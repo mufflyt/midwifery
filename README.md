@@ -16,14 +16,22 @@ The directory is an Oracle APEX classic report that hard-caps any result set at
 per-discipline `Total : N` line, however, is exact even when the rows are
 capped.
 
-The scraper uses that count to recursively partition the search by certification
-number until every bucket is under the cap, fetches each bucket in a single
-500-row request, and de-duplicates on (certification, certification number).
-Certification numbers are either `CNM`-prefixed or bare digits; the search maps
-to a SQL `LIKE`, so `_` serves as a length mask to anchor a bare-digit prefix.
+Only four search items are honoured by the report: certification, certification
+number, last name and first name. Certification number matches by `INSTR`
+(substring, no wildcards), which gives the partition used here:
 
-Reported totals as of August 2026: 183 Certified Midwives, 22,126 Certified
-Nurse-Midwives.
+* numbers prefixed `CNM`/`CM` — walk the prefix digit by digit; the prefix only
+  occurs at the start, so a prefixed pattern is effectively anchored
+* bare digit numbers — sweep every 3-digit substring, since any number with at
+  least three digits contains one. The 2- and 1-digit sweeps run only if the
+  running count still falls short
+
+Each bucket under the cap is fetched in a single 500-row request and
+de-duplicated on (certification, certification number). The scraper checks its
+result against the reported total before writing.
+
+Collected 2026-08-06: 22,309 records (183 Certified Midwives, 22,126 Certified
+Nurse-Midwives), matching the directory's own totals exactly.
 
 ## Output columns
 
