@@ -37,6 +37,7 @@ sql <- sprintf('
       UPPER(TRIM("Provider Last Name (Legal Name)"))                        AS last_name,
       UPPER(TRIM("Provider Middle Name"))                                   AS middle_name,
       UPPER(TRIM("Provider Credential Text"))                               AS credential,
+      UPPER(TRIM("Provider First Line Business Practice Location Address"))  AS practice_address,
       UPPER(TRIM("Provider Business Practice Location Address City Name"))  AS practice_city,
       UPPER(TRIM("Provider Business Practice Location Address State Name")) AS practice_state,
       TRIM("Provider Business Practice Location Address Postal Code")       AS practice_zip,

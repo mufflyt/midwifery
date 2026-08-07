@@ -2,3 +2,11 @@
 *.html
 cj.txt
 *.parquet
+
+# Derived NPPES pulls: 176 MB candidate table and a 1.4 GB response cache.
+# Both are reproducible with fetch_npi_candidates.py.
+nppes_candidates.csv
+nppes_api_cache.jsonl
+
+# Name-parser cache written by the isochrones parser
+.cache/

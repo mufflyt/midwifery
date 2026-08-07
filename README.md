@@ -43,14 +43,37 @@ does not touch the purchase endpoint.
 
 Geography instead comes from NPPES:
 
-    Rscript extract_nppes_midwives.R   # midwifery NPIs -> nppes_midwives.parquet
+    python3 fetch_npi_candidates.py    # NPI Registry API -> nppes_candidates.csv
     Rscript match_nppes.R              # -> midwives_with_nppes.csv
+    Rscript geocode_midwives.R         # -> midwives_geocoded.csv
+    Rscript check_npi_deactivation.R   # -> midwives_status_check.csv
 
-Matching reuses the isochrones-A name-matching stack (`normalize_string()`,
-the nickname dictionary, and the weighted Jaro-Winkler scoring from
-`matching_utils.R`); set `ISOCHRONES_R` if that repo lives elsewhere. Only
-`Accept` rows (score >= 0.85) carry city/state; ambiguous name collisions are
-labelled and left blank.
+Candidates come from the live NPI Registry API keyed on surname, not from a
+bulk dissemination file: the local March 2024 snapshot is two years stale and
+simply lacks recently certified midwives. Querying by surname (rather than by
+midwifery taxonomy) also returns CNMs enumerated under other taxonomies, and
+returns each provider's former/maiden names, which matter in a cohort that is
+~99% women.
+
+Matching is built on the isochrones matching stack — `parse_physician_name_enhanced()`,
+`calculate_similarities()` + `apply_scoring()`, `score_middle_name_match()`,
+the nickname dictionary, `write_match_ledger()`, `validate_pipeline_output()`
+and `log_exclusion()`. Set `ISOCHRONES_R` if that project lives elsewhere.
+A deterministic exact pass runs first; only the residual pays for
+Jaro-Winkler scoring.
+
+Acceptance scales with clinical evidence, because a surname-blocked pool means
+a perfect name match can still be the wrong person: 0.82 with a midwifery
+taxonomy or CNM/CM credential, 0.88 with nursing/women's-health evidence, 0.95
+and sole candidate with neither. Only `Accept` rows carry geography.
+
+`credential_compatibility.R` documents why the project's credential gate is
+re-implemented here (its enum is MD/DO/UNKNOWN, which either no-ops or
+fails closed on a CNM) and why gender blocking is deliberately not used.
+
+Known coverage gap: 106 first+last name combinations are common enough to
+still hit the API's 200-row response cap, so their candidate lists are
+truncated.
 
 ## Output columns
 
