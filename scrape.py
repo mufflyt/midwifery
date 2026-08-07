@@ -25,6 +25,9 @@ WORKERS = 6
 COLS = ["certification", "certification_number", "status", "certification_date",
         "expiration_date", "last_name", "first_name", "middle_name",
         "discipline", "primary_source"]
+# The primary-source cell links to AMCB's paid verification checkout; the customer
+# id in that link is the directory's own key for the record, so keep it.
+CUST_ID = re.compile(r"p_related_cust_id=(\d+)")
 
 
 def _text(fragment):
@@ -77,7 +80,10 @@ class Session:
         for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", doc, re.S):
             cells = re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S)
             if len(cells) == len(COLS):
-                out.append(dict(zip(COLS, map(_text, cells))))
+                row = dict(zip(COLS, map(_text, cells)))
+                found = CUST_ID.search(cells[-1])
+                row["customer_id"] = found.group(1) if found else ""
+                out.append(row)
         return out
 
 
@@ -151,7 +157,7 @@ def main():
 
     rows = sorted(records.values(), key=lambda r: (r["last_name"], r["first_name"]))
     with open("midwives.csv", "w", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=COLS)
+        writer = csv.DictWriter(fh, fieldnames=COLS + ["customer_id"])
         writer.writeheader()
         writer.writerows(rows)
     print(f"wrote {len(rows)} rows to midwives.csv", file=sys.stderr)

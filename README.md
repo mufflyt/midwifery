@@ -33,6 +33,25 @@ result against the reported total before writing.
 Collected 2026-08-06: 22,309 records (183 Certified Midwives, 22,126 Certified
 Nurse-Midwives), matching the directory's own totals exactly.
 
+## Location data
+
+AMCB does not publish city/state — those sit behind its paid primary-source
+verification, linked per row as `purchase_product?p_related_cust_id=...`. The
+scraper records that `customer_id` (present for ACTIVE certifications only) so
+individual verifications can be purchased through AMCB's normal checkout; it
+does not touch the purchase endpoint.
+
+Geography instead comes from NPPES:
+
+    Rscript extract_nppes_midwives.R   # midwifery NPIs -> nppes_midwives.parquet
+    Rscript match_nppes.R              # -> midwives_with_nppes.csv
+
+Matching reuses the isochrones-A name-matching stack (`normalize_string()`,
+the nickname dictionary, and the weighted Jaro-Winkler scoring from
+`matching_utils.R`); set `ISOCHRONES_R` if that repo lives elsewhere. Only
+`Accept` rows (score >= 0.85) carry city/state; ambiguous name collisions are
+labelled and left blank.
+
 ## Output columns
 
 `certification, certification_number, status, certification_date,
