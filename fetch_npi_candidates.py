@@ -66,6 +66,56 @@ def load_cache():
     return done
 
 
+def build_candidate_rows(results_lists):
+    """Flatten cached NPPES result sets into one deduplicated row per name variant.
+
+    For each provider: pick the LOCATION address (else the first), the primary
+    taxonomy (else the first), and emit the legal name plus every ``other_names``
+    variant. Rows are deduplicated on (npi, first, last, variant-kind).
+    """
+    seen, rows = set(), []
+    for results in results_lists:
+        for r in results:
+            npi = r.get("number")
+            basic = r.get("basic", {}) or {}
+            addr = next((a for a in (r.get("addresses") or [])
+                         if a.get("address_purpose") == "LOCATION"),
+                        (r.get("addresses") or [{}])[0])
+            taxa = r.get("taxonomies") or []
+            primary = next((t for t in taxa if t.get("primary")), taxa[0] if taxa else {})
+            # One row per name variant: legal name plus every former/other name.
+            variants = [(basic.get("first_name"), basic.get("last_name"),
+                         basic.get("middle_name"), "legal")]
+            for other in (r.get("other_names") or []):
+                variants.append((other.get("first_name"), other.get("last_name"),
+                                 other.get("middle_name"), other.get("type") or "other"))
+            for first, last, middle, kind in variants:
+                if not last:
+                    continue
+                key = (npi, (first or "").upper(), (last or "").upper(), kind)
+                if key in seen:
+                    continue
+                seen.add(key)
+                rows.append({
+                    "npi": npi,
+                    "first_name": (first or "").upper().strip(),
+                    "last_name": (last or "").upper().strip(),
+                    "middle_name": (middle or "").upper().strip(),
+                    "name_variant": kind,
+                    "credential": (basic.get("credential") or "").upper().strip(),
+                    "sex": basic.get("sex") or "",
+                    "enumeration_date": basic.get("enumeration_date") or "",
+                    "taxonomy": primary.get("code") or "",
+                    "taxonomy_desc": primary.get("desc") or "",
+                    "all_taxonomies": "|".join(t.get("code", "") for t in taxa),
+                    "practice_address": (addr.get("address_1") or "").upper().strip(),
+                    "practice_city": (addr.get("city") or "").upper().strip(),
+                    "practice_state": (addr.get("state") or "").upper().strip(),
+                    "practice_zip": (addr.get("postal_code") or "")[:5],
+                })
+    return rows
+
+
 def main():
     with open("midwives.csv") as fh:
         amcb = list(csv.DictReader(fh))
@@ -122,46 +172,7 @@ def main():
 
     log.close()
 
-    seen, rows = set(), []
-    for results in cache.values():
-        for r in results:
-            npi = r.get("number")
-            basic = r.get("basic", {}) or {}
-            addr = next((a for a in (r.get("addresses") or [])
-                         if a.get("address_purpose") == "LOCATION"),
-                        (r.get("addresses") or [{}])[0])
-            taxa = r.get("taxonomies") or []
-            primary = next((t for t in taxa if t.get("primary")), taxa[0] if taxa else {})
-            # One row per name variant: legal name plus every former/other name.
-            variants = [(basic.get("first_name"), basic.get("last_name"),
-                         basic.get("middle_name"), "legal")]
-            for other in (r.get("other_names") or []):
-                variants.append((other.get("first_name"), other.get("last_name"),
-                                 other.get("middle_name"), other.get("type") or "other"))
-            for first, last, middle, kind in variants:
-                if not last:
-                    continue
-                key = (npi, (first or "").upper(), (last or "").upper(), kind)
-                if key in seen:
-                    continue
-                seen.add(key)
-                rows.append({
-                    "npi": npi,
-                    "first_name": (first or "").upper().strip(),
-                    "last_name": (last or "").upper().strip(),
-                    "middle_name": (middle or "").upper().strip(),
-                    "name_variant": kind,
-                    "credential": (basic.get("credential") or "").upper().strip(),
-                    "sex": basic.get("sex") or "",
-                    "enumeration_date": basic.get("enumeration_date") or "",
-                    "taxonomy": primary.get("code") or "",
-                    "taxonomy_desc": primary.get("desc") or "",
-                    "all_taxonomies": "|".join(t.get("code", "") for t in taxa),
-                    "practice_address": (addr.get("address_1") or "").upper().strip(),
-                    "practice_city": (addr.get("city") or "").upper().strip(),
-                    "practice_state": (addr.get("state") or "").upper().strip(),
-                    "practice_zip": (addr.get("postal_code") or "")[:5],
-                })
+    rows = build_candidate_rows(cache.values())
 
     with open(OUT, "w", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=list(rows[0]))
@@ -171,4 +182,5 @@ def main():
           f"({len({r['npi'] for r in rows}):,} NPIs) to {OUT}", file=sys.stderr)
 
 
-main()
+if __name__ == "__main__":
+    main()

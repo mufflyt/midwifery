@@ -34,6 +34,28 @@ def _text(fragment):
     return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", fragment))).strip()
 
 
+def parse_total(doc):
+    """Sum every "Total : N" line -- exact even when the 500-row cap truncates rows."""
+    return sum(int(n) for n in re.findall(r"Total : (\d+)", doc))
+
+
+def parse_rows(doc):
+    """Parse an APEX report fragment into row dicts, one per COLS-width <tr>.
+
+    Each COLS-width row also carries the primary-source customer id, if the
+    last cell links to AMCB's paid verification checkout.
+    """
+    out = []
+    for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", doc, re.S):
+        cells = re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S)
+        if len(cells) == len(COLS):
+            row = dict(zip(COLS, map(_text, cells)))
+            found = CUST_ID.search(cells[-1])
+            row["customer_id"] = found.group(1) if found else ""
+            out.append(row)
+    return out
+
+
 class Session:
     """One APEX session: search items are server-side state, so never share."""
 
@@ -66,7 +88,7 @@ class Session:
         vals = ",".join(urllib.parse.quote(v) for v in (cert, number))
         doc = self._request(f"{BASE}f?p=500:17800:{self.instance}::NO::"
                             f"P17800_CERT,P17800_CERT_NUMBER,P17800_SEARCH_FLG:{vals},Y")
-        return sum(int(n) for n in re.findall(r"Total : (\d+)", doc))
+        return parse_total(doc)
 
     def rows(self):
         """Fetch up to CAP rows of the current result set."""
@@ -76,15 +98,7 @@ class Session:
             "p_pg_min_row": 1, "p_pg_max_rows": CAP, "p_pg_rows_fetched": CAP,
         }).encode()
         doc = self._request(BASE + "wwv_flow.show", body)
-        out = []
-        for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", doc, re.S):
-            cells = re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S)
-            if len(cells) == len(COLS):
-                row = dict(zip(COLS, map(_text, cells)))
-                found = CUST_ID.search(cells[-1])
-                row["customer_id"] = found.group(1) if found else ""
-                out.append(row)
-        return out
+        return parse_rows(doc)
 
 
 _local = threading.local()
@@ -163,4 +177,5 @@ def main():
     print(f"wrote {len(rows)} rows to midwives.csv", file=sys.stderr)
 
 
-main()
+if __name__ == "__main__":
+    main()

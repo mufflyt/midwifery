@@ -3,6 +3,13 @@
 cj.txt
 *.parquet
 
+# Test / Python tooling artifacts
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+
 # Derived NPPES pulls: 176 MB candidate table and a 1.4 GB response cache.
 # Both are reproducible with fetch_npi_candidates.py.
 nppes_candidates.csv
