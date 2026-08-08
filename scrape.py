@@ -68,6 +68,9 @@ class Session:
         """Open a fresh cookie jar and read the report home page for the two
         server-side handles every later request needs: the APEX session
         instance id and the report region id."""
+        # Any reconnect invalidates the server-side search state.
+        self._needs_reapply = True
+        self._applied = getattr(self, "_applied", None)
         self.opener = urllib.request.build_opener(
             urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
         self.opener.addheaders = [("User-Agent", "Mozilla/5.0")]
@@ -93,13 +96,26 @@ class Session:
 
     def search(self, cert, number):
         """Apply the search and return the exact total, cap notwithstanding."""
+        self._applied = (cert, number)
+        return self._apply_search(cert, number)
+
+    def _apply_search(self, cert, number):
         vals = ",".join(urllib.parse.quote(v) for v in (cert, number))
         doc = self._request(f"{BASE}f?p=500:17800:{self.instance}::NO::"
                             f"P17800_CERT,P17800_CERT_NUMBER,P17800_SEARCH_FLG:{vals},Y")
         return parse_total(doc)
 
     def rows(self):
-        """Fetch up to CAP rows of the current result set."""
+        """Fetch up to CAP rows of the current result set.
+
+        The search is server-side session state. If a retry inside _request()
+        rebuilt the session, that state is gone and this would return the
+        unfiltered first CAP rows -- silently attributing 500 arbitrary
+        certificants to whichever bucket was being fetched. Re-apply first.
+        """
+        if getattr(self, "_needs_reapply", False) and self._applied:
+            self._apply_search(*self._applied)
+            self._needs_reapply = False
         body = urllib.parse.urlencode({
             "p_flow_id": "500", "p_flow_step_id": "17800", "p_instance": self.instance,
             "p_request": f"FLOW_PPR_OUTPUT_R{self.region}_pg_R_{self.region}",

@@ -34,12 +34,24 @@ CREDENTIAL_CLASSES <- list(
 #' normalize_credential_class(NA)         # -> "UNKNOWN"
 normalize_credential_class <- function(credential) {
   if (is.null(credential) || length(credential) != 1L || is.na(credential)) return("UNKNOWN")
-  tokens <- unlist(strsplit(toupper(trimws(as.character(credential))), "[^A-Z]+"))
+  raw <- toupper(trimws(as.character(credential)))
+  tokens <- unlist(strsplit(raw, "[^A-Z]+"))
   tokens <- tokens[nzchar(tokens)]
-  if (!length(tokens)) return("UNKNOWN")
+  # "C.N.M." tokenises to C / N / M, so also test the fully de-punctuated form.
+  # Multi-letter codes are matched as substrings there; two-letter codes are
+  # not, to avoid CM matching inside e.g. "BCMA".
+  flat <- gsub("[^A-Z]", "", raw)
+  if (!length(tokens) && !nzchar(flat)) return("UNKNOWN")
   # Most specific class wins: a "CNM, RN" is a midwife, not a nurse.
   for (cls in names(CREDENTIAL_CLASSES)) {
-    if (any(tokens %in% CREDENTIAL_CLASSES[[cls]])) return(cls)
+    codes <- CREDENTIAL_CLASSES[[cls]]
+    if (any(tokens %in% codes)) return(cls)
+    long <- codes[nchar(codes) > 2]
+    if (length(long) && grepl(paste(long, collapse = "|"), flat)) return(cls)
+    # Two-letter codes (MD, CM, RN, NP) are only accepted when the whole
+    # de-punctuated credential IS that code -- "M.D." must read as physician
+    # without "BCMA" reading as a midwife.
+    if (flat %in% codes) return(cls)
   }
   "UNKNOWN"
 }
@@ -61,4 +73,34 @@ are_credentials_compatible_midwifery <- function(amcb_credential, nppes_credenti
   if (a == "UNKNOWN" || b == "UNKNOWN") return(TRUE)
   if (a == "midwifery" && b %in% c("physician", "other_doc")) return(FALSE)
   TRUE
+}
+
+#' Vectorised credential classification
+#'
+#' `normalize_credential_class()` is scalar, and calling it once per candidate
+#' dominated the matcher's runtime -- the credential of an NPPES record is a
+#' static property, so classify the whole table once instead. Kept in lockstep
+#' with the scalar version by `stopifnot()` in the caller.
+#'
+#' @param credential `character`: vector of free-text credentials.
+#' @return `character` vector of class labels.
+classify_credentials <- function(credential) {
+  raw   <- toupper(trimws(replace(as.character(credential),
+                                  is.na(credential), "")))
+  flat  <- gsub("[^A-Z]", "", raw)
+  words <- gsub("[^A-Z]+", " ", raw)
+
+  has_code <- function(cls) {
+    codes <- CREDENTIAL_CLASSES[[cls]]
+    long  <- codes[nchar(codes) > 2]
+    hit <- flat %in% codes
+    if (length(long)) hit <- hit | grepl(paste(long, collapse = "|"), flat)
+    hit | grepl(paste0("\\b(", paste(codes, collapse = "|"), ")\\b"), words)
+  }
+
+  out <- rep("UNKNOWN", length(raw))
+  # Reverse order so the most specific class (listed first) wins the assignment.
+  for (cls in rev(names(CREDENTIAL_CLASSES))) out[has_code(cls)] <- cls
+  out[!nzchar(flat)] <- "UNKNOWN"
+  out
 }

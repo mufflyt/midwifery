@@ -17,3 +17,5 @@ nppes_api_cache.jsonl
 
 # Name-parser cache written by the isochrones parser
 .cache/
+data/cache/
+artifacts/match_ledger.csv

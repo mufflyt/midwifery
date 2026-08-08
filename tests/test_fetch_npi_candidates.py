@@ -73,6 +73,7 @@ def test_build_rows_picks_location_address_over_mailing():
     assert row["practice_address"] == "1 CLINIC WAY"
     assert row["practice_city"] == "CAREVILLE"
     assert row["practice_state"] == "CA"
+    assert row["address_purpose"] == "LOCATION"
 
 
 def test_build_rows_truncates_zip_to_five_digits():
@@ -93,6 +94,8 @@ def test_build_rows_falls_back_to_first_address_when_no_location():
          "city": "Mailtown", "state": "NY", "postal_code": "10001"}])
     (row,) = fnc.build_candidate_rows([[p]])
     assert row["practice_city"] == "MAILTOWN"
+    # The fallback records that this is a MAILING address, not a practice site.
+    assert row["address_purpose"] == "MAILING"
 
 
 def test_build_rows_handles_provider_with_no_taxonomies():

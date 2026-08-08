@@ -84,7 +84,8 @@ def load_cache():
 def build_candidate_rows(results_lists):
     """Flatten cached NPPES result sets into one deduplicated row per name variant.
 
-    For each provider: pick the LOCATION address (else the first), the primary
+    For each provider: pick the LOCATION address (else the first, recording its
+    ``address_purpose`` so a MAILING fallback is visible downstream), the primary
     taxonomy (else the first), and emit the legal name plus every ``other_names``
     variant. Rows are deduplicated on (npi, first, last, variant-kind).
     """
@@ -93,9 +94,15 @@ def build_candidate_rows(results_lists):
         for r in results:
             npi = r.get("number")
             basic = r.get("basic", {}) or {}
-            addr = next((a for a in (r.get("addresses") or [])
-                         if a.get("address_purpose") == "LOCATION"),
-                        (r.get("addresses") or [{}])[0])
+            addresses = r.get("addresses") or []
+            addr = next((a for a in addresses
+                         if a.get("address_purpose") == "LOCATION"), None)
+            if addr is None:
+                # No practice location on file. A MAILING address is often a PO
+                # box or billing office, so keep it but record what it is --
+                # geocoding a billing office as a practice site is a silent
+                # error that no downstream step can detect.
+                addr = addresses[0] if addresses else {}
             taxa = r.get("taxonomies") or []
             primary = next((t for t in taxa if t.get("primary")), taxa[0] if taxa else {})
             # One row per name variant: legal name plus every former/other name.
@@ -127,6 +134,7 @@ def build_candidate_rows(results_lists):
                     "practice_city": (addr.get("city") or "").upper().strip(),
                     "practice_state": (addr.get("state") or "").upper().strip(),
                     "practice_zip": (addr.get("postal_code") or "")[:5],
+                    "address_purpose": addr.get("address_purpose") or "",
                 })
     return rows
 
@@ -189,8 +197,12 @@ def main():
 
     rows = build_candidate_rows(cache.values())
 
+    fields = ["npi", "first_name", "last_name", "middle_name", "name_variant",
+              "credential", "sex", "enumeration_date", "taxonomy", "taxonomy_desc",
+              "all_taxonomies", "practice_address", "practice_city",
+              "practice_state", "practice_zip", "address_purpose"]
     with open(OUT, "w", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(fh, fieldnames=fields)
         writer.writeheader()
         writer.writerows(rows)
     print(f"wrote {len(rows):,} candidate name-rows "
