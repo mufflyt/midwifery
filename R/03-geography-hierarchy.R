@@ -47,10 +47,11 @@
 #' @export
 
 suppressPackageStartupMessages({
-  library(dplyr); library(readr); library(stringr); library(tidyr); library(cli)
+  library(dplyr); library(readr); library(stringr); library(tidyr); library(cli); library(tigris)
 })
 
 DATA <- "data"; ART <- "artifacts"
+`%||%` <- function(a, b) if (is.null(a)) b else a
 # Default to the guarded linkage. The earlier Stage 2 roster had no
 # identifiability guard: 2,847 of its 16,743 matched rows are unmatched,
 # quarantined, or assigned to a DIFFERENT NPI under the guard, and 2,368 of
@@ -61,6 +62,12 @@ GEO_OUT <- Sys.getenv("STAGE3_OUT", "midwives_geography.csv")
 dir.create(ART, showWarnings = FALSE)
 
 pad5 <- function(x) str_pad(as.character(x), 5, "left", "0")
+#' Two-digit state FIPS for a USPS state code
+state_fips_of <- function(x) {
+  lu <- distinct(tigris::fips_codes, state, state_code)
+  lu$state_code[match(x, lu$state)]
+}
+pad_n <- function(x, n) str_pad(as.character(x), n, "left", "0")
 
 #' ZIP -> county with the ambiguity retained
 #'
@@ -71,6 +78,52 @@ pad5 <- function(x) str_pad(as.character(x), 5, "left", "0")
 #' @return [tibble] zip5, n_county, GEOID_unique, top_land_share.
 #' @keywords internal
 #' @noRd
+#' Connecticut ZIP -> 2022 planning region, at the analysis vintage
+#'
+#' CT replaced its 8 counties with 9 planning regions in 2022, so the 2020
+#' ZCTA-county relationship file emits 09001/09003/... while county_base.csv
+#' (tigris 2023) holds 09110/09170/.... The two do not join.
+#'
+#' This is fixable EXACTLY rather than approximately. Per the Census Bureau
+#' (quoted in ~/isochrones/data/external/ruca_tract_mapping_ct_planning_regions.README.md):
+#' "There were no geographic changes to blocks or tracts between 2020 and 2022 --
+#' only the FIPS codes changed." So a 2020 tract IS a 2022 tract; only its label
+#' moved. Routing ZIP -> 2020 tract -> 2022 tract -> planning region is therefore
+#' a relabelling, not a spatial approximation, and it preserves the multi-county
+#' detection that a hand-coded old->new county lookup could not (planning regions
+#' cross old county lines, so that mapping is not 1:1).
+#'
+#' @return [tibble] zip5, n_county, top_land_share, GEOID_unique for CT ZIPs.
+#' @keywords internal
+#' @noRd
+zip_county_ct_2022 <- function() {
+  zt <- file.path(DATA, "zcta_tract_2020.txt")
+  xw <- file.path(DATA, "ct_tract_crosswalk_2022.csv")
+  if (!file.exists(zt) || !file.exists(xw)) {
+    cli::cli_alert_warning("CT vintage crosswalk inputs missing; CT ZIPs stay unresolved.")
+    return(tibble(zip5 = character(), n_county = integer(),
+                  top_land_share = numeric(), GEOID_unique = character()))
+  }
+
+  cross <- read_csv(xw, show_col_types = FALSE, progress = FALSE) %>%
+    transmute(tract20 = pad_n(tract_fips_2020, 11),
+              pr_geoid = pad5(ce_fips_2022)) %>%
+    distinct(tract20, .keep_all = TRUE)
+
+  read_delim(zt, delim = "|", show_col_types = FALSE, progress = FALSE) %>%
+    filter(str_starts(GEOID_TRACT_20, "09")) %>%
+    transmute(zip5 = pad5(GEOID_ZCTA5_20),
+              tract20 = pad_n(GEOID_TRACT_20, 11),
+              land = suppressWarnings(as.numeric(AREALAND_PART))) %>%
+    inner_join(cross, by = "tract20") %>%
+    group_by(zip5, pr_geoid) %>%
+    summarise(land = sum(land, na.rm = TRUE), .groups = "drop_last") %>%
+    summarise(n_county = n(),
+              top_land_share = max(land) / sum(land),
+              GEOID_unique = if (n() == 1L) first(pr_geoid) else NA_character_,
+              .groups = "drop")
+}
+
 zip_county_unique <- function() {
   f <- file.path(DATA, "zcta_county_2020.txt")
   if (!file.exists(f)) stop("Missing ", f, call. = FALSE)
@@ -82,7 +135,57 @@ zip_county_unique <- function() {
     summarise(n_county = n(),
               top_land_share = max(land) / sum(land),
               GEOID_unique = if (n() == 1L) first(GEOID) else NA_character_,
-              .groups = "drop")
+              .groups = "drop") -> base_zip
+
+  # Replace CT wholesale with the planning-region derivation; the 2020 rows for
+  # CT are not merely stale, they are unjoinable.
+  #
+  # BUG FIX: the first cut filtered on GEOID_unique starting "09", which misses
+  # CT MULTI-county ZIPs -- those carry GEOID_unique = NA, so they survived the
+  # filter and were then re-added by bind_rows(). That produced duplicate zip5
+  # rows, a many-to-many join, and duplicated midwives downstream. Drop by ZIP
+  # KEY, not by the county value.
+  ct <- zip_county_ct_2022()
+  base_zip %>%
+    filter(!zip5 %in% ct$zip5) %>%
+    bind_rows(ct) %>%
+    distinct(zip5, .keep_all = TRUE)
+}
+
+
+# --- Structural invariants -------------------------------------------------
+# A valid ZIP became attached to the WRONG PERSON in an earlier build. These
+# guards target that mechanism -- key cardinality and identity invariance --
+# not just its symptom (a state mismatch), because a silent many-to-many join
+# followed by row reordering can attach any field to any person.
+
+#' Abort unless a column is a unique key
+#' @keywords internal
+#' @noRd
+assert_unique_key <- function(df, key, what) {
+  n_dup <- sum(duplicated(df[[key]]))
+  if (n_dup > 0) {
+    stop(sprintf("INVARIANT: '%s' is not unique in %s (%d duplicates). A person-level join on a non-unique key attaches fields to the wrong person.",
+                 key, what, n_dup), call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+#' Abort unless row count and the person-key SET are unchanged
+#'
+#' Set equality, not just count: a join can drop one person and duplicate
+#' another, leaving nrow() identical while the cohort silently changes.
+#' @keywords internal
+#' @noRd
+assert_identity_preserved <- function(after, spine, key, step) {
+  if (nrow(after) != nrow(spine)) {
+    stop(sprintf("INVARIANT: row count changed at '%s' (%d -> %d).",
+                 step, nrow(spine), nrow(after)), call. = FALSE)
+  }
+  if (!setequal(after[[key]], spine[[key]])) {
+    stop(sprintf("INVARIANT: person-key set changed at '%s'.", step), call. = FALSE)
+  }
+  invisible(TRUE)
 }
 
 build_geography <- function() {
@@ -119,11 +222,41 @@ build_geography <- function() {
 
   zc <- zip_county_unique()
 
+  # The frozen roster is the ONLY spine. Prove the key before joining on it.
+  roster <- roster %>% filter(!is.na(npi))
+  assert_unique_key(roster, "certification_number", "frozen roster")
+  assert_unique_key(coords, "certification_number", "coordinate evidence")
+  spine <- roster
+
+  # ADDRESS-LEVEL PROVENANCE: coordinates are only admissible if the address
+  # they were generated FROM matches the pinned roster address. Joining on a
+  # person key alone would re-import the original defect, where coordinates
+  # derived from one identity were attached to another identity's ZIP.
+  if (all(c("practice_zip", "practice_state") %in% names(geo))) {
+    prov <- geo %>%
+      select(certification_number, geo_zip = practice_zip,
+             geo_state = practice_state) %>%
+      distinct(certification_number, .keep_all = TRUE)
+    bad_prov <- roster %>%
+      select(certification_number, practice_zip, practice_state) %>%
+      inner_join(prov, by = "certification_number") %>%
+      mutate(rz = pad5(str_sub(str_remove_all(practice_zip, "[^0-9]"), 1, 5)),
+             gz = pad5(str_sub(str_remove_all(geo_zip, "[^0-9]"), 1, 5))) %>%
+      filter((!is.na(rz) & !is.na(gz) & rz != gz) |
+               (!is.na(practice_state) & !is.na(geo_state) &
+                  practice_state != geo_state))
+    if (nrow(bad_prov) > 0) {
+      write_csv(bad_prov, file.path(ART, "invariant_address_provenance_failures.csv"))
+      stop(sprintf("INVARIANT: %d records where the coordinate source's address disagrees with the pinned roster address. Coordinates and ZIP would describe different practices. See artifacts/invariant_address_provenance_failures.csv",
+                   nrow(bad_prov)), call. = FALSE)
+    }
+  }
+
   m <- roster %>%
-    filter(!is.na(npi)) %>%
-    left_join(coords, by = "certification_number") %>%
+    left_join(coords, by = "certification_number", relationship = "one-to-one") %>%
     mutate(zip5 = pad5(str_sub(str_remove_all(practice_zip, "[^0-9]"), 1, 5))) %>%
-    left_join(zc, by = "zip5")
+    left_join(zc, by = "zip5", relationship = "many-to-one")
+  assert_identity_preserved(m, spine, "certification_number", "coords + zip join")
 
   m <- m %>%
     mutate(
@@ -170,6 +303,68 @@ build_geography <- function() {
         n_county == 1     ~ "unambiguous",
         top_land_share >= 0.8 ~ "multi_county_dominant",
         TRUE              ~ "multi_county_split"))
+
+  # --- INVARIANTS: provenance and state consistency -------------------------
+  # Added after 156 validation discordances traced to a MIXED-VINTAGE build:
+  # ZIPs came from a guarded linkage that reassigns 2,847 rows to a different
+  # NPI, while coordinates came from pre-guard geocoding. Same certification
+  # number, two different people, so the ZIP and the coordinates described
+  # different practices and the disagreement was scored as fallback error.
+  # These fire BEFORE any county is emitted.
+  fail <- list()
+
+  # 1. Coordinates must belong to the same address the ZIP came from. Proxy:
+  #    the geocoded source must carry the same ZIP for that person.
+  if ("practice_zip" %in% names(geo)) {
+    zchk <- m %>%
+      select(certification_number, roster_zip = practice_zip) %>%
+      inner_join(geo %>% select(certification_number, geo_zip = practice_zip) %>%
+                   distinct(certification_number, .keep_all = TRUE),
+                 by = "certification_number") %>%
+      mutate(rz = pad5(str_sub(str_remove_all(roster_zip, "[^0-9]"), 1, 5)),
+             gz = pad5(str_sub(str_remove_all(geo_zip, "[^0-9]"), 1, 5))) %>%
+      filter(!is.na(rz), !is.na(gz), rz != gz)
+    if (nrow(zchk) > 0) {
+      fail$zip_provenance <- nrow(zchk)
+      cli::cli_alert_danger(
+        "INVARIANT FAILED: {nrow(zchk)} rows where the geocoded source's ZIP differs from the roster ZIP -- coordinates and ZIP describe different addresses.")
+    }
+  }
+
+  # 2. State consistency. A ZIP may straddle a county line; it cannot straddle
+  #    two states. Any cross-state disagreement is a build fault, not a
+  #    precision limit, and must not receive a county.
+  m <- m %>%
+    mutate(st_addr = state_fips_of(practice_state),
+           st_zip  = str_sub(GEOID_unique, 1, 2),
+           st_cty  = str_sub(GEOID_coord, 1, 2),
+           cross_state_fail =
+             (!is.na(st_addr) & !is.na(st_zip) & st_addr != st_zip) |
+             (!is.na(st_addr) & !is.na(st_cty) & st_addr != st_cty) |
+             (!is.na(st_zip)  & !is.na(st_cty) & st_zip  != st_cty))
+
+  n_cross <- sum(m$cross_state_fail, na.rm = TRUE)
+  if (n_cross > 0) {
+    fail$cross_state <- n_cross
+    cli::cli_alert_danger("INVARIANT FAILED: {n_cross} cross-state disagreements.")
+    write_csv(m %>% filter(cross_state_fail) %>%
+                select(certification_number, npi, practice_state, practice_zip,
+                       GEOID_coord, GEOID_unique, st_addr, st_zip, st_cty),
+              file.path(ART, "invariant_cross_state_failures.csv"))
+  }
+
+  # Fail closed: a record failing any invariant gets NO county.
+  m <- m %>% mutate(
+    county_exact = if_else(cross_state_fail %in% TRUE, NA_character_, county_exact),
+    county_best  = if_else(cross_state_fail %in% TRUE, NA_character_, county_best),
+    geo_source   = if_else(cross_state_fail %in% TRUE, "invariant_failure", geo_source))
+
+  if (length(fail) > 0) {
+    cli::cli_alert_danger(
+      "VALIDATION FAILURE -- no completeness estimate may be emitted while these are unexplained: {paste(names(fail), unlist(fail), sep='=', collapse=', ')}")
+  } else {
+    cli::cli_alert_success("Invariants passed: provenance and state consistency clean.")
+  }
 
   # --- Class counts --------------------------------------------------------
   classes <- m %>%
@@ -241,6 +436,30 @@ build_geography <- function() {
            latitude, longitude, quality_score, geocode_match,
            county_exact, county_best, geo_source, geo_precision, geo_ambiguity,
            zip_n_county = n_county, zip_top_land_share = top_land_share)
+  # Cross-state failures are QUARANTINED (county set to NA above), so isolated
+  # bad source rows -- a ZIP that genuinely straddles a state line like 42223
+  # (Fort Campbell KY/TN), or a keying error such as an SD address with a TX
+  # ZIP -- do not block the build. A systemic rate does: that signals an
+  # assembly fault of the kind that produced 104 cross-state discordances, and
+  # must abort. Structural failures (cardinality, identity, address
+  # provenance) always abort; they have already stop()ped above.
+  CROSS_STATE_ABORT_RATE <- 0.005
+  cross_rate <- (fail$cross_state %||% 0) / nrow(m)
+  if (cross_rate > CROSS_STATE_ABORT_RATE) {
+    stop(sprintf("ABORTING: cross-state failure rate %.3f%% exceeds %.1f%% -- systemic assembly fault, not isolated source errors.",
+                 100 * cross_rate, 100 * CROSS_STATE_ABORT_RATE), call. = FALSE)
+  }
+  if (!is.null(fail$cross_state)) {
+    cli::cli_alert_warning(
+      "{fail$cross_state} cross-state rows QUARANTINED (county = NA, geo_source = invariant_failure), rate {round(100*cross_rate,3)}% -- isolated source conflicts, build proceeds.")
+    fail$cross_state <- NULL
+  }
+  if (length(fail) > 0 && !nzchar(Sys.getenv("ALLOW_INVARIANT_FAILURES"))) {
+    stop(sprintf("ABORTING before writing %s: %s. Set ALLOW_INVARIANT_FAILURES=1 only to inspect a known-bad build.",
+                 GEO_OUT, paste(names(fail), unlist(fail), sep = "=", collapse = ", ")),
+         call. = FALSE)
+  }
+  assert_identity_preserved(out, spine, "certification_number", "final output")
   write_csv(out, GEO_OUT, na = "")
   cli::cli_alert_success("{GEO_OUT} written ({nrow(out)} rows)")
 

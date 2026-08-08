@@ -47,6 +47,22 @@ roster <- roster %>%
   mutate(address_hash = key_of(nppes_practice_address, nppes_city,
                                nppes_state, nppes_zip))
 
+# Freshly geocoded coordinates must come from the run RESULTS as well as the
+# cache: the cascade writes new cache rows keyed on
+# MD5(normalized_address + geocoder_version), so a pipe-format lookup finds the
+# seeded rows but silently misses everything geocoded since.
+run_results <- c("artifacts/panel_geocode_results.csv",
+                 "artifacts/geocode_rerun_results.csv")
+fresh <- lapply(run_results[file.exists(run_results)], function(p)
+  read_csv(p, show_col_types = FALSE) %>%
+    transmute(nppes_practice_address = geocode_address_1, nppes_city = geocode_city,
+              nppes_state = geocode_state, nppes_zip = geocode_zip,
+              f_lat = lat, f_lon = lon, f_prov = geocode_source)) %>%
+  bind_rows() %>%
+  filter(!is.na(f_lat)) %>%
+  distinct(nppes_practice_address, nppes_city, nppes_state, nppes_zip, .keep_all = TRUE)
+cat(sprintf("fresh geocodes available: %s\n", format(nrow(fresh), big.mark = ",")))
+
 con <- dbConnect(duckdb::duckdb(), cache_path, read_only = TRUE)
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 cache <- dbGetQuery(con, "
@@ -64,13 +80,17 @@ nozip <- cache %>% distinct(key_nozip, .keep_all = TRUE) %>%
          tract2 = census_tract, county2 = county_fips)
 
 hit <- roster %>%
+  left_join(fresh, by = c("nppes_practice_address", "nppes_city",
+                          "nppes_state", "nppes_zip")) %>%
   left_join(select(cache, address_hash, latitude, longitude, quality_score,
                    census_tract, county_fips), by = "address_hash") %>%
   left_join(nozip, by = "key_nozip") %>%
   mutate(geocode_match = case_when(!is.na(latitude) ~ "exact_key",
+                                   !is.na(f_lat)    ~ "run_results",
                                    !is.na(lat2)     ~ "no_zip_fallback",
                                    TRUE             ~ NA_character_),
-         latitude = coalesce(latitude, lat2), longitude = coalesce(longitude, lon2),
+         latitude = coalesce(latitude, f_lat, lat2),
+         longitude = coalesce(longitude, f_lon, lon2),
          quality_score = coalesce(quality_score, q2),
          census_tract = coalesce(census_tract, tract2),
          county_fips = coalesce(county_fips, county2)) %>%

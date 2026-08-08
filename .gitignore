@@ -35,3 +35,13 @@ artifacts/identity_flip_audit.csv
 midwives_panel_geocoded.csv
 midwives_geography_guarded.csv
 artifacts/panel_geocode_queue.csv
+.amcb_done*
+.both_done
+.geocode_done
+artifacts/panel_geocode_results.csv
+artifacts/geocode_rerun_results.csv
+artifacts/geocode_rerun_queue.csv
+artifacts/geocode_provenance_gap.csv
+artifacts/geocode_provenance_audit.csv
+artifacts/geocode_checkpoints/
+midwives_geography.csv
