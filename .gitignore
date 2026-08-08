@@ -29,3 +29,6 @@ midwife_panel.csv.lock
 
 # Scoring-loop checkpoint (match_nppes.R); resumable state, not a result
 artifacts/match_progress.rds
+artifacts/amcb_npi_matched*.csv
+artifacts/amcb_npi_linkage_FROZEN.csv
+artifacts/identity_flip_audit.csv

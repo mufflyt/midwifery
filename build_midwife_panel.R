@@ -52,6 +52,7 @@ con <- dbConnect(duckdb::duckdb())
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
 out_path <- "midwife_panel.csv"
+RESUME <- !identical(Sys.getenv("PANEL_REBUILD"), "1")
 lock <- paste0(out_path, ".lock")
 if (file.exists(lock)) {
   stop(sprintf(paste("%s exists -- another build is writing %s.",
@@ -61,17 +62,39 @@ if (file.exists(lock)) {
 }
 file.create(lock)
 on.exit(unlink(lock), add = TRUE)
-if (file.exists(out_path)) unlink(out_path)
-first <- TRUE
+done_years <- integer(0)
+if (RESUME && file.exists(out_path)) {
+  done_years <- unique(as.integer(read.csv(out_path, colClasses = "character")$snapshot_year))
+  cat(sprintf("resuming: %s already present\n", paste(sort(done_years), collapse = ", ")))
+} else if (file.exists(out_path)) {
+  unlink(out_path)
+}
+first <- !file.exists(out_path)
 
 for (k in seq_along(files)) {
+  if (snap_year[k] %in% done_years) next
   f <- files[k]
   # Column names drift across releases; resolve against the actual header.
-  src <- sprintf("read_csv_auto('%s', all_varchar = TRUE, sample_size = -1,
-                                 normalize_names = TRUE, encoding = 'latin-1',
-                                 ignore_errors = true)", f)
-  have <- tryCatch(names(dbGetQuery(con, sprintf("SELECT * FROM %s LIMIT 0", src))),
-                   error = function(e) character(0))
+  # Two settings here are load-bearing, both learned the hard way:
+  #
+  #   sample_size stays small -- all_varchar = TRUE means there are no types to
+  #   infer, and sample_size = -1 forced a full multi-GB scan that failed
+  #   outright on every release from 2018 onward.
+  #
+  #   encoding is per file, not global. Releases up to 2017 are latin-1 and
+  #   abort as UTF-8; releases from 2018 are UTF-8 and abort as latin-1. A
+  #   single hardcoded value silently loses one era or the other.
+  reader <- function(enc) sprintf(
+    "read_csv_auto('%s', all_varchar = TRUE, sample_size = 1000,
+                   normalize_names = TRUE, encoding = '%s', ignore_errors = true)",
+    f, enc)
+  src <- NULL; have <- character(0)
+  for (enc in c("utf-8", "latin-1")) {
+    cols <- tryCatch(names(dbGetQuery(con, sprintf("SELECT * FROM %s LIMIT 0", reader(enc)))),
+                     error = function(e) character(0))
+    if (length(cols)) { src <- reader(enc); have <- cols; break }
+  }
+  if (is.null(src)) have <- character(0)
   if (!length(have)) { cat(sprintf("  [%d/%d] %s -- unreadable, skipped\n",
                                    k, length(files), basename(f))); next }
 

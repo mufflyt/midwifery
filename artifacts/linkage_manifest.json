@@ -1,0 +1,56 @@
+{
+  "generated_utc": "2026-08-08 19:48:30 UTC",
+  "git_commit": "529bb175571cb03c4fbdfe6047a7b49296379284",
+  "inputs": {
+    "amcb_roster": {
+      "path": "midwives.csv",
+      "rows": 22309,
+      "sha256": "fe035788018f076db16f8dbe9c1b484f062d5ee3af8f6106547ed1886e127d11",
+      "source": "ams.amcbmidwife.org APEX directory, scrape.py"
+    },
+    "nppes_panel": {
+      "path": "midwife_panel.csv",
+      "rows": 233094,
+      "sha256": "4308a1a2cd087188a69bfe78b81b5d55b3ff7add2b869c89226bf245556314a6",
+      "distinct_npi": 20849,
+      "snapshot_years": [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+      "snapshot_years_missing": [],
+      "source": "NPPES historical dissemination files, build_midwife_panel.R"
+    }
+  },
+  "outputs": {
+    "frozen_linkage": {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "rows": 22309,
+      "cols": 28,
+      "sha256": "2478380f3b58a72cf7976eee2a4e87e2f48d7222a641be88f0f2037cc807f4c2"
+    },
+    "ab_through2017": {
+      "path": "artifacts/amcb_npi_matched_through2017.csv",
+      "rows": 22309,
+      "sha256": "e4d2d36d1e56ef9ca63596ea5382f7495050e81af8921652c9671c6102f13d86"
+    },
+    "identity_audit": {
+      "path": "artifacts/identity_flip_audit.csv",
+      "rows": 81,
+      "sha256": "23ce4318ccc0bcf52d943d02af562d8b21776f7613f9f9e8b722dbdcc41d0cb2"
+    }
+  },
+  "linkage": {
+    "total_rows": 22309,
+    "primary": 15538,
+    "sensitivity_fuzzy": 168,
+    "quarantined": 877,
+    "unmatched": 5726,
+    "resolution": {
+      "exact_name_tie_broken_by_middle": 106,
+      "exact_name_unique": 15366,
+      "fuzzy_surname": 168,
+      "last_plus_first_initial": 66
+    },
+    "ab_gain_records": 6041,
+    "ab_gain_pp": 27.1,
+    "identity_flips": 81,
+    "guard_quarantined_by_new_data": 79
+  }
+}
