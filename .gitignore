@@ -26,3 +26,6 @@ DAC_NationalDownloadableFile*.csv
 *.lock
 midwife_panel.csv
 midwife_panel.csv.lock
+
+# Scoring-loop checkpoint (match_nppes.R); resumable state, not a result
+artifacts/match_progress.rds

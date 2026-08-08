@@ -275,7 +275,18 @@ cat(sprintf("AMCB records: %s | candidate name-rows: %s (%s NPIs)\n",
 cat("Evidence tiers in candidate pool:\n"); print(table(cand$evidence))
 # The vectorised classifier is an optimisation of the scalar rule; if they ever
 # diverge the credential gate is silently wrong, so check on a sample.
-.api <- which(cand$name_variant != "dac")
+#
+# Only rows whose cred_class came STRAIGHT from classify_credentials() are
+# comparable. Two row sources deliberately override it afterwards and must be
+# excluded, or the check fails on its own intended behaviour:
+#   dac       -- Doctors and Clinicians rows
+#   panel_*   -- historical NPPES snapshots, forced to "midwifery" above
+# The panel_ exclusion was missing, so this stopifnot() killed a full 40-minute
+# run after the scoring loop had completed. It was intermittent because .chk is
+# an unseeded sample of 500: it only fired when a panel row happened to be
+# drawn. Seeded now so a failure reproduces instead of vanishing on re-run.
+.api <- which(!grepl("^(dac|panel_)", cand$name_variant))
+set.seed(20260808)
 .chk <- sample(.api, min(500, length(.api)))
 stopifnot(identical(cand$cred_class[.chk],
                     vapply(cand$credential[.chk], normalize_credential_class,
@@ -505,17 +516,59 @@ score_one <- function(i) {
                     accepted = decision == "Accept" & seq_len(nrow(cc)) == best))
 }
 
+# --- Scoring loop, checkpointed ----------------------------------------------
+# The loop is ~40 minutes over 22k names and used to write NOTHING until it
+# finished. A crash at 22,000/22,309 -- which happened, from a concurrent edit
+# to this file mid-run, since R parses top-level expressions lazily -- threw
+# away the entire run. Progress is now flushed every CKPT_EVERY records and
+# reloaded on restart, so a failure costs at most one checkpoint interval.
+#
+# The checkpoint is keyed by roster_id, not by loop index: if the roster
+# changes between runs, index i no longer means the same person, and resuming
+# positionally would silently attribute one certificant's match to another.
+# Stale entries are dropped rather than trusted.
+CKPT_FILE  <- file.path("artifacts", "match_progress.rds")
+CKPT_EVERY <- 500L
+
+resume <- list(results = list(), ledger = list())
+if (file.exists(CKPT_FILE) && !nzchar(Sys.getenv("MATCH_RESTART"))) {
+  ck <- tryCatch(readRDS(CKPT_FILE), error = function(e) NULL)
+  if (!is.null(ck) && identical(ck$roster_hash, digest::digest(amcb$roster_id))) {
+    resume <- ck
+    cat(sprintf("Resuming from checkpoint: %s of %s already scored\n",
+                format(length(resume$results), big.mark = ","),
+                format(nrow(amcb), big.mark = ",")))
+  } else {
+    cat("Checkpoint ignored: roster changed since it was written.\n")
+  }
+}
+
 start <- Sys.time()
-results <- vector("list", nrow(amcb))
-ledger_buffer <- vector("list", nrow(amcb))
-for (i in seq_len(nrow(amcb))) {
+results <- resume$results
+ledger_buffer <- resume$ledger
+roster_hash <- digest::digest(amcb$roster_id)
+
+save_ckpt <- function() {
+  tmp <- paste0(CKPT_FILE, ".tmp")
+  saveRDS(list(results = results, ledger = ledger_buffer,
+               roster_hash = roster_hash), tmp)
+  file.rename(tmp, CKPT_FILE)   # atomic: never leave a half-written checkpoint
+}
+
+todo <- which(!(amcb$roster_id %in% names(results)))
+for (i in todo) {
+  key <- as.character(amcb$roster_id[i])
   r <- score_one(i)
-  if (!is.null(r)) { results[[i]] <- r$best; ledger_buffer[[i]] <- r$ledger }
-  if (i %% 2000 == 0) {
-    cat(sprintf("  %s/%s (%.0fs)\n", i, nrow(amcb),
+  if (!is.null(r)) { results[[key]] <- r$best; ledger_buffer[[key]] <- r$ledger }
+
+  n_done <- length(results)
+  if (n_done %% CKPT_EVERY == 0) save_ckpt()
+  if (n_done %% 2000 == 0) {
+    cat(sprintf("  %s/%s (%.0fs)\n", n_done, nrow(amcb),
                 as.numeric(difftime(Sys.time(), start, units = "secs"))))
   }
 }
+save_ckpt()
 matches <- bind_rows(results)
 write_match_ledger(bind_rows(ledger_buffer), LEDGER)
 
