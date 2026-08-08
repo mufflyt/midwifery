@@ -137,6 +137,21 @@ build_completeness <- function() {
   # failures (matching vs geocoding) and overstate this one.
   m <- g %>% filter(!is.na(npi)) %>% mutate(geocoded = !is.na(latitude))
 
+  # Stage 3+: ascertainment is COUNTY resolution (county_best), not coordinate
+  # possession. Same strata, same code path, different numerator -- so the
+  # stage table stays a like-for-like comparison of what each stage achieved.
+  if (nzchar(Sys.getenv("ASCERTAIN_FROM_GEOGRAPHY")) &&
+      file.exists("midwives_geography.csv")) {
+    gg <- read_csv("midwives_geography.csv", show_col_types = FALSE,
+                   col_types = cols(.default = col_character())) %>%
+      select(certification_number, county_best) %>%
+      distinct(certification_number, .keep_all = TRUE)
+    m <- m %>%
+      left_join(gg, by = "certification_number") %>%
+      mutate(geocoded = !is.na(county_best))
+    cli::cli_alert_info("Ascertainment = county_best (geography hierarchy), not raw coordinates")
+  }
+
   # Optional: treat a Healthgrades address as recovered coverage, so the table
   # reports completeness AFTER supplementary evidence rather than before.
   hg_ids <- character(0)
