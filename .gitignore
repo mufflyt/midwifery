@@ -20,3 +20,4 @@ nppes_api_cache.jsonl
 data/cache/
 artifacts/match_ledger.csv
 dac_midwives.csv
+DAC_NationalDownloadableFile*.csv

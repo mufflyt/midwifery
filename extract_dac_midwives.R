@@ -26,9 +26,17 @@
 
 suppressPackageStartupMessages({library(DBI); library(duckdb)})
 
-dac <- Sys.getenv("DAC_FILE", path.expand(
-  "~/Documents/Documents - TMuff/doctors_and_clinicians_current_data/DAC_NationalDownloadableFile.csv"))
-stopifnot(file.exists(dac))
+# Prefer the current download; fall back to the 2022 copy on disk.
+dac <- Sys.getenv("DAC_FILE", "")
+if (!nzchar(dac)) {
+  candidates <- c("DAC_NationalDownloadableFile_2026-06.csv",
+                  path.expand(paste0("~/Documents/Documents - TMuff/",
+                                     "doctors_and_clinicians_current_data/",
+                                     "DAC_NationalDownloadableFile.csv")))
+  dac <- candidates[file.exists(candidates)][1]
+}
+stopifnot(!is.na(dac), file.exists(dac))
+cat("DAC source: ", basename(dac), "\n", sep = "")
 
 con <- dbConnect(duckdb::duckdb())
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
@@ -43,23 +51,43 @@ src <- sprintf("read_csv_auto(%s, all_varchar = TRUE, sample_size = -1,
 
 # NB: DuckDB reads "..." as an identifier, so every string literal below must
 # be single-quoted -- hence the raw string.
+# CMS renamed columns between the 2022 and 2026 releases (lst_nm ->
+# "Provider Last Name", cty -> "City/Town", ...). normalize_names lowercases
+# and underscores them, so resolve each field against what this file actually
+# has rather than hardcoding one release's schema.
+have <- names(dbGetQuery(con, sprintf("SELECT * FROM %s LIMIT 0", src)))
+pick <- function(...) {
+  opts <- c(...)
+  hit <- opts[opts %in% have]
+  if (!length(hit)) stop(sprintf("DAC file has none of: %s",
+                                 paste(opts, collapse = ", ")), call. = FALSE)
+  hit[1]
+}
+col_last  <- pick("lst_nm", "provider_last_name")
+col_first <- pick("frst_nm", "provider_first_name")
+col_mid   <- pick("mid_nm", "provider_middle_name")
+col_city  <- pick("cty", "citytown", "city_town")
+col_state <- pick("st", "state")
+col_zip   <- pick("zip", "zip_code")
+
 sql <- sprintf(r"(
   SELECT
     NPI                                    AS npi,
-    UPPER(TRIM(lst_nm))                    AS last_name,
-    UPPER(TRIM(frst_nm))                   AS first_name,
-    UPPER(TRIM(COALESCE(mid_nm, '')))      AS middle_name,
+    UPPER(TRIM(%s))                        AS last_name,
+    UPPER(TRIM(%s))                        AS first_name,
+    UPPER(TRIM(COALESCE(%s, '')))          AS middle_name,
     UPPER(TRIM(COALESCE(cred, '')))        AS credential,
     UPPER(TRIM(COALESCE(gndr, '')))        AS sex,
     UPPER(TRIM(pri_spec))                  AS primary_specialty,
     UPPER(TRIM(COALESCE(sec_spec_all, ''))) AS secondary_specialties,
     UPPER(TRIM(COALESCE(adr_ln_1, '')))    AS practice_address,
-    UPPER(TRIM(COALESCE(cty, '')))         AS practice_city,
-    UPPER(TRIM(COALESCE(st, '')))          AS practice_state,
-    SUBSTR(TRIM(COALESCE(zip, '')), 1, 5)  AS practice_zip
+    UPPER(TRIM(COALESCE(%s, '')))          AS practice_city,
+    UPPER(TRIM(COALESCE(%s, '')))          AS practice_state,
+    SUBSTR(TRIM(COALESCE(%s, '')), 1, 5)   AS practice_zip
   FROM %s
   WHERE UPPER(COALESCE(pri_spec, '')) LIKE '%%MIDWIFE%%'
-     OR UPPER(COALESCE(sec_spec_all, '')) LIKE '%%MIDWIFE%%')", src)
+     OR UPPER(COALESCE(sec_spec_all, '')) LIKE '%%MIDWIFE%%')",
+  col_last, col_first, col_mid, col_city, col_state, col_zip, src)
 
 cat("Scanning DAC national file...\n")
 rows <- dbGetQuery(con, sql)
