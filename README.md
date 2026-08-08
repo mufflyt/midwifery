@@ -3,6 +3,11 @@
 Scraper for the [AMCB certification directory](https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800)
 (American Midwifery Certification Board public primary-source verification listing).
 
+> **New to this codebase?** Start with [ARCHITECTURE.md](ARCHITECTURE.md) for the
+> end-to-end pipeline, per-file roles, environment variables, and how to run and
+> test each stage. This README covers the scraping and matching rationale in
+> depth.
+
 ## Usage
 
     python3 scrape.py    # writes midwives.csv

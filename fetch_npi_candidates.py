@@ -32,6 +32,15 @@ _last_call = [0.0]
 
 
 def nppes_query(last, first=None):
+    """Query the NPI Registry API for individual providers by surname.
+
+    Paces itself to the global 10 req/sec ceiling and retries transient
+    failures up to four times with linear back-off. Returns the parsed JSON
+    dict, or ``None`` if every attempt failed.
+
+    :param last: surname to search (upper-cased and trimmed).
+    :param first: optional given name, used to refine a truncated surname pull.
+    """
     params = {"version": "2.1", "limit": str(LIMIT), "enumeration_type": "NPI-1",
               "last_name": last.upper().strip()}
     if first:
@@ -54,6 +63,12 @@ def nppes_query(last, first=None):
 
 
 def load_cache():
+    """Load the on-disk response cache so a re-run is resumable.
+
+    Reads the JSONL cache into a ``{query_key: results}`` dict, silently
+    skipping a truncated final line left by an interrupted run. Returns an
+    empty dict when no cache exists yet.
+    """
     done = {}
     if os.path.exists(CACHE):
         with open(CACHE) as fh:
@@ -64,6 +79,64 @@ def load_cache():
                     continue          # truncated final line from an interrupted run
                 done[rec["query"]] = rec["results"]
     return done
+
+
+def build_candidate_rows(results_lists):
+    """Flatten cached NPPES result sets into one deduplicated row per name variant.
+
+    For each provider: pick the LOCATION address (else the first, recording its
+    ``address_purpose`` so a MAILING fallback is visible downstream), the primary
+    taxonomy (else the first), and emit the legal name plus every ``other_names``
+    variant. Rows are deduplicated on (npi, first, last, variant-kind).
+    """
+    seen, rows = set(), []
+    for results in results_lists:
+        for r in results:
+            npi = r.get("number")
+            basic = r.get("basic", {}) or {}
+            addresses = r.get("addresses") or []
+            addr = next((a for a in addresses
+                         if a.get("address_purpose") == "LOCATION"), None)
+            if addr is None:
+                # No practice location on file. A MAILING address is often a PO
+                # box or billing office, so keep it but record what it is --
+                # geocoding a billing office as a practice site is a silent
+                # error that no downstream step can detect.
+                addr = addresses[0] if addresses else {}
+            taxa = r.get("taxonomies") or []
+            primary = next((t for t in taxa if t.get("primary")), taxa[0] if taxa else {})
+            # One row per name variant: legal name plus every former/other name.
+            variants = [(basic.get("first_name"), basic.get("last_name"),
+                         basic.get("middle_name"), "legal")]
+            for other in (r.get("other_names") or []):
+                variants.append((other.get("first_name"), other.get("last_name"),
+                                 other.get("middle_name"), other.get("type") or "other"))
+            for first, last, middle, kind in variants:
+                if not last:
+                    continue
+                key = (npi, (first or "").upper(), (last or "").upper(), kind)
+                if key in seen:
+                    continue
+                seen.add(key)
+                rows.append({
+                    "npi": npi,
+                    "first_name": (first or "").upper().strip(),
+                    "last_name": (last or "").upper().strip(),
+                    "middle_name": (middle or "").upper().strip(),
+                    "name_variant": kind,
+                    "credential": (basic.get("credential") or "").upper().strip(),
+                    "sex": basic.get("sex") or "",
+                    "enumeration_date": basic.get("enumeration_date") or "",
+                    "taxonomy": primary.get("code") or "",
+                    "taxonomy_desc": primary.get("desc") or "",
+                    "all_taxonomies": "|".join(t.get("code", "") for t in taxa),
+                    "practice_address": (addr.get("address_1") or "").upper().strip(),
+                    "practice_city": (addr.get("city") or "").upper().strip(),
+                    "practice_state": (addr.get("state") or "").upper().strip(),
+                    "practice_zip": (addr.get("postal_code") or "")[:5],
+                    "address_purpose": addr.get("address_purpose") or "",
+                })
+    return rows
 
 
 def main():
@@ -122,53 +195,7 @@ def main():
 
     log.close()
 
-    seen, rows = set(), []
-    for results in cache.values():
-        for r in results:
-            npi = r.get("number")
-            basic = r.get("basic", {}) or {}
-            addresses = r.get("addresses") or []
-            addr = next((a for a in addresses
-                         if a.get("address_purpose") == "LOCATION"), None)
-            if addr is None:
-                # No practice location on file. A MAILING address is often a PO
-                # box or billing office, so keep it but record what it is --
-                # geocoding a billing office as a practice site is a silent
-                # error that no downstream step can detect.
-                addr = addresses[0] if addresses else {}
-            taxa = r.get("taxonomies") or []
-            primary = next((t for t in taxa if t.get("primary")), taxa[0] if taxa else {})
-            # One row per name variant: legal name plus every former/other name.
-            variants = [(basic.get("first_name"), basic.get("last_name"),
-                         basic.get("middle_name"), "legal")]
-            for other in (r.get("other_names") or []):
-                variants.append((other.get("first_name"), other.get("last_name"),
-                                 other.get("middle_name"), other.get("type") or "other"))
-            for first, last, middle, kind in variants:
-                if not last:
-                    continue
-                key = (npi, (first or "").upper(), (last or "").upper(), kind)
-                if key in seen:
-                    continue
-                seen.add(key)
-                rows.append({
-                    "npi": npi,
-                    "first_name": (first or "").upper().strip(),
-                    "last_name": (last or "").upper().strip(),
-                    "middle_name": (middle or "").upper().strip(),
-                    "name_variant": kind,
-                    "credential": (basic.get("credential") or "").upper().strip(),
-                    "sex": basic.get("sex") or "",
-                    "enumeration_date": basic.get("enumeration_date") or "",
-                    "taxonomy": primary.get("code") or "",
-                    "taxonomy_desc": primary.get("desc") or "",
-                    "all_taxonomies": "|".join(t.get("code", "") for t in taxa),
-                    "practice_address": (addr.get("address_1") or "").upper().strip(),
-                    "practice_city": (addr.get("city") or "").upper().strip(),
-                    "practice_state": (addr.get("state") or "").upper().strip(),
-                    "practice_zip": (addr.get("postal_code") or "")[:5],
-                    "address_purpose": addr.get("address_purpose") or "",
-                })
+    rows = build_candidate_rows(cache.values())
 
     fields = ["npi", "first_name", "last_name", "middle_name", "name_variant",
               "credential", "sex", "enumeration_date", "taxonomy", "taxonomy_desc",
@@ -182,4 +209,5 @@ def main():
           f"({len({r['npi'] for r in rows}):,} NPIs) to {OUT}", file=sys.stderr)
 
 
-main()
+if __name__ == "__main__":
+    main()
