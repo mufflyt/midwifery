@@ -149,13 +149,60 @@ cand <- cand_raw %>%
              grepl("\\bRN\\b|\\bNP\\b", cred_words)                     ~ "weak",
            TRUE                                                      ~ "none"))
 
+# --- CMS Doctors and Clinicians (strategy_02) --------------------------------
+# DAC states a clinician's Medicare-enrolled specialty outright, which buys two
+# things the NPI Registry cannot. First, independent specialty evidence: a
+# midwife enumerated under some other NPPES taxonomy still reads as a midwife
+# here. Second, reach back in time -- DAC lists who was enrolled when it was
+# published, so an NPI deactivated since is absent from the live API but
+# present here. That is precisely the lapsed/retired/deceased population.
+if (file.exists("dac_midwives.csv")) {
+  dac <- read_csv("dac_midwives.csv", col_types = cols(.default = "c")) %>%
+    mutate(across(c(first_name, last_name, middle_name), normalize_string),
+           across(c(first_name, last_name, middle_name), ~ replace_na(.x, "")))
+
+  dac_npis <- unique(dac$npi)
+  boosted <- sum(cand$npi %in% dac_npis & cand$evidence != "strong")
+  cand$evidence[cand$npi %in% dac_npis] <- "strong"
+
+  dac_rows <- dac %>%
+    transmute(npi, first_name, last_name, middle_name,
+              name_variant = "dac", credential, sex,
+              enumeration_date = NA_character_,
+              taxonomy = NA_character_, taxonomy_desc = primary_specialty,
+              all_taxonomies = NA_character_,
+              practice_address, practice_city, practice_state, practice_zip,
+              address_purpose = "DAC_PRACTICE",
+              cred_flat = gsub("[^A-Z]", "", toupper(coalesce(credential, ""))),
+              cred_words = gsub("[^A-Z]+", " ", toupper(coalesce(credential, ""))),
+              cred_class = classify_credentials(credential),
+              evidence = "strong") %>%
+    # DAC's own credential field is often blank; the roster membership is the
+    # evidence, so never let a blank credential veto it.
+    mutate(cred_class = if_else(cred_class == "UNKNOWN", "midwifery", cred_class))
+
+  # Keep DAC rows only where they add a name the API pull does not already have
+  # for that NPI, so a live NPPES record always wins on address freshness.
+  known <- paste(cand$npi, cand$first_name, cand$last_name)
+  dac_rows <- dac_rows[!paste(dac_rows$npi, dac_rows$first_name,
+                              dac_rows$last_name) %in% known, ]
+  cand <- bind_rows(cand, dac_rows)
+  cat(sprintf("DAC: %s midwives, %s candidate NPIs promoted to strong evidence, %s name-rows added\n",
+              format(length(dac_npis), big.mark = ","),
+              format(boosted, big.mark = ","),
+              format(nrow(dac_rows), big.mark = ",")))
+} else {
+  cat("DAC file absent -- run extract_dac_midwives.R for specialty evidence\n")
+}
+
 cat(sprintf("AMCB records: %s | candidate name-rows: %s (%s NPIs)\n",
             format(nrow(amcb), big.mark = ","), format(nrow(cand), big.mark = ","),
             format(n_distinct(cand$npi), big.mark = ",")))
 cat("Evidence tiers in candidate pool:\n"); print(table(cand$evidence))
 # The vectorised classifier is an optimisation of the scalar rule; if they ever
 # diverge the credential gate is silently wrong, so check on a sample.
-.chk <- sample(nrow(cand), min(500, nrow(cand)))
+.api <- which(cand$name_variant != "dac")
+.chk <- sample(.api, min(500, length(.api)))
 stopifnot(identical(cand$cred_class[.chk],
                     vapply(cand$credential[.chk], normalize_credential_class,
                            character(1), USE.NAMES = FALSE)))

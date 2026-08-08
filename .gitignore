@@ -19,3 +19,4 @@ nppes_api_cache.jsonl
 .cache/
 data/cache/
 artifacts/match_ledger.csv
+dac_midwives.csv
