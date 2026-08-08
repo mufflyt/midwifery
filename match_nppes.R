@@ -128,17 +128,37 @@ cand_raw <- read_csv("nppes_candidates.csv", col_types = cols(.default = "c"))
 cand <- cand_raw %>%
   mutate(across(c(first_name, last_name, middle_name), normalize_string),
          across(c(first_name, last_name, middle_name), ~ replace_na(.x, "")),
+         # Two normalised forms are needed: "C.N.M." only reads as CNM once
+         # punctuation is REMOVED (collapsing to spaces yields "C N M"), while
+         # short codes like CM need word boundaries to avoid matching inside
+         # longer credentials.
+         cred_flat  = gsub("[^A-Z]", "", toupper(coalesce(credential, ""))),
+         cred_words = gsub("[^A-Z]+", " ", toupper(coalesce(credential, ""))),
+         # Classified once for the whole table: this is a static property of
+         # each NPPES record, and calling the scalar classifier per candidate
+         # dominated the matcher's runtime.
+         cred_class = classify_credentials(credential),
          evidence = case_when(
            grepl(paste(MIDWIFE_TAX, collapse = "|"), all_taxonomies) ~ "strong",
-           grepl("\\bCNM\\b|\\bCM\\b|MIDWI", coalesce(credential, ""))~ "strong",
+           # Strip punctuation first: "C.N.M." is common in NPPES and a
+           # \\bCNM\\b pattern never matches it.
+           grepl("CNM|MIDWI", cred_flat) |
+             grepl("\\bCM\\b|\\bCNM\\b", cred_words)                    ~ "strong",
            grepl(paste(WOMENS_TAX, collapse = "|"), all_taxonomies)  ~ "weak",
-           grepl("\\bRN\\b|APRN|\\bNP\\b|MSN|DNP|WHNP|FNP", coalesce(credential, "")) ~ "weak",
+           grepl("APRN|WHNP|FNP|MSN|DNP", cred_flat) |
+             grepl("\\bRN\\b|\\bNP\\b", cred_words)                     ~ "weak",
            TRUE                                                      ~ "none"))
 
 cat(sprintf("AMCB records: %s | candidate name-rows: %s (%s NPIs)\n",
             format(nrow(amcb), big.mark = ","), format(nrow(cand), big.mark = ","),
             format(n_distinct(cand$npi), big.mark = ",")))
 cat("Evidence tiers in candidate pool:\n"); print(table(cand$evidence))
+# The vectorised classifier is an optimisation of the scalar rule; if they ever
+# diverge the credential gate is silently wrong, so check on a sample.
+.chk <- sample(nrow(cand), min(500, nrow(cand)))
+stopifnot(identical(cand$cred_class[.chk],
+                    vapply(cand$credential[.chk], normalize_credential_class,
+                           character(1), USE.NAMES = FALSE)))
 
 # compare_hyphenated_names() / compare_international_names() return a list with
 # a 0-30 point score; assess_potential_maiden_name() returns a 0-0.8 confidence.
@@ -166,9 +186,7 @@ score_one <- function(i) {
 
   # Credential gate (see credential_compatibility.R): an AMCB certified midwife
   # matching an NPPES record credentialed MD/DO is almost certainly a namesake.
-  cred_ok <- vapply(pool$credential, are_credentials_compatible_midwifery,
-                    logical(1), amcb_credential = "CNM", USE.NAMES = FALSE)
-  pool <- pool[cred_ok, , drop = FALSE]
+  pool <- pool[!pool$cred_class %in% c("physician", "other_doc"), , drop = FALSE]
   if (!nrow(pool)) return(NULL)
 
   # Stage 1a: deterministic exact match (exact first + last, no middle
@@ -209,7 +227,18 @@ score_one <- function(i) {
   # full 22k x 1.28M comparison tractable.
   if (nrow(cc) > SHORTLIST) {
     cheap <- CFG$weights$last * cc$last_sim + CFG$weights$first * cc$first_sim
-    cc <- cc[order(cheap, decreasing = TRUE)[seq_len(SHORTLIST)], , drop = FALSE]
+    keep <- order(cheap, decreasing = TRUE)[seq_len(SHORTLIST)]
+    # Ranking on name alone would drop a midwife-credentialed candidate sitting
+    # 41st among namesakes on a common surname, which is exactly the candidate
+    # most likely to win once evidence is applied. Always retain the best
+    # clinically-plausible candidates alongside the best-named ones.
+    with_evidence <- which(cc$evidence != "none")
+    if (length(with_evidence)) {
+      keep <- union(keep, with_evidence[order(cheap[with_evidence],
+                                              decreasing = TRUE)][seq_len(
+                                                min(SHORTLIST, length(with_evidence)))])
+    }
+    cc <- cc[keep, , drop = FALSE]
   }
 
   # Nickname-aware first names (JULIE/JULES), then the project's tiered middle
@@ -222,6 +251,19 @@ score_one <- function(i) {
   cc$middle_sim <- pmax(0, cc$middle_points) / 15   # 15 pts == same initial
 
   cc <- apply_scoring(cc, CFG)
+
+  # Absence of evidence is not evidence of absence: when NEITHER side records a
+  # middle name there is nothing to agree about, yet the middle term still
+  # contributed 0, capping those records at 0.88 -- unreachable for
+  # ACCEPT_NONE (0.95) and barely over ACCEPT_WEAK. Renormalise over the terms
+  # that actually carry information.
+  no_middle <- !nzchar(amcb$middle_n[i]) & !nzchar(cc$middle_name)
+  if (any(no_middle)) {
+    informative <- CFG$weights$last + CFG$weights$first
+    cc$total_score[no_middle] <-
+      (CFG$weights$last * cc$last_sim[no_middle] +
+       CFG$weights$first * cc$first_sim[no_middle]) / informative
+  }
 
   # Name-variation credit (enhanced_name_parsing.R). This cohort is ~99% women
   # with certifications going back decades, so surname change -- hyphenation,
@@ -249,8 +291,12 @@ score_one <- function(i) {
   cc <- cc[order(cc$total_score, decreasing = TRUE), , drop = FALSE]
   cc <- cc[!duplicated(cc$npi), , drop = FALSE]
 
+  # A single NA similarity propagates into total_score, and `if (any(NA))`
+  # aborts the whole run -- one malformed candidate would kill 22k matches.
+  cc$total_score[is.na(cc$total_score)] <- 0
   eligible <- cc$total_score >= accept_floor[cc$evidence] &
               (cc$evidence != "none" | nrow(cc) == 1)
+  eligible[is.na(eligible)] <- FALSE
   best <- which.max(cc$total_score)
   decision <- if (any(eligible)) {
     best <- which(eligible)[which.max(cc$total_score[eligible])]
@@ -308,7 +354,10 @@ write_match_ledger(bind_rows(ledger_buffer), LEDGER)
 # score keeps it and the others drop to Ambiguous.
 dupes <- matches %>% filter(match_decision == "Accept") %>%
   group_by(npi) %>% filter(n() > 1) %>%
-  arrange(desc(match_score), .by_group = TRUE) %>% slice(-1) %>% ungroup()
+  # roster_id breaks score ties deterministically; without it the winner
+  # depends on row order and the output is not reproducible run to run.
+  arrange(desc(match_score), roster_id, .by_group = TRUE) %>%
+  slice(-1) %>% ungroup()
 cat(sprintf("\nDemoted %s accepted matches sharing an NPI with a stronger claim\n",
             format(nrow(dupes), big.mark = ",")))
 matches <- matches %>%

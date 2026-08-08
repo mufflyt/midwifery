@@ -16,7 +16,7 @@
 # =============================================================================
 
 suppressPackageStartupMessages({
-  library(dplyr); library(readr); library(readxl)
+  library(dplyr); library(readr); library(readxl); library(stringr)
 })
 
 report <- Sys.getenv("NPI_DEACTIVATION_REPORT",
@@ -32,7 +32,9 @@ deactivated <- read_excel(report, skip = 1) %>%
   rename(npi = NPI, deactivation_date = `NPPES Deactivation Date`) %>%
   filter(!is.na(npi)) %>%
   mutate(npi = as.character(npi),
-         deactivation_year = as.integer(substr(deactivation_date, 7, 10))) %>%
+         deactivation_date = as.character(deactivation_date),
+         deactivation_year = as.integer(
+           stringr::str_extract(deactivation_date, "[12][0-9]{3}"))) %>%
   distinct(npi, .keep_all = TRUE)
 
 cat(sprintf("Deactivated NPIs in report: %s\n",

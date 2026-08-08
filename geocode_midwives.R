@@ -48,9 +48,12 @@ cache <- dbGetQuery(con, "
   distinct(address_hash, .keep_all = TRUE)
 
 # The cache stores 9-digit zips; ours are 5-digit, so try the exact key first
-# and fall back to street+city+state.
-cache$key5 <- sub("\\|[0-9]*$", "", cache$address_hash)
-located$key5 <- sub("\\|[^|]*$", "", located$address_hash)
+# and fall back to street+city+state. Both sides must drop the zip field the
+# SAME way -- a "[0-9]*$" pattern leaves a non-numeric zip ("NA") in place on
+# the cache side only, and then the fallback join silently never matches.
+drop_zip <- function(x) sub("\\|[^|]*$", "", x)
+cache$key5 <- drop_zip(cache$address_hash)
+located$key5 <- drop_zip(located$address_hash)
 
 hit <- located %>%
   left_join(select(cache, address_hash, latitude, longitude, quality_score,
