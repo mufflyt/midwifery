@@ -21,3 +21,6 @@ data/cache/
 artifacts/match_ledger.csv
 dac_midwives.csv
 DAC_NationalDownloadableFile*.csv
+
+# Runtime lock files (see build_midwife_panel.R); never a committable artifact
+*.lock

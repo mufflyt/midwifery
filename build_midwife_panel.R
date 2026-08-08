@@ -52,6 +52,15 @@ con <- dbConnect(duckdb::duckdb())
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
 out_path <- "midwife_panel.csv"
+lock <- paste0(out_path, ".lock")
+if (file.exists(lock)) {
+  stop(sprintf(paste("%s exists -- another build is writing %s.",
+                     "Two builders append to the same file and interleave into",
+                     "a corrupt panel. Remove the lock if no build is running."),
+               lock, out_path), call. = FALSE)
+}
+file.create(lock)
+on.exit(unlink(lock), add = TRUE)
 if (file.exists(out_path)) unlink(out_path)
 first <- TRUE
 
