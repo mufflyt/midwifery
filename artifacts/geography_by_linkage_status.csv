@@ -1,0 +1,3 @@
+match_status,n,pct_best,pct_exact,n_county_best,n_county_exact
+primary,15538,85.8,30.7,13329,4773
+sensitivity_fuzzy,168,82.1,21.4,138,36

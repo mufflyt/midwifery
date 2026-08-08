@@ -51,7 +51,13 @@ suppressPackageStartupMessages({
 })
 
 DATA <- "data"; ART <- "artifacts"
-FROZEN <- file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")
+# Default to the guarded linkage. The earlier Stage 2 roster had no
+# identifiability guard: 2,847 of its 16,743 matched rows are unmatched,
+# quarantined, or assigned to a DIFFERENT NPI under the guard, and 2,368 of
+# those were receiving a county. Geography must not out-run identity.
+FROZEN <- Sys.getenv("STAGE2_FROZEN",
+                     file.path(ART, "amcb_npi_linkage_FROZEN.csv"))
+GEO_OUT <- Sys.getenv("STAGE3_OUT", "midwives_geography.csv")
 dir.create(ART, showWarnings = FALSE)
 
 pad5 <- function(x) str_pad(as.character(x), 5, "left", "0")
@@ -85,7 +91,22 @@ build_geography <- function() {
          ". Run the matcher and freeze before Stage 3.", call. = FALSE)
   }
   roster <- read_csv(FROZEN, show_col_types = FALSE)
-  geo <- read_csv("midwives_geocoded.csv", show_col_types = FALSE)
+  # The guarded linkage names its geography columns nppes_*; the older Stage 2
+  # roster used practice_*. Accept either so this stage is not coupled to one
+  # upstream vintage.
+  if (!"practice_zip" %in% names(roster) && "nppes_zip" %in% names(roster)) {
+    roster <- roster %>% mutate(practice_zip = nppes_zip,
+                                practice_state = nppes_state)
+  }
+  # Carry linkage provenance so county findings can be restricted or
+  # stratified on it rather than silently pooling evidence tiers.
+  if (!"match_status" %in% names(roster)) roster$match_status <- NA_character_
+  if (!"match_resolution" %in% names(roster)) roster$match_resolution <- NA_character_
+  # Coordinates MUST come from the same address the ZIP came from, or the
+  # validation compares two different practice locations for one person and
+  # scores the disagreement as error.
+  GEO_IN <- Sys.getenv("STAGE3_COORDS", "midwives_geocoded.csv")
+  geo <- read_csv(GEO_IN, show_col_types = FALSE)
   # The analysis universe. A county GEOID absent from here is unusable no
   # matter how confidently it was derived.
   cb <- read_csv(file.path(DATA, "county_base.csv"), show_col_types = FALSE,
@@ -196,7 +217,8 @@ build_geography <- function() {
   if (nrow(disc) > 0) {
     by_rucc <- disc %>% count(geo_ambiguity, name = "n_discordant")
     by_state <- disc %>% count(practice_state, sort = TRUE, name = "n") %>% head(8)
-    by_tier <- disc %>% count(match_tier, sort = TRUE, name = "n")
+    by_tier <- disc %>% count(.data[[if ("match_tier" %in% names(disc)) "match_tier" else
+                       "match_resolution"]], sort = TRUE, name = "n")
     cli::cli_h3("Discordant cases: {nrow(disc)}")
     print(as.data.frame(by_rucc), row.names = FALSE)
     print(as.data.frame(by_tier), row.names = FALSE)
@@ -204,7 +226,7 @@ build_geography <- function() {
     write_csv(
       disc %>% select(certification_number, npi, practice_state, practice_zip,
                       GEOID_coord, GEOID_unique, quality_score, geocode_match,
-                      match_tier, geo_ambiguity),
+                      any_of(c("match_tier", "match_resolution")), geo_ambiguity),
       file.path(ART, "zip_fallback_discordant.csv"))
   }
 
@@ -214,12 +236,33 @@ build_geography <- function() {
             file.path(ART, "zip_fallback_validation.csv"))
 
   out <- m %>%
-    select(certification_number, npi, practice_state, practice_zip,
+    select(certification_number, npi, match_status, match_resolution,
+           practice_state, practice_zip,
            latitude, longitude, quality_score, geocode_match,
            county_exact, county_best, geo_source, geo_precision, geo_ambiguity,
            zip_n_county = n_county, zip_top_land_share = top_land_share)
-  write_csv(out, "midwives_geography.csv", na = "")
-  cli::cli_alert_success("midwives_geography.csv written ({nrow(out)} rows)")
+  write_csv(out, GEO_OUT, na = "")
+  cli::cli_alert_success("{GEO_OUT} written ({nrow(out)} rows)")
+
+  # Ascertainment by linkage status: a county attached to a fuzzy or
+  # unconfirmed link is not the same evidence as one attached to a uniquely
+  # identified person, and pooling them hides that.
+  if (any(!is.na(out$match_status))) {
+    by_status <- out %>%
+      group_by(match_status) %>%
+      # NB: compute the percentage BEFORE rebinding the column names, or
+      # summarise() sees the scalar count it just assigned and every row
+      # reports 100%.
+      summarise(n = n(),
+                pct_best      = round(100 * mean(!is.na(county_best)), 1),
+                pct_exact     = round(100 * mean(!is.na(county_exact)), 1),
+                n_county_best = sum(!is.na(county_best)),
+                n_county_exact = sum(!is.na(county_exact)),
+                .groups = "drop") %>%
+      arrange(desc(n))
+    print(as.data.frame(by_status))
+    write_csv(by_status, file.path(ART, "geography_by_linkage_status.csv"))
+  }
 
   # The gate the instructions asked for: coverage is not evidence, agreement is.
   if (pct_agree < 95) {

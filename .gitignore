@@ -32,3 +32,6 @@ artifacts/match_progress.rds
 artifacts/amcb_npi_matched*.csv
 artifacts/amcb_npi_linkage_FROZEN.csv
 artifacts/identity_flip_audit.csv
+midwives_panel_geocoded.csv
+midwives_geography_guarded.csv
+artifacts/panel_geocode_queue.csv
