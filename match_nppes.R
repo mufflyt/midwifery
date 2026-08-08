@@ -161,6 +161,11 @@ if (file.exists("dac_midwives.csv")) {
     mutate(across(c(first_name, last_name, middle_name), normalize_string),
            across(c(first_name, last_name, middle_name), ~ replace_na(.x, "")))
 
+  dac_lookup <- dac %>%
+    group_by(npi) %>%
+    summarise(dac_last = first(last_name), dac_first = first(first_name),
+              dac_state = first(practice_state), dac_zip = first(practice_zip),
+              .groups = "drop")
   dac_npis <- unique(dac$npi)
   boosted <- sum(cand$npi %in% dac_npis & cand$evidence != "strong")
   cand$evidence[cand$npi %in% dac_npis] <- "strong"
@@ -193,6 +198,9 @@ if (file.exists("dac_midwives.csv")) {
               format(nrow(dac_rows), big.mark = ",")))
 } else {
   cat("DAC file absent -- run extract_dac_midwives.R for specialty evidence\n")
+  dac_lookup <- tibble(npi = character(), dac_last = character(),
+                       dac_first = character(), dac_state = character(),
+                       dac_zip = character())
 }
 
 cat(sprintf("AMCB records: %s | candidate name-rows: %s (%s NPIs)\n",
@@ -468,6 +476,63 @@ out <- amcb %>%
   mutate(across(c(npi, practice_city, practice_state, practice_zip, practice_address,
                   nppes_taxonomy, nppes_taxonomy_desc, nppes_credential),
                 ~ if_else(match_decision == "Accept", .x, NA_character_)))
+
+# --- Match tiers and the spatial anchor --------------------------------------
+# vignettes/step-1-npi-matching.Rmd defines four tiers and a Spatial Anchor
+# that rejects a name-only agreement when the candidate shares neither ZIP nor
+# state with the roster record. That gate cannot be applied literally here:
+# AMCB publishes no location at all -- which is why we are matching in the
+# first place -- so there is no roster location to anchor against.
+#
+# The available substitute is corroboration BETWEEN the two independent
+# sources that do carry location: the live NPI Registry and CMS Doctors and
+# Clinicians. When both list the matched NPI, agreement on ZIP (or state) means
+# two separately maintained rosters place the same name at the same practice,
+# which is the evidence the anchor is really asking for. Where DAC has no row
+# for the NPI, the anchor simply cannot run, and the match is capped at Bronze
+# rather than being credited with corroboration it never received.
+out <- out %>%
+  left_join(dac_lookup, by = "npi") %>%
+  mutate(
+    name_exact = match_stage == "exact",
+    dac_corroborated = !is.na(dac_last) &
+      normalize_string(dac_last) == normalize_string(last_name) &
+      substr(normalize_string(dac_first), 1, 1) ==
+        substr(normalize_string(first_name), 1, 1),
+    anchor = case_when(
+      !dac_corroborated                             ~ "not_available",
+      !is.na(practice_zip) & !is.na(dac_zip) &
+        nzchar(practice_zip) & practice_zip == dac_zip ~ "zip",
+      !is.na(practice_state) & !is.na(dac_state) &
+        nzchar(practice_state) & practice_state == dac_state ~ "state",
+      TRUE                                          ~ "conflict"),
+    match_tier = case_when(
+      match_decision != "Accept"                    ~ NA_character_,
+      anchor == "zip"                               ~ "Gold",
+      anchor == "state"                             ~ "Silver",
+      anchor == "conflict"                          ~ "Bronze",
+      name_exact & evidence == "strong"             ~ "Bronze",
+      evidence == "strong"                          ~ "Bronze",
+      TRUE                                          ~ "Lead"))
+
+cat("\nMatch tiers (vignettes/step-1-npi-matching.Rmd):\n")
+print(out %>% filter(match_decision == "Accept") %>% count(match_tier, sort = TRUE))
+cat("\nSpatial anchor outcome for accepted matches:\n")
+print(out %>% filter(match_decision == "Accept") %>% count(anchor, sort = TRUE))
+
+.acc <- sum(out$match_decision == "Accept")
+.hi  <- sum(out$match_tier %in% c("Gold", "Silver"), na.rm = TRUE)
+.rate <- .acc / nrow(out)
+.hi_rate <- if (.acc) .hi / .acc else 0
+cat(sprintf("\nQuality gates: match rate %.1f%% (floor 65%%) -- %s\n",
+            100 * .rate, if (.rate >= 0.65) "PASS" else "FAIL"))
+cat(sprintf("               high-confidence (Gold+Silver) %.1f%% (floor 50%%) -- %s\n",
+            100 * .hi_rate, if (.hi_rate >= 0.50) "PASS" else "FAIL"))
+if (.hi_rate < 0.50) {
+  cat("               NOTE: the ceiling on this gate is DAC coverage. Only\n")
+  cat("               NPIs present in Doctors and Clinicians can be anchored,\n")
+  cat("               so it is not achievable from NPPES alone.\n")
+}
 
 write_csv(select(out, -roster_id), "midwives_with_nppes.csv", na = "")
 write_csv(filter(out, match_decision != "Accept") %>% select(-roster_id),
