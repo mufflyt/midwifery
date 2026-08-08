@@ -258,6 +258,85 @@ and every exclusion to `artifacts/exclusion_ledger.csv` (non-negotiable #15).
 
 ---
 
+## Stage 3: geography, and why it is a separate provenance stage
+
+The linkage artifact and the geography derived from it are deliberately kept
+apart. `amcb_npi_linkage_FROZEN.csv` answers *who is this person*;
+`midwives_geography_guarded.csv` answers *where was that person last observed*.
+Re-deriving geography must never silently alter identity, so Stage 3 reads the
+frozen linkage and never writes back to it.
+
+```mermaid
+flowchart LR
+    A[AMCB roster] --> B[guarded NPI linkage]
+    B --> C[last-observed NPPES<br/>practice address]
+    C --> D[coordinates from<br/>THAT address]
+    D --> E[point-in-polygon county<br/>TIGER 2023]
+    C --> F[unique-ZIP county]
+    E --> G[county_exact]
+    E --> H[county_best]
+    F --> H
+    F -.ambiguous or vintage mismatch.-> I[unresolved]
+```
+
+**Coordinates and ZIP must share an address vintage.** They did not
+originally: coordinates were geocoded from a previous roster's address and
+keyed on certification number, while the ZIP came from the panel snapshot named
+in `nppes_location_year`. That compares two different practice locations for
+one person. Agreement fell to 94.47%, below the pipeline's own 95% gate --
+which is the gate doing its job, not a nuisance. Among discordant rows the two
+rosters' ZIPs differed 71.8% of the time against 5.0% among validation rows
+overall, and only 42 of 216 involved an actual NPI change.
+`geocode_panel_addresses.R` now geocodes the address the linkage actually used.
+
+### Validation
+
+| Measure | Result |
+|:---|:---|
+| Coordinate vs unique-ZIP county agreement | **98.34%** (3,980 / 4,047) |
+| Excluding the Connecticut vintage rows | **100%** (3,980 / 3,980) |
+| Discordant cases | 67, **all Connecticut** |
+
+Coverage is not evidence; agreement is. Midwives holding both a
+coordinate-derived and a unique-ZIP county are an internal validation sample,
+and the fallback reproduces the coordinate answer empirically.
+
+### Ascertainment
+
+| Measure | n | % |
+|:---|---:|---:|
+| `county_exact` (coordinates only) | 4,809 | 30.6% of linked |
+| `county_best` (+ unique ZIP) | 13,467 | 85.7% of linked |
+| **`county_best` as a share of the full AMCB roster** | **13,467 / 22,309** | **60.4%** |
+| Primary linkage | | 85.8% |
+| Fuzzy sensitivity linkage | | 82.1% |
+
+Fuzzy-surname matches remain **sensitivity-only** and are never pooled into the
+primary cohort.
+
+### What is deliberately left unresolved
+
+* **Connecticut.** 186 records whose unique-ZIP county exists in the 2020
+  crosswalk but not in the 2023 analysis universe, because Connecticut replaced
+  counties with planning regions in 2022. These are classified
+  `zip_vintage_mismatch` and left unresolved rather than force-assigned a GEOID
+  that would silently fail to merge.
+* **Ambiguous ZIPs.** 1,935 records whose ZIP spans more than one county.
+
+### 60.4% is not a ceiling
+
+**6,793 distinct practice addresses are cache misses and have not been
+geocoded.** They sit in `artifacts/panel_geocode_queue.csv`. Running them
+through the geocoding pipeline would raise `county_exact` above 30.6%, enlarge
+the validation sample, and recover further county assignments. The 60.4% figure
+describes the current state of ascertainment, not its limit.
+
+And it carries the same caveat as the linkage itself: 82.3% of ACTIVE
+certificants link against 19.6% of DECEASED, so neither the linkage nor the
+geography derived from it is a random sample of the roster.
+
+---
+
 ## Reproducing
 
 ```sh
