@@ -32,6 +32,15 @@ _last_call = [0.0]
 
 
 def nppes_query(last, first=None):
+    """Query the NPI Registry API for individual providers by surname.
+
+    Paces itself to the global 10 req/sec ceiling and retries transient
+    failures up to four times with linear back-off. Returns the parsed JSON
+    dict, or ``None`` if every attempt failed.
+
+    :param last: surname to search (upper-cased and trimmed).
+    :param first: optional given name, used to refine a truncated surname pull.
+    """
     params = {"version": "2.1", "limit": str(LIMIT), "enumeration_type": "NPI-1",
               "last_name": last.upper().strip()}
     if first:
@@ -54,6 +63,12 @@ def nppes_query(last, first=None):
 
 
 def load_cache():
+    """Load the on-disk response cache so a re-run is resumable.
+
+    Reads the JSONL cache into a ``{query_key: results}`` dict, silently
+    skipping a truncated final line left by an interrupted run. Returns an
+    empty dict when no cache exists yet.
+    """
     done = {}
     if os.path.exists(CACHE):
         with open(CACHE) as fh:

@@ -31,6 +31,8 @@ CUST_ID = re.compile(r"p_related_cust_id=(\d+)")
 
 
 def _text(fragment):
+    """Turn an HTML cell fragment into clean text: strip tags, unescape
+    entities, collapse runs of whitespace, and trim the ends."""
     return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", fragment))).strip()
 
 
@@ -63,6 +65,9 @@ class Session:
         self.connect()
 
     def connect(self):
+        """Open a fresh cookie jar and read the report home page for the two
+        server-side handles every later request needs: the APEX session
+        instance id and the report region id."""
         self.opener = urllib.request.build_opener(
             urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
         self.opener.addheaders = [("User-Agent", "Mozilla/5.0")]
@@ -71,9 +76,12 @@ class Session:
         self.region = re.search(r"apex\.widget\.report\.paginate\('(\d+)'", home).group(1)
 
     def _get(self, url, body=None):
+        """Fetch one URL (GET, or POST if `body` is given) as decoded text."""
         return self.opener.open(url, body, timeout=90).read().decode("utf8", "replace")
 
     def _request(self, url, body=None):
+        """`_get` with up to four tries; reconnect (new session) from the
+        second failure on, since a dropped APEX session can't be resumed."""
         for attempt in range(4):
             try:
                 return self._get(url, body)
@@ -105,17 +113,35 @@ _local = threading.local()
 
 
 def session():
+    """Return this thread's Session, creating it on first use.
+
+    APEX search items are server-side state, so each worker thread must own its
+    own session and never share one; a thread-local is how that's enforced.
+    """
     if not hasattr(_local, "session"):
         _local.session = Session()
     return _local.session
 
 
 class Collector:
+    """Accumulates de-duplicated records for one certification (CM or CNM).
+
+    Records are keyed on (certification, certification_number), so the same row
+    reached through overlapping search patterns is stored once. `expected` is
+    the directory's own reported total, used to decide when a sweep is done.
+    """
+
     def __init__(self, cert, expected):
         self.cert, self.expected = cert, expected
         self.records, self.lock = {}, threading.Lock()
 
     def run(self, patterns):
+        """Work a list of search patterns to exhaustion, breadth-first.
+
+        Each pattern is fetched in parallel; any that is still over the 500-row
+        cap yields ten digit-extended children, which are worked on the next
+        pass. Returns the running unique-record count.
+        """
         with ThreadPoolExecutor(WORKERS) as pool:
             while patterns:
                 deeper = []
@@ -125,6 +151,12 @@ class Collector:
         return len(self.records)
 
     def bucket(self, pattern):
+        """Fetch one search pattern; collect its rows or split it if capped.
+
+        Returns child patterns to descend into when the result set is over the
+        cap (and still splittable), else an empty list. Under the cap, the rows
+        are fetched and merged into `self.records`.
+        """
         site = session()
         total = site.search(self.cert, pattern)
         if total == 0:

@@ -28,6 +28,10 @@ CREDENTIAL_CLASSES <- list(
 #'
 #' @param credential `character(1)`: free-text credential, e.g. "CNM, MSN".
 #' @return One of "midwifery", "nursing", "physician", "other_doc", "UNKNOWN".
+#' @examples
+#' normalize_credential_class("CNM, RN")  # -> "midwifery" (most specific wins)
+#' normalize_credential_class("MD")       # -> "physician"
+#' normalize_credential_class(NA)         # -> "UNKNOWN"
 normalize_credential_class <- function(credential) {
   if (is.null(credential) || length(credential) != 1L || is.na(credential)) return("UNKNOWN")
   tokens <- unlist(strsplit(toupper(trimws(as.character(credential))), "[^A-Z]+"))
@@ -47,6 +51,10 @@ normalize_credential_class <- function(credential) {
 #' @return Logical. UNKNOWN on either side allows the match (missing data is
 #'   never treated as evidence); physician credentials are incompatible with a
 #'   midwifery certificant.
+#' @examples
+#' are_credentials_compatible_midwifery("CNM", "MD")        # -> FALSE (namesake)
+#' are_credentials_compatible_midwifery("CNM", "CNM, MSN")  # -> TRUE
+#' are_credentials_compatible_midwifery("CNM", "")          # -> TRUE (unknown)
 are_credentials_compatible_midwifery <- function(amcb_credential, nppes_credential) {
   a <- normalize_credential_class(amcb_credential)
   b <- normalize_credential_class(nppes_credential)

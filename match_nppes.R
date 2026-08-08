@@ -140,13 +140,37 @@ cat(sprintf("AMCB records: %s | candidate name-rows: %s (%s NPIs)\n",
             format(n_distinct(cand$npi), big.mark = ",")))
 cat("Evidence tiers in candidate pool:\n"); print(table(cand$evidence))
 
-# compare_hyphenated_names() / compare_international_names() return a list with
-# a 0-30 point score; assess_potential_maiden_name() returns a 0-0.8 confidence.
-# Rescale both to [0, 1] before they enter the weighted score.
+#' Rescale a hyphenated/international name-variation result to [0, 1]
+#'
+#' `compare_hyphenated_names()` and `compare_international_names()` (both from
+#' enhanced_name_parsing.R) return a list whose `$score` is on a 0-30 point
+#' scale. This normalises that to [0, 1] so it can enter the weighted match
+#' score, failing safe to 0 when the score is missing or malformed.
+#'
+#' @param x `list`: the result of a `compare_*_names()` call, expected to carry
+#'   a numeric `$score` in the 0-30 range.
+#' @return `numeric(1)` in [0, 1]; 0 when `$score` is absent, non-scalar or NA.
+#' @examples
+#' .variation_score(list(score = 15))   # -> 0.5
+#' .variation_score(list(score = NA))   # -> 0
 .variation_score <- function(x) {
   v <- suppressWarnings(as.numeric(x$score))
   if (length(v) != 1 || is.na(v)) 0 else max(0, min(1, v / 30))
 }
+
+#' Rescale a potential-maiden-name confidence to [0, 1]
+#'
+#' `assess_potential_maiden_name()` (enhanced_name_parsing.R) returns a list
+#' whose `$confidence` is already on a 0-0.8 scale. This clamps it into [0, 1]
+#' for the weighted score, failing safe to 0 on missing or malformed input.
+#'
+#' @param x `list`: the result of `assess_potential_maiden_name()`, expected to
+#'   carry a numeric `$confidence`.
+#' @return `numeric(1)` in [0, 1]; 0 when `$confidence` is absent, non-scalar
+#'   or NA.
+#' @examples
+#' .maiden_score(list(confidence = 0.8))  # -> 0.8
+#' .maiden_score(list())                  # -> 0
 .maiden_score <- function(x) {
   v <- suppressWarnings(as.numeric(x$confidence))
   if (length(v) != 1 || is.na(v)) 0 else max(0, min(1, v))
@@ -156,6 +180,30 @@ nick    <- create_nickname_dictionary(verbose = FALSE)
 by_last <- split(seq_len(nrow(cand)), cand$last_name)
 accept_floor <- c(strong = ACCEPT_STRONG, weak = ACCEPT_WEAK, none = ACCEPT_NONE)
 
+#' Match one AMCB certificant to NPPES and score the candidates
+#'
+#' The heart of the matcher. For AMCB roster row `i` it pulls the same-surname
+#' NPPES candidate block, applies the credential gate, then resolves the match
+#' in two stages:
+#'
+#' \enumerate{
+#'   \item \strong{Stage 1a (exact):} a single exact first+last candidate with
+#'     no middle-name conflict and non-`none` evidence is accepted outright at
+#'     score 1.
+#'   \item \strong{Fuzzy:} otherwise candidates are shortlisted on cheap
+#'     similarities, scored with nickname-aware first names and tiered middle
+#'     names, given name-variation credit (hyphenation / maiden / particle
+#'     surnames), and ranked. The decision is `Accept` / `Ambiguous` / `Review`
+#'     / `No match` per the evidence-tiered acceptance floors.
+#' }
+#'
+#' Reads the enclosing-scope objects `amcb`, `cand`, `by_last`, `nick`, `CFG`,
+#' `accept_floor` and the `ACCEPT_*` / `AMBIGUOUS` / `SHORTLIST` constants.
+#'
+#' @param i `integer(1)`: row index into the `amcb` roster.
+#' @return `NULL` when there is no surviving candidate, otherwise a `list` with
+#'   two tibbles: `best` (one row, the chosen match plus geography and decision)
+#'   and `ledger` (one row per scored candidate, for the audit ledger).
 score_one <- function(i) {
   idx <- by_last[[amcb$last_n[i]]]
   if (is.null(idx) || !length(idx)) return(NULL)
