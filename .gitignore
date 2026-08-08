@@ -24,3 +24,5 @@ DAC_NationalDownloadableFile*.csv
 
 # Runtime lock files (see build_midwife_panel.R); never a committable artifact
 *.lock
+midwife_panel.csv
+midwife_panel.csv.lock

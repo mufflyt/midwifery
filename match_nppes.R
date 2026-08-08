@@ -203,6 +203,72 @@ if (file.exists("dac_midwives.csv")) {
                        dac_zip = character())
 }
 
+# --- NPPES historical panel (build_midwife_panel.R) ---------------------------
+# One snapshot per year, 2007 onwards, of everyone carrying a midwifery
+# taxonomy. Two distinct contributions, and it is worth being clear that they
+# are different things:
+#
+#   1. NPIs the live API no longer returns. A midwife who retired in 2016 is
+#      absent from the 2026 registry but present in the 2016 file, with the
+#      practice address she had while enrolled. This is the only source that
+#      reaches the LAPSED, RETIRED and DECEASED cells.
+#   2. Surname history. The same NPI appears under different last names across
+#      snapshots. Each historical surname becomes a blocking key, which in a
+#      cohort that is ~99% women certified over four decades is the largest
+#      single recall lever available.
+#
+# The panel is NOT used for the spatial anchor: it is NPPES, so agreement
+# between it and the live registry is one source agreeing with its own past,
+# not the independent corroboration the anchor is asking for.
+if (file.exists("midwife_panel.csv")) {
+  panel <- read_csv("midwife_panel.csv", col_types = cols(.default = "c")) %>%
+    mutate(across(c(first_name, last_name, middle_name), normalize_string),
+           across(c(first_name, last_name, middle_name), ~ replace_na(.x, "")),
+           snapshot_year = suppressWarnings(as.integer(snapshot_year))) %>%
+    filter(nzchar(last_name))
+
+  # Most recent snapshot wins for the address; every distinct name spelling is
+  # kept, because the older spellings are the point.
+  panel_rows <- panel %>%
+    arrange(desc(snapshot_year)) %>%
+    group_by(npi, last_name, first_name, middle_name) %>%
+    slice(1) %>%
+    ungroup() %>%
+    transmute(npi, first_name, last_name, middle_name,
+              name_variant = paste0("panel_", snapshot_year),
+              credential, sex = NA_character_,
+              enumeration_date = NA_character_,
+              taxonomy = NA_character_,
+              taxonomy_desc = "MIDWIFERY TAXONOMY (HISTORICAL NPPES)",
+              all_taxonomies = "367A00000X",
+              practice_address, practice_city, practice_state, practice_zip,
+              address_purpose = "NPPES_HISTORICAL",
+              cred_flat = gsub("[^A-Z]", "", toupper(coalesce(credential, ""))),
+              cred_words = gsub("[^A-Z]+", " ", toupper(coalesce(credential, ""))),
+              cred_class = classify_credentials(credential),
+              evidence = "strong") %>%
+    mutate(cred_class = if_else(cred_class %in% c("physician", "other_doc"),
+                                cred_class, "midwifery"))
+
+  known <- paste(cand$npi, cand$first_name, cand$last_name)
+  new_rows <- panel_rows[!paste(panel_rows$npi, panel_rows$first_name,
+                                panel_rows$last_name) %in% known, ]
+  revived <- length(setdiff(new_rows$npi, cand$npi))
+  surname_hist <- panel %>% distinct(npi, last_name) %>% count(npi) %>%
+    filter(n > 1) %>% nrow()
+
+  cand <- bind_rows(cand, new_rows)
+  cat(sprintf(paste("panel: %s snapshot rows, %s NPIs, %s with >1 surname;",
+                    "%s name-rows added, %s NPIs absent from the live API\n"),
+              format(nrow(panel), big.mark = ","),
+              format(n_distinct(panel$npi), big.mark = ","),
+              format(surname_hist, big.mark = ","),
+              format(nrow(new_rows), big.mark = ","),
+              format(revived, big.mark = ",")))
+} else {
+  cat("panel absent -- run build_midwife_panel.R to reach lapsed/retired midwives\n")
+}
+
 cat(sprintf("AMCB records: %s | candidate name-rows: %s (%s NPIs)\n",
             format(nrow(amcb), big.mark = ","), format(nrow(cand), big.mark = ","),
             format(n_distinct(cand$npi), big.mark = ",")))
@@ -468,7 +534,15 @@ matches <- matches %>%
                                   match_decision))
 
 out <- amcb %>%
-  select(-last_n, -first_n, -middle_n) %>%
+  # Keep the PARSED name components rather than dropping them. AMCB packs
+  # middle names into first_name for 7,520 of 22,309 roster rows ("Doris Mary",
+  # "Julie Ann"), and parse_physician_name_enhanced() is what splits them. If
+  # only the raw fused field survives into midwives_unmatched.csv, every
+  # downstream consumer has to re-solve that -- and the Healthgrades scraper
+  # did not, querying "Doris Mary Abbott" and matching nobody for half the
+  # roster. Publishing the parsed components makes the fused field a
+  # non-problem for anything reading these outputs.
+  rename(first_parsed = first_n, middle_parsed = middle_n, last_parsed = last_n) %>%
   left_join(matches, by = "roster_id") %>%
   mutate(match_decision = coalesce(match_decision, "No match")) %>%
   # Only accepted matches carry geography; review/ambiguous keep the score for
