@@ -120,22 +120,12 @@ load_subspecialists <- function(which = NULL) {
                   group = subspecialty_normalized)
 }
 
-#' Refuse coordinates that are not fit for routing.
+#' Coordinate fitness is enforced by mufflyaccess::assert_travel_time_eligible().
 #'
-#' Call this at the top of ANY function that generates isochrones, computes
-#' drive times, or otherwise treats a coordinate as a real practice location.
-#' It errors rather than filtering: silently dropping rows would change a
-#' denominator without anyone noticing, which is the failure mode that produced
-#' the 56.4%-coverage generalist counts in the first place.
-assert_travel_time_eligible <- function(df) {
-  if ("usable_for_travel_time" %in% names(df) && any(!df$usable_for_travel_time))
-    stop("travel-time analysis received rows flagged usable_for_travel_time = FALSE")
-  if ("coord_source" %in% names(df) && any(grepl("centroid", df$coord_source)))
-    stop("travel-time analysis received city-centroid coordinates: ",
-         sum(grepl("centroid", df$coord_source)), " rows. ",
-         "Filter with !grepl('centroid', coord_source) and report the exclusion.")
-  invisible(TRUE)
-}
+#' This file used to define its own copy. It now lives in the SSOT package
+#' beside the other assertions, so callers in any repo get the same guard --
+#' and so a fix to it is a fix everywhere rather than a fix here only.
+assert_travel_time_eligible <- mufflyaccess::assert_travel_time_eligible
 
 load_midwives <- function() {
   link <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv", show_col_types = FALSE)

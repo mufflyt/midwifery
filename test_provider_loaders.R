@@ -66,14 +66,9 @@ ok(!any(is.na(g$coord_source)), "no NA coord_source")
 cat("\n--- 4. city centroids fail closed for travel time ---\n")
 # The guard itself. Any routing/isochrone caller must pass its input through
 # this, and it must ERROR rather than filter, so a mistake is loud.
-assert_travel_time_eligible <- function(df) {
-  if ("usable_for_travel_time" %in% names(df) && any(!df$usable_for_travel_time))
-    stop("travel-time analysis received rows flagged usable_for_travel_time = FALSE")
-  if ("coord_source" %in% names(df) && any(grepl("centroid", df$coord_source)))
-    stop("travel-time analysis received city-centroid coordinates: ",
-         sum(grepl("centroid", df$coord_source)), " rows")
-  invisible(TRUE)
-}
+# The guard itself is mufflyaccess::assert_travel_time_eligible() -- canonical,
+# shared, and tested in its own package. What is tested HERE is that this
+# project's data actually trips it, which is the project-specific contract.
 threw <- inherits(try(assert_travel_time_eligible(g), silent = TRUE), "try-error")
 ok(threw, "full generalist frame is REJECTED for travel time")
 

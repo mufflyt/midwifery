@@ -158,6 +158,79 @@ band_union <- function(b) {
 unions <- lapply(BANDS, band_union)
 names(unions) <- as.character(BANDS)
 
+# --- nesting: a smaller band must lie inside every larger one ----------------
+# haa_dissolve_isochrones() in mufflyt/isochrones enforces this by cumulative
+# union, ascending. Dissolving each band independently -- which this script did
+# -- guarantees nothing, and with two routing engines whose polygons disagree
+# by up to 15% in area it is a live risk, not a theoretical one: a 30-minute
+# surface can escape its own 60-minute surface where the engines differ.
+for (i in seq_along(BANDS)[-1]) {
+  a <- as.character(BANDS[i]); b <- as.character(BANDS[i - 1])
+  before <- as.numeric(sf::st_area(unions[[a]])) / 1e6
+  g <- sf::st_union(sf::st_geometry(unions[[a]]), sf::st_geometry(unions[[b]]))
+  sf::st_geometry(unions[[a]]) <- sf::st_make_valid(g)
+  after <- as.numeric(sf::st_area(unions[[a]])) / 1e6
+  cat(sprintf("[nesting] %smin absorbed %smin: %s -> %s km2 (+%.2f%%)\n",
+              a, b, format(round(before), big.mark = ","),
+              format(round(after), big.mark = ","),
+              100 * (after - before) / before))
+}
+
+# --- clip to land ------------------------------------------------------------
+# The surfaces previously ran over the Great Lakes, because they were clipped to
+# the union of county polygons and counties extend into open water. Reported
+# coverage area therefore counted water nobody drives across.
+#
+# Masks load through load_water_mask() from mufflyt/isochrones (cached,
+# geometry-validated, CRS-matched). build_water_mask_and_clip() would be the
+# fuller canonical path but requires a coastline layer we do not have here, and
+# clip_isochrone_to_land() is per-state while these surfaces are national and
+# already dissolved.
+water_dir <- "/Volumes/MufflySamsung/nhdplus_hr/water_masks"
+if (dir.exists(water_dir)) {
+  local({
+    owd <- setwd(path.expand("~/isochrones-main")); on.exit(setwd(owd), add = TRUE)
+    suppressWarnings(suppressMessages(
+      sys.source(file.path("R", "canonical_water_mask_loader.R"), envir = globalenv())))
+  })
+  states <- setdiff(mufflyaccess::CONUS_STATE_ABBR, c("DC"))
+  cat(sprintf("loading water masks for %s states ...\n", length(states)))
+  wm <- lapply(states, function(st) {
+    f <- file.path(water_dir, sprintf("%s_water_mask.fgb", st))
+    if (!file.exists(f)) return(NULL)
+    g <- tryCatch(suppressWarnings(sf::st_geometry(sf::st_read(f, quiet = TRUE))),
+                  error = function(e) NULL)
+    if (is.null(g)) return(NULL)
+    suppressWarnings(sf::st_transform(g, 4326))
+  })
+  wm <- Filter(Negate(is.null), wm)
+  cat(sprintf("water masks loaded: %s states\n", length(wm)))
+  if (length(wm)) {
+    water <- sf::st_make_valid(do.call(c, wm))
+    water <- sf::st_union(water)
+    for (b in names(unions)) {
+      before <- as.numeric(sf::st_area(unions[[b]])) / 1e6
+      g <- suppressWarnings(sf::st_difference(
+        sf::st_make_valid(sf::st_geometry(unions[[b]])), water))
+      sf::st_geometry(unions[[b]]) <- sf::st_make_valid(g)
+      after <- as.numeric(sf::st_area(unions[[b]])) / 1e6
+      unions[[b]]$area_km2 <- round(after, 1)
+      unions[[b]]$water_removed_km2 <- round(before - after, 1)
+      cat(sprintf("[land clip] %smin: %s -> %s km2 (water removed %s)\n", b,
+                  format(round(before), big.mark = ","),
+                  format(round(after), big.mark = ","),
+                  format(round(before - after), big.mark = ",")))
+    }
+    rm(water, wm); invisible(gc())
+  }
+} else {
+  cat("WATER MASKS NOT REACHABLE -- surfaces still include open water; areas overstated\n")
+}
+
+for (b in names(unions))
+  saveRDS(unions[[b]], file.path(OUTDIR,
+          sprintf("midwifery_isochrone_union_%smin.rds", b)))
+
 # --- 3. simplify for the browser --------------------------------------------
 # Analysis geometry is saved above at full resolution; only the web copy is
 # simplified. Conflating the two is how a map ends up disagreeing with a table.
