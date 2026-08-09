@@ -38,6 +38,175 @@ Scraper for the [AMCB certification directory](https://ams.amcbmidwife.org/amcbs
 > test each stage. This README covers the scraping and matching rationale in
 > depth.
 
+## From a midwife's name to a county on a map
+
+The American Midwifery Certification Board publishes **22,309 certified midwives
+and no addresses at all**. Everything geographic in this project rests on turning
+each name into an NPI, and each NPI into a practice location.
+
+![The AMCB Instant Verification directory: public search over every certificant, with no address field](docs/figures/amcb_public_directory.png)
+
+*The source. Names, certification numbers, status and dates are public; location
+is not published at any level. AMCB's own status definitions are reproduced
+above, and they are why `status` and `linkage_tier` are kept apart below —
+"Deactivated" is an administrative CM↔CNM switch, not an exit from practice.*
+
+### The whole pipeline
+
+Four stages, each writing an artifact its successor verifies by SHA-256 before
+doing any work. Identity is decided first; taxonomy and geography follow.
+
+```mermaid
+flowchart TD
+  A["AMCB directory — 22,309 names, no location"] --> B["Candidate generation — 197,081 pairs"]
+  P["NPPES 2007-2025 — 443,623 NPIs"] --> B
+  B --> C["Rank by name-evidence class"]
+  C --> D{"One candidate at the strongest class?"}
+  D -->|no| Q["Quarantined — 3,091"]
+  D -->|yes| E{"One NPI, one person?"}
+  E -->|contested| Q2["Quarantined — 91"]
+  E -->|yes| F["Accepted links — 16,892"]
+  F --> G["Last-observed practice address"]
+  G --> H["Geocode — Census to ArcGIS to centroid"]
+  G --> J["Unique-ZIP county"]
+  H --> I["Point-in-polygon county"]
+  I --> K["county_exact"]
+  I --> L["county_best"]
+  J --> L
+```
+
+Quarantine is an outcome, not a failure: it marks records where the evidence
+cannot identify one person.
+
+### Identity evidence is ordered, not scored
+
+Two people who are both exact first-and-last-name matches, with no middle name,
+no address and no date of birth, **are** indistinguishable. A numeric score would
+only manufacture certainty, so evidence is a ranked class and taxonomy never
+breaks a name tie.
+
+| Class | Evidence | Candidate pairs |
+|---|---|---:|
+| **1** (strongest) | exact first + last, with a recorded middle name | 10,412 |
+| **2** | exact first + last, no middle information | 12,258 |
+| **3** | exact last + first initial | 150,745 |
+| **4** | fuzzy last (Levenshtein ≤ 2) + exact first | 23,666 |
+
+A candidate is resolved only when exactly one sits at a roster row's best
+available class. **Class 2 was empty until a defect was found:**
+`paste(NA, "")` produced the literal string `"NA"`, giving every midwife without
+a middle name a fabricated initial that matched every other absent one.
+
+### Taxonomy decides the tier, never the identity
+
+A certified nurse-midwife must hold RN licensure and may register under either
+taxonomy. So nursing NPIs are candidates — but a nursing-only match is a separate
+evidence tier, never promoted into the primary cohort.
+
+```mermaid
+flowchart LR
+  S["Resolved candidate"] --> T1{"Fuzzy surname?"}
+  T1 -->|yes| F["sensitivity_fuzzy — 328"]
+  T1 -->|no| T2{"Midwifery taxonomy ever recorded?"}
+  T2 -->|yes| P["primary_midwifery — 14,668"]
+  T2 -->|no| N["sensitivity_nursing — 1,896"]
+```
+
+### Where the 22,309 go
+
+Linkage, not geocoding, is the binding constraint. Every record that fails is
+classified by *why*, and the two kinds of missingness are kept apart: no
+plausible NPI exists, versus plausible NPIs exist but identity is ambiguous.
+
+| Stage | n | % of roster |
+|---|---:|---:|
+| AMCB roster | 22,309 | 100.0 |
+| **Primary linkage** | **14,668** | **65.7** |
+| + nursing tier | 16,564 | 74.2 |
+| + fuzzy tier | 16,892 | 75.7 |
+| Quarantined | 3,091 | 13.9 |
+| No candidate at all | 2,326 | 10.4 |
+| **Primary + county** | **14,631** | **65.6** |
+
+All 3,091 quarantined records have candidates; all 2,326 unmatched records have
+none. That distinction is preserved in the artifact as `has_candidate`.
+
+### Geography, once identity is settled
+
+Coordinates and ZIP must describe the **same** address. Pairing coordinates
+geocoded from one roster with ZIPs from another dropped validation agreement to
+94.47%; rebuilt from a single address vintage it reaches 99.95%.
+
+```mermaid
+flowchart TD
+  A["Last-observed address, with its observation year"] --> B{"Already in geocode cache?"}
+  B -->|yes| D["Coordinates"]
+  B -->|no| C1["US Census — 86.9%"]
+  C1 -->|fail| C2["ArcGIS — 9.2%"]
+  C2 -->|fail| C3["City centroid"]
+  C1 --> D
+  C2 --> D
+  D --> E{"Coordinate state = ZIP state?"}
+  E -->|no| X["Cross-state conflict — unresolved — 17"]
+  E -->|yes| F["Point-in-polygon, TIGER 2023"]
+  F --> G["county_exact — 98.9% of primary"]
+  A --> H["Unique-ZIP county"]
+  G --> I["county_best — 99.7% of primary"]
+  H --> I
+```
+
+> All 17 cross-state conflicts are one address: **Fort Campbell, KY 42223** — a
+> base that straddles the Kentucky–Tennessee line. They stay unresolved with both
+> sources retained, rather than being special-cased, so the rule stays general.
+
+### Completeness by evidence tier
+
+Reported separately, never pooled: a county attached to a fuzzy-name match is not
+the same evidence as one attached to a uniquely identified person.
+
+| Tier | n | exact · frozen | exact · enhanced | best · enhanced |
+|---|---:|---:|---:|---:|
+| primary_midwifery | 14,668 | 98.1% | **98.9%** | **99.7%** |
+| sensitivity_nursing | 1,896 | 32.2% | **98.5%** | **99.8%** |
+| sensitivity_fuzzy | 328 | 47.9% | **98.8%** | **99.4%** |
+| quarantined | 3,091 | — | — | — |
+| unmatched | 2,326 | — | — | — |
+
+Quarantined and unmatched rows carry zero analytic geography, asserted at build
+time. The frozen column is the reference artifact; the enhanced column adds 1,484
+newly geocoded addresses.
+
+**The tier gap was ascertainment, not evidence.** Nursing-tier geography looked
+far worse than primary's — 32.2% against 98.1%. Geocoding the 1,624 addresses
+that had never been sent to a geocoder closed it almost entirely: nursing reaches
+98.5%. The gap measured which addresses happened to be cached, not anything about
+the linkage.
+
+That separation matters for interpretation. **Linkage certainty differs by tier
+and is the real inferential limitation** — primary rests on midwifery-taxonomy
+confirmation, nursing on name evidence alone. **Geographic completeness,
+conditional on having a link, is now ~99% everywhere.** The two should never be
+reported as one number.
+
+### What the guards caught
+
+Every number above survived a check that could have refuted it. These fired:
+
+| Defect | Effect if unfound |
+|---|---|
+| Middle initials fabricated from missing values | All 18,397 pairs falsely "agreed" |
+| Point-in-polygon gated on `all(is.na())` | 10,225 coordinates never became counties |
+| Staged cascade suppressed candidates | 90% of plausible pairs never generated |
+| Coordinates and ZIPs from different rosters | Validation fell to 94.47% |
+| Reused geocoder `run_id` | 147 addresses lost their attempt provenance |
+| NPPES snapshots 2018–2025 silently skipped | Linkage 27.1 points lower |
+
+Frozen linkage `b44bf2bc9254…` · frozen geography `9455138198e4…` · enhanced
+geography `53bb087a59a4…` · NPPES snapshots 2007–2025 · CMS Doctors & Clinicians
+2026-06 · TIGER 2023 counties. Geography figures here are the *enhanced* version;
+the frozen artifact is unmodified and remains the reference. Every artifact
+carries a manifest recording its inputs' SHA-256.
+
 ## Maps
 
 Built with [mufflyt/mysterymaps](https://github.com/mufflyt/mysterymaps) (`mysterymaps_map_base()`
