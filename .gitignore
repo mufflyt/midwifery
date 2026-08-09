@@ -117,3 +117,7 @@ data/cd119/
 
 # Machine-specific env (paths, API keys) - never commit
 .Renviron
+
+# rendered maps and dissolved unions: 14-20 MB binaries, rebuildable from
+# build_midwifery_isochrone_map.R + render_midwifery_map.R
+artifacts/maps/
