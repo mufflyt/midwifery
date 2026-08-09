@@ -53,28 +53,10 @@ LEDGER <- file.path(ART, "match_ledger.csv")
 ROSTER <- "midwives.csv"
 CANDS  <- "nppes_candidates.csv"
 
-MIDDLE_WEIGHT <- 0.12    # CFG$weights$middle in match_nppes.R
-PTS_PER_SIM   <- 15      # middle_sim = pmax(0, points) / 15
-
-sha256_of <- function(p) sub(" .*$", "",
-                             system2("shasum", c("-a", "256", shQuote(p)), stdout = TRUE)[1])
-
-has_middle <- function(x) !is.na(x) & nzchar(trimws(x))
-
-#' Classify the middle-name state of a (roster, candidate) pair
-#' @keywords internal
-#' @noRd
-middle_state <- function(roster_mid, cand_mid) {
-  r <- has_middle(roster_mid); c <- has_middle(cand_mid)
-  ri <- substr(toupper(trimws(roster_mid)), 1, 1)
-  ci <- substr(toupper(trimws(cand_mid)), 1, 1)
-  dplyr::case_when(
-    !r & !c            ~ "both_missing",
-    r & !c             ~ "missing_npi_side",
-    !r & c             ~ "missing_roster_side",
-    ri == ci           ~ "initial_agreement",
-    TRUE               ~ "conflict")
-}
+# Scoring arms live in ONE place, shared with R/09. Two copies of "what arm B
+# is" would eventually disagree -- the failure mode already hit three times
+# here (gender gate, credential helpers, rank_one_to_one).
+source(file.path("R", "lib", "ab_middle_name_common.R"))
 
 run_ab <- function() {
   stopifnot(file.exists(LEDGER), file.exists(ROSTER), file.exists(CANDS))
@@ -85,41 +67,9 @@ run_ab <- function() {
     "Endpoint is candidate ranking, not final linkage."))
 
   cli::cli_h2("Loading pinned inputs")
-  led <- read_csv(LEDGER, show_col_types = FALSE, progress = FALSE)
-  ros <- read_csv(ROSTER, show_col_types = FALSE, progress = FALSE) %>%
-    transmute(roster_id = certification_number, roster_middle = middle_name,
-              roster_first = first_name, roster_last = last_name)
-  cand <- read_csv(CANDS, col_types = cols(.default = col_character()),
-                   progress = FALSE) %>%
-    transmute(candidate_npi = npi, cand_middle = middle_name,
-              cand_first = first_name, cand_last = last_name) %>%
-    distinct(candidate_npi, .keep_all = TRUE)
-
-  d <- led %>%
-    mutate(roster_id = as.character(roster_id),
-           candidate_npi = as.character(candidate_npi)) %>%
-    left_join(mutate(ros, roster_id = as.character(roster_id)), by = "roster_id") %>%
-    left_join(cand, by = "candidate_npi") %>%
-    mutate(mid_state = middle_state(roster_middle, cand_middle),
-           # A -> B delta: ONLY one-sided missingness loses its bonus.
-           delta = case_when(
-             mid_state == "missing_npi_side"    ~ -MIDDLE_WEIGHT * 5 / PTS_PER_SIM,
-             mid_state == "missing_roster_side" ~ -MIDDLE_WEIGHT * 3 / PTS_PER_SIM,
-             TRUE                               ~ 0),
-           score_A = score_total,
-           score_B = score_total + delta)
-
-  # --- Assertions ---------------------------------------------------------
-  stopifnot(
-    # Candidate membership identical between arms, by construction.
-    nrow(d) == nrow(led),
-    # Only one-sided missingness may change.
-    all(d$delta[!d$mid_state %in% c("missing_npi_side", "missing_roster_side")] == 0),
-    # Agreement and conflict states are untouched.
-    all(d$score_A[d$mid_state %in% c("initial_agreement", "conflict", "both_missing")] ==
-          d$score_B[d$mid_state %in% c("initial_agreement", "conflict", "both_missing")]),
-    # Neutralization can only lower a score, never raise one.
-    all(d$score_B <= d$score_A + 1e-12))
+  # build_ab_ledger() asserts internally: membership identical between arms,
+  # only one-sided-missingness fuzzy rows change, and only downward.
+  d <- build_ab_ledger(LEDGER, ROSTER, CANDS)
   cli::cli_alert_success("Assertions passed: only one-sided-missingness rows change, and only downward.")
 
   #' Top-two summary under one scoring arm
@@ -221,21 +171,14 @@ run_ab <- function() {
   cli::cli_alert_info("evidence vectors: {nrow(changed)} changed + {nrow(matched)} matched-unchanged people")
 
   # --- Manifest: data AND code provenance ---------------------------------
-  manifest <- list(
+  manifest <- c(list(
     analysis = "A/B middle-name neutralization, ranking instability",
-    label = "LEADING INDICATOR on the midwifery (AMCB) cohort -- NOT the isochrones ABOG production effect",
-    scoring_A = "one-sided missingness +5 / +3",
-    scoring_B = "one-sided missingness 0 / 0",
-    middle_weight = MIDDLE_WEIGHT, pts_per_sim = PTS_PER_SIM,
-    inputs = list(
-      ledger = list(path = LEDGER, sha256 = sha256_of(LEDGER), rows = nrow(led)),
-      roster = list(path = ROSTER, sha256 = sha256_of(ROSTER), rows = nrow(ros)),
-      candidates = list(path = CANDS, sha256 = sha256_of(CANDS), rows = nrow(cand))),
-    git_commit = tryCatch(system2("git", c("rev-parse", "HEAD"), stdout = TRUE)[1],
-                          error = function(e) NA_character_),
+    label = "LEADING INDICATOR on the midwifery (AMCB) cohort -- NOT the isochrones ABOG production effect"),
+    ab_manifest_inputs(LEDGER, ROSTER, CANDS, d),
+    list(
     people_with_2plus_candidates = nrow(cmp),
     exposed_people = length(exposed_ids),
-    generated_at = format(Sys.time(), "%Y-%m-%d %H:%M:%S"))
+    generated_at = format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
   write_json(manifest, file.path(OUT, "manifest.json"), auto_unbox = TRUE)
   cli::cli_alert_success("manifest written (input SHAs + git commit pinned)")
 
