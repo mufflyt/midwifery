@@ -100,14 +100,44 @@ whole time:
 
 | Band | Reported | Actual land | Water |
 |---|---|---|---|
-| 30 min | 1,759,430 km2 | 1,578,626 km2 | 180,804 (10.3%) |
-| 60 min | 4,199,532 km2 | 3,656,272 km2 | 543,345 (12.9%) |
+| 30 min | 1,759,430 km2 | 1,578,621 km2 | 180,809 (10.3%) |
+| 60 min | 4,199,532 km2 | 3,656,267 km2 | 543,350 (12.9%) |
 
 **Lesson:** clipping to an administrative boundary is not clipping to land, and
 a coverage statistic denominated in area silently rewards water and empty
 terrain. The population-weighted version (twostep::compute_band_tract_overlap)
 would not have had this failure mode at all -- which is a second reason to
 prefer it, beyond the one already noted.
+
+### 3d. Excluded DC from the water clip, then used the bug to check for the bug
+
+Having just fixed the water clip, I wrote:
+
+```r
+states <- setdiff(mufflyaccess::CONUS_STATE_ABBR, c("DC"))
+```
+
+A hand-written exception to a canonical constant, for no reason I can defend.
+`DC_water_mask.fgb` was on disk the whole time, so the Potomac and Anacostia
+stayed counted as drivable ground.
+
+**The worse part is how I checked.** Asked which state was missing, I compared
+the mask files on disk against `states` — my own already-filtered vector — got
+an empty set, and reported "nothing is missing" twice. The filter was the bug,
+and it was also the yardstick. Comparing against `CONUS_STATE_ABBR` instead
+found it in one line.
+
+Effect is 5 km² at 30 minutes, which is right for a 177 km² district and beside
+the point: a silent exception of this shape is exactly as easy to write for
+Michigan.
+
+**Also fixed:** `Filter(Negate(is.null), wm)` silently dropped masks that failed
+to read, and a state whose water goes unclipped looks identical to one whose
+water is clipped. That is now a `stop()`. Same silent-success shape as entry 6.
+
+**Lesson:** never check a filter's output with the filter. Compare against the
+canonical source. And an exception to a canonical constant needs a written
+reason at the moment you type it, or it should not be typed.
 
 ### 4. Counted 88 physicians twice
 
