@@ -90,9 +90,20 @@ ahrf <- ahrf %>%
 cat(sprintf("AHRF counties                : %s\n", nrow(ahrf)))
 
 # --- 2. CMS Provider of Services: facility counts by county -----------------
-# PRVDR_CTGRY_CD 01 = hospital; subtype 01 = short-term general, 11 = critical
-# access. POS carries no obstetric-service flag -- that gap is why AHRF's
-# birthing-room variable is carried above.
+# CORRECTION (2026-08-09): an earlier version of this file asserted that POS
+# "carries no obstetric-service flag", on the strength of one grep that never
+# tried the obvious abbreviation. POS column 221 is OB_SRVC_CD and column 461
+# is OB_GYN_SRGRY_SW. The claim was wrong and it drove the decision to fall
+# back on AHRF birthing rooms.
+#
+# Obstetric-service counts come from build_ob_hospital_counts() in
+# R/lib/ob_hospitals.R -- the canonical implementation in this repo -- rather
+# than being rewritten here. It deduplicates superseded POS records, restricts
+# to short-term acute (01) and critical access (11), drops terminated
+# providers, and keeps "no obstetrics" separate from "did not report".
+#
+# AHRF birthing rooms are RETAINED alongside, because they measure a different
+# thing: rooms are capacity, OB_SRVC_CD is presence of a service.
 pos <- read_csv(POS, col_types = cols(.default = col_character())) %>%
   filter(!is.na(FIPS_STATE_CD), !is.na(FIPS_CNTY_CD)) %>%
   mutate(fips = paste0(str_pad(FIPS_STATE_CD, 2, "left", "0"),
@@ -104,6 +115,13 @@ pos <- read_csv(POS, col_types = cols(.default = col_character())) %>%
             pos_critical_acc   = sum(PRVDR_CTGRY_SBTYP_CD == "11", na.rm = TRUE),
             .groups = "drop")
 cat(sprintf("POS counties with a hospital : %s\n", nrow(pos)))
+
+source("R/lib/ob_hospitals.R")
+obh <- build_ob_hospital_counts() %>%
+  transmute(fips = str_pad(as.character(GEOID), 5, "left", "0"),
+            n_hosp_active, n_hosp_ob, n_hosp_ob_unknown)
+cat(sprintf("counties with an active hospital: %s | with an OB service: %s\n",
+            nrow(obh), sum(obh$n_hosp_ob > 0)))
 
 # --- 3. our own cohort's county counts --------------------------------------
 ours <- read_csv("artifacts/isochrone_representation_by_county.csv",
@@ -123,9 +141,12 @@ base <- read_csv("data/county_base.csv", show_col_types = FALSE) %>%
 d <- base %>%
   left_join(ahrf, by = "fips") %>%
   left_join(pos,  by = "fips") %>%
+  left_join(obh,  by = "fips") %>%
   left_join(ours, by = "fips") %>%
   mutate(across(c(study_midwives, study_represented, pos_hospitals,
-                  pos_short_term_gen, pos_critical_acc), ~ coalesce(., 0L)))
+                  pos_short_term_gen, pos_critical_acc,
+                  n_hosp_active, n_hosp_ob, n_hosp_ob_unknown),
+                ~ coalesce(., 0L)))
 
 # --- 4. rates ---------------------------------------------------------------
 # Births preference: AHRF (NCHS vital statistics) over the ACS 12-month
@@ -154,6 +175,20 @@ d <- d %>%
       if_else(!is.na(births_used) & births_used >= MIN_BIRTHS & !is.na(ahrf_birth_rooms),
               round(1000 * ahrf_birth_rooms / births_used, 2), NA_real_),
     no_hospital = pos_hospitals == 0,
+    # Three-way, deliberately. A county whose hospitals never reported an
+    # obstetric status has not reported "no obstetrics" -- and POS reporting is
+    # sparsest among small rural hospitals, so collapsing "unreported" into
+    # "no" would understate obstetric capacity exactly where this study is most
+    # sensitive.
+    ob_hospital_status = case_when(
+      n_hosp_active == 0    ~ "no hospital",
+      n_hosp_ob > 0         ~ "hospital with obstetrics",
+      n_hosp_ob_unknown > 0 ~ "hospital, obstetrics unreported",
+      TRUE                  ~ "hospital, no obstetrics"),
+    ob_hospitals_per_1k_births =
+      if_else(!is.na(births_used) & births_used >= MIN_BIRTHS,
+              mufflyaccess::safe_rate(n_hosp_ob, births_used,
+                                      multiplier = 1000, digits = 2), NA_real_),
     rurality = case_when(is.na(rucc_2023) ~ NA_character_,
                          rucc_2023 <= 3 ~ "Metro (RUCC 1-3)",
                          rucc_2023 <= 6 ~ "Nonmetro, adjacent (RUCC 4-6)",
@@ -239,6 +274,10 @@ print(as.data.frame(d %>% filter(!is.na(rurality)) %>% group_by(rurality) %>%
                                              sum(births_used, na.rm = TRUE), 2),
             pct_counties_no_midwife = round(100 * mean(study_midwives == 0), 1),
             pct_counties_no_hospital = round(100 * mean(no_hospital), 1),
+            hosp_with_ob = sum(n_hosp_ob),
+            pct_counties_with_ob_hosp = round(100 * mean(n_hosp_ob > 0), 1),
+            pct_counties_ob_unreported =
+              round(100 * mean(ob_hospital_status == "hospital, obstetrics unreported"), 1),
             birth_rooms = sum(ahrf_birth_rooms, na.rm = TRUE),
             .groups = "drop")), row.names = FALSE)
 
