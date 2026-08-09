@@ -72,3 +72,8 @@ artifacts/geocode_final_results.csv
 
 # the pipeline diagrams are documentation, not scraped HTML
 !docs/pipeline.html
+docs/maps/leaflet_*_files/
+!docs/maps/*.png
+!docs/maps/*.html
+!docs/maps/*.csv
+docs/maps/leaflet_counties.html

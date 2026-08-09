@@ -38,6 +38,32 @@ Scraper for the [AMCB certification directory](https://ams.amcbmidwife.org/amcbs
 > test each stage. This README covers the scraping and matching rationale in
 > depth.
 
+## Maps
+
+Built with [mufflyt/mysterymaps](https://github.com/mufflyt/mysterymaps) —
+`mysterymaps_geographic_map()` for the state choropleth, `mysterymaps_map_base()` for the leaflet
+bases. County is this project's analytic grain, so that layer is drawn against the same TIGER 2023
+vintage the linkage assigned counties from.
+
+![Certified midwives by county of practice](docs/maps/county_choropleth.png)
+
+| Map | File |
+|---|---|
+| County choropleth (static) | [`docs/maps/county_choropleth.png`](docs/maps/county_choropleth.png) |
+| State supply per 100k women 15–44 (static) | [`docs/maps/state_choropleth.png`](docs/maps/state_choropleth.png) |
+| Practice points, jittered (leaflet) | [`docs/maps/leaflet_points.html`](docs/maps/leaflet_points.html) |
+| County choropleth (leaflet) | rebuild with `Rscript map_midwife_geography.R` (20 MB, not committed) |
+| Per-state counts and rates | [`docs/maps/midwives_by_state.csv`](docs/maps/midwives_by_state.csv) |
+
+**14,618 primary-tier midwives map to 1,262 of 3,109 CONUS counties** — 59% of counties have none.
+Highest supply per 100,000 women aged 15–44: WA 30.8, NY 27.2, NC 23.1, GA 21.2. Highest raw counts:
+CA 1,307, NY 1,235, FL 835.
+
+Two rules govern what is plotted. Only `primary_midwifery` links appear in the headline maps, so no
+pattern depends on the weaker evidence tiers. And the point map **jitters coordinates and carries no
+names** — a dot means "a certified midwife practises near here", not an identified individual.
+
+
 ## Usage
 
     python3 scrape.py    # writes midwives.csv
