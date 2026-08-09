@@ -68,6 +68,25 @@ and I had dissolved it into a gradient.
 **Lesson:** zero is a category, not the low end of a scale. The canonical helper
 already knew this, which leads to entry 8.
 
+### 3b. "POS has no obstetric-service flag" — it has two
+
+I searched the CMS Provider of Services header for `obst|matern|deliv|nursry|
+nursery|neonat|birth|labor|nicu|perinat`, got nothing, and reported that POS's
+473 columns contain no obstetric-service indicator. On that basis the county
+analysis substituted AHRF's birthing-room count, and the claim went into a
+pushed commit message.
+
+POS column 221 is **`OB_SRVC_CD`** and column 461 is **`OB_GYN_SRGRY_SW`**.
+Among hospitals: 7,270 coded `0`, 4,167 coded `1`, plus 296 and 447 at `2`/`3`.
+
+My pattern never tried the obvious abbreviation. A concurrent session found it
+immediately and geocoded 2,784 OB-service hospitals from it.
+
+**Lesson:** a negative result from one grep is not a property of the data. When
+the answer is "this dataset lacks X," check the codebook rather than trusting a
+pattern you wrote from imagination — especially before making a substitution
+decision that propagates into every downstream table.
+
 ### 4. Counted 88 physicians twice
 
 88 NPIs were labelled `Generalist` in the canonical roster *and* present in the

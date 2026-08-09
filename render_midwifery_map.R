@@ -75,8 +75,8 @@ local({
 # R/mysterymaps_urogyn.R in isochrones-main; see R/lib/mysterymaps_dep.R for why
 # this is a path dependency and not a copy. An earlier draft of this file
 # duplicated the scale function line for line.
-source("R/lib/mysterymaps_dep.R")
-invisible(load_mysterymaps())          # mm_jenks_zero_scale (staging file)
+# Everything this map needs now lives in the installed mysterymaps package;
+# the path dependency on the isochrones staging file is gone.
 suppressPackageStartupMessages(library(mysterymaps))
 
 # --- data --------------------------------------------------------------------
@@ -116,7 +116,7 @@ gap60 <- suppressWarnings(rmapshaper::ms_simplify(gap60, keep = 0.08, keep_shape
 
 cty$county_label_disp <- paste0(cty$county_name_base, ", ", cty$state)
 
-sc <- mm_jenks_zero_scale(cty$midwives_per_1k_births, k = 6, digits = 1)
+sc <- mysterymaps_jenks_zero_scale(cty$midwives_per_1k_births, k = 6, digits = 1)
 # Caller-side wording only: the canonical zero label is "0.0", and for this map
 # the distinction between "no midwife" and "a low rate" is the whole point.
 sc$leg_labs[1] <- "none"
