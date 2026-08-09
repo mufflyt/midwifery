@@ -140,16 +140,35 @@ build_completeness <- function() {
   # Stage 3+: ascertainment is COUNTY resolution (county_best), not coordinate
   # possession. Same strata, same code path, different numerator -- so the
   # stage table stays a like-for-like comparison of what each stage achieved.
-  if (nzchar(Sys.getenv("ASCERTAIN_FROM_GEOGRAPHY")) &&
-      file.exists("midwives_geography.csv")) {
-    gg <- read_csv("midwives_geography.csv", show_col_types = FALSE,
-                   col_types = cols(.default = col_character())) %>%
-      select(certification_number, county_best) %>%
-      distinct(certification_number, .keep_all = TRUE)
-    m <- m %>%
-      left_join(gg, by = "certification_number") %>%
-      mutate(geocoded = !is.na(county_best))
-    cli::cli_alert_info("Ascertainment = county_best (geography hierarchy), not raw coordinates")
+  #
+  # The geography file is the SPINE, not a lookup joined onto an older one.
+  # Reading midwives_geocoded.csv as the spine and joining county_best onto it
+  # silently reported the PREVIOUS stage's numbers verbatim, because that file
+  # still held the pre-geocoding roster. Path is configurable because the
+  # row-level geography output is gitignored and its name has moved.
+  geo_file <- Sys.getenv("GEOGRAPHY_FILE", "midwives_geography_guarded.csv")
+  if (nzchar(Sys.getenv("ASCERTAIN_FROM_GEOGRAPHY"))) {
+    if (!file.exists(geo_file)) {
+      stop("ASCERTAIN_FROM_GEOGRAPHY set but ", geo_file,
+           " not found. Set GEOGRAPHY_FILE to the current Stage 3 output.",
+           call. = FALSE)
+    }
+    gg <- read_csv(geo_file, show_col_types = FALSE,
+                   col_types = cols(.default = col_character()))
+    if (anyDuplicated(gg$certification_number) > 0) {
+      stop("Geography file has duplicate certification_number; a person-level ",
+           "join on it would attach fields to the wrong person.", call. = FALSE)
+    }
+    # Roster characteristics the geography file does not carry.
+    chars <- m %>%
+      select(certification_number, any_of(c("status", "certification",
+                                            "match_tier", "certification_date")))
+    m <- gg %>%
+      mutate(geocoded = !is.na(county_best)) %>%
+      left_join(chars, by = "certification_number",
+                relationship = "one-to-one")
+    cli::cli_alert_info(
+      "Spine = {geo_file} ({nrow(m)} rows); ascertainment = county_best, not raw coordinates")
   }
 
   # Optional: treat a Healthgrades address as recovered coverage, so the table
@@ -167,10 +186,17 @@ build_completeness <- function() {
 
   # Rurality proxy observable for geocoded and un-geocoded alike.
   zc <- load_zip_county()
+  # Fall back across whichever county column the spine happens to carry: the
+  # older geocoded spine names it GEOID, the geography spine names it
+  # county_exact / county_best. The ZIP-derived value is preferred because it
+  # is observable for ascertained and un-ascertained rows alike.
+  m$.spine_county <- if ("GEOID" %in% names(m)) m$GEOID else
+    if ("county_exact" %in% names(m)) m$county_exact else NA_character_
   m <- m %>%
     mutate(zip5 = pad5(str_sub(str_remove_all(practice_zip, "[^0-9]"), 1, 5))) %>%
     left_join(zc, by = "zip5", suffix = c("", ".zip")) %>%
-    mutate(GEOID_proxy = coalesce(GEOID.zip, GEOID)) %>%
+    mutate(GEOID_zip = if ("GEOID.zip" %in% names(.)) GEOID.zip else GEOID,
+           GEOID_proxy = coalesce(GEOID_zip, .spine_county)) %>%
     left_join(select(cb, GEOID, rucc_2023, state_cb = state),
               by = c("GEOID_proxy" = "GEOID")) %>%
     mutate(rucc_cat = case_when(
