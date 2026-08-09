@@ -59,6 +59,19 @@ roster <- cohort %>% filter(linkage_tier == "primary_midwifery")
 # AMCB's own definitions: only ACTIVE means "currently certified, may use the
 # CNM/CM title". RETIRED is explicitly "permanently retired from practice";
 # LAPSED and REVOKED holders may no longer use the title at all.
+# WORKFORCE INCLUSION RULE: status == "ACTIVE", nothing else.
+#   RETIRED     AMCB: "permanently retired from practice"
+#   LAPSED      may no longer use the CNM/CM title
+#   REVOKED     title removed, usually by discipline ruling
+#   SURRENDERED title given up, usually by discipline ruling
+#   DECEASED    self-evident
+#   EMERITUS    27 records carrying a status AMCB's own definitions page does
+#               not document; excluded explicitly rather than silently
+#   DEACTIVATED AMCB: "usually to switch certification from CM to CNM or CNM to
+#               CM". 16 of 22 have an ACTIVE record under the same name, so the
+#               PERSON is still counted; 6 are represented by no ACTIVE record
+#               and are genuinely dropped. Verified: ACTIVE-only yields 11,913
+#               rows and 11,913 distinct NPIs, so nobody is double-counted.
 ACTIVE_STATUSES <- c("ACTIVE")
 active <- roster %>% filter(status %in% ACTIVE_STATUSES)
 
@@ -78,7 +91,39 @@ cat(sprintf("  with primary NPI linkage        : %s (%.1f%%)\n",
 cat(sprintf("  with county geography           : %s (%.1f%%)\n",
             format(nrow(active), big.mark = ","), 100 * nrow(active) / nrow(all_active)))
 
-primary <- active   # every downstream map below uses the ACTIVE cohort
+# --- PRODUCT A: roster geography, DESCRIPTIVE ONLY ---------------------------
+# Every primary-linked certificant regardless of status. This is a picture of
+# the LINKAGE, not of the workforce, and carries no rate and no denominator.
+counties_a <- suppressMessages(tigris::counties(cb = TRUE, year = 2023, progress_bar = FALSE)) %>%
+  filter(!STATEFP %in% c("02", "15", "60", "66", "69", "72", "78"))
+roster_cty <- counties_a %>%
+  left_join(roster %>% count(county_best, name = "certificants"),
+            by = c("GEOID" = "county_best"))
+pA <- ggplot(roster_cty) +
+  geom_sf(aes(fill = certificants), colour = NA) +
+  scale_fill_viridis_c(option = "mako", na.value = "grey92", trans = "sqrt",
+                       name = "Certificants", breaks = c(1, 5, 20, 50, 150)) +
+  coord_sf(crs = 5070) +
+  labs(title = "All primary-linked AMCB certificants by last-observed practice location",
+       subtitle = sprintf("%s records of ANY certification status - %s ACTIVE, %s not",
+                          format(nrow(roster), big.mark = ","),
+                          format(nrow(active), big.mark = ","),
+                          format(nrow(roster) - nrow(active), big.mark = ",")),
+       caption = paste("DESCRIPTIVE map of the linkage, NOT the workforce: includes lapsed,",
+                       "retired and deceased certificants. Not a supply measure.")) +
+  theme_void(base_size = 12) +
+  theme(plot.background = element_rect(fill = "#f5f7f8", colour = NA),
+        legend.background = element_rect(fill = "#f5f7f8", colour = NA),
+        plot.title = element_text(face = "bold", size = 14, colour = "#0f1519"),
+        plot.subtitle = element_text(colour = "#5c6b74", size = 10.5, margin = margin(b = 8)),
+        plot.caption = element_text(colour = "#8f2a2a", size = 8, hjust = 0),
+        plot.margin = margin(18, 18, 14, 18))
+ggsave("docs/maps/roster_county_descriptive.png", pA, width = 11, height = 7, dpi = 200,
+       bg = "#f5f7f8")
+cat("wrote docs/maps/roster_county_descriptive.png (PRODUCT A, descriptive)\n")
+
+# --- PRODUCT B: active workforce ---------------------------------------------
+primary <- active
 
 # --- 1. STATE CHOROPLETH: midwives per 100,000 women aged 15-44 --------------
 cb <- read_csv("data/county_base.csv", show_col_types = FALSE,
@@ -120,7 +165,7 @@ p1 <- ggplot(smap) +
                        name = "per 100,000\nwomen 15-44") +
   coord_sf(crs = 5070) +
   labs(title = "Active AMCB-certified midwives per 100,000 women aged 15-44",
-       subtitle = sprintf("%s ACTIVE certificants with a primary NPI link and county geography",
+       subtitle = sprintf("%s ACTIVE certificants by LAST-OBSERVED NPPES practice location",
                           format(nrow(primary), big.mark = ",")),
        caption = "Practice-location distribution, not a measure of access. AMCB directory linked to NPPES 2007-2025.") +
   theme_void(base_size = 12) +
@@ -149,7 +194,7 @@ p2 <- ggplot(cmap) +
   scale_fill_viridis_c(option = "viridis", na.value = "grey92", trans = "sqrt",
                        name = "Midwives", breaks = c(1, 5, 20, 50, 150)) +
   coord_sf(crs = 5070) +
-  labs(title = "Active certified midwives by county of practice location",
+  labs(title = "Active certified midwives by last-observed practice county",
        subtitle = sprintf("%s ACTIVE certificants · grey = no linked practice location in that county",
                           format(nrow(primary), big.mark = ",")),
        caption = paste("Distribution of practice locations, NOT access: patients cross county lines,",

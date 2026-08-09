@@ -46,36 +46,65 @@ assigned counties from).
 
 ![Active AMCB-certified midwives per 100,000 women aged 15-44](docs/maps/active_state_rate.png)
 
-**Two filters, not one.** Linkage tier answers *how sure are we this is the right NPI?*;
-AMCB certification status answers *is this person part of the current workforce?* Conflating them
-turns a confidently-linked deceased certificant into a practising midwife. Of the 14,618 primary-tier
-links with geography, **2,741 (18.8%) are not active** — 2,020 LAPSED, 579 RETIRED, 93 DECEASED,
-8 REVOKED, 5 SURRENDERED. Only the ACTIVE subset carries workforce language.
+### Two filters, kept separate
 
-| | n | of ACTIVE roster |
+`linkage_tier` answers *how sure are we this is the right NPI?* `AMCB status` answers *is this person
+part of the current workforce?* Conflating them turns a confidently-linked deceased certificant into a
+practising midwife. Of the 14,618 primary-tier links with geography:
+
+| Status | n | % |
 |---|---:|---:|
-| ACTIVE certificants | 15,285 | — |
-| with primary NPI linkage | 11,913 | 77.9% |
-| with county geography | **11,877** | **77.7%** |
+| **ACTIVE** | **11,877** | **81.2** |
+| LAPSED | 2,020 | 13.8 |
+| RETIRED | 579 | 4.0 |
+| DECEASED | 93 | 0.6 |
+| EMERITUS | 20 | 0.1 |
+| DEACTIVATED | 16 | 0.1 |
+| REVOKED | 8 | 0.1 |
+| SURRENDERED | 5 | 0.0 |
+| **Total** | **14,618** | 100 |
 
-| Map | Cohort | File |
+**Workforce rule: `status == "ACTIVE"`, nothing else.** RETIRED is "permanently retired from
+practice"; LAPSED, REVOKED and SURRENDERED holders may not use the CNM/CM title. EMERITUS carries a
+status AMCB's own definitions page does not document. DEACTIVATED usually means a CM↔CNM switch — 16
+of 22 have an ACTIVE record under the same name so the person is still counted, and 6 are dropped.
+Verified: 11,913 ACTIVE primary-linked rows map to 11,913 distinct NPIs, so nobody is double-counted.
+
+### Denominator flow
+
+| Stage | n | % of previous | % of roster |
+|---|---:|---:|---:|
+| Full AMCB roster | 22,309 | — | 100.0 |
+| ACTIVE status | 15,285 | 68.5 | 68.5 |
+| + primary NPI link | 11,913 | 77.9 | 53.4 |
+| + `county_best` | **11,877** | 99.7 | **53.2** |
+| + `county_exact` | 11,780 | 99.2 | 52.8 |
+
+Primary linkage by status — geography cannot repair people who never linked: ACTIVE 77.9%,
+RETIRED 45.6%, LAPSED 39.2%, DECEASED 18.6%.
+
+### The maps
+
+| Map | Cohort | Reading |
 |---|---|---|
-| Active supply per 100k women 15–44 | ACTIVE | [`active_state_rate.png`](docs/maps/active_state_rate.png) |
-| Active midwives by county | ACTIVE | [`active_county_counts.png`](docs/maps/active_county_counts.png) |
-| County choropleth (leaflet) | ACTIVE | rebuild with `Rscript map_midwife_geography.R` |
-| Per-state counts and rates | ACTIVE | [`active_midwives_by_state.csv`](docs/maps/active_midwives_by_state.csv) |
+| [`active_state_rate.png`](docs/maps/active_state_rate.png) | ACTIVE | supply per 100k women 15–44 |
+| [`active_county_counts.png`](docs/maps/active_county_counts.png) | ACTIVE | counts by county |
+| [`roster_county_descriptive.png`](docs/maps/roster_county_descriptive.png) | **all statuses** | **descriptive only — not workforce** |
+| [`active_midwives_by_state.csv`](docs/maps/active_midwives_by_state.csv) | ACTIVE | counts and rates |
+| County leaflet | ACTIVE | rebuild with `Rscript map_midwife_geography.R` |
 | Person-level points | ACTIVE | **internal QA only**, not committed |
 
 Active supply per 100,000 women aged 15–44: **WA 24.9, NY 21.4, NC 19.5, GA 18.1**; by raw count
-**CA 1,015, NY 971, FL 670**. California leads on count but sits mid-table on supply (11.0).
-1,173 of 3,109 CONUS counties contain at least one linked active practice location.
+**CA 1,015, NY 971, FL 670**. 1,173 of 3,109 CONUS counties contain at least one linked active
+practice location.
 
-**These are practice-location distributions, not access.** Patients cross county lines, and 22% of
-ACTIVE certificants have no linked location at all, so a county with no dot is not a county without
-midwifery care. Travel-time isochrones are the measure that would answer access.
+### What these maps are not
 
-Person-level point maps stay internal: jittering is not de-identification, and in a rural county with
-one CNM the jitter is cosmetic.
+They show **last-observed NPPES practice location**, not confirmed current practice at that site.
+They are **practice-location distribution, not access** — patients cross county lines, and 22% of
+ACTIVE certificants have no linked location, so an empty county is not a county without midwifery
+care. Travel-time isochrones would answer access. Person-level point maps stay internal: jittering
+is not de-identification, and in a rural county with one CNM the jitter is cosmetic.
 
 
 ## Usage
