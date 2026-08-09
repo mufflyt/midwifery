@@ -87,6 +87,28 @@ the answer is "this dataset lacks X," check the codebook rather than trusting a
 pattern you wrote from imagination — especially before making a substitution
 decision that propagates into every downstream table.
 
+### 3c. Reported coverage area that included the Great Lakes
+
+The drive-time surfaces were clipped to the union of county polygons. Counties
+extend into open water, so the coverage areas I reported -- 1,759,430 km2 within
+30 minutes and 4,199,532 km2 within 60 -- counted lakes and coastal water as
+ground within reach of a midwife. The Great Lakes are plainly shaded in the
+screenshots; I looked at those maps repeatedly and did not see it.
+
+Corrected with load_water_mask() from mufflyt/isochrones, which existed the
+whole time:
+
+| Band | Reported | Actual land | Water |
+|---|---|---|---|
+| 30 min | 1,759,430 km2 | 1,578,626 km2 | 180,804 (10.3%) |
+| 60 min | 4,199,532 km2 | 3,656,272 km2 | 543,345 (12.9%) |
+
+**Lesson:** clipping to an administrative boundary is not clipping to land, and
+a coverage statistic denominated in area silently rewards water and empty
+terrain. The population-weighted version (twostep::compute_band_tract_overlap)
+would not have had this failure mode at all -- which is a second reason to
+prefer it, beyond the one already noted.
+
 ### 4. Counted 88 physicians twice
 
 88 NPIs were labelled `Generalist` in the canonical roster *and* present in the
