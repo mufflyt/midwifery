@@ -5,18 +5,18 @@
 #' Assembles the county-level birth statistics that bear on midwifery care and
 #' renders two to four plain sentences per county.
 #'
-#' @section Why CDC WONDER natality is NOT the source here:
-#' The obvious source for "births attended by a midwife" is CDC WONDER
-#' Natality, which carries an Attendant variable (MD, DO, CNM/CM, other
-#' midwife). It is deliberately not used, for one reason: WONDER suppresses
-#' county-level sub-totals below 10 births. Midwife-attended births are a small
-#' share of an already small denominator, so the suppressed cells fall almost
-#' entirely on low-volume rural counties -- exactly the counties a midwifery
-#' access analysis exists to describe. A variable that is present in metro
-#' counties and blank in rural ones would not be a measure of midwifery care;
-#' it would be a measure of county size wearing a midwifery label. Every
-#' measure below is instead complete for all 3,235 counties, or is a count we
-#' produced ourselves and can characterise honestly.
+#' @section How CDC WONDER enters, and what it cannot cover:
+#' Midwife-attended births come from the WONDER county x CNM/CM export ingested
+#' by R/11, joined here when present. WONDER publishes county natality only for
+#' counties of 100,000+ residents, pooling the rest by state, so it covers 579
+#' of 3,235 counties. The exclusion is by POPULATION, which removes almost
+#' exactly the rural counties a midwifery access analysis is about.
+#'
+#' The sentences therefore distinguish three states that must never collapse
+#' into "no midwife-attended births": a published count, a SUPPRESSED count
+#' (1-9, not zero), and a county WONDER does not report separately at all.
+#' Every other measure is complete for all 3,235 counties, or is a count we
+#' produced ourselves and characterise as such.
 #'
 #' @section The midwife counts are an UNDERCOUNT, and the sentences say so:
 #' Midwife counts come from the AMCB roster after NPI linkage and geocoding.
@@ -133,7 +133,25 @@ county_sentences <- function(r) {
                       paste(tail_bits, collapse = ", ")))
   }
 
-  # 4. Access context, when observed.
+  # 4. Midwife-attended births, when WONDER reports the county at all.
+  if (!is.null(r$cnm_births_2016_2024) && !is.na(r$cnm_births_2016_2024)) {
+    share <- fmt(r$cnm_share_of_births_pct, 1)
+    s <- c(s, sprintf(
+      "CDC WONDER records %s births attended by a certified nurse-midwife here over 2016-2024%s%s.",
+      fmt(r$cnm_births_2016_2024),
+      if (!is.null(share)) sprintf(", about %s%% of recent births", share) else "",
+      if (isTRUE(r$ct_apportioned))
+        " (apportioned from Connecticut's legacy counties, so an estimate rather than a count)" else ""))
+  } else if (isTRUE(r$wonder_county_reported)) {
+    s <- c(s, paste0("CDC WONDER suppressed the midwife-attended birth count for this county, ",
+                     "meaning it is between 1 and 9 -- not zero."))
+  } else {
+    s <- c(s, paste0("CDC WONDER does not report this county separately: it publishes county ",
+                     "natality only for counties of 100,000 or more residents and pools the rest ",
+                     "by state, so midwife-attended births here are unpublished, not absent."))
+  }
+
+  # 5. Access context, when observed.
   acc <- character(0)
   if (!is.null(fmt(r$pct_uninsured, 1)))
     acc <- c(acc, sprintf("%s%% of residents are uninsured", fmt(r$pct_uninsured, 1)))
@@ -161,6 +179,20 @@ run_profiles <- function() {
 
   base <- read_csv(BASE, show_col_types = FALSE, progress = FALSE,
                    col_types = cols(GEOID = col_character(), .default = col_guess()))
+
+  # Fold in the WONDER county x CNM ingest (R/11) when it has been produced, so
+  # the sentences carry every measure we hold rather than a subset. Re-running
+  # R/10 alone stays valid: the midwife-attended clause degrades to the
+  # "not reported separately" wording rather than erroring.
+  wonder_county <- file.path(OUT, "county_cnm_births.csv")
+  if (file.exists(wonder_county)) {
+    wc <- read_csv(wonder_county, show_col_types = FALSE, progress = FALSE,
+                   col_types = cols(GEOID = col_character(), .default = col_guess())) %>%
+      select(GEOID, cnm_births_2016_2024, cnm_share_of_births_pct,
+             wonder_county_reported, ct_apportioned)
+    base <- left_join(base, wc, by = "GEOID", relationship = "one-to-one")
+    cli::cli_alert_info("WONDER CNM births joined for {sum(!is.na(base$cnm_births_2016_2024))} counties")
+  }
   geo <- read_csv(GEO, show_col_types = FALSE, progress = FALSE,
                   col_types = cols(.default = col_character()))
 
