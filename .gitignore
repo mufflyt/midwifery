@@ -104,3 +104,13 @@ artifacts/midwife_panel_midwifeonly.csv
 .s3pip_done
 .stage3_done
 .tax_ab_done
+data/ahrf/
+data/cms_pos_hospital.csv
+
+# osm.de routing run: coordinates derived from person records, plus bulk polygons
+artifacts/route_queue_osmde.csv
+artifacts/isochrones_osmde/
+artifacts/iso_recovery_pro/
+# reference boundaries, redownloadable from Census
+data/cd118/
+data/cd119/
