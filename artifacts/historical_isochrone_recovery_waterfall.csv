@@ -1,0 +1,6 @@
+tier,newly_rescued,still_unrescued
+1_s3_historical,321,3044
+2_ec2,0,3044
+3_external_drive,2273,771
+4_dropbox,0,771
+5_local_derived,0,771

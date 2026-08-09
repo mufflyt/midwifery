@@ -1,0 +1,5 @@
+rurality,n_midwives,canonical,recovered,covered,pct_canonical_only,pct_with_validated_recovery
+Metro (RUCC 1-3),10639,8198,807,9005,77.1,84.6
+"Nonmetro, adjacent (RUCC 4-6)",787,176,223,399,22.4,50.7
+"Nonmetro, remote (RUCC 7-9)",336,47,85,132,14,39.3
+,30,6,0,6,20,20

@@ -85,3 +85,5 @@ docs/maps/leaflet_active_counties.html
 # and artifacts/represented_subset_access_* are the shareable form.
 artifacts/midwife_isochrone_match.csv
 artifacts/not_represented_by_existing_isochrone_library.csv
+artifacts/historical_isochrone_recovery_matches*.csv
+artifacts/iso_recovery/

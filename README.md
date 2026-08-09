@@ -195,6 +195,63 @@ interpreted as workforce-access differences.
 **Withdrawn:** the earlier claim that the rural gradient is "robust to both biases" predates this
 coverage analysis and has not been tested against it.
 
+## Existing-isochrone recovery search
+
+Before generating anything, we searched for polygons we already possess elsewhere. No routing was
+performed and the canonical 3,909-origin library was not modified. Sources previously rejected for
+the temporal/subspecialty physician analysis were back in scope here: missing subspecialty labels
+are irrelevant to whether a polygon is centred near a midwife.
+
+| tier | result |
+|---|---|
+| S3 (`tyler-valhalla-tiles`) | `isochrone_archive/` ×2 releases, `staging/`, `supplemental_isochrones/`, `production_run/`. No `isochrone-releases/` prefix exists. |
+| EC2 | **no instances and no volumes exist in the account** — nothing to search |
+| External drive | `/Volumes/MufflySamsung/isochrone_archives/isochrones_archive/`, 16 artifacts |
+| Dropbox | `isochrones_shared/` holds only a geocoding cache and state-board scrapes — **no isochrones** |
+
+Two corrections to the inventory that motivated this search: the record counts are origin×band rows,
+not origins. `provider_isochrones_25K.rds` holds **5,344 distinct locations**, not 27,457;
+`provider_isochrones_NEW.rds` holds 4,093, not 19,653. `provider_isochrones_CORRUPTED.rds` cannot be
+read at all — `readRDS` fails on the connection, so the name is accurate.
+
+Across all sources: **11,592 distinct origin locations, 7,595 of them absent from the canonical
+3,909.** On proximity alone this looked like a large win — 2,594 of the 3,365 unrepresented midwives
+(77.1%) sit within 5 km of some archived origin.
+
+**Polygon validation removed most of it.** Of the 1,072 origins examined, only 452 (42.2%) pass:
+
+| failure | origins |
+|---|---:|
+| missing at least one of the 30/60/120/180 bands | 594 |
+| centre falls outside its own 30-minute polygon | 220 |
+| Russian-doll nesting violated | 39 |
+| invalid geometry | 0 (58–410 per file repaired by `st_make_valid`) |
+
+The centre-outside-own-30-minute check is the one that matters most: it catches a merge that paired a
+centre coordinate with a different provider's polygon, which no amount of geometric tidiness would
+reveal. A further 26 origins come only from `supplemental_isochrones/`, which has **no 180-minute
+object in S3 at all**, and are counted as failing.
+
+### Net result
+
+| | midwives | canonical only | + validated recovery |
+|---|---:|---:|---:|
+| Metro (RUCC 1–3) | 10,639 | 77.1% | **84.6%** |
+| Nonmetro adjacent (4–6) | 787 | 22.4% | **50.7%** |
+| Nonmetro remote (7–9) | 336 | 14.0% | **39.3%** |
+| **National** | 11,792 | **71.5%** | **80.9%** |
+
+1,116 of the 3,365 (33.2%) are rescued from artifacts we already had, without a single routing call.
+Rural coverage more than doubles. But it does not close the gap: **2,249 midwives still have no
+usable existing polygon**, and coverage remains steeply rural-selective (84.6% metro vs 39.3% remote).
+The recovery is a real improvement and not a solution — the differential-coverage objection to a
+national or rural travel-time estimate still stands.
+
+Recovered origins are published as a separate `historical_isochrone_recovery` artifact with
+source-level provenance. Nothing has been merged into `artifacts/isochrones/`, and
+`provider_isochrones.rds` was read as a *candidate* source only — never substituted for the
+production library, which is the actual content of the 164→445 warning.
+
 
 ## Usage
 
