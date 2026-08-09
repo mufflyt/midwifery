@@ -283,15 +283,16 @@ district_sentences <- function(r, n_d) {
                r$district_display, fmt(r$women_15_44), fmt(r$births_12mo))
 
   b <- if (r$n_midwives == 0) {
-    paste0("No AMCB-certified nurse-midwife in the linked cohort could be located in this district, ",
-           "which reflects roster, linkage and geocoding coverage as much as who practises here.")
+    # Plain statement; the ascertainment caveat belongs once in the notes,
+    # not repeated per district. See R/10 for the full reasoning.
+    "No certified nurse-midwife was located in this district."
   } else {
     tail_bits <- c(
       if (!is.null(fmt(r$midwives_per_10k_women, 1)))
         sprintf("%s per 10,000 women aged 15-44", fmt(r$midwives_per_10k_women, 1)),
       if (!is.null(fmt(r$births_per_midwife)))
         sprintf("roughly %s births per located midwife", fmt(r$births_per_midwife)))
-    sprintf("%s AMCB-certified nurse-midwi%s located here%s%s.",
+    sprintf("%s certified nurse-midwi%s located here%s%s.",
             fmt(r$n_midwives), if (r$n_midwives == 1) "fe was" else "ves were",
             if (length(tail_bits)) " -- " else "", oxford_join(tail_bits))
   }

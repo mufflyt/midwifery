@@ -267,6 +267,13 @@ panel <- sprintf('
    (AHRF/NCHS births). "None" is its own class &mdash; a county with no midwife is
    not the low end of a scale. Counties under 50 births/yr are suppressed rather
    than shown as noisy rates.</p>
+  <p style="margin:.2em 0 .7em"><b>"No midwife located" means located, not
+   practising.</b> Counts come from the AMCB roster after NPI linkage and
+   geocoding; 16,506 of 16,892 roster records (97.7%%) resolved to a county, so
+   a county shown with none may still be served &mdash; by a midwife we could
+   not place, or by one practising across the county line. Where CDC WONDER
+   reports midwife-attended births in a county with no located midwife, the
+   popup shows both; that contrast is real and worth reading.</p>
   <p style="margin:.2em 0 .7em"><b>Midwife dots</b> show every ACTIVE,
    AMCB-certified, primary-linked midwife with a geocoded practice address
    (11,792). Click for the NPI and its NPPES registry page; names appear on the

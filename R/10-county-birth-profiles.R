@@ -75,9 +75,9 @@ fmt <- function(x, digits = 0, big = TRUE) {
 }
 
 RUCC_LABEL <- c(
-  "1" = "a metro county in a large metro area (1 million+)",
-  "2" = "a metro county in a medium metro area (250,000-1 million)",
-  "3" = "a metro county in a small metro area (under 250,000)",
+  "1" = "a metro county in a large metro area",
+  "2" = "a metro county in a medium metro area",
+  "3" = "a metro county in a small metro area",
   "4" = "a nonmetro county with a large urban population, adjacent to a metro area",
   "5" = "a nonmetro county with a large urban population, not adjacent to a metro area",
   "6" = "a nonmetro county with a small urban population, adjacent to a metro area",
@@ -114,15 +114,24 @@ county_sentences <- function(r, n_counties) {
   # supply: the count is midwives we could locate after roster linkage and
   # geocoding, so a zero is "none located", not "none practising".
   b <- if (r$n_midwives == 0) {
-    paste0("No AMCB-certified nurse-midwife in the linked cohort could be located here, ",
-           "which reflects roster, linkage and geocoding coverage as much as who practises here.")
+    # PLAIN, not hedged. This previously read "...which reflects roster,
+    # linkage and geocoding coverage as much as who practises here" -- a
+    # methods caveat repeated on ~1,600 counties, so the map spent its ink
+    # telling the reader not to trust it. Two things were wrong with it:
+    # "as much as" asserted a 50/50 the data does not support (ascertainment
+    # is 16,506 of 16,892 roster rows, 97.7%), and the hedge buried the
+    # informative case -- Randall TX has no located midwife AND 95
+    # WONDER-recorded midwife-attended births, a contrast the next sentence
+    # makes on its own once this one gets out of the way.
+    # The ascertainment caveat belongs once, in the map's notes panel.
+    "No certified nurse-midwife was located in this county."
   } else {
     tail_bits <- c(
       if (!is.null(fmt(r$midwives_per_10k_women, 1)))
         sprintf("%s per 10,000 women aged 15-44", fmt(r$midwives_per_10k_women, 1)),
       if (!is.null(fmt(r$births_per_midwife)))
         sprintf("roughly %s births per located midwife", fmt(r$births_per_midwife)))
-    sprintf("%s AMCB-certified nurse-midwi%s located here%s%s.",
+    sprintf("%s certified nurse-midwi%s located here%s%s.",
             fmt(r$n_midwives), if (r$n_midwives == 1) "fe was" else "ves were",
             if (length(tail_bits)) " -- " else "", oxford_join(tail_bits))
   }
@@ -132,16 +141,16 @@ county_sentences <- function(r, n_counties) {
   # not reported separately (WONDER publishes only counties of 100,000+).
   cc <- if (!is.null(r$cnm_births_2016_2024) && !is.na(r$cnm_births_2016_2024)) {
     share <- fmt(r$cnm_share_of_births_pct, 1)
-    sprintf("CDC WONDER records %s births attended by a certified nurse-midwife here over 2016-2024%s%s.",
-            fmt(r$cnm_births_2016_2024),
+    sprintf("The CDC records %s births attended by a certified nurse-midwife in %s over 2016-2024%s%s.",
+            fmt(r$cnm_births_2016_2024), r$county_unit,
             if (!is.null(share)) sprintf(", about %s%% of recent births", share) else "",
             if (isTRUE(r$ct_apportioned))
               " (apportioned from Connecticut's legacy counties, so an estimate rather than a count)" else "")
   } else if (isTRUE(r$wonder_county_reported)) {
-    paste0("CDC WONDER suppressed the midwife-attended birth count for this county, ",
+    paste0("The CDC suppressed the midwife-attended birth count for this county, ",
            "meaning it is between 1 and 9 -- not zero.")
   } else {
-    paste0("CDC WONDER does not report this county separately: it publishes county natality ",
+    paste0("The CDC does not report this county separately: it publishes county natality ",
            "only for counties of 100,000 or more residents and pools the rest by state, so ",
            "midwife-attended births here are unpublished, not absent.")
   }
@@ -271,6 +280,11 @@ run_profiles <- function() {
     mutate(
       n_midwives = coalesce(n_midwives, 0L),
       county_label = paste0(county_name, ", ", state),
+      # "Randall County", "Acadia Parish", "Anchorage Municipality",
+      # "Baltimore city" -- taken from acs_name rather than pasting " County"
+      # onto county_name, which would invent "Acadia County" and
+      # "Baltimore city County".
+      county_unit = sub(",.*$", "", acs_name),
       midwives_per_10k_women = if_else(!is.na(women_15_44) & women_15_44 > 0,
                                        1e4 * n_midwives / women_15_44, NA_real_),
       births_per_midwife = if_else(n_midwives > 0 & !is.na(births_past_12mo),
