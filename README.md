@@ -471,6 +471,199 @@ source-level provenance. Nothing has been merged into `artifacts/isochrones/`, a
 production library, which is the actual content of the 164→445 warning.
 
 
+## Data sources
+
+Nothing in this repository is scraped from behind a paywall or a login, and no
+source publishes midwife locations — the geography is derived, which is what the
+linkage section above is about.
+
+| Source | Used for | Original data | Reproducible entry point |
+|---|---|---|---|
+| **AMCB Instant Verification** | the 22,309-name roster: certification number, status, dates | [ams.amcbmidwife.org](https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800) | `match_amcb_to_npi.R` |
+| **NPPES** (NPI registry, 2007–2025 snapshots) | candidate NPIs, taxonomy, practice address | [download.cms.gov/nppes](https://download.cms.gov/nppes/NPI_Files.html) | `extract_nppes_midwives.R` |
+| **CMS Doctors & Clinicians** (2026-06) | practice-address corroboration | [data.cms.gov](https://data.cms.gov/provider-data/topics/doctors-clinicians) | `extract_dac_midwives.R` |
+| **AHRF 2024–2025** | county midwife and OB/GYN counts, births, birth outcomes, birthing rooms | [data.hrsa.gov/data/download](https://data.hrsa.gov/data/download) | `build_county_midwifery_supply.R` |
+| **CMS Provider of Services** | hospitals and obstetric service (`OB_SRVC_CD`) by county | [data.cms.gov](https://data.cms.gov/provider-characteristics/hospitals-and-other-facilities/provider-of-services-file-hospital-non-hospital-facilities) | `R/13-geocode-ob-hospitals.R` |
+| **ACS 5-year 2023** | population, women 15–50, births past 12 months, income | [api.census.gov](https://api.census.gov/data/2023/acs/acs5) | `R/01-build-county-base.R`, `build_cd_midwifery_stats.R` |
+| **TIGER / Cartographic Boundary** | county, tract and congressional-district polygons | [census.gov/geographies](https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html) | `build_cd_provider_counts.R` |
+| **USDA RUCC 2023** | metro / nonmetro-adjacent / nonmetro-remote strata | [ers.usda.gov](https://www.ers.usda.gov/data-products/rural-urban-continuum-codes) | `R/01-build-county-base.R` |
+| **CDC WONDER Natality** | CNM-attended births by county | [wonder.cdc.gov/natality.html](https://wonder.cdc.gov/natality.html) | `R/11-wonder-county-ingest.R` |
+| **County Health Rankings 2025** | low birth weight, infant mortality, uninsured | [countyhealthrankings.org](https://www.countyhealthrankings.org/health-data) | `R/01-build-county-base.R` |
+| **ABOG roster** (via `isochrones`) | general OB/GYN and subspecialist comparators | not public — board roster | `load_obstetric_providers.R` |
+| **Valhalla isochrones** | 30/60-minute drive-time polygons | generated, not downloaded | `generate_osmde_isochrones.R` |
+
+### Access requirements
+
+| What | Requirement |
+|---|---|
+| ACS via `api.census.gov` | **free API key** in `CENSUS_API_KEY` ([request](https://api.census.gov/data/key_signup.html)) |
+| AHRF, POS, TIGER, RUCC, CHR, WONDER | none — direct download |
+| NPPES monthly snapshots | none, but ~1 GB compressed each; kept outside the repo |
+| ABOG roster and isochrone library | a checkout of `mufflyt/isochrones` (private) at `ISOCHRONES_HOME` |
+| Archive isochrone recovery | external drive mounted at `/Volumes/MufflySamsung` |
+| osm.de routing | none — public demo server, rate-limited, **disabled in the isochrones config** |
+
+Two sources are deliberately **not** used: the AMCB primary-source verification
+letter (a paid checkout, never fetched) and any purchased NPPES derivative.
+
+### Expected files and transformations
+
+Downloads land in `data/`, derived tables in `artifacts/`. Neither large input
+files nor person-level rows are committed; both are gitignored and rebuildable.
+
+| Expected file | Transformation | Produced by |
+|---|---|---|
+| `data/ahrf/AHRF2025.csv` | select 24 of 1,927 columns; rates via `mufflyaccess::safe_rate()` | manual download |
+| `data/cms_pos_hospital.csv` | dedupe superseded providers; restrict to subtypes 01/11 | manual download |
+| `data/county_base.csv` | ACS + RUCC + SVI + CHR joined on 5-digit FIPS | `R/01-build-county-base.R` |
+| `data/rucc_2023.xlsx` | FIPS zero-padded; RUCC 1–3 / 4–6 / 7–9 collapsed | manual download |
+| `artifacts/amcb_npi_linkage_FROZEN.csv` | ranked-class identity resolution → `linkage_tier` | `reconcile_linkage.R` |
+| `artifacts/midwives_geography_FROZEN.csv` | geocode cascade → point-in-polygon → `county_exact` / `county_best` | `map_midwife_geography.R` |
+| `artifacts/county_midwifery_supply.csv` | AHRF + POS + cohort counts → per-1,000-births rates | `build_county_midwifery_supply.R` |
+| `artifacts/cd_midwifery_stats.csv` | providers assigned to CD118 polygons by point-in-polygon | `build_cd_midwifery_stats.R` |
+| `artifacts/county_profiles/county_sentences.csv` | variety-sentence prose per county | `R/10-county-birth-profiles.R` |
+| `docs/figures/*.png` | figures rebuilt from committed artifacts | `make_readme_figures.R` |
+
+## Repository layout
+
+```
+midwifery/
+├── R/                          numbered pipeline stages, run in order
+│   ├── 01-build-county-base.R      ACS + RUCC + SVI + CHR -> data/county_base.csv
+│   ├── 02-geocoding-completeness.R geocode coverage by stage
+│   ├── 03-geography-hierarchy.R    county_exact / county_best hierarchy
+│   ├── 04-diagnose-cross-state.R   coordinate-vs-ZIP state conflicts
+│   ├── 05..09-*.R                  cohort flow, composition, name diagnostics
+│   ├── 10-county-birth-profiles.R  variety-sentence prose per county
+│   ├── 11-wonder-county-ingest.R   CDC WONDER CNM-attended births
+│   ├── 12-district-profiles.R      congressional-district profiles
+│   ├── 13/14-geocode-ob-*.R        obstetric hospitals from CMS POS
+│   ├── lib/                    cross-repo dependencies and shared helpers
+│   │   ├── isochrones_dep.R        path dependency on mufflyt/isochrones
+│   │   ├── mysterymaps_dep.R       path dependency on mufflyt/mysterymaps
+│   │   ├── ob_hospitals.R          POS -> obstetric hospitals by county
+│   │   └── wonder_natality.R       WONDER query + parse
+│   └── utils/
+├── data/                       downloaded inputs (large files gitignored)
+│   ├── ahrf/                       AHRF 2024-2025
+│   ├── cd118/, cd119/              Census district boundaries
+│   ├── wonder/                     WONDER extracts
+│   └── county_base.csv             the county spine
+├── artifacts/                  derived tables (person-level rows gitignored)
+│   ├── county_profiles/            per-county prose and birth profiles
+│   ├── district_profiles/
+│   ├── iso_recovery/               archive-origin catalogs
+│   ├── isochrones_osmde/           newly routed polygons (gitignored)
+│   └── maps/                       rendered maps and unions (gitignored)
+├── docs/
+│   ├── figures/                    README figures, rebuilt from artifacts
+│   ├── maps/                       static and leaflet map output
+│   └── HALL_OF_SHAME.md            defects written here, and what each cost
+├── tests/                      contract tests
+├── qa/                         quality-assurance snapshots
+├── vignettes/                  amcb-midwife-npi-matching.Rmd
+├── logs/
+└── *.R                         entry points (see Usage)
+```
+
+This is a **pipeline repository, not an R package** — deliberately. There is no
+`DESCRIPTION` and no `NAMESPACE`; `R/` holds ordered stages that execute on
+`source()`, not exported functions. `R CMD check` does not apply. Reusable code
+belongs in the packages instead, reached through the `R/lib/*_dep.R` path
+dependencies.
+
+## Model architecture
+
+Three layers. Identity is settled before geography, and geography before any
+access claim — so a failure upstream cannot be laundered into a downstream
+number.
+
+```
+        ┌─────────────────────────────────────────────────────────────┐
+        │  LAYER 1 — IDENTITY          who is this person?            │
+        └─────────────────────────────────────────────────────────────┘
+   AMCB roster 22,309                NPPES 2007-2025  443,623 NPIs
+          │                                    │
+          └──────────────┬─────────────────────┘
+                         ▼
+              candidate pairs  197,081
+                         │
+                         ▼
+              ranked evidence class 1..4      ◄── taxonomy NEVER breaks a tie
+                         │
+            ┌────────────┼────────────┐
+            ▼            ▼            ▼
+      quarantined    unmatched    resolved 16,892
+         3,091         2,326            │
+                                        ▼
+                              linkage_tier assigned
+                     primary 14,668 · nursing 1,896 · fuzzy 328
+
+        ┌─────────────────────────────────────────────────────────────┐
+        │  LAYER 2 — GEOGRAPHY         where do they practise?        │
+        └─────────────────────────────────────────────────────────────┘
+              last-observed practice address (+ observation year)
+                         │
+              ┌──────────┴──────────┐
+              ▼                     ▼
+     geocode cascade          unique-ZIP county
+   Census 86.9% ─► ArcGIS 9.2% ─► city centroid
+              │                     │
+              ▼                     │
+     coordinate-vs-ZIP state check  │
+              │  17 unresolved      │
+              ▼                     ▼
+     point-in-polygon TIGER 2023 ──► county_best  99.7%
+              │
+              ▼
+        county_exact 98.9%
+
+        ┌─────────────────────────────────────────────────────────────┐
+        │  LAYER 3 — ACCESS            who can reach one, and where?  │
+        └─────────────────────────────────────────────────────────────┘
+                         │
+        ┌────────────────┼────────────────────┐
+        ▼                ▼                    ▼
+  SUPPLY            COVERAGE             COMPOSITION
+  count / births    isochrone reuse      midwife vs OB/GYN
+  complete          @ 5 km, 30/60 min    AHRF general OB
+        │                │                    │
+        │                ▼                    │
+        │        ┌───────────────┐            │
+        │        │ COVERAGE GATE │            │
+        │        └───────────────┘            │
+        │   84.6% metro vs 39.3% remote       │
+        │   rural-selective ► national and    │
+        │   rural travel-time claims BLOCKED  │
+        ▼                                     ▼
+   county / CD / state rates            provider configuration
+   SURVIVES the gate                    SURVIVES the gate
+```
+
+### Where a claim can die
+
+Each gate below refuses rather than degrades, because a silently degraded number
+is indistinguishable from a good one.
+
+```
+  claim ──► is it built on coverage?
+              │yes                      │no
+              ▼                         ▼
+      is coverage rural-selective?   is the denominator complete?
+              │yes         │no          │yes            │no
+              ▼            ▼            ▼               ▼
+        ┌──────────┐   proceed      proceed        suppress the cell
+        │ BLOCKED  │                                (<50 births: 353
+        └──────────┘                                 counties)
+
+  ── other gates that fire ────────────────────────────────────────────
+  assert_travel_time_eligible()   city-centroid coords ► ERROR, not filter
+  assert_access_language()        "shortage" / "adequacy" ► ERROR
+  stopifnot(length(union) == 1)   dissolved surface must be ONE feature
+  polygon validation (6 checks)   bands, geometry, CRS, nesting, centre, TEST
+  join_safety                     coverage / duplication bounds on every join
+```
+
 ## Usage
 
     python3 scrape.py    # writes midwives.csv
