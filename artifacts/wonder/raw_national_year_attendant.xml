@@ -1,0 +1,2418 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<page>
+  <platform>prod</platform>
+  <title>Natality, 2007-2024 Results Form</title>
+  <default-map/>
+  <agreement-signed>true</agreement-signed>
+  <dataset code="D66" label="Natality, 2007-2024" family="Natality" validatorFamily="" totals="true" vintage="2024" suppress-counts="true" suppress-zeros="true" agreement-required="true">
+    <variable groupby-heading="Maternal residence"/>
+    <variable code="D66.V22" label="Census Regions" type="display-label-code,hier1,related,use-finder" display-code="T-Last" use-finder="true">
+      <other-param-control code="O_location" value="D66.V22"/>
+      <hier-level code="D66.V22-level1" level="1" label="Census Region" type="geo=region-cens"/>
+      <hier-level code="D66.V22-level2" level="2" label="Census Division" type="geo=division-cens,valuesvary"/>
+      <hier-level code="D66.V22-level3" level="3" label="State" type="geo=state,valuesvary,alias=D66.V21-level1"/>
+      <hier-level code="D66.V22-level4" level="4" label="County" type="geo=county,valuesvary,alias=D66.V21-level2"/>
+    </variable>
+    <variable code="D66.V37" label="HHS Regions" type="display-label-code,hier1,related,use-finder" display-code="T-Last" use-finder="true">
+      <other-param-control code="O_location" value="D66.V37"/>
+      <hier-level code="D66.V37-level1" level="1" label="HHS Region" type="geo=region-hhs"/>
+      <hier-level code="D66.V37-level2" level="2" label="State" type="geo=state,valuesvary,alias=D66.V21-level1"/>
+      <hier-level code="D66.V37-level3" level="3" label="County" type="geo=county,valuesvary,alias=D66.V21-level2"/>
+    </variable>
+    <variable code="D66.V21" label="States" type="display-label-code,hier1,related,use-finder" display-code="T-Last" use-finder="true">
+      <other-param-control code="O_location" value="D66.V21"/>
+      <hier-level code="D66.V21-level1" level="1" label="State" type="geo=state,mapvar=D66.V22-level3"/>
+      <hier-level code="D66.V21-level2" level="2" label="County" type="geo=county,valuesvary,mapvar=D66.V22-level4"/>
+    </variable>
+    <variable code="D66.V154" label="2013 Metro/Nonmetro" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_urban" value="D66.V154"/>
+      <value code="Metro" label="Metro"/>
+      <value code="Nonmetro" label="Nonmetro"/>
+    </variable>
+    <variable code="D66.V155" label="2006 Metro/Nonmetro" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_urban" value="D66.V155"/>
+      <value code="Metro" label="Metro"/>
+      <value code="Nonmetro" label="Nonmetro"/>
+    </variable>
+    <variable code="D66.V158" label="2023 Metro/Nonmetro" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_urban" value="D66.V158"/>
+      <value code="Metro" label="Metro"/>
+      <value code="Nonmetro" label="Nonmetro"/>
+      <value code="9" label="Not Available"/>
+    </variable>
+    <variable code="D66.V156" label="2013 Urbanization" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_urban" value="D66.V156"/>
+      <value code="1" label="Large Central Metro"/>
+      <value code="2" label="Large Fringe Metro"/>
+      <value code="3" label="Medium Metro"/>
+      <value code="4" label="Small Metro"/>
+      <value code="5" label="Micropolitan (Nonmetro)"/>
+      <value code="6" label="NonCore (Nonmetro)"/>
+    </variable>
+    <variable code="D66.V157" label="2006 Urbanization" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_urban" value="D66.V157"/>
+      <value code="1" label="Large Central Metro"/>
+      <value code="2" label="Large Fringe Metro"/>
+      <value code="3" label="Medium Metro"/>
+      <value code="4" label="Small Metro"/>
+      <value code="5" label="Micropolitan (Nonmetro)"/>
+      <value code="6" label="NonCore (Nonmetro)"/>
+    </variable>
+    <variable code="D66.V159" label="2023 Urbanization" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_urban" value="D66.V159"/>
+      <value code="1" label="Large Central Metro"/>
+      <value code="2" label="Large Fringe Metro"/>
+      <value code="3" label="Medium Metro"/>
+      <value code="4" label="Small Metro"/>
+      <value code="5" label="Micropolitan (Nonmetro)"/>
+      <value code="6" label="NonCore (Nonmetro)"/>
+      <value code="9" label="Not Available"/>
+    </variable>
+    <variable groupby-heading="endgroup"/>
+    <variable groupby-heading="Maternal characteristics"/>
+    <variable code="D66.V4" label="Mother's Expanded Hispanic Origin" type="" display-code="F" use-finder="false">
+      <value code="0" label="Non-Hispanic"/>
+      <value code="2148-5" label="Mexican"/>
+      <value code="2180-8" label="Puerto Rican"/>
+      <value code="2182-4" label="Cuban"/>
+      <value code="4" label="Central or South American"/>
+      <value code="7" label="Dominican"/>
+      <value code="5" label="Other and Unknown Hispanic"/>
+      <value code="9" label="Unknown or Not Stated"/>
+      <value code="10" label="Not Available"/>
+      <value code="100" label="Not Reported"/>
+    </variable>
+    <variable code="D66.V43" label="Mother's Hispanic Origin" type="" display-code="F" use-finder="false">
+      <value code="2135-2" label="Hispanic or Latino"/>
+      <value code="2186-5" label="Not Hispanic or Latino"/>
+      <value code="9" label="Unknown or Not Stated"/>
+    </variable>
+    <variable code="D66.V2" label="Mother's Bridged Race" type="" display-code="F" use-finder="false">
+      <value code="1002-5" label="American Indian or Alaska Native"/>
+      <value code="A-PI" label="Asian or Pacific Islander"/>
+      <value code="2054-5" label="Black or African American"/>
+      <value code="2106-3" label="White"/>
+      <value code="100" label="Not Reported"/>
+    </variable>
+    <variable code="D66.V42" label="Mother's Single Race" type="" display-code="F" use-finder="false">
+      <value code="1002-5" label="American Indian or Alaska Native"/>
+      <value code="A" label="Asian"/>
+      <value code="2054-5" label="Black or African American"/>
+      <value code="NHOPI" label="Native Hawaiian or Other Pacific Islander"/>
+      <value code="2106-3" label="White"/>
+      <value code="M" label="More than one race"/>
+      <value code="UNK" label="Unknown or Not Stated"/>
+      <value code="NA" label="Not Available"/>
+      <value code="NR" label="Not Reported"/>
+    </variable>
+    <variable code="D66.V27" label="Marital Status" type="" display-code="F" use-finder="false">
+      <value code="1" label="Married"/>
+      <value code="2" label="Unmarried"/>
+      <value code="9" label="Unknown or Not Stated"/>
+      <value code="NR" label="Not Reported"/>
+    </variable>
+    <variable code="D66.V1" label="Age of Mother 9" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_age" value="D66.V1"/>
+      <value code="15" label="Under 15 years"/>
+      <value code="15-19" label="15-19 years"/>
+      <value code="20-24" label="20-24 years"/>
+      <value code="25-29" label="25-29 years"/>
+      <value code="30-34" label="30-34 years"/>
+      <value code="35-39" label="35-39 years"/>
+      <value code="40-44" label="40-44 years"/>
+      <value code="45-49" label="45-49 years"/>
+      <value code="50+" label="50 years and over"/>
+    </variable>
+    <variable code="D66.V38" label="Age of Mother 10" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_age" value="D66.V38"/>
+      <value code="15-" label="Under 15 years"/>
+      <value code="15-17" label="15 - 17 years"/>
+      <value code="18-19" label="18 - 19 years"/>
+      <value code="20-24" label="20-24 years"/>
+      <value code="25-29" label="25-29 years"/>
+      <value code="30-34" label="30-34 years"/>
+      <value code="35-39" label="35-39 years"/>
+      <value code="40-44" label="40-44 years"/>
+      <value code="45-49" label="45-49 years"/>
+      <value code="50+" label="50 years and over"/>
+    </variable>
+    <variable code="D66.V39" label="Age of Mother 13" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_age" value="D66.V39"/>
+      <value code="15-" label="Under 15 years"/>
+      <value code="15" label="15 years"/>
+      <value code="16" label="16 years"/>
+      <value code="17" label="17 years"/>
+      <value code="18" label="18 years"/>
+      <value code="19" label="19 years"/>
+      <value code="20-24" label="20-24 years"/>
+      <value code="25-29" label="25-29 years"/>
+      <value code="30-34" label="30-34 years"/>
+      <value code="35-39" label="35-39 years"/>
+      <value code="40-44" label="40-44 years"/>
+      <value code="45-49" label="45-49 years"/>
+      <value code="50+" label="50 years and over"/>
+    </variable>
+    <variable code="D66.V5" label="Mother's Education" type="" display-code="F" use-finder="false">
+      <value code="1" label="8th grade or less"/>
+      <value code="2" label="9th through 12th grade with no diploma"/>
+      <value code="3" label="High school graduate or GED completed"/>
+      <value code="4" label="Some college credit, but not a degree"/>
+      <value code="5" label="Associate degree (AA, AS)"/>
+      <value code="6" label="Bachelor's degree (BA, AB, BS)"/>
+      <value code="7" label="Master's degree (MA, MS, MEng, MEd, MSW, MBA)"/>
+      <value code="8" label="Doctorate (PhD, EdD) or Professional Degree (MD, DDS, DVM, LLB, JD)"/>
+      <value code="Unk" label="Unknown or Not Stated"/>
+      <value code="Exc" label="Excluded"/>
+      <value code="NR" label="Not Reported"/>
+    </variable>
+    <variable groupby-heading="endgroup"/>
+    <variable groupby-heading="Birth characteristics"/>
+    <variable code="D66.V20" label="Year" type="default=2024,range=2007-2024" display-code="F" use-finder="false">
+      <range>
+        <min code="2007" label="2007"/>
+        <max code="2024" label="2024"/>
+      </range>
+      <value code="2007" label="2007"/>
+      <value code="2008" label="2008"/>
+      <value code="2009" label="2009"/>
+      <value code="2010" label="2010"/>
+      <value code="2011" label="2011"/>
+      <value code="2012" label="2012"/>
+      <value code="2013" label="2013"/>
+      <value code="2014" label="2014"/>
+      <value code="2015" label="2015"/>
+      <value code="2016" label="2016"/>
+      <value code="2017" label="2017"/>
+      <value code="2018" label="2018"/>
+      <value code="2019" label="2019"/>
+      <value code="2020" label="2020"/>
+      <value code="2021" label="2021"/>
+      <value code="2022" label="2022"/>
+      <value code="2023" label="2023"/>
+      <value code="2024" label="2024"/>
+    </variable>
+    <variable code="D66.V25" label="Month" type="" display-code="F" use-finder="false">
+      <value code="1" label="January"/>
+      <value code="2" label="February"/>
+      <value code="3" label="March"/>
+      <value code="4" label="April"/>
+      <value code="5" label="May"/>
+      <value code="6" label="June"/>
+      <value code="7" label="July"/>
+      <value code="8" label="August"/>
+      <value code="9" label="September"/>
+      <value code="10" label="October"/>
+      <value code="11" label="November"/>
+      <value code="12" label="December"/>
+    </variable>
+    <variable code="D66.V26" label="Weekday" type="" display-code="F" use-finder="false">
+      <value code="1" label="Weekend"/>
+      <value code="2" label="Weekday"/>
+    </variable>
+    <variable code="D66.V3" label="Sex" type="" display-code="F" use-finder="false">
+      <value code="F" label="Female"/>
+      <value code="M" label="Male"/>
+    </variable>
+    <variable code="D66.V8" label="Month Prenatal Care Began" type="" display-code="F" use-finder="false">
+      <value code="00" label="No prenatal care"/>
+      <value code="01" label="1st month"/>
+      <value code="02" label="2nd month"/>
+      <value code="03" label="3rd month"/>
+      <value code="04" label="4th month"/>
+      <value code="05" label="5th month"/>
+      <value code="06" label="6th month"/>
+      <value code="07" label="7th month"/>
+      <value code="08" label="8th month"/>
+      <value code="09" label="9th month"/>
+      <value code="10" label="10th month"/>
+      <value code="99" label="Unknown or Not Stated"/>
+      <value code="98" label="Not Reported"/>
+    </variable>
+    <variable code="D66.V9" label="Infant Birth Weight 12" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_weight" value="D66.V9"/>
+      <value code="01" label="499 grams or less"/>
+      <value code="02" label="500 - 999 grams"/>
+      <value code="03" label="1000 - 1499 grams"/>
+      <value code="04" label="1500 - 1999 grams"/>
+      <value code="05" label="2000 - 2499 grams"/>
+      <value code="06" label="2500 - 2999 grams"/>
+      <value code="07" label="3000 - 3499 grams"/>
+      <value code="08" label="3500 - 3999 grams"/>
+      <value code="09" label="4000 - 4499 grams"/>
+      <value code="10" label="4500 - 4999 grams"/>
+      <value code="11" label="5000 - 8165 grams"/>
+      <value code="12" label="Unknown or Not Stated"/>
+    </variable>
+    <variable code="D66.V35" label="Infant Birth Weight 14" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_weight" value="D66.V35"/>
+      <value code="01" label="499 grams or less"/>
+      <value code="02" label="500 - 749 grams"/>
+      <value code="03" label="750 - 999 grams"/>
+      <value code="04" label="1000 - 1249 grams"/>
+      <value code="05" label="1250 - 1499 grams"/>
+      <value code="06" label="1500 - 1999 grams"/>
+      <value code="07" label="2000 - 2499 grams"/>
+      <value code="08" label="2500 - 2999 grams"/>
+      <value code="09" label="3000 - 3499 grams"/>
+      <value code="10" label="3500 - 3999 grams"/>
+      <value code="11" label="4000 - 4499 grams"/>
+      <value code="12" label="4500 - 4999 grams"/>
+      <value code="13" label="5000 - 8165 grams"/>
+      <value code="14" label="Unknown or Not Stated"/>
+    </variable>
+    <variable code="D66.V41" label="Infant Birth Weight 100 gram increments" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_weight" value="D66.V41"/>
+      <value code="0" label="0 - 99 grams"/>
+      <value code="1" label="100 - 199 grams"/>
+      <value code="2" label="200 - 299 grams"/>
+      <value code="3" label="300 - 399 grams"/>
+      <value code="4" label="400 - 499 grams"/>
+      <value code="5" label="500 - 599 grams"/>
+      <value code="6" label="600 - 699 grams"/>
+      <value code="7" label="700 - 799 grams"/>
+      <value code="8" label="800 - 899 grams"/>
+      <value code="9" label="900 - 999 grams"/>
+      <value code="10" label="1000 - 1099 grams"/>
+      <value code="11" label="1100 - 1199 grams"/>
+      <value code="12" label="1200 - 1299 grams"/>
+      <value code="13" label="1300 - 1399 grams"/>
+      <value code="14" label="1400 - 1499 grams"/>
+      <value code="15" label="1500 - 1599 grams"/>
+      <value code="16" label="1600 - 1699 grams"/>
+      <value code="17" label="1700 - 1799 grams"/>
+      <value code="18" label="1800 - 1899 grams"/>
+      <value code="19" label="1900 - 1999 grams"/>
+      <value code="20" label="2000 - 2099 grams"/>
+      <value code="21" label="2100 - 2199 grams"/>
+      <value code="22" label="2200 - 2299 grams"/>
+      <value code="23" label="2300 - 2399 grams"/>
+      <value code="24" label="2400 - 2499 grams"/>
+      <value code="25" label="2500 - 2599 grams"/>
+      <value code="26" label="2600 - 2699 grams"/>
+      <value code="27" label="2700 - 2799 grams"/>
+      <value code="28" label="2800 - 2899 grams"/>
+      <value code="29" label="2900 - 2999 grams"/>
+      <value code="30" label="3000 - 3099 grams"/>
+      <value code="31" label="3100 - 3199 grams"/>
+      <value code="32" label="3200 - 3299 grams"/>
+      <value code="33" label="3300 - 3399 grams"/>
+      <value code="34" label="3400 - 3499 grams"/>
+      <value code="35" label="3500 - 3599 grams"/>
+      <value code="36" label="3600 - 3699 grams"/>
+      <value code="37" label="3700 - 3799 grams"/>
+      <value code="38" label="3800 - 3899 grams"/>
+      <value code="39" label="3900 - 3999 grams"/>
+      <value code="40" label="4000 - 4099 grams"/>
+      <value code="41" label="4100 - 4199 grams"/>
+      <value code="42" label="4200 - 4299 grams"/>
+      <value code="43" label="4300 - 4399 grams"/>
+      <value code="44" label="4400 - 4499 grams"/>
+      <value code="45" label="4500 - 4599 grams"/>
+      <value code="46" label="4600 - 4699 grams"/>
+      <value code="47" label="4700 - 4799 grams"/>
+      <value code="48" label="4800 - 4899 grams"/>
+      <value code="49" label="4900 - 4999 grams"/>
+      <value code="50" label="5000 - 5099 grams"/>
+      <value code="51" label="5100 - 5199 grams"/>
+      <value code="52" label="5200 - 5299 grams"/>
+      <value code="53" label="5300 - 5399 grams"/>
+      <value code="54" label="5400 - 5499 grams"/>
+      <value code="55" label="5500 - 5599 grams"/>
+      <value code="56" label="5600 - 5699 grams"/>
+      <value code="57" label="5700 - 5799 grams"/>
+      <value code="58" label="5800 - 5899 grams"/>
+      <value code="59" label="5900 - 5999 grams"/>
+      <value code="60" label="6000 - 6099 grams"/>
+      <value code="61" label="6100 - 6199 grams"/>
+      <value code="62" label="6200 - 6299 grams"/>
+      <value code="63" label="6300 - 6399 grams"/>
+      <value code="64" label="6400 - 6499 grams"/>
+      <value code="65" label="6500 - 6599 grams"/>
+      <value code="66" label="6600 - 6699 grams"/>
+      <value code="67" label="6700 - 6799 grams"/>
+      <value code="68" label="6800 - 6899 grams"/>
+      <value code="69" label="6900 - 6999 grams"/>
+      <value code="70" label="7000 - 7099 grams"/>
+      <value code="71" label="7100 - 7199 grams"/>
+      <value code="72" label="7200 - 7299 grams"/>
+      <value code="73" label="7300 - 7399 grams"/>
+      <value code="74" label="7400 - 7499 grams"/>
+      <value code="75" label="7500 - 7599 grams"/>
+      <value code="76" label="7600 - 7699 grams"/>
+      <value code="77" label="7700 - 7799 grams"/>
+      <value code="78" label="7800 - 7899 grams"/>
+      <value code="79" label="7900 - 7999 grams"/>
+      <value code="80" label="8000 - 8099 grams"/>
+      <value code="81" label="8100 - 8165 grams"/>
+      <value code="99" label="Unknown or Not Stated"/>
+      <value code="100" label="Not Reported"/>
+    </variable>
+    <variable code="D66.V7" label="Plurality or Multiple Birth" type="" display-code="F" use-finder="false">
+      <value code="1" label="Single"/>
+      <value code="2" label="Twin"/>
+      <value code="3" label="Triplet or higher"/>
+    </variable>
+    <variable code="D66.V28" label="Live Birth Order" type="" display-code="F" use-finder="false">
+      <value code="01" label="1st child born alive to mother"/>
+      <value code="02" label="2nd child born alive to mother"/>
+      <value code="03" label="3rd child born alive to mother"/>
+      <value code="04" label="4th child born alive to mother"/>
+      <value code="05" label="5th child born alive to mother"/>
+      <value code="06" label="6th child and over born alive to mother"/>
+      <value code="99" label="Unknown or not stated"/>
+    </variable>
+    <variable code="D66.V30" label="Birthplace" type="" display-code="F" use-finder="false">
+      <value code="1" label="In Hospital"/>
+      <value code="2" label="Freestanding Birth Center"/>
+      <value code="3" label="Clinic/Doctor's Office"/>
+      <value code="4" label="Residence"/>
+      <value code="5" label="Other"/>
+      <value code="9" label="Unknown or Not Stated"/>
+      <value code="10" label="Not Reported"/>
+    </variable>
+    <variable code="D66.V31" label="Delivery Method" type="" display-code="F" use-finder="false">
+      <value code="1" label="Vaginal"/>
+      <value code="2" label="Cesarean"/>
+      <value code="9" label="Unknown or Not Stated"/>
+    </variable>
+    <variable code="D66.V29" label="Medical Attendant" type="" display-code="F" use-finder="false">
+      <value code="1" label="Doctor of Medicine(MD)"/>
+      <value code="2" label="Doctor of Osteopathy(DO)"/>
+      <value code="3" label="Certified Nurse Midwife(CNM/CM)"/>
+      <value code="4" label="Other Midwife"/>
+      <value code="5" label="Other"/>
+      <value code="9" label="Unknown or not stated"/>
+      <value code="100" label="Not Reported"/>
+    </variable>
+    <variable code="D66.V6" label="LMP Gestational Age 10" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_gestation" value="D66.V6"/>
+      <value code="01" label="Under 20 weeks"/>
+      <value code="02" label="20 - 27 weeks"/>
+      <value code="03" label="28 - 31 weeks"/>
+      <value code="04" label="32 - 35 weeks"/>
+      <value code="05" label="36 weeks"/>
+      <value code="06" label="37 - 39 weeks"/>
+      <value code="07" label="40 weeks"/>
+      <value code="08" label="41 weeks"/>
+      <value code="09" label="42 weeks or more"/>
+      <value code="10" label="Unknown or Not Stated"/>
+    </variable>
+    <variable code="D66.V23" label="LMP Gestational Age 11" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_gestation" value="D66.V23"/>
+      <value code="01" label="Under 20 weeks"/>
+      <value code="02" label="20-27 weeks"/>
+      <value code="03" label="28-31 weeks"/>
+      <value code="04" label="32-33 weeks"/>
+      <value code="05" label="34-36 weeks"/>
+      <value code="06" label="37-38 weeks"/>
+      <value code="07" label="39 weeks"/>
+      <value code="08" label="40 weeks"/>
+      <value code="09" label="41 weeks"/>
+      <value code="10" label="42 weeks or more"/>
+      <value code="11" label="Unknown or Not Stated"/>
+    </variable>
+    <variable code="D66.V24" label="LMP Gestational Age Weekly" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_gestation" value="D66.V24"/>
+      <value code="17" label="17 weeks"/>
+      <value code="18" label="18 weeks"/>
+      <value code="19" label="19 weeks"/>
+      <value code="20" label="20 weeks"/>
+      <value code="21" label="21 weeks"/>
+      <value code="22" label="22 weeks"/>
+      <value code="23" label="23 weeks"/>
+      <value code="24" label="24 weeks"/>
+      <value code="25" label="25 weeks"/>
+      <value code="26" label="26 weeks"/>
+      <value code="27" label="27 weeks"/>
+      <value code="28" label="28 weeks"/>
+      <value code="29" label="29 weeks"/>
+      <value code="30" label="30 weeks"/>
+      <value code="31" label="31 weeks"/>
+      <value code="32" label="32 weeks"/>
+      <value code="33" label="33 weeks"/>
+      <value code="34" label="34 weeks"/>
+      <value code="35" label="35 weeks"/>
+      <value code="36" label="36 weeks"/>
+      <value code="37" label="37 weeks"/>
+      <value code="38" label="38 weeks"/>
+      <value code="39" label="39 weeks"/>
+      <value code="40" label="40 weeks"/>
+      <value code="41" label="41 weeks"/>
+      <value code="42" label="42 weeks"/>
+      <value code="43" label="43 weeks"/>
+      <value code="44" label="44 weeks"/>
+      <value code="45" label="45 weeks"/>
+      <value code="46" label="46 weeks"/>
+      <value code="47" label="47 weeks"/>
+      <value code="99" label="Unknown or Not Stated"/>
+    </variable>
+    <variable code="D66.V32" label="OE Gestational Age 10" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_oe_gestation" value="D66.V32"/>
+      <value code="01" label="Under 20 weeks"/>
+      <value code="02" label="20 - 27 weeks"/>
+      <value code="03" label="28 - 31 weeks"/>
+      <value code="04" label="32 - 35 weeks"/>
+      <value code="05" label="36 weeks"/>
+      <value code="06" label="37 - 39 weeks"/>
+      <value code="07" label="40 weeks"/>
+      <value code="08" label="41 weeks"/>
+      <value code="09" label="42 weeks or more"/>
+      <value code="10" label="Unknown or Not Stated"/>
+    </variable>
+    <variable code="D66.V33" label="OE Gestational Age 11" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_oe_gestation" value="D66.V33"/>
+      <value code="01" label="Under 20 weeks"/>
+      <value code="02" label="20-27 weeks"/>
+      <value code="03" label="28-31 weeks"/>
+      <value code="04" label="32-33 weeks"/>
+      <value code="05" label="34-36 weeks"/>
+      <value code="06" label="37-38 weeks"/>
+      <value code="07" label="39 weeks"/>
+      <value code="08" label="40 weeks"/>
+      <value code="09" label="41 weeks"/>
+      <value code="10" label="42 weeks or more"/>
+      <value code="11" label="Unknown or Not Stated"/>
+    </variable>
+    <variable code="D66.V34" label="OE Gestational Age Weekly" type="" display-code="F" use-finder="false">
+      <other-param-control code="O_oe_gestation" value="D66.V34"/>
+      <value code="17" label="17 weeks"/>
+      <value code="18" label="18 weeks"/>
+      <value code="19" label="19 weeks"/>
+      <value code="20" label="20 weeks"/>
+      <value code="21" label="21 weeks"/>
+      <value code="22" label="22 weeks"/>
+      <value code="23" label="23 weeks"/>
+      <value code="24" label="24 weeks"/>
+      <value code="25" label="25 weeks"/>
+      <value code="26" label="26 weeks"/>
+      <value code="27" label="27 weeks"/>
+      <value code="28" label="28 weeks"/>
+      <value code="29" label="29 weeks"/>
+      <value code="30" label="30 weeks"/>
+      <value code="31" label="31 weeks"/>
+      <value code="32" label="32 weeks"/>
+      <value code="33" label="33 weeks"/>
+      <value code="34" label="34 weeks"/>
+      <value code="35" label="35 weeks"/>
+      <value code="36" label="36 weeks"/>
+      <value code="37" label="37 weeks"/>
+      <value code="38" label="38 weeks"/>
+      <value code="39" label="39 weeks"/>
+      <value code="40" label="40 weeks"/>
+      <value code="41" label="41 weeks"/>
+      <value code="42" label="42 weeks"/>
+      <value code="43" label="43 weeks"/>
+      <value code="44" label="44 weeks"/>
+      <value code="45" label="45 weeks"/>
+      <value code="46" label="46 weeks"/>
+      <value code="47" label="47 weeks"/>
+      <value code="99" label="Unknown or Not Stated"/>
+    </variable>
+    <variable groupby-heading="endgroup"/>
+    <variable groupby-heading="Maternal risk factors"/>
+    <variable code="D66.V16" label="Chronic Hypertension" type="" display-code="F" use-finder="false">
+      <value code="1" label="Yes"/>
+      <value code="2" label="No"/>
+      <value code="9" label="Unknown or Not Stated"/>
+    </variable>
+    <variable code="D66.V14" label="Diabetes" type="" display-code="F" use-finder="false">
+      <value code="1" label="Yes"/>
+      <value code="2" label="No"/>
+      <value code="9" label="Unknown or Not Stated"/>
+    </variable>
+    <variable code="D66.V17" label="Pregnancy-associated Hypertension" type="" display-code="F" use-finder="false">
+      <value code="1" label="Yes"/>
+      <value code="2" label="No"/>
+      <value code="9" label="Unknown or Not Stated"/>
+    </variable>
+    <variable code="D66.V18" label="Eclampsia" type="" display-code="F" use-finder="false">
+      <value code="1" label="Yes"/>
+      <value code="2" label="No"/>
+      <value code="9" label="Unknown or Not Stated"/>
+      <value code="10" label="Not Reported"/>
+    </variable>
+    <variable code="D66.V10" label="Tobacco Use" type="" display-code="F" use-finder="false">
+      <value code="1" label="Yes"/>
+      <value code="2" label="No"/>
+      <value code="9" label="Unknown or Not Stated"/>
+      <value code="10" label="Not Reported"/>
+    </variable>
+    <variable groupby-heading="endgroup"/>
+    <measure code="D66.M1" label="Births" type="count" datatype="int" isdefault="true"/>
+    <measure code="D66.M2" label="Total Population" type="pop" datatype="int" isdefault="false"/>
+    <measure code="D66.M3" label="Birth Rate" type="rate" datatype="double" isdefault="false"/>
+    <measure code="D66.M4" label="Female Population" type="pop" datatype="int" isdefault="false"/>
+    <measure code="D66.M5" label="Fertility Rate" type="rate" datatype="double" isdefault="false"/>
+    <measure code="D66.M11" label="% of Total Births" type="percent" datatype="double" isdefault="false"/>
+    <measure code="D66.M60" label="Average Birth Weight" type="" datatype="double" isdefault="false">
+      <combine-label idx="0" label="Standard Deviation"/>
+    </measure>
+    <measure code="D66.M61" label="Standard Deviation for Average Birth Weight" type="" datatype="double" isdefault="false"/>
+    <measure code="D66.M70" label="Average Age of Mother" type="" datatype="double" isdefault="false">
+      <combine-label idx="0" label="Standard Deviation"/>
+    </measure>
+    <measure code="D66.M71" label="Standard Deviation for Average Age of Mother" type="" datatype="double" isdefault="false"/>
+    <measure code="D66.M80" label="Average LMP Gestational Age" type="" datatype="double" isdefault="false">
+      <combine-label idx="0" label="Standard Deviation"/>
+    </measure>
+    <measure code="D66.M81" label="Standard Deviation for Average LMP Gestational Age" type="" datatype="double" isdefault="false"/>
+    <measure code="D66.M90" label="Average OE Gestational Age" type="" datatype="double" isdefault="false">
+      <combine-label idx="0" label="Standard Deviation"/>
+    </measure>
+    <measure code="D66.M91" label="Standard Deviation for Average OE Gestational Age" type="" datatype="double" isdefault="false"/>
+    <documentation>
+      <citation>Centers for Disease Control and Prevention, National Center for Health Statistics. National Vital Statistics System,
+		 Natality on CDC WONDER Online Database. Data are from the Natality Records 2007-2024, as compiled from data provided by the 57 
+		 vital statistics jurisdictions through the Vital Statistics Cooperative Program.</citation>
+      <helpfile>/wonder/help/natality.html</helpfile>
+      <jumppageURL>/natality.html</jumppageURL>
+      <jumppageText>Natality Information</jumppageText>
+      <citationURL>http://wonder.cdc.gov/natality-current.html</citationURL>
+      <about>
+        <p>
+			This dataset has counts of births occurring within the United States to U.S. residents and non-residents.
+			Counts can be obtained by state, county, urbanization, child's gender and weight, mother's bridged race, mother's single race, mother's age, mother's education, 
+			gestation period, prenatal care, birth plurality, medical and tobacco use risk factors (mother). 
+			The data are derived from birth certificates issued in years 2007 - 2024. 
+			</p>
+        <p>
+          <b>Data Use Restrictions:</b>
+        </p>
+        <p>
+		The Public Health Service Act (42 U.S.C. 242m(d)) provides that the data collected by the 
+		National Center for Health Statistics (NCHS) may be used only for the purpose for which they were obtained; 
+		any effort to determine the identity of any reported cases, or to use the information for any purpose other 
+		than for health statistical reporting and analysis, is against the law. Therefore users will:
+
+		<ul><li>Use these data for health statistical reporting and analysis only. 
+		</li><li>Do not present or publish birth counts of 9 or fewer or
+			birth rates based on counts of nine or fewer (in figures, graphs, maps, tables, etc.).
+		</li><li>Make no attempt to learn the identity of any person or establishment included in these data.
+		</li><li>Make no disclosure or other use of the identity of any person or establishment discovered inadvertently 
+			and advise the NCHS Confidentiality Officer of any such discovery.
+		</li></ul>
+
+		<div style="margin-left: 60px; margin-top: -15px"><br/> Confidentiality Officer 
+		<br/> National Center for Health Statistics 
+		<br/> 3311 Toledo Road
+		<br/> Hyattsville, MD 20782 
+		<br/> Telephone 888-642-4159
+ 		<br/> Email: nchsconfidentiality@cdc.gov
+		</div>
+		</p>
+        <p>
+          <b> Sanctions for Violating Rules: </b>
+        </p>
+        <p>
+		Researchers who violate the terms of the data use restrictions will lose access to WONDER 
+		and their sponsors and institutions will be notified.  Researchers who are suspected of 
+		violating the rules may be prevented from using WONDER until an investigation can be completed.
+		Deliberately making a false statement in any matter within the jurisdiction of any department or 
+		agency of the Federal government violates 18 USC 1001 and is punishable by a fine of up to $10,000 
+		or up to 5 years in prison, or both.
+		</p>
+      </about>
+      <dataurl>http://www.cdc.gov/nchs/data_access/VitalStatsOnline.htm#Births</dataurl>
+      <caveat code="D66.C01">
+        <text evaluate="false"><![CDATA['Not Available' appears when the denominator population for a rate measure is not available.]]></text>
+        <rule>wonder:nat-NAv-flag()</rule>
+      </caveat>
+      <caveat code="D66.C01a">
+        <text evaluate="false"><![CDATA['Missing County' appears when county data is not available for a certain year. This occurs because the county 
+				did not meet minimum population standards and thus the data for the county was recoded to the "Unidentified Counties" 
+				category for the state of the county. #Locations#]]></text>
+        <rule>wonder:nat-missing-county-flag()</rule>
+      </caveat>
+      <caveat code="D66.C01aa">
+        <text evaluate="false"><![CDATA['Missing Race' appears when Single Race categories are not available for births before year 
+				2016.  Maternal race data for years before 2016 are recoded to the Single Race 
+				category "Not Available".  #About-Single-Race#]]></text>
+        <rule>wonder:nat-missing-race-flag()</rule>
+      </caveat>
+      <caveat code="D66.C01b">
+        <text evaluate="false"><![CDATA['Suppressed' appears when the data do not meet the criteria for confidentiality constraints. #Assurance of Confidentiality#]]></text>
+        <rule>wonder:nat-suppressed-flag()</rule>
+      </caveat>
+      <caveat code="D66.C01c">
+        <text evaluate="false"><![CDATA['Not Applicable' appears when an average value can not be calculated for the categories "Not Stated" or "Unknown".]]></text>
+        <rule>wonder:nat-NA-flag()</rule>
+      </caveat>
+      <caveat code="D66.C02">
+        <text evaluate="false"><![CDATA[Each birth record represents one liveborn infant.]]></text>
+        <rule>true()</rule>
+      </caveat>
+      <caveat code="D66.C02a">
+        <text evaluate="false"><![CDATA[County-level data are shown only for counties with populations of 100,000 persons or 
+			more. Within each state, data for all counties with fewer than 100,000 persons are combined together 
+			under the label "Unidentified Counties".]]></text>
+        <rule>wonder:nat-unidentified()</rule>
+      </caveat>
+      <caveat code="D66.C02b">
+        <text evaluate="false"><![CDATA[<p>
+				About Education and Prenatal Care data: Education and Prenatal Care data have been recoded to 
+        			"Excluded" for births to mothers residing in a reporting area that used the 
+				1989 U.S. Standard Certificate of Live Birth in the specified data year.
+				All reporting areas collect information 	
+				on Education and Prenatal care, but information from the 
+				2003 revision of the birth certificate 
+				is not comparable to the information based on the earlier certificate.  
+				
+			 	The following reporting areas have Education and Prenatal Care data coded to "Excluded":
+				Alabama, 2007-2013; 
+				Alaska 2007-2012; 
+				Arizona 2007-2013; 
+				Arkansas 2007-2013; 
+				Connecticut 2007-2015; 
+				District of Columbia 2007-2009; 
+				Georgia 2007; 
+				Hawaii 2007-2013; 
+				Illinois 2007-2009; 
+				Louisiana 2007-2010; 
+				Maine 2007-2013; 
+				Maryland 2007-2009; 
+				Massachusetts 2007-2011; 
+				Michigan 2007; 
+				Minnesota 2007-2011; 
+				Mississippi 2007-2012; 
+				Missouri 2007-2009; 
+				Montana 2007; 
+				Nevada 2007-2009; 
+				New Jersey 2007-2015; 
+				New Mexico 2007; 
+				New York (only counties comprising New York City) 2007; 
+				North Carolina 2007-2010; 
+				Oklahoma 2007-2009; 
+				Oregon 2007; 
+				Rhode Island 2007-2014; 
+				Utah 2007-2008; 
+				Virginia 2007-2012; 
+				West Virginia 2007-2013; 
+				Wisconsin 2007-2010.
+				</p>
+				<p>
+				Note the change from preceding years:  
+				Natality data for years 2003-2006 in CDC WONDER excluded 
+				Education and Prenatal Care data for the reporting areas that had adopted the 
+				2003 U.S. Standard Certificate of Live Birth. 
+				</p>]]></text>
+        <rule>wonder:nat-field('V5') or wonder:nat-field('V8')</rule>
+      </caveat>
+      <caveat code="D66.C02c">
+        <text evaluate="false"><![CDATA[<p>
+				About Maternal Tobacco Use data: 
+				Maternal Tobacco Use data have been recoded to "Not Reported" for 
+				births to mothers residing in a reporting area that used the 
+				1989 U.S. Standard Certificate of Live Birth or did not report Tobacco Use in the specified data year. 
+				All reporting areas, except California, routinely 
+				collect information on Maternal Tobacco Use, but 
+				information from the 2003 revision of the birth certificate 
+				is not comparable to the information based on the earlier certificate.  
+								
+				The following reporting areas have Maternal Tobacco Use data coded to "Not Reported": 
+				Alabama 2007-2013; 
+				Alaska 2007-2012; 
+				Arizona 2007-2013; 
+				Arkansas 2007-2013; 
+				Connecticut 2007-2015; 
+				District of Columbia 2007-2009; 
+				Florida 2007-2010; 
+				Georgia 2007-2010; 
+				Hawaii 2007-2014; 
+				Illinois 2007-2009; 
+				Louisiana 2007-2010; 
+				Maine 2007-2013; 
+				Maryland 2007-2009; 
+				Massachusetts 2007-2011; 
+				Michigan 2007-2013; 
+				Minnesota 2007-2011; 
+				Mississippi 2007-2012; 
+				Missouri 2007-2009; 
+				Montana 2007; 
+				Nevada 2007-2009; 
+				New Jersey 2007-2015; 
+				New Mexico 2007; 
+				New York (only counties comprising New York City) 2007; 
+				North Carolina 2007-2010; 
+				Oklahoma 2007-2009; 
+				Oregon 2007; 
+				Rhode Island 2007-2014; 
+				Utah 2007-2008; 
+				Virginia 2007-2012; 
+				West Virginia 2007-2013; 
+				Wisconsin 2007-2010. 
+				</p>
+				<p>
+				Note the change from preceding years: 
+				Natality data for years 2003-2006 in CDC WONDER reported 
+				Tobacco Use data as "Not Reported" for the reporting areas that had adopted the 
+				2003 U.S. Standard Certificate of Live Birth. 
+				</p>]]></text>
+        <rule>wonder:nat-field('V10')</rule>
+      </caveat>
+      <caveat xmlns:wonder="http://wonder.cdc.gov" xmlns:xalan="http://xml.apache.org/xalan" code="D66.C02d">
+        <text evaluate="true">concat("These items in the results table are not fully selected: ", wonder:partial-hier-labels(), ". The Query Description lists the actual values selected.")</text>
+        <rule>wonder:partial-hier()</rule>
+      </caveat>
+      <caveat code="D66.C02e">
+        <text evaluate="false"><![CDATA[Birth rates are calculated as the number of births divided by total population in the given year(s).
+				When the numerator is sub-set by mother's race, mother's hispanicity, location, or year of birth,
+				then the same sub-set for age, race, hispanicity, location and year applies to the denominator population.]]></text>
+        <rule>wonder:nat-measure('M3')</rule>
+      </caveat>
+      <caveat code="D66.C02f">
+        <text evaluate="false"><![CDATA[Fertility rates are calculated as the number of births divided by 
+				the number of females age 15 - 44 years old in the given year(s).
+				When the numerator is sub-set by mother's age, mother's race, mother's hispanicity, location, or year of birth,
+				then the same sub-set for age, race, hispanicity, location and year applies to the denominator population.
+				However, if you sub-set mother's age selecting some years not in the 15 - 44 range, those years of mother's
+				age ouside this range will not be included in the denominator population.  If you sub-set mother's age 
+				selecting only years outside the 15 - 44 range, "Not Available" is reported for the denominator population.
+				Single race categories are not available for births before year 2016. 
+				Bridged race categories are not available for births after year 2019.]]></text>
+        <rule>wonder:nat-measure('M5')</rule>
+      </caveat>
+      <caveat code="D66.C02g">
+        <text evaluate="false"><![CDATA[The following reporting areas have Eclampsia data coded to "Not Reported": 
+				Idaho 2007-2013; 
+				Kentucky 2007-2012; 
+				Michigan 2008-2013; 
+				Nebraska 2007-2013; 
+				New York (only counties comprising New York City) 2008-2012; 
+				Pennsylvania 2007-2015; 
+				South Carolina 2007-2021; 
+				Tennessee 2007-2019; 
+				Washington 2007-2012. 
+				#Eclampsia#]]></text>
+        <rule>wonder:nat-field('V18')</rule>
+      </caveat>
+      <caveat code="D66.C02h">
+        <text evaluate="false"><![CDATA[Note that there are a different number of days of the week in each year.]]></text>
+        <rule>wonder:nat-field('V26')</rule>
+      </caveat>
+      <caveat code="D66.C02i">
+        <text evaluate="false"><![CDATA[For birth weight data shown in WONDER before May 8, 2015, 21 births that occurred in 
+				year 2011 were erroneously reported in the birth weight category 5000-8165 grams, 
+				instead of the "Not stated" birth weight category. These 21 births are now reported 
+				in "Not stated" birth weight category.]]></text>
+        <rule>wonder:nat-field('V9') or wonder:nat-field('V35') or wonder:nat-field('V41')</rule>
+      </caveat>
+      <caveat code="D66.C02j">
+        <text evaluate="false"><![CDATA[<p>
+				As a result of population changes the following counties do not have data available for all years.<br/> 
+				Before 2014 the data for the following counties was recoded to the "Unidentified Counties" category within the state of the county 
+				because they did not meet minimum population standards.
+				Houston County, AL (01069);     
+				Navajo County, AZ (04017);      
+				Faulkner County, AR (05045);    
+				Saline County, AR (05125);      
+				Bartow County, GA (13015);      
+				Carroll County, GA (13045);     
+				Columbia County, GA (13073);    
+				Coweta County, GA (13077);      
+				Douglas County, GA (13097);     
+				Fayette County, GA (13113);     
+				Forsyth County, GA (13117);     
+				Lowndes County, GA (13185);     
+				Paulding County, GA (13223);    
+				Whitfield County, GA (13313);   
+				Bonneville County, ID (16019);  
+				DeKalb County, IL (17037);      
+				Kendall County, IL (17093);     
+				Clark County, IN (18019);       
+				Douglas County, KS (20045);     
+				Boone County, KY (21015);       
+				Hardin County, KY (21093);      
+				Warren County, KY (21227);      
+				Ascension Parish, LA (22005);   
+				Bossier Parish, LA (22015);     
+				Livingston Parish, LA (22063);  
+				Cecil County, MD (24015);       
+				St. Mary's County, MD (24037);  
+				Scott County, MN (27139);       
+				Wright County, MN (27171);      
+				Franklin County, MO (29071);    
+				Missoula County, MT (30063);    
+				Sandoval County, NM (35043);    
+				Tompkins County, NY (36109);    
+				Brunswick County, NC (37019);   
+				Craven County, NC (37049);      
+				Harnett County, NC (37085);     
+				Henderson County, NC (37089);   
+				Miami County, OH (39109);       
+				Canadian County, OK (40017);    
+				Adams County, PA (42001);       
+				Dorchester County, SC (45035);  
+				Pennington County, SD (46103);  
+				Wilson County, TN (47189);      
+				Comal County, TX (48091);       
+				Guadalupe County, TX (48187);   
+				Hays County, TX (48209);        
+				Kaufman County, TX (48257);     
+				Parker County, TX (48367);      
+				Cache County, UT (49005);       
+				Washington County, UT (49053);  
+				Spotsylvania County, VA (51177);
+				Stafford County, VA (51179); 
+				Cowlitz County, WA (53015);     
+				Berkeley County, WV (54003);    
+				Fond du Lac County, WI (55039); 
+				Walworth County, WI (55127).    
+				</p>
+				<p>
+				After 2013 the data for the following counties was recoded to the "Unidentified Counties" category within the state of the county 
+				because they did not meet minimum population standards.
+				Cape May County, NJ (34009);
+				Portsmouth city, VA (51740).
+				</p>]]></text>
+        <rule>wonder:nat-unidentified-county('01069,04017,05045,05125,13015,13045,13073,13077,13097,13113,13117,13185,13223,13313,16019,17037,17093,18019,20045,21015,21093,21227,22005,22015,22063,24015,24037,27139,27171,29071,30063,35043,36109,37019,37049,37085,37089,39109,40017,42001,45035,46103,47189,48091,48187,48209,48257,48367,49005,49053,51177,51179,53015,54003,55039,55127,34009,51740')</rule>
+      </caveat>
+      <caveat code="D66.C02k">
+        <text evaluate="false"><![CDATA[Beginning in 2014, month prenatal care began is calculated using gestational age based on the 
+				obstetric estimate.  For years 2013 and earlier, month prenatal care began was based on 
+				gestational age calculated using the date of the last normal menses.  
+				This change may lead to a slight discontinuity in prenatal care results between years 2013 and 2014.]]></text>
+        <rule>wonder:nat-field('V8')</rule>
+      </caveat>
+      <caveat code="D66.C02l">
+        <text evaluate="false"><![CDATA[Caution should be used when interpreting the Average Age of Mother measure. 
+				All ages 12 years and less are coded to 12 years. 
+				All ages 50 years and over are coded to 50 years. 
+				The number of counts in those two age goups are small and 
+				should not have a great effect on the average age. 
+				Consider doing queries with and without these
+				two age groups and compare the effect on Average Age of Mother measure.]]></text>
+        <rule>wonder:nat-measure('M70')</rule>
+      </caveat>
+      <caveat code="D66.C02m">
+        <text evaluate="false"><![CDATA[Data for some counties in New York and Virginia have been revised for 2014 births 
+				based on updated residence population. #county_2014#]]></text>
+        <rule>(wonder:nat-county-years('36','36081,36999','2014') or wonder:nat-county-years('51','51550,51700,51710,51760,51810,51999','2014'))</rule>
+      </caveat>
+      <caveat code="D66.C02n">
+        <text evaluate="false"><![CDATA[Data in CDC WONDER for some counties in New York for 2009 births is slightly different than those 
+				previously published due to updated residence population values use in CDC WONDER. #county_2009#]]></text>
+        <rule>wonder:nat-county-years('36','36005,36047,36061,36081,36085','2009')</rule>
+      </caveat>
+      <caveat code="D66.C02o">
+        <text evaluate="false"><![CDATA[Please note that the Percent of Total presented here may not be consistent with 
+				percentages published by NCHS. NCHS excludes births categorized as "Unknown", "Not Stated", "Not on Certificate", "Excluded", and "Not Reported" from the denominator 
+				when calculating percentages.]]></text>
+        <rule>wonder:nat-measure('M11')</rule>
+      </caveat>
+      <caveat code="D66.C02p">
+        <text evaluate="false"><![CDATA[Single Race categories are not available for births before year 2016.  Maternal single race data 
+				for years before 2016 are recoded to the Single Race category "Not Available".  #About-Single-Race#]]></text>
+        <rule>wonder:nat-field('V42')</rule>
+      </caveat>
+      <caveat code="D66.C02q">
+        <text evaluate="false"><![CDATA[Rates returned for Hispanicity in combination with either Bridged Race or Single Race are calculated differently
+				here than in other natality published reports.  #About-Rates#]]></text>
+        <rule>wonder:nat-rate-issue()</rule>
+      </caveat>
+      <caveat code="D66.C02r">
+        <text evaluate="false"><![CDATA[Beginning in 2017, due to state statutory restrictions, California no longer provides record-level data on the 
+				marital status of the mother for births occurring in California to California residents and non-residents 
+				(including residents of other states). For these births, Marital Status is coded as "Not Reported."]]></text>
+        <rule>wonder:nat-field('V27')</rule>
+      </caveat>
+      <caveat code="D66.C02s">
+        <text evaluate="false"><![CDATA[Records where the "Birth Weight" is "Unknown or Not Stated" 
+				are not included in the calculation of the "Average Birth Weight" measure.]]></text>
+        <rule>wonder:nat-measure('M60')</rule>
+      </caveat>
+      <caveat code="D66.C02t">
+        <text evaluate="false"><![CDATA[Records where the gestation age is "Unknown or Not Stated" 
+				are not included in the calculation of the "Average Gestational Age" measure.]]></text>
+        <rule>wonder:nat-measure('M80') or wonder:nat-measure('M90')</rule>
+      </caveat>
+      <caveat code="D66.C02u">
+        <text evaluate="false"><![CDATA[Beginning in 2018 the category "Dominican" was added to "Mother's Expanded Hispanic Origin" and 
+				records were coded to this category.  Before 2018 there are
+				no case counts for the "Dominican" category.  Before 2018 case counts for "Dominican" were coded to the 
+				"Other and Unknown Hispanic" category, thus there is a discontinuity between 2017 and 2018 for the 
+				"Other and Unknown Hispanic" category.]]></text>
+        <rule>wonder:nat-field('V4')</rule>
+      </caveat>
+      <caveat code="D66.C02v">
+        <text evaluate="false"><![CDATA[Beginning with 2020, bridged race categories are no longer included in the national birth file. 
+				Beginning with year 2021, bridged race population estimates are not available as rate denominators.]]></text>
+        <rule>wonder:nat-field('V2')</rule>
+      </caveat>
+      <caveat code="D66.C02w">
+        <text evaluate="false"><![CDATA[Connecticut population data for 2022-2023 are reported in the "Unidentified counties" row because population 
+				estimates for Connecticut legacy counties are not available for 2022-2024. Birth and Fertility rate are not 
+				available for 2022-2024 because legacy Connecticut counties population estimates are not available.]]></text>
+        <rule>wonder:nat-county-years('09','09001,09003,09005,09007,09009,09011,09015,09999','2022,2023')</rule>
+      </caveat>
+      <caveat code="D66.C02x">
+        <text evaluate="false"><![CDATA[2023 Urbanization and Metro/Nonmetro categories are not available for Natality before year 2023.]]></text>
+        <rule>wonder:nat-field('V158') or wonder:nat-field('V159')</rule>
+      </caveat>
+      <caveat code="D66.C02y">
+        <text evaluate="false"><![CDATA[Some counties are not classified in 2023 Urbanization scheme.]]></text>
+        <rule>wonder:nat-field('V158') or wonder:nat-field('V159')</rule>
+      </caveat>
+      <caveat code="D66.C03a">
+        <text evaluate="false"><![CDATA[Birth rates and fertility rates are calculated using the following populations:
+
+				The populations for year 2024 are from the postcensal single race series of July 1st 
+				estimates of the resident population, released by Census Bureau on June 26, 2025.
+				The 2024 population estimates are based on the Blended Base produced by the 
+				US Census Bureau in lieu of the April 1, 2020 decennial population count. 
+
+				The populations for year 2023 are from the postcensal single race series of July 1st 
+				estimates of the resident population, released by Census Bureau on June 27, 2024.
+				The 2023 population estimates are based on the Blended Base produced by the 
+				US Census Bureau in lieu of the April 1, 2020 decennial population count. 
+				Bridged race population figures are not available for year 2023.
+				
+				The populations for year 2022 are from the postcensal single race series of July 1st 
+				estimates of the resident population, released by Census Bureau on June 22, 2023.
+				The 2022 population estimates are based on the Blended Base produced by the 
+				US Census Bureau in lieu of the April 1, 2020 decennial population count. 
+				Bridged race population figures are not available for year 2022.
+				
+				The populations for year 2021  are from the postcensal single race series of July 1st 
+				estimates of the resident population, released by Census Bureau on June 30, 2022.
+				The 2021 population estimates are based on the Blended Base produced by the 
+				US Census Bureau in lieu of the April 1, 2020 decennial population count. 
+				Bridged race population figures are not available for year 2021. 
+				
+				The populations for year 2020  are from the postcensal single-race series of July 1st estimates of 
+				the resident population, released by Census Bureau on July 27, 2021; 
+				and the postcensal bridged-race series of July 1st estimates of the resident population, 
+				released by NCHS on September 22, 2021 (for fertility rate denominators by detailed age groups). 
+				
+				The populations for year 2019  are from the postcensal single-race series of July 1st estimates of 
+				the resident population, released by Census Bureau on June 25, 2020; 
+				and the postcensal bridged-race series of July 1st estimates of the resident population, 
+				released by NCHS on July 9, 2020. 
+				
+				The populations for year 2018 are from the postcensal single-race series of July 1st 
+				estimates of the resident population, released by Census Bureau on June 21, 2019; 
+				and the postcensal bridged-race series of July 1st estimates of the resident population, 
+				released by NCHS on June 27, 2019.
+
+				The populations for year 2017 are from the postcensal single-race series of July 1st 
+				estimates of the resident population, released by Census Bureau on June 21, 2018; 
+				and the postcensal bridged-race series of July 1st estimates of the resident population, 
+				released by NCHS on June 27, 2018.
+				The populations for year 2016 are from the 
+				postcensal single-race series of July 1st estimates of the resident population, 
+				released by Census Bureau on June 22, 2017; 
+				and the postcensal bridged-race series of July 1st estimates of the resident population, 
+				released by NCHS on June 26, 2017. 		
+				The populations for year 2015 are from the 
+				postcensal bridged-race series of July 1st estimates of the resident population, 
+				released by NCHS on June 28, 2016. 
+				The populations for year 2014 are from the 
+				postcensal bridged-race series of July 1st estimates of the resident population, 
+				released by NCHS on June 30, 2015. 
+				The populations for year 2013 are from the 
+				postcensal bridged-race series of July 1st estimates of the resident population,
+				released by NCHS on June 26, 2014.
+				The populations for year 2012 are from the 
+				postcensal bridged-race series of July 1st estimates of the resident population,
+				released by NCHS on June 13, 2013.
+				The populations for year 2011 are from the 
+				postcensal bridged-race series of July 1st estimates of the resident population,
+				released by NCHS on July 18, 2012.  
+				The populations for year 2010 are the bridged-race April 1, 2010 Census counts.  
+				The populations for years 2007-2009 are from the 
+				revised intercensal bridged-race series of July 1st estimates of the resident population,
+				released by NCHS on October 26, 2012. #Denominator-Population-Sources#]]></text>
+        <rule>wonder:nat-defaultpops()</rule>
+      </caveat>
+      <caveat code="D66.C03b">
+        <text evaluate="false"><![CDATA[Archive birth rates and archive fertility rates are calculated using the following populations.
+				The populations for years 2007-2009 are from the bridged-race postcensal population estimates. 
+				The populations for year 2010 are the bridged-race April 1, 2010 Census counts.  
+				#Archive#]]></text>
+        <rule>wonder:nat-archivepops()</rule>
+      </caveat>
+      <caveat code="D66.C04">
+        <text evaluate="false"><![CDATA[Dade County, Florida (FIPS code 12025) was renamed Miami-Dade County (FIPS code 12086) 
+				effective November 13, 1997. The area is coded to Miami-Dade (12086) after 2002 and Dade (12025) 
+				for earlier years in other natality datasets.]]></text>
+        <rule>wonder:nat-ctys('12', '12086')</rule>
+      </caveat>
+      <caveat code="D66.C04a">
+        <text evaluate="false"><![CDATA[The independent city of Baltimore, Maryland (FIPS code 24510) is reported separately 
+				from Baltimore County (FIPS code 24005).]]></text>
+        <rule>wonder:nat-ctys('24', '24510,24005')</rule>
+      </caveat>
+      <caveat code="D66.C04b">
+        <text evaluate="false"><![CDATA[The independent city of St. Louis, Missouri (FIPS code 29510) is reported separately 
+				from St. Louis County (FIPS code 29189).]]></text>
+        <rule>wonder:nat-ctys('29', '29510,29189')</rule>
+      </caveat>
+      <caveat code="D66.C04c">
+        <text evaluate="false"><![CDATA[Bronx, New York (FIPS code 36005) represents Bronx Borough, New York City.]]></text>
+        <rule>wonder:nat-ctys('36', '36005')</rule>
+      </caveat>
+      <caveat code="D66.C04d">
+        <text evaluate="false"><![CDATA[Kings County, New York (FIPS code 36047) represents Brooklyn Borough, New York City.]]></text>
+        <rule>wonder:nat-ctys('36', '36047')</rule>
+      </caveat>
+      <caveat code="D66.C04e">
+        <text evaluate="false"><![CDATA[New York County, New York (FIPS code 36061) represents Manhattan Borough, New York City.]]></text>
+        <rule>wonder:nat-ctys('36', '36061')</rule>
+      </caveat>
+      <caveat code="D66.C04f">
+        <text evaluate="false"><![CDATA[Queens, New York (FIPS code 36081) represents Queens Borough, New York City.]]></text>
+        <rule>wonder:nat-ctys('36', '36081')</rule>
+      </caveat>
+      <caveat code="D66.C04g">
+        <text evaluate="false"><![CDATA[Richmond County, New York (FIPS code 36085) represents Staten Island Borough, New York City.]]></text>
+        <rule>wonder:nat-ctys('36', '36085')</rule>
+      </caveat>
+    </documentation>
+    <missing var1="D66.V22-level4" var2="D66.V20" flag="Missing County">
+      <alias code="D66.V21" alias="D66.V22"/>
+      <alias code="D66.V21-level1" alias="D66.V22-level3"/>
+      <alias code="D66.V21-level2" alias="D66.V22-level4"/>
+      <alias code="D66.V37" alias="D66.V22"/>
+      <alias code="D66.V37-level2" alias="D66.V22-level3"/>
+      <alias code="D66.V37-level3" alias="D66.V22-level4"/>
+      <instance code="01069">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="04017">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="05045">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="05125">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="13015">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="13045">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="13073">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="13077">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="13097">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="13113">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="13117">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="13185">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="13223">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="13313">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="16019">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="17037">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="17093">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="18019">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="20045">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="21015">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="21093">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="21227">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="22005">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="22015">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="22063">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="24015">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="24037">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="27139">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="27171">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="29071">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="30063">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="34009">
+        <range>2014-2021</range>
+      </instance>
+      <instance code="35043">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="36109">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="37019">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="37049">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="37085">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="37089">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="39109">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="40017">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="42001">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="45035">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="46103">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="47189">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="48091">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="48187">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="48209">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="48257">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="48367">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="49005">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="49053">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="51177">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="51179">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="51740">
+        <range>2014-2021</range>
+      </instance>
+      <instance code="53015">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="54003">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="55039">
+        <range>2007-2013</range>
+      </instance>
+      <instance code="55127">
+        <range>2007-2013</range>
+      </instance>
+    </missing>
+    <missing var1="D66.V42" var2="D66.V20" flag="Missing Race">
+      <instance code="NHOPI">
+        <range>2007-2015</range>
+      </instance>
+      <instance code="M">
+        <range>2007-2015</range>
+      </instance>
+      <instance code="A">
+        <range>2007-2015</range>
+      </instance>
+    </missing>
+    <missing var1="D66.V42" var2="D66.V20" flag="Missing Race">
+      <instance code="1002-5">
+        <range>2007-2015</range>
+      </instance>
+      <instance code="2054-5">
+        <range>2007-2015</range>
+      </instance>
+      <instance code="2106-3">
+        <range>2007-2015</range>
+      </instance>
+    </missing>
+    <missing var1="D66.V2" var2="D66.V20" flag="Missing Race">
+      <instance code="1002-5">
+        <range>2020-2024</range>
+      </instance>
+      <instance code="A-PI">
+        <range>2020-2024</range>
+      </instance>
+      <instance code="2054-5">
+        <range>2020-2024</range>
+      </instance>
+      <instance code="2106-3">
+        <range>2020-2024</range>
+      </instance>
+    </missing>
+    <missing var1="D66.V4" var2="D66.V20" flag="Missing Ethnicity">
+      <instance code="7">
+        <range>2007-2017</range>
+      </instance>
+    </missing>
+  </dataset>
+  <response>
+    <request query-date="Aug 9, 2026 5:00:35 AM">
+      <variable-selections>
+</variable-selections>
+      <byvariables>
+        <variable code="D66.V20"/>
+        <variable code="D66.V29"/>
+      </byvariables>
+      <list-variables>
+</list-variables>
+      <measure-selections>
+        <measure code="D66.M1"/>
+      </measure-selections>
+      <other-parameters>
+        <parameter code="O_show_totals" label="Show Totals" display="true">
+          <option value="true" label="True"/>
+          <option value="false" label="False"/>
+          <option value="disabled" label="Disabled"/>
+          <value>true</value>
+        </parameter>
+        <parameter code="O_show_zeros" label="Show Zero Values" display="true">
+          <option value="true" label="True"/>
+          <option value="false" label="False"/>
+          <option value="disabled" label="Disabled"/>
+          <value>false</value>
+        </parameter>
+        <parameter code="O_show_suppressed" label="Show Suppressed" display="true">
+          <option value="true" label="True"/>
+          <option value="false" label="False"/>
+          <option value="disabled" label="Disabled"/>
+          <value>false</value>
+        </parameter>
+        <parameter code="O_precision" label="Precision" display="false">
+          <option value="0" label="0"/>
+          <option value="1" label="1"/>
+          <option value="2" label="2"/>
+          <option value="3" label="3"/>
+          <option value="4" label="4"/>
+          <option value="5" label="5"/>
+          <option value="6" label="6"/>
+          <option value="7" label="7"/>
+          <option value="8" label="8"/>
+          <option value="9" label="9"/>
+          <value>2</value>
+        </parameter>
+        <parameter code="O_timeout" label="Data Access Timeout" display="false">
+          <option value="60" label="1"/>
+          <option value="120" label="2"/>
+          <option value="180" label="3"/>
+          <option value="240" label="4"/>
+          <option value="300" label="5"/>
+          <option value="360" label="6"/>
+          <option value="420" label="7"/>
+          <option value="480" label="8"/>
+          <option value="540" label="9"/>
+          <option value="600" label="10"/>
+          <option value="660" label="11"/>
+          <option value="720" label="12"/>
+          <option value="780" label="13"/>
+          <option value="840" label="14"/>
+          <option value="900" label="15"/>
+          <value>600</value>
+        </parameter>
+        <parameter code="O_groups_count" label="Groups" display="false">
+          <option value="2" label="Two"/>
+          <option value="3" label="Three"/>
+          <option value="4" label="Four"/>
+          <option value="5" label="Five"/>
+          <option value="6" label="Six"/>
+          <option value="7" label="Seven"/>
+          <option value="8" label="Eight"/>
+          <option value="9" label="Nine"/>
+          <option value="10" label="Ten"/>
+          <value>4</value>
+        </parameter>
+        <parameter code="O_groups_methods" label="Group Breaks Method" display="false">
+          <option value="QUANTILE" label="Quantile"/>
+          <option value="EQUAL" label="Equal Interval"/>
+          <value>QUANTILE</value>
+        </parameter>
+        <parameter code="O_rate_per" label="Calculate Rates Per" display="true">
+          <option value="1000" label="1,000"/>
+          <option value="10000" label="10,000"/>
+          <option value="100000" label="100,000"/>
+          <option value="1000000" label="1,000,000"/>
+          <value>1000</value>
+        </parameter>
+        <parameter code="O_natality_archive_pops" label="Population Option" display="true">
+          <option value="total_intercensal" label="Default intercensal populations for years 2007-2009"/>
+          <option value="total" label="Archive postcensal populations for years 2007-2009"/>
+          <option value="norates" label="No populations shown because rates were not selected."/>
+          <value>norates</value>
+        </parameter>
+        <parameter code="O_V22_fmode" display="false">
+          <value>freg</value>
+        </parameter>
+        <parameter code="O_oe_gestation" display="false">
+          <value>D66.V33</value>
+        </parameter>
+        <parameter code="O_V21_fmode" display="false">
+          <value>freg</value>
+        </parameter>
+        <parameter code="O_V37_fmode" display="false">
+          <value>freg</value>
+        </parameter>
+        <parameter code="O_javascript" display="false">
+          <value>on</value>
+        </parameter>
+        <parameter code="O_age" display="false">
+          <value>D66.V1</value>
+        </parameter>
+        <parameter code="O_oc-sect1-request" display="false">
+          <value>close</value>
+        </parameter>
+        <parameter code="O_urban" display="false">
+          <value>D66.V154</value>
+        </parameter>
+        <parameter code="O_title" display="false">
+          <value/>
+        </parameter>
+        <parameter code="O_weight" display="false">
+          <value>D66.V9</value>
+        </parameter>
+        <parameter code="O_gestation" display="false">
+          <value>D66.V23</value>
+        </parameter>
+        <parameter code="O_location" display="false">
+          <value>D66.V21</value>
+        </parameter>
+        <parameter code="O_labels_opt" display="false">
+          <value>false</value>
+        </parameter>
+        <parameter code="O_show_rank" display="false">
+          <value>false</value>
+        </parameter>
+        <parameter code="O_groups" display="false">
+          <value>false</value>
+        </parameter>
+      </other-parameters>
+      <request-parameters>
+        <parameter>
+          <name>B_1</name>
+          <value>D66.V20</value>
+        </parameter>
+        <parameter>
+          <name>B_2</name>
+          <value>D66.V29</value>
+        </parameter>
+        <parameter>
+          <name>B_3</name>
+          <value>*None*</value>
+        </parameter>
+        <parameter>
+          <name>B_4</name>
+          <value>*None*</value>
+        </parameter>
+        <parameter>
+          <name>B_5</name>
+          <value>*None*</value>
+        </parameter>
+        <parameter>
+          <name>M_1</name>
+          <value>D66.M1</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V1</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V10</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V14</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V16</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V17</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V18</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V2</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V20</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V21</name>
+          <value/>
+        </parameter>
+        <parameter>
+          <name>V_D66.V22</name>
+          <value/>
+        </parameter>
+        <parameter>
+          <name>V_D66.V23</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V24</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V25</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V26</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V27</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V28</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V29</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V3</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V30</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V31</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V32</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V33</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V34</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V35</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V37</name>
+          <value/>
+        </parameter>
+        <parameter>
+          <name>V_D66.V38</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V39</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V4</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V41</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V42</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V43</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V5</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V6</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V7</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V8</name>
+          <value>*All*</value>
+        </parameter>
+        <parameter>
+          <name>V_D66.V9</name>
+          <value>*All*</value>
+        </parameter>
+      </request-parameters>
+    </request>
+    <other-parameters>
+      <parameter code="O_show_totals" label="Show Totals" display="true">
+        <option value="true" label="True"/>
+        <option value="false" label="False"/>
+        <option value="disabled" label="Disabled"/>
+        <value>true</value>
+      </parameter>
+      <parameter code="O_show_zeros" label="Show Zero Values" display="true">
+        <option value="true" label="True"/>
+        <option value="false" label="False"/>
+        <option value="disabled" label="Disabled"/>
+        <value>false</value>
+      </parameter>
+      <parameter code="O_show_suppressed" label="Show Suppressed" display="true">
+        <option value="true" label="True"/>
+        <option value="false" label="False"/>
+        <option value="disabled" label="Disabled"/>
+        <value>false</value>
+      </parameter>
+      <parameter code="O_precision" label="Precision" display="false">
+        <option value="0" label="0"/>
+        <option value="1" label="1"/>
+        <option value="2" label="2"/>
+        <option value="3" label="3"/>
+        <option value="4" label="4"/>
+        <option value="5" label="5"/>
+        <option value="6" label="6"/>
+        <option value="7" label="7"/>
+        <option value="8" label="8"/>
+        <option value="9" label="9"/>
+        <value>2</value>
+      </parameter>
+      <parameter code="O_timeout" label="Data Access Timeout" display="false">
+        <option value="60" label="1"/>
+        <option value="120" label="2"/>
+        <option value="180" label="3"/>
+        <option value="240" label="4"/>
+        <option value="300" label="5"/>
+        <option value="360" label="6"/>
+        <option value="420" label="7"/>
+        <option value="480" label="8"/>
+        <option value="540" label="9"/>
+        <option value="600" label="10"/>
+        <option value="660" label="11"/>
+        <option value="720" label="12"/>
+        <option value="780" label="13"/>
+        <option value="840" label="14"/>
+        <option value="900" label="15"/>
+        <value>600</value>
+      </parameter>
+      <parameter code="O_groups_count" label="Groups" display="false">
+        <option value="2" label="Two"/>
+        <option value="3" label="Three"/>
+        <option value="4" label="Four"/>
+        <option value="5" label="Five"/>
+        <option value="6" label="Six"/>
+        <option value="7" label="Seven"/>
+        <option value="8" label="Eight"/>
+        <option value="9" label="Nine"/>
+        <option value="10" label="Ten"/>
+        <value>4</value>
+      </parameter>
+      <parameter code="O_groups_methods" label="Group Breaks Method" display="false">
+        <option value="QUANTILE" label="Quantile"/>
+        <option value="EQUAL" label="Equal Interval"/>
+        <value>QUANTILE</value>
+      </parameter>
+      <parameter code="O_rate_per" label="Calculate Rates Per" display="true">
+        <option value="1000" label="1,000"/>
+        <option value="10000" label="10,000"/>
+        <option value="100000" label="100,000"/>
+        <option value="1000000" label="1,000,000"/>
+        <value>1000</value>
+      </parameter>
+      <parameter code="O_natality_archive_pops" label="Population Option" display="true">
+        <option value="total_intercensal" label="Default intercensal populations for years 2007-2009"/>
+        <option value="total" label="Archive postcensal populations for years 2007-2009"/>
+        <option value="norates" label="No populations shown because rates were not selected."/>
+        <value>norates</value>
+      </parameter>
+      <parameter code="O_V22_fmode" display="false">
+        <value>freg</value>
+      </parameter>
+      <parameter code="O_oe_gestation" display="false">
+        <value>D66.V33</value>
+      </parameter>
+      <parameter code="O_V21_fmode" display="false">
+        <value>freg</value>
+      </parameter>
+      <parameter code="O_V37_fmode" display="false">
+        <value>freg</value>
+      </parameter>
+      <parameter code="O_javascript" display="false">
+        <value>on</value>
+      </parameter>
+      <parameter code="O_age" display="false">
+        <value>D66.V1</value>
+      </parameter>
+      <parameter code="O_oc-sect1-request" display="false">
+        <value>close</value>
+      </parameter>
+      <parameter code="O_urban" display="false">
+        <value>D66.V154</value>
+      </parameter>
+      <parameter code="O_title" display="false">
+        <value/>
+      </parameter>
+      <parameter code="O_weight" display="false">
+        <value>D66.V9</value>
+      </parameter>
+      <parameter code="O_gestation" display="false">
+        <value>D66.V23</value>
+      </parameter>
+      <parameter code="O_location" display="false">
+        <value>D66.V21</value>
+      </parameter>
+      <parameter code="O_labels_opt" display="false">
+        <value>false</value>
+      </parameter>
+      <parameter code="O_show_rank" display="false">
+        <value>false</value>
+      </parameter>
+      <parameter code="O_groups" display="false">
+        <value>false</value>
+      </parameter>
+      <parameter code="O_labels_quick" display="false">
+        <value>false</value>
+      </parameter>
+    </other-parameters>
+    <measure-selections>
+      <measure code="D66.M1" min="0" max="70,010,438" minNtNz="1,774" maxNtNz="3,729,199" minNtWz="0" maxNtWz="3,729,199" minWtNz="1,774" maxWtNz="70,010,438"/>
+    </measure-selections>
+    <measure-selections-all>
+      <measure code="D66.M1"/>
+    </measure-selections-all>
+    <data-table show-all-labels="false">
+      <r>
+        <c l="2007" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="3,729,199"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="214,995"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="316,811"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="23,943"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="28,864"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="2,421"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="4,316,233"/>
+      </r>
+      <r>
+        <c l="2008" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="3,662,668"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="217,137"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="317,626"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="20,712"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="27,483"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="2,068"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="4,247,694"/>
+      </r>
+      <r>
+        <c l="2009" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="3,545,597"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="220,981"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="313,516"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="21,787"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="26,670"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="2,114"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="4,130,665"/>
+      </r>
+      <r>
+        <c l="2010" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="3,411,797"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="224,407"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="312,129"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="23,500"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="25,020"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="2,533"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="3,999,386"/>
+      </r>
+      <r>
+        <c l="2011" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="3,359,909"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="228,294"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="309,514"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="26,011"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="25,782"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="4,080"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="3,953,590"/>
+      </r>
+      <r>
+        <c l="2012" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="3,347,334"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="235,434"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="313,846"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="28,343"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="25,777"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="2,107"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="3,952,841"/>
+      </r>
+      <r>
+        <c l="2013" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="3,310,094"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="243,487"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="320,983"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="27,865"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="27,354"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="2,398"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="3,932,181"/>
+      </r>
+      <r>
+        <c l="2014" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="3,331,630"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="263,129"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="332,107"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="31,701"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="27,542"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="1,967"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="3,988,076"/>
+      </r>
+      <r>
+        <c l="2015" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="3,293,951"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="278,576"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="338,663"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="32,841"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="32,418"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="2,048"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="3,978,497"/>
+      </r>
+      <r>
+        <c l="2016" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="3,241,239"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="290,431"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="348,206"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="30,388"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="33,256"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="2,355"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="3,945,875"/>
+      </r>
+      <r>
+        <c l="2017" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="3,142,479"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="295,937"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="351,968"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="29,926"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="32,401"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="2,789"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="3,855,500"/>
+      </r>
+      <r>
+        <c l="2018" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="3,066,477"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="303,090"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="357,297"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="30,222"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="32,185"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="2,441"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="3,791,712"/>
+      </r>
+      <r>
+        <c l="2019" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="2,997,404"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="315,000"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="368,362"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="32,410"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="32,123"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="2,241"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="3,747,540"/>
+      </r>
+      <r>
+        <c l="2020" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="2,853,659"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="318,094"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="372,991"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="37,397"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="29,732"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="1,774"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="3,613,647"/>
+      </r>
+      <r>
+        <c l="2021" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="2,848,701"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="332,022"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="390,212"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="43,772"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="47,341"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="2,244"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="3,664,292"/>
+      </r>
+      <r>
+        <c l="2022" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="2,830,551"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="345,099"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="398,976"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="44,528"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="45,916"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="2,688"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="3,667,758"/>
+      </r>
+      <r>
+        <c l="2023" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="2,739,690"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="357,152"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="408,214"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="46,220"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="42,490"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="2,251"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="3,596,017"/>
+      </r>
+      <r>
+        <c l="2024" r="7"/>
+        <c l="Doctor of Medicine(MD)"/>
+        <c v="2,725,046"/>
+      </r>
+      <r>
+        <c l="Doctor of Osteopathy(DO)"/>
+        <c v="376,521"/>
+      </r>
+      <r>
+        <c l="Certified Nurse Midwife(CNM/CM)"/>
+        <c v="434,811"/>
+      </r>
+      <r>
+        <c l="Other Midwife"/>
+        <c v="49,078"/>
+      </r>
+      <r>
+        <c l="Other"/>
+        <c v="40,398"/>
+      </r>
+      <r>
+        <c l="Unknown or not stated"/>
+        <c v="3,080"/>
+      </r>
+      <r>
+        <c c="1"/>
+        <c dt="3,628,934"/>
+      </r>
+      <r>
+        <c c="2"/>
+        <c dt="70,010,438"/>
+      </r>
+    </data-table>
+    <options>
+      <other-parameters>
+        <parameter code="O_show_totals" label="Show Totals" display="true">
+          <option value="true" label="True"/>
+          <option value="false" label="False"/>
+          <option value="disabled" label="Disabled"/>
+          <value>true</value>
+        </parameter>
+        <parameter code="O_show_zeros" label="Show Zero Values" display="true">
+          <option value="true" label="True"/>
+          <option value="false" label="False"/>
+          <option value="disabled" label="Disabled"/>
+          <value>false</value>
+        </parameter>
+        <parameter code="O_show_suppressed" label="Show Suppressed" display="true">
+          <option value="true" label="True"/>
+          <option value="false" label="False"/>
+          <option value="disabled" label="Disabled"/>
+          <value>false</value>
+        </parameter>
+        <parameter code="O_precision" label="Precision" display="false">
+          <option value="0" label="0"/>
+          <option value="1" label="1"/>
+          <option value="2" label="2"/>
+          <option value="3" label="3"/>
+          <option value="4" label="4"/>
+          <option value="5" label="5"/>
+          <option value="6" label="6"/>
+          <option value="7" label="7"/>
+          <option value="8" label="8"/>
+          <option value="9" label="9"/>
+          <value>2</value>
+        </parameter>
+        <parameter code="O_timeout" label="Data Access Timeout" display="false">
+          <option value="60" label="1"/>
+          <option value="120" label="2"/>
+          <option value="180" label="3"/>
+          <option value="240" label="4"/>
+          <option value="300" label="5"/>
+          <option value="360" label="6"/>
+          <option value="420" label="7"/>
+          <option value="480" label="8"/>
+          <option value="540" label="9"/>
+          <option value="600" label="10"/>
+          <option value="660" label="11"/>
+          <option value="720" label="12"/>
+          <option value="780" label="13"/>
+          <option value="840" label="14"/>
+          <option value="900" label="15"/>
+          <value>600</value>
+        </parameter>
+        <parameter code="O_groups_count" label="Groups" display="false">
+          <option value="2" label="Two"/>
+          <option value="3" label="Three"/>
+          <option value="4" label="Four"/>
+          <option value="5" label="Five"/>
+          <option value="6" label="Six"/>
+          <option value="7" label="Seven"/>
+          <option value="8" label="Eight"/>
+          <option value="9" label="Nine"/>
+          <option value="10" label="Ten"/>
+          <value>4</value>
+        </parameter>
+        <parameter code="O_groups_methods" label="Group Breaks Method" display="false">
+          <option value="QUANTILE" label="Quantile"/>
+          <option value="EQUAL" label="Equal Interval"/>
+          <value>QUANTILE</value>
+        </parameter>
+        <parameter code="O_rate_per" label="Calculate Rates Per" display="true">
+          <option value="1000" label="1,000"/>
+          <option value="10000" label="10,000"/>
+          <option value="100000" label="100,000"/>
+          <option value="1000000" label="1,000,000"/>
+          <value>1000</value>
+        </parameter>
+        <parameter code="O_natality_archive_pops" label="Population Option" display="true">
+          <option value="total_intercensal" label="Default intercensal populations for years 2007-2009"/>
+          <option value="total" label="Archive postcensal populations for years 2007-2009"/>
+          <option value="norates" label="No populations shown because rates were not selected."/>
+          <value>norates</value>
+        </parameter>
+        <parameter code="O_V22_fmode" display="false">
+          <value>freg</value>
+        </parameter>
+        <parameter code="O_oe_gestation" display="false">
+          <value>D66.V33</value>
+        </parameter>
+        <parameter code="O_V21_fmode" display="false">
+          <value>freg</value>
+        </parameter>
+        <parameter code="O_V37_fmode" display="false">
+          <value>freg</value>
+        </parameter>
+        <parameter code="O_javascript" display="false">
+          <value>on</value>
+        </parameter>
+        <parameter code="O_age" display="false">
+          <value>D66.V1</value>
+        </parameter>
+        <parameter code="O_oc-sect1-request" display="false">
+          <value>close</value>
+        </parameter>
+        <parameter code="O_urban" display="false">
+          <value>D66.V154</value>
+        </parameter>
+        <parameter code="O_title" display="false">
+          <value/>
+        </parameter>
+        <parameter code="O_weight" display="false">
+          <value>D66.V9</value>
+        </parameter>
+        <parameter code="O_gestation" display="false">
+          <value>D66.V23</value>
+        </parameter>
+        <parameter code="O_location" display="false">
+          <value>D66.V21</value>
+        </parameter>
+        <parameter code="O_labels_opt" display="false">
+          <value>false</value>
+        </parameter>
+        <parameter code="O_show_rank" display="false">
+          <value>false</value>
+        </parameter>
+        <parameter code="O_groups" display="false">
+          <value>false</value>
+        </parameter>
+        <parameter code="O_labels_quick" display="false">
+          <value>false</value>
+        </parameter>
+      </other-parameters>
+      <measure-selections-show>
+        <measure code="D66.M1"/>
+      </measure-selections-show>
+      <groups>
+</groups>
+    </options>
+    <footnotes>
+</footnotes>
+    <caveats>
+      <caveat><![CDATA[Each birth record represents one liveborn infant.]]></caveat>
+    </caveats>
+  </response>
+  <message>Rows with zero Births are hidden. Use Quick Options above to show zero rows.</message>
+  <tabs2>
+    <tab label="Request Form" status="closed" target="request" title="Click to see the request page"/>
+    <tab label="Results" status="open" target="results" title="Click to see the results table"/>
+    <tab label="Map" status="closed" target="map" title="Click to create maps"/>
+    <tab label="Chart" status="closed" target="chart" title="Click to create charts"/>
+    <tab label="About" status="closed" target="about" title="Information about this dataset"/>
+  </tabs2>
+  <thisfile>/wonder/templates/xsl/table_response.xsl</thisfile>
+</page>

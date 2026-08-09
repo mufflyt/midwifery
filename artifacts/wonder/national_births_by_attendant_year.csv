@@ -1,0 +1,109 @@
+year,attendant,births_raw,births,flag
+2007,Doctor of Medicine(MD),"3,729,199",3729199,ok
+2007,Doctor of Osteopathy(DO),"214,995",214995,ok
+2007,Certified Nurse Midwife(CNM/CM),"316,811",316811,ok
+2007,Other Midwife,"23,943",23943,ok
+2007,Other,"28,864",28864,ok
+2007,Unknown or not stated,"2,421",2421,ok
+2008,Doctor of Medicine(MD),"3,662,668",3662668,ok
+2008,Doctor of Osteopathy(DO),"217,137",217137,ok
+2008,Certified Nurse Midwife(CNM/CM),"317,626",317626,ok
+2008,Other Midwife,"20,712",20712,ok
+2008,Other,"27,483",27483,ok
+2008,Unknown or not stated,"2,068",2068,ok
+2009,Doctor of Medicine(MD),"3,545,597",3545597,ok
+2009,Doctor of Osteopathy(DO),"220,981",220981,ok
+2009,Certified Nurse Midwife(CNM/CM),"313,516",313516,ok
+2009,Other Midwife,"21,787",21787,ok
+2009,Other,"26,670",26670,ok
+2009,Unknown or not stated,"2,114",2114,ok
+2010,Doctor of Medicine(MD),"3,411,797",3411797,ok
+2010,Doctor of Osteopathy(DO),"224,407",224407,ok
+2010,Certified Nurse Midwife(CNM/CM),"312,129",312129,ok
+2010,Other Midwife,"23,500",23500,ok
+2010,Other,"25,020",25020,ok
+2010,Unknown or not stated,"2,533",2533,ok
+2011,Doctor of Medicine(MD),"3,359,909",3359909,ok
+2011,Doctor of Osteopathy(DO),"228,294",228294,ok
+2011,Certified Nurse Midwife(CNM/CM),"309,514",309514,ok
+2011,Other Midwife,"26,011",26011,ok
+2011,Other,"25,782",25782,ok
+2011,Unknown or not stated,"4,080",4080,ok
+2012,Doctor of Medicine(MD),"3,347,334",3347334,ok
+2012,Doctor of Osteopathy(DO),"235,434",235434,ok
+2012,Certified Nurse Midwife(CNM/CM),"313,846",313846,ok
+2012,Other Midwife,"28,343",28343,ok
+2012,Other,"25,777",25777,ok
+2012,Unknown or not stated,"2,107",2107,ok
+2013,Doctor of Medicine(MD),"3,310,094",3310094,ok
+2013,Doctor of Osteopathy(DO),"243,487",243487,ok
+2013,Certified Nurse Midwife(CNM/CM),"320,983",320983,ok
+2013,Other Midwife,"27,865",27865,ok
+2013,Other,"27,354",27354,ok
+2013,Unknown or not stated,"2,398",2398,ok
+2014,Doctor of Medicine(MD),"3,331,630",3331630,ok
+2014,Doctor of Osteopathy(DO),"263,129",263129,ok
+2014,Certified Nurse Midwife(CNM/CM),"332,107",332107,ok
+2014,Other Midwife,"31,701",31701,ok
+2014,Other,"27,542",27542,ok
+2014,Unknown or not stated,"1,967",1967,ok
+2015,Doctor of Medicine(MD),"3,293,951",3293951,ok
+2015,Doctor of Osteopathy(DO),"278,576",278576,ok
+2015,Certified Nurse Midwife(CNM/CM),"338,663",338663,ok
+2015,Other Midwife,"32,841",32841,ok
+2015,Other,"32,418",32418,ok
+2015,Unknown or not stated,"2,048",2048,ok
+2016,Doctor of Medicine(MD),"3,241,239",3241239,ok
+2016,Doctor of Osteopathy(DO),"290,431",290431,ok
+2016,Certified Nurse Midwife(CNM/CM),"348,206",348206,ok
+2016,Other Midwife,"30,388",30388,ok
+2016,Other,"33,256",33256,ok
+2016,Unknown or not stated,"2,355",2355,ok
+2017,Doctor of Medicine(MD),"3,142,479",3142479,ok
+2017,Doctor of Osteopathy(DO),"295,937",295937,ok
+2017,Certified Nurse Midwife(CNM/CM),"351,968",351968,ok
+2017,Other Midwife,"29,926",29926,ok
+2017,Other,"32,401",32401,ok
+2017,Unknown or not stated,"2,789",2789,ok
+2018,Doctor of Medicine(MD),"3,066,477",3066477,ok
+2018,Doctor of Osteopathy(DO),"303,090",303090,ok
+2018,Certified Nurse Midwife(CNM/CM),"357,297",357297,ok
+2018,Other Midwife,"30,222",30222,ok
+2018,Other,"32,185",32185,ok
+2018,Unknown or not stated,"2,441",2441,ok
+2019,Doctor of Medicine(MD),"2,997,404",2997404,ok
+2019,Doctor of Osteopathy(DO),"315,000",315000,ok
+2019,Certified Nurse Midwife(CNM/CM),"368,362",368362,ok
+2019,Other Midwife,"32,410",32410,ok
+2019,Other,"32,123",32123,ok
+2019,Unknown or not stated,"2,241",2241,ok
+2020,Doctor of Medicine(MD),"2,853,659",2853659,ok
+2020,Doctor of Osteopathy(DO),"318,094",318094,ok
+2020,Certified Nurse Midwife(CNM/CM),"372,991",372991,ok
+2020,Other Midwife,"37,397",37397,ok
+2020,Other,"29,732",29732,ok
+2020,Unknown or not stated,"1,774",1774,ok
+2021,Doctor of Medicine(MD),"2,848,701",2848701,ok
+2021,Doctor of Osteopathy(DO),"332,022",332022,ok
+2021,Certified Nurse Midwife(CNM/CM),"390,212",390212,ok
+2021,Other Midwife,"43,772",43772,ok
+2021,Other,"47,341",47341,ok
+2021,Unknown or not stated,"2,244",2244,ok
+2022,Doctor of Medicine(MD),"2,830,551",2830551,ok
+2022,Doctor of Osteopathy(DO),"345,099",345099,ok
+2022,Certified Nurse Midwife(CNM/CM),"398,976",398976,ok
+2022,Other Midwife,"44,528",44528,ok
+2022,Other,"45,916",45916,ok
+2022,Unknown or not stated,"2,688",2688,ok
+2023,Doctor of Medicine(MD),"2,739,690",2739690,ok
+2023,Doctor of Osteopathy(DO),"357,152",357152,ok
+2023,Certified Nurse Midwife(CNM/CM),"408,214",408214,ok
+2023,Other Midwife,"46,220",46220,ok
+2023,Other,"42,490",42490,ok
+2023,Unknown or not stated,"2,251",2251,ok
+2024,Doctor of Medicine(MD),"2,725,046",2725046,ok
+2024,Doctor of Osteopathy(DO),"376,521",376521,ok
+2024,Certified Nurse Midwife(CNM/CM),"434,811",434811,ok
+2024,Other Midwife,"49,078",49078,ok
+2024,Other,"40,398",40398,ok
+2024,Unknown or not stated,"3,080",3080,ok
