@@ -46,6 +46,55 @@ assigned counties from).
 
 ![Active AMCB-certified midwives per 100,000 women aged 15-44](docs/maps/active_state_rate.png)
 
+### Supply, before travel time enters the picture
+
+![County midwifery supply, with "none" as its own colour class](docs/figures/county_supply.png)
+
+Midwives per 1,000 births is a **count over a denominator** — both complete — so
+unlike anything drawn from isochrones it does not depend on coverage. Zero gets
+its own colour deliberately: 1,619 of 3,109 CONUS counties have no ACTIVE
+AMCB-certified midwife, and an equal-interval scale renders every one of them as
+"low" rather than "none".
+
+![Supply gradient and provider configuration by rurality](docs/figures/rural_gradient.png)
+
+The gradient is monotone (3.38 → 2.53 → 1.95 per 1,000 births), but the
+composition panel is the finding: **midwives are co-located with obstetricians,
+not substituting for them.** "Midwife only" never exceeds 5.9% of counties in any
+stratum and is *lowest* where obstetricians are scarcest. 72.5% of remote
+counties have neither provider type.
+
+![Share of each rurality stratum that is observed at all, by measure](docs/figures/missingness_gradient.png)
+
+**The single most important caveat in this project.** Four independent
+measurements, each thinning out fastest in the counties the study is about. The
+gradient lives partly in the *observation process*, not only in the workforce —
+which is why an uncorrected rural claim from any coverage- or reporting-based
+measure is unsafe, and why the supply measure above is the one that survives.
+
+![Distribution of midwives per 1,000 births across congressional districts](docs/figures/district_spread.png)
+
+District variation dwarfs the rural gradient: a 9.6-fold gap between the 90th and
+10th percentile district, against 1.7-fold metro-to-remote. Where you are matters
+more than how rural you are.
+
+![osm.de to EC2 polygon area ratio by rurality and band](docs/figures/engine_calibration.png)
+
+The 30/60-minute surfaces are assembled from two routing engines, and the split
+falls along the urban/rural axis by construction. Calibration on 88 shared
+origins shows the 30-minute area ratio drifting 0.85 → 1.09 across the gradient —
+relatively *more* generous in rural areas — while 60 minutes is nearly flat.
+**Do not read a rural gradient off the 30-minute band.**
+
+Regenerate every figure above from committed artifacts:
+
+```sh
+Rscript make_readme_figures.R
+```
+
+All are aggregate. No figure plots an individual midwife: an isochrone or a dot
+discloses a practice address, and jittering is not de-identification.
+
 ### Two filters, kept separate
 
 `linkage_tier` answers *how sure are we this is the right NPI?* `AMCB status` answers *is this person
