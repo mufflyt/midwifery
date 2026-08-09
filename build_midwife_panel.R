@@ -30,7 +30,22 @@ ROOT <- Sys.getenv("NPPES_HISTORY",
                    "/Volumes/MufflySamsung/nppes_historical_downloads")
 stopifnot(dir.exists(ROOT))
 
+# A CNM must hold RN licensure, so enumerating under a nursing or women's
+# health taxonomy instead of a midwifery one is a registration choice, not a
+# different profession -- we hit exactly that case (a CNM enumerated as a
+# Women's Health NP). Restricting the panel to 367A/176B therefore hides real
+# midwives. Nursing codes are included and LABELLED, so the matcher can weigh
+# them as weaker evidence rather than treating all candidates alike.
 MIDWIFE_TAX <- c("367A00000X", "176B00000X")
+NURSING_TAX <- c("363LW0102X",  # Women's Health NP
+                 "363LX0001X",  # OB-GYN NP
+                 "363L00000X",  # Nurse Practitioner
+                 "363LA2200X",  # Adult Health NP
+                 "163WW0101X",  # RN, Women's Health
+                 "163W00000X",  # Registered Nurse
+                 "367500000X",  # Certified Registered Nurse Anesthetist
+                 "364SW0102X")  # CNS, Women's Health
+PANEL_TAX <- c(MIDWIFE_TAX, NURSING_TAX)
 
 files <- list.files(ROOT, pattern = "^npidata(_pfile)?_[0-9]{8}-[0-9]{8}\\.csv$",
                     recursive = TRUE, full.names = TRUE)
@@ -54,13 +69,23 @@ on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 out_path <- "midwife_panel.csv"
 RESUME <- !identical(Sys.getenv("PANEL_REBUILD"), "1")
 lock <- paste0(out_path, ".lock")
+# The lock must record WHO holds it, or a killed build leaves a stale file that
+# blocks every future run and looks identical to a live one.
 if (file.exists(lock)) {
-  stop(sprintf(paste("%s exists -- another build is writing %s.",
-                     "Two builders append to the same file and interleave into",
-                     "a corrupt panel. Remove the lock if no build is running."),
-               lock, out_path), call. = FALSE)
+  holder <- tryCatch(as.integer(readLines(lock, warn = FALSE)[1]), error = function(e) NA)
+  alive <- !is.na(holder) &&
+    nzchar(suppressWarnings(system(sprintf("ps -p %d -o pid=", holder),
+                                   intern = TRUE, ignore.stderr = TRUE))[1])
+  if (isTRUE(alive)) {
+    stop(sprintf(paste("%s is held by running process %d. Two builders append",
+                       "to the same file and interleave into a corrupt panel."),
+                 lock, holder), call. = FALSE)
+  }
+  message(sprintf("[panel] clearing stale lock from dead process %s",
+                  ifelse(is.na(holder), "<unknown>", holder)))
+  unlink(lock)
 }
-file.create(lock)
+writeLines(as.character(Sys.getpid()), lock)
 on.exit(unlink(lock), add = TRUE)
 done_years <- integer(0)
 if (RESUME && file.exists(out_path)) {
@@ -117,12 +142,16 @@ for (k in seq_along(files)) {
                 k, length(files), basename(f))); next
   }
 
-  where_tax <- paste(sprintf("%s IN ('%s')", tax, paste(MIDWIFE_TAX, collapse = "','")),
+  where_tax <- paste(sprintf("%s IN ('%s')", tax, paste(PANEL_TAX, collapse = "','")),
                      collapse = " OR ")
+  # Which slot matched decides the evidence tier downstream.
+  mid_expr <- paste(sprintf("%s IN ('%s')", tax, paste(MIDWIFE_TAX, collapse = "','")),
+                    collapse = " OR ")
   sel <- function(nm, as) if (is.na(col[[nm]])) sprintf("NULL AS %s", as)
                           else sprintf("UPPER(TRIM(%s)) AS %s", col[[nm]], as)
 
   sql <- sprintf("SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                         CASE WHEN (%s) THEN 'midwife' ELSE 'nursing' END AS tax_class,
                          %d AS snapshot_year, '%s' AS snapshot_date
                   FROM %s WHERE (%s)%s",
                  sprintf("%s AS npi", col$npi),
@@ -134,7 +163,7 @@ for (k in seq_along(files)) {
                  else sprintf("SUBSTR(TRIM(%s), 1, 5) AS practice_zip", col$zip),
                  if (is.na(col$deact)) "NULL AS deactivation_date"
                  else sprintf("TRIM(%s) AS deactivation_date", col$deact),
-                 snap_year[k], snap_date[k], src, where_tax,
+                 mid_expr, snap_year[k], snap_date[k], src, where_tax,
                  if (is.na(col$ent)) "" else sprintf(" AND %s = '1'", col$ent))
 
   t0 <- Sys.time()
@@ -145,8 +174,10 @@ for (k in seq_along(files)) {
   write.table(rows, out_path, sep = ",", row.names = FALSE, na = "",
               col.names = first, append = !first, qmethod = "double")
   first <- FALSE
-  cat(sprintf("  [%d/%d] %s -> %s midwives (%.0fs)\n", k, length(files), snap_year[k],
-              format(nrow(rows), big.mark = ","),
+  cat(sprintf("  [%d/%d] %s -> %s rows (%s midwife, %s nursing) (%.0fs)\n",
+              k, length(files), snap_year[k], format(nrow(rows), big.mark = ","),
+              format(sum(rows$tax_class == "midwife"), big.mark = ","),
+              format(sum(rows$tax_class == "nursing"), big.mark = ","),
               as.numeric(difftime(Sys.time(), t0, units = "secs"))))
 }
 
