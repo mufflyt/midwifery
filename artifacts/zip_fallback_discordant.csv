@@ -1,7 +1,9 @@
 certification_number,npi,practice_state,practice_zip,GEOID_coord,GEOID_unique,quality_score,geocode_match,match_resolution,geo_ambiguity
-6233,1093934580,MN,55454,27123,27053,NA,run_results,exact_name_unique,unambiguous
-11963,1518010040,GA,30034,13135,13089,NA,run_results,exact_name_unique,unambiguous
-2240,1134209604,NY,11361,36005,36081,NA,run_results,exact_name_unique,unambiguous
-10492,1740208156,KS,66023,20091,20005,NA,run_results,exact_name_unique,unambiguous
-CNM2729,1851773576,MA,02740,25017,25005,NA,run_results,exact_name_unique,unambiguous
-12940,1124269345,WY,82335,56013,56007,NA,run_results,exact_name_unique,unambiguous
+6233,1093934580,MN,55454,27123,27053,NA,run_results,NA,unambiguous
+11963,1518010040,GA,30034,13135,13089,NA,run_results,NA,unambiguous
+9313,1962854323,MS,39216,28121,28049,NA,run_results,NA,unambiguous
+2240,1134209604,NY,11361,36005,36081,NA,run_results,NA,unambiguous
+10492,1740208156,KS,66023,20091,20005,NA,run_results,NA,unambiguous
+10977,1609207208,GA,30022,13089,13121,NA,run_results,NA,unambiguous
+12940,1124269345,WY,82335,56013,56007,NA,run_results,NA,unambiguous
+5717,1346307444,VA,22908,51003,51540,85,no_zip_fallback,NA,unambiguous

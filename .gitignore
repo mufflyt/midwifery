@@ -87,3 +87,20 @@ artifacts/midwife_isochrone_match.csv
 artifacts/not_represented_by_existing_isochrone_library.csv
 artifacts/historical_isochrone_recovery_matches*.csv
 artifacts/iso_recovery/
+
+# Row-level person data from the Healthgrades scrape (names, street addresses,
+# coordinates, NPIs) and the midwife-only NPPES panel (233K person-year rows).
+# Same treatment as every other row-level artifact here.
+healthgrades_midwives.csv
+healthgrades_checkpoint.rds
+healthgrades_scrape_log.txt
+artifacts/midwife_panel_midwifeonly.csv
+
+# Stage sentinels written by the pipeline drivers
+.enh_done
+.geo_final_done
+.rerun_done
+.s3final_done
+.s3pip_done
+.stage3_done
+.tax_ab_done

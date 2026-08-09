@@ -1,0 +1,9 @@
+metric,value
+A->B top-NPI changes (n),483
+  ... contested under C,14
+  ... tied-evidence under C,0
+  ... still accepted under C,110
+  ... accepted with the NEW (B) top NPI,54
+  ... not accepted by own evidence in either arm,359
+contested rate among A->B CHANGED (%),2.899
+contested rate among A->B UNCHANGED (%),2.123

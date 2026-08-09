@@ -1,0 +1,5 @@
+bc,n,pct
+accepted_same_npi,16573,76.38
+unchanged_unmatched,3328,15.34
+unchanged_ambiguous,1642,7.57
+accepted_to_ambiguous_contested_npi,154,0.71
