@@ -114,3 +114,6 @@ artifacts/iso_recovery_pro/
 # reference boundaries, redownloadable from Census
 data/cd118/
 data/cd119/
+
+# Machine-specific env (paths, API keys) - never commit
+.Renviron
