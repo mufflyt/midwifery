@@ -45,7 +45,30 @@ sf::sf_use_s2(FALSE)
 # that basis. The dissolved-union layers remain, because they answer a different
 # question (where is there coverage) than the dots do (who is where).
 OUTDIR <- "artifacts/maps"
-CONUS_EXCLUDE <- c("02", "15", "60", "66", "69", "72", "78")   # AK HI AS GU MP PR VI
+
+# Geography and band constants come from mufflyaccess, the SSOT package. An
+# earlier version of this file hand-typed the non-contiguous FIPS vector, which
+# was byte-identical to NON_CONTIGUOUS_FIPS -- retyped, not derived, so the two
+# would have diverged silently at the next revision.
+CONUS_EXCLUDE <- mufflyaccess::NON_CONTIGUOUS_FIPS              # AK HI AS GU MP PR VI
+BANDS_SHOWN   <- c(30, 60)
+stopifnot(all(BANDS_SHOWN %in% mufflyaccess::CANONICAL_BANDS))
+# Showing 2 of the 4 canonical bands is a deliberate, stated deviation: no
+# 120/180 polygons were generated for the newly-routed locations, and falling
+# back to canonical-only coverage for those bands would reinstate the
+# rural-selective bias this whole effort exists to avoid.
+BANDS_OMITTED <- setdiff(mufflyaccess::CANONICAL_BANDS, BANDS_SHOWN)
+
+# --- access language guard ---------------------------------------------------
+# twostep encodes a methodological constraint as a vocabulary: an accessibility
+# surface with no defensible demand target cannot support normative claims, so
+# "shortage", "adequacy", "unmet need" and friends are forbidden on user-facing
+# strings. twostep does not currently install (it sources a file absent from the
+# repo), so the one module is sourced directly rather than skipped.
+local({
+  f <- path.expand("~/twostep/R/access_language.R")
+  if (file.exists(f)) sys.source(f, envir = globalenv())
+})
 
 # --- canonical helpers -------------------------------------------------------
 # mm_jenks_zero_scale() and the map conventions below come from
@@ -53,7 +76,8 @@ CONUS_EXCLUDE <- c("02", "15", "60", "66", "69", "72", "78")   # AK HI AS GU MP 
 # this is a path dependency and not a copy. An earlier draft of this file
 # duplicated the scale function line for line.
 source("R/lib/mysterymaps_dep.R")
-invisible(load_mysterymaps())
+invisible(load_mysterymaps())          # mm_jenks_zero_scale (staging file)
+suppressPackageStartupMessages(library(mysterymaps))
 
 # --- data --------------------------------------------------------------------
 u30 <- readRDS(file.path(OUTDIR, "midwifery_isochrone_union_30min.rds"))
@@ -187,8 +211,8 @@ m <- leaflet::leaflet(options = leaflet::leafletOptions(
                      opacity = 0.9,
                      className = "info legend mm-lg mm-lg-rate") %>%
 
-  mm_register_base_legend(G$rate, key = "rate") %>%
-  mm_add_coverage_surfaces(
+  mysterymaps_register_base_legend(G$rate, key = "rate") %>%
+  mysterymaps_add_coverage_surfaces(
     surfaces = stats::setNames(list(c30, c60, gap60), c(G$b30, G$b60, G$gap)),
     colors = c("#08519c", "#3182bd", "#d94801"),
     legend_labels = c("within 30 min of a midwife",
@@ -315,8 +339,8 @@ panel <- sprintf('
 # Both handlers are canonical (mysterymaps): legends keyed to BASE groups, and
 # point labels gated by zoom instead of hidden behind cluster bubbles. An
 # earlier draft of this file hand-rolled both.
-m <- mm_base_legend_switcher(m, default = G$rate)
-m <- mm_zoom_gated_labels(m, group = "Midwife locations",
+m <- mysterymaps_base_legend_switcher(m, default = G$rate)
+m <- mysterymaps_zoom_gated_labels(m, group = "Midwife locations",
                           min_zoom = 9, max_labels = 400)
 
 # Reset-view control: specific to this map's CONUS framing, so it stays local.
@@ -339,6 +363,17 @@ function(el, x) {
 }')
 
 m <- htmlwidgets::prependContent(m, htmltools::HTML(panel))
+
+# Every user-facing string is checked before the map is written, so a normative
+# word cannot reach a published figure via a hurried edit.
+if (exists("assert_access_language", mode = "function")) {
+  assert_access_language(c(unlist(G), sc$leg_labs,
+                           "within 30 min of a midwife",
+                           "within 60 min of a midwife",
+                           "more than 60 min from any midwife"),
+                         context = "map layer and legend labels")
+  cat("access-language guard: clean\n")
+}
 
 out <- file.path(OUTDIR, "midwifery_access_map.html")
 htmlwidgets::saveWidget(m, out, selfcontained = TRUE,

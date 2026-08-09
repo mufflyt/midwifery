@@ -138,15 +138,18 @@ d <- d %>%
                               !is.na(ahrf_births_3yr) ~ "AHRF_natality_3yr",
                               !is.na(acs_births)      ~ "ACS_past_12mo",
                               TRUE                    ~ NA_character_),
+    # safe_rate() from mufflyaccess handles the zero denominator, the NA and
+    # the Inf that round() would otherwise carry into a published table.
     midwives_per_1k_births =
       if_else(!is.na(births_used) & births_used >= MIN_BIRTHS,
-              round(1000 * study_midwives / births_used, 2), NA_real_),
+              mufflyaccess::safe_rate(study_midwives, births_used,
+                                      multiplier = 1000, digits = 2), NA_real_),
     ahrf_midwives_per_1k_births =
       if_else(!is.na(births_used) & births_used >= MIN_BIRTHS & !is.na(ahrf_midwives_24),
               round(1000 * ahrf_midwives_24 / births_used, 2), NA_real_),
     midwives_per_100k_pop =
-      if_else(!is.na(population) & population > 0,
-              round(1e5 * study_midwives / population, 2), NA_real_),
+      mufflyaccess::safe_rate(study_midwives, population,
+                              multiplier = 1e5, digits = 2),
     birth_rooms_per_1k_births =
       if_else(!is.na(births_used) & births_used >= MIN_BIRTHS & !is.na(ahrf_birth_rooms),
               round(1000 * ahrf_birth_rooms / births_used, 2), NA_real_),

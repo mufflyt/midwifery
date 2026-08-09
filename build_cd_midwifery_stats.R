@@ -128,8 +128,8 @@ d <- sf::st_drop_geometry(cd) %>%
          attendants_per_1k_births =
            if_else(rate_ok, round(1000 * birth_attendants / acs_births, 2), NA_real_),
          midwives_per_100k_pop =
-           if_else(!is.na(population) & population > 0,
-                   round(1e5 * n_midwife / population, 2), NA_real_),
+           mufflyaccess::safe_rate(n_midwife, population,
+                                   multiplier = 1e5, digits = 2),
          # Share of the ROUTINE birth-attending workforce that is midwives.
          midwife_share_of_attendants =
            if_else(birth_attendants > 0,
