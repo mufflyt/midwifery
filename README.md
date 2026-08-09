@@ -1,5 +1,35 @@
 # midwifery
 
+**[→ Interactive pipeline diagrams](https://claude.ai/code/artifact/9a541a9f-038f-458b-bb9d-d3b0120ca2cd)**
+&nbsp;·&nbsp; [source](docs/pipeline.html)
+
+Flowcharts of the whole chain — AMCB name to NPI to county — with the real counts at every stage
+and the defects each guard caught. (Private link; visible to the repo owner.)
+
+```mermaid
+flowchart LR
+  A["AMCB directory<br/>22,309 names"] --> B["Candidate generation<br/>197,081 pairs"]
+  B --> C["Name-evidence class<br/>1 to 4"]
+  C --> D["Accepted links<br/>16,892"]
+  C --> Q["Quarantined<br/>3,091"]
+  D --> E["Last-observed<br/>practice address"]
+  E --> F["Geocode + county<br/>~99% of linked"]
+```
+
+| Stage | Result |
+|---|---|
+| AMCB roster scraped | 22,309 certificants (reconciles to AMCB's own totals) |
+| Primary linkage | 14,668 (65.7%) — midwifery taxonomy confirmed |
+| Sensitivity tiers | +1,896 nursing, +328 fuzzy → 16,892 accepted (75.7%) |
+| Quarantined | 3,091 — candidates exist but identity is ambiguous |
+| Unmatched | 2,326 — no plausible NPI at all |
+| County (enhanced) | 98.9% of primary links, ~99% in every tier |
+
+Linkage certainty and geographic completeness are separate properties: **65.7% primary linkage is
+the inferential limitation; the geography is essentially complete for anything linked.** Linkage
+also varies sharply by certification status (82.3% ACTIVE vs 19.6% DECEASED), so the linked subset
+is not a random sample of the roster.
+
 Scraper for the [AMCB certification directory](https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800)
 (American Midwifery Certification Board public primary-source verification listing).
 

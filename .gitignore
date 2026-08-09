@@ -69,3 +69,6 @@ logs_*.log
 midwives_geography_enhanced.csv
 midwives_panel_geocoded_enhanced.csv
 artifacts/geocode_final_results.csv
+
+# the pipeline diagrams are documentation, not scraped HTML
+!docs/pipeline.html

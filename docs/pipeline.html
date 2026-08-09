@@ -1,0 +1,268 @@
+<title>AMCB → NPI → Geography: linkage pipeline</title>
+<style>
+  :root{
+    --ink:#0f1519; --paper:#f5f7f8; --panel:#ffffff; --slate:#5c6b74;
+    --rule:#d8e0e3; --accent:#146b60; --accent-soft:#e4efed;
+    --amber:#9a6212; --crimson:#8f2a2a; --keep:#146b60;
+    --serif:Charter,"Iowan Old Style","Source Serif Pro",Georgia,serif;
+    --sans:"Helvetica Neue",Inter,system-ui,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--ink:#e4eaed;--paper:#0d1417;--panel:#141d21;--slate:#93a4ad;
+      --rule:#25333a;--accent:#4bb3a3;--accent-soft:#12292a;--amber:#d4a04a;--crimson:#d97a7a;--keep:#4bb3a3;}
+  }
+  :root[data-theme="dark"]{--ink:#e4eaed;--paper:#0d1417;--panel:#141d21;--slate:#93a4ad;
+    --rule:#25333a;--accent:#4bb3a3;--accent-soft:#12292a;--amber:#d4a04a;--crimson:#d97a7a;--keep:#4bb3a3;}
+  :root[data-theme="light"]{--ink:#0f1519;--paper:#f5f7f8;--panel:#ffffff;--slate:#5c6b74;
+    --rule:#d8e0e3;--accent:#146b60;--accent-soft:#e4efed;--amber:#9a6212;--crimson:#8f2a2a;--keep:#146b60;}
+
+  body{background:var(--paper);color:var(--ink);font-family:var(--serif);
+    line-height:1.6;margin:0;padding:0 1.25rem 6rem;}
+  .wrap{max-width:52rem;margin:0 auto;display:flex;flex-direction:column;gap:2.75rem;}
+  header{padding:4rem 0 0;display:flex;flex-direction:column;gap:.75rem;}
+  .eyebrow{font-family:var(--sans);font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--accent);font-weight:600;}
+  h1{font-size:clamp(1.9rem,4.5vw,2.9rem);line-height:1.12;margin:0;text-wrap:balance;font-weight:600;}
+  .standfirst{font-size:1.1rem;color:var(--slate);max-width:38rem;margin:0;}
+  h2{font-size:1.35rem;margin:0 0 .5rem;text-wrap:balance;font-weight:600;
+    border-top:2px solid var(--ink);padding-top:.7rem;}
+  h3{font-family:var(--sans);font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--slate);margin:1.5rem 0 .4rem;font-weight:600;}
+  p{margin:0 0 .9rem;}
+  section{display:flex;flex-direction:column;}
+  .fig{background:var(--panel);border:1px solid var(--rule);border-radius:3px;
+    padding:1.4rem 1rem;overflow-x:auto;margin:.6rem 0 .3rem;}
+  .cap{font-family:var(--sans);font-size:.78rem;color:var(--slate);margin:0 0 1.2rem;}
+  table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:.82rem;
+    font-variant-numeric:tabular-nums;}
+  th{font-family:var(--sans);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
+    text-align:right;color:var(--slate);border-bottom:1px solid var(--rule);padding:.45rem .6rem;font-weight:600;}
+  th:first-child,td:first-child{text-align:left;}
+  td{padding:.45rem .6rem;border-bottom:1px solid var(--rule);text-align:right;}
+  tbody tr:last-child td{border-bottom:none;}
+  .keep{color:var(--keep);font-weight:600;} .warn{color:var(--amber);} .drop{color:var(--crimson);}
+  .scroller{overflow-x:auto;}
+  .waterfall{display:flex;flex-direction:column;gap:.35rem;font-family:var(--mono);font-size:.8rem;
+    font-variant-numeric:tabular-nums;}
+  .wf-row{display:grid;grid-template-columns:12.5rem 1fr 5rem;gap:.75rem;align-items:center;}
+  .wf-label{font-family:var(--sans);font-size:.75rem;color:var(--slate);}
+  .bar{height:1.15rem;background:var(--accent);border-radius:1px;}
+  .bar.mut{background:var(--rule);}
+  .note{border-left:3px solid var(--amber);padding:.1rem 0 .1rem 1rem;color:var(--slate);
+    font-size:.95rem;margin:.4rem 0 1rem;}
+  code{font-family:var(--mono);font-size:.85em;background:var(--accent-soft);padding:.1em .35em;border-radius:2px;}
+  footer{font-family:var(--sans);font-size:.78rem;color:var(--slate);border-top:1px solid var(--rule);
+    padding-top:1rem;}
+  @media (max-width:640px){.wf-row{grid-template-columns:8rem 1fr 4rem;}}
+
+  /* Mermaid inherits page type rather than its own defaults */
+  .fig .mermaid{font-family:var(--sans)!important;}
+  .fig .mermaid .nodeLabel,.fig .mermaid .edgeLabel{font-family:var(--sans)!important;font-size:.82rem!important;}
+  .fig .mermaid .edgeLabel{background:var(--panel)!important;color:var(--slate)!important;}
+  .fig .mermaid .node rect,.fig .mermaid .node polygon{stroke:var(--rule);}
+
+  /* Evidence ladder: built in CSS so the type and counts stay under control */
+  .ladder{display:flex;flex-direction:column;gap:.4rem;}
+  .rung{display:grid;grid-template-columns:5.5rem 1fr 6rem;gap:1rem;align-items:baseline;
+    padding:.7rem .9rem;border-radius:2px;color:#fff;}
+  .rung .cls{font-family:var(--sans);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;}
+  .rung .desc{font-family:var(--serif);font-size:.95rem;}
+  .rung .ct{font-family:var(--mono);font-size:.85rem;text-align:right;font-variant-numeric:tabular-nums;opacity:.95;}
+  .r1{background:#146b60;} .r2{background:#2c8377;}
+  .r3{background:#5c6b74;} .r4{background:#9a6212;}
+  .rung.r1{margin-right:0;} .rung.r2{margin-right:1.5rem;}
+  .rung.r3{margin-right:3rem;} .rung.r4{margin-right:4.5rem;}
+  @media (max-width:640px){.rung{grid-template-columns:4.5rem 1fr;}
+    .rung .ct{grid-column:2;text-align:left;}
+    .rung.r2,.rung.r3,.rung.r4{margin-right:0;}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Record linkage · methods</div>
+  <h1>From a midwife’s name to a county on a map</h1>
+  <p class="standfirst">The American Midwifery Certification Board publishes 22,309 certified midwives and
+  no addresses at all. This is how each name becomes an NPI, and each NPI a practice location — and where
+  records are deliberately lost along the way.</p>
+</header>
+
+<section>
+  <h2>The whole pipeline</h2>
+  <p>Four stages, each writing an artifact its successor verifies by SHA-256 before doing any work.
+  Identity is decided first; taxonomy and geography follow.</p>
+  <div class="fig">
+<pre class="mermaid">
+flowchart TD
+  A["AMCB directory &nbsp; 22,309 names, no location"] --> B["Candidate generation &nbsp; 197,081 pairs"]
+  P["NPPES 2007-2025 &nbsp; 443,623 NPIs"] --> B
+  B --> C["Rank by name-evidence class"]
+  C --> D{"One candidate at the strongest class?"}
+  D -->|no| Q["Quarantined &nbsp; 3,091"]
+  D -->|yes| E{"One NPI, one person?"}
+  E -->|contested| Q2["Quarantined &nbsp; 91"]
+  E -->|yes| F["Accepted links &nbsp; 16,892"]
+  F --> G["Last-observed practice address"]
+  G --> H["Geocode &nbsp; Census to ArcGIS to centroid"]
+  G --> J["Unique-ZIP county"]
+  H --> I["Point-in-polygon county"]
+  I --> K["county_exact"]
+  I --> L["county_best"]
+  J --> L
+  classDef src fill:#146b60,stroke:none,color:#ffffff;
+  classDef hold fill:#9a6212,stroke:none,color:#ffffff;
+  classDef out fill:#0f1519,stroke:#0f1519,color:#ffffff;
+  class A,F src; class Q,Q2 hold; class K,L out;
+</pre>
+  </div>
+  <p class="cap">Quarantine is an outcome, not a failure: it marks records where the evidence cannot
+  identify one person.</p>
+</section>
+
+<section>
+  <h2>Identity evidence is ordered, not scored</h2>
+  <p>Two people who are both exact first-and-last-name matches, with no middle name, no address and no
+  date of birth, <em>are</em> indistinguishable. A numeric score would only manufacture certainty, so
+  evidence is a ranked class and taxonomy never breaks a name tie.</p>
+  <div class="fig">
+<div class="ladder">
+      <div class="rung r1"><span class="cls">Class 1</span><span class="desc">exact first + last, with a recorded middle name</span><span class="ct">10,412</span></div>
+      <div class="rung r2"><span class="cls">Class 2</span><span class="desc">exact first + last, no middle information</span><span class="ct">12,258</span></div>
+      <div class="rung r3"><span class="cls">Class 3</span><span class="desc">exact last + first initial</span><span class="ct">150,745</span></div>
+      <div class="rung r4"><span class="cls">Class 4</span><span class="desc">fuzzy last (Levenshtein &#8804; 2) + exact first</span><span class="ct">23,666</span></div>
+    </div>
+  </div>
+  <p class="cap">Strongest evidence at the top; a candidate is only resolved when exactly one sits at
+  a roster row&rsquo;s best available class. Class 2 was empty until a defect was found: <code>paste(NA, "")</code> produced the literal
+  string “NA”, giving every midwife without a middle name a fabricated initial that matched every other
+  absent one.</p>
+</section>
+
+<section>
+  <h2>Taxonomy decides the tier, never the identity</h2>
+  <p>A certified nurse-midwife must hold RN licensure and may register under either taxonomy. So nursing
+  NPIs are candidates — but a nursing-only match is a separate evidence tier, never promoted into the
+  primary cohort.</p>
+  <div class="fig">
+<pre class="mermaid">
+flowchart LR
+  S["Resolved candidate"] --> T1{"Fuzzy surname?"}
+  T1 -->|yes| F["sensitivity_fuzzy &nbsp; 328"]
+  T1 -->|no| T2{"Midwifery taxonomy ever recorded?"}
+  T2 -->|yes| P["primary_midwifery &nbsp; 14,668"]
+  T2 -->|no| N["sensitivity_nursing &nbsp; 1,896"]
+  classDef prim fill:#146b60,stroke:none,color:#ffffff;
+  classDef sens fill:#2c8377,stroke:none,color:#ffffff;
+  classDef fuzz fill:#9a6212,stroke:none,color:#ffffff;
+  class P prim; class N sens; class F fuzz;
+</pre>
+  </div>
+</section>
+
+<section>
+  <h2>Where the 22,309 go</h2>
+  <p>Linkage, not geocoding, is the binding constraint. Every record that fails is classified by
+  <em>why</em>, and the two kinds of missingness are kept apart: no plausible NPI exists, versus plausible
+  NPIs exist but identity is ambiguous.</p>
+  <div class="fig">
+    <div class="waterfall">
+      <div class="wf-row"><span class="wf-label">AMCB roster</span><span class="bar" style="width:100%"></span><span>22,309</span></div>
+      <div class="wf-row"><span class="wf-label">Primary linkage</span><span class="bar" style="width:65.7%"></span><span class="keep">14,668</span></div>
+      <div class="wf-row"><span class="wf-label">+ nursing tier</span><span class="bar" style="width:74.2%"></span><span>16,564</span></div>
+      <div class="wf-row"><span class="wf-label">+ fuzzy tier</span><span class="bar" style="width:75.7%"></span><span>16,892</span></div>
+      <div class="wf-row"><span class="wf-label">Quarantined</span><span class="bar mut" style="width:13.9%"></span><span class="warn">3,091</span></div>
+      <div class="wf-row"><span class="wf-label">No candidate at all</span><span class="bar mut" style="width:10.4%"></span><span class="drop">2,326</span></div>
+      <div class="wf-row"><span class="wf-label">Primary + county</span><span class="bar" style="width:65.6%"></span><span class="keep">14,631</span></div>
+    </div>
+  </div>
+  <p class="cap">All 3,091 quarantined records have candidates; all 2,326 unmatched records have none.
+  That distinction is preserved in the artifact as <code>has_candidate</code>.</p>
+</section>
+
+<section>
+  <h2>Geography, once identity is settled</h2>
+  <p>Coordinates and ZIP must describe the <em>same</em> address. Pairing coordinates geocoded from one
+  roster with ZIPs from another dropped validation agreement to 94.47%; rebuilt from a single address
+  vintage it reaches 99.95%.</p>
+  <div class="fig">
+<pre class="mermaid">
+flowchart TD
+  A["Last-observed address, with its observation year"] --> B{"Already in geocode cache?"}
+  B -->|yes| D["Coordinates"]
+  B -->|no| C1["US Census &nbsp; 86.9%"]
+  C1 -->|fail| C2["ArcGIS &nbsp; 9.2%"]
+  C2 -->|fail| C3["City centroid"]
+  C1 --> D
+  C2 --> D
+  D --> E{"Coordinate state = ZIP state?"}
+  E -->|no| X["Cross-state conflict &nbsp; unresolved &nbsp; 17"]
+  E -->|yes| F["Point-in-polygon, TIGER 2023"]
+  F --> G["county_exact &nbsp; 98.9% of primary"]
+  A --> H["Unique-ZIP county"]
+  G --> I["county_best &nbsp; 99.7% of primary"]
+  H --> I
+  classDef good fill:#146b60,stroke:none,color:#ffffff;
+  classDef out fill:#0f1519,stroke:#0f1519,color:#ffffff;
+  classDef hold fill:#9a6212,stroke:none,color:#ffffff;
+  class G good; class I out; class X hold;
+</pre>
+  </div>
+  <div class="note">All 17 cross-state conflicts are one address: Fort Campbell, KY 42223 — a base that
+  straddles the Kentucky–Tennessee line. They stay unresolved with both sources retained, rather than
+  being special-cased, so the rule stays general.</div>
+</section>
+
+<section>
+  <h2>Completeness by evidence tier</h2>
+  <p>Reported separately, never pooled: a county attached to a fuzzy-name match is not the same evidence
+  as one attached to a uniquely identified person.</p>
+  <div class="scroller">
+  <table>
+    <thead><tr><th>Tier</th><th>n</th><th>exact · frozen</th><th>exact · enhanced</th><th>best · enhanced</th></tr></thead>
+    <tbody>
+      <tr><td>primary_midwifery</td><td>14,668</td><td>98.1%</td><td class="keep">98.9%</td><td class="keep">99.7%</td></tr>
+      <tr><td>sensitivity_nursing</td><td>1,896</td><td class="warn">32.2%</td><td class="keep">98.5%</td><td class="keep">99.8%</td></tr>
+      <tr><td>sensitivity_fuzzy</td><td>328</td><td class="warn">47.9%</td><td class="keep">98.8%</td><td class="keep">99.4%</td></tr>
+      <tr><td>quarantined</td><td>3,091</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>unmatched</td><td>2,326</td><td>—</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="cap">Quarantined and unmatched rows carry zero analytic geography, asserted at build time.
+  The frozen column is the reference artifact; the enhanced column adds 1,484 newly geocoded addresses.</p>
+
+  <h3>The tier gap was ascertainment, not evidence</h3>
+  <p>Nursing-tier geography looked far worse than primary&rsquo;s &mdash; 32.2% against 98.1%. Geocoding
+  the 1,624 addresses that had never been sent to a geocoder closed it almost entirely: nursing reaches
+  98.5%, within a fraction of primary. The gap measured which addresses happened to be cached, not
+  anything about the linkage itself.</p>
+  <p>That separation matters for interpretation. <strong>Linkage certainty differs by tier and is the
+  real inferential limitation</strong> &mdash; primary rests on midwifery-taxonomy confirmation, nursing
+  on name evidence alone. <strong>Geographic completeness, conditional on having a link, is now ~99%
+  everywhere.</strong> The two should never be reported as one number.</p>
+</section>
+
+<section>
+  <h2>What the guards caught</h2>
+  <p>Every number above survived a check that could have refuted it. These are the ones that fired.</p>
+  <div class="scroller">
+  <table>
+    <thead><tr><th>Defect</th><th>Effect if unfound</th></tr></thead>
+    <tbody>
+      <tr><td>Middle initials fabricated from missing values</td><td>All 18,397 pairs falsely “agreed”</td></tr>
+      <tr><td>Point-in-polygon gated on <code>all(is.na())</code></td><td>10,225 coordinates never became counties</td></tr>
+      <tr><td>Staged cascade suppressed candidates</td><td>90% of plausible pairs never generated</td></tr>
+      <tr><td>Coordinates and ZIPs from different rosters</td><td>Validation fell to 94.47%</td></tr>
+      <tr><td>Reused geocoder <code>run_id</code></td><td>147 addresses lost their attempt provenance</td></tr>
+      <tr><td>NPPES snapshots 2018–2025 silently skipped</td><td>Linkage 27.1 points lower</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<footer>
+  Frozen linkage <code>b44bf2bc9254…</code> · frozen geography <code>9455138198e4…</code> ·
+  NPPES snapshots 2007–2025 · CMS Doctors &amp; Clinicians 2026-06 · TIGER 2023 counties.
+  Every artifact carries a manifest recording its inputs’ SHA-256.
+</footer>
+</div>
