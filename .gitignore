@@ -66,3 +66,6 @@ stage3_*.log
 artifacts/midwives_geography_FROZEN.csv
 artifacts/coordinate_provenance_audit.csv
 logs_*.log
+midwives_geography_enhanced.csv
+midwives_panel_geocoded_enhanced.csv
+artifacts/geocode_final_results.csv

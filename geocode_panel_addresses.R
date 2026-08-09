@@ -65,7 +65,8 @@ roster <- roster %>%
 # MD5(normalized_address + geocoder_version), so a pipe-format lookup finds the
 # seeded rows but silently misses everything geocoded since.
 run_results <- c("artifacts/panel_geocode_results.csv",
-                 "artifacts/geocode_rerun_results.csv")
+                 "artifacts/geocode_rerun_results.csv",
+                 "artifacts/geocode_final_results.csv")
 fresh <- lapply(run_results[file.exists(run_results)], function(p)
   read_csv(p, show_col_types = FALSE) %>%
     transmute(nppes_practice_address = geocode_address_1, nppes_city = geocode_city,
@@ -178,7 +179,8 @@ out <- hit %>%
             address_year = nppes_location_year,
             latitude, longitude, quality_score, geocode_match,
             GEOID = county_fips, census_tract)
-write_csv(out, "midwives_panel_geocoded.csv", na = "")
+COORD_OUT <- Sys.getenv("COORD_OUT", "midwives_panel_geocoded.csv")
+write_csv(out, COORD_OUT, na = "")
 
 queue <- hit %>% filter(is.na(latitude), nzchar(nppes_city)) %>%
   distinct(nppes_practice_address, nppes_city, nppes_state, nppes_zip)

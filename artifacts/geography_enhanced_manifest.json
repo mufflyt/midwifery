@@ -1,0 +1,58 @@
+{
+  "version": "geography_enhanced",
+  "based_on_frozen_linkage_sha256": "b44bf2bc92543b445b34bb5f4eecf3e7352b2a4f02a4a7462ae4252ad5f7e1eb",
+  "frozen_geography_sha256": "9455138198e4d347fe191470a4e30e8e94267689ade8ee4a9acb20d8862d3f5a",
+  "enhanced_geography_sha256": "53bb087a59a4fa2c1cc9a7dfffa0cc5e5e422d3682fb2b7d40c99150ef2fc0df",
+  "generated_utc": "2026-08-09 02:30:40 UTC",
+  "by_tier": [
+    {
+      "linkage_tier": "primary_midwifery",
+      "n": 14668,
+      "exact_frozen": 14389,
+      "exact_enh": 14501,
+      "best_frozen": 14591,
+      "best_enh": 14618,
+      "exact_gain": 112,
+      "exact_pp": 0.8,
+      "best_gain": 27,
+      "best_pp": 0.2,
+      "pct_exact_frozen": 98.1,
+      "pct_exact_enh": 98.9,
+      "pct_best_frozen": 99.5,
+      "pct_best_enh": 99.7
+    },
+    {
+      "linkage_tier": "sensitivity_fuzzy",
+      "n": 328,
+      "exact_frozen": 157,
+      "exact_enh": 324,
+      "best_frozen": 285,
+      "best_enh": 326,
+      "exact_gain": 167,
+      "exact_pp": 50.9,
+      "best_gain": 41,
+      "best_pp": 12.5,
+      "pct_exact_frozen": 47.9,
+      "pct_exact_enh": 98.8,
+      "pct_best_frozen": 86.9,
+      "pct_best_enh": 99.4
+    },
+    {
+      "linkage_tier": "sensitivity_nursing",
+      "n": 1896,
+      "exact_frozen": 610,
+      "exact_enh": 1867,
+      "best_frozen": 1630,
+      "best_enh": 1893,
+      "exact_gain": 1257,
+      "exact_pp": 66.3,
+      "best_gain": 263,
+      "best_pp": 13.9,
+      "pct_exact_frozen": 32.2,
+      "pct_exact_enh": 98.5,
+      "pct_best_frozen": 86,
+      "pct_best_enh": 99.8
+    }
+  ],
+  "note": "Completeness enhancement from geocoding 1,624 previously uncached addresses. Does NOT supersede the frozen geography artifact."
+}
