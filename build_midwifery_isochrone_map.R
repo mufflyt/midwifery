@@ -133,8 +133,34 @@ band_union <- function(b) {
 
   all_g <- do.call(c, unname(parts))
   cat(sprintf("[%smin] dissolving %s polygons ...\n", b, length(all_g)))
-  u <- sf::st_union(all_g)
-  u <- sf::st_make_valid(u)
+
+  # BATCHED dissolve. A single st_union() over the whole mixed set silently
+  # dropped about 7% of the osm.de polygons: their coverage was absent from the
+  # result even though they were counted in n_origins_dissolved, so 130 midwives
+  # fell outside a surface built from their own isochrones. Unioning osm.de
+  # alone kept all 1,471, so the failure is in the large mixed dissolve, not the
+  # inputs. Reducing in batches keeps each GEOS call small enough to be robust.
+  bidx <- split(seq_along(all_g), ceiling(seq_along(all_g) / 250))
+  bu <- lapply(bidx, function(i) sf::st_make_valid(sf::st_union(all_g[i])))
+  u <- sf::st_make_valid(sf::st_union(do.call(c, bu)))
+  rm(bu); invisible(gc())
+
+  # OUTPUT ASSERTION. n_origins_dissolved counts what went IN; nothing checked
+  # what came OUT, which is why the loss was invisible. Every input polygon must
+  # be substantially represented in the dissolved surface.
+  rp <- suppressWarnings(sf::st_point_on_surface(all_g))
+  covered <- lengths(suppressMessages(sf::st_intersects(rp, u))) > 0
+  n_lost <- sum(!covered)
+  cat(sprintf("[%smin] containment check: %s of %s input polygons represented\n",
+              b, format(sum(covered), big.mark = ","), format(length(all_g), big.mark = ",")))
+  if (n_lost > 0) {
+    stop(sprintf(paste0("[%smin] dissolve LOST %s of %s input polygons (%.1f%%).\n",
+                        "  Their coverage is absent from the union while still being counted ",
+                        "in n_origins_dissolved, so the surface understates access and the ",
+                        "origin count overstates it."),
+                 b, format(n_lost, big.mark = ","), format(length(all_g), big.mark = ","),
+                 100 * n_lost / length(all_g)), call. = FALSE)
+  }
 
   # THE PRIVACY ASSERTION. If the dissolve ever yields more than one feature,
   # the output is per-origin geometry and must not be written.
@@ -207,8 +233,31 @@ if (dir.exists(water_dir)) {
     if (is.null(g)) return(NULL)
     suppressWarnings(sf::st_transform(g, 4326))
   })
+  names(wm) <- states
   failed <- states[vapply(wm, is.null, logical(1))]
   wm <- Filter(Negate(is.null), wm)
+
+  # INVERSION GATE. A "water mask" covering most of its state is not water --
+  # it is the state outline, and subtracting it erases every isochrone there.
+  # WV, MO, IA, AR and KS each carried a single-feature mask of 102-104% of
+  # their land area, which silently deleted all midwife coverage in five states
+  # and made 400 midwives appear to have no isochrone. The cause is upstream:
+  # the high-resolution downloader logged "Empty response, assuming complete"
+  # and a fallback wrote the state boundary as the mask.
+  #
+  # Excluded rather than fatal: refusing to build would block the map on data we
+  # cannot regenerate here, and a surface that includes some open water in five
+  # states is far better than one that erases those states entirely. The
+  # exclusion is printed, never silent.
+  # Canonical guard (mysterymaps_guard_water_masks). A mask larger than 5x its
+  # state's census water area is a state outline, not water, and subtracting it
+  # erases every isochrone in that state -- silently, because removing too much
+  # geometry does not error and leaves no hole a reader would recognise.
+  # See docs/HALL_OF_SHAME.md #14.
+  st_geo <- tigris::states(cb = TRUE, year = 2023, progress_bar = FALSE)
+  water_km2 <- stats::setNames(as.numeric(st_geo$AWATER) / 1e6, st_geo$STUSPS)
+  wm <- mysterymaps::mysterymaps_guard_water_masks(wm, water_km2)
+  cat(sprintf("water masks usable: %s of %s states\n", length(wm), length(states)))
   cat(sprintf("water masks loaded: %s of %s states\n", length(wm), length(states)))
   # A mask that fails to read leaves that state's water counted as land. Silence
   # here would look identical to success, so it is an error, not a warning.

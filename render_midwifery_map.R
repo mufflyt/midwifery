@@ -347,7 +347,15 @@ panel <- sprintf('
       filter(!is.na(latitude), !is.na(longitude)) %>%
       sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
   }
-  mysterymaps_gate_provider_coverage(gate_pts, c30, label = "30-minute surface",
+  # CONUS only. c30 is clipped to the continental US, so Alaska, Hawaii and the
+  # territories fall outside it by construction rather than for want of an
+  # isochrone. Counting them inflated the gate from 490 to 633 -- a quarter of
+  # the reported failure was the clip doing its job.
+  NON_CONUS <- c("AK", "HI", "PR", "VI", "GU", "AS", "MP")
+  gate_conus <- gate_pts[!gate_pts$practice_state %in% NON_CONUS, ]
+  cat(sprintf("coverage gate: %s CONUS midwives (%s non-CONUS excluded)\n",
+              nrow(gate_conus), nrow(gate_pts) - nrow(gate_conus)))
+  mysterymaps_gate_provider_coverage(gate_conus, c30, label = "30-minute surface",
                                      group_col = "practice_state",
                                      on_fail = "warn")
 }

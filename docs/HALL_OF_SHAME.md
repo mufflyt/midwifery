@@ -313,3 +313,73 @@ Not everything failed. These were designed to fail loudly, and did:
 
 The difference between Tier 1 and this section is not care. It is whether the
 check was written *before* the result was believed.
+
+### 14. A "water mask" that was the whole state
+
+**Symptom.** Midwives in Kansas had dots but no drive-time coverage around them.
+The gate put it at 583 of 11,742 CONUS midwives (5.0%) outside the surface
+dissolved from their own isochrones, concentrated in Missouri (117), Iowa (112),
+Kansas (79), West Virginia (53) and Arkansas (39).
+
+**Cause.** Not the isochrones. The land clip was subtracting land. Five states
+carried a single-feature water mask covering **102–104% of the entire state** —
+a state outline, not water:
+
+| state | mask km² | state land km² | mask ÷ census water |
+|---|---|---|---|
+| WV | 65,123 | 62,756 | 133× |
+| MO | 185,134 | 180,540 | 74× |
+| IA | 148,906 | 145,746 | 137× |
+| AR | 140,659 | 137,732 | 45× |
+| KS | 217,346 | 213,100 | 162× |
+
+For comparison the working masks are a few percent of their state: New York 8.8%,
+Minnesota 4.9%, Colorado 0.0%. File sizes said the same thing — NY is 495 KB of
+real water detail, these five are 7–14 KB.
+
+`st_difference(union, water)` therefore erased **every isochrone in five states**.
+The map showed the rural interior as having no midwife access at all.
+
+**Upstream cause.** The high-resolution mask downloader logged
+`"Empty response, assuming complete"` hundreds of times. Those five states never
+received an HR mask — 30 states have one, these five do not — and a fallback
+wrote the state boundary as the mask. An empty response was treated as success.
+
+**Why nothing caught it.** Subtracting too much geometry does not error, does not
+warn, and leaves no hole a reader would recognise as a defect. It removes
+shading, and the map still looks plausible. `n_origins_dissolved` counted what
+went into the dissolve, never what survived the clip, so the provenance field
+agreed with the broken output.
+
+**Fix.** Two gates in `build_midwifery_isochrone_map.R`:
+
+1. **Containment** — every input polygon must be represented in the dissolved
+   surface (4,714/4,714 at 30 min).
+2. **Mask inversion** — a mask larger than 5× its state's census `AWATER` is not
+   water; it is excluded from the clip, loudly.
+
+Excluded rather than fatal: a surface that includes some open water in five
+states is far better than one that erases those states, and the masks cannot be
+regenerated from this repository.
+
+**The false positive that shaped the test.** The first gate compared mask area to
+**land** area and flagged Michigan at 68%. Michigan's boundary contains the Great
+Lakes, so a mask that size is *correct* there — excluding it would have let the
+surface run across Lake Michigan, which is the exact failure the clip exists to
+prevent. Measured against census `AWATER` the cases separate cleanly: Michigan
+0.95×, the inverted five 45–162×. **Pick the denominator that distinguishes the
+failure from the legitimate extreme, not the one that is easiest to reach.**
+
+**Result.** Water removed at 30 minutes fell from 180,809 km² to 7,448 km²; the
+surface grew from 1,578,621 km² to 1,751,982 km²; midwives outside their own
+coverage fell from 583 to 180, and the remainder is scattered (IL 31, CA 28,
+NY 28, FL 26) rather than clustered in five states.
+
+**Four wrong diagnoses preceded the right one**, each stated with more confidence
+than it deserved: 1,033 locations without isochrones (union-count arithmetic);
+63.8% uncovered (exact-coordinate join against origins matched within 5 km); 7%
+lost inside `st_union` (measured against the clipped surface, not the dissolve);
+and a +11.4% recovery from batched unioning (pre-clip area compared with
+post-clip area). The lesson is narrow and practical: when a spatial result looks
+wrong, test the **point against the polygon** before theorising about the
+pipeline that produced it.
