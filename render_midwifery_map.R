@@ -202,6 +202,7 @@ m <- mysterymaps_county_access_map(
                       "more than 60 min from any midwife"),
   coverage_titles = c("Drive-time coverage", "Drive-time coverage", "Coverage gap"),
   points          = NULL,          # dots are added below, with their own popups
+  overlay_group   = "Midwife locations",   # never NULL: leaflet labels it "null"
   legend_title    = "Midwives per<br/>1,000 births",
   search          = NULL,          # added after the dots exist
   notes           = NULL,          # this map's notes panel is built below
@@ -314,6 +315,33 @@ panel <- sprintf('
   format(u30$n_origins_dissolved, big.mark = ","),
   format(u60$n_origins_dissolved, big.mark = ","))
 
+# --- gate: every midwife must fall inside their own coverage -----------------
+# A midwife is within 30 minutes of herself, so any who fall outside the
+# dissolved surface are midwives whose isochrone was never generated. That
+# failure is silent -- it removes shading rather than raising anything -- and
+# it is currently REGIONAL (Missouri, Iowa, Kansas), so it biases the coverage
+# gap toward the rural interior this map exists to describe.
+#
+# Reported, not fatal, until the missing isochrones are generated: erroring here
+# would block the map entirely on a defect it is the map's job to reveal.
+{
+  gate_pts <- {
+    l <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv", show_col_types = FALSE,
+                  progress = FALSE)
+    c0 <- read_csv("midwives_panel_geocoded_enhanced.csv", show_col_types = FALSE,
+                   progress = FALSE)
+    l %>% filter(status == "ACTIVE", linkage_tier == "primary_midwifery") %>%
+      distinct(certification_number, .keep_all = TRUE) %>%
+      left_join(c0 %>% select(certification_number, latitude, longitude, practice_state),
+                by = "certification_number") %>%
+      filter(!is.na(latitude), !is.na(longitude)) %>%
+      sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+  }
+  mysterymaps_gate_provider_coverage(gate_pts, c30, label = "30-minute surface",
+                                     group_col = "practice_state",
+                                     on_fail = "warn")
+}
+
 # --- INTERNAL: per-midwife dots ---------------------------------------------
 {
   link <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv", show_col_types = FALSE)
@@ -404,7 +432,7 @@ m <- mysterymaps_zoom_gated_labels(m, group = "Midwife locations",
 # Name search from the canonical control (mysterymaps_name_search) rather than
 # a local copy of the same plugin bootstrap. The CDN trade-off -- map opens
 # offline, search box needs network -- is documented on that function.
-m <- mysterymaps_name_search(m, group = "Midwife locations", placeholder = "Search midwife name\u2026", zoom = 11)
+m <- mysterymaps_name_search(m, placeholder = "Search midwife name\u2026", zoom = 11)
 
 # Reset-view control: specific to this map's CONUS framing, so it stays local.
 m <- htmlwidgets::onRender(m, '
