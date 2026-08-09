@@ -11,14 +11,11 @@
 # own practice coordinates instead, which needs no apportionment assumption.
 #
 # TWO PROVIDER SOURCES, DIFFERENT UNIVERSES -- do not read the ratio naively:
-#   * OB/GYN SUBSPECIALISTS, not general obstetricians. The ABOG cohort is
-#     MFM (2,610), REI (1,423), GYN-ONC (1,292), FPMRS (1,172), MIGS (658),
-#     CFP (243), PAG (218). A district with zero here has no OB/GYN
-#     SUBSPECIALIST; it may well have many general obstetricians. AHRF's county
-#     md_nf_obgyn_gen_23 counts general OB/GYNs and is a different quantity
-#     entirely -- the two must never be combined or compared as like for like.
-#     Getting general obstetricians to district level requires an NPPES
-#     taxonomy 207V00000X extract, which is not wired in here.
+#   * GENERAL OB/GYNs (ABOG "Generalist"), the clinically correct comparator
+#     for midwives -- both attend routine births. Only 56.4% of ABOG
+#     generalists are geocoded, so counts are a FLOOR, biased downward
+#     non-uniformly. MFM is reported separately as the referral tier and is
+#     never summed with midwives. See load_obstetric_providers.R.
 #   * Midwives = AMCB-certified, ACTIVE, primary-linked study cohort. Also a
 #                defined certification universe, not all practising midwives.
 # Both are certification-based, which makes them comparable to each other in
@@ -53,23 +50,10 @@ cd <- sf::st_read("data/cd119/cb_2024_us_cd119_500k.shp", quiet = TRUE) %>%
 cat(sprintf("districts loaded: %s\n", nrow(cd)))
 
 # --- providers ---------------------------------------------------------------
-ob <- readRDS(path.expand("~/isochrones/artifacts/isochrones/step_2.5_final_cohort.rds")) %>%
-  as_tibble() %>%
-  filter(!is.na(latitude), !is.na(longitude)) %>%
-  distinct(npi, .keep_all = TRUE) %>%
-  select(id = npi, latitude, longitude)
-cat(sprintf("OB/GYN subspecialists with coordinates: %s\n", nrow(ob)))
-
-link <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv", show_col_types = FALSE)
-crd  <- read_csv("midwives_panel_geocoded_enhanced.csv", show_col_types = FALSE)
-mw <- link %>%
-  filter(status == "ACTIVE", linkage_tier == "primary_midwifery") %>%
-  distinct(certification_number) %>%
-  left_join(crd %>% select(certification_number, latitude, longitude),
-            by = "certification_number") %>%
-  filter(!is.na(latitude), !is.na(longitude)) %>%
-  select(id = certification_number, latitude, longitude)
-cat(sprintf("midwives with coordinates: %s\n", nrow(mw)))
+source("load_obstetric_providers.R")
+ob  <- load_generalists()
+mfm <- load_subspecialists("MFM")
+mw  <- load_midwives()
 
 assign_cd <- function(df, label) {
   p <- sf::st_as_sf(df, coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
@@ -82,61 +66,73 @@ assign_cd <- function(df, label) {
               label, sum(!is.na(j$cd_id)), n_out, 100 * n_out / nrow(j)))
   sf::st_drop_geometry(j) %>% filter(!is.na(cd_id))
 }
-ob_cd <- assign_cd(ob, "OB/GYN")
+
+# Provenance must survive to the published artifact: a district whose generalist
+# count rests largely on city centroids is weaker evidence than one built from
+# street-level geocodes, and a reader cannot tell without this column.
+centroid_counts <- function(cd_tbl) {
+  if (!"coord_source" %in% names(cd_tbl)) return(NULL)
+  cd_tbl %>% filter(grepl("centroid", coord_source)) %>%
+    count(cd_id, name = "n_general_obgyn_city_centroid")
+}
+ob_cd  <- assign_cd(ob,  "generalOB")
+mfm_cd <- assign_cd(mfm, "MFM")
 mw_cd <- assign_cd(mw, "midwife")
 
 # --- counts per district -----------------------------------------------------
 # Districts with zero providers must survive: a district with no obstetrician is
 # the finding, and an inner join would delete it.
 counts <- sf::st_drop_geometry(cd) %>%
-  left_join(ob_cd %>% count(cd_id, name = "n_obgyn_subspec"),   by = "cd_id") %>%
+  left_join(ob_cd  %>% count(cd_id, name = "n_general_obgyn"), by = "cd_id") %>%
+  left_join(mfm_cd %>% count(cd_id, name = "n_mfm"),           by = "cd_id") %>%
+  left_join(centroid_counts(ob_cd), by = "cd_id") %>%
   left_join(mw_cd %>% count(cd_id, name = "n_midwife"), by = "cd_id") %>%
-  mutate(across(c(n_obgyn_subspec, n_midwife), ~ coalesce(., 0L)),
-         total_obstetric = n_obgyn_subspec + n_midwife,
-         midwife_share = if_else(total_obstetric > 0,
-                                 round(n_midwife / total_obstetric, 3), NA_real_),
-         midwives_per_obgyn_subspec = if_else(n_obgyn_subspec > 0,
-                                      round(n_midwife / n_obgyn_subspec, 2), NA_real_),
+  mutate(across(c(n_general_obgyn, n_mfm, n_midwife, n_general_obgyn_city_centroid), ~ coalesce(., 0L)),
+         birth_attendants = n_general_obgyn + n_midwife,
+         midwife_share = if_else(birth_attendants > 0,
+                                 round(n_midwife / birth_attendants, 3), NA_real_),
+         midwives_per_general_obgyn = if_else(n_general_obgyn > 0,
+                                      round(n_midwife / n_general_obgyn, 2), NA_real_),
          provider_config = case_when(
-           n_obgyn_subspec == 0 & n_midwife == 0 ~ "Neither",
-           n_obgyn_subspec == 0 & n_midwife > 0  ~ "Midwife only",
-           n_obgyn_subspec > 0  & n_midwife == 0 ~ "OB subspecialist only",
+           n_general_obgyn == 0 & n_midwife == 0 ~ "Neither",
+           n_general_obgyn == 0 & n_midwife > 0  ~ "Midwife only",
+           n_general_obgyn > 0  & n_midwife == 0 ~ "General OB only",
            TRUE                          ~ "Both"))
 
 cat(sprintf("\ntotal districts            : %s\n", nrow(counts)))
-cat(sprintf("OB/GYNs placed             : %s\n", format(sum(counts$n_obgyn_subspec), big.mark = ",")))
+cat(sprintf("OB/GYNs placed             : %s\n", format(sum(counts$n_general_obgyn), big.mark = ",")))
 cat(sprintf("midwives placed            : %s\n", format(sum(counts$n_midwife), big.mark = ",")))
 
 cat("\n=========== DISTRICT PROVIDER CONFIGURATION ===========\n")
 print(as.data.frame(counts %>% count(provider_config) %>%
   mutate(pct = round(100 * n / sum(n), 1))), row.names = FALSE)
 
-cat("\n=========== DISTRICTS WITH NO OB/GYN SUBSPECIALIST ===========\n")
-noob <- counts %>% filter(n_obgyn_subspec == 0)
-cat(sprintf("districts with 0 OB subspecialist    : %s (%.1f%%)\n", nrow(noob),
+cat("\n=========== DISTRICTS WITH NO GENERAL OB/GYN ===========\n")
+noob <- counts %>% filter(n_general_obgyn == 0)
+cat(sprintf("districts with 0 general OB/GYN    : %s (%.1f%%)\n", nrow(noob),
             100 * nrow(noob) / nrow(counts)))
 if (nrow(noob))
-  print(as.data.frame(noob %>% select(cd_id, cd_name, n_obgyn_subspec, n_midwife) %>%
+  print(as.data.frame(noob %>% select(cd_id, cd_name, n_general_obgyn, n_midwife) %>%
                         arrange(cd_id)), row.names = FALSE)
 
 cat("\n=========== LOWEST 15 DISTRICTS BY OBSTETRIC WORKFORCE ===========\n")
-print(as.data.frame(counts %>% arrange(total_obstetric, cd_id) %>%
-  select(cd_id, cd_name, n_obgyn_subspec, n_midwife, total_obstetric) %>% head(15)),
+print(as.data.frame(counts %>% arrange(birth_attendants, cd_id) %>%
+  select(cd_id, cd_name, n_general_obgyn, n_midwife, birth_attendants) %>% head(15)),
   row.names = FALSE)
 
 cat("\n=========== HIGHEST 10 DISTRICTS ===========\n")
-print(as.data.frame(counts %>% arrange(desc(total_obstetric)) %>%
-  select(cd_id, cd_name, n_obgyn_subspec, n_midwife, midwife_share) %>% head(10)),
+print(as.data.frame(counts %>% arrange(desc(birth_attendants)) %>%
+  select(cd_id, cd_name, n_general_obgyn, n_midwife, midwife_share) %>% head(10)),
   row.names = FALSE)
 
 cat("\n=========== BY STATE (top 10 by district count) ===========\n")
 print(as.data.frame(counts %>% group_by(state) %>%
-  summarise(districts = n(), obgyn = sum(n_obgyn_subspec), midwife = sum(n_midwife),
-            districts_no_obgyn = sum(n_obgyn_subspec == 0),
-            midwives_per_obgyn_subspec = round(sum(n_midwife) / pmax(sum(n_obgyn_subspec), 1), 2),
+  summarise(districts = n(), obgyn = sum(n_general_obgyn), midwife = sum(n_midwife),
+            districts_no_obgyn = sum(n_general_obgyn == 0),
+            midwives_per_general_obgyn = round(sum(n_midwife) / pmax(sum(n_general_obgyn), 1), 2),
             .groups = "drop") %>%
   arrange(desc(districts)) %>% head(10)), row.names = FALSE)
 
 write_csv(counts, "artifacts/cd_obstetric_workforce.csv", na = "")
 cat("\nwritten: artifacts/cd_obstetric_workforce.csv\n")
-cat("NOTE: counts are OB/GYN SUBSPECIALISTS (MFM/REI/GO/FPMRS/MIGS/CFP/PAG),\n     NOT general obstetricians. Zero here does not mean no obstetric care.\n")
+cat("NOTE: general OB/GYN counts are a FLOOR -- 56.4% of ABOG generalists are\n     geocoded. MFM is reported separately and never summed with midwives.\n")
