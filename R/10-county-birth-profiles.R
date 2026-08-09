@@ -42,6 +42,18 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(cli); library(jsonlite)
 })
 
+# The variety-sentence engine is CANONICAL in mufflyt/isochrones
+# (R/variety_sentences.R, PR #519). It is loaded, never copied: a second
+# definition would drift from the one the urogyn maps use.
+source(file.path("R", "lib", "isochrones_dep.R"))
+source(file.path("R", "lib", "ob_hospitals.R"))
+load_variety_sentence_engine(quiet = TRUE)
+
+# Rank threshold for superlatives. A county ranked 1,600th of 3,235 is not
+# interesting, and asserting a rank for every county would imply precision the
+# underlying estimates do not carry.
+SUPERLATIVE_N <- 10L
+
 ART <- "artifacts"; OUT <- file.path(ART, "county_profiles")
 dir.create(OUT, showWarnings = FALSE, recursive = TRUE)
 
@@ -74,94 +86,133 @@ RUCC_LABEL <- c(
   "9" = "a completely rural county, not adjacent to a metro area")
 
 #' Render the sentences for one county
+#'
+#' Structure follows the urogyn county summaries in isochrones: a place-type
+#' LEAD, an always-present SPINE (there, drive time to the nearest provider;
+#' here, midwifery care), then a deterministically ROTATED pool of context
+#' facts so neighbouring counties on a choropleth emphasise a different mix.
+#' Superlatives are added only at the extremes, where "the 4th-highest" is
+#' informative rather than noise.
 #' @keywords internal
 #' @noRd
-county_sentences <- function(r) {
-  s <- character(0)
-
-  # 1. What kind of place, and how many births.
-  # RUCC is missing for territories and for counties added since the 2023
-  # vintage; [[ ]] on an absent key errors rather than returning NULL.
+county_sentences <- function(r, n_counties) {
+  # A: identity and place type. RUCC is missing for territories and for
+  # counties added since the 2023 vintage; [[ ]] on an absent key errors.
   geo <- unname(RUCC_LABEL[as.character(r$rucc_2023)])
   if (length(geo) != 1L || is.na(geo)) geo <- NULL
-  place <- if (!is.null(geo)) sprintf("%s is %s", r$county_label, geo) else
-    sprintf("%s", r$county_label)
-  births <- fmt(r$births_past_12mo)
-  women <- fmt(r$women_15_44)
-  if (!is.null(births) && !is.null(women)) {
-    s <- c(s, sprintf("%s, home to %s women aged 15-44, with about %s births in the past 12 months.",
-                      place, women, births))
+  births <- fmt(r$births_past_12mo); women <- fmt(r$women_15_44)
+  a <- if (!is.null(geo) && !is.null(births) && !is.null(women)) {
+    sprintf("%s is %s, home to %s women aged 15-44, with about %s births in the past 12 months.",
+            r$county_label, geo, women, births)
+  } else if (!is.null(births)) {
+    sprintf("%s recorded about %s births in the past 12 months.", r$county_label, births)
   } else {
-    s <- c(s, sprintf("%s.", place))
+    sprintf("%s.", r$county_label)
   }
 
-  # 2. Fertility and birth risk, only the parts that are observed.
-  bits <- character(0)
-  if (!is.null(fmt(r$general_fertility_rate, 1)))
-    bits <- c(bits, sprintf("a general fertility rate of %s births per 1,000 women aged 15-44",
-                            fmt(r$general_fertility_rate, 1)))
-  if (!is.null(fmt(r$teen_birth_rate, 1)))
-    bits <- c(bits, sprintf("a teen birth rate of %s per 1,000", fmt(r$teen_birth_rate, 1)))
-  # UNITS: county_base stores pct_low_birth_weight and svi_overall_pctile as
-  # PROPORTIONS (0-1), while pct_uninsured is already a percentage (0-44).
-  # Printing the proportions unscaled produced "0.1% of births low birth
-  # weight" for Cook County -- a figure two orders of magnitude off that still
-  # looked like a plausible number, which is exactly how a unit error survives
-  # review.
-  if (!is.null(fmt(100 * r$pct_low_birth_weight, 1)))
-    bits <- c(bits, sprintf("%s%% of births low birth weight",
-                            fmt(100 * r$pct_low_birth_weight, 1)))
-  if (length(bits)) {
-    s <- c(s, sprintf("The county has %s.",
-                      paste(bits, collapse = if (length(bits) == 2) " and " else ", ")))
-  }
-
-  # 3. Located midwives -- phrased as ascertainment, never as supply.
-  if (r$n_midwives == 0) {
-    s <- c(s, paste0("No AMCB-certified nurse-midwife in the linked cohort could be located ",
-                     "in this county, which reflects roster, linkage and geocoding coverage ",
-                     "as much as it reflects who practises here."))
+  # B: the midwifery spine, always present. Phrased as ASCERTAINMENT, never as
+  # supply: the count is midwives we could locate after roster linkage and
+  # geocoding, so a zero is "none located", not "none practising".
+  b <- if (r$n_midwives == 0) {
+    paste0("No AMCB-certified nurse-midwife in the linked cohort could be located here, ",
+           "which reflects roster, linkage and geocoding coverage as much as who practises here.")
   } else {
-    per <- fmt(r$midwives_per_10k_women, 1)
-    ratio <- fmt(r$births_per_midwife)
-    tail_bits <- character(0)
-    if (!is.null(per)) tail_bits <- c(tail_bits, sprintf("%s per 10,000 women aged 15-44", per))
-    if (!is.null(ratio)) tail_bits <- c(tail_bits, sprintf("roughly %s births per located midwife", ratio))
-    s <- c(s, sprintf("%s AMCB-certified nurse-midwi%s located here%s%s.",
-                      fmt(r$n_midwives), if (r$n_midwives == 1) "fe was" else "ves were",
-                      if (length(tail_bits)) " -- " else "",
-                      paste(tail_bits, collapse = ", ")))
+    tail_bits <- c(
+      if (!is.null(fmt(r$midwives_per_10k_women, 1)))
+        sprintf("%s per 10,000 women aged 15-44", fmt(r$midwives_per_10k_women, 1)),
+      if (!is.null(fmt(r$births_per_midwife)))
+        sprintf("roughly %s births per located midwife", fmt(r$births_per_midwife)))
+    sprintf("%s AMCB-certified nurse-midwi%s located here%s%s.",
+            fmt(r$n_midwives), if (r$n_midwives == 1) "fe was" else "ves were",
+            if (length(tail_bits)) " -- " else "", oxford_join(tail_bits))
   }
 
-  # 4. Midwife-attended births, when WONDER reports the county at all.
-  if (!is.null(r$cnm_births_2016_2024) && !is.na(r$cnm_births_2016_2024)) {
+  # C: midwife-attended births. Three states that must NEVER collapse into
+  # "no midwife-attended births": published, suppressed (1-9, not zero), and
+  # not reported separately (WONDER publishes only counties of 100,000+).
+  cc <- if (!is.null(r$cnm_births_2016_2024) && !is.na(r$cnm_births_2016_2024)) {
     share <- fmt(r$cnm_share_of_births_pct, 1)
-    s <- c(s, sprintf(
-      "CDC WONDER records %s births attended by a certified nurse-midwife here over 2016-2024%s%s.",
-      fmt(r$cnm_births_2016_2024),
-      if (!is.null(share)) sprintf(", about %s%% of recent births", share) else "",
-      if (isTRUE(r$ct_apportioned))
-        " (apportioned from Connecticut's legacy counties, so an estimate rather than a count)" else ""))
+    sprintf("CDC WONDER records %s births attended by a certified nurse-midwife here over 2016-2024%s%s.",
+            fmt(r$cnm_births_2016_2024),
+            if (!is.null(share)) sprintf(", about %s%% of recent births", share) else "",
+            if (isTRUE(r$ct_apportioned))
+              " (apportioned from Connecticut's legacy counties, so an estimate rather than a count)" else "")
   } else if (isTRUE(r$wonder_county_reported)) {
-    s <- c(s, paste0("CDC WONDER suppressed the midwife-attended birth count for this county, ",
-                     "meaning it is between 1 and 9 -- not zero."))
+    paste0("CDC WONDER suppressed the midwife-attended birth count for this county, ",
+           "meaning it is between 1 and 9 -- not zero.")
   } else {
-    s <- c(s, paste0("CDC WONDER does not report this county separately: it publishes county ",
-                     "natality only for counties of 100,000 or more residents and pools the rest ",
-                     "by state, so midwife-attended births here are unpublished, not absent."))
+    paste0("CDC WONDER does not report this county separately: it publishes county natality ",
+           "only for counties of 100,000 or more residents and pools the rest by state, so ",
+           "midwife-attended births here are unpublished, not absent.")
   }
 
-  # 5. Access context, when observed.
-  acc <- character(0)
-  if (!is.null(fmt(r$pct_uninsured, 1)))
-    acc <- c(acc, sprintf("%s%% of residents are uninsured", fmt(r$pct_uninsured, 1)))
-  if (!is.null(fmt(100 * r$svi_overall_pctile, 0)))
-    acc <- c(acc, sprintf("social vulnerability sits at the %s%s percentile nationally",
-                          fmt(100 * r$svi_overall_pctile),
-                          scales_ord(100 * r$svi_overall_pctile)))
-  if (length(acc)) s <- c(s, sprintf("%s.", paste(acc, collapse = ", and ")))
+  # D: rotating context pool. mm_rotate_facts() seeds on the FIPS, so a county
+  # always shows the same facts while adjacent counties start at a different
+  # offset -- variety across the map, stability across rebuilds.
+  pool <- c(
+    if (!is.null(fmt(r$general_fertility_rate, 1)))
+      sprintf("a general fertility rate of %s per 1,000 women aged 15-44", fmt(r$general_fertility_rate, 1)),
+    if (!is.null(fmt(r$teen_birth_rate, 1)))
+      sprintf("a teen birth rate of %s per 1,000", fmt(r$teen_birth_rate, 1)),
+    if (!is.null(fmt(100 * r$pct_low_birth_weight, 1)))
+      sprintf("%s%% of births low birth weight", fmt(100 * r$pct_low_birth_weight, 1)),
+    if (!is.null(fmt(r$infant_mortality_per_1k, 1)))
+      sprintf("an infant mortality rate of %s per 1,000", fmt(r$infant_mortality_per_1k, 1)),
+    if (!is.null(fmt(r$pct_uninsured, 0)))
+      sprintf("%s%% of residents uninsured", fmt(r$pct_uninsured, 0)),
+    if (!is.null(fmt(r$median_hh_income)))
+      sprintf("a median household income of $%s", fmt(r$median_hh_income)),
+    # UNITS: pct_below_poverty is ALREADY a percentage (1.7-64.7), unlike
+    # pct_low_birth_weight and svi_overall_pctile which are proportions.
+    if (!is.null(fmt(r$pct_below_poverty, 0)))
+      sprintf("a %s%% poverty rate", fmt(r$pct_below_poverty, 0)),
+    # MISNAMED COLUMN: county_base$pcp_per_100k holds a PER-CAPITA rate
+    # (0-0.006), not a per-100,000 rate. Denver 0.00130 -> 130 per 100k, Cook
+    # 92, Van Zandt 8, against CHR's ~55-80 national -- so the scale is right
+    # and the name is wrong. Printing it unscaled rendered every county as
+    # "0 primary care physicians per 100,000 residents".
+    if (!is.null(fmt(1e5 * r$pcp_per_100k, 0)))
+      sprintf("%s primary care physicians per 100,000 residents", fmt(1e5 * r$pcp_per_100k, 0)),
+    if (!is.null(fmt(100 * r$svi_overall_pctile, 0)))
+      sprintf("a social vulnerability index at the %s percentile nationally",
+              format_ordinal(round(100 * r$svi_overall_pctile))),
+    if (!is.null(fmt(100 * r$pct_rural, 0)))
+      sprintf("a %s%% rural population", fmt(100 * r$pct_rural, 0)),
+    if (!is.null(r$pop_density_sq_mi) && !is.na(r$pop_density_sq_mi))
+      sprintf("about %s residents per square mile", density_number(r$pop_density_sq_mi)),
+    # Reported obstetric capacity. Phrased as "reporting obstetric services"
+    # because a hospital with no OB code has not said "no" -- it has said
+    # nothing, and that silence is commonest in small rural counties.
+    if (!is.null(r$n_hosp_ob) && r$n_hosp_ob > 0)
+      sprintf("%s hospital%s reporting obstetric services", fmt(r$n_hosp_ob),
+              if (r$n_hosp_ob > 1) "s" else ""),
+    if (!is.null(r$n_hosp_active) && r$n_hosp_active > 0 && r$n_hosp_ob == 0)
+      sprintf("%s active hospital%s, none of which reports obstetric services",
+              fmt(r$n_hosp_active), if (r$n_hosp_active > 1) "s" else ""))
 
-  paste(s, collapse = " ")
+  parts <- c(a, b, cc)
+  pick <- mm_rotate_facts(pool, r$GEOID, 3)
+  if (length(pick)) parts <- c(parts, sprintf("It has %s.", oxford_join(pick)))
+
+  # E: superlatives, only at the extremes. A county ranked 1,600th of 3,235 is
+  # not interesting; asserting a rank for every county would be noise and would
+  # imply precision the underlying estimates do not carry.
+  sup <- c(
+    if (!is.na(r$rank_mw_high) && r$rank_mw_high <= SUPERLATIVE_N)
+      mm_superlative_phrase(r$rank_mw_high, n_counties,
+                            "density of located nurse-midwives", "high", "county", "counties"),
+    if (!is.na(r$rank_cnm_high) && r$rank_cnm_high <= SUPERLATIVE_N)
+      mm_superlative_phrase(r$rank_cnm_high, n_counties,
+                            "share of births attended by a nurse-midwife", "high", "county", "counties"),
+    if (!is.na(r$rank_births_high) && r$rank_births_high <= SUPERLATIVE_N)
+      mm_superlative_phrase(r$rank_births_high, n_counties,
+                            "births", "most", "county", "counties"),
+    if (!is.na(r$rank_gfr_high) && r$rank_gfr_high <= SUPERLATIVE_N)
+      mm_superlative_phrase(r$rank_gfr_high, n_counties,
+                            "general fertility rate", "high", "county", "counties"))
+  if (length(sup)) parts <- c(parts, sprintf("That is %s.", oxford_join(sup)))
+
+  paste(parts, collapse = " ")
 }
 
 #' Ordinal suffix
@@ -184,6 +235,13 @@ run_profiles <- function() {
   # the sentences carry every measure we hold rather than a subset. Re-running
   # R/10 alone stays valid: the midwife-attended clause degrades to the
   # "not reported separately" wording rather than erroring.
+  # Obstetric-service hospitals, exact at county level (POS carries county
+  # FIPS). A missing OB code is "unknown", never "no" -- see R/lib/ob_hospitals.R.
+  ob <- build_ob_hospital_counts()
+  base <- left_join(base, ob, by = "GEOID", relationship = "one-to-one") %>%
+    mutate(across(c(n_hosp_active, n_hosp_ob, n_hosp_ob_unknown), ~ coalesce(.x, 0L)))
+  cli::cli_alert_info("counties with >=1 obstetric-service hospital: {sum(base$n_hosp_ob > 0)}")
+
   wonder_county <- file.path(OUT, "county_cnm_births.csv")
   if (file.exists(wonder_county)) {
     wc <- read_csv(wonder_county, show_col_types = FALSE, progress = FALSE,
@@ -230,8 +288,19 @@ run_profiles <- function() {
   cli::cli_alert_success(
     "Join invariants passed: {nrow(prof)} counties, all {n_located} located midwives retained.")
 
+  # Ranks for the superlative clause. mm_rank() takes the MINIMUM rank on ties,
+  # so two joint-highest counties are both "the highest" rather than 1st and
+  # 2nd -- it never asserts an order the data does not support.
+  prof <- prof %>%
+    mutate(
+      rank_mw_high     = mm_rank(midwives_per_10k_women),
+      rank_cnm_high    = mm_rank(cnm_share_of_births_pct),
+      rank_births_high = mm_rank(births_past_12mo),
+      rank_gfr_high    = mm_rank(general_fertility_rate))
+
+  n_counties <- nrow(prof)
   prof$sentences <- vapply(seq_len(nrow(prof)),
-                           function(i) county_sentences(as.list(prof[i, ])),
+                           function(i) county_sentences(as.list(prof[i, ]), n_counties),
                            character(1))
 
   write_csv(prof, file.path(OUT, "county_birth_profiles.csv"), na = "")
