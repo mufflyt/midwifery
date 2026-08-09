@@ -181,53 +181,31 @@ G <- list(rate = "Midwives per 1,000 births",
           b60  = "Within 60 minutes",
           gap  = "Beyond 60 minutes")
 
-m <- leaflet::leaflet(options = leaflet::leafletOptions(
-        minZoom = 3, maxZoom = 14, zoomControl = TRUE,
-        # 11,792 individual markers are only affordable on a canvas renderer;
-        # the default SVG path-per-marker stalls the browser at national zoom.
-        preferCanvas = TRUE)) %>%
-  leaflet::addProviderTiles("CartoDB.PositronNoLabels", group = "base") %>%
-  # Scale bar stays bottom-left; bottom-right is the legend. The notes panel
-  # is lifted above it in CSS so the two no longer overlap.
-  leaflet::addScaleBar(position = "bottomleft",
-                       options = leaflet::scaleBarOptions(imperial = TRUE)) %>%
+# The whole assembly is now one call to the canonical template
+# (mysterymaps_county_access_map). It owns the choropleth, the zero-aware
+# scale, the county mesh, the base-group legends and switcher, the coverage
+# surfaces, the layers control and the CONUS framing. This file supplies data
+# and vocabulary only -- an earlier version of it hand-built all of that, and
+# the urogyn map hand-built the same thing separately.
+cty$.tooltip <- vapply(lab, as.character, character(1))
+cty$.popup   <- vapply(pop, as.character, character(1))
 
-  # --- metric 1: supply choropleth
-  leaflet::addPolygons(data = cty, fillColor = ~sc$color(midwives_per_1k_births),
-                       fillOpacity = 0.85, color = "#ffffff", weight = 0.4,
-                       smoothFactor = 0.5, label = lab, popup = pop,
-                       popupOptions = leaflet::popupOptions(maxWidth = 360),
-                       highlightOptions = hi, group = G$rate) %>%
-
-  # --- metric 2/3: coverage surfaces over a single always-on county mesh.
-  # The mesh carries no `group`, so leaflet keeps it visible under every base
-  # group -- three group-bound copies tripled the county geometry in the HTML.
-  leaflet::addPolygons(data = sf::st_geometry(cty), fill = FALSE,
-                       color = "#c0c0c0", weight = 0.3) %>%
-  leaflet::addPolygons(data = sf::st_geometry(cty), fill = FALSE,
-                       color = "#c0c0c0", weight = 0.3) %>%
-
-  leaflet::addProviderTiles("CartoDB.PositronOnlyLabels", group = "base") %>%
-
-  leaflet::addLegend(position = "bottomright", colors = sc$leg_cols,
-                     labels = sc$leg_labs, title = "Midwives per<br/>1,000 births",
-                     opacity = 0.9,
-                     className = "info legend mm-lg mm-lg-rate") %>%
-
-  mysterymaps_register_base_legend(G$rate, key = "rate") %>%
-  mysterymaps_add_coverage_surfaces(
-    surfaces = stats::setNames(list(c30, c60, gap60), c(G$b30, G$b60, G$gap)),
-    colors = c("#08519c", "#3182bd", "#d94801"),
-    legend_labels = c("within 30 min of a midwife",
+m <- mysterymaps_county_access_map(
+  counties        = cty,
+  value_col       = "midwives_per_1k_births",
+  label_col       = ".tooltip",
+  popup_col       = ".popup",
+  coverage        = stats::setNames(list(c30, c60, gap60), c(G$b30, G$b60, G$gap)),
+  coverage_colors = c("#08519c", "#3182bd", "#d94801"),
+  coverage_labels = c("within 30 min of a midwife",
                       "within 60 min of a midwife",
                       "more than 60 min from any midwife"),
-    legend_titles = c("Drive-time coverage", "Drive-time coverage",
-                      "Coverage gap")) %>%
-  leaflet::addLayersControl(
-    baseGroups = c(G$rate, G$b30, G$b60, G$gap),
-    overlayGroups = "Midwife locations",
-    options = leaflet::layersControlOptions(collapsed = FALSE)) %>%
-  leaflet::fitBounds(-125, 24.5, -66.9, 49.4)
+  coverage_titles = c("Drive-time coverage", "Drive-time coverage", "Coverage gap"),
+  points          = NULL,          # dots are added below, with their own popups
+  legend_title    = "Midwives per<br/>1,000 births",
+  search          = NULL,          # added after the dots exist
+  notes           = NULL,          # this map's notes panel is built below
+  bounds          = c(24.5, -125, 49.4, -66.9))
 
 # --- collapsible caveat panel ------------------------------------------------
 # Height-capped and collapsed by default so it never covers the map, per the
@@ -420,48 +398,13 @@ panel <- sprintf('
 # Both handlers are canonical (mysterymaps): legends keyed to BASE groups, and
 # point labels gated by zoom instead of hidden behind cluster bubbles. An
 # earlier draft of this file hand-rolled both.
-m <- mysterymaps_base_legend_switcher(m, default = G$rate)
 m <- mysterymaps_zoom_gated_labels(m, group = "Midwife locations",
                           min_zoom = 9, max_labels = 400)
 
-# Name search over the midwife markers. Leaflet.Control.Search is loaded from a
-# CDN, so the box needs network access even though the map itself opens
-# offline; the plugin is not vendored because a 17 MB file does not want a
-# fourth copy of someone else's library inside it.
-m <- htmlwidgets::onRender(m, sprintf('
-function(el, x) {
-  var map = this;
-  function addCss(href){ var l=document.createElement("link"); l.rel="stylesheet"; l.href=href; document.head.appendChild(l); }
-  function addJs(src, cb){ var s=document.createElement("script"); s.src=src; s.onload=cb; document.head.appendChild(s); }
-
-  addCss("https://unpkg.com/leaflet-search@3.0.9/dist/leaflet-search.min.css");
-  addJs("https://unpkg.com/leaflet-search@3.0.9/dist/leaflet-search.min.js", function(){
-    // Collect the marker layer once it exists. The markers live in the group
-    // leaflet.js registers under its layerId; scan the map for circle markers
-    // carrying a tooltip, which is what the name labels attach to.
-    var pts = L.layerGroup();
-    map.eachLayer(function(l){
-      if (l instanceof L.CircleMarker && l.getTooltip && l.getTooltip()) {
-        l.feature = l.feature || {};
-        l.feature.properties = { name: l.getTooltip().getContent() };
-        pts.addLayer(l);
-      }
-    });
-    if (!pts.getLayers().length) return;
-
-    map.addControl(new L.Control.Search({
-      layer: pts,
-      propertyName: "name",
-      initial: false,          // substring match, not just prefix
-      zoom: 11,
-      marker: false,
-      textPlaceholder: "Search midwife name\u2026",
-      position: "topleft",
-      moveToLocation: function(latlng, title, m2){ m2.setView(latlng, 11); }
-    }));
-  });
-}
-'))
+# Name search from the canonical control (mysterymaps_name_search) rather than
+# a local copy of the same plugin bootstrap. The CDN trade-off -- map opens
+# offline, search box needs network -- is documented on that function.
+m <- mysterymaps_name_search(m, group = "Midwife locations", placeholder = "Search midwife name\u2026", zoom = 11)
 
 # Reset-view control: specific to this map's CONUS framing, so it stays local.
 m <- htmlwidgets::onRender(m, '
