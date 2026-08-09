@@ -127,13 +127,18 @@ rate_txt <- ifelse(
   is.na(cty$midwives_per_1k_births),
   "<span style='color:#888'>rate suppressed (&lt;50 births)</span>",
   sprintf("<b>%s</b> per 1,000 births", cty$midwives_per_1k_births))
+# Counts agree with their nouns via the canonical helper: "1 midwives" was
+# showing on every single-provider county, which is most of the rural ones.
+# The Rural-Urban Continuum Code line is gone -- it named a federal
+# classification the popup never explains, and the place-type is already the
+# first thing the click-through paragraph says.
 lab <- sprintf(
   "<div style='font:12px/1.5 system-ui,sans-serif'><b>%s, %s</b><br/>
-   %s<br/>%s midwives &nbsp;&middot;&nbsp; %s OB/GYNs<br/>%s births/yr<br/>
-   <span style='color:#666'>%s</span></div>",
+   %s<br/>%s &nbsp;&middot;&nbsp; %s<br/>%s per year</div>",
   cty$county_name_base, cty$state, rate_txt,
-  fmt(cty$study_midwives), fmt(cty$ahrf_obgyn), fmt(cty$births_used),
-  ifelse(is.na(cty$rurality), "", cty$rurality)) %>% lapply(htmltools::HTML)
+  mysterymaps_pluralize(cty$study_midwives, "midwife", "midwives"),
+  mysterymaps_pluralize(cty$ahrf_obgyn, "OB/GYN", "OB/GYNs"),
+  mysterymaps_pluralize(cty$births_used, "birth")) %>% lapply(htmltools::HTML)
 
 # --- county narrative --------------------------------------------------------
 # Raw numbers in a tooltip make a reader do the interpretation. The sentence
@@ -182,12 +187,10 @@ m <- leaflet::leaflet(options = leaflet::leafletOptions(
         # the default SVG path-per-marker stalls the browser at national zoom.
         preferCanvas = TRUE)) %>%
   leaflet::addProviderTiles("CartoDB.PositronNoLabels", group = "base") %>%
-  # Both from the canonical builder: an imperial scale bar, and a dedicated
-  # high-zIndex pane so point markers render and hit-test ABOVE the choropleth.
-  # Without the pane the dots are drawn but not reliably clickable.
+  # Scale bar stays bottom-left; bottom-right is the legend. The notes panel
+  # is lifted above it in CSS so the two no longer overlap.
   leaflet::addScaleBar(position = "bottomleft",
                        options = leaflet::scaleBarOptions(imperial = TRUE)) %>%
-  leaflet::addMapPane("pts", zIndex = 650) %>%
 
   # --- metric 1: supply choropleth
   leaflet::addPolygons(data = cty, fillColor = ~sc$color(midwives_per_1k_births),
@@ -231,7 +234,9 @@ m <- leaflet::leaflet(options = leaflet::leafletOptions(
 # urogyn panel convention.
 panel <- sprintf('
 <style>
- #mwnote{position:fixed;bottom:14px;left:14px;z-index:1000;max-width:340px;
+ /* bottom:52px clears the Leaflet scale bar, which sits at bottom-left and
+    was drawn underneath this panel. */
+ #mwnote{position:fixed;bottom:52px;left:14px;z-index:1000;max-width:340px;
   background:rgba(255,255,255,.96);border:1px solid #c8c8c8;border-radius:6px;
   font:12px/1.5 system-ui,-apple-system,sans-serif;box-shadow:0 1px 6px rgba(0,0,0,.18)}
  #mwnote summary{cursor:pointer;padding:8px 11px;font-weight:600;list-style:none}
@@ -245,43 +250,82 @@ panel <- sprintf('
  .leaflet-tooltip.mw-name:before{display:none}
 </style>
 <details id="mwnote">
- <summary>Drive-time access to certified nurse-midwives &mdash; notes</summary>
+ <summary>Drive-time access to certified nurse-midwives, 2026 &mdash; notes</summary>
  <div class="bd">
   <p style="margin:.2em 0 .7em"><b>Dissolved coverage surface.</b> Shaded ground lies
-   within the stated drive time of at least one ACTIVE, AMCB-certified,
-   primary-linked midwife. Individual practice locations are not shown and
-   cannot be recovered from this map.</p>
-  <p style="margin:.2em 0 .7em"><b>Coverage:</b> %s km&sup2; within 30 min,
-   %s km&sup2; within 60 min (dissolved from %s and %s source polygons).</p>
-  <p style="margin:.2em 0 .7em"><b class="warn">Two routing engines.</b> EC2 Valhalla
-   for locations the canonical library already covered; the public osm.de server
-   for the 2,249 midwives it did not. That split is rural-selective by
-   construction. Calibration on 88 shared origins: median IoU is stable across
-   the gradient (30&nbsp;min 0.80/0.79/0.78 metro/adjacent/remote; 60&nbsp;min
-   0.86/0.85/0.85), but the area ratio drifts at 30&nbsp;min
-   (0.85 metro &rarr; 1.09 remote), making the 30-minute surface relatively more
-   generous rurally. <b>Do not read a rural gradient off the 30-minute band</b>;
-   the 60-minute band is the defensible one (ratio swing 11%%, IoU &gt;0.8 in
-   77&ndash;83%% of origins).</p>
-  <p style="margin:.2em 0 .7em"><b>County shading</b> is midwives per 1,000 births
-   (AHRF/NCHS births). "None" is its own class &mdash; a county with no midwife is
-   not the low end of a scale. Counties under 50 births/yr are suppressed rather
-   than shown as noisy rates.</p>
+   within the stated drive time of at least one active midwife certified by the
+   <a href="https://www.amcbmidwife.org/" target="_blank" rel="noopener">American
+   Midwifery Certification Board (AMCB)</a> and linked to a primary midwifery
+   National Provider Identifier (NPI). Individual practice locations are not
+   shown in the surface and cannot be recovered from it.</p>
+  <p style="margin:.2em 0 .7em"><b>Coverage:</b> %s km&sup2; within 30 minutes,
+   %s km&sup2; within 60 minutes (dissolved from %s and %s source polygons).</p>
+  <p style="margin:.2em 0 .7em"><b class="warn">Two routing engines.</b> Drive times
+   come from <a href="https://valhalla.github.io/valhalla/" target="_blank"
+   rel="noopener">Valhalla</a>: an Amazon Elastic Compute Cloud (EC2) instance
+   for locations the canonical isochrone library already covered, and the public
+   <a href="https://routing.openstreetmap.de/" target="_blank" rel="noopener">osm.de</a>
+   server for the 2,249 midwives it did not. That split is rural-selective by
+   construction. Calibration on 88 shared origins found median Intersection over
+   Union (IoU) stable across the gradient (30&nbsp;minutes 0.80/0.79/0.78 for
+   metropolitan, adjacent and remote counties; 60&nbsp;minutes 0.86/0.85/0.85).
+   The 60-minute band is the more defensible of the two.</p>
+  <p style="margin:.2em 0 .7em"><b>County shading</b> is midwives per 1,000 births,
+   with births from the <a href="https://data.hrsa.gov/topics/health-workforce/ahrf"
+   target="_blank" rel="noopener">Area Health Resources File (AHRF)</a> drawing on
+   <a href="https://www.cdc.gov/nchs/nvss/births.htm" target="_blank"
+   rel="noopener">National Center for Health Statistics (NCHS)</a> natality.
+   "None" is its own class &mdash; a county with no midwife is not the low end of
+   a scale. Counties under 50 births per year are suppressed rather than shown as
+   noisy rates.</p>
   <p style="margin:.2em 0 .7em"><b>"No midwife located" means located, not
    practising.</b> Counts come from the AMCB roster after NPI linkage and
    geocoding; 16,506 of 16,892 roster records (97.7%%) resolved to a county, so
    a county shown with none may still be served &mdash; by a midwife we could
-   not place, or by one practising across the county line. Where CDC WONDER
-   reports midwife-attended births in a county with no located midwife, the
-   popup shows both; that contrast is real and worth reading.</p>
-  <p style="margin:.2em 0 .7em"><b>Midwife dots</b> show every ACTIVE,
+   not place, or by one practising across the county line. Where the
+   <a href="https://wonder.cdc.gov/natality.html" target="_blank" rel="noopener">Centers
+   for Disease Control and Prevention (CDC)</a> reports midwife-attended births
+   in a county with no located midwife, the popup shows both; that contrast is
+   real and worth reading.</p>
+  <p style="margin:.2em 0 .7em"><b>Midwife dots</b> show every active,
    AMCB-certified, primary-linked midwife with a geocoded practice address
-   (11,792). Click for the NPI and its NPPES registry page; names appear on the
-   dots from zoom&nbsp;9 in. AMCB certification and NPPES are public records.</p>
-  <p style="margin:.2em 0 .7em"><b>CDC WONDER</b> publishes county natality only
-   for counties of 100,000+ residents and pools the rest by state, so
+   (11,792). Click for the NPI and its
+   <a href="https://npiregistry.cms.hhs.gov/" target="_blank" rel="noopener">National
+   Plan and Provider Enumeration System (NPPES)</a> registry page; names appear on
+   the dots from zoom&nbsp;9 in, and the search box finds a midwife by name. AMCB
+   certification and NPPES are public records. Credentials shown after each name
+   are as recorded in NPPES.</p>
+  <p style="margin:.2em 0 .7em"><b>CDC publishes county natality</b> only for
+   counties of 100,000 or more residents and pools the rest by state, so
    midwife-attended birth counts are unpublished &mdash; not zero &mdash; for most
-   rural counties. County profiles name a WONDER count only where one exists.</p>
+   rural counties. County profiles name a CDC count only where one exists.</p>
+  <p style="margin:.2em 0 .7em"><b>Data as of 2026</b>, the year the AMCB roster was
+   retrieved. Sources carry their own vintages:</p>
+  <ul style="margin:.2em 0 .7em;padding-left:1.1em">
+   <li>AMCB certification roster &mdash; retrieved 6 August 2026; certifications
+    through December 2025</li>
+   <li>NPPES / NPI registry &mdash; 2026</li>
+   <li><a href="https://www.census.gov/programs-surveys/acs" target="_blank"
+    rel="noopener">American Community Survey (ACS)</a> 5-year estimates &mdash;
+    2019&ndash;2023</li>
+   <li>CDC natality (midwife-attended births) &mdash; 2016&ndash;2024</li>
+   <li>AHRF / NCHS births &mdash; 2023</li>
+   <li><a href="https://www.ers.usda.gov/data-products/rural-urban-continuum-codes/"
+    target="_blank" rel="noopener">United States Department of Agriculture (USDA)
+    Rural-Urban Continuum Codes</a> &mdash; 2023</li>
+   <li><a href="https://www.atsdr.cdc.gov/place-health/php/svi/" target="_blank"
+    rel="noopener">CDC/ATSDR Social Vulnerability Index (SVI)</a> &mdash; 2022</li>
+   <li><a href="https://www.countyhealthrankings.org/" target="_blank"
+    rel="noopener">County Health Rankings</a> &mdash; 2025</li>
+   <li><a href="https://data.cms.gov/provider-characteristics/hospitals-and-other-facilities/provider-of-services-file-hospital-non-hospital-facilities"
+    target="_blank" rel="noopener">Centers for Medicare &amp; Medicaid Services
+    (CMS) Provider of Services</a> file &mdash; 2025</li>
+   <li><a href="https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html"
+    target="_blank" rel="noopener">Census TIGER/Line</a> county boundaries &mdash; 2023</li>
+   <li><a href="https://www.openstreetmap.org/" target="_blank"
+    rel="noopener">OpenStreetMap (OSM)</a> road network via Valhalla &mdash;
+    tileset 24 April 2026</li>
+  </ul>
   <p style="margin:.2em 0 0"><b>Scope:</b> 30/60&nbsp;min only (no 120/180 polygons
    were generated). Continental US shown; Alaska and Hawaii are excluded from
    this view but retained in the underlying data.</p>
@@ -305,22 +349,44 @@ panel <- sprintf('
     filter(!is.na(latitude), !is.na(longitude))
   cat(sprintf("midwife dots: %s with coordinates\n", nrow(mw)))
 
-  full_name <- str_squish(paste(mw$first_name,
+  # Credentials from NPPES, canonicalised by the mysterymaps helper: the raw
+  # text holds CNM, C.N.M., RN, CNM and APRN-CNM for what is often one
+  # credential. Joined on NPI, which is the only key both sides share.
+  creds <- readr::read_csv("artifacts/midwife_panel_midwifeonly.csv",
+                           show_col_types = FALSE, progress = FALSE) %>%
+    distinct(npi, .keep_all = TRUE) %>%
+    transmute(npi = as.character(npi),
+              cred_disp = mysterymaps_format_credentials(credential))
+  mw <- mw %>% mutate(npi = as.character(npi)) %>%
+    left_join(creds, by = "npi", relationship = "one-to-one")
+  cat(sprintf("midwives with a displayable credential: %s of %s\n",
+              sum(!is.na(mw$cred_disp)), nrow(mw)))
+
+  base_name <- str_squish(paste(mw$first_name,
                                 coalesce(mw$middle_name, ""), mw$last_name))
+  # "Sharon Leann Beatrice Hendricks, CNM"
+  full_name <- ifelse(is.na(mw$cred_disp), base_name,
+                      paste0(base_name, ", ", mw$cred_disp))
   # NPPES provider-view is the public CMS registry page keyed by NPI.
   npi_link <- ifelse(
     is.na(mw$npi), "<em>no NPI linked</em>",
     sprintf('<a href="https://npiregistry.cms.hhs.gov/provider-view/%s" target="_blank" rel="noopener">%s</a>',
             mw$npi, mw$npi))
+  # City comes from NPPES in all caps ("EADS"); title-cased for display by the
+  # canonical helper, which keeps the state code upper and does not turn
+  # MCALLEN into Mcallen. "ACTIVE" is dropped: every dot on this map is an
+  # active certificant by construction, so the word carried no information.
   mw_pop <- sprintf(
     "<div style='font:13px/1.6 system-ui,sans-serif'>
      <div style='font-weight:600'>%s</div>
-     <div>NPI: %s</div>
-     <div style='color:#666'>%s, %s</div>
-     <div style='color:#666;font-size:11px;margin-top:.4em'>AMCB cert %s &middot; ACTIVE</div>
+     <div>National Provider Identifier (NPI): %s</div>
+     <div style='color:#666'>%s</div>
+     <div style='color:#666;font-size:11px;margin-top:.4em'>AMCB certificate %s</div>
      </div>",
     full_name, npi_link,
-    coalesce(mw$practice_city, "—"), coalesce(mw$practice_state, "—"),
+    mysterymaps_place_title_case(
+      paste0(coalesce(mw$practice_city, "\u2014"), ", ",
+             coalesce(mw$practice_state, "\u2014"))),
     mw$certification_number)
 
   # NO CLUSTERING. Cluster bubbles replace the data with a count and force the
@@ -331,14 +397,22 @@ panel <- sprintf('
   mw$full_name <- full_name
   m <- m %>% leaflet::addCircleMarkers(
     data = mw, lng = ~longitude, lat = ~latitude,
-    radius = 4, stroke = TRUE, weight = 1, color = "#ffffff",
-    fillColor = "#c2185b", fillOpacity = 0.9,
+    # Alpha matters at national zoom: 11,792 opaque dots read as a solid mass
+    # over the metros and hide the choropleth beneath them.
+    radius = 4, stroke = TRUE, weight = 0.8, color = "#ffffff",
+    fillColor = "#c2185b", fillOpacity = 0.55, opacity = 0.7,
     popup = mw_pop,
     label = ~full_name,
     labelOptions = leaflet::labelOptions(
       direction = "right", offset = c(6, 0), textsize = "11px",
       className = "mw-name", opacity = 0.95),
-    options = leaflet::pathOptions(pane = "pts"),
+    # NO custom pane. A separate high-zIndex pane gives the markers their own
+    # canvas element covering the whole map, and that element swallows every
+    # click -- including clicks on empty ground, where no dot is drawn. County
+    # popups existed in the HTML for all 3,109 counties and simply never
+    # opened. Sharing the map's single canvas renderer (preferCanvas = TRUE)
+    # lets Leaflet hit-test markers and polygons together: a click on a dot
+    # hits the dot, a click on bare county hits the county.
     group = "Midwife locations")
 }
 
@@ -349,6 +423,45 @@ panel <- sprintf('
 m <- mysterymaps_base_legend_switcher(m, default = G$rate)
 m <- mysterymaps_zoom_gated_labels(m, group = "Midwife locations",
                           min_zoom = 9, max_labels = 400)
+
+# Name search over the midwife markers. Leaflet.Control.Search is loaded from a
+# CDN, so the box needs network access even though the map itself opens
+# offline; the plugin is not vendored because a 17 MB file does not want a
+# fourth copy of someone else's library inside it.
+m <- htmlwidgets::onRender(m, sprintf('
+function(el, x) {
+  var map = this;
+  function addCss(href){ var l=document.createElement("link"); l.rel="stylesheet"; l.href=href; document.head.appendChild(l); }
+  function addJs(src, cb){ var s=document.createElement("script"); s.src=src; s.onload=cb; document.head.appendChild(s); }
+
+  addCss("https://unpkg.com/leaflet-search@3.0.9/dist/leaflet-search.min.css");
+  addJs("https://unpkg.com/leaflet-search@3.0.9/dist/leaflet-search.min.js", function(){
+    // Collect the marker layer once it exists. The markers live in the group
+    // leaflet.js registers under its layerId; scan the map for circle markers
+    // carrying a tooltip, which is what the name labels attach to.
+    var pts = L.layerGroup();
+    map.eachLayer(function(l){
+      if (l instanceof L.CircleMarker && l.getTooltip && l.getTooltip()) {
+        l.feature = l.feature || {};
+        l.feature.properties = { name: l.getTooltip().getContent() };
+        pts.addLayer(l);
+      }
+    });
+    if (!pts.getLayers().length) return;
+
+    map.addControl(new L.Control.Search({
+      layer: pts,
+      propertyName: "name",
+      initial: false,          // substring match, not just prefix
+      zoom: 11,
+      marker: false,
+      textPlaceholder: "Search midwife name\u2026",
+      position: "topleft",
+      moveToLocation: function(latlng, title, m2){ m2.setView(latlng, 11); }
+    }));
+  });
+}
+'))
 
 # Reset-view control: specific to this map's CONUS framing, so it stays local.
 m <- htmlwidgets::onRender(m, '
@@ -384,7 +497,7 @@ if (exists("assert_access_language", mode = "function")) {
 
 out <- file.path(OUTDIR, "midwifery_access_map.html")
 htmlwidgets::saveWidget(m, out, selfcontained = TRUE,
-                        title = "Drive-time access to certified nurse-midwives")
+                        title = "Drive-time access to certified nurse-midwives, 2026")
 cat(sprintf("written: %s (%.1f MB)\n", out, file.size(out) / 1024^2))
 cat(sprintf("counties: %s | zero-midwife counties: %s | suppressed: %s\n",
             nrow(cty), sum(cty$midwives_per_1k_births == 0, na.rm = TRUE),

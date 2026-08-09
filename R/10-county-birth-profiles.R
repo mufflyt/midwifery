@@ -46,6 +46,7 @@ suppressPackageStartupMessages({
 # (R/variety_sentences.R, PR #519). It is loaded, never copied: a second
 # definition would drift from the one the urogyn maps use.
 source(file.path("R", "lib", "isochrones_dep.R"))
+suppressPackageStartupMessages(library(mysterymaps))   # pluralisation helper
 source(file.path("R", "lib", "ob_hospitals.R"))
 load_variety_sentence_engine(quiet = TRUE)
 
@@ -126,14 +127,22 @@ county_sentences <- function(r, n_counties) {
     # The ascertainment caveat belongs once, in the map's notes panel.
     "No certified nurse-midwife was located in this county."
   } else {
-    tail_bits <- c(
+    # Two short sentences rather than one clause-stacked line. The single
+    # sentence -- "13 certified nurse-midwives were located here -- 3.6 per
+    # 10,000 women aged 15-44 and roughly 145 births per located midwife" --
+    # made a reader hold three numbers and two denominators at once.
+    lead <- sprintf("%s %s located here.",
+                    mysterymaps_pluralize(r$n_midwives, "certified nurse-midwife",
+                                          "certified nurse-midwives"),
+                    if (r$n_midwives == 1) "was" else "were")
+    rate_bits <- c(
       if (!is.null(fmt(r$midwives_per_10k_women, 1)))
         sprintf("%s per 10,000 women aged 15-44", fmt(r$midwives_per_10k_women, 1)),
       if (!is.null(fmt(r$births_per_midwife)))
-        sprintf("roughly %s births per located midwife", fmt(r$births_per_midwife)))
-    sprintf("%s certified nurse-midwi%s located here%s%s.",
-            fmt(r$n_midwives), if (r$n_midwives == 1) "fe was" else "ves were",
-            if (length(tail_bits)) " -- " else "", oxford_join(tail_bits))
+        sprintf("about %s births for each one", fmt(r$births_per_midwife)))
+    if (length(rate_bits)) {
+      paste(lead, sprintf("That is %s.", oxford_join(rate_bits)))
+    } else lead
   }
 
   # C: midwife-attended births. Three states that must NEVER collapse into
@@ -201,7 +210,10 @@ county_sentences <- function(r, n_counties) {
 
   parts <- c(a, b, cc)
   pick <- mm_rotate_facts(pool, r$GEOID, 3)
-  if (length(pick)) parts <- c(parts, sprintf("It has %s.", oxford_join(pick)))
+  # Not "It has ...": three sentences in a row opened with a pronoun whose
+  # referent was two sentences back.
+  if (length(pick))
+    parts <- c(parts, sprintf("The county also records %s.", oxford_join(pick)))
 
   # E: superlatives, only at the extremes. A county ranked 1,600th of 3,235 is
   # not interesting; asserting a rank for every county would be noise and would

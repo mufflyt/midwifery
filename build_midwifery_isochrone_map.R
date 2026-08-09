@@ -193,7 +193,11 @@ if (dir.exists(water_dir)) {
     suppressWarnings(suppressMessages(
       sys.source(file.path("R", "canonical_water_mask_loader.R"), envir = globalenv())))
   })
-  states <- setdiff(mufflyaccess::CONUS_STATE_ABBR, c("DC"))
+  # ALL of CONUS_STATE_ABBR, including DC. An earlier version excluded DC for
+  # no reason, so the Potomac and Anacostia stayed counted as drivable ground.
+  # A hand-written exception to a canonical constant is exactly the kind of
+  # edit that survives review because it looks like housekeeping.
+  states <- mufflyaccess::CONUS_STATE_ABBR
   cat(sprintf("loading water masks for %s states ...\n", length(states)))
   wm <- lapply(states, function(st) {
     f <- file.path(water_dir, sprintf("%s_water_mask.fgb", st))
@@ -203,8 +207,14 @@ if (dir.exists(water_dir)) {
     if (is.null(g)) return(NULL)
     suppressWarnings(sf::st_transform(g, 4326))
   })
+  failed <- states[vapply(wm, is.null, logical(1))]
   wm <- Filter(Negate(is.null), wm)
-  cat(sprintf("water masks loaded: %s states\n", length(wm)))
+  cat(sprintf("water masks loaded: %s of %s states\n", length(wm), length(states)))
+  # A mask that fails to read leaves that state's water counted as land. Silence
+  # here would look identical to success, so it is an error, not a warning.
+  if (length(failed))
+    stop("water masks missing or unreadable for: ", paste(failed, collapse = ", "),
+         " -- their water would be counted as drivable ground.", call. = FALSE)
   if (length(wm)) {
     water <- sf::st_make_valid(do.call(c, wm))
     water <- sf::st_union(water)
