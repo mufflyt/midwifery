@@ -29,7 +29,20 @@ cache_path <- Sys.getenv("GEOCODING_CACHE_PATH",
                          path.expand("~/isochrones/data/geocoding_cache.duckdb"))
 stopifnot(file.exists(FROZEN), file.exists(cache_path))
 
-roster <- read_csv(FROZEN, show_col_types = FALSE) %>%
+roster <- read_csv(FROZEN, show_col_types = FALSE)
+# Accept either vintage of the linkage schema: the matcher emits
+# linkage_tier / npi_match_status, and match_status only appears once
+# reconcile_linkage.R has frozen it. Requiring the frozen name meant this
+# stage could not consume a freshly matched arm at all.
+if (!"match_status" %in% names(roster)) {
+  roster$match_status <- if ("linkage_tier" %in% names(roster)) roster$linkage_tier
+                         else roster$npi_match_status
+}
+if (!"match_resolution" %in% names(roster)) {
+  roster$match_resolution <- if ("npi_match_resolution" %in% names(roster))
+    roster$npi_match_resolution else NA_character_
+}
+roster <- roster %>%
   filter(!is.na(npi)) %>%
   mutate(across(c(nppes_practice_address, nppes_city, nppes_state, nppes_zip),
                 ~ toupper(trimws(coalesce(.x, "")))))

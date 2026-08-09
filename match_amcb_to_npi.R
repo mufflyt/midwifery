@@ -11,7 +11,10 @@
 #
 # Specifically reused, not reimplemented:
 #   norm_name(), first_initial()   name normalisation
-#   compute_match_score()          additive flag scoring (score_total / 108)
+#   compute_match_score()          NOT used: it collapses categorical identity
+#                                  evidence into one number, and this cohort has
+#                                  no location/DOB to make a finer scale mean
+#                                  anything. Ordered evidence classes instead.
 #   rank_one_to_one()              greedy bijection with deterministic tiebreak
 #   safe_pct()                     reporting helper
 #
@@ -34,6 +37,7 @@
 
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(tibble); library(stringdist); library(tidyr)
+  library(digest); library(jsonlite)
 })
 
 ISO <- Sys.getenv("ISOCHRONES_DIR", path.expand("~/isochrones"))
@@ -65,12 +69,40 @@ ROSTER  <- "midwives.csv"
 OUT_DIR <- "artifacts"
 dir.create(OUT_DIR, showWarnings = FALSE)
 YEAR_FLOOR <- suppressWarnings(as.integer(Sys.getenv("PANEL_YEAR_MAX", "")))
-# The A/B variant must not overwrite the production artifact -- it did once,
-# and the truncated-panel numbers silently replaced the full-panel ones.
-OUT     <- file.path(OUT_DIR, if (is.na(YEAR_FLOOR)) "amcb_npi_matched.csv"
-                              else sprintf("amcb_npi_matched_through%d.csv", YEAR_FLOOR))
 
-# --- Valid NPI: 10 digits, Luhn with the 80840 prefix (NPPES check digit) ----
+# Every A/B variant must write its own artifact. Keying the filename on the
+# year cap alone was not enough: the taxonomy A/B varied the PANEL instead, so
+# both arms wrote amcb_npi_matched.csv and the second silently replaced the
+# first -- the same defect twice, once per dimension. The name now derives from
+# every input that changes the result, so a new dimension cannot reintroduce it
+# without also changing the filename.
+# Artifact naming must encode EVERY dimension that can alter the linkage, not
+# just the one that varied most recently. Keying on the year window alone was
+# not enough: the taxonomy A/B varied the PANEL, both arms wrote the same file,
+# and the second silently replaced the first. Same defect twice, once per
+# dimension. Naming now derives from the panel definition AND the year window,
+# and a run refuses to clobber an existing artifact without an explicit flag.
+# Every invocation gets a unique id, recorded in a sidecar manifest beside the
+# artifact. Twice now a failed run left an older file in place and its numbers
+# were read as if fresh; a consumer must be able to PROVE which invocation
+# produced what it is reading, not infer it from a timestamp.
+RUN_ID <- Sys.getenv("MATCH_RUN_ID", sprintf(
+  "amcbmatch_%s_%s", format(Sys.time(), "%Y%m%dT%H%M%S"),
+  paste(sample(c(letters, 0:9), 6, replace = TRUE), collapse = "")))
+RUN_STARTED <- Sys.time()
+
+OUT <- Sys.getenv("MATCH_OUT", "")   # resolved after the panel is read,
+                                     # because the name depends on its content
+
+panel_definition <- function(panel_df) {
+  classes <- unique(panel_df$tax_class)
+  if (all(classes == "midwife")) "midwifery" else "midwifery-plus-nursing"
+}
+year_window <- function(panel_df) {
+  if (!is.na(YEAR_FLOOR)) sprintf("through-%d", YEAR_FLOOR)
+  else paste(range(panel_df$snapshot_year, na.rm = TRUE), collapse = "-")
+}
+
 npi_luhn_ok <- function(npi) {
   ok <- grepl("^[0-9]{10}$", npi)
   if (!any(ok, na.rm = TRUE)) return(ok & FALSE)
@@ -88,16 +120,31 @@ npi_luhn_ok <- function(npi) {
 }
 
 # --- Inputs ------------------------------------------------------------------
+# THE DEFECT THIS GUARDS AGAINST (2026-08-08). Two base-R behaviours combined
+# to manufacture identity evidence:
+#
+#   paste(NA_character_, "")  ->  "NA"     (a fabricated middle initial "N")
+#   nzchar(NA_character_)     ->  TRUE     (missing read as "information present")
+#
+# Every absent middle name became "N" and matched every other absent middle
+# name: all 18,397 candidate pairs reported middle agreement, and evidence
+# class 2 (exact name, no middle info) was empty. norm_name() and toupper() are
+# NOT at fault -- they propagate NA correctly.
+blank_na <- function(x) coalesce(norm_name(x), "")
+
+# Never use a naked nzchar() to ask whether identity information exists.
+has_name_information <- function(x) !is.na(x) & nzchar(x)
+
 amcb <- read_csv(ROSTER, show_col_types = FALSE) %>%
   mutate(amcb_id = certification_number,
-         last_clean  = norm_name(last_name),
+         last_clean  = blank_na(last_name),
          # AMCB fuses middle names into first_name ("Julie Ann"): the first
          # token is the given name, the rest is middle.
-         first_raw   = norm_name(first_name),
+         first_raw   = blank_na(first_name),
          first_clean = sub("\\s.*$", "", first_raw),
          mid_from_first = trimws(sub("^[^ ]*", "", first_raw)),
-         middle_clean = trimws(paste(norm_name(middle_name), mid_from_first)),
-         first_init  = first_initial(first_clean),
+         middle_clean = trimws(paste(blank_na(middle_name), mid_from_first)),
+         first_init  = coalesce(first_initial(first_clean), ""),
          mid_init    = substr(middle_clean, 1, 1))
 
 panel_raw <- read_csv(PANEL, col_types = cols(.default = "c")) %>%
@@ -107,17 +154,31 @@ if (!is.na(YEAR_FLOOR)) {
   cat(sprintf("panel restricted to snapshots <= %d\n", YEAR_FLOOR))
 }
 
+if (!"tax_class" %in% names(panel_raw)) panel_raw$tax_class <- "midwife"
 panel <- panel_raw %>%
   filter(!is.na(npi), npi_luhn_ok(npi)) %>%
-  mutate(nppes_last_clean  = norm_name(last_name),
-         nppes_first_clean = norm_name(first_name),
-         nppes_first_init  = first_initial(nppes_first_clean),
-         nppes_mid_init    = substr(norm_name(middle_name), 1, 1))
+  mutate(nppes_last_clean  = blank_na(last_name),
+         nppes_first_clean = blank_na(first_name),
+         nppes_first_init  = coalesce(first_initial(nppes_first_clean), ""),
+         nppes_mid_init    = substr(blank_na(middle_name), 1, 1))
 
 # Candidate identities: one row per (NPI, name spelling) so every historical
 # surname is matchable, not just the current one.
+# An NPI that ever carried a midwifery taxonomy is stronger evidence for an
+# AMCB certificant than one that only ever appears as a nurse. Nursing codes
+# are in the pool because a CNM must hold RN licensure and may enumerate under
+# either, but the pool is now 21x larger (443,623 NPIs vs 20,849), so treating
+# both alike would let name collisions with unrelated nurses outvote real
+# midwives.
+npi_class <- panel %>%
+  group_by(npi) %>%
+  summarise(npi_tax_class = if (any(tax_class == "midwife")) "midwife" else "nursing",
+            .groups = "drop")
+
 identities <- panel %>%
-  distinct(npi, nppes_last_clean, nppes_first_clean, nppes_first_init, nppes_mid_init)
+  distinct(npi, nppes_last_clean, nppes_first_clean, nppes_first_init, nppes_mid_init) %>%
+  left_join(npi_class, by = "npi")
+cat("candidate NPIs by taxonomy class:\n"); print(table(npi_class$npi_tax_class))
 
 # Most recent appearance per NPI supplies the geography.
 latest <- panel %>%
@@ -133,6 +194,35 @@ latest <- panel %>%
             nppes_zip = practice_zip,
             nppes_practice_address = practice_address,
             nppes_location_year = snapshot_year)
+
+if (!nzchar(OUT)) {
+  OUT <- file.path(OUT_DIR, sprintf("amcb_npi_linkage_panel-%s_years-%s.csv",
+                                    panel_definition(panel), year_window(panel)))
+}
+if (file.exists(OUT) && !identical(Sys.getenv("MATCH_OVERWRITE"), "1")) {
+  stop(sprintf(paste("%s already exists. Overwriting it would replace another",
+                     "arm's numbers with this one's -- exactly how the year and",
+                     "taxonomy A/B arms lost their artifacts. Set",
+                     "MATCH_OVERWRITE=1 to replace it deliberately."), OUT),
+       call. = FALSE)
+}
+# Config smoke test, run BEFORE any matching. A patch once swallowed OUT's
+# definition and the run died only after building the candidate pool; these
+# assertions cost nothing and fail in the first second instead.
+local({
+  def <- panel_definition(panel); win <- year_window(panel)
+  stopifnot(nzchar(OUT), nzchar(def), nzchar(win))
+  stopifnot(grepl(def, basename(OUT), fixed = TRUE),
+            grepl(win, basename(OUT), fixed = TRUE))
+  alt <- file.path(OUT_DIR, sprintf("amcb_npi_linkage_panel-%s_years-%s.csv",
+                                    if (def == "midwifery") "midwifery-plus-nursing"
+                                    else "midwifery", win))
+  stopifnot(!identical(normalizePath(OUT, mustWork = FALSE),
+                       normalizePath(alt, mustWork = FALSE)))
+  cat("config smoke test: OK (name carries both dimensions and is spec-unique)\n")
+})
+cat(sprintf("panel definition: %s | year window: %s\noutput: %s\n",
+            panel_definition(panel), year_window(panel), OUT))
 
 cat(sprintf("AMCB rows: %s | panel identities: %s (%s NPIs, snapshots %s)\n",
             format(nrow(amcb), big.mark = ","), format(nrow(identities), big.mark = ","),
@@ -158,26 +248,35 @@ base_flags <- function(df, strategy, method) {
 # have, so scaling by it would understate nothing and overstate confidence.
 MAX_NAME_SCORE <- 60
 
-s1 <- amcb %>%
+# --- Candidate generation: EVERY strategy, for EVERY row ---------------------
+# Previously each strategy ran only on the residual of the last, so a row that
+# matched exactly at strategy 1 never generated its fuzzy-surname candidates.
+# That is why STACEY WALDEN silently vanished from the candidate set when an
+# exact STACEY ALLEN appeared, and why CONFLICT_MARGIN could never fire: the
+# candidates it was meant to compare could not coexist. Generate the complete
+# plausible set and let evidence decide.
+# A blank name is not a name: joining "" to "" would be a fabricated exact match.
+identities <- identities %>% filter(has_name_information(nppes_last_clean),
+                                   has_name_information(nppes_first_clean))
+amcb_named <- amcb %>% filter(has_name_information(last_clean),
+                              has_name_information(first_clean))
+
+s1 <- amcb_named %>%
   inner_join(identities, by = c("last_clean" = "nppes_last_clean",
                                 "first_clean" = "nppes_first_clean"),
              relationship = "many-to-many") %>%
-  mutate(exact_last = 1L, exact_first = 1L, first_init_ok = 1L) %>%
+  mutate(exact_last = 1L, exact_first = 1L, first_init_ok = 1L, lv_last = 0L) %>%
   base_flags(1L, "exact_last_first")
 
-s2 <- amcb %>%
-  anti_join(s1, by = "amcb_id") %>%
+s2 <- amcb_named %>%
   inner_join(identities, by = c("last_clean" = "nppes_last_clean",
                                 "first_init" = "nppes_first_init"),
              relationship = "many-to-many") %>%
-  filter(mid_init == "" | nppes_mid_init == "" | mid_init == nppes_mid_init) %>%
-  mutate(exact_last = 1L, exact_first = 0L, first_init_ok = 1L) %>%
+  filter(first_clean != nppes_first_clean) %>%   # s1 already holds exact-first
+  mutate(exact_last = 1L, exact_first = 0L, first_init_ok = 1L, lv_last = 0L) %>%
   base_flags(2L, "exact_last_first_initial")
 
-# Fuzzy surname, exact given name: marriage/hyphenation drift the panel's own
-# name history did not happen to capture.
-s3 <- amcb %>%
-  anti_join(bind_rows(s1, s2), by = "amcb_id") %>%
+s3 <- amcb_named %>%
   inner_join(identities, by = c("first_clean" = "nppes_first_clean"),
              relationship = "many-to-many") %>%
   mutate(lv_last = stringdist(last_clean, nppes_last_clean, method = "lv")) %>%
@@ -185,51 +284,84 @@ s3 <- amcb %>%
   mutate(exact_last = 0L, exact_first = 1L, first_init_ok = 1L) %>%
   base_flags(3L, "fuzzy_last_exact_first")
 
-candidates <- bind_rows(s1, s2, s3) %>%
-  compute_match_score() %>%
-  mutate(confidence_score = pmin(1.0, score_total / MAX_NAME_SCORE),
-         mid_match = as.integer(nzchar(mid_init) & mid_init == nppes_mid_init))
-
-cat("\ncandidate pairs by strategy:\n"); print(count(candidates, match_strategy, match_method))
-
-# --- Identifiability guard ---------------------------------------------------
-# rank_one_to_one() enforces a bijection, and with the ENTHealth data that was
-# safe because address and phone carried independent identifying information.
-# AMCB supplies name only. A bijection over name-only evidence would silently
-# manufacture identifiability: if three midwives are named JENNIFER SMITH, the
-# algorithm still hands out exactly one NPI, and the result LOOKS clean.
+# --- Evidence, kept as components rather than collapsed into one number ------
+# Two people who are both exact first+last matches, with no middle name,
+# location or DOB to separate them, ARE indistinguishable. A finer score would
+# manufacture certainty rather than measure it. So identity strength is an
+# ORDERED CLASS of name evidence, and taxonomy is a separate axis that decides
+# the tier -- never the identity.
 #
-# So resolution happens BEFORE ranking, and a row is accepted only when the
-# name evidence actually singles out one NPI:
-#   1. one candidate NPI holds the top score outright, or
-#   2. the tie is broken by a middle initial both sides record.
-# Anything still tied is quarantined as ambiguous rather than being resolved by
-# the bijection's arbitrary but deterministic ordering.
+#   1  exact first + last + compatible middle
+#   2  exact first + last, no useful middle information
+#   3  exact last + first initial
+#   4  fuzzy last + exact first
+candidates <- bind_rows(s1, s2, s3) %>%
+  mutate(
+    mid_both   = has_name_information(mid_init) &
+                 has_name_information(nppes_mid_init),
+    mid_match  = as.integer(mid_both & mid_init == nppes_mid_init),
+    mid_conflict = as.integer(mid_both & mid_init != nppes_mid_init),
+    name_evidence_class = case_when(
+      exact_last == 1L & exact_first == 1L & mid_match == 1L ~ 1L,
+      exact_last == 1L & exact_first == 1L                   ~ 2L,
+      exact_last == 1L & first_init_ok == 1L                 ~ 3L,
+      TRUE                                                   ~ 4L),
+    taxonomy_axis = npi_tax_class) %>%
+  filter(mid_conflict == 0L)   # a recorded middle-initial conflict still vetoes
+
+cat("\ncandidates by name_evidence_class x taxonomy:\n")
+print(as.data.frame(count(candidates, name_evidence_class, taxonomy_axis)))
+
+# Full candidate audit table: every plausible pair survives here even when it
+# loses, so adding a candidate source can never make a known candidate vanish.
+cand_audit <- candidates %>%
+  transmute(amcb_id, npi, name_evidence_class, taxonomy_axis, match_method,
+            exact_last, exact_first, first_init_ok, mid_match, lv_last,
+            first_year = NA_integer_, last_year = NA_integer_)
+write_csv(cand_audit, file.path(OUT_DIR, "linkage_candidate_audit.csv"), na = "")
+
+# --- Resolution: identity first, taxonomy second -----------------------------
 per_npi <- candidates %>%
   group_by(amcb_id, npi) %>%
-  summarise(score_total = max(score_total), mid_match = max(mid_match),
-            match_method = match_method[which.max(score_total)],
-            match_strategy = match_strategy[which.max(score_total)],
-            confidence_score = max(confidence_score), .groups = "drop")
+  summarise(name_evidence_class = min(name_evidence_class),
+            mid_match = max(mid_match), taxonomy_axis = first(taxonomy_axis),
+            match_method = match_method[which.min(name_evidence_class)],
+            match_strategy = match_strategy[which.min(name_evidence_class)],
+            .groups = "drop")
 
-pre_rank <- per_npi %>% count(amcb_id, name = "n_candidates_pre_rank")
+pool_stats <- per_npi %>%
+  group_by(amcb_id) %>%
+  summarise(n_candidates_pre_rank = n(),
+            n_midwifery_candidates = sum(taxonomy_axis == "midwife"),
+            n_nursing_only_candidates = sum(taxonomy_axis == "nursing"),
+            best_evidence_class = min(name_evidence_class),
+            n_at_best_class = sum(name_evidence_class == min(name_evidence_class)),
+            .groups = "drop")
 
 resolved <- per_npi %>%
-  left_join(pre_rank, by = "amcb_id") %>%
-  group_by(amcb_id) %>%
-  mutate(top_score = max(score_total),
-         n_at_top  = sum(score_total == top_score),
-         n_top_mid = sum(score_total == top_score & mid_match == 1L)) %>%
-  filter(score_total == top_score) %>%
-  mutate(resolution = case_when(
-    n_at_top == 1L                             ~ "unique_top_score",
-    n_top_mid == 1L & mid_match == 1L          ~ "resolved_by_middle",
-    TRUE                                       ~ "tied")) %>%
-  filter(resolution != "tied",
-         !(n_at_top > 1L & resolution == "unique_top_score")) %>%
-  ungroup()
+  inner_join(pool_stats, by = "amcb_id") %>%
+  filter(name_evidence_class == best_evidence_class) %>%
+  # Exactly one candidate at the strongest class resolves. Several means they
+  # are indistinguishable on the evidence we hold -- taxonomy must NOT break
+  # that tie, because it says nothing about which person the name refers to.
+  filter(n_at_best_class == 1L) %>%
+  mutate(resolution = if_else(name_evidence_class == 1L,
+                              "unique_best_class_with_middle", "unique_best_class"),
+         confidence_score = c(1.0, 0.9, 0.7, 0.5)[name_evidence_class])
 
 quarantined_ids <- setdiff(unique(candidates$amcb_id), unique(resolved$amcb_id))
+
+cat("\nresolved by best name-evidence class:\n")
+print(as.data.frame(count(resolved, name_evidence_class, taxonomy_axis)))
+cat(sprintf("indistinguishable at best class (quarantined): %s\n",
+            format(length(quarantined_ids), big.mark = ",")))
+
+# CONFLICT_MARGIN is gone. It expressed a numeric question about categorical
+# evidence, and its zero-conflict behaviour was structural (staged generation
+# meant the candidates it compared never coexisted), not validation of the
+# value 12. Ordered evidence classes replace it.
+diag_pools <- pool_stats %>% mutate(quarantined = amcb_id %in% quarantined_ids)
+write_csv(diag_pools, file.path(OUT_DIR, "linkage_pool_diagnostics.csv"), na = "")
 
 # Only now enforce one NPI to one person, over candidates that were already
 # individually identifiable. Record contested NPIs before the bijection prunes
@@ -237,13 +369,19 @@ quarantined_ids <- setdiff(unique(candidates$amcb_id), unique(resolved$amcb_id))
 contested <- resolved %>% count(npi) %>% filter(n > 1)
 
 matched <- resolved %>%
-  mutate(enthealth_id = amcb_id) %>%
+  # rank_one_to_one() ranks on method_priority, score_total then
+  # confidence_score. Feed it the evidence class as the score so the bijection
+  # prefers the strongest identity evidence, not an arbitrary row order.
+  mutate(enthealth_id = amcb_id,
+         score_total = 5L - name_evidence_class,
+         match_strategy = name_evidence_class) %>%
   rank_one_to_one() %>%
   transmute(amcb_id, npi, npi_match_method = match_method,
+            npi_tax_class = taxonomy_axis, name_evidence_class,
             npi_match_resolution = resolution,
             npi_match_confidence = round(confidence_score, 4),
-            npi_match_score = score_total,
-            n_candidates_pre_rank, match_strategy)
+            npi_match_score = 5L - name_evidence_class,
+            match_strategy)   # candidate counts come from pool_stats, once
 
 # Rows identifiable on name but which lost the bijection to a stronger claim.
 lost_bijection <- setdiff(unique(resolved$amcb_id), matched$amcb_id)
@@ -255,17 +393,59 @@ out <- amcb %>%
   left_join(matched, by = "amcb_id") %>%
   left_join(latest, by = "npi") %>%
   mutate(npi_match_status = case_when(
+    !is.na(npi) & npi_tax_class == "nursing" ~ "matched_nursing_taxonomy",
     !is.na(npi)                  ~ "matched",
     amcb_id %in% quarantined_ids ~ "ambiguous_tied_names",
     amcb_id %in% lost_bijection  ~ "ambiguous_contested_npi",
     TRUE                         ~ "unmatched")) %>%
-  left_join(pre_rank, by = "amcb_id", suffix = c("", "_all")) %>%
-  mutate(n_candidates_pre_rank = coalesce(n_candidates_pre_rank,
-                                          n_candidates_pre_rank_all, 0L)) %>%
-  select(-any_of("n_candidates_pre_rank_all"))
+  # pool_stats joined exactly ONCE: it is the single source of candidate counts.
+  left_join(pool_stats, by = "amcb_id") %>%
+  mutate(across(c(n_candidates_pre_rank, n_midwifery_candidates,
+                  n_nursing_only_candidates), ~ coalesce(.x, 0L))) %>%
+  # "no plausible NPI exists" and "plausible NPIs exist but identity is
+  # ambiguous" are different kinds of missingness and must stay separable.
+  mutate(has_candidate = n_candidates_pre_rank > 0,
+         linkage_tier = case_when(
+           # Fuzzy identity evidence is sensitivity-only whatever the taxonomy.
+           !is.na(npi) & name_evidence_class == 4L  ~ "sensitivity_fuzzy",
+           !is.na(npi) & npi_tax_class == "nursing" ~ "sensitivity_nursing",
+           !is.na(npi)                              ~ "primary_midwifery",
+           grepl("^ambiguous", npi_match_status)    ~ "quarantined",
+           TRUE                                     ~ "unmatched"))
 
 stopifnot(nrow(out) == nrow(amcb), !any(duplicated(out$amcb_id)))
-write_csv(out, OUT, na = "")
+stopifnot(all(out$linkage_tier %in% c("primary_midwifery", "sensitivity_nursing",
+                                      "sensitivity_fuzzy", "quarantined", "unmatched")),
+          sum(table(out$linkage_tier)) == nrow(amcb),
+          !any(out$linkage_tier == "primary_midwifery" &
+                 out$npi_tax_class == "nursing", na.rm = TRUE))
+# Atomic publish: a failed or half-finished run must not leave something that
+# looks like a valid linkage artifact. Write to a temp path, then rename only
+# after every assertion above has passed.
+tmp_out <- paste0(OUT, ".tmp", Sys.getpid())
+write_csv(out, tmp_out, na = "")
+if (!file.rename(tmp_out, OUT)) {
+  unlink(tmp_out)
+  stop(sprintf("could not publish %s", OUT), call. = FALSE)
+}
+
+# Sidecar manifest: proves provenance of the bytes just published.
+manifest <- list(
+  run_id = RUN_ID,
+  run_started_utc = format(RUN_STARTED, tz = "UTC", usetz = TRUE),
+  run_finished_utc = format(Sys.time(), tz = "UTC", usetz = TRUE),
+  artifact = basename(OUT),
+  artifact_sha256 = digest::digest(file = OUT, algo = "sha256"),
+  artifact_rows = nrow(out),
+  source_script_sha256 = digest::digest(file = "match_amcb_to_npi.R", algo = "sha256"),
+  panel = basename(PANEL),
+  panel_sha256 = digest::digest(file = PANEL, algo = "sha256"),
+  panel_definition = panel_definition(panel),
+  year_window = year_window(panel),
+  columns = names(out))
+jsonlite::write_json(manifest, paste0(OUT, ".manifest.json"),
+                     auto_unbox = TRUE, pretty = TRUE)
+cat(sprintf("run_id: %s\nmanifest: %s\n", RUN_ID, paste0(basename(OUT), ".manifest.json")))
 
 # --- Report ------------------------------------------------------------------
 n <- nrow(out); nm <- sum(!is.na(out$npi))
@@ -280,6 +460,14 @@ cat(sprintf("unmatched                  : %s (%s)\n",
             format(sum(out$npi_match_status == "unmatched"), big.mark = ","),
             safe_pct(sum(out$npi_match_status == "unmatched"), n)))
 cat("\nby match method:\n"); print(count(filter(out, !is.na(npi)), npi_match_method, sort = TRUE))
+if ("npi_tax_class" %in% names(out)) {
+  cat("\nmatched NPIs by taxonomy class:\n")
+  print(count(filter(out, !is.na(npi)), npi_tax_class, sort = TRUE))
+  cat(paste0(
+    "  NOTE: a nursing-taxonomy NPI matching an AMCB name uniquely may still\n",
+    "  be a different person who happens to be a nurse of that name. These are\n",
+    "  a separate evidence stratum (matched_nursing_taxonomy), not primary.\n"))
+}
 cat("\nby resolution:\n"); print(count(filter(out, !is.na(npi)), npi_match_resolution, sort = TRUE))
 
 # The categories that matter for identifiability, reported separately rather
@@ -308,6 +496,28 @@ cat(sprintf("AMCB (last, first) names held by >1 row: %s names, %s rows\n",
             format(sum(dupe_names$n), big.mark = ",")))
 cat(sprintf("NPIs contested by >1 AMCB row pre-bijection: %s\n",
             format(nrow(contested), big.mark = ",")))
+
+cat("\nlinkage_tier (mutually exclusive):\n")
+tiers <- out %>% count(linkage_tier) %>% mutate(pct = round(100 * n / nrow(out), 1))
+print(as.data.frame(tiers))
+stopifnot(sum(tiers$n) == nrow(out))
+cat(sprintf("  primary_midwifery                  : %s (%.1f%%)\n",
+            format(sum(out$linkage_tier == "primary_midwifery"), big.mark = ","),
+            100 * mean(out$linkage_tier == "primary_midwifery")))
+cat(sprintf("  + sensitivity_nursing increment    : %s (%+.1f pp)\n",
+            format(sum(out$linkage_tier == "sensitivity_nursing"), big.mark = ","),
+            100 * mean(out$linkage_tier == "sensitivity_nursing")))
+cat(sprintf("  + sensitivity_fuzzy increment      : %s (%+.1f pp)\n",
+            format(sum(out$linkage_tier == "sensitivity_fuzzy"), big.mark = ","),
+            100 * mean(out$linkage_tier == "sensitivity_fuzzy")))
+cat(sprintf("  quarantined                        : %s (%.1f%%), of which %s have candidates\n",
+            format(sum(out$linkage_tier == "quarantined"), big.mark = ","),
+            100 * mean(out$linkage_tier == "quarantined"),
+            format(sum(out$linkage_tier == "quarantined" & out$has_candidate), big.mark = ",")))
+cat(sprintf("  unmatched                          : %s (%.1f%%), of which %s HAVE candidates\n",
+            format(sum(out$linkage_tier == "unmatched"), big.mark = ","),
+            100 * mean(out$linkage_tier == "unmatched"),
+            format(sum(out$linkage_tier == "unmatched" & out$has_candidate), big.mark = ",")))
 
 cat("\nby confidence tier:\n")
 print(out %>% filter(!is.na(npi)) %>%

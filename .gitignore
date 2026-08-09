@@ -49,3 +49,17 @@ midwives_geography.csv
 # 24 MB Census ZCTA-tract relationship file; regenerate with the URL in
 # R/03-geography-hierarchy.R (zip_county_ct_2022).
 data/zcta_tract_2020.txt
+artifacts/amcb_npi_linkage_panel-*.csv*
+artifacts/linkage_candidate_audit.csv
+artifacts/linkage_pool_diagnostics.csv
+artifacts/identity_flip_audit.csv
+artifacts/geocode_*.csv
+clean_rerun.log
+refactor_run.log
+tax_ab.log
+tier_ab.log
+audit_pools.log
+stage3_*.log
+.s3f_done
+.tier_done
+.pool_done

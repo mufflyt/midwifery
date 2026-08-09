@@ -194,6 +194,28 @@ build_geography <- function() {
          ". Run the matcher and freeze before Stage 3.", call. = FALSE)
   }
   roster <- read_csv(FROZEN, show_col_types = FALSE)
+  # Stale downstream inputs have bitten this pipeline twice: coordinates from
+  # one roster paired with ZIPs from another (94.47% validation failure), and
+  # geography from the midwifery-only linkage reported as if it described
+  # nursing-tier matches (1.7% "coverage"). Record which linkage produced this
+  # geography so a consumer can refuse a mismatch instead of believing it.
+  linkage_sha <- if (requireNamespace("digest", quietly = TRUE))
+    digest::digest(file = FROZEN, algo = "sha256") else NA_character_
+  # Verify the linkage BEFORE any geography work: if the file on disk is not
+  # the frozen artifact the manifest describes, nothing downstream is valid.
+  mf <- file.path(ART, "linkage_manifest.json")
+  if (file.exists(mf) && requireNamespace("jsonlite", quietly = TRUE)) {
+    want <- jsonlite::fromJSON(mf)$linkage_sha256
+    if (!is.null(want) && !identical(want, linkage_sha)) {
+      stop(sprintf(paste("Stage 3 refused: %s has sha256 %s but the frozen",
+                         "manifest records %s. Geography must be built from the",
+                         "frozen linkage, not whatever is on disk."),
+                   FROZEN, substr(linkage_sha, 1, 16), substr(want, 1, 16)),
+           call. = FALSE)
+    }
+    cat(sprintf("linkage SHA verified against frozen manifest: %s\n",
+                substr(linkage_sha, 1, 16)))
+  }
   # The guarded linkage names its geography columns nppes_*; the older Stage 2
   # roster used practice_*. Accept either so this stage is not coupled to one
   # upstream vintage.
@@ -431,7 +453,9 @@ build_geography <- function() {
             file.path(ART, "zip_fallback_validation.csv"))
 
   out <- m %>%
+    mutate(source_linkage = basename(FROZEN), source_linkage_sha256 = linkage_sha) %>%
     select(certification_number, npi, match_status, match_resolution,
+           source_linkage, source_linkage_sha256,
            practice_state, practice_zip,
            latitude, longitude, quality_score, geocode_match,
            county_exact, county_best, geo_source, geo_precision, geo_ambiguity,

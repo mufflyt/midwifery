@@ -28,8 +28,12 @@
 
 suppressPackageStartupMessages({library(dplyr); library(readr); library(tidyr)})
 
-full <- read_csv("artifacts/amcb_npi_matched.csv", show_col_types = FALSE)
-old  <- read_csv("artifacts/amcb_npi_matched_through2017.csv", show_col_types = FALSE)
+full <- read_csv(Sys.getenv("RECONCILE_FULL", "artifacts/amcb_npi_matched.csv"),
+                 show_col_types = FALSE)
+if (!"npi_tax_class" %in% names(full)) full$npi_tax_class <- NA_character_
+old  <- read_csv(Sys.getenv("RECONCILE_BASE",
+                            "artifacts/amcb_npi_matched_through2017.csv"),
+                 show_col_types = FALSE)
 stopifnot(nrow(full) == 22309, nrow(old) == 22309)
 
 # --- 1. Transition matrix -----------------------------------------------------
@@ -109,9 +113,11 @@ frozen <- full %>%
       !is.na(npi) & npi_match_method == "exact_last_first" & n_candidates_pre_rank > 1,
     # 3. Fuzzy surname is evidentially weaker with no location to corroborate it.
     match_status = case_when(
-      is.na(npi)                             ~ npi_match_status,
-      match_resolution == "fuzzy_surname"    ~ "sensitivity_fuzzy",
-      TRUE                                   ~ "primary"))
+      is.na(npi)                                     ~ npi_match_status,
+      # Weakest evidence first: a nursing-only NPI could be a same-named nurse.
+      !is.na(npi_tax_class) & npi_tax_class == "nursing" ~ "sensitivity_nursing_taxonomy",
+      match_resolution == "fuzzy_surname"             ~ "sensitivity_fuzzy",
+      TRUE                                            ~ "primary"))
 
 cat("\n=== mutually exclusive match_resolution ===\n")
 res <- frozen %>% filter(!is.na(npi)) %>% count(match_resolution, sort = TRUE)
@@ -146,7 +152,7 @@ cat("associated with certification status, so the linked subset is NOT a\n")
 cat("representative sample of the roster. Any geographic analysis must report\n")
 cat("completeness by status rather than treating the linked rows as a random 70%.\n")
 
-write_csv(frozen, "artifacts/amcb_npi_linkage_FROZEN.csv", na = "")
-cat(sprintf("\nfrozen artifact           : %s\n",
-            normalizePath("artifacts/amcb_npi_linkage_FROZEN.csv")))
+FROZEN_OUT <- Sys.getenv("FROZEN_OUT", "artifacts/amcb_npi_linkage_FROZEN.csv")
+write_csv(frozen, FROZEN_OUT, na = "")
+cat(sprintf("\nfrozen artifact           : %s\n", normalizePath(FROZEN_OUT)))
 cat(sprintf("columns                   : %s\n", ncol(frozen)))

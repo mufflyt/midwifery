@@ -1,0 +1,14 @@
+{
+  "run_id": "amcbmatch_20260808T193946_verify",
+  "run_started_utc": "2026-08-09 01:39:46 UTC",
+  "run_finished_utc": "2026-08-09 01:43:36 UTC",
+  "artifact": "amcb_npi_linkage_panel-midwifery-plus-nursing_years-2007-2025.csv",
+  "artifact_sha256": "b44bf2bc92543b445b34bb5f4eecf3e7352b2a4f02a4a7462ae4252ad5f7e1eb",
+  "artifact_rows": 22309,
+  "source_script_sha256": "b7c10798e9c010a149e489b6c9a2cc869b2e556e4d8ffb7c3a17421fcb501700",
+  "panel": "midwife_panel.csv",
+  "panel_sha256": "4ba33447f281109a4ca0475e69501213c430121c30bcf8aa007e386adb03715a",
+  "panel_definition": "midwifery-plus-nursing",
+  "year_window": "2007-2025",
+  "columns": ["certification", "certification_number", "status", "certification_date", "expiration_date", "last_name", "first_name", "middle_name", "discipline", "primary_source", "customer_id", "amcb_id", "npi", "npi_match_method", "npi_tax_class", "name_evidence_class", "npi_match_resolution", "npi_match_confidence", "npi_match_score", "match_strategy", "nppes_city", "nppes_state", "nppes_zip", "nppes_practice_address", "nppes_location_year", "npi_match_status", "n_candidates_pre_rank", "n_midwifery_candidates", "n_nursing_only_candidates", "best_evidence_class", "n_at_best_class", "has_candidate", "linkage_tier"]
+}
