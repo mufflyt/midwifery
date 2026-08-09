@@ -137,8 +137,63 @@ deceased certificants into a workforce denominator and are withdrawn.
 They show **last-observed NPPES practice location**, not confirmed current practice at that site.
 They are **practice-location distribution, not access** — patients cross county lines, and 22% of
 ACTIVE certificants have no linked location, so an empty county is not a county without midwifery
-care. Travel-time isochrones would answer access. Person-level point maps stay internal: jittering
+care. Travel-time isochrones would answer access — but see the next section: the existing isochrone
+library cannot answer it nationally. Person-level point maps stay internal: jittering
 is not de-identification, and in a rural county with one CNM the jitter is cosmetic.
+
+## Isochrone reuse: a negative validation result
+
+No isochrones were generated. The question was whether the project's existing library of 3,909
+drive-time origins can be reused for midwives. An isochrone is a polygon around a *point* and is
+agnostic to whose practice prompted it, so reuse is legitimate wherever a midwife falls within the
+project's 5 km reuse radius of an existing origin.
+
+**It does not reach far enough.** Of 11,792 ACTIVE primary-linked midwives with usable coordinates,
+8,427 (71.5%) are represented; 3,365 (28.5%) are not. Where a match exists it is excellent — median
+separation 0.23 km, 79.6% within 2 km, only 4.6% near the 5 km threshold. The problem is not proxy
+quality. The problem is that representation is **spatially informative**:
+
+| | midwives | represented | median km |
+|---|---:|---:|---:|
+| Metro (RUCC 1–3) | 10,639 | **77.1%** | 0.23 |
+| Nonmetro adjacent (4–6) | 787 | **22.4%** | 0.20 |
+| Nonmetro remote (7–9) | 336 | **14.0%** | 0.13 |
+
+659 of the 1,179 counties with an ACTIVE primary-linked midwife have *zero* represented midwives.
+Adjusted for state, the odds of representation are 0.068 in adjacent-rural and 0.040 in remote-rural
+counties relative to metro (`artifacts/isochrone_representation_model.txt` — fit for bias
+characterization only; its fitted values are **not** used as weights, and no
+inverse-probability correction is applied. Reweighting represented midwives cannot reconstruct the
+missing travel-time polygons of the unrepresented, and where representation is spatially informative
+it would project urban road networks onto rural geography).
+
+**Conclusion: the existing physician-centered isochrone library is dense enough to proxy most urban
+midwife locations, but its rural coverage is differential, so it cannot support unbiased national or
+rural midwifery travel-time estimates without additional isochrones.**
+
+The 3,365 are stored as `not_represented_by_existing_isochrone_library`, never `no_access` — they are
+midwives with *unmeasured exposure*, not midwives no one can reach.
+
+### Represented-subset access (lower bound only)
+
+Computed from the existing polygons for the 2,038 origins the matched midwives invoke, against
+82,455 tracts holding 164.6M women (ACS 2023), binary at the population-weighted tract centroid:
+
+| drive time | women with access | % |
+|---|---:|---:|
+| 30 min | 125,678,032 | 76.3% |
+| 60 min | 150,274,665 | 91.3% |
+| 120 min | 162,023,081 | 98.4% |
+| 180 min | 163,870,791 | 99.5% |
+
+This is **access to the subset of ACTIVE primary-linked midwives represented by the existing
+isochrone library**. It is not an estimate of access to the full ACTIVE midwifery workforce, and the
+rural rows of `artifacts/represented_subset_access_by_band_rucc.csv` (30-min: metro 86.2%, adjacent
+17.8%, remote 5.2%) are depressed by library coverage, not only by workforce supply. They must not be
+interpreted as workforce-access differences.
+
+**Withdrawn:** the earlier claim that the rural gradient is "robust to both biases" predates this
+coverage analysis and has not been tested against it.
 
 
 ## Usage

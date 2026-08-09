@@ -79,3 +79,9 @@ docs/maps/leaflet_*_files/
 docs/maps/leaflet_counties.html
 qa/
 docs/maps/leaflet_active_counties.html
+
+# Isochrone reuse: certification-number-level rows (matched origin coordinates,
+# and the unrepresented list). Aggregates in artifacts/isochrone_representation_*
+# and artifacts/represented_subset_access_* are the shareable form.
+artifacts/midwife_isochrone_match.csv
+artifacts/not_represented_by_existing_isochrone_library.csv
