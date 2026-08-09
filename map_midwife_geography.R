@@ -6,14 +6,25 @@
 # Uses the frozen linkage and the enhanced geography. Two rules govern what is
 # plotted:
 #
-#   TIER. Only primary_midwifery links appear in the headline maps. Nursing and
-#   fuzzy tiers rest on weaker identity evidence and are mapped separately, so a
-#   reader can see how much of a pattern depends on them.
+#   TWO FILTERS, NOT ONE. Linkage tier answers "how sure are we this is the
+#   right NPI?"; AMCB certification status answers "is this person part of the
+#   current workforce?" They are independent, and conflating them turns a
+#   confidently-linked DECEASED certificant into a practising midwife. An
+#   earlier version of this script did exactly that: 2,741 of 14,618 mapped
+#   records (18.8%) were LAPSED, RETIRED, DECEASED, REVOKED or SURRENDERED, and
+#   the resulting rates were described as workforce supply. They were not.
 #
-#   PERSON-LEVEL DISCLOSURE. These are real people at real practice addresses.
-#   The point map jitters coordinates and carries no names -- a dot means "a
-#   certified midwife practises near here", not "this is Jane Smith's office".
-#   County choropleths are aggregate and carry no such risk.
+#   So two separate products are produced:
+#     roster_*  every primary-tier link, whatever its status -- DESCRIPTIVE
+#               only, a picture of the linkage, never of the workforce
+#     active_*  ACTIVE certificants only -- the only maps that may carry
+#               workforce or supply language
+#
+#   PERSON-LEVEL DISCLOSURE. Jittering is not de-identification. 14,000
+#   person-level points still reveal approximate locations of identifiable
+#   clinicians, and in a rural county with one CNM the jitter is cosmetic. The
+#   point map is therefore INTERNAL QA ONLY and is not committed or published;
+#   shared products are county or state aggregates.
 #
 # Outputs: docs/maps/*.png (static), docs/maps/*.html (leaflet)
 # =============================================================================
@@ -43,9 +54,31 @@ cohort <- link %>%
             by = "certification_number") %>%
   filter(!is.na(county_best))
 
-primary <- cohort %>% filter(linkage_tier == "primary_midwifery")
-cat(sprintf("mappable: %s primary, %s all tiers\n",
-            format(nrow(primary), big.mark = ","), format(nrow(cohort), big.mark = ",")))
+roster <- cohort %>% filter(linkage_tier == "primary_midwifery")
+
+# AMCB's own definitions: only ACTIVE means "currently certified, may use the
+# CNM/CM title". RETIRED is explicitly "permanently retired from practice";
+# LAPSED and REVOKED holders may no longer use the title at all.
+ACTIVE_STATUSES <- c("ACTIVE")
+active <- roster %>% filter(status %in% ACTIVE_STATUSES)
+
+cat(sprintf("primary-tier links with geography : %s\n", format(nrow(roster), big.mark = ",")))
+cat("  status composition:\n")
+print(as.data.frame(roster %>% count(status, sort = TRUE) %>%
+                      mutate(pct = round(100 * n / sum(n), 1))))
+cat(sprintf("  ACTIVE (workforce denominator)  : %s (%.1f%%)\n",
+            format(nrow(active), big.mark = ","), 100 * nrow(active) / nrow(roster)))
+
+# Completeness among ACTIVE certificants, the number a workforce claim needs.
+all_active <- link %>% filter(status %in% ACTIVE_STATUSES)
+act_primary <- all_active %>% filter(linkage_tier == "primary_midwifery")
+cat(sprintf("\nACTIVE certificants on the roster : %s\n", format(nrow(all_active), big.mark = ",")))
+cat(sprintf("  with primary NPI linkage        : %s (%.1f%%)\n",
+            format(nrow(act_primary), big.mark = ","), 100 * nrow(act_primary) / nrow(all_active)))
+cat(sprintf("  with county geography           : %s (%.1f%%)\n",
+            format(nrow(active), big.mark = ","), 100 * nrow(active) / nrow(all_active)))
+
+primary <- active   # every downstream map below uses the ACTIVE cohort
 
 # --- 1. STATE CHOROPLETH: midwives per 100,000 women aged 15-44 --------------
 cb <- read_csv("data/county_base.csv", show_col_types = FALSE,
@@ -66,32 +99,40 @@ if (!is.na(denom_col) && !is.na(state_col)) {
 } else {
   by_state <- by_state %>% mutate(rate = midwives)
 }
-write_csv(by_state, "docs/maps/midwives_by_state.csv")
+write_csv(by_state, "docs/maps/active_midwives_by_state.csv")
 
 # mysterymaps_geographic_map() is written for acceptance-rate PROPORTIONS and
 # warns on anything outside [0, 1], so the supply rate is rescaled to a
 # 0-1 index of the highest-supply state. The underlying per-100k values stay in
 # docs/maps/midwives_by_state.csv and label the legend.
-rng <- range(by_state$rate, na.rm = TRUE)
-p1 <- tryCatch(
-  mysterymaps_geographic_map(
-    data = by_state %>% transmute(state = nppes_state,
-                                  offered = ifelse(is.na(rate), 0,
-                                                   (rate - rng[1]) / diff(rng))),
-    state_col = "state", outcome_col = "offered",
-    fill_label = sprintf("Supply index\n(0 = %.1f, 1 = %.1f per 100k)", rng[1], rng[2]),
-    title = "Certified midwife supply by state",
-    subtitle = sprintf("%s primary-tier links · midwives per 100,000 women aged 15-44",
-                       format(nrow(primary), big.mark = ",")),
-    palette = "viridis"),
-  error = function(e) {cat("mysterymaps_geographic_map:", conditionMessage(e), "\n"); NULL})
-if (!is.null(p1)) {
-  p1 <- p1 + theme(plot.background = element_rect(fill = "#f5f7f8", colour = NA),
-                   legend.background = element_rect(fill = "#f5f7f8", colour = NA))
-  ggsave("docs/maps/state_choropleth.png", p1, width = 10, height = 6.5, dpi = 200,
-         bg = "#f5f7f8")
-  cat("wrote docs/maps/state_choropleth.png\n")
-}
+# The rate is a provider-to-population ratio and is plotted as itself.
+# mysterymaps_geographic_map() coerces values into [0, 1] because it is written
+# for acceptance-rate proportions, which would turn a meaningful rate into an
+# arbitrary index; mysterymaps supplies the state basemap instead and the fill
+# scale is defined here so the legend shows real units.
+states_sf <- suppressMessages(tigris::states(cb = TRUE, year = 2023, progress_bar = FALSE)) %>%
+  filter(!STATEFP %in% c("02", "15", "60", "66", "69", "72", "78"))
+smap <- states_sf %>% left_join(by_state, by = c("STUSPS" = "nppes_state"))
+
+p1 <- ggplot(smap) +
+  geom_sf(aes(fill = rate), colour = "white", linewidth = .25) +
+  scale_fill_viridis_c(option = "viridis", na.value = "grey92",
+                       name = "per 100,000\nwomen 15-44") +
+  coord_sf(crs = 5070) +
+  labs(title = "Active AMCB-certified midwives per 100,000 women aged 15-44",
+       subtitle = sprintf("%s ACTIVE certificants with a primary NPI link and county geography",
+                          format(nrow(primary), big.mark = ",")),
+       caption = "Practice-location distribution, not a measure of access. AMCB directory linked to NPPES 2007-2025.") +
+  theme_void(base_size = 12) +
+  theme(plot.background = element_rect(fill = "#f5f7f8", colour = NA),
+        legend.background = element_rect(fill = "#f5f7f8", colour = NA),
+        plot.title = element_text(face = "bold", size = 15, colour = "#0f1519"),
+        plot.subtitle = element_text(colour = "#5c6b74", size = 11, margin = margin(b = 8)),
+        plot.caption = element_text(colour = "#5c6b74", size = 8, hjust = 0),
+        legend.title = element_text(size = 9), legend.text = element_text(size = 8),
+        plot.margin = margin(18, 18, 14, 18))
+ggsave("docs/maps/active_state_rate.png", p1, width = 10, height = 6.5, dpi = 200, bg = "#f5f7f8")
+cat("wrote docs/maps/active_state_rate.png\n")
 
 # --- 2. COUNTY CHOROPLETH ----------------------------------------------------
 # mysterymaps maps states and HRRs; county is this project's analytic grain, so
@@ -108,10 +149,11 @@ p2 <- ggplot(cmap) +
   scale_fill_viridis_c(option = "viridis", na.value = "grey92", trans = "sqrt",
                        name = "Midwives", breaks = c(1, 5, 20, 50, 150)) +
   coord_sf(crs = 5070) +
-  labs(title = "Certified midwives by county of practice",
-       subtitle = sprintf("%s primary-tier links · counties with none shown grey",
+  labs(title = "Active certified midwives by county of practice location",
+       subtitle = sprintf("%s ACTIVE certificants · grey = no linked practice location in that county",
                           format(nrow(primary), big.mark = ",")),
-       caption = "AMCB certification directory linked to NPPES 2007-2025 · TIGER 2023 counties") +
+       caption = paste("Distribution of practice locations, NOT access: patients cross county lines,",
+                       "and 34% of the roster never linked. AMCB linked to NPPES 2007-2025, TIGER 2023.")) +
   theme_void(base_size = 12) +
   # theme_void() leaves the background TRANSPARENT, which renders every label
   # invisible against a dark viewer -- the first version of this map lost its
@@ -129,8 +171,8 @@ p2 <- ggplot(cmap) +
         legend.text   = element_text(colour = "#5c6b74", size = 8),
         legend.position = "right",
         plot.margin = margin(18, 18, 14, 18))
-ggsave("docs/maps/county_choropleth.png", p2, width = 11, height = 7, dpi = 200, bg = "#f5f7f8")
-cat("wrote docs/maps/county_choropleth.png\n")
+ggsave("docs/maps/active_county_counts.png", p2, width = 11, height = 7, dpi = 200, bg = "#f5f7f8")
+cat("wrote docs/maps/active_county_counts.png\n")
 
 # --- 3. LEAFLET: county choropleth, aggregate only ---------------------------
 pal <- colorNumeric("viridis", domain = sqrt(cmap$midwives), na.color = "#e8e8e8")
@@ -144,8 +186,8 @@ m1 <- mysterymaps_map_base(title = "Certified midwives by county", zoom = 4) %>%
                                                   bringToFront = TRUE)) %>%
   addLegend(pal = pal, values = sqrt(cmap$midwives), title = "Midwives (sqrt)",
             position = "bottomright")
-htmlwidgets::saveWidget(m1, "docs/maps/leaflet_counties.html", selfcontained = TRUE)
-cat("wrote docs/maps/leaflet_counties.html\n")
+htmlwidgets::saveWidget(m1, "docs/maps/leaflet_active_counties.html", selfcontained = TRUE)
+cat("wrote docs/maps/leaflet_active_counties.html\n")
 
 # --- 4. LEAFLET: jittered practice points, no names --------------------------
 pts <- primary %>%
@@ -163,8 +205,10 @@ m2 <- mysterymaps_map_base(title = "Practice locations (jittered)", zoom = 4) %>
                    # practises near here", not an identified individual.
                    label = ~sprintf("%s (last observed %s)", nppes_state,
                                     nppes_location_year))
-htmlwidgets::saveWidget(m2, "docs/maps/leaflet_points.html", selfcontained = TRUE)
-cat(sprintf("wrote docs/maps/leaflet_points.html (%s jittered points)\n",
+# INTERNAL QA ONLY -- written outside docs/ so it is never published.
+dir.create("qa", showWarnings = FALSE)
+htmlwidgets::saveWidget(m2, "qa/leaflet_points_INTERNAL.html", selfcontained = TRUE)
+cat(sprintf("wrote qa/leaflet_points_INTERNAL.html (%s points, QA only)\n",
             format(nrow(pts), big.mark = ",")))
 
 cat("\ntop states:\n"); print(as.data.frame(by_state %>% arrange(desc(midwives)) %>% head(8)))

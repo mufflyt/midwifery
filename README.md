@@ -40,28 +40,42 @@ Scraper for the [AMCB certification directory](https://ams.amcbmidwife.org/amcbs
 
 ## Maps
 
-Built with [mufflyt/mysterymaps](https://github.com/mufflyt/mysterymaps) —
-`mysterymaps_geographic_map()` for the state choropleth, `mysterymaps_map_base()` for the leaflet
-bases. County is this project's analytic grain, so that layer is drawn against the same TIGER 2023
-vintage the linkage assigned counties from.
+Built with [mufflyt/mysterymaps](https://github.com/mufflyt/mysterymaps) (`mysterymaps_map_base()`
+for the leaflet base; state and county layers drawn against the same TIGER 2023 vintage the linkage
+assigned counties from).
 
-![Certified midwives by county of practice](docs/maps/county_choropleth.png)
+![Active AMCB-certified midwives per 100,000 women aged 15-44](docs/maps/active_state_rate.png)
 
-| Map | File |
-|---|---|
-| County choropleth (static) | [`docs/maps/county_choropleth.png`](docs/maps/county_choropleth.png) |
-| State supply per 100k women 15–44 (static) | [`docs/maps/state_choropleth.png`](docs/maps/state_choropleth.png) |
-| Practice points, jittered (leaflet) | [`docs/maps/leaflet_points.html`](docs/maps/leaflet_points.html) |
-| County choropleth (leaflet) | rebuild with `Rscript map_midwife_geography.R` (20 MB, not committed) |
-| Per-state counts and rates | [`docs/maps/midwives_by_state.csv`](docs/maps/midwives_by_state.csv) |
+**Two filters, not one.** Linkage tier answers *how sure are we this is the right NPI?*;
+AMCB certification status answers *is this person part of the current workforce?* Conflating them
+turns a confidently-linked deceased certificant into a practising midwife. Of the 14,618 primary-tier
+links with geography, **2,741 (18.8%) are not active** — 2,020 LAPSED, 579 RETIRED, 93 DECEASED,
+8 REVOKED, 5 SURRENDERED. Only the ACTIVE subset carries workforce language.
 
-**14,618 primary-tier midwives map to 1,262 of 3,109 CONUS counties** — 59% of counties have none.
-Highest supply per 100,000 women aged 15–44: WA 30.8, NY 27.2, NC 23.1, GA 21.2. Highest raw counts:
-CA 1,307, NY 1,235, FL 835.
+| | n | of ACTIVE roster |
+|---|---:|---:|
+| ACTIVE certificants | 15,285 | — |
+| with primary NPI linkage | 11,913 | 77.9% |
+| with county geography | **11,877** | **77.7%** |
 
-Two rules govern what is plotted. Only `primary_midwifery` links appear in the headline maps, so no
-pattern depends on the weaker evidence tiers. And the point map **jitters coordinates and carries no
-names** — a dot means "a certified midwife practises near here", not an identified individual.
+| Map | Cohort | File |
+|---|---|---|
+| Active supply per 100k women 15–44 | ACTIVE | [`active_state_rate.png`](docs/maps/active_state_rate.png) |
+| Active midwives by county | ACTIVE | [`active_county_counts.png`](docs/maps/active_county_counts.png) |
+| County choropleth (leaflet) | ACTIVE | rebuild with `Rscript map_midwife_geography.R` |
+| Per-state counts and rates | ACTIVE | [`active_midwives_by_state.csv`](docs/maps/active_midwives_by_state.csv) |
+| Person-level points | ACTIVE | **internal QA only**, not committed |
+
+Active supply per 100,000 women aged 15–44: **WA 24.9, NY 21.4, NC 19.5, GA 18.1**; by raw count
+**CA 1,015, NY 971, FL 670**. California leads on count but sits mid-table on supply (11.0).
+1,173 of 3,109 CONUS counties contain at least one linked active practice location.
+
+**These are practice-location distributions, not access.** Patients cross county lines, and 22% of
+ACTIVE certificants have no linked location at all, so a county with no dot is not a county without
+midwifery care. Travel-time isochrones are the measure that would answer access.
+
+Person-level point maps stay internal: jittering is not de-identification, and in a rural county with
+one CNM the jitter is cosmetic.
 
 
 ## Usage

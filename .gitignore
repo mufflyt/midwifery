@@ -77,3 +77,5 @@ docs/maps/leaflet_*_files/
 !docs/maps/*.html
 !docs/maps/*.csv
 docs/maps/leaflet_counties.html
+qa/
+docs/maps/leaflet_active_counties.html
