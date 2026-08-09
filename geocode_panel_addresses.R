@@ -127,11 +127,49 @@ assign_county_from_points <- function(df) {
   out[ok] <- counties$GEOID[first]
   out
 }
-if (all(is.na(hit$county_fips))) {
-  hit$county_fips <- assign_county_from_points(hit)
+# BUG (found 2026-08-08 by the coordinate-provenance audit): this was gated on
+# all(is.na(hit$county_fips)) -- point-in-polygon ran ONLY when EVERY row
+# lacked a cached county. Once any rows carried one (4,949 did), the branch
+# never fired and 10,226 rows kept their coordinates but never received a
+# county. The reported 30.6% county_exact was a control-flow artifact, not a
+# measurement. Fill row-wise instead, leaving cached values untouched.
+needs_pip <- is.na(hit$county_fips) & !is.na(hit$latitude) & !is.na(hit$longitude)
+if (any(needs_pip)) {
+  filled <- assign_county_from_points(hit[needs_pip, , drop = FALSE])
+  hit$county_fips[needs_pip] <- filled
+  cat(sprintf("point-in-polygon: %s rows needed a county, %s assigned\n",
+              format(sum(needs_pip), big.mark = ","),
+              format(sum(!is.na(filled)), big.mark = ",")))
+} else {
+  cat("point-in-polygon: no rows needed a county\n")
 }
 hit <- hit %>% mutate(county_fips = if_else(is.na(county_fips), NA_character_,
                                             str_pad(as.character(county_fips), 5, "left", "0")))
+
+# Known-bad geocodes, invalidated by inspection (2026-08-08 discordance audit).
+# Deliberately an explicit, short, auditable list rather than a heuristic: a
+# "returned city differs from input city" rule flags 3.5% of geocodes, almost
+# all of them legitimate variants (LAWRENCEVILLE / LAWRENCE TOWNSHIP) or
+# parse artifacts, so it would invalidate far more good coordinates than bad.
+# Invalidated rows fall through to the unique-ZIP fallback, which is correct
+# in this case.
+KNOWN_BAD_GEOCODE <- tibble::tribble(
+  ~practice_address, ~practice_city, ~practice_state, ~reason,
+  "101 PAGE ST",     "NEW BEDFORD",  "MA",
+  "Census matched 101 Page RD, BEDFORD MA 01730 -- wrong city and street type; ZIP 02740 (New Bedford, Bristol) is correct"
+)
+bad <- hit %>%
+  transmute(nppes_practice_address, nppes_city, nppes_state) %>%
+  mutate(row = row_number()) %>%
+  inner_join(KNOWN_BAD_GEOCODE,
+             by = c("nppes_practice_address" = "practice_address",
+                    "nppes_city" = "practice_city",
+                    "nppes_state" = "practice_state"))
+if (nrow(bad)) {
+  hit$latitude[bad$row] <- NA_real_; hit$longitude[bad$row] <- NA_real_
+  hit$county_fips[bad$row] <- NA_character_
+  cat(sprintf("invalidated %s known-bad geocode(s); ZIP fallback will apply\n", nrow(bad)))
+}
 
 out <- hit %>%
   transmute(certification_number, npi, match_status, match_resolution,

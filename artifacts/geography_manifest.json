@@ -1,0 +1,72 @@
+{
+  "frozen_utc": "2026-08-09 02:19:11 UTC",
+  "primary_analytic_tier": "primary_midwifery",
+  "linkage_sha256": "b44bf2bc92543b445b34bb5f4eecf3e7352b2a4f02a4a7462ae4252ad5f7e1eb",
+  "stage3_code_sha256": "1406b9612b960ef8a8b7af322617e5d1b078a243cc607359784d857789bfae0d",
+  "geocode_code_sha256": "70aadb3fcbc05020d04b8b1aee35d5861beedbdcf6568bca44be87668b8b4ce4",
+  "coordinate_artifact_sha256": "8328cf9fc4352ff8631c980a9c0a40e74a6a436128dd4665635c3b14484e689a",
+  "zip_crosswalk_sha256": "not_local",
+  "geography_sha256": "9455138198e4d347fe191470a4e30e8e94267689ade8ee4a9acb20d8862d3f5a",
+  "run_id": "stage3_20260808T201735",
+  "rows_by_tier": [
+    {
+      "linkage_tier": "primary_midwifery",
+      "n": 14668,
+      "county_exact": 14389,
+      "county_best": 14591
+    },
+    {
+      "linkage_tier": "quarantined",
+      "n": 3091,
+      "county_exact": 0,
+      "county_best": 0
+    },
+    {
+      "linkage_tier": "sensitivity_fuzzy",
+      "n": 328,
+      "county_exact": 157,
+      "county_best": 285
+    },
+    {
+      "linkage_tier": "sensitivity_nursing",
+      "n": 1896,
+      "county_exact": 610,
+      "county_best": 1630
+    },
+    {
+      "linkage_tier": "unmatched",
+      "n": 2326,
+      "county_exact": 0,
+      "county_best": 0
+    }
+  ],
+  "rows_by_geo_source": {
+    "coordinate": 15156,
+    "invariant_failure": 17,
+    "zip_multi_county": 338,
+    "zip_not_in_crosswalk": 31,
+    "zip_unique": 1350
+  },
+  "validation": {
+    "agreement": "12487/12493 = 99.95%",
+    "ci": "99.90-99.98",
+    "discordant_cases": 6,
+    "cross_state_conflicts": 17,
+    "cross_state_note": "all 17 are Fort Campbell KY 42223; base straddles the KY/TN line. Left UNRESOLVED with both sources retained.",
+    "unresolved_ambiguous_zip": 338,
+    "zip_not_in_crosswalk": 31
+  },
+  "geocode_exceptions": [
+    {
+      "certification_number": "CNM2729",
+      "address": "101 PAGE ST, NEW BEDFORD MA 02740",
+      "reason": "Census returned 101 Page Rd, BEDFORD MA 01730 -- wrong city and street type; coordinate invalidated, Bristol County assigned via ZIP fallback"
+    }
+  ],
+  "methods_note": "Coordinate-ZIP disagreement is a DIAGNOSTIC, not proof that either source is wrong. Of three audited discordances, one was a bad geocode and TWO were bad ZIPs in the source record where the coordinate was correct.",
+  "superseded": {
+    "county_exact_30_6_pct": "artifact of a mixed-row point-in-polygon control-flow bug (PIP gated on all(is.na(county_fips)))",
+    "figure_15526": "unreproducible; its log and artifact were overwritten. Do not carry forward."
+  },
+  "remaining_work": "1,624 unique ungeocoded addresses; a completeness enhancement for sensitivity tiers, not a change to this frozen primary artifact"
+}

@@ -1,5 +1,5 @@
 geo_class,n,pct
-1_exact_coordinate,4948,29.3
-2_unambiguous_zip_fallback,9678,57.3
-3_ambiguous_zip_unresolved,2138,12.7
-5_completely_unresolved,128,0.8
+1_exact_coordinate,15156,89.7
+2_unambiguous_zip_fallback,1350,8
+3_ambiguous_zip_unresolved,338,2
+5_completely_unresolved,48,0.3

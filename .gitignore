@@ -63,3 +63,6 @@ stage3_*.log
 .s3f_done
 .tier_done
 .pool_done
+artifacts/midwives_geography_FROZEN.csv
+artifacts/coordinate_provenance_audit.csv
+logs_*.log
