@@ -68,7 +68,9 @@ practising midwife. Of the 14,618 primary-tier links with geography:
 practice"; LAPSED, REVOKED and SURRENDERED holders may not use the CNM/CM title. EMERITUS carries a
 status AMCB's own definitions page does not document. DEACTIVATED usually means a CM↔CNM switch — 16
 of 22 have an ACTIVE record under the same name so the person is still counted, and 6 are dropped.
-Verified: 11,913 ACTIVE primary-linked rows map to 11,913 distinct NPIs, so nobody is double-counted.
+Verified against three independent attributes, not just the bijection: 11,913 ACTIVE primary-linked
+rows map to 11,913 distinct NPIs, and the 14 names appearing twice differ on **state, middle name and
+certification date in all 14 cases** — 28 distinct people sharing 14 names, not duplicates.
 
 ### Denominator flow
 
@@ -77,8 +79,15 @@ Verified: 11,913 ACTIVE primary-linked rows map to 11,913 distinct NPIs, so nobo
 | Full AMCB roster | 22,309 | — | 100.0 |
 | ACTIVE status | 15,285 | 68.5 | 68.5 |
 | + primary NPI link | 11,913 | 77.9 | 53.4 |
-| + `county_best` | **11,877** | 99.7 | **53.2** |
+| + `county_best` | **11,877** | 99.7 | 53.2 |
 | + `county_exact` | 11,780 | 99.2 | 52.8 |
+
+**The workforce-map denominator is the ACTIVE roster, not all 22,309 records: 11,877 of 15,285
+ACTIVE certificants (77.7%) are mappable on primary evidence.** Once an ACTIVE person is
+primary-linked, geography is essentially complete — 99.7% have `county_best`, 98.9% `county_exact`.
+**The limiting step is identity linkage, not geocoding.** (The 53.2% column is the same rows against
+the full historical roster, which mixes in lapsed, retired and deceased records; it is not the
+workforce completeness figure.)
 
 Primary linkage by status — geography cannot repair people who never linked: ACTIVE 77.9%,
 RETIRED 45.6%, LAPSED 39.2%, DECEASED 18.6%.
@@ -94,9 +103,34 @@ RETIRED 45.6%, LAPSED 39.2%, DECEASED 18.6%.
 | County leaflet | ACTIVE | rebuild with `Rscript map_midwife_geography.R` |
 | Person-level points | ACTIVE | **internal QA only**, not committed |
 
-Active supply per 100,000 women aged 15–44: **WA 24.9, NY 21.4, NC 19.5, GA 18.1**; by raw count
-**CA 1,015, NY 971, FL 670**. 1,173 of 3,109 CONUS counties contain at least one linked active
-practice location.
+### First valid workforce-distribution results
+
+Supply per 100,000 women aged 15–44 spans a **19.9-fold range**, median 16.5:
+
+| Highest | | Lowest | |
+|---|---:|---|---:|
+| AK | 50.5 | AL | 2.5 |
+| VT | 44.2 | MS | 3.1 |
+| NH | 42.2 | LA | 5.1 |
+| NM | 38.4 | AR | 5.8 |
+| OR | 34.5 | OK | 6.2 |
+
+By raw count the order is different — CA 1,015, NY 971, FL 670 — because population drives counts.
+California is 1st by count and mid-table by supply (11.0).
+
+**County presence falls sharply with rurality**, and this is the finding the maps exist to show:
+
+| | counties | with ≥1 active midwife | % | women 15–44 in a county with none |
+|---|---:|---:|---:|---:|
+| Metro (RUCC 1–3) | 1,252 | 707 | 56.5% | 7.4% |
+| Nonmetro adjacent (4–6) | 670 | 294 | 43.9% | 44.5% |
+| Nonmetro remote (7–9) | 1,311 | 188 | **14.3%** | **72.3%** |
+
+Nationally, **9,988,174 women aged 15–44 (13.1%) live in a county with no linked active AMCB midwife**.
+In remote rural counties that rises to 72.3%.
+
+These figures supersede the earlier WA 30.8 / 1,262-county results, which mixed lapsed, retired and
+deceased certificants into a workforce denominator and are withdrawn.
 
 ### What these maps are not
 
