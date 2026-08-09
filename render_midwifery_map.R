@@ -103,8 +103,18 @@ conus <- sf::st_union(sf::st_geometry(cty))
 clip_to <- function(u) {
   g <- suppressWarnings(sf::st_intersection(
     sf::st_make_valid(sf::st_geometry(u)), conus))
-  suppressWarnings(rmapshaper::ms_simplify(sf::st_sf(geometry = g),
-                                           keep = 0.08, keep_shapes = TRUE))
+  out <- suppressWarnings(rmapshaper::ms_simplify(sf::st_sf(geometry = g),
+                                                  keep = 0.08, keep_shapes = TRUE))
+  # Carry the origin count through. st_sf(geometry = g) drops every attribute,
+  # so the band popup could name its area but not how many provider isochrones
+  # were dissolved into it -- which is the more informative half, and the number
+  # the coverage gate is about. Area is deliberately NOT carried: it is
+  # recomputed from the CLIPPED geometry, and the pre-clip figure would overstate
+  # the surface by the water and non-CONUS area just removed.
+  if (!is.null(u$n_origins_dissolved)) {
+    out$n_origins_dissolved <- u$n_origins_dissolved[1]
+  }
+  out
 }
 c30 <- clip_to(u30); c60 <- clip_to(u60)
 
