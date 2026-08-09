@@ -45,3 +45,7 @@ artifacts/geocode_provenance_gap.csv
 artifacts/geocode_provenance_audit.csv
 artifacts/geocode_checkpoints/
 midwives_geography.csv
+
+# 24 MB Census ZCTA-tract relationship file; regenerate with the URL in
+# R/03-geography-hierarchy.R (zip_county_ct_2022).
+data/zcta_tract_2020.txt
