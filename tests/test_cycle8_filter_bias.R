@@ -148,18 +148,41 @@ cat("\n-- SEMANTIC --\n")
 # left the one claim that justifies tolerating any filter unverified. A skip
 # here is a hole, not a pass.
 {
+  # THIS TEST WAS VACUOUS AS FIRST WRITTEN, TWICE. county_midwifery_supply.csv
+  # has no general_fertility_rate column, so `sup$general_fertility_rate` was
+  # NULL, `!is.na(NULL)` was logical(0), the exclusion set was empty, and the
+  # test reported "0 of 11,762, 0.00%" and passed no matter what the data said.
+  # It is the exact trap cycle 4 and cycle 6 caught elsewhere -- a test that
+  # cannot fail reads as coverage. The rate lives in data/county_base.csv; the
+  # midwife counts live in the supply artifact; the claim needs both, joined.
+  # The columns are asserted to EXIST before anything is computed from them.
   sup_f <- file.path(root, "artifacts", "county_midwifery_supply.csv")
-  if (!file.exists(sup_f)) {
-    chk(FALSE, "T77 county_midwifery_supply.csv absent -- claim unverifiable")
+  cb_f  <- file.path(root, "data", "county_base.csv")
+  if (!file.exists(sup_f) || !file.exists(cb_f)) {
+    chk(FALSE, "T77 inputs absent -- claim unverifiable")
   } else {
     sup <- suppressWarnings(read_csv(sup_f, show_col_types = FALSE, progress = FALSE))
+    cb  <- suppressWarnings(read_csv(cb_f,  show_col_types = FALSE, progress = FALSE))
     mcol <- intersect(c("study_midwives", "ahrf_midwives_24"), names(sup))[1]
-    ex   <- !is.na(sup$general_fertility_rate) & sup$general_fertility_rate > BOUND
-    lost <- sum(sup[[mcol]][ex], na.rm = TRUE)
-    tot  <- sum(sup[[mcol]], na.rm = TRUE)
-    chk(tot > 0 && 100 * lost / tot < 1,
-        sprintf("T77 excluded counties hold a negligible share of midwives [%s: %d of %d, %.2f%%]",
-                mcol, lost, tot, 100 * lost / max(tot, 1)))
+    gkey <- intersect(c("GEOID", "fips"), names(cb))[1]
+    # Membership, not is.na(): a wrong-but-non-NA column name slipped this
+    # guard and the test CRASHED instead of failing cleanly, which in a loop
+    # that greps for "FAIL" is indistinguishable from silence.
+    have <- "general_fertility_rate" %in% names(cb) &&
+      !is.na(mcol) && mcol %in% names(sup) &&
+      !is.na(gkey) && gkey %in% names(cb) && "fips" %in% names(sup)
+    if (!have) {
+      chk(FALSE, "T77 required columns missing -- refusing to pass vacuously")
+    } else {
+      pad <- function(x) sprintf("%05s", as.character(x))
+      j <- merge(data.frame(k = pad(cb[[gkey]]), g = cb$general_fertility_rate),
+                 data.frame(k = pad(sup$fips), m = sup[[mcol]]), by = "k")
+      ex   <- !is.na(j$g) & j$g > BOUND
+      lost <- sum(j$m[ex], na.rm = TRUE); tot <- sum(j$m, na.rm = TRUE)
+      chk(tot > 0 && sum(ex) > 0 && 100 * lost / tot < 1,
+          sprintf("T77 the %d excluded counties hold %d of %d midwives (%.2f%%)",
+                  sum(ex), lost, tot, 100 * lost / max(tot, 1)))
+    }
   }
 }
 

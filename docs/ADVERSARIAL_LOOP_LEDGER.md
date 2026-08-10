@@ -2182,3 +2182,70 @@ the 5 pp limit.
 
 **Estimand changed:** yes — every county fertility rate rose ~13%, because the
 denominator is now the population the column has always claimed to be.
+
+---
+
+## Cycle 16 — 2026-08-10 02:4x — 4 BVA / 3 semantic / 3 adversarial
+
+**Target.** The ACS variable definitions behind every fertility figure. Tests
+in `tests/test_cycle16_acs_variables.R`.
+
+**DEFECT — `women_15_44` included ages 45–49.** The denominator summed TEN
+`B01001` female bands, `_030` through `_039`. `_039` is **45–49**, outside the
+range the column's own name asserts. Effects:
+
+- denominator inflated **15.4%**, so every general fertility rate was
+  understated by **13.3%**;
+- the inflation factor varies **1.16× to 1.85×** across counties, so the
+  **ranking moved**, not merely the level.
+
+**External validation, which is what settles it.** National `women_15_44`:
+**76,046,473 → 65,895,592**. The published US figure for women aged 15–44 is
+~65–66 million. The corrected total lands inside that range; the old one
+**exceeded it by 10 million** — a number that could have been checked against
+one published statistic at any point.
+
+**Artifacts rebuilt, not just code.** `data/county_base.csv` was regenerated,
+and the downstream `artifacts/county_midwifery_supply.csv` was found **stale**
+(still carrying 76.0M) and rebuilt to match. A code fix without an artifact
+rebuild would have left every published figure wrong while the tests passed.
+
+**A VACUOUS TEST OF MY OWN, from cycle 8.** T77 read
+`sup$general_fertility_rate` from `county_midwifery_supply.csv` — a column that
+**does not exist there**. `!is.na(NULL)` is `logical(0)`, so the exclusion set
+was empty, and the test reported "0 of 11,762, 0.00%" and passed regardless of
+the data. The claim reported to the owner last cycle — "the excluded counties
+hold zero midwives" — was never actually tested. This is the same trap cycles 4
+and 6 caught elsewhere, and I fell into it while fixing another instance of it.
+
+Rewritten to join the rate (`data/county_base.csv`) to the midwife counts
+(supply artifact) and to assert the columns EXIST before computing. Real
+answer: **19 counties** now exceed the plausibility bound — up from 9, because
+the corrected denominator raised every GFR by ~15% — and they hold **0 of
+11,762 midwives**. The conclusion survives; it is now measured.
+
+**A test that crashed instead of failing.** The first repair guarded with
+`is.na(gkey)`, so a wrong-but-non-NA column name slipped through and the file
+errored rather than printing FAIL — in a loop that greps for "FAIL", a crash is
+indistinguishable from silence. Now guarded on membership, and the missing-
+column path fails cleanly.
+
+**Full suite.** 21/21 pass, 0 skips.
+
+**Carried forward.**
+
+- **DECISION NEEDED:** with the denominator corrected, the GFR reliability
+  question (cycle 8) is unchanged but the numbers moved — median county GFR is
+  now 64.7 and 19 counties exceed 200.
+- **DECISION NEEDED:** nesting-escape threshold (c14); `women_15_44`
+  partial-sum (c7); Table 1 panel censoring (c1); `ct_partial` (c4); minimum
+  Healthgrades coverage (c6).
+- **ACTION (upstream):** `extract_first_initial()` accent stripping.
+- **ACTION:** rebuild Table 1 when the crawl finishes (53.5% searched).
+- **ACTION (new):** re-check any figure or sentence already generated from the
+  inflated denominator — `make_readme_figures.R` reads these artifacts.
+- **DEBT:** 12 undeclared joins (T100); 14 bare `.keep_all` (T44).
+
+**Estimand changed: YES, and materially.** Every general fertility rate rises
+~15%, and county rankings change. This is a correction, not a choice — the old
+denominator counted 45–49-year-olds as women aged 15–44.
