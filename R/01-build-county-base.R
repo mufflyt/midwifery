@@ -225,7 +225,18 @@ fetch_acs_county <- function() {
 
   detail |>
     dplyr::mutate(
-      women_15_44 = rowSums(dplyr::across(dplyr::all_of(paste0("w", 30:39))), na.rm = TRUE),
+      # CYCLE 7, class N1. rowSums(na.rm = TRUE) over the ten female age bands
+      # scored a suppressed band as 0 women, shrinking the DENOMINATOR of the
+      # general fertility rate and inflating it. This is the same construction
+      # found in 12-district-profiles.R (cycle 3) and 03-geography-hierarchy.R
+      # (cycle 5); a denominator assembled from parts must not treat an absent
+      # part as an empty one. NA when every band is missing, observed sum
+      # otherwise, with the gap counted so an understated denominator is visible.
+      women_15_44 = {
+        .b <- dplyr::across(dplyr::all_of(paste0("w", 30:39)))
+        ifelse(rowSums(!is.na(.b)) == 0L, NA_real_, rowSums(.b, na.rm = TRUE))
+      },
+      women_15_44_bands_missing = rowSums(is.na(dplyr::across(dplyr::all_of(paste0("w", 30:39))))),
       pct_poverty = 100 * poverty_num / poverty_den,
       general_fertility_rate = 1000 * births_past_12mo / women_15_44
     ) |>

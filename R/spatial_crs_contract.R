@@ -139,6 +139,12 @@ validate_geometry_contract <- function(
 ) {
   issues <- character(0)
 
+  if (n_unallocated > 0L) {
+    issues <- c(issues, sprintf(
+      "Population: %d of %d tracts have no allocated population, so the %s total below is a floor, not a count",
+      n_unallocated, nrow(overlap_df), format(population, big.mark = ",")))
+  }
+
   # 1. CRS check
   actual_crs <- tryCatch(sf::st_crs(sf_obj)$epsg, error = function(e) NA)
   if (is.na(actual_crs) || actual_crs != expected_crs) {
@@ -259,6 +265,11 @@ validate_overlap_plausibility <- function(
 ) {
   n_states <- length(unique(substr(overlap_df$GEOID, 1, 2)))
   n_tracts <- nrow(overlap_df)
+  # CYCLE 7, class N1. na.rm = TRUE scored every UNALLOCATED tract as 0
+  # residents, so the population floor below was compared against an understated
+  # total -- meaning the gate was most likely to pass precisely when allocation
+  # had failed. Missing allocations are now counted and reported separately.
+  n_unallocated <- sum(is.na(overlap_df$population_allocated))
   population <- sum(overlap_df$population_allocated, na.rm = TRUE)
 
   issues <- character(0)

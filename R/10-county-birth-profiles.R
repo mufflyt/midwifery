@@ -54,6 +54,13 @@ load_variety_sentence_engine(quiet = TRUE)
 # interesting, and asserting a rank for every county would imply precision the
 # underlying estimates do not carry.
 SUPERLATIVE_N <- 10L
+#' Minimum women aged 15-44 for a county's general fertility rate to be RANKED.
+#' Not a correction to the rate, a reliability floor on the comparison: ACS
+#' estimates over a few hundred women carry margins wide enough to produce
+#' impossible rates (448.7 per 1,000 in a county with 156 women), and a
+#' superlative built on those names the noisiest county rather than the most
+#' fertile one.
+GFR_MIN_WOMEN <- 5000L
 
 ART <- "artifacts"; OUT <- file.path(ART, "county_profiles")
 dir.create(OUT, showWarnings = FALSE, recursive = TRUE)
@@ -322,7 +329,20 @@ run_profiles <- function() {
       rank_mw_high     = mm_rank(midwives_per_10k_women),
       rank_cnm_high    = mm_rank(cnm_share_of_births_pct),
       rank_births_high = mm_rank(births_past_12mo),
-      rank_gfr_high    = mm_rank(general_fertility_rate))
+      # CYCLE 7. Ranking the raw rate made the "highest fertility" superlative
+      # name an ACS sampling artifact: 9 counties exceed 200 births per 1,000
+      # women 15-44, topping out at 448.7, and every one has a denominator
+      # between 138 and 3,146 women. A rate estimated from 156 women is not
+      # evidence that a county is fertile; it is evidence that the estimate is
+      # noisy. Counties below the floor keep their rate (it is still their best
+      # available estimate) but are withheld from the RANKING, which is the part
+      # that makes a claim about one county relative to every other.
+      #
+      # The floor is a reliability threshold, not a correction of the rate --
+      # what to do about the rate itself is recorded in the ledger as an open
+      # decision.
+      gfr_reliable     = !is.na(women_15_44) & women_15_44 >= GFR_MIN_WOMEN,
+      rank_gfr_high    = mm_rank(ifelse(gfr_reliable, general_fertility_rate, NA_real_)))
 
   n_counties <- nrow(prof)
   prof$sentences <- vapply(seq_len(nrow(prof)),

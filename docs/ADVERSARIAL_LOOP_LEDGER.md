@@ -795,3 +795,121 @@ cohort (≤7%) are different numbers, and only the second decides publishability
 - `.keep_all` on non-coordinate keys (`load_obstetric_providers.R` ×4) — latent.
 
 **Estimand changed:** no.
+
+---
+
+## Cycle 7 — 2026-08-09 — 4 BVA / 3 semantic / 3 adversarial
+
+**Target.** The UNITS in `data/county_base.csv` and the multipliers that turn
+them into published English in `R/10-county-birth-profiles.R`.
+
+**Tests added** — `tests/test_cycle7_units.R` (T61–T70, 17 assertions)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T61 | BVA | proportions stay within [0, 1] |
+| T62 | BVA | percentages stay within [0, 100] and exceed 1 somewhere |
+| T63 | BVA | rates are non-negative and finite |
+| T64 | BVA | `pcp_per_100k` is per-capita despite its name |
+| T65 | semantic | every `pct_` column has a declared unit |
+| T66 | semantic | each call-site multiplier matches the declared unit |
+| T67 | semantic | fertility rates are demographically possible |
+| T68 | adversarial | a vintage shipping a proportion as a percentage is caught |
+| T69 | adversarial | missing values produce no sentence, never "NA" |
+| T70 | adversarial | class N1, the population plausibility gate |
+
+### `pct_` is not a unit
+
+    pct_low_birth_weight   0.029 - 0.226    PROPORTION
+    pct_rural              0     - 1        PROPORTION
+    pct_below_poverty      1.7   - 64.7     PERCENTAGE
+    pct_uninsured          0     - 44.3     PERCENTAGE
+    pct_poverty            1.7   - 64.8     PERCENTAGE
+    pct_public_coverage    16.9  - 82.9     PERCENTAGE
+
+Six columns share a prefix and carry **two different units**. The sentence
+generator compensates by hand, `100 *` on some and not others, with a comment at
+each site. That holds only as long as every future reader reads the comment, and
+nothing verified the multiplier still matched the data. A 100× error here is not
+a rounding difference: "23% of births low birth weight" and "0.2%" are different
+public-health claims printable from the same column.
+
+`pct_poverty` and `pct_below_poverty` are the **same quantity** — correlation
+1.000, differing only in rounding. Two columns for one concept; a vintage could
+update one and leave the other, and nothing would notice. T65c pins their
+agreement.
+
+### The chain of the cycle
+
+`women_15_44` is assembled as `rowSums(across(w30:w39), na.rm = TRUE)` — **class
+N1 for the third time** (after `12-district-profiles.R` in cycle 3 and
+`03-geography-hierarchy.R` in cycle 5). A suppressed age band scores 0 women,
+shrinking the denominator of
+
+    general_fertility_rate = 1000 * births_past_12mo / women_15_44
+
+and inflating the rate. **Fixed**, with the gap counted in
+`women_15_44_bands_missing`.
+
+That denominator then fed a **published superlative**. Nine counties exceed 200
+births per 1,000 women aged 15-44, topping out at **448.7** — which would mean
+45% of all women of reproductive age gave birth in one year. Every one has a
+denominator between 138 and 3,146 women. So `rank_gfr_high` was naming the
+*noisiest* county, not the most fertile one, and that ranking reaches a reader
+as a sentence.
+
+**Fixed** by a reliability floor (`GFR_MIN_WOMEN = 5000`) applied to the
+**ranking only**. Counties below it keep their rate — it is still their best
+available estimate — but are withheld from a comparison their denominator cannot
+support.
+
+### Also found — universe mismatch, NOT fixed
+
+`births_past_12mo` is ACS **B13016_002**, whose universe is women **15-50**. The
+denominator is women **15-44**. The published sentence reads "per 1,000 women
+aged 15-44", asserting a denominator that does not match its numerator.
+`women_15_50` (B13016_001) is already in the table.
+
+**DECISION NEEDED.** Three defensible answers — divide by `women_15_50` and
+relabel; restrict the numerator to 15-44 from B13016's age detail; or keep and
+document. They give different published numbers, so this is not mine to pick.
+
+### Defects found — 3 fixed, 2 documented, 0 wrong tests
+
+1. Class N1 in `women_15_44` — *fixed.*
+2. Fertility superlative ranking sampling noise — *fixed* (ranking floor).
+3. Class N1 in `validate_overlap_plausibility()` — *fixed.* `na.rm = TRUE`
+   scored unallocated tracts as 0 residents, so the population floor was checked
+   against an understated total: **the gate was most likely to pass precisely
+   when allocation had failed.**
+4. `pct_poverty` / `pct_below_poverty` duplication — *documented, pinned.*
+5. GFR universe mismatch — *documented, decision needed.*
+
+### Class N1 is now closed
+
+All four aggregation sites found by the sweep are fixed:
+`12-district-profiles.R` (c3), `ct_county_crosswalk.R` (c4),
+`03-geography-hierarchy.R` (c5), `01-build-county-base.R` +
+`spatial_crs_contract.R` (c7). Subclass N2 (guards) closed in cycle 4.
+
+### Full suite
+
+**12/12 pass.**
+
+### Unresolved / carried forward
+
+- **DECISION NEEDED (new):** GFR numerator universe 15-50 vs denominator 15-44.
+- **DECISION NEEDED:** what to do about the 9 implausible GFR values themselves
+  (floor, multi-year estimate, or suppress) — only the *ranking* is fixed.
+- **DECISION NEEDED:** `women_15_44` partial vs `NA` denominator (cycle 3) —
+  note this cycle's fix chose NA-when-all-missing for the county build; the
+  district build is still open.
+- **DECISION NEEDED:** Table 1 panel-window censoring on ">=15 years" (cycle 1).
+- **DECISION NEEDED:** whether a `ct_partial` region is reported (cycle 4).
+- 14 bare `.keep_all` sites, ratcheted (cycle 5).
+- `safe_percent` DEN-032 default — belongs in `mufflyaccess`, out of scope.
+
+**Estimand changed:** yes — counties with fewer than 5,000 women aged 15-44 are
+excluded from the fertility *ranking* (not from the data, and not from their own
+sentence). Ranking a county against every other on an estimate drawn from 156
+women is not a defensible alternative, so this is a correction.
