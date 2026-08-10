@@ -78,18 +78,50 @@ cache_raw <- dbGetQuery(con, "
 # Split the stored key back into fields and re-derive it through the SAME
 # function, so both sides are normalized identically.
 parts <- str_split_fixed(cache_raw$address_hash, stringr::fixed("|"), 4)
-cache <- cache_raw %>%
+# 48 cache keys hold MORE THAN ONE coordinate -- spread up to 1,074.8 km.
+# distinct(.keep_all = TRUE) kept whichever row sorted first, so row order
+# decided a midwife's location and every isochrone built on it. Resolved on
+# quality_score where that discriminates; refused (no coordinate) where it
+# cannot and the disagreement is material. See R/lib/geocode_conflicts.R.
+source("R/lib/geocode_conflicts.R")
+cache_keyed <- cache_raw %>%
   mutate(cache_key = canonical_address_key(parts[, 1], parts[, 2],
                                            parts[, 3], parts[, 4])) %>%
-  filter(!is.na(cache_key)) %>%
-  distinct(cache_key, .keep_all = TRUE)
+  filter(!is.na(cache_key))
+resolved <- resolve_geocode_key(cache_keyed$cache_key, cache_keyed$latitude,
+                                cache_keyed$longitude, cache_keyed$quality_score)
+message(summarise_geocode_resolution(resolved))
+cache <- cache_keyed %>%
+  inner_join(resolved %>%
+               filter(!is.na(lat)) %>%
+               select(cache_key = key, lat_r = lat, lon_r = lon,
+                      coord_spread_km = spread_km, coord_resolution = resolution),
+             by = "cache_key") %>%
+  filter(latitude == lat_r, longitude == lon_r) %>%
+  # Rows surviving here agree on the COORDINATE and can differ only in
+  # metadata (provenance, match_type). A total ordering plus slice(1) is
+  # deterministic and order-independent; distinct(.keep_all) would not be.
+  arrange(cache_key, desc(quality_score), geocoder_provenance, match_type) %>%
+  group_by(cache_key) %>% slice(1) %>% ungroup()
 
 # Zip-less fallback: same key minus the ZIP field, for records whose ZIP is
 # missing or disagrees. Both sides drop it the same way.
 drop_zip <- function(x) sub("\\|[^|]*$", "", x)
-cache_nozip <- cache %>%
-  mutate(key_nozip = drop_zip(cache_key)) %>%
-  distinct(key_nozip, .keep_all = TRUE) %>%
+# Dropping the ZIP MERGES cache keys that were distinct, so this fallback can
+# create conflicts the keyed pass did not have: two different addresses on the
+# same street in different ZIPs collapse to one key. Resolved or refused on
+# the same contract, never picked by row order.
+cache_nz_in <- cache %>% mutate(key_nozip = drop_zip(cache_key))
+nz_res <- resolve_geocode_key(cache_nz_in$key_nozip, cache_nz_in$latitude,
+                              cache_nz_in$longitude, cache_nz_in$quality_score)
+message("zip-less fallback -- ", summarise_geocode_resolution(nz_res))
+cache_nozip <- cache_nz_in %>%
+  inner_join(nz_res %>% filter(!is.na(lat)) %>%
+               select(key_nozip = key, .lat = lat, .lon = lon),
+             by = "key_nozip") %>%
+  filter(latitude == .lat, longitude == .lon) %>%
+  arrange(key_nozip, desc(quality_score), geocoder_provenance) %>%
+  group_by(key_nozip) %>% slice(1) %>% ungroup() %>%
   select(key_nozip, lat_nz = latitude, lon_nz = longitude,
          q_nz = quality_score, prov_nz = geocoder_provenance)
 

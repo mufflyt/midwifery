@@ -509,3 +509,93 @@ not to edit a number. **A count must not be frozen mid-crawl.**
 planning region now reports `NA` instead of `0`. Publishing 0 was not a
 defensible reading of a suppressed cell (suppression means 1–9), so this is a
 correction rather than a choice between defensible alternatives.
+
+---
+
+## Cycle 5 — 2026-08-09 22:0x — 3 BVA / 4 semantic / 3 adversarial
+
+**Target.** Carried-forward item (e), open since cycle 2 and slipped three
+cycles: unaudited `distinct(<key>, .keep_all = TRUE)` sites. Coordinates feed
+isochrones, travel times and county assignment, so this is the
+highest-consequence area the loop has reached.
+
+**Tests added** — `tests/test_cycle5_geocode_conflicts.R`
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T41 | BVA | zero rows → typed empty frame; one row passes through |
+| T42 | BVA | tolerance edge: 0.90 km resolves, 1.50 km refuses |
+| T43 | BVA | all-NA quality refuses; never fabricates a winner |
+| T44 | semantic | quality resolves; a tie at 2,192 km refuses |
+| T45 | semantic | `spread_km` is great-circle, checked at the threshold |
+| T46 | semantic | one row per key; key set preserved |
+| T47 | semantic | identical duplicates collapse (no over-refusal) |
+| T48 | adversarial | resolution invariant to row order (+ T48b anti-ceremony) |
+| T49 | adversarial | tied quality with identical coords still resolves |
+| T50 | adversarial | enforce the sweep: no coordinate key left on `.keep_all` |
+
+**DEFECT — LIVE, not latent, and the most consequential so far.** The
+geocoding cache holds 55,843 rows for 54,225 keys, and **48 keys carry more
+than one coordinate**: median spread 1.0 km, 90th percentile 13.8 km,
+**maximum 1,074.8 km**. `distinct(cache_key, .keep_all = TRUE)` kept whichever
+row sorted first, so **row order decided a midwife's location** — and every
+isochrone, travel time and county assignment built on it.
+
+**Fix.** `R/lib/geocode_conflicts.R`: resolve on `quality_score` where it has a
+single strict winner; where it cannot and the disagreement exceeds
+`max_spread_km` (1 km — two minutes of a 30-minute band at 30 mph), the key
+gets **no coordinate**. An address we cannot place is missing data, not a coin
+flip. Every key carries `spread_km` and a `resolution` label so the loss is
+visible.
+
+Real-data impact: 52,819 unique, 1,381 within tolerance, 13 resolved by
+quality, **12 refused** (0.022%; median spread 4.5 km, max 1,073.6 km).
+
+**Same-class sweep, enforced by T50 rather than by grep.** The test found a
+site the manual audit had missed: `geocode_panel_addresses.R:92`. Three sites
+fixed in total (`geocode_midwives.R` ×2 including the `key_nozip` fallback,
+`geocode_panel_addresses.R` ×1). The `key_nozip` fallback is worse than the
+keyed pass — dropping the ZIP *merges* previously distinct addresses — so it
+needed the resolver, not just deduping.
+
+Trailing `distinct(.keep_all)` calls were removed rather than renamed. They
+were safe after resolution, but keeping them while the guard forbids them
+would have meant evading the test instead of satisfying it. Replaced with a
+total ordering plus `slice(1)`, which is deterministic and order-independent.
+
+**Wrong test, corrected (T45).** The first version demanded agreement within
+1 km with `geosphere::distHaversine`, which defaults to the EQUATORIAL radius
+(6378.137 km) while the resolver uses the mean radius (6371 km) — a 0.3%
+difference, 2.4 km over 2,200 km. Replaced with relative agreement (<0.5%)
+over long distances **plus a 10 m absolute bound at the 1 km threshold**,
+where the refuse/resolve decision is actually made. That is the stricter test.
+
+**Stale-artifact alarm, made precise.** `test_healthgrades_integrity.R` had
+begun failing because Table 1 reported 15 exclusions while the live crawl
+implied 17. Table 1 is stale by construction while the crawl runs, so this
+test was red every cycle — which teaches everyone to ignore a red suite.
+Table 1 now writes `artifacts/table1_provenance.csv` (built_at, scrape rows
+and certificants, cohort N, exclusion count). The STRICT assertion is
+internal consistency against that stamp; live drift is reported as a note.
+Discrimination verified: forcing the stamp to 99 fails the check.
+
+**Full suite.** 9/9 pass.
+
+**Carried forward.**
+
+- **DECISION NEEDED:** Table 1 panel-window censoring on ">=15 years" (cycle 1).
+- **DECISION NEEDED:** `women_15_44` partial vs `NA` denominator (cycle 3).
+- **DECISION NEEDED:** whether a `ct_partial` region should be reported (cycle 4).
+- **ACTION:** rebuild Table 1 when the crawl finishes (now detected, not guessed).
+- N1 sites outside CT: `03-geography-hierarchy.R:120`, `spatial_crs_contract.R:262`.
+- Healthgrades: constant `hg_years_experience`; absent-vs-FALSE booleans.
+- Remaining `.keep_all` sites on NON-coordinate keys (`load_obstetric_providers.R`
+  ×4, ABOG roster) — audited against real data this cycle: **no duplicate NPIs
+  today**, so latent rather than live. T50 covers coordinate keys only.
+- Ledger has a duplicate Cycle 2 heading from the keep-both rebase rule; both
+  records are real (one manual, one from the cron cycle).
+
+**Estimand changed:** yes, deliberately. 12 unplaceable addresses now yield no
+coordinate instead of an arbitrary one. Publishing a coin-flip location was not
+a defensible alternative, so this is a correction, not a choice between
+defensible readings.

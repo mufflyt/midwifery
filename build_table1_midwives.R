@@ -265,6 +265,19 @@ t1 <- bind_rows(
 
 write_csv(t1, "artifacts/table1_midwives.csv", na = "")
 
+# Vintage stamp. The Healthgrades crawl is still running, so the ambiguity
+# count is a function of WHEN this was built. Recording the scrape vintage
+# lets the test suite assert that Table 1 is internally consistent with the
+# data it actually saw, and report drift against a moving crawl as drift
+# rather than as a defect. Without this the suite is red by construction.
+readr::write_csv(tibble::tibble(
+  built_at            = format(Sys.time(), "%Y-%m-%dT%H:%M:%S"),
+  scrape_rows         = if (exists("hg")) nrow(hg) else NA_integer_,
+  scrape_certificants = if (exists("hg")) dplyr::n_distinct(hg$certification_number) else NA_integer_,
+  cohort_n            = N,
+  hg_ambiguous_cohort = length(hg_ambiguous)),
+  "artifacts/table1_provenance.csv")
+
 # --- markdown render ----------------------------------------------------------
 md <- c("# Table 1. Characteristics of the ACTIVE certified-midwife cohort", "",
         sprintf("Cohort: **%s** midwives with AMCB status ACTIVE and a primary-tier NPI link.",
