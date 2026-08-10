@@ -146,3 +146,6 @@ hg_sweep.out
 # Join-provenance logs written at runtime by safe_left_join(); one timestamped
 # file per join, including from the test suite. Diagnostics, not artifacts.
 artifacts/step00_summary/
+
+# Work parked from a killed concurrent session; regenerable, kept for recovery.
+.quarantine/
