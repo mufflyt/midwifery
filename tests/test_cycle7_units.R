@@ -173,8 +173,18 @@ cat("\n-- SEMANTIC --\n")
     chk(implausible <= 9L,
         sprintf("T67a implausible GFR count does not grow [%d counties > 200/1,000, max %.1f]",
                 implausible, max(gfr, na.rm = TRUE)))
-    chk(grepl("gfr_reliable|min_women_15_44|women_15_44 >=", SRC),
-        "T67b the fertility superlative excludes counties whose denominator is too small to support it")
+    # UPDATED IN CYCLE 8. This originally asserted the denominator floor
+    # (GFR_MIN_WOMEN <- 5000) that cycle 7 introduced. Cycle 8 measured that
+    # filter and found it removed 88.5% of REMOTE counties from the ranking in a
+    # study about rural access -- more biased than the noise it corrected -- and
+    # replaced it with a demographic VALIDITY bound.
+    #
+    # The contract is unchanged and still right: the superlative must not name a
+    # sampling artifact. Only the mechanism moved, so the assertion moves with
+    # it rather than being deleted. The bias of whatever mechanism is in force is
+    # asserted separately, in test_cycle8_filter_bias.R T74.
+    chk(grepl("gfr_plausible|GFR_MAX_PLAUSIBLE", SRC),
+        "T67b the fertility superlative excludes demographically impossible rates")
   }
 }
 

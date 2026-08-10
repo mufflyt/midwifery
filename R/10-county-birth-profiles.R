@@ -54,13 +54,29 @@ load_variety_sentence_engine(quiet = TRUE)
 # interesting, and asserting a rank for every county would imply precision the
 # underlying estimates do not carry.
 SUPERLATIVE_N <- 10L
-#' Minimum women aged 15-44 for a county's general fertility rate to be RANKED.
-#' Not a correction to the rate, a reliability floor on the comparison: ACS
-#' estimates over a few hundred women carry margins wide enough to produce
-#' impossible rates (448.7 per 1,000 in a county with 156 women), and a
-#' superlative built on those names the noisiest county rather than the most
-#' fertile one.
-GFR_MIN_WOMEN <- 5000L
+#' Upper bound on a demographically possible general fertility rate.
+#'
+#' CYCLE 8, replacing the cycle-7 `GFR_MIN_WOMEN <- 5000` denominator floor.
+#' That floor fixed the right defect the wrong way: it removed **88.5% of
+#' remote counties** from the fertility ranking (1,160 of 1,311) in a study
+#' about rural access, so a remote county could essentially never be named most
+#' fertile. The filter was more biased than the noise it was correcting.
+#'
+#' This is a VALIDITY constraint rather than a reliability threshold, and the
+#' distinction is the whole point. The highest national general fertility rate
+#' ever recorded is roughly 150-200 per 1,000 women aged 15-44. A county
+#' reporting 448.7 is not an unusually fertile place; it is an ACS estimate
+#' drawn from 156 women, and it is not a measurement of fertility at all.
+#' Excluding an impossible value is not choosing between defensible readings.
+#'
+#' It removes 9 counties instead of 1,583, and 0.7% of remote counties instead
+#' of 88.5%.
+#'
+#' The RELIABILITY question -- what to do about rates that are possible but
+#' imprecise -- is deliberately still open. ACS ships margins of error; a
+#' MOE-aware or smoothed estimator is the real answer and it is a scientific
+#' decision, recorded in the ledger.
+GFR_MAX_PLAUSIBLE <- 200
 
 ART <- "artifacts"; OUT <- file.path(ART, "county_profiles")
 dir.create(OUT, showWarnings = FALSE, recursive = TRUE)
@@ -341,8 +357,9 @@ run_profiles <- function() {
       # The floor is a reliability threshold, not a correction of the rate --
       # what to do about the rate itself is recorded in the ledger as an open
       # decision.
-      gfr_reliable     = !is.na(women_15_44) & women_15_44 >= GFR_MIN_WOMEN,
-      rank_gfr_high    = mm_rank(ifelse(gfr_reliable, general_fertility_rate, NA_real_)))
+      gfr_plausible    = !is.na(general_fertility_rate) &
+                           general_fertility_rate <= GFR_MAX_PLAUSIBLE,
+      rank_gfr_high    = mm_rank(ifelse(gfr_plausible, general_fertility_rate, NA_real_)))
 
   n_counties <- nrow(prof)
   prof$sentences <- vapply(seq_len(nrow(prof)),

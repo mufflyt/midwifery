@@ -990,3 +990,110 @@ loop must not pick this.
 - `.keep_all` on non-coordinate keys (`load_obstetric_providers.R` ×4) — latent.
 
 **Estimand changed:** yes, twice, and both need ratification — see above.
+
+---
+
+## Cycle 8 — 2026-08-09 — 3 BVA / 4 semantic / 3 adversarial
+
+**Target: the loop's own work.** A concurrent review (`847fc73`) measured the
+`GFR_MIN_WOMEN <- 5000` filter that *my* cycle 7 introduced and found it removed
+**88.5% of remote counties** from the fertility ranking. This cycle acts on that
+review rather than continuing outward.
+
+**Tests added** — `tests/test_cycle8_filter_bias.R` (T71–T80, 16 assertions)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T71 | BVA | the bound is inclusive at 200; NA/Inf unrankable; 0 is valid |
+| T72 | BVA | exactly the impossible counties are excluded |
+| T73 | BVA | only the ranking is filtered, never the dataset |
+| T74 | semantic | **exclusions are not differential by rurality** |
+| T75 | semantic | validity constraint vs reliability threshold, stated |
+| T76 | semantic | the bound sits above every real national GFR |
+| T77 | semantic | excluded counties hold a negligible share of midwives |
+| T78 | adversarial | the rejected floor cannot creep back in any spelling |
+| T79 | adversarial | excluding a value does not renumber survivors' ranks |
+| T80 | adversarial | ranks are invariant to row order |
+
+### The finding: a filter more biased than the noise it corrected
+
+Cycle 7 fixed a real defect — the "highest fertility" superlative was naming an
+ACS sampling artifact (448.7 births per 1,000 women in a county with 156 women).
+It fixed it with a **denominator floor**, which excluded:
+
+| rurality | counties | excluded | % |
+|---|---:|---:|---:|
+| Metro (RUCC 1-3) | 1,252 | 261 | 20.8% |
+| Nonmetro, adjacent | 670 | 162 | 24.2% |
+| Nonmetro, remote | 1,311 | **1,160** | **88.5%** |
+
+In a study about rural access, that means a remote county can essentially never
+be named most fertile — **a conclusion about rurality produced entirely by a
+threshold.**
+
+**The general lesson, now enforced as T74: a filter applied before a ranking is
+part of the estimand.** Any exclusion must be checked for differential
+application along the study's own stratifier, because an exclusion correlated
+with the exposure manufactures a finding. Nothing in this repo checked that, and
+the loop itself walked straight into it.
+
+### The replacement, and why it is not another estimand choice
+
+`GFR_MAX_PLAUSIBLE <- 200` — a **validity** constraint, above the highest
+national general fertility rate ever recorded (~150-200). A county reporting
+448.7 is not an unusually fertile place; it is an estimate drawn from 156 women,
+and it is not a measurement of fertility at all. **Excluding an impossible value
+is not choosing between defensible readings.**
+
+| | denominator floor (c7) | validity bound (c8) |
+|---|---:|---:|
+| counties excluded | 1,583 | **9** |
+| remote counties excluded | 88.5% | **0.7%** |
+| spread across rurality | 67.6 pp | **0.7 pp** |
+| highest rate still rankable | — | 195.6 |
+
+T74b asserts the **rejected** filter still fails the bias test, so the contract
+discriminates rather than decorates.
+
+The **reliability** question — what to do about rates that are possible but
+imprecise — is deliberately left open. ACS ships margins of error; a MOE-aware
+or smoothed estimator is the real answer and it is a scientific decision.
+
+### Cross-cycle contradiction, found and reconciled
+
+Cycle 7's **T67b asserted the very floor cycle 8 removed**, so the suite held two
+incompatible expectations. This is the failure mode the cycle-24 audit is meant
+to catch, surfacing eight cycles early. T67b was **updated, not deleted** — its
+contract ("the superlative must not name a sampling artifact") is unchanged and
+still right; only the mechanism moved, and the bias of whatever mechanism is in
+force is now asserted separately in T74.
+
+### Wrong tests, corrected
+
+T73b and T75a first failed by matching **this cycle's own roxygen**, which names
+the rejected `GFR_MIN_WOMEN <- 5000` in order to explain its removal. A
+source-contract test that greps prose fails on its own changelog; both now strip
+comment lines and assert against code only.
+
+### Full suite
+
+**13/13 pass.** T77 **skips**: no county-level midwife count artifact currently
+exists, so the review's mitigating claim (1.7% of midwives in excluded counties)
+**cannot be verified here**. It is recorded as unverified rather than assumed —
+and it matters less now, since the bound excludes 9 counties rather than 1,583.
+
+### Unresolved / carried forward
+
+- **DECISION NEEDED:** a reliability method for imprecise-but-possible GFRs
+  (MOE-aware, smoothed, or none). The validity bound does not address it.
+- **DECISION NEEDED:** GFR numerator universe 15-50 vs denominator 15-44 (c7).
+- **DECISION NEEDED:** `women_15_44` partial vs NA — cycle 7 chose partial-with-
+  gap-counted; **still unratified**.
+- **DECISION NEEDED:** Table 1 panel-window censoring on ">=15 years" (c1).
+- **DECISION NEEDED:** whether a `ct_partial` region is reported (c4).
+- **ACTION:** rebuild `artifacts/county_birth_profiles.csv` so T77 can run.
+- 14 bare `.keep_all` sites, ratcheted (c5).
+
+**Estimand changed:** yes — the cycle-7 denominator floor is **withdrawn** and
+replaced by a validity bound. This is a net reduction in the loop's own
+interference: 1,583 counties return to the ranking, 1,160 of them remote.
