@@ -471,6 +471,33 @@ source-level provenance. Nothing has been merged into `artifacts/isochrones/`, a
 production library, which is the actual content of the 164→445 warning.
 
 
+## Table 1
+
+`Rscript build_table1_midwives.R` → [`docs/table1_midwives.md`](docs/table1_midwives.md)
+and `artifacts/table1_midwives.csv`.
+
+Characteristics of the **11,913** ACTIVE, primary-linked midwives: certification
+(CNM 99.0% / CM 1.0%), sex as recorded in NPPES, ACOG district, rurality, years
+since NPI enumeration, and years observed in NPPES. Long format
+(`characteristic` / `n` / `percent` / `category`) following the isochrones
+vignette `how-to-create-table-1.Rmd`.
+
+Percentages use the **non-missing** denominator and unknowns get their own row,
+so the table never implies more is known than is. Three naming choices are
+deliberate:
+
+* **"Sex recorded in NPPES", not gender.** NPPES calls the field
+  `Provider Sex Code` (2025 layout) and `Provider Gender Code` (2022); it is
+  administrative sex recorded at enumeration, not gender identity. `X` and `U`
+  are recorded values and are shown as such rather than folded into unknown.
+* **"Years observed in NPPES", not years active.** It is the span from first to
+  last annual snapshot in which the NPI appears — a presence measure. An NPI
+  persists after someone stops practising, and the panel starts in 2007, so
+  earlier enumerations are left-censored.
+* **Language is reported as unavailable.** No source this project holds collects
+  it: not NPPES in either layout, not the CMS Doctors & Clinicians file, and not
+  the Healthgrades scrape.
+
 ## Data sources
 
 Nothing in this repository is scraped from behind a paywall or a login, and no

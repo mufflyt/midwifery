@@ -121,3 +121,7 @@ data/cd119/
 # rendered maps and dissolved unions: 14-20 MB binaries, rebuildable from
 # build_midwifery_isochrone_map.R + render_midwifery_map.R
 artifacts/maps/
+
+# NPPES person-level extract (NPI + sex + enumeration date); rebuildable from
+# the NPPES bulk file, not committed
+artifacts/nppes_sex_enumeration.csv
