@@ -2395,3 +2395,76 @@ otherwise dismissed as noise.
 **Estimand changed: YES.** The numerator now excludes births to women 45–50,
 lowering the national rate from 61.0 to 59.2 per 1,000. A correction, not a
 choice: a 15–44 rate cannot count births to 45–50-year-olds.
+
+---
+
+## Cycle 18 — 2026-08-10 — 3 BVA / 3 semantic / 4 adversarial
+
+**Target.** Stale artifacts and mismatched vintages — a hazard **this loop
+created twice and flagged twice** without ever building a mechanism to catch it.
+
+**Tests added** — `tests/test_cycle18_artifact_freshness.R` (T181–T190, 15
+assertions, 1 tracked)
+
+### The live finding
+
+Cycles 16 and 17 rebuilt `data/county_base.csv`. **Seven downstream artifacts
+still described the old numbers**, dated 08-08 against an input rebuilt 08-10.
+Nothing said so — a reader opening `geocoding_completeness_rucc.csv` sees a
+table, not a date.
+
+Five were **regenerated this cycle** (R/02, R/05). Two remain, and the reason is
+the more interesting finding.
+
+### R/03 has been unable to complete, and nobody noticed
+
+`R/03-geography-hierarchy.R` **aborts on its own data invariant**:
+
+> INVARIANT: 1163 records where the coordinate source's address disagrees with
+> the pinned roster address.
+
+**Verified pre-existing**, not a regression from this loop: I suspected my own
+cycle-5 change (which made the geocode dedup `arrange(desc(quality_score))`
+before `distinct()`, and so could pick a different coordinate row). Ran the
+**pre-cycle-5 version of the file** — it fails with the **identical 1,163**. So
+the guard predates the loop's work entirely.
+
+The failure was invisible because **the artifacts the script left behind still
+exist**. A stage that aborts leaves its previous output in place, and every
+downstream reader treats that as current. This is a data question — which
+address is right — not a code fix, so it is recorded rather than papered over.
+
+### Why the mechanism is content-based, not mtime
+
+mtime found this and will lie tomorrow: `git checkout`, `cp`, `rsync` and
+archive extraction all rewrite modification times in either direction, so a
+fresh clone can show every artifact "newer" than its inputs while containing
+stale numbers. **T189 demonstrates the inversion directly.**
+
+`R/lib/artifact_provenance.R` therefore records the **SHA-256 of every input**
+beside each artifact at write time and compares content. T184 pins the
+distinction that matters: an input that is *newer but unchanged* is not
+staleness. It reuses the canonical `sha256_of()` from cycle 9 rather than adding
+a seventh copy — asserted by T186.
+
+The dependency graph is **read from the scripts themselves**, not hard-coded, so
+a new `read_csv`/`write_csv` pair is covered without editing the test.
+
+### Full suite
+
+**23/23 files pass**, with 1 tracked expected failure (the two R/03 artifacts),
+ratcheted from 7 → 2.
+
+### Unresolved / carried forward
+
+- **DATA QUESTION (new):** the 1,163 address disagreements blocking R/03. Until
+  resolved, `geography_class_counts.csv` and `geography_by_linkage_status.csv`
+  cannot be regenerated and remain stale.
+- **ACTION:** `write_with_provenance()` exists but no pipeline script calls it
+  yet; wiring it in is cycle 19's natural next step.
+- **DECISION NEEDED:** GFR reliability method (c8); `women_15_44` partial vs NA
+  (c7); Table 1 censoring (c1); `ct_partial` reporting (c4).
+- **UPSTREAM (isochrones):** `extract_first_initial()` accent bug (c12).
+- 18 undeclared joins (c10); 4 duplicate helpers (c9); 14 `.keep_all` (c5).
+
+**No scientific estimand was changed in this cycle.**
