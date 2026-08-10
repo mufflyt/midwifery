@@ -94,3 +94,40 @@ checkpoint_merge, cross_taxonomy_hierarchy, pip_materialization.
   decision, not a code fix** — flagged, not silently chosen.
 
 **No scientific estimand was changed in this cycle.**
+
+---
+
+## Out-of-cycle finding — 2026-08-09, stage 2 at 1,010 profiles
+
+Field coverage was checked at the 1,000-profile mark. Three fields reported
+"100% non-missing", which for optional self-reported attributes is a warning
+sign, not reassurance.
+
+**`hg_years_experience` is constant 0 across all 1,035 rows.** It is not a
+parse failure: the Healthgrades payload itself carries
+`roundedYearsOfExperience: 0` for midwives, verified against a live profile.
+The field is unpopulated for this provider type. It read as "100% complete"
+only because zero is a value. **Unusable -- must not reach Table 1**, and a
+completeness statistic that counts it as present is misleading.
+
+**`hg_accepts_new_patients` and `hg_has_telehealth` contain no NA at all**
+(1,018/17 and 903/132). Every other field has missingness, so the absence of
+NA suggests "attribute not stated" is being recorded as FALSE rather than
+unknown. If so, `hg_has_telehealth == FALSE` conflates "no telehealth" with
+"not stated", and the 87% FALSE rate is an unknown mixture of the two.
+Compare with `hg_medicaid_named`, which does carry NA (156) and is documented
+as a floor, not a measure. **Needs a test that distinguishes absent from
+false at the parser level before either field is reported.**
+
+`hg_languages` is 5% populated -- it does not rescue the Language row, which
+should stay "not collected".
+
+`hg_age` is 56% of profiles, and profiles cover only part of the cohort, so
+effective coverage is far below that. Median 60 (IQR 47-71, range 28-96) is
+older than expected for an ACTIVE workforce; whether that reflects genuine
+profile-selection bias or a mis-targeted regex should be validated against a
+handful of known profiles before use.
+
+**Carried to the next cycle:** (a) assert no field reaches Table 1 while
+constant; (b) distinguish absent from false for the two boolean fields;
+(c) validate `hg_age` against known profiles.
