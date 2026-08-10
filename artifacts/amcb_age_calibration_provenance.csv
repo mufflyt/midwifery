@@ -1,2 +1,2 @@
-calibrated_at,roster_source,total_roster_n,calib_sample_n,calibration_type,alpha_intercept,beta_slope,r_squared,residual_std_err
-2026-08-10T20:45:11,midwives.csv,22309,1829,Empirical OLS Model,33.12127679003601,0.6989780996929895,0.35497302226064836,9.464101582087745
+calibrated_at,roster_source,total_roster_n,direct_ground_truth_n,combined_sample_n,selected_model,alpha_intercept,beta_slope,r_squared,residual_std_err,direct_alpha,direct_beta,direct_r2,direct_rse,comb_alpha,comb_beta,comb_r2,comb_rse
+2026-08-10T20:49:58,midwives.csv,22309,1025,1829,"Primary Gold-Standard Direct OLS (N = 1025, R2 = 0.541)",36.17791299920699,0.8470670061818435,0.5411169100876546,7.868241972629453,36.17791299920699,0.8470670061818435,0.5411169100876546,7.868241972629453,33.12127679003601,0.6989780996929895,0.35497302226064836,9.464101582087745

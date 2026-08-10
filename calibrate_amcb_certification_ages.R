@@ -6,21 +6,17 @@
 # Method:
 #   1. Parse `certification_date` from AMCB roster (`midwives.csv` or cohort roster)
 #      to derive `certification_year` and `years_certified = 2026 - certification_year`.
-#   2. Merge available ground-truth provider ages from Healthgrades (hg_age),
-#      State Nursing License files, or Doximity extracts if present on disk.
-#   3. If ground-truth ages are present (e.g., 10-13% Healthgrades sample), fit an
-#      empirical linear model:
-#        age ~ years_certified
-#      to estimate exact baseline entry age (alpha) and slope (beta).
-#   4. If no ground-truth sample is present, fall back to literature prior:
-#        alpha = 29.5, beta = 1.0  =>  imputed_age = years_certified + 29.5
+#   2. Merge available ground-truth provider ages from:
+#      - Washington State DOH direct birth years (WA direct: gold standard)
+#      - Healthgrades direct provider ages (hg_age)
+#      - Illinois state license derived ages (IL derived)
+#      - Doximity extracts (if present)
+#   3. Prioritize Direct Ground-Truth Ages (WA direct + Healthgrades) to fit the
+#      primary empirical OLS regression:
+#        Age = alpha + beta * years_certified
+#   4. Compare against the Combined Sample model (N = 1,829, Age = 33.12 + 0.70 * years_certified).
 #   5. Assign standard Table 1 age bands:
 #        <35 years, 35-44 years, 45-54 years, 55-64 years, >=65 years.
-#
-# Inputs:
-#   midwives.csv (or artifacts/amcb_npi_linkage_FROZEN.csv)
-#   healthgrades_profile_attrs.csv (optional 10% calibration sample)
-#   artifacts/state_nursing_license_ages.csv (optional state sample)
 #
 # Outputs:
 #   artifacts/amcb_calibrated_ages.csv
@@ -55,8 +51,7 @@ df_raw <- read_csv(roster_path, show_col_types = FALSE, progress = FALSE)
 df <- df_raw %>%
   mutate(
     certification_number = as.character(certification_number),
-    # Handle MM/YYYY or YYYY-MM-DD formats
-    cert_year = suppressWarnings(as.integer(str_extract(certification_date, "\\d{4}"))),
+    cert_year = suppressWarnings(as.integer(str_extract(certification_date, "[0-9]{4}"))),
     years_certified = REF_YEAR - cert_year
   ) %>%
   filter(!is.na(cert_year), cert_year <= REF_YEAR, cert_year >= 1950)
@@ -65,11 +60,12 @@ cat(sprintf("  Valid certificants with cert_year: %s / %s\n",
             format(nrow(df), big.mark = ","),
             format(nrow(df_raw), big.mark = ",")))
 
-# --- 2. Gather Ground-Truth Age Samples for Calibration ----------------------
+# --- 2. Gather Ground-Truth Age Samples --------------------------------------
 df$known_age <- NA_real_
 df$age_source <- NA_character_
+df$is_direct_ground_truth <- FALSE
 
-# A. Healthgrades profile attributes
+# A. Healthgrades profile attributes (Direct Age)
 hg_paths <- c("healthgrades_profile_attrs.csv", "artifacts/healthgrades_profile_attrs.csv")
 hg_path <- hg_paths[file.exists(hg_paths)][1]
 
@@ -92,13 +88,14 @@ if (!is.na(hg_path)) {
       left_join(hg_merged %>% select(certification_number, hg_age), by = "certification_number") %>%
       mutate(
         known_age = coalesce(known_age, as.numeric(hg_age)),
-        age_source = if_else(!is.na(hg_age) & is.na(age_source), "Healthgrades", age_source)
+        age_source = if_else(!is.na(hg_age) & is.na(age_source), "Healthgrades_Direct", age_source),
+        is_direct_ground_truth = if_else(!is.na(hg_age), TRUE, is_direct_ground_truth)
       ) %>%
       select(-any_of("hg_age"))
   }
 }
 
-# B. State Nursing License ages
+# B. State Nursing License ages (WA Direct Birth Year + IL Derived)
 state_path <- "artifacts/state_nursing_license_ages.csv"
 if (file.exists(state_path)) {
   cat(sprintf("Merging calibration sample from State Nursing Licenses: %s\n", state_path))
@@ -113,7 +110,7 @@ if (file.exists(state_path)) {
              
   if (!is.na(col_age)) {
     st_ages <- st_ages %>%
-      select(certification_number, st_age = all_of(col_age)) %>%
+      select(certification_number, state_source, birth_year_source, st_age = all_of(col_age)) %>%
       filter(!is.na(st_age)) %>%
       distinct(certification_number, .keep_all = TRUE)
       
@@ -121,9 +118,13 @@ if (file.exists(state_path)) {
       left_join(st_ages, by = "certification_number") %>%
       mutate(
         known_age = coalesce(known_age, as.numeric(st_age)),
-        age_source = if_else(!is.na(st_age) & is.na(age_source), "State_License", age_source)
+        is_wa_direct = !is.na(st_age) & state_source == "WA" & birth_year_source == "direct",
+        age_source = if_else(!is.na(st_age) & is.na(age_source),
+                             if_else(is_wa_direct, "WA_Direct_BirthYear", "IL_Derived_IssueYear"),
+                             age_source),
+        is_direct_ground_truth = if_else(is_wa_direct, TRUE, is_direct_ground_truth)
       ) %>%
-      select(-any_of("st_age"))
+      select(-any_of(c("st_age", "state_source", "birth_year_source", "is_wa_direct")))
   }
 }
 
@@ -137,43 +138,91 @@ if (file.exists(dox_path)) {
       left_join(dox_ages %>% select(certification_number, dox_age_at_ref), by = "certification_number") %>%
       mutate(
         known_age = coalesce(known_age, as.numeric(dox_age_at_ref)),
-        age_source = if_else(!is.na(dox_age_at_ref) & is.na(age_source), "Doximity", age_source)
+        age_source = if_else(!is.na(dox_age_at_ref) & is.na(age_source), "Doximity_Direct", age_source),
+        is_direct_ground_truth = if_else(!is.na(dox_age_at_ref), TRUE, is_direct_ground_truth)
       ) %>%
       select(-any_of("dox_age_at_ref"))
   }
 }
 
-calibration_subset <- df %>% filter(!is.na(known_age), known_age >= 21, known_age <= 85)
-n_calib <- nrow(calibration_subset)
+# Subsets for calibration evaluation
+direct_subset <- df %>% filter(is_direct_ground_truth, !is.na(known_age), known_age >= 21, known_age <= 85)
+combined_subset <- df %>% filter(!is.na(known_age), known_age >= 21, known_age <= 85)
 
-# --- 3. Calibration Model Fit ------------------------------------------------
-cat("\n--- Model Calibration Status ---\n")
-if (n_calib >= 30) {
-  cat(sprintf("Fitting linear calibration model on N = %s known provider ages...\n",
-              format(n_calib, big.mark = ",")))
+n_direct   <- nrow(direct_subset)
+n_combined <- nrow(combined_subset)
+
+cat("\n--- Ground-Truth Calibration Subsets Available ---\n")
+cat(sprintf("  Direct Ground-Truth Ages (WA Direct + Healthgrades) : N = %s\n", format(n_direct, big.mark = ",")))
+cat(sprintf("  Combined Sample (Direct WA + Derived IL + Others)    : N = %s\n", format(n_combined, big.mark = ",")))
+
+# --- 3. Calibration Model Fit & Comparison -----------------------------------
+cat("\n--- Model Calibration & Fitting ---\n")
+
+if (n_direct >= 30) {
+  cat(sprintf("Fitting Primary Gold-Standard Model on Direct Ground-Truth (N = %s)...\n", format(n_direct, big.mark = ",")))
+  fit_direct <- lm(known_age ~ years_certified, data = direct_subset)
+  sum_direct <- summary(fit_direct)
   
-  fit <- lm(known_age ~ years_certified, data = calibration_subset)
-  fit_sum <- summary(fit)
+  alpha_direct <- fit_direct$coefficients[1]
+  beta_direct  <- fit_direct$coefficients[2]
+  r2_direct    <- sum_direct$r.squared
+  rse_direct   <- sum_direct$sigma
   
-  alpha <- fit$coefficients[1]
-  beta  <- fit$coefficients[2]
-  r2    <- fit_sum$r.squared
-  rse   <- fit_sum$sigma
-  
-  cat(sprintf("  Calibrated Model: Age = %.2f + %.2f * years_certified\n", alpha, beta))
-  cat(sprintf("  Implied entry age at certification: %.2f years\n", alpha))
-  cat(sprintf("  R-squared: %.4f | Residual Std Error: %.2f years\n", r2, rse))
-  
-  calibration_type <- "Empirical OLS Model"
+  cat(sprintf("  [Gold-Standard Direct Model]: Age = %.2f + %.3f * years_certified\n", alpha_direct, beta_direct))
+  cat(sprintf("  Implied entry age at certification: %.2f years\n", alpha_direct))
+  cat(sprintf("  R-squared: %.4f (%.1f%% variance explained) | RSE: %.2f years\n",
+              r2_direct, 100 * r2_direct, rse_direct))
 } else {
-  cat(sprintf("Insufficient ground-truth sample (N = %d < 30). Using literature prior.\n", n_calib))
+  alpha_direct <- DEFAULT_ENTRY_AGE
+  beta_direct  <- 1.0
+  r2_direct    <- NA_real_
+  rse_direct   <- NA_real_
+}
+
+if (n_combined >= 30) {
+  cat(sprintf("\nFitting Secondary Model on Combined Sample (N = %s)...\n", format(n_combined, big.mark = ",")))
+  fit_comb <- lm(known_age ~ years_certified, data = combined_subset)
+  sum_comb <- summary(fit_comb)
+  
+  alpha_comb <- fit_comb$coefficients[1]
+  beta_comb  <- fit_comb$coefficients[2]
+  r2_comb    <- sum_comb$r.squared
+  rse_comb   <- sum_comb$sigma
+  
+  cat(sprintf("  [Combined Sample Model]     : Age = %.2f + %.3f * years_certified\n", alpha_comb, beta_comb))
+  cat(sprintf("  Implied entry age at certification: %.2f years\n", alpha_comb))
+  cat(sprintf("  R-squared: %.4f (%.1f%% variance explained) | RSE: %.2f years\n",
+              r2_comb, 100 * r2_comb, rse_comb))
+} else {
+  alpha_comb <- DEFAULT_ENTRY_AGE
+  beta_comb  <- 1.0
+  r2_comb    <- NA_real_
+  rse_comb   <- NA_real_
+}
+
+# Select primary model for cohort imputation (prefer direct gold-standard if N >= 30)
+if (n_direct >= 30) {
+  alpha <- alpha_direct
+  beta  <- beta_direct
+  r2    <- r2_direct
+  rse   <- rse_direct
+  calibration_type <- sprintf("Primary Gold-Standard Direct OLS (N = %d, R2 = %.3f)", n_direct, r2_direct)
+} else if (n_combined >= 30) {
+  alpha <- alpha_comb
+  beta  <- beta_comb
+  r2    <- r2_comb
+  rse   <- rse_comb
+  calibration_type <- sprintf("Combined Sample OLS (N = %d, R2 = %.3f)", n_combined, r2_comb)
+} else {
   alpha <- DEFAULT_ENTRY_AGE
   beta  <- 1.0
   r2    <- NA_real_
   rse   <- NA_real_
-  cat(sprintf("  Literature Prior: Age = %.1f + 1.0 * years_certified\n", alpha))
   calibration_type <- "Literature Prior (29.5y entry age)"
 }
+
+cat(sprintf("\n--> Selected Imputation Model: Age = %.2f + %.3f * years_certified\n", alpha, beta))
 
 # --- 4. Age Imputation and Banding -------------------------------------------
 df <- df %>%
@@ -195,8 +244,11 @@ df <- df %>%
 cat("\n--- Cohort Imputed Age Summary ---\n")
 cat(sprintf("Total Certificants Processed: %s\n", format(nrow(df), big.mark = ",")))
 cat(sprintf("Direct Ground-Truth Ages   : %s (%.1f%%)\n",
-            format(sum(!df$is_imputed), big.mark = ","),
-            100 * mean(!df$is_imputed)))
+            format(sum(!df$is_imputed & df$is_direct_ground_truth), big.mark = ","),
+            100 * mean(!df$is_imputed & df$is_direct_ground_truth)))
+cat(sprintf("State Derived Ages         : %s (%.1f%%)\n",
+            format(sum(!df$is_imputed & !df$is_direct_ground_truth), big.mark = ","),
+            100 * mean(!df$is_imputed & !df$is_direct_ground_truth)))
 cat(sprintf("Imputed Ages               : %s (%.1f%%)\n",
             format(sum(df$is_imputed), big.mark = ","),
             100 * mean(df$is_imputed)))
@@ -216,22 +268,31 @@ dir.create("artifacts", showWarnings = FALSE)
 
 out_file <- "artifacts/amcb_calibrated_ages.csv"
 write_csv(df %>% select(certification_number, cert_year, years_certified,
-                        known_age, age_source, fitted_age, final_age,
-                        is_imputed, age_band),
+                        known_age, age_source, is_direct_ground_truth,
+                        fitted_age, final_age, is_imputed, age_band),
           out_file, na = "")
 cat(sprintf("\nWritten: %s\n", out_file))
 
 prov_file <- "artifacts/amcb_age_calibration_provenance.csv"
 prov <- tibble(
-  calibrated_at    = format(Sys.time(), "%Y-%m-%dT%H:%M:%S"),
-  roster_source    = roster_path,
-  total_roster_n   = nrow(df),
-  calib_sample_n   = n_calib,
-  calibration_type = calibration_type,
-  alpha_intercept  = alpha,
-  beta_slope       = beta,
-  r_squared        = r2,
-  residual_std_err = rse
+  calibrated_at       = format(Sys.time(), "%Y-%m-%dT%H:%M:%S"),
+  roster_source       = roster_path,
+  total_roster_n      = nrow(df),
+  direct_ground_truth_n = n_direct,
+  combined_sample_n   = n_combined,
+  selected_model      = calibration_type,
+  alpha_intercept     = alpha,
+  beta_slope          = beta,
+  r_squared           = r2,
+  residual_std_err    = rse,
+  direct_alpha        = alpha_direct,
+  direct_beta         = beta_direct,
+  direct_r2           = r2_direct,
+  direct_rse          = rse_direct,
+  comb_alpha          = alpha_comb,
+  comb_beta           = beta_comb,
+  comb_r2             = r2_comb,
+  comb_rse            = rse_comb
 )
 write_csv(prov, prov_file, na = "")
 cat(sprintf("Written: %s\n", prov_file))
