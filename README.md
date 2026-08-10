@@ -8,12 +8,12 @@ and the defects each guard caught. (Private link; visible to the repo owner.)
 
 ```mermaid
 flowchart LR
-  A["AMCB directory<br/>22,309 names"] --> B["Candidate generation<br/>197,081 pairs"]
-  B --> C["Name-evidence class<br/>1 to 4"]
-  C --> D["Accepted links<br/>16,892"]
-  C --> Q["Quarantined<br/>3,091"]
-  D --> E["Last-observed<br/>practice address"]
-  E --> F["Geocode + county<br/>~99% of linked"]
+  A["AMCB directory - 22,309 names"] --> B["Candidate generation - 197,081 pairs"]
+  B --> C["Name-evidence class 1 to 4"]
+  C --> D["Accepted links - 16,892"]
+  C --> Q["Quarantined - 3,091"]
+  D --> E["Last-observed practice address"]
+  E --> F["Geocode and county - 99% of linked"]
 ```
 
 | Stage | Result |
