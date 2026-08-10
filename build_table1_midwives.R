@@ -258,6 +258,26 @@ if (file.exists(pnl)) {
 coh <- coh %>%
   mutate(active_band = band_years_observed(yrs_observed))
 
+# --- Doximity age supplement --------------------------------------------------
+# enrich_doximity_cnm_ages.R writes this file. When present, Doximity birth
+# years are joined into hg_link so blk_hg("hg_age_band", ...) gains coverage
+# beyond the ~13% fill rate Healthgrades achieves. NPI matches take precedence;
+# name matches are included but flagged in the provenance file.
+dox_age_file <- "artifacts/doximity_cnm_ages.csv"
+if (!is.null(hg_link) && file.exists(dox_age_file)) {
+  dox_ages <- read_csv(dox_age_file, show_col_types = FALSE, progress = FALSE) %>%
+    filter(dox_age_plausible) %>%
+    select(certification_number, dox_birth_year, dox_age_at_ref)
+  hg_link <- hg_link %>%
+    left_join(dox_ages, by = "certification_number") %>%
+    mutate(
+      hg_age = dplyr::coalesce(as.numeric(hg_age), as.numeric(dox_age_at_ref))
+    ) %>%
+    select(-dox_birth_year, -dox_age_at_ref)
+  cat(sprintf("Doximity: merged age for %s additional profiles\n",
+              format(sum(!is.na(dox_ages$dox_age_at_ref)), big.mark = ",")))
+}
+
 # --- Healthgrades banded columns ----------------------------------------------
 if (!is.null(hg_link)) {
   hg_link <- hg_link %>%
@@ -313,7 +333,7 @@ blk_hg <- function(col, category, lvls = NULL, binary_yes = NULL) {
     out <- out %>% arrange(match(characteristic, lvls))
   else
     out <- out %>% arrange(desc(n))
-  miss <- N_hg - known
+  miss <- max(0L, N_hg - known)
   bind_rows(out, tibble(characteristic = "Unknown / not recorded",
                         n = miss, percent = NA_real_, category = category))
 }

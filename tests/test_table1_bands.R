@@ -159,6 +159,33 @@ p16 <- sample(seq_along(x16))
 chk(identical(band_hg_age(x16)[p16], band_hg_age(x16[p16])),
     "hg_age banding is invariant to row order")
 
+# T17. Zero-length input must return zero-length character, not crash and not
+# logical(0). A logical(0) in a downstream bind_rows() poisons the column type
+# and produces NA in every row — the same defect fixed for band_cert_decade().
+chk(identical(band_hg_age(numeric(0)), character(0)),
+    "zero-length input returns zero-length character (not logical(0))")
+
+# T18. Decimal boundary values. The bands are right-closed on integers, but
+# Healthgrades sometimes returns fractional ages. 34.9 must stay in "<35" and
+# 35.0 must enter "35-44"; a >= vs > confusion at the boundary moves everyone
+# who is exactly 35, 45, 55, or 65 into the wrong decade.
+chk(identical(band_hg_age(c(34.9, 35.0, 44.9, 45.0, 54.9, 55.0, 64.9, 65.0)),
+              c("<35 years", "35-44 years", "35-44 years", "45-54 years",
+                "45-54 years", "55-64 years", "55-64 years", ">=65 years")),
+    "decimal boundary values (34.9/35.0, 44.9/45.0, ...) land in the correct band")
+
+# T19. Exact plausibility fence. 17 is out; 18 is in. 120 is in; 121 is out.
+# The terminal exclusions guard against Healthgrades returning placeholder ages
+# (999, 0) being absorbed into the "<35" or ">=65" band as real data.
+chk(is.na(band_hg_age(17)) && band_hg_age(18) == "<35 years" &&
+      band_hg_age(120) == ">=65 years" && is.na(band_hg_age(121)),
+    "plausibility fence: 17 and 121 are NA; 18 and 120 are classified")
+
+# T20. A vector of all-NA input must return all-NA, not error, not produce a
+# band label. If the scrape returns no ages the function must not fabricate any.
+chk(all(is.na(band_hg_age(c(NA_real_, NA_real_, NA_integer_)))),
+    "all-NA input returns all-NA output")
+
 cat(sprintf("\n%s (%d failure%s)\n", if (fails == 0L) "PASS" else "FAILURES",
             fails, if (fails == 1L) "" else "s"))
 quit(status = if (fails == 0L) 0L else 1L)
