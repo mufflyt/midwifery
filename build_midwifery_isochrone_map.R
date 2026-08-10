@@ -32,7 +32,7 @@
 #          artifacts/isochrones_osmde/osmde_isochrones_30_60.rds
 #          artifacts/county_midwifery_supply.csv
 # Outputs: artifacts/maps/midwifery_isochrone_union_{30,60}min.rds
-#          artifacts/maps/midwifery_access_map.html
+#          artifacts/maps/midwifery_coverage_surface_map.html
 # =============================================================================
 suppressPackageStartupMessages({
   library(sf); library(dplyr); library(readr); library(stringr)
@@ -267,6 +267,10 @@ if (dir.exists(water_dir)) {
   if (length(wm)) {
     water <- sf::st_make_valid(do.call(c, wm))
     water <- sf::st_union(water)
+    # Persisted so the renderer can crop its coverage-gap layer with the SAME
+    # water. Recomputing it there would be slow and, worse, could drift from the
+    # water actually subtracted from the surfaces.
+    saveRDS(water, file.path(OUTDIR, "water_union_conus.rds"))
     for (b in names(unions)) {
       before <- as.numeric(sf::st_area(unions[[b]])) / 1e6
       g <- suppressWarnings(sf::st_difference(
@@ -372,7 +376,12 @@ note <- sprintf(
   format(unions[["30"]]$osmde_input_area_km2, big.mark = ","))
 m <- htmlwidgets::prependContent(m, htmltools::HTML(note))
 
-out_html <- file.path(OUTDIR, "midwifery_access_map.html")
+# DISTINCT filename. Both this script and render_midwifery_map.R used to write
+# midwifery_access_map.html, so whichever ran last silently won -- and the two
+# are different maps: this one is the dissolved coverage surface alone, that one
+# is the full access map with counties, dots and popups. Opening the file after
+# a build showed a map that looked valid and was not the one being checked.
+out_html <- file.path(OUTDIR, "midwifery_coverage_surface_map.html")
 htmlwidgets::saveWidget(m, out_html, selfcontained = TRUE, title =
                           "Drive-time access to certified nurse-midwives")
 cat(sprintf("\nwritten: %s (%.1f MB)\n", out_html,

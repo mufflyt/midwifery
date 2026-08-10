@@ -120,16 +120,41 @@ c30 <- clip_to(u30); c60 <- clip_to(u60)
 
 # The complement: ground beyond the drive time. This is the gap the study is
 # about, and it must be visible as a positive shape rather than as absence.
+# The gap is CONUS minus the 60-minute surface. `conus` is built from county
+# polygons, and counties extend into the Great Lakes and out past the shoreline,
+# so the raw difference painted open water as a coverage gap -- orange across
+# Lake Erie and along the Lake Michigan shore, where nobody lives and no
+# coverage is owed. Subtracting the same water masks used for the surfaces
+# crops it to land.
+WATER_UNION <- file.path(OUTDIR, "water_union_conus.rds")
+gap_base <- conus
+if (file.exists(WATER_UNION)) {
+  wu <- readRDS(WATER_UNION)
+  gap_base <- suppressWarnings(sf::st_difference(sf::st_make_valid(gap_base),
+                                                 sf::st_make_valid(wu)))
+  cat("gap layer clipped to land using the shared water union\n")
+} else {
+  cat("NOTE: no water union at ", WATER_UNION,
+      " -- the gap layer will include open water\n", sep = "")
+}
 gap60 <- sf::st_sf(geometry = suppressWarnings(
-  sf::st_difference(conus, sf::st_union(sf::st_geometry(c60)))))
+  sf::st_difference(gap_base, sf::st_union(sf::st_geometry(c60)))))
 gap60 <- suppressWarnings(rmapshaper::ms_simplify(gap60, keep = 0.08, keep_shapes = TRUE))
 
 cty$county_label_disp <- paste0(cty$county_name_base, ", ", cty$state)
 
-sc <- mysterymaps_jenks_zero_scale(cty$midwives_per_1k_births, k = 6, digits = 1)
+# digits = 0: the legend counts MIDWIVES, and "0.2-2.6 midwives per 1,000
+# births" invites a reader to picture a fifth of a person. Whole numbers read as
+# what they are -- a rate per 1,000 births, rounded to the nearest midwife.
+sc <- mysterymaps_jenks_zero_scale(cty$midwives_per_1k_births, k = 6, digits = 0)
 # Caller-side wording only: the canonical zero label is "0.0", and for this map
 # the distinction between "no midwife" and "a low rate" is the whole point.
 sc$leg_labs[1] <- "none"
+# Rounding to whole midwives makes the first POSITIVE class read "0-5", which
+# looks like the zero class above it. These counties have a rate above zero and
+# below five; say that instead.
+if (length(sc$leg_labs) > 1)
+  sc$leg_labs[2] <- sub("^0\u2013", "under ", sc$leg_labs[2])
 
 # --- labels ------------------------------------------------------------------
 fmt <- function(x) ifelse(is.na(x), "—", format(round(x), big.mark = ","))
@@ -207,13 +232,19 @@ m <- mysterymaps_county_access_map(
   popup_col       = ".popup",
   coverage        = stats::setNames(list(c30, c60, gap60), c(G$b30, G$b60, G$gap)),
   coverage_colors = c("#08519c", "#3182bd", "#d94801"),
-  coverage_labels = c("within 30 min of a midwife",
-                      "within 60 min of a midwife",
-                      "more than 60 min from any midwife"),
+  coverage_labels = c("Within 30 minutes driving time of a Certified Nurse Midwife",
+                      "Within 60 minutes driving time of a Certified Nurse Midwife",
+                      "Beyond 60 minutes driving time of a Certified Nurse Midwife"),
   coverage_titles = c("Drive-time coverage", "Drive-time coverage", "Coverage gap"),
+  # Square miles, not km2: this map is read by a US audience.
+  coverage_area_units = "mi",
   points          = NULL,          # dots are added below, with their own popups
   overlay_group   = "Midwife locations",   # never NULL: leaflet labels it "null"
   legend_title    = "Midwives per<br/>1,000 births",
+  # Whole midwives, and wording that keeps the zero class distinct from the
+  # first positive one after rounding.
+  jenks_digits    = 0L,
+  legend_labels   = sc$leg_labs,
   search          = NULL,          # added after the dots exist
   notes           = NULL,          # this map's notes panel is built below
   bounds          = c(24.5, -125, 49.4, -66.9))
