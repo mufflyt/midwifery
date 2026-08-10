@@ -1,0 +1,2 @@
+calibrated_at,roster_source,total_roster_n,calib_sample_n,calibration_type,alpha_intercept,beta_slope,r_squared,residual_std_err
+2026-08-10T20:15:44,midwives.csv,22309,0,Literature Prior (29.5y entry age),29.5,1,,
