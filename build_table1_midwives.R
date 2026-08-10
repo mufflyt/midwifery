@@ -266,7 +266,22 @@ if (file.exists(pnl)) {
 coh <- coh %>%
   mutate(active_band = band_years_observed(yrs_observed))
 
-# --- Calibrated Empirical Age (100% Roster Coverage) --------------------------
+# --- NPPES Geography, Taxonomy & Address Concordance ------------------------
+geo_npi_file <- "artifacts/amcb_npi_geography.csv"
+if (file.exists(geo_npi_file)) {
+  geo_npi <- read_csv(geo_npi_file, show_col_types = FALSE, progress = FALSE) %>%
+    select(npi, taxonomy_description, practice_mailing_state_differs) %>%
+    mutate(
+      npi = as.character(npi),
+      state_concordance = case_when(
+        practice_mailing_state_differs == FALSE ~ "Same practice and mailing state",
+        practice_mailing_state_differs == TRUE ~ "Different practice and mailing state (Cross-state practice)",
+        TRUE ~ NA_character_
+      )
+    )
+  coh <- coh %>% mutate(npi = as.character(npi)) %>% left_join(geo_npi, by = "npi")
+  cat("Merged NPPES taxonomy and address concordance into cohort.\n")
+}
 calib_age_file <- "artifacts/amcb_calibrated_ages.csv"
 if (file.exists(calib_age_file)) {
   calib_df <- read_csv(calib_age_file, show_col_types = FALSE, progress = FALSE) %>%
@@ -355,7 +370,11 @@ t1 <- bind_rows(
          percent = 100, category = "Cohort"),
 
   blk(coh, "certification", "Certification"),
+  if ("taxonomy_description" %in% names(coh))
+    blk(coh, "taxonomy_description", "Primary NPPES Specialty Taxonomy"),
   blk(coh, "sex", "Sex recorded in NPPES"),
+  if ("state_concordance" %in% names(coh))
+    blk(coh, "state_concordance", "Practice vs. Mailing State Concordance"),
   if ("age_band" %in% names(coh))
     blk(coh, "age_band", "Calibrated Age (100% Cohort Coverage)",
         lvls = c("<35 years", "35-44 years", "45-54 years", "55-64 years", ">=65 years")),

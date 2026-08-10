@@ -2,7 +2,16 @@ characteristic,n,percent,category
 "ACTIVE, primary-linked midwives",11920,100,Cohort
 Certified Nurse-Midwife,11801,99,Certification
 Certified Midwife,119,1,Certification
+Certified Nurse Midwife,10187,85.8,Primary NPPES Specialty Taxonomy
+Midwife,1646,13.9,Primary NPPES Specialty Taxonomy
+Nurse Practitioner,21,0.2,Primary NPPES Specialty Taxonomy
+"Nurse Practitioner, Women's Health",15,0.1,Primary NPPES Specialty Taxonomy
+"Nurse Practitioner, Obstetrics & Gynecology",9,0.1,Primary NPPES Specialty Taxonomy
+Registered Nurse,1,0,Primary NPPES Specialty Taxonomy
+Unknown / not recorded,41,,Primary NPPES Specialty Taxonomy
 Unknown / not recorded,11920,,Sex recorded in NPPES
+Same practice and mailing state,11044,92.7,Practice vs. Mailing State Concordance
+Different practice and mailing state (Cross-state practice),876,7.3,Practice vs. Mailing State Concordance
 <35 years,551,4.6,Calibrated Age (100% Cohort Coverage)
 35-44 years,5319,44.6,Calibrated Age (100% Cohort Coverage)
 45-54 years,3356,28.2,Calibrated Age (100% Cohort Coverage)

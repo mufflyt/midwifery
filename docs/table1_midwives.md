@@ -13,8 +13,19 @@ Registry-derived rows use the full cohort. Healthgrades-derived rows use a small
 | **Certification** | | |
 | Certified Nurse-Midwife | 11,801 | 99.0 |
 | Certified Midwife | 119 | 1.0 |
+| **Primary NPPES Specialty Taxonomy** | | |
+| Certified Nurse Midwife | 10,187 | 85.8 |
+| Midwife | 1,646 | 13.9 |
+| Nurse Practitioner | 21 | 0.2 |
+| Nurse Practitioner, Women's Health | 15 | 0.1 |
+| Nurse Practitioner, Obstetrics & Gynecology | 9 | 0.1 |
+| Registered Nurse | 1 | 0.0 |
+| Unknown / not recorded | 41 | — |
 | **Sex recorded in NPPES** | | |
 | Unknown / not recorded | 11,920 | — |
+| **Practice vs. Mailing State Concordance** | | |
+| Same practice and mailing state | 11,044 | 92.7 |
+| Different practice and mailing state (Cross-state practice) | 876 | 7.3 |
 | **Calibrated Age (100% Cohort Coverage)** | | |
 | <35 years | 551 | 4.6 |
 | 35-44 years | 5,319 | 44.6 |
