@@ -62,11 +62,10 @@ if (file.exists(file.path(acog_home, "R", "acog_districts.R"))) {
   acog_ok <- exists("map_state_to_acog", mode = "function")
 }
 coh$acog_district <- if (acog_ok) {
-  # as_factor = TRUE returns an ordered factor in ACOG's Roman-numeral sequence.
-  # As plain character, districts sort alphabetically and District IX lands
-  # between IV and V -- the ordering this table used until the canonical
-  # function gained the argument.
-  suppressWarnings(map_state_to_acog(coh$nppes_state, as_factor = TRUE))
+  # Roman-numeral ordering is now the default in the canonical function
+  # (isochrones 66a7fb277); it returns an ordered factor with
+  # ACOG_DISTRICT_LEVELS. The explicit as_factor = TRUE is no longer needed.
+  suppressWarnings(map_state_to_acog(coh$nppes_state))
 } else {
   warning("canonical ACOG crosswalk not found; district left NA", call. = FALSE)
   NA_character_
