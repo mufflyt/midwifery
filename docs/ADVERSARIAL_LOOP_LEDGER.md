@@ -1722,3 +1722,71 @@ is honest missingness rather than exclusion.
   reporting (c4).
 
 **No scientific estimand was changed in this cycle.**
+
+---
+
+## Cycle 12 — 2026-08-10 01:0x — 3 BVA / 3 semantic / 4 adversarial
+
+**Target.** Name normalisation and territory handling. Tests in
+`tests/test_cycle12_names_territories.R`.
+
+**DEFECT (upstream) — accented first letters are STRIPPED, not transliterated.**
+`extract_first_initial()` in `~/isochrones/R/string_normalization.R` removes an
+accented first character rather than folding it to its ASCII equivalent, so
+**6 of 6 accented names block on the wrong letter** (Á→ the second letter, and
+so on). First-initial blocking is a **linkage key**, so candidate pairs are
+never generated for those people: the failure falls entirely on non-Anglo
+names. Recorded as 5 tracked upstream failures (`xfail`), gated so a sixth
+would fail the suite. `T120` confirms no midwifery script calls the function,
+so the fix belongs in `isochrones` and is out of scope here.
+
+**BUT THE ARTIFACTS WERE BUILT UPSTREAM, so the bias may already be in this
+cohort.** `T120` only shows this repo does not CALL the function; the frozen
+AMCB↔NPI linkage was produced by code that did. Tested directly:
+
+| linkage_tier | n | non-ASCII names | % |
+|---|---:|---:|---:|
+| primary_midwifery | 14,668 | 6 | 0.041 |
+| quarantined | 3,091 | 3 | 0.097 |
+| unmatched | 2,326 | 7 | 0.301 |
+| sensitivity_nursing | 1,896 | 0 | 0.000 |
+| **sensitivity_fuzzy** | 328 | 7 | **2.134** |
+
+Accented names are **52× more concentrated in the fuzzy-match tier** than in
+the primary tier, and 5.4× more concentrated across all non-primary tiers
+(0.222% vs 0.041%). Fisher exact **OR 0.18 (95% CI 0.06–0.49), p = 0.0002** for
+an accented name reaching the primary tier — exactly the pattern the blocking
+defect predicts: exact/blocked matching fails, and the person falls through to
+fuzzy or to no match at all.
+
+**Two honest limits on that result.** (1) Only **23 of 22,309** names contain a
+non-ASCII character, so while the association is strong and significant, the
+absolute number of people involved is small. (2) Non-ASCII is a **crude proxy**
+for a non-Anglo name — Nguyen, Garcia and Chen are pure ASCII — so this measures
+the accented subset only, and the truly affected population is larger than 23
+and not identifiable by this test.
+
+**Neither the defect nor the cohort effect is fixed here** — the function lives
+in `isochrones`, and re-running linkage is not a within-cycle change. Recorded
+as an action with a named owner rather than patched locally, which would create
+the duplicate-definition problem cycle 9 just removed.
+
+**Full suite.** 17/17 pass (0 failures, 5 tracked upstream), 0 skips.
+
+**Carried forward.**
+
+- **ACTION (new, upstream):** fix `extract_first_initial()` in
+  `~/isochrones/R/string_normalization.R` to transliterate rather than strip,
+  then re-run linkage. Until then the linked cohort under-represents accented
+  names (OR 0.18, p = 0.0002).
+- **DECISION NEEDED:** GFR reliability treatment (MOE-aware or smoothed).
+- **DECISION NEEDED:** ratify the `women_15_44` partial-sum reading.
+- **DECISION NEEDED:** Table 1 panel-window censoring on ">=15 years".
+- **DECISION NEEDED:** whether a `ct_partial` region should be reported.
+- **DECISION NEEDED:** minimum cohort coverage for a Healthgrades field (~49%
+  projected).
+- **ACTION:** rebuild Table 1 when the crawl finishes.
+- **DEBT:** 12 undeclared joins (T100); 14 bare `.keep_all` (T44).
+- **HYGIENE:** duplicate test IDs across cycles 6/7.
+
+**Estimand changed:** no.
