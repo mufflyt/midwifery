@@ -28,7 +28,8 @@ unknowns are counted on their own row.
 | District IX | 1,015 | 8.5 |
 | District XI | 536 | 4.5 |
 | District XII | 670 | 5.6 |
-| Unknown / not recorded | 40 | — |
+| Unknown / not recorded | 2 | — |
+| Excluded: overseas military or US territory | 38 | — |
 | **Rurality (RUCC 2023)** | | |
 | Metropolitan (RUCC 1-3) | 10,696 | 90.2 |
 | Nonmetropolitan, adjacent (RUCC 4-6) | 816 | 6.9 |

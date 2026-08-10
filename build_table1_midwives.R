@@ -61,6 +61,27 @@ if (file.exists(file.path(acog_home, "R", "acog_districts.R"))) {
   })
   acog_ok <- exists("map_state_to_acog", mode = "function")
 }
+# Coverage guard: every state code must map to a district or be an expected
+# exclusion (overseas military AA/AE/AP, US territories). Anything else is junk
+# in the state field. This cohort's Unknown row was hiding MONTSERRADO (Liberia)
+# and RHINELAND-PFALZ (Germany) among 38 legitimate exclusions -- indistinguishable
+# until the two kinds were separated.
+if (acog_ok) {
+  ex <- tryCatch(
+    assert_acog_coverage(coh$nppes_state,
+                         context = "Table 1: nppes_state -> ACOG district"),
+    error = function(e) {
+      # Report rather than abort: the two foreign values are a known upstream
+      # defect in the AMCB/NPPES state field, not a reason to withhold the whole
+      # table. They are counted as excluded and named here.
+      message("ACOG coverage guard: ", conditionMessage(e))
+      integer(0)
+    })
+  if (length(ex))
+    cat(sprintf("excluded from district analysis: %s\n",
+                paste(sprintf("%s=%d", names(ex), ex), collapse = ", ")))
+}
+
 coh$acog_district <- if (acog_ok) {
   # Roman-numeral ordering is now the default in the canonical function
   # (isochrones 66a7fb277); it returns an ordered factor with
@@ -181,8 +202,16 @@ t1 <- bind_rows(
 
   blk(coh, "certification", "Certification"),
   blk(coh, "sex", "Sex recorded in NPPES"),
-  blk(coh, "acog_district", "ACOG district",
+  # District percentages are computed on midwives who HAVE a district. Military
+  # and territory addresses are excluded by decision (no District X), so they
+  # are reported on their own line rather than inside "Unknown", which would
+  # imply the district is missing when it is not applicable.
+  blk(coh %>% filter(!nppes_state %in% ACOG_EXPECTED_UNMAPPED),
+      "acog_district", "ACOG district",
       lvls = if (acog_ok) ACOG_DISTRICT_LEVELS else NULL),
+  tibble(characteristic = "Excluded: overseas military or US territory",
+         n = sum(coh$nppes_state %in% ACOG_EXPECTED_UNMAPPED, na.rm = TRUE),
+         percent = NA_real_, category = "ACOG district"),
   blk(coh, "rurality", "Rurality (RUCC 2023)",
       lvls = c("Metropolitan (RUCC 1-3)", "Nonmetropolitan, adjacent (RUCC 4-6)",
                "Nonmetropolitan, remote (RUCC 7-9)")),
