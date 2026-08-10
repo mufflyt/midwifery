@@ -27,7 +27,7 @@
 # read as the same measurement.
 #
 # Run: Rscript enrich_amcb_crosswalk_geography.R
-#   CROSSWALK_IN   crosswalk to enrich (default artifacts/amcb_npi_crosswalk_translit.csv)
+#   CROSSWALK_IN   crosswalk to enrich (default: the current c5guard crosswalk)
 #   GEO_OUT        output (default artifacts/amcb_npi_geography.csv)
 # =============================================================================
 
@@ -46,13 +46,38 @@ setwd(root_dir)
 # matcher refuses to write an artifact whose name does not encode every
 # dimension that can change the linkage, after two A/B arms silently
 # overwrote each other. Downstream defaults must honour the same convention.
+# A STALE DEFAULT IS A SILENT WRONG ANSWER (2026-08-10). This pointed at the
+# translit crosswalk, which two later builds superseded -- the component
+# strategy added 164 matches and the class-5 guard removed 8. Running without
+# CROSSWALK_IN therefore produced geography for a linkage nobody was using, and
+# nothing in the output said so. The default now names the current crosswalk,
+# and the guard below refuses to run against one the matcher has superseded.
 CROSSWALK <- Sys.getenv(
   "CROSSWALK_IN",
-  "artifacts/amcb_npi_crosswalk_translit_panel-midwifery-plus-nursing_years-2007-2025.csv")
+  "artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv")
 GEO_OUT   <- Sys.getenv("GEO_OUT", "artifacts/amcb_npi_geography.csv")
 ROOT      <- Sys.getenv("NPPES_HISTORY",
                         "/Volumes/MufflySamsung/nppes_historical_downloads")
 stopifnot(file.exists(CROSSWALK), dir.exists(ROOT))
+
+# Refuse to silently enrich a superseded linkage. If a newer crosswalk exists
+# beside the requested one, say so rather than producing geography that looks
+# current and is not.
+local({
+  peers <- list.files("artifacts",
+                      pattern = "^amcb_npi_crosswalk_.*_panel-.*\\.csv$",
+                      full.names = TRUE)
+  peers <- peers[!grepl("\\.manifest\\.json$", peers)]
+  newer <- peers[file.mtime(peers) > file.mtime(CROSSWALK)]
+  if (length(newer)) {
+    warning(sprintf(paste0(
+      "A NEWER crosswalk exists than the one being enriched.\n",
+      "  enriching: %s\n  newer    : %s\n",
+      "  Set CROSSWALK_IN deliberately if this is intended."),
+      basename(CROSSWALK), paste(basename(newer), collapse = ", ")),
+      call. = FALSE, immediate. = TRUE)
+  }
+})
 
 # The taxonomy set is CLOSED: build_midwife_panel.R admits exactly these ten
 # codes, so descriptions come from that definition rather than an external NUCC
