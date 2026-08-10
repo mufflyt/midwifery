@@ -2592,3 +2592,84 @@ restoring `612` makes it fail.
 - **DEBT:** 2 stale artifacts; 12 undeclared joins; 14 bare `.keep_all`.
 
 **Estimand changed:** no.
+
+---
+
+## Cycle 19 — 2026-08-10 — 4 BVA / 3 semantic / 3 adversarial
+
+**Target.** The address-provenance invariant blocking `R/03`, carried from c18.
+
+**Tests added** — `tests/test_cycle19_address_provenance.R` (T191–T200, 17
+assertions)
+
+### The question, and the answer being "no"
+
+The guard aborts the whole stage whenever the roster ZIP/state differs **as a
+string** from the address the coordinates were geocoded from. 1,163 records trip
+it. A string-equality check that halts a pipeline is exactly the shape of an
+over-strict guard, so it was investigated as one.
+
+**It is not over-strict, and it is deliberately not relaxed.** Resolving both
+addresses through the ZCTA-county crosswalk:
+
+| impact | strict (`GEOID_unique`) | land-dominant |
+|---|---:|---:|
+| different **state** | 390 | 612 |
+| different county, same state | 175 | 318 |
+| **same county** (harmless) | 171 | 209 |
+| unresolvable (multi-county ZIP) | 427 | 24 |
+
+On the permissive reading **930 of 1,163 (80%)** land the record in a different
+**county** — the unit of every access finding here. On the strict reading at
+least **565** do and 427 cannot be determined. Loosening to "same county is
+fine" would still admit the large majority.
+
+### What was actually wrong: triage, not threshold
+
+All 1,163 were reported at one severity, so nobody could separate the cross-state
+cases from the ~171 harmless ones. The evidence file now carries `county_impact`
+and the abort prints the breakdown. **T196 asserts the guard still aborts and is
+not conditioned on the impact class** — triage informs, it does not excuse.
+
+T197 pins that a multi-county ZIP is reported **unresolvable** rather than
+assigned to whichever county holds the most land: a guess presented as a fact is
+worse than an admission.
+
+T198 is the one that kills the tempting shortcut: **175 same-STATE disagreements
+still change the county**, so "same state, therefore fine" is not safe.
+
+### A regression I introduced, caught by my own ratchet
+
+My two new joins pushed `test_cycle9_joins.R` T89 over its limit. Both **declare
+`relationship = "many-to-one"`** — the failure exposed that **T89's premise was
+superseded**: it counted *every* join, so adding a correctly-declared one failed
+the ratchet, penalising exactly the practice cycle 10 established. Recounted on
+cycle 10's basis (undeclared joins only), limit 18. That is a wrong test
+corrected, not a ratchet loosened.
+
+### A note on method, recorded because it is embarrassing and instructive
+
+My first pass read the evidence file, found **90 rows** against a message
+claiming 1,163, and was about to report a count/evidence mismatch. The file was
+the **stale 08-08 copy** — I was fooled by a stale artifact while investigating
+stale artifacts, one cycle after building the detector for them. Re-running the
+script first gives 1,163, matching the message exactly.
+
+### Full suite
+
+**24/24 files pass.**
+
+### Unresolved / carried forward
+
+- **DATA QUESTION:** the 1,163 address disagreements. Now triaged: 390 land in a
+  different state, 175 in a different county, 171 are harmless, 427 involve a
+  ZIP that cannot place anyone. R/03 stays blocked until these are resolved.
+- 2 stale artifacts, both downstream of R/03 (c18).
+- **ACTION:** `write_with_provenance()` still unwired (c18).
+- **DECISION NEEDED:** GFR reliability method (c8); `women_15_44` partial vs NA
+  (c7); Table 1 censoring (c1); `ct_partial` reporting (c4).
+- **UPSTREAM (isochrones):** `extract_first_initial()` accent bug (c12).
+- 18 undeclared joins (c10); 4 duplicate helpers (c9); 14 `.keep_all` (c5).
+
+**No scientific estimand was changed in this cycle.** The guard's threshold is
+untouched; only its diagnostic improved.
