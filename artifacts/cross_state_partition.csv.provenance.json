@@ -1,6 +1,6 @@
 {
   "artifact": "cross_state_partition.csv",
-  "written_utc": "2026-08-10 15:54:38 UTC",
+  "written_utc": "2026-08-10 23:45:25 UTC",
   "inputs": [
     {
       "path": "midwives_geography.csv",

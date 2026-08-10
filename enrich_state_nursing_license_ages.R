@@ -13,7 +13,9 @@
 #
 # IL  Illinois IDFPR        data.illinois.gov/resource/pzzh-kp68
 #       credential: Certified Professional Midwife, APRN, Full Practice APRN
-#       birth_year derived: original_issue_year - APRN_ISSUE_AGE_OFFSET
+#       birth_year: MEASURED fields only. A board that publishes no birth
+#       year contributes no age (the issue-year derivation was removed
+#       2026-08-10; see the note at the snl_birth_year definition).
 #       (CNMs typically earn APRN licensure ~27 years old; offset ±3 y uncertainty)
 #
 # Outputs
@@ -27,7 +29,11 @@ suppressPackageStartupMessages({
 })
 
 REF_YEAR             <- 2026L
-APRN_ISSUE_AGE_OFFSET <- 27L   # typical age at first APRN/CNM licensure
+# Retained for the provenance file only, which still reports how far a board's
+# issue years sit from its measured birth years. It no longer produces a birth
+# year: "typical age at first licensure" is an assumption about a career, not a
+# measurement of a person.
+APRN_ISSUE_AGE_OFFSET <- 27L
 PAGE_SIZE            <- 50000L
 
 ROSTER_CANDIDATES <- c(
@@ -164,18 +170,29 @@ state_results <- map(names(STATE_CONFIGS), function(st) {
       last_clean   = str_remove_all(last_upper, "[^A-Z]"),
       first_token  = str_to_upper(map_chr(str_split(first_upper, "\\s+"), 1)),
 
-      # Birth year: from direct field or derived from issue year
-      snl_birth_year = {
-        if (!is.na(birth_col) && birth_col %in% names(.)) {
-          suppressWarnings(as.integer(.data[[birth_col]]))
-        } else if (!is.na(issue_col) && issue_col %in% names(.)) {
-          iy <- suppressWarnings(
-            as.integer(str_extract(.data[[issue_col]], "\\d{4}"))
-          )
-          iy - APRN_ISSUE_AGE_OFFSET
-        } else {
-          NA_integer_
-        }
+      # BIRTH YEAR IS ONLY EVER A MEASURED FIELD (2026-08-10).
+      #
+      # This used to fall back to `issue_year - APRN_ISSUE_AGE_OFFSET` when a
+      # board published no birth year, producing 804 Illinois values that were
+      # a guess about when a person qualified, not a record of when they were
+      # born. Measured against the sources that do record a birth year, those
+      # derived values were not merely noisy -- they were wrong in a consistent
+      # direction:
+      #
+      #   IL derived vs Healthgrades : median +9.0 yr, 5.8% exact, 44.5% off by >10 yr
+      #   WA direct  vs Healthgrades : median  0.0 yr, 87.6% exact,  4.5% off by >10 yr
+      #   OH voter   vs Healthgrades : median  0.0 yr, 89.0% exact,  1.1% off by >10 yr
+      #
+      # They implied a median age of 34 against 41-54 from every measured
+      # source, because an APRN licence is not issued at a fixed age. A
+      # derived value that carries a `birth_year_source` flag still gets
+      # averaged, ranked and plotted by anyone who does not filter on it.
+      #
+      # A board that does not publish a birth year contributes no age.
+      snl_birth_year = if (!is.na(birth_col) && birth_col %in% names(.)) {
+        suppressWarnings(as.integer(.data[[birth_col]]))
+      } else {
+        NA_integer_
       },
 
       # Age at REF_YEAR
@@ -191,7 +208,7 @@ state_results <- map(names(STATE_CONFIGS), function(st) {
 
       # Birth year source flag
       birth_year_source = if (!is.na(birth_col) && birth_col %in% names(.))
-        "direct" else "derived_from_issue_year"
+        "direct" else NA_character_
     ) %>%
     select(state_source, last_upper, first_upper, last_clean, first_token,
            snl_birth_year, snl_age_at_ref, snl_age_plausible,

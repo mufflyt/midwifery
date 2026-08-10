@@ -190,6 +190,18 @@ if (acog_ok) {
                 paste(sprintf("%s=%d", names(ex), ex), collapse = ", ")))
 }
 
+# ACOG district. THE ASSIGNMENT WAS DELETED AT SOME POINT while the block that
+# publishes it remained, so Table 1 shipped with an empty ACOG section and
+# nothing failed -- blk() on a NULL column returns zero rows AND zero
+# "Unknown", so the category simply disappeared. Restored 2026-08-10.
+coh$acog_district <- if (acog_ok) {
+  suppressWarnings(map_state_to_acog(coh$nppes_state))
+} else {
+  warning("canonical ACOG crosswalk not found; district left NA", call. = FALSE)
+  NA_character_
+}
+
+
 if (!exists("ACOG_EXPECTED_UNMAPPED")) {
   ACOG_EXPECTED_UNMAPPED <- c("AA", "AE", "AP", "GU", "PR", "VI", "AS", "MP", "FM", "PW", "MH")
 }
@@ -321,6 +333,16 @@ if (!is.null(hg_link)) {
 # Percentages use the non-missing denominator, and the missing count is emitted
 # as its own row so the two are never confused.
 blk <- function(df, col, category, lvls = NULL) {
+  # AN ABSENT COLUMN IS AN ERROR, NOT AN EMPTY BLOCK. df[[col]] on a missing
+  # column returns NULL; as.character(NULL) has zero rows and sum(is.na(NULL))
+  # is 0, so the category vanished from the table entirely -- no rows, no
+  # "Unknown", no warning. That is how the ACOG block disappeared. A published
+  # block that silently omits itself is worse than one that fails loudly.
+  if (!col %in% names(df)) {
+    stop(sprintf(paste0("Table 1 block '%s' requires column '%s', which is not ",
+                        "present. Refusing to emit an empty category."),
+                 category, col), call. = FALSE)
+  }
   v <- df[[col]]
   known <- sum(!is.na(v))
   out <- tibble(characteristic = as.character(v)) %>%
@@ -403,9 +425,30 @@ t1 <- bind_rows(
       lvls = c("<5 years", "5-9 years", "10-14 years", ">=15 years")),
 
   # Language: use Healthgrades data when available; otherwise note it is absent.
+  # LANGUAGE IS A FLOOR, NOT A PROPORTION.
+  #
+  # Published as a block, this read "Yes 367, 100.0%" -- because hg_lang_flag is
+  # only ever "Yes" or NA, so the denominator was the 367 who have a language
+  # listed. "Of midwives listed as speaking another language, 100% speak
+  # another language" is circular, and it is the kind of number that gets
+  # quoted as a prevalence.
+  #
+  # hg_languages is present on 6.4% of profiles, and absence means NOT LISTED,
+  # not "English only" -- Healthgrades publishes no negative. So the only
+  # defensible statement is a lower bound against the eligible denominator,
+  # reported the same way hg_medicaid_named already is.
   if (!is.null(hg_link) && "hg_lang_flag" %in% names(hg_link))
-    blk_hg("hg_lang_flag", "Speaks a language other than English",
-            lvls = c("Yes", "No"))
+    local({
+      n_yes <- sum(hg_link$hg_lang_flag == "Yes", na.rm = TRUE)
+      den   <- N - length(hg_ambiguous)
+      tibble(
+        characteristic = c(
+          "At least this many speak a language other than English",
+          "Not listed (absence is not evidence of English-only)"),
+        n = c(n_yes, den - n_yes),
+        percent = c(round(100 * n_yes / den, 1), NA_real_),
+        category = "Language (Healthgrades floor)")
+    })
   else
     tibble(characteristic = "Not collected by NPPES, CMS DAC or the Healthgrades scrape",
            n = NA_integer_, percent = NA_real_, category = "Language"),

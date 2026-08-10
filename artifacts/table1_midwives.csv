@@ -1,38 +1,78 @@
 characteristic,n,percent,category
-"ACTIVE, primary-linked midwives",11920,100,Cohort
-Certified Nurse-Midwife,11801,99,Certification
+"ACTIVE, primary-linked midwives",11913,100,Cohort
+Certified Nurse-Midwife,11794,99,Certification
 Certified Midwife,119,1,Certification
-Certified Nurse Midwife,10187,85.8,Primary NPPES Specialty Taxonomy
-Midwife,1646,13.9,Primary NPPES Specialty Taxonomy
+Certified Nurse Midwife,10181,85.8,Primary NPPES Specialty Taxonomy
+Midwife,1645,13.9,Primary NPPES Specialty Taxonomy
 Nurse Practitioner,21,0.2,Primary NPPES Specialty Taxonomy
 "Nurse Practitioner, Women's Health",15,0.1,Primary NPPES Specialty Taxonomy
 "Nurse Practitioner, Obstetrics & Gynecology",9,0.1,Primary NPPES Specialty Taxonomy
 Registered Nurse,1,0,Primary NPPES Specialty Taxonomy
 Unknown / not recorded,41,,Primary NPPES Specialty Taxonomy
-Unknown / not recorded,11920,,Sex recorded in NPPES
-Same practice and mailing state,11044,92.7,Practice vs. Mailing State Concordance
-Different practice and mailing state (Cross-state practice),876,7.3,Practice vs. Mailing State Concordance
-<35 years,551,4.6,Calibrated Age (100% Cohort Coverage)
-35-44 years,5319,44.6,Calibrated Age (100% Cohort Coverage)
-45-54 years,3356,28.2,Calibrated Age (100% Cohort Coverage)
-55-64 years,1972,16.5,Calibrated Age (100% Cohort Coverage)
->=65 years,722,6.1,Calibrated Age (100% Cohort Coverage)
-Direct Verified DOB (OH/WA/FL/HG),1221,10.2,Age Data Source & Provenance
-Derived State License Issue Date,804,6.7,Age Data Source & Provenance
-OLS Calibrated Imputation,9895,83,Age Data Source & Provenance
-<5 years,2295,19.3,Years Since AMCB Initial Certification
-5-9 years,2749,23.1,Years Since AMCB Initial Certification
-10-19 years,3456,29,Years Since AMCB Initial Certification
-20-29 years,2147,18,Years Since AMCB Initial Certification
+Female,11829,99.4,Sex recorded in NPPES
+Male,63,0.5,Sex recorded in NPPES
+X (not listed as F or M),13,0.1,Sex recorded in NPPES
+Unknown / not recorded,8,,Sex recorded in NPPES
+Same practice and mailing state,11037,92.6,Practice vs. Mailing State Concordance
+Different practice and mailing state (Cross-state practice),876,7.4,Practice vs. Mailing State Concordance
+<35 years,205,1.7,Calibrated Age (100% Cohort Coverage)
+35-44 years,5090,42.7,Calibrated Age (100% Cohort Coverage)
+45-54 years,3391,28.5,Calibrated Age (100% Cohort Coverage)
+55-64 years,1882,15.8,Calibrated Age (100% Cohort Coverage)
+>=65 years,1345,11.3,Calibrated Age (100% Cohort Coverage)
+Direct Verified DOB (OH/WA/FL/HG),3862,32.4,Age Data Source & Provenance
+OLS Calibrated Imputation,8051,67.6,Age Data Source & Provenance
+<5 years,2293,19.2,Years Since AMCB Initial Certification
+5-9 years,2746,23.1,Years Since AMCB Initial Certification
+10-19 years,3455,29,Years Since AMCB Initial Certification
+20-29 years,2146,18,Years Since AMCB Initial Certification
 >=30 years,1273,10.7,Years Since AMCB Initial Certification
+District I,935,7.9,ACOG district
+District II,971,8.2,ACOG district
+District III,792,6.7,ACOG district
+District IV,1772,14.9,ACOG district
+District V,1155,9.7,ACOG district
+District VI,1253,10.6,ACOG district
+District VII,662,5.6,ACOG district
+District VIII,2112,17.8,ACOG district
+District IX,1015,8.5,ACOG district
+District XI,536,4.5,ACOG district
+District XII,670,5.6,ACOG district
+Unknown / not recorded,2,,ACOG district
 Excluded: overseas military or US territory,38,,ACOG district
-Unknown / not recorded,11920,,Years since NPI enumeration
-Unknown / not recorded,11920,,Years observed in NPPES
-"Not collected by NPPES, CMS DAC or the Healthgrades scrape",,,Language
-Healthgrades data not available,,,Sex (Healthgrades)
-Healthgrades data not available,,,Age (Healthgrades)
-Healthgrades data not available,,,Accepts new patients
-Healthgrades data not available,,,Offers telehealth
-Healthgrades data not available,,,Named as Medicaid provider
-Eligible for attribution (no shared profile),11920,100,Healthgrades-derived fields
-Excluded: profile shared with another certificant,0,,Healthgrades-derived fields
+Metropolitan (RUCC 1-3),10594,90.4,Rurality (RUCC 2023)
+"Nonmetropolitan, adjacent (RUCC 4-6)",784,6.7,Rurality (RUCC 2023)
+"Nonmetropolitan, remote (RUCC 7-9)",336,2.9,Rurality (RUCC 2023)
+Unknown / not recorded,199,,Rurality (RUCC 2023)
+<5 years,2223,18.7,Years since NPI enumeration
+5-9 years,2729,22.9,Years since NPI enumeration
+10-14 years,2307,19.4,Years since NPI enumeration
+15-19 years,2162,18.2,Years since NPI enumeration
+>=20 years,2484,20.9,Years since NPI enumeration
+Unknown / not recorded,8,,Years since NPI enumeration
+<5 years,3095,26,Years observed in NPPES
+5-9 years,2746,23.1,Years observed in NPPES
+10-14 years,2173,18.2,Years observed in NPPES
+>=15 years,3899,32.7,Years observed in NPPES
+At least this many speak a language other than English,367,3.1,Language (Healthgrades floor)
+Not listed (absence is not evidence of English-only),11434,,Language (Healthgrades floor)
+Female,5852,99.6,Sex (Healthgrades)
+Male,26,0.4,Sex (Healthgrades)
+Unknown / not recorded,5923,,Sex (Healthgrades)
+<35 years,112,3.6,Age (Healthgrades)
+35-44 years,705,22.7,Age (Healthgrades)
+45-54 years,790,25.5,Age (Healthgrades)
+55-64 years,723,23.3,Age (Healthgrades)
+>=65 years,769,24.8,Age (Healthgrades)
+Unknown / not recorded,8702,,Age (Healthgrades)
+Yes,5759,97.9,Accepts new patients
+No,121,2.1,Accepts new patients
+Unknown / not recorded,5921,,Accepts new patients
+No,4934,83.9,Offers telehealth
+Yes,946,16.1,Offers telehealth
+Unknown / not recorded,5921,,Offers telehealth
+No,5309,98,Named as Medicaid provider
+Yes,109,2,Named as Medicaid provider
+Unknown / not recorded,6383,,Named as Medicaid provider
+Eligible for attribution (no shared profile),11801,99.1,Healthgrades-derived fields
+Excluded: profile shared with another certificant,112,,Healthgrades-derived fields

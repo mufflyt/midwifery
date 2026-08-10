@@ -107,7 +107,7 @@ cat("\n-- SEMANTIC --\n")
   cases <- list(c("Élodie", "E"), c("Ángel", "A"), c("Ólafur", "O"), c("Ébano", "E"))
   got <- vapply(cases, function(k) extract_first_initial(k[1]), character(1))
   want <- vapply(cases, function(k) k[2], character(1))
-  xchk(identical(got, want),
+  chk(identical(got, want),
       sprintf("T114 an accented first letter yields its own initial [got %s, want %s]",
               paste(got, collapse = ""), paste(want, collapse = "")))
 }
@@ -119,7 +119,7 @@ cat("\n-- SEMANTIC --\n")
   nm <- c("Élodie", "Ángel", "García", "Zoe")
   from_norm <- substr(normalize_string(nm), 1, 1)
   from_init <- vapply(nm, extract_first_initial, character(1), USE.NAMES = FALSE)
-  xchk(identical(from_norm, from_init),
+  chk(identical(from_norm, from_init),
       sprintf("T115 normalize_string and extract_first_initial agree on the first letter [%s vs %s]",
               paste(from_norm, collapse = ""), paste(from_init, collapse = "")))
 }
@@ -144,7 +144,7 @@ cat("\n-- ADVERSARIAL --\n")
   initials <- vapply(accented, extract_first_initial, character(1), USE.NAMES = FALSE)
   expected <- c("A", "E", "I", "O", "U", "N")
   n_wrong <- sum(initials != expected)
-  xchk(n_wrong == 0L,
+  chk(n_wrong == 0L,
       sprintf("T117 no accented name is mis-blocked [%d of %d wrong: %s]",
               n_wrong, length(accented), paste(initials, collapse = "")))
 }
@@ -154,7 +154,7 @@ cat("\n-- ADVERSARIAL --\n")
 # implementation turns into a confident wrong answer.
 {
   r <- extract_first_initial("Ölçü")
-  xchk(identical(r, "O") || is.na(r),
+  chk(identical(r, "O") || is.na(r),
       sprintf("T118 a fully accented name gives its own initial or NA, never a later letter [%s]", r))
 }
 
@@ -184,7 +184,7 @@ cat("\n-- ADVERSARIAL --\n")
 }
 
 cat("\n-- UPSTREAM (isochrones), tracked not skipped --\n")
-cat(sprintf("  %d known upstream failure(s); expected exactly 5.\n", xfails))
+cat(sprintf("  %d known upstream failure(s); expected exactly 1.\n", xfails))
 cat("  extract_first_initial() strips an accented first letter instead of\n")
 cat("  transliterating it, so 6 of 6 accented names block on the WRONG letter.\n")
 cat("  First-initial blocking is a linkage key, so the failure falls entirely on\n")
@@ -193,7 +193,7 @@ if (length(xpasses)) {
   cat("\n  UNEXPECTED PASS -- upstream appears fixed, remove this bookkeeping:\n")
   for (m in xpasses) cat(sprintf("    %s\n", m))
 }
-drift <- (xfails != 5L) || length(xpasses) > 0L
+drift <- (xfails != 1L) || length(xpasses) > 0L
 if (drift) fails <- fails + 1L
 cat(sprintf("\n%s (%d failures, %d tracked upstream)\n",
             if (fails == 0L) "PASS" else "FAIL", fails, xfails))

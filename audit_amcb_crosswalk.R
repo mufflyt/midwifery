@@ -19,7 +19,7 @@
 #      draw is reproducible and cannot be re-rolled until it looks good.
 #
 # Run: Rscript audit_amcb_crosswalk.R
-#   CROSSWALK_IN  crosswalk to audit  (default artifacts/amcb_npi_crosswalk_translit.csv)
+#   CROSSWALK_IN  crosswalk to audit  (default: the current c5guard crosswalk)
 #   CROSSWALK_REF baseline to diff    (default artifacts/amcb_npi_linkage_FROZEN.csv)
 # =============================================================================
 
@@ -32,9 +32,14 @@ root_dir <- {
 setwd(root_dir)
 
 # Name carries panel definition and year window, per the matcher's contract.
+# STALE DEFAULT (2026-08-10). This pointed at the translit crosswalk, which two
+# later builds superseded. The identical defect was fixed in
+# enrich_amcb_crosswalk_geography.R the same afternoon and NOT fixed here --
+# one sibling patched, the other left. A default is the path most runs take,
+# so a stale one silently audits a linkage nobody uses.
 XW  <- Sys.getenv(
   "CROSSWALK_IN",
-  "artifacts/amcb_npi_crosswalk_translit_panel-midwifery-plus-nursing_years-2007-2025.csv")
+  "artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv")
 REF <- Sys.getenv("CROSSWALK_REF", "artifacts/amcb_npi_linkage_FROZEN.csv")
 OUT_DIR <- "artifacts"
 stopifnot(file.exists(XW))

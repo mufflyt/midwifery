@@ -1,2 +1,2 @@
 built_at,ref_year,aprn_issue_age_offset,states_queried,nursing_rows_raw,cohort_n,matched_n,tier1_exact_n,tier2_token_n,plausible_age_n,direct_birth_year,derived_birth_year
-2026-08-10T20:45:09,2026,27,"WA, IL",92975,11920,1833,1474,359,1829,1029,804
+2026-08-10T17:36:46,2026,27,"WA, IL",92975,11913,1833,1474,359,1025,NA,NA

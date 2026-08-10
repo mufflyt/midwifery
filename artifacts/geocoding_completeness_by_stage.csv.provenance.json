@@ -1,10 +1,10 @@
 {
   "artifact": "geocoding_completeness_by_stage.csv",
-  "written_utc": "2026-08-10 15:54:35 UTC",
+  "written_utc": "2026-08-10 23:45:22 UTC",
   "inputs": [
     {
       "path": "healthgrades_midwives.csv",
-      "sha256": "665f6fd4f47c58beaf1dd172b2226b0cac01d9f00d5ac4064d3a7a7d5fe964ff"
+      "sha256": "f89a8fae4ac8de6051213595fa2baf79c06fddbf00675752141e79f7208f8dd0"
     },
     {
       "path": "midwives_geocoded.csv",
