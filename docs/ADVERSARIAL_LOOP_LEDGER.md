@@ -599,3 +599,13 @@ Discrimination verified: forcing the stamp to 99 fails the check.
 coordinate instead of an arbitrary one. Publishing a coin-flip location was not
 a defensible alternative, so this is a correction, not a choice between
 defensible readings.
+
+**Process defect found in the loop itself (cycle 5).** The pre-commit guard
+`git status --short \| grep -E "healthgrades_..."` matches
+`tests/test_healthgrades_integrity.R` — a TEST file, not data. A cycle
+following the instruction literally would abort its own commit every time,
+leaving work uncommitted exactly as cycle 2 did. The guard must exclude
+`tests/` and anchor on the repo-root data names:
+
+    git status --short | awk '{print $2}' | grep -vE "^tests/" \
+      | grep -E "^(healthgrades_|nppes_sex_enumeration|hg_snapshot_|premerge_)|^artifacts/maps/"
