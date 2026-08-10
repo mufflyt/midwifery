@@ -1,0 +1,2 @@
+built_at,ref_year,aprn_issue_age_offset,states_queried,nursing_rows_raw,nursing_rows_dedup,cohort_n,matched_n,ambiguous_excluded,plausible_age_n,direct_birth_year,derived_birth_year
+2026-08-10T20:34:58,2026,27,"WA, IL",65900,61493,11920,898,0,897,233,665

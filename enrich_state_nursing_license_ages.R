@@ -44,18 +44,34 @@ suppressPackageStartupMessages({
 REF_YEAR             <- 2026L
 APRN_ISSUE_AGE_OFFSET <- 27L   # typical age at first APRN/CNM licensure
 PAGE_SIZE            <- 50000L
-ROSTER               <- "artifacts/amcb_npi_linkage_FROZEN.csv"
+ROSTER_CANDIDATES <- c(
+  "artifacts/amcb_npi_linkage_FROZEN.csv",
+  "artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv",
+  "midwives.csv"
+)
+ROSTER <- ROSTER_CANDIDATES[file.exists(ROSTER_CANDIDATES)][1]
 
 cat(sprintf("State nursing license age enrichment (ref year %d)\n", REF_YEAR))
 
 # ---------------------------------------------------------------------------
 # Guard: cohort roster
 # ---------------------------------------------------------------------------
-if (!file.exists(ROSTER))
-  stop(sprintf("Cohort roster not found: %s", ROSTER), call. = FALSE)
+if (is.na(ROSTER) || !file.exists(ROSTER))
+  stop("Cohort roster not found in artifacts/ or project root.", call. = FALSE)
 
-coh <- read_csv(ROSTER, show_col_types = FALSE, progress = FALSE) %>%
-  filter(status == "ACTIVE", linkage_tier == "primary_midwifery") %>%
+cat(sprintf("Using roster file: %s\n", ROSTER))
+
+raw_coh <- read_csv(ROSTER, show_col_types = FALSE, progress = FALSE)
+
+coh <- raw_coh
+if ("status" %in% names(coh)) {
+  coh <- coh %>% filter(status == "ACTIVE")
+}
+if ("linkage_tier" %in% names(coh)) {
+  coh <- coh %>% filter(linkage_tier == "primary_midwifery")
+}
+
+coh <- coh %>%
   distinct(certification_number, .keep_all = TRUE) %>%
   mutate(
     last_upper  = str_to_upper(str_trim(last_name)),

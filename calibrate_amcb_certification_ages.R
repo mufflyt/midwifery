@@ -103,14 +103,27 @@ state_path <- "artifacts/state_nursing_license_ages.csv"
 if (file.exists(state_path)) {
   cat(sprintf("Merging calibration sample from State Nursing Licenses: %s\n", state_path))
   st_ages <- read_csv(state_path, show_col_types = FALSE, progress = FALSE)
-  if ("license_age_at_ref" %in% names(st_ages)) {
+  
+  if ("snl_age_plausible" %in% names(st_ages)) {
+    st_ages <- st_ages %>% filter(snl_age_plausible)
+  }
+  
+  col_age <- if ("snl_age_at_ref" %in% names(st_ages)) "snl_age_at_ref" else
+             if ("license_age_at_ref" %in% names(st_ages)) "license_age_at_ref" else NA_character_
+             
+  if (!is.na(col_age)) {
+    st_ages <- st_ages %>%
+      select(certification_number, st_age = all_of(col_age)) %>%
+      filter(!is.na(st_age)) %>%
+      distinct(certification_number, .keep_all = TRUE)
+      
     df <- df %>%
-      left_join(st_ages %>% select(certification_number, license_age_at_ref), by = "certification_number") %>%
+      left_join(st_ages, by = "certification_number") %>%
       mutate(
-        known_age = coalesce(known_age, as.numeric(license_age_at_ref)),
-        age_source = if_else(!is.na(license_age_at_ref) & is.na(age_source), "State_License", age_source)
+        known_age = coalesce(known_age, as.numeric(st_age)),
+        age_source = if_else(!is.na(st_age) & is.na(age_source), "State_License", age_source)
       ) %>%
-      select(-any_of("license_age_at_ref"))
+      select(-any_of("st_age"))
   }
 }
 
