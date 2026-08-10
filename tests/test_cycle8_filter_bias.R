@@ -139,16 +139,24 @@ cat("\n-- SEMANTIC --\n")
 # conclusions are barely affected -- must be asserted, not assumed. If a filter
 # ever starts removing counties where midwives actually practise, the whole
 # argument for tolerating it collapses.
+#
+# The count lives in artifacts/county_midwifery_supply.csv, not county_base --
+# the first version of this test looked only in county_base and SKIPPED, which
+# left the one claim that justifies tolerating any filter unverified. A skip
+# here is a hole, not a pass.
 {
-  if (!"midwives_total" %in% names(CB) && !"n_midwives" %in% names(CB)) {
-    cat("  skip T77 no midwife count column in county_base\n")
+  sup_f <- file.path(root, "artifacts", "county_midwifery_supply.csv")
+  if (!file.exists(sup_f)) {
+    chk(FALSE, "T77 county_midwifery_supply.csv absent -- claim unverifiable")
   } else {
-    mc <- if ("midwives_total" %in% names(CB)) CB$midwives_total else CB$n_midwives
-    ex <- !is.na(CB$general_fertility_rate) & CB$general_fertility_rate > BOUND
-    lost <- sum(mc[ex], na.rm = TRUE); tot <- sum(mc, na.rm = TRUE)
+    sup <- suppressWarnings(read_csv(sup_f, show_col_types = FALSE, progress = FALSE))
+    mcol <- intersect(c("study_midwives", "ahrf_midwives_24"), names(sup))[1]
+    ex   <- !is.na(sup$general_fertility_rate) & sup$general_fertility_rate > BOUND
+    lost <- sum(sup[[mcol]][ex], na.rm = TRUE)
+    tot  <- sum(sup[[mcol]], na.rm = TRUE)
     chk(tot > 0 && 100 * lost / tot < 1,
-        sprintf("T77 excluded counties hold a negligible share of midwives [%d of %d, %.2f%%]",
-                lost, tot, 100 * lost / max(tot, 1)))
+        sprintf("T77 excluded counties hold a negligible share of midwives [%s: %d of %d, %.2f%%]",
+                mcol, lost, tot, 100 * lost / max(tot, 1)))
   }
 }
 

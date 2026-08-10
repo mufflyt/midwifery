@@ -135,11 +135,15 @@ cat("\n-- SEMANTIC --\n")
 # two different coordinate pairs resolved by row order puts a person in a
 # different county -- and county is the unit of every access finding here.
 {
-  p <- file.path(root, "artifacts", "geocode_final_results.csv")
-  if (!file.exists(p)) { cat("  skip T46 geocode_final_results.csv absent\n") } else {
-    g <- rd("artifacts/geocode_final_results.csv")
+  # geocode_final_results.csv is ADDRESS-keyed and has no certification_number,
+  # so the original fixture could only ever skip -- leaving the person-level
+  # claim untested. midwives_geography_FROZEN.csv is the person-keyed artifact
+  # and is what this contract is actually about.
+  p <- file.path(root, "artifacts", "midwives_geography_FROZEN.csv")
+  if (!file.exists(p)) { cat("  skip T46 midwives_geography_FROZEN.csv absent\n") } else {
+    g <- rd("artifacts/midwives_geography_FROZEN.csv")
     key <- intersect(c("certification_number"), names(g))
-    if (!length(key)) { cat("  skip T46 no certification_number column\n") } else {
+    if (!length(key)) { chk(FALSE, "T46 person-keyed artifact lacks certification_number") } else {
       ll <- intersect(c("latitude", "longitude"), names(g))
       conflicting <- g %>% distinct(across(all_of(c(key, ll)))) %>%
         count(across(all_of(key))) %>% filter(n > 1L)

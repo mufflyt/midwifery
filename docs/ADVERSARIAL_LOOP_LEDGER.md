@@ -1097,3 +1097,63 @@ and it matters less now, since the bound excludes 9 counties rather than 1,583.
 **Estimand changed:** yes — the cycle-7 denominator floor is **withdrawn** and
 replaced by a validity bound. This is a net reduction in the loop's own
 interference: 1,583 counties return to the ranking, 1,160 of them remote.
+
+---
+
+## Cycle 8 — 2026-08-09 23:0x — 3 BVA / 4 semantic / 3 adversarial
+
+**Target.** The unratified `GFR_MIN_WOMEN <- 5000` floor cycle 7 introduced.
+Tests in `tests/test_cycle8_filter_bias.R`.
+
+**THE CYCLE-7 FIX WAS REPLACED, NOT RATIFIED.** It fixed the right defect the
+wrong way: a denominator floor removed **88.5% of remote counties** (1,160 of
+1,311) from the fertility ranking in a study about rural access. The filter was
+more biased than the noise it corrected.
+
+Replaced with `GFR_MAX_PLAUSIBLE <- 200`, a **validity** constraint rather than
+a reliability threshold, and the distinction is the whole point:
+
+- The highest general fertility rate ever recorded nationally is ~150–200 per
+  1,000 women 15–44. A county reporting 448.7 from 156 women is not an
+  unusually fertile place; it is not a measurement of fertility at all.
+  Excluding an impossible value is not choosing between defensible readings, so
+  it is a decision the loop may take.
+- It removes **9 counties instead of 1,583**, and **0.7% of remote counties
+  instead of 88.5%** — near-uniform across strata (T74a: 0.7 pp spread; the
+  rejected floor: 67.6 pp).
+- Genuinely high-fertility counties stay rankable (max kept 195.6).
+
+**The reliability question remains OPEN and is not answered here.** What to do
+about rates that are possible but imprecise — ACS margins of error, a smoothed
+or empirical-Bayes estimator — is still a scientific decision for the owner.
+
+**Two skipped tests closed. A skip is a hole, not a pass.**
+
+- **T77** verified the mitigating claim only if `county_base` held a midwife
+  count; it does not, so the test skipped and the claim that justified
+  tolerating any filter went unverified. Repointed at
+  `county_midwifery_supply.csv`: the 9 excluded counties hold **0 of 11,762
+  midwives (0.00%)** — stronger than the 1.7% quoted for the rejected floor.
+- **T46** (cycle 5) claimed "one midwife, one location" but read
+  `geocode_final_results.csv`, which is ADDRESS-keyed and has no
+  `certification_number`, so it could only ever skip. Repointed at the
+  person-keyed `midwives_geography_FROZEN.csv`: **0 certificants carry two
+  different coordinate pairs.** The contract is now actually tested.
+
+**Full suite.** 13/13 pass, **0 skips**.
+
+**Carried forward.**
+
+- **DECISION NEEDED:** GFR reliability treatment (MOE-aware or smoothed) — the
+  validity bound does not answer it.
+- **DECISION NEEDED:** ratify the `women_15_44` partial-sum reading (cycle 7).
+- **DECISION NEEDED:** Table 1 panel-window censoring on ">=15 years" (cycle 1).
+- **DECISION NEEDED:** whether a `ct_partial` region should be reported (cycle 4).
+- **DECISION NEEDED:** minimum cohort coverage for a Healthgrades field (cycle 6).
+- **ACTION:** rebuild Table 1 when the crawl finishes.
+- **DEBT:** 14 bare `.keep_all` sites, ratcheted by T44 so the count cannot grow.
+- **HYGIENE:** duplicate test IDs across cycle 6 / cycle 7 files.
+
+**Estimand changed:** yes — 9 impossible counties leave the ranking, and cycle
+7's rural-biased floor is withdrawn. The withdrawal restores 1,574 counties,
+1,154 of them remote.
