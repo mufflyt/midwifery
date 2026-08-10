@@ -384,7 +384,11 @@ run_profiles <- function() {
                            function(i) county_sentences(as.list(prof[i, ]), n_counties),
                            character(1))
 
-  write_csv(prof, file.path(OUT, "county_birth_profiles.csv"), na = "")
+  # CYCLE 21. This artifact is one join away from county_base.csv, so it is
+  # exactly the file that silently kept old fertility rates in cycles 16-17.
+  source(file.path("R", "lib", "artifact_provenance.R"))
+  write_with_provenance(prof, file.path(OUT, "county_birth_profiles.csv"),
+                        inputs = BASE)
   write_csv(select(prof, GEOID, county_label, state, n_midwives, births_past_12mo, sentences),
             file.path(OUT, "county_sentences.csv"), na = "")
 

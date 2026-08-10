@@ -425,7 +425,16 @@ build_county_base <- function(out_csv = OUT_CSV) {
     dplyr::arrange(GEOID)
 
   dir.create(dirname(out_csv), showWarnings = FALSE, recursive = TRUE)
-  readr::write_csv(base, out_csv)
+  # CYCLE 21. county_base.csv is the root of the artifact graph -- cycles 16 and
+  # 17 rebuilt it and left seven downstream files describing the old numbers,
+  # which is what prompted the provenance mechanism in cycle 18. Emitting the
+  # sidecar HERE is what makes that detectable by content instead of by clock.
+  source(file.path("R", "lib", "artifact_provenance.R"))
+  write_with_provenance(base, out_csv, inputs = c(
+    file.path(DATA_DIR, "rucc_2023.xlsx"),
+    file.path(DATA_DIR, "nchs_urcodes_2013.xlsx"),
+    file.path(DATA_DIR, "svi_2022_county.csv"),
+    file.path(DATA_DIR, "chr_2025_analytic.csv")))
 
   cli::cli_h2("county_base")
   cli::cli_alert_success("{nrow(base)} counties x {ncol(base)} columns -> {out_csv}")

@@ -1,0 +1,22 @@
+{
+  "artifact": "county_base.csv",
+  "written_utc": "2026-08-10 11:18:13 UTC",
+  "inputs": [
+    {
+      "path": "data/rucc_2023.xlsx",
+      "sha256": "aeaae451663c7ea70cd15ef26fdc991bebcaf3a39d658ab2133d321530777df5"
+    },
+    {
+      "path": "data/nchs_urcodes_2013.xlsx",
+      "sha256": "8713c90703a97a78b7857e04a7359574df4b0e028716ae4ab0f2c4d06ec36e26"
+    },
+    {
+      "path": "data/svi_2022_county.csv",
+      "sha256": "bc47d244153e359d5c09f621a4bf344a1e593159c16fbd3c28a15461b70a6c0f"
+    },
+    {
+      "path": "data/chr_2025_analytic.csv",
+      "sha256": "fe94ca504dd8688d55429b908540241bc420466ebc5556cbe27e84adf7aefbcf"
+    }
+  ]
+}

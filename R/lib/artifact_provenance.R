@@ -31,6 +31,24 @@ source(file.path("R", "lib", "provenance.R"))
 #' @param inputs [character]: paths this artifact was computed from.
 #' @return `path`, invisibly.
 #' @family provenance
+#' Make a path repo-relative
+#'
+#' CYCLE 21. The first version recorded whatever path the caller passed, which
+#' for `R/01` meant an ABSOLUTE one:
+#'   "/Users/tylermuffly/midwifery/data/rucc_2023.xlsx"
+#' On any other machine -- a clone, a collaborator, CI -- that file does not
+#' exist, `check_provenance()` reports `current = NA`, and every artifact is
+#' declared stale. That is the precise opposite of the property cycle 18 claimed
+#' for this mechanism, which was that it survives copying and cloning where
+#' mtime does not. Paths are therefore stored relative to the repo root.
+#' @keywords internal
+#' @noRd
+.repo_relative <- function(p) {
+  root <- normalizePath(".", winslash = "/", mustWork = FALSE)
+  ab <- normalizePath(p, winslash = "/", mustWork = FALSE)
+  ifelse(startsWith(ab, paste0(root, "/")), substring(ab, nchar(root) + 2L), p)
+}
+
 write_with_provenance <- function(x, path, inputs = character(0)) {
   readr::write_csv(x, path, na = "")
   inputs <- inputs[file.exists(inputs)]
@@ -39,7 +57,8 @@ write_with_provenance <- function(x, path, inputs = character(0)) {
     list(artifact = basename(path),
          written_utc = format(Sys.time(), tz = "UTC", usetz = TRUE),
          inputs = if (length(inputs))
-           lapply(inputs, function(p) list(path = p, sha256 = sha256_of(p)))
+           lapply(inputs, function(p) list(path = .repo_relative(p),
+                                           sha256 = sha256_of(p)))
          else list()),
     side, auto_unbox = TRUE, pretty = TRUE)
   invisible(path)

@@ -310,7 +310,13 @@ run_districts <- function() {
   d$sentences <- vapply(seq_len(n_d), function(i) district_sentences(as.list(d[i, ]), n_d),
                         character(1))
 
-  write_csv(select(d, -any_of("geometry")), file.path(OUT, "district_profiles.csv"), na = "")
+  # CYCLE 21. Provenance on the district artifact too: its ACS pull and the
+  # congressional roster are both cached files that can be refreshed underneath
+  # it without any visible change to this table.
+  source(file.path("R", "lib", "artifact_provenance.R"))
+  write_with_provenance(select(d, -any_of("geometry")),
+                        file.path(OUT, "district_profiles.csv"),
+                        inputs = file.path("data", "congress", "legislators_current.csv"))
   write_csv(select(d, GEOID, district_display, rep_name, party, n_midwives,
                    births_12mo, sentences, rep_badge),
             file.path(OUT, "district_sentences.csv"), na = "")

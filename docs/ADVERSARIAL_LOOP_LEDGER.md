@@ -2803,3 +2803,78 @@ list, which now fails with both sides printed.
   coordination point, and it is written at the END of a cycle.
 
 **Estimand changed:** no. The disclosure changed; no count moved.
+
+---
+
+## Cycle 21 — 2026-08-10 — 3 BVA / 3 semantic / 4 adversarial
+
+**Target.** Close the ACTION cycle 18 opened: `write_with_provenance()` existed
+and **nothing called it**. A provenance mechanism no writer uses is
+documentation.
+
+**Tests added** — `tests/test_cycle21_provenance_wiring.R` (T211–T220, 14
+assertions)
+
+### Wired, and why not all 43
+
+There are 43 `write_csv` sites across 14 scripts. Converting them wholesale is
+the same risky mechanical edit as the `.keep_all` sites (c5) and the bare joins
+(c10), justified by nothing that has actually gone wrong. What *has* gone wrong
+is precise, so the three artifacts on that path are wired:
+
+| artifact | why |
+|---|---|
+| `data/county_base.csv` | root of the graph; went stale twice |
+| `county_birth_profiles.csv` | one join away from it |
+| `district_profiles.csv` | cached ACS + roster underneath it |
+
+T217 ratchets coverage so it can only grow.
+
+### Two defects, both mine, both the class this loop hunts
+
+**1. The sidecar recorded ABSOLUTE paths.**
+
+```
+"path": "/Users/tylermuffly/midwifery/data/rucc_2023.xlsx"
+```
+
+On any clone, collaborator machine or CI runner that file does not exist,
+`check_provenance()` returns `current = NA`, and **every artifact is declared
+stale**. That is the exact opposite of the property cycle 18 claimed for content
+hashing over mtime — that it *survives* copying and cloning. Paths are now
+repo-relative; T220a asserts it.
+
+**2. A test with a side effect on shared state — test-order dependence.**
+
+T215 advanced the real `county_base.csv` mtime by two hours **and never put it
+back**. Every downstream artifact then looked stale by clock, so cycles 18 and
+19 failed — *but only when this file ran first*. The suite gave different
+answers on consecutive runs.
+
+Introduced by the very test arguing that clocks are the wrong thing to trust.
+Both T215 and T218 now restore mtime as well as bytes. **Verified by running the
+full suite twice and getting identical results** (26 pass, 0 fail, both passes) —
+which is the check the cycle-24 audit is supposed to perform, arriving early
+because I caused the problem.
+
+### A rebuild that re-created the staleness it was fixing
+
+Rebuilding `county_base.csv` to emit its sidecar immediately re-staled the seven
+downstream artifacts, and cycles 18/19 caught it within the same run.
+Regenerated R/02 and R/05; R/03 still aborts on the 1,163 address disagreements,
+so its two artifacts remain the tracked debt.
+
+### Full suite
+
+**26/26 files pass, twice in a row, order-independent.**
+
+### Unresolved / carried forward
+
+- **DATA QUESTION:** the 1,163 address disagreements blocking R/03 (c19).
+- 40 write sites without provenance, ratcheted at 3 covered (T217).
+- **DECISION NEEDED:** GFR reliability method (c8); `women_15_44` partial vs NA
+  (c7); Table 1 censoring (c1); `ct_partial` reporting (c4).
+- **UPSTREAM (isochrones):** `extract_first_initial()` accent bug (c12).
+- 18 undeclared joins (c10); 4 duplicate helpers (c9); 14 `.keep_all` (c5).
+
+**No scientific estimand was changed in this cycle.**
