@@ -1623,3 +1623,102 @@ comparison of row-wise versus person-wise counting.)
 - **HYGIENE:** duplicate test IDs across cycles 6/7.
 
 **Estimand changed:** no.
+
+---
+
+## Cycle 12 — 2026-08-10 — 3 BVA / 3 semantic / 4 adversarial
+
+**Targets.** The name-normalisation shim, and the territory question cycle 11
+left open.
+
+**Tests added** — `tests/test_cycle12_names_territories.R` (T111–T120, 17
+assertions, of which **5 are tracked upstream failures**)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T111 | BVA | `normalize_string()` edges; accents transliterated |
+| T112 | BVA | `extract_first_initial()` on unaccented input |
+| T113 | BVA | internal whitespace collapsed |
+| T114 | semantic | an accented first letter yields its own initial |
+| T115 | semantic | the two functions agree on the first letter |
+| T116 | semantic | the county spine covers territories |
+| T117 | adversarial | the bias is systematic, not incidental |
+| T118 | adversarial | a fully accented name |
+| T119 | adversarial | case and padding do not create two people |
+| T120 | adversarial | **containment** — midwifery does not depend on it |
+
+### The defect: a linkage key that fails only on non-Anglo names
+
+```r
+letters_only <- gsub("[^A-Z]", "", toupper(trimws(x)))
+substr(letters_only, 1, 1)
+```
+
+`extract_first_initial()` **deletes** an accented first letter instead of
+transliterating it, so the initial becomes the *second* letter:
+
+| name | returned | correct |
+|---|---|---|
+| Élodie | **L** | E |
+| Ángel | **N** | A |
+| Ólafur | **L** | O |
+| Álvarez | **L** | A |
+
+**6 of 6** accented test names are mis-blocked — a 100% failure rate *within the
+affected group*, and 0% outside it.
+
+`normalize_string()` **in the same file** transliterates correctly
+(`"Élodie" → "ELODIE"`). The two functions disagree about what a name is, so
+blocking and comparison run on different alphabets.
+
+First-initial blocking is a standard record-linkage key: a mis-blocked name can
+never match. The failure is not random — it falls on Hispanic, Nordic, Slavic
+and other non-Anglo names. **In a workforce study about who provides care and
+where, a linkage failure concentrated by ethnicity is a finding about the study,
+not a typo.**
+
+Also found: `normalize_string()` does not collapse internal whitespace, so
+`"Mary Ann"` and `"Mary  Ann"` are different keys for one person.
+
+### Not fixed, and not fixable here
+
+`R/string_normalization.R` is a shim; the implementation is in `~/isochrones`,
+which this loop must not modify. The project rule also forbids vendoring a local
+copy — two copies of a name rule is how two pipelines quietly disagree about who
+matched whom.
+
+**Handled as tracked upstream failures, not skips.** Each test runs, prints its
+actual wrong answer, and the count is **ratcheted at exactly 5**: a sixth
+upstream failure fails the file, and so does an unexpected PASS, which would
+mean upstream is fixed and the bookkeeping should be deleted.
+
+**T120 is the containment**: no midwifery script calls `extract_first_initial()`
+today, so there is **no live impact in this repo**. If one ever does, that test
+fails and the dependency becomes a decision rather than an accident.
+
+**ACTION FOR THE ISOCHRONES OWNER:** `~/isochrones/R/string_normalization.R` —
+`extract_first_initial()` should delegate to `normalize_string()` rather than
+re-implement a stricter, ASCII-only filter.
+
+### Cycle 11's question, answered
+
+The county spine carries **91 territory rows** (AS, GU, MP, PR, VI) and includes
+Alaska and Hawaii, and both `tigris` layers cover all five territories. So the
+3 territory midwives and 36 territory hospitals are **not** silently dropped.
+11 of 89 territory counties lack ACS `women_15_44` / `births_past_12mo`, which
+is honest missingness rather than exclusion.
+
+### Full suite
+
+**17/17 files pass**, with 5 assertions tracked as upstream.
+
+### Unresolved / carried forward
+
+- **UPSTREAM (isochrones):** `extract_first_initial()` accent bug;
+  `normalize_string()` whitespace. Ratcheted at 5.
+- 18 undeclared joins (c10); 4 duplicate helpers (c9); 14 `.keep_all` (c5).
+- **DECISION NEEDED:** GFR reliability method (c8); GFR universe 15-50 vs 15-44
+  (c7); `women_15_44` partial vs NA (c7); Table 1 censoring (c1); `ct_partial`
+  reporting (c4).
+
+**No scientific estimand was changed in this cycle.**
