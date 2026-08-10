@@ -1,0 +1,14 @@
+{
+  "artifact": "cross_state_partition.csv",
+  "written_utc": "2026-08-10 11:41:18 UTC",
+  "inputs": [
+    {
+      "path": "midwives_geography.csv",
+      "sha256": "47bebb0a47f3876f4ad88ab84350f1606714a7a2a864340c40208fa8265f9ab1"
+    },
+    {
+      "path": "midwives_with_nppes.csv",
+      "sha256": "93dc2e8bc2a2a066f255b84a351050a3594a253e4258575e0fde3e344ec5ff08"
+    }
+  ]
+}
