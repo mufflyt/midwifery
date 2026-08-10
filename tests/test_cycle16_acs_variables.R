@@ -142,7 +142,13 @@ cat("\n-- SEMANTIC --\n")
 # denominator's age range is part of the rate's definition and must match the
 # label the sentence prints.
 {
-  chk(grepl("general_fertility_rate = 1000 \\* births_past_12mo / women_15_44", COC),
+  # CYCLE 17 UPDATE. This pinned the whole expression, including the numerator,
+  # which cycle 17 then correctly changed from births_past_12mo (universe women
+  # 15-50) to births_15_44. The CONTRACT here is about the denominator -- that
+  # the rate divides by the 15-44 column this cycle fixed -- so it now asserts
+  # that and leaves the numerator to cycle 17's T174. A test should pin the
+  # claim it is about, not the line it happened to read.
+  chk(grepl("general_fertility_rate = 1000 \\* [a-z_0-9]+ / women_15_44", COC),
       "T167a the GFR denominator is the women_15_44 column")
   prof <- code(readLines(file.path(root, "R", "10-county-birth-profiles.R"), warn = FALSE))
   chk(grepl("per 1,000 women aged 15-44", prof),

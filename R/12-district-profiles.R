@@ -157,7 +157,22 @@ run_districts <- function() {
       pct_births_unmarried = 100 * births_unmarried / births_12mo,
       pct_poverty = 100 * B17001_002E / B17001_001E,
       pct_no_internet = 100 * B28002_013E / B28002_001E,
-      gfr = 1000 * births_12mo / women_15_44,
+      # CYCLE 17. births_12mo is B13016_002E, whose universe is women 15-50.
+      # Dividing it by women_15_44 counted births to women 45-50 in the
+      # numerator while excluding those women from the denominator, and the
+      # published sentence says "per 1,000 women aged 15-44". Measured across
+      # 3,198 counties: births to women 45-50 are 2.92% of the numerator
+      # nationally, but the per-county share runs from a median of 0.21% to a
+      # maximum of 100% -- so, like the cycle-16 band error, it is differential
+      # and moves counties relative to one another.
+      #
+      # B13016_009E is that age group, so subtracting it makes numerator and
+      # denominator describe the SAME population. This is not a choice between
+      # defensible estimands: a general fertility rate is conventionally 15-44,
+      # and the label already said 15-44. Dividing by women_15_50 and
+      # relabelling remains available if a 15-50 rate is wanted instead.
+      births_15_44 = births_12mo - B13016_009E,
+      gfr = 1000 * births_15_44 / women_15_44,
       births_teen = B13016_003E,
       pct_births_teen = 100 * B13016_003E / births_12mo,
       births_35plus = B13016_007E + B13016_008E + B13016_009E,

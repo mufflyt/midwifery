@@ -2249,3 +2249,90 @@ column path fails cleanly.
 **Estimand changed: YES, and materially.** Every general fertility rate rises
 ~15%, and county rankings change. This is a correction, not a choice — the old
 denominator counted 45–49-year-olds as women aged 15–44.
+
+---
+
+## Cycle 17 — 2026-08-10 — 3 BVA / 4 semantic / 3 adversarial
+
+**Target.** Sweep the class cycle 16 opened: verify **every** ACS variable in
+the repo against the official 2023 labels, and pin them.
+
+**Tests added** — `tests/test_cycle17_acs_labels.R` (T171–T180, 16 assertions)
+
+### The sweep came back clean
+
+**34 of 34** ACS variables denote what the code calls them — including the
+C-tables, which my first pattern missed and which is exactly where this project
+was bitten before (`C27007_004` is male under 19). Reported as a clean result
+rather than dressed up.
+
+The value delivered is the **contract**. Cycle 16's defect existed because
+nothing asserted what a variable number means, so a plausible comment stood in
+for a check and was wrong on both ends. **T173 is that check**, for every
+age-bearing variable.
+
+### The defect it did find: a universe mismatch, in both scripts
+
+```
+births_12mo = B13016_002E     universe: women 15 to 50
+denominator = women_15_44     universe: women 15 to 44
+printed as    "per 1,000 women aged 15-44"
+```
+
+Births to women 45-50 were in the numerator while those women were excluded
+from the denominator. This is the decision carried open since cycle 7 — now
+**quantified** rather than restated:
+
+| | value |
+|---|---:|
+| births to women 45-50 | 117,458 of 4,018,403 |
+| national share of numerator | **2.92%** |
+| per-county share, median | 0.21% |
+| per-county share, p95 | 10.24% |
+| per-county share, **max** | **100%** |
+
+**Differential again**, like cycle 16's band error — it moved counties relative
+to one another, not just a level.
+
+**Fixed, and I judged this a correction rather than an estimand choice.**
+`B13016_009E` *is* that age group, so subtracting it makes numerator and
+denominator the same population. A general fertility rate is conventionally
+15-44 and the printed label already said 15-44, so "keep it" was not among the
+defensible options. Dividing by `women_15_50` and relabelling to a 15-50 rate
+remains available and is recorded here as the alternative.
+
+Rebuilt: median county GFR **64.7 → 63.0** (−2.7%); counties over the
+plausibility bound **19 → 16**.
+
+### Cross-cycle contradiction, again
+
+Cycle 16's **T167a pinned the whole GFR expression**, including the numerator
+cycle 17 then correctly changed — so the suite briefly held two incompatible
+expectations, the same failure caught in cycle 8. Updated to assert the claim it
+is *about* (the denominator) and leave the numerator to T174. **A test should
+pin the claim it is about, not the line it happened to read.** That is now the
+second instance; worth watching at the final audit.
+
+### One wrong test of my own
+
+T173 first failed on `B01001_026E` and `B13016_001E`. Both are universe totals I
+had verified but omitted from the pinned table — **my table was incomplete, the
+code was not.** Added, with `B13016_001E` noted as women 15-50, which is what
+the county script accurately names `women_15_50`.
+
+### Full suite
+
+**22/22 files pass.**
+
+### Unresolved / carried forward
+
+- **ACTION:** downstream artifacts built from `county_base.csv` need
+  regenerating again (profiles, Table 1, figures) — the rate changed twice.
+- **DECISION NEEDED:** GFR reliability method for imprecise-but-possible rates
+  (c8); `women_15_44` partial vs NA (c7); Table 1 censoring (c1); `ct_partial`
+  reporting (c4). **The GFR universe decision (c7) is now CLOSED.**
+- **UPSTREAM (isochrones):** `extract_first_initial()` accent bug (c12).
+- 18 undeclared joins (c10); 4 duplicate helpers (c9); 14 `.keep_all` (c5).
+
+**Estimand changed:** yes — the fertility numerator is now births to women
+15-44, matching the denominator and the printed label.

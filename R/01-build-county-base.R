@@ -212,6 +212,7 @@ fetch_acs_county <- function() {
     poverty_den      = "B17001_001",
     women_15_50      = "B13016_001",
     births_past_12mo = "B13016_002",
+    births_45_50     = "B13016_009",   # CYCLE 17: the part of the numerator outside 15-44
     rlang::set_names(sprintf("B01001_%03d", 30:38), women_labels)
   )
 
@@ -254,7 +255,15 @@ fetch_acs_county <- function() {
       },
       women_15_44_bands_missing = rowSums(is.na(dplyr::across(dplyr::all_of(paste0("w", 30:38))))),
       pct_poverty = 100 * poverty_num / poverty_den,
-      general_fertility_rate = 1000 * births_past_12mo / women_15_44
+      # CYCLE 17. births_past_12mo is B13016_002, universe women 15-50, while the
+      # denominator is women 15-44 and the published sentence says "per 1,000
+      # women aged 15-44". Births to women 45-50 (B13016_009) were in the
+      # numerator but their women were not in the denominator. Nationally that
+      # is 2.92% of births; per county it runs from 0.21% (median) to 100%, so
+      # it is differential like the cycle-16 band error, not a constant offset.
+      # Subtracting _009 makes both sides the same population.
+      births_15_44 = pmax(0, births_past_12mo - births_45_50),
+      general_fertility_rate = 1000 * births_15_44 / women_15_44
     ) |>
     dplyr::select(-dplyr::all_of(paste0("w", 30:38)), -poverty_num, -poverty_den) |>
     safe_left_join(subject, by = "GEOID", label_right = "acs_subject",
