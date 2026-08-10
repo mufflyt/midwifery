@@ -36,9 +36,13 @@
 suppressPackageStartupMessages({
   library(httr); library(rvest); library(jsonlite)
   library(dplyr); library(stringr); library(readr); library(tibble)
+  library(humaniformat)
 })
 
-INPUT       <- "midwives_unmatched.csv"
+# The FULL AMCB roster (22,309), not a subset. The frozen linkage carries
+# certification_number, last_name and first_name for every certificant
+# regardless of linkage tier, which is what a name search needs.
+INPUT       <- Sys.getenv("HG_INPUT", "artifacts/amcb_npi_linkage_FROZEN.csv")
 OUTPUT      <- "healthgrades_midwives.csv"
 CHECKPOINT  <- "healthgrades_checkpoint.rds"
 LOG_FILE    <- "healthgrades_scrape_log.txt"
@@ -150,21 +154,189 @@ search_midwife <- function(first, last, state = NA_character_) {
   unique(str_extract_all(html, "/providers/[a-z0-9-]+")[[1]])
 }
 
+#' Split a name into lowercase alphabetic tokens
+#'
+#' Splitting on any non-letter means "Barlow-Reed" and "Barlow Reed" tokenise
+#' identically, so hyphenation differences between AMCB and Healthgrades do not
+#' cause a miss. Tokens shorter than 2 characters (middle initials) are dropped.
+#'
+#' @param x [character(1)]: a name, or a URL slug.
+#' @return [character] tokens.
+name_tokens <- function(x) {
+  if (is.na(x)) return(character(0))
+  # Apostrophes are DELETED, not treated as separators: Healthgrades stores
+  # "Michele Oconnor" where AMCB has "Michele O'Connor". Splitting on the
+  # apostrophe yields the token "connor", which then fails to equal "oconnor"
+  # and rejects a correct match. Deleting makes both sides "oconnor".
+  x <- str_replace_all(x, "[’'`]", "")
+  t <- tolower(str_split(str_squish(x), "[^A-Za-z]+")[[1]])
+  t[nchar(t) >= 2]
+}
+
+#' Parse a full name into normalised given/surname parts
+#'
+#' humaniformat::parse_names() rather than hand-rolled splitting, because the
+#' hand-rolled version cannot handle the particles that actually occur on this
+#' roster: "Sybelle B.E. van Erven", "Carolyn Gisela van Duuren", "Emily duBois
+#' Hollander". Naive last-token logic returns "Erven"/"Duuren"/"Hollander" with
+#' the particle stranded in the middle name; parse_names() keeps "van Erven"
+#' and "van Duuren" intact.
+#'
+#' Applied to BOTH sides. That symmetry is the point: whatever convention the
+#' parser imposes on a compound name, it imposes identically on the roster
+#' string and the Healthgrades string, so the two remain comparable even where
+#' the parse is debatable.
+#'
+#' @param full [character(1)]: a whole name, e.g. "Christine Barlow Reed".
+#' @return [list] `first` and `last`, lowercased with apostrophes stripped.
+parse_person <- function(full) {
+  if (is.na(full) || !nzchar(str_squish(full))) {
+    return(list(first = NA_character_, last = NA_character_))
+  }
+  p <- humaniformat::parse_names(str_squish(full))
+  norm1 <- function(s) {
+    if (is.na(s)) return(NA_character_)
+    tolower(str_squish(str_replace_all(s, "[’'`]", "")))
+  }
+  list(first = norm1(p$first_name), middle = norm1(p$middle_name),
+       last = norm1(p$last_name),
+       # Everything after the leading token. Unhyphenated compound surnames --
+       # "Sherece Dyer Hill", "Emily Young Johnson", "Wendy McQueen Miya" --
+       # are split by parse_names() into middle + last, so the roster's single
+       # "Dyer" can never equal the parsed last name "Hill". Comparing the
+       # whole trailing pool instead keeps those together.
+       rest = name_tokens(str_squish(str_remove(full, "^\\S+\\s*"))))
+}
+
+#' Candidate given-name forms for one side of a comparison
+#'
+#' AMCB fuses middle names into first_name ("Jo Ann", "Beth Anne"), while
+#' Healthgrades stores the fused form as one word ("Joann"). Generating both
+#' the split and the concatenated form lets "Jo Ann" reach "Joann" without
+#' loosening the prefix rule to two characters, which would start matching
+#' "Al" to "Alice".
+#'
+#' @param p [list]: output of parse_person().
+#' @return [character] distinct candidate forms.
+given_forms <- function(p) {
+  parts <- c(p$first, p$middle)
+  parts <- parts[!is.na(parts) & nzchar(parts)]
+  if (length(parts) == 0) return(character(0))
+  toks <- name_tokens(paste(parts, collapse = " "))
+  unique(c(p$first, toks, paste(toks, collapse = "")))
+}
+
+#' Does the given name match, allowing documented shortenings?
+#'
+#' Surnames must match exactly because a wrong surname means a different
+#' person. Given names cannot be that strict: AMCB and Healthgrades disagree
+#' constantly on the same individual -- "Jo Ann"/"Joann", "Carol"/"Caroline",
+#' "Sara"/"Sarah", "Jan"/"Janet". A prefix rule accepts those while still
+#' rejecting the substring collisions that motivated this change --
+#' "Linda"/"Melinda" and "Elissa"/"Melissa" are NOT prefixes of one another, so
+#' they stay rejected.
+#'
+#' Nicknames that are not prefixes ("Beth" for Elizabeth) remain misses. That is
+#' accepted: a miss costs one unmatched midwife, a false match corrupts a row.
+#'
+#' @param a,b [character(1)]: two normalised given names.
+#' @return [logical(1)]
+given_name_match <- function(a, b) {
+  if (is.na(a) || is.na(b) || !nzchar(a) || !nzchar(b)) return(FALSE)
+  if (identical(a, b)) return(TRUE)
+  n <- min(nchar(a), nchar(b))
+  n >= 3 && substr(a, 1, n) == substr(b, 1, n)
+}
+
+#' Compare a Healthgrades page title against a roster name
+#'
+#' @param hg_name [character(1)]: page title, e.g. "Joann Haas, CNM - Midwife
+#'   in Fountain Hill, PA". Everything from the first comma is credential and
+#'   location boilerplate and is discarded before parsing.
+#' @param first,last [character(1)]: roster name fields.
+#' @return [logical(1)] TRUE when surname matches exactly and given name
+#'   matches under given_name_match().
+name_matches_roster <- function(hg_name, first, last) {
+  if (is.na(hg_name)) return(FALSE)
+  hg <- parse_person(str_squish(str_remove(hg_name, ",.*$")))
+  ros <- parse_person(paste(first %||% "", last %||% ""))
+  if (is.na(hg$last) || is.na(ros$last)) return(FALSE)
+
+  # Surname comparison is token SUBSET, not string equality. Married and
+  # hyphenated surnames are the single largest source of legitimate
+  # disagreement between the two sources -- AMCB "Nelson" vs Healthgrades
+  # "Nelson-Becker", "Kioko" vs "Kioko-Kamps", "Perry" vs "Perry-Hidalgo" (56
+  # such pairs in the current output). Requiring equality rejects all of them.
+  #
+  # Subset still blocks the collisions this whole change is about, because
+  # those differ WITHIN a token rather than by adding one: "anderson" is not a
+  # member of {"sanderson"}, nor "williams" of {"williamson"}, nor "martin" of
+  # {"martinez"}.
+  # Two views of the surname, either of which may match. Neither alone is
+  # enough:
+  #   * parsed last name handles a roster middle name against a hyphenated
+  #     surname -- "Karen Margaret Murphy" vs "Karen Murphy-Fitch", where the
+  #     trailing pools {margaret,murphy} and {murphy,fitch} do not nest.
+  #   * trailing pool handles an unhyphenated compound -- "Sherece Dyer" vs
+  #     "Sherece Dyer Hill", where parse_names() calls the last name "Hill".
+  subset_either <- function(a, b) {
+    if (length(a) == 0 || length(b) == 0) return(FALSE)
+    all(b %in% a) || all(a %in% b)
+  }
+  surname_ok <- subset_either(name_tokens(hg$last), name_tokens(ros$last)) ||
+    subset_either(hg$rest, ros$rest)
+  if (!surname_ok) return(FALSE)
+
+  fa <- given_forms(hg)
+  fb <- given_forms(ros)
+  any(outer(fa, fb, Vectorize(given_name_match)))
+}
+
+#' Does every token of `part` appear as a WHOLE token of `full`?
+#'
+#' The substring test this replaces -- str_detect(full, fixed(part)) -- accepted
+#' any name that merely contained the target as a substring. Observed live:
+#' AMCB's "Anderson" matched Healthgrades' "Laura Sanderson", because
+#' "sanderson" contains "anderson". The same collision hits every -son/-sen
+#' surname, plus Allen/Allende and Arnold/Arnoldson, and it silently attributes
+#' one midwife's address, NPI and demographics to a different person.
+#'
+#' Whole-token equality is deliberately stricter than the old behaviour: it also
+#' stops rejecting-by-luck cases like "Beth" matching inside "Elizabeth". Those
+#' become misses rather than wrong answers, which is the correct trade for a
+#' matching source feeding a provider panel.
+#'
+#' @param full [character(1)]: the candidate name (or slug).
+#' @param part [character(1)]: the roster name to require.
+#' @return [logical(1)]
+tokens_all_present <- function(full, part) {
+  need <- name_tokens(part)
+  if (length(need) == 0) return(FALSE)
+  all(need %in% name_tokens(full))
+}
+
 #' Choose the profile whose slug best matches the name
 #'
 #' Slug-based, so it is a weak check -- verify_profile() re-checks the name and
-#' credential from the page itself before anything is written out.
+#' credential from the page itself before anything is written out. Matching is
+#' on whole slug tokens; see tokens_all_present() for why substrings are unsafe.
 pick_best_url <- function(urls, first, last) {
   if (length(urls) == 0) return(NA_character_)
-  lc <- tolower(str_replace_all(last, "[^A-Za-z]", ""))
-  fc <- tolower(str_replace_all(first, "[^A-Za-z]", ""))
-  if (nchar(lc) == 0) return(NA_character_)
-  if (nchar(fc) >= 2) {
-    both <- urls[str_detect(tolower(urls), fixed(lc)) &
-                   str_detect(tolower(urls), fixed(fc))]
+
+  # Slugs cannot go through humaniformat -- "/providers/laura-sanderson-ylb2q"
+  # has no name structure and carries a trailing profile id. Compare whole slug
+  # tokens instead, which is enough to stop the Anderson/Sanderson collision;
+  # verify_profile() then does the real humaniformat check on the page title.
+  ros <- parse_person(paste(first %||% "", last %||% ""))
+  if (is.na(ros$last)) return(NA_character_)
+
+  last_hit <- vapply(urls, tokens_all_present, logical(1), part = ros$last)
+  if (!is.na(ros$first) && nchar(ros$first) >= 2) {
+    first_hit <- vapply(urls, tokens_all_present, logical(1), part = ros$first)
+    both <- urls[last_hit & first_hit]
     if (length(both) > 0) return(both[1])
   }
-  only_last <- urls[str_detect(tolower(urls), fixed(lc))]
+  only_last <- urls[last_hit]
   if (length(only_last) > 0) return(only_last[1]) else NA_character_
 }
 
@@ -215,6 +387,179 @@ extract_locations <- function(html) {
   distinct(bind_rows(rows))
 }
 
+#' Unescape the Next.js flight payload embedded in the page
+#'
+#' Healthgrades is a Next.js app: alongside the JSON-LD it ships the whole
+#' provider model inside `self.__next_f.push([1,"..."])` string chunks. Because
+#' those chunks are JS string literals, every quote arrives escaped -- and at
+#' two different depths (\\" and \\\\") depending on nesting. Collapsing both
+#' turns the payload into ordinary JSON text that plain regexes can read.
+#'
+#' Not parsed as JSON: the payload is a concatenation of partial React flight
+#' chunks, not one well-formed document, so fromJSON() fails on it.
+#'
+#' @param html [character(1)]: raw profile HTML.
+#' @return [character(1)] the page text with flight-payload escaping removed.
+unescape_flight <- function(html) {
+  if (is.null(html) || is.na(html) || nchar(html) == 0) return(NA_character_)
+  str_replace_all(str_replace_all(html, fixed('\\\\"'), '"'), fixed('\\"'), '"')
+}
+
+#' Slice out the bracket-balanced array value of a key in the flight payload
+#'
+#' `insuranceAccepted` nests a `plans` array inside each payor object, so the
+#' obvious '\\[([^]]*)\\]' stops at the first inner bracket and truncates after
+#' one payor. Count depth instead.
+#'
+#' @param x [character(1)]: unescaped flight payload.
+#' @param key [character(1)]: the JSON key whose array value is wanted.
+#' @return [character(1)] the array text including its brackets, or NA.
+extract_json_array <- function(x, key) {
+  start <- str_locate(x, fixed(paste0('"', key, '":[')))
+  if (is.na(start[1, 1])) return(NA_character_)
+  open_at <- start[1, 2]                     # index of the '['
+  chars <- strsplit(substr(x, open_at, min(nchar(x), open_at + 200000L)), "")[[1]]
+  depth <- 0L
+  for (i in seq_along(chars)) {
+    if (chars[i] == "[") depth <- depth + 1L
+    else if (chars[i] == "]") {
+      depth <- depth - 1L
+      if (depth == 0L) return(paste(chars[1:i], collapse = ""))
+    }
+  }
+  NA_character_
+}
+
+#' Summarise the payors and plans a provider is listed as accepting
+#'
+#' Medicaid shows up inconsistently -- sometimes as the payor name ("Georgia
+#' Medicaid"), sometimes only in a plan name under a commercial payor ("Anthem
+#' Healthy Blue Medicaid"), sometimes in planType. Match across all three.
+#'
+#' IMPORTANT for interpretation: this list is sponsor-supplied and demonstrably
+#' incomplete (a hospital-employed CNM showing exactly one EPO plan is not a
+#' provider who takes one plan). Absence of Medicaid is NOT evidence of
+#' non-acceptance; treat hg_medicaid == TRUE as a lower bound and never read
+#' NA/FALSE as a refusal.
+#'
+#' @param x [character(1)]: unescaped flight payload.
+#' @return [tibble] payor count, plan count, Medicaid/Medicare flags, payor list.
+parse_insurance <- function(x) {
+  blk <- extract_json_array(x, "insuranceAccepted")
+  if (is.na(blk) || identical(str_squish(blk), "[]")) {
+    return(tibble(hg_payor_n = 0L, hg_plan_n = 0L,
+                  hg_medicaid_named = NA, hg_medicare = NA,
+                  hg_payors = NA_character_, hg_plans = NA_character_))
+  }
+  # Scoped to the block, so the stray '"payor":"term"' elsewhere on the page
+  # cannot inflate the count.
+  payors <- str_match_all(blk, '"payor":"([^"]*)"')[[1]][, 2]
+  plans  <- str_match_all(blk, '"name":"([^"]*)"')[[1]][, 2]
+  types  <- str_match_all(blk, '"planType":"([^"]*)"')[[1]][, 2]
+  hay <- c(payors, plans, types)
+
+  tibble(
+    hg_payor_n  = length(payors),
+    hg_plan_n   = length(plans),
+    # Hyphen REQUIRED in medi-cal: an optional hyphen makes the pattern match
+    # the word "Medical", which flagged the payor "Medical Mutual" (an Ohio
+    # commercial insurer) as Medicaid.
+    hg_medicaid_named = any(str_detect(hay, regex("medicaid|\\bmedi-cal\\b|\\bchip\\b",
+                                                  ignore_case = TRUE))),
+    hg_medicare = any(str_detect(hay, regex("medicare", ignore_case = TRUE))),
+    hg_payors   = if (length(payors) == 0) NA_character_
+                  else paste(unique(payors), collapse = "; "),
+    # Kept verbatim so a payor -> Medicaid crosswalk can be applied later
+    # without re-crawling. Necessary because Healthgrades does not label
+    # Medicaid plans: New Mexico's Medicaid product appears as "HealthyBlue
+    # Advantage" and Ohio's as "CareSource", neither containing "Medicaid".
+    # hg_medicaid_named is therefore a floor, not a measure.
+    hg_plans    = if (length(plans) == 0) NA_character_
+                  else paste(unique(plans), collapse = "; ")
+  )
+}
+
+#' Extract person-level attributes from the Next.js flight payload
+#'
+#' The JSON-LD block carries only address, specialty and NPI. Everything else
+#' Healthgrades knows about a provider -- gender, age, rating, verification
+#' date -- lives in the flight payload and is invisible to extract_locations().
+#'
+#' Anchoring matters. The payload also embeds a `compareProviders` array of
+#' OTHER midwives, each with its own "gender" key, and those appear BEFORE the
+#' subject's in the document. An unanchored '"gender":"([MF])"' therefore
+#' returns a neighbouring provider's sex, silently and for most of the file.
+#' Both gender patterns below are pinned to a key that only the subject's own
+#' record carries; no unanchored fallback, because a wrong value here is worse
+#' than a missing one.
+#'
+#' Empty-by-design fields (education, boardCertifications, languages,
+#' roundedYearsOfExperience) are still extracted: they are populated for
+#' physicians, and capturing them costs nothing beyond a regex. Expect NA.
+#'
+#' @param html [character(1)]: raw profile HTML.
+#' @return [tibble] one row of attributes; NA where the page is silent.
+parse_next_flight <- function(html) {
+  na_row <- tibble(
+    hg_gender = NA_character_, hg_age = NA_integer_,
+    hg_years_experience = NA_integer_, hg_education_n = NA_integer_,
+    hg_education_year = NA_integer_, hg_education_name = NA_character_,
+    hg_languages = NA_character_, hg_board_certs = NA_character_,
+    hg_memberships = NA_character_, hg_professional_subtype = NA_character_,
+    hg_accepts_new_patients = NA, hg_has_telehealth = NA,
+    hg_has_photo = NA, hg_rating = NA_real_, hg_review_n = NA_integer_,
+    hg_verified_date = NA_character_, hg_provider_code = NA_character_,
+    hg_payor_n = NA_integer_, hg_plan_n = NA_integer_, hg_medicaid_named = NA,
+    hg_medicare = NA, hg_payors = NA_character_, hg_plans = NA_character_)
+
+  x <- unescape_flight(html)
+  if (is.na(x)) return(na_row)
+
+  # First capture group of the first match, or NA.
+  g1 <- function(pat) {
+    m <- str_match(x, pat)
+    if (is.na(m[1, 1])) NA_character_ else m[1, 2]
+  }
+  # NA unless every match agrees -- guards against a key that also occurs in
+  # some other provider's record on the same page.
+  g_unique <- function(pat) {
+    v <- unique(str_match_all(x, pat)[[1]][, 2])
+    if (length(v) == 1) v else NA_character_
+  }
+  as_lgl <- function(s) if (is.na(s)) NA else identical(s, "true")
+  # "[]" is Healthgrades' way of saying "we have no data", not "none".
+  nonempty <- function(s) if (is.na(s) || !nzchar(str_squish(s))) NA_character_ else s
+
+  tibble(
+    # Spelled out, not the raw "F"/"M": a CSV column of bare F/M is read back
+    # by readr's type guesser as LOGICAL, turning every female midwife into
+    # FALSE and every male into NA. Verified round-trip, do not "simplify".
+    hg_gender           = c(F = "Female", M = "Male")[
+      g1('"providerDisplayFullName":"[^"]*","gender":"([MF])"')] %>% unname(),
+    hg_age              = suppressWarnings(as.integer(g_unique('"age":"([0-9]{1,3})"'))),
+    hg_years_experience = suppressWarnings(as.integer(g_unique('"roundedYearsOfExperience":([0-9]+)'))),
+    hg_education_n      = nrow(str_match_all(x, '"completionYear":')[[1]]),
+    hg_education_year   = suppressWarnings(as.integer(g1('"completionYear":([0-9]{4})'))),
+    hg_education_name   = nonempty(g1('"education":\\[\\{[^}]*?"name":"([^"]*)"')),
+    hg_languages        = nonempty(g1('"languages":\\[([^]]*)\\]')),
+    hg_board_certs      = nonempty(g1('"boardCertifications":\\[([^]]*)\\]')),
+    hg_memberships      = nonempty(g1('"memberships":\\[([^]]*)\\]')),
+    hg_professional_subtype = nonempty(g1('"professionalSubType":"([^"]*)"')),
+    hg_accepts_new_patients = as_lgl(g_unique('"acceptsNewPatients":(true|false)')),
+    hg_has_telehealth   = as_lgl(g_unique('"hasTelehealth":(true|false)')),
+    hg_has_photo        = as_lgl(g_unique('"hasDisplayImage":(true|false)')),
+    hg_rating           = suppressWarnings(as.numeric(g_unique('"surveyOverallRatingScore":([0-9.]+)'))),
+    # Anchored to the rating, which is unique to the subject. Bare
+    # "surveyUserCount" occurs ~10x per page -- the FIRST hit sits inside the
+    # `otherProviders` / `compareProviders` arrays, so an unanchored read
+    # returns a neighbouring midwife's review count (observed: 1 instead of 0).
+    hg_review_n         = suppressWarnings(as.integer(
+      g1('"surveyOverallRatingScore":[0-9.]+,"surveyUserCount":([0-9]+)'))),
+    hg_verified_date    = g_unique('"lastVerificationDateIso":"([0-9-]{10})"'),
+    hg_provider_code    = g_unique('"providerCode":"([A-Z0-9]+)"')
+  ) %>% bind_cols(parse_insurance(x))
+}
+
 #' Read the NPI from the JSON-LD `usNPI` field
 #'
 #' Cleaner than scraping embedded JS: schema.org exposes it directly. Still
@@ -260,12 +605,13 @@ verify_profile <- function(html, first, last) {
   hg_first <- str_squish(str_remove(hg_name, ",.*$"))
   norm <- function(x) tolower(str_replace_all(x, "[^A-Za-z]", ""))
 
-  last_ok  <- str_detect(norm(hg_name), fixed(norm(last)))
-  gn <- given_name(first)
-  first_ok <- nchar(norm(gn)) >= 2 && str_detect(norm(hg_first), fixed(norm(gn)))
+  # humaniformat on both sides, surname exact: the old substring test matched
+  # AMCB's "Anderson" against Healthgrades' "Laura Sanderson".
+  # name_matches_roster() covers first and last together.
+  name_ok  <- name_matches_roster(hg_name, first, last)
   cred_ok  <- !is.na(cred) && cred %in% c("CNM", "CM")
 
-  list(ok = isTRUE(last_ok) && isTRUE(first_ok) && isTRUE(cred_ok),
+  list(ok = isTRUE(name_ok) && isTRUE(cred_ok),
        credential = cred, hg_name = hg_name)
 }
 
@@ -317,6 +663,32 @@ main <- function(n_limit = NA_integer_) {
     filter(!is.na(last_name), !is.na(first_name))
 
   done <- if (file.exists(CHECKPOINT)) readRDS(CHECKPOINT) else list()
+
+  # RECOVERY GUARD (added 2026-08-09 after losing 5,963 completed searches).
+  # OUTPUT is rewritten wholesale from `done` at every checkpoint, so a missing
+  # or reset checkpoint does not merely lose progress -- it TRUNCATES the CSV
+  # that held it. That is what happened: the checkpoint went away, the next run
+  # started from zero, and 482 KB of results became 552 bytes.
+  #
+  # If the CSV holds more work than the checkpoint does, rebuild the checkpoint
+  # from the CSV instead of overwriting it. Results are recovered rather than
+  # destroyed, and a stale checkpoint can never cost more than the requests
+  # since the last save.
+  if (file.exists(OUTPUT)) {
+    prior <- suppressWarnings(tryCatch(
+      readr::read_csv(OUTPUT, show_col_types = FALSE, progress = FALSE),
+      error = function(e) NULL))
+    if (!is.null(prior) && nrow(prior) &&
+        dplyr::n_distinct(prior$certification_number) > length(done)) {
+      recovered <- split(prior, prior$certification_number)
+      log_message(sprintf(
+        "RECOVERY: %s has %d certificants but the checkpoint has %d. Rebuilding
+   the checkpoint from the CSV so completed work is not re-scraped.",
+        OUTPUT, length(recovered), length(done)))
+      done <- utils::modifyList(recovered, done)
+    }
+  }
+
   todo <- roster %>% filter(!certification_number %in% names(done))
   if (!is.na(n_limit)) todo <- head(todo, n_limit)
 
@@ -342,6 +714,18 @@ main <- function(n_limit = NA_integer_) {
 
   out <- bind_rows(done)
   write_csv(out, OUTPUT, na = "")
+
+  # A profile URL claimed by more than one certificant cannot describe both.
+  # 185 URLs matched 204 certificants in the first pass; at roster scale that
+  # ambiguity multiplies, so it is counted every run rather than discovered
+  # later.
+  if ("hg_url" %in% names(out)) {
+    dup <- out %>% filter(!is.na(hg_url)) %>% count(hg_url) %>% filter(n > 1)
+    if (nrow(dup))
+      log_message(sprintf(
+        "AMBIGUOUS: %d profile URL(s) matched >1 certificant (%d rows affected). Resolve before use.",
+        nrow(dup), sum(dup$n)))
+  }
 
   s <- out %>% count(hg_status, sort = TRUE)
   log_message("--- status counts ---")

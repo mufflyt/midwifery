@@ -125,3 +125,12 @@ artifacts/maps/
 # NPPES person-level extract (NPI + sex + enumeration date); rebuildable from
 # the NPPES bulk file, not committed
 artifacts/nppes_sex_enumeration.csv
+
+# Healthgrades scrape: person-level (names, addresses, coordinates, profile URLs).
+# Rebuildable by scrape_healthgrades_midwives.R + enrich_healthgrades_profiles.R.
+healthgrades_profile_attrs.csv
+healthgrades_attrs_checkpoint.rds
+healthgrades_attrs_log.txt
+backup_*_healthgrades_*
+prior_run_checkpoint_*.rds
+artifacts/hg_backup_*/
