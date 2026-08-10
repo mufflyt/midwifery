@@ -1877,3 +1877,84 @@ carrying down correctly).
   reporting (c4).
 
 **No scientific estimand was changed in this cycle.**
+
+---
+
+## Cycle 14 — 2026-08-10 01:5x — 3 BVA / 4 semantic / 3 adversarial
+
+**Target.** The dissolved coverage surfaces — the central geographic claim of
+the study, untouched by cycles 1–13. Tests in
+`tests/test_cycle14_coverage_surfaces.R`; contracts in
+`R/lib/coverage_surface_contracts.R`. Both defects produce a **plausible map
+from a broken input**, the worst thing a figure can do.
+
+**DEFECT 1 — the land clip was conditional on a USB drive.**
+
+```r
+water_dir <- "/Volumes/MufflySamsung/nhdplus_hr/water_masks"
+if (dir.exists(water_dir)) { ...clip... }
+```
+
+With the drive unmounted the clip is skipped, nothing errors, and the surfaces
+again run over the Great Lakes — 10.3% and 12.9% open water counted as drivable
+ground, the defect already in the Hall of Shame. Whether the published map was
+correct depended on **whether a drive happened to be plugged in**, and nothing
+in the output recorded which had happened.
+
+Replaced with `water_clip_provenance()`, which refuses a final build when masks
+are missing and writes `artifacts/coverage_clip_provenance.csv` either way.
+Verified on real data: drive present → 49/49 masks, `clip_applied=TRUE`,
+`final=TRUE`; simulated absence → 0/49, `final=FALSE`.
+`MIDWIFERY_ALLOW_UNCLIPPED=1` permits a deliberate exploratory run, which is
+then recorded as not final.
+
+**DEFECT 2 — nesting was enforced by mutation.** The loop unioned each smaller
+band into the larger, so the invariant always held afterwards. But a 30-minute
+surface escaping its own 60-minute surface is *evidence*: the two routing
+engines disagree by up to 15% in area, and an escape is how that disagreement
+appears geographically. Absorbing it made the invariant true and destroyed the
+evidence in one statement. The escape is now measured first, warned on, and
+written to `artifacts/coverage_nesting_report.csv` before absorption proceeds.
+
+**Cycle 11's guard failed cycle 14's code — as intended.** `nesting_escape_km2()`
+called `st_difference()` without `assert_crs_equal()`, and T104 (written two
+cycles ago, when the contract had zero callers) caught it. The guard is load-
+bearing, not decorative.
+
+**Two of my own tests were wrong, and the code was right both times.**
+
+- **T132** expected 1,875 km² of escape; the true overlap is the 10 km × 10 km
+  corner, so the answer is 2,400. Careless geometry on my part.
+- **T139** assumed `sf` returns square degrees for a lon/lat layer with s2
+  disabled. It does not — sf 1.1 computes a geodesic area either way
+  (10,000.28 km² vs 10,000.00 from the equal-area projection). Rewritten to
+  assert the property that actually protects the number: the two routes agree
+  to **0.239%**, so a coverage area is reproducible regardless of which CRS an
+  intermediate step left behind.
+
+**The sweep flagged its own documentation.** T138's first version matched the
+explanatory comment describing the retired `if (dir.exists(water_dir))`
+construct. A text sweep that fires on prose either produces false alarms or
+teaches the next person to delete the explanation to get green. Comments are
+now stripped before matching. Discrimination re-verified afterwards:
+reinstating the bare gate fails T138 and names the line.
+
+**Full suite.** 19/19 pass, 0 skips.
+
+**Carried forward.**
+
+- **ACTION (new):** the nesting report is written but never asserted against a
+  threshold — what escape magnitude should FAIL a build is a scientific
+  question about engine comparability, not a code default. **Flagged, not set.**
+- **ACTION (upstream):** fix `extract_first_initial()`; the linked cohort
+  under-represents accented names (OR 0.18, p = 0.0002).
+- **DECISION NEEDED:** GFR reliability treatment; `women_15_44` partial-sum;
+  Table 1 panel censoring; `ct_partial` reporting; minimum Healthgrades
+  coverage (~49% projected).
+- **ACTION:** rebuild Table 1 when the crawl finishes (49.9% searched).
+- **DEBT:** 12 undeclared joins (T100); 14 bare `.keep_all` (T44).
+- **HYGIENE:** duplicate test IDs across cycles 6/7.
+
+**Estimand changed:** no — but a build that would previously have produced an
+unclipped surface now refuses, which will change what gets published if the
+drive is ever absent.

@@ -190,9 +190,25 @@ names(unions) <- as.character(BANDS)
 # -- guarantees nothing, and with two routing engines whose polygons disagree
 # by up to 15% in area it is a live risk, not a theoretical one: a 30-minute
 # surface can escape its own 60-minute surface where the engines differ.
+# CYCLE 14. The escape is MEASURED BEFORE it is absorbed. Unioning the smaller
+# band into the larger makes the invariant true and destroys the evidence in
+# the same statement -- and the evidence is what says how far the two routing
+# engines disagree geographically. The number is kept.
+source(file.path("R", "lib", "coverage_surface_contracts.R"))
+nesting_report <- list()
 for (i in seq_along(BANDS)[-1]) {
   a <- as.character(BANDS[i]); b <- as.character(BANDS[i - 1])
+  escape_km2 <- nesting_escape_km2(unions[[b]], unions[[a]])
   before <- as.numeric(sf::st_area(unions[[a]])) / 1e6
+  nesting_report[[length(nesting_report) + 1L]] <- data.frame(
+    inner_band = b, outer_band = a, escape_km2 = round(escape_km2, 1),
+    outer_area_km2_before = round(before, 1),
+    escape_pct_of_outer = round(100 * escape_km2 / before, 3),
+    stringsAsFactors = FALSE)
+  if (escape_km2 > 0)
+    cat(sprintf("[nesting] WARNING %smin escapes %smin by %s km2 (%.3f%% of the outer band)\n",
+                b, a, format(round(escape_km2), big.mark = ","),
+                100 * escape_km2 / before))
   g <- sf::st_union(sf::st_geometry(unions[[a]]), sf::st_geometry(unions[[b]]))
   sf::st_geometry(unions[[a]]) <- sf::st_make_valid(g)
   after <- as.numeric(sf::st_area(unions[[a]])) / 1e6
@@ -200,6 +216,11 @@ for (i in seq_along(BANDS)[-1]) {
               a, b, format(round(before), big.mark = ","),
               format(round(after), big.mark = ","),
               100 * (after - before) / before))
+}
+if (length(nesting_report)) {
+  nesting_report <- do.call(rbind, nesting_report)
+  utils::write.csv(nesting_report, "artifacts/coverage_nesting_report.csv",
+                   row.names = FALSE)
 }
 
 # --- clip to land ------------------------------------------------------------
@@ -213,7 +234,23 @@ for (i in seq_along(BANDS)[-1]) {
 # clip_isochrone_to_land() is per-state while these surfaces are national and
 # already dissolved.
 water_dir <- "/Volumes/MufflySamsung/nhdplus_hr/water_masks"
-if (dir.exists(water_dir)) {
+# CYCLE 14. This was `if (dir.exists(water_dir))`, so an unmounted external
+# drive skipped the clip in silence and the surfaces once again counted the
+# Great Lakes as drivable ground -- 10.3% and 12.9% open water in the published
+# bands. Whether the map was correct depended on whether a USB drive happened
+# to be plugged in, and nothing in the output recorded which had happened.
+#
+# The provenance call refuses a FINAL build when masks are missing, and records
+# what was actually done either way. Set MIDWIFERY_ALLOW_UNCLIPPED=1 for a
+# deliberate exploratory run; the record then marks the surface not final.
+source(file.path("R", "lib", "coverage_surface_contracts.R"))
+clip_prov <- water_clip_provenance(
+  water_dir, mufflyaccess::CONUS_STATE_ABBR,
+  require_clip = !nzchar(Sys.getenv("MIDWIFERY_ALLOW_UNCLIPPED")))
+utils::write.csv(clip_prov, "artifacts/coverage_clip_provenance.csv", row.names = FALSE)
+cat(sprintf("[land clip] applied=%s masks=%d/%d final=%s\n", clip_prov$clip_applied,
+            clip_prov$masks_found, clip_prov$masks_expected, clip_prov$final))
+if (clip_prov$clip_applied) {
   local({
     owd <- setwd(path.expand("~/isochrones-main")); on.exit(setwd(owd), add = TRUE)
     suppressWarnings(suppressMessages(
