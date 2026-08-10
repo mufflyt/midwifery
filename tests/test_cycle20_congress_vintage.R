@@ -193,5 +193,64 @@ cat("\n-- ADVERSARIAL --\n")
   }
 }
 
+
+# ---------------------------------------------------------------------------
+# Folded in from a duplicate cycle-20 file. Two agents wrote cycle 20
+# concurrently -- the cron's run and a manual one -- producing overlapping
+# suites. The overlapping assertions were dropped rather than kept twice; these
+# four cover ground the other file did not.
+# ---------------------------------------------------------------------------
+
+# G1. Columns asserted BEFORE anything is computed from them. Run against the
+# pre-fix artifact, a delegate-classification check PASSED because
+# redistricted_since_acs did not exist and `all(NULL == FALSE)` is TRUE -- the
+# test congratulated a column that was not there (cycle 16's T77 trap).
+{
+  need <- c("state_abbr", "boundary_vintage", "redistricted_since_acs")
+  chk(all(need %in% names(d)),
+      sprintf("G1 required columns exist before evaluation [missing: %s]",
+              paste(setdiff(need, names(d)), collapse = ", ")))
+}
+
+# G2. Sweep: ANY per-row disclosure that is constant is the same defect under a
+# different column name.
+{
+  cand <- grep("vintage|caveat|disclosure|note|warning", names(d), value = TRUE)
+  const <- cand[vapply(cand, function(cc) length(unique(d[[cc]])) == 1L, logical(1))]
+  chk(length(const) == 0,
+      sprintf("G2 no disclosure column is constant across all districts [%s]",
+              if (length(const)) paste(const, collapse = ", ") else "none"))
+}
+
+# G3. The source list and the rebuilt artifact must agree -- a source edited
+# without a rebuild leaves a disclosure describing a different map than the
+# code claims (the cycle-16 lesson, applied to prose). The two-letter codes are
+# pulled straight off the definition line; an earlier version used a nested
+# regex whose escaping did not survive being written through a shell, and it
+# failed while the data was correct.
+{
+  ln <- grep("^REDISTRICTED_119 <- ", readLines(
+    file.path(root, "R", "12-district-profiles.R"), warn = FALSE), value = TRUE)[1]
+  rd <- if (is.na(ln)) character(0)
+        else regmatches(ln, gregexpr('"[A-Z]{2}"', ln))[[1]]
+  rd <- sort(gsub('"', "", rd))
+  # The reader above coerces EVERY column to character, so this flag arrives as
+  # "TRUE"/"FALSE". Indexing a vector by a character vector silently returns
+  # nothing rather than erroring, which made this guard report an empty
+  # artifact while the data was correct. Coerced explicitly.
+  flag <- d$redistricted_since_acs %in% c(TRUE, "TRUE")
+  in_art <- sort(unique(d$state_abbr[flag]))
+  chk(length(rd) > 0 && identical(in_art, rd),
+      sprintf("G3 REDISTRICTED_119 in the source matches the rebuilt artifact [src: %s | artifact: %s]",
+              paste(rd, collapse = ","), paste(in_art, collapse = ",")))
+}
+
+# G4. Row order must not change any disclosure.
+{
+  set.seed(20); p <- sample(nrow(d))
+  chk(identical(d$boundary_vintage[p][order(p)], d$boundary_vintage),
+      "G4 disclosures are invariant to row order")
+}
+
 cat(sprintf("\n%s (%d failures)\n", if (fails == 0L) "PASS" else "FAIL", fails))
 quit(status = if (fails == 0L) 0L else 1L)

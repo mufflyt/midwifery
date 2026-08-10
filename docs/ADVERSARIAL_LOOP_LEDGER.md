@@ -2743,3 +2743,63 @@ this loop keeps finding in other people's comments. Corrected.
 
 **No scientific estimand was changed in this cycle.** No number moved; a
 disclosure became specific to the districts it concerns.
+
+---
+
+## Cycle 20 — 2026-08-10 04:5x — 3 BVA / 4 semantic / 3 adversarial
+
+**Target.** The congressional-district boundary disclosure. Tests in
+`tests/test_cycle20_congress_vintage.R`.
+
+**DEFECT — a caveat that said the same thing everywhere.** `boundary_vintage`
+was ONE constant string on all 437 rows, so a Colorado district — whose map did
+not move — carried the same redistricting warning as an Alabama district whose
+map did. A disclosure identical everywhere tells a reader nothing about their
+own district and is indistinguishable from one that is simply wrong.
+
+**67 of 437 districts (15.3%)** sit in the five states that redrew between the
+118th and 119th Congress (AL, GA, LA, NC, NY). ACS 2023 reports on 118th
+boundaries while the roster is 119th, so in those districts — and only those —
+the sitting member is attached to statistics describing different ground. That
+is per-row knowable, so it is now per-row stated: 52 distinct disclosures.
+
+**TWO AGENTS WROTE CYCLE 20 CONCURRENTLY.** The cron run and this manual run
+each produced a full suite for the same cycle — 28 assertions with roughly six
+overlapping. The duplicate file was **deleted**, not kept: two suites asserting
+the same property is the duplication the ledger exists to prevent, and it
+inflates the apparent test count. Four non-overlapping guards were folded into
+the surviving file (G1–G4): column-existence before evaluation, a sweep for any
+other constant disclosure column, source-list-versus-artifact agreement, and
+row-order invariance. 22 assertions total.
+
+**A vacuous pass caught in the discrimination check.** Run against the pre-fix
+artifact, the delegate-classification test PASSED — because
+`redistricted_since_acs` did not exist, and `all(NULL == FALSE)` is `TRUE`. The
+same trap as cycle 16's T77. G1 now asserts the columns exist before anything
+is computed from them.
+
+**A guard defeated by a defensive reader.** The surviving file reads every
+column as character to defeat type guessing — so the flag arrives as `"TRUE"`,
+and **indexing a vector by a character vector silently returns nothing** rather
+than erroring. G3 reported an empty artifact while the data was correct. Fixed
+by coercing explicitly; discrimination re-verified by adding `OH` to the source
+list, which now fails with both sides printed.
+
+**Full suite.** 25/25 files pass, 0 skips.
+
+**Carried forward.**
+
+- **DECISION NEEDED (highest priority):** re-freeze the cohort or keep the pin
+  (17,538 vs 16,892).
+- **DATA QUESTION:** the 565 address disagreements that change county; the 427
+  unplaceable.
+- **DECISION NEEDED:** `general_fertility_rate` naming; nesting-escape
+  threshold; GFR reliability; `women_15_44` partial-sum; Table 1 panel
+  censoring; `ct_partial`; Healthgrades coverage.
+- **ACTION (upstream):** `extract_first_initial()` accent stripping.
+- **ACTION:** rebuild Table 1 when the crawl finishes (60.8%); regenerate
+  README figures.
+- **HYGIENE:** concurrent cycles can duplicate work — the ledger is the only
+  coordination point, and it is written at the END of a cycle.
+
+**Estimand changed:** no. The disclosure changed; no count moved.
