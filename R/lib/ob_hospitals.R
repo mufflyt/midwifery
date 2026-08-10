@@ -72,10 +72,21 @@ build_ob_hospital_counts <- function(path = POS_FILE) {
     dplyr::distinct(PRVDR_NUM, .keep_all = TRUE) %>%
     dplyr::mutate(
       GEOID = paste0(FIPS_STATE_CD, FIPS_CNTY_CD),
+      # CYCLE 15. The trailing `TRUE ~ "no"` asserted "this hospital has no
+      # obstetric service" for ANY code outside 1-3 -- including a code POS has
+      # not used yet. That is the same construction cycle 1 removed from the
+      # RUCC banding rule, where an unexpected value was confidently labelled
+      # "Nonmetropolitan, remote". Only "0" is a recorded no; anything else is
+      # something the source said that this code does not understand, which is
+      # unknown, not a negative.
+      #
+      # The live extract carries only 0/1/2/3, so behaviour is unchanged today
+      # -- which is exactly why the branch had never been tested by data.
       ob_status = dplyr::case_when(
-        is.na(OB_SRVC_CD)      ~ "unknown",
+        is.na(OB_SRVC_CD)                ~ "unknown",
         OB_SRVC_CD %in% c("1", "2", "3") ~ "yes",
-        TRUE                   ~ "no"))
+        OB_SRVC_CD == "0"                ~ "no",
+        TRUE                             ~ "unknown"))
 
   active %>%
     dplyr::group_by(GEOID) %>%

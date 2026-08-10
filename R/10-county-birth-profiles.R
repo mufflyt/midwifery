@@ -226,7 +226,26 @@ county_sentences <- function(r, n_counties) {
     if (!is.null(r$n_hosp_ob) && r$n_hosp_ob > 0)
       sprintf("%s hospital%s reporting obstetric services", fmt(r$n_hosp_ob),
               if (r$n_hosp_ob > 1) "s" else ""),
-    if (!is.null(r$n_hosp_active) && r$n_hosp_active > 0 && r$n_hosp_ob == 0)
+    # CYCLE 15. "none of which reports obstetric services" was emitted whenever
+    # n_hosp_ob == 0, regardless of WHY. Measured: of the 1,451 counties that
+    # receive this sentence, 651 (45%) have every active hospital's OB_SRVC_CD
+    # missing -- so the sentence is generated from pure silence, and a reader
+    # hears "no obstetric care here" from a field the source never filled in.
+    #
+    # The comment above guessed that silence is "commonest in small rural
+    # counties". The data says otherwise: all-unknown runs 55.2% in metro,
+    # 43.1% in remote and 28.1% in adjacent counties. Recorded because a
+    # plausible aside in a comment is not evidence.
+    #
+    # Two different facts now get two different sentences. Nothing that is
+    # COUNTED changes.
+    if (!is.null(r$n_hosp_active) && r$n_hosp_active > 0 && r$n_hosp_ob == 0 &&
+        !is.null(r$n_hosp_ob_unknown) && r$n_hosp_ob_unknown >= r$n_hosp_active)
+      sprintf(paste0("%s active hospital%s, none of which records whether it ",
+                     "offers obstetric services"),
+              fmt(r$n_hosp_active), if (r$n_hosp_active > 1) "s" else ""),
+    if (!is.null(r$n_hosp_active) && r$n_hosp_active > 0 && r$n_hosp_ob == 0 &&
+        (is.null(r$n_hosp_ob_unknown) || r$n_hosp_ob_unknown < r$n_hosp_active))
       sprintf("%s active hospital%s, none of which reports obstetric services",
               fmt(r$n_hosp_active), if (r$n_hosp_active > 1) "s" else ""))
 

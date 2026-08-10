@@ -1958,3 +1958,90 @@ reinstating the bare gate fails T138 and names the line.
 **Estimand changed:** no — but a build that would previously have produced an
 unclipped surface now refuses, which will change what gets published if the
 drive is ever absent.
+
+---
+
+## Cycle 15 — 2026-08-10 — 3 BVA / 3 semantic / 4 adversarial
+
+**Target.** `R/lib/ob_hospitals.R` — what makes a hospital "obstetric" — and the
+county sentence that reports it. This defines the hospital denominator for every
+obstetric-capacity claim in the project.
+
+**Tests added** — `tests/test_cycle15_ob_capacity.R` (T141–T150, 15 assertions)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T141 | BVA | ob + unknown never exceeds active |
+| T142 | BVA | GEOID is 5 characters (state+county, unpadded paste) |
+| T143 | BVA | no-hospital and hospital-but-no-OB are distinct |
+| T144 | semantic | the all-unknown case gets its own sentence |
+| T145 | semantic | positives are phrased as *reporting*, not *having* |
+| T146 | semantic | unknown is a first-class status |
+| T147 | adversarial | both sentences are reachable |
+| T148 | adversarial | the comment's rural claim, tested |
+| T149 | adversarial | an unrecognised service code |
+| T150 | adversarial | row-order invariance of every county count |
+
+### The finding: a sentence built from silence
+
+**19,352 of 23,830** active hospital records (**81.2%**) carry no `OB_SRVC_CD`
+at all. The module handles this correctly — three-way yes/no/unknown, with
+`n_hosp_ob_unknown` carried out. **The sentence did not:**
+
+```r
+n_hosp_ob == 0  ->  "N active hospitals, none of which reports obstetric services"
+```
+
+was emitted regardless of *why* the count was zero. Of the **1,451** counties
+receiving it, **651 (45%)** have every active hospital's OB status missing. The
+sentence is generated from pure silence, and a reader hears "no obstetric care
+here" from a field the source never filled in.
+
+Unknown is not no — the same principle as cycle 3's suppressed-is-not-zero, now
+in **published prose** rather than in a denominator.
+
+*Fixed:* two facts, two sentences. Nothing that is **counted** changes.
+
+### A comment that was backwards
+
+The code beside that sentence asserted the silence is "commonest in small rural
+counties". Measured:
+
+| rurality | 'no OB' counties | all-unknown | % |
+|---|---:|---:|---:|
+| Metro (RUCC 1-3) | 422 | 233 | **55.2%** |
+| Nonmetro, adjacent | 171 | 48 | 28.1% |
+| Nonmetro, remote | 858 | 370 | 43.1% |
+
+All-unknown is **most** common in metro counties, not rural ones. T148 pins this
+so the claim cannot drift back into prose. A plausible aside in a comment is not
+evidence.
+
+### Class closed: the trailing `TRUE` branch
+
+`ob_status` ended `TRUE ~ "no"`, asserting "this hospital has no obstetric
+service" for **any** code outside 1–3, including one POS has not used yet. That
+is precisely the construction cycle 1 removed from the RUCC banding rule, where
+an unexpected value was confidently labelled "Nonmetropolitan, remote".
+
+*Fixed:* only a recorded `"0"` means no; anything else is unknown. The live
+extract carries only 0/1/2/3, so **behaviour is unchanged today** — which is
+exactly why the branch had never been tested by data. Third instance of this
+class (RUCC c1, WONDER `flag == "ok"` c3, OB service code c15).
+
+### Full suite
+
+**20/20 files pass.**
+
+### Unresolved / carried forward
+
+- **UPSTREAM (isochrones):** `extract_first_initial()` accent bug, ratcheted at
+  5 (c12).
+- 18 undeclared joins (c10); 4 duplicate helpers (c9); 14 `.keep_all` (c5).
+- **DECISION NEEDED:** GFR reliability method (c8); GFR universe 15-50 vs 15-44
+  (c7); `women_15_44` partial vs NA (c7); Table 1 censoring (c1); `ct_partial`
+  reporting (c4).
+
+**No scientific estimand was changed in this cycle.** No count moved; one
+misleading sentence was split into two accurate ones, and one unreachable
+branch was made honest.
