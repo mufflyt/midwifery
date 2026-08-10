@@ -79,12 +79,24 @@ cat("\n-- SEMANTIC --\n")
               cc$pct, old_coverage(val)))
 }
 
-# T66. EMPTY and CONSTANT are different diagnoses. One means "never captured",
-# the other "captured, no information" -- they point at different fixes.
+# T66. EMPTY and CONSTANT are different diagnoses -- "never captured" versus
+# "captured, no information" -- and they point at different fixes.
+#
+# The second half of this test pins a defect made while writing this cycle:
+# the verdict was first computed on the COHORT-LINKED SUBSET, where hg_gender
+# reads CONSTANT purely because the single male midwife is not in it. That
+# would have suppressed a genuine 99.4%-female distribution as though it were a
+# scraping failure. Whether the SOURCE populates a field is a property of the
+# source, so the verdict must be judged on all fetched profiles; coverage is a
+# separate question, judged against the cohort.
 {
+  source_col <- c(rep("Female", 99), "Male")     # varies in the source
+  subset_col <- rep("Female", 40)                # constant in this subset
   chk(field_variability(rep(NA_real_, 10))$verdict == "EMPTY" &&
-        field_variability(rep(0, 10))$verdict == "CONSTANT",
-      "T66 EMPTY and CONSTANT are not conflated")
+        field_variability(rep(0, 10))$verdict == "CONSTANT" &&
+        field_variability(source_col)$verdict == "VARIES" &&
+        field_variability(subset_col)$verdict == "CONSTANT",
+      "T66 EMPTY/CONSTANT distinct, and a subset-constant field is not a source-constant field")
 }
 
 cat("\n-- ADVERSARIAL --\n")

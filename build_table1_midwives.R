@@ -119,8 +119,14 @@ if (file.exists("healthgrades_profile_attrs.csv") &&
            certification_number %in% coh$certification_number[coh$hg_eligible]) %>%
     distinct(certification_number, hg_url) %>%
     left_join(.attrs, by = "hg_url")
+  # VERDICT is judged on ALL fetched profiles, not on the cohort-linked subset.
+  # "Does the source populate this field with information?" is a property of
+  # the source. Judged on the subset, hg_gender reads CONSTANT purely because
+  # the single male midwife is not in it -- a genuine 99.4%-female distribution
+  # would have been suppressed as if it were a scraping failure. Coverage is a
+  # separate question and is still measured against the cohort.
   .rep <- lapply(intersect(HG_CANDIDATE_FIELDS, names(.link)), function(f) {
-    v  <- field_variability(.link[[f]])
+    v  <- field_variability(.attrs[[f]])
     cc <- cohort_coverage(.link[[f]], .link$certification_number,
                           coh$certification_number)
     tibble(field = f, verdict = v$verdict, distinct_values = v$n_distinct,

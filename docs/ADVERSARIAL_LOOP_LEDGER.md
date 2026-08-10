@@ -710,3 +710,88 @@ paid.
 - `safe_percent` DEN-032 default — belongs in `mufflyaccess`, out of scope.
 
 **No scientific estimand was changed in this pass.**
+
+---
+
+## Cycle 6 — 2026-08-09 22:2x — 3 BVA / 3 semantic / 4 adversarial
+
+**Target.** The carried-forward Healthgrades items. These decide whether the
+scraped demographics may enter Table 1 at all, so they gate a published table.
+
+**Tests added** — `tests/test_cycle6_field_quality.R`
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T61 | BVA | EMPTY/CONSTANT/VARIES at the 0-1-2 distinct-value edges |
+| T62 | BVA | empty cohort → 0%, never `NaN` in a table |
+| T63 | BVA | NA is not a distinct value |
+| T64 | semantic | a constant field is refused (+ T64b anti-ceremony) |
+| T65 | semantic | coverage measured against cohort, not profiles |
+| T66 | semantic | subset-constant ≠ source-constant |
+| T67 | adversarial | absent key parses to NA, not FALSE |
+| T68 | adversarial | empirical: booleans never NA over 1,632 profiles |
+| T69 | adversarial | `hg_age` within a plausible adult range |
+| T70 | adversarial | enforce the sweep: no unguarded `hg_` field reaches Table 1 |
+
+**Two carried-forward items RESOLVED, one of them by refutation.**
+
+- **`hg_years_experience` is confirmed dead** at n=1,632: one distinct value
+  (0) and zero NA. Healthgrades does not populate
+  `roundedYearsOfExperience` for midwives. It is now refused at the point of
+  use, not merely noted.
+- **Absent-vs-FALSE: REFUTED, my earlier suspicion was wrong.** I flagged that
+  the booleans might record "not stated" as FALSE. The parser returns NA when
+  the key is missing (T67), and across all 1,632 profiles neither boolean is
+  ever NA (T68) — so the keys are always present and `FALSE` means false.
+  Both facts are now pinned so a future parser change cannot start writing
+  FALSE for absence silently.
+- **`hg_age` validated** as plausible: 920 values in [28, 96], no impossible
+  ages. The older-than-expected median (60) is therefore a coverage/selection
+  question, not a mis-targeted regex.
+
+**DEFECT IN MY OWN GUARD, caught by running it.** The usability verdict was
+first computed on the COHORT-LINKED SUBSET, where `hg_gender` reads CONSTANT
+purely because the single male midwife is not in it. The guard would have
+suppressed a genuine 99.4%-female distribution as though it were a scraping
+failure — a guard causing the error it exists to prevent. Whether the SOURCE
+populates a field is a property of the source, so the verdict is now judged on
+all fetched profiles while COVERAGE remains cohort-based. T66 pins the
+distinction.
+
+**T70 was vacuous when written** (0 `hg_` blocks exist, so it could not fail —
+the cycle-4 lesson). Fixed by wiring the guard in for real:
+`build_table1_midwives.R` now classifies every candidate field and writes
+`artifacts/healthgrades_field_usability.csv`, so the guard is present and the
+test bites the moment a block is added.
+
+**Field usability at n=1,632** (cohort = 11,913; coverage is cohort-based):
+
+| field | verdict | cohort coverage |
+|---|---|---:|
+| `hg_gender` | VARIES | 6.97% |
+| `hg_age` | VARIES | 3.65% |
+| `hg_years_experience` | **CONSTANT** | not publishable |
+| `hg_languages` | VARIES | 0.36% |
+| `hg_accepts_new_patients` | VARIES | 6.97% |
+| `hg_has_telehealth` | VARIES | 6.97% |
+| `hg_medicaid_named` | VARIES | 6.40% |
+
+Coverage is low because the crawl is ~36% done; these will rise. The point of
+the table is that completeness among profiles (up to 100%) and coverage of the
+cohort (≤7%) are different numbers, and only the second decides publishability.
+
+**Full suite.** 11/11 pass.
+
+**Carried forward.**
+
+- **DECISION NEEDED:** Table 1 panel-window censoring on ">=15 years" (cycle 1).
+- **DECISION NEEDED:** `women_15_44` partial vs `NA` denominator (cycle 3).
+- **DECISION NEEDED:** whether a `ct_partial` region should be reported (cycle 4).
+- **DECISION NEEDED (new):** minimum cohort coverage for a Healthgrades field to
+  be publishable at all. `hg_languages` at 0.36% is arithmetically a percentage
+  and scientifically noise. The loop must not pick that threshold.
+- **ACTION:** rebuild Table 1 when the crawl finishes.
+- N1 sites: `03-geography-hierarchy.R:120`, `spatial_crs_contract.R:262`.
+- `.keep_all` on non-coordinate keys (`load_obstetric_providers.R` ×4) — latent.
+
+**Estimand changed:** no.
