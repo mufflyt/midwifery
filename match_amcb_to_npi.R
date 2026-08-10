@@ -40,6 +40,14 @@ suppressPackageStartupMessages({
   library(digest); library(jsonlite)
 })
 
+# Resolved before anything sources a sibling file: the ENT script below does a
+# setwd() into the isochrones root, so a path relative to getwd() taken after
+# that point would resolve into the wrong repository.
+root_dir <- {
+  a <- grep("--file=", commandArgs(), value = TRUE)
+  if (length(a)) normalizePath(dirname(sub("--file=", "", a[1]))) else normalizePath(".")
+}
+
 ISO <- Sys.getenv("ISOCHRONES_DIR", path.expand("~/isochrones"))
 Sys.setenv(PIPELINE_LOAD_ONLY = "1")   # suppress the script's auto-main()
 ent_script <- file.path(ISO, "scripts", "match_enthealth_to_npi.R")
@@ -61,8 +69,30 @@ for (fn in c("norm_name", "first_initial", "compute_match_score",
   if (!exists(fn)) stop(sprintf("%s() not available from %s", fn, ent_script),
                         call. = FALSE)
 }
-cat("reusing:", paste(c("norm_name", "first_initial", "compute_match_score",
-                        "rank_one_to_one"), collapse = ", "), "\n")
+cat("reusing:", paste(c("rank_one_to_one", "safe_pct"), collapse = ", "), "\n")
+
+# NAME NORMALISATION IS NOT TAKEN FROM THE ENT SCRIPT (2026-08-10).
+#
+# norm_name() and first_initial() are still sourced above -- rank_one_to_one()
+# and the ENT script's own internals rely on them -- but this pipeline must NOT
+# use them for AMCB. norm_name() is toupper(trimws(...)) and nothing more, so
+# it PRESERVES accents rather than transliterating them:
+#
+#   norm_name("Álvarez") -> "ÁLVAREZ"   first_initial(...) -> "Á"
+#
+# Every strategy below joins on exact first name or exact first initial, so an
+# accented roster name could not reach its unaccented NPPES spelling by any
+# route. Measured in the frozen linkage: of the 27 roster rows with non-ASCII
+# names, sensitivity_fuzzy runs 26% against 1.5% cohort-wide (the accent
+# survives to strategy 3 and scores as one Levenshtein edit) and unmatched runs
+# 30% against 10.4%.
+#
+# R/amcb_name_keys.R delegates to the CANONICAL normalize_string(), which
+# already transliterates correctly. It is a key builder, not a second
+# normaliser. See tests/test_amcb_name_normalization.R.
+source(file.path(root_dir, "R", "amcb_name_keys.R"))
+cat("name keys: amcb_name_key() via canonical normalize_string()",
+    "(transliterating)\n")
 
 PANEL   <- Sys.getenv("MIDWIFE_PANEL", "midwife_panel.csv")
 ROSTER  <- "midwives.csv"
@@ -130,21 +160,30 @@ npi_luhn_ok <- function(npi) {
 # name: all 18,397 candidate pairs reported middle agreement, and evidence
 # class 2 (exact name, no middle info) was empty. norm_name() and toupper() are
 # NOT at fault -- they propagate NA correctly.
-blank_na <- function(x) coalesce(norm_name(x), "")
+blank_na <- amcb_blank_na                      # transliterating; see above
 
 # Never use a naked nzchar() to ask whether identity information exists.
-has_name_information <- function(x) !is.na(x) & nzchar(x)
+has_name_information <- amcb_has_name_information
 
 amcb <- read_csv(ROSTER, show_col_types = FALSE) %>%
   mutate(amcb_id = certification_number,
+         # The name as AMCB published it, kept verbatim beside the keys. A
+         # crosswalk that shows only the normalised form cannot be audited:
+         # a reviewer has no way to see that "ALVAREZ" came from "Álvarez".
+         amcb_name_original = trimws(paste(
+           coalesce(first_name, ""), coalesce(middle_name, ""),
+           coalesce(last_name, ""))),
+         amcb_customer_id = customer_id,
          last_clean  = blank_na(last_name),
          # AMCB fuses middle names into first_name ("Julie Ann"): the first
          # token is the given name, the rest is middle.
          first_raw   = blank_na(first_name),
-         first_clean = sub("\\s.*$", "", first_raw),
-         mid_from_first = trimws(sub("^[^ ]*", "", first_raw)),
+         first_clean = amcb_split_first(first_name)$given,
+         mid_from_first = amcb_split_first(first_name)$middle_from_first,
+         # paste() renders NA as the literal "NA"; blank_na() has already
+         # mapped absence to "" so nothing here can fabricate an initial.
          middle_clean = trimws(paste(blank_na(middle_name), mid_from_first)),
-         first_init  = coalesce(first_initial(first_clean), ""),
+         first_init  = coalesce(amcb_first_initial(first_clean), ""),
          mid_init    = substr(middle_clean, 1, 1))
 
 panel_raw <- read_csv(PANEL, col_types = cols(.default = "c")) %>%
@@ -157,10 +196,18 @@ if (!is.na(YEAR_FLOOR)) {
 if (!"tax_class" %in% names(panel_raw)) panel_raw$tax_class <- "midwife"
 panel <- panel_raw %>%
   filter(!is.na(npi), npi_luhn_ok(npi)) %>%
+  # The panel arrives UPPER(TRIM())-ed by the DuckDB extract, but NOT
+  # transliterated -- and the 2007-2017 dissemination files are latin-1, so
+  # accented NPPES spellings are genuinely present on this side too. Both sides
+  # must pass through the same key builder or the fix is only half applied.
   mutate(nppes_last_clean  = blank_na(last_name),
          nppes_first_clean = blank_na(first_name),
-         nppes_first_init  = coalesce(first_initial(nppes_first_clean), ""),
-         nppes_mid_init    = substr(blank_na(middle_name), 1, 1))
+         nppes_first_init  = coalesce(amcb_first_initial(nppes_first_clean), ""),
+         nppes_mid_init    = substr(blank_na(middle_name), 1, 1),
+         # Retained verbatim for the crosswalk's evidence columns.
+         nppes_last_raw   = last_name,
+         nppes_first_raw  = first_name,
+         nppes_middle_raw = middle_name)
 
 # Candidate identities: one row per (NPI, name spelling) so every historical
 # surname is matchable, not just the current one.
@@ -189,7 +236,16 @@ latest <- panel %>%
   # provider_first_line_business_practice_location_address), never the mailing
   # address. The source fields ride along: publishing city/state is fine, but
   # validating them later is impossible without what they were derived from.
+  # NPPES-side identity evidence rides along with the geography, taken from
+  # the SAME most-recent appearance. It is deliberately NOT added to the
+  # identity table above: that table is keyed on normalised names, and joining
+  # raw spellings into it would split one candidate NPI into several rows and
+  # silently inflate every candidate count.
   transmute(npi,
+            nppes_first_name = nppes_first_raw,
+            nppes_middle_name = nppes_middle_raw,
+            nppes_last_name = nppes_last_raw,
+            nppes_credential = credential,
             nppes_city = practice_city, nppes_state = practice_state,
             nppes_zip = practice_zip,
             nppes_practice_address = practice_address,
@@ -388,8 +444,14 @@ lost_bijection <- setdiff(unique(resolved$amcb_id), matched$amcb_id)
 ambiguous_ids <- union(quarantined_ids, lost_bijection)
 
 out <- amcb %>%
-  select(-last_clean, -first_raw, -first_clean, -mid_from_first,
-         -middle_clean, -first_init, -mid_init) %>%
+  # The normalised keys are PUBLISHED, not discarded. They were dropped here
+  # before, which made the crosswalk unauditable: a reviewer looking at a
+  # surprising match could not see which strings were actually compared, and
+  # the accent defect was invisible in the artifact for exactly that reason.
+  rename(normalized_first_name = first_clean,
+         normalized_middle_name = middle_clean,
+         normalized_last_name = last_clean) %>%
+  select(-first_raw, -mid_from_first, -first_init, -mid_init) %>%
   left_join(matched, by = "amcb_id") %>%
   left_join(latest, by = "npi") %>%
   mutate(npi_match_status = case_when(
@@ -411,7 +473,30 @@ out <- amcb %>%
            !is.na(npi) & npi_tax_class == "nursing" ~ "sensitivity_nursing",
            !is.na(npi)                              ~ "primary_midwifery",
            grepl("^ambiguous", npi_match_status)    ~ "quarantined",
-           TRUE                                     ~ "unmatched"))
+           TRUE                                     ~ "unmatched"),
+         # candidate_count is the pool BEFORE resolution -- how many NPIs were
+         # ever plausible for this person. Reporting the post-bijection count
+         # would always be 0 or 1 and would hide every ambiguity.
+         candidate_count = n_candidates_pre_rank,
+         # ambiguity_flag separates "we could not tell which person" from "we
+         # found nobody". Those are different failures and are routinely
+         # conflated into a single unmatched rate.
+         ambiguity_flag = case_when(
+           npi_match_status == "ambiguous_tied_names"   ~ "tied_on_name_evidence",
+           npi_match_status == "ambiguous_contested_npi" ~ "lost_bijection_to_stronger_claim",
+           !is.na(npi) & n_at_best_class > 1L            ~ "resolved_but_pool_not_unique",
+           is.na(npi) & has_candidate                    ~ "candidates_existed_none_resolved",
+           TRUE                                          ~ "none"),
+         # A sentence a human can check, built from the evidence actually used.
+         match_reason = case_when(
+           is.na(npi) & !has_candidate ~ "no NPPES midwifery/nursing candidate shared this name",
+           is.na(npi) ~ sprintf("%d candidate(s), %d tied at best evidence class %s; not resolvable on name alone",
+                                candidate_count, n_at_best_class, best_evidence_class),
+           TRUE ~ sprintf("%s; evidence class %d (%s); %s taxonomy; %d candidate(s), %d at best class",
+                          npi_match_method, name_evidence_class,
+                          c("exact first+last+middle initial", "exact first+last, no middle info",
+                            "exact last + first initial", "fuzzy last + exact first")[name_evidence_class],
+                          npi_tax_class, candidate_count, n_at_best_class)))
 
 stopifnot(nrow(out) == nrow(amcb), !any(duplicated(out$amcb_id)))
 stopifnot(all(out$linkage_tier %in% c("primary_midwifery", "sensitivity_nursing",

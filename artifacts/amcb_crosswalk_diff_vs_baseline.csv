@@ -1,0 +1,14 @@
+amcb_id,npi_new,tier_new,npi_old,tier_old
+12370,1619070596,sensitivity_nursing,,unmatched
+CNM08559,1982391363,primary_midwifery,1982391363,sensitivity_fuzzy
+11892,1497709844,primary_midwifery,1497709844,sensitivity_fuzzy
+CNM04166,,quarantined,,unmatched
+CNM10330,1588438832,sensitivity_fuzzy,,unmatched
+CNM05783,1336780840,primary_midwifery,1336780840,sensitivity_fuzzy
+CNM1121,1154668481,primary_midwifery,1154668481,sensitivity_fuzzy
+CNM04772,1174000921,primary_midwifery,1174000921,sensitivity_fuzzy
+CNM08824,1518740513,primary_midwifery,,unmatched
+CNM04742,1659869915,primary_midwifery,,unmatched
+5850,1093245680,primary_midwifery,,unmatched
+CNM06728,1417542911,primary_midwifery,1417542911,sensitivity_fuzzy
+5620,1891167631,sensitivity_nursing,,quarantined

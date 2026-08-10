@@ -1,0 +1,192 @@
+#!/usr/bin/env Rscript
+# =============================================================================
+# AMCB name normalisation -- Unicode/accent regression tests
+# =============================================================================
+# Guards the defect described at the top of R/amcb_name_keys.R: the AMCB
+# matcher normalised names with toupper(trimws(...)) only, so accented names
+# could not join their unaccented NPPES spellings by any strategy.
+#
+# The adversarial loop reported this as "the initial character is deleted".
+# That is NOT what happens and the distinction matters for what we assert:
+# the accent is PRESERVED, not stripped -- "Álvarez" became "ÁLVAREZ" and its
+# first initial "Á". So a test asserting nchar() is unchanged would pass
+# against the broken code. These tests assert the transliterated VALUE.
+#
+# Run: Rscript tests/test_amcb_name_normalization.R
+# =============================================================================
+
+root <- {
+  a <- grep("--file=", commandArgs(), value = TRUE)
+  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
+  else normalizePath(".")
+}
+owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
+suppressPackageStartupMessages({library(dplyr); library(readr)})
+source(file.path(root, "R", "amcb_name_keys.R"))
+
+fails <- 0L
+chk <- function(cond, m) {
+  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
+  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
+}
+
+# The old normaliser, reproduced here ONLY so the tests can prove they
+# discriminate. If a test passes under both, it is not testing the fix.
+old_norm <- function(x) toupper(trimws(gsub("\\s+", " ", as.character(x))))
+
+cat("\n-- BVA --\n")
+
+# T1 (BVA). The literal names the adversarial loop named. Each must
+# transliterate to its ASCII spelling, which is what NPPES stores.
+{
+  cases <- c("Álvarez" = "ALVAREZ", "Élodie" = "ELODIE", "Ñuñez" = "NUNEZ",
+             "García" = "GARCIA", "Muñoz" = "MUNOZ", "Cotè" = "COTE",
+             "Renée" = "RENEE", "Frómeta" = "FROMETA", "González" = "GONZALEZ")
+  got <- amcb_name_key(names(cases))
+  bad <- names(cases)[got != unname(cases)]
+  chk(length(bad) == 0L,
+      sprintf("T1 accented names transliterate to their ASCII spelling [%d/%d]%s",
+              sum(got == unname(cases)), length(cases),
+              if (length(bad)) paste0(" bad: ", paste(bad, collapse = ", ")) else ""))
+}
+
+# T2 (BVA). The initial character is transliterated, NOT deleted. Both halves
+# matter: "Á" -> "A" (not "Á", the real defect) and NOT "" (the reported one).
+{
+  init <- amcb_first_initial(c("Álvarez", "Élodie", "Ñuñez", "Alvarez"))
+  chk(identical(init, c("A", "E", "N", "A")),
+      sprintf("T2 first initial of an accented name is its ASCII letter [%s]",
+              paste(init, collapse = ",")))
+}
+
+# T3 (BVA). Length is preserved -- no character is dropped. This is the
+# assertion that specifically refutes the "deletes the initial character"
+# reading, and it must hold for names accented anywhere in the string.
+{
+  v <- c("Álvarez", "García", "Ñuñez", "Élodie")
+  chk(all(nchar(amcb_name_key(v)) == nchar(v)),
+      sprintf("T3 transliteration preserves character count [%s vs %s]",
+              paste(nchar(amcb_name_key(v)), collapse = ","),
+              paste(nchar(v), collapse = ",")))
+}
+
+cat("\n-- semantic --\n")
+
+# T4 (semantic). The join that the defect broke. An accented roster name and
+# its unaccented NPPES spelling must produce the SAME key, and must not have
+# done so under the old normaliser -- otherwise this test proves nothing.
+{
+  now_joins <- amcb_name_key("Álvarez") == amcb_name_key("ALVAREZ")
+  used_to   <- old_norm("Álvarez") == old_norm("ALVAREZ")
+  chk(now_joins && !used_to,
+      sprintf("T4 accented roster name now joins NPPES spelling (was %s, is %s)",
+              used_to, now_joins))
+}
+
+# T5 (semantic). German romanisation is inherited from the canonical
+# normaliser, not reinvented: ü -> UE, not U. NPPES stores the romanised form.
+{
+  chk(identical(amcb_name_key(c("Müller", "Weiß")), c("MUELLER", "WEISS")),
+      sprintf("T5 German umlaut/eszett romanise to digraphs [%s]",
+              paste(amcb_name_key(c("Müller", "Weiß")), collapse = ",")))
+}
+
+# T6 (semantic). The curly apostrophe is real in this roster (D'Annunzio,
+# Y'Vonne) and is a different codepoint from ASCII "'". If it survives, those
+# names cannot join either.
+{
+  k <- amcb_name_key("D’Annunzio")
+  chk(identical(k, "D'ANNUNZIO"),
+      sprintf("T6 curly apostrophe folds to ASCII [%s]", k))
+}
+
+# T7 (semantic). AMCB fuses middle names into first_name. The split must
+# happen on the NORMALISED string, so an accented given name still splits.
+{
+  s <- amcb_split_first("René Richard")
+  chk(identical(s$given, "RENE") && identical(s$middle_from_first, "RICHARD"),
+      sprintf("T7 fused first/middle splits after transliteration [%s | %s]",
+              s$given, s$middle_from_first))
+}
+
+cat("\n-- adversarial --\n")
+
+# T8 (adversarial). Missingness must not become evidence. This is the
+# 2026-08-08 defect: paste() renders NA as "NA" and nzchar(NA) is TRUE, so
+# every absent middle name agreed with every other absent middle name.
+{
+  chk(is.na(amcb_name_key(NA_character_)) &&
+        is.na(amcb_first_initial(NA_character_)) &&
+        identical(amcb_blank_na(NA_character_), "") &&
+        !amcb_has_name_information(NA_character_) &&
+        !amcb_has_name_information(""),
+      "T8 NA stays NA, blanks carry no identity information")
+}
+
+# T9 (adversarial). "NA" and "Na" are REAL names (and a real first initial N).
+# A guard against missingness must not swallow them.
+{
+  chk(identical(amcb_name_key("Na"), "NA") &&
+        identical(amcb_first_initial("Na"), "N") &&
+        amcb_has_name_information(amcb_name_key("Na")),
+      "T9 the literal name 'Na' survives the missingness guard")
+}
+
+# T10 (adversarial). Empty and zero-length input must not error or recycle
+# into a value. length-0 in, length-0 out.
+{
+  ok <- length(amcb_name_key(character(0))) == 0L &&
+    identical(amcb_first_initial(""), NA_character_)
+  chk(ok, "T10 zero-length and empty-string input degrade safely")
+}
+
+# T11 (adversarial). Unicode normal form drift. The SAME name composed (NFC,
+# U+00C1) and decomposed (NFD, "A" + U+0301) is byte-different but is the same
+# person. Both must yield one key, or a roster and a registry that disagree
+# only on normal form will silently fail to join.
+{
+  nfc <- "ÁLVAREZ"          # composed
+  nfd <- "ÁLVAREZ"         # decomposed
+  chk(nfc != nfd && amcb_name_key(nfc) == amcb_name_key(nfd) &&
+        amcb_name_key(nfd) == "ALVAREZ",
+      sprintf("T11 NFC and NFD spellings collapse to one key [%s / %s]",
+              amcb_name_key(nfc), amcb_name_key(nfd)))
+}
+
+# T12 (adversarial). The real roster, not a fixture. Every AMCB row carrying
+# non-ASCII name characters must produce a pure-ASCII key -- if any survives,
+# it cannot match NPPES and the fix is incomplete.
+{
+  roster <- file.path(root, "midwives.csv")
+  if (!file.exists(roster)) {
+    chk(FALSE, "T12 midwives.csv present")
+  } else {
+    a <- read_csv(roster, show_col_types = FALSE, progress = FALSE)
+    nonascii <- function(x) !is.na(x) & grepl("[^\\x01-\\x7F]", x, perl = TRUE)
+    hit <- nonascii(a$last_name) | nonascii(a$first_name) | nonascii(a$middle_name)
+    keys <- c(amcb_name_key(a$last_name[hit]), amcb_name_key(a$first_name[hit]),
+              amcb_name_key(a$middle_name[hit]))
+    keys <- keys[!is.na(keys)]
+    left <- keys[grepl("[^\\x01-\\x7F]", keys, perl = TRUE)]
+    chk(sum(hit) > 0L && length(left) == 0L,
+        sprintf("T12 all %d non-ASCII roster rows yield ASCII keys [%d residual]%s",
+                sum(hit), length(left),
+                if (length(left)) paste0(": ", paste(left, collapse = ", ")) else ""))
+  }
+}
+
+# T13 (adversarial). Transliteration must not MERGE distinct people. It is a
+# recall fix, and a recall fix that collapses different surnames into one key
+# would buy matches by manufacturing collisions.
+{
+  distinct_pairs <- list(c("Nunez", "Nunes"), c("Alvarez", "Alvares"),
+                         c("Cote", "Cotter"), c("Mueller", "Miller"))
+  merged <- vapply(distinct_pairs,
+                   function(p) amcb_name_key(p[1]) == amcb_name_key(p[2]), logical(1))
+  chk(!any(merged),
+      sprintf("T13 transliteration does not merge genuinely different surnames [%d merged]",
+              sum(merged)))
+}
+
+cat(sprintf("\n%s (%d failures)\n", if (fails == 0L) "PASS" else "FAIL", fails))
+quit(status = if (fails == 0L) 0L else 1L)

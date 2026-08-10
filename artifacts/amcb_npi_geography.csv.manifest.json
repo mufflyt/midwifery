@@ -1,0 +1,11 @@
+{
+  "artifact": "amcb_npi_geography.csv",
+  "artifact_sha256": "709107c02468c52eb4ba0ebb7afebbbca8dd2c3f8e184923bd27178e84c25a2c",
+  "artifact_rows": 16898,
+  "crosswalk": "amcb_npi_crosswalk_translit_panel-midwifery-plus-nursing_years-2007-2025.csv",
+  "crosswalk_sha256": "0b812533f7cf460928941e3fff9d504aad52c37b7272a6a3caecdf50dddf5a33",
+  "nppes_bulk_file": "npidata_pfile_20050523-20251109.csv",
+  "nppes_bulk_vintage": "2025-11-09",
+  "source_script_sha256": "a9e993f2ec3e176119ab5a2ba5771b21a85a5fe1a0c6a1c7405218dcee073fa3",
+  "columns": ["npi", "practice_address_1", "practice_address_2", "practice_city", "practice_state", "practice_zip", "mailing_address_1", "mailing_city", "mailing_state", "mailing_zip", "nppes_enumeration_date", "nppes_last_update_date", "nppes_deactivation_date", "taxonomy_code", "taxonomy_selection_rule", "taxonomy_description", "nppes_geo_source", "nppes_geo_vintage", "practice_mailing_state_differs"]
+}

@@ -3060,3 +3060,65 @@ first* — **measured**, not inferred from filenames.
 
 **No scientific estimand was changed in this cycle.** T228 confirms the artifact
 is byte-identical after re-running.
+
+---
+
+## Cycle 23 — 2026-08-10 — 3 BVA / 4 semantic / 3 adversarial
+
+**Target.** The geocoding precision flags in `R/13` and `R/14` — *"a city
+centroid is a town, not a hospital"*.
+
+**Tests added** — `tests/test_cycle23_geocode_precision.R` (T231–T240, 16
+assertions)
+
+### Finding 1 — `coord_precision` has no consumer
+
+R/14's roxygen states that "a downstream travel time computed from a centroid is
+a statement about a town, not a hospital, and must be able to say so". **Nothing
+reads the column.** Fourth flag in this project that exists and never runs, after
+`compute_match_score()`, `safe_left_join()`'s unusable default, and the CRS
+contract's zero call sites.
+
+Nor is the artifact consumed: the hospital counts in `county_base` come from
+`build_ob_hospital_counts()`, which reads the POS file directly. So **2,784
+geocoded hospitals — including 366 rate-limited fallback API calls — feed
+nothing today.** There is no live error, and the test file says so.
+
+### Finding 2 — the flag predicts error, which is why it is worth keeping
+
+Resolving every geocode against the county its POS record claims:
+
+| precision | n | wrong county | % wrong |
+|---|---:|---:|---:|
+| cache | 364 | 6 | 1.65 |
+| census_batch | 2,054 | 43 | 2.09 |
+| fallback_address | 347 | 16 | 4.61 |
+| **city_centroid** | **19** | **3** | **15.79** |
+
+A centroid row is **~7× more likely** to land in the wrong county than a
+census-batch row, and **68 hospitals overall** sit outside the county POS
+assigns them. The flag is not bookkeeping — it tracks real displacement, and the
+ordering cache < batch < fallback < centroid holds exactly as the fallback chain
+predicts.
+
+So the contract pinned is: precision is assigned from the geocoder's own match
+type, it survives to the artifact, and the error rate it predicts cannot grow
+unnoticed (T240) — **so that when something finally consumes these coordinates,
+the caveat travels with them.** T234 asserts the absence of a consumer, so the
+day one appears, the change is noticed rather than assumed safe.
+
+### Full suite
+
+**29/29 files pass, twice, order-independent. Frozen directories untouched.**
+
+### Unresolved / carried forward
+
+- **DATA QUESTION:** the 1,163 address disagreements blocking R/03 (c19).
+- **NEW, low priority:** 2,784 geocoded hospitals with no consumer. Either wire
+  them into the access analysis or stop paying the fallback API cost.
+- **DECISION NEEDED:** GFR reliability method (c8); `women_15_44` partial vs NA
+  (c7); Table 1 censoring (c1); `ct_partial` reporting (c4).
+- **UPSTREAM (isochrones):** `extract_first_initial()` accent bug (c12).
+- 18 undeclared joins (c10); 4 duplicate helpers (c9); 14 `.keep_all` (c5).
+
+**No scientific estimand was changed in this cycle.**
