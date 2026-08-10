@@ -1556,3 +1556,70 @@ it as a save would be false.
 **16/16 pass.**
 
 **No scientific estimand was changed in this cycle.**
+
+---
+
+## Cycle 11 — 2026-08-10 00:4x — 3 BVA / 4 semantic / 3 adversarial
+
+**Target.** Spatial contracts: CRS handling, coordinate plausibility, and
+point-in-polygon cardinality. Tests in `tests/test_cycle11_spatial.R`; new
+`R/lib/coordinate_plausibility.R`.
+
+**DEFECT — a documented rule with zero call sites.**
+`R/spatial_crs_contract.R` states that every spatial binary operation must be
+preceded by `assert_crs_equal()`. It had **no callers anywhere in the repo**.
+A contract that is never invoked is documentation, not a guard, and it reads
+in review as though the check is happening.
+
+Honestly scoped: `sf` already errors on a CRS mismatch and on a one-sided NA,
+so the residual gap is narrow — **two layers that BOTH have an undefined CRS
+satisfy `identical()`, and `st_join()` will happily match them**, computing
+point-in-polygon on unlabelled numbers. T105a demonstrates sf doing exactly
+that silently; T105b shows the assertion catching it, which is what makes the
+guard non-redundant rather than ceremonial. Both call sites set CRS literally,
+so this cannot fire today; the fix makes the module's own rule true rather
+than aspirational.
+
+**Also pinned this cycle.**
+
+- A swapped lon/lat does not error — it lands outside every US polygon and
+  yields NA, which reads as "no match" rather than "wrong input" (T108).
+- A Web-Mercator metre coordinate mislabelled EPSG:4326 is out of degree range
+  and therefore detectable (T109).
+- Two midwives at the same address remain two people after a spatial join
+  (T110) — the person-level counterpart to the geocode collision work in
+  cycle 5.
+- `s2` is disabled only around a topological operation, never around a
+  measurement (T107).
+
+**Discrimination verified.** Removing one `assert_crs_equal()` call makes T104
+fail and name the exact site (`12-district-profiles.R:216`); restoring it
+passes. The guard is enforced, not asserted.
+
+**Out-of-cycle sweep (from the 10,000-certificant report).** The watcher used
+`!is.na(hg_url)` as a proxy for "has a profile", which counts REJECTED
+candidates as hits, and divided a full-roster numerator by the cohort
+denominator — producing 63.3% and 116%, against correct values of 47.5% and
+49.1%. Swept the repository for that class: **every tracked call site is
+guarded by `hg_status`**. The only offenders were in the untracked ad-hoc
+watcher, now retired; the corrected logic lives in
+`tests/test_healthgrades_integrity.R`, which runs every cycle. (The two
+apparently unguarded hits in that test file are its deliberate side-by-side
+comparison of row-wise versus person-wise counting.)
+
+**Full suite.** 16/16 pass, 0 skips.
+
+**Carried forward.**
+
+- **DECISION NEEDED:** GFR reliability treatment (MOE-aware or smoothed).
+- **DECISION NEEDED:** ratify the `women_15_44` partial-sum reading.
+- **DECISION NEEDED:** Table 1 panel-window censoring on ">=15 years".
+- **DECISION NEEDED:** whether a `ct_partial` region should be reported.
+- **DECISION NEEDED:** minimum cohort coverage for a Healthgrades field —
+  now quantified: projected cohort coverage at completion is **~49%**, and the
+  missing half is not missing at random.
+- **ACTION:** rebuild Table 1 when the crawl finishes (45.1% searched).
+- **DEBT:** 12 undeclared joins (T100); 14 bare `.keep_all` (T44).
+- **HYGIENE:** duplicate test IDs across cycles 6/7.
+
+**Estimand changed:** no.
