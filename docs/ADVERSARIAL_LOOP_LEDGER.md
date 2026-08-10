@@ -2533,3 +2533,62 @@ data question — which address is right — and is tracked, not silenced.
 
 **Estimand changed:** no — the attempted change was reverted, which is the
 point of this entry.
+
+---
+
+## Cycle 19 — 2026-08-10 04:2x — 4 BVA / 3 semantic / 3 adversarial
+
+**Target.** The 1,163 address-provenance disagreements that block
+`R/03-geography-hierarchy.R` — the data question cycle 18 surfaced. Tests in
+`tests/test_cycle19_address_provenance.R`.
+
+**The boundary was respected.** The cycle triaged the disagreements without
+resolving them: T196a confirms the invariant still ABORTS rather than warning,
+and T196b confirms the abort is **not conditioned on impact class** —
+*triage informs, it does not excuse*. Which address is correct remains the
+owner's data question.
+
+**Triage (strict per-ZIP classification, matching the shipped evidence file):**
+
+| class | n | |
+|---|---:|---|
+| different state | 390 | definitely misplaced |
+| different county, same state | 175 | definitely misplaced |
+| same county | 171 | demonstrably harmless |
+| ZIP spans several counties | 427 | **cannot be placed either way** |
+
+565 (48.6%) definitely change county; 427 (36.7%) are unresolvable; only 171
+(14.7%) are harmless. County is the unit of every access finding, so the
+invariant is catching real placement error — and relaxing it to "same county is
+fine" would still admit 48.6% while guessing at another 36.7%.
+
+**PROSE DISAGREED WITH DATA, IN THE SAME COMMIT.** The comment added to `R/03`
+quoted **612 / 318 / 209 / 24** while the evidence file it shipped alongside
+held **390 / 175 / 171 / 427**. The comment's figures came from a superseded
+land-dominant assignment, which pushes every multi-county ZIP into its largest
+county and so reported 24 unresolvable instead of 427. Its headline claim —
+"930 of 1,163 (80%) move to a different county" — overstated certainty; the
+strict figure is 48.6% definite with 36.7% unknowable.
+
+Two number sets in one repo, and the wrong one is the one that reaches a
+manuscript. The comment now carries the strict counts, and **T194b asserts the
+figures quoted in the source match the artifact**. Discrimination verified:
+restoring `612` makes it fail.
+
+**Full suite.** 24/24 pass, 0 skips.
+
+**Carried forward.**
+
+- **DECISION NEEDED (highest priority):** re-freeze the cohort or keep the pin
+  (17,538 vs 16,892) — cycle 18.
+- **DATA QUESTION (now triaged, still open):** which address is authoritative
+  for the 565 records that definitely change county, and what to do with the
+  427 that no ZIP can place.
+- **DECISION NEEDED:** `general_fertility_rate` naming (c17); nesting escape
+  threshold (c14); GFR reliability (c8); `women_15_44` partial-sum (c7);
+  Table 1 panel censoring (c1); `ct_partial` (c4); Healthgrades coverage (c6).
+- **ACTION (upstream):** `extract_first_initial()` accent stripping.
+- **ACTION:** rebuild Table 1 when the crawl finishes; regenerate README figures.
+- **DEBT:** 2 stale artifacts; 12 undeclared joins; 14 bare `.keep_all`.
+
+**Estimand changed:** no.

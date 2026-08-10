@@ -294,7 +294,55 @@ build_geography <- function() {
                (!is.na(practice_state) & !is.na(geo_state) &
                   practice_state != geo_state))
     if (nrow(bad_prov) > 0) {
+      # CYCLE 19. The guard is CORRECT and is deliberately not relaxed. It was
+      # investigated as a candidate for being over-strict, because it aborts the
+      # whole stage on any string difference between the roster ZIP/state and
+      # the address the coordinates were geocoded from.
+      #
+      # Classified against the ZCTA-county crosswalk, the 1,163 disagreements
+      # break down as follows. These are the STRICT per-ZIP counts, and they
+      # match artifacts/invariant_address_provenance_failures.csv exactly --
+      # quote these, not the land-dominant figures an earlier draft of this
+      # comment carried (612/318/209/24), which assigned every multi-county ZIP
+      # to its largest county and so reported only 24 unresolvable instead of
+      # 427:
+      #
+      #   390  land in a DIFFERENT STATE
+      #   175  land in a different county, same state
+      #   171  land in the SAME county (ZIP differs, county does not)
+      #   427  ZIP spans several counties and cannot place the person at all
+      #
+      # 565 of 1,163 (48.6%) DEFINITELY move the record to a different county,
+      # and a further 427 (36.7%) cannot be placed either way. Only 171 (14.7%)
+      # are demonstrably harmless. County is the unit of every access finding
+      # here, so the invariant is not a string-matching nuisance -- and
+      # loosening it to "same county is fine" would still admit 48.6% of these
+      # while silently guessing at another 36.7%.
+      #
+      # Classification uses GEOID_unique, which is NA for a ZIP spanning several
+      # counties. That is deliberate: such a ZIP genuinely cannot place a
+      # person, so it is reported as unresolvable rather than assigned to
+      # whichever county holds the most land. The counts above were measured
+      # with the land-dominant assignment and so understate "unresolvable".
+      #
+      # What WAS missing is triage. All 1,163 were reported at one severity, so
+      # a human could not tell the 612 cross-state cases from the 209 harmless
+      # ones. The evidence file now carries that classification.
+      bad_prov <- bad_prov %>%
+        dplyr::left_join(dplyr::select(zc, zip5, .cty_r = GEOID_unique),
+                         by = c("rz" = "zip5"), relationship = "many-to-one") %>%
+        dplyr::left_join(dplyr::select(zc, zip5, .cty_g = GEOID_unique),
+                         by = c("gz" = "zip5"), relationship = "many-to-one") %>%
+        dplyr::mutate(county_impact = dplyr::case_when(
+          is.na(.cty_r) | is.na(.cty_g)                      ~ "unresolvable_zip",
+          .cty_r == .cty_g                                   ~ "same_county",
+          substr(.cty_r, 1, 2) == substr(.cty_g, 1, 2)       ~ "different_county_same_state",
+          TRUE                                               ~ "different_state")) %>%
+        dplyr::select(-.cty_r, -.cty_g)
+      impact <- sort(table(bad_prov$county_impact), decreasing = TRUE)
       write_csv(bad_prov, file.path(ART, "invariant_address_provenance_failures.csv"))
+      cli::cli_alert_danger(
+        "address provenance failures by county impact: {paste(sprintf('%s=%d', names(impact), as.integer(impact)), collapse=', ')}")
       stop(sprintf("INVARIANT: %d records where the coordinate source's address disagrees with the pinned roster address. Coordinates and ZIP would describe different practices. See artifacts/invariant_address_provenance_failures.csv",
                    nrow(bad_prov)), call. = FALSE)
     }

@@ -195,11 +195,19 @@ cat("\n-- ADVERSARIAL --\n")
     if (basename(f) == "join_safety.R") next
     src <- readLines(f, warn = FALSE)
     src <- src[!grepl("^\\s*#", src)]
-    bare <- bare + sum(grepl("[^_a-z](left|inner)_join\\(", src))
+    # CYCLE 19 CORRECTION. This counted EVERY left/inner join, so adding a new,
+    # correctly-declared join failed the ratchet -- penalising exactly the
+    # practice cycle 10 established. The premise was superseded: what matters is
+    # the count of joins that do NOT declare their cardinality. Recounted on
+    # that basis, matching T100.
+    for (i in grep("[^_a-z](left|inner)_join\\(", src)) {
+      blk <- paste(src[i:min(length(src), i + 3)], collapse = " ")
+      if (!grepl("relationship\\s*=", blk)) bare <- bare + 1L
+    }
     safe <- safe + sum(grepl("safe_(left|inner|semi|anti)_join\\(", src))
   }
-  chk(bare <= 46L,
-      sprintf("T89 the bare-join count does not grow beyond the recorded debt [%d bare, %d guarded]",
+  chk(bare <= 18L,
+      sprintf("T89 the UNDECLARED-join count does not grow beyond the recorded debt [%d undeclared, %d wrapped]",
               bare, safe))
 }
 
