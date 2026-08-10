@@ -91,6 +91,7 @@ cat("reusing:", paste(c("rank_one_to_one", "safe_pct"), collapse = ", "), "\n")
 # already transliterates correctly. It is a key builder, not a second
 # normaliser. See tests/test_amcb_name_normalization.R.
 source(file.path(root_dir, "R", "amcb_name_keys.R"))
+source(file.path(root_dir, "R", "amcb_match_rules.R"))
 cat("name keys: amcb_name_key() via canonical normalize_string()",
     "(transliterating)\n")
 
@@ -549,10 +550,15 @@ matched <- resolved %>%
 # and 1548261456 (ANASTASIA OTT HALLISEY, middle M. then absent) were each
 # vetoed by themselves. Excluding the matched NPI leaves only genuinely rival
 # people, which is what the guard was ever meant to count.
-mid_veto_stats <- vetoed_c5_pairs %>%
-  left_join(matched %>% select(amcb_id, npi), by = "amcb_id") %>%
-  filter(is.na(npi) | vetoed_npi != npi) %>%
-  count(amcb_id, name = "n_mid_vetoed_c5")
+# Delegated to count_rival_npis() in R/amcb_match_rules.R rather than written
+# inline: the rule is exactly what was got wrong, and inline it can only be
+# tested by a nine-minute full run plus an artifact diff. See G3 in
+# tests/test_amcb_gates.R, which pins BOTH directions -- a self-variant is not
+# a rival, a different NPI is.
+mid_veto_stats <- count_rival_npis(
+  as.data.frame(vetoed_c5_pairs),
+  as.data.frame(matched %>% select(amcb_id, npi))) %>%
+  rename(n_mid_vetoed_c5 = n_rival_npis)
 
 # Rows identifiable on name but which lost the bijection to a stronger claim.
 lost_bijection <- setdiff(unique(resolved$amcb_id), matched$amcb_id)
