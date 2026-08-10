@@ -17,7 +17,8 @@
 #   - dateCreated / dateModified (profile metadata)
 #
 # Strategy:
-#   PASS 1 — crawl directory A–Z, collect all public profile URLs.
+#   PASS 1 — paginate directory (?page=N), collect all public profile URLs.
+#             Note: letter sub-paths (/a, /b …) return 404; base URL + ?page=N works.
 #   PASS 2 — fetch each profile URL, parse HTML + JSON-LD.
 #   PASS 3 — name-match to the AMCB cohort roster.
 #
@@ -60,37 +61,33 @@ cat(sprintf("resume mode: %s\n", RESUME))
 dir.create("artifacts", showWarnings = FALSE)
 
 # =============================================================================
-# PASS 1: collect profile URLs from directory A–Z
+# PASS 1: collect profile URLs via paginated directory (no letter sub-paths)
 # =============================================================================
 if (RESUME && file.exists(URL_FILE)) {
   cat("pass 1: loading existing URL list\n")
   url_df <- read_csv(URL_FILE, show_col_types = FALSE)
 } else {
-  cat("pass 1: crawling directory A–Z\n")
+  cat("pass 1: crawling directory pages\n")
   all_urls <- character(0)
-  letters_tried <- character(0)
 
-  for (letter in letters) {
-    page_n <- 1L
-    repeat {
-      dir_url <- sprintf("%s/%s?page=%d", DIR_BASE, letter, page_n)
-      resp <- safe_get(dir_url)
-      if (is.null(resp) || status_code(resp) != 200) break
+  page_n <- 1L
+  repeat {
+    dir_url <- sprintf("%s?page=%d", DIR_BASE, page_n)
+    resp <- safe_get(dir_url)
+    if (is.null(resp) || status_code(resp) != 200) break
 
-      html  <- content(resp, as = "parsed", encoding = "UTF-8")
-      links <- html %>%
-        html_elements("a[href]") %>%
-        html_attr("href") %>%
-        keep(~ str_detect(.x, "^/pub/"))
+    html  <- content(resp, as = "parsed", encoding = "UTF-8")
+    links <- html %>%
+      html_elements("a[href]") %>%
+      html_attr("href") %>%
+      keep(~ str_detect(.x, "^/pub/"))
 
-      if (!length(links)) break
-      new_urls <- paste0(BASE, links)
-      all_urls <- unique(c(all_urls, new_urls))
-      cat(sprintf("  %s p%d: %d profiles (total %d)\n",
-                  toupper(letter), page_n, length(links), length(all_urls)))
-      page_n <- page_n + 1L
-    }
-    letters_tried <- c(letters_tried, letter)
+    if (!length(links)) break
+    new_urls <- paste0(BASE, links)
+    all_urls <- unique(c(all_urls, new_urls))
+    cat(sprintf("  p%d: %d profiles (total %d)\n",
+                page_n, length(links), length(all_urls)))
+    page_n <- page_n + 1L
   }
 
   url_df <- tibble(profile_url = unique(all_urls))
@@ -160,17 +157,22 @@ parse_profile <- function(url) {
   city_zip     <- NA_character_
   phone        <- NA_character_
   for (li in list_items) {
-    if (str_detect(li, "^\\+1\\s")) {
-      phone <- str_trim(li)
-    } else if (str_detect(li, "\\d{5}")) {
-      # e.g. "111 17th Ave E\nAlexandria, MN 56308"
-      parts <- str_split(li, "\n")[[1]]
-      if (length(parts) >= 2) {
-        address_line <- str_trim(parts[1])
-        city_zip     <- str_trim(parts[2])
-      } else {
-        address_line <- str_trim(li)
+    # Strip inline CSS injected by Doximity icon wrappers before the text.
+    li_clean <- str_trim(str_remove(li, "^.*\\}"))
+    # Phone: require full US number (country code 1 + 10 digits).
+    if (str_detect(li_clean, "^\\+?1[\\s\\-\\.]?\\(?\\d{3}\\)?[\\s\\-\\.]?\\d{3}[\\s\\-\\.]?\\d{4}")) {
+      phone <- li_clean
+    } else if (str_detect(li_clean, "\\d{5}")) {
+      # HTML fuses street and city without a separator.
+      # Use the already-scraped city name as the split anchor.
+      split_done <- FALSE
+      if (!is.na(city) && nchar(city) > 0 && str_detect(li_clean, fixed(city))) {
+        idx <- str_locate(li_clean, fixed(city))[1, "start"]
+        address_line <- str_trim(substr(li_clean, 1L, idx - 1L))
+        city_zip     <- str_trim(substr(li_clean, idx, nchar(li_clean)))
+        split_done   <- TRUE
       }
+      if (!split_done) address_line <- li_clean
     }
   }
 
