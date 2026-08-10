@@ -111,6 +111,54 @@ chk(identical(band_rurality(c("7", "1")), band_rurality(c(7, 1))) &&
       identical(band_rurality(factor(c("7", "1"))), band_rurality(c(7, 1))),
     "character and factor RUCC codes band identically to numeric")
 
+cat("\n-- band_hg_age: BVA --\n")
+
+# T11. Band edges are closed on the left at 35/45/55/65. Off-by-one here
+# shifts a midwife's decade in a published demographic row.
+a <- band_hg_age(c(34, 35, 44, 45, 54, 55, 64, 65, 100))
+chk(identical(a, c("<35 years", "35-44 years", "35-44 years", "45-54 years",
+                   "45-54 years", "55-64 years", "55-64 years",
+                   ">=65 years", ">=65 years")),
+    "hg_age bands are closed on the left at 35/45/55/65")
+
+# T12. Ages outside the plausible window (< 18 or > 120) must be NA, not
+# absorbed into the terminal bands.
+chk(all(is.na(band_hg_age(c(NA, 17, 0, -1, 121, Inf, -Inf, NaN)))),
+    "implausible ages (< 18, > 120, Inf, NaN, NA) band to NA")
+
+cat("\n-- band_hg_age: SEMANTIC --\n")
+
+# T13. Every value assigned to a band label actually falls within that band's
+# stated range — labels must not lie about who they contain.
+ages <- seq(18, 120, by = 1)
+ba   <- band_hg_age(ages)
+rng_ok_hg <-
+  all(ages[!is.na(ba) & ba == "<35 years"]  < 35) &&
+  all(ages[!is.na(ba) & ba == "35-44 years"] >= 35 & ages[!is.na(ba) & ba == "35-44 years"] < 45) &&
+  all(ages[!is.na(ba) & ba == "45-54 years"] >= 45 & ages[!is.na(ba) & ba == "45-54 years"] < 55) &&
+  all(ages[!is.na(ba) & ba == "55-64 years"] >= 55 & ages[!is.na(ba) & ba == "55-64 years"] < 65) &&
+  all(ages[!is.na(ba) & ba == ">=65 years"]  >= 65)
+chk(rng_ok_hg, "every hg_age band label bounds the values assigned to it")
+
+# T14. Bands are exhaustive over the plausible domain and mutually exclusive.
+chk(!any(is.na(ba)) && length(unique(ba)) == 5L,
+    "hg_age bands are exhaustive and mutually exclusive over ages 18-120")
+
+cat("\n-- band_hg_age: ADVERSARIAL --\n")
+
+# T15. Character and factor inputs (as Healthgrades data often arrives) must
+# band identically to numeric.
+chk(identical(band_hg_age(c("34", "35", "65")), band_hg_age(c(34, 35, 65))) &&
+      identical(band_hg_age(factor(c("34", "35", "65"))), band_hg_age(c(34, 35, 65))),
+    "character and factor ages band identically to numeric")
+
+# T16. Row order must not change any result.
+set.seed(2)
+x16 <- c(25, 40, 50, 60, 70, NA, 18)
+p16 <- sample(seq_along(x16))
+chk(identical(band_hg_age(x16)[p16], band_hg_age(x16[p16])),
+    "hg_age banding is invariant to row order")
+
 cat(sprintf("\n%s (%d failure%s)\n", if (fails == 0L) "PASS" else "FAILURES",
             fails, if (fails == 1L) "" else "s"))
 quit(status = if (fails == 0L) 0L else 1L)

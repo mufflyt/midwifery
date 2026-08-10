@@ -107,6 +107,7 @@ source("R/lib/field_quality.R")
 HG_CANDIDATE_FIELDS <- c("hg_gender", "hg_age", "hg_years_experience",
                          "hg_languages", "hg_accepts_new_patients",
                          "hg_has_telehealth", "hg_medicaid_named")
+hg_link <- NULL
 if (file.exists("healthgrades_profile_attrs.csv") &&
     file.exists("healthgrades_midwives.csv")) {
   .attrs <- read_csv("healthgrades_profile_attrs.csv", show_col_types = FALSE,
@@ -119,6 +120,7 @@ if (file.exists("healthgrades_profile_attrs.csv") &&
            certification_number %in% coh$certification_number[coh$hg_eligible]) %>%
     distinct(certification_number, hg_url) %>%
     left_join(.attrs, by = "hg_url")
+  hg_link <- .link
   # VERDICT is judged on ALL fetched profiles, not on the cohort-linked subset.
   # "Does the source populate this field with information?" is a property of
   # the source. Judged on the subset, hg_gender reads CONSTANT purely because
@@ -256,6 +258,18 @@ if (file.exists(pnl)) {
 coh <- coh %>%
   mutate(active_band = band_years_observed(yrs_observed))
 
+# --- Healthgrades banded columns ----------------------------------------------
+if (!is.null(hg_link)) {
+  hg_link <- hg_link %>%
+    mutate(
+      hg_age_band  = band_hg_age(hg_age),
+      hg_lang_flag = dplyr::if_else(
+        !is.na(hg_languages) & hg_languages != "" &
+          !str_to_lower(trimws(hg_languages)) %in% c("english", "english only"),
+        "Yes", NA_character_)
+    )
+}
+
 # --- assemble, long format, per the isochrones vignette -----------------------
 # Percentages use the non-missing denominator, and the missing count is emitted
 # as its own row so the two are never confused.
@@ -275,6 +289,33 @@ blk <- function(df, col, category, lvls = NULL) {
     out <- bind_rows(out, tibble(characteristic = "Unknown / not recorded",
                                  n = miss, percent = NA_real_, category = category))
   out
+}
+
+# Parallel helper for Healthgrades-derived rows. Uses the HG-eligible
+# denominator (N - shared-profile exclusions) rather than the full cohort N.
+blk_hg <- function(col, category, lvls = NULL, binary_yes = NULL) {
+  if (is.null(hg_link) || !col %in% names(hg_link)) {
+    return(tibble(characteristic = "Healthgrades data not available",
+                  n = NA_integer_, percent = NA_real_, category = category))
+  }
+  N_hg <- N - length(hg_ambiguous)
+  v <- hg_link[[col]]
+  if (!is.null(binary_yes))
+    v <- dplyr::if_else(as.character(v) %in% as.character(binary_yes),
+                        "Yes",
+                        dplyr::if_else(is.na(v), NA_character_, "No"))
+  known <- sum(!is.na(v))
+  out <- tibble(characteristic = as.character(v)) %>%
+    filter(!is.na(characteristic)) %>%
+    count(characteristic, name = "n") %>%
+    mutate(percent = round(100 * n / known, 1), category = category)
+  if (!is.null(lvls))
+    out <- out %>% arrange(match(characteristic, lvls))
+  else
+    out <- out %>% arrange(desc(n))
+  miss <- N_hg - known
+  bind_rows(out, tibble(characteristic = "Unknown / not recorded",
+                        n = miss, percent = NA_real_, category = category))
 }
 
 t1 <- bind_rows(
@@ -301,10 +342,27 @@ t1 <- bind_rows(
   blk(coh, "active_band", "Years observed in NPPES",
       lvls = c("<5 years", "5-9 years", "10-14 years", ">=15 years")),
 
-  tibble(characteristic = "Not collected by NPPES, CMS DAC or the Healthgrades scrape",
-         n = NA_integer_, percent = NA_real_, category = "Language"),
+  # Language: use Healthgrades data when available; otherwise note it is absent.
+  if (!is.null(hg_link) && "hg_lang_flag" %in% names(hg_link))
+    blk_hg("hg_lang_flag", "Speaks a language other than English",
+            lvls = c("Yes", "No"))
+  else
+    tibble(characteristic = "Not collected by NPPES, CMS DAC or the Healthgrades scrape",
+           n = NA_integer_, percent = NA_real_, category = "Language"),
 
-  # The denominator any future Healthgrades-derived row must use. Stated
+  # Healthgrades-derived person-level characteristics
+  blk_hg("hg_gender", "Sex (Healthgrades)", lvls = c("Female", "Male")),
+  blk_hg("hg_age_band", "Age (Healthgrades)",
+          lvls = c("<35 years", "35-44 years", "45-54 years",
+                   "55-64 years", ">=65 years")),
+  blk_hg("hg_accepts_new_patients", "Accepts new patients",
+          binary_yes = c("TRUE", "true", "Yes", "yes", TRUE)),
+  blk_hg("hg_has_telehealth", "Offers telehealth",
+          binary_yes = c("TRUE", "true", "Yes", "yes", TRUE)),
+  blk_hg("hg_medicaid_named", "Named as Medicaid provider",
+          binary_yes = c("TRUE", "true", "Yes", "yes", TRUE)),
+
+  # The denominator any Healthgrades-derived row must use. Stated
   # explicitly so it can never be silently swapped for N: those fields describe
   # a smaller population than the registry fields above them.
   tibble(characteristic = "Eligible for attribution (no shared profile)",

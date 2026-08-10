@@ -186,6 +186,22 @@ build_rucc_lookup <- function(fips, rucc) {
 #' @return [character] decade label such as "2000s"; `NA` where no plausible
 #'   year is present. Zero-length input returns zero-length **character**.
 #' @family table1-bands
+#' Band Healthgrades age into 10-year groups
+#'
+#' @param age [numeric|character]: age in years as reported by Healthgrades.
+#' @return [character] band label, NA where not classifiable.
+band_hg_age <- function(age) {
+  a <- suppressWarnings(as.numeric(as.character(age)))
+  bad <- is.na(a) | !is.finite(a) | a < 18 | a > 120
+  out <- rep(NA_character_, length(a))
+  out[!bad & a <  35] <- "<35 years"
+  out[!bad & a >= 35 & a < 45] <- "35-44 years"
+  out[!bad & a >= 45 & a < 55] <- "45-54 years"
+  out[!bad & a >= 55 & a < 65] <- "55-64 years"
+  out[!bad & a >= 65] <- ">=65 years"
+  out
+}
+
 band_cert_decade <- function(x, min_year = 1950L, max_year = 2100L) {
   y <- parse_enum_year(x, min_year = min_year, max_year = max_year)
   # NOT ifelse(): it is type-unstable on zero-length input, returning
