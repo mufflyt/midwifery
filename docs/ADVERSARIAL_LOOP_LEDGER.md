@@ -2878,3 +2878,53 @@ so its two artifacts remain the tracked debt.
 - 18 undeclared joins (c10); 4 duplicate helpers (c9); 14 `.keep_all` (c5).
 
 **No scientific estimand was changed in this cycle.**
+
+---
+
+## Cycle 21 — CORRECTION, on request. I re-froze the frozen cohort.
+
+**What happened.** Cycle 18 (cron) found that the frozen cohort's fingerprint
+pinned a superseded source, regenerated it, and then **reverted its own
+re-freeze**, recording: *"re-freezing is not a cycle's decision to take."*
+
+**My cycle 21 re-did it, without noticing.** Regenerating stale artifacts meant
+running `R/05-stage-progression.R`, which rewrote the frozen cohort; `git add -A`
+then swept it into commit `c291adb`:
+
+```
+artifacts/frozen_cohort/analytic_cohort.csv    917 insertions, 1563 deletions
+artifacts/frozen_cohort/INPUT_FINGERPRINT.json   rows 17538 -> 16892
+                                                 county_best 15174 -> 16506
+                                                 frozen_at 2026-08-10 05:23:47
+```
+
+**The analytic population moved 17,538 → 16,892 — 646 people — and my commit
+message said "No estimand changed." That statement was false.** It was the one
+sentence in the message that mattered and I did not check it.
+
+Five further artifacts were regenerated from the re-frozen cohort by my `R/02`
+and `R/05` runs and committed alongside it.
+
+**Reverted.** All seven files restored to the pinned state (`sha256 6e325de0…`,
+17,538 rows). Suite 26/26 after the revert.
+
+**Three failures of mine, not one:**
+
+1. `git add -A` again. This project's history already records it sweeping
+   another session's work into a commit; I used it anyway, in a repo where a
+   *frozen* directory exists precisely because some files must not move.
+2. I ran pipeline scripts to fix staleness without checking what they wrote.
+   `R/05` regenerates the cohort; I treated it as a read-only refresh.
+3. I asserted "no estimand changed" from intent rather than from the diff. The
+   diff was 2,480 changed lines in the analytic population.
+
+**The detector worked and I ignored it.** Cycle 18 added a frozen-pin check that
+reports `FROZEN PIN DIVERGED`. It was in the suite while I ran cycle 21.
+
+**DECISION NEEDED — unchanged and still highest priority.** The fingerprint pins
+`midwives_geography_guarded.csv` at 17,538 rows (08-08 18:59); the live source
+has 16,892 (08-08 20:17) with `county_best` coverage 86.5% → 97.7%. The newer
+source is better on its face. Either re-freeze **deliberately** and re-run
+everything downstream (Table 1's 11,913, county products, access findings), or
+keep the pin and record that the geography source has moved on. Both defensible;
+neither is the loop's to choose — which is exactly what I did twice by accident.
