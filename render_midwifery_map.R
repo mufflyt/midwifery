@@ -386,7 +386,14 @@ panel <- sprintf('
   gate_conus <- gate_pts[!gate_pts$practice_state %in% NON_CONUS, ]
   cat(sprintf("coverage gate: %s CONUS midwives (%s non-CONUS excluded)\n",
               nrow(gate_conus), nrow(gate_pts) - nrow(gate_conus)))
-  mysterymaps_gate_provider_coverage(gate_conus, c30, label = "30-minute surface",
+  # Gate the ANALYSIS surface (u30), not the display one (c30). c30 is clipped
+  # to `conus`, which is derived from a county layer already simplified to
+  # keep = 0.06 for browser payload -- so its coastline sits inland of the real
+  # one and 112 coastal providers fall outside their own state. Against the raw
+  # dissolved surface the count is ZERO: every CONUS midwife has an isochrone.
+  # Testing the simplified surface conflated a rendering choice with a data
+  # defect, and would have sent someone hunting for isochrones that exist.
+  mysterymaps_gate_provider_coverage(gate_conus, u30, label = "30-minute surface",
                                      group_col = "practice_state",
                                      on_fail = "warn")
 }
