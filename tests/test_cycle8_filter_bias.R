@@ -71,7 +71,7 @@ cat("\n-- BVA --\n")
 # T72 (BVA). The bound removes exactly the demographically impossible values,
 # and no more. If this count grows, the data changed, not the rule.
 {
-  excl <- sum(CB$general_fertility_rate > BOUND, na.rm = TRUE)
+  excl <- sum(CB$acs_births_per_1000_women_15_44 > BOUND, na.rm = TRUE)
   # CYCLE 16 UPDATE: 9 -> 19, after the women_15_44 denominator fix raised every
   # county's fertility rate by ~13%. More counties now exceed the bound because
   # the rates are finally right, not because the data got worse.
@@ -84,7 +84,7 @@ cat("\n-- BVA --\n")
 {
   chk(grepl("rank_gfr_high\\s*=\\s*mm_rank\\(ifelse\\(gfr_plausible", SRC),
       "T73a only the ranking is filtered, via ifelse inside mm_rank")
-  chk(!grepl("filter\\(gfr_plausible\\)|filter\\([^)]*general_fertility_rate <=", SRC_CODE),
+  chk(!grepl("filter\\(gfr_plausible\\)|filter\\([^)]*acs_births_per_1000_women_15_44 <=", SRC_CODE),
       "T73b no county is dropped from the profile table by the bound")
 }
 
@@ -100,8 +100,8 @@ cat("\n-- SEMANTIC --\n")
       group_by(rurality) %>%
       summarise(pct = 100 * sum(ex, na.rm = TRUE) / n(), .groups = "drop")
   }
-  now <- rate_by_rurality(!is.na(CB$general_fertility_rate) &
-                            CB$general_fertility_rate > BOUND)
+  now <- rate_by_rurality(!is.na(CB$acs_births_per_1000_women_15_44) &
+                            CB$acs_births_per_1000_women_15_44 > BOUND)
   spread_now <- max(now$pct) - min(now$pct)
   chk(spread_now < 5,
       sprintf("T74a the live exclusion is near-uniform across rurality [spread %.1f pp: %s]",
@@ -131,8 +131,8 @@ cat("\n-- SEMANTIC --\n")
 {
   chk(BOUND >= 150,
       "T76a the bound sits above the highest recorded national GFR (~150-200)")
-  ranked <- CB$general_fertility_rate[!is.na(CB$general_fertility_rate) &
-                                        CB$general_fertility_rate <= BOUND]
+  ranked <- CB$acs_births_per_1000_women_15_44[!is.na(CB$acs_births_per_1000_women_15_44) &
+                                        CB$acs_births_per_1000_women_15_44 <= BOUND]
   chk(max(ranked) > 100,
       sprintf("T76b genuinely high-fertility counties remain rankable [max kept %.1f]",
               max(ranked)))
@@ -149,7 +149,7 @@ cat("\n-- SEMANTIC --\n")
 # here is a hole, not a pass.
 {
   # THIS TEST WAS VACUOUS AS FIRST WRITTEN, TWICE. county_midwifery_supply.csv
-  # has no general_fertility_rate column, so `sup$general_fertility_rate` was
+  # has no acs_births_per_1000_women_15_44 column, so `sup$acs_births_per_1000_women_15_44` was
   # NULL, `!is.na(NULL)` was logical(0), the exclusion set was empty, and the
   # test reported "0 of 11,762, 0.00%" and passed no matter what the data said.
   # It is the exact trap cycle 4 and cycle 6 caught elsewhere -- a test that
@@ -168,14 +168,14 @@ cat("\n-- SEMANTIC --\n")
     # Membership, not is.na(): a wrong-but-non-NA column name slipped this
     # guard and the test CRASHED instead of failing cleanly, which in a loop
     # that greps for "FAIL" is indistinguishable from silence.
-    have <- "general_fertility_rate" %in% names(cb) &&
+    have <- "acs_births_per_1000_women_15_44" %in% names(cb) &&
       !is.na(mcol) && mcol %in% names(sup) &&
       !is.na(gkey) && gkey %in% names(cb) && "fips" %in% names(sup)
     if (!have) {
       chk(FALSE, "T77 required columns missing -- refusing to pass vacuously")
     } else {
       pad <- function(x) sprintf("%05s", as.character(x))
-      j <- merge(data.frame(k = pad(cb[[gkey]]), g = cb$general_fertility_rate),
+      j <- merge(data.frame(k = pad(cb[[gkey]]), g = cb$acs_births_per_1000_women_15_44),
                  data.frame(k = pad(sup$fips), m = sup[[mcol]]), by = "k")
       ex   <- !is.na(j$g) & j$g > BOUND
       lost <- sum(j$m[ex], na.rm = TRUE); tot <- sum(j$m, na.rm = TRUE)
@@ -213,8 +213,8 @@ cat("\n-- ADVERSARIAL --\n")
 # T80 (adversarial). Row order must not change any rank. The profile table is
 # rebuilt from several joins, so its row order is not stable across runs.
 {
-  d <- CB %>% filter(!is.na(general_fertility_rate)) %>%
-    mutate(g = ifelse(general_fertility_rate <= BOUND, general_fertility_rate, NA_real_))
+  d <- CB %>% filter(!is.na(acs_births_per_1000_women_15_44)) %>%
+    mutate(g = ifelse(acs_births_per_1000_women_15_44 <= BOUND, acs_births_per_1000_women_15_44, NA_real_))
   r1 <- d %>% arrange(GEOID) %>% mutate(rk = rank(-g, na.last = "keep", ties.method = "min"))
   r2 <- d %>% arrange(desc(GEOID)) %>% mutate(rk = rank(-g, na.last = "keep", ties.method = "min")) %>%
     arrange(GEOID)

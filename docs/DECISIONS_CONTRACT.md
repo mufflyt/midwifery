@@ -39,7 +39,9 @@ uses it. A reader comparing this to a career-duration figure would be misled.
 **Recommendation: A.** The quantity is genuine and useful; only its name
 overclaims. C is not defensible now that the censoring is documented.
 
-**Ruling:** ______________________ **Date:** __________
+**RULING (2026-08-10): Keep as is (option C).**
+
+The `>=15 years` band is published unchanged. Recorded consequence, accepted by the owner: the panel runs 2007-2025, so the band can only mean 15-19 and anyone enumerated before 2007 is left-censored. Readers comparing it to career length will overstate tenure.
 
 ---
 
@@ -65,7 +67,9 @@ should the denominator be the observed partial sum, or `NA`?
 dangerous as a divisor. Zero counties are affected today, so the cost is zero
 and the rule is in place before a vintage that needs it.
 
-**Ruling:** ______________________ **Date:** __________
+**RULING (2026-08-10): Option C — partial sum kept, derived rate suppressed.**
+
+`women_15_44` reports the observed partial sum with its missing-band counter; any rate derived from it is NA when a band is missing. 0 of 3,235 counties are affected on this ACS vintage, so the rule ships before it is needed.
 
 ---
 
@@ -92,7 +96,9 @@ contributor understates by 1–9 — small individually, unbounded in aggregate.
 **Recommendation: C** for tables, **B** for any ranking or superlative. An
 understated total that can win or lose a comparison is the dangerous case.
 
-**Ruling:** ______________________ **Date:** __________
+**RULING (2026-08-10): Option B — withhold any partial region.**
+
+A Connecticut planning region whose total is missing a suppressed contributor is reported as NA rather than as an understated total.
 
 ---
 
@@ -129,7 +135,9 @@ floor was withdrawn because it removed **88.4% of remote counties**.
 to each county's actual precision instead of imposing one population cutoff,
 which is exactly what made cycle 7's floor rurally biased.
 
-**Ruling:** ______________________ **Date:** __________
+**RULING (2026-08-10): Option A — validity bound only.**
+
+`GFR_MAX_PLAUSIBLE <- 200` stands; no reliability filter is added. 16 counties excluded. Small-denominator imprecision is accepted and not corrected.
 
 ---
 
@@ -166,7 +174,9 @@ presence, which plausibly correlates with practice setting and urbanicity.
 regardless of threshold: state that profile presence is non-random, because
 that limitation applies even at 100% coverage.
 
-**Ruling:** ______________________ **Date:** __________
+**RULING (2026-08-10): Option B — publish any VARIES field with its coverage stated.**
+
+No coverage threshold. `hg_years_experience` remains barred as CONSTANT. Every published Healthgrades field must carry its cohort coverage, and the non-random nature of profile presence must be stated.
 
 ---
 
@@ -190,7 +200,9 @@ and re-route the affected origins on a single engine.
 worth deciding separately whether mixed-engine surfaces are acceptable in a
 published figure at all — that is the underlying question the escape measures.
 
-**Ruling:** ______________________ **Date:** __________
+**RULING (2026-08-10): FAIL above 10 km2 of escape.**
+
+IMMEDIATE CONSEQUENCE: the current build measures 84.1 km2 and therefore FAILS under this rule. The map cannot be rebuilt until the two routing engines agree within 10 km2, or the affected origins are re-routed on a single engine.
 
 ---
 
@@ -210,7 +222,9 @@ disclose the divergence wherever published. (C) Both.
 **Recommendation: C.** The rename prevents the error; the disclosure explains
 it for anyone holding the old name.
 
-**Ruling:** ______________________ **Date:** __________
+**RULING (2026-08-10): Option A — rename.**
+
+`general_fertility_rate` becomes `acs_births_per_1000_women_15_44`, naming the ACS survey basis rather than inviting comparison with the NCHS GFR (59.2 vs 54.5).
 
 ---
 
@@ -241,7 +255,9 @@ the exclusion.
 them), and treat the 427 as **unplaceable** — excluded from county-level
 analysis with the count reported, since no rule can place them honestly.
 
-**Ruling:** ______________________ **Date:** __________
+**RULING (2026-08-10): Option A — roster address authoritative.**
+
+The 565 records whose coordinate-source address disagrees are re-geocoded from the roster address. The 427 unplaceable multi-county-ZIP records remain excluded from county-level analysis with the count reported.
 
 ---
 
@@ -269,7 +285,9 @@ linkage changes the 11,913, which invalidates every current figure — so it
 should happen **once**, deliberately, before the manuscript's numbers are
 frozen, not after.
 
-**Ruling:** ______________________ **Date:** __________
+**RULING (2026-08-10): Option A — fix upstream and re-run linkage.**
+
+`extract_first_initial()` is corrected to transliterate rather than strip, and linkage is re-run, accepting a changed cohort. This must happen ONCE, before manuscript figures are frozen.
 
 ---
 

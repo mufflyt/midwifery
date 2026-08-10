@@ -46,6 +46,7 @@ root <- {
   else normalizePath(".")
 }
 suppressPackageStartupMessages({library(dplyr); library(readr)})
+NEWCOL <- "acs_births_per_1000_women_15_44"
 
 fails <- 0L
 chk <- function(cond, m) {
@@ -156,8 +157,19 @@ cat("\n-- SEMANTIC --\n")
   # the rate divides by the 15-44 column this cycle fixed -- so it now asserts
   # that and leaves the numerator to cycle 17's T174. A test should pin the
   # claim it is about, not the line it happened to read.
-  chk(grepl("general_fertility_rate = 1000 \\* [a-z_0-9]+ / women_15_44", COC),
-      "T167a the GFR denominator is the women_15_44 column")
+  # BEHAVIOUR, NOT SOURCE TEXT. This matched the literal expression, so wrapping
+  # it in if_else() for ruling D2 broke the test while the arithmetic was
+  # unchanged. An implementation-specific assertion fails on a harmless
+  # refactor and passes on a rewrite that computes the wrong thing in the same
+  # shape. The contract is the DENOMINATOR, so it is checked against the data.
+  cbx <- suppressWarnings(read_csv(file.path(root, "data", "county_base.csv"),
+                                   show_col_types = FALSE, progress = FALSE))
+  okr <- !is.na(cbx[[NEWCOL]])
+  chk(sum(okr) > 3000 &&
+        max(abs(cbx[[NEWCOL]][okr] -
+                1000 * cbx$births_15_44[okr] / cbx$women_15_44[okr])) < 1e-9,
+      sprintf("T167a the rate divides by the women_15_44 column [%d counties exact]",
+              sum(okr)))
   prof <- code(readLines(file.path(root, "R", "10-county-birth-profiles.R"), warn = FALSE))
   chk(grepl("per 1,000 women aged 15-44", prof),
       "T167b the published sentence names the same age range the column claims")

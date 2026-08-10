@@ -194,8 +194,8 @@ county_sentences <- function(r, n_counties) {
   # always shows the same facts while adjacent counties start at a different
   # offset -- variety across the map, stability across rebuilds.
   pool <- c(
-    if (!is.null(fmt(r$general_fertility_rate, 1)))
-      sprintf("a general fertility rate of %s per 1,000 women aged 15-44", fmt(r$general_fertility_rate, 1)),
+    if (!is.null(fmt(r$acs_births_per_1000_women_15_44, 1)))
+      sprintf("a general fertility rate of %s per 1,000 women aged 15-44", fmt(r$acs_births_per_1000_women_15_44, 1)),
     if (!is.null(fmt(r$teen_birth_rate, 1)))
       sprintf("a teen birth rate of %s per 1,000", fmt(r$teen_birth_rate, 1)),
     if (!is.null(fmt(100 * r$pct_low_birth_weight, 1)))
@@ -379,9 +379,9 @@ run_profiles <- function() {
       # The floor is a reliability threshold, not a correction of the rate --
       # what to do about the rate itself is recorded in the ledger as an open
       # decision.
-      gfr_plausible    = !is.na(general_fertility_rate) &
-                           general_fertility_rate <= GFR_MAX_PLAUSIBLE,
-      rank_gfr_high    = mm_rank(ifelse(gfr_plausible, general_fertility_rate, NA_real_)))
+      gfr_plausible    = !is.na(acs_births_per_1000_women_15_44) &
+                           acs_births_per_1000_women_15_44 <= GFR_MAX_PLAUSIBLE,
+      rank_gfr_high    = mm_rank(ifelse(gfr_plausible, acs_births_per_1000_women_15_44, NA_real_)))
 
   n_counties <- nrow(prof)
   prof$sentences <- vapply(seq_len(nrow(prof)),

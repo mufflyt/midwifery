@@ -195,6 +195,11 @@ names(unions) <- as.character(BANDS)
 # the same statement -- and the evidence is what says how far the two routing
 # engines disagree geographically. The number is kept.
 source(file.path("R", "lib", "coverage_surface_contracts.R"))
+#' Maximum tolerated escape of an inner band outside its outer band, km^2.
+#' Set by ruling D6 (2026-08-10). The build STOPS above this; it is not a
+#' warning threshold. See docs/DECISIONS_CONTRACT.md.
+NESTING_MAX_ESCAPE_KM2 <- 10
+
 nesting_report <- list()
 for (i in seq_along(BANDS)[-1]) {
   a <- as.character(BANDS[i]); b <- as.character(BANDS[i - 1])
@@ -209,6 +214,29 @@ for (i in seq_along(BANDS)[-1]) {
     cat(sprintf("[nesting] WARNING %smin escapes %smin by %s km2 (%.3f%% of the outer band)\n",
                 b, a, format(round(escape_km2), big.mark = ","),
                 100 * escape_km2 / before))
+
+  # D6 RULING (2026-08-10): FAIL above 10 km2 of escape.
+  #
+  # An escape is the two routing engines disagreeing about where a band ends,
+  # expressed geographically. Absorbing it makes the nesting invariant true and
+  # destroys the evidence; warning about it lets a disagreed surface be
+  # published anyway. The owner set the tolerance at 10 km2.
+  #
+  # This is a HARD STOP, not a warning: a surface whose bands disagree by more
+  # than the tolerance is not publishable, and continuing would write it to
+  # artifacts/maps/ where nothing downstream records that it was out of
+  # tolerance. To proceed deliberately, re-route the affected origins on a
+  # single engine -- do not raise the threshold to match the data.
+  if (escape_km2 > NESTING_MAX_ESCAPE_KM2) {
+    utils::write.csv(do.call(rbind, nesting_report),
+                     "artifacts/coverage_nesting_report.csv", row.names = FALSE)
+    stop(sprintf(paste0("NESTING: %smin escapes %smin by %.1f km2, above the %.0f km2 ",
+                        "tolerance set by ruling D6. The two routing engines disagree ",
+                        "about this band's edge. Report written to ",
+                        "artifacts/coverage_nesting_report.csv. Re-route the affected ",
+                        "origins on one engine rather than raising the threshold."),
+                 b, a, escape_km2, NESTING_MAX_ESCAPE_KM2), call. = FALSE)
+  }
   g <- sf::st_union(sf::st_geometry(unions[[a]]), sf::st_geometry(unions[[b]]))
   sf::st_geometry(unions[[a]]) <- sf::st_make_valid(g)
   after <- as.numeric(sf::st_area(unions[[a]])) / 1e6

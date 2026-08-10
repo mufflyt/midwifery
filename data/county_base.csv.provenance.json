@@ -1,6 +1,6 @@
 {
   "artifact": "county_base.csv",
-  "written_utc": "2026-08-10 11:37:52 UTC",
+  "written_utc": "2026-08-10 15:19:20 UTC",
   "inputs": [
     {
       "path": "data/rucc_2023.xlsx",

@@ -117,8 +117,15 @@ cat("\n-- SEMANTIC --\n")
 # T174 (semantic). THE FIX. Numerator and denominator must describe the same
 # population, which is what a rate means.
 {
-  chk(grepl("general_fertility_rate = 1000 \\* births_15_44 / women_15_44", CO),
-      "T174a the county rate divides 15-44 births by 15-44 women")
+  # Behaviour rather than source text -- see the note on cycle 16's T167a.
+  cb2 <- suppressWarnings(read_csv(file.path(root, "data", "county_base.csv"),
+                                   show_col_types = FALSE, progress = FALSE))
+  keep <- !is.na(cb2[["acs_births_per_1000_women_15_44"]])
+  chk(sum(keep) > 3000 &&
+        max(abs(cb2[["acs_births_per_1000_women_15_44"]][keep] -
+                1000 * cb2$births_15_44[keep] / cb2$women_15_44[keep])) < 1e-9,
+      sprintf("T174a the county rate divides 15-44 births by 15-44 women [%d exact]",
+              sum(keep)))
   chk(grepl("gfr = 1000 \\* births_15_44 / women_15_44", DI),
       "T174b the district rate does the same")
 }
@@ -184,7 +191,7 @@ cat("\n-- ADVERSARIAL --\n")
                                   show_col_types = FALSE, progress = FALSE,
                                   col_types = cols(GEOID = col_character())))
   both_na <- is.na(cb$births_15_44) | is.na(cb$women_15_44)
-  chk(all(is.na(cb$general_fertility_rate[both_na])),
+  chk(all(is.na(cb$acs_births_per_1000_women_15_44[both_na])),
       "T180 a missing numerator or denominator yields a missing rate, never a partial one")
 }
 

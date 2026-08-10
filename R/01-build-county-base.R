@@ -267,7 +267,20 @@ fetch_acs_county <- function() {
       # it is differential like the cycle-16 band error, not a constant offset.
       # Subtracting _009 makes both sides the same population.
       births_15_44 = pmax(0, births_past_12mo - births_45_50),
-      general_fertility_rate = 1000 * births_15_44 / women_15_44
+      # D7 RULING (2026-08-10): named for its ACS survey basis, not "general
+      # fertility rate". ACS B13016 asks women whether they gave birth in the
+      # past 12 months; self-report runs above vital statistics, so this reads
+      # 59.2 per 1,000 against the NCHS GFR of 54.5. The old name invited a
+      # comparison it loses on definition rather than on data.
+      # D2 RULING (2026-08-10): the partial sum is kept as a COUNT, but any rate
+      # derived from it is suppressed. A denominator assembled from some of its
+      # parts understates, so the rate it produces overstates -- and unlike the
+      # count, a rate carries no visible sign that it was built from a gap.
+      # 0 of 3,235 counties are affected on this ACS vintage; the rule ships
+      # before the vintage that needs it.
+      acs_births_per_1000_women_15_44 = dplyr::if_else(
+        women_15_44_bands_missing > 0L, NA_real_,
+        1000 * births_15_44 / women_15_44)
     ) |>
     dplyr::select(-dplyr::all_of(paste0("w", 30:38)), -poverty_num, -poverty_den) |>
     safe_left_join(subject, by = "GEOID", label_right = "acs_subject",

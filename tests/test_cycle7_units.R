@@ -88,7 +88,7 @@ cat("\n-- BVA --\n")
 
 # T63 (BVA). Rates are counts per population: non-negative, finite, never NaN.
 {
-  rates <- intersect(c("general_fertility_rate", "teen_birth_rate",
+  rates <- intersect(c("acs_births_per_1000_women_15_44", "teen_birth_rate",
                        "infant_mortality_per_1k", "pop_density_sq_mi"), names(CB))
   bad <- rates[vapply(rates, function(c) {
     y <- CB[[c]][!is.na(CB[[c]])]
@@ -157,8 +157,8 @@ cat("\n-- SEMANTIC --\n")
 # 120; 448 would mean 45% of all women of reproductive age gave birth in one
 # year, which is a denominator failure, not a fertile county.
 {
-  if (!"general_fertility_rate" %in% names(CB)) { cat("  skip T67 column absent\n") } else {
-    gfr <- CB$general_fertility_rate
+  if (!"acs_births_per_1000_women_15_44" %in% names(CB)) { cat("  skip T67 column absent\n") } else {
+    gfr <- CB$acs_births_per_1000_women_15_44
     # RATCHET. 9 counties exceed 200 births per 1,000 women 15-44, topping out
     # at 448.7 -- which would mean 45% of all women of reproductive age gave
     # birth in one year. Every one has a tiny denominator (138-3,146 women), so

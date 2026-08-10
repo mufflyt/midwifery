@@ -152,7 +152,17 @@ apportion_ct_legacy <- function(d, geoid_col = "GEOID", value_cols) {
         !all(dplyr::if_all(dplyr::all_of(value_cols), is.na)),
       .groups = "drop") %>%
     dplyr::rename(!!geoid_col := ce_fips_2022) %>%
-    dplyr::mutate(ct_apportioned = TRUE)
+    dplyr::mutate(ct_apportioned = TRUE) %>%
+    # D3 RULING (2026-08-10): WITHHOLD any partial region.
+    #
+    # The flagged-but-published behaviour above protected only readers who
+    # check the flag. CDC WONDER suppression means 1-9, so each missing
+    # contributor understates the region by an unknown 1-9, and an understated
+    # total that can win or lose a comparison is worse than a missing one.
+    # The count is set to NA where ct_partial is TRUE; the flag is retained so
+    # the reason for the gap stays visible and countable.
+    dplyr::mutate(dplyr::across(dplyr::all_of(value_cols),
+                                ~ dplyr::if_else(ct_partial, NA_real_, .x)))
 
   # Apportionment redistributes; it must not change the total.
   # CYCLE 4. This guard used na.rm = TRUE on BOTH sides, so when a suppressed
