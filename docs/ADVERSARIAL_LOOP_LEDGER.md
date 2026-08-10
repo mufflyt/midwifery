@@ -224,3 +224,71 @@ baseline is **zero pre-existing failures**.
   ">=15 years" band remains a **scientific decision**, still not made.
 
 **No scientific estimand was changed in this cycle.**
+
+---
+
+## Cycle 2 — 2026-08-09 ~21:30 — 3 BVA / 4 semantic / 3 adversarial
+
+**Targets.** Carried-forward items (a) and (b): positional `cert_decade`
+parsing in `R/07-cohort-composition.R`, and key conflicts resolved by row
+order. Both feed cohort-flow outputs.
+
+**Tests added** — `tests/test_cycle2_dates_keys.R`
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T11 | BVA | decade edges: year ending 0 opens, 9 closes |
+| T12 | BVA | zero-length in → zero-length **character** out; NA/blank → NA |
+| T13 | BVA | implausible years (1776, 3000) rejected, not banded |
+| T14 | semantic | same day in ISO and US form → same decade |
+| T14b | semantic | anti-ceremony: the retired rule must fail T14 |
+| T15 | semantic | every label is a 4-digit year ending in 0, then "s" |
+| T16 | semantic | conflicting duplicate keys not resolved by row order |
+| T17 | semantic | identical duplicates still collapse (fix must not over-reject) |
+| T18 | adversarial | decade assignment invariant to row order |
+| T19 | adversarial | factor dates parse by value, not level index |
+| T20 | adversarial | no inline RUCC banding rule survives outside table1_bands.R |
+
+**Defects found.**
+
+1. **`cert_decade` was positional.** `str_sub(certification_date, -4, -2)`
+   yields `"5-1"` for ISO `2007-05-12`, so the label became **`"5-10s"`** — not
+   a decade at all, and not NA either, so it would have flowed into a grouped
+   column unnoticed. Same class as cycle 1 defect 2. Fixed via
+   `band_cert_decade()`, which routes through `parse_enum_year()` so the two
+   date rules cannot drift apart.
+
+2. **A THIRD rurality vocabulary.** Cycle 1's sweep found two label sets and
+   missed three files (`R/02`, `R/05`, `R/07`) using a third —
+   `"Nonmetro, adjacent (4-6)"` without "RUCC". Close enough to a typo to
+   overlook, far enough to change a published column. Added as
+   `RURALITY_LABELS_COHORT` and kept verbatim rather than unified. **Cycle 1's
+   same-class sweep was incomplete**, which is itself the finding: grepping
+   for one label spelling missed the sites spelled differently.
+
+3. **`ifelse()` is type-unstable on zero-length input** (returns `logical(0)`,
+   not `character(0)`), which poisons a downstream `bind_rows()` column type.
+   `band_cert_decade()` avoids `ifelse` for this reason (T12a).
+
+**Same-class sweep.** T20 now asserts no inline RUCC `case_when` survives
+anywhere outside `R/lib/table1_bands.R` — the sweep is enforced by a test
+rather than repeated by hand, so cycle 1's miss cannot recur silently.
+`assert_unique_keys()` already existed in `R/join_safety.R:184` and refuses
+conflicts; T16/T17 pin that contract instead of duplicating the helper.
+
+**Behaviour preserved.** `rucc_cat` identical over 1–9, NA, 0, 10 and 99;
+US-format `cert_decade` unchanged (`05/12/1998` → `1990s`). Only ISO input
+changes, which previously produced `"5-10s"`.
+
+**Full suite.** 6/6 pass.
+
+**Process note.** This cycle was interrupted between its fix step and its
+commit step, and was found with 4 failing tests in the working tree. The
+failures were a mid-cycle snapshot, not defects — re-running after the cycle
+finished gave 10/10. Ledger entry and commit completed manually. Cycles must
+reach step 10 (commit → pull --rebase → push) before the session goes idle.
+
+**Carried forward.** Items (c)–(f) from cycle 1 remain open: panel censoring
+of ">=15 years observed" (scientific decision), constant-field guard for
+Table 1, absent-vs-FALSE for the two Healthgrades booleans, and `hg_age`
+validation. Seven `distinct(..., .keep_all = TRUE)` sites remain unaudited.
