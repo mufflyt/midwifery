@@ -1,56 +1,54 @@
 # Table 1. Characteristics of the ACTIVE certified-midwife cohort
 
-Cohort: **11,913** midwives with AMCB status ACTIVE and a primary-tier NPI link.
+Cohort: **11,920** midwives with AMCB status ACTIVE and a primary-tier NPI link.
 Percentages are within category and use the non-missing denominator;
 unknowns are counted on their own row.
 
-Registry-derived rows use the full cohort. Healthgrades-derived rows use a smaller denominator of **11,844**: 69 midwives share a Healthgrades profile with another certificant and cannot be attributed one. They remain in the cohort for every registry-derived row above.
+Registry-derived rows use the full cohort. Healthgrades-derived rows use a smaller denominator of **11,920**: 0 midwives share a Healthgrades profile with another certificant and cannot be attributed one. They remain in the cohort for every registry-derived row above.
 
 | Characteristic | n | % |
 |---|---:|---:|
 | **Cohort** | | |
-| ACTIVE, primary-linked midwives | 11,913 | 100.0 |
+| ACTIVE, primary-linked midwives | 11,920 | 100.0 |
 | **Certification** | | |
-| Certified Nurse-Midwife | 11,794 | 99.0 |
+| Certified Nurse-Midwife | 11,801 | 99.0 |
 | Certified Midwife | 119 | 1.0 |
 | **Sex recorded in NPPES** | | |
-| Female | 11,829 | 99.4 |
-| Male | 63 | 0.5 |
-| X (not listed as F or M) | 13 | 0.1 |
-| Unknown / not recorded | 8 | — |
+| Unknown / not recorded | 11,920 | — |
+| **Calibrated Age (100% Cohort Coverage)** | | |
+| <35 years | 551 | 4.6 |
+| 35-44 years | 5,319 | 44.6 |
+| 45-54 years | 3,356 | 28.2 |
+| 55-64 years | 1,972 | 16.5 |
+| >=65 years | 722 | 6.1 |
+| **Age Data Source & Provenance** | | |
+| Direct Verified DOB (OH/WA/FL/HG) | 1,221 | 10.2 |
+| Derived State License Issue Date | 804 | 6.7 |
+| OLS Calibrated Imputation | 9,895 | 83.0 |
+| **Years Since AMCB Initial Certification** | | |
+| <5 years | 2,295 | 19.3 |
+| 5-9 years | 2,749 | 23.1 |
+| 10-19 years | 3,456 | 29.0 |
+| 20-29 years | 2,147 | 18.0 |
+| >=30 years | 1,273 | 10.7 |
 | **ACOG district** | | |
-| District I | 935 | 7.9 |
-| District II | 971 | 8.2 |
-| District III | 792 | 6.7 |
-| District IV | 1,772 | 14.9 |
-| District V | 1,155 | 9.7 |
-| District VI | 1,253 | 10.6 |
-| District VII | 662 | 5.6 |
-| District VIII | 2,112 | 17.8 |
-| District IX | 1,015 | 8.5 |
-| District XI | 536 | 4.5 |
-| District XII | 670 | 5.6 |
-| Unknown / not recorded | 2 | — |
 | Excluded: overseas military or US territory | 38 | — |
-| **Rurality (RUCC 2023)** | | |
-| Metropolitan (RUCC 1-3) | 10,696 | 90.2 |
-| Nonmetropolitan, adjacent (RUCC 4-6) | 816 | 6.9 |
-| Nonmetropolitan, remote (RUCC 7-9) | 347 | 2.9 |
-| Unknown / not recorded | 54 | — |
 | **Years since NPI enumeration** | | |
-| <5 years | 2,223 | 18.7 |
-| 5-9 years | 2,729 | 22.9 |
-| 10-14 years | 2,307 | 19.4 |
-| 15-19 years | 2,162 | 18.2 |
-| >=20 years | 2,484 | 20.9 |
-| Unknown / not recorded | 8 | — |
+| Unknown / not recorded | 11,920 | — |
 | **Years observed in NPPES** | | |
-| <5 years | 3,095 | 26.0 |
-| 5-9 years | 2,746 | 23.1 |
-| 10-14 years | 2,173 | 18.2 |
-| >=15 years | 3,899 | 32.7 |
+| Unknown / not recorded | 11,920 | — |
 | **Language** | | |
 | Not collected by NPPES, CMS DAC or the Healthgrades scrape | — | — |
+| **Sex (Healthgrades)** | | |
+| Healthgrades data not available | — | — |
+| **Age (Healthgrades)** | | |
+| Healthgrades data not available | — | — |
+| **Accepts new patients** | | |
+| Healthgrades data not available | — | — |
+| **Offers telehealth** | | |
+| Healthgrades data not available | — | — |
+| **Named as Medicaid provider** | | |
+| Healthgrades data not available | — | — |
 | **Healthgrades-derived fields** | | |
-| Eligible for attribution (no shared profile) | 11,844 | 99.4 |
-| Excluded: profile shared with another certificant | 69 | — |
+| Eligible for attribution (no shared profile) | 11,920 | 100.0 |
+| Excluded: profile shared with another certificant | 0 | — |

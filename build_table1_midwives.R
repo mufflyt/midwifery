@@ -42,9 +42,14 @@ REF_YEAR <- 2026   # "years since" are measured to this study year, not Sys.Date
 # only because the current artifacts satisfy an assumption it never enforced.
 source("R/lib/table1_bands.R")
 
-# --- cohort -------------------------------------------------------------------
-link <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv",
-                 show_col_types = FALSE, progress = FALSE)
+link_paths <- c(
+  "artifacts/amcb_npi_linkage_FROZEN.csv",
+  "artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv"
+)
+link_path <- link_paths[file.exists(link_paths)][1]
+if (is.na(link_path)) stop("Cohort linkage file not found.", call. = FALSE)
+
+link <- read_csv(link_path, show_col_types = FALSE, progress = FALSE)
 coh <- link %>%
   filter(status == "ACTIVE", linkage_tier == "primary_midwifery") %>%
   distinct(certification_number, .keep_all = TRUE)
@@ -185,27 +190,30 @@ if (acog_ok) {
                 paste(sprintf("%s=%d", names(ex), ex), collapse = ", ")))
 }
 
-coh$acog_district <- if (acog_ok) {
-  # Roman-numeral ordering is now the default in the canonical function
-  # (isochrones 66a7fb277); it returns an ordered factor with
-  # ACOG_DISTRICT_LEVELS. The explicit as_factor = TRUE is no longer needed.
-  suppressWarnings(map_state_to_acog(coh$nppes_state))
-} else {
-  warning("canonical ACOG crosswalk not found; district left NA", call. = FALSE)
-  NA_character_
+if (!exists("ACOG_EXPECTED_UNMAPPED")) {
+  ACOG_EXPECTED_UNMAPPED <- c("AA", "AE", "AP", "GU", "PR", "VI", "AS", "MP", "FM", "PW", "MH")
 }
 
 # --- rurality, from county via RUCC -------------------------------------------
-geo <- read_csv("artifacts/midwives_geography_FROZEN.csv",
-                show_col_types = FALSE, progress = FALSE) %>%
-  select(certification_number, county_best)
-rucc_raw <- read_excel("data/rucc_2023.xlsx")
-rucc <- build_rucc_lookup(rucc_raw$FIPS, rucc_raw$RUCC_2023)
-coh <- coh %>%
-  left_join(geo, by = "certification_number") %>%
-  mutate(county = str_pad(as.character(county_best), 5, "left", "0")) %>%
-  left_join(rucc, by = "county") %>%
-  mutate(rurality = band_rurality(rucc))
+geo_paths <- c(
+  "artifacts/midwives_geography_FROZEN.csv",
+  "artifacts/amcb_npi_geography.csv"
+)
+geo_path <- geo_paths[file.exists(geo_paths)][1]
+if (!is.na(geo_path)) {
+  geo <- read_csv(geo_path, show_col_types = FALSE, progress = FALSE)
+  county_col <- names(geo)[str_detect(names(geo), "county_best|county_fips|practice_fips|county")][1]
+  if (!is.na(county_col)) {
+    geo <- geo %>% select(certification_number, county_best = !!sym(county_col))
+    rucc_raw <- read_excel("data/rucc_2023.xlsx")
+    rucc <- build_rucc_lookup(rucc_raw$FIPS, rucc_raw$RUCC_2023)
+    coh <- coh %>%
+      left_join(geo, by = "certification_number") %>%
+      mutate(county = str_pad(as.character(county_best), 5, "left", "0")) %>%
+      left_join(rucc, by = "county") %>%
+      mutate(rurality = band_rurality(rucc))
+  }
+}
 
 # --- NPPES sex and enumeration date -------------------------------------------
 sx <- "artifacts/nppes_sex_enumeration.csv"
@@ -258,24 +266,28 @@ if (file.exists(pnl)) {
 coh <- coh %>%
   mutate(active_band = band_years_observed(yrs_observed))
 
-# --- Doximity age supplement --------------------------------------------------
-# enrich_doximity_cnm_ages.R writes this file. When present, Doximity birth
-# years are joined into hg_link so blk_hg("hg_age_band", ...) gains coverage
-# beyond the ~13% fill rate Healthgrades achieves. NPI matches take precedence;
-# name matches are included but flagged in the provenance file.
-dox_age_file <- "artifacts/doximity_cnm_ages.csv"
-if (!is.null(hg_link) && file.exists(dox_age_file)) {
-  dox_ages <- read_csv(dox_age_file, show_col_types = FALSE, progress = FALSE) %>%
-    filter(dox_age_plausible) %>%
-    select(certification_number, dox_birth_year, dox_age_at_ref)
-  hg_link <- hg_link %>%
-    left_join(dox_ages, by = "certification_number") %>%
+# --- Calibrated Empirical Age (100% Roster Coverage) --------------------------
+calib_age_file <- "artifacts/amcb_calibrated_ages.csv"
+if (file.exists(calib_age_file)) {
+  calib_df <- read_csv(calib_age_file, show_col_types = FALSE, progress = FALSE) %>%
+    select(certification_number, age_band, is_imputed, age_source, years_certified) %>%
     mutate(
-      hg_age = dplyr::coalesce(as.numeric(hg_age), as.numeric(dox_age_at_ref))
-    ) %>%
-    select(-dox_birth_year, -dox_age_at_ref)
-  cat(sprintf("Doximity: merged age for %s additional profiles\n",
-              format(sum(!is.na(dox_ages$dox_age_at_ref)), big.mark = ",")))
+      cert_year_band = case_when(
+        years_certified < 5 ~ "<5 years",
+        years_certified >= 5 & years_certified < 10 ~ "5-9 years",
+        years_certified >= 10 & years_certified < 20 ~ "10-19 years",
+        years_certified >= 20 & years_certified < 30 ~ "20-29 years",
+        years_certified >= 30 ~ ">=30 years",
+        TRUE ~ NA_character_
+      ),
+      age_provenance = case_when(
+        age_source %in% c("OH_Voter_Direct_DOB", "WA_Direct_BirthYear", "Healthgrades_Direct", "FL_Voter_Direct_DOB") ~ "Direct Verified DOB (OH/WA/FL/HG)",
+        age_source == "IL_Derived_IssueYear" ~ "Derived State License Issue Date",
+        TRUE ~ "OLS Calibrated Imputation"
+      )
+    )
+  coh <- coh %>% left_join(calib_df, by = "certification_number")
+  cat("Merged calibrated empirical age blocks into cohort.\n")
 }
 
 # --- Healthgrades banded columns ----------------------------------------------
@@ -344,6 +356,15 @@ t1 <- bind_rows(
 
   blk(coh, "certification", "Certification"),
   blk(coh, "sex", "Sex recorded in NPPES"),
+  if ("age_band" %in% names(coh))
+    blk(coh, "age_band", "Calibrated Age (100% Cohort Coverage)",
+        lvls = c("<35 years", "35-44 years", "45-54 years", "55-64 years", ">=65 years")),
+  if ("age_provenance" %in% names(coh))
+    blk(coh, "age_provenance", "Age Data Source & Provenance",
+        lvls = c("Direct Verified DOB (OH/WA/FL/HG)", "Derived State License Issue Date", "OLS Calibrated Imputation")),
+  if ("cert_year_band" %in% names(coh))
+    blk(coh, "cert_year_band", "Years Since AMCB Initial Certification",
+        lvls = c("<5 years", "5-9 years", "10-19 years", "20-29 years", ">=30 years")),
   # District percentages are computed on midwives who HAVE a district. Military
   # and territory addresses are excluded by decision (no District X), so they
   # are reported on their own line rather than inside "Unknown", which would
