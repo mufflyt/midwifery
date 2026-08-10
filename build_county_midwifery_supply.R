@@ -1,3 +1,4 @@
+source(file.path("R", "lib", "table1_bands.R"))  # band_rurality()
 #!/usr/bin/env Rscript
 # =============================================================================
 # County midwifery supply: AHRF + CMS facilities + midwives per 1,000 births
@@ -189,10 +190,13 @@ d <- d %>%
       if_else(!is.na(births_used) & births_used >= MIN_BIRTHS,
               mufflyaccess::safe_rate(n_hosp_ob, births_used,
                                       multiplier = 1000, digits = 2), NA_real_),
-    rurality = case_when(is.na(rucc_2023) ~ NA_character_,
-                         rucc_2023 <= 3 ~ "Metro (RUCC 1-3)",
-                         rucc_2023 <= 6 ~ "Nonmetro, adjacent (RUCC 4-6)",
-                         TRUE           ~ "Nonmetro, remote (RUCC 7-9)"))
+    # AUDIT 2026-08-10. This copy of the RUCC rule was missed by the cycle-1
+    # and cycle-2 sweeps, which scanned R/ and not the root-level scripts. It
+    # still carried the original defect: a terminal TRUE branch labels ANY
+    # unexpected code -- 0, 10, a 99 "not classified" sentinel -- as
+    # "Nonmetro, remote". Rurality is the stratifier for the access findings,
+    # and this file writes a published artifact.
+    rurality = band_rurality(rucc_2023, RURALITY_LABELS_SHORT))
 
 # --- 4b. birth outcome rates ------------------------------------------------
 # All AHRF outcome numerators are 3-year averages, so they are divided by the

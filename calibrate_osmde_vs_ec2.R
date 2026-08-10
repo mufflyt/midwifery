@@ -1,3 +1,4 @@
+source(file.path("R", "lib", "table1_bands.R"))  # band_rurality()
 #!/usr/bin/env Rscript
 # =============================================================================
 # Engine calibration: osm.de public Valhalla vs EC2 Valhalla, same origins
@@ -80,10 +81,13 @@ if (all(is.na(frame$rurality))) {
     left_join(geo %>% select(certification_number, county_best), by = "certification_number") %>%
     mutate(county = stringr::str_pad(as.character(county_best), 5, "left", "0")) %>%
     left_join(rucc, by = "county") %>%
-    mutate(rurality = case_when(is.na(rucc) ~ NA_character_,
-                                rucc <= 3 ~ "Metro (RUCC 1-3)",
-                                rucc <= 6 ~ "Nonmetro, adjacent (RUCC 4-6)",
-                                TRUE      ~ "Nonmetro, remote (RUCC 7-9)"))
+    mutate(# AUDIT 2026-08-10. This copy of the RUCC rule was missed by the cycle-1
+    # and cycle-2 sweeps, which scanned R/ and not the root-level scripts. It
+    # still carried the original defect: a terminal TRUE branch labels ANY
+    # unexpected code -- 0, 10, a 99 "not classified" sentinel -- as
+    # "Nonmetro, remote". Rurality is the stratifier for the access findings,
+    # and this file writes a published artifact.
+    rurality = band_rurality(rucc, RURALITY_LABELS_SHORT))
 }
 
 origins <- frame %>% filter(!is.na(rurality)) %>%
