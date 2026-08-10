@@ -195,7 +195,35 @@ assert_unique_keys <- function(.data, key_cols, label = "table", dedupe = FALSE)
   if (nrow(d) > 0) {
     # BUG FIX (2026-01-28): Bug 163 - Support dedupe option to remove duplicates
     if (isTRUE(dedupe)) {
-      # Keep first occurrence of each key combination
+      # CYCLE 2. dedupe used to mean "keep whichever row sorted first", which
+      # resolves a DATA CONFLICT by file order inside a helper named
+      # assert_unique_keys. Two rows for one certification_number disagreeing
+      # on practice_state would silently publish one of the two states, and
+      # which one depended on how the input happened to be sorted.
+      #
+      # Identical duplicate rows carry no conflict and still collapse. Rows
+      # that share a key but disagree elsewhere are a question for a human, so
+      # they stop the run and name the offending key and column.
+      dup_keys <- .data %>%
+        dplyr::semi_join(dplyr::select(d, dplyr::all_of(key_cols)), by = key_cols)
+      conflicting <- dup_keys %>%
+        dplyr::group_by(dplyr::across(dplyr::all_of(key_cols))) %>%
+        dplyr::filter(dplyr::n_distinct(dplyr::pick(dplyr::everything())) > 1L) %>%
+        dplyr::ungroup()
+      if (nrow(conflicting) > 0) {
+        varying <- setdiff(names(conflicting), key_cols)
+        varying <- varying[vapply(varying, function(v)
+          dplyr::n_distinct(conflicting[[v]]) > 1L, logical(1))]
+        stop(sprintf(paste0(
+          "assert_unique_keys(dedupe = TRUE) on %s: %d rows share a key but ",
+          "DISAGREE on %s. Deduplication would resolve that by row order. ",
+          "Reconcile the source, or drop the conflicting column before ",
+          "deduplicating.\n  key(s): %s\n  disagreeing column(s): %s"),
+          label, nrow(conflicting),
+          if (length(varying)) "other columns" else "row content",
+          paste(key_cols, collapse = ", "),
+          paste(utils::head(varying, 5), collapse = ", ")), call. = FALSE)
+      }
       out <- .data %>%
         dplyr::distinct(dplyr::across(dplyr::all_of(key_cols)), .keep_all = TRUE)
       message(sprintf(

@@ -70,6 +70,10 @@
 #' @author Tyler Muffly, MD + Claude Code
 #' @export
 
+# Canonical banding + date rules. Inline copies of the RUCC case_when and the
+# positional cert_decade parse lived here until cycle 2; see R/lib/table1_bands.R.
+source(file.path("R", "lib", "table1_bands.R"))
+
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(tidyr); library(cli)
 })
@@ -199,11 +203,8 @@ build_completeness <- function() {
            GEOID_proxy = coalesce(GEOID_zip, .spine_county)) %>%
     left_join(select(cb, GEOID, rucc_2023, state_cb = state),
               by = c("GEOID_proxy" = "GEOID")) %>%
-    mutate(rucc_cat = case_when(
-      rucc_2023 %in% 1:3 ~ "Metro (RUCC 1-3)",
-      rucc_2023 %in% 4:6 ~ "Nonmetro, adjacent (4-6)",
-      rucc_2023 %in% 7:9 ~ "Nonmetro, remote (7-9)",
-      TRUE               ~ "Unknown"))
+    mutate(rucc_cat = coalesce(
+      band_rurality(rucc_2023, RURALITY_LABELS_COHORT), "Unknown"))
 
   cli::cli_h2("Geocoding completeness — matched roster")
   cli::cli_alert_info("matched {nrow(m)} | geocoded {sum(m$geocoded)} ({round(100*mean(m$geocoded),1)}%) | +Healthgrades {sum(m$geocoded_hg)} ({round(100*mean(m$geocoded_hg),1)}%)")

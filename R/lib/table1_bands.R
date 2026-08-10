@@ -114,6 +114,14 @@ RURALITY_LABELS_LONG <- c("Metropolitan (RUCC 1-3)",
 RURALITY_LABELS_SHORT <- c("Metro (RUCC 1-3)",
                            "Nonmetro, adjacent (RUCC 4-6)",
                            "Nonmetro, remote (RUCC 7-9)")
+# CYCLE 2. A THIRD vocabulary, used by the cohort-flow scripts (02, 05, 07),
+# which cycle 1's sweep did not reach. It differs from _SHORT only in dropping
+# "RUCC" from the second and third labels -- close enough to look like a typo
+# and far enough to change a published column. Kept verbatim rather than
+# unified, for the same reason the other two were.
+RURALITY_LABELS_COHORT <- c("Metro (RUCC 1-3)",
+                            "Nonmetro, adjacent (4-6)",
+                            "Nonmetro, remote (7-9)")
 
 band_rurality <- function(rucc, labels = RURALITY_LABELS_LONG) {
   stopifnot(length(labels) == 3L)
@@ -154,4 +162,37 @@ build_rucc_lookup <- function(fips, rucc) {
          call. = FALSE)
   }
   d
+}
+
+#' Band a certification date into its decade
+#'
+#' @description
+#' Replaces `paste0(str_sub(certification_date, -4, -2), "0s")`, which was
+#' live in `R/07-cohort-composition.R:158`. That rule counts characters from
+#' the end of the string, so it encodes a date FORMAT as an offset: the US
+#' form `05/12/2007` yields "2000s", while the ISO form `2007-05-12` yields
+#' **"5-10s"**. Both forms have shipped from the registry, and the failure is
+#' silent -- a garbage decade is still a character string, so it groups and
+#' tabulates without complaint.
+#'
+#' Same class as the enumeration-year defect fixed in cycle 1. Parsing is
+#' delegated to `parse_enum_year()` rather than reimplemented, so the two
+#' cannot drift apart.
+#'
+#' @param x [character|factor]: certification dates in any format
+#'   `parse_enum_year()` accepts.
+#' @param min_year,max_year [integer(1)]: plausibility window. Certification
+#'   predates NPI enumeration, so this defaults wider than `parse_enum_year()`.
+#' @return [character] decade label such as "2000s"; `NA` where no plausible
+#'   year is present. Zero-length input returns zero-length **character**.
+#' @family table1-bands
+band_cert_decade <- function(x, min_year = 1950L, max_year = 2100L) {
+  y <- parse_enum_year(x, min_year = min_year, max_year = max_year)
+  # NOT ifelse(): it is type-unstable on zero-length input, returning
+  # logical(0) rather than character(0), which then poisons a downstream
+  # bind_rows() or factor() with the wrong column type. Caught by T12a.
+  out <- rep(NA_character_, length(y))
+  ok <- !is.na(y)
+  out[ok] <- paste0(as.integer(y[ok] %/% 10L) * 10L, "s")
+  out
 }

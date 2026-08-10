@@ -131,3 +131,96 @@ handful of known profiles before use.
 **Carried to the next cycle:** (a) assert no field reaches Table 1 while
 constant; (b) distinguish absent from false for the two boolean fields;
 (c) validate `hg_age` against known profiles.
+
+---
+
+## Cycle 2 — 2026-08-09 — 3 BVA / 4 semantic / 3 adversarial
+
+**Targets.** The two classes cycle 1 carried forward, plus a check on cycle 1's
+own sweep.
+
+**Tests added** — `tests/test_cycle2_dates_keys.R` (T11–T20, 12 assertions)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T11 | BVA | decade opens on a year ending 0, closes on 9 |
+| T12 | BVA | zero-length and blank input neither error nor fabricate |
+| T13 | BVA | implausible years rejected, not banded |
+| T14 | semantic | same day in two date formats gives the same decade |
+| T15 | semantic | every decade label bounds the years assigned to it |
+| T16 | semantic | conflicting duplicate keys are not resolved by row order |
+| T17 | semantic | identical duplicates still collapse (fix must not over-reject) |
+| T18 | adversarial | decade assignment invariant to row order |
+| T19 | adversarial | factor dates parse by value, not level index |
+| T20 | adversarial | no inline RUCC rule survives outside the library |
+
+### Defects found — 4
+
+1. **Cycle 1's sweep was incomplete.** It reported the RUCC banding rule in
+   three copies and fixed three. There were **six**: `02-geocoding-completeness.R`,
+   `05-stage-progression.R` and `07-cohort-composition.R` each carried a fourth,
+   fifth and sixth copy, in a **third label vocabulary** ("Nonmetro, adjacent
+   (4-6)", dropping "RUCC") that differs from `_SHORT` by an amount that looks
+   like a typo and changes a published column. All three now call
+   `band_rurality(rucc_2023, RURALITY_LABELS_COHORT)`.
+   *A fix applied to three of six copies is a fix applied to none.*
+   T20 now enforces zero inline copies, so a seventh cannot appear quietly.
+
+2. **`cert_decade` positional parsing** (`07-cohort-composition.R:158`) —
+   carried forward from cycle 1 and now fixed. `str_sub(date, -4, -2)` encodes
+   a date *format* as a character offset: `05/12/2007` → "2000s", but
+   `2007-05-12` → **"5-10s"**. A garbage decade is still a string, so it groups
+   and tabulates without complaint. Replaced by `band_cert_decade()`, which
+   delegates to the existing `parse_enum_year()` rather than reimplementing it.
+
+3. **`assert_unique_keys(dedupe = TRUE)` resolved conflicts by row order** —
+   inside `R/join_safety.R`, a helper whose name promises the opposite. Two rows
+   sharing a `certification_number` but disagreeing on `practice_state` silently
+   published whichever sorted first. Identical duplicates still collapse;
+   disagreeing rows now stop the run and name the key and the disagreeing
+   columns.
+
+4. **`ifelse()` is type-unstable on zero-length input** — returns `logical(0)`,
+   not `character(0)`, which poisons a downstream `bind_rows()` with a wrong
+   column type. Caught by T12a while writing the replacement, and avoided in
+   `band_cert_decade()`.
+
+### Same-class sweep
+
+`distinct(..., .keep_all = TRUE)` on a conflict-bearing key: the ledger
+estimated 8 sites; the actual count is **14**. The one inside `join_safety.R`
+is fixed because it is the shared helper. The remaining 13 are in individual
+scripts and are **not yet audited** for whether their keys can actually carry
+conflicting values — several are almost certainly benign (`01-build-county-base.R`
+dedupes a geometry join). **Cycle 3** must classify each site rather than
+rewrite it blindly.
+
+### Anti-ceremony check
+
+T14b asserts the *retired* rule still fails the format test (`ISO → "5-10s"`),
+so T14 is proven to discriminate rather than to pass vacuously. T11–T15 and
+T18–T19 were initially written against a local replica; when production was
+fixed they were repointed at `band_cert_decade()`, because a test aimed at a
+retired implementation pins nothing.
+
+### Full suite
+
+6/6 pass — checkpoint_merge, cross_taxonomy_hierarchy, cycle2_dates_keys,
+healthgrades_integrity, pip_materialization, table1_bands. All five edited
+sources parse.
+
+**Correction to the cycle-1 record:** the earlier note of a pre-existing failure
+in `test_table1_bands.R` was an artifact of running a plain Rscript test file
+through `testthat::test_file()`. Under its documented runner it passes. The
+baseline is **zero pre-existing failures**.
+
+### Unresolved / carried forward
+
+- 13 unaudited `.keep_all` sites (above). **Cycle 3.**
+- Healthgrades: `hg_years_experience` constant 0 must not reach Table 1;
+  `hg_accepts_new_patients` / `hg_has_telehealth` conflate absent with FALSE;
+  `hg_age` needs validation against known profiles. **Carried from cycle 1.**
+- `left_censored` — whether Table 1 should report panel-window censoring on the
+  ">=15 years" band remains a **scientific decision**, still not made.
+
+**No scientific estimand was changed in this cycle.**

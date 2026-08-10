@@ -49,6 +49,10 @@
 #' @author Tyler Muffly, MD + Claude Code
 #' @export
 
+# Canonical banding + date rules. Inline copies of the RUCC case_when and the
+# positional cert_decade parse lived here until cycle 2; see R/lib/table1_bands.R.
+source(file.path("R", "lib", "table1_bands.R"))
+
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(tidyr); library(cli)
 })
@@ -155,14 +159,11 @@ build_composition <- function() {
     left_join(chars, by = "certification_number") %>%
     left_join(link_cols, by = "certification_number") %>%
     mutate(zip5 = pad5(str_sub(str_remove_all(practice_zip, "[^0-9]"), 1, 5)),
-           cert_decade = paste0(str_sub(certification_date, -4, -2), "0s")) %>%
+           cert_decade = band_cert_decade(certification_date)) %>%
     left_join(zc, by = "zip5") %>%
     left_join(select(cb, GEOID, rucc_2023), by = "GEOID") %>%
-    mutate(rucc_cat = case_when(
-      rucc_2023 %in% 1:3 ~ "Metro (RUCC 1-3)",
-      rucc_2023 %in% 4:6 ~ "Nonmetro, adjacent (4-6)",
-      rucc_2023 %in% 7:9 ~ "Nonmetro, remote (7-9)",
-      TRUE               ~ "Unknown"))
+    mutate(rucc_cat = coalesce(
+      band_rurality(rucc_2023, RURALITY_LABELS_COHORT), "Unknown"))
 
   write_csv(d %>% select(certification_number, group, s2_decision, s2_npi,
                          final_npi, any_of(c("npi_match_method",
