@@ -170,7 +170,14 @@ cat("\n-- SEMANTIC --\n")
     # is that the count cannot GROW -- and, below, that these artifacts are kept
     # out of the published superlative, which is the part that reaches a reader.
     implausible <- sum(gfr > 200, na.rm = TRUE)
-    chk(implausible <= 9L,
+    # CYCLE 16 UPDATE: 9 -> 19. The count grew because a DEFECT WAS FIXED, not
+    # because the data degraded. women_15_44 was summing ten B01001 bands and
+    # therefore included women 45-49, inflating the denominator by 15.4% and
+    # suppressing every county's fertility rate by 13.3%. Correcting it raised
+    # every rate, so more counties now clear the plausibility bound. Cycle 8's
+    # differential-exclusion contract still holds: the spread across rurality is
+    # 1.37 pp, well inside its 5 pp limit.
+    chk(implausible <= 19L,
         sprintf("T67a implausible GFR count does not grow [%d counties > 200/1,000, max %.1f]",
                 implausible, max(gfr, na.rm = TRUE)))
     # UPDATED IN CYCLE 8. This originally asserted the denominator floor

@@ -2097,3 +2097,88 @@ does not.
 **Estimand changed:** no. Counts are identical on the current POS vintage; only
 the sentence attached to 651 counties changes, and it changes from an assertion
 to an accurate statement of ignorance.
+
+---
+
+## Cycle 16 — 2026-08-10 — 4 BVA / 3 semantic / 3 adversarial
+
+**Target.** The ACS variable maps in `R/01-build-county-base.R` and
+`R/12-district-profiles.R`: do the variable NUMBERS match the quantities the
+code names them?
+
+**Tests added** — `tests/test_cycle16_acs_variables.R` (T161–T170, 15 assertions)
+
+### The defect — the most consequential this loop has found
+
+```r
+R/01:  women_labels <- paste0("w", 30:39)      # TEN bands
+R/12:  sprintf("B01001_%03dE", 30:38)          # NINE bands
+```
+
+The same named quantity had **two different definitions in one project**.
+Against the official ACS 2023 labels:
+
+| variable | label |
+|---|---|
+| `B01001_030E` | Female: **15 to 17 years** — the comment called this "15-19" |
+| `B01001_038E` | Female: 40 to 44 years — the last band of 15-44 |
+| `B01001_039E` | Female: **45 to 49 years** — was being summed in |
+
+So the county column named `women_15_44` contained **women 15-49**.
+
+**Measured, then verified by rebuilding:**
+
+| | before | after |
+|---|---:|---:|
+| national `women_15_44` | 76,046,473 | **65,895,592** |
+| denominator overstatement | 15.4% | — |
+| median county GFR | 56.0 | **64.7** (+15.7%) |
+| max county GFR | 448.7 | 482.8 |
+
+**Every county general fertility rate in the project was understated by 13.3%.**
+
+And the error is **differential**, not a constant scale: the per-county
+inflation factor ran from 1.164 (median) to **1.846** (max). A uniform error
+would leave rankings intact; this one moved counties relative to one another —
+the same concern cycle 8 raised about filters, applied to a denominator.
+
+The district script was right. The county script was wrong. **Nothing compared
+them**, because nothing asserted what the variable numbers mean. T165 is that
+assertion now.
+
+### Fixed, and the artifact rebuilt
+
+Code fixed to `30:38` at all five sites, and `data/county_base.csv` **rebuilt**
+— because a corrected formula with a stale artifact is the more dangerous state:
+the code now looks right. T164 fails until a rebuild stamp exists.
+
+### Two ratchets updated, deliberately
+
+Counties exceeding the GFR plausibility bound rose **9 → 19** — because a defect
+was fixed, not because data degraded. Correcting the denominator raised every
+rate, so more counties clear the bound. Cycle 7's T67a and cycle 8's T72 were
+updated with that reason recorded in each.
+
+**Cycle 8's differential-exclusion contract still holds**: the new exclusion runs
+0.00% metro / 0.15% adjacent / **1.37%** remote — a 1.37 pp spread, well inside
+the 5 pp limit.
+
+### Full suite
+
+**21/21 files pass.**
+
+### Unresolved / carried forward
+
+- **ACTION:** anything computed downstream from `county_base.csv` (profiles,
+  Table 1, figures) predates this fix and must be regenerated.
+- **DECISION NEEDED:** GFR universe — `births_past_12mo` is B13016_002, universe
+  women **15-50**, over a 15-44 denominator (c7). **This defect makes that one
+  sharper**, since the denominator is now correct and the mismatch is the only
+  remaining inconsistency in the rate.
+- **DECISION NEEDED:** GFR reliability method (c8); `women_15_44` partial vs NA
+  (c7); Table 1 censoring (c1); `ct_partial` reporting (c4).
+- **UPSTREAM (isochrones):** `extract_first_initial()` accent bug (c12).
+- 18 undeclared joins (c10); 4 duplicate helpers (c9); 14 `.keep_all` (c5).
+
+**Estimand changed:** yes — every county fertility rate rose ~13%, because the
+denominator is now the population the column has always claimed to be.

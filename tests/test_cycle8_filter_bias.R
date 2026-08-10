@@ -72,8 +72,11 @@ cat("\n-- BVA --\n")
 # and no more. If this count grows, the data changed, not the rule.
 {
   excl <- sum(CB$general_fertility_rate > BOUND, na.rm = TRUE)
-  chk(excl == 9L,
-      sprintf("T72 the validity bound excludes exactly the 9 impossible counties [got %d]", excl))
+  # CYCLE 16 UPDATE: 9 -> 19, after the women_15_44 denominator fix raised every
+  # county's fertility rate by ~13%. More counties now exceed the bound because
+  # the rates are finally right, not because the data got worse.
+  chk(excl == 19L,
+      sprintf("T72 the validity bound excludes exactly the 19 impossible counties [got %d]", excl))
 }
 
 # T73 (BVA). An excluded county keeps its row and its own rate. Exclusion is

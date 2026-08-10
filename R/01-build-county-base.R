@@ -185,8 +185,24 @@ fetch_acs_county <- function() {
     stop("CENSUS_API_KEY is unset. Add it to ~/.Renviron and restart R.", call. = FALSE)
   }
 
-  # B01001_030..039 are the female 15-19 ... 40-44 age bands.
-  women_labels <- paste0("w", 30:39)
+  # CYCLE 16. This said "B01001_030..039 are the female 15-19 ... 40-44 age
+  # bands" and summed TEN variables. Both halves are wrong, verified against
+  # the official ACS 2023 variable labels:
+  #
+  #   B01001_030E  Female: 15 to 17 years      <- not 15 to 19
+  #   B01001_031E  Female: 18 and 19 years
+  #   ...
+  #   B01001_038E  Female: 40 to 44 years      <- the LAST band of 15-44
+  #   B01001_039E  Female: 45 to 49 years      <- was being included
+  #
+  # So women aged 15-44 is 030..038, NINE variables. Including _039 added the
+  # 45-49 band, making this column women 15-49 while every label, and the
+  # general fertility rate built on it, says 15-44. An inflated denominator
+  # UNDERSTATES the fertility rate in every county.
+  #
+  # R/12-district-profiles.R already used 30:38, so the same named quantity had
+  # two different definitions in one project -- and the district one was right.
+  women_labels <- paste0("w", 30:38)
 
   detail_vars <- c(
     population       = "B01003_001",
@@ -196,7 +212,7 @@ fetch_acs_county <- function() {
     poverty_den      = "B17001_001",
     women_15_50      = "B13016_001",
     births_past_12mo = "B13016_002",
-    rlang::set_names(sprintf("B01001_%03d", 30:39), women_labels)
+    rlang::set_names(sprintf("B01001_%03d", 30:38), women_labels)
   )
 
   cli::cli_alert("Fetching ACS {ACS_YEAR} {ACS_SURVEY} detailed tables ...")
@@ -233,14 +249,14 @@ fetch_acs_county <- function() {
       # part as an empty one. NA when every band is missing, observed sum
       # otherwise, with the gap counted so an understated denominator is visible.
       women_15_44 = {
-        .b <- dplyr::across(dplyr::all_of(paste0("w", 30:39)))
+        .b <- dplyr::across(dplyr::all_of(paste0("w", 30:38)))
         ifelse(rowSums(!is.na(.b)) == 0L, NA_real_, rowSums(.b, na.rm = TRUE))
       },
-      women_15_44_bands_missing = rowSums(is.na(dplyr::across(dplyr::all_of(paste0("w", 30:39))))),
+      women_15_44_bands_missing = rowSums(is.na(dplyr::across(dplyr::all_of(paste0("w", 30:38))))),
       pct_poverty = 100 * poverty_num / poverty_den,
       general_fertility_rate = 1000 * births_past_12mo / women_15_44
     ) |>
-    dplyr::select(-dplyr::all_of(paste0("w", 30:39)), -poverty_num, -poverty_den) |>
+    dplyr::select(-dplyr::all_of(paste0("w", 30:38)), -poverty_num, -poverty_den) |>
     safe_left_join(subject, by = "GEOID", label_right = "acs_subject",
                    min_coverage = 0.98,
                    use_enhanced_metrics = FALSE, write_report = FALSE)
