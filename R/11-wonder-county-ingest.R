@@ -127,7 +127,13 @@ run_ingest <- function() {
     ct_app <- apportion_ct_legacy(ct_legacy, "GEOID", "cnm_births_2016_2024")
     cli::cli_alert_info(
       "CT: apportioned {format(sum(ct_legacy$cnm_births_2016_2024, na.rm=TRUE), big.mark=',')} legacy-county CNM births across {nrow(ct_app)} planning regions (weights = ACS women 15-44)")
-    ident <- bind_rows(ident, mutate(ct_app, suppressed = FALSE))
+    # CYCLE 4. suppressed = FALSE used to be hard-coded here, stamping every
+    # apportioned row as an observation -- including rows derived from a legacy
+    # county WONDER had suppressed. Suppression now propagates through
+    # apportion_ct_legacy() as NA, so it is read back off the value rather than
+    # asserted.
+    ident <- bind_rows(ident, mutate(ct_app,
+                                     suppressed = is.na(cnm_births_2016_2024)))
   }
   ident <- ident %>% mutate(ct_apportioned = coalesce(ct_apportioned, FALSE))
 

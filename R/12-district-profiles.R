@@ -167,10 +167,29 @@ run_districts <- function() {
       pct_women_19_44_uninsured = 100 * women_19_44_uninsured / women_19_44_total,
       district_label = sub(" \\(.*", "", sub("^Congressional District ", "", NAME)),
       state_abbr = NA_character_)
+  # CYCLE 4. These guards used na.rm = TRUE, which drops the rows they cannot
+  # evaluate -- so a district with a missing numerator or denominator passed
+  # silently, which is precisely the district worth stopping for. Missingness is
+  # now counted and reported separately from violation, so neither hides.
+  chk_le <- function(lhs, rhs, what) {
+    viol <- sum(lhs > rhs, na.rm = TRUE)
+    unevaluable <- sum(is.na(lhs) | is.na(rhs))
+    if (viol > 0L) {
+      stop(sprintf("%s: %d district(s) violate the containment check.", what, viol),
+           call. = FALSE)
+    }
+    if (unevaluable > 0L) {
+      cli::cli_alert_warning(
+        "{what}: {unevaluable} district(s) could not be checked (missing input) -- not counted as passing")
+    }
+    invisible(TRUE)
+  }
   # B27001 bracket totals were inferred from table position, same as C27007.
-  stopifnot(sum(d$women_19_44_uninsured > d$women_19_44_total, na.rm = TRUE) == 0)
+  chk_le(d$women_19_44_uninsured, d$women_19_44_total,
+         "uninsured women 19-44 vs bracket total")
   # Age-specific births must not exceed the total they are drawn from.
-  stopifnot(sum(d$births_teen + d$births_35plus > d$births_12mo, na.rm = TRUE) == 0)
+  chk_le(d$births_teen + d$births_35plus, d$births_12mo,
+         "teen + 35plus births vs total births")
   cli::cli_alert_success("B27001 bracket denominators and B13016 age splits are internally consistent")
   cli::cli_alert_info("districts: {nrow(d)}")
 

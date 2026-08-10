@@ -392,3 +392,120 @@ this cycle. Still open.
   `hg_age` validation (cycle 1).
 
 **No scientific estimand was changed in this cycle.**
+
+---
+
+## Cycle 4 — 2026-08-09 — 4 BVA / 3 semantic / 3 adversarial
+
+**Target.** `R/lib/ct_county_crosswalk.R` — the Connecticut apportionment.
+Every Connecticut birth count in this project passes through it, because WONDER
+reports natality by **legacy county** and everything else uses **2022 planning
+regions**.
+
+**Tests added** — `tests/test_cycle4_ct_apportionment.R` (T31–T40, 16 assertions)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T31 | BVA | weights partition each legacy county exactly (8 counties, 9 regions) |
+| T32 | BVA | an observed 0 survives as 0, not NA |
+| T33 | BVA | empty and no-CT input return zero rows |
+| T34 | BVA | the wholly-nested county (09007) transfers exactly |
+| T35 | semantic | a suppressed county does not become 0 births |
+| T36 | semantic | the conservation guard is able to fail |
+| T37 | semantic | apportioned rows are flagged as estimates |
+| T38 | adversarial | the caller recombines; no hard-coded `suppressed` |
+| T39 | adversarial | `na.rm=TRUE` guards across the repo |
+| T40 | adversarial | the isochrones shim fails loudly, not silently |
+
+### The class, split in two
+
+The cycle-3 `rowSums(na.rm = TRUE)` finding generalised. Sweeping found **17
+sites**, in two distinct subclasses:
+
+- **N1 — aggregation.** `na.rm = TRUE` building a count or denominator: a
+  suppressed input contributes 0, so "we may not say" is published as "none".
+  Three sites in the CT crosswalk alone.
+- **N2 — validation guard.** Worse, and new this cycle. `na.rm = TRUE` inside a
+  guard drops precisely the rows the guard cannot evaluate. **A guard that
+  cannot fail on bad input is not a guard.**
+
+### Defects found — 4 fixed, 1 wrong test
+
+1. **A planning region fed only by a suppressed county was published as 0.**
+   *Fixed.* Region 09120 draws solely from Fairfield (09001). When WONDER
+   suppressed Fairfield, 09120 was published as **0 midwife-attended births** —
+   the strongest possible claim about a place, manufactured from a cell that
+   said only "fewer than 10".
+
+2. **The conservation guard could not detect it.** *Fixed.* It compared
+   `sum(before, na.rm = TRUE)` with `sum(after, na.rm = TRUE)`, so NA → 0 left
+   both sides at 0 and the invariant passed over the exact corruption it exists
+   to catch. Subclass N2, in the guard protecting the most fragile step here.
+
+3. **`suppressed = FALSE` was hard-coded on apportioned rows**
+   (`11-wonder-county-ingest.R`), stamping every apportioned value as an
+   observation — including rows derived from a suppressed county. *Fixed:* read
+   off the value rather than asserted.
+
+4. **Two district-profile guards blinded by `na.rm = TRUE`.** *Fixed.*
+   `stopifnot(sum(a > b, na.rm = TRUE) == 0)` passes when `a` or `b` is missing.
+   Replaced by a check that counts violation and unevaluability **separately**,
+   so neither can hide behind the other.
+
+5. **`R/string_normalization.R` failed silently.** *Fixed.* The shim sourced
+   `~/isochrones/R/string_normalization.R` unconditionally; when absent R said
+   only "cannot open the connection", naming neither the file nor the variable
+   that would fix it. Now names both and states the no-vendoring rule.
+
+### A fix that was wrong in the other direction
+
+My first fix propagated NA to **any** region touched by a suppressed county.
+The new conservation guard immediately caught it: a region straddling one
+suppressed and one observed county discarded the observed births too, and the
+total fell 100 → 92.97. **Both "publish 0" and "publish NA" destroy
+information.**
+
+Final behaviour: a region reports the sum of its **observed** contributions, is
+`NA` only when **every** contributing county was suppressed, and carries
+`ct_partial` when its total is missing at least one suppressed county — so an
+understated value can never be read as a complete one. This was worth recording
+because the guard fixed in defect 2 is what caught the error in defect 1's fix,
+one step later.
+
+### Wrong test, corrected
+
+T38 asserted the caller recombines, by regex, and failed. The caller **does**
+recombine (`bind_rows(ident, ...)` after filtering the legacy rows); my pattern
+was too narrow. Rewritten to test the behaviour — which is how defect 3 on the
+adjacent line was found.
+
+### Full suite
+
+7/8 pass. **1 failure, pre-existing and unrelated**, verified by re-running
+against stashed changes:
+
+`test_healthgrades_integrity.R` — "Table 1 reports the same exclusion count the
+data implies (15 vs 17)". The Healthgrades crawl is still running and the
+collision count has moved 14 → 15 → 17 while Table 1's committed figure says 15.
+**This is the test working correctly**: a stale-artifact/vintage-mismatch alarm.
+Not patched, because the answer is to rebuild Table 1 when the crawl finishes,
+not to edit a number. **A count must not be frozen mid-crawl.**
+
+### Unresolved / carried forward
+
+- **ACTION:** rebuild Table 1 after the Healthgrades crawl completes; until then
+  the exclusion count is stale by construction.
+- **DECISION NEEDED:** `women_15_44` partial vs `NA` denominator (cycle 3).
+- **DECISION NEEDED:** Table 1 panel-window censoring on ">=15 years" (cycle 1).
+- **DECISION NEEDED (new):** whether a `ct_partial` region should be reported at
+  all, or withheld like a suppressed one. Currently reported, flagged.
+- N1 sites outside CT not yet audited: `03-geography-hierarchy.R:120` (land),
+  `spatial_crs_contract.R:262` (`population_allocated`). **Cycle 5.**
+- `safe_percent` DEN-032 default — fix belongs in `mufflyaccess`, out of scope.
+- 13 unaudited `.keep_all` sites (cycle 2) — **still open, slipped 3 cycles.**
+- Healthgrades: constant `hg_years_experience`; absent-vs-FALSE booleans.
+
+**Estimand changed:** yes, and deliberately — a purely-suppressed Connecticut
+planning region now reports `NA` instead of `0`. Publishing 0 was not a
+defensible reading of a suppressed cell (suppression means 1–9), so this is a
+correction rather than a choice between defensible alternatives.

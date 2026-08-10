@@ -127,18 +127,53 @@ apportion_ct_legacy <- function(d, geoid_col = "GEOID", value_cols) {
                       relationship = "many-to-many") %>%
     dplyr::mutate(dplyr::across(dplyr::all_of(value_cols), ~ .x * weight)) %>%
     dplyr::group_by(ce_fips_2022) %>%
-    dplyr::summarise(dplyr::across(dplyr::all_of(value_cols), ~ sum(.x, na.rm = TRUE)),
-                     .groups = "drop") %>%
+    # CYCLE 4. sum(na.rm = TRUE) here turned a WONDER-suppressed legacy county
+    # (which arrives as NA) into 0 for every planning region drawing from it --
+    # and a region fed ONLY by that county was published as a hard 0. "We may
+    # not say" is not "none"; the difference is a county reported as having no
+    # midwife-attended births. Suppression means the true count is 1-9, so 0 is
+    # not even a defensible estimate, only a lower bound.
+    #
+    # Propagating NA to any region touched by a suppressed county was the first
+    # fix and it was wrong in the other direction: a region straddling one
+    # suppressed and one observed county would discard the observed births too,
+    # so the conservation guard fired at 100 -> 92.97. Both "publish 0" and
+    # "publish NA" destroy information.
+    #
+    # A region therefore reports the sum of its OBSERVED contributions, and is
+    # NA only when every contributing county was suppressed -- the case that was
+    # being published as a hard 0. `ct_partial` marks a region whose total is
+    # missing at least one suppressed county, so an understated value can never
+    # be mistaken for a complete one.
+    dplyr::summarise(
+      dplyr::across(dplyr::all_of(value_cols),
+                    ~ if (all(is.na(.x))) NA_real_ else sum(.x, na.rm = TRUE)),
+      ct_partial = any(dplyr::if_any(dplyr::all_of(value_cols), is.na)) &&
+        !all(dplyr::if_all(dplyr::all_of(value_cols), is.na)),
+      .groups = "drop") %>%
     dplyr::rename(!!geoid_col := ce_fips_2022) %>%
     dplyr::mutate(ct_apportioned = TRUE)
 
   # Apportionment redistributes; it must not change the total.
+  # CYCLE 4. This guard used na.rm = TRUE on BOTH sides, so when a suppressed
+  # county's NA became 0 the totals matched at 0 and the invariant passed over
+  # exactly the corruption it exists to detect. A guard that cannot fail on bad
+  # input is not a guard. Missing values are now accounted for separately, and
+  # the total is compared only over the observed part.
   for (v in value_cols) {
+    n_missing_before <- sum(is.na(legacy[[v]]))
+    n_missing_after  <- sum(is.na(out[[v]]))
+    if (n_missing_before > 0L && n_missing_after == 0L) {
+      stop(sprintf(paste0(
+        "apportion_ct_legacy: %s had %d suppressed legacy county/counties on ",
+        "input and none on output. Suppression must propagate, not become 0."),
+        v, n_missing_before), call. = FALSE)
+    }
     before <- sum(legacy[[v]], na.rm = TRUE)
     after  <- sum(out[[v]], na.rm = TRUE)
     if (abs(before - after) > 1e-6 * max(1, before)) {
-      stop(sprintf("apportion_ct_legacy: %s total changed (%s -> %s).", v, before, after),
-           call. = FALSE)
+      stop(sprintf("apportion_ct_legacy: %s observed total changed (%s -> %s).",
+                   v, before, after), call. = FALSE)
     }
   }
   out
