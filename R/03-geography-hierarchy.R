@@ -127,7 +127,9 @@ zip_county_ct_2022 <- function() {
     transmute(zip5 = pad5(GEOID_ZCTA5_20),
               tract20 = pad_n(GEOID_TRACT_20, 11),
               land = suppressWarnings(as.numeric(AREALAND_PART))) %>%
-    inner_join(cross, by = "tract20") %>%
+    # cross is guaranteed unique on tract20 by the stop() above; declaring the
+    # cardinality turns that invariant into a contract dplyr enforces.
+    inner_join(cross, by = "tract20", relationship = "many-to-one") %>%
     group_by(zip5, pr_geoid) %>%
     # CYCLE 5, class N1. sum(land, na.rm = TRUE) scored a tract with missing
     # ALAND as 0 square metres, shrinking a density DENOMINATOR and inflating
@@ -284,7 +286,8 @@ build_geography <- function() {
       distinct(certification_number, .keep_all = TRUE)
     bad_prov <- roster %>%
       select(certification_number, practice_zip, practice_state) %>%
-      inner_join(prov, by = "certification_number") %>%
+      inner_join(prov, by = "certification_number",
+                 relationship = "many-to-one") %>%
       mutate(rz = pad5(str_sub(str_remove_all(practice_zip, "[^0-9]"), 1, 5)),
              gz = pad5(str_sub(str_remove_all(geo_zip, "[^0-9]"), 1, 5))) %>%
       filter((!is.na(rz) & !is.na(gz) & rz != gz) |
@@ -365,7 +368,7 @@ build_geography <- function() {
       select(certification_number, roster_zip = practice_zip) %>%
       inner_join(geo %>% select(certification_number, geo_zip = practice_zip) %>%
                    distinct(certification_number, .keep_all = TRUE),
-                 by = "certification_number") %>%
+                 by = "certification_number", relationship = "many-to-one") %>%
       mutate(rz = pad5(str_sub(str_remove_all(roster_zip, "[^0-9]"), 1, 5)),
              gz = pad5(str_sub(str_remove_all(geo_zip, "[^0-9]"), 1, 5))) %>%
       filter(!is.na(rz), !is.na(gz), rz != gz)

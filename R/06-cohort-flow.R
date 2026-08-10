@@ -99,8 +99,9 @@ build_flow <- function() {
   }
 
   adds <- tibble(certification_number = added) %>%
-    left_join(prior, by = "certification_number") %>%
-    left_join(fin_state, by = "certification_number", suffix = c("", ".fin"))
+    left_join(prior, by = "certification_number", relationship = "many-to-one") %>%
+    left_join(fin_state, by = "certification_number", suffix = c("", ".fin"),
+              relationship = "many-to-one")
 
   npi_fin <- if ("npi.fin" %in% names(adds)) adds$npi.fin else
     if ("npi" %in% names(adds)) adds$npi else NA_character_
@@ -171,8 +172,9 @@ build_flow <- function() {
 
   rem <- tibble(certification_number = removed) %>%
     left_join(select(s2_all, certification_number, s2_npi = npi),
-              by = "certification_number") %>%
-    left_join(fin_state, by = "certification_number", suffix = c("", ".fin")) %>%
+              by = "certification_number", relationship = "many-to-one") %>%
+    left_join(fin_state, by = "certification_number", suffix = c("", ".fin"),
+              relationship = "many-to-one") %>%
     mutate(final_npi = if ("npi.fin" %in% names(.)) npi.fin else
              if ("npi" %in% names(.)) npi else NA_character_,
            reason = case_when(

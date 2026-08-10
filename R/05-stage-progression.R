@@ -184,9 +184,9 @@ build_progression <- function() {
     left_join(if (is.null(link)) tibble(certification_number = character()) else
                 select(link, certification_number,
                        any_of(c("npi", "npi_match_method", "npi_match_resolution"))),
-              by = "certification_number") %>%
+              by = "certification_number", relationship = "many-to-one") %>%
     left_join(select(s2, certification_number, s2_npi = npi),
-              by = "certification_number") %>%
+              by = "certification_number", relationship = "many-to-one") %>%
     mutate(reason = case_when(
       !("npi" %in% names(.)) ~ "not_in_guarded_linkage",
       is.na(npi) & !is.na(s2_npi) ~ "npi_withdrawn_by_identity_guard",
@@ -213,8 +213,8 @@ build_progression <- function() {
   strata <- g4 %>%
     transmute(certification_number,
               zip5 = pad5(str_sub(str_remove_all(practice_zip, "[^0-9]"), 1, 5))) %>%
-    left_join(zc, by = "zip5") %>%
-    left_join(select(cb, GEOID, rucc_2023), by = "GEOID") %>%
+    left_join(zc, by = "zip5", relationship = "many-to-one") %>%
+    left_join(select(cb, GEOID, rucc_2023), by = "GEOID", relationship = "many-to-one") %>%
     mutate(rucc_cat = coalesce(
       band_rurality(rucc_2023, RURALITY_LABELS_COHORT), "Unknown")) %>%
     select(certification_number, rucc_cat)

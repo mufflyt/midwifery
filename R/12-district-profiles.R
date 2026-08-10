@@ -135,9 +135,9 @@ run_districts <- function() {
     # subset: the earlier explicit list silently dropped the new columns and
     # failed downstream with "object not found".
     left_join(core[, setdiff(names(core), c("NAME", "state", "congressional district"))],
-              by = "GEOID") %>%
+              by = "GEOID", relationship = "many-to-one") %>%
     left_join(subj[, setdiff(names(subj), c("NAME", "state", "congressional district"))],
-              by = "GEOID") %>%
+              by = "GEOID", relationship = "many-to-one") %>%
     rename(state_fips = state, cd = `congressional district`,
            births_12mo = B13016_002E, births_unmarried = B13002_007E,
            medicaid_women = C27007_017E, medicaid_women_denom = C27007_016E,
@@ -218,7 +218,7 @@ run_districts <- function() {
   d <- d %>% filter(cd != "ZZ")
   if (n_zz) cli::cli_alert_info("dropped {n_zz} 'ZZ' water/unassigned pseudo-districts")
 
-  d <- d %>% left_join(mw_cd, by = "GEOID") %>%
+  d <- d %>% left_join(mw_cd, by = "GEOID", relationship = "many-to-one") %>%
     mutate(n_midwives = coalesce(n_midwives, 0L),
            midwives_per_10k_women = if_else(women_15_44 > 0,
                                             1e4 * n_midwives / women_15_44, NA_real_),
@@ -234,9 +234,9 @@ run_districts <- function() {
                               "98", district))
   fips <- tigris::fips_codes %>% distinct(state, state_code)
   d <- d %>%
-    left_join(fips, by = c("state_fips" = "state_code")) %>%
+    left_join(fips, by = c("state_fips" = "state_code"), relationship = "many-to-one") %>%
     mutate(state_abbr = state) %>% select(-state) %>%
-    left_join(reps, by = c("state_abbr", "cd" = "district")) %>%
+    left_join(reps, by = c("state_abbr", "cd" = "district"), relationship = "many-to-one") %>%
     mutate(
       district_display = if_else(state_abbr %in% c("DC", "PR"), state_abbr,
                                  sprintf("%s-%s", state_abbr, cd)),

@@ -1327,3 +1327,84 @@ appeared during this cycle. Diagnostics, not artifacts; now gitignored.
 - **HYGIENE:** duplicate test IDs across cycle 6 / cycle 7 files.
 
 **Estimand changed:** no.
+
+---
+
+## Cycle 10 — 2026-08-10 — 4 BVA / 3 semantic / 3 adversarial
+
+**Target.** The 46-bare-join inventory cycle 9 opened.
+
+**Tests added** — `tests/test_cycle10_join_cardinality.R` (T91–T100, 15 assertions)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T91 | BVA | `many-to-one` rejects a **single** duplicate right key |
+| T92 | BVA | empty right table, empty both sides |
+| T93 | BVA | composite keys are unique on the pair |
+| T94 | BVA | `suffix = c("", ".fin")` does not shadow a left value |
+| T95 | semantic | every cohort-building join declares its cardinality |
+| T96 | semantic | enriching a 100-person cohort leaves 100 people |
+| T97 | semantic | a genuinely many-to-many join says so |
+| T98 | adversarial | an injected duplicate is refused, not fanned out |
+| T99 | adversarial | an undeclared fan-out is order-dependent |
+| T100 | adversarial | undeclared-join ratchet |
+
+### The measurement that shaped the fix
+
+**No artifact in this repo carries a duplicate `certification_number`.** Every
+person-keyed join is safe — today, by coincidence, not by contract. Same shape
+as the `.keep_all` sites (c5) and the POS tie-break that has never fired (c5).
+
+Fan-out is a scientific error rather than a tidiness one because a left join
+that fans out increases the **left** row count, and here the left row count *is*
+the cohort — the denominator of every proportion downstream. One duplicate row
+in a lookup table silently enlarges the cohort.
+
+### Fix: dplyr-native, not a wrapper swap
+
+`relationship = "many-to-one"` makes dplyr itself error on a duplicated right
+key, needs no dependency, and fails at the exact line. Converting 46 calls to
+`safe_left_join()` would be a far larger edit for the same guarantee.
+
+**Undeclared joins: 46 → 18.** All **cohort-building joins in `05`, `06`, `07`
+and `12` now declare their cardinality** (T95 at zero). T98 proves the guard
+fires by injecting the duplicate the artifacts do not have; T99 shows the same
+join is order-dependent when undeclared — which is *why* it must be declared.
+
+### Three wrong tests of my own, all in the source scanner
+
+Worth recording together, because they share one root cause: **a
+source-scanning test is itself code, and mine was wrong three ways.**
+
+1. `code_of()` **removed** comment lines, so every reported line number indexed
+   the filtered vector and pointed at innocent code several lines away. Counts
+   right, diagnostics fiction. Now blanks them in place.
+2. The detector read a fixed **3-line window**, so every multi-line join looked
+   undeclared — including ones I had just annotated. Now reads to the closing
+   paren by balancing parentheses.
+3. My *annotator* skipped a join when "relationship" appeared anywhere in the
+   preceding 5 lines — which matched the **previous** join's declaration. Three
+   joins were silently passed over.
+
+None of these would have failed loudly; each produced a plausible number.
+
+### Full suite
+
+**15/15 pass.**
+
+### Unresolved / carried forward
+
+- **18 undeclared joins remain**, ratcheted (T100). They are enrichment/report
+  joins outside the cohort path — cycle 11 should classify rather than annotate
+  in bulk, since some may be legitimately many-to-many.
+- 4 duplicate helper definitions, ratcheted (c9).
+- 14 bare `.keep_all` sites, ratcheted (c5).
+- **DECISION NEEDED:** reliability method for imprecise GFRs (c8).
+- **DECISION NEEDED:** GFR numerator universe 15-50 vs denominator 15-44 (c7).
+- **DECISION NEEDED:** `women_15_44` partial vs NA — still unratified (c7).
+- **DECISION NEEDED:** Table 1 censoring on ">=15 years" (c1).
+- **DECISION NEEDED:** whether a `ct_partial` region is reported (c4).
+
+**No scientific estimand was changed in this cycle.** The declarations cannot
+alter any current result — every affected join already had a unique right table.
+They convert a future silent error into a present loud one.

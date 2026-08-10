@@ -158,12 +158,12 @@ build_composition <- function() {
                  col_types = cols(GEOID = col_character()))
 
   d <- membership %>%
-    left_join(chars, by = "certification_number") %>%
-    left_join(link_cols, by = "certification_number") %>%
+    left_join(chars, by = "certification_number", relationship = "many-to-one") %>%
+    left_join(link_cols, by = "certification_number", relationship = "many-to-one") %>%
     mutate(zip5 = pad5(str_sub(str_remove_all(practice_zip, "[^0-9]"), 1, 5)),
            cert_decade = band_cert_decade(certification_date)) %>%
-    left_join(zc, by = "zip5") %>%
-    left_join(select(cb, GEOID, rucc_2023), by = "GEOID") %>%
+    left_join(zc, by = "zip5", relationship = "many-to-one") %>%
+    left_join(select(cb, GEOID, rucc_2023), by = "GEOID", relationship = "many-to-one") %>%
     mutate(rucc_cat = coalesce(
       band_rurality(rucc_2023, RURALITY_LABELS_COHORT), "Unknown"))
 
@@ -206,7 +206,7 @@ build_composition <- function() {
     aud <- aud %>% left_join(
       geo %>% select(certification_number, county_best, geo_source, geo_precision,
                      geo_npi = npi),
-      by = "certification_number")
+      by = "certification_number", relationship = "many-to-one")
   }
   aud <- aud %>%
     mutate(has_zip = !is.na(practice_zip) & nzchar(practice_zip),
