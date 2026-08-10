@@ -1,1115 +1,181 @@
 certification_number,last_name,first_name,state_source,voter_dob,oh_birth_year,oh_age_at_ref,oh_age_plausible,match_method,match_confidence,voter_freq_in_ohio,voter_city,voter_zip
-CNM09069,Abbott,Heidi,OH_Voter,1972-06-03,1972,54,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43204
-CNM1149,Abbott,Whitney,OH_Voter,1993-10-15,1993,33,TRUE,unambiguous_unique_name,1,1,BELLEFONTAINE,43311
 CNM09750,Abdalla,Muna,OH_Voter,1991-01-01,1991,35,TRUE,unambiguous_unique_name,1,1,CANAL WINCHESTER,43110
-CNM06682,Abdi,Siham,OH_Voter,2004-10-10,2004,22,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43229
-CNM05699,Abdulle,Deka,OH_Voter,1991-01-10,1991,35,TRUE,unambiguous_unique_name,1,1,DUBLIN,43017
-CNM04580,Abner,Melanie,OH_Voter,1981-02-08,1981,45,TRUE,unambiguous_unique_name,1,1,MASSILLON,44646
-3944,Abraham,Linda,OH_Voter,1956-04-07,1956,70,TRUE,unambiguous_unique_name,1,1,COLUMBIANA,44408
-6589,Abrams,Lauren,OH_Voter,1984-12-13,1984,42,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45243
-CNM09449,Acosta,Amanda,OH_Voter,1991-11-13,1991,35,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45213
-CNM05813,Acosta,Jessica,OH_Voter,1986-12-03,1986,40,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44111
 CNM08887,Acuna,Valeria,OH_Voter,1996-02-28,1996,30,TRUE,unambiguous_unique_name,1,1,MARION,43302
-CNM2620,Adair,Rachael,OH_Voter,1981-03-15,1981,45,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43206
-CNM09164,Adkins,Amie,OH_Voter,1978-04-14,1978,48,TRUE,unambiguous_unique_name,1,1,DEFIANCE,43512
-CNM1845,Adkins,Suzanne,OH_Voter,1962-07-03,1962,64,TRUE,unambiguous_unique_name,1,1,MIDDLETOWN,45042
-CNM09768,Akers,Aimee,OH_Voter,1984-03-22,1984,42,TRUE,unambiguous_unique_name,1,1,CANTON,44709
-CNM0745,Alba,Amanda,OH_Voter,1991-09-10,1991,35,TRUE,unambiguous_unique_name,1,1,MINERVA,44657
-CNM05014,Alba,Deborah,OH_Voter,1964-01-22,1964,62,TRUE,unambiguous_unique_name,1,1,VAN WERT,45891
 CNM10414,Albers,Meghan,OH_Voter,1993-04-10,1993,33,TRUE,unambiguous_unique_name,1,1,ST HENRY,45883
-CNM07620,Alexander,Alia,OH_Voter,2005-01-08,2005,21,FALSE,unambiguous_unique_name,1,1,COLUMBUS,43215
 CNM1767,Alexander,Mica,OH_Voter,1985-03-27,1985,41,TRUE,unambiguous_unique_name,1,1,GAHANNA,43230
 CNM07468,Ali,Barqadle,OH_Voter,1986-01-01,1986,40,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43224
-CNM09806,Allman,Samantha,OH_Voter,1987-04-23,1987,39,TRUE,unambiguous_unique_name,1,1,TALLMADGE,44278
-CNM08138,Allmon,Valerie,OH_Voter,1954-12-25,1954,72,TRUE,unambiguous_unique_name,1,1,BLACKLICK,43004
-CNM07469,Alt,Stacey,OH_Voter,1984-09-09,1984,42,TRUE,unambiguous_unique_name,1,1,FOSTORIA,44830
-CNM10128,Alvarez,Eric,OH_Voter,1987-06-11,1987,39,TRUE,unambiguous_unique_name,1,1,HAMILTON,45011
-5046,Alward,Susan,OH_Voter,1960-02-21,1960,66,TRUE,unambiguous_unique_name,1,1,BLUE CREEK,45616
-CNM06050,Ames,Megan,OH_Voter,1994-04-09,1994,32,TRUE,unambiguous_unique_name,1,1,XENIA,45385
 13284,Amiet,Jennifer,OH_Voter,1974-01-04,1974,52,TRUE,unambiguous_unique_name,1,1,GRANVILLE,43023
-CNM1516,Ammons,Rebecca,OH_Voter,1967-07-31,1967,59,TRUE,unambiguous_unique_name,1,1,WAPAKONETA,45895
 CNM06463,Anderson,Ambria,OH_Voter,1991-03-16,1991,35,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43205
-CNM06761,Andrews,Naomi,OH_Voter,1991-01-27,1991,35,TRUE,unambiguous_unique_name,1,1,GIRARD,44420
-CNM09131,Ankrom,Sarah,OH_Voter,1969-09-16,1969,57,TRUE,unambiguous_unique_name,1,1,LITTLE HOCKING,45742
-12566,Arce,Monica,OH_Voter,1991-04-03,1991,35,TRUE,unambiguous_unique_name,1,1,MARION,43302
-CNM06486,Armstrong,Isabelle,OH_Voter,2005-02-03,2005,21,FALSE,unambiguous_unique_name,1,1,DELAWARE,43015
-CNM05900,Arnott,Michelle,OH_Voter,1962-01-15,1962,64,TRUE,unambiguous_unique_name,1,1,CIRCLEVILLE,43113
-13314,Arrington,Lauren,OH_Voter,1997-03-28,1997,29,TRUE,unambiguous_unique_name,1,1,GOSHEN,45122
-CNM08888,Asad,Sarah,OH_Voter,1994-09-12,1994,32,TRUE,unambiguous_unique_name,1,1,LEWIS CENTER,43035
-CNM06546,Asante,Grace,OH_Voter,1973-08-18,1973,53,TRUE,unambiguous_unique_name,1,1,MAINEVILLE,45039
-CNM2615,Atkinson,Stacey,OH_Voter,1971-11-02,1971,55,TRUE,unambiguous_unique_name,1,1,RICHMOND DALE,45673
-CNM0073,Augustine,Kathleen,OH_Voter,1951-08-11,1951,75,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44109
-CNM05359,Austin,Sabrina,OH_Voter,1967-04-27,1967,59,TRUE,unambiguous_unique_name,1,1,BEDFORD,44146
-CNM09701,Aven,Tess,OH_Voter,1982-03-14,1982,44,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45241
-CNM07805,Ayer,Robyn,OH_Voter,1966-04-20,1966,60,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45202
-CNM1112,Bache,Julie,OH_Voter,1970-05-27,1970,56,TRUE,unambiguous_unique_name,1,1,WESTERVILLE,43081
-CNM09209,Bailey,Makenzie,OH_Voter,1993-08-02,1993,33,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43240
-CNM08779,Baker,Alexia,OH_Voter,1999-04-29,1999,27,TRUE,unambiguous_unique_name,1,1,GOSHEN,45122
-CNM2819,Baker,Ana,OH_Voter,1972-12-10,1972,54,TRUE,unambiguous_unique_name,1,1,MOGADORE,44260
-CNM1554,Baker,Jodie,OH_Voter,1961-10-29,1961,65,TRUE,unambiguous_unique_name,1,1,MILFORD,45150
-CNM2616,Bakker,Linda,OH_Voter,1948-12-13,1948,78,TRUE,unambiguous_unique_name,1,1,CORTLAND,44410
-CNM04421,Ball,Kristine,OH_Voter,1946-09-16,1946,80,TRUE,unambiguous_unique_name,1,1,MIAMISBURG,45342
-CNM1438,Ballester,Rachel,OH_Voter,1998-08-03,1998,28,TRUE,unambiguous_unique_name,1,1,MIAMISBURG,45342
-CNM06806,Banaszak,Lauren,OH_Voter,1980-09-29,1980,46,TRUE,unambiguous_unique_name,1,1,PARMA,44129
-13222,Bandt,Amy,OH_Voter,1978-05-06,1978,48,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45231
-12633,Barber,Carrie,OH_Voter,1984-10-01,1984,42,TRUE,unambiguous_unique_name,1,1,MIAMISBURG,45342
-CNM07350,Barber,Melanie,OH_Voter,1971-11-17,1971,55,TRUE,unambiguous_unique_name,1,1,MT STERLING,43143
-CNM06645,Barbour,Andrea,OH_Voter,1986-11-23,1986,40,TRUE,unambiguous_unique_name,1,1,WADSWORTH,44281
-4374,Barry,Martha,OH_Voter,1986-10-31,1986,40,TRUE,unambiguous_unique_name,1,1,WORTHINGTON,43085
 CNM06941,Barth,Justeen,OH_Voter,1996-03-20,1996,30,TRUE,unambiguous_unique_name,1,1,UPPER SANDUSKY,43351
-CNM0746,Bates,Faye,OH_Voter,1977-01-21,1977,49,TRUE,unambiguous_unique_name,1,1,ROCK CREEK,44084
-CNM08629,Battey,Rachel,OH_Voter,1964-12-15,1964,62,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45223
-9631,Bauer,Michele,OH_Voter,1979-11-07,1979,47,TRUE,unambiguous_unique_name,1,1,DUBLIN,43016
-CNM1967,Beaman,Emily,OH_Voter,1979-12-15,1979,47,TRUE,unambiguous_unique_name,1,1,KENTON,43326
-CNM07148,Beckman,Erin,OH_Voter,1973-03-17,1973,53,TRUE,unambiguous_unique_name,1,1,DAYTON,45409
 CNM08389,Beitler,Jessica,OH_Voter,1980-04-20,1980,46,TRUE,unambiguous_unique_name,1,1,NORTH CANTON,44720
-12440,Belfiore,Theresa,OH_Voter,1949-10-09,1949,77,TRUE,unambiguous_unique_name,1,1,HIGHLAND HTS,44143
 CNM03813,Bellman,Brooke,OH_Voter,1970-09-28,1970,56,TRUE,unambiguous_unique_name,1,1,SYLVANIA,43560
 CNM2691,Bellomy,Katherine,OH_Voter,1975-10-29,1975,51,TRUE,unambiguous_unique_name,1,1,WESTERVILLE,43082
-CNM06796,Belz,Sarah,OH_Voter,1991-07-25,1991,35,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43213
-CNM0508,Benfield,Karen,OH_Voter,1954-07-11,1954,72,TRUE,unambiguous_unique_name,1,1,WALNUT CREEK,44687
-3187,Benfield,Rebecca,OH_Voter,1947-11-06,1947,79,TRUE,unambiguous_unique_name,1,1,LIMA,45807
-CNM07650,Bennett,Claudia,OH_Voter,1946-11-05,1946,80,TRUE,unambiguous_unique_name,1,1,LAKEWOOD,44107
-CNM08567,Bennett,Griffin,OH_Voter,2003-11-12,2003,23,TRUE,unambiguous_unique_name,1,1,NEW RICHMOND,45157
-CNM04945,Benson,Leanne,OH_Voter,1987-07-04,1987,39,TRUE,unambiguous_unique_name,1,1,POWELL,43065
 8704,Beregovskaya,Yelena,OH_Voter,1957-01-13,1957,69,TRUE,unambiguous_unique_name,1,1,ORANGE,44022
-CNM10101,Berger,Krista,OH_Voter,1988-03-01,1988,38,TRUE,unambiguous_unique_name,1,1,WESTERVILLE,43081
-CNM08530,Berger,Miriam,OH_Voter,1989-07-17,1989,37,TRUE,unambiguous_unique_name,1,1,CLEVELAND HTS,44118
-CNM06831,Berigan,Mary,OH_Voter,1955-06-04,1955,71,TRUE,unambiguous_unique_name,1,1,ELYRIA,44035
-13124,Berlin,Kara,OH_Voter,1992-08-21,1992,34,TRUE,unambiguous_unique_name,1,1,HUBBARD,44425
-CNM03840,Bernard,Jama,OH_Voter,1985-03-09,1985,41,TRUE,unambiguous_unique_name,1,1,SHAKER HTS,44122
-CNM07461,Berry,Kristina,OH_Voter,1987-08-05,1987,39,TRUE,unambiguous_unique_name,1,1,PLAIN CITY,43064
-CNM1439,Billings,Sara,OH_Voter,1951-10-25,1951,75,TRUE,unambiguous_unique_name,1,1,WALBRIDGE,43465
 CNM08660,Biondi,Emily,OH_Voter,2003-05-15,2003,23,TRUE,unambiguous_unique_name,1,1,LEWIS CENTER,43035
-CNM1241,Birdsong,Julie,OH_Voter,1959-07-30,1959,67,TRUE,unambiguous_unique_name,1,1,ENGLEWOOD,45322
-12864,Blair,Veronica,OH_Voter,1972-01-17,1972,54,TRUE,unambiguous_unique_name,1,1,MARYSVILLE,43040
 CNM03814,Blake,Kristie,OH_Voter,1991-07-21,1991,35,TRUE,unambiguous_unique_name,1,1,PLAIN CITY,43064
-CNM2921,Blanchard,Karyn,OH_Voter,1987-08-26,1987,39,TRUE,unambiguous_unique_name,1,1,VINCENT,45784
 CNM09915,Bledsoe,Alyssa,OH_Voter,1993-05-16,1993,33,TRUE,unambiguous_unique_name,1,1,CONCORD,44060
-2438,Blizzard,Barbara,OH_Voter,1962-04-03,1962,64,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43207
 CNM05723,Boddy,Candice,OH_Voter,1979-11-22,1979,47,TRUE,unambiguous_unique_name,1,1,NORTH OLMSTED,44070
-4248,Bogar,Susan,OH_Voter,1976-10-28,1976,50,TRUE,unambiguous_unique_name,1,1,LOVELAND,45140
-CNM1329,Bohan,Mary,OH_Voter,1980-12-17,1980,46,TRUE,unambiguous_unique_name,1,1,HUDSON,44236
-CNM0067,Bohn,Sarah,OH_Voter,1976-06-01,1976,50,TRUE,unambiguous_unique_name,1,1,HILLIARD,43026
-CNM1934,Bohrer,Carol,OH_Voter,1943-05-01,1943,83,TRUE,unambiguous_unique_name,1,1,FAIRFIELD,45014
-CNM08645,Boling,Melanie,OH_Voter,1974-07-18,1974,52,TRUE,unambiguous_unique_name,1,1,ST PARIS,43072
 CNM04489,Bolton,Crystal,OH_Voter,1980-03-15,1980,46,TRUE,unambiguous_unique_name,1,1,TOLEDO,43611
-11882,Bolton,Margaret,OH_Voter,1964-07-04,1964,62,TRUE,unambiguous_unique_name,1,1,NEWBURY,44065
-CNM06584,Bonilla,Jessica,OH_Voter,1990-10-06,1990,36,TRUE,unambiguous_unique_name,1,1,WARREN,44484
-CNM0262,Boone,Brandi,OH_Voter,1979-09-01,1979,47,TRUE,unambiguous_unique_name,1,1,ZANESFIELD,43360
-CNM09528,Boone,Megan,OH_Voter,1987-06-08,1987,39,TRUE,unambiguous_unique_name,1,1,MCCONNELSVILLE,43756
-4084,Boone,Ruth,OH_Voter,1945-08-29,1945,81,TRUE,unambiguous_unique_name,1,1,ASHVILLE,43103
-CNM03872,Borden,Christine,OH_Voter,1984-11-30,1984,42,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43205
-CNM1440,Borden,Pamela,OH_Voter,1971-08-27,1971,55,TRUE,unambiguous_unique_name,1,1,DAYTON,45404
-CNM0800,Boucher,Andrea,OH_Voter,1981-01-12,1981,45,TRUE,unambiguous_unique_name,1,1,WOODSFIELD,43793
-CNM3343,Bower,Allison,OH_Voter,1996-12-19,1996,30,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45231
-CNM0672,Bowers,Sabrina,OH_Voter,1998-03-27,1998,28,TRUE,unambiguous_unique_name,1,1,GALLOWAY,43119
-CNM07467,Bowling,Katie,OH_Voter,2001-05-06,2001,25,TRUE,unambiguous_unique_name,1,1,NEW CARLISLE,45344
-CNM07017,Boyd,Brianna,OH_Voter,2002-09-19,2002,24,TRUE,unambiguous_unique_name,1,1,RAVENNA,44266
 CNM08930,Boyden,Maria,OH_Voter,1990-01-06,1990,36,TRUE,unambiguous_unique_name,1,1,DUBLIN,43016
 CNM06417,Boyers,Jennifer,OH_Voter,1981-07-17,1981,45,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45255
-CNM04948,Boykin,Jamie,OH_Voter,1963-03-10,1963,63,TRUE,unambiguous_unique_name,1,1,IRONTON,45638
-CNM08753,Brace,Gina,OH_Voter,1982-09-16,1982,44,TRUE,unambiguous_unique_name,1,1,CANFIELD,44406
 CNM08837,Brackbill,Karen,OH_Voter,1980-11-29,1980,46,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43224
-12803,Bradbury,Sarah,OH_Voter,1968-07-06,1968,58,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45251
-CNM09896,Bradley,Bethany,OH_Voter,1995-01-29,1995,31,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43201
-11135,Bramlett,Elizabeth,OH_Voter,1989-06-02,1989,37,TRUE,unambiguous_unique_name,1,1,FAIRBORN,45324
-CNM04799,Branch,Amanda,OH_Voter,1977-11-10,1977,49,TRUE,unambiguous_unique_name,1,1,DAYTON,45417
-CNM09353,Brandes,Ashley,OH_Voter,1991-08-04,1991,35,TRUE,unambiguous_unique_name,1,1,CANTON,44705
-CNM04910,Brandt,Ashley,OH_Voter,1994-03-02,1994,32,TRUE,unambiguous_unique_name,1,1,SUNBURY,43074
-CNM09184,Brandt,Lydia,OH_Voter,2000-11-13,2000,26,TRUE,unambiguous_unique_name,1,1,ROCKY RIVER,44116
-CNM04553,Brandt,Paula,OH_Voter,1972-05-02,1972,54,TRUE,unambiguous_unique_name,1,1,RICHFIELD,44286
 CNM06336,Branham,Allie,OH_Voter,1993-02-05,1993,33,TRUE,unambiguous_unique_name,1,1,MARYSVILLE,43040
-CNM07523,Breeden,Brittany,OH_Voter,1988-05-27,1988,38,TRUE,unambiguous_unique_name,1,1,SOUTH EUCLID,44143
-CNM06890,Brinson,Britney,OH_Voter,1987-02-06,1987,39,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44106
-CNM07377,Bristow,Anna,OH_Voter,2002-03-19,2002,24,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45208
 CNM09933,Britton,Casey,OH_Voter,1988-04-22,1988,38,TRUE,unambiguous_unique_name,1,1,MANSFIELD,44904
-CNM05451,Brooker,Stephanie,OH_Voter,1973-03-13,1973,53,TRUE,unambiguous_unique_name,1,1,WATERFORD,45786
-CNM05083,Brower,Tamara,OH_Voter,1975-07-02,1975,51,TRUE,unambiguous_unique_name,1,1,SOLON,44139
-CNM06294,Brown,Ashlynne,OH_Voter,2005-09-15,2005,21,FALSE,unambiguous_unique_name,1,1,LORAIN,44053
-CNM07018,Brown,Ayana,OH_Voter,1994-07-21,1994,32,TRUE,unambiguous_unique_name,1,1,WESTERVILLE,43082
-CNM08121,Brown,Fatima,OH_Voter,1971-07-16,1971,55,TRUE,unambiguous_unique_name,1,1,EUCLID,44123
-11087,Brown,Felecia,OH_Voter,1973-10-02,1973,53,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45213
-CNM08323,Brown,Jorden,OH_Voter,1993-11-22,1993,33,TRUE,unambiguous_unique_name,1,1,SANDUSKY,44870
-12451,Brown,Maraya,OH_Voter,2000-01-25,2000,26,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43201
-CNM07796,Brubaker,Julianne,OH_Voter,1976-09-15,1976,50,TRUE,unambiguous_unique_name,1,1,PERRYSBURG,43551
-CNM07754,Bruch,Kelly,OH_Voter,1970-12-02,1970,56,TRUE,unambiguous_unique_name,1,1,SUNBURY,43074
 CNM05158,Bruderer,Heather,OH_Voter,1977-09-24,1977,49,TRUE,unambiguous_unique_name,1,1,AMHERST,44001
 CNM07829,Bruscianelli,Mildred,OH_Voter,1995-02-21,1995,31,TRUE,unambiguous_unique_name,1,1,WATERVILLE,43566
-CNM07561,Bryant,Addison,OH_Voter,1995-05-04,1995,31,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45208
 CNM09751,Bryant,Maqsooda,OH_Voter,1993-07-07,1993,33,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44111
-CNM2693,Bryden,Katherine,OH_Voter,1952-08-23,1952,74,TRUE,unambiguous_unique_name,1,1,DUBLIN,43017
 CNM09700,Bubnar,Hannah,OH_Voter,1995-11-29,1995,31,TRUE,unambiguous_unique_name,1,1,GROVE CITY,43123
 CNM05003,Buckholtz,Samantha,OH_Voter,1989-02-15,1989,37,TRUE,unambiguous_unique_name,1,1,CLEVELAND HTS,44118
-12138,Buckley,Theresa,OH_Voter,1967-06-02,1967,59,TRUE,unambiguous_unique_name,1,1,OLMSTED TWP,44138
-CNM09139,Bullock,Chelsea,OH_Voter,1987-03-31,1987,39,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45211
-CNM04075,Bundy,Madeline,OH_Voter,2005-04-13,2005,21,FALSE,unambiguous_unique_name,1,1,N RIDGEVILLE,44039
-12074,Burdette,Anna,OH_Voter,1979-12-01,1979,47,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43222
-CNM2180,Burgess,Lindsay,OH_Voter,1989-06-08,1989,37,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43207
 CNM0623,Burkhardt,Melissa,OH_Voter,1983-03-08,1983,43,TRUE,unambiguous_unique_name,1,1,TIPP CITY,45371
-CNM09570,Burnette,Lisa,OH_Voter,1973-01-19,1973,53,TRUE,unambiguous_unique_name,1,1,HAMILTON,45013
-CNM0175,Burr,Kathleen,OH_Voter,1947-11-12,1947,79,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45245
-CNM08308,Butterfield,Natalie,OH_Voter,1999-02-03,1999,27,TRUE,unambiguous_unique_name,1,1,PATASKALA,43062
-CNM0778,Butterworth,Lisa,OH_Voter,1960-08-13,1960,66,TRUE,unambiguous_unique_name,1,1,WORTHINGTON,43085
-CNM09939,Byrne,Michaela,OH_Voter,1999-03-25,1999,27,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43212
-CNM05197,Cabral,Marilyn,OH_Voter,1969-01-01,1969,57,TRUE,unambiguous_unique_name,1,1,MASSILLON,44646
 CNM06736,Cackovic,Hannah,OH_Voter,1991-04-16,1991,35,TRUE,unambiguous_unique_name,1,1,HILLIARD,43026
-CNM0642,Caldwell,Belinda,OH_Voter,1965-05-09,1965,61,TRUE,unambiguous_unique_name,1,1,EUCLID,44132
-CNM1407,Calhoun,Carolyn,OH_Voter,1952-07-24,1952,74,TRUE,unambiguous_unique_name,1,1,EUCLID,44117
-CNM07775,Calloway,Casey,OH_Voter,1990-10-13,1990,36,TRUE,unambiguous_unique_name,1,1,WILMINGTON,45177
-CNM07104,Camardo,Nicole,OH_Voter,1985-08-19,1985,41,TRUE,unambiguous_unique_name,1,1,POLAND,44514
-CNM08228,Campanelli,Doris,OH_Voter,1940-09-15,1940,86,FALSE,unambiguous_unique_name,1,1,CADIZ,43907
-CNM1130,Cardinal,Tara,OH_Voter,1984-08-31,1984,42,TRUE,unambiguous_unique_name,1,1,SUNBURY,43074
-CNM09103,Carmen,Amanda,OH_Voter,1983-11-04,1983,43,TRUE,unambiguous_unique_name,1,1,HARRISON,45030
-CNM07956,Carr,Tiara,OH_Voter,1994-08-11,1994,32,TRUE,unambiguous_unique_name,1,1,TROTWOOD,45426
 CNM08935,Carrigg,Molly,OH_Voter,1982-07-02,1982,44,TRUE,unambiguous_unique_name,1,1,WESTLAKE,44145
-5088,Carrington,Suzanne,OH_Voter,1951-06-01,1951,75,TRUE,unambiguous_unique_name,1,1,GREENVILLE,45331
-CNM08639,Carswell,Heather,OH_Voter,1989-08-05,1989,37,TRUE,unambiguous_unique_name,1,1,PATASKALA,43062
-CNM09166,Casas,Maricela,OH_Voter,1997-11-13,1997,29,TRUE,unambiguous_unique_name,1,1,LEWIS CENTER,43035
-CNM07061,Casper,Jodi,OH_Voter,1966-12-24,1966,60,TRUE,unambiguous_unique_name,1,1,WOOSTER,44691
-CNM04846,Chandler,Regina,OH_Voter,1965-11-04,1965,61,TRUE,unambiguous_unique_name,1,1,CHAGRIN FALLS,44023
-CNM09862,Chaudhry,Umara,OH_Voter,1970-09-09,1970,56,TRUE,unambiguous_unique_name,1,1,CENTERVILLE,45458
-CNM1088,Chauvin,Rebecca,OH_Voter,1960-11-29,1960,66,TRUE,unambiguous_unique_name,1,1,ROSSFORD,43460
-CNM10077,Chavez,Emily,OH_Voter,1980-06-27,1980,46,TRUE,unambiguous_unique_name,1,1,GROVE CITY,43123
-CNM3019,Chavez,Rebecca,OH_Voter,1967-07-13,1967,59,TRUE,unambiguous_unique_name,1,1,ASHLAND,44805
-CNM2546,Cheek,Rachel,OH_Voter,1989-09-14,1989,37,TRUE,unambiguous_unique_name,1,1,CENTERVILLE,45458
-CNM2547,Chen,Dong,OH_Voter,1968-02-05,1968,58,TRUE,unambiguous_unique_name,1,1,MAUMEE,43537
 CNM06388,Cheney,Brooke,OH_Voter,1985-12-17,1985,41,TRUE,unambiguous_unique_name,1,1,SYLVANIA,43560
-CNM05559,Cherry,Catherine,OH_Voter,1990-10-20,1990,36,TRUE,unambiguous_unique_name,1,1,TOLEDO,43615
 CNM1867,Chipps,Andrea,OH_Voter,1975-06-28,1975,51,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45213
-CNM0198,Choi,Christina,OH_Voter,1981-07-21,1981,45,TRUE,unambiguous_unique_name,1,1,DELAWARE,43015
-CNM09414,Chouljian,Mikayla,OH_Voter,1997-09-30,1997,29,TRUE,unambiguous_unique_name,1,1,CLEVELAND HTS,44106
-CNM09041,Christopher,Heather,OH_Voter,1979-10-16,1979,47,TRUE,unambiguous_unique_name,1,1,MARION,43302
-CNM08145,Christy,Ellen,OH_Voter,1955-08-28,1955,71,TRUE,unambiguous_unique_name,1,1,WESTERVILLE,43082
-CNM05743,Cirigliano,Lisa,OH_Voter,1967-01-06,1967,59,TRUE,unambiguous_unique_name,1,1,KENT,44240
-CNM07043,Cirillo,Elizabeth,OH_Voter,1991-09-07,1991,35,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45219
-CNM08781,Clarkson,Danielle,OH_Voter,1988-03-27,1988,38,TRUE,unambiguous_unique_name,1,1,SALEM,44460
-CNM04384,Clarkson,Elizabeth,OH_Voter,2002-10-04,2002,24,TRUE,unambiguous_unique_name,1,1,MOUNT VERNON,43050
-CNM04385,Clauson,Amanda,OH_Voter,1980-08-29,1980,46,TRUE,unambiguous_unique_name,1,1,WAUSEON,43567
-CNM09786,Claussen,Casey,OH_Voter,1989-09-19,1989,37,TRUE,unambiguous_unique_name,1,1,MARTIN,43445
-CNM05016,Clayton,Tabitha,OH_Voter,1979-12-24,1979,47,TRUE,unambiguous_unique_name,1,1,ASHLAND,44805
-8562,Clemans,Carolyn,OH_Voter,1941-10-12,1941,85,TRUE,unambiguous_unique_name,1,1,HILLIARD,43026
-CNM07096,Clements,Camille,OH_Voter,1969-04-12,1969,57,TRUE,unambiguous_unique_name,1,1,XENIA,45385
-CNM3137,Cleveland,Megan,OH_Voter,1998-03-05,1998,28,TRUE,unambiguous_unique_name,1,1,NEW PHILADELPHIA,44663
-CNM1027,Clevenger,Diane,OH_Voter,1965-08-26,1965,61,TRUE,unambiguous_unique_name,1,1,HARRISVILLE,43974
-CNM2694,Cline,Alice,OH_Voter,1976-04-15,1976,50,TRUE,unambiguous_unique_name,1,1,MOUNT VERNON,43050
-13301,Coburn,Allison,OH_Voter,2001-04-07,2001,25,TRUE,unambiguous_unique_name,1,1,HUBER HEIGHTS,45424
-CNM1376,Cockrell,Ashley,OH_Voter,2004-10-29,2004,22,TRUE,unambiguous_unique_name,1,1,FREDERICKTOWN,43019
-CNM06183,Cole,Briana,OH_Voter,1988-01-14,1988,38,TRUE,unambiguous_unique_name,1,1,RAVENNA,44266
-7778,Comer,Melanie,OH_Voter,1989-07-31,1989,37,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45208
-CNM07701,Conard,Jennifer,OH_Voter,1997-11-28,1997,29,TRUE,unambiguous_unique_name,1,1,KETTERING,45429
-CNM2293,Condon,Mary,OH_Voter,1984-12-13,1984,42,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45208
 CNM04467,Connair,Anna,OH_Voter,1987-02-16,1987,39,TRUE,unambiguous_unique_name,1,1,LEWIS CENTER,43035
 CNM08363,Connaughton,Natalie,OH_Voter,1995-09-27,1995,31,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43206
-CNM09708,Connelly,Amanda,OH_Voter,1992-11-13,1992,34,TRUE,unambiguous_unique_name,1,1,HUDSON,44236
-10466,Connelly,Katie,OH_Voter,1993-06-14,1993,33,TRUE,unambiguous_unique_name,1,1,TOLEDO,43613
-CNM1659,Conrad,Bethany,OH_Voter,1999-03-18,1999,27,TRUE,unambiguous_unique_name,1,1,STOUTSVILLE,43154
-CNM2294,Conroy,Kristen,OH_Voter,1991-07-29,1991,35,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43212
-CNM06076,Cook,Gerri,OH_Voter,1965-05-20,1965,61,TRUE,unambiguous_unique_name,1,1,MONROEVILLE,44847
-8569,Cook,Pamala,OH_Voter,1956-03-12,1956,70,TRUE,unambiguous_unique_name,1,1,BIDWELL,45614
-12747,Corbett,Paige,OH_Voter,2003-12-15,2003,23,TRUE,unambiguous_unique_name,1,1,BELLEFONTAINE,43311
-CNM09965,Cordero,Vanesa,OH_Voter,2003-04-03,2003,23,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43228
-CNM1284,Cornwell,Leslie,OH_Voter,1968-09-17,1968,58,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44128
-12072,Corry,Andrea,OH_Voter,1982-01-05,1982,44,TRUE,unambiguous_unique_name,1,1,HAMILTON,45013
-CNM05289,Costello,Holly,OH_Voter,1978-12-30,1978,48,TRUE,unambiguous_unique_name,1,1,FREMONT,43420
-CNM07054,Cottrell,Stephanie,OH_Voter,1992-09-15,1992,34,TRUE,unambiguous_unique_name,1,1,SPRINGFIELD,45503
-CNM05162,Coughlin,Danielle,OH_Voter,1998-04-25,1998,28,TRUE,unambiguous_unique_name,1,1,MENTOR ON THE LAKE,44060
-CNM07339,Cowper,Alexandra,OH_Voter,1987-11-18,1987,39,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44102
-CNM09461,Cox,Cristin,OH_Voter,1989-10-10,1989,37,TRUE,unambiguous_unique_name,1,1,KINGS MILLS,45034
-CNM07612,Cramer,Felicia,OH_Voter,1992-02-28,1992,34,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43206
-CNM1692,Crawley,Erin,OH_Voter,1990-11-05,1990,36,TRUE,unambiguous_unique_name,1,1,BLACKLICK,43004
-12476,Cripe,Amanda,OH_Voter,1978-10-18,1978,48,TRUE,unambiguous_unique_name,1,1,MONROE,45050
-7322,Crone,Barbara,OH_Voter,1979-08-06,1979,47,TRUE,unambiguous_unique_name,1,1,AUSTINTOWN,44515
-CNM04195,Cronin,Rebecca,OH_Voter,1987-11-27,1987,39,TRUE,unambiguous_unique_name,1,1,SPRINGBORO,45066
-CNM05607,Crowther,Shawn,OH_Voter,1969-01-23,1969,57,TRUE,unambiguous_unique_name,1,1,EAST CANTON,44730
-CNM03954,Crum,Tina,OH_Voter,1968-05-02,1968,58,TRUE,unambiguous_unique_name,1,1,WHIPPLE,45788
-CNM08277,Cruz,Madison,OH_Voter,1999-08-19,1999,27,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44113
 CNM07747,Curren,Darian,OH_Voter,1990-10-06,1990,36,TRUE,unambiguous_unique_name,1,1,MARION,43302
-CNM04510,Cushing,Amanda,OH_Voter,1958-09-11,1958,68,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43204
-CNM3276,Daily,Amy,OH_Voter,1970-10-06,1970,56,TRUE,unambiguous_unique_name,1,1,CANTON,44703
 11148,Dale,Helen,OH_Voter,1978-09-30,1978,48,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43235
-CNM06120,Daniels,Sophia,OH_Voter,2002-07-24,2002,24,TRUE,unambiguous_unique_name,1,1,MILFORD,45150
-CNM2986,Darnall,Emily,OH_Voter,1987-06-12,1987,39,TRUE,unambiguous_unique_name,1,1,FINDLAY,45840
-CNM3220,Darr,Alicia,OH_Voter,1983-02-20,1983,43,TRUE,unambiguous_unique_name,1,1,FINDLAY,45840
-CNM03877,Daugherty,Kelli,OH_Voter,1969-11-01,1969,57,TRUE,unambiguous_unique_name,1,1,MIAMISBURG,45342
 CNM04847,Davenport,Rochelle,OH_Voter,1980-08-21,1980,46,TRUE,unambiguous_unique_name,1,1,PEEBLES,45660
-13328,Davey,Julie,OH_Voter,1950-08-22,1950,76,TRUE,unambiguous_unique_name,1,1,CAMBRIDGE,43725
-CNM0712,Davidson,Bridget,OH_Voter,1991-03-02,1991,35,TRUE,unambiguous_unique_name,1,1,AMELIA,45102
-12771,Davies,Denise,OH_Voter,1962-03-18,1962,64,TRUE,unambiguous_unique_name,1,1,LEAVITTSBURG,44430
-CNM0425,Davis,Emmy,OH_Voter,2005-03-22,2005,21,FALSE,unambiguous_unique_name,1,1,CANTON,44721
-CNM1029,Davis,Lynnette,OH_Voter,1986-07-02,1986,40,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43207
 CNM07750,Dawson,Madeline,OH_Voter,1996-02-24,1996,30,TRUE,unambiguous_unique_name,1,1,BAY VILLAGE,44140
-CNM06838,DeHart,Allison,OH_Voter,1977-10-27,1977,49,TRUE,unambiguous_unique_name,1,1,TROY,45373
 CNM0281,DeHart,Neva,OH_Voter,1981-11-13,1981,45,TRUE,unambiguous_unique_name,1,1,XENIA,45385
-CNM1759,DeLuca,Allison,OH_Voter,1984-01-28,1984,42,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43202
-CNM2332,DePalma,Katie,OH_Voter,1982-06-16,1982,44,TRUE,unambiguous_unique_name,1,1,POLAND,44514
-CNM09587,DeSpain,Stephanie,OH_Voter,1973-10-11,1973,53,TRUE,unambiguous_unique_name,1,1,LEXINGTON,44904
-CNM0141,Dean,Brooke,OH_Voter,1993-09-09,1993,33,TRUE,unambiguous_unique_name,1,1,CENTERVILLE,45458
-CNM06121,Dean,Marian,OH_Voter,1945-07-28,1945,81,TRUE,unambiguous_unique_name,1,1,WESTERVILLE,43081
 CNM2480,Deioma,Shannon,OH_Voter,1979-09-28,1979,47,TRUE,unambiguous_unique_name,1,1,CHAGRIN FALLS,44022
-CNM09676,Delao,Alejandra,OH_Voter,1998-08-16,1998,28,TRUE,unambiguous_unique_name,1,1,PERRYSBURG,43551
-CNM0282,Dell,Sheila,OH_Voter,1963-07-11,1963,63,TRUE,unambiguous_unique_name,1,1,NEWARK,43056
-CNM10145,Demers,Rachel,OH_Voter,1989-07-13,1989,37,TRUE,unambiguous_unique_name,1,1,PATASKALA,43062
-12250,Denbow,Cynthia,OH_Voter,1957-07-16,1957,69,TRUE,unambiguous_unique_name,1,1,ZANESVILLE,43701
 CNM0714,DiPiero,Christina,OH_Voter,1980-02-08,1980,46,TRUE,unambiguous_unique_name,1,1,DELAWARE,43015
-CNM05608,DiPietro,Katherine,OH_Voter,1986-03-20,1986,40,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43221
-CNM1306,Diaz,Gabriela,OH_Voter,1989-12-04,1989,37,TRUE,unambiguous_unique_name,1,1,REYNOLDSBURG,43068
-5293,Dickens,Elizabeth,OH_Voter,1963-09-08,1963,63,TRUE,unambiguous_unique_name,1,1,TOLEDO,43606
-CNM0938,Dickerson,Anissa,OH_Voter,2000-09-23,2000,26,TRUE,unambiguous_unique_name,1,1,WEST CHESTER,45069
-4431,Dickinson,Cynthia,OH_Voter,1962-09-16,1962,64,TRUE,unambiguous_unique_name,1,1,CONCORD,44077
-11203,Dickson,Carrie,OH_Voter,1976-06-17,1976,50,TRUE,unambiguous_unique_name,1,1,SOUTH POINT,45680
 CNM08998,Dilo,Tanisha,OH_Voter,1994-11-17,1994,32,TRUE,unambiguous_unique_name,1,1,THORNVILLE,43076
-CNM09040,Dilthey,Emily,OH_Voter,1982-09-25,1982,44,TRUE,unambiguous_unique_name,1,1,BAY VILLAGE,44140
-CNM1224,Dishong,Nicole,OH_Voter,1989-06-30,1989,37,TRUE,unambiguous_unique_name,1,1,FINDLAY,45840
 CNM1091,Distefano,Cassandra,OH_Voter,1981-10-11,1981,45,TRUE,unambiguous_unique_name,1,1,AVON LAKE,44012
-12372,Dixon,Kerry,OH_Voter,1968-01-05,1968,58,TRUE,unambiguous_unique_name,1,1,GRANVILLE,43023
-CNM10192,Dodson,Anna,OH_Voter,1957-09-03,1957,69,TRUE,unambiguous_unique_name,1,1,FREMONT,43420
 CNM06293,Dolly,Jennifer,OH_Voter,1980-07-13,1980,46,TRUE,unambiguous_unique_name,1,1,MACEDONIA,44056
 CNM0666,Doolos,Ashley,OH_Voter,1984-05-22,1984,42,TRUE,unambiguous_unique_name,1,1,N RIDGEVILLE,44039
-CNM1307,Douglass,Mackenzie,OH_Voter,1984-04-08,1984,42,TRUE,unambiguous_unique_name,1,1,SHAKER HTS,44122
-CNM1522,Dowd,Jessica,OH_Voter,1976-02-08,1976,50,TRUE,unambiguous_unique_name,1,1,PAINESVILLE,44077
-CNM3313,Dowd,Sara,OH_Voter,1988-06-19,1988,38,TRUE,unambiguous_unique_name,1,1,LAKEWOOD,44107
-3644,Dowdy,Diana,OH_Voter,1981-06-20,1981,45,TRUE,unambiguous_unique_name,1,1,WORTHINGTON,43085
-CNM1363,Dowdy,Regina,OH_Voter,1991-05-30,1991,35,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43212
-CNM10143,Dowell,Brittany,OH_Voter,1990-10-06,1990,36,TRUE,unambiguous_unique_name,1,1,PIQUA,45356
 13274,Downing,Annie,OH_Voter,1981-10-05,1981,45,TRUE,unambiguous_unique_name,1,1,NEW ALBANY,43054
-12112,Doyle,Lois,OH_Voter,1952-10-27,1952,74,TRUE,unambiguous_unique_name,1,1,LEBANON,45036
-7558,Doyle,Therese,OH_Voter,1953-12-02,1953,73,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45241
-CNM1730,Drake,Holly,OH_Voter,1974-12-02,1974,52,TRUE,unambiguous_unique_name,1,1,MT STERLING,43143
 CNM10228,Driscoll,Taylor,OH_Voter,1995-12-18,1995,31,TRUE,unambiguous_unique_name,1,1,CUYAHOGA FALLS,44221
-11488,Driskell,Amanda,OH_Voter,1987-10-24,1987,39,TRUE,unambiguous_unique_name,1,1,HILLIARD,43026
-12232,DuBois,Dominique,OH_Voter,1999-01-15,1999,27,TRUE,unambiguous_unique_name,1,1,BROADVIEW HTS,44147
-CNM09227,DuFour,Jennifer,OH_Voter,1969-03-03,1969,57,TRUE,unambiguous_unique_name,1,1,BLACKLICK,43004
 CNM2023,Dulin,Dawn,OH_Voter,1971-04-14,1971,55,TRUE,unambiguous_unique_name,1,1,OLMSTED FALLS,44138
-CM0027,Dummitt,Susan,OH_Voter,1947-03-02,1947,79,TRUE,unambiguous_unique_name,1,1,OBERLIN,44074
-CNM04451,Dunn,Jenna,OH_Voter,1999-06-25,1999,27,TRUE,unambiguous_unique_name,1,1,WILLARD,44890
-CNM0845,Dunn,Traci,OH_Voter,1963-07-05,1963,63,TRUE,unambiguous_unique_name,1,1,BLOOMVILLE,44818
-CNM09035,Dunning,Jennifer,OH_Voter,1964-01-13,1964,62,TRUE,unambiguous_unique_name,1,1,GENEVA,44041
-CNM0247,Durbin,Nicole,OH_Voter,1987-01-23,1987,39,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45216
-CNM04828,Dworkin,Bronwyn,OH_Voter,1981-02-11,1981,45,TRUE,unambiguous_unique_name,1,1,CLEVELAND HTS,44118
-CNM07392,Dykstra,Anna,OH_Voter,1989-05-11,1989,37,TRUE,unambiguous_unique_name,1,1,MIDDLETOWN,45044
-CNM09172,Eakins,Jessica,OH_Voter,1991-03-16,1991,35,TRUE,unambiguous_unique_name,1,1,SOUTH BLOOMFIELD,43103
-CNM08042,Early,Laura,OH_Voter,1958-03-21,1958,68,TRUE,unambiguous_unique_name,1,1,JACOBSBURG,43933
-CNM06052,Eason,Stacey,OH_Voter,1967-02-02,1967,59,TRUE,unambiguous_unique_name,1,1,DELTA,43515
 CNM2334,Eckman,Lindsay,OH_Voter,1982-09-25,1982,44,TRUE,unambiguous_unique_name,1,1,GROVE CITY,43123
-CNM04335,Edens,Jocelyn,OH_Voter,2005-06-06,2005,21,FALSE,unambiguous_unique_name,1,1,MIDDLETOWN,45042
-CNM07253,Ellington,Emily,OH_Voter,1970-03-18,1970,56,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44105
-CNM2484,Elliott,Lydia,OH_Voter,1944-09-10,1944,82,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45231
-CNM04147,Elliott,Rosalind,OH_Voter,1971-02-12,1971,55,TRUE,unambiguous_unique_name,1,1,WEST CARROLLTON,45449
-CNM2408,Emly,Jessica,OH_Voter,1984-06-15,1984,42,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45231
-CNM1823,Engel,Alison,OH_Voter,1989-11-06,1989,37,TRUE,unambiguous_unique_name,1,1,MAUMEE,43537
-CNM09089,Epstein,Amy,OH_Voter,1961-12-14,1961,65,TRUE,unambiguous_unique_name,1,1,CLEVELAND HTS,44118
-CNM1877,Ervin,Lauren,OH_Voter,2005-02-24,2005,21,FALSE,unambiguous_unique_name,1,1,WELLSTON,45692
-CNM07118,Ervin,Shannon,OH_Voter,1994-04-18,1994,32,TRUE,unambiguous_unique_name,1,1,TRENTON,45067
-CNM06173,Erwin,Dorothea,OH_Voter,1992-04-26,1992,34,TRUE,unambiguous_unique_name,1,1,ATHENS,45701
-9964,Escobar,Nancy,OH_Voter,1956-01-12,1956,70,TRUE,unambiguous_unique_name,1,1,WEST CHESTER,45069
-CNM06654,Esquivel,Mary,OH_Voter,1954-12-12,1954,72,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44135
-CNM04829,Estep,Natasha,OH_Voter,1981-08-09,1981,45,TRUE,unambiguous_unique_name,1,1,MCARTHUR,45651
-CNM0291,Etienne,Stephanie,OH_Voter,1983-03-27,1983,43,TRUE,unambiguous_unique_name,1,1,WAYNESVILLE,45068
-CNM03669,Etter,Robin,OH_Voter,1971-12-30,1971,55,TRUE,unambiguous_unique_name,1,1,DUPONT,45837
-CNM2900,Eubanks,Samantha,OH_Voter,1970-07-16,1970,56,TRUE,unambiguous_unique_name,1,1,TOLEDO,43614
-CNM0116,Evans,Mara,OH_Voter,1972-07-14,1972,54,TRUE,unambiguous_unique_name,1,1,WESTLAKE,44145
-CNM07044,Faber,Angela,OH_Voter,1981-11-29,1981,45,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43207
-CNM06329,Faber,Lindsey,OH_Voter,1979-04-07,1979,47,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45209
-CNM08725,Farr,Christina,OH_Voter,1976-05-17,1976,50,TRUE,unambiguous_unique_name,1,1,CORTLAND,44410
-CNM0962,Faucett,Kendra,OH_Voter,1991-03-09,1991,35,TRUE,unambiguous_unique_name,1,1,CRESTLINE,44827
-13336,Faul,Danielle,OH_Voter,1985-04-09,1985,41,TRUE,unambiguous_unique_name,1,1,MIDLAND,45148
-CNM08881,Faulk,Karen,OH_Voter,1968-10-16,1968,58,TRUE,unambiguous_unique_name,1,1,WOODVILLE,43469
-CNM1939,Faust,Kim,OH_Voter,1952-06-07,1952,74,TRUE,unambiguous_unique_name,1,1,OLMSTED FALLS,44138
 CNM05032,Feagin,Latonia,OH_Voter,1982-03-03,1982,44,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43232
-CNM1196,Feierabend,Sarah,OH_Voter,1983-02-27,1983,43,TRUE,unambiguous_unique_name,1,1,GRAFTON,44044
 CNM10001,Fenton,Kylie,OH_Voter,1988-06-17,1988,38,TRUE,unambiguous_unique_name,1,1,PORTSMOUTH,45662
-CNM2827,Fields,Alexandra,OH_Voter,2003-01-19,2003,23,TRUE,unambiguous_unique_name,1,1,LOVELAND,45140
-9971,Fife,Rose,OH_Voter,1957-10-08,1957,69,TRUE,unambiguous_unique_name,1,1,REEDSVILLE,45772
-CNM2331,Finch,Erin,OH_Voter,1993-01-15,1993,33,TRUE,unambiguous_unique_name,1,1,WATERVILLE,43566
-CNM04253,Fischer,Alyssa,OH_Voter,2000-07-14,2000,26,TRUE,unambiguous_unique_name,1,1,FAIRFIELD,45014
-CNM0902,Fishel,Christine,OH_Voter,1968-02-24,1968,58,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45241
-CNM08074,Fisher,Abbie,OH_Voter,1999-11-19,1999,27,TRUE,unambiguous_unique_name,1,1,MANSFIELD,44906
-CNM04401,Fisher,Avery,OH_Voter,2000-10-07,2000,26,TRUE,unambiguous_unique_name,1,1,HUBER HEIGHTS,45424
-6236,Fitzpatrick,Lori,OH_Voter,1970-09-16,1970,56,TRUE,unambiguous_unique_name,1,1,REYNOLDSBURG,43068
 CNM1183,Flood,Jennifer,OH_Voter,1987-03-05,1987,39,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43205
 CNM3145,Floro,Valerie,OH_Voter,1964-11-28,1964,62,TRUE,unambiguous_unique_name,1,1,OAK HARBOR,43449
-CNM03846,Flowers,Miranda,OH_Voter,1994-09-22,1994,32,TRUE,unambiguous_unique_name,1,1,BRUNSWICK,44212
-CNM05672,Foley,Alex,OH_Voter,1998-06-02,1998,28,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45236
-CNM08843,Fonseca,Alicia,OH_Voter,2005-10-11,2005,21,FALSE,unambiguous_unique_name,1,1,AKRON,44307
-CNM03956,Forbes,Donna,OH_Voter,1947-08-26,1947,79,TRUE,unambiguous_unique_name,1,1,DUBLIN,43017
-12430,Ford,Jody,OH_Voter,1967-03-03,1967,59,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43235
-CNM07889,Ford,Shawna,OH_Voter,1998-02-21,1998,28,TRUE,unambiguous_unique_name,1,1,NEWARK,43056
-CNM10139,Forte,Bridget,OH_Voter,1960-03-26,1960,66,TRUE,unambiguous_unique_name,1,1,HUBBARD,44425
-CNM1761,Foulke,Heather,OH_Voter,1978-03-27,1978,48,TRUE,unambiguous_unique_name,1,1,SPRINGFIELD,45505
-CNM07233,Fox,Sheldon,OH_Voter,2001-07-03,2001,25,TRUE,unambiguous_unique_name,1,1,SPRINGBORO,45066
 CNM03769,Fraley,Jaclyn,OH_Voter,1977-08-11,1977,49,TRUE,unambiguous_unique_name,1,1,WESTERVILLE,43082
-CNM04364,Francis,Katharine,OH_Voter,1981-09-11,1981,45,TRUE,unambiguous_unique_name,1,1,MAINEVILLE,45039
-CNM06703,Franco,Danielle,OH_Voter,1991-01-15,1991,35,TRUE,unambiguous_unique_name,1,1,OLMSTED TWP,44138
-CNM1309,Franco,Rachel,OH_Voter,1990-08-31,1990,36,TRUE,unambiguous_unique_name,1,1,SPRINGBORO,45066
-CNM08193,Frank,Krista,OH_Voter,1988-08-22,1988,38,TRUE,unambiguous_unique_name,1,1,E PALESTINE,44413
 CNM09919,Frankeny,Nora,OH_Voter,1996-03-30,1996,30,TRUE,unambiguous_unique_name,1,1,BAY VILLAGE,44140
-12626,Frazier,Natalie,OH_Voter,2000-10-24,2000,26,TRUE,unambiguous_unique_name,1,1,PERRYSBURG,43551
-CNM07808,Free,Sarah,OH_Voter,2002-09-02,2002,24,TRUE,unambiguous_unique_name,1,1,FRANKFORT,45628
-CNM07230,French,Ellen,OH_Voter,1990-11-16,1990,36,TRUE,unambiguous_unique_name,1,1,GROVE CITY,43123
-CNM06453,Friend,Stacia,OH_Voter,1984-01-31,1984,42,TRUE,unambiguous_unique_name,1,1,LANCASTER,43130
-CNM07229,Frost,Kristen,OH_Voter,1986-02-07,1986,40,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45244
-CNM09261,Fuentes,Jessica,OH_Voter,1993-12-03,1993,33,TRUE,unambiguous_unique_name,1,1,GALLOWAY,43119
-CNM08149,Fulton,Cindy,OH_Voter,1957-06-23,1957,69,TRUE,unambiguous_unique_name,1,1,TOLEDO,43609
-CNM09182,Furillo,Madison,OH_Voter,1997-07-30,1997,29,TRUE,unambiguous_unique_name,1,1,BROOKFIELD,44403
-CNM08367,Gable,Taylor,OH_Voter,2004-09-15,2004,22,TRUE,unambiguous_unique_name,1,1,SOUTH LEBANON,45065
-CNM09111,Gagnon,Alicia,OH_Voter,1969-02-26,1969,57,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43204
-CNM06153,Galbraith,Kelly,OH_Voter,1968-06-25,1968,58,TRUE,unambiguous_unique_name,1,1,POWELL,43065
-CNM2061,Gallagher,Jamie,OH_Voter,1982-10-20,1982,44,TRUE,unambiguous_unique_name,1,1,WAYNESVILLE,45068
 CNM08904,Gantner,Stephanie,OH_Voter,1989-05-10,1989,37,TRUE,unambiguous_unique_name,1,1,BALTIMORE,43105
-12726,Garcia,Eva,OH_Voter,1991-05-05,1991,35,TRUE,unambiguous_unique_name,1,1,CANAL WINCHESTER,43110
-CNM0968,Garcia,Lorraine,OH_Voter,1965-03-22,1965,61,TRUE,unambiguous_unique_name,1,1,LORAIN,44055
-CNM1796,Gardner,Eleanor,OH_Voter,2000-12-04,2000,26,TRUE,unambiguous_unique_name,1,1,TIPP CITY,45371
-CNM2093,Gartin,Lisa,OH_Voter,1959-10-01,1959,67,TRUE,unambiguous_unique_name,1,1,GAHANNA,43230
-13214,Gauthier,Kathleen,OH_Voter,1986-06-14,1986,40,TRUE,unambiguous_unique_name,1,1,HUBER HEIGHTS,45424
 CNM03945,Gavin,Rebecca,OH_Voter,1995-09-11,1995,31,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45255
-CNM04556,Geddes,Virginia,OH_Voter,1944-06-27,1944,82,TRUE,unambiguous_unique_name,1,1,BOARDMAN,44512
-CNM08675,Gee,Brittany,OH_Voter,1997-11-15,1997,29,TRUE,unambiguous_unique_name,1,1,PIQUA,45356
 CNM0719,Gerecke,Marie,OH_Voter,1984-01-18,1984,42,TRUE,unambiguous_unique_name,1,1,MOUNT VERNON,43050
-CNM08271,Gerhart,Kara,OH_Voter,1994-07-07,1994,32,TRUE,unambiguous_unique_name,1,1,KIRTLAND HILLS,44060
-CNM04224,Gibson,Ashli,OH_Voter,1988-07-14,1988,38,TRUE,unambiguous_unique_name,1,1,KENT,44240
-CNM1663,Gillette,Tiffany,OH_Voter,1985-10-15,1985,41,TRUE,unambiguous_unique_name,1,1,GAHANNA,43230
-CNM08716,Gilmore,Callie,OH_Voter,1997-05-11,1997,29,TRUE,unambiguous_unique_name,1,1,TOLEDO,43607
 9034,Gisslen,Karen,OH_Voter,1965-03-19,1965,61,TRUE,unambiguous_unique_name,1,1,CENTERVILLE,45458
 CNM07066,Given,Sabrina,OH_Voter,1983-11-07,1983,43,TRUE,unambiguous_unique_name,1,1,JOHNSTOWN,43031
-CNM07388,Gleason,Chelsea,OH_Voter,1991-12-05,1991,35,TRUE,unambiguous_unique_name,1,1,TERRACE PARK,45174
 CNM08297,Gleussner,Nicole,OH_Voter,1991-03-07,1991,35,TRUE,unambiguous_unique_name,1,1,BOARDMAN,44512
-CNM05820,Glorioso,Jennifer,OH_Voter,1983-06-27,1983,43,TRUE,unambiguous_unique_name,1,1,DELAWARE,43015
-CNM2517,Godfrey,Stephanie,OH_Voter,1965-05-23,1965,61,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44114
-CNM07739,Gomez,Kayla,OH_Voter,2002-12-31,2002,24,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44135
-CNM2188,Goodman,Ashley,OH_Voter,1984-12-04,1984,42,TRUE,unambiguous_unique_name,1,1,AMELIA,45102
-13266,Goodman,Vicki,OH_Voter,1971-08-06,1971,55,TRUE,unambiguous_unique_name,1,1,WEST CHESTER,45069
-CNM04583,Goodrich,Melissa,OH_Voter,1967-07-12,1967,59,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43220
-CNM2678,Goodwin,Caitlin,OH_Voter,1984-07-19,1984,42,TRUE,unambiguous_unique_name,1,1,OLMSTED FALLS,44138
 12778,Goodwin,Heidi,OH_Voter,1972-01-18,1972,54,TRUE,unambiguous_unique_name,1,1,MENTOR,44060
-CNM1785,Goolsby,Emily,OH_Voter,1985-09-04,1985,41,TRUE,unambiguous_unique_name,1,1,PERRYSBURG,43551
 CNM07324,Gorbold,Katie,OH_Voter,1988-12-13,1988,38,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44120
-CNM09562,Gordon,Nichole,OH_Voter,1991-12-31,1991,35,TRUE,unambiguous_unique_name,1,1,NORTH RANDALL,44128
-CNM2902,Gordon,Rita,OH_Voter,1942-10-20,1942,84,TRUE,unambiguous_unique_name,1,1,ANDOVER,44003
-3487,Gorman,Phyllis,OH_Voter,1957-11-08,1957,69,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43202
-CNM07549,Gorrell,Amanda,OH_Voter,1978-12-27,1978,48,TRUE,unambiguous_unique_name,1,1,CHESTERHILL,43728
-6096,Gosney,Mary,OH_Voter,1975-05-14,1975,51,TRUE,unambiguous_unique_name,1,1,CANTON,44708
-4637,Gottschalk,Barbara,OH_Voter,1940-12-20,1940,86,FALSE,unambiguous_unique_name,1,1,MILLBURY,43447
-CNM0717,Govoni,Kara,OH_Voter,1984-04-17,1984,42,TRUE,unambiguous_unique_name,1,1,GAHANNA,43230
-12727,Graber,Rachel,OH_Voter,1996-07-17,1996,30,TRUE,unambiguous_unique_name,1,1,LOUISVILLE,44641
-CNM04640,Gragg,Michelle,OH_Voter,1969-06-13,1969,57,TRUE,unambiguous_unique_name,1,1,PIKETON,45661
-CNM2675,Grande,Jennifer,OH_Voter,1953-10-03,1953,73,TRUE,unambiguous_unique_name,1,1,MAYFIELD HTS,44124
 CNM04894,Gray,Javonne,OH_Voter,1989-08-21,1989,37,TRUE,unambiguous_unique_name,1,1,SOUTH EUCLID,44121
-CNM2147,Greene,Tessa,OH_Voter,1993-07-22,1993,33,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44102
-CNM08905,Grennan,Kathleen,OH_Voter,1947-08-13,1947,79,TRUE,unambiguous_unique_name,1,1,GEORGETOWN,45121
-CNM04717,Gress,Nicole,OH_Voter,1990-02-28,1990,36,TRUE,unambiguous_unique_name,1,1,ELYRIA,44035
-CNM08406,Griffith,Alexandra,OH_Voter,1992-04-12,1992,34,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45236
-CNM04389,Grose,Emily,OH_Voter,2001-05-08,2001,25,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45202
-10170,Gross,Helene,OH_Voter,1983-10-07,1983,43,TRUE,unambiguous_unique_name,1,1,DAYTON,45414
-CNM2874,Grossman,Lisa,OH_Voter,1962-09-11,1962,64,TRUE,unambiguous_unique_name,1,1,MARYSVILLE,43040
-CNM1341,Grove,Gina,OH_Voter,1977-04-26,1977,49,TRUE,unambiguous_unique_name,1,1,FREMONT,43420
-CNM03958,Gulotta,Crystal,OH_Voter,1980-08-13,1980,46,TRUE,unambiguous_unique_name,1,1,XENIA,45385
-CNM04323,Gustafson,Jill,OH_Voter,1958-08-29,1958,68,TRUE,unambiguous_unique_name,1,1,MASON,45040
-CNM04234,Gustafson,Karin,OH_Voter,1975-09-29,1975,51,TRUE,unambiguous_unique_name,1,1,TOLEDO,43613
-CNM07740,Gutierrez,Elena,OH_Voter,2004-10-27,2004,22,TRUE,unambiguous_unique_name,1,1,FREMONT,43420
-CNM06620,Guyton,Amber,OH_Voter,1992-09-18,1992,34,TRUE,unambiguous_unique_name,1,1,AKRON,44314
-CNM07254,Guzman,Amy,OH_Voter,1998-11-02,1998,28,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43204
-CNM04294,Haddad,Amanda,OH_Voter,1985-04-11,1985,41,TRUE,unambiguous_unique_name,1,1,WESTERVILLE,43082
-CNM06995,Hagan,Heidi,OH_Voter,1970-05-10,1970,56,TRUE,unambiguous_unique_name,1,1,NEW ALBANY,43054
-12235,Hagen,Theresa,OH_Voter,1953-09-26,1953,73,TRUE,unambiguous_unique_name,1,1,DUBLIN,43016
-CNM2821,Hale,Tasha,OH_Voter,1992-04-17,1992,34,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44120
-CNM09004,Hall,Maggie,OH_Voter,2001-04-18,2001,25,TRUE,unambiguous_unique_name,1,1,FAIRBORN,45324
-CNM08083,Hall,Mallorie,OH_Voter,2000-05-19,2000,26,TRUE,unambiguous_unique_name,1,1,SIDNEY,45365
-13305,Hammond,Lydia,OH_Voter,1981-05-01,1981,45,TRUE,unambiguous_unique_name,1,1,ALLIANCE,44601
 CNM06420,Hamp,Claire,OH_Voter,1988-05-20,1988,38,TRUE,unambiguous_unique_name,1,1,SHAKER HTS,44122
-CNM06732,Hanks,Erin,OH_Voter,1987-11-10,1987,39,TRUE,unambiguous_unique_name,1,1,TRENTON,45067
-12871,Hanna,Charlene,OH_Voter,1971-08-20,1971,55,TRUE,unambiguous_unique_name,1,1,GROVE CITY,43123
-12810,Hanna,Katrina,OH_Voter,1991-10-25,1991,35,TRUE,unambiguous_unique_name,1,1,WOOSTER,44691
-CNM06271,Hanna,Stacie,OH_Voter,1973-10-07,1973,53,TRUE,unambiguous_unique_name,1,1,WESTERVILLE,43081
-CNM1402,Hannigan,Brittany,OH_Voter,1984-04-25,1984,42,TRUE,unambiguous_unique_name,1,1,GROVE CITY,43123
-CNM2904,Hansen,Dana,OH_Voter,1971-03-07,1971,55,TRUE,unambiguous_unique_name,1,1,HUDSON,44236
-12501,Hanson,Suzanne,OH_Voter,1960-10-10,1960,66,TRUE,unambiguous_unique_name,1,1,MONROE,45050
-CNM04601,Hardy,Nicole,OH_Voter,1994-06-21,1994,32,TRUE,unambiguous_unique_name,1,1,HILLSBORO,45133
-11460,Hardy,Paige,OH_Voter,2001-04-10,2001,25,TRUE,unambiguous_unique_name,1,1,TOLEDO,43612
 CNM10412,Harm,Crystal,OH_Voter,1991-03-23,1991,35,TRUE,unambiguous_unique_name,1,1,PERRY,44081
-CNM06672,Harness,Melissa,OH_Voter,1979-10-29,1979,47,TRUE,unambiguous_unique_name,1,1,CANAL FULTON,44614
-CNM08196,Harr,Emily,OH_Voter,2004-10-27,2004,22,TRUE,unambiguous_unique_name,1,1,DEFIANCE,43512
-CNM3429,Harrington,Cheryl,OH_Voter,1958-02-26,1958,68,TRUE,unambiguous_unique_name,1,1,STRONGSVILLE,44149
-CNM0878,Harrington,Jamie,OH_Voter,1976-03-22,1976,50,TRUE,unambiguous_unique_name,1,1,BRYAN,43506
-CNM05600,Harrison,Sophie,OH_Voter,1999-03-12,1999,27,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45231
-12718,Hart,Cassie,OH_Voter,1995-08-09,1995,31,TRUE,unambiguous_unique_name,1,1,PEEBLES,45660
-12279,Hart,Jocelyn,OH_Voter,1983-12-25,1983,43,TRUE,unambiguous_unique_name,1,1,HILLIARD,43026
-CNM2470,Hatcher,Tammy,OH_Voter,1968-01-05,1968,58,TRUE,unambiguous_unique_name,1,1,BEDFORD,44146
-CNM0975,Hatter,Melissa,OH_Voter,1974-12-22,1974,52,TRUE,unambiguous_unique_name,1,1,BLANCHESTER,45107
-CNM06307,Hawkins,Kai,OH_Voter,1978-03-20,1978,48,TRUE,unambiguous_unique_name,1,1,MAPLE HTS,44137
-CNM04043,Hazel,Kelley,OH_Voter,1967-03-15,1967,59,TRUE,unambiguous_unique_name,1,1,MEDINA,44256
-CNM0668,Healey,Amy,OH_Voter,1975-08-19,1975,51,TRUE,unambiguous_unique_name,1,1,GOSHEN,45122
-CNM06551,Heath,Brittany,OH_Voter,1993-06-07,1993,33,TRUE,unambiguous_unique_name,1,1,LIMA,45805
-CNM08230,Heath,Dayna,OH_Voter,1964-05-21,1964,62,TRUE,unambiguous_unique_name,1,1,CHARDON,44024
-CNM06842,Heath,Stephanie,OH_Voter,1985-04-03,1985,41,TRUE,unambiguous_unique_name,1,1,TROY,45373
-CNM0294,Hedrick,Andrea,OH_Voter,1954-10-19,1954,72,TRUE,unambiguous_unique_name,1,1,BRUNSWICK,44212
 CNM04440,Heggestad,Krystal,OH_Voter,1984-01-25,1984,42,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43209
-CNM09736,Heins,Kristin,OH_Voter,1979-05-02,1979,47,TRUE,unambiguous_unique_name,1,1,GALENA,43021
-4960,Heller,Sandra,OH_Voter,1948-05-25,1948,78,TRUE,unambiguous_unique_name,1,1,AKRON,44313
-CNM1800,Hendrickson,Kathryn,OH_Voter,1979-03-28,1979,47,TRUE,unambiguous_unique_name,1,1,CENTERVILLE,45459
-CNM07681,Hendrickson,Krista,OH_Voter,1974-09-24,1974,52,TRUE,unambiguous_unique_name,1,1,POWELL,43065
-CNM10019,Henry,Kaitlin,OH_Voter,2002-12-08,2002,24,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45226
-13064,Herman,Gina,OH_Voter,1986-11-14,1986,40,TRUE,unambiguous_unique_name,1,1,POWELL,43065
-CNM0649,Herold,Katherine,OH_Voter,1987-10-07,1987,39,TRUE,unambiguous_unique_name,1,1,AKRON,44333
-12481,Herrick,Diana,OH_Voter,1960-12-09,1960,66,TRUE,unambiguous_unique_name,1,1,REYNOLDSBURG,43068
 CNM08415,Herron,Isabella,OH_Voter,1996-12-27,1996,30,TRUE,unambiguous_unique_name,1,1,WILLIAMSBURG,45176
-10491,Hicks,Candis,OH_Voter,1975-08-29,1975,51,TRUE,unambiguous_unique_name,1,1,TOLEDO,43615
-CNM07345,Higgs,Heather,OH_Voter,1977-05-20,1977,49,TRUE,unambiguous_unique_name,1,1,BURTON,44021
 CNM07768,Hildebrandt,Kristin,OH_Voter,1988-09-11,1988,38,TRUE,unambiguous_unique_name,1,1,SHAKER HTS,44122
-CNM0060,Hillis,Barbara,OH_Voter,1950-05-04,1950,76,TRUE,unambiguous_unique_name,1,1,NAPOLEON,43545
 CNM05730,Hiner,Katherine,OH_Voter,1982-05-20,1982,44,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44102
-12341,Hines,Adrienne,OH_Voter,1971-07-29,1971,55,TRUE,unambiguous_unique_name,1,1,PORT CLINTON,43452
-8665,Hodgson,Susan,OH_Voter,1950-05-10,1950,76,TRUE,unambiguous_unique_name,1,1,PERRYSBURG,43551
-CNM2148,Hoffman,Hayley,OH_Voter,1999-04-05,1999,27,TRUE,unambiguous_unique_name,1,1,WADSWORTH,44281
-CNM09422,Holdheide,Karen,OH_Voter,1981-12-20,1981,45,TRUE,unambiguous_unique_name,1,1,ST HENRY,45883
-CNM08578,Holland,Kristi,OH_Voter,1982-04-19,1982,44,TRUE,unambiguous_unique_name,1,1,VANDALIA,45377
-CNM1778,Holman,Carol,OH_Voter,1957-12-29,1957,69,TRUE,unambiguous_unique_name,1,1,PIKETON,45661
-CNM05255,Holmes,Antoinette,OH_Voter,1980-02-07,1980,46,TRUE,unambiguous_unique_name,1,1,TOLEDO,43623
-CNM04685,Holmes,Bridgette,OH_Voter,1979-12-14,1979,47,TRUE,unambiguous_unique_name,1,1,TOLEDO,43608
-CNM10274,Holmes,Leah,OH_Voter,1992-09-19,1992,34,TRUE,unambiguous_unique_name,1,1,PORT CLINTON,43452
-CNM08372,Horne,Brittney,OH_Voter,1985-12-21,1985,41,TRUE,unambiguous_unique_name,1,1,XENIA,45385
-CNM05476,Horne,Rachel,OH_Voter,1979-03-13,1979,47,TRUE,unambiguous_unique_name,1,1,SPENCER,44275
 CNM06813,Horton,Alissa,OH_Voter,1970-05-09,1970,56,TRUE,unambiguous_unique_name,1,1,WAPAKONETA,45895
-CNM2856,Horton,Kerry,OH_Voter,1956-10-05,1956,70,TRUE,unambiguous_unique_name,1,1,CONCORD,44077
-CNM05271,Hosner,Kelly,OH_Voter,1959-11-03,1959,67,TRUE,unambiguous_unique_name,1,1,MASSILLON,44646
 9197,Hotelling,Susan,OH_Voter,1968-06-10,1968,58,TRUE,unambiguous_unique_name,1,1,CAREY,43316
-CNM04917,Houser,Taylor,OH_Voter,1990-07-06,1990,36,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43223
 CNM05140,Huang,Qin,OH_Voter,1976-12-05,1976,50,TRUE,unambiguous_unique_name,1,1,POWELL,43065
 9754,Hudepohl,Stacy,OH_Voter,1970-02-12,1970,56,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45233
-CNM03849,Huff,Tammy,OH_Voter,1974-07-13,1974,52,TRUE,unambiguous_unique_name,1,1,ASHLAND,44805
-CNM08248,Huggins,Lauren,OH_Voter,1998-12-21,1998,28,TRUE,unambiguous_unique_name,1,1,GALION,44833
-8997,Hughes,Maryellen,OH_Voter,1948-08-18,1948,78,TRUE,unambiguous_unique_name,1,1,CIRCLEVILLE,43113
-CNM2045,Hughes,Miriam,OH_Voter,1980-12-20,1980,46,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45241
-CNM05568,Hughes,Nichole,OH_Voter,1983-12-30,1983,43,TRUE,unambiguous_unique_name,1,1,MARIETTA,45750
-CNM07264,Hull,Chelsea,OH_Voter,1985-09-01,1985,41,TRUE,unambiguous_unique_name,1,1,WEST CARROLLTON,45449
-CNM2997,Hunt,Aaliyah,OH_Voter,1998-11-07,1998,28,TRUE,unambiguous_unique_name,1,1,ASHTABULA,44004
-CNM07958,Hunt,Ciara,OH_Voter,2001-01-15,2001,25,TRUE,unambiguous_unique_name,1,1,GROVE CITY,43123
-CNM1179,Hurst,Melinda,OH_Voter,1973-09-26,1973,53,TRUE,unambiguous_unique_name,1,1,SPENCERVILLE,45887
-CNM03807,Huss,BreAnne,OH_Voter,1983-12-15,1983,43,TRUE,unambiguous_unique_name,1,1,WORTHINGTON,43085
-CNM09137,Hussain,Anam,OH_Voter,1995-05-26,1995,31,TRUE,unambiguous_unique_name,1,1,CENTERVILLE,45459
-CNM04568,Hutchens,Jenna,OH_Voter,2005-09-22,2005,21,FALSE,unambiguous_unique_name,1,1,CINCINNATI,45241
-CNM05752,Ingle,Stacy,OH_Voter,1970-11-24,1970,56,TRUE,unambiguous_unique_name,1,1,MARION,43302
-CNM04203,Iverson,Ashley,OH_Voter,1988-08-11,1988,38,TRUE,unambiguous_unique_name,1,1,GROVE CITY,43123
-CNM05850,Ives,Michelle,OH_Voter,1968-04-16,1968,58,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43209
-CNM07902,Jablonski,Leah,OH_Voter,2004-10-12,2004,22,TRUE,unambiguous_unique_name,1,1,SYLVANIA,43560
-CNM06581,Jackson,Chanell,OH_Voter,1987-07-22,1987,39,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44128
-4494,Jaeger,Cheryl,OH_Voter,1974-01-19,1974,52,TRUE,unambiguous_unique_name,1,1,HAMILTON,45011
-CNM09067,James,Simone,OH_Voter,1999-08-19,1999,27,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44120
-CNM07866,Janes,Elisa,OH_Voter,1987-01-27,1987,39,TRUE,unambiguous_unique_name,1,1,PERRYSBURG,43551
-CNM10354,Janes,Erin,OH_Voter,1976-03-09,1976,50,TRUE,unambiguous_unique_name,1,1,BEAVERCREEK,45434
-11567,Janke,Jennifer,OH_Voter,1988-04-11,1988,38,TRUE,unambiguous_unique_name,1,1,CONCORD,44077
-CNM0150,Jarvis,Teresa,OH_Voter,1957-05-12,1957,69,TRUE,unambiguous_unique_name,1,1,GOSHEN,45122
-CNM06437,Jaynes,Megan,OH_Voter,1989-05-19,1989,37,TRUE,unambiguous_unique_name,1,1,CANAL WINCHESTER,43110
-CNM1460,Jefferson,Carey,OH_Voter,1975-02-28,1975,51,TRUE,unambiguous_unique_name,1,1,MIAMISBURG,45342
-12695,Jenkins,Gretchen,OH_Voter,1987-03-06,1987,39,TRUE,unambiguous_unique_name,1,1,GAHANNA,43230
-CNM2797,Jennings,Devon,OH_Voter,1989-04-07,1989,37,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44105
-CNM09742,Jensen,Kaitlyn,OH_Voter,2002-03-03,2002,24,TRUE,unambiguous_unique_name,1,1,WRIGHT PATTERSON AFB,45433
 CNM03983,Jensen,Lila,OH_Voter,1986-10-28,1986,40,TRUE,unambiguous_unique_name,1,1,YELLOW SPRINGS,45387
-12483,Johanson,Rachel,OH_Voter,1983-06-21,1983,43,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43229
-CNM04119,Johnston,Tayler,OH_Voter,1995-11-03,1995,31,TRUE,unambiguous_unique_name,1,1,ROCK CREEK,44084
 CNM06345,Jones,Caetlyn,OH_Voter,1988-11-03,1988,38,TRUE,unambiguous_unique_name,1,1,DAYTON,45432
-13148,Jones,Story,OH_Voter,2004-02-06,2004,22,TRUE,unambiguous_unique_name,1,1,HUDSON,44236
-CNM05111,Jorgensen,Heather,OH_Voter,1994-02-22,1994,32,TRUE,unambiguous_unique_name,1,1,HUBER HEIGHTS,45424
-9349,Joyce,Monica,OH_Voter,1990-04-24,1990,36,TRUE,unambiguous_unique_name,1,1,YOUNGSTOWN,44505
-CNM07366,Joyner,Asia,OH_Voter,2001-12-03,2001,25,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43232
 CNM09518,Junkins,Krysta,OH_Voter,1985-08-13,1985,41,TRUE,unambiguous_unique_name,1,1,TOLEDO,43614
-CNM2289,Kahn,Megan,OH_Voter,1988-07-30,1988,38,TRUE,unambiguous_unique_name,1,1,LOVELAND,45140
 CNM08084,Kahrs,Mallory,OH_Voter,1995-05-04,1995,31,TRUE,unambiguous_unique_name,1,1,PLAIN CITY,43064
-CNM10234,Kane,Mia,OH_Voter,2005-03-17,2005,21,FALSE,unambiguous_unique_name,1,1,SANDUSKY,44870
-CNM05857,Karam,Deanna,OH_Voter,1991-09-14,1991,35,TRUE,unambiguous_unique_name,1,1,MEDINA,44256
-CNM2801,Kargbo,Isatu,OH_Voter,1996-11-25,1996,30,TRUE,unambiguous_unique_name,1,1,GAHANNA,43230
-CNM2932,Kasper,Hannah,OH_Voter,1993-11-24,1993,33,TRUE,unambiguous_unique_name,1,1,DELAWARE,43015
-CNM05669,Katz,Dana,OH_Voter,1970-12-17,1970,56,TRUE,unambiguous_unique_name,1,1,DELAWARE,43015
-13136,Kaufman,Melanie,OH_Voter,1990-04-27,1990,36,TRUE,unambiguous_unique_name,1,1,POWELL,43065
-CNM0827,Kaufman,Sheila,OH_Voter,1942-04-17,1942,84,TRUE,unambiguous_unique_name,1,1,TWINSBURG,44087
-CNM2303,Kavanaugh,Molly,OH_Voter,1952-05-11,1952,74,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45236
-CNM0152,Keirns,Teresa,OH_Voter,1957-07-16,1957,69,TRUE,unambiguous_unique_name,1,1,NEW MARSHFIELD,45766
-CNM08792,Kelly,Elyse,OH_Voter,2004-10-11,2004,22,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45227
-12027,Kelly,Lydia,OH_Voter,1992-06-03,1992,34,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44102
-CNM06254,Kemper,Kaleena,OH_Voter,1982-04-10,1982,44,TRUE,unambiguous_unique_name,1,1,PICKERINGTON,43147
-CNM2457,Kendall,Rachel,OH_Voter,1978-05-13,1978,48,TRUE,unambiguous_unique_name,1,1,CHILLICOTHE,45601
-CNM09329,Kendrick,Sara,OH_Voter,1982-01-21,1982,44,TRUE,unambiguous_unique_name,1,1,CARDINGTON,43315
-12063,Kent,Anna,OH_Voter,1984-10-06,1984,42,TRUE,unambiguous_unique_name,1,1,WESTERVILLE,43082
 12200,Kersting,Kacey,OH_Voter,1979-09-22,1979,47,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45242
-CNM2049,Keshishyan,Anna,OH_Voter,1964-06-16,1964,62,TRUE,unambiguous_unique_name,1,1,FAIRFIELD,45014
-CNM06491,Kesterson,Jessica,OH_Voter,1977-06-14,1977,49,TRUE,unambiguous_unique_name,1,1,ELYRIA,44035
-CNM09327,Kilby,Madison,OH_Voter,2000-07-03,2000,26,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45244
 CNM04047,Kilianski,Mary,OH_Voter,1987-06-10,1987,39,TRUE,unambiguous_unique_name,1,1,SPRINGBORO,45066
-12817,Killeen,Jennifer,OH_Voter,1987-09-29,1987,39,TRUE,unambiguous_unique_name,1,1,MEDINA,44256
-CNM0213,Killingsworth,Michelle,OH_Voter,1979-06-22,1979,47,TRUE,unambiguous_unique_name,1,1,CORTLAND,44410
-CNM0926,Killman,Nicole,OH_Voter,1996-01-30,1996,30,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43201
-12623,Kilroy,Anne,OH_Voter,1961-12-08,1961,65,TRUE,unambiguous_unique_name,1,1,NOVELTY,44072
-CNM1009,Kim,Yuhan,OH_Voter,2001-08-08,2001,25,TRUE,unambiguous_unique_name,1,1,HUDSON,44236
-CNM08017,Kinder,Angela,OH_Voter,1979-03-18,1979,47,TRUE,unambiguous_unique_name,1,1,GERMANTOWN,45327
-CNM2803,Kinsey,Patricia,OH_Voter,1953-11-06,1953,73,TRUE,unambiguous_unique_name,1,1,LOUISVILLE,44641
-CNM06822,Kirby,Jordan,OH_Voter,2001-07-04,2001,25,TRUE,unambiguous_unique_name,1,1,CANTON,44708
-12946,Kirk,Alison,OH_Voter,1989-06-18,1989,37,TRUE,unambiguous_unique_name,1,1,MARYSVILLE,43040
 CNM07581,Kitzmiller,Shari,OH_Voter,1982-08-01,1982,44,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43229
 CNM06823,Klasmeier,Christina,OH_Voter,1976-05-01,1976,50,TRUE,unambiguous_unique_name,1,1,MASON,45040
-CNM3140,Klausman,Melissa,OH_Voter,1982-12-13,1982,44,TRUE,unambiguous_unique_name,1,1,GAHANNA,43230
-CNM09428,Kline,Amber,OH_Voter,1988-12-09,1988,38,TRUE,unambiguous_unique_name,1,1,BRUNSWICK,44212
 CNM06124,Klinglesmith,Kara,OH_Voter,1983-12-19,1983,43,TRUE,unambiguous_unique_name,1,1,GAHANNA,43230
-CNM1040,Knight,Summer,OH_Voter,1994-01-26,1994,32,TRUE,unambiguous_unique_name,1,1,DAYTON,45406
 CNM05466,Knittel,Amanda,OH_Voter,1977-09-13,1977,49,TRUE,unambiguous_unique_name,1,1,NORTH OLMSTED,44070
-13330,Kocher,Jill,OH_Voter,1968-10-27,1968,58,TRUE,unambiguous_unique_name,1,1,LEXINGTON,44904
-CNM3264,Koenigseker,Sarah,OH_Voter,1982-01-24,1982,44,TRUE,unambiguous_unique_name,1,1,CHESTERLAND,44026
 12754,Konkoly,Ann Marie,OH_Voter,1981-04-02,1981,45,TRUE,unambiguous_unique_name,1,1,SOLON,44139
-CNM05142,Koval,Julia,OH_Voter,2002-05-05,2002,24,TRUE,unambiguous_unique_name,1,1,BROOK PARK,44142
-CNM1642,Kraemer,Jessica,OH_Voter,1994-03-08,1994,32,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43202
-CNM3547,Kramer,Briana,OH_Voter,1991-01-04,1991,35,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45202
-13201,Kratzer,Jennifer,OH_Voter,1994-01-13,1994,32,TRUE,unambiguous_unique_name,1,1,OXFORD,45056
 CNM2307,Kresch,Ilana,OH_Voter,1988-05-01,1988,38,TRUE,unambiguous_unique_name,1,1,OBERLIN,44074
-CNM04088,Krieg,Sarah,OH_Voter,1986-09-28,1986,40,TRUE,unambiguous_unique_name,1,1,CANAL WINCHESTER,43110
 CNM09189,Krompak,Nikki,OH_Voter,1987-01-20,1987,39,TRUE,unambiguous_unique_name,1,1,SYLVANIA,43560
-CNM2543,Krueger,Christina,OH_Voter,1990-12-26,1990,36,TRUE,unambiguous_unique_name,1,1,WOODVILLE,43469
-CNM2124,Kruler,Carwyn,OH_Voter,1985-02-26,1985,41,TRUE,unambiguous_unique_name,1,1,COLUMBIA STA,44028
-13094,Kuhl,Amy,OH_Voter,1976-01-19,1976,50,TRUE,unambiguous_unique_name,1,1,WORTHINGTON,43085
-CNM09415,Kuhl,Courtney,OH_Voter,1993-10-08,1993,33,TRUE,unambiguous_unique_name,1,1,LOVELAND,45140
 CNM08016,Kurdziel,Alexis,OH_Voter,1988-08-02,1988,38,TRUE,unambiguous_unique_name,1,1,TOLEDO,43613
-CNM05616,Kurtz,Cassie,OH_Voter,1976-06-25,1976,50,TRUE,unambiguous_unique_name,1,1,FAIRBORN,45324
 13149,Kushner,Leslie,OH_Voter,1961-06-21,1961,65,TRUE,unambiguous_unique_name,1,1,BEACHWOOD,44122
 CNM04572,Labuda,Amy,OH_Voter,1979-07-09,1979,47,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44111
-CNM05362,Lacey,Abigail,OH_Voter,2001-03-02,2001,25,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43221
-12452,Lackey,Joy,OH_Voter,1987-05-23,1987,39,TRUE,unambiguous_unique_name,1,1,WALDO,43356
-CNM0653,Lagana,Jacqueline,OH_Voter,1973-10-22,1973,53,TRUE,unambiguous_unique_name,1,1,OREGON,43616
-CNM06309,Laing,Melissa,OH_Voter,1978-02-24,1978,48,TRUE,unambiguous_unique_name,1,1,LIMA,45804
-CNM09273,Lammers,Sydney,OH_Voter,1996-02-22,1996,30,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43206
 CNM05227,Landon,Gabrielle,OH_Voter,1989-09-10,1989,37,TRUE,unambiguous_unique_name,1,1,CHARDON,44024
-CNM06858,Landon,Melissa,OH_Voter,1979-08-26,1979,47,TRUE,unambiguous_unique_name,1,1,DUBLIN,43016
-CNM05345,Laney,Laura,OH_Voter,1952-04-11,1952,74,TRUE,unambiguous_unique_name,1,1,EUCLID,44123
-CNM04238,Largent,Laura,OH_Voter,1977-08-18,1977,49,TRUE,unambiguous_unique_name,1,1,JOHNSTOWN,43031
-CNM0914,Larson,Tiana,OH_Voter,1981-08-17,1981,45,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45206
 CNM06477,Lately,MyQueesha,OH_Voter,1992-02-12,1992,34,TRUE,unambiguous_unique_name,1,1,WESTERVILLE,43081
 CNM05786,Latta,Emily,OH_Voter,1982-03-10,1982,44,TRUE,unambiguous_unique_name,1,1,ATHENS,45701
-CNM1531,Latta,Rachel,OH_Voter,1967-09-30,1967,59,TRUE,unambiguous_unique_name,1,1,WATERVILLE,43566
-CNM2709,Lavin,Amber,OH_Voter,1979-03-21,1979,47,TRUE,unambiguous_unique_name,1,1,FREDERICKTOWN,43019
-CNM0566,Lavin,Erin,OH_Voter,1987-12-12,1987,39,TRUE,unambiguous_unique_name,1,1,GIRARD,44420
-CNM2309,Laws,Lauren,OH_Voter,2000-03-01,2000,26,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44102
 12869,Lazar,Jalana,OH_Voter,1977-04-23,1977,49,TRUE,unambiguous_unique_name,1,1,YELLOW SPRINGS,45387
-CNM08719,Ledford,Bonnie,OH_Voter,1945-03-07,1945,81,TRUE,unambiguous_unique_name,1,1,MIDDLETOWN,45042
-CNM05269,Lee,Christa,OH_Voter,1973-08-20,1973,53,TRUE,unambiguous_unique_name,1,1,FAIRBORN,45324
-CNM1702,Lee,Dalia,OH_Voter,1995-11-11,1995,31,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45204
-CNM09241,Lee,Robyn,OH_Voter,1985-01-22,1985,41,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45207
-CNM06870,Leininger,Taylor,OH_Voter,1994-09-13,1994,32,TRUE,unambiguous_unique_name,1,1,MASSILLON,44646
-CNM07583,Leonard,Emma,OH_Voter,1954-03-29,1954,72,TRUE,unambiguous_unique_name,1,1,WEST UNION,45693
 CNM1526,Leslie,Emily,OH_Voter,1986-07-07,1986,40,TRUE,unambiguous_unique_name,1,1,CLEVELAND HTS,44118
-CNM2157,Leung,Julie,OH_Voter,1969-08-04,1969,57,TRUE,unambiguous_unique_name,1,1,STRONGSVILLE,44149
-CNM04247,Leung,Mary,OH_Voter,1955-09-07,1955,71,TRUE,unambiguous_unique_name,1,1,MASON,45040
-CNM0722,Levi,Miriam,OH_Voter,1976-06-09,1976,50,TRUE,unambiguous_unique_name,1,1,WEST UNION,45693
-CNM06524,Libby,Melissa,OH_Voter,1989-08-14,1989,37,TRUE,unambiguous_unique_name,1,1,GROVE CITY,43123
 CNM07905,Liles,Darienne,OH_Voter,1997-02-24,1997,29,TRUE,unambiguous_unique_name,1,1,LUCASVILLE,45648
-CNM07526,Lilly,BreAnna,OH_Voter,2003-04-15,2003,23,TRUE,unambiguous_unique_name,1,1,POMEROY,45769
-CNM05114,Linder,Jacqueline,OH_Voter,1992-03-19,1992,34,TRUE,unambiguous_unique_name,1,1,JOHNSTOWN,43031
 CNM03892,Linkey,Sara,OH_Voter,1987-07-31,1987,39,TRUE,unambiguous_unique_name,1,1,GRAND RAPIDS,43522
-CNM06731,Littleton,Amber,OH_Voter,1986-11-05,1986,40,TRUE,unambiguous_unique_name,1,1,BATAVIA,45103
-CNM1498,Lock,Susan,OH_Voter,1968-12-27,1968,58,TRUE,unambiguous_unique_name,1,1,NEWARK,43055
-CNM1916,Locke,Janice,OH_Voter,1943-02-05,1943,83,TRUE,unambiguous_unique_name,1,1,ALLIANCE,44601
-CNM05618,Locke,Michelle,OH_Voter,1972-02-16,1972,54,TRUE,unambiguous_unique_name,1,1,GALLOWAY,43119
 CNM04506,Lockett,Antoynae,OH_Voter,1990-06-24,1990,36,TRUE,unambiguous_unique_name,1,1,CANAL WINCHESTER,43110
-CNM2158,Lockett,Lisa,OH_Voter,1954-11-28,1954,72,TRUE,unambiguous_unique_name,1,1,CANAL WINCHESTER,43110
-CNM09884,Lockhart,Julia,OH_Voter,2002-07-05,2002,24,TRUE,unambiguous_unique_name,1,1,COOLVILLE,45723
-CNM1083,Lockwood,Lauren,OH_Voter,1998-09-13,1998,28,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43206
-CNM06534,Loeb,Lauren,OH_Voter,1968-08-09,1968,58,TRUE,unambiguous_unique_name,1,1,RICHMOND DALE,45673
-CNM0982,Loeffler,Helen,OH_Voter,1982-04-13,1982,44,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45241
-CNM1705,Long,Debora,OH_Voter,1986-01-15,1986,40,TRUE,unambiguous_unique_name,1,1,NORTH CANTON,44720
-CNM10005,Lopez,Geneva,OH_Voter,1977-12-19,1977,49,TRUE,unambiguous_unique_name,1,1,TOLEDO,43614
-CNM06493,Lord,Megan,OH_Voter,2000-05-27,2000,26,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43214
-CNM09176,Losey,Stacy,OH_Voter,1972-01-16,1972,54,TRUE,unambiguous_unique_name,1,1,MASSILLON,44647
 CNM06627,Lotte,Erica,OH_Voter,1984-09-23,1984,42,TRUE,unambiguous_unique_name,1,1,LITHOPOLIS,43136
-CNM09983,Loveless,Heather,OH_Voter,1976-02-10,1976,50,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45239
-CNM07827,Lovell,Sarah,OH_Voter,1998-10-09,1998,28,TRUE,unambiguous_unique_name,1,1,DELAWARE,43015
-CNM10220,Lowe,Cheyenne,OH_Voter,2001-05-30,2001,25,TRUE,unambiguous_unique_name,1,1,CONTINENTAL,45831
-CNM09092,Lunsford,Molly,OH_Voter,1981-09-28,1981,45,TRUE,unambiguous_unique_name,1,1,LANCASTER,43130
 CNM09115,Luzader,Stacey,OH_Voter,1989-11-01,1989,37,TRUE,unambiguous_unique_name,1,1,BERLIN HEIGHTS,44814
-CNM04725,Lyle,Rebecca,OH_Voter,1953-04-30,1953,73,TRUE,unambiguous_unique_name,1,1,WEST UNION,45693
-CNM03894,Lynch,Kristin,OH_Voter,1989-08-12,1989,37,TRUE,unambiguous_unique_name,1,1,GAHANNA,43230
-CNM06198,Lynn,Sherri,OH_Voter,1958-03-14,1958,68,TRUE,unambiguous_unique_name,1,1,GROVE CITY,43123
-CNM0155,Ma,Jun,OH_Voter,1960-11-07,1960,66,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45243
-CNM1534,MacIntyre,Hannah,OH_Voter,1993-02-16,1993,33,TRUE,unambiguous_unique_name,1,1,LYNDHURST,44124
-CNM05878,MacLeod,Amy,OH_Voter,1967-01-15,1967,59,TRUE,unambiguous_unique_name,1,1,DAYTON,45440
-CNM03681,Mace,Lauren,OH_Voter,2000-12-30,2000,26,TRUE,unambiguous_unique_name,1,1,HOWARD,43028
-12499,Macharia,Yemarishet,OH_Voter,1972-06-13,1972,54,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45232
-CNM10262,Magnuson,Kelsey,OH_Voter,1982-12-18,1982,44,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43235
-CNM05834,Maio,Rachel,OH_Voter,1990-11-17,1990,36,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43207
 CNM1535,Maistros,Kathyrn,OH_Voter,1975-09-02,1975,51,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44111
-CNM07130,Malone,Kaitlin,OH_Voter,1991-09-15,1991,35,TRUE,unambiguous_unique_name,1,1,MINFORD,45653
-12066,Manning,Claire,OH_Voter,2003-07-15,2003,23,TRUE,unambiguous_unique_name,1,1,MASON,45040
-6564,Manuel,Paula,OH_Voter,1969-02-13,1969,57,TRUE,unambiguous_unique_name,1,1,PIQUA,45356
 CNM04882,Marchand,Alisha,OH_Voter,1983-04-06,1983,43,TRUE,unambiguous_unique_name,1,1,TOLEDO,43612
-12631,Marcus,Lisa,OH_Voter,1961-04-16,1961,65,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45236
-CNM2199,Marcus,Miranda,OH_Voter,1983-09-28,1983,43,TRUE,unambiguous_unique_name,1,1,SUNBURY,43074
-CM0128,Marino,Kristen,OH_Voter,1992-04-13,1992,34,TRUE,unambiguous_unique_name,1,1,NORWALK,44857
-12067,Marshall,Keisha,OH_Voter,1996-09-26,1996,30,TRUE,unambiguous_unique_name,1,1,EUCLID,44132
-CNM0288,Marshall,Lara,OH_Voter,1988-02-27,1988,38,TRUE,unambiguous_unique_name,1,1,MARYSVILLE,43040
-CNM09162,Marshall,Shelby,OH_Voter,1998-12-13,1998,28,TRUE,unambiguous_unique_name,1,1,SYLVANIA,43560
 CNM3266,Marten,Erin,OH_Voter,1979-07-06,1979,47,TRUE,unambiguous_unique_name,1,1,MAUMEE,43537
-CNM07190,Martin,Kourtney,OH_Voter,1994-05-29,1994,32,TRUE,unambiguous_unique_name,1,1,MANSFIELD,44903
-CNM07589,Martinez,Whitney,OH_Voter,1997-05-21,1997,29,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44109
-CNM1191,Martini,Mallory,OH_Voter,1997-10-27,1997,29,TRUE,unambiguous_unique_name,1,1,TRENTON,45067
-CNM09136,Martins,Megan,OH_Voter,2000-05-01,2000,26,TRUE,unambiguous_unique_name,1,1,DELPHOS,45833
 CNM06859,Masimore,Laura,OH_Voter,1995-07-25,1995,31,TRUE,unambiguous_unique_name,1,1,POLK,44866
-CNM0804,Massey,Rhonda,OH_Voter,1964-05-07,1964,62,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43207
-11596,Mather,Mary,OH_Voter,1949-10-16,1949,77,TRUE,unambiguous_unique_name,1,1,GRAND RAPIDS,43522
-CNM1669,Matherly,Jennifer,OH_Voter,1972-06-12,1972,54,TRUE,unambiguous_unique_name,1,1,FAIRFIELD,45014
-13159,Maust,Sarah,OH_Voter,1983-07-12,1983,43,TRUE,unambiguous_unique_name,1,1,AKRON,44305
-CNM0884,Maxfield,Courtney,OH_Voter,1988-11-23,1988,38,TRUE,unambiguous_unique_name,1,1,HARRISON,45030
-CNM08078,Maxwell,Charlotte,OH_Voter,1979-05-24,1979,47,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43223
-12923,May,Alice,OH_Voter,1958-02-11,1958,68,TRUE,unambiguous_unique_name,1,1,NORWALK,44857
-CNM2494,May,Carla,OH_Voter,1961-05-25,1961,65,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43213
 13184,May,Denay,OH_Voter,1973-07-04,1973,53,TRUE,unambiguous_unique_name,1,1,MARIETTA,45750
-CNM07058,Mayes,Mackenzie,OH_Voter,2001-07-30,2001,25,TRUE,unambiguous_unique_name,1,1,NORTH ROYALTON,44133
-CNM06092,McAllister,Jessica,OH_Voter,1980-12-06,1980,46,TRUE,unambiguous_unique_name,1,1,NEFFS,43940
 4903,McClelland,Lois,OH_Voter,1946-03-31,1946,80,TRUE,unambiguous_unique_name,1,1,SHEFFIELD LAKE,44054
-CNM06323,McCormick,Kendall,OH_Voter,2003-06-09,2003,23,TRUE,unambiguous_unique_name,1,1,HINCKLEY,44233
-CNM06174,McCormick,Tresa,OH_Voter,1967-12-14,1967,59,TRUE,unambiguous_unique_name,1,1,GEORGETOWN,45121
-CNM3076,McCray,Emily,OH_Voter,1994-02-22,1994,32,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43220
-CNM04498,McDevitt,Kathryn,OH_Voter,1994-02-25,1994,32,TRUE,unambiguous_unique_name,1,1,HUBBARD,44425
-CNM07718,McDonald,January,OH_Voter,1976-01-04,1976,50,TRUE,unambiguous_unique_name,1,1,SOUTH EUCLID,44121
-8967,McDonald,Wanda,OH_Voter,1977-01-24,1977,49,TRUE,unambiguous_unique_name,1,1,CANTON,44703
-CNM0521,McGahey,Emily,OH_Voter,1973-07-05,1973,53,TRUE,unambiguous_unique_name,1,1,MILFORD,45150
-CNM05785,McGrath,Kelly,OH_Voter,1978-05-28,1978,48,TRUE,unambiguous_unique_name,1,1,STOW,44224
-CNM06759,McGrew,Hannah,OH_Voter,1997-08-29,1997,29,TRUE,unambiguous_unique_name,1,1,HUBER HEIGHTS,45424
-CNM03713,McHugh,Robyn,OH_Voter,1979-12-05,1979,47,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45242
-CNM08663,McKay,Kelli,OH_Voter,1965-06-25,1965,61,TRUE,unambiguous_unique_name,1,1,ATWATER,44201
-CNM06396,McKinney,Kelsey,OH_Voter,1992-11-06,1992,34,TRUE,unambiguous_unique_name,1,1,BURBANK,44214
-CNM09599,McMahon,Jacqueline,OH_Voter,1984-02-08,1984,42,TRUE,unambiguous_unique_name,1,1,DELAWARE,43015
-CNM09380,McMahon,Kaitlyn,OH_Voter,1997-07-14,1997,29,TRUE,unambiguous_unique_name,1,1,MENTOR,44060
-12018,McNamee,Maureen,OH_Voter,1958-06-07,1958,68,TRUE,unambiguous_unique_name,1,1,BRUNSWICK,44212
-CNM09248,McQuade,Kelly,OH_Voter,1994-08-01,1994,32,TRUE,unambiguous_unique_name,1,1,LAKEWOOD,44107
 CNM08532,McQueen,Shatoya,OH_Voter,1987-10-04,1987,39,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44120
-CNM2030,McShane,Laurie,OH_Voter,1968-05-15,1968,58,TRUE,unambiguous_unique_name,1,1,AKRON,44312
-CNM07875,McShane,Molly,OH_Voter,1980-04-02,1980,46,TRUE,unambiguous_unique_name,1,1,PORTSMOUTH,45662
-13032,McVay,Amanda,OH_Voter,1982-08-31,1982,44,TRUE,unambiguous_unique_name,1,1,CLARINGTON,43915
-CNM0971,McVey,Rebecca,OH_Voter,1977-10-06,1977,49,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43235
-12488,Mease,Julie,OH_Voter,1974-04-09,1974,52,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43214
-CNM3332,Medina,Adrian,OH_Voter,1997-04-03,1997,29,TRUE,unambiguous_unique_name,1,1,MEDINA,44256
-6544,Mefford,Amy,OH_Voter,1976-11-26,1976,50,TRUE,unambiguous_unique_name,1,1,SPRINGFIELD,45503
 CNM1382,Mehler,Ann,OH_Voter,1982-11-30,1982,44,TRUE,unambiguous_unique_name,1,1,BEACHWOOD,44122
 CNM05533,Meinert,Leah,OH_Voter,1993-08-10,1993,33,TRUE,unambiguous_unique_name,1,1,SYLVANIA,43560
-CNM06768,Meister,Courtney,OH_Voter,1988-01-18,1988,38,TRUE,unambiguous_unique_name,1,1,CANTON,44721
-CNM03993,Mena,Katherine,OH_Voter,2000-02-17,2000,26,TRUE,unambiguous_unique_name,1,1,TROY,45373
 CNM1722,Mendoza,Nikki,OH_Voter,1987-04-27,1987,39,TRUE,unambiguous_unique_name,1,1,ALLIANCE,44601
-CNM08046,Merrill,Eric,OH_Voter,1972-10-03,1972,54,TRUE,unambiguous_unique_name,1,1,MIDDLEBURG HTS,44130
-CNM1890,Merritt,Meredith,OH_Voter,1990-04-07,1990,36,TRUE,unambiguous_unique_name,1,1,PORT CLINTON,43452
-12757,Mesaros,Megan,OH_Voter,1992-07-25,1992,34,TRUE,unambiguous_unique_name,1,1,GAHANNA,43230
-CNM09299,Mettler,Megan,OH_Voter,1997-02-25,1997,29,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43201
-12653,Meyers,Ronnie,OH_Voter,1968-12-25,1968,58,TRUE,unambiguous_unique_name,1,1,RAVENNA,44266
-CNM1919,Michael,Kristina,OH_Voter,1987-09-30,1987,39,TRUE,unambiguous_unique_name,1,1,NEWARK,43056
-12868,Michel,Alexandra,OH_Voter,2000-06-09,2000,26,TRUE,unambiguous_unique_name,1,1,WATERVILLE,43566
-CNM05303,Millar,Kathryn,OH_Voter,1973-10-03,1973,53,TRUE,unambiguous_unique_name,1,1,LEWIS CENTER,43035
-CNM07676,Miller,Ilene,OH_Voter,1950-08-10,1950,76,TRUE,unambiguous_unique_name,1,1,WESTERVILLE,43081
-CNM09104,Miller,Juliet,OH_Voter,1962-01-29,1962,64,TRUE,unambiguous_unique_name,1,1,OAKWOOD,44146
-CNM06256,Mills,Adrian,OH_Voter,2001-03-16,2001,25,TRUE,unambiguous_unique_name,1,1,AKRON,44304
-CNM06543,Milne,Molly,OH_Voter,1990-02-22,1990,36,TRUE,unambiguous_unique_name,1,1,XENIA,45385
-CNM09317,Minor,Courtney,OH_Voter,1989-12-02,1989,37,TRUE,unambiguous_unique_name,1,1,WESTERVILLE,43081
 CNM06412,Miramontes,Raychel,OH_Voter,1986-07-31,1986,40,TRUE,unambiguous_unique_name,1,1,TROY,45373
-CNM06127,Moe,Jessica,OH_Voter,1980-08-11,1980,46,TRUE,unambiguous_unique_name,1,1,CLYDE,43410
-CNM09372,Mohamed,Sadia,OH_Voter,1995-11-20,1995,31,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43231
 CNM07926,Molinuevo,Janece,OH_Voter,1986-01-23,1986,40,TRUE,unambiguous_unique_name,1,1,WEST CHESTER,45069
-CNM06175,Mollard,Elizabeth,OH_Voter,1941-06-21,1941,85,TRUE,unambiguous_unique_name,1,1,NEW ALBANY,43054
 10921,Molony,Patricia,OH_Voter,1966-10-30,1966,60,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45212
-CNM07335,Moody,Leslie,OH_Voter,1958-10-09,1958,68,TRUE,unambiguous_unique_name,1,1,DELAWARE,43015
-CNM07431,Moore,DeAnne,OH_Voter,1969-09-12,1969,57,TRUE,unambiguous_unique_name,1,1,URBANA,43078
-CNM05685,Morales,Monique,OH_Voter,1969-01-24,1969,57,TRUE,unambiguous_unique_name,1,1,GROVEPORT,43125
-CNM1863,Morelli,Sarah,OH_Voter,1997-05-07,1997,29,TRUE,unambiguous_unique_name,1,1,CANTON,44705
-CNM05392,Morgan,Rochelle,OH_Voter,1957-09-16,1957,69,TRUE,unambiguous_unique_name,1,1,WOODSTOCK,43084
 CNM10396,Morris,Allie,OH_Voter,1993-02-27,1993,33,TRUE,unambiguous_unique_name,1,1,VINTON,45686
-CNM04815,Morse,Jodi,OH_Voter,1980-07-22,1980,46,TRUE,unambiguous_unique_name,1,1,CENTERVILLE,45459
-CNM03855,Mortensen,Nicole,OH_Voter,1985-03-21,1985,41,TRUE,unambiguous_unique_name,1,1,PARMA,44130
-CNM07779,Moylan,Michele,OH_Voter,1963-09-23,1963,63,TRUE,unambiguous_unique_name,1,1,TWINSBURG,44087
-12782,Muck,Cheryl,OH_Voter,1959-04-04,1959,67,TRUE,unambiguous_unique_name,1,1,BRYAN,43506
-CNM07848,Mulholland,Kathryn,OH_Voter,1962-06-28,1962,64,TRUE,unambiguous_unique_name,1,1,BATAVIA,45103
-12456,Mull,Alyssa,OH_Voter,1995-08-26,1995,31,TRUE,unambiguous_unique_name,1,1,STRASBURG,44680
 CNM05174,Mullahey,Tia,OH_Voter,1990-11-22,1990,36,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43214
-CNM04690,Mullet,Veronica,OH_Voter,1963-02-06,1963,63,TRUE,unambiguous_unique_name,1,1,SHELBY,44875
-CNM2963,Mullins,Marcie,OH_Voter,1952-03-06,1952,74,TRUE,unambiguous_unique_name,1,1,HAMILTON,45011
 CNM05138,Munson,Alexandra,OH_Voter,1990-10-28,1990,36,TRUE,unambiguous_unique_name,1,1,PERRYSBURG,43551
-CNM04022,Murray,Ruth,OH_Voter,1965-08-28,1965,61,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45241
-CNM10044,Murray,Sherri,OH_Voter,1947-12-21,1947,79,TRUE,unambiguous_unique_name,1,1,MT GILEAD,43338
-11860,Nagel,Virginia,OH_Voter,1946-09-15,1946,80,TRUE,unambiguous_unique_name,1,1,SEVEN HILLS,44131
-11469,Naser,Melissa,OH_Voter,1979-04-20,1979,47,TRUE,unambiguous_unique_name,1,1,KETTERING,45429
-CNM07256,Nave,Kathleen,OH_Voter,1949-02-28,1949,77,TRUE,unambiguous_unique_name,1,1,MAUMEE,43537
-CNM09169,Nay,Chelsea,OH_Voter,1986-06-18,1986,40,TRUE,unambiguous_unique_name,1,1,KIRTLAND,44094
-CNM04334,Naylor,Meghan,OH_Voter,1988-05-09,1988,38,TRUE,unambiguous_unique_name,1,1,YOUNGSTOWN,44511
-CNM08742,Neal,Joni,OH_Voter,1968-10-07,1968,58,TRUE,unambiguous_unique_name,1,1,IRONTON,45638
-13162,Neiman,Emily,OH_Voter,1976-01-16,1976,50,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43214
-CNM2354,Netzel,Jessica,OH_Voter,1981-04-25,1981,45,TRUE,unambiguous_unique_name,1,1,CANTON,44705
-CNM05382,Neville,Samantha,OH_Voter,1998-06-29,1998,28,TRUE,unambiguous_unique_name,1,1,DELAWARE,43015
-CNM04509,New,Lauren,OH_Voter,1992-02-29,1992,34,TRUE,unambiguous_unique_name,1,1,CUYAHOGA FALLS,44223
-12003,Newbury,Nancy,OH_Voter,1953-04-08,1953,73,TRUE,unambiguous_unique_name,1,1,SYLVANIA,43560
 CNM03927,Newton,Charissa,OH_Voter,1984-10-18,1984,42,TRUE,unambiguous_unique_name,1,1,EATON,45320
-CNM06666,Nguyen,Patricia,OH_Voter,1992-02-09,1992,34,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45206
 CNM0235,Nicaisse,Syrah,OH_Voter,1981-10-13,1981,45,TRUE,unambiguous_unique_name,1,1,CENTERVILLE,45458
-CNM04136,Nicholls,Amanda,OH_Voter,1977-05-13,1977,49,TRUE,unambiguous_unique_name,1,1,CANTON,44709
-CNM04480,Nichols,Kristi,OH_Voter,1969-03-13,1969,57,TRUE,unambiguous_unique_name,1,1,AMHERST,44001
-CNM2386,Nicholson,Aiden,OH_Voter,2002-04-25,2002,24,TRUE,unambiguous_unique_name,1,1,NEW LEXINGTON,43764
-CNM10102,Niese,Bridgette,OH_Voter,1995-10-20,1995,31,TRUE,unambiguous_unique_name,1,1,GROVER HILL,45849
-12656,Nix,Natalie,OH_Voter,1995-03-14,1995,31,TRUE,unambiguous_unique_name,1,1,BLACKLICK,43004
-CNM0071,Nolan,Alexis,OH_Voter,1993-01-29,1993,33,TRUE,unambiguous_unique_name,1,1,XENIA,45385
-12999,Noone,Theresa,OH_Voter,1959-01-08,1959,67,TRUE,unambiguous_unique_name,1,1,MORROW,45152
-CNM09005,Nordquist,Dawn,OH_Voter,1970-09-19,1970,56,TRUE,unambiguous_unique_name,1,1,LAKE MILTON,44429
-10934,North,Alison,OH_Voter,1976-12-21,1976,50,TRUE,unambiguous_unique_name,1,1,SPRINGFIELD,45504
-CNM04415,North,Hannah,OH_Voter,1992-10-01,1992,34,TRUE,unambiguous_unique_name,1,1,FINDLAY,45840
-CNM0489,North,Michele,OH_Voter,1968-09-07,1968,58,TRUE,unambiguous_unique_name,1,1,LEWIS CENTER,43035
-CNM1216,Northam,Kellie,OH_Voter,1986-12-20,1986,40,TRUE,unambiguous_unique_name,1,1,SOUTH POINT,45680
-CNM0825,Nowak,Maureen,OH_Voter,1949-08-28,1949,77,TRUE,unambiguous_unique_name,1,1,NORTH ROYALTON,44133
 CNM04736,Noy,Tamara,OH_Voter,1984-08-18,1984,42,TRUE,unambiguous_unique_name,1,1,NORTHFIELD,44067
-9424,Nunez,Jennifer,OH_Voter,1981-11-17,1981,45,TRUE,unambiguous_unique_name,1,1,MIDDLETOWN,45044
 CNM03774,Oates,Brittaney,OH_Voter,1988-05-24,1988,38,TRUE,unambiguous_unique_name,1,1,SYLVANIA,43560
-CNM05508,Oates,Julie,OH_Voter,1971-09-21,1971,55,TRUE,unambiguous_unique_name,1,1,CHILLICOTHE,45601
-CNM10013,Oliver,Kelli,OH_Voter,1980-04-04,1980,46,TRUE,unambiguous_unique_name,1,1,NILES,44446
-CNM09349,Olson,Paige,OH_Voter,1964-05-31,1964,62,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45245
 CNM08407,Opeyemi,Kenya,OH_Voter,1991-06-10,1991,35,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43224
-CNM04677,Orem,Victoria,OH_Voter,1955-11-15,1955,71,TRUE,unambiguous_unique_name,1,1,MINERVA,44657
-CNM2238,Ortega,Alejandra,OH_Voter,1992-03-15,1992,34,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43204
-CNM04499,Ortiz,Priscilla,OH_Voter,1968-05-01,1968,58,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44102
-8478,Ortiz,Veronica,OH_Voter,1989-12-12,1989,37,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44109
-CNM2721,Osborn,Whitney,OH_Voter,1998-11-01,1998,28,TRUE,unambiguous_unique_name,1,1,E LIVERPOOL,43920
-11911,Ostrowski,Jessica,OH_Voter,1984-04-17,1984,42,TRUE,unambiguous_unique_name,1,1,POWELL,43065
-CNM06144,Ott,Brittany,OH_Voter,1990-01-02,1990,36,TRUE,unambiguous_unique_name,1,1,SIDNEY,45365
-4687,Overman,Barbara,OH_Voter,1954-07-27,1954,72,TRUE,unambiguous_unique_name,1,1,ST MARYS,45885
 CNM09759,Pace,Brandi,OH_Voter,1996-07-06,1996,30,TRUE,unambiguous_unique_name,1,1,MIDDLETOWN,45044
-CNM2151,Pacheco,Jamie,OH_Voter,1984-07-18,1984,42,TRUE,unambiguous_unique_name,1,1,OREGON,43616
-CNM09948,Palko,Ashley,OH_Voter,1986-07-21,1986,40,TRUE,unambiguous_unique_name,1,1,PARMA,44134
-11924,Parkinson,Erin,OH_Voter,1979-07-26,1979,47,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43214
-CNM06639,Parris,Jessica,OH_Voter,1989-06-29,1989,37,TRUE,unambiguous_unique_name,1,1,CHESTERLAND,44026
 CNM1320,Patel,Aashka,OH_Voter,1989-01-11,1989,37,TRUE,unambiguous_unique_name,1,1,WESTERVILLE,43081
-CNM08349,Paul,Shawna,OH_Voter,1971-06-24,1971,55,TRUE,unambiguous_unique_name,1,1,BETHEL,45106
-CNM0295,Paxton,Katherine,OH_Voter,1988-07-08,1988,38,TRUE,unambiguous_unique_name,1,1,MANSFIELD,44903
-CNM2313,Payne,Kari,OH_Voter,1982-11-17,1982,44,TRUE,unambiguous_unique_name,1,1,MIDDLETOWN,45042
-12081,Payne,Terri,OH_Voter,1973-02-18,1973,53,TRUE,unambiguous_unique_name,1,1,LUCASVILLE,45648
-CNM06974,Payton,Sierra,OH_Voter,1997-08-28,1997,29,TRUE,unambiguous_unique_name,1,1,SANDUSKY,44870
 CNM06599,Peabody,Brandy,OH_Voter,1987-10-22,1987,39,TRUE,unambiguous_unique_name,1,1,WHITEHOUSE,43571
-CNM04864,Peacock,Caroline,OH_Voter,1956-11-06,1956,70,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44109
-CNM07586,Peacock,Samantha,OH_Voter,1996-12-04,1996,30,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43215
-CNM08093,Pearcy,Jennifer,OH_Voter,1994-12-22,1994,32,TRUE,unambiguous_unique_name,1,1,AKRON,44305
-CNM1367,Pelletier,Danielle,OH_Voter,1988-12-28,1988,38,TRUE,unambiguous_unique_name,1,1,HUDSON,44236
-CNM10071,Pelton,Emma,OH_Voter,2003-06-02,2003,23,TRUE,unambiguous_unique_name,1,1,TOLEDO,43614
-CNM0754,Pelton,Michelle,OH_Voter,1988-10-06,1988,38,TRUE,unambiguous_unique_name,1,1,DELTA,43515
-5912,Peluso,Barbara,OH_Voter,1967-05-02,1967,59,TRUE,unambiguous_unique_name,1,1,PETERSBURG,44454
-CNM06705,Pena,Megan,OH_Voter,1993-08-20,1993,33,TRUE,unambiguous_unique_name,1,1,PERRY,44081
-12223,Pender,Lorie,OH_Voter,1965-10-12,1965,61,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45239
 CNM08216,Pereira,Diana,OH_Voter,1979-06-12,1979,47,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43240
-CNM1185,Perez,Kristin,OH_Voter,1972-10-28,1972,54,TRUE,unambiguous_unique_name,1,1,PERRYSBURG,43551
-CNM1019,Perez,Maureen,OH_Voter,1961-01-14,1961,65,TRUE,unambiguous_unique_name,1,1,SPRINGBORO,45066
-CNM08184,Peterson,Haleigh,OH_Voter,1991-10-23,1991,35,TRUE,unambiguous_unique_name,1,1,CORTLAND,44410
-CNM10138,Peterson,Marissa,OH_Voter,2005-10-03,2005,21,FALSE,unambiguous_unique_name,1,1,HAMILTON,45013
-13077,Pettigrew,Jessica,OH_Voter,2001-08-23,2001,25,TRUE,unambiguous_unique_name,1,1,MAINEVILLE,45039
-CNM05250,Phelps,Hannah,OH_Voter,1997-09-05,1997,29,TRUE,unambiguous_unique_name,1,1,MORROW,45152
-CNM08690,Pineda,Ashleigh,OH_Voter,1994-02-21,1994,32,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44113
-CNM04452,Pitney,Christie,OH_Voter,1990-04-20,1990,36,TRUE,unambiguous_unique_name,1,1,BOWLING GREEN,43402
 CNM08679,Pitts,Shani,OH_Voter,1980-10-29,1980,46,TRUE,unambiguous_unique_name,1,1,PICKERINGTON,43147
 CNM06110,Plotts,Courtney,OH_Voter,1975-06-15,1975,51,TRUE,unambiguous_unique_name,1,1,MASSILLON,44646
 11511,Podojil,Nadia,OH_Voter,1980-08-05,1980,46,TRUE,unambiguous_unique_name,1,1,RICHFIELD,44286
-CNM10549,Pollock,Morgan,OH_Voter,2004-12-25,2004,22,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43223
 CNM3303,Poorman,Amanda,OH_Voter,1973-01-26,1973,53,TRUE,unambiguous_unique_name,1,1,COSHOCTON,43812
-CNM3269,Pope,Abigail,OH_Voter,1994-09-06,1994,32,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43212
-CNM0207,Porter,Ping,OH_Voter,1975-12-02,1975,51,TRUE,unambiguous_unique_name,1,1,HUDSON,44236
 CNM03825,Pothast,Nicole,OH_Voter,1982-10-26,1982,44,TRUE,unambiguous_unique_name,1,1,OTTAWA,45875
-CNM10417,Potts,Chelsea,OH_Voter,1992-05-08,1992,34,TRUE,unambiguous_unique_name,1,1,STOUTSVILLE,43154
-CNM3241,Potts,Janelle,OH_Voter,1985-08-31,1985,41,TRUE,unambiguous_unique_name,1,1,SARDIS,43946
-CNM0181,Powers,Madeline,OH_Voter,2001-05-14,2001,25,TRUE,unambiguous_unique_name,1,1,SOMERVILLE,45064
-CNM05759,Prentiss,Jennifer,OH_Voter,1972-04-01,1972,54,TRUE,unambiguous_unique_name,1,1,CUYAHOGA FALLS,44223
-CNM0271,Price,Caroline,OH_Voter,1996-12-28,1996,30,TRUE,unambiguous_unique_name,1,1,TIFFIN,44883
 CNM07983,Prince,Maura,OH_Voter,1970-05-06,1970,56,TRUE,unambiguous_unique_name,1,1,FAIRFIELD,45014
-CNM3099,Pringle,Sarah,OH_Voter,2004-09-16,2004,22,TRUE,unambiguous_unique_name,1,1,YOUNGSTOWN,44505
-CNM04031,Proctor,Hannah,OH_Voter,1985-07-31,1985,41,TRUE,unambiguous_unique_name,1,1,FINDLAY,45840
-CNM09006,Provost,Emma,OH_Voter,1999-05-04,1999,27,TRUE,unambiguous_unique_name,1,1,FINDLAY,45840
-CNM2128,Przybylski,Elizabeth,OH_Voter,1995-09-12,1995,31,TRUE,unambiguous_unique_name,1,1,N RIDGEVILLE,44039
 CNM06424,Quinn,Lyndsay,OH_Voter,1985-02-17,1985,41,TRUE,unambiguous_unique_name,1,1,WINDHAM,44288
-CNM04093,Raider,Sarah,OH_Voter,1987-05-26,1987,39,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45233
-CNM10113,Ramirez,Angela,OH_Voter,1969-09-24,1969,57,TRUE,unambiguous_unique_name,1,1,CANTON,44702
 CNM07984,Ramke,Allison,OH_Voter,1984-08-14,1984,42,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45230
-CNM3336,Ramsey,Christa,OH_Voter,1987-07-06,1987,39,TRUE,unambiguous_unique_name,1,1,DAYTON,45415
-CNM1200,Ranallo,Jessica,OH_Voter,1982-11-20,1982,44,TRUE,unambiguous_unique_name,1,1,WESTLAKE,44145
-CNM1076,Rasmussen,Cara,OH_Voter,1999-04-07,1999,27,TRUE,unambiguous_unique_name,1,1,LOVELAND,45140
-CNM04198,Rasmussen,Sarah,OH_Voter,1982-06-12,1982,44,TRUE,unambiguous_unique_name,1,1,PICKERINGTON,43147
-CNM09057,Rauch,Wendy,OH_Voter,1984-01-08,1984,42,TRUE,unambiguous_unique_name,1,1,CLAYTON,45315
-CNM07598,Reagan,Teresa,OH_Voter,1971-06-23,1971,55,TRUE,unambiguous_unique_name,1,1,HILLSBORO,45133
-CNM06944,Redd,Amber,OH_Voter,1984-02-13,1984,42,TRUE,unambiguous_unique_name,1,1,RIVERSIDE,45431
-CNM2357,Reddick,Carol,OH_Voter,1977-09-04,1977,49,TRUE,unambiguous_unique_name,1,1,MEDINA,44256
-13020,Reid,Alison,OH_Voter,1993-03-11,1993,33,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45238
-CNM05315,Reinke,Amy,OH_Voter,1983-07-30,1983,43,TRUE,unambiguous_unique_name,1,1,HOUSTON,45333
 CNM07528,Reitano,Tori,OH_Voter,1997-01-10,1997,29,TRUE,unambiguous_unique_name,1,1,MILLFIELD,45761
-CNM10104,Reiter,Christina,OH_Voter,1996-02-27,1996,30,TRUE,unambiguous_unique_name,1,1,WAVERLY,45690
-CNM1359,Remy,Carli,OH_Voter,1986-08-09,1986,40,TRUE,unambiguous_unique_name,1,1,UNIVERSITY HTS,44118
 CNM2117,Rettig,Brittney,OH_Voter,1986-09-04,1986,40,TRUE,unambiguous_unique_name,1,1,BLUFFTON,45817
-CNM06549,Reynolds,Kristina,OH_Voter,1978-12-21,1978,48,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45231
-CNM0405,Ricci,Kristin,OH_Voter,1982-05-29,1982,44,TRUE,unambiguous_unique_name,1,1,MORELAND HILLS,44022
-CNM04884,Rice,Jeannine,OH_Voter,1960-09-27,1960,66,TRUE,unambiguous_unique_name,1,1,FAIRFIELD,45014
-CNM10420,Richard,Sydney,OH_Voter,2005-07-12,2005,21,FALSE,unambiguous_unique_name,1,1,COVINGTON,45318
-12938,Richards,Erica,OH_Voter,1979-12-22,1979,47,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43212
-CNM07721,Richie,Nicole,OH_Voter,1973-03-15,1973,53,TRUE,unambiguous_unique_name,1,1,WAVERLY,45690
-CNM10399,Richins,Sara,OH_Voter,1982-11-24,1982,44,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45244
-3990,Ricketts,Marilyn,OH_Voter,1947-11-07,1947,79,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43224
 CNM0637,Ridenbaugh,Cheryl,OH_Voter,1971-09-17,1971,55,TRUE,unambiguous_unique_name,1,1,WINDHAM,44288
-CNM06587,Riegel,Caroline,OH_Voter,1969-08-21,1969,57,TRUE,unambiguous_unique_name,1,1,DAYTON,45419
-CNM06763,Riggins,Kimberly,OH_Voter,1956-03-05,1956,70,TRUE,unambiguous_unique_name,1,1,FAIRFIELD,45014
-CNM04707,Riley,Devon,OH_Voter,1994-12-18,1994,32,TRUE,unambiguous_unique_name,1,1,MOSCOW,45153
-CNM06276,Ripley,Rebecca,OH_Voter,1994-04-02,1994,32,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44102
-11270,Rivera,Adriana,OH_Voter,1977-02-18,1977,49,TRUE,unambiguous_unique_name,1,1,PLAIN CITY,43064
-CNM1864,Rivera,Lara,OH_Voter,1997-04-10,1997,29,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45233
-CNM06707,Roark,Julie,OH_Voter,1960-11-13,1960,66,TRUE,unambiguous_unique_name,1,1,OKEANA,45053
-CNM07286,Robins,Rachel,OH_Voter,1999-05-27,1999,27,TRUE,unambiguous_unique_name,1,1,N RIDGEVILLE,44039
-CNM07603,Robinson,Isabella,OH_Voter,2004-08-30,2004,22,TRUE,unambiguous_unique_name,1,1,HIGHLAND HTS,44143
 CNM07696,Rockwern,Jennifer,OH_Voter,1984-05-27,1984,42,TRUE,unambiguous_unique_name,1,1,WEST CHESTER,45069
-CNM0441,Rodriguez,Claire,OH_Voter,1993-09-14,1993,33,TRUE,unambiguous_unique_name,1,1,CLEVELAND HTS,44106
-CNM04661,Rodriguez,Josie,OH_Voter,2004-01-09,2004,22,TRUE,unambiguous_unique_name,1,1,AKRON,44310
-CNM10350,Rogerson,Mary,OH_Voter,1968-08-14,1968,58,TRUE,unambiguous_unique_name,1,1,N RIDGEVILLE,44039
-CNM06279,Roland,Katherine,OH_Voter,1997-02-09,1997,29,TRUE,unambiguous_unique_name,1,1,RAYMOND,43067
-CNM2119,Roll,Bonnie,OH_Voter,1951-08-09,1951,75,TRUE,unambiguous_unique_name,1,1,KENT,44240
-CNM07933,Roman,Amber,OH_Voter,1991-12-08,1991,35,TRUE,unambiguous_unique_name,1,1,CLINTON,44216
 CNM06622,Roose,Lindsay,OH_Voter,1985-02-24,1985,41,TRUE,unambiguous_unique_name,1,1,DEFIANCE,43512
-CNM05880,Rose,Abbey,OH_Voter,1979-10-25,1979,47,TRUE,unambiguous_unique_name,1,1,PERRYSBURG,43551
-CNM04453,Rose,Dawna,OH_Voter,1983-05-01,1983,43,TRUE,unambiguous_unique_name,1,1,LEBANON,45036
-CNM05797,Ross,Alexandria,OH_Voter,1996-08-18,1996,30,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43201
-CNM09547,Rossman,Jillian,OH_Voter,2004-04-20,2004,22,TRUE,unambiguous_unique_name,1,1,WESTLAKE,44145
-7957,Rouse,Nancy,OH_Voter,1985-10-15,1985,41,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45231
-CNM07409,Roy,Brooke,OH_Voter,2004-04-29,2004,22,TRUE,unambiguous_unique_name,1,1,DAYTON,45440
-CNM04933,Royster,Julie,OH_Voter,1969-05-17,1969,57,TRUE,unambiguous_unique_name,1,1,LEBANON,45036
-CNM0826,Ruch,Jennifer,OH_Voter,1973-04-02,1973,53,TRUE,unambiguous_unique_name,1,1,DAYTON,45424
 CNM09484,Rudy,Bethany,OH_Voter,1992-02-16,1992,34,TRUE,unambiguous_unique_name,1,1,CLEVELAND HTS,44118
-CNM04397,Rudy,Nicole,OH_Voter,1975-04-04,1975,51,TRUE,unambiguous_unique_name,1,1,LORAIN,44052
-CNM06150,Ruff,Amanda,OH_Voter,1987-10-05,1987,39,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45209
-CNM09290,Ruiz,Ashley,OH_Voter,1991-05-22,1991,35,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44102
-CNM06951,Rupard,Jessica,OH_Voter,1994-12-03,1994,32,TRUE,unambiguous_unique_name,1,1,RIVERSIDE,45431
-CNM09405,Rush,Cassidy,OH_Voter,1997-11-16,1997,29,TRUE,unambiguous_unique_name,1,1,BARNESVILLE,43713
-12690,Rush,Tina,OH_Voter,1967-07-07,1967,59,TRUE,unambiguous_unique_name,1,1,LEAVITTSBURG,44430
-CNM06906,Russell,Alexandrea,OH_Voter,1994-04-12,1994,32,TRUE,unambiguous_unique_name,1,1,MILLFIELD,45761
-12263,Russo,Sonya,OH_Voter,1975-12-14,1975,51,TRUE,unambiguous_unique_name,1,1,MEDINA,44256
-CNM2208,Salyer,Tracie,OH_Voter,1966-10-21,1966,60,TRUE,unambiguous_unique_name,1,1,MAUMEE,43537
 CNM0381,Sampsell,Cassandra,OH_Voter,1983-01-17,1983,43,TRUE,unambiguous_unique_name,1,1,LEWIS CENTER,43035
-CNM03995,Samson,Kimberly,OH_Voter,1982-04-16,1982,44,TRUE,unambiguous_unique_name,1,1,DELAWARE,43015
-CNM1472,Sander,Jenna,OH_Voter,1992-06-16,1992,34,TRUE,unambiguous_unique_name,1,1,BRUNSWICK,44212
-12352,Sanders,Bethany,OH_Voter,1982-01-08,1982,44,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43202
-CNM07764,Sanders,Jocelyn,OH_Voter,1970-06-21,1970,56,TRUE,unambiguous_unique_name,1,1,NEWBURY,44065
-CNM2561,Santos,Jennifer,OH_Voter,1987-03-04,1987,39,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44113
 CNM04379,Saroyan,Rebecca,OH_Voter,1983-03-25,1983,43,TRUE,unambiguous_unique_name,1,1,HAMILTON,45011
-CNM08225,Sauder,Sarah,OH_Voter,1997-06-07,1997,29,TRUE,unambiguous_unique_name,1,1,SHAKER HTS,44120
-5454,Sayer,Melissa,OH_Voter,1989-09-06,1989,37,TRUE,unambiguous_unique_name,1,1,DAYTON,45417
 CNM06310,Scafuro,Sara,OH_Voter,1988-11-04,1988,38,TRUE,unambiguous_unique_name,1,1,STOW,44224
-CNM09771,Scarbrough,Heather,OH_Voter,1983-05-20,1983,43,TRUE,unambiguous_unique_name,1,1,LOUISVILLE,44641
-CNM0524,Schaefer,Lindsay,OH_Voter,1991-10-12,1991,35,TRUE,unambiguous_unique_name,1,1,WEST CHESTER,45069
-CNM1473,Schafer,Robyn,OH_Voter,1973-11-18,1973,53,TRUE,unambiguous_unique_name,1,1,WAPAKONETA,45895
-CNM1627,Schell,Danielle,OH_Voter,1999-03-24,1999,27,TRUE,unambiguous_unique_name,1,1,E LIVERPOOL,43920
-CNM04173,Schilling,Erika,OH_Voter,1998-03-13,1998,28,TRUE,unambiguous_unique_name,1,1,BALTIMORE,43105
-CNM04865,Schlegel,Molly,OH_Voter,1976-02-10,1976,50,TRUE,unambiguous_unique_name,1,1,BAY VILLAGE,44140
-CNM2209,Schlueter,Katrina,OH_Voter,1994-07-13,1994,32,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45213
-12492,Schmidt,Deanna,OH_Voter,1946-08-25,1946,80,TRUE,unambiguous_unique_name,1,1,SYLVANIA,43560
-CNM1203,Schock,Jessica,OH_Voter,1978-06-07,1978,48,TRUE,unambiguous_unique_name,1,1,KETTERING,45429
 CNM09718,Schuerman,Jean,OH_Voter,1986-03-14,1986,40,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43209
-CNM3270,Schulz,Katie,OH_Voter,2004-06-02,2004,22,TRUE,unambiguous_unique_name,1,1,CONCORD,44060
-12151,Schuman,Jennifer,OH_Voter,1979-10-13,1979,47,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43209
-CNM04856,Schwantes,Heather,OH_Voter,1973-04-12,1973,53,TRUE,unambiguous_unique_name,1,1,LOVELAND,45140
 CNM07855,Schwochow,Wendy,OH_Voter,1983-12-06,1983,43,TRUE,unambiguous_unique_name,1,1,ELYRIA,44035
-CNM1273,Scribner,Christina,OH_Voter,1970-03-17,1970,56,TRUE,unambiguous_unique_name,1,1,CUYAHOGA FALLS,44221
 CNM0118,Sedlak,Stephanie,OH_Voter,1983-01-18,1983,43,TRUE,unambiguous_unique_name,1,1,MEDINA,44256
-11788,Seifert,Anne,OH_Voter,1954-05-13,1954,72,TRUE,unambiguous_unique_name,1,1,LEXINGTON,44904
-CNM08950,Selby,Kara,OH_Voter,1971-01-30,1971,55,TRUE,unambiguous_unique_name,1,1,LEWIS CENTER,43035
-CNM05331,Selvidio,Laura,OH_Voter,1987-02-19,1987,39,TRUE,unambiguous_unique_name,1,1,ARLINGTON,45814
-12599,Selzer,Casey,OH_Voter,1988-12-07,1988,38,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45230
-CNM0742,Shane,Diana,OH_Voter,1992-07-16,1992,34,TRUE,unambiguous_unique_name,1,1,MAINEVILLE,45039
-CNM06449,Shanks,Kristen,OH_Voter,1978-05-07,1978,48,TRUE,unambiguous_unique_name,1,1,HAMILTON,45011
-CNM05469,Shanley,Jennifer,OH_Voter,1985-02-12,1985,41,TRUE,unambiguous_unique_name,1,1,STOW,44224
 CNM06716,Shattuck,Jessica,OH_Voter,1990-01-28,1990,36,TRUE,unambiguous_unique_name,1,1,BEREA,44017
-CNM1055,Sheets,Joanna,OH_Voter,1952-11-10,1952,74,TRUE,unambiguous_unique_name,1,1,NEW ALBANY,43054
 CNM06680,Sheldon,Rebecca,OH_Voter,1993-09-14,1993,33,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43214
-CNM08654,Shell,Chelsea,OH_Voter,1995-10-03,1995,31,TRUE,unambiguous_unique_name,1,1,MIDLAND,45148
-CNM0082,Shepard,Megan,OH_Voter,1991-08-04,1991,35,TRUE,unambiguous_unique_name,1,1,MIDDLETOWN,45044
-CNM0895,Shepherd,Kristina,OH_Voter,1975-12-29,1975,51,TRUE,unambiguous_unique_name,1,1,BLUFFTON,45817
-CNM05239,Sherman,Katrina,OH_Voter,1982-12-10,1982,44,TRUE,unambiguous_unique_name,1,1,N BALTIMORE,45872
-13185,Sherman,Tanya,OH_Voter,1971-01-09,1971,55,TRUE,unambiguous_unique_name,1,1,WILLOWICK,44095
-CNM0187,Shields,Cheri,OH_Voter,1982-09-21,1982,44,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43201
-CNM3066,Shields,Dana,OH_Voter,1976-12-24,1976,50,TRUE,unambiguous_unique_name,1,1,HILLSBORO,45133
-CNM04807,Shifflett,Michelle,OH_Voter,1964-07-13,1964,62,TRUE,unambiguous_unique_name,1,1,HAMILTON,45011
-13164,Shilling,Stephanie,OH_Voter,1949-10-22,1949,77,TRUE,unambiguous_unique_name,1,1,REYNOLDSBURG,43068
-CNM09689,Shimizu,Leslie,OH_Voter,1988-10-15,1988,38,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43224
 CNM08018,Shinew,Cortnee,OH_Voter,1995-05-06,1995,31,TRUE,unambiguous_unique_name,1,1,MAUMEE,43537
 CNM2536,Shire,Renae,OH_Voter,1983-07-13,1983,43,TRUE,unambiguous_unique_name,1,1,AVON,44011
-CNM0679,Shirey,Pamela,OH_Voter,1968-07-13,1968,58,TRUE,unambiguous_unique_name,1,1,NORTHWOOD,43619
 CNM1056,Shoemaker,Molly,OH_Voter,1980-01-05,1980,46,TRUE,unambiguous_unique_name,1,1,CHILLICOTHE,45601
-CNM2168,Sholey,Gayla,OH_Voter,1967-10-05,1967,59,TRUE,unambiguous_unique_name,1,1,PEMBERVILLE,43450
 CNM07348,Short,Paige,OH_Voter,1995-07-16,1995,31,TRUE,unambiguous_unique_name,1,1,FAYETTEVILLE,45118
-CNM05123,Shultz,Rebekah,OH_Voter,1997-09-02,1997,29,TRUE,unambiguous_unique_name,1,1,WEST PORTSMOUTH,45663
-10644,Sidney,Dana,OH_Voter,1992-09-17,1992,34,TRUE,unambiguous_unique_name,1,1,CAMPBELL,44405
 12603,Sieman,Rachel,OH_Voter,1970-04-04,1970,56,TRUE,unambiguous_unique_name,1,1,BOARDMAN,44512
-CNM1704,Silva,Stephanie,OH_Voter,1985-06-07,1985,41,TRUE,unambiguous_unique_name,1,1,NEW FRANKLIN,44203
-CNM2064,Simms,Jodie,OH_Voter,1981-03-15,1981,45,TRUE,unambiguous_unique_name,1,1,AKRON,44312
-12820,Simms,Katie,OH_Voter,1991-05-13,1991,35,TRUE,unambiguous_unique_name,1,1,CIRCLEVILLE,43113
-CNM04178,Simpson,Ebony,OH_Voter,1991-03-01,1991,35,TRUE,unambiguous_unique_name,1,1,DAYTON,45416
-CNM2123,Singer,Tonya,OH_Voter,1999-12-14,1999,27,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44102
-CNM0656,Sisco,Emily,OH_Voter,1974-10-07,1974,52,TRUE,unambiguous_unique_name,1,1,BOWLING GREEN,43402
 CNM05545,Skelton,Brittani,OH_Voter,1989-06-02,1989,37,TRUE,unambiguous_unique_name,1,1,NEW BREMEN,45869
-12900,Slattery,Carolyn,OH_Voter,1951-03-31,1951,75,TRUE,unambiguous_unique_name,1,1,SPRINGBORO,45066
-CNM0681,Sloat,Megan,OH_Voter,1968-04-17,1968,58,TRUE,unambiguous_unique_name,1,1,PLAIN CITY,43064
-CNM05204,Small,Theresa,OH_Voter,1959-01-21,1959,67,TRUE,unambiguous_unique_name,1,1,FRANKLIN,45005
-CNM3232,Smith,Gaither,OH_Voter,1941-11-05,1941,85,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45240
-13121,Smith,Ilia,OH_Voter,1997-12-12,1997,29,TRUE,unambiguous_unique_name,1,1,WEST CARROLLTON,45449
-CNM2914,Smith,Jeana,OH_Voter,1978-10-18,1978,48,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45251
-12362,Smith,MaryLou,OH_Voter,1955-04-07,1955,71,TRUE,unambiguous_unique_name,1,1,VAN WERT,45891
-CNM04310,Smith,Sunday,OH_Voter,1969-07-10,1969,57,TRUE,unambiguous_unique_name,1,1,BALTIMORE,43105
-CNM2729,Snell,Grace,OH_Voter,2001-03-05,2001,25,TRUE,unambiguous_unique_name,1,1,FAIRFIELD,45014
-CNM05445,Solis,Elizabeth,OH_Voter,1970-09-12,1970,56,TRUE,unambiguous_unique_name,1,1,PORT CLINTON,43452
-4179,Sommers,Barbara,OH_Voter,1947-09-14,1947,79,TRUE,unambiguous_unique_name,1,1,LORAIN,44053
-11525,Soule,Anne,OH_Voter,1962-05-08,1962,64,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44110
 CNM05077,Southwell,Melissa,OH_Voter,1981-11-02,1981,45,TRUE,unambiguous_unique_name,1,1,XENIA,45385
-CNM0102,Spalding,Diana,OH_Voter,1957-05-25,1957,69,TRUE,unambiguous_unique_name,1,1,TOLEDO,43615
-10976,Spencer,Simone,OH_Voter,1988-07-19,1988,38,TRUE,unambiguous_unique_name,1,1,STOW,44224
-CNM09943,Sponsler,Mary,OH_Voter,1953-03-22,1953,73,TRUE,unambiguous_unique_name,1,1,VIENNA,44473
 CNM09406,Spratley,Alayna,OH_Voter,1985-07-17,1985,41,TRUE,unambiguous_unique_name,1,1,MAYFIELD VILLAGE,44040
-CNM06651,Stallings,Emily,OH_Voter,1981-11-25,1981,45,TRUE,unambiguous_unique_name,1,1,WESTERVILLE,43081
-CNM07210,Stamm,Sola,OH_Voter,1991-07-02,1991,35,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43214
-CNM07208,Stang,Rebecca,OH_Voter,1976-11-20,1976,50,TRUE,unambiguous_unique_name,1,1,HAMILTON,45011
 CNM04604,Staroska,Justina,OH_Voter,1970-02-19,1970,56,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45248
-CNM06498,Stear,Marissa,OH_Voter,2003-05-25,2003,23,TRUE,unambiguous_unique_name,1,1,WARREN,44483
-CNM09583,Stebbins,Ashley,OH_Voter,1985-04-24,1985,41,TRUE,unambiguous_unique_name,1,1,SHAKER HTS,44120
-12092,Stec,Melissa,OH_Voter,1976-07-11,1976,50,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45245
-10770,Stein,Cindy,OH_Voter,1957-09-30,1957,69,TRUE,unambiguous_unique_name,1,1,TOLEDO,43606
 CNM05869,Steller,Amanda,OH_Voter,1989-12-06,1989,37,TRUE,unambiguous_unique_name,1,1,LEWIS CENTER,43035
-12293,Stephan,Linda,OH_Voter,1949-12-12,1949,77,TRUE,unambiguous_unique_name,1,1,SARDINIA,45171
-CNM07647,Stephan,Melissa,OH_Voter,1975-10-14,1975,51,TRUE,unambiguous_unique_name,1,1,LOUISVILLE,44641
-CNM04189,Stephenson,Kelli,OH_Voter,1986-02-08,1986,40,TRUE,unambiguous_unique_name,1,1,WELLSTON,45692
-CNM1400,Stiles,Alexandra,OH_Voter,1991-05-02,1991,35,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43220
-CNM2871,Stinson,Nicole,OH_Voter,1982-12-11,1982,44,TRUE,unambiguous_unique_name,1,1,BLANCHESTER,45107
-CNM10332,Stokes,Mikayla,OH_Voter,1993-03-08,1993,33,TRUE,unambiguous_unique_name,1,1,UNIVERSITY HTS,44118
-CNM08973,Stone,Camille,OH_Voter,1997-09-16,1997,29,TRUE,unambiguous_unique_name,1,1,HURON,44839
-CNM2213,Stone,Tessa,OH_Voter,1983-05-22,1983,43,TRUE,unambiguous_unique_name,1,1,UPPER SANDUSKY,43351
-CNM07626,Street,Angel,OH_Voter,2001-07-04,2001,25,TRUE,unambiguous_unique_name,1,1,HAMILTON,45011
-11652,Stroh,Heather,OH_Voter,1996-04-22,1996,30,TRUE,unambiguous_unique_name,1,1,SHREVE,44676
-CNM03801,Strom,Sarah,OH_Voter,1979-05-01,1979,47,TRUE,unambiguous_unique_name,1,1,FAIRFIELD,45014
 CNM05480,Stropko,Molly,OH_Voter,1982-04-28,1982,44,TRUE,unambiguous_unique_name,1,1,N RIDGEVILLE,44039
-CNM03694,Stroud,Courtney,OH_Voter,1991-11-25,1991,35,TRUE,unambiguous_unique_name,1,1,CANAL WINCHESTER,43110
-CNM0083,Stryker,Anna,OH_Voter,1982-08-19,1982,44,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45213
-CNM03762,Stuck,Kimberly,OH_Voter,1961-05-13,1961,65,TRUE,unambiguous_unique_name,1,1,PORTSMOUTH,45662
 CNM09962,Suchora,Leah,OH_Voter,1985-03-23,1985,41,TRUE,unambiguous_unique_name,1,1,MINERAL RIDGE,44440
-CNM3283,Sugrue,Kathleen,OH_Voter,1990-11-23,1990,36,TRUE,unambiguous_unique_name,1,1,HILLIARD,43026
-CNM2506,Sullivan,Naomi,OH_Voter,1976-03-11,1976,50,TRUE,unambiguous_unique_name,1,1,WAPAKONETA,45895
-CNM0989,Sullivan,Phoebe,OH_Voter,1994-10-24,1994,32,TRUE,unambiguous_unique_name,1,1,STRONGSVILLE,44149
-13211,Summerfield,Kelly,OH_Voter,1975-03-31,1975,51,TRUE,unambiguous_unique_name,1,1,HUBBARD,44425
-CNM07628,Sutcliffe,Samantha,OH_Voter,2001-07-11,2001,25,TRUE,unambiguous_unique_name,1,1,PARMA HTS,44130
-CNM03695,Swain,Lori,OH_Voter,1963-12-29,1963,63,TRUE,unambiguous_unique_name,1,1,GRAFTON,44044
-CNM09351,Swenson,Kristin,OH_Voter,1976-10-17,1976,50,TRUE,unambiguous_unique_name,1,1,CONCORD,44077
-6206,Swingle,Jane,OH_Voter,1969-11-17,1969,57,TRUE,unambiguous_unique_name,1,1,XENIA,45385
-CNM08235,Swisher,Anthony,OH_Voter,1987-02-22,1987,39,TRUE,unambiguous_unique_name,1,1,AKRON,44306
-CNM07818,Tamplin,Elizabeth,OH_Voter,1983-06-28,1983,43,TRUE,unambiguous_unique_name,1,1,GREENVILLE,45331
-CNM07566,Tarver,Destiny,OH_Voter,1986-08-25,1986,40,TRUE,unambiguous_unique_name,1,1,AKRON,44310
-CNM2916,Tate,Jeannine,OH_Voter,1954-10-13,1954,72,TRUE,unambiguous_unique_name,1,1,UNIONTOWN,44685
 CNM07489,Thieroff,Emily,OH_Voter,1994-05-28,1994,32,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43204
-CNM09275,Thompson,Bridgette,OH_Voter,1997-07-18,1997,29,TRUE,unambiguous_unique_name,1,1,AKRON,44303
-CNM2507,Thorpe,Rhonda,OH_Voter,1960-12-16,1960,66,TRUE,unambiguous_unique_name,1,1,FAIRFIELD,45014
-13193,Thorsen,Nicole,OH_Voter,1990-08-30,1990,36,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43228
 CNM08065,Tiberio,Michelle,OH_Voter,1980-03-08,1980,46,TRUE,unambiguous_unique_name,1,1,LEWIS CENTER,43035
 CNM10433,Timlin,Kathryn,OH_Voter,1992-03-17,1992,34,TRUE,unambiguous_unique_name,1,1,SOLON,44139
-CNM09790,Tippery,Victoria,OH_Voter,1988-05-11,1988,38,TRUE,unambiguous_unique_name,1,1,NORTHWOOD,43619
-CNM2433,Todaro,Laura,OH_Voter,1957-02-03,1957,69,TRUE,unambiguous_unique_name,1,1,WELLINGTON,44090
-CNM0424,Toledo,Jodi,OH_Voter,1973-06-27,1973,53,TRUE,unambiguous_unique_name,1,1,NEW ALBANY,43054
-11336,Torres,Barbara,OH_Voter,1942-01-21,1942,84,TRUE,unambiguous_unique_name,1,1,WILLOUGHBY HILLS,44094
-CNM05273,Torres,Nina,OH_Voter,1986-03-27,1986,40,TRUE,unambiguous_unique_name,1,1,EAST CLEVELAND,44118
-CNM2398,Towers,Katherine,OH_Voter,1984-02-02,1984,42,TRUE,unambiguous_unique_name,1,1,ARCHBOLD,43502
-CNM08812,Tran,Thy,OH_Voter,1994-12-19,1994,32,TRUE,unambiguous_unique_name,1,1,GAHANNA,43230
-12916,Trost,Sarah,OH_Voter,1981-05-13,1981,45,TRUE,unambiguous_unique_name,1,1,HUBER HEIGHTS,45424
-CNM09534,Trotter,Anna,OH_Voter,1979-12-07,1979,47,TRUE,unambiguous_unique_name,1,1,NORWALK,44857
-13002,Trout,Kristin,OH_Voter,1989-09-26,1989,37,TRUE,unambiguous_unique_name,1,1,CHILLICOTHE,45601
 CNM08879,Trusty,Emma,OH_Voter,1997-12-13,1997,29,TRUE,unambiguous_unique_name,1,1,UPPER SANDUSKY,43351
-CNM07567,Tunkara,Zahidah,OH_Voter,1977-09-06,1977,49,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43229
-CNM3015,Tyson,Elizabeth,OH_Voter,1977-03-28,1977,49,TRUE,unambiguous_unique_name,1,1,TOLEDO,43606
-CNM05285,Tyson,Kathleen,OH_Voter,1946-10-12,1946,80,TRUE,unambiguous_unique_name,1,1,BLOOMDALE,44817
-CNM04821,Tyson,Sydney,OH_Voter,2002-09-12,2002,24,TRUE,unambiguous_unique_name,1,1,GROVE CITY,43123
-5327,Ullman,Rebecca,OH_Voter,1945-07-10,1945,81,TRUE,unambiguous_unique_name,1,1,MUNROE FALLS,44262
-CNM0259,Ulmer,Ashley,OH_Voter,1987-06-01,1987,39,TRUE,unambiguous_unique_name,1,1,SANDUSKY,44870
-CNM1672,Ulmer,Stacy,OH_Voter,1978-08-13,1978,48,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43232
 CNM04710,Uptain,Crystal,OH_Voter,1984-10-06,1984,42,TRUE,unambiguous_unique_name,1,1,MILLERSBURG,44654
 CNM07172,Vagi,Lisa,OH_Voter,1989-07-19,1989,37,TRUE,unambiguous_unique_name,1,1,ELYRIA,44035
-CNM2131,Valencia,Catalina,OH_Voter,1958-03-30,1958,68,TRUE,unambiguous_unique_name,1,1,MARYSVILLE,43040
 CNM0941,Valle,Laura,OH_Voter,1972-11-29,1972,54,TRUE,unambiguous_unique_name,1,1,NEW ALBANY,43054
-CNM07200,Van Houten,Natalie,OH_Voter,2004-01-31,2004,22,TRUE,unambiguous_unique_name,1,1,CUYAHOGA FALLS,44221
 CNM09070,Varga,Lindsey,OH_Voter,1983-11-14,1983,43,TRUE,unambiguous_unique_name,1,1,LORAIN,44053
-CNM10169,Vargas,Melissa,OH_Voter,1971-04-07,1971,55,TRUE,unambiguous_unique_name,1,1,CAMPBELL,44405
-12565,Vega,Christina,OH_Voter,1996-06-07,1996,30,TRUE,unambiguous_unique_name,1,1,LORAIN,44055
-CNM1167,Vega,Susana,OH_Voter,1956-01-07,1956,70,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44111
-CNM09752,Villegas,Jennifer,OH_Voter,1990-02-20,1990,36,TRUE,unambiguous_unique_name,1,1,OREGON,43616
-CNM07252,Vogel,Leah,OH_Voter,2000-03-31,2000,26,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45219
-CNM05308,Voigt,Marianne,OH_Voter,1980-05-25,1980,46,TRUE,unambiguous_unique_name,1,1,WAPAKONETA,45895
-CNM06614,Wade,Evelyn,OH_Voter,1956-05-07,1956,70,TRUE,unambiguous_unique_name,1,1,NORWALK,44857
-CNM09812,Wade,Tami,OH_Voter,1982-07-14,1982,44,TRUE,unambiguous_unique_name,1,1,BARNESVILLE,43713
-13053,Wade,Virginia,OH_Voter,1948-07-11,1948,78,TRUE,unambiguous_unique_name,1,1,CELINA,45822
-6972,Wakeman,Cheryl,OH_Voter,1953-12-21,1953,73,TRUE,unambiguous_unique_name,1,1,ASHTABULA,44004
-4400,Waldbaum,Lisa,OH_Voter,1971-10-24,1971,55,TRUE,unambiguous_unique_name,1,1,SOLON,44139
-CNM04938,Walden,Emily,OH_Voter,2003-06-03,2003,23,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45251
-CNM07412,Waldron,Sarah,OH_Voter,2000-08-08,2000,26,TRUE,unambiguous_unique_name,1,1,CORTLAND,44410
-CNM08813,Walker,Alecia,OH_Voter,1960-07-24,1960,66,TRUE,unambiguous_unique_name,1,1,NEWARK,43055
-CNM07966,Walker,Allegra,OH_Voter,2000-10-24,2000,26,TRUE,unambiguous_unique_name,1,1,WEST SALEM,44287
-CNM06751,Walker,Shameka,OH_Voter,1982-04-26,1982,44,TRUE,unambiguous_unique_name,1,1,SPRINGFIELD,45503
-4802,Wallace,Arlene,OH_Voter,1942-06-12,1942,84,TRUE,unambiguous_unique_name,1,1,MENTOR,44060
 CNM04105,Wan,Amy,OH_Voter,1974-03-30,1974,52,TRUE,unambiguous_unique_name,1,1,BAY VILLAGE,44140
-CNM04053,Ward,Darcy,OH_Voter,1980-01-11,1980,46,TRUE,unambiguous_unique_name,1,1,HAMILTON,45013
 CNM07530,Wares,Christine,OH_Voter,1973-09-03,1973,53,TRUE,unambiguous_unique_name,1,1,BAY VILLAGE,44140
-CNM3374,Warren,Caitlin,OH_Voter,1993-01-12,1993,33,TRUE,unambiguous_unique_name,1,1,FREMONT,43420
-CNM08922,Warren,Lukas,OH_Voter,2001-11-30,2001,25,TRUE,unambiguous_unique_name,1,1,WARREN,44485
-CNM0620,Waters,Rose,OH_Voter,1942-11-24,1942,84,TRUE,unambiguous_unique_name,1,1,AKRON,44320
-CNM08697,Watson,Julianne,OH_Voter,1969-02-05,1969,57,TRUE,unambiguous_unique_name,1,1,AKRON,44319
 13295,Wayt,Bethany,OH_Voter,1976-08-25,1976,50,TRUE,unambiguous_unique_name,1,1,HILLIARD,43026
-CNM06617,Webb,Leighel,OH_Voter,1975-12-16,1975,51,TRUE,unambiguous_unique_name,1,1,ASHLEY,43003
-CNM06888,Weber,Rebekah,OH_Voter,1990-08-06,1990,36,TRUE,unambiguous_unique_name,1,1,SHELBY,44875
-CNM09846,Webster,Madison,OH_Voter,2000-12-18,2000,26,TRUE,unambiguous_unique_name,1,1,HEATH,43056
-CNM2172,Weinstein,Sarah,OH_Voter,1992-10-31,1992,34,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43209
-CNM10031,Welch,Macy,OH_Voter,2005-11-07,2005,21,FALSE,unambiguous_unique_name,1,1,OXFORD,45056
-CNM06928,Weller,Annette,OH_Voter,1972-05-05,1972,54,TRUE,unambiguous_unique_name,1,1,GREENFIELD,45123
-CNM09970,Wells,Bridget,OH_Voter,1973-08-25,1973,53,TRUE,unambiguous_unique_name,1,1,WARSAW,43844
-CNM04697,Welter,Katherine,OH_Voter,1992-08-28,1992,34,TRUE,unambiguous_unique_name,1,1,TIFFIN,44883
-12463,Weppler,Lisa,OH_Voter,1960-05-24,1960,66,TRUE,unambiguous_unique_name,1,1,MARIETTA,45750
-CNM04486,Wetzel,Abigail,OH_Voter,1980-11-03,1980,46,TRUE,unambiguous_unique_name,1,1,TOLEDO,43609
-CNM03804,Wetzel,Carolyn,OH_Voter,1952-10-13,1952,74,TRUE,unambiguous_unique_name,1,1,ST CLAIRSVILLE,43950
-CNM1050,Wheelock,Heather,OH_Voter,1985-09-07,1985,41,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45211
-CNM08303,Whipple,Kristin,OH_Voter,1992-08-19,1992,34,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43221
-12661,White,Brenna,OH_Voter,2003-01-28,2003,23,TRUE,unambiguous_unique_name,1,1,PIONEER,43554
-CNM08749,Whitehead,Casey,OH_Voter,1985-01-18,1985,41,TRUE,unambiguous_unique_name,1,1,CLEVES,45002
-13052,Whitehurst,Ramona,OH_Voter,1966-09-02,1966,60,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43228
-10562,Whitworth,Elizabeth,OH_Voter,1986-05-29,1986,40,TRUE,unambiguous_unique_name,1,1,MENTOR,44060
 CNM2235,Wilder,Corrie,OH_Voter,1981-02-06,1981,45,TRUE,unambiguous_unique_name,1,1,SHAKER HTS,44120
-12548,Wilhite,Kelly,OH_Voter,1993-12-31,1993,33,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45251
-12914,Wilkes,Charlotte,OH_Voter,1948-12-04,1948,78,TRUE,unambiguous_unique_name,1,1,STOW,44224
-CNM10443,Wilkinson,Claire,OH_Voter,1999-11-23,1999,27,TRUE,unambiguous_unique_name,1,1,TOLEDO,43606
-CNM2614,Wilks,Denise,OH_Voter,1957-04-13,1957,69,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45231
-13087,Willey,Katherine,OH_Voter,1984-10-09,1984,42,TRUE,unambiguous_unique_name,1,1,FAIRLAWN,44333
-CNM09437,Williams,Audra,OH_Voter,1981-06-22,1981,45,TRUE,unambiguous_unique_name,1,1,ANDOVER,44003
-CNM08925,Williams,Renea,OH_Voter,1964-01-15,1964,62,TRUE,unambiguous_unique_name,1,1,PICKERINGTON,43147
 CNM3027,Williams,Rhyan,OH_Voter,1987-12-16,1987,39,TRUE,unambiguous_unique_name,1,1,DELAWARE,43015
-CNM07702,Williams,Shanan,OH_Voter,1972-08-21,1972,54,TRUE,unambiguous_unique_name,1,1,AKRON,44312
-CNM1069,Willis,Alison,OH_Voter,1987-03-03,1987,39,TRUE,unambiguous_unique_name,1,1,PAINESVILLE,44077
-CNM09186,Willman,Samantha,OH_Voter,1998-09-09,1998,28,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43228
-12010,Wilson,Lucy,OH_Voter,1940-04-29,1940,86,FALSE,unambiguous_unique_name,1,1,HEATH,43056
 CNM08353,Winland,Brittany,OH_Voter,1990-03-22,1990,36,TRUE,unambiguous_unique_name,1,1,HILLSBORO,45133
-CNM07042,Winn,Alyssa,OH_Voter,2001-10-17,2001,25,TRUE,unambiguous_unique_name,1,1,BELLBROOK,45305
-CNM1395,Wipert,Natalie,OH_Voter,1963-01-01,1963,63,TRUE,unambiguous_unique_name,1,1,SPRINGFIELD,45502
-CNM0165,Wirtz,Kathleen,OH_Voter,1983-04-18,1983,43,TRUE,unambiguous_unique_name,1,1,STRONGSVILLE,44136
-3043,Witmer,Jennifer,OH_Voter,1981-08-10,1981,45,TRUE,unambiguous_unique_name,1,1,LISBON,44432
-CNM04316,Witten,Elizabeth,OH_Voter,1985-02-13,1985,41,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45242
-CNM07868,Wolfe,Cara,OH_Voter,1968-09-26,1968,58,TRUE,unambiguous_unique_name,1,1,WELLSVILLE,43968
-CNM03865,Wood,Lena,OH_Voter,1974-06-23,1974,52,TRUE,unambiguous_unique_name,1,1,MT STERLING,43143
-CNM04096,Woodall,Katherine,OH_Voter,1994-11-22,1994,32,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45209
-CNM06929,Woods,Aleisha,OH_Voter,1994-01-19,1994,32,TRUE,unambiguous_unique_name,1,1,MEDINA,44256
-CNM0842,Woolley,Alexandra,OH_Voter,2001-06-27,2001,25,TRUE,unambiguous_unique_name,1,1,CLEVELAND,44102
-CNM09390,Wright,Brianne,OH_Voter,1998-05-27,1998,28,TRUE,unambiguous_unique_name,1,1,DUBLIN,43016
-CNM06505,Wright,Susannah,OH_Voter,1994-10-24,1994,32,TRUE,unambiguous_unique_name,1,1,GAHANNA,43230
 CNM08361,Wu,Shelly,OH_Voter,1992-07-27,1992,34,TRUE,unambiguous_unique_name,1,1,BEACHWOOD,44122
-CNM2346,Wylie,Cynthia,OH_Voter,1960-09-19,1960,66,TRUE,unambiguous_unique_name,1,1,FREMONT,43420
-CNM06360,Xiao,Jenny,OH_Voter,1999-09-06,1999,27,TRUE,unambiguous_unique_name,1,1,BOARDMAN,44512
-CNM09097,Xu,Nancy,OH_Voter,2000-06-16,2000,26,TRUE,unambiguous_unique_name,1,1,SHAKER HTS,44120
-12763,Yanke,Melanie,OH_Voter,1972-02-28,1972,54,TRUE,unambiguous_unique_name,1,1,STRONGSVILLE,44136
-CNM09950,Yeager,Melissa,OH_Voter,1975-12-21,1975,51,TRUE,unambiguous_unique_name,1,1,BLACKLICK,43004
-12858,Yoder,Sabrina,OH_Voter,1969-10-14,1969,57,TRUE,unambiguous_unique_name,1,1,MILLERSBURG,44654
-CNM0106,Younger,Amanda,OH_Voter,1993-07-11,1993,33,TRUE,unambiguous_unique_name,1,1,CASTALIA,44824
 CNM09460,Zahorsky,Melissa,OH_Voter,1987-01-15,1987,39,TRUE,unambiguous_unique_name,1,1,CHAGRIN FALLS,44023
-CNM04133,Ziebell,Elisabeth,OH_Voter,1960-12-28,1960,66,TRUE,unambiguous_unique_name,1,1,CINCINNATI,45243
-13088,Ziemke,Suzanne,OH_Voter,1968-05-24,1968,58,TRUE,unambiguous_unique_name,1,1,HOLLAND,43528
 CNM09412,Zientek,Lena,OH_Voter,1994-04-02,1994,32,TRUE,unambiguous_unique_name,1,1,PEMBERVILLE,43450
-CNM08329,Zilla,Megan,OH_Voter,1985-12-03,1985,41,TRUE,unambiguous_unique_name,1,1,TERRACE PARK,45174
-CNM1257,Zimmer,Terry,OH_Voter,1978-12-30,1978,48,TRUE,unambiguous_unique_name,1,1,MANSFIELD,44907
-CNM07940,Zimmerman,Adrienne,OH_Voter,1983-06-17,1983,43,TRUE,unambiguous_unique_name,1,1,PATASKALA,43062
-11992,Zimmermann,Amy,OH_Voter,1965-02-23,1965,61,TRUE,unambiguous_unique_name,1,1,MASON,45040
 CNM1262,Zimmermann,Lily,OH_Voter,1986-12-21,1986,40,TRUE,unambiguous_unique_name,1,1,COLUMBUS,43214
-CNM07039,Zito,Jessica,OH_Voter,1989-04-03,1989,37,TRUE,unambiguous_unique_name,1,1,CONNEAUT,44030
 4413,Zwolinski,Nina,OH_Voter,1955-02-19,1955,71,TRUE,unambiguous_unique_name,1,1,WESTLAKE,44145
 12620,Austin,Elizabeth,OH_Voter,1982-11-22,1982,44,TRUE,geo_disambiguated_name,0.95,12,COLUMBUS,43220
 CNM2288,Bair,Megan,OH_Voter,1988-10-22,1988,38,TRUE,geo_disambiguated_name,0.95,3,UPPER SANDUSKY,43351
@@ -1120,10 +186,7 @@ CNM04955,Clark,Whitney,OH_Voter,1991-07-05,1991,35,TRUE,geo_disambiguated_name,0
 CNM1173,Cooper,Andrea,OH_Voter,1989-07-14,1989,37,TRUE,geo_disambiguated_name,0.95,11,GAHANNA,43230
 CNM0245,Ellis,Kelly,OH_Voter,1980-03-24,1980,46,TRUE,geo_disambiguated_name,0.95,14,GRANVILLE,43023
 CNM10503,Fox,Aubrey,OH_Voter,1995-11-12,1995,31,TRUE,geo_disambiguated_name,0.95,4,COLUMBUS,43221
-CM0145,Fox,Patricia,OH_Voter,1968-01-09,1968,58,TRUE,geo_disambiguated_name,0.95,29,BROOKLYN,44144
 12444,Francis,Barbara,OH_Voter,1964-08-02,1964,62,TRUE,geo_disambiguated_name,0.95,8,PERRY,44081
-CNM07824,Hale,Angela,OH_Voter,1973-05-31,1973,53,TRUE,geo_disambiguated_name,0.95,20,WILLIAMSBURG,45176
-CNM2701,Harris,Nina,OH_Voter,1998-07-08,1998,28,TRUE,geo_disambiguated_name,0.95,4,OBERLIN,44074
 CNM07000,Hermiller,Jennifer,OH_Voter,1983-06-24,1983,43,TRUE,geo_disambiguated_name,0.95,2,LIMA,45807
 CNM05172,Kim,Rebecca,OH_Voter,1985-06-30,1985,41,TRUE,geo_disambiguated_name,0.95,6,CLEVELAND HTS,44118
 CNM0828,King,Carla,OH_Voter,1966-03-30,1966,60,TRUE,geo_disambiguated_name,0.95,17,DAYTON,45431
@@ -1131,7 +194,6 @@ CNM07368,Lewis,Andrea,OH_Voter,1988-06-02,1988,38,TRUE,geo_disambiguated_name,0.
 CNM0738,Littleton,Susan,OH_Voter,1982-08-18,1982,44,TRUE,geo_disambiguated_name,0.95,3,COLUMBUS,43221
 CNM10467,May,Heather,OH_Voter,1971-08-26,1971,55,TRUE,geo_disambiguated_name,0.95,12,COLUMBUS,43209
 CNM05740,Metzger,Katherine,OH_Voter,2001-05-03,2001,25,TRUE,geo_disambiguated_name,0.95,2,CINCINNATI,45213
-13322,Miller,Laurel,OH_Voter,1990-11-15,1990,36,TRUE,geo_disambiguated_name,0.95,5,DOVER,44622
 CNM1106,Miller,Melanie,OH_Voter,1972-02-29,1972,54,TRUE,geo_disambiguated_name,0.95,63,SYLVANIA,43560
 CNM04435,Mitchell,Hope,OH_Voter,1967-01-30,1967,59,TRUE,geo_disambiguated_name,0.95,5,TOLEDO,43607
 CNM09685,Newman,Jessica,OH_Voter,1996-01-08,1996,30,TRUE,geo_disambiguated_name,0.95,20,COLUMBUS,43204
@@ -1139,6 +201,4 @@ CNM09685,Newman,Jessica,OH_Voter,1996-01-08,1996,30,TRUE,geo_disambiguated_name,
 13323,Pool,Kathleen,OH_Voter,1975-05-27,1975,51,TRUE,geo_disambiguated_name,0.95,2,TIFFIN,44883
 CNM06145,Robinson,Nadia,OH_Voter,1988-01-20,1988,38,TRUE,geo_disambiguated_name,0.95,2,CLEVELAND,44102
 CNM05001,Simmons,Brianna,OH_Voter,1994-02-21,1994,32,TRUE,geo_disambiguated_name,0.95,3,CLEVELAND,44110
-8231,Smith,Lindsay,OH_Voter,1990-06-15,1990,36,TRUE,geo_disambiguated_name,0.95,61,MIAMISBURG,45342
-12410,Williams,Cynthia,OH_Voter,1977-10-27,1977,49,TRUE,geo_disambiguated_name,0.95,137,JACKSON,45640
 CNM03997,Yeager,Renee,OH_Voter,1989-11-19,1989,37,TRUE,geo_disambiguated_name,0.95,5,COLUMBUS,43235

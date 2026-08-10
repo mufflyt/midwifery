@@ -88,8 +88,8 @@ links <- unique(raw_matches)
 cat(sprintf("Found %d Statewide Voter File (SWVF) products.\n", length(links)))
 
 if (!length(links)) {
-  cat("Calling Python APEX session link helper...\n")
-  py_cmd <- "python3 -c \"import requests, re, html; s = requests.Session(); r = s.get('https://www6.ohiosos.gov/ords/f?p=VOTERFTP:STWD', headers={'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'}, verify=False); print('\\n'.join(re.findall(r'f\\?p=VOTERFTP:DOWNLOAD::FILE::2:P2_PRODUCT_NUMBER:[^\\s\\\"\\'>]+', html.unescape(r.text))))\""
+  cat("Calling Python APEX session link helper with retry...\n")
+  py_cmd <- "python3 -c \"import requests, re, html, time; s = requests.Session(); res = []\nfor _ in range(5):\n    try:\n        r = s.get('https://www6.ohiosos.gov/ords/f?p=VOTERFTP:STWD', headers={'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'}, verify=False, timeout=15)\n        res = re.findall(r'f\\?p=VOTERFTP:DOWNLOAD::FILE::2:P2_PRODUCT_NUMBER:[^\\s\\\"\\'>]+', html.unescape(r.text))\n        if res: break\n    except Exception:\n        pass\n    time.sleep(1)\nprint('\\n'.join(res))\""
   links <- suppressWarnings(system(py_cmd, intern = TRUE))
   links <- unique(links[nzchar(links)])
   cat(sprintf("Retrieved %d product links via session helper.\n", length(links)))
@@ -105,11 +105,17 @@ for (i in seq_along(links)) {
   cat(sprintf("  URL: %s\n", dl_url))
 
   tf <- tempfile(fileext = ".txt.gz")
-  py_dl <- sprintf("python3 -c \"import requests; s = requests.Session(); r = s.get('%s', headers={'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'}, verify=False); open('%s', 'wb').write(r.content)\"", dl_url, tf)
-  suppressWarnings(system(py_dl, ignore.stdout = TRUE, ignore.stderr = TRUE))
+  
+  # Download with retry
+  for (attempt in 1:3) {
+    py_dl <- sprintf("python3 -c \"import requests; s = requests.Session(); r = s.get('%s', headers={'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'}, verify=False, timeout=60); open('%s', 'wb').write(r.content)\"", dl_url, tf)
+    suppressWarnings(system(py_dl, ignore.stdout = TRUE, ignore.stderr = TRUE))
+    if (file.exists(tf) && file.size(tf) > 10000000) break  # Expected >10MB compressed archive
+    Sys.sleep(1)
+  }
 
-  if (!file.exists(tf) || file.size(tf) < 1000) {
-    warning(sprintf("Error fetching product %d archive", i))
+  if (!file.exists(tf) || file.size(tf) < 1000000) {
+    warning(sprintf("Error fetching product %d archive (size: %s)", i, if (file.exists(tf)) file.size(tf) else 0))
     if (file.exists(tf)) unlink(tf)
     next
   }
@@ -131,6 +137,11 @@ for (i in seq_along(links)) {
 
   unlink(tf) # cleanup tempfile
 
+  if (!all(c("LAST_NAME", "FIRST_NAME", "DATE_OF_BIRTH") %in% names(voter_df))) {
+    warning(sprintf("Product %d missing required name/DOB columns", i))
+    next
+  }
+
   cat(sprintf("  Parsed %s voter records.\n", format(nrow(voter_df), big.mark = ",")))
 
   voter_df <- voter_df %>%
@@ -151,11 +162,19 @@ for (i in seq_along(links)) {
 }
 
 all_voters <- bind_rows(voter_list)
+
+if (nrow(all_voters) == 0)
+  stop("No voter records successfully downloaded.", call. = FALSE)
+
 cat(sprintf("\nTotal Ohio Voter Records Streamed: %s\n",
             format(nrow(all_voters), big.mark = ",")))
 
 # --- 4. 3-Stage Disambiguation & Deduplication ------------------------------
 cat("\n=== Executing 3-Stage Disambiguation Engine in R ===\n")
+cat("State Blocking Mode: STRICT_STATE (nppes_state == OH)\n")
+
+# Filter cohort by state blocker (OH residents/practitioners)
+coh_state_blocked <- coh %>% filter(nppes_state == "OH")
 
 # Count voter name occurrences in full state database
 voter_counts <- all_voters %>%
@@ -163,13 +182,13 @@ voter_counts <- all_voters %>%
 
 # Candidate join against full voter database
 candidate_joins <- inner_join(
-  coh,
+  coh_state_blocked,
   all_voters,
   by = c("last_upper", "first_upper")
 ) %>%
   left_join(voter_counts, by = c("last_upper", "first_upper"))
 
-cat(sprintf("Candidate matches generated: %s\n", format(nrow(candidate_joins), big.mark = ",")))
+cat(sprintf("Candidate matches generated (State-Blocked OH): %s\n", format(nrow(candidate_joins), big.mark = ",")))
 
 # Tier 1: Unambiguous Unique Name (voter_freq_in_ohio == 1)
 tier1 <- candidate_joins %>%
