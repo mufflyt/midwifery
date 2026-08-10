@@ -4,7 +4,7 @@ Cohort: **11,913** midwives with AMCB status ACTIVE and a primary-tier NPI link.
 Percentages are within category and use the non-missing denominator;
 unknowns are counted on their own row.
 
-Registry-derived rows use the full cohort. Healthgrades-derived rows use a smaller denominator of **11,894**: 19 midwives share a Healthgrades profile with another certificant and cannot be attributed one. They remain in the cohort for every registry-derived row above.
+Registry-derived rows use the full cohort. Healthgrades-derived rows use a smaller denominator of **11,844**: 69 midwives share a Healthgrades profile with another certificant and cannot be attributed one. They remain in the cohort for every registry-derived row above.
 
 | Characteristic | n | % |
 |---|---:|---:|
@@ -52,5 +52,5 @@ Registry-derived rows use the full cohort. Healthgrades-derived rows use a small
 | **Language** | | |
 | Not collected by NPPES, CMS DAC or the Healthgrades scrape | — | — |
 | **Healthgrades-derived fields** | | |
-| Eligible for attribution (no shared profile) | 11,894 | 99.8 |
-| Excluded: profile shared with another certificant | 19 | — |
+| Eligible for attribution (no shared profile) | 11,844 | 99.4 |
+| Excluded: profile shared with another certificant | 69 | — |

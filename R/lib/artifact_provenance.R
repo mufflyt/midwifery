@@ -49,8 +49,17 @@ source(file.path("R", "lib", "provenance.R"))
   ifelse(startsWith(ab, paste0(root, "/")), substring(ab, nchar(root) + 2L), p)
 }
 
-write_with_provenance <- function(x, path, inputs = character(0)) {
-  readr::write_csv(x, path, na = "")
+#' @param ... passed through to `readr::write_csv()`.
+#'
+#' CYCLE 21b. This used to hard-code `na = ""`. Of the 47 write sites in the
+#' pipeline only 10 pass `na = ""` explicitly; the other 37 rely on readr's
+#' default of `"NA"`. Converting them to a wrapper that forces `""` would have
+#' rewritten every one of those artifacts -- silently changing how missingness
+#' is represented in files this project has spent six cycles proving treat
+#' missing and zero as different things. The wrapper now changes provenance
+#' only, never content.
+write_with_provenance <- function(x, path, inputs = character(0), ...) {
+  readr::write_csv(x, path, ...)
   inputs <- inputs[file.exists(inputs)]
   side <- paste0(path, ".provenance.json")
   jsonlite::write_json(
