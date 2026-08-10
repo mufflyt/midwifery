@@ -51,6 +51,11 @@ suppressPackageStartupMessages({
   library(DBI); library(duckdb)
 })
 
+# Helpers shared with the other numbered scripts. Defined once: these were
+# duplicated across files sourced into one environment, where load order
+# decided which definition won.
+source(file.path("R", "lib", "common_helpers.R"))
+
 source(file.path("R", "lib", "isochrones_dep.R"))
 source(file.path("R", "lib", "ob_hospitals.R"))
 
@@ -80,12 +85,6 @@ source(file.path("R", "lib", "provenance.R"))  # canonical sha256_of()
 #' reason. Worth a small isochrones PR.
 #' @keywords internal
 #' @noRd
-with_iso_wd <- function(expr) {
-  old <- getwd()
-  setwd(ISO)
-  on.exit(setwd(old), add = TRUE)
-  force(expr)
-}
 
 #' Load the canonical geocoding stack, aborting if unavailable
 #' @keywords internal

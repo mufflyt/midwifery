@@ -36,13 +36,16 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(tidyr); library(cli)
 })
 
+# Helpers shared with the other numbered scripts. Defined once: these were
+# duplicated across files sourced into one environment, where load order
+# decided which definition won.
+source(file.path("R", "lib", "common_helpers.R"))
+
 ART <- "artifacts"
 STAGE2 <- file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")
 COHORT <- file.path(ART, "frozen_cohort", "analytic_cohort.csv")
 LINKAGE <- file.path(ART, "amcb_npi_linkage_FROZEN.csv")
 
-chr <- function(f) read_csv(f, show_col_types = FALSE,
-                            col_types = cols(.default = col_character()))
 
 build_flow <- function() {
   s2_all <- chr(STAGE2)

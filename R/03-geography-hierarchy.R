@@ -50,8 +50,12 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(tidyr); library(cli); library(tigris)
 })
 
+# Helpers shared with the other numbered scripts. Defined once: these were
+# duplicated across files sourced into one environment, where load order
+# decided which definition won.
+source(file.path("R", "lib", "common_helpers.R"))
+
 DATA <- "data"; ART <- "artifacts"
-`%||%` <- function(a, b) if (is.null(a)) b else a
 # Default to the guarded linkage. The earlier Stage 2 roster had no
 # identifiability guard: 2,847 of its 16,743 matched rows are unmatched,
 # quarantined, or assigned to a DIFFERENT NPI under the guard, and 2,368 of
@@ -61,7 +65,6 @@ FROZEN <- Sys.getenv("STAGE2_FROZEN",
 GEO_OUT <- Sys.getenv("STAGE3_OUT", "midwives_geography.csv")
 dir.create(ART, showWarnings = FALSE)
 
-pad5 <- function(x) str_pad(as.character(x), 5, "left", "0")
 #' Two-digit state FIPS for a USPS state code
 state_fips_of <- function(x) {
   lu <- distinct(tigris::fips_codes, state, state_code)

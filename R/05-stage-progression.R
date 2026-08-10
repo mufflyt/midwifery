@@ -41,10 +41,14 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(tidyr); library(cli); library(jsonlite)
 })
 
+# Helpers shared with the other numbered scripts. Defined once: these were
+# duplicated across files sourced into one environment, where load order
+# decided which definition won.
+source(file.path("R", "lib", "common_helpers.R"))
+
 ART <- "artifacts"; DATA <- "data"
 FROZEN_DIR <- file.path(ART, "frozen_cohort")
 dir.create(FROZEN_DIR, showWarnings = FALSE, recursive = TRUE)
-pad5 <- function(x) str_pad(as.character(x), 5, "left", "0")
 
 GEO4 <- Sys.getenv("GEOGRAPHY_FILE", "midwives_geography_guarded.csv")
 GEO3 <- "midwives_geography.csv"          # ZIP-fallback era output

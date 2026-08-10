@@ -142,3 +142,7 @@ hg_enrich_run.out
 hg_snapshot_*.csv
 premerge_*_healthgrades_*
 hg_sweep.out
+
+# Join-provenance logs written at runtime by safe_left_join(); one timestamped
+# file per join, including from the test suite. Diagnostics, not artifacts.
+artifacts/step00_summary/

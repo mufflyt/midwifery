@@ -57,15 +57,17 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(tidyr); library(cli)
 })
 
+# Helpers shared with the other numbered scripts. Defined once: these were
+# duplicated across files sourced into one environment, where load order
+# decided which definition won.
+source(file.path("R", "lib", "common_helpers.R"))
+
 ART <- "artifacts"; DATA <- "data"
 STAGE2 <- file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")
 COHORT <- file.path(ART, "frozen_cohort", "analytic_cohort.csv")
 FROZEN_GEO <- file.path(ART, "frozen_cohort", "midwives_geography_guarded.csv")
 LINKAGE <- file.path(ART, "amcb_npi_linkage_FROZEN.csv")
 
-chr <- function(f) read_csv(f, show_col_types = FALSE,
-                            col_types = cols(.default = col_character()))
-pad5 <- function(x) str_pad(as.character(x), 5, "left", "0")
 
 #' n/N (%) by group for one characteristic, with a max-vs-min effect size
 #'

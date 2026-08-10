@@ -35,16 +35,17 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(cli); library(jsonlite)
 })
 
-`%||%` <- function(a, b) if (is.null(a) || length(a) == 0 || all(is.na(a))) b else a
+# Helpers shared with the other numbered scripts. Defined once: these were
+# duplicated across files sourced into one environment, where load order
+# decided which definition won.
+source(file.path("R", "lib", "common_helpers.R"))
+
 
 source(file.path("R", "lib", "isochrones_dep.R"))
 ISO <- isochrones_home()
 GEO <- file.path("artifacts", "ob_hospitals_geocoded.csv")
 LOG <- file.path("artifacts", "ob_hospitals_fallback_log.csv")
 
-with_iso_wd <- function(expr) {
-  old <- getwd(); setwd(ISO); on.exit(setwd(old), add = TRUE); force(expr)
-}
 
 run_fallbacks <- function() {
   stopifnot(file.exists(GEO))
@@ -96,11 +97,11 @@ run_fallbacks <- function() {
     }
     res[[i]] <- tibble(
       prvdr_num = r$prvdr_num,
-      fb_lat  = pick(out, "latitude", "lat")  %||% NA_real_,
-      fb_lon  = pick(out, "longitude", "lon") %||% NA_real_,
-      fb_match_type = as.character(pick(out, "match_type") %||% NA_character_),
-      fb_source     = as.character(pick(out, "geocode_source") %||% NA_character_),
-      fb_provenance = as.character(pick(out, "geocoder_provenance") %||% NA_character_))
+      fb_lat  = pick(out, "latitude", "lat")  %|na|% NA_real_,
+      fb_lon  = pick(out, "longitude", "lon") %|na|% NA_real_,
+      fb_match_type = as.character(pick(out, "match_type") %|na|% NA_character_),
+      fb_source     = as.character(pick(out, "geocode_source") %|na|% NA_character_),
+      fb_provenance = as.character(pick(out, "geocoder_provenance") %|na|% NA_character_))
     if (i %% 50 == 0) cli::cli_alert_info("  {i}/{nrow(todo)}")
   }
   fb <- bind_rows(res)

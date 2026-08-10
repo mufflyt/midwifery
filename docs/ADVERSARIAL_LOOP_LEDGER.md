@@ -1249,3 +1249,81 @@ assert that refusal as behaviour rather than working around it.
 - **DECISION NEEDED:** whether a `ct_partial` region is reported (c4).
 
 **No scientific estimand was changed in this cycle.**
+
+---
+
+## Cycle 9 — 2026-08-09 23:5x — 3 BVA / 3 semantic / 4 adversarial
+
+**Target.** Joins and duplicate definitions. Tests in
+`tests/test_cycle9_joins.R`; helpers consolidated into
+`R/lib/common_helpers.R`; join provenance in `R/lib/provenance.R`.
+
+**DEFECT — a helper whose meaning depended on load order.** The numbered
+scripts are sourced in sequence into ONE environment, so a helper defined twice
+is not two private copies; it is one name whose winner is decided by source
+order. Five duplicates existed, and one had already diverged:
+
+| helper | copies | status |
+|---|---:|---|
+| `pad5` | 4 | identical |
+| `chr` | 2 | identical |
+| `fmt` | 2 | identical |
+| `with_iso_wd` | 2 | identical |
+| **`%||%`** | 2 | **DIVERGENT** |
+
+```
+R/03-geography-hierarchy.R    if (is.null(a)) b else a
+R/14-geocode-ob-fallbacks.R   if (is.null(a) || length(a) == 0 || all(is.na(a))) b else a
+```
+
+Same name, different answers for `NA %||% x` and `character(0) %||% x`, with
+the winner set by which file was sourced last.
+
+**Fix.** All five moved to `R/lib/common_helpers.R`. The two `%||%` behaviours
+are BOTH wanted, in different places, so they were **not merged** — merging
+would silently change one caller's semantics. They now have distinct names:
+`%||%` keeps the standard null-coalesce, and the missing-aware variant is
+`%|na|%`, which says what it does. File 14's five call sites were switched to
+`%|na|%`, preserving their existing behaviour exactly.
+
+**A duplicate the test itself missed.** T84 listed four duplicates
+(`pad5`, `chr`, `fmt`, `with_iso_wd`) — it did not report `%||%`, the only
+divergent one, because it matched on plain-name definitions and `%||%` is
+written with backticks. Found by re-deriving duplicates through R's own parser
+rather than by grep. The parser-based check is the one to keep: a
+grep-shaped test misses exactly the definitions that look unusual, and those
+are disproportionately the operators.
+
+**Ratchet tightened 4 → 0.** T84's baseline recorded 4 duplicates as accepted
+debt. With all five resolved, leaving it at 4 would let three creep back
+without failing — debt returning under cover of a passing test.
+
+**Behaviour preserved.** Verified each helper resolves and behaves as before
+(`pad5(1234) == "01234"`, `fmt(1234.56, 1) == "1,234.6"`, `fmt(NA)` is NULL),
+and that the two operators genuinely differ (`NA %||% 5` is NA;
+`NA %|na|% 5` is 5) — if they agreed, splitting them would have been pointless.
+
+**Repair during the fix.** The regex that stripped the local definitions
+clipped the first line of the two-line `chr` definition and left its
+continuation, breaking `R/06-cohort-flow.R` and `R/07-cohort-composition.R`.
+Caught by the parse check before the suite ran, and repaired.
+
+**Housekeeping.** `safe_left_join()` writes a timestamped provenance file per
+join into `artifacts/step00_summary/`, including from the test suite — 24 files
+appeared during this cycle. Diagnostics, not artifacts; now gitignored.
+
+**Full suite.** 14/14 pass, 0 skips.
+
+**Carried forward.**
+
+- **DECISION NEEDED:** GFR reliability treatment (MOE-aware or smoothed).
+- **DECISION NEEDED:** ratify the `women_15_44` partial-sum reading.
+- **DECISION NEEDED:** Table 1 panel-window censoring on ">=15 years".
+- **DECISION NEEDED:** whether a `ct_partial` region should be reported.
+- **DECISION NEEDED:** minimum cohort coverage for a Healthgrades field.
+- **ACTION:** rebuild Table 1 when the crawl finishes.
+- **DEBT:** 46 bare joins (8 guarded), ratcheted by T89; 14 bare `.keep_all`
+  sites, ratcheted by T44.
+- **HYGIENE:** duplicate test IDs across cycle 6 / cycle 7 files.
+
+**Estimand changed:** no.

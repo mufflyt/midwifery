@@ -42,6 +42,11 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(cli); library(jsonlite)
 })
 
+# Helpers shared with the other numbered scripts. Defined once: these were
+# duplicated across files sourced into one environment, where load order
+# decided which definition won.
+source(file.path("R", "lib", "common_helpers.R"))
+
 # The variety-sentence engine is CANONICAL in mufflyt/isochrones
 # (R/variety_sentences.R, PR #519). It is loaded, never copied: a second
 # definition would drift from the one the urogyn maps use.
@@ -91,11 +96,6 @@ source(file.path("R", "lib", "provenance.R"))  # canonical sha256_of()
 #' Format a number for prose, returning NULL when unusable
 #' @keywords internal
 #' @noRd
-fmt <- function(x, digits = 0, big = TRUE) {
-  if (is.null(x) || length(x) != 1L || is.na(x)) return(NULL)
-  formatC(round(x, digits), format = "f", digits = digits,
-          big.mark = if (big) "," else "")
-}
 
 RUCC_LABEL <- c(
   "1" = "a metro county in a large metro area",

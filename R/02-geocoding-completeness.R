@@ -78,10 +78,14 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(tidyr); library(cli)
 })
 
+# Helpers shared with the other numbered scripts. Defined once: these were
+# duplicated across files sourced into one environment, where load order
+# decided which definition won.
+source(file.path("R", "lib", "common_helpers.R"))
+
 DATA <- "data"; ART <- "artifacts"
 dir.create(ART, showWarnings = FALSE)
 
-pad5 <- function(x) str_pad(as.character(x), 5, "left", "0")
 
 #' ZIP (approximated by ZCTA) -> county GEOID, largest-land-area wins
 #'

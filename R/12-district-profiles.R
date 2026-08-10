@@ -46,6 +46,11 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(sf); library(cli); library(jsonlite)
 })
 
+# Helpers shared with the other numbered scripts. Defined once: these were
+# duplicated across files sourced into one environment, where load order
+# decided which definition won.
+source(file.path("R", "lib", "common_helpers.R"))
+
 source(file.path("R", "lib", "isochrones_dep.R"))
 source(file.path("R", "lib", "congress_roster.R"))
 load_variety_sentence_engine(quiet = TRUE)
@@ -58,11 +63,6 @@ ACS_YEAR <- 2023L
 
 source(file.path("R", "lib", "provenance.R"))  # canonical sha256_of()
 
-fmt <- function(x, digits = 0, big = TRUE) {
-  if (is.null(x) || length(x) != 1L || is.na(x)) return(NULL)
-  formatC(round(x, digits), format = "f", digits = digits,
-          big.mark = if (big) "," else "")
-}
 
 # Variables verified against the Census metadata API rather than recalled:
 # an early draft used B13002_005 (married women 20-34) for unmarried births and

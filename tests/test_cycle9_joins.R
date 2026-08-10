@@ -122,7 +122,12 @@ cat("\n-- SEMANTIC --\n")
   # individually by design. Their copies are textually equivalent today. That is
   # a coincidence rather than a contract, so the count is RATCHETED and named
   # rather than declared clean.
-  BASELINE <- 4L
+  # Ratchet tightened from 4 to 0: the four identical duplicates (pad5, chr,
+  # fmt, with_iso_wd) and the DIVERGENT %||% were all resolved into
+  # R/lib/common_helpers.R this cycle. Leaving the baseline at 4 would let
+  # three duplicates creep back without failing, which is the debt returning
+  # under cover of a passing test.
+  BASELINE <- 0L
   chk(length(dupes) <= BASELINE,
       sprintf("T84b duplicate-definition count does not grow beyond the recorded debt [%d of %d: %s]",
               length(dupes), BASELINE,
