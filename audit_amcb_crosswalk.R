@@ -39,6 +39,19 @@ REF <- Sys.getenv("CROSSWALK_REF", "artifacts/amcb_npi_linkage_FROZEN.csv")
 OUT_DIR <- "artifacts"
 stopifnot(file.exists(XW))
 
+# DIFF AND SAMPLE FILENAMES MUST ENCODE WHAT THEY DESCRIBE (2026-08-10).
+# Writing a fixed "amcb_crosswalk_diff_vs_baseline.csv" repeated the defect
+# this repo has now hit three times: the accent run diffed against FROZEN, the
+# component run diffed against the accent crosswalk, and the second silently
+# replaced the first under a name that claims to describe neither. The stem
+# derives from BOTH inputs, so two A/B arms cannot collide.
+stem <- function(p) sub("\\.csv$", "", sub("^amcb_npi_crosswalk_", "", basename(p)))
+short <- function(p) sub("_panel-.*$", "", stem(p))
+DIFF_OUT <- file.path(OUT_DIR, sprintf("amcb_crosswalk_diff_%s_vs_%s.csv",
+                                       short(XW), short(REF)))
+SAMP_OUT <- file.path(OUT_DIR, sprintf("amcb_crosswalk_review_sample_%s.csv",
+                                       short(XW)))
+
 cc <- cols(.default = "c")
 x <- read_csv(XW, col_types = cc)
 n <- nrow(x)
@@ -68,6 +81,7 @@ line("exact unique matches (class 1: +middle initial)", sum(matched & ec == 1, n
 line("exact unique matches (class 2: no middle info)",  sum(matched & ec == 2, na.rm = TRUE))
 line("high-confidence non-exact (class 3: first initial)", sum(matched & ec == 3, na.rm = TRUE))
 line("fuzzy surname (class 4, sensitivity only)",       sum(matched & ec == 4, na.rm = TRUE))
+line("surname component (class 5, sensitivity only)",  sum(matched & ec == 5, na.rm = TRUE))
 line("ambiguous (candidates existed, none resolved)",
      sum(grepl("^ambiguous", x$npi_match_status)))
 line("unmatched (no candidate at all)", sum(x$npi_match_status == "unmatched"))
@@ -131,9 +145,8 @@ if (file.exists(REF)) {
   if (!nrow(mv)) cat("  (none)\n")
 
   changed <- j %>% filter(!same_npi | tier_old != tier_new)
-  write_csv(changed, file.path(OUT_DIR, "amcb_crosswalk_diff_vs_baseline.csv"), na = "")
-  cat(sprintf("\nrow-level diff written: %s (%s rows)\n",
-              file.path(OUT_DIR, "amcb_crosswalk_diff_vs_baseline.csv"), fmt(nrow(changed))))
+  write_csv(changed, DIFF_OUT, na = "")
+  cat(sprintf("\nrow-level diff written: %s (%s rows)\n", DIFF_OUT, fmt(nrow(changed))))
 
   # The accent cohort specifically: this is the population the fix targeted, so
   # its movement is the direct test of whether the fix did what was claimed.
@@ -143,6 +156,29 @@ if (file.exists(REF)) {
   ja <- j %>% filter(amcb_id %in% acc_ids)
   cat(sprintf("\n-- the %d roster rows with non-ASCII names --\n", length(acc_ids)))
   print(as.data.frame(ja %>% count(tier_old, tier_new, sort = TRUE)))
+
+  # THE DIRECT TEST OF THE COMPONENT STRATEGY. The gap it targets was stated as
+  # a RATE DIFFERENCE -- 27.1% unmatched for hyphenated surnames against 9.8%
+  # for unhyphenated -- so the fix has to be judged on whether that gap closed,
+  # not on how many extra matches appeared. A strategy that raised both rates
+  # equally would have bought nothing.
+  hy <- x %>%
+    transmute(amcb_id, hyph = grepl("-", normalized_last_name),
+              unm_new = npi_match_status == "unmatched") %>%
+    left_join(r %>% transmute(amcb_id, unm_old = npi_match_status == "unmatched"),
+              by = "amcb_id")
+  cat("\n-- unmatched rate by compound surname, before -> after --\n")
+  print(as.data.frame(hy %>% group_by(hyph) %>%
+    summarise(n = n(),
+              unmatched_before = sum(unm_old, na.rm = TRUE),
+              pct_before = round(100 * mean(unm_old, na.rm = TRUE), 1),
+              unmatched_after = sum(unm_new),
+              pct_after = round(100 * mean(unm_new), 1), .groups = "drop")))
+  gb <- with(hy, mean(unm_old[hyph], na.rm = TRUE) - mean(unm_old[!hyph], na.rm = TRUE))
+  ga <- with(hy, mean(unm_new[hyph]) - mean(unm_new[!hyph]))
+  cat(sprintf("compound-surname penalty: %+.1f pp before -> %+.1f pp after (%s)\n",
+              100 * gb, 100 * ga,
+              if (abs(ga) < abs(gb)) "narrowed" else "NOT narrowed"))
 } else {
   cat(sprintf("\n[skip] baseline %s not found\n", REF))
 }
@@ -158,7 +194,9 @@ take <- function(df, k, stratum) {
 cols_keep <- intersect(
   c("amcb_customer_id", "amcb_id", "amcb_name_original", "certification", "status",
     "normalized_first_name", "normalized_middle_name", "normalized_last_name",
-    "npi", "nppes_first_name", "nppes_middle_name", "nppes_last_name",
+    "npi", "nppes_matched_first", "nppes_matched_last",
+    "nppes_first_name", "nppes_middle_name", "nppes_last_name",
+    "nppes_name_changed_since_match",
     "nppes_credential", "nppes_city", "nppes_state", "nppes_location_year",
     "name_evidence_class", "npi_match_method", "npi_match_confidence",
     "npi_tax_class", "candidate_count", "n_at_best_class", "linkage_tier",
@@ -174,7 +212,7 @@ sample_out <- bind_rows(
   take(xs[x$npi_match_status == "unmatched", ], 25, "unmatched")) %>%
   mutate(reviewer_verdict = "", reviewer_notes = "")
 
-samp_path <- file.path(OUT_DIR, "amcb_crosswalk_review_sample.csv")
+samp_path <- SAMP_OUT
 write_csv(sample_out, samp_path, na = "")
 cat(sprintf("\nstratified review sample: %s (%s rows, seed 20260810)\n",
             samp_path, fmt(nrow(sample_out))))

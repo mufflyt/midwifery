@@ -188,5 +188,70 @@ cat("\n-- adversarial --\n")
               sum(merged)))
 }
 
+cat("\n-- surname components --\n")
+
+# T14 (BVA). The compound forms that actually appear in the roster: hyphen and
+# space separated. Both must yield both components.
+{
+  a <- amcb_surname_tokens("McCarthy-Dervin")
+  b <- amcb_surname_tokens("Harvey Capista")
+  chk(identical(a, c("MCCARTHY", "DERVIN")) && identical(b, c("HARVEY", "CAPISTA")),
+      sprintf("T14 hyphen and space compounds split into components [%s | %s]",
+              paste(a, collapse = "+"), paste(b, collapse = "+")))
+}
+
+# T15 (semantic). The join the gap requires: AMCB holds the compound, NPPES
+# holds one component. They must share a token.
+{
+  shared <- intersect(amcb_surname_tokens("Walker-Schrader"),
+                      amcb_surname_tokens("Schrader"))
+  chk(identical(shared, "SCHRADER"),
+      sprintf("T15 compound and single-component surname share a token [%s]",
+              paste(shared, collapse = ",")))
+}
+
+# T16 (adversarial). Particles must NOT become join keys. "DE" shared between
+# two unrelated Spanish surnames is a naming convention, not identity evidence.
+{
+  x <- amcb_surname_tokens("De La Cruz"); y <- amcb_surname_tokens("De Leon")
+  chk(length(intersect(x, y)) == 0L,
+      sprintf("T16 particles are not join keys: De La Cruz [%s] vs De Leon [%s]",
+              paste(x, collapse = "+"), paste(y, collapse = "+")))
+}
+
+# T17 (adversarial). Short tokens are dropped. "NG" or "LI" standing alone
+# after a compound is discarded would join far too much.
+{
+  chk(!"NG" %in% amcb_surname_tokens("Ng-Patterson") &&
+        "PATTERSON" %in% amcb_surname_tokens("Ng-Patterson"),
+      sprintf("T17 sub-%d-character tokens dropped [%s]", AMCB_MIN_SURNAME_TOKEN,
+              paste(amcb_surname_tokens("Ng-Patterson"), collapse = "+")))
+}
+
+# T18 (adversarial). A surname made ENTIRELY of particles/short tokens must
+# yield NO key rather than a weak one -- returning "" would join everything.
+{
+  t <- amcb_surname_tokens("De La")
+  chk(length(t) == 0L, sprintf("T18 all-particle surname yields no join key [%d]",
+                               length(t)))
+}
+
+# T19 (adversarial). Components compose with transliteration: the accented
+# compound must tokenise to ASCII, or the two fixes do not stack.
+{
+  t <- amcb_surname_tokens("Schupp-López")
+  chk(identical(t, c("SCHUPP", "LOPEZ")),
+      sprintf("T19 accented compound tokenises to ASCII components [%s]",
+              paste(t, collapse = "+")))
+}
+
+# T20 (adversarial). Missing and empty input yield no tokens, never NA_character_
+# masquerading as one.
+{
+  chk(length(amcb_surname_tokens(NA_character_)) == 0L &&
+        length(amcb_surname_tokens("")) == 0L,
+      "T20 missing/empty surname yields zero tokens")
+}
+
 cat(sprintf("\n%s (%d failures)\n", if (fails == 0L) "PASS" else "FAIL", fails))
 quit(status = if (fails == 0L) 0L else 1L)

@@ -109,6 +109,54 @@ amcb_first_initial <- function(x) {
   out
 }
 
+# Surname particles. A token match on "DE", "VAN" or "ST" is not evidence of
+# identity -- it is evidence of a naming convention -- and admitting them would
+# join every DE LA CRUZ to every DE LEON sharing a given name.
+AMCB_SURNAME_PARTICLES <- c(
+  "DE", "DEL", "DELA", "DELAS", "DELOS", "LA", "LAS", "LE", "LOS", "DA", "DAS",
+  "DI", "DO", "DOS", "VAN", "VANDER", "VON", "DER", "DEN", "TER", "TEN",
+  "ST", "STE", "MC", "MAC", "EL", "AL", "BIN", "IBN", "BEN", "ABU", "Y", "I")
+
+# A shorter token carries too little information to stand alone as surname
+# evidence once the rest of the compound is discarded.
+AMCB_MIN_SURNAME_TOKEN <- 4L
+
+#' Split a normalised surname into its components.
+#'
+#' WHY THIS EXISTS. AMCB and NPPES routinely disagree about how a compound
+#' surname is recorded: AMCB holds "MCCARTHY-DERVIN" where NPPES holds
+#' "MCCARTHY", or AMCB splits "HARVEY CAPISTA" across its middle and last
+#' fields where NPPES keeps it whole. None of the exact or Levenshtein
+#' strategies can span a DROPPED name component -- an edit distance of 2 cannot
+#' cross seven missing characters -- so these fail silently as "no candidate".
+#' Measured in the crosswalk: hyphenated surnames are 27.1% unmatched against
+#' 9.8% for unhyphenated, a 2.8x gap over 791 roster rows.
+#'
+#' Splits on hyphen and whitespace, drops particles and short tokens, and
+#' returns unique components. Returns character(0) when nothing survives, so a
+#' name made entirely of particles yields no join key rather than a weak one.
+amcb_surname_tokens <- function(x) {
+  k <- amcb_name_key(x)
+  if (is.na(k) || !nzchar(k)) return(character(0))
+  toks <- strsplit(gsub("[^A-Z']+", " ", k), "\\s+")[[1]]
+  toks <- toks[nzchar(toks)]
+  toks <- toks[!toks %in% AMCB_SURNAME_PARTICLES]
+  toks <- toks[nchar(toks) >= AMCB_MIN_SURNAME_TOKEN]
+  unique(toks)
+}
+
+#' Vectorised surname tokens as a long (index, token) data frame.
+#'
+#' Returned long rather than as a list column because every caller joins on the
+#' token; a list column would have to be unnested at each call site.
+amcb_surname_token_table <- function(x, id) {
+  stopifnot(length(x) == length(id))
+  lst <- lapply(x, amcb_surname_tokens)
+  n <- lengths(lst)
+  data.frame(id = rep(id, n), token = unlist(lst, use.names = FALSE),
+             stringsAsFactors = FALSE)
+}
+
 #' Split the AMCB first_name field into given name and trailing middle tokens.
 #'
 #' AMCB fuses middle names into first_name ("Julie Ann", "René Richard"): the

@@ -321,7 +321,17 @@ s1 <- amcb_named %>%
   inner_join(identities, by = c("last_clean" = "nppes_last_clean",
                                 "first_clean" = "nppes_first_clean"),
              relationship = "many-to-many") %>%
-  mutate(exact_last = 1L, exact_first = 1L, first_init_ok = 1L, lv_last = 0L) %>%
+  mutate(exact_last = 1L, exact_first = 1L, first_init_ok = 1L, lv_last = 0L,
+         # THE NAME VARIANT THAT ACTUALLY WON (2026-08-10). An NPI may appear
+         # under several surnames across snapshots -- 1891167631 is WILLIAMS in
+         # early years and WRIGHT later. The match is made on the historical
+         # spelling, but nppes_last_name reports the MOST RECENT one, so a
+         # reviewer comparing the two sees a surname mismatch on a method
+         # called "exact_last_first" and reasonably concludes it is a false
+         # match. Recording the winning variant is what makes the match
+         # checkable. Here the join keys collapse, so the variant IS the AMCB
+         # key by construction.
+         nppes_matched_last = last_clean, nppes_matched_first = first_clean) %>%
   base_flags(1L, "exact_last_first")
 
 s2 <- amcb_named %>%
@@ -329,7 +339,10 @@ s2 <- amcb_named %>%
                                 "first_init" = "nppes_first_init"),
              relationship = "many-to-many") %>%
   filter(first_clean != nppes_first_clean) %>%   # s1 already holds exact-first
-  mutate(exact_last = 1L, exact_first = 0L, first_init_ok = 1L, lv_last = 0L) %>%
+  # Surname is the join key so it collapses; the given name does NOT match
+  # exactly here, so the NPPES side of it is the informative half.
+  mutate(exact_last = 1L, exact_first = 0L, first_init_ok = 1L, lv_last = 0L,
+         nppes_matched_last = last_clean, nppes_matched_first = nppes_first_clean) %>%
   base_flags(2L, "exact_last_first_initial")
 
 s3 <- amcb_named %>%
@@ -337,8 +350,58 @@ s3 <- amcb_named %>%
              relationship = "many-to-many") %>%
   mutate(lv_last = stringdist(last_clean, nppes_last_clean, method = "lv")) %>%
   filter(lv_last > 0, lv_last <= 2, nchar(last_clean) >= 5) %>%
-  mutate(exact_last = 0L, exact_first = 1L, first_init_ok = 1L) %>%
+  # Given name is the join key; the surname is fuzzy, so the NPPES spelling of
+  # it is exactly what a reviewer needs to see to judge the match.
+  mutate(exact_last = 0L, exact_first = 1L, first_init_ok = 1L,
+         nppes_matched_last = nppes_last_clean, nppes_matched_first = first_clean) %>%
   base_flags(3L, "fuzzy_last_exact_first")
+
+# --- Strategy 5: shared surname COMPONENT + exact given name -----------------
+# THE GAP THIS CLOSES (2026-08-10). AMCB and NPPES disagree about how compound
+# surnames are recorded -- AMCB "MCCARTHY-DERVIN" against NPPES "MCCARTHY", or
+# AMCB splitting "HARVEY CAPISTA" across its middle and last fields where NPPES
+# keeps it whole. No strategy above can span a DROPPED component: strategy 3's
+# Levenshtein ceiling of 2 cannot cross seven missing characters, so these fail
+# as "no candidate at all" rather than as a weak match. Measured in the
+# preceding crosswalk: hyphenated surnames run 27.1% unmatched against 9.8%
+# unhyphenated, a 2.8x gap over 791 roster rows -- roughly 8x the population
+# the accent fix reached.
+#
+# WHY THIS IS THE WEAKEST CLASS AND NOT A PEER OF THE OTHERS. Discarding half a
+# compound surname discards real discriminating information: every SMITH-JONES
+# becomes joinable to every SMITH sharing a given name. This is a recall
+# instrument with a genuine precision cost, so it enters at the BOTTOM of the
+# evidence order (class 5). It can only resolve someone for whom nothing
+# stronger exists, and it lands in its own sensitivity tier -- never in
+# primary_midwifery. Particles and sub-4-character tokens are excluded by
+# amcb_surname_tokens(); see tests T14-T20.
+amcb_tok <- amcb_surname_token_table(amcb_named$last_clean, amcb_named$amcb_id) %>%
+  rename(amcb_id = id, surname_token = token)
+ident_indexed <- identities %>% mutate(.ident_row = row_number())
+ident_tok <- amcb_surname_token_table(ident_indexed$nppes_last_clean,
+                                      ident_indexed$.ident_row) %>%
+  rename(.ident_row = id, surname_token = token)
+cat(sprintf("surname component tokens: %s AMCB, %s NPPES identity rows\n",
+            format(nrow(amcb_tok), big.mark = ","),
+            format(nrow(ident_tok), big.mark = ",")))
+
+s5 <- amcb_named %>%
+  inner_join(amcb_tok, by = "amcb_id", relationship = "many-to-many") %>%
+  inner_join(ident_indexed %>% inner_join(ident_tok, by = ".ident_row",
+                                          relationship = "many-to-many"),
+             by = c("first_clean" = "nppes_first_clean",
+                    "surname_token" = "surname_token"),
+             relationship = "many-to-many") %>%
+  # Exact-surname pairs are already class 1/2. Only genuinely PARTIAL surname
+  # agreement is new information here.
+  filter(last_clean != nppes_last_clean) %>%
+  select(-.ident_row, -surname_token) %>%
+  distinct() %>%
+  mutate(exact_last = 0L, exact_first = 1L, first_init_ok = 1L,
+         lv_last = NA_integer_, component_last = 1L,
+         nppes_matched_last = nppes_last_clean, nppes_matched_first = first_clean) %>%
+  base_flags(5L, "surname_component_exact_first")
+cat(sprintf("strategy 5 candidate pairs: %s\n", format(nrow(s5), big.mark = ",")))
 
 # --- Evidence, kept as components rather than collapsed into one number ------
 # Two people who are both exact first+last matches, with no middle name,
@@ -351,8 +414,13 @@ s3 <- amcb_named %>%
 #   2  exact first + last, no useful middle information
 #   3  exact last + first initial
 #   4  fuzzy last + exact first
-candidates <- bind_rows(s1, s2, s3) %>%
+#   5  surname component + exact first (WEAKEST -- see strategy 5 above)
+#
+# Class 5 sorts BELOW 4 numerically because resolution takes min(class) as the
+# strongest evidence; a partial surname must never outrank a whole one.
+candidates <- bind_rows(s1, s2, s3, s5) %>%
   mutate(
+    component_last = coalesce(component_last, 0L),
     mid_both   = has_name_information(mid_init) &
                  has_name_information(nppes_mid_init),
     mid_match  = as.integer(mid_both & mid_init == nppes_mid_init),
@@ -361,6 +429,7 @@ candidates <- bind_rows(s1, s2, s3) %>%
       exact_last == 1L & exact_first == 1L & mid_match == 1L ~ 1L,
       exact_last == 1L & exact_first == 1L                   ~ 2L,
       exact_last == 1L & first_init_ok == 1L                 ~ 3L,
+      component_last == 1L                                   ~ 5L,
       TRUE                                                   ~ 4L),
     taxonomy_axis = npi_tax_class) %>%
   filter(mid_conflict == 0L)   # a recorded middle-initial conflict still vetoes
@@ -383,6 +452,10 @@ per_npi <- candidates %>%
             mid_match = max(mid_match), taxonomy_axis = first(taxonomy_axis),
             match_method = match_method[which.min(name_evidence_class)],
             match_strategy = match_strategy[which.min(name_evidence_class)],
+            # Taken from the SAME candidate row that supplied the method, so
+            # the recorded variant is the one whose evidence class won.
+            nppes_matched_last = nppes_matched_last[which.min(name_evidence_class)],
+            nppes_matched_first = nppes_matched_first[which.min(name_evidence_class)],
             .groups = "drop")
 
 pool_stats <- per_npi %>%
@@ -403,7 +476,9 @@ resolved <- per_npi %>%
   filter(n_at_best_class == 1L) %>%
   mutate(resolution = if_else(name_evidence_class == 1L,
                               "unique_best_class_with_middle", "unique_best_class"),
-         confidence_score = c(1.0, 0.9, 0.7, 0.5)[name_evidence_class])
+         # Class 5 sits below class 4: a partial surname is weaker evidence than
+         # a whole surname within edit distance 2.
+         confidence_score = c(1.0, 0.9, 0.7, 0.5, 0.35)[name_evidence_class])
 
 quarantined_ids <- setdiff(unique(candidates$amcb_id), unique(resolved$amcb_id))
 
@@ -433,6 +508,7 @@ matched <- resolved %>%
          match_strategy = name_evidence_class) %>%
   rank_one_to_one() %>%
   transmute(amcb_id, npi, npi_match_method = match_method,
+            nppes_matched_last, nppes_matched_first,
             npi_tax_class = taxonomy_axis, name_evidence_class,
             npi_match_resolution = resolution,
             npi_match_confidence = round(confidence_score, 4),
@@ -469,6 +545,9 @@ out <- amcb %>%
   mutate(has_candidate = n_candidates_pre_rank > 0,
          linkage_tier = case_when(
            # Fuzzy identity evidence is sensitivity-only whatever the taxonomy.
+           # Its own tier, not folded into sensitivity_fuzzy: the two have
+           # different failure modes and must stay separable.
+           !is.na(npi) & name_evidence_class == 5L  ~ "sensitivity_name_component",
            !is.na(npi) & name_evidence_class == 4L  ~ "sensitivity_fuzzy",
            !is.na(npi) & npi_tax_class == "nursing" ~ "sensitivity_nursing",
            !is.na(npi)                              ~ "primary_midwifery",
@@ -478,6 +557,14 @@ out <- amcb %>%
          # ever plausible for this person. Reporting the post-bijection count
          # would always be 0 or 1 and would hide every ambiguity.
          candidate_count = n_candidates_pre_rank,
+         # TRUE when the spelling that produced the match is not the spelling
+         # NPPES currently reports for that NPI. Without this a reviewer reads
+         # a legitimate name change as a false match; with it, the row explains
+         # itself. Compared on the normalised key, not the raw string, so an
+         # accent alone can never raise the flag.
+         nppes_name_changed_since_match = !is.na(npi) &
+           !is.na(nppes_matched_last) & !is.na(nppes_last_name) &
+           blank_na(nppes_matched_last) != blank_na(nppes_last_name),
          # ambiguity_flag separates "we could not tell which person" from "we
          # found nobody". Those are different failures and are routinely
          # conflated into a single unmatched rate.
@@ -494,13 +581,18 @@ out <- amcb %>%
                                 candidate_count, n_at_best_class, best_evidence_class),
            TRUE ~ sprintf("%s; evidence class %d (%s); %s taxonomy; %d candidate(s), %d at best class",
                           npi_match_method, name_evidence_class,
+                          # Five entries for five classes. A four-entry vector
+                          # would silently yield NA for class 5 and print
+                          # "evidence class 5 (NA)" in the auditable column.
                           c("exact first+last+middle initial", "exact first+last, no middle info",
-                            "exact last + first initial", "fuzzy last + exact first")[name_evidence_class],
+                            "exact last + first initial", "fuzzy last + exact first",
+                            "surname component + exact first")[name_evidence_class],
                           npi_tax_class, candidate_count, n_at_best_class)))
 
 stopifnot(nrow(out) == nrow(amcb), !any(duplicated(out$amcb_id)))
 stopifnot(all(out$linkage_tier %in% c("primary_midwifery", "sensitivity_nursing",
-                                      "sensitivity_fuzzy", "quarantined", "unmatched")),
+                                      "sensitivity_fuzzy", "sensitivity_name_component",
+                                      "quarantined", "unmatched")),
           sum(table(out$linkage_tier)) == nrow(amcb),
           !any(out$linkage_tier == "primary_midwifery" &
                  out$npi_tax_class == "nursing", na.rm = TRUE))
