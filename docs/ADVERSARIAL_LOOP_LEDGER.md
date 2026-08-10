@@ -609,3 +609,104 @@ leaving work uncommitted exactly as cycle 2 did. The guard must exclude
 
     git status --short | awk '{print $2}' | grep -vE "^tests/" \
       | grep -E "^(healthgrades_|nppes_sex_enumeration|hg_snapshot_|premerge_)|^artifacts/maps/"
+
+---
+
+## Cycle 5, second pass — 2026-08-09 — 3 BVA / 4 semantic / 3 adversarial
+
+**Note on concurrency.** A cycle-5 entry above (`ece202b`) ran at the same time
+and covered the same *theme* — row order deciding coordinates — in the
+root-level `geocode_midwives.R` / `geocode_panel_addresses.R`. This pass covers
+`R/`, which it did not touch. Complementary, not duplicate; verified by diff
+before committing.
+
+**Target.** The debt carried since cycle 2: the 13 (actually **17**) unaudited
+`distinct(..., .keep_all = TRUE)` sites, plus the remaining class-N1
+aggregations.
+
+**Tests added** — `tests/test_cycle5_key_resolution.R` (T41–T50, 16 assertions)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T41 | BVA | conflict-refusing helper at 0/1/all-duplicate rows |
+| T42 | BVA | a composite key is evaluated jointly, not per column |
+| T43 | BVA | leading-zero FIPS survive as characters |
+| T44 | semantic | no bare `.keep_all` resolves a conflict by row order (**ratchet**) |
+| T45 | semantic | tract → planning region is a function |
+| T46 | semantic | one certificant, one coordinate pair |
+| T47 | semantic | the RUCC workbook read refuses conflicting FIPS |
+| T48 | adversarial | the POS tie-break is deterministic |
+| T49 | adversarial | class N1 outside CT — the land denominator |
+| T50 | adversarial | a city centroid is not treated as a hospital |
+
+### The finding that reframes the debt
+
+Every one of the 17 sites is a **no-op on the current artifacts**. The tract
+crosswalk has zero tracts mapping to two regions; the POS extract has **zero
+duplicate `PRVDR_NUM` at all**. So `distinct()` never drops a row, and the
+documented "most recently certified record wins" rule **has never once fired.**
+
+That is not reassurance. A silent tie-break that has never executed is an
+untested rule that has not yet been asked a question — and the question arrives
+with the next data vintage, not with a code change. The distinction this cycle
+enforces is between a **rule** and a **coincidence**.
+
+### Defects found — 4 fixed, 1 wrong test
+
+1. **Tract → planning-region dedup hid a contract violation.** *Fixed.* CT
+   apportionment weights are built from this crosswalk; a tract mapping to two
+   regions would have had half its evidence silently discarded. Now stops.
+
+2. **Conflicting geocodes for one certificant were resolved by row order**
+   (`03-geography-hierarchy.R`). *Fixed.* This can place a person in a different
+   county, and county is the unit of every access finding here. Stated rule now:
+   best `quality_score` wins.
+
+3. **The RUCC workbook reader still used a bare `distinct(GEOID)`.** *Fixed.*
+   Cycle 1 built `build_rucc_lookup()` for exactly this, and the fix never
+   reached this reader — the same "fixed in n of m copies" pattern as cycle 2.
+   Now routed through a new `assert_no_key_conflict()` in `join_safety.R`.
+
+4. **Class N1, the land denominator.** *Fixed.* `sum(land, na.rm = TRUE)` scored
+   a tract with missing ALAND as **0 square metres**, shrinking a density
+   denominator and inflating every density from it. Now `NA` when a group has no
+   land at all, observed land otherwise, with the gap counted in
+   `land_tracts_missing`.
+
+5. **Wrong test, corrected.** T48's fixture named the POS column `NAME`; the
+   real column is `FAC_NAME`, so the test exercised a sort key production does
+   not use and failed for the wrong reason. A tie-break can only be tested
+   against the column it actually sorts on.
+
+### T44 is a ratchet, and that is deliberate
+
+Converting all 17 sites at once is a large mechanical edit across 8 files with
+real regression risk and **no observable benefit today**. The three that can
+move a thing on a map were fixed with judgment. T44 therefore asserts the count
+cannot **grow** past 14 — a real contract, since a new bare `.keep_all` fails
+the build — while naming the remaining debt explicitly rather than declaring it
+paid.
+
+**Remaining 14:** `01-build-county-base.R:304,321,356`,
+`03-geography-hierarchy.R:167,281,364`, `04-diagnose-cross-state.R:86`,
+`05-stage-progression.R:178,224,229`, `06-cohort-flow.R:51`,
+`07-cohort-composition.R:96`, `join_safety.R:228`,
+`ab_middle_name_common.R:82`.
+
+### Full suite
+
+**10/10 pass.** The cycle-4 `test_healthgrades_integrity.R` failure is resolved
+— `ece202b` rebuilt Table 1 and taught the test to tolerate crawl progress.
+
+### Unresolved / carried forward
+
+- 14 bare `.keep_all` sites, ratcheted (above).
+- **DECISION NEEDED:** `women_15_44` partial vs `NA` denominator (cycle 3).
+- **DECISION NEEDED:** Table 1 panel-window censoring on ">=15 years" (cycle 1).
+- **DECISION NEEDED:** whether a `ct_partial` region is reported or withheld
+  (cycle 4).
+- `spatial_crs_contract.R:262` (`population_allocated`) — last unaudited N1
+  site. **Cycle 6.**
+- `safe_percent` DEN-032 default — belongs in `mufflyaccess`, out of scope.
+
+**No scientific estimand was changed in this pass.**

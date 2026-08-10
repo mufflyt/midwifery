@@ -95,6 +95,53 @@ if (file.exists("healthgrades_midwives.csv")) {
   cat("Healthgrades: scrape absent; no attribution exclusions applied\n")
 }
 
+# --- Healthgrades field usability --------------------------------------------
+# Completeness is not usability. hg_years_experience is 100% non-missing and
+# entirely 0, because Healthgrades does not populate roundedYearsOfExperience
+# for midwives; published as a Table 1 row it would read as a finding. Every
+# candidate field is classified EMPTY / CONSTANT / VARIES and scored against
+# the COHORT, not against the profiles that happen to exist -- most of the loss
+# is upstream in the search stage. Nothing is published from here yet; this
+# writes the decision table and refuses constants at the point of use.
+source("R/lib/field_quality.R")
+HG_CANDIDATE_FIELDS <- c("hg_gender", "hg_age", "hg_years_experience",
+                         "hg_languages", "hg_accepts_new_patients",
+                         "hg_has_telehealth", "hg_medicaid_named")
+if (file.exists("healthgrades_profile_attrs.csv") &&
+    file.exists("healthgrades_midwives.csv")) {
+  .attrs <- read_csv("healthgrades_profile_attrs.csv", show_col_types = FALSE,
+                     progress = FALSE)
+  # Attribute to certificants only through UNAMBIGUOUS profiles; a shared URL
+  # would copy one person's demographics onto several midwives.
+  .link <- read_csv("healthgrades_midwives.csv", show_col_types = FALSE,
+                    progress = FALSE) %>%
+    filter(hg_status == "ok", !is.na(hg_url),
+           certification_number %in% coh$certification_number[coh$hg_eligible]) %>%
+    distinct(certification_number, hg_url) %>%
+    left_join(.attrs, by = "hg_url")
+  .rep <- lapply(intersect(HG_CANDIDATE_FIELDS, names(.link)), function(f) {
+    v  <- field_variability(.link[[f]])
+    cc <- cohort_coverage(.link[[f]], .link$certification_number,
+                          coh$certification_number)
+    tibble(field = f, verdict = v$verdict, distinct_values = v$n_distinct,
+           cohort_n = cc$n_cohort, cohort_with_value = cc$n_with_value,
+           cohort_pct = round(cc$pct, 2),
+           publishable = v$verdict == "VARIES")
+  })
+  if (length(.rep)) {
+    .rep <- bind_rows(.rep)
+    write_csv(.rep, "artifacts/healthgrades_field_usability.csv")
+    cat("Healthgrades field usability (cohort-based):\n")
+    for (i in seq_len(nrow(.rep)))
+      cat(sprintf("  %-26s %-8s %6.2f%% of cohort  %s\n", .rep$field[i],
+                  .rep$verdict[i], .rep$cohort_pct[i],
+                  if (.rep$publishable[i]) "" else "<- NOT PUBLISHABLE"))
+    # Enforce it, do not merely report it.
+    for (f in .rep$field[!.rep$publishable])
+      try(assert_not_constant(.link[[f]], f), silent = TRUE)
+  }
+}
+
 # --- ACOG district, from the canonical crosswalk ------------------------------
 # map_state_to_acog() lives in mufflyt/isochrones and is loaded rather than
 # reimplemented; the district definitions there were corrected against the ACOG

@@ -34,5 +34,5 @@ Unknown / not recorded,8,,Years since NPI enumeration
 10-14 years,2173,18.2,Years observed in NPPES
 >=15 years,3899,32.7,Years observed in NPPES
 "Not collected by NPPES, CMS DAC or the Healthgrades scrape",,,Language
-Eligible for attribution (no shared profile),11896,99.9,Healthgrades-derived fields
-Excluded: profile shared with another certificant,17,,Healthgrades-derived fields
+Eligible for attribution (no shared profile),11894,99.8,Healthgrades-derived fields
+Excluded: profile shared with another certificant,19,,Healthgrades-derived fields

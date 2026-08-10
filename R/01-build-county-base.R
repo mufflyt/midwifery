@@ -279,7 +279,12 @@ fetch_rucc <- function() {
   )
   readxl::read_excel(path, sheet = 1) |>
     dplyr::transmute(GEOID = as_geoid(FIPS), rucc_2023 = as.integer(RUCC_2023)) |>
-    dplyr::distinct(GEOID, .keep_all = TRUE)
+    # CYCLE 5. Cycle 1 built build_rucc_lookup() because a bare distinct() let
+    # file order decide whether a county was metropolitan. That fix never
+    # reached this reader. Conflicting codes for one FIPS now stop the run
+    # instead of being resolved by workbook sort order.
+    unique() |>
+    assert_no_key_conflict("GEOID", "RUCC 2023 workbook")
 }
 
 #' NCHS 6-level urban-rural classification (2013 vintage)

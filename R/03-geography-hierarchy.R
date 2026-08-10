@@ -108,7 +108,16 @@ zip_county_ct_2022 <- function() {
   cross <- read_csv(xw, show_col_types = FALSE, progress = FALSE) %>%
     transmute(tract20 = pad_n(tract_fips_2020, 11),
               pr_geoid = pad5(ce_fips_2022)) %>%
-    distinct(tract20, .keep_all = TRUE)
+    # CYCLE 5. distinct(tract20, .keep_all = TRUE) silently kept whichever row
+    # sorted first when a tract mapped to two planning regions. It is a no-op on
+    # the current crosswalk (verified: zero such tracts), which is exactly why it
+    # needed stating -- the contract never guaranteed what the data happened to
+    # provide, and the CT apportionment weights are built from this.
+    distinct(tract20, pr_geoid)
+  if (anyDuplicated(cross$tract20)) {
+    stop(sprintf("tract->planning-region crosswalk is not a function: %d tract(s) map to more than one region.",
+                 sum(duplicated(cross$tract20))), call. = FALSE)
+  }
 
   read_delim(zt, delim = "|", show_col_types = FALSE, progress = FALSE) %>%
     filter(str_starts(GEOID_TRACT_20, "09")) %>%
@@ -117,7 +126,13 @@ zip_county_ct_2022 <- function() {
               land = suppressWarnings(as.numeric(AREALAND_PART))) %>%
     inner_join(cross, by = "tract20") %>%
     group_by(zip5, pr_geoid) %>%
-    summarise(land = sum(land, na.rm = TRUE), .groups = "drop_last") %>%
+    # CYCLE 5, class N1. sum(land, na.rm = TRUE) scored a tract with missing
+    # ALAND as 0 square metres, shrinking a density DENOMINATOR and inflating
+    # every density computed from it. A group is NA when it has no land at all,
+    # and reports its observed land otherwise, with the gap counted.
+    summarise(land = if (all(is.na(land))) NA_real_ else sum(land, na.rm = TRUE),
+              land_tracts_missing = sum(is.na(land)),
+              .groups = "drop_last") %>%
     summarise(n_county = n(),
               top_land_share = max(land) / sum(land),
               GEOID_unique = if (n() == 1L) first(pr_geoid) else NA_character_,
@@ -240,6 +255,11 @@ build_geography <- function() {
   coords <- geo %>%
     select(certification_number, latitude, longitude, GEOID_coord = GEOID,
            quality_score, geocode_match) %>%
+    # CYCLE 5. A bare distinct() resolved conflicting geocodes for one
+    # certificant by row order, which can place a person in a different
+    # county -- the unit of every access finding here. Stated rule now:
+    # the best quality_score wins.
+    arrange(certification_number, dplyr::desc(quality_score)) %>%
     distinct(certification_number, .keep_all = TRUE)
 
   zc <- zip_county_unique()

@@ -1801,3 +1801,64 @@ safe_anti_join <- function(left, right, by,
 
   out
 }
+
+#' Stop if a key carries conflicting rows
+#'
+#' @description
+#' The smallest form of the rule cycle 2 put into `assert_unique_keys()`, for
+#' pipelines that only need the assertion and not the deduplication. Identical
+#' duplicate rows are collapsed by the caller's `unique()`; anything still
+#' duplicated on the key disagrees somewhere, and resolving that by row order is
+#' a scientific decision made by a file's sort order.
+#'
+#' @param d [data.frame]: input, already `unique()`d.
+#' @param key [character(1)]: key column.
+#' @param label [character(1)]: what to name in the error.
+#' @return `d`, unchanged, or an error.
+#' @family join-safety
+#' @export
+assert_no_key_conflict <- function(d, key, label = "input") {
+  if (!key %in% names(d)) {
+    stop(sprintf("assert_no_key_conflict: '%s' not found in %s.", key, label),
+         call. = FALSE)
+  }
+  dup <- d[[key]][duplicated(d[[key]])]
+  if (length(dup)) {
+    stop(sprintf(
+      "%s: %d value(s) of '%s' carry conflicting rows (e.g. %s). Deduplicating would resolve that by row order; reconcile the source instead.",
+      label, length(unique(dup)), key,
+      paste(utils::head(unique(dup), 3), collapse = ", ")), call. = FALSE)
+  }
+  d
+}
+
+#' Stop if a key carries conflicting rows
+#'
+#' @description
+#' The smallest form of the rule cycle 2 put into `assert_unique_keys()`, for
+#' readers that need the assertion and not the deduplication. Identical
+#' duplicate rows are collapsed by the caller's `unique()`; anything still
+#' duplicated on the key disagrees somewhere, and resolving that by row order is
+#' a scientific decision made by a file's sort order.
+#'
+#' @param d [data.frame]: input, already `unique()`d.
+#' @param key [character(1)]: key column.
+#' @param label [character(1)]: what to name in the error.
+#' @return `d` unchanged, or an error.
+#' @family join-safety
+#' @export
+assert_no_key_conflict <- function(d, key, label = "input") {
+  if (!key %in% names(d)) {
+    stop(sprintf("assert_no_key_conflict: '%s' not found in %s.", key, label),
+         call. = FALSE)
+  }
+  dup <- unique(d[[key]][duplicated(d[[key]])])
+  if (length(dup)) {
+    stop(sprintf(paste0(
+      "%s: %d value(s) of '%s' carry conflicting rows (e.g. %s). Deduplicating ",
+      "would resolve that by row order; reconcile the source instead."),
+      label, length(dup), key,
+      paste(utils::head(dup, 3), collapse = ", ")), call. = FALSE)
+  }
+  d
+}

@@ -62,7 +62,13 @@ build_ob_hospital_counts <- function(path = POS_FILE) {
     # One row per provider. POS carries historical and superseded records, so an
     # un-deduplicated count would tally the same hospital several times; the
     # most recently certified record wins.
-    dplyr::arrange(PRVDR_NUM, dplyr::desc(CRTFCTN_DT)) %>%
+    # CYCLE 5. desc(CRTFCTN_DT) alone leaves same-date records for one provider
+    # to input order. The current extract has NO duplicate PRVDR_NUM at all, so
+    # this rule has never once fired -- an untested rule, not a tested one. The
+    # provider name is a deterministic secondary key so the choice cannot depend
+    # on how the POS file was sorted.
+    dplyr::arrange(PRVDR_NUM, dplyr::desc(CRTFCTN_DT),
+                   dplyr::across(dplyr::any_of(c("FAC_NAME", "PRVDR_NAME")))) %>%
     dplyr::distinct(PRVDR_NUM, .keep_all = TRUE) %>%
     dplyr::mutate(
       GEOID = paste0(FIPS_STATE_CD, FIPS_CNTY_CD),
