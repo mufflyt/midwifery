@@ -51,6 +51,10 @@ suppressPackageStartupMessages({
   library(DBI); library(duckdb)
 })
 
+# CYCLE 21b. Inputs recorded beside every artifact this script writes, so a
+# reader can tell whether the numbers were built from the bytes still on disk.
+source(file.path("R", "lib", "artifact_provenance.R"))
+
 # Helpers shared with the other numbered scripts. Defined once: these were
 # duplicated across files sourced into one environment, where load order
 # decided which definition won.
@@ -201,7 +205,7 @@ run_geocode <- function() {
   n_coord <- sum(!is.na(out$latitude) & !is.na(out$longitude))
   cli::cli_alert_info("with coordinates: {n_coord} of {nrow(ob)} ({round(100*n_coord/nrow(ob),1)}%)")
 
-  write_csv(out, OUT, na = "")
+  write_with_provenance(out, OUT, na = "", inputs = prov_inputs(POS))
   manifest <- list(
     analysis = "OB-service hospital geocoding",
     geocoder = "isochrones::census_batch_geocode (canonical)",

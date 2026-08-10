@@ -45,6 +45,10 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(cli)
   library(sf); library(tigris)
 })
+
+# CYCLE 21b. Inputs recorded beside every artifact this script writes, so a
+# reader can tell whether the numbers were built from the bytes still on disk.
+source(file.path("R", "lib", "artifact_provenance.R"))
 source(file.path("R", "spatial_crs_contract.R"))  # assert_crs_equal()
 options(tigris_use_cache = TRUE)
 
@@ -137,8 +141,8 @@ diagnose <- function() {
           row.names = FALSE)
   }
 
-  write_csv(d, file.path(ART, "cross_state_diagnosis.csv"), na = "")
-  write_csv(part, file.path(ART, "cross_state_partition.csv"))
+  write_with_provenance(d, file.path(ART, "cross_state_diagnosis.csv"), na = "", inputs = prov_inputs("midwives_geography.csv", "midwives_with_nppes.csv", "zip_fallback_discordant.csv"))
+  write_with_provenance(part, file.path(ART, "cross_state_partition.csv"), inputs = prov_inputs("midwives_geography.csv", "midwives_with_nppes.csv", "zip_fallback_discordant.csv"))
   cli::cli_alert_success("artifacts/cross_state_diagnosis.csv written")
   invisible(d)
 }

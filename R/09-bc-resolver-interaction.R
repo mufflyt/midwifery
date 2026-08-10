@@ -55,6 +55,10 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(tidyr); library(cli); library(jsonlite)
 })
 
+# CYCLE 21b. Inputs recorded beside every artifact this script writes, so a
+# reader can tell whether the numbers were built from the bytes still on disk.
+source(file.path("R", "lib", "artifact_provenance.R"))
+
 source(file.path("R", "lib", "ab_middle_name_common.R"))
 
 ART <- "artifacts"; OUT <- file.path(ART, "bc_resolver")
@@ -210,7 +214,7 @@ run_bc <- function() {
   cli::cli_h2("B -> C decision transitions (all roster people, n = {nrow(dec)})")
   bc_tab <- dec %>% count(bc, name = "n", sort = TRUE) %>%
     mutate(pct = round(100 * n / sum(n), 2))
-  print(as.data.frame(bc_tab), row.names = FALSE); write_csv(bc_tab, file.path(OUT, "bc_transitions.csv"))
+  print(as.data.frame(bc_tab), row.names = FALSE); write_with_provenance(bc_tab, file.path(OUT, "bc_transitions.csv"), inputs = prov_inputs(LEDGER, ROSTER, CANDS))
 
   # --- Primary interaction: A->B ranking status x B->C resolver outcome ----
   ab <- d %>%
@@ -240,7 +244,7 @@ run_bc <- function() {
     count(ab_status, bc_outcome, name = "n") %>%
     pivot_wider(names_from = bc_outcome, values_from = n, values_fill = 0)
   print(as.data.frame(ct), row.names = FALSE)
-  write_csv(ct, file.path(OUT, "crosstab_counts.csv"))
+  write_with_provenance(ct, file.path(OUT, "crosstab_counts.csv"), inputs = prov_inputs(LEDGER, ROSTER, CANDS))
 
   cli::cli_h2("PRIMARY: same cross-tab, ROW percentages")
   ctp <- ct %>% rowwise() %>%
@@ -248,7 +252,7 @@ run_bc <- function() {
     mutate(across(-c(ab_status, total), ~ round(100 * .x / total, 2))) %>%
     ungroup()
   print(as.data.frame(ctp), row.names = FALSE)
-  write_csv(ctp, file.path(OUT, "crosstab_row_pct.csv"))
+  write_with_provenance(ctp, file.path(OUT, "crosstab_row_pct.csv"), inputs = prov_inputs(LEDGER, ROSTER, CANDS))
 
   # --- The four specific questions -----------------------------------------
   chg <- x %>% filter(ab_status == "top_npi_changed")
@@ -272,7 +276,7 @@ run_bc <- function() {
               round(100 * mean(unchg$bc_outcome == "ambiguous_contested_npi"), 3)))
   cli::cli_h2("Targeted questions")
   print(as.data.frame(q), row.names = FALSE)
-  write_csv(q, file.path(OUT, "targeted_questions.csv"))
+  write_with_provenance(q, file.path(OUT, "targeted_questions.csv"), inputs = prov_inputs(LEDGER, ROSTER, CANDS))
 
   # --- Full evidence for every contested NPI --------------------------------
   # Preserved so a future dominance rule can be evaluated against real
@@ -284,7 +288,7 @@ run_bc <- function() {
     left_join(select(x, roster_id, ab_status, status_B, status_C, npi_B, npi_C),
               by = "roster_id") %>%
     arrange(candidate_npi, roster_id, desc(score_B))
-  write_csv(ev, file.path(OUT, "contested_evidence.csv"), na = "")
+  write_with_provenance(ev, file.path(OUT, "contested_evidence.csv"), na = "", inputs = prov_inputs(LEDGER, ROSTER, CANDS))
   cli::cli_alert_info("contested: {length(contested_ids)} people over {length(contested_npis)} NPIs; {nrow(ev)} evidence rows preserved")
 
   manifest <- c(list(

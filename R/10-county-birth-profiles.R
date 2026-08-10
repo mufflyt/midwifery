@@ -42,6 +42,10 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(cli); library(jsonlite)
 })
 
+# CYCLE 21b. Inputs recorded beside every artifact this script writes, so a
+# reader can tell whether the numbers were built from the bytes still on disk.
+source(file.path("R", "lib", "artifact_provenance.R"))
+
 # Helpers shared with the other numbered scripts. Defined once: these were
 # duplicated across files sourced into one environment, where load order
 # decided which definition won.
@@ -388,9 +392,9 @@ run_profiles <- function() {
   # exactly the file that silently kept old fertility rates in cycles 16-17.
   source(file.path("R", "lib", "artifact_provenance.R"))
   write_with_provenance(prof, file.path(OUT, "county_birth_profiles.csv"),
-                        inputs = BASE)
-  write_csv(select(prof, GEOID, county_label, state, n_midwives, births_past_12mo, sentences),
-            file.path(OUT, "county_sentences.csv"), na = "")
+                        inputs = BASE, na = "")
+  write_with_provenance(select(prof, GEOID, county_label, state, n_midwives, births_past_12mo, sentences),
+            file.path(OUT, "county_sentences.csv"), na = "", inputs = prov_inputs(file.path("data", "county_base.csv"), file.path(ART, "midwives_geography_FROZEN.csv")))
 
   cli::cli_h2("Coverage")
   cli::cli_alert_info("roster rows: {n_roster}; located to a county: {n_located} ({round(100*n_located/n_roster,1)}%)")

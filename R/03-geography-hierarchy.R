@@ -50,6 +50,10 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(tidyr); library(cli); library(tigris)
 })
 
+# CYCLE 21b. Inputs recorded beside every artifact this script writes, so a
+# reader can tell whether the numbers were built from the bytes still on disk.
+source(file.path("R", "lib", "artifact_provenance.R"))
+
 # Helpers shared with the other numbered scripts. Defined once: these were
 # duplicated across files sourced into one environment, where load order
 # decided which definition won.
@@ -340,7 +344,7 @@ build_geography <- function() {
           TRUE                                               ~ "different_state")) %>%
         dplyr::select(-.cty_r, -.cty_g)
       impact <- sort(table(bad_prov$county_impact), decreasing = TRUE)
-      write_csv(bad_prov, file.path(ART, "invariant_address_provenance_failures.csv"))
+      write_with_provenance(bad_prov, file.path(ART, "invariant_address_provenance_failures.csv"), inputs = prov_inputs("county_base.csv"))
       cli::cli_alert_danger(
         "address provenance failures by county impact: {paste(sprintf('%s=%d', names(impact), as.integer(impact)), collapse=', ')}")
       stop(sprintf("INVARIANT: %d records where the coordinate source's address disagrees with the pinned roster address. Coordinates and ZIP would describe different practices. See artifacts/invariant_address_provenance_failures.csv",
@@ -443,10 +447,10 @@ build_geography <- function() {
   if (n_cross > 0) {
     fail$cross_state <- n_cross
     cli::cli_alert_danger("INVARIANT FAILED: {n_cross} cross-state disagreements.")
-    write_csv(m %>% filter(cross_state_fail) %>%
+    write_with_provenance(m %>% filter(cross_state_fail) %>%
                 select(certification_number, npi, practice_state, practice_zip,
                        GEOID_coord, GEOID_unique, st_addr, st_zip, st_cty),
-              file.path(ART, "invariant_cross_state_failures.csv"))
+              file.path(ART, "invariant_cross_state_failures.csv"), inputs = prov_inputs("county_base.csv"))
   }
 
   # Fail closed: a record failing any invariant gets NO county.
@@ -475,7 +479,7 @@ build_geography <- function() {
 
   cli::cli_h2("Geography classes (frozen Stage 2 matched roster, n = {nrow(m)})")
   print(as.data.frame(classes), row.names = FALSE)
-  write_csv(classes, file.path(ART, "geography_class_counts.csv"))
+  write_with_provenance(classes, file.path(ART, "geography_class_counts.csv"), inputs = prov_inputs("county_base.csv"))
 
   cli::cli_alert_info(
     "county_exact resolved: {sum(!is.na(m$county_exact))} ({round(100*mean(!is.na(m$county_exact)),1)}%)")
@@ -514,17 +518,17 @@ build_geography <- function() {
     print(as.data.frame(by_rucc), row.names = FALSE)
     print(as.data.frame(by_tier), row.names = FALSE)
     print(as.data.frame(by_state), row.names = FALSE)
-    write_csv(
+    write_with_provenance(
       disc %>% select(certification_number, npi, practice_state, practice_zip,
                       GEOID_coord, GEOID_unique, quality_score, geocode_match,
                       any_of(c("match_tier", "match_resolution")), geo_ambiguity),
-      file.path(ART, "zip_fallback_discordant.csv"))
+      file.path(ART, "zip_fallback_discordant.csv"), inputs = prov_inputs("county_base.csv"))
   }
 
-  write_csv(tibble(n_validation = n_val, n_agree = n_agree,
+  write_with_provenance(tibble(n_validation = n_val, n_agree = n_agree,
                    pct_agree = pct_agree,
                    ci_low = 100 * (ctr - hw), ci_high = 100 * (ctr + hw)),
-            file.path(ART, "zip_fallback_validation.csv"))
+            file.path(ART, "zip_fallback_validation.csv"), inputs = prov_inputs("county_base.csv"))
 
   out <- m %>%
     mutate(source_linkage = basename(FROZEN), source_linkage_sha256 = linkage_sha) %>%
@@ -558,7 +562,7 @@ build_geography <- function() {
          call. = FALSE)
   }
   assert_identity_preserved(out, spine, "certification_number", "final output")
-  write_csv(out, GEO_OUT, na = "")
+  write_with_provenance(out, GEO_OUT, na = "", inputs = prov_inputs("county_base.csv"))
   cli::cli_alert_success("{GEO_OUT} written ({nrow(out)} rows)")
 
   # Ascertainment by linkage status: a county attached to a fuzzy or
@@ -578,7 +582,7 @@ build_geography <- function() {
                 .groups = "drop") %>%
       arrange(desc(n))
     print(as.data.frame(by_status))
-    write_csv(by_status, file.path(ART, "geography_by_linkage_status.csv"))
+    write_with_provenance(by_status, file.path(ART, "geography_by_linkage_status.csv"), inputs = prov_inputs("county_base.csv"))
   }
 
   # The gate the instructions asked for: coverage is not evidence, agreement is.

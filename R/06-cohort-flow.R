@@ -36,6 +36,10 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(tidyr); library(cli)
 })
 
+# CYCLE 21b. Inputs recorded beside every artifact this script writes, so a
+# reader can tell whether the numbers were built from the bytes still on disk.
+source(file.path("R", "lib", "artifact_provenance.R"))
+
 # Helpers shared with the other numbered scripts. Defined once: these were
 # duplicated across files sourced into one environment, where load order
 # decided which definition won.
@@ -155,8 +159,8 @@ build_flow <- function() {
 
   unclassified <- sum(is.na(adds$addition_reason))
   if (unclassified > 0) {
-    write_csv(filter(adds, is.na(addition_reason)),
-              file.path(ART, "cohort_additions_UNCLASSIFIED.csv"))
+    write_with_provenance(filter(adds, is.na(addition_reason)),
+              file.path(ART, "cohort_additions_UNCLASSIFIED.csv"), inputs = prov_inputs(file.path(ART, "frozen_cohort", "analytic_cohort.csv"), file.path(ART, "amcb_npi_linkage_FROZEN.csv"), file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))
     stop(sprintf("%d of %d additions remain unclassified; see artifacts/cohort_additions_UNCLASSIFIED.csv",
                  unclassified, nrow(adds)), call. = FALSE)
   }
@@ -181,7 +185,7 @@ build_flow <- function() {
   if (nrow(mech) > 0) {
     cli::cli_h2("Final resolution mechanism for the additions")
     print(as.data.frame(mech), row.names = FALSE)
-    write_csv(mech, file.path(ART, "cohort_additions_by_mechanism.csv"))
+    write_with_provenance(mech, file.path(ART, "cohort_additions_by_mechanism.csv"), inputs = prov_inputs(file.path(ART, "frozen_cohort", "analytic_cohort.csv"), file.path(ART, "amcb_npi_linkage_FROZEN.csv"), file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))
   }
 
   # Historical NPPES panel dependence, when the field exists.
@@ -198,7 +202,7 @@ build_flow <- function() {
                     "npi_match_status", "match_status", "match_resolution",
                     "s2_tier", "s2_evidence")),
            addition_reason)
-  write_csv(audit, file.path(ART, "cohort_additions_16743_to_17538.csv"), na = "")
+  write_with_provenance(audit, file.path(ART, "cohort_additions_16743_to_17538.csv"), na = "", inputs = prov_inputs(file.path(ART, "frozen_cohort", "analytic_cohort.csv"), file.path(ART, "amcb_npi_linkage_FROZEN.csv"), file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))
   cli::cli_alert_success("Person-level audit: artifacts/cohort_additions_16743_to_17538.csv ({nrow(audit)} rows)")
 
   rem <- tibble(certification_number = removed) %>%
@@ -234,7 +238,7 @@ build_flow <- function() {
 
   cli::cli_h2("Transition table")
   print(as.data.frame(transitions), row.names = FALSE)
-  write_csv(transitions, file.path(ART, "cohort_transitions.csv"))
+  write_with_provenance(transitions, file.path(ART, "cohort_transitions.csv"), inputs = prov_inputs(file.path(ART, "frozen_cohort", "analytic_cohort.csv"), file.path(ART, "amcb_npi_linkage_FROZEN.csv"), file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))
 
   # --- Resolution mechanism WITHIN each prior-status group ------------------
   res_col <- intersect(c("npi_match_resolution", "npi_match_method"), names(adds))
@@ -250,7 +254,7 @@ build_flow <- function() {
     stopifnot(sum(by_prior$n) == length(added))
     cli::cli_h2("Final resolution mechanism, within prior status")
     print(as.data.frame(by_prior), row.names = FALSE)
-    write_csv(by_prior, file.path(ART, "newly_resolved_by_prior_status.csv"))
+    write_with_provenance(by_prior, file.path(ART, "newly_resolved_by_prior_status.csv"), inputs = prov_inputs(file.path(ART, "frozen_cohort", "analytic_cohort.csv"), file.path(ART, "amcb_npi_linkage_FROZEN.csv"), file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))
   }
 
   # --- Bidirectional flow, replacing the one-sided artifact ----------------
@@ -269,7 +273,7 @@ build_flow <- function() {
     sum(flow$n[flow$population == "removed"]) == length(removed),
     sum(flow$n[flow$population == "retained"]) == length(retained))
 
-  write_csv(flow, file.path(ART, "cohort_flow_bidirectional.csv"))
+  write_with_provenance(flow, file.path(ART, "cohort_flow_bidirectional.csv"), inputs = prov_inputs(file.path(ART, "frozen_cohort", "analytic_cohort.csv"), file.path(ART, "amcb_npi_linkage_FROZEN.csv"), file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))
   cli::cli_h2("Bidirectional flow")
   print(as.data.frame(flow %>% select(population, reason, n)), row.names = FALSE)
   cli::cli_alert_success("artifacts/cohort_flow_bidirectional.csv written")

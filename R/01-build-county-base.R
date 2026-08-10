@@ -56,6 +56,10 @@ suppressPackageStartupMessages({
   library(sf)
 })
 
+# CYCLE 21b. Inputs recorded beside every artifact this script writes, so a
+# reader can tell whether the numbers were built from the bytes still on disk.
+source(file.path("R", "lib", "artifact_provenance.R"))
+
 options(tigris_use_cache = TRUE, timeout = 600)
 
 ACS_YEAR <- 2023L
@@ -430,6 +434,11 @@ build_county_base <- function(out_csv = OUT_CSV) {
   # which is what prompted the provenance mechanism in cycle 18. Emitting the
   # sidecar HERE is what makes that detectable by content instead of by clock.
   source(file.path("R", "lib", "artifact_provenance.R"))
+  # No `na =` argument, exactly as the original readr::write_csv(base, out_csv)
+  # had none. The first wiring let the helper force na = "", which silently
+  # rewrote 2,696 NA values in this file as empty strings -- and cycle 13's T130
+  # showed this repo does treat blank and NA differently. The wrapper must
+  # change provenance, never content.
   write_with_provenance(base, out_csv, inputs = c(
     file.path(DATA_DIR, "rucc_2023.xlsx"),
     file.path(DATA_DIR, "nchs_urcodes_2013.xlsx"),

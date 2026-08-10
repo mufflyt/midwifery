@@ -92,3 +92,23 @@ check_provenance <- function(path) {
                stale = !identical(cur, i$sha256), stringsAsFactors = FALSE)
   }))
 }
+
+#' Collect the input paths that exist
+#'
+#' @description
+#' CYCLE 21b. The first wiring gave each of the 14 numbered scripts its own
+#' `.prov_inputs()` definition -- fourteen copies of one function, which is
+#' precisely the duplicate-definition class this project has paid for six times
+#' and which cycle 9's T84 exists to catch. It caught this one, in code written
+#' by the cycle that added the guard's sibling.
+#'
+#' One definition; each script passes its own paths.
+#'
+#' @param ... paths, given as literals or as the script's own path constants.
+#' @return [character] those that exist, in the order supplied.
+#' @family provenance
+prov_inputs <- function(...) {
+  p <- unlist(list(...), use.names = FALSE)
+  p <- p[!is.na(p) & nzchar(p)]
+  p[file.exists(p)]
+}

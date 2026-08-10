@@ -46,6 +46,10 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(cli); library(jsonlite)
 })
 
+# CYCLE 21b. Inputs recorded beside every artifact this script writes, so a
+# reader can tell whether the numbers were built from the bytes still on disk.
+source(file.path("R", "lib", "artifact_provenance.R"))
+
 source(file.path("R", "lib", "ct_county_crosswalk.R"))
 
 ART  <- "artifacts"; OUT <- file.path(ART, "county_profiles")
@@ -167,7 +171,7 @@ run_ingest <- function() {
   cli::cli_alert_info("CNM births in identified counties: {format(ident_births, big.mark=',')}")
   cli::cli_alert_info("CNM births pooled into 'Unidentified Counties': {format(pooled_births, big.mark=',')} ({round(100*pooled_births/(pooled_births+ident_births),1)}% of the total)")
 
-  write_csv(joined, file.path(OUT, "county_cnm_births.csv"), na = "")
+  write_with_provenance(joined, file.path(OUT, "county_cnm_births.csv"), na = "", inputs = prov_inputs(file.path(OUT, "county_birth_profiles.csv")))
 
   manifest <- list(
     analysis = "CDC WONDER county x CNM/CM natality ingest",

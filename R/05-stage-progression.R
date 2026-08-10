@@ -41,6 +41,10 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(tidyr); library(cli); library(jsonlite)
 })
 
+# CYCLE 21b. Inputs recorded beside every artifact this script writes, so a
+# reader can tell whether the numbers were built from the bytes still on disk.
+source(file.path("R", "lib", "artifact_provenance.R"))
+
 # Helpers shared with the other numbered scripts. Defined once: these were
 # duplicated across files sourced into one environment, where load order
 # decided which definition won.
@@ -86,6 +90,38 @@ freeze_input <- function(src, dest_dir) {
   sha <- sha256_of(src)
   info <- file.info(src)
   d <- read_csv(src, show_col_types = FALSE, col_types = cols(.default = col_character()))
+
+  # CYCLE 21b. THE ROOT CAUSE OF TWO ACCIDENTAL RE-FREEZES. This function
+  # copied over any existing freeze and rewrote the fingerprint on every run,
+  # so simply executing R/05 -- to refresh a stale downstream artifact, say --
+  # silently re-pinned the analytic population. It happened twice: cycle 18
+  # caught and reverted it, and cycle 21 (mine) did it again, moving the cohort
+  # 17,538 -> 16,892 and shipping a commit that claimed no estimand changed.
+  #
+  # A freeze that silently re-freezes is a copy. If a fingerprint already exists
+  # and the source no longer matches it, that is a DECISION -- re-pin and re-run
+  # everything downstream, or keep the pin -- and the decision belongs to a
+  # person, not to whoever happened to run this script. Set
+  # ALLOW_REFREEZE=1 to make it deliberate.
+  fp_path <- file.path(dest_dir, "INPUT_FINGERPRINT.json")
+  if (file.exists(fp_path) && !nzchar(Sys.getenv("ALLOW_REFREEZE"))) {
+    prev <- jsonlite::read_json(fp_path, simplifyVector = TRUE)
+    if (!identical(prev$sha256, sha)) {
+      stop(sprintf(paste0(
+        "FROZEN PIN DIVERGED -- refusing to silently re-freeze %s.\n",
+        "  pinned : %d rows, county_best %d, sha %s (frozen %s)\n",
+        "  live   : %d rows, county_best %d, sha %s (mtime %s)\n",
+        "Re-freezing changes the analytic population and every downstream count.\n",
+        "If that is intended, re-run with ALLOW_REFREEZE=1 and regenerate Table 1,\n",
+        "the county products and the access findings. Otherwise restore the live\n",
+        "source or leave the pin alone."),
+        basename(src),
+        prev$rows, prev$county_best, substr(prev$sha256, 1, 16), prev$frozen_at,
+        nrow(d), sum(!is.na(d$county_best)), substr(sha, 1, 16),
+        format(info$mtime, "%Y-%m-%d %H:%M:%S")), call. = FALSE)
+    }
+    return(prev)   # unchanged source: keep the existing pin untouched
+  }
 
   dest <- file.path(dest_dir, basename(src))
   file.copy(src, dest, overwrite = TRUE)
@@ -162,8 +198,8 @@ build_progression <- function() {
   cohort <- g4$certification_number
   N <- length(cohort)
   cli::cli_alert_info("Frozen analytic cohort: {N} people (from {GEO4})")
-  write_csv(tibble(certification_number = cohort),
-            file.path(FROZEN_DIR, "analytic_cohort.csv"))
+  write_with_provenance(tibble(certification_number = cohort),
+            file.path(FROZEN_DIR, "analytic_cohort.csv"), inputs = prov_inputs("county_base.csv", "zcta_county_2020.txt", file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))
 
   # --- Cohort flow ---------------------------------------------------------
   s2 <- read_csv(STAGE2_ROSTER, show_col_types = FALSE,
@@ -197,7 +233,7 @@ build_progression <- function() {
   # Reasons must be mutually exclusive and account for EVERY dropped person.
   stopifnot(sum(flow$n) == length(dropped))
   print(as.data.frame(flow), row.names = FALSE)
-  write_csv(flow, file.path(ART, sprintf("cohort_flow_%d_to_%d.csv", nrow(s2), N)))
+  write_with_provenance(flow, file.path(ART, sprintf("cohort_flow_%d_to_%d.csv", nrow(s2), N)), inputs = prov_inputs("county_base.csv", "zcta_county_2020.txt", file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))
   cli::cli_alert_success("Cohort flow sums exactly to {length(dropped)}")
 
   # --- Rurality stratum, fixed once for the frozen cohort ------------------
@@ -262,7 +298,7 @@ build_progression <- function() {
   res <- bind_rows(out) %>%
     mutate(input_sha256 = FP$sha256, input_rows = FP$rows,
            input_mtime = FP$mtime)
-  write_csv(res, file.path(ART, "stage_progression_like_for_like.csv"))
+  write_with_provenance(res, file.path(ART, "stage_progression_like_for_like.csv"), inputs = prov_inputs("county_base.csv", "zcta_county_2020.txt", file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))
   cli::cli_alert_success("artifacts/stage_progression_like_for_like.csv written")
   invisible(res)
 }

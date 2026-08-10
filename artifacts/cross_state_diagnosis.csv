@@ -1,0 +1,9 @@
+certification_number,GEOID_coord,GEOID_unique,latitude,longitude,geocode_match,quality_score,practice_address,practice_city,practice_state,practice_zip,npi,match_tier,match_stage,match_score,GEOID_fresh,state_code,st_address,st_zip,st_coord,cached_vs_fresh,partition
+6233,27123,27053,,,,,,,,,,,,,,,,27,,,incomplete_evidence
+11963,13135,13089,,,,,GEORGIA CENTER FOR FEMALE HEALTH,DECATUR,GA,30034,1518010040,Bronze,exact,1,,13,13,13,,,incomplete_evidence
+9313,28121,28049,,,,,141 MASCOMA ST,LEBANON,NH,03766,1275580847,Bronze,exact,1,,33,33,28,,,incomplete_evidence
+2240,36005,36081,,,,,3000 EAST TREMONT AVENUE -ROOM B 34,BRONX,NY,11361,1134209604,Bronze,exact,1,,36,36,36,,,incomplete_evidence
+10492,20091,20005,,,,,8450 W 151ST ST,OVERLAND PARK,KS,66023,1740208156,Bronze,fuzzy,1,,20,20,20,,,incomplete_evidence
+10977,13089,13121,,,,,,,,,,,fuzzy,0.8462,,,,13,,,incomplete_evidence
+12940,56013,56007,,,,,854 TWEED LN,LANDER,WY,82335,1124269345,Bronze,fuzzy,1,,56,56,56,,,incomplete_evidence
+5717,51003,51540,,,,,,,,,,,fuzzy,0.92,,,,51,,,incomplete_evidence

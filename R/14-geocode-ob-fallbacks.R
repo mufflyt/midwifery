@@ -35,6 +35,10 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(cli); library(jsonlite)
 })
 
+# CYCLE 21b. Inputs recorded beside every artifact this script writes, so a
+# reader can tell whether the numbers were built from the bytes still on disk.
+source(file.path("R", "lib", "artifact_provenance.R"))
+
 # Helpers shared with the other numbered scripts. Defined once: these were
 # duplicated across files sourced into one environment, where load order
 # decided which definition won.
@@ -105,7 +109,7 @@ run_fallbacks <- function() {
     if (i %% 50 == 0) cli::cli_alert_info("  {i}/{nrow(todo)}")
   }
   fb <- bind_rows(res)
-  write_csv(fb, LOG, na = "")
+  write_with_provenance(fb, LOG, na = "", inputs = prov_inputs(file.path("artifacts", "ob_hospitals_geocoded.csv"), file.path("artifacts", "ob_hospitals_fallback_log.csv")))
   merge_fallbacks(d, fb)
 }
 
@@ -136,7 +140,7 @@ merge_fallbacks <- function(d, fb) {
   cli::cli_alert_success("with coordinates: {n_coord} of {nrow(merged)} ({round(100*n_coord/nrow(merged),1)}%)")
   print(as.data.frame(count(merged, coord_precision, sort = TRUE)), row.names = FALSE)
 
-  write_csv(merged, GEO, na = "")
+  write_with_provenance(merged, GEO, na = "", inputs = prov_inputs(file.path("artifacts", "ob_hospitals_geocoded.csv"), file.path("artifacts", "ob_hospitals_fallback_log.csv")))
   invisible(merged)
 }
 

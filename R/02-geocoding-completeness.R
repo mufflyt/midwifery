@@ -78,6 +78,10 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(tidyr); library(cli)
 })
 
+# CYCLE 21b. Inputs recorded beside every artifact this script writes, so a
+# reader can tell whether the numbers were built from the bytes still on disk.
+source(file.path("R", "lib", "artifact_provenance.R"))
+
 # Helpers shared with the other numbered scripts. Defined once: these were
 # duplicated across files sourced into one environment, where load order
 # decided which definition won.
@@ -225,9 +229,9 @@ build_completeness <- function() {
       cert_decade) %>% rename(level = cert_decade) %>% mutate(variable = "certification decade")
   ) %>% select(variable, level, n, n_geocoded, pct, ci_low, ci_high)
 
-  write_csv(by_rucc, file.path(ART, "geocoding_completeness_rucc.csv"))
-  write_csv(by_state, file.path(ART, "geocoding_completeness_state.csv"))
-  write_csv(by_char, file.path(ART, "geocoding_completeness_characteristics.csv"))
+  write_with_provenance(by_rucc, file.path(ART, "geocoding_completeness_rucc.csv"), inputs = prov_inputs("county_base.csv", "healthgrades_midwives.csv", "midwives_geocoded.csv"))
+  write_with_provenance(by_state, file.path(ART, "geocoding_completeness_state.csv"), inputs = prov_inputs("county_base.csv", "healthgrades_midwives.csv", "midwives_geocoded.csv"))
+  write_with_provenance(by_char, file.path(ART, "geocoding_completeness_characteristics.csv"), inputs = prov_inputs("county_base.csv", "healthgrades_midwives.csv", "midwives_geocoded.csv"))
 
   cli::cli_h3("By rurality (ZIP-derived, observable regardless of geocoding)")
   print(as.data.frame(by_rucc %>% mutate(across(pct:ci_high, ~ round(.x, 1)))))
@@ -265,7 +269,7 @@ build_completeness <- function() {
     mutate(stage = stage, n_matched = nrow(m), rural_gap_pp = -spread) %>%
     relocate(stage)
   hist_f <- file.path(ART, "geocoding_completeness_by_stage.csv")
-  write_csv(row, hist_f, append = file.exists(hist_f))
+  write_with_provenance(row, hist_f, append = file.exists(hist_f), inputs = prov_inputs("county_base.csv", "healthgrades_midwives.csv", "midwives_geocoded.csv"))
   cli::cli_alert_success("stage '{stage}' appended to {hist_f}")
 
   invisible(list(rucc = by_rucc, state = by_state, characteristics = by_char))

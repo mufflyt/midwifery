@@ -129,11 +129,23 @@ cat("\n-- ADVERSARIAL --\n")
                   logical(1)))
   chk(n >= 3L,
       sprintf("T217 provenance coverage does not shrink below the recorded three [%d]", n))
-  src <- paste(unlist(lapply(
-    c("R/01-build-county-base.R", "R/10-county-birth-profiles.R",
-      "R/12-district-profiles.R"), readLines, warn = FALSE)), collapse = "\n")
-  chk(lengths(regmatches(src, gregexpr("write_with_provenance\\(", src))) >= 3L,
-      "T217b all three writers still call write_with_provenance()")
+
+  # CYCLE 21b. Wiring extended from 3 artifacts to EVERY write in the numbered
+  # pipeline, on request. The ratchet is now the inverse: no bare write_csv may
+  # remain in a numbered script, because a single unwired writer is the one
+  # whose staleness nobody detects.
+  scripts <- list.files("R", pattern = "^[0-9]{2}-.*\\.R$", full.names = TRUE)
+  bare <- unlist(lapply(scripts, function(f) {
+    x <- readLines(f, warn = FALSE); x[grepl("^\\s*#", x)] <- ""
+    if (any(grepl("(?<![_a-zA-Z.])write_csv\\(", x, perl = TRUE))) basename(f) else NULL
+  }))
+  chk(length(bare) == 0L,
+      sprintf("T217b no numbered script still writes without provenance [%s]",
+              if (length(bare)) paste(bare, collapse = ", ") else "none"))
+  wired <- sum(vapply(scripts, function(f)
+    any(grepl("write_with_provenance\\(", readLines(f, warn = FALSE))), logical(1)))
+  chk(wired >= 14L,
+      sprintf("T217c every numbered script that writes is wired [%d]", wired))
 }
 
 # T218 (adversarial). THE REAL SCENARIO. Rebuild an input and confirm the

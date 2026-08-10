@@ -57,6 +57,10 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(tidyr); library(cli)
 })
 
+# CYCLE 21b. Inputs recorded beside every artifact this script writes, so a
+# reader can tell whether the numbers were built from the bytes still on disk.
+source(file.path("R", "lib", "artifact_provenance.R"))
+
 # Helpers shared with the other numbered scripts. Defined once: these were
 # duplicated across files sourced into one environment, where load order
 # decided which definition won.
@@ -167,12 +171,12 @@ build_composition <- function() {
     mutate(rucc_cat = coalesce(
       band_rurality(rucc_2023, RURALITY_LABELS_COHORT), "Unknown"))
 
-  write_csv(d %>% select(certification_number, group, s2_decision, s2_npi,
+  write_with_provenance(d %>% select(certification_number, group, s2_decision, s2_npi,
                          final_npi, any_of(c("npi_match_method",
                                              "npi_match_resolution")),
                          status, certification, cert_decade, practice_state,
                          rucc_cat),
-            file.path(ART, "cohort_membership_four_way.csv"), na = "")
+            file.path(ART, "cohort_membership_four_way.csv"), na = "", inputs = prov_inputs("county_base.csv", "zcta_county_2020.txt", file.path(ART, "frozen_cohort", "analytic_cohort.csv"), file.path(ART, "frozen_cohort", "midwives_geography_guarded.csv"), file.path(ART, "amcb_npi_linkage_FROZEN.csv"), file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))
 
   cli::cli_h2("Group sizes")
   print(as.data.frame(count(d, group, name = "n")), row.names = FALSE)
@@ -182,7 +186,7 @@ build_composition <- function() {
     cli::cli_h3(v)
     print(as.data.frame(r$wide %>% mutate(across(where(is.numeric), ~ round(.x, 1)))),
           row.names = FALSE)
-    write_csv(r$long, file.path(ART, sprintf("composition_%s.csv", v)))
+    write_with_provenance(r$long, file.path(ART, sprintf("composition_%s.csv", v)), inputs = prov_inputs("county_base.csv", "zcta_county_2020.txt", file.path(ART, "frozen_cohort", "analytic_cohort.csv"), file.path(ART, "frozen_cohort", "midwives_geography_guarded.csv"), file.path(ART, "amcb_npi_linkage_FROZEN.csv"), file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))
   }
 
   # n/N detail for rurality, the question that matters most here.
@@ -197,7 +201,7 @@ build_composition <- function() {
   print(as.data.frame(rn), row.names = FALSE)
 
   st <- compose(d, "practice_state")
-  write_csv(st$long, file.path(ART, "composition_practice_state.csv"))
+  write_with_provenance(st$long, file.path(ART, "composition_practice_state.csv"), inputs = prov_inputs("county_base.csv", "zcta_county_2020.txt", file.path(ART, "frozen_cohort", "analytic_cohort.csv"), file.path(ART, "frozen_cohort", "midwives_geography_guarded.csv"), file.path(ART, "amcb_npi_linkage_FROZEN.csv"), file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))
 
   # --- Provenance audit of the no-final-NPI entrants -----------------------
   geo <- if (file.exists(FROZEN_GEO)) chr(FROZEN_GEO) else NULL
@@ -227,7 +231,7 @@ build_composition <- function() {
       geo_npi_present = sum(!is.na(geo_npi)), geo_npi_absent = sum(is.na(geo_npi)))),
       row.names = FALSE)
   }
-  write_csv(aud, file.path(ART, "no_final_npi_provenance.csv"), na = "")
+  write_with_provenance(aud, file.path(ART, "no_final_npi_provenance.csv"), na = "", inputs = prov_inputs("county_base.csv", "zcta_county_2020.txt", file.path(ART, "frozen_cohort", "analytic_cohort.csv"), file.path(ART, "frozen_cohort", "midwives_geography_guarded.csv"), file.path(ART, "amcb_npi_linkage_FROZEN.csv"), file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))
   cli::cli_alert_success("artifacts/no_final_npi_provenance.csv written")
 
   invisible(d)

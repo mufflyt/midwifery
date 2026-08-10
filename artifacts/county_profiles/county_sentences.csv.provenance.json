@@ -1,10 +1,14 @@
 {
-  "artifact": "county_birth_profiles.csv",
+  "artifact": "county_sentences.csv",
   "written_utc": "2026-08-10 11:43:11 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",
       "sha256": "7bb17b14e30afffd4dadaaae707b288d681a41006b87b1e47b94b8c9bbba7639"
+    },
+    {
+      "path": "artifacts/midwives_geography_FROZEN.csv",
+      "sha256": "9455138198e4d347fe191470a4e30e8e94267689ade8ee4a9acb20d8862d3f5a"
     }
   ]
 }

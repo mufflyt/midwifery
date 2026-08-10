@@ -46,6 +46,10 @@ suppressPackageStartupMessages({
   library(cli); library(jsonlite)
 })
 
+# CYCLE 21b. Inputs recorded beside every artifact this script writes, so a
+# reader can tell whether the numbers were built from the bytes still on disk.
+source(file.path("R", "lib", "artifact_provenance.R"))
+
 ART <- "artifacts"; OUT <- file.path(ART, "ab_middle_name")
 dir.create(OUT, showWarnings = FALSE, recursive = TRUE)
 
@@ -112,7 +116,7 @@ run_ab <- function() {
   tr <- cmp %>% count(transition, name = "n", sort = TRUE) %>%
     mutate(pct = round(100 * n / sum(n), 2))
   print(as.data.frame(tr), row.names = FALSE)
-  write_csv(tr, file.path(OUT, "transitions_all.csv"))
+  write_with_provenance(tr, file.path(OUT, "transitions_all.csv"), inputs = prov_inputs(LEDGER, ROSTER, CANDS))
 
   # --- Exposure population -------------------------------------------------
   exposed_ids <- d %>%
@@ -130,7 +134,7 @@ run_ab <- function() {
     count(transition, name = "n", sort = TRUE) %>%
     mutate(pct = round(100 * n / sum(n), 2))
   print(as.data.frame(tre), row.names = FALSE)
-  write_csv(tre, file.path(OUT, "transitions_exposed.csv"))
+  write_with_provenance(tre, file.path(OUT, "transitions_exposed.csv"), inputs = prov_inputs(LEDGER, ROSTER, CANDS))
 
   # --- Evidence vectors: changed + matched unchanged comparison group ------
   changed <- cmp %>% filter(transition != "completely_unchanged")
@@ -167,7 +171,7 @@ run_ab <- function() {
            roster_first, roster_last, cand_first, cand_last,
            confidence_score, last_match, first_match, state_match, zip_match,
            specialty_signal, accepted)
-  write_csv(evidence, file.path(OUT, "evidence_top2.csv"), na = "")
+  write_with_provenance(evidence, file.path(OUT, "evidence_top2.csv"), na = "", inputs = prov_inputs(LEDGER, ROSTER, CANDS))
   cli::cli_alert_info("evidence vectors: {nrow(changed)} changed + {nrow(matched)} matched-unchanged people")
 
   # --- Manifest: data AND code provenance ---------------------------------

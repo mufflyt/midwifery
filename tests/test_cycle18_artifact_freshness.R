@@ -56,6 +56,13 @@ ALLF <- list.files(c("data", "artifacts", "docs"), recursive = TRUE, full.names 
 resolve <- function(nm) {
   if (grepl("%", nm)) return(NA_character_)          # sprintf template, not a path
   hit <- ALLF[basename(ALLF) == basename(nm)]
+  # CYCLE 21b. Resolution is by BASENAME, so a frozen copy and its live source
+  # collapse to one node. Frozen artifacts are pinned ON PURPOSE and are meant
+  # to be older than the source they pinned -- that is what freezing IS. Flagging
+  # them as stale reports the mechanism working as a failure, so they are
+  # excluded here and covered instead by the fingerprint check, which compares
+  # the pin to the source deliberately rather than by clock.
+  hit <- hit[!grepl("(^|/)(frozen_[^/]*|.*_FROZEN)[^/]*(/|$)", hit)]
   if (length(hit)) hit[1] else NA_character_
 }
 edges <- local({
@@ -66,8 +73,14 @@ edges <- local({
       m <- regmatches(txt, gregexpr(paste0(fn, "\\([^\n]*"), txt))[[1]]
       gsub('"', "", unlist(regmatches(m, gregexpr('"[^"]+\\.csv"', m))))
     }
-    ins  <- unique(stats::na.omit(vapply(grab("read_csv"),  resolve, character(1), USE.NAMES = FALSE)))
-    outs <- unique(stats::na.omit(vapply(grab("write_csv"), resolve, character(1), USE.NAMES = FALSE)))
+    # CYCLE 21b. This grabbed "write_csv" only, so when every pipeline write was
+    # converted to write_with_provenance() the graph silently emptied and this
+    # file passed with ZERO edges -- a freshness test over nothing. Caught by
+    # T181a, which exists for exactly that reason.
+    ins  <- unique(stats::na.omit(vapply(grab("read_csv"), resolve, character(1), USE.NAMES = FALSE)))
+    outs <- unique(stats::na.omit(vapply(
+      c(grab("write_csv"), grab("write_with_provenance")),
+      resolve, character(1), USE.NAMES = FALSE)))
     for (o in outs) for (i in ins) if (!identical(i, o))
       out[[length(out) + 1]] <- data.frame(script = basename(s), output = o, input = i,
                                            stringsAsFactors = FALSE)

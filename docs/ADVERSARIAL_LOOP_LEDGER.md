@@ -2928,3 +2928,68 @@ source is better on its face. Either re-freeze **deliberately** and re-run
 everything downstream (Table 1's 11,913, county products, access findings), or
 keep the pin and record that the geography source has moved on. Both defensible;
 neither is the loop's to choose — which is exactly what I did twice by accident.
+
+---
+
+## Cycle 21b — provenance wired across the pipeline, on request
+
+**41 further `write_csv` calls converted**, across all 14 numbered scripts. Every
+artifact the pipeline writes now carries a sidecar naming the SHA-256 of the
+files it was built from. `T217b` inverts the old ratchet: **no bare `write_csv`
+may remain** in a numbered script, because one unwired writer is the one whose
+staleness nobody detects.
+
+### Four defects introduced by the wiring, three caught by existing tests
+
+1. **The helper forced `na = ""`.** Only 10 of 47 call sites passed it; 37 relied
+   on readr's default `"NA"`. The first wiring rewrote **2,696 `NA` values in
+   `county_base.csv` as empty strings** — and cycle 13's T130 proved this repo
+   treats blank and `NA` differently. The wrapper now passes `...` through and
+   changes provenance only, never content.
+2. **Fourteen copies of `.prov_inputs()`.** Caught by **cycle 9's T84**, the
+   duplicate-definition guard — my own class-C1 violation, in the cycle that
+   added the guard's sibling. Replaced by one `prov_inputs(...)` taking each
+   script's paths.
+3. **Cycle 18's graph emptied.** It grepped `write_csv` for outputs, so after the
+   rename it found **zero edges** and passed as a freshness test over nothing.
+   Caught by its own T181a, which exists for that reason.
+4. **A comment rewritten into a lie.** The converter edited text *inside* a
+   comment in `R/01`, making it describe code that never existed. Restored.
+
+### A false positive I did not ship
+
+With the graph fixed, the sweep flagged three **frozen** artifacts as stale. A
+frozen copy is pinned on purpose and is *meant* to be older than its source —
+that is what freezing is. Reporting the mechanism working as a failure would
+have been the Michigan-water-mask error again. Frozen paths are excluded from
+the clock sweep and covered by the fingerprint check instead, which compares pin
+to source deliberately rather than by clock.
+
+### Root cause of two accidental re-freezes, fixed
+
+`freeze_input()` copied over any existing freeze and rewrote the fingerprint on
+**every run**, so merely executing `R/05` re-pinned the analytic population. It
+happened twice — cycle 18 caught it, and cycle 21 (mine) repeated it. It now
+**refuses** when a fingerprint exists and the source no longer matches, printing
+both row counts and requiring `ALLOW_REFREEZE=1`. A freeze that silently
+re-freezes is a copy.
+
+### On my revert, which was wrong
+
+Commit `f381d05` re-froze the cohort deliberately and corrected me: the old pin's
+payload (`6e325de0`, 17,538 rows) **existed nowhere** — the frozen payload is
+gitignored person-level data. My revert restored *metadata* onto data it no
+longer described, creating a broken pin while intending to prevent an unapproved
+change. The deliberate re-freeze costs the study nothing: **0 of the 1,563 lost
+records are in the active primary-linked cohort**, and none of the 11,913
+analytic midwives is in the lost set.
+
+### Pre-existing, recorded not fixed
+
+`R/11-wonder-county-ingest.R` aborts with `object 'ct_apportioned' not found`
+when the CT branch is empty — the column is never created, then coalesced.
+Verified pre-existing against the version before cycle 4.
+
+### Full suite
+
+**27/27 files pass, twice, order-independent. Frozen directories untouched.**

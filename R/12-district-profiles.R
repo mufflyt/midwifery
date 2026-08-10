@@ -45,6 +45,10 @@
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(sf); library(cli); library(jsonlite)
 })
+
+# CYCLE 21b. Inputs recorded beside every artifact this script writes, so a
+# reader can tell whether the numbers were built from the bytes still on disk.
+source(file.path("R", "lib", "artifact_provenance.R"))
 source(file.path("R", "spatial_crs_contract.R"))  # assert_crs_equal()
 
 # Helpers shared with the other numbered scripts. Defined once: these were
@@ -316,10 +320,11 @@ run_districts <- function() {
   source(file.path("R", "lib", "artifact_provenance.R"))
   write_with_provenance(select(d, -any_of("geometry")),
                         file.path(OUT, "district_profiles.csv"),
-                        inputs = file.path("data", "congress", "legislators_current.csv"))
-  write_csv(select(d, GEOID, district_display, rep_name, party, n_midwives,
+                        inputs = file.path("data", "congress", "legislators_current.csv"),
+                        na = "")
+  write_with_provenance(select(d, GEOID, district_display, rep_name, party, n_midwives,
                    births_12mo, sentences, rep_badge),
-            file.path(OUT, "district_sentences.csv"), na = "")
+            file.path(OUT, "district_sentences.csv"), na = "", inputs = prov_inputs(file.path(ART, "midwives_geography_FROZEN.csv")))
 
   cli::cli_h2("Examples")
   ex <- d %>% arrange(desc(n_midwives)) %>% slice(1) %>%
