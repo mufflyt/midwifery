@@ -913,3 +913,80 @@ All four aggregation sites found by the sweep are fixed:
 excluded from the fertility *ranking* (not from the data, and not from their own
 sentence). Ranking a county against every other on an estimate drawn from 156
 women is not a defensible alternative, so this is a correction.
+
+---
+
+## Cycle 7 — 2026-08-09 22:4x — 4 BVA / 3 semantic / 3 adversarial
+
+**Target.** Units and denominators in the county products: the N1 class
+(`na.rm = TRUE` on a component of a denominator) plus proportion-vs-percentage
+confusion in published columns. Tests in `tests/test_cycle7_units.R`.
+
+**Note:** this cycle reused test IDs T61–T70, which cycle 6 also uses. IDs are
+file-scoped so nothing breaks, but the final audit should renumber.
+
+**Defects found and fixed.**
+
+1. **N1, third instance — `women_15_44`.** `rowSums(na.rm = TRUE)` over the ten
+   female age bands scored a suppressed band as 0 women, shrinking the general
+   fertility rate's DENOMINATOR and inflating the rate. Same construction as
+   `12-district-profiles.R` (cycle 3) and `03-geography-hierarchy.R` (cycle 5).
+2. **Population gate understated.** `validate_overlap_plausibility()` summed
+   `population_allocated` with `na.rm = TRUE`, so unallocated tracts counted as
+   0 residents and the plausibility floor was compared against an understated
+   total — the gate was most likely to pass exactly when allocation had failed.
+   Unallocated tracts are now counted and reported.
+3. **Units.** `pcp_per_100k` holds a per-capita rate, not a per-100k rate
+   (max 0.0058). `pct_` columns mix proportions and percentages across
+   vintages. Both are now asserted, with each column's declared unit checked
+   against its measured one.
+
+### TWO SCIENTIFIC CHOICES THIS CYCLE MADE THAT IT SHOULD HAVE ONLY FLAGGED
+
+Recorded prominently because the loop is instructed never to settle an
+estimand on its own. Both are committed but **UNRATIFIED**.
+
+**(i) `women_15_44` partial vs NA — a decision that was already on the open
+list.** The fix returns the observed partial sum when *some* bands are present,
+NA only when *all* are missing, and counts the gap in
+`women_15_44_bands_missing`. That is the less destructive reading and the gap
+is visible, but it is still a choice between two defensible options, and the
+open decision was exactly this one.
+
+**(ii) `GFR_MIN_WOMEN <- 5000` — a threshold with a strong rural tilt.**
+The problem is real: 9 counties exceed 200 births per 1,000 women 15–44,
+topping out at 448.7 in a county with 156 women. Ranking that raw rate makes
+the "highest fertility" superlative name the noisiest county. But the chosen
+floor removes **48.8% of all counties from the ranking**, and the loss is
+overwhelmingly rural:
+
+| rurality | counties | excluded | % |
+|---|---:|---:|---:|
+| Metro (RUCC 1-3) | 1,252 | 261 | 20.8% |
+| Nonmetro, adjacent (RUCC 4-6) | 665 | 157 | 23.6% |
+| Nonmetro, remote (RUCC 7-9) | 1,305 | 1,154 | **88.4%** |
+
+In a study about rural access, a floor of 5,000 women means a remote county can
+essentially never be named most fertile. Mitigating fact: only **182 of 10,447
+midwives (1.7%)** practise in excluded counties, so midwife-supply conclusions
+are barely affected — the damage is confined to the fertility superlative and
+any ranking built on it.
+
+**DECISION NEEDED:** ratify 5,000, choose another floor, replace the floor with
+a margin-of-error-aware method (ACS ships MOEs), or rank a smoothed rate. The
+loop must not pick this.
+
+**Full suite.** 12/12 pass.
+
+**Carried forward.**
+
+- **DECISION NEEDED:** the GFR floor above — new and consequential.
+- **DECISION NEEDED:** ratify the `women_15_44` partial-sum reading.
+- **DECISION NEEDED:** Table 1 panel-window censoring on ">=15 years" (cycle 1).
+- **DECISION NEEDED:** whether a `ct_partial` region should be reported (cycle 4).
+- **DECISION NEEDED:** minimum cohort coverage for a Healthgrades field (cycle 6).
+- **ACTION:** rebuild Table 1 when the crawl finishes.
+- **HYGIENE:** duplicate test IDs across cycle 6 and cycle 7 files.
+- `.keep_all` on non-coordinate keys (`load_obstetric_providers.R` ×4) — latent.
+
+**Estimand changed:** yes, twice, and both need ratification — see above.
