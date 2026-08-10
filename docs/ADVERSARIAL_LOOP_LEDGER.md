@@ -1461,3 +1461,98 @@ scope the check now fails precisely, naming the offending call.
 - **HYGIENE:** duplicate test IDs across cycle 6 / cycle 7 files.
 
 **Estimand changed:** no.
+
+---
+
+## Cycle 11 — 2026-08-10 — 3 BVA / 4 semantic / 3 adversarial
+
+**Target.** `R/spatial_crs_contract.R` and the two point-in-polygon assignments
+that place every midwife in a county and a congressional district.
+
+**Tests added** — `tests/test_cycle11_spatial.R` (T101–T110, 26 assertions)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T101 | BVA | `assert_crs_equal()` at its four cases |
+| T102 | BVA | zero-feature layers with and without a CRS |
+| T103 | BVA | coordinate classification, incl. the real artifacts |
+| T104 | semantic | every spatial binary op is guarded |
+| T105 | semantic | the guard is not redundant with sf |
+| T106 | semantic | point-in-polygon assignment is total |
+| T107 | semantic | s2 off only around a topological op |
+| T108 | adversarial | swapped lon/lat |
+| T109 | adversarial | metres labelled as degrees |
+| T110 | adversarial | duplicate points stay two people |
+
+### A dead guard, and the honest size of it
+
+`R/spatial_crs_contract.R` advertises three layers and opens with "Every spatial
+binary operation must be preceded by `assert_crs_equal()`". It had **zero call
+sites**. Third instance in this project of documentation describing an intended
+design as an implemented one, after `compute_match_score()` and
+`safe_left_join()`'s unusable default (c9).
+
+Measuring the severity mattered more than reporting it:
+
+| case | sf's own behaviour |
+|---|---|
+| mismatched CRS | **errors** |
+| NA CRS one side | **errors** |
+| NA CRS **both** sides | **silent, returns matches** |
+
+Only the third is a genuine hole, and it is exactly the one the module's roxygen
+claims to close. Both live call sites set CRS literally, so the guard **cannot
+fire today**. Wiring it in (2 sites) makes the module's rule true rather than
+aspirational; it does not fix a live defect, and the test file says so.
+
+### The finding with real consequence: no coordinate validation existed
+
+Nothing in this repo validated coordinate RANGES. `st_as_sf(coords =
+c("longitude", "latitude"))` is order-sensitive, so a swapped pair is a valid
+point in the Indian Ocean, and the assignment then reports it as "not in a
+district" — **indistinguishable from a legitimate miss.**
+
+**The naive check would have been wrong.** "Longitude must be negative" flags
+three real hospitals: American Samoa (-14.3, -171), Guam (13.5, 145) and the
+Northern Marianas (15.2, 146). Positive longitude is correct for the western
+Pacific territories, and a sign test would delete obstetric capacity from the
+places least able to spare it — the same false-positive shape as the Michigan
+water-mask gate earlier in this project.
+
+New `R/lib/coordinate_plausibility.R` therefore **classifies** rather than
+rejects: `conus` / `noncontiguous` / `territory` / `implausible`.
+
+Measured on the shipped artifacts:
+
+| artifact | conus | noncontiguous | territory | implausible |
+|---|---:|---:|---:|---:|
+| `midwives_geography_FROZEN.csv` | 15,095 | 75 | 3 | **0** |
+| `ob_hospitals_geocoded.csv` | 2,721 | 27 | 36 | **0** |
+
+(1,719 midwives have no coordinates at all.)
+
+### Defects found — 1 dead guard wired, 1 missing validation added, 0 live errors
+
+This cycle found **no live corruption**. Stated plainly because the honest
+result of an adversarial pass is sometimes that the data is clean, and reporting
+it as a save would be false.
+
+### Carried forward, and a new one
+
+- **NEW:** 3 territory midwives and 36 territory hospitals. If the
+  `congressional_districts()` / `counties()` layers exclude territories, those
+  people are silently absent from every denominator. **Cycle 12 must check
+  whether the assignment layers cover them**, and the pipeline's "inside a
+  district: N (X%)" line should separate *implausible* from *unassigned*.
+- 18 undeclared joins, ratcheted (c10).
+- 4 duplicate helper definitions, ratcheted (c9).
+- 14 bare `.keep_all` sites, ratcheted (c5).
+- **DECISION NEEDED:** reliability method for imprecise GFRs (c8); GFR universe
+  15-50 vs 15-44 (c7); `women_15_44` partial vs NA (c7); Table 1 censoring (c1);
+  `ct_partial` reporting (c4).
+
+### Full suite
+
+**16/16 pass.**
+
+**No scientific estimand was changed in this cycle.**

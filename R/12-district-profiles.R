@@ -45,6 +45,7 @@
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(sf); library(cli); library(jsonlite)
 })
+source(file.path("R", "spatial_crs_contract.R"))  # assert_crs_equal()
 
 # Helpers shared with the other numbered scripts. Defined once: these were
 # duplicated across files sourced into one environment, where load order
@@ -203,6 +204,15 @@ run_districts <- function() {
     st_transform(4326)
   pts <- st_as_sf(mw, coords = c("longitude", "latitude"), crs = 4326)
   old_s2 <- sf::sf_use_s2(); sf::sf_use_s2(FALSE); on.exit(sf::sf_use_s2(old_s2), add = TRUE)
+  # CYCLE 11. R/spatial_crs_contract.R states that every spatial binary
+  # operation must be preceded by assert_crs_equal(), and it had ZERO call
+  # sites anywhere in the repo. sf already errors on a CRS mismatch and on a
+  # one-sided NA, so the residual value is narrow but real: two layers that
+  # BOTH have an undefined CRS satisfy identical() and st_join happily matches
+  # them, computing point-in-polygon on unlabelled numbers. Both layers here
+  # set CRS literally, so this cannot fire today -- it makes the module's own
+  # rule true rather than aspirational.
+  assert_crs_equal(pts, cds, "st_join(point-in-district)")
   hit <- st_join(pts, cds[, c("GEOID")], join = st_within)
 
   n_assigned <- sum(!is.na(hit$GEOID))

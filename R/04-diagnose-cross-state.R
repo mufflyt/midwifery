@@ -45,6 +45,7 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(cli)
   library(sf); library(tigris)
 })
+source(file.path("R", "spatial_crs_contract.R"))  # assert_crs_equal()
 options(tigris_use_cache = TRUE)
 
 ART <- "artifacts"
@@ -63,6 +64,9 @@ fresh_county <- function(df) {
     sf::st_transform(4326)
   pts <- sf::st_as_sf(df[ok, c("longitude", "latitude")],
                       coords = c("longitude", "latitude"), crs = 4326)
+  # CYCLE 11. See R/12-district-profiles.R -- the CRS contract's stated rule,
+  # now actually applied.
+  assert_crs_equal(pts, cty, "st_within(point-in-county)")
   idx <- sf::st_within(pts, sf::st_geometry(cty))
   first <- vapply(idx, function(i) if (length(i)) i[1] else NA_integer_, integer(1))
   out[ok] <- cty$GEOID[first]
