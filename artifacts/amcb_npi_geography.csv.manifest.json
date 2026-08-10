@@ -1,9 +1,9 @@
 {
   "artifact": "amcb_npi_geography.csv",
-  "artifact_sha256": "709107c02468c52eb4ba0ebb7afebbbca8dd2c3f8e184923bd27178e84c25a2c",
+  "artifact_sha256": "c7b8783fbb9c1321c5a1499f48c4c2f30fd91959440c96835ce2db225ba14dcb",
   "artifact_rows": 16898,
   "crosswalk": "amcb_npi_crosswalk_translit_panel-midwifery-plus-nursing_years-2007-2025.csv",
-  "crosswalk_sha256": "0b812533f7cf460928941e3fff9d504aad52c37b7272a6a3caecdf50dddf5a33",
+  "crosswalk_sha256": "f4b6464a0077c46b8a99a9cb3def47e8a68f3901ab1e1ff3f0e985030ded56ef",
   "nppes_bulk_file": "npidata_pfile_20050523-20251109.csv",
   "nppes_bulk_vintage": "2025-11-09",
   "source_script_sha256": "a9e993f2ec3e176119ab5a2ba5771b21a85a5fe1a0c6a1c7405218dcee073fa3",
