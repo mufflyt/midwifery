@@ -729,10 +729,28 @@ main <- function(n_limit = NA_integer_) {
   # ambiguity multiplies, so it is counted every run rather than discovered
   # later.
   if ("hg_url" %in% names(out)) {
-    dup <- out %>% filter(!is.na(hg_url)) %>% count(hg_url) %>% filter(n > 1)
+    # Two corrections to the obvious version of this check, each of which
+    # inflated the count several-fold:
+    #
+    # 1. distinct() on certification_number FIRST. A midwife occupies one row
+    #    per practice site, so counting rows per URL flags every multi-site
+    #    midwife as though she were several people -- 766 flagged where 131
+    #    were real, one certificant with four clinics counted as four
+    #    claimants.
+    # 2. Select on hg_status == "ok", not !is.na(hg_url). A candidate rejected
+    #    for a name or credential mismatch KEEPS the URL it was rejected for,
+    #    so !is.na(hg_url) silently readmits rejected matches.
+    #
+    # The claim is about PEOPLE sharing one profile, so the unit counted has
+    # to be the person, over accepted matches only.
+    dup <- out %>%
+      filter(hg_status == "ok", !is.na(hg_url)) %>%
+      distinct(certification_number, hg_url) %>%
+      count(hg_url) %>%
+      filter(n > 1)
     if (nrow(dup))
       log_message(sprintf(
-        "AMBIGUOUS: %d profile URL(s) matched >1 certificant (%d rows affected). Resolve before use.",
+        "AMBIGUOUS: %d profile URL(s) claimed by >1 certificant (%d certificant-links). Not attributable; drop before use.",
         nrow(dup), sum(dup$n)))
   }
 

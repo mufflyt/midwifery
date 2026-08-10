@@ -122,16 +122,41 @@ repeat {
 a <- read_csv(OUTPUT, show_col_types = FALSE, progress = FALSE)
 say("profiles enriched: %s", format(nrow(a), big.mark = ","))
 
-ACTIVE_COHORT <- 11913L
-hits <- read_csv(HITS, show_col_types = FALSE, progress = FALSE)
-linked <- hits %>%
-  filter(hg_status == "ok", !is.na(hg_url)) %>%
-  distinct(certification_number, hg_url)
-say("certificants with a profile: %s of %s ACTIVE (%.1f%%)",
-    format(n_distinct(linked$certification_number), big.mark = ","),
-    format(ACTIVE_COHORT, big.mark = ","),
-    100 * n_distinct(linked$certification_number) / ACTIVE_COHORT)
+# The crawl targets the FULL 22,309-certificant roster; the Table 1 cohort is
+# the 11,913 that are ACTIVE and primary-linked. An earlier version of this
+# report took its numerator from the crawl and its denominator from the
+# cohort -- two different populations, a percentage that can exceed 100. The
+# cohort is imposed on the numerator here so both sides describe one group.
+cohort <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv",
+                   show_col_types = FALSE, progress = FALSE) %>%
+  filter(status == "ACTIVE", linkage_tier == "primary_midwifery") %>%
+  pull(certification_number) %>% unique()
 
+hits <- read_csv(HITS, show_col_types = FALSE, progress = FALSE)
+
+# Selection is on hg_status, never on !is.na(hg_url): a candidate rejected for
+# a name or credential mismatch RETAINS the URL it was rejected for.
+linked <- hits %>%
+  filter(hg_status == "ok", !is.na(hg_url), certification_number %in% cohort) %>%
+  distinct(certification_number, hg_url)
+
+# A URL claimed by more than one certificant cannot be attributed to either.
+# Joining on it would copy one person's demographics onto several midwives --
+# fabricated values, which are far worse than missing ones. Dropped before
+# anything is counted, and reported so the loss is visible.
+amb <- linked %>% count(hg_url) %>% filter(n > 1)
+if (nrow(amb)) {
+  say("dropping %d shared profile URL(s) covering %d cohort member(s): not attributable",
+      nrow(amb), n_distinct(linked$certification_number[linked$hg_url %in% amb$hg_url]))
+  linked <- filter(linked, !hg_url %in% amb$hg_url)
+}
+
+say("cohort members with an attributable profile: %s of %s (%.1f%%)",
+    format(n_distinct(linked$certification_number), big.mark = ","),
+    format(length(cohort), big.mark = ","),
+    100 * n_distinct(linked$certification_number) / length(cohort))
+
+ACTIVE_COHORT <- length(cohort)
 per_cert <- linked %>% left_join(a, by = "hg_url")
 cat("\nfield                     of profiles    of ACTIVE cohort\n")
 for (v in c("hg_gender", "hg_age", "hg_years_experience", "hg_languages",
@@ -143,12 +168,5 @@ for (v in c("hg_gender", "hg_age", "hg_years_experience", "hg_languages",
               n_cert, 100 * n_cert / ACTIVE_COHORT))
 }
 
-# A URL claimed by more than one certificant cannot be attributed to either.
-dup <- linked %>% count(hg_url) %>% filter(n > 1)
-if (nrow(dup)) {
-  cat(sprintf("\nAMBIGUOUS: %d profile URL(s) map to >1 certificant (%d links).\n",
-              nrow(dup), sum(dup$n)))
-  cat("Those certificants must not receive these fields; resolve or drop them.\n")
-} else {
-  cat("\nNo profile URL maps to more than one certificant.\n")
-}
+cat(sprintf("\n%d shared URL(s) were excluded above, so no certificant here
+carries another person's attributes.\n", nrow(amb)))
