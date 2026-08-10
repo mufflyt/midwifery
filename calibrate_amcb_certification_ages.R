@@ -128,7 +128,29 @@ if (file.exists(state_path)) {
   }
 }
 
-# C. Doximity frozen ages (if available locally)
+# C. Ohio Statewide Voter Database direct DOBs (3,962 direct verified DOBs)
+oh_path <- "artifacts/ohio_voter_license_ages.csv"
+if (file.exists(oh_path)) {
+  cat(sprintf("Merging calibration sample from Ohio Voter File: %s\n", oh_path))
+  oh_voter <- read_csv(oh_path, show_col_types = FALSE, progress = FALSE)
+  if ("oh_age_at_ref" %in% names(oh_voter)) {
+    oh_voter <- oh_voter %>%
+      filter(oh_age_plausible) %>%
+      select(certification_number, oh_age = oh_age_at_ref) %>%
+      distinct(certification_number, .keep_all = TRUE)
+      
+    df <- df %>%
+      left_join(oh_voter, by = "certification_number") %>%
+      mutate(
+        known_age = coalesce(known_age, as.numeric(oh_age)),
+        age_source = if_else(!is.na(oh_age) & is.na(age_source), "OH_Voter_Direct_DOB", age_source),
+        is_direct_ground_truth = if_else(!is.na(oh_age), TRUE, is_direct_ground_truth)
+      ) %>%
+      select(-any_of("oh_age"))
+  }
+}
+
+# D. Doximity frozen ages (if available locally)
 dox_path <- "artifacts/doximity_cnm_ages.csv"
 if (file.exists(dox_path)) {
   cat(sprintf("Merging calibration sample from Doximity: %s\n", dox_path))
