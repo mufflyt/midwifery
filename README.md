@@ -58,16 +58,16 @@ doing any work. Identity is decided first; taxonomy and geography follow.
 
 ```mermaid
 flowchart TD
-  A["AMCB directory — 22,309 names, no location"] --> B["Candidate generation — 197,081 pairs"]
-  P["NPPES 2007-2025 — 443,623 NPIs"] --> B
+  A["AMCB directory - 22,309 names, no location"] --> B["Candidate generation - 197,081 pairs"]
+  P["NPPES 2007-2025 - 443,623 NPIs"] --> B
   B --> C["Rank by name-evidence class"]
   C --> D{"One candidate at the strongest class?"}
-  D -->|no| Q["Quarantined — 3,091"]
+  D -->|no| Q["Quarantined - 3,091"]
   D -->|yes| E{"One NPI, one person?"}
-  E -->|contested| Q2["Quarantined — 91"]
-  E -->|yes| F["Accepted links — 16,892"]
+  E -->|contested| Q2["Quarantined - 91"]
+  E -->|yes| F["Accepted links - 16,892"]
   F --> G["Last-observed practice address"]
-  G --> H["Geocode — Census to ArcGIS to centroid"]
+  G --> H["Geocode - Census to ArcGIS to centroid"]
   G --> J["Unique-ZIP county"]
   H --> I["Point-in-polygon county"]
   I --> K["county_exact"]
@@ -106,10 +106,10 @@ evidence tier, never promoted into the primary cohort.
 ```mermaid
 flowchart LR
   S["Resolved candidate"] --> T1{"Fuzzy surname?"}
-  T1 -->|yes| F["sensitivity_fuzzy — 328"]
+  T1 -->|yes| F["sensitivity_fuzzy - 328"]
   T1 -->|no| T2{"Midwifery taxonomy ever recorded?"}
-  T2 -->|yes| P["primary_midwifery — 14,668"]
-  T2 -->|no| N["sensitivity_nursing — 1,896"]
+  T2 -->|yes| P["primary_midwifery - 14,668"]
+  T2 -->|no| N["sensitivity_nursing - 1,896"]
 ```
 
 ### Where the 22,309 go
@@ -141,17 +141,17 @@ geocoded from one roster with ZIPs from another dropped validation agreement to
 flowchart TD
   A["Last-observed address, with its observation year"] --> B{"Already in geocode cache?"}
   B -->|yes| D["Coordinates"]
-  B -->|no| C1["US Census — 86.9%"]
-  C1 -->|fail| C2["ArcGIS — 9.2%"]
+  B -->|no| C1["US Census - 86.9%"]
+  C1 -->|fail| C2["ArcGIS - 9.2%"]
   C2 -->|fail| C3["City centroid"]
   C1 --> D
   C2 --> D
-  D --> E{"Coordinate state = ZIP state?"}
-  E -->|no| X["Cross-state conflict — unresolved — 17"]
+  D --> E{"Coordinate state matches ZIP state?"}
+  E -->|no| X["Cross-state conflict - unresolved - 17"]
   E -->|yes| F["Point-in-polygon, TIGER 2023"]
-  F --> G["county_exact — 98.9% of primary"]
+  F --> G["county_exact - 98.9% of primary"]
   A --> H["Unique-ZIP county"]
-  G --> I["county_best — 99.7% of primary"]
+  G --> I["county_best - 99.7% of primary"]
   H --> I
 ```
 
