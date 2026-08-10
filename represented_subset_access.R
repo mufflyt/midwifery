@@ -83,18 +83,16 @@ cent <- sf::st_sf(GEOID = tr$GEOID, female_population = tr$female_population,
                   geometry = cent)
 
 # --- county / rurality for each tract (first 5 of GEOID) --------------------
-rucc <- read_excel("data/rucc_2023.xlsx") %>%
-  transmute(county = str_pad(as.character(FIPS), 5, "left", "0"),
-            rucc = as.integer(RUCC_2023)) %>%
-  distinct(county, .keep_all = TRUE)
+# Shared with build_table1_midwives.R: the lookup refuses to resolve a
+# conflicting duplicate FIPS by row order, and the bander returns NA for codes
+# outside 1-9 instead of labelling them remote.
+source("R/lib/table1_bands.R")
+rucc_raw <- read_excel("data/rucc_2023.xlsx")
+rucc <- build_rucc_lookup(rucc_raw$FIPS, rucc_raw$RUCC_2023)
 cent <- cent %>%
   mutate(county = substr(GEOID, 1, 5)) %>%
   left_join(rucc, by = "county") %>%
-  mutate(rurality = case_when(
-    is.na(rucc) ~ NA_character_,
-    rucc <= 3   ~ "Metro (RUCC 1-3)",
-    rucc <= 6   ~ "Nonmetro, adjacent (RUCC 4-6)",
-    TRUE        ~ "Nonmetro, remote (RUCC 7-9)"))
+  mutate(rurality = band_rurality(rucc, RURALITY_LABELS_SHORT))
 
 # --- per-band binary access -------------------------------------------------
 for (b in BANDS) {

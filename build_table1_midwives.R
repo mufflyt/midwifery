@@ -38,6 +38,10 @@ suppressPackageStartupMessages({
 
 REF_YEAR <- 2026   # "years since" are measured to this study year, not Sys.Date()
 
+# Banding and date parsing live in one tested place. Inline, each rule held
+# only because the current artifacts satisfy an assumption it never enforced.
+source("R/lib/table1_bands.R")
+
 # --- cohort -------------------------------------------------------------------
 link <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv",
                  show_col_types = FALSE, progress = FALSE)
@@ -140,19 +144,13 @@ coh$acog_district <- if (acog_ok) {
 geo <- read_csv("artifacts/midwives_geography_FROZEN.csv",
                 show_col_types = FALSE, progress = FALSE) %>%
   select(certification_number, county_best)
-rucc <- read_excel("data/rucc_2023.xlsx") %>%
-  transmute(county = str_pad(as.character(FIPS), 5, "left", "0"),
-            rucc = as.integer(RUCC_2023)) %>%
-  distinct(county, .keep_all = TRUE)
+rucc_raw <- read_excel("data/rucc_2023.xlsx")
+rucc <- build_rucc_lookup(rucc_raw$FIPS, rucc_raw$RUCC_2023)
 coh <- coh %>%
   left_join(geo, by = "certification_number") %>%
   mutate(county = str_pad(as.character(county_best), 5, "left", "0")) %>%
   left_join(rucc, by = "county") %>%
-  mutate(rurality = case_when(
-    is.na(rucc) ~ NA_character_,
-    rucc <= 3   ~ "Metropolitan (RUCC 1-3)",
-    rucc <= 6   ~ "Nonmetropolitan, adjacent (RUCC 4-6)",
-    TRUE        ~ "Nonmetropolitan, remote (RUCC 7-9)"))
+  mutate(rurality = band_rurality(rucc))
 
 # --- NPPES sex and enumeration date -------------------------------------------
 sx <- "artifacts/nppes_sex_enumeration.csv"
@@ -179,18 +177,9 @@ coh <- coh %>%
                     sex_code == "X" ~ "X (not listed as F or M)",
                     sex_code == "U" ~ "U (unspecified in NPPES)",
                     TRUE ~ NA_character_),
-    enum_year = suppressWarnings(as.integer(str_sub(
-      str_replace_all(as.character(enumeration_date), "[^0-9/]", ""), -4))),
+    enum_year = parse_enum_year(enumeration_date, max_year = REF_YEAR),
     yrs_since_enum = REF_YEAR - enum_year,
-    yrs_since_enum = if_else(yrs_since_enum >= 0 & yrs_since_enum <= 25,
-                             yrs_since_enum, NA_real_),
-    enum_band = case_when(
-      is.na(yrs_since_enum) ~ NA_character_,
-      yrs_since_enum < 5    ~ "<5 years",
-      yrs_since_enum < 10   ~ "5-9 years",
-      yrs_since_enum < 15   ~ "10-14 years",
-      yrs_since_enum < 20   ~ "15-19 years",
-      TRUE                  ~ ">=20 years"))
+    enum_band = band_years_since_enum(yrs_since_enum))
 
 # --- years active, from the NPPES snapshot panel ------------------------------
 # "Years active" here is YEARS OBSERVED IN NPPES: the span from first to last
@@ -212,12 +201,7 @@ if (file.exists(pnl)) {
   coh$yrs_observed <- NA_real_; coh$first_seen <- NA_real_
 }
 coh <- coh %>%
-  mutate(active_band = case_when(
-    is.na(yrs_observed) ~ NA_character_,
-    yrs_observed < 5    ~ "<5 years",
-    yrs_observed < 10   ~ "5-9 years",
-    yrs_observed < 15   ~ "10-14 years",
-    TRUE                ~ ">=15 years"))
+  mutate(active_band = band_years_observed(yrs_observed))
 
 # --- assemble, long format, per the isochrones vignette -----------------------
 # Percentages use the non-missing denominator, and the missing count is emitted

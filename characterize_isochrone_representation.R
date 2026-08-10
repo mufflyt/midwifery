@@ -34,6 +34,7 @@
 #          artifacts/not_represented_by_existing_isochrone_library.csv
 #          artifacts/isochrone_representation_model.txt
 # =============================================================================
+source("R/lib/table1_bands.R")
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(readxl); library(stringr)
 })
@@ -64,11 +65,7 @@ den <- link %>%
   left_join(rucc, by = "county") %>%
   mutate(
     represented = certification_number %in% mat$point_id,
-    rurality = case_when(
-      is.na(rucc)  ~ NA_character_,
-      rucc <= 3    ~ "Metro (RUCC 1-3)",
-      rucc <= 6    ~ "Nonmetro, adjacent (RUCC 4-6)",
-      TRUE         ~ "Nonmetro, remote (RUCC 7-9)")) %>%
+    rurality = band_rurality(rucc, RURALITY_LABELS_SHORT)) %>%
   left_join(mat %>% select(point_id, match_method, match_distance_km),
             by = c("certification_number" = "point_id"))
 
