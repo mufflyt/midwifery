@@ -82,7 +82,13 @@ safe_divide <- function(numerator,
 
   # Handle vector operations
   if (length(numerator) != length(denominator)) {
-    if (length(numerator) == 0L || length(denominator) == 0L) return(default)
+    # CYCLE 3. This used to `return(default)`, a length-1 value, for a
+    # zero-length input. Inside mutate() that either errors on recycling or
+    # silently lengthens a column, and the caller sees a value where there was
+    # no row. Zero rows in means zero rows out.
+    if (length(numerator) == 0L || length(denominator) == 0L) {
+      return(rep(as.numeric(default), 0L))
+    }
     if (length(numerator) == 1) {
       numerator <- rep(numerator, length(denominator))
     } else if (length(denominator) == 1) {

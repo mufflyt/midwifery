@@ -292,3 +292,103 @@ reach step 10 (commit → pull --rebase → push) before the session goes idle.
 of ">=15 years observed" (scientific decision), constant-field guard for
 Table 1, absent-vs-FALSE for the two Healthgrades booleans, and `hg_age`
 validation. Seven `distinct(..., .keep_all = TRUE)` sites remain unaudited.
+
+---
+
+## Cycle 3 — 2026-08-09 — 3 BVA / 3 semantic / 4 adversarial
+
+**Targets.** The two libraries that produce denominators and counts and had
+**zero tests between them** — `R/safe_divide.R` and `R/lib/wonder_natality.R` —
+plus the ACS denominator in `R/12-district-profiles.R`.
+
+**Organising principle:** *suppressed is not zero, and neither is missing.*
+Every defect below gives an absent value the number 0, which is not missingness
+but a claim — and in each case a claim in the direction that makes access look
+better or a denominator look smaller.
+
+**Tests added** — `tests/test_cycle3_denominators.R` (T21–T30, 21 assertions)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T21 | BVA | `zero_threshold` edge; negative ≠ zero denominator |
+| T22 | BVA | length/type stability inside `mutate()` |
+| T23 | BVA | published percentages do not round half **up** |
+| T24 | semantic | `safe_percent` still carries the DEN-032 default |
+| T25 | semantic | `flag == "ok"` implies a real count |
+| T26 | semantic | suppressed / unreliable / N-A keep distinct flags, never 0 |
+| T27 | adversarial | hand-edited spreadsheet cell values |
+| T28 | adversarial | non-finite numerators; rate on empty exposure |
+| T29 | adversarial | `rowSums(na.rm = TRUE)` on a suppressed component |
+| T30 | adversarial | drift from the mufflyaccess SSOT |
+
+### Defects found — 2 fixed, 2 documented hazards, 1 wrong test
+
+1. **`wonder_count(",,,")` was flagged `"ok"` with an `NA` value.** *Fixed.*
+   The pattern `^[0-9,]+$` accepts a string of bare commas; `as.numeric("")`
+   then gives `NA`. `flag == "ok"` is precisely what downstream code tests to
+   decide whether a county's births may be reported, so a cell that parsed to
+   nothing advertised itself as publishable. Now requires at least one digit and
+   either plain digits or proper thousands grouping.
+
+2. **`safe_divide()` returned a length-1 value for zero-length input.** *Fixed.*
+   Inside `mutate()` that either errors on recycling or silently lengthens a
+   column, producing a value where there was no row.
+
+3. **DOCUMENTED HAZARD — `safe_percent(default = 0)`.** `safe_pct_manu()`'s own
+   roxygen states this default "caused Step 4/11 to report 0% access when the
+   denominator was missing, creating phantom care-desert artifacts (DEN-032)".
+   The alias was fixed; **`safe_percent()` itself still defaults to 0**, so an
+   empty denominator yields "0% access" — an assertion of total absence,
+   manufactured from missing data.
+   **Not fixed here, deliberately.** `safe_divide.R` is vendored verbatim from
+   `~/mufflyaccess`, the SSOT, which carries the identical default (verified by
+   T30). Changing midwifery's copy alone would create exactly the silent drift
+   between same-named copies that this project has paid for repeatedly. The fix
+   belongs in mufflyaccess, which is out of scope for this loop.
+   **Contained instead:** T24c asserts no midwifery script calls
+   `safe_percent()` directly (currently none do), so the hazard cannot reach a
+   published number without failing a test first.
+
+4. **DOCUMENTED HAZARD — `rowSums(..., na.rm = TRUE)` builds `women_15_44`**
+   (`R/12-district-profiles.R:114`). The loader has just converted Census
+   negative sentinels to `NA`; `na.rm = TRUE` then scores every suppressed
+   component as **0**, understating the denominator and inflating every
+   per-capita rate computed from it. A partially suppressed district becomes
+   indistinguishable from one with genuinely fewer women of reproductive age.
+   **Not fixed: this is a scientific decision, not a code fix.** Either the
+   district is reported with a partial denominator (current, understated), or
+   it is `NA` and drops out of the district analysis. Both are defensible and
+   they give different published tables. **DECISION NEEDED.**
+
+5. **Wrong test, corrected.** T23 originally expected `12.35 → 12.4` by
+   banker's rounding. Wrong: 12.35 is not representable in binary and its double
+   sits fractionally *below* the midpoint, so it rounds down for a reason
+   unrelated to round-half-to-even. Both mechanisms are now pinned separately,
+   because "round half up" is what a reader assumes a published percentage did
+   and neither of these is that.
+
+### Same-class sweep
+
+`safe_percent`/`safe_divide` are **vendored from mufflyaccess with no declared
+dependency**. T30 pins the local copy's signature against the SSOT's so drift
+becomes a test failure rather than a silent divergence. This is the C1 class
+again, now crossing a repo boundary.
+
+The 13 unaudited `.keep_all` sites carried from cycle 2 were **not** reached
+this cycle. Still open.
+
+### Full suite
+
+7/7 pass.
+
+### Unresolved / carried forward
+
+- **DECISION NEEDED:** partial vs `NA` denominator for `women_15_44` (defect 4).
+- **DECISION NEEDED:** whether Table 1 reports panel-window censoring on the
+  ">=15 years" band (from cycle 1).
+- `safe_percent` DEN-032 default — fix belongs in `mufflyaccess`, out of scope.
+- 13 unaudited `.keep_all` sites (cycle 2).
+- Healthgrades: constant `hg_years_experience`; absent-vs-FALSE booleans;
+  `hg_age` validation (cycle 1).
+
+**No scientific estimand was changed in this cycle.**

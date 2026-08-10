@@ -179,7 +179,13 @@ wonder_count <- function(x) {
     grepl("^Suppressed$", x, ignore.case = TRUE)     ~ "suppressed",
     grepl("^Unreliable$", x, ignore.case = TRUE)     ~ "unreliable",
     grepl("^Not Applicable$", x, ignore.case = TRUE) ~ "not_applicable",
-    grepl("^[0-9,]+$", x)                            ~ "ok",
+    # CYCLE 3. This was "^[0-9,]+$", which accepts a string of bare commas.
+    # ",,," was flagged "ok" while as.numeric("") made its value NA, so a cell
+    # that parsed to nothing advertised itself as a publishable count. Downstream
+    # code tests flag == "ok" to decide whether a county's births can be
+    # reported, so the flag must imply a real number. Require at least one
+    # digit, and either plain digits or proper thousands grouping.
+    grepl("^[0-9]+$|^[0-9]{1,3}(,[0-9]{3})+$", x)    ~ "ok",
     TRUE                                             ~ "unparsed")
   value <- suppressWarnings(as.numeric(gsub(",", "", x)))
   value[flag != "ok"] <- NA_real_
