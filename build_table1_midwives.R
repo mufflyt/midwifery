@@ -47,6 +47,50 @@ coh <- link %>%
 N <- nrow(coh)
 cat(sprintf("cohort: %s ACTIVE primary-linked midwives\n", format(N, big.mark = ",")))
 
+# --- Healthgrades attribution eligibility -------------------------------------
+# Some Healthgrades profiles are claimed by more than one certificant -- either
+# two genuinely different people with near-identical names (Sara vs Sarah
+# Adkins; four separate Jennifer Allens), or one person holding two AMCB
+# certifications (a CM and a CNM number). Either way the profile cannot be
+# attributed to a specific midwife.
+#
+# SCOPE. This disqualifies them from HEALTHGRADES-DERIVED fields only. Their
+# NPPES sex, certification type, ACOG district, rurality and enumeration dates
+# are untouched by the collision, so removing them from the cohort would
+# discard sound registry data, shift the denominator off N, and break
+# comparability with every figure already published against it. The cohort
+# stays whole; the exclusion is carried as a flag and applied per field.
+#
+# Selection is on hg_status == "ok": a rejected candidate keeps the URL it was
+# rejected for, so !is.na(hg_url) would readmit refused matches.
+coh$hg_eligible <- TRUE
+hg_ambiguous <- character(0)
+if (file.exists("healthgrades_midwives.csv")) {
+  hg <- read_csv("healthgrades_midwives.csv", show_col_types = FALSE,
+                 progress = FALSE)
+  # Collisions are detected across the FULL roster, then intersected with the
+  # cohort. Restricting to cohort members BEFORE the count hides the case where
+  # a cohort member shares a profile with a non-cohort certificant: the URL
+  # then looks unshared and the midwife is wrongly treated as attributable.
+  # That mistake was live here and reported 2 affected members instead of 14.
+  shared <- hg %>%
+    filter(hg_status == "ok", !is.na(hg_url)) %>%
+    distinct(certification_number, hg_url) %>%
+    add_count(hg_url) %>%
+    filter(n > 1)
+  hg_ambiguous <- intersect(unique(shared$certification_number),
+                            coh$certification_number)
+  coh$hg_eligible <- !coh$certification_number %in% hg_ambiguous
+  cat(sprintf(paste0("Healthgrades: %s cohort member(s) share %s profile URL(s); ",
+                     "ineligible for Healthgrades-derived fields only\n"),
+              format(length(hg_ambiguous), big.mark = ","),
+              format(n_distinct(shared$hg_url), big.mark = ",")))
+  cat(sprintf("  registry-derived rows keep the full cohort of %s\n",
+              format(N, big.mark = ",")))
+} else {
+  cat("Healthgrades: scrape absent; no attribution exclusions applied\n")
+}
+
 # --- ACOG district, from the canonical crosswalk ------------------------------
 # map_state_to_acog() lives in mufflyt/isochrones and is loaded rather than
 # reimplemented; the district definitions there were corrected against the ACOG
@@ -221,7 +265,18 @@ t1 <- bind_rows(
       lvls = c("<5 years", "5-9 years", "10-14 years", ">=15 years")),
 
   tibble(characteristic = "Not collected by NPPES, CMS DAC or the Healthgrades scrape",
-         n = NA_integer_, percent = NA_real_, category = "Language")
+         n = NA_integer_, percent = NA_real_, category = "Language"),
+
+  # The denominator any future Healthgrades-derived row must use. Stated
+  # explicitly so it can never be silently swapped for N: those fields describe
+  # a smaller population than the registry fields above them.
+  tibble(characteristic = "Eligible for attribution (no shared profile)",
+         n = N - length(hg_ambiguous),
+         percent = round(100 * (N - length(hg_ambiguous)) / N, 1),
+         category = "Healthgrades-derived fields"),
+  tibble(characteristic = "Excluded: profile shared with another certificant",
+         n = length(hg_ambiguous), percent = NA_real_,
+         category = "Healthgrades-derived fields")
 )
 
 write_csv(t1, "artifacts/table1_midwives.csv", na = "")
@@ -232,6 +287,14 @@ md <- c("# Table 1. Characteristics of the ACTIVE certified-midwife cohort", "",
                 format(N, big.mark = ",")),
         "Percentages are within category and use the non-missing denominator;",
         "unknowns are counted on their own row.", "",
+        sprintf(paste0("Registry-derived rows use the full cohort. Healthgrades-derived ",
+                       "rows use a smaller denominator of **%s**: %s a Healthgrades ",
+                       "profile with another certificant and cannot be attributed one. ",
+                       "They remain in the cohort for every registry-derived row above."),
+                format(N - length(hg_ambiguous), big.mark = ","),
+                if (length(hg_ambiguous) == 1L) "one midwife shares"
+                else sprintf("%s midwives share",
+                             format(length(hg_ambiguous), big.mark = ","))), "",
         "| Characteristic | n | % |", "|---|---:|---:|")
 for (cat_i in unique(t1$category)) {
   md <- c(md, sprintf("| **%s** | | |", cat_i))

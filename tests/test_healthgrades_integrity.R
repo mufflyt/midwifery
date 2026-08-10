@@ -147,6 +147,32 @@ if (file.exists(ATTRS)) {
               nrow(clean), n_distinct(clean$certification_number)))
 }
 
+# Collisions must be detected across the FULL roster and only THEN intersected
+# with the cohort. Filtering to the cohort first hides any profile shared
+# between a cohort member and a non-cohort certificant: the URL looks unshared
+# and that midwife is wrongly treated as attributable. Live in
+# build_table1_midwives.R for one run, where it reported 2 exclusions
+# instead of 14 -- an error that removes a safeguard rather than adding noise.
+detect_then_scope <- x %>% filter(hg_status == "ok", !is.na(hg_url)) %>%
+  distinct(certification_number, hg_url) %>% add_count(hg_url) %>% filter(n > 1) %>%
+  pull(certification_number) %>% unique() %>% intersect(COHORT) %>% length()
+scope_then_detect <- x %>%
+  filter(hg_status == "ok", !is.na(hg_url), certification_number %in% COHORT) %>%
+  distinct(certification_number, hg_url) %>% add_count(hg_url) %>% filter(n > 1) %>%
+  pull(certification_number) %>% unique() %>% length()
+chk(detect_then_scope >= scope_then_detect,
+    sprintf("collision detection precedes cohort scoping (%d found vs %d if scoped first)",
+            detect_then_scope, scope_then_detect))
+
+if (file.exists("docs/table1_midwives.md")) {
+  t1txt <- readLines("docs/table1_midwives.md")
+  claimed <- as.integer(sub(".*profile shared with another certificant \\| ([0-9,]+) .*",
+                            "\\1", grep("profile shared with another", t1txt, value = TRUE)[1]))
+  chk(!is.na(claimed) && claimed == detect_then_scope,
+      sprintf("Table 1 reports the same exclusion count the data implies (%s vs %d)",
+              claimed, detect_then_scope))
+}
+
 # =============================================================================
 cat("\n3. PROVENANCE\n")
 # =============================================================================
