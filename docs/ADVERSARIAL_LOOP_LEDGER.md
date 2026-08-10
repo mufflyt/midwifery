@@ -2045,3 +2045,55 @@ class (RUCC c1, WONDER `flag == "ok"` c3, OB service code c15).
 **No scientific estimand was changed in this cycle.** No count moved; one
 misleading sentence was split into two accurate ones, and one unreachable
 branch was made honest.
+
+---
+
+## Cycle 15 — 2026-08-10 02:1x — 3 BVA / 3 semantic / 4 adversarial
+
+**Target.** Obstetric hospital capacity from the POS extract, and the county
+sentences generated from it. Tests in `tests/test_cycle15_ob_capacity.R`.
+
+**DEFECT 1 — a sentence asserting absence from a blank field.** The county
+narrative emitted *"N active hospitals, none of which reports obstetric
+services"* whenever `n_hosp_ob == 0`, regardless of why. Measured: of the
+**1,451** counties receiving that sentence, **651 (45%)** have every active
+hospital's `OB_SRVC_CD` missing. The sentence was generated from pure silence,
+and a reader hears "no obstetric care here" from a field the source never
+filled in. Two different facts now get two different sentences. **Nothing that
+is counted changes.**
+
+**DEFECT 2 — the cycle-1 class, recurring.** `build_ob_hospital_counts()` ended
+its recode with `TRUE ~ "no"`, so ANY code outside 1–3 — including one POS has
+not used yet — was asserted to mean "this hospital has no obstetric service".
+That is exactly the construction cycle 1 removed from the RUCC banding rule,
+where an unexpected code was confidently labelled "Nonmetropolitan, remote".
+Only a recorded `0` is a no; anything else is unknown.
+
+Behaviour preserved on current data: T149b confirms the live extract carries
+only codes 0–3, so no hospital changes category today. The fix is against the
+next vintage, not this one.
+
+**A comment's guess was wrong, and the data said so.** The code carried an
+aside that all-unknown OB records are "commonest in small rural counties". They
+are not: all-unknown runs **55.2% in metro, 43.1% in remote, 28.1% in
+adjacent**. Corrected in place — a plausible aside in a comment is not
+evidence, and this one would have supported a rural-access narrative the data
+does not.
+
+**Full suite.** 20/20 pass, 0 skips.
+
+**Carried forward.**
+
+- **DECISION NEEDED:** nesting-escape threshold that should fail a build (c14).
+- **DECISION NEEDED:** GFR reliability treatment; `women_15_44` partial-sum;
+  Table 1 panel censoring; `ct_partial` reporting; minimum Healthgrades
+  coverage (~49% projected).
+- **ACTION (upstream):** `extract_first_initial()` accent stripping — linked
+  cohort under-represents accented names (OR 0.18, p = 0.0002).
+- **ACTION:** rebuild Table 1 when the crawl finishes.
+- **DEBT:** 12 undeclared joins (T100); 14 bare `.keep_all` (T44).
+- **HYGIENE:** duplicate test IDs across cycles 6/7.
+
+**Estimand changed:** no. Counts are identical on the current POS vintage; only
+the sentence attached to 651 counties changes, and it changes from an assertion
+to an accurate statement of ignorance.
