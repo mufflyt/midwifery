@@ -1,0 +1,2 @@
+timestamp,join_type,label_left,label_right,left_rows,matched_rows,output_rows,coverage,left_only_rows,left_only_pct,by_columns
+20260809_234846.751,left,left,right,2,2,2,1,0,0,k

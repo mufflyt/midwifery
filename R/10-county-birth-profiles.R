@@ -86,8 +86,7 @@ BASE <- file.path("data", "county_base.csv")
 # analysis, and analyses read frozen inputs (see R/05-stage-progression.R).
 GEO  <- file.path(ART, "midwives_geography_FROZEN.csv")
 
-sha256_of <- function(p) sub(" .*$", "",
-                             system2("shasum", c("-a", "256", shQuote(p)), stdout = TRUE)[1])
+source(file.path("R", "lib", "provenance.R"))  # canonical sha256_of()
 
 #' Format a number for prose, returning NULL when unusable
 #' @keywords internal

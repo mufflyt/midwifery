@@ -59,8 +59,7 @@ CACHE <- file.path("/Users/tylermuffly/isochrones", "data", "geocoding_cache.duc
 POS   <- file.path("data", "cms_pos_hospital.csv")
 OUT   <- file.path("artifacts", "ob_hospitals_geocoded.csv")
 
-sha256_of <- function(p) sub(" .*$", "",
-                             system2("shasum", c("-a", "256", shQuote(p)), stdout = TRUE)[1])
+source(file.path("R", "lib", "provenance.R"))  # canonical sha256_of()
 
 #' Evaluate an expression with the working directory set to the isochrones repo
 #'

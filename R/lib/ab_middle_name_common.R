@@ -38,8 +38,7 @@ PTS_PER_SIM   <- 15      # middle_sim = pmax(0, points) / 15
 # never produces, and in step 09 that would change their ACCEPT eligibility.
 FUZZY_STRATEGY <- "surname_block_jw_evidence"
 
-sha256_of <- function(p) sub(" .*$", "",
-                             system2("shasum", c("-a", "256", shQuote(p)), stdout = TRUE)[1])
+source(file.path("R", "lib", "provenance.R"))  # canonical sha256_of()
 
 has_middle <- function(x) !is.na(x) & nzchar(trimws(x))
 

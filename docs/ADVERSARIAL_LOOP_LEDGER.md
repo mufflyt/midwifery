@@ -1157,3 +1157,95 @@ or empirical-Bayes estimator — is still a scientific decision for the owner.
 **Estimand changed:** yes — 9 impossible counties leave the ranking, and cycle
 7's rural-biased floor is withdrawn. The withdrawal restores 1,574 counties,
 1,154 of them remote.
+
+---
+
+## Cycle 9 — 2026-08-09 — 3 BVA / 3 semantic / 4 adversarial
+
+**Target.** `R/join_safety.R` and every join that can change a denominator.
+
+**Tests added** — `tests/test_cycle9_joins.R` (T81–T90, 16 assertions)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T81 | BVA | left-join cardinality; low coverage is refused |
+| T82 | BVA | numeric-vs-character FIPS keys |
+| T83 | BVA | NA keys do not match each other |
+| T84 | semantic | **no function is defined twice under R/** |
+| T85 | semantic | a left join does not silently fan out |
+| T86 | semantic | every advertised join guard actually exists |
+| T87 | adversarial | a duplicated lookup row inflates a cohort |
+| T88 | adversarial | factor key joins by value, not level index |
+| T89 | adversarial | bare-join count ratchet |
+| T90 | adversarial | the duplicate detector fires on a known duplicate |
+
+### 1. The loop committed the bug class it exists to hunt
+
+`assert_no_key_conflict()` was defined **twice** in `R/join_safety.R` — both
+introduced by **my own cycle-5 commit** (`402898d`), when a heredoc ran twice
+after a failed anchor. R keeps the last definition, so the first was dead code
+nothing would ever report. **It survived four cycles.**
+
+Class C1, committed into `join_safety.R` — the module whose entire purpose is to
+stop conflicts being resolved silently. The guard that would have caught it did
+not exist in this repo. **T84 is now that guard**, and T90 proves the detector
+fires rather than merely passing.
+
+### 2. The repo's flagship join guard has been unusable
+
+`safe_left_join()` defaulted `use_enhanced_metrics = TRUE`, which hard-stops
+unless `safe_left_join_with_metrics()` is available — from `R/join_metrics.R`,
+**a file that does not exist in this repo.** So the default configuration
+errored on every call.
+
+The evidence that this was long-standing: **all six callers pass
+`use_enhanced_metrics = FALSE`.** A unanimous, silent vote that the default was
+unusable, and the likeliest reason the pipeline makes **46 bare joins against 8
+guarded ones**.
+
+*Fixed:* default is now `FALSE` — basic validation is real validation and is what
+every caller has actually been running. An explicit `TRUE` still hard-stops,
+preserving the 2026-02-12 intent that a *requested* check is never silently
+skipped. The error message now says the file is absent from this repo rather
+than "check module loading".
+
+### 3. Five helpers defined in more than one file
+
+`sha256_of` (**6 files**, two textual forms), `pad5` (4), `fmt` (2), `chr` (2),
+`with_iso_wd` (2).
+
+`sha256_of` is **consolidated**, not ratcheted, into `R/lib/provenance.R`. It is
+the hash tying an artifact to the bytes it was built from; the six copies
+happened to agree, and nothing required them to. If one were ever changed — to
+`openssl::sha256()` for speed, or to hash content rather than the file — two
+scripts would report different provenance for the same input and nothing would
+flag it.
+
+The other four are short formatting/IO helpers in standalone numbered scripts
+that are sourced individually by design. **Ratcheted at 4** and named, not
+declared clean.
+
+### Wrong test, corrected
+
+T81's first fixture matched 1 of 2 left rows, and `safe_left_join()` **refused
+it** at the 98% coverage threshold — the guard working correctly. Rewritten to
+assert that refusal as behaviour rather than working around it.
+
+### Full suite
+
+**14/14 pass.**
+
+### Unresolved / carried forward
+
+- **46 bare joins vs 8 guarded**, ratcheted (T89). Now that the default is
+  usable, converting them is tractable — **cycle 10**, in priority order of
+  which joins feed a denominator.
+- 4 duplicate helper definitions, ratcheted (T84b).
+- 14 bare `.keep_all` sites, ratcheted (c5).
+- **DECISION NEEDED:** reliability method for imprecise GFRs (c8).
+- **DECISION NEEDED:** GFR numerator universe 15-50 vs denominator 15-44 (c7).
+- **DECISION NEEDED:** `women_15_44` partial vs NA — still unratified (c7).
+- **DECISION NEEDED:** Table 1 censoring on ">=15 years" (c1).
+- **DECISION NEEDED:** whether a `ct_partial` region is reported (c4).
+
+**No scientific estimand was changed in this cycle.**

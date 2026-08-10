@@ -57,8 +57,7 @@ EXPORT <- Sys.getenv("WONDER_EXPORT",
                      file.path("data", "wonder", "natality_2016_2024_cnm_by_county.csv"))
 PROFILES <- file.path(OUT, "county_birth_profiles.csv")
 
-sha256_of <- function(p) sub(" .*$", "",
-                             system2("shasum", c("-a", "256", shQuote(p)), stdout = TRUE)[1])
+source(file.path("R", "lib", "provenance.R"))  # canonical sha256_of()
 
 #' Read the WONDER export, keeping the footer's provenance
 #' @keywords internal

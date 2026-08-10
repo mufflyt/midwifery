@@ -624,7 +624,19 @@ safe_left_join <- function(left, right, by, expect_unique_right = TRUE,
                            agree_on = NULL, agree_map = NULL,
                            suffix = c(".x", ".y"),
                            write_report = TRUE, report_prefix = "join_left",
-                           use_enhanced_metrics = TRUE) {
+                           # CYCLE 9. Was TRUE, which made this function ERROR on every
+                           # call: it requires safe_left_join_with_metrics() from
+                           # R/join_metrics.R, and that file does not exist in this
+                           # repo. All six callers had independently discovered they
+                           # must pass FALSE -- a unanimous silent vote that the
+                           # default was unusable, and the likeliest reason the
+                           # pipeline makes 46 bare joins against 8 guarded ones.
+                           # Basic validation is real validation; it is what every
+                           # caller has actually been running. Asking for enhanced
+                           # metrics explicitly still hard-stops when they are absent,
+                           # which preserves the 2026-02-12 intent that a REQUESTED
+                           # check is never silently skipped.
+                           use_enhanced_metrics = FALSE) {
   # ── Parameter validation ──────────────────────────────────────────────────
   checkmate::assert_data_frame(left)
   checkmate::assert_data_frame(right)
@@ -708,7 +720,9 @@ safe_left_join <- function(left, right, by, expect_unique_right = TRUE,
       stop(
         "Enhanced join metrics requested but not available.\n",
         "safe_left_join_with_metrics() function not found.\n\n",
-        "This should have been auto-loaded from R/join_metrics.R.\n",
+        "R/join_metrics.R DOES NOT EXIST in the midwifery repo -- this is not a\n",
+        "module-loading problem, the file was never added here. Either drop\n",
+        "use_enhanced_metrics (basic validation still runs) or port the module.\n",
         "Check module loading or source manually:\n",
         "  source(here::here('R', 'join_metrics.R'))\n\n",
         "To use basic validation only, set use_enhanced_metrics=FALSE explicitly.",
@@ -1800,36 +1814,6 @@ safe_anti_join <- function(left, right, by,
   }
 
   out
-}
-
-#' Stop if a key carries conflicting rows
-#'
-#' @description
-#' The smallest form of the rule cycle 2 put into `assert_unique_keys()`, for
-#' pipelines that only need the assertion and not the deduplication. Identical
-#' duplicate rows are collapsed by the caller's `unique()`; anything still
-#' duplicated on the key disagrees somewhere, and resolving that by row order is
-#' a scientific decision made by a file's sort order.
-#'
-#' @param d [data.frame]: input, already `unique()`d.
-#' @param key [character(1)]: key column.
-#' @param label [character(1)]: what to name in the error.
-#' @return `d`, unchanged, or an error.
-#' @family join-safety
-#' @export
-assert_no_key_conflict <- function(d, key, label = "input") {
-  if (!key %in% names(d)) {
-    stop(sprintf("assert_no_key_conflict: '%s' not found in %s.", key, label),
-         call. = FALSE)
-  }
-  dup <- d[[key]][duplicated(d[[key]])]
-  if (length(dup)) {
-    stop(sprintf(
-      "%s: %d value(s) of '%s' carry conflicting rows (e.g. %s). Deduplicating would resolve that by row order; reconcile the source instead.",
-      label, length(unique(dup)), key,
-      paste(utils::head(unique(dup), 3), collapse = ", ")), call. = FALSE)
-  }
-  d
 }
 
 #' Stop if a key carries conflicting rows

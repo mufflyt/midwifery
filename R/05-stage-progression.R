@@ -65,9 +65,7 @@ STAGE2_ROSTER <- file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")
 #' SHA256 of a file
 #' @keywords internal
 #' @noRd
-sha256_of <- function(path) {
-  sub(" .*$", "", system2("shasum", c("-a", "256", shQuote(path)), stdout = TRUE)[1])
-}
+source(file.path("R", "lib", "provenance.R"))  # canonical sha256_of()
 
 #' Freeze a pipeline output for analysis, recording everything needed to prove
 #' the analysis consumed exactly this file

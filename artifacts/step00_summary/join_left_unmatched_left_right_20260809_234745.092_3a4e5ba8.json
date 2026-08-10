@@ -1,0 +1,20 @@
+{
+  "left_n": 2,
+  "matched_n": 1,
+  "left_only_n": 1,
+  "left_only_pct": 50,
+  "truncated": false,
+  "truncated_from": 1,
+  "by_columns": "k",
+  "label_left": "left",
+  "label_right": "right",
+  "run_id": null,
+  "timestamp": "2026-08-09T23:47:45",
+  "missing_key_examples": [
+    {
+      "k": "b"
+    }
+  ],
+  "missing_key_hash": "26bbcedece9615ec6161e4ad7541fd10962d7296640793e2747fd98556ed8652",
+  "right_source_id": null
+}

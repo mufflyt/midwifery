@@ -56,8 +56,7 @@ GEO <- file.path(ART, "midwives_geography_FROZEN.csv")
 SUPERLATIVE_N <- 10L
 ACS_YEAR <- 2023L
 
-sha256_of <- function(p) sub(" .*$", "",
-                             system2("shasum", c("-a", "256", shQuote(p)), stdout = TRUE)[1])
+source(file.path("R", "lib", "provenance.R"))  # canonical sha256_of()
 
 fmt <- function(x, digits = 0, big = TRUE) {
   if (is.null(x) || length(x) != 1L || is.na(x)) return(NULL)
