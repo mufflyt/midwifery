@@ -128,7 +128,27 @@ if (file.exists(state_path)) {
   }
 }
 
-# C. Ohio Statewide Voter Database direct DOBs (3,962 direct verified DOBs)
+# C2. Florida Statewide Voter Database direct DOBs (22 <= Age <= 80)
+fl_voter_path <- "artifacts/florida_voter_license_ages.csv"
+if (file.exists(fl_voter_path)) {
+  fl_voter <- read_csv(fl_voter_path, show_col_types = FALSE, progress = FALSE)
+  if ("fl_age_at_ref" %in% names(fl_voter) && nrow(fl_voter) > 0) {
+    cat(sprintf("Merging calibration sample from Florida Voter File: %s (N = %d)\n", fl_voter_path, nrow(fl_voter)))
+    fl_voter <- fl_voter %>%
+      filter(fl_age_plausible) %>%
+      select(certification_number, fl_age = fl_age_at_ref) %>%
+      distinct(certification_number, .keep_all = TRUE)
+      
+    df <- df %>%
+      left_join(fl_voter, by = "certification_number") %>%
+      mutate(
+        known_age = coalesce(known_age, as.numeric(fl_age)),
+        age_source = if_else(!is.na(fl_age) & is.na(age_source), "FL_Voter_Direct_DOB", age_source),
+        is_direct_ground_truth = if_else(!is.na(fl_age), TRUE, is_direct_ground_truth)
+      ) %>%
+      select(-any_of("fl_age"))
+  }
+}
 oh_path <- "artifacts/ohio_voter_license_ages.csv"
 if (file.exists(oh_path)) {
   cat(sprintf("Merging calibration sample from Ohio Voter File: %s\n", oh_path))
