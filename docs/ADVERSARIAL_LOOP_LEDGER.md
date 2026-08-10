@@ -2336,3 +2336,62 @@ the county script accurately names `women_15_50`.
 
 **Estimand changed:** yes — the fertility numerator is now births to women
 15-44, matching the denominator and the printed label.
+
+---
+
+## Cycle 17 — 2026-08-10 03:2x — 3 BVA / 4 semantic / 3 adversarial
+
+**Target.** ACS universe labels — the mirror image of cycle 16. Tests in
+`tests/test_cycle17_acs_labels.R`.
+
+**DEFECT — the NUMERATOR spanned a different universe than the denominator.**
+Cycle 16 restricted `women_15_44` to nine bands. The births numerator comes
+from `B13016`, whose universe is **women 15–50**. So a corrected 15–44
+denominator was being divided into a 15–50 numerator: a rate whose top and
+bottom describe different populations.
+
+Measured: births to women 45–50 are **2.92% of the national numerator**, but
+the per-county share runs from a **0.21% median to 100% maximum** — differential
+across counties, so it distorts comparisons and not merely the level.
+
+**External validation, and an honest limit on it.** With both fixes the
+national rate is **59.2 per 1,000** (unrestricted numerator: 61.0). NCHS
+reports **54.5** for 2023. The remaining ~9% gap is *expected*: ACS `B13016` is
+a self-reported survey question and is known to run above vital-statistics
+births. **But the column is named `general_fertility_rate`**, and a reader will
+compare it to the NCHS GFR. Naming it for what it is —
+ACS-reported births per 1,000 women 15–44 — is a manuscript decision, recorded
+rather than taken.
+
+**A TEST DEFEATED BY THE COMMAND ITS OWN MESSAGE SUGGESTED.** Cycle 16's T164
+asserted only that `data/.county_base_rebuilt_after_cycle16` exists — satisfied
+by `touch`, without rebuilding anything, and its failure message told you to
+run exactly that. Replaced with a check of the artifact's CONTENT against the
+published figure: national `women_15_44` must fall in 60–70M. Discrimination
+verified — the pre-fix artifact (76.0M) fails it, the rebuilt one (65.9M)
+passes. The stamp file was deleted.
+
+**A flaky failure, diagnosed rather than retried.** `test_cycle16` failed once
+in the suite and passed immediately after. Cause: a concurrent cron cycle was
+rewriting `data/county_base.csv` while the suite read it — the same
+read-during-write hazard the crawler snapshots exist to avoid. Not a code
+defect; recorded because a test that fails once and passes on retry is
+otherwise dismissed as noise.
+
+**Full suite.** 22/22 pass, 0 skips.
+
+**Carried forward.**
+
+- **DECISION NEEDED (new):** rename `general_fertility_rate` to name its ACS
+  survey basis, or state the divergence from NCHS wherever it is published.
+- **DECISION NEEDED:** nesting-escape threshold (c14); GFR reliability (c8);
+  `women_15_44` partial-sum (c7); Table 1 panel censoring (c1); `ct_partial`
+  (c4); minimum Healthgrades coverage (c6).
+- **ACTION (upstream):** `extract_first_initial()` accent stripping.
+- **ACTION:** rebuild Table 1 when the crawl finishes; regenerate README
+  figures built from the pre-fix denominator.
+- **DEBT:** 12 undeclared joins (T100); 14 bare `.keep_all` (T44).
+
+**Estimand changed: YES.** The numerator now excludes births to women 45–50,
+lowering the national rate from 61.0 to 59.2 per 1,000. A correction, not a
+choice: a 15–44 rate cannot count births to 45–50-year-olds.

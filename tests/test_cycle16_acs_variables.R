@@ -106,12 +106,20 @@ cat("\n-- BVA --\n")
   cb <- suppressWarnings(read_csv(file.path(root, "data", "county_base.csv"),
                                   show_col_types = FALSE, progress = FALSE,
                                   col_types = cols(GEOID = col_character())))
-  stamp <- file.path(root, "data", ".county_base_rebuilt_after_cycle16")
-  chk(file.exists(stamp),
-      paste0("T164 county_base.csv has been rebuilt since the band fix ",
-             "[MISSING -- every general_fertility_rate in the current artifact ",
-             "is understated by ~13%; touch data/.county_base_rebuilt_after_cycle16 ",
-             "after rerunning R/01]"))
+  # A STAMP FILE IS NOT EVIDENCE. The first version asserted only that
+  # data/.county_base_rebuilt_after_cycle16 exists, which any `touch` satisfies
+  # without rebuilding anything -- a test defeated by the one command its own
+  # failure message tells you to run.
+  #
+  # The artifact is checked against an EXTERNAL published figure instead: US
+  # women aged 15-44 number ~65-66 million (Census/ACS). The pre-fix artifact
+  # totalled 76.0M, which is outside this range by 10 million; the rebuilt one
+  # totals 65.9M. That cannot be faked by touching a file.
+  w <- sum(cb$women_15_44, na.rm = TRUE) / 1e6
+  chk(w > 60 && w < 70,
+      sprintf(paste0("T164 county_base.csv carries the 15-44 denominator ",
+                     "[%.1fM against a published 65-66M; the pre-fix artifact ",
+                     "held 76.0M]"), w))
 }
 
 cat("\n-- SEMANTIC --\n")
