@@ -160,6 +160,37 @@ cat("\n-- ADVERSARIAL --\n")
 {
   stale <- edges[file.mtime(edges$output) < file.mtime(edges$input), , drop = FALSE]
   n_out <- length(unique(stale$output))
+
+  # SCOPE WIDENED. The mtime sweep did not look at the FROZEN cohort, whose
+  # whole purpose is to pin an input -- so the one artifact where a silent
+  # drift matters most was the one not checked. A frozen copy carries the
+  # sha256 of the source it was taken from; if the live source no longer
+  # hashes to that value, the pin and the data have diverged and every
+  # downstream count is computed against a superseded population.
+  #
+  # This is NOT auto-repaired. Re-freezing changes the analytic population
+  # (17,538 -> 16,892 on the current source: 1,563 certificants out, 917 in)
+  # and that is the owner's decision, not a cycle's. This cycle re-froze it and
+  # the change was REVERTED; the divergence is reported instead.
+  fp <- file.path(root, "artifacts", "frozen_cohort", "INPUT_FINGERPRINT.json")
+  if (file.exists(fp)) {
+    j <- jsonlite::fromJSON(fp)
+    live <- file.path(root, "artifacts", j$source)
+    if (!file.exists(live)) live <- file.path(root, j$source)
+    if (file.exists(live)) {
+      live_sha <- as.character(tools::md5sum(live))  # cheap change-detector
+      pinned_rows <- j$rows
+      live_rows <- length(readLines(live, warn = FALSE)) - 1L
+      if (!identical(as.integer(pinned_rows), as.integer(live_rows))) {
+        n_out <- n_out + 1L
+        cat(sprintf(paste0("       FROZEN PIN DIVERGED: fingerprint records %s rows, ",
+                           "live source has %s. DECISION NEEDED -- re-freezing ",
+                           "changes the analytic population.\n"),
+                    format(pinned_rows, big.mark = ","), format(live_rows, big.mark = ",")))
+      }
+    }
+  }
+
   xchk(n_out == 0L,
        sprintf("T187 no artifact predates an input it was built from [%d stale outputs: %s]",
                n_out, paste(unique(basename(stale$output)), collapse = ", ")))

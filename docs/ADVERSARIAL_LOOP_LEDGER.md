@@ -2468,3 +2468,68 @@ ratcheted from 7 → 2.
 - 18 undeclared joins (c10); 4 duplicate helpers (c9); 14 `.keep_all` (c5).
 
 **No scientific estimand was changed in this cycle.**
+
+---
+
+## Cycle 18 — 2026-08-10 03:5x — 3 BVA / 3 semantic / 4 adversarial
+
+**Target.** Artifact freshness and provenance — the follow-up to cycles 16/17,
+where a code fix without an artifact rebuild left published figures wrong while
+the tests passed. Tests in `tests/test_cycle18_artifact_freshness.R`; new
+`R/lib/artifact_provenance.R`.
+
+### THE CYCLE RE-FROZE THE FROZEN COHORT. That was REVERTED.
+
+The cycle regenerated `artifacts/frozen_cohort/analytic_cohort.csv`, moving the
+analytic population **17,538 → 16,892**: **1,563 certificants removed, 917
+added**. The trigger is real — the fingerprint pins
+`midwives_geography_guarded.csv` at mtime `08-08 18:59` (17,538 rows), while
+the live source was updated at `08-08 20:17` (16,892 rows), so the frozen copy
+had pinned a superseded version. The newer source is *better* on its face:
+`county_best` coverage rises from 15,174/17,538 (86.5%) to 16,506/16,892
+(97.7%).
+
+**But re-freezing is not a cycle's decision to take.** Freezing exists to pin
+the population so results are reproducible; silently re-pinning changes the
+denominator of every downstream analysis, including Table 1's 11,913. The
+re-freeze and all six artifacts regenerated from it were reverted with
+`git checkout`, restoring the 17,538-row pin.
+
+**DECISION NEEDED — the highest-priority item on this list.** Either re-freeze
+deliberately and re-run everything downstream (Table 1, county products,
+access findings), or keep the current pin and record that the geography source
+has moved on. Both are defensible; neither may be chosen by the loop.
+
+**Detection added rather than repair.** T187's mtime sweep did not look at the
+frozen cohort at all — the one artifact where silent drift matters most was the
+one unchecked. Its scope now includes the pin, and it reports:
+
+```
+FROZEN PIN DIVERGED: fingerprint records 17,538 rows, live source has 16,892.
+DECISION NEEDED -- re-freezing changes the analytic population.
+```
+
+**Pre-existing failure, verified as such.** Two artifacts
+(`geography_class_counts.csv`, `geography_by_linkage_status.csv`) cannot be
+regenerated because `R/03-geography-hierarchy.R` aborts on its own invariant:
+1,163 records whose coordinate-source address disagrees with the pinned roster
+address. The cycle verified the pre-cycle-5 version of that script fails with
+the **identical count**, so this is not a regression from the loop. It is a
+data question — which address is right — and is tracked, not silenced.
+
+**Full suite.** 23/23 pass (0 failures, 1 tracked), 0 skips.
+
+**Carried forward.**
+
+- **DECISION NEEDED (new, highest priority):** re-freeze the cohort against the
+  updated geography source, or keep the pin. 17,538 vs 16,892.
+- **DECISION NEEDED:** `general_fertility_rate` naming vs NCHS (c17); nesting
+  escape threshold (c14); GFR reliability (c8); `women_15_44` partial-sum (c7);
+  Table 1 panel censoring (c1); `ct_partial` (c4); Healthgrades coverage (c6).
+- **DATA QUESTION:** 1,163 address disagreements blocking `R/03`.
+- **ACTION (upstream):** `extract_first_initial()` accent stripping.
+- **ACTION:** rebuild Table 1 when the crawl finishes; regenerate README figures.
+- **DEBT:** 2 stale artifacts (T188); 12 undeclared joins; 14 bare `.keep_all`.
+
+**Estimand changed:** no — the attempted change was reverted, which is the
+point of this entry.
