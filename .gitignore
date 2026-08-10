@@ -141,3 +141,4 @@ artifacts/hg_backup_*/
 hg_enrich_run.out
 hg_snapshot_*.csv
 premerge_*_healthgrades_*
+hg_sweep.out
