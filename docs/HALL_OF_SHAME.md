@@ -383,3 +383,48 @@ and a +11.4% recovery from batched unioning (pre-clip area compared with
 post-clip area). The lesson is narrow and practical: when a spatial result looks
 wrong, test the **point against the polygon** before theorising about the
 pipeline that produced it.
+
+---
+
+## Tier 5 — Concurrency between sessions
+
+### 15. Inferred a session was dead from the absence of a running process
+
+Two Claude Code sessions were working this repo at once. One was matching AMCB
+certificants to NPPES; the other was repairing frozen-cohort provenance. The
+second checked for running R processes, found only its own two Healthgrades
+crawlers, concluded the first session was dead, and recorded that in
+`e362c3d` — "only two R processes remain, both this session's ... run with no
+concurrent writer for the first time since cycle 20."
+
+The first session was alive. It was *between runs*, editing scripts. A matcher
+that takes eight minutes to run spends most of its wall-clock time not running.
+
+**What the inference cost, in order:**
+
+1. Its working-tree edits to `match_amcb_to_npi.R` and `audit_amcb_crosswalk.R`
+   were reverted and parked at
+   `.quarantine/killed_session_20260810/name_variant_work.unfinished.patch`.
+2. Its staged-but-uncommitted files — the matcher, key builder, tests and first
+   artifacts — were swept into `c3aa82a`, a commit about the cycle-23 precision
+   flag that mentions none of them. The history now attributes an AMCB→NPPES
+   matcher to an adversarial-loop commit.
+3. `a8552fa` published a crosswalk carrying `nppes_matched_last`,
+   `nppes_matched_first` and `nppes_name_changed_since_match` while the
+   `match_amcb_to_npi.R` in that same commit produced none of them — **an
+   artifact unreproducible from its own source**, the precise failure the
+   provenance work exists to prevent. Restored in `199f529`.
+
+**Both sessions contributed.** The second inferred liveness from process
+listings. The first ran `git status` on files it had just edited, got empty
+output, and read it as "clean" instead of asking why a file it had just changed
+showed no diff. **An unexpectedly empty status is a question, not a
+confirmation.**
+
+**Lesson.** Liveness cannot be inferred from `ps`. A session is idle between
+runs, and idle is indistinguishable from dead by that signal. Before reverting,
+quarantining or committing another writer's work, the only safe assumptions are
+that uncommitted changes belong to someone and that `git add` of specific paths
+is not consent to sweep them into an unrelated commit. If two sessions must
+share a repo, partition by *path* and never stage or revert outside your
+partition — process inspection is not a substitute for a claim you can see.
