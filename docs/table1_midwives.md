@@ -17,17 +17,17 @@ unknowns are counted on their own row.
 | X (not listed as F or M) | 13 | 0.1 |
 | Unknown / not recorded | 8 | — |
 | **ACOG district** | | |
-| District VIII | 2,112 | 17.8 |
-| District IV | 1,772 | 14.9 |
-| District VI | 1,253 | 10.6 |
-| District V | 1,155 | 9.7 |
-| District IX | 1,015 | 8.5 |
-| District II | 971 | 8.2 |
 | District I | 935 | 7.9 |
+| District II | 971 | 8.2 |
 | District III | 792 | 6.7 |
-| District XII | 670 | 5.6 |
+| District IV | 1,772 | 14.9 |
+| District V | 1,155 | 9.7 |
+| District VI | 1,253 | 10.6 |
 | District VII | 662 | 5.6 |
+| District VIII | 2,112 | 17.8 |
+| District IX | 1,015 | 8.5 |
 | District XI | 536 | 4.5 |
+| District XII | 670 | 5.6 |
 | Unknown / not recorded | 40 | — |
 | **Rurality (RUCC 2023)** | | |
 | Metropolitan (RUCC 1-3) | 10,696 | 90.2 |

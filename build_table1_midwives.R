@@ -62,7 +62,11 @@ if (file.exists(file.path(acog_home, "R", "acog_districts.R"))) {
   acog_ok <- exists("map_state_to_acog", mode = "function")
 }
 coh$acog_district <- if (acog_ok) {
-  suppressWarnings(map_state_to_acog(coh$nppes_state))
+  # as_factor = TRUE returns an ordered factor in ACOG's Roman-numeral sequence.
+  # As plain character, districts sort alphabetically and District IX lands
+  # between IV and V -- the ordering this table used until the canonical
+  # function gained the argument.
+  suppressWarnings(map_state_to_acog(coh$nppes_state, as_factor = TRUE))
 } else {
   warning("canonical ACOG crosswalk not found; district left NA", call. = FALSE)
   NA_character_
@@ -178,7 +182,8 @@ t1 <- bind_rows(
 
   blk(coh, "certification", "Certification"),
   blk(coh, "sex", "Sex recorded in NPPES"),
-  blk(coh, "acog_district", "ACOG district"),
+  blk(coh, "acog_district", "ACOG district",
+      lvls = if (acog_ok) ACOG_DISTRICT_LEVELS else NULL),
   blk(coh, "rurality", "Rurality (RUCC 2023)",
       lvls = c("Metropolitan (RUCC 1-3)", "Nonmetropolitan, adjacent (RUCC 4-6)",
                "Nonmetropolitan, remote (RUCC 7-9)")),
