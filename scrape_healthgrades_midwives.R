@@ -685,7 +685,16 @@ main <- function(n_limit = NA_integer_) {
         "RECOVERY: %s has %d certificants but the checkpoint has %d. Rebuilding
    the checkpoint from the CSV so completed work is not re-scraped.",
         OUTPUT, length(recovered), length(done)))
-      done <- utils::modifyList(recovered, done)
+      # FLAT name-keyed replacement, NOT modifyList(). modifyList() recurses
+      # into any element that is itself a list -- and a tibble IS a list -- so
+      # it tries to merge the recovered and checkpointed records COLUMN BY
+      # COLUMN inside each certificant and dies on row recycling:
+      #   Assigned data `if (...) NULL` must be compatible with existing data.
+      # That is exactly what happened when merging two checkpoints by hand, and
+      # it would have fired here the first time recovery was ever needed.
+      # Checkpoint entries win where both exist: they are the fresher pass.
+      recovered[names(done)] <- done
+      done <- recovered
     }
   }
 
