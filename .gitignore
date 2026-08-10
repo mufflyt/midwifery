@@ -149,3 +149,13 @@ artifacts/step00_summary/
 
 # Work parked from a killed concurrent session; regenerable, kept for recovery.
 .quarantine/
+
+# Temporary scraper scratch scripts
+node_modules/
+package-lock.json
+package.json
+scrape_*.mjs
+probe_*.R
+artifacts/ct_*
+artifacts/oh_*
+artifacts/tx_*
