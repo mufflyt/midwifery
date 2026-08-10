@@ -61,6 +61,12 @@ dir.create(OUT, showWarnings = FALSE, recursive = TRUE)
 GEO <- file.path(ART, "midwives_geography_FROZEN.csv")
 SUPERLATIVE_N <- 10L
 ACS_YEAR <- 2023L
+#' States that redrew congressional districts between the 118th and 119th
+#' Congress. ACS 2023 reports on 118th boundaries and the roster is 119th, so in
+#' these states a member is paired with statistics for a differently-shaped
+#' district. Named here rather than left in prose, so the disclosure can be
+#' carried per row and tested.
+REDISTRICTED_119 <- c("AL", "GA", "LA", "NY", "NC")
 
 source(file.path("R", "lib", "provenance.R"))  # canonical sha256_of()
 
@@ -271,8 +277,25 @@ run_districts <- function() {
       # GA-13 and TX-23 are absent from the current roster because the seat is
       # unfilled. Saying so is more accurate than a blank badge.
       seat_vacant = is.na(rep_name),
-      boundary_vintage = sprintf("ACS %d on 118th Congress boundaries; roster is 119th Congress",
-                                 ACS_YEAR))
+      # CYCLE 20. boundary_vintage was a single constant string, identical on
+      # every row -- so Colorado, which did not redistrict, carried the same
+      # warning as Alabama, which did. A disclosure that says the same thing
+      # everywhere tells a reader nothing about their own district.
+      #
+      # 67 of 437 districts (15.3%) sit in states that redrew their maps between
+      # the 118th and 119th Congress. In those, and only those, the sitting
+      # member is attached to a district whose ACS statistics describe different
+      # ground. That is per-row knowable, so it is now per-row stated.
+      redistricted_since_acs = state_abbr %in% REDISTRICTED_119,
+      boundary_vintage = dplyr::if_else(
+        state_abbr %in% REDISTRICTED_119,
+        sprintf(paste0("ACS %d on 118th Congress boundaries; roster is 119th. ",
+                       "%s REDREW its districts between them, so this member ",
+                       "represents different ground than these statistics describe."),
+                ACS_YEAR, state_abbr),
+        sprintf(paste0("ACS %d on 118th Congress boundaries; roster is 119th. ",
+                       "%s did not redistrict between them."),
+                ACS_YEAR, state_abbr)))
   cli::cli_alert_info("districts matched to a sitting member: {sum(!is.na(d$rep_name))} of {nrow(d)}")
 
   # ---- ranks + sentences ---------------------------------------------------

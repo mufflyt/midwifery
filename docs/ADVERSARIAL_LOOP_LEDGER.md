@@ -2673,3 +2673,73 @@ script first gives 1,163, matching the message exactly.
 
 **No scientific estimand was changed in this cycle.** The guard's threshold is
 untouched; only its diagnostic improved.
+
+---
+
+## Cycle 20 (second pass) — 2026-08-10 — 3 BVA / 4 semantic / 3 adversarial
+
+**Note on concurrency.** A cron cycle-20 ran on the same theme
+(`test_cycle20_boundary_vintage.R`). This pass targets the roster join and the
+per-row disclosure; both suites pass.
+
+**Target.** `R/lib/congress_roster.R` and the district-profile join — never
+tested, and the place where a **named human being** is attached to a set of
+statistics.
+
+**Tests added** — `tests/test_cycle20_congress_vintage.R` (T201–T210, 18
+assertions)
+
+### The finding: a correct disclosure, said uselessly
+
+`boundary_vintage` documented a real problem and then wrote **one constant
+string on all 437 rows**. ACS 2023 reports on 118th-Congress boundaries while
+the roster is the 119th, and five states — **AL, GA, LA, NY, NC** — redrew their
+maps in between. So **67 of 437 districts (15.3%)** pair a member with statistics
+describing differently-shaped ground, and 370 do not.
+
+**Colorado carried the same warning as Alabama.** A disclosure that says the same
+thing everywhere tells a reader nothing about their own district. It is per-row
+knowable, so it is now per-row stated, with `redistricted_since_acs` as a
+machine-readable flag and T206 asserting flag and prose can never disagree.
+
+### A claim I tried to refute and could not
+
+A comment asserts CA-14, FL-20, GA-13 and TX-23 have no representative because
+the seats are **vacant**. This loop has already caught three comments that were
+wrong about their own data — cycle 15's rural claim, cycle 16's band labels,
+cycle 17's numerator — so I treated this as a likely fourth.
+
+**It is correct.** The arithmetic closes exactly:
+
+```
+roster House rows      437  =  431 filled voting seats + 6 delegates
+ACS districts          437  =  435 voting + DC + PR
+CA districts in roster  51  of 52, with 14 absent
+```
+
+T204 pins that identity, so the claim stays **checkable rather than assertable**.
+Recorded because a negative result from an adversarial probe is a result.
+
+### One wrong test of my own
+
+T203 filtered `c("AK","DE","ND","SD","VT","WY","MT")` as "at-large states". **MT
+gained a second district in 2022** and is not at-large, so the assertion reported
+codes 00/01/02 under a heading saying "single district" — the same imprecision
+this loop keeps finding in other people's comments. Corrected.
+
+### Full suite
+
+**26/26 files pass.**
+
+### Unresolved / carried forward
+
+- **DATA QUESTION:** the 1,163 address disagreements blocking R/03, triaged in
+  c19. 2 stale artifacts depend on it.
+- **ACTION:** `write_with_provenance()` still unwired (c18).
+- **DECISION NEEDED:** GFR reliability method (c8); `women_15_44` partial vs NA
+  (c7); Table 1 censoring (c1); `ct_partial` reporting (c4).
+- **UPSTREAM (isochrones):** `extract_first_initial()` accent bug (c12).
+- 18 undeclared joins (c10); 4 duplicate helpers (c9); 14 `.keep_all` (c5).
+
+**No scientific estimand was changed in this cycle.** No number moved; a
+disclosure became specific to the districts it concerns.
