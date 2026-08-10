@@ -2993,3 +2993,70 @@ Verified pre-existing against the version before cycle 4.
 ### Full suite
 
 **27/27 files pass, twice, order-independent. Frozen directories untouched.**
+
+---
+
+## Cycle 22 — 2026-08-10 — 4 BVA / 3 semantic / 3 adversarial
+
+**Target: RE-RUN SAFETY.** Twenty-one cycles tested what the pipeline computes;
+none asked whether running a step **twice** gives the same answer as once. A
+different axis, and it caught a script that worked exactly once.
+
+**Tests added** — `tests/test_cycle22_idempotence.R` (T221–T230, 17 assertions)
+
+### The finding: R/10 and R/11 consume each other's output
+
+```
+R/10 reads county_cnm_births.csv    (R/11's output) and merges
+     cnm_births_2016_2024, suppressed, ct_apportioned into the profile
+R/11 reads county_birth_profiles.csv (R/10's output) and joins them back
+```
+
+On a **first** run the profile lacks those columns and the join is clean. On
+every run after, dplyr suffixes both copies to `.x`/`.y` and the next
+`mutate(ct_apportioned = ...)` dies with `object 'ct_apportioned' not found`.
+
+So R/11 ran once, wrote an artifact holding 9 apportioned Connecticut planning
+regions, and **could never run again** — exactly the state found on disk: a good
+artifact beside a script that cannot reproduce it. Invisible because nobody
+re-ran the step, and cycle 18 established that an aborting stage leaves its
+previous output in place.
+
+*Fixed:* R/11 is the authority for those columns, so a stale copy arriving on the
+profile is **dropped and reported** before the join, never suffixed.
+
+**A second latent break on the same line:** `ct_apportioned` is created only
+inside the CT branch, so an export with no Connecticut legacy counties — full
+suppression, or a different geography — skips the branch and hits the same
+opaque error from the opposite direction. Column now guaranteed before use.
+
+### Three of my own tests were wrong
+
+1. **T222's extractor isolated nothing** — a pair of `sub()` calls that matched
+   the whole file, so every column looked missing from a list that was complete.
+2. **T227 passed vacuously.** The write-detector interpolated
+   `write_with_provenance|write_csv\(` so the `\(` bound only to the second
+   branch and writes went uncaptured. It reported "no cycles" **in the cycle
+   that found the cycle**.
+3. **Fixed, T227 then over-reported** — six "cycles" among scripts 02/03/05/07.
+   Running each twice shows they complete cleanly both times: they share *input*
+   filenames, not a producer/consumer loop. Publishing those six would have been
+   the Michigan-water-mask false positive again.
+
+T227 is now the property it was proxying for — *a second run behaves like the
+first* — **measured**, not inferred from filenames.
+
+### Full suite
+
+**28/28 files pass, twice, order-independent. Frozen directories untouched.**
+
+### Unresolved / carried forward
+
+- **DATA QUESTION:** the 1,163 address disagreements blocking R/03 (c19).
+- **DECISION NEEDED:** GFR reliability method (c8); `women_15_44` partial vs NA
+  (c7); Table 1 censoring (c1); `ct_partial` reporting (c4).
+- **UPSTREAM (isochrones):** `extract_first_initial()` accent bug (c12).
+- 18 undeclared joins (c10); 4 duplicate helpers (c9); 14 `.keep_all` (c5).
+
+**No scientific estimand was changed in this cycle.** T228 confirms the artifact
+is byte-identical after re-running.

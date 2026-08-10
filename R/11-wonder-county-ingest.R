@@ -138,6 +138,13 @@ run_ingest <- function() {
     ident <- bind_rows(ident, mutate(ct_app,
                                      suppressed = is.na(cnm_births_2016_2024)))
   }
+  # CYCLE 22, second latent break on the same line. `ct_apportioned` is only
+  # created inside the CT branch above, via bind_rows with the apportioned
+  # frame. If the WONDER export ever contains no Connecticut legacy counties --
+  # all suppressed, a different geography, or a state-level pull -- the branch
+  # is skipped, the column never exists, and this coalesce fails with the same
+  # opaque "object not found". The column is now guaranteed before it is used.
+  if (!"ct_apportioned" %in% names(ident)) ident$ct_apportioned <- FALSE
   ident <- ident %>% mutate(ct_apportioned = coalesce(ct_apportioned, FALSE))
 
   unmatched <- setdiff(ident$GEOID, prof$GEOID)
@@ -145,6 +152,30 @@ run_ingest <- function() {
     cli::cli_alert_warning("{length(unmatched)} WONDER counties absent from the profile spine: {paste(head(unmatched,5), collapse=', ')}")
   } else {
     cli::cli_alert_success("every WONDER county now joins the profile spine")
+  }
+
+  # CYCLE 22. IDEMPOTENCE. R/10 reads this script's output and merges
+  # cnm_births_2016_2024, suppressed and ct_apportioned into the profile; this
+  # script then reads the profile and joins the same columns back. The two
+  # scripts consume each other's output.
+  #
+  # On a FIRST run the profile lacks those columns and the join is clean. On
+  # every run after that the profile already carries them, dplyr suffixes both
+  # copies to .x/.y, and the next `mutate(ct_apportioned = ...)` fails with
+  # "object 'ct_apportioned' not found". So this script worked exactly once and
+  # then broke until someone deleted the profile -- which is why the artifact on
+  # disk contains 9 apportioned CT regions while the script would not run.
+  #
+  # This script is the AUTHORITY for these three columns, so any stale copy
+  # arriving on the profile is dropped before the join rather than suffixed.
+  ct_cols <- c("cnm_births_2016_2024", "suppressed", "ct_apportioned",
+               "cnm_births_per_year", "cnm_share_of_births_pct",
+               "wonder_county_reported", "ct_partial")
+  dropped <- intersect(ct_cols, names(prof))
+  if (length(dropped)) {
+    cli::cli_alert_info(
+      "dropping {length(dropped)} stale WONDER column{?s} from the profile before re-deriving: {paste(dropped, collapse=', ')}")
+    prof <- select(prof, -any_of(ct_cols))
   }
 
   joined <- prof %>%
