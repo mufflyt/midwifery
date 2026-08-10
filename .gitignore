@@ -134,3 +134,10 @@ healthgrades_attrs_log.txt
 backup_*_healthgrades_*
 prior_run_checkpoint_*.rds
 artifacts/hg_backup_*/
+
+# Stage 2 (Healthgrades profile enrichment) run scratch. Person-level: the
+# provider URLs embed midwife names, and the snapshot/premerge files carry
+# names and practice addresses. Code is tracked; these are not.
+hg_enrich_run.out
+hg_snapshot_*.csv
+premerge_*_healthgrades_*
