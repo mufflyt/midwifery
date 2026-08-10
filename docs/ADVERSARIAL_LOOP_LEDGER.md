@@ -1408,3 +1408,56 @@ None of these would have failed loudly; each produced a plausible number.
 **No scientific estimand was changed in this cycle.** The declarations cannot
 alter any current result — every affected join already had a unique right table.
 They convert a future silent error into a present loud one.
+
+---
+
+## Cycle 10 — 2026-08-10 00:1x — 4 BVA / 3 semantic / 3 adversarial
+
+**Target.** Join cardinality: the class where a duplicated lookup row silently
+multiplies cohort members. Tests in `tests/test_cycle10_join_cardinality.R`.
+
+**THE DEFECT WAS IN THE TEST, IN BOTH DIRECTIONS.** T95 reported 5 undeclared
+joins in the cohort scripts. All five were **false positives** — their
+`relationship =` sat on a continuation line, and the paren counter started from
+the line the join began on, so a first line that happened to balance ended the
+scan immediately. Meanwhile it **missed every undeclared join in the files it
+did not list**. Re-deriving through R's own parser (argument names off the
+parsed call, immune to layout) gives 12 genuinely undeclared joins, none of
+them the five originally flagged.
+
+This is the cycle-9 lesson recurring: a text-shaped detector is wrong about
+exactly the code that does not look ordinary. Both T95 and the T100 ratchet now
+read parsed calls.
+
+**Two detectors disagreed, and the looser one was winning.** T100 counted 15
+where the parser counts 12. A ratchet whose detector overcounts can never
+report that debt grew, because the slack absorbs it. Baseline reset to the
+measured parser count (12), not the older text estimate (38 → 12).
+
+**Fixes.** Three joins in `R/03-geography-hierarchy.R` now declare
+`relationship = "many-to-one"`: the tract→planning-region join (uniqueness
+already enforced by a `stop()`), and two person-keyed joins whose right sides
+are already `distinct()`-ed. Behaviour-preserving by construction — the
+invariant held, and is now enforced by dplyr rather than assumed.
+
+**Scope widened after the discrimination check failed to bite.** Reintroducing
+a bare join in `03-geography-hierarchy.R` was caught only by the repo-wide T100
+ratchet, not by T95, because `03` was not in T95's `cohort_files` list — even
+though that file assigns every midwife to a county, the unit of every access
+finding here. A fan-out there duplicates people into counties. With `03` in
+scope the check now fails precisely, naming the offending call.
+
+**Full suite.** 15/15 pass, 0 skips.
+
+**Carried forward.**
+
+- **DECISION NEEDED:** GFR reliability treatment (MOE-aware or smoothed).
+- **DECISION NEEDED:** ratify the `women_15_44` partial-sum reading.
+- **DECISION NEEDED:** Table 1 panel-window censoring on ">=15 years".
+- **DECISION NEEDED:** whether a `ct_partial` region should be reported.
+- **DECISION NEEDED:** minimum cohort coverage for a Healthgrades field.
+- **ACTION:** rebuild Table 1 when the crawl finishes.
+- **DEBT:** 12 undeclared joins (T100, parser-based); 14 bare `.keep_all` (T44).
+- **HYGIENE:** duplicate test IDs across cycle 6 / cycle 7 files.
+
+**Estimand changed:** no.

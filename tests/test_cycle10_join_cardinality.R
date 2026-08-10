@@ -108,28 +108,36 @@ cat("\n-- SEMANTIC --\n")
 # declare its cardinality, because those are the joins whose fan-out changes a
 # denominator rather than merely widening a table.
 {
-  cohort_files <- c("05-stage-progression.R", "06-cohort-flow.R",
-                    "07-cohort-composition.R", "12-district-profiles.R")
+  # 03-geography-hierarchy.R was outside this scope, yet it assigns every
+  # midwife to a county -- the unit of every access finding here. A fan-out
+  # there duplicates people into counties. Verified by reintroducing a bare
+  # join: the suite caught it only via the repo-wide T100 ratchet, not via this
+  # test, which is why the scope is widened rather than left to the ratchet.
+  cohort_files <- c("03-geography-hierarchy.R", "05-stage-progression.R",
+                    "06-cohort-flow.R", "07-cohort-composition.R",
+                    "12-district-profiles.R")
+  # PARSER, NOT TEXT. The previous version counted parentheses from the line
+  # the join started on; a first line that happens to balance ended the scan
+  # immediately. It was wrong in BOTH directions -- it reported five joins as
+  # undeclared whose `relationship =` sat on a continuation line, and missed
+  # every undeclared join in the files it did not list. Reading the argument
+  # names off the parsed call cannot be fooled by layout.
+  JOIN_FNS <- c("left_join", "inner_join", "right_join", "full_join")
   undeclared <- character(0)
+  walk <- function(e, f) {
+    if (!is.call(e)) return(invisible())
+    fn <- tryCatch(as.character(e[[1]])[1], error = function(...) "")
+    if (fn %in% JOIN_FNS && !("relationship" %in% names(e))) {
+      undeclared <<- c(undeclared, sprintf("%s :: %s", basename(f),
+        substr(paste(deparse(e), collapse = " "), 1, 46)))
+    }
+    for (i in seq_along(e)) tryCatch(walk(e[[i]], f), error = function(...) NULL)
+  }
   for (f in R_FILES) {
     if (!basename(f) %in% cohort_files) next
-    src <- code_of(f)
-    # A fixed 3-line window missed every multi-line join and reported code that
-    # WAS declared as undeclared. The call is now read to its closing paren.
-    for (i in grep("[^_a-z](left|inner)_join\\(", src)) {
-      depth <- 0L; j <- i
-      repeat {
-        seg <- src[j]
-        depth <- depth + lengths(regmatches(seg, gregexpr("\\(", seg))) -
-          lengths(regmatches(seg, gregexpr("\\)", seg)))
-        if (depth <= 0L || j >= length(src)) break
-        j <- j + 1L
-      }
-      block <- paste(src[i:j], collapse = " ")
-      if (!grepl("relationship\\s*=", block)) {
-        undeclared <- c(undeclared, sprintf("%s:%d", basename(f), i))
-      }
-    }
+    ex <- tryCatch(parse(f), error = function(e) NULL)
+    if (is.null(ex)) next
+    for (e in ex) walk(e, f)
   }
   chk(length(undeclared) == 0L,
       sprintf("T95 every cohort-building join declares its cardinality [%d undeclared: %s]",
@@ -192,27 +200,30 @@ cat("\n-- ADVERSARIAL --\n")
               ja, jb))
 }
 
-# T100 (adversarial). Repo-wide ratchet. 46 bare joins at cycle 9; the count
-# must fall or hold, never grow.
+# T100 (adversarial). Repo-wide ratchet, on the SAME parser-based detector as
+# T95. It previously used the paren-counting text scan and reported 15 where
+# the parser finds 12 -- two detectors disagreeing makes the debt figure
+# meaningless, and the looser one always wins an argument about whether the
+# debt grew. Baseline set to the parser count actually measured, not to the
+# older, larger text estimate.
 {
   bare <- 0L
+  walk2 <- function(e, f) {
+    if (!is.call(e)) return(invisible())
+    fn <- tryCatch(as.character(e[[1]])[1], error = function(...) "")
+    if (fn %in% JOIN_FNS && !("relationship" %in% names(e))) bare <<- bare + 1L
+    for (i in seq_along(e)) tryCatch(walk2(e[[i]], f), error = function(...) NULL)
+  }
   for (f in R_FILES) {
     if (basename(f) == "join_safety.R") next
-    src <- code_of(f)
-    for (i in grep("[^_a-z](left|inner)_join\\(", src)) {
-      depth <- 0L; j <- i
-      repeat {
-        seg <- src[j]
-        depth <- depth + lengths(regmatches(seg, gregexpr("\\(", seg))) -
-          lengths(regmatches(seg, gregexpr("\\)", seg)))
-        if (depth <= 0L || j >= length(src)) break
-        j <- j + 1L
-      }
-      if (!grepl("relationship\\s*=", paste(src[i:j], collapse = " "))) bare <- bare + 1L
-    }
+    ex <- tryCatch(parse(f), error = function(e) NULL)
+    if (is.null(ex)) next
+    for (e in ex) walk2(e, f)
   }
-  chk(bare <= 38L,
-      sprintf("T100 undeclared-join count does not grow beyond the recorded debt [%d of 38]", bare))
+  BASELINE_BARE <- 12L
+  chk(bare <= BASELINE_BARE,
+      sprintf("T100 undeclared-join count does not grow beyond the recorded debt [%d of %d]",
+              bare, BASELINE_BARE))
   cat(sprintf("       undeclared joins remaining: %d\n", bare))
 }
 
