@@ -1,4 +1,3 @@
-source(file.path("R", "lib", "table1_bands.R"))  # band_rurality()
 #!/usr/bin/env Rscript
 # =============================================================================
 # County midwifery supply: AHRF + CMS facilities + midwives per 1,000 births
@@ -39,6 +38,10 @@ source(file.path("R", "lib", "table1_bands.R"))  # band_rurality()
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(tidyr)
 })
+
+# Canonical rurality banding. band_rurality() returns NA for a code outside
+# 1-9 rather than labelling it "remote", which the inline case_when here did.
+source(file.path("R", "lib", "table1_bands.R"))
 
 MIN_BIRTHS <- 50   # below this a per-1,000-births rate is noise, not signal
 

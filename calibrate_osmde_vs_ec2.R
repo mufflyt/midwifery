@@ -1,4 +1,3 @@
-source(file.path("R", "lib", "table1_bands.R"))  # band_rurality()
 #!/usr/bin/env Rscript
 # =============================================================================
 # Engine calibration: osm.de public Valhalla vs EC2 Valhalla, same origins
@@ -34,6 +33,10 @@ source(file.path("R", "lib", "table1_bands.R"))  # band_rurality()
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(sf); library(httr); library(purrr)
 })
+
+# Canonical rurality banding. band_rurality() returns NA for a code outside
+# 1-9 rather than labelling it "remote", which the inline case_when here did.
+source(file.path("R", "lib", "table1_bands.R"))
 sf::sf_use_s2(FALSE)
 set.seed(20260808)   # fixed: the same sample must be reproducible for the paper
 

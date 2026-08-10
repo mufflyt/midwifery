@@ -103,6 +103,29 @@ whole time:
 | 30 min | 1,759,430 km2 | 1,578,621 km2 | 180,809 (10.3%) |
 | 60 min | 4,199,532 km2 | 3,656,267 km2 | 543,350 (12.9%) |
 
+**CORRECTION, 2026-08-10 (fix audit).** The clipped figures in this table are
+wrong, and wrong in a way that matters more than the defect they document. They
+were produced before the mask-inversion gate existed, so the clip subtracted
+five "water masks" that are actually state outlines — AR, IA, KS, MO and WV, at
+45x to 162x their census water area. Those five states hold 731,500 km2 of
+land, and 543,350 km2 removed from the 60-minute band is the right order of
+magnitude for the band intersected with them. **The clip was erasing five
+states and reporting it as removing water.**
+
+Re-running the build today, with the inversion gate in place (44 of 49 masks
+usable), gives:
+
+| band | before clip | after clip | water removed |
+|---|---:|---:|---:|
+| 30 min | 1,759,430 km2 | 1,751,982 km2 | 7,448 (0.4%) |
+| 60 min | 4,199,617 km2 | 4,177,376 km2 | 22,241 (0.5%) |
+
+The clip still works: a point in the middle of Lake Michigan, Lake Superior and
+Lake Erie is inside the water mask and outside the 60-minute surface. The
+removal is small because the surfaces were never mostly over water — the
+original 10.3%/12.9% figures were dominated by the five erased states, not by
+the Great Lakes.
+
 **Lesson:** clipping to an administrative boundary is not clipping to land, and
 a coverage statistic denominated in area silently rewards water and empty
 terrain. The population-weighted version (twostep::compute_band_tract_overlap)
