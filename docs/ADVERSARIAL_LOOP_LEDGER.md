@@ -1790,3 +1790,90 @@ the duplicate-definition problem cycle 9 just removed.
 - **HYGIENE:** duplicate test IDs across cycles 6/7.
 
 **Estimand changed:** no.
+
+---
+
+## Cycle 13 — 2026-08-10 — 4 BVA / 3 semantic / 3 adversarial
+
+**Targets.** The cohort set arithmetic in `R/06-cohort-flow.R`, and the
+row-span carry-down in `wonder_parse()`.
+
+**Tests added** — `tests/test_cycle13_cohort_wonder.R` (T121–T130, 20 assertions)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T121 | BVA | an empty WONDER data-table |
+| T122 | BVA | first row lacking outer labels — nothing to carry down |
+| T123 | BVA | more labels than group-by variables |
+| T124 | BVA | cohort identity at degenerate sizes |
+| T125 | semantic | the identities are arithmetic, over 200 random set pairs |
+| T126 | semantic | invariants and provenance pins are distinguishable |
+| T127 | semantic | added/removed/retained **partition** |
+| T128 | adversarial | a duplicated id breaks the row-count identity |
+| T129 | adversarial | ragged WONDER rows |
+| T130 | adversarial | a blank NPI passes `!is.na()` |
+
+### The defect: two kinds of claim in one assertion
+
+`R/06` asserted four things in a single `stopifnot()`:
+
+```r
+length(added) == 2147                        # a fact about these frozen files
+length(removed) == 1352                      # a fact about these frozen files
+length(retained) + length(added) == final    # arithmetic, always true
+length(s2) + added - removed == final        # arithmetic, always true
+```
+
+**Their failures mean opposite things.** An identity failure means the *code* is
+wrong. A pin failure means the *data* moved — which may be entirely legitimate,
+since `artifacts/frozen_stage2/` and `artifacts/frozen_cohort/` are frozen
+precisely so someone can refreeze them deliberately.
+
+Conflated, both produced the same bare `length(added) == 2147 is not TRUE`, and
+a reader could not tell a broken pipeline from a refrozen cohort — nor which of
+the four assertions were mathematical truths and which were this vintage's
+answers.
+
+*Fixed:* separated into an **invariant** block (now also asserting pairwise
+disjointness, which was never checked) and a named **provenance pin** whose
+failure message states explicitly that the arithmetic still holds and only the
+frozen artifacts changed.
+
+The pins are **correct and were verified live**: stage2 16,743 → added 2,147,
+removed 1,352, final 17,538, identity holds. This was a clarity defect, not an
+arithmetic one — but it is the same shape as cycle 4's "violation and
+unevaluable must not hide behind each other."
+
+T125 demonstrates the identities over **200 random set pairs**, which is the
+only way to show they are invariants rather than another pin.
+
+### Latent risks confirmed, no live impact
+
+- **T128** — `setdiff()`/`intersect()` return **unique** values while
+  `length(fin_cohort)` counts **rows**, so a duplicated `certification_number`
+  breaks the identity. It cannot pass unnoticed, which is the good outcome.
+- **T130** — the stage-2 cohort is defined by `!is.na(npi)`, and an empty
+  string is not `NA`. Measured on the frozen file: **22,309 rows, 5,566 NA,
+  0 blank, 0 malformed.** Clean today; the guard is now stated.
+
+### wonder_parse carry-down holds
+
+All four edges pass: empty table, a first row with no outer label (stays `NA`
+rather than fabricating one), more labels than group-by variables, and ragged
+rows (padded with `NA`, never filled from a neighbour, with the outer label
+carrying down correctly).
+
+### Full suite
+
+**18/18 files pass.**
+
+### Unresolved / carried forward
+
+- **UPSTREAM (isochrones):** `extract_first_initial()` accent bug, ratcheted at
+  5 (c12).
+- 18 undeclared joins (c10); 4 duplicate helpers (c9); 14 `.keep_all` (c5).
+- **DECISION NEEDED:** GFR reliability method (c8); GFR universe 15-50 vs 15-44
+  (c7); `women_15_44` partial vs NA (c7); Table 1 censoring (c1); `ct_partial`
+  reporting (c4).
+
+**No scientific estimand was changed in this cycle.**

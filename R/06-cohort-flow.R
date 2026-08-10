@@ -65,12 +65,43 @@ build_flow <- function() {
   cli::cli_h2("Set arithmetic")
   cli::cli_alert_info("stage2 {length(s2_cohort)} | added {length(added)} | removed {length(removed)} | retained {length(retained)} | final {length(fin_cohort)}")
 
+  # CYCLE 13. These four assertions were one stopifnot(), and they are two
+  # DIFFERENT KINDS of claim whose failures mean opposite things.
+  #
+  #   An INVARIANT is arithmetic. retained + added == final holds for any three
+  #   sets, on any vintage, forever. If it fails, the CODE is wrong.
+  #
+  #   A PROVENANCE PIN is a fact about these specific frozen inputs. added ==
+  #   2147 holds because artifacts/frozen_stage2 and artifacts/frozen_cohort
+  #   are the files this analysis was written against. If it fails, the DATA
+  #   moved -- which may be entirely legitimate.
+  #
+  # Conflated, a failure gave the same message for "you broke the code" and
+  # "someone refroze the cohort", and a reader could not tell which assertions
+  # were mathematical truths and which were this vintage's answers. Separated,
+  # each says what it is.
+
+  # --- Invariants: true of any sets, in any vintage ---
   stopifnot(
-    length(added) == 2147,
-    length(removed) == 1352,
     length(retained) + length(added) == length(fin_cohort),
-    length(s2_cohort) + length(added) - length(removed) == length(fin_cohort)
+    length(s2_cohort) + length(added) - length(removed) == length(fin_cohort),
+    length(intersect(added, removed)) == 0L,
+    length(intersect(added, retained)) == 0L,
+    length(intersect(removed, retained)) == 0L
   )
+
+  # --- Provenance pins: true of THESE frozen inputs ---
+  PIN_ADDED   <- 2147L
+  PIN_REMOVED <- 1352L
+  if (length(added) != PIN_ADDED || length(removed) != PIN_REMOVED) {
+    stop(sprintf(paste0(
+      "[PROVENANCE] The frozen inputs no longer produce the pinned cohort deltas.\n",
+      "  added:   %d (pinned %d)\n  removed: %d (pinned %d)\n",
+      "  The set arithmetic above still HOLDS, so this is not a code fault -- the\n",
+      "  frozen artifacts have changed. If that was deliberate, update the pins and\n",
+      "  say why in the commit; every published count downstream moves with them."),
+      length(added), PIN_ADDED, length(removed), PIN_REMOVED), call. = FALSE)
+  }
   cli::cli_alert_success("Identity holds: {length(s2_cohort)} + {length(added)} - {length(removed)} = {length(fin_cohort)}")
 
   # Additions must already exist in the roster; otherwise they would be new
