@@ -519,5 +519,35 @@ for (cat_i in unique(t1$category)) {
 dir.create("docs", showWarnings = FALSE)
 writeLines(md, "docs/table1_midwives.md")
 
+# Also render HTML. The markdown is the source of truth, but .md is associated
+# with TeXShop on this machine, which renders LaTeX and shows the raw pipe
+# table instead. Generating both here keeps them from drifting; if pandoc is
+# absent the markdown still ships and the failure is announced rather than
+# silent.
+local({
+  if (nzchar(Sys.which("pandoc"))) {
+    css <- tempfile(fileext = ".html")
+    writeLines(c(
+      "<style>",
+      " body{font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:52rem;",
+      "      margin:2rem auto;padding:0 1.5rem;line-height:1.5;color:#1a1a1a}",
+      " table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}",
+      " th,td{padding:.35rem .6rem;border-bottom:1px solid #e3e3e3;text-align:left}",
+      " td:nth-child(2),td:nth-child(3),th:nth-child(2),th:nth-child(3){text-align:right}",
+      " thead th{border-bottom:2px solid #333}",
+      " tr:has(td strong){background:#f4f6f8}",
+      " h1{font-size:1.5rem;border-bottom:2px solid #333;padding-bottom:.4rem}",
+      "</style>"), css)
+    st <- system2("pandoc", c("docs/table1_midwives.md", "-s", "--embed-resources",
+                              "--metadata", shQuote("title=Table 1"),
+                              "-H", shQuote(css), "-o", "docs/table1_midwives.html"),
+                  stdout = FALSE, stderr = FALSE)
+    if (st == 0L) cat("written: docs/table1_midwives.html\n")
+    else cat("NOTE: pandoc failed; docs/table1_midwives.html not refreshed\n")
+  } else {
+    cat("NOTE: pandoc not found; docs/table1_midwives.html not refreshed\n")
+  }
+})
+
 cat("\n"); print(as.data.frame(t1), row.names = FALSE)
 cat("\nwritten: artifacts/table1_midwives.csv, docs/table1_midwives.md\n")
