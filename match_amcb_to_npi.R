@@ -418,7 +418,7 @@ cat(sprintf("strategy 5 candidate pairs: %s\n", format(nrow(s5), big.mark = ",")
 #
 # Class 5 sorts BELOW 4 numerically because resolution takes min(class) as the
 # strongest evidence; a partial surname must never outrank a whole one.
-candidates <- bind_rows(s1, s2, s3, s5) %>%
+candidates_prefilter <- bind_rows(s1, s2, s3, s5) %>%
   mutate(
     component_last = coalesce(component_last, 0L),
     mid_both   = has_name_information(mid_init) &
@@ -431,8 +431,31 @@ candidates <- bind_rows(s1, s2, s3, s5) %>%
       exact_last == 1L & first_init_ok == 1L                 ~ 3L,
       component_last == 1L                                   ~ 5L,
       TRUE                                                   ~ 4L),
-    taxonomy_axis = npi_tax_class) %>%
+    taxonomy_axis = npi_tax_class)
+candidates <- candidates_prefilter %>%
   filter(mid_conflict == 0L)   # a recorded middle-initial conflict still vetoes
+
+# RULED IN, OR MERELY NOT RULED OUT? (2026-08-10)
+#
+# Review of the class-5 census found ten matches where several pool members
+# shared the given name AND the joining surname token. The veto above had
+# already reduced each to a single candidate, which looked like successful
+# discrimination -- and for three of them it was: the survivor's middle initial
+# AGREED with the roster's.
+#
+# For the other seven it was not. Kelly Kathleen Clark-Mattox is the clearest
+# case: eight KELLY + CLARK NPIs exist, seven carry a recorded middle initial
+# (A, J, N, A, C, S, O), none is K, so all seven were vetoed. The survivor is
+# the one NPI with NO middle name at all. It was not ruled IN by agreeing with
+# KATHLEEN; it was the only one that could not be ruled OUT.
+#
+# That is a materially weaker claim than the evidence class implies, and it is
+# invisible downstream because the surviving row looks identical to a genuine
+# unique match. Restricted to class 5, where the surname evidence is already
+# partial, such a match is quarantined rather than published.
+vetoed_c5_pairs <- candidates_prefilter %>%
+  filter(name_evidence_class == 5L, mid_conflict == 1L) %>%
+  distinct(amcb_id, vetoed_npi = npi)
 
 cat("\ncandidates by name_evidence_class x taxonomy:\n")
 print(as.data.frame(count(candidates, name_evidence_class, taxonomy_axis)))
@@ -456,6 +479,7 @@ per_npi <- candidates %>%
             # the recorded variant is the one whose evidence class won.
             nppes_matched_last = nppes_matched_last[which.min(name_evidence_class)],
             nppes_matched_first = nppes_matched_first[which.min(name_evidence_class)],
+            nppes_mid_init = nppes_mid_init[which.min(name_evidence_class)],
             .groups = "drop")
 
 pool_stats <- per_npi %>%
@@ -508,12 +532,27 @@ matched <- resolved %>%
          match_strategy = name_evidence_class) %>%
   rank_one_to_one() %>%
   transmute(amcb_id, npi, npi_match_method = match_method,
-            nppes_matched_last, nppes_matched_first,
+            nppes_matched_last, nppes_matched_first, nppes_mid_init,
             npi_tax_class = taxonomy_axis, name_evidence_class,
             npi_match_resolution = resolution,
             npi_match_confidence = round(confidence_score, 4),
             npi_match_score = 5L - name_evidence_class,
             match_strategy)   # candidate counts come from pool_stats, once
+
+# A VETOED ALTERNATIVE MUST BE A DIFFERENT PERSON (2026-08-10).
+# The first version of this counted n_distinct(npi[mid_conflict == 1L]) and
+# demoted three matches that were fine. An NPI appears once per name variant
+# per snapshot, so a single person recorded with a middle initial in one year
+# and without it in another supplies BOTH a conflicting and a non-conflicting
+# candidate row -- and the conflicting one was counted as evidence against the
+# match it belongs to. NPI 1609834951 (JOANNE ANDERSON, middle L then absent)
+# and 1548261456 (ANASTASIA OTT HALLISEY, middle M. then absent) were each
+# vetoed by themselves. Excluding the matched NPI leaves only genuinely rival
+# people, which is what the guard was ever meant to count.
+mid_veto_stats <- vetoed_c5_pairs %>%
+  left_join(matched %>% select(amcb_id, npi), by = "amcb_id") %>%
+  filter(is.na(npi) | vetoed_npi != npi) %>%
+  count(amcb_id, name = "n_mid_vetoed_c5")
 
 # Rows identifiable on name but which lost the bijection to a stronger claim.
 lost_bijection <- setdiff(unique(resolved$amcb_id), matched$amcb_id)
@@ -530,14 +569,31 @@ out <- amcb %>%
   select(-first_raw, -mid_from_first, -first_init, -mid_init) %>%
   left_join(matched, by = "amcb_id") %>%
   left_join(latest, by = "npi") %>%
+  # pool_stats joined exactly ONCE: it is the single source of candidate counts.
+  left_join(pool_stats, by = "amcb_id") %>%
+  left_join(mid_veto_stats, by = "amcb_id") %>%
+  mutate(n_mid_vetoed_c5 = coalesce(n_mid_vetoed_c5, 0L),
+         # Ruled in, or merely not ruled out. TRUE when a class-5 match
+         # survived ONLY because it carried no middle initial to conflict,
+         # while recorded alternatives were vetoed by theirs.
+         resolved_by_absence_c5 = !is.na(npi) & name_evidence_class == 5L &
+           n_mid_vetoed_c5 > 0L & !has_name_information(nppes_mid_init)) %>%
+  # Demotion runs AFTER the flag exists and BEFORE status is derived. Both
+  # halves matter: an earlier placement reads a column that does not exist yet,
+  # and a later one leaves the row holding an NPI while calling itself
+  # quarantined.
+  mutate(npi_demoted_absence_c5 = resolved_by_absence_c5,
+         npi = if_else(resolved_by_absence_c5, NA_character_, npi),
+         npi_tax_class = if_else(npi_demoted_absence_c5, NA_character_, npi_tax_class),
+         name_evidence_class = if_else(npi_demoted_absence_c5,
+                                       NA_integer_, name_evidence_class)) %>%
   mutate(npi_match_status = case_when(
+    npi_demoted_absence_c5 ~ "ambiguous_unruled_out_component",
     !is.na(npi) & npi_tax_class == "nursing" ~ "matched_nursing_taxonomy",
     !is.na(npi)                  ~ "matched",
     amcb_id %in% quarantined_ids ~ "ambiguous_tied_names",
     amcb_id %in% lost_bijection  ~ "ambiguous_contested_npi",
     TRUE                         ~ "unmatched")) %>%
-  # pool_stats joined exactly ONCE: it is the single source of candidate counts.
-  left_join(pool_stats, by = "amcb_id") %>%
   mutate(across(c(n_candidates_pre_rank, n_midwifery_candidates,
                   n_nursing_only_candidates), ~ coalesce(.x, 0L))) %>%
   # "no plausible NPI exists" and "plausible NPIs exist but identity is
@@ -551,6 +607,7 @@ out <- amcb %>%
            !is.na(npi) & name_evidence_class == 4L  ~ "sensitivity_fuzzy",
            !is.na(npi) & npi_tax_class == "nursing" ~ "sensitivity_nursing",
            !is.na(npi)                              ~ "primary_midwifery",
+           npi_demoted_absence_c5                   ~ "quarantined",
            grepl("^ambiguous", npi_match_status)    ~ "quarantined",
            TRUE                                     ~ "unmatched"),
          # candidate_count is the pool BEFORE resolution -- how many NPIs were
@@ -571,6 +628,8 @@ out <- amcb %>%
          ambiguity_flag = case_when(
            npi_match_status == "ambiguous_tied_names"   ~ "tied_on_name_evidence",
            npi_match_status == "ambiguous_contested_npi" ~ "lost_bijection_to_stronger_claim",
+           npi_match_status == "ambiguous_unruled_out_component" ~
+             "class5_survived_only_by_carrying_no_middle_initial",
            !is.na(npi) & n_at_best_class > 1L            ~ "resolved_but_pool_not_unique",
            is.na(npi) & has_candidate                    ~ "candidates_existed_none_resolved",
            TRUE                                          ~ "none"),
