@@ -3122,3 +3122,19 @@ day one appears, the change is noticed rather than assumed safe.
 - 18 undeclared joins (c10); 4 duplicate helpers (c9); 14 `.keep_all` (c5).
 
 **No scientific estimand was changed in this cycle.**
+
+### Cycle 23 — commit hygiene correction
+
+`c3aa82a` contains **11 files belonging to a concurrent session** (the amcb
+crosswalk work) that its message does not describe. No harm: nothing frozen was
+touched, and that session's files are intact — committed rather than lost. The
+fault is atomicity and attribution.
+
+**Root cause, and it is the third variant of one mistake.** Cycle 21 used
+`git add -A`. Cycle 22 and 23 staged explicitly — but cycle 22's
+`pull --rebase --autostash` restored those files **into the index**, so the index
+was already dirty when cycle 23's `git add` added three more paths to it. Staging
+explicitly is not enough if you never look at what is *already* staged.
+
+**The form that prevents it:** `git commit -- <paths>` commits exactly those
+paths regardless of index state. Adopted from here.
