@@ -19,7 +19,31 @@ suppressPackageStartupMessages({
 source("R/lib/common_helpers.R")
 
 DEFAULT_DAC_PATH <- "data/CMS_Facility_Affiliation.csv"
+DEFAULT_DAC_URL <- "https://data.cms.gov/provider-data/sites/default/files/resources/b7c4080ae144663e43353a9c35cd3f53_1782750576/Facility_Affiliation.csv"
 DEFAULT_HOSPITAL_PATH <- "artifacts/ob_hospitals_geocoded.csv"
+
+#' Auto-ensure dataset availability (Downloads missing DAC files & creates artifacts)
+ensure_file_exists <- function(path, url = NULL) {
+  if (file.exists(path)) return(TRUE)
+  
+  dir_name <- dirname(path)
+  if (!dir.exists(dir_name)) {
+    dir.create(dir_name, recursive = TRUE, showWarnings = FALSE)
+  }
+  
+  if (!is.null(url)) {
+    message(sprintf("[match_npi_to_hospitals] Missing file '%s'. Downloading from:\n  %s ...", path, url))
+    tryCatch({
+      utils::download.file(url, destfile = path, mode = "wb", quiet = TRUE)
+      message(sprintf("[match_npi_to_hospitals] Successfully downloaded '%s'.", path))
+      return(TRUE)
+    }, error = function(e) {
+      warning(sprintf("Failed to download '%s': %s", path, e$message), call. = FALSE)
+      return(FALSE)
+    })
+  }
+  return(FALSE)
+}
 
 #' Match NPI Individuals to their Affiliated Hospitals
 #'
@@ -39,6 +63,16 @@ match_npi_to_hospitals <- function(npis,
                                    hospital_path = DEFAULT_HOSPITAL_PATH,
                                    include_unmatched = TRUE) {
   
+  # 0. Ensure datasets exist (Auto-download & artifact creation if missing)
+  ensure_file_exists(dac_path, DEFAULT_DAC_URL)
+  if (!file.exists(hospital_path)) {
+    # Check fallback path
+    fallback_hosp <- "ob_hospitals_geocoded.csv"
+    if (file.exists(fallback_hosp)) {
+      hospital_path <- fallback_hosp
+    }
+  }
+
   # 1. Extract NPI vector from input
   if (is.data.frame(npis)) {
     if (!"npi" %in% names(npis)) {
