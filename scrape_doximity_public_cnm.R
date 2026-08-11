@@ -33,11 +33,24 @@
 suppressPackageStartupMessages({
   library(httr); library(rvest); library(jsonlite)
   library(dplyr); library(readr); library(stringr); library(tibble)
+  # purrr was USED but never LOADED -- keep() in pass 1 and map_chr() in pass 3.
+  # Pass 1 aborted on the first directory page, which is why this scraper has
+  # never emitted a row despite being committed twice.
+  library(purrr)
 })
 
 RESUME      <- identical(Sys.getenv("DOX_RESUME"), "1")
 SLEEP_SEC   <- 2
-ROSTER_FILE <- "artifacts/amcb_npi_linkage_FROZEN.csv"
+
+# BOUNDED RUNS. A full crawl of the public CNM directory is thousands of
+# profiles at 2s each. DOX_MAX_PROFILES caps the number of profiles fetched so
+# the scraper can be exercised against the live site -- and its output
+# inspected -- without committing to hours of requests. Unset means no cap.
+MAX_PROFILES <- suppressWarnings(as.integer(Sys.getenv("DOX_MAX_PROFILES", NA)))
+
+# The roster is only needed for the match stage and lives outside a worktree
+# (it is gitignored person-level data), so its path is overridable.
+ROSTER_FILE <- Sys.getenv("DOX_ROSTER", "artifacts/amcb_npi_linkage_FROZEN.csv")
 URL_FILE    <- "artifacts/doximity_public_urls.csv"
 OUT_FILE    <- "artifacts/doximity_public_profiles.csv"
 PROV_FILE   <- "artifacts/doximity_public_provenance.csv"
@@ -77,20 +90,30 @@ if (RESUME && file.exists(URL_FILE)) {
     if (is.null(resp) || status_code(resp) != 200) break
 
     html  <- content(resp, as = "parsed", encoding = "UTF-8")
+    # The is.na guard matters: html_attr() returns NA for an anchor with no
+    # href, and str_detect(NA, ...) yields NA, which subsets to a phantom row.
     links <- html %>%
       html_elements("a[href]") %>%
-      html_attr("href") %>%
-      keep(~ str_detect(.x, "^/pub/"))
+      html_attr("href")
+    links <- links[!is.na(links) & str_detect(links, "^/pub/")]
 
     if (!length(links)) break
     new_urls <- paste0(BASE, links)
     all_urls <- unique(c(all_urls, new_urls))
     cat(sprintf("  p%d: %d profiles (total %d)\n",
                 page_n, length(links), length(all_urls)))
+    # Stop enumerating once the cap is reachable; there is no reason to page
+    # through a directory whose extra URLs will not be fetched.
+    if (!is.na(MAX_PROFILES) && length(all_urls) >= MAX_PROFILES) {
+      cat(sprintf("  stopping directory crawl: %d URLs is enough for a cap of %d\n",
+                  length(all_urls), MAX_PROFILES))
+      break
+    }
     page_n <- page_n + 1L
   }
 
   url_df <- tibble(profile_url = unique(all_urls))
+  if (!is.na(MAX_PROFILES)) url_df <- head(url_df, MAX_PROFILES)
   write_csv(url_df, URL_FILE)
   cat(sprintf("pass 1 complete: %d unique profile URLs\n",
               nrow(url_df)))
@@ -159,9 +182,15 @@ parse_profile <- function(url) {
   for (li in list_items) {
     # Strip inline CSS injected by Doximity icon wrappers before the text.
     li_clean <- str_trim(str_remove(li, "^.*\\}"))
-    # Phone: require full US number (country code 1 + 10 digits).
-    if (str_detect(li_clean, "^\\+?1[\\s\\-\\.]?\\(?\\d{3}\\)?[\\s\\-\\.]?\\d{3}[\\s\\-\\.]?\\d{4}")) {
-      phone <- li_clean
+    # Phone: full US number (country code 1 + 10 digits). The pattern was
+    # anchored at ^ , but Doximity renders the item as "Phone+1 707-322-0445"
+    # -- the literal label sits in front of the number, so the anchor never
+    # matched and this column came back empty for every profile while the
+    # number was plainly visible in bio_text. Match anywhere and extract just
+    # the number rather than keeping the label in the value.
+    PHONE_RE <- "\\+?1[\\s\\-\\.]?\\(?\\d{3}\\)?[\\s\\-\\.]?\\d{3}[\\s\\-\\.]?\\d{4}"
+    if (str_detect(li_clean, PHONE_RE)) {
+      phone <- str_trim(str_extract(li_clean, PHONE_RE))
     } else if (str_detect(li_clean, "\\d{5}")) {
       # HTML fuses street and city without a separator.
       # Use the already-scraped city name as the split anchor.
