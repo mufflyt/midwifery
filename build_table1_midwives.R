@@ -503,7 +503,14 @@ if (!is.null(hg_link)) {
 # --- assemble, long format, per the isochrones vignette -----------------------
 # Percentages use the non-missing denominator, and the missing count is emitted
 # as its own row so the two are never confused.
-blk <- function(df, col, category, lvls = NULL) {
+# EVERY "UNKNOWN" MEANS SOMETHING DIFFERENT, so each block names its own.
+# A single shared label put three unrelated states in one column: DAC's 7,050 is
+# NOT ENROLLED IN MEDICARE, Healthgrades' 5,926 is NO PUBLIC PROFILE, and
+# HPSA's 189 is NO GEOCODE. Only the last is missing data in the ordinary
+# sense; the other two are substantive findings that read as data-quality
+# problems when they share a row label with genuine missingness.
+blk <- function(df, col, category, lvls = NULL,
+                unknown_label = "Unknown / not recorded") {
   # AN ABSENT COLUMN IS AN ERROR, NOT AN EMPTY BLOCK. df[[col]] on a missing
   # column returns NULL; as.character(NULL) has zero rows and sum(is.na(NULL))
   # is 0, so the category vanished from the table entirely -- no rows, no
@@ -526,14 +533,15 @@ blk <- function(df, col, category, lvls = NULL) {
     out <- out %>% arrange(desc(n))
   miss <- sum(is.na(v))
   if (miss > 0)
-    out <- bind_rows(out, tibble(characteristic = "Unknown / not recorded",
+    out <- bind_rows(out, tibble(characteristic = unknown_label,
                                  n = miss, percent = NA_real_, category = category))
   out
 }
 
 # Parallel helper for Healthgrades-derived rows. Uses the HG-eligible
 # denominator (N - shared-profile exclusions) rather than the full cohort N.
-blk_hg <- function(col, category, lvls = NULL, binary_yes = NULL) {
+blk_hg <- function(col, category, lvls = NULL, binary_yes = NULL,
+                   unknown_label = "No public Healthgrades profile") {
   if (is.null(hg_link) || !col %in% names(hg_link)) {
     return(tibble(characteristic = "Healthgrades data not available",
                   n = NA_integer_, percent = NA_real_, category = category))
@@ -554,7 +562,7 @@ blk_hg <- function(col, category, lvls = NULL, binary_yes = NULL) {
   else
     out <- out %>% arrange(desc(n))
   miss <- max(0L, N_hg - known)
-  bind_rows(out, tibble(characteristic = "Unknown / not recorded",
+  bind_rows(out, tibble(characteristic = unknown_label,
                         n = miss, percent = NA_real_, category = category))
 }
 
@@ -564,7 +572,8 @@ t1 <- bind_rows(
 
   blk(coh, "certification", "Certification"),
   if ("taxonomy_description" %in% names(coh))
-    blk(coh, "taxonomy_description", "Primary NPPES Specialty Taxonomy"),
+    blk(coh, "taxonomy_description", "Primary NPPES Specialty Taxonomy",
+        unknown_label = "No taxonomy recorded in NPPES"),
   # SEX -- ONE BLOCK, MERGED. Healthgrades sex was published separately; the two
   # are now one row set because the merge adds no coverage and only
   # confirmation. Measured on this cohort: NPPES has sex for 11,905 (99.9%),
@@ -573,7 +582,7 @@ t1 <- bind_rows(
   # 5,876 of 5,878 (99.97%), with 2 disagreements. A merged variable is
   # therefore identical to the NPPES variable; publishing both blocks implied a
   # second, independent measurement of the same 11,913 people.
-  blk(coh, "sex", "Sex"),
+  blk(coh, "sex", "Sex", unknown_label = "Sex not recorded in NPPES"),
   if ("state_concordance" %in% names(coh))
     blk(coh, "state_concordance", "Practice vs. Mailing State Concordance"),
   if ("age_band" %in% names(coh))
@@ -588,35 +597,42 @@ t1 <- bind_rows(
   # imply the district is missing when it is not applicable.
   blk(coh %>% filter(!nppes_state %in% ACOG_EXPECTED_UNMAPPED),
       "acog_district", "ACOG district",
-      lvls = if (acog_ok) ACOG_DISTRICT_LEVELS else NULL),
+      lvls = if (acog_ok) ACOG_DISTRICT_LEVELS else NULL,
+      unknown_label = "State not mappable to an ACOG district"),
   blk(coh, "rurality", "Rurality (RUCC 2023)",
       lvls = c("Metropolitan (RUCC 1-3)", "Nonmetropolitan, adjacent (RUCC 4-6)",
-               "Nonmetropolitan, remote (RUCC 7-9)")),
+               "Nonmetropolitan, remote (RUCC 7-9)"),
+      unknown_label = "County not resolved (no RUCC code)"),
 
   if ("training_institution_top" %in% names(coh))
     blk(coh, "training_institution_top",
         "Training institution (CMS DAC + Healthgrades)",
-        lvls = c(school_src, "Other named institution")),
+        lvls = c(school_src, "Other named institution"),
+        unknown_label = "No school named by CMS DAC or Healthgrades"),
 
   if ("dac_practice_size" %in% names(coh))
     blk(coh, "dac_practice_size",
         "Medicare practice group size (CMS DAC)",
-        lvls = PRACTICE_SIZE_LEVELS),
+        lvls = PRACTICE_SIZE_LEVELS,
+        unknown_label = "Not enrolled in Medicare (absent from CMS DAC)"),
   if ("dac_practice_sites" %in% names(coh))
     blk(coh, "dac_practice_sites",
         "Number of practice locations (CMS DAC)",
-        lvls = PRACTICE_LOCATION_LEVELS),
+        lvls = PRACTICE_LOCATION_LEVELS,
+        unknown_label = "Not enrolled in Medicare (absent from CMS DAC)"),
   if ("dac_assignment" %in% names(coh))
     blk(coh, "dac_assignment",
         "Medicare assignment (CMS DAC)",
-        lvls = MEDICARE_ASSIGNMENT_LEVELS),
+        lvls = MEDICARE_ASSIGNMENT_LEVELS,
+        unknown_label = "Not enrolled in Medicare (absent from CMS DAC)"),
 
   if ("hpsa_status" %in% names(coh))
     blk(coh, "hpsa_status", "Primary-care shortage area (HRSA HPSA)",
         lvls = c("Designated geographic primary-care HPSA",
                  "Population-group HPSA only (not location-based)",
                  "HPSA proposed for withdrawal only",
-                 "Not in a primary-care HPSA")),
+                 "Not in a primary-care HPSA"),
+        unknown_label = "No geocoded practice location"),
 
   if ("medicare_part_b" %in% names(coh))
     blk(coh, "medicare_part_b", "Medicare Part B, any year 2013-2023",

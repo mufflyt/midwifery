@@ -8,11 +8,11 @@ Nurse Practitioner,21,0.2,Primary NPPES Specialty Taxonomy
 "Nurse Practitioner, Women's Health",15,0.1,Primary NPPES Specialty Taxonomy
 "Nurse Practitioner, Obstetrics & Gynecology",9,0.1,Primary NPPES Specialty Taxonomy
 Registered Nurse,1,0,Primary NPPES Specialty Taxonomy
-Unknown / not recorded,41,,Primary NPPES Specialty Taxonomy
+No taxonomy recorded in NPPES,41,,Primary NPPES Specialty Taxonomy
 Female,11834,99.4,Sex
 Male,63,0.5,Sex
 X (not listed as F or M),13,0.1,Sex
-Unknown / not recorded,10,,Sex
+Sex not recorded in NPPES,10,,Sex
 Same practice and mailing state,11044,92.7,Practice vs. Mailing State Concordance
 Different practice and mailing state (Cross-state practice),876,7.3,Practice vs. Mailing State Concordance
 <35 years,205,1.7,Calibrated Age (100% Cohort Coverage)
@@ -36,11 +36,11 @@ District VIII,2113,17.8,ACOG district
 District IX,1018,8.6,ACOG district
 District XI,536,4.5,ACOG district
 District XII,670,5.6,ACOG district
-Unknown / not recorded,2,,ACOG district
+State not mappable to an ACOG district,2,,ACOG district
 Metropolitan (RUCC 1-3),10599,90.4,Rurality (RUCC 2023)
 "Nonmetropolitan, adjacent (RUCC 4-6)",784,6.7,Rurality (RUCC 2023)
 "Nonmetropolitan, remote (RUCC 7-9)",336,2.9,Rurality (RUCC 2023)
-Unknown / not recorded,201,,Rurality (RUCC 2023)
+County not resolved (no RUCC code),201,,Rurality (RUCC 2023)
 Georgetown University,94,7.7,Training institution (CMS DAC + Healthgrades)
 University of Cincinnati,66,5.4,Training institution (CMS DAC + Healthgrades)
 Yale University,53,4.3,Training institution (CMS DAC + Healthgrades)
@@ -52,27 +52,27 @@ State University of New York Downstate,32,2.6,Training institution (CMS DAC + He
 Oregon Health Sciences University,26,2.1,Training institution (CMS DAC + Healthgrades)
 State University of New York at Stony Brook,25,2,Training institution (CMS DAC + Healthgrades)
 Other named institution,759,61.8,Training institution (CMS DAC + Healthgrades)
-Unknown / not recorded,10692,,Training institution (CMS DAC + Healthgrades)
+No school named by CMS DAC or Healthgrades,10692,,Training institution (CMS DAC + Healthgrades)
 No group affiliation (solo),498,10.2,Medicare practice group size (CMS DAC)
 2-9 clinicians,158,3.2,Medicare practice group size (CMS DAC)
 10-49 clinicians,519,10.7,Medicare practice group size (CMS DAC)
 50-249 clinicians,1096,22.5,Medicare practice group size (CMS DAC)
 250-999 clinicians,1316,27,Medicare practice group size (CMS DAC)
 ">=1,000 clinicians",1283,26.3,Medicare practice group size (CMS DAC)
-Unknown / not recorded,7050,,Medicare practice group size (CMS DAC)
+Not enrolled in Medicare (absent from CMS DAC),7050,,Medicare practice group size (CMS DAC)
 1 location,3300,67.8,Number of practice locations (CMS DAC)
 2 locations,1006,20.7,Number of practice locations (CMS DAC)
 3-4 locations,475,9.8,Number of practice locations (CMS DAC)
 >=5 locations,89,1.8,Number of practice locations (CMS DAC)
-Unknown / not recorded,7050,,Number of practice locations (CMS DAC)
+Not enrolled in Medicare (absent from CMS DAC),7050,,Number of practice locations (CMS DAC)
 Accepts Medicare assignment,4451,91.4,Medicare assignment (CMS DAC)
 May accept assignment (non-participating),419,8.6,Medicare assignment (CMS DAC)
-Unknown / not recorded,7050,,Medicare assignment (CMS DAC)
+Not enrolled in Medicare (absent from CMS DAC),7050,,Medicare assignment (CMS DAC)
 Designated geographic primary-care HPSA,335,2.9,Primary-care shortage area (HRSA HPSA)
 Population-group HPSA only (not location-based),3213,27.4,Primary-care shortage area (HRSA HPSA)
 HPSA proposed for withdrawal only,1893,16.1,Primary-care shortage area (HRSA HPSA)
 Not in a primary-care HPSA,6290,53.6,Primary-care shortage area (HRSA HPSA)
-Unknown / not recorded,189,,Primary-care shortage area (HRSA HPSA)
+No geocoded practice location,189,,Primary-care shortage area (HRSA HPSA)
 Billed Part B in at least one year,2320,19.5,"Medicare Part B, any year 2013-2023"
 "No Part B record (billed <11 beneficiaries, or none)",9600,80.5,"Medicare Part B, any year 2013-2023"
 Prescribed under Part D in at least one year,5615,47.1,"Medicare Part D, any year 2013-2023"
@@ -81,7 +81,7 @@ At least this many speak a language other than English,367,3.1,Language (Healthg
 Not listed (absence is not evidence of English-only),11441,,Language (Healthgrades floor)
 Yes,5761,97.9,Accepts new patients
 No,121,2.1,Accepts new patients
-Unknown / not recorded,5926,,Accepts new patients
+No public Healthgrades profile,5926,,Accepts new patients
 No,4936,83.9,Offers telehealth
 Yes,946,16.1,Offers telehealth
-Unknown / not recorded,5926,,Offers telehealth
+No public Healthgrades profile,5926,,Offers telehealth
