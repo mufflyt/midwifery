@@ -137,19 +137,45 @@ out <- cnm %>%
 # Suffixes stripped in descending length so "COLLEGE OF MEDICINE" is not left as
 # a trailing "INE" by an earlier match on "COLLEGE OF MED".
 strip_med_suffix <- function(x) {
+  # Ordered longest-first so a shorter pattern cannot truncate a longer one --
+  # "COLLEGE OF MEDICINE" must be consumed before "COLLEGE OF MED" can leave a
+  # trailing "INE". Every pattern anchors to end-of-string, so only a TRAILING
+  # academic unit is removed and a leading one (Medical University of South
+  # Carolina, Medical College of Wisconsin) is left intact by the guard below.
+  #
+  # Derived from the 72 distinct strings CMS actually uses for CNMs, not from
+  # imagination: they include five DENTAL schools and a college of physicians
+  # and surgeons, which is CMS taxonomy noise rather than midwifery training.
+  pats <- c(
+    "SCHOOL OF MEDICINE AND DENTISTRY", "COLLEGE OF PHYSICIANS AND SURGEONS",
+    "SCHOOL OF OSTEOPATHIC MEDICINE",   "COLLEGE OF OSTEOPATHIC MEDICINE",
+    "COLLEGE OF MEDICINE AND SURGERY",  "SCHOOL OF DENTAL MEDICINE",
+    "SCHOOL OF DENTAL MED",             "COLLEGE OF DENTISTRY",
+    "SCHOOL OF MEDICINE",               "COLLEGE OF MEDICINE",
+    "MEDICAL DEPARTMENT",               "MEDICAL BRANCH",
+    "MEDICAL SCHOOL",                   "MEDICAL COLLEGE",
+    "MEDICAL CENTER",                   "MEDICAL UNIVERSITY",
+    "COLLEGE OF MED", "SCHOOL OF MED", "SCH OF MED", "MED CTR", "MED SCH")
+  # `^(.+?)` requires at least one character BEFORE the pattern, so a phrase
+  # that opens the institution's name is never treated as a suffix. Without it,
+  # "MEDICAL UNIVERSITY OF SOUTH CAROLINA COLLEGE OF MEDICINE" matched
+  # "MEDICAL UNIVERSITY" at position 0, consumed the whole string, and the
+  # empty-guard handed back the original -- the one name in 72 that came out
+  # uncleaned. With it, only "COLLEGE OF MEDICINE" is stripped and the
+  # institution survives.
   y <- x
-  y <- str_replace(y, regex("\\s*[,-]?\\s*SCHOOL OF MEDICINE.*$", ignore_case = TRUE), "")
-  y <- str_replace(y, regex("\\s*[,-]?\\s*COLLEGE OF MEDICINE.*$", ignore_case = TRUE), "")
-  y <- str_replace(y, regex("\\s*[,-]?\\s*COLLEGE OF MED\\b.*$",   ignore_case = TRUE), "")
-  y <- str_replace(y, regex("\\s*[,-]?\\s*SCH OF MED\\b.*$",       ignore_case = TRUE), "")
-  # Word order varies: "... MEDICAL SCHOOL" as well as "SCHOOL OF MEDICINE".
-  # "MEDICAL CENTER" is deliberately NOT stripped -- SUNY Downstate Medical
-  # Center is the institution's actual name, not a CMS suffix.
-  y <- str_replace(y, regex("\\s*[,-]?\\s*MEDICAL SCHOOL\\b.*$",  ignore_case = TRUE), "")
+  for (p in pats)
+    y <- str_replace(y, regex(paste0("^(.+?)\\s*[,-]?\\s*", p, "\\b.*$"),
+                              ignore_case = TRUE), "\\1")
+  # Trailing connective left behind by a strip ("... AT THE", "... SYSTEM,").
+  y <- str_replace(y, regex("[ ,\\-]+(AT|OF|THE|AND|SYSTEM|HSC)?[ ,\\-]*$", ignore_case = TRUE), "")
   y <- str_squish(y)
-  # Never return an empty string where a name existed.
+  # A pattern that consumed the whole string means the medical phrase WAS the
+  # institution's name -- Medical University of South Carolina, Ohio Medical
+  # University -- so the original is kept rather than returning nothing.
   ifelse(is.na(x), NA_character_, ifelse(nzchar(y), y, x))
 }
+
 out <- out %>%
   mutate(med_sch_clean = strip_med_suffix(med_sch_raw),
          med_sch_was_medical_label = !is.na(med_sch_raw) &
