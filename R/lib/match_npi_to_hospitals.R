@@ -21,6 +21,55 @@ source("R/lib/common_helpers.R")
 DEFAULT_DAC_PATH <- "data/CMS_Facility_Affiliation.csv"
 DEFAULT_DAC_URL <- "https://data.cms.gov/provider-data/sites/default/files/resources/b7c4080ae144663e43353a9c35cd3f53_1782750576/Facility_Affiliation.csv"
 DEFAULT_HOSPITAL_PATH <- "artifacts/ob_hospitals_geocoded.csv"
+DEFAULT_HOSP_INFO_URL <- "https://data.cms.gov/provider-data/sites/default/files/resources/893c372430d9d71a1c52737d01239d47_1777413958/Hospital_General_Information.csv"
+
+#' Build OB Hospital Master Artifact from CMS Hospital General Information if missing
+build_ob_hospitals_artifact <- function(target_path = DEFAULT_HOSPITAL_PATH) {
+  if (file.exists(target_path)) return(TRUE)
+  
+  dir_name <- dirname(target_path)
+  if (!dir.exists(dir_name)) {
+    dir.create(dir_name, recursive = TRUE, showWarnings = FALSE)
+  }
+  
+  raw_hosp_csv <- "data/CMS_Hospital_General_Information.csv"
+  ensure_file_exists(raw_hosp_csv, DEFAULT_HOSP_INFO_URL)
+  
+  if (!file.exists(raw_hosp_csv)) {
+    warning(sprintf("Unable to acquire CMS Hospital General Information data to build '%s'.", target_path), call. = FALSE)
+    return(FALSE)
+  }
+  
+  message(sprintf("[match_npi_to_hospitals] Building hospital master artifact '%s' from CMS General Information...", target_path))
+  
+  tryCatch({
+    raw_df <- readr::read_csv(raw_hosp_csv, show_col_types = FALSE,
+                              col_types = readr::cols(.default = readr::col_character()))
+    
+    # Map CMS columns to standard schema
+    mapped <- raw_df %>%
+      mutate(
+        prvdr_num = pad_ccn(`Facility ID`),
+        fac_name = `Facility Name`,
+        geocode_address_1 = `Address`,
+        geocode_city = `City/Town`,
+        geocode_state = `State`,
+        geocode_zip = `ZIP Code`,
+        county_fips = `County/Parish`,
+        latitude = NA_character_,
+        longitude = NA_character_
+      ) %>%
+      filter(!is.na(prvdr_num)) %>%
+      distinct(prvdr_num, .keep_all = TRUE)
+    
+    readr::write_csv(mapped, target_path)
+    message(sprintf("[match_npi_to_hospitals] Successfully created hospital artifact '%s' (%d records).", target_path, nrow(mapped)))
+    return(TRUE)
+  }, error = function(e) {
+    warning(sprintf("Failed to build hospital artifact: %s", e$message), call. = FALSE)
+    return(FALSE)
+  })
+}
 
 #' Auto-ensure dataset availability (Downloads missing DAC files & creates artifacts)
 ensure_file_exists <- function(path, url = NULL) {
@@ -66,11 +115,7 @@ match_npi_to_hospitals <- function(npis,
   # 0. Ensure datasets exist (Auto-download & artifact creation if missing)
   ensure_file_exists(dac_path, DEFAULT_DAC_URL)
   if (!file.exists(hospital_path)) {
-    # Check fallback path
-    fallback_hosp <- "ob_hospitals_geocoded.csv"
-    if (file.exists(fallback_hosp)) {
-      hospital_path <- fallback_hosp
-    }
+    build_ob_hospitals_artifact(hospital_path)
   }
 
   # 1. Extract NPI vector from input
