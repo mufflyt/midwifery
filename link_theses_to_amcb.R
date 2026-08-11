@@ -57,6 +57,29 @@ source(file.path(root_dir, "R", "amcb_match_rules.R"))   # require_cols, assert_
 # whose DNP collections span every nursing specialty.
 SPECIALTY_PURE_INSTITUTIONS <- c("Frontier Nursing University")
 
+# Collections excluded by review (2026-08-10). These carry FACULTY output,
+# undergraduate work, posters, journals and alumni bulletins -- none of which is
+# the author's own doctoral degree work, and a faculty publication says where
+# someone WORKS, not where they trained. degree_text alone did not remove them:
+# a faculty paper about a DNP program still matches the degree vocabulary.
+#
+# Compared case-insensitively on purpose: "College of Nursing and Health
+# sciences" (lowercase s) is a distinct string from the "...Sciences" spelling
+# in this list, and exact matching would silently keep it.
+EXCLUDED_COLLECTIONS <- c(
+  "Nurse Educator Theses", "Nursing Department", "Nursing Faculty Publications",
+  "Nursing and Health Studies Faculty Book Gallery",
+  "SANA: Self-Achievement through Nursing Art",
+  "Marion Peckham Egan School of Nursing and Health Studies",
+  "Student Publications and Presentations", "Nursing Faculty Scholarship",
+  "Nursing, College of", "College of Nursing Faculty Research and Publications",
+  "College of Nursing and Health Sciences",
+  "Bachelor of Science in Nursing Senior Synthesis",
+  "National Nursing Symposium on Antibiotic Resistance and Stewardship",
+  "College of Nursing Faculty Papers & Presentations", "Nursing Alumni Bulletins",
+  "Department of Nursing Posters", "Bachelor of Science in Nursing Honors Program",
+  "Asian/Pacific Island Nursing Journal")
+
 AUTHORS <- Sys.getenv("ACME_AUTHORS", "artifacts/acme_dnp_authors.csv")
 ROSTER  <- "midwives.csv"
 FROZEN  <- "artifacts/amcb_npi_linkage_FROZEN.csv"
@@ -70,10 +93,36 @@ require_cols(au, c("institution", "author_last", "author_first", "year",
 # they trained, and the general "College of Nursing" sets are mostly faculty
 # output: of Marquette's 11,483 harvested records only 372 are degree works.
 # Restricting here took the pooled false-positive proxy from 36% to 20%.
-au <- au %>% filter(degree_text) %>%
-  mutate(k_last  = amcb_blank_na(author_last),
-         k_first = sub("[[:space:]].*$", "", amcb_blank_na(author_first)),
-         project_year = suppressWarnings(as.integer(substr(year, 1, 4))),
+# NAMES ARE PARSED WITH humaniformat, ON BOTH SIDES, AND COMPARED AS TOKEN SETS.
+# The previous split-on-first-comma plus take-first-token produced, verbatim:
+#   "Wang, MSN, CRNP, Mary" -> given name "MSN,"   (credentials)
+#   "Williams, W. Jon"      -> given name "W."     (initial-first; it is Jon)
+#   "Bass, Dr. M. Dustin"   -> given name "Dr."    (title)
+# 764 of 5,404 degree-work author strings contain a period, 54 have two or more
+# commas, 119 have no comma at all. Switching to humaniformat + token sets
+# found 128 additional certificants and lost NONE.
+# degree_text IS RECOMPUTED HERE, NOT TRUSTED FROM THE HARVEST. The harvester's
+# pattern was wrong in two ways that each silently discarded a real collection:
+#
+#   "thesis"   does not match "Theses"  -> Bethel University's
+#              "Nurse-Midwifery Theses and Projects" (154 records) was dropped,
+#              and that is a MIDWIFERY-SPECIFIC collection, i.e. tier-1 evidence.
+#   "doctoral" does not match "Doctor of Nursing Practice" -> Seattle
+#              University's "Doctor of Nursing Practice Projects" (409 records)
+#              was dropped, which is why Seattle fell from 24 matches to 1.
+#
+# Stems, not whole words. perl = TRUE because \\b is not a word boundary in
+# POSIX ERE -- the same trap that made an earlier producer-detector match
+# nothing at all.
+DEGREE_WORK_RX <- paste0(
+  "thes|dissert|doctor|\\bDNP\\b|\\bETD\\b|capstone|",
+  "scholarly project|doctoral project|culminating|graduate project")
+au <- au %>%
+  mutate(degree_text = grepl(DEGREE_WORK_RX, paste(collection, title),
+                             ignore.case = TRUE, perl = TRUE)) %>%
+  filter(degree_text,
+         !tolower(trimws(collection)) %in% tolower(trimws(EXCLUDED_COLLECTIONS))) %>%
+  mutate(project_year = suppressWarnings(as.integer(substr(year, 1, 4))),
          # TIER-1 PURITY IS AN INSTITUTION PROPERTY, NOT A COLLECTION NAME.
          # The first version tested only the collection name and returned ZERO
          # tier-1 rows -- because Frontier's collection is called "DNP
@@ -84,19 +133,75 @@ au <- au %>% filter(degree_text) %>%
          collection_specific = grepl("midwif|nurse[-[:space:]]?midwi", collection,
                                      ignore.case = TRUE) |
                                institution %in% SPECIALTY_PURE_INSTITUTIONS) %>%
-  filter(nzchar(k_last), nzchar(k_first))
-assert_nonempty_selection(au$k_last, "harvested authors with usable names")
+  filter(!is.na(author_raw), nzchar(author_raw))
+.pa <- amcb_parse_person(au$author_raw)
+au$k_last <- .pa$last
+au$given_tokens <- amcb_given_tokens(.pa$first, .pa$middle)
+au <- au %>% filter(!is.na(k_last), nzchar(k_last), lengths(given_tokens) > 0)
+assert_nonempty_selection(au$k_last, "harvested authors with usable parsed names")
 
 am <- read_csv(ROSTER, show_col_types = FALSE) %>%
-  mutate(k_last  = amcb_blank_na(last_name),
-         k_first = sub("[[:space:]].*$", "", amcb_blank_na(first_name)),
-         cert_year = suppressWarnings(as.integer(sub("^.*/", "", certification_date)))) %>%
-  filter(nzchar(k_last), nzchar(k_first))
+  mutate(cert_year = suppressWarnings(as.integer(sub("^.*/", "", certification_date))))
+# The SAME parser on the roster side. Parsing only the external side and
+# comparing against a naively split roster reintroduces the asymmetry that
+# caused false matches in this project before.
+.pm <- amcb_parse_person(paste0(am$last_name, ", ", am$first_name, " ",
+                                ifelse(is.na(am$middle_name), "", am$middle_name)))
+am$k_last <- .pm$last
+am$given_tokens <- amcb_given_tokens(.pm$first, .pm$middle)
+am <- am %>% filter(!is.na(k_last), nzchar(k_last), lengths(given_tokens) > 0)
+
+# Explode given-name tokens: identity rests on a SHARED FULL TOKEN, not on
+# position. "Williams, W. Jon" and "Jon W Williams" share JON; a positional
+# rule scores them as different people. Initials are excluded from the token
+# set upstream -- "W." is compatible with every W and identifies nobody.
+# NAME RARITY: how many AMCB certificants share this exact (surname, first
+# given token)? A match on a name held by one person in the roster is strong;
+# a match on a name held by nine is not. This is the corroborator that replaced
+# state agreement.
+#
+# WHY STATE AGREEMENT WAS THE WRONG TOOL. It bought precision by discarding
+# anyone who trained in one state and practises in another -- which is a large
+# and entirely legitimate share of the workforce, and irrelevant to the
+# question being asked. The University of South Carolina had 215 degree works
+# and 23 matches, NONE of which survived, purely because those graduates moved.
+# Where someone practises now is not evidence about where they went to school.
+.rarity <- am %>%
+  mutate(.first_amcb = vapply(given_tokens, function(z) z[1], character(1))) %>%
+  count(k_last, .first_amcb, name = "n_amcb_same_name")
 
 link_on <- function(authors) {
-  am %>% inner_join(authors, by = c("k_last", "k_first"),
-                    relationship = "many-to-many") %>%
-    mutate(gap = project_year - cert_year)
+  # Capture the FIRST given token before unnesting -- unnest_longer consumes
+  # the list column, so it cannot be inspected afterwards.
+  a <- authors %>%
+    mutate(.aid = row_number(),
+           .first_repo = vapply(given_tokens, function(z) z[1], character(1))) %>%
+    tidyr::unnest_longer(given_tokens, values_to = ".tok")
+  m <- am %>%
+    mutate(.mid = row_number(),
+           .first_amcb = vapply(given_tokens, function(z) z[1], character(1))) %>%
+    tidyr::unnest_longer(given_tokens, values_to = ".tok")
+  inner_join(m, a, by = c("k_last", ".tok"), relationship = "many-to-many") %>%
+    # WHICH given name matched matters. "Casey, Lauren Marie" matched "Annette
+    # Marie Casey" on MARIE alone, and "Morgan, Lisa Marie" matched both "Anne
+    # Marie Morgan" and "Lisa Jean Morgan". A shared MIDDLE name is weak
+    # evidence -- common middle names collide across unrelated people -- while a
+    # shared FIRST given name is what actually identifies.
+    mutate(tok_is_first_amcb = .tok == .first_amcb,
+           tok_is_first_repo = .tok == .first_repo,
+           given_match_position = dplyr::case_when(
+             tok_is_first_amcb & tok_is_first_repo ~ "both_first",
+             tok_is_first_amcb | tok_is_first_repo ~ "one_first",
+             TRUE                                  ~ "both_middle")) %>%
+    group_by(.mid, .aid) %>%
+    slice_min(order_by = match(given_match_position,
+                               c("both_first", "one_first", "both_middle")),
+              n = 1, with_ties = FALSE) %>%
+    ungroup() %>%
+    left_join(.rarity, by = c("k_last", ".first_amcb")) %>%
+    mutate(n_amcb_same_name = coalesce(n_amcb_same_name, 1L),
+           name_is_unique_in_roster = n_amcb_same_name == 1L,
+           gap = project_year - cert_year)
 }
 real <- link_on(au)
 
@@ -106,7 +211,7 @@ real <- link_on(au)
 # collision risk scales with collection breadth: Frontier (all midwifery
 # students) ran 9%, Seattle (all nursing specialties) ran 38%.
 set.seed(20260810)
-ctrl <- link_on(au %>% mutate(k_first = sample(k_first)))
+ctrl <- link_on(au %>% mutate(given_tokens = sample(given_tokens)))
 
 # --- per-institution window --------------------------------------------------
 # Fitted from the institution's own matched gaps: p10..p90 of the real matches,
@@ -149,8 +254,13 @@ if (file.exists(FROZEN)) {
 
 # Ambiguity: one project matched by more than one certificant. At most one can
 # be right, and which is unknowable from name alone.
+# AMBIGUITY IS PER AUTHOR STRING, NOT PER PROJECT. Grouping by project treated
+# a genuine multi-author DNP project as ambiguous: 37 groups had two
+# certificants matching two DIFFERENT authors on the same paper, which is two
+# real matches, not a collision. Only several certificants competing for the
+# SAME author string is unresolvable.
 res <- res %>%
-  group_by(institution, title, project_year) %>%
+  group_by(institution, repository_author_key = author_raw) %>%
   mutate(n_amcb_on_project = n_distinct(certification_number)) %>%
   ungroup() %>%
   # THE WINDOW IS NO LONGER A GATE. Fitting it per institution from the matched
@@ -168,12 +278,19 @@ res <- res %>%
   # entry-level), which is a finding in its own right. It just must not gatekeep.
   mutate(training_evidence_class = case_when(
     n_amcb_on_project > 1                          ~ 4L,
+    # A shared MIDDLE name alone is not identification, whatever the collection.
+    given_match_position == "both_middle"          ~ 3L,
     collection_specific                            ~ 1L,
-    midwifery_text | state_agrees                  ~ 2L,
+    # Measured on non-Frontier schools: first-given-name match AND a name held
+    # by exactly one certificant gives 207 people at 16% FP, against 34 people
+    # at ~8% under the old state rule. Six times the yield, and it does not
+    # penalise anyone for having moved.
+    (given_match_position == "both_first" & name_is_unique_in_roster) |
+      midwifery_text                               ~ 2L,
     TRUE                                           ~ 3L),
     training_evidence = recode(as.character(training_evidence_class),
       "1" = "collection_is_midwifery_specific",
-      "2" = "generic_collection_corroborated_by_state_or_midwifery_text",
+      "2" = "generic_collection_unique_first_name_or_midwifery_text",
       "3" = "generic_collection_name_match_only",
       "4" = "ambiguous_multiple_certificants_on_one_project"))
 
@@ -184,6 +301,7 @@ out <- res %>%
             project_title = title, project_year, cert_year, gap,
             window_lo = lo, window_hi = hi, window_fitted = fitted,
             temporally_concordant, midwifery_text, state_agrees,
+            given_match_position, n_amcb_same_name, name_is_unique_in_roster,
             n_amcb_on_project, training_evidence_class, training_evidence,
             project_url = url) %>%
   arrange(training_evidence_class, training_institution, certification_number)

@@ -168,3 +168,108 @@ amcb_split_first <- function(first_name) {
   trailing <- trimws(sub("^[^ ]*", "", k))
   list(given = given, middle_from_first = trailing)
 }
+
+# =============================================================================
+# Personal-name parsing for external author strings (humaniformat)
+# =============================================================================
+#
+# WHY NOT sub(",.*") AND FIRST-TOKEN. Repository author strings are not
+# "Last, First". Observed in the ACME harvest (5,404 degree works): 764 contain
+# a period, 54 contain two or more commas, 119 have no comma at all, and some
+# carry credentials or titles inline. A split-on-first-comma plus take-first-
+# token produced, verbatim:
+#
+#   "Wang, MSN, CRNP, Mary"          -> given name "MSN,"      credentials
+#   "Williams, W. Jon"               -> given name "W."        initial-first
+#   "Bass, Dr. M. Dustin"            -> given name "Dr."       title
+#   "Schneider, Barbara St. Pierre"  -> given name "Barbara"   ok by luck
+#
+# Two of those can never match anything; the third matches the wrong people.
+#
+# BOTH SIDES ARE PARSED THE SAME WAY. Parsing only the external side and
+# comparing against a naively split roster reintroduces the asymmetry that
+# caused false matches here before.
+#
+# COMPARISON IS ON TOKEN SETS, NOT POSITION. "Williams, W. Jon" and
+# "Jon W Williams" are the same person; their given-name token SETS share JON.
+# A positional first-token rule scores them as different. A shared FULL token
+# (>=2 characters) is required -- initials may corroborate but never identify,
+# since "W." matches every W.
+
+# Credentials and titles seen in these repositories. Stripped BEFORE parsing:
+# humaniformat has no way to know CRNP is not a middle name.
+AMCB_NAME_NOISE <- c(
+  "DNP","DNSC","DNS","PHD","EDD","MD","DO","MSN","MSC","MS","MA","MPH",
+  "BSN","BS","BA","RN","APRN","ARNP","CNM","CM","CNS","CRNP","CRNA",
+  "NP","FNP","WHNP","PNP","ANP","AGNP","IBCLC","LCCE","FACNM","FAAN",
+  "RNC","LM","CPM","DR","PROF","MR","MRS","MS","MISS","JR","SR",
+  "II","III","IV")
+
+#' Strip credential and title TOKENS from a personal-name string.
+#'
+#' TOKEN-BASED ON PURPOSE. The first version used a \\b-delimited regex
+#' alternation, which destroyed accented surnames: in "Mróz" the "ó" is not an
+#' ASCII word character, so \\bMr\\b matched INSIDE the name and the parser
+#' returned a surname of "OZ". That is the same population the transliteration
+#' work exists to protect, broken by the cleaner meant to help it.
+#'
+#' Splitting on delimiters and dropping whole tokens cannot match a substring,
+#' so no name can be truncated by this function.
+amcb_strip_name_noise <- function(x) {
+  vapply(as.character(x), function(s) {
+    if (is.na(s)) return(NA_character_)
+    parts <- strsplit(s, "[[:space:],]+")[[1]]
+    parts <- parts[nzchar(parts)]
+    bare <- toupper(gsub("[.]", "", parts))
+    keep <- parts[!(bare %in% AMCB_NAME_NOISE)]
+    # Periods carry no identity information once titles are gone.
+    out <- gsub("[.]", " ", paste(keep, collapse = " "))
+    gsub("[[:space:]]+", " ", trimws(out))
+  }, character(1), USE.NAMES = FALSE)
+}
+
+#' Parse an author string into first / middle / last using humaniformat.
+#'
+#' Handles both "Last, First M" (reversed before parsing) and "First M Last".
+#' @return data.frame(first, middle, last), normalised with amcb_name_key().
+amcb_parse_person <- function(x) {
+  if (!requireNamespace("humaniformat", quietly = TRUE)) {
+    stop("humaniformat is required for author-name parsing", call. = FALSE)
+  }
+  # Preserve the "Last, First" signal: stripping removes commas, so record
+  # whether one was present BEFORE cleaning and restore it for format_reverse().
+  had_comma <- grepl(",", as.character(x))
+  cleaned <- amcb_strip_name_noise(x)
+  raw <- ifelse(had_comma & !is.na(cleaned),
+                sub("^([^ ]+)[[:space:]]+", "\\1, ", cleaned), cleaned)
+  # format_reverse() turns "Last, First" into "First Last"; it is a no-op on
+  # strings without a comma, so it is safe to apply to the whole vector.
+  rev <- humaniformat::format_reverse(raw)
+  p <- humaniformat::parse_names(rev)
+  data.frame(
+    first  = amcb_name_key(p$first_name),
+    middle = amcb_name_key(p$middle_name),
+    last   = amcb_name_key(p$last_name),
+    stringsAsFactors = FALSE)
+}
+
+#' Given-name tokens of length >= 2 (initials excluded).
+#'
+#' Initials are dropped for MATCHING because "W." is compatible with every W;
+#' they are still available in the parsed columns for reporting.
+amcb_given_tokens <- function(first, middle = NULL) {
+  both <- trimws(paste(coalesce_chr(first), coalesce_chr(middle)))
+  lapply(strsplit(both, "[^A-Z']+"), function(t) {
+    t <- t[nchar(t) >= 2]
+    unique(t[nzchar(t)])
+  })
+}
+
+coalesce_chr <- function(x) if (is.null(x)) "" else ifelse(is.na(x), "", x)
+
+#' Do two parsed people share a surname AND at least one full given-name token?
+amcb_person_matches <- function(last_a, given_a, last_b, given_b) {
+  same_last <- !is.na(last_a) & !is.na(last_b) & nzchar(last_a) & last_a == last_b
+  shared <- mapply(function(x, y) length(intersect(x, y)) > 0, given_a, given_b)
+  same_last & shared
+}

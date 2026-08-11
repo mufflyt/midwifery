@@ -1,0 +1,51 @@
+institution,state,platform,status,n_candidate_sets,harvested,degree_works,matched,usable,diagnosis
+Baylor University,TX,dspace7,live,1,10,0,0,0,"harvested, but no degree-work collection"
+Baystate Medical Center,MA,,not_found,0,0,0,0,0,no repository found
+Bethel University,MN,bepress,live,4,874,186,140,126,contributing
+Boston College,MA,,not_found,0,0,0,0,0,no repository found
+California State University Fullerton,CA,,not_found,0,0,0,0,0,no repository found
+Case Western Reserve University,OH,bepress,live,2,424,0,0,0,"harvested, but no degree-work collection"
+Columbia University,NY,generic,live,0,0,0,0,0,endpoint live but sets returned nothing
+East Carolina University,NC,dspace7,live,1,964,50,3,0,matches exist but none corroborated
+Fairfield University,CT,bepress,live,6,2574,52,1,1,contributing
+Frontier Nursing University,KY,contentdm,live,7,1986,1864,591,522,contributing
+George Washington University,DC,,not_found,0,0,0,0,0,no repository found
+Georgetown University,DC,,not_found,0,0,0,0,0,no repository found
+Georgia College and State University,GA,bepress,live,3,278,101,10,4,contributing
+Louisiana State University Health Sciences Center,LA,,not_found,0,0,0,0,0,no repository found
+Loyola University New Orleans,LA,,not_found,0,0,0,0,0,no repository found
+Marquette University,WI,bepress,live,4,11483,221,12,4,contributing
+Montana State University,MT,dspace6,live,1,296,5,0,0,"degree works present, zero AMCB matches"
+New York University,NY,dspace6,live,1,0,0,0,0,endpoint live but sets returned nothing
+Ohio State University,OH,dspace6,live,0,0,0,0,0,endpoint live but sets returned nothing
+Oregon Health Sciences University,OR,,not_found,0,0,0,0,0,no repository found
+Rutgers University,NJ,,not_found,0,0,0,0,0,no repository found
+Seattle University,WA,bepress,live,10,1816,880,42,11,contributing
+Shenandoah University,VA,,not_found,0,0,0,0,0,no repository found
+SUNY Downstate,NY,dspace6,live,2,0,0,0,0,endpoint live but sets returned nothing
+Stony Brook University,NY,bepress,live,2,0,0,0,0,endpoint live but sets returned nothing
+Texas Tech University Health Sciences Center,TX,dspace7,live,0,0,0,0,0,endpoint live but sets returned nothing
+Thomas Jefferson University,PA,bepress,live,27,2882,24,1,0,matches exist but none corroborated
+University at Buffalo,NY,dspace6,live,2,543,66,1,0,matches exist but none corroborated
+University of Alabama at Birmingham,AL,bepress,live,4,577,1,0,0,"degree works present, zero AMCB matches"
+University of Arizona,AZ,dspace6,live,0,0,0,0,0,endpoint live but sets returned nothing
+University of Arkansas for Medical Sciences,AR,,not_found,0,0,0,0,0,no repository found
+University of California San Francisco,CA,generic,live,0,0,0,0,0,endpoint live but sets returned nothing
+University of Cincinnati,OH,,not_found,0,0,0,0,0,no repository found
+University of Colorado Anschutz,CO,,not_found,0,0,0,0,0,no repository found
+University of Delaware,DE,,not_found,0,0,0,0,0,no repository found
+University of Illinois at Chicago,IL,,not_found,0,0,0,0,0,no repository found
+University of Iowa,IA,,not_found,0,0,0,0,0,no repository found
+University of Kansas,KS,dspace6,live,2,257,0,0,0,"harvested, but no degree-work collection"
+University of Michigan,MI,dspace,live,0,0,0,0,0,endpoint live but sets returned nothing
+University of Minnesota,MN,dspace7,live,0,0,0,0,0,endpoint live but sets returned nothing
+University of Nevada Las Vegas,NV,bepress,live,6,1930,242,33,2,contributing
+University of New Mexico,NM,bepress,live,8,558,70,6,3,contributing
+University of Pennsylvania,PA,dspace6,live,0,0,0,0,0,endpoint live but sets returned nothing
+University of Pittsburgh,PA,,not_found,0,0,0,0,0,no repository found
+University of South Carolina,SC,bepress,live,9,1157,215,23,0,matches exist but none corroborated
+University of Tennessee Health Science Center,TN,bepress,live,7,91,1,0,0,"degree works present, zero AMCB matches"
+University of Utah,UT,generic,live,3,1997,10,0,0,"degree works present, zero AMCB matches"
+University of Washington,WA,dspace7,live,1,6,0,0,0,"harvested, but no degree-work collection"
+Vanderbilt University,TN,,not_found,0,0,0,0,0,no repository found
+Yale University,CT,bepress,live,5,1192,209,15,2,contributing

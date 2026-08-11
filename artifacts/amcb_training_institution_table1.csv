@@ -1,0 +1,875 @@
+certification_number,npi,training_institution,training_school_state,training_evidence_class,training_evidence,program_type,first_project_year,n_projects,n_institutions_matched,midwifery_text,state_agrees,training_institution_usable
+0302,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2019,1,1,FALSE,FALSE,
+10059,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2019,1,1,FALSE,FALSE,
+10076,1730296039,East Carolina University,NC,3,generic_collection_name_match_only,unknown (few matches),2025,1,1,FALSE,FALSE,
+10090,,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2015,1,1,FALSE,FALSE,
+10126,,Georgia College and State University,GA,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2015,2,1,FALSE,FALSE,
+10135,1871650960,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+10176,1043276173,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,TRUE,FALSE,Frontier Nursing University
+10182,1821072992,Marquette University,WI,3,generic_collection_name_match_only,post-professional DNP,2009,1,1,FALSE,FALSE,
+10186,1447241179,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2013,1,1,TRUE,FALSE,Frontier Nursing University
+10199,1376654301,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,TRUE,FALSE,Frontier Nursing University
+10206,1285818757,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+10215,1215918289,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+10223,1760473318,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+10245,1952381931,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2012,1,1,FALSE,FALSE,Frontier Nursing University
+10254,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2015,1,1,FALSE,FALSE,
+10282,1336295286,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2013,1,1,TRUE,FALSE,Frontier Nursing University
+10316,1083601918,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2014,1,1,FALSE,FALSE,Frontier Nursing University
+10357,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2017,1,1,FALSE,FALSE,
+10400,1316005697,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2021,1,1,FALSE,FALSE,
+10407,1972693000,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2021,1,1,FALSE,FALSE,
+10420,1093703449,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+10431,1861469520,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+10468,,University at Buffalo,NY,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2025,1,1,FALSE,FALSE,University at Buffalo
+10550,1710041074,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+10562,1871762724,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2012,1,1,FALSE,FALSE,Frontier Nursing University
+10658,1285917096,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2012,1,1,FALSE,FALSE,Frontier Nursing University
+10682,1801837034,University at Buffalo,NY,3,generic_collection_name_match_only,post-professional DNP,2021,1,1,FALSE,FALSE,
+10702,1578780722,Yale University,CT,3,generic_collection_name_match_only,post-professional DNP,2016,1,1,FALSE,FALSE,
+10745,1871658849,Georgia College and State University,GA,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2021,1,1,TRUE,TRUE,Georgia College and State University
+10751,1700816154,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+10766,1598894362,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2012,1,1,TRUE,FALSE,Frontier Nursing University
+10786,1801991930,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+10800,,University of South Carolina,SC,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2022,1,1,FALSE,FALSE,
+10848,,Marquette University,WI,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2010,1,1,FALSE,FALSE,Marquette University
+10982,1780686501,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2012,1,1,TRUE,FALSE,Frontier Nursing University
+11011,1679686034,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2010,1,1,TRUE,FALSE,Frontier Nursing University
+11058,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2019,1,1,FALSE,FALSE,
+11062,1316066343,Marquette University,WI,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2017,1,1,FALSE,FALSE,
+11072,1942274451,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,TRUE,FALSE,Frontier Nursing University
+11228,,Yale University,CT,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2019,1,1,FALSE,FALSE,
+11251,1649239823,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+11315,,University of South Carolina,SC,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2026,1,1,FALSE,FALSE,
+11316,1366406324,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2010,1,1,FALSE,FALSE,Frontier Nursing University
+11330,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2017,1,1,FALSE,FALSE,
+11338,1518039205,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2026,1,1,FALSE,FALSE,Frontier Nursing University
+11342,1750340899,University of Nevada Las Vegas,NV,3,generic_collection_name_match_only,post-professional DNP,2016,1,1,FALSE,FALSE,
+11382,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2014,1,1,TRUE,FALSE,Frontier Nursing University
+11388,1215904669,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+11396,1285608703,University of South Carolina,SC,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2010,2,1,FALSE,FALSE,
+11445,1942246392,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+11448,1073570966,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+11589,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2024,1,1,FALSE,FALSE,
+11672,1467651901,Yale University,CT,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2019,1,1,FALSE,FALSE,Yale University
+11680,1740317510,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+11709,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2016,1,1,TRUE,FALSE,
+11726,1902876360,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2010,1,1,FALSE,FALSE,Frontier Nursing University
+11758,1316373665,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+11817,1275549909,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+11825,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2020,1,1,FALSE,FALSE,
+11839,1154403749,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2014,1,1,FALSE,FALSE,Frontier Nursing University
+11851,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2016,1,1,TRUE,FALSE,
+11863,,Seattle University,WA,3,generic_collection_name_match_only,entry-level DNP (gap ~ 0),2023,2,1,FALSE,FALSE,
+11867,1811932379,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+11918,1922080852,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2010,1,1,FALSE,FALSE,Frontier Nursing University
+11983,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2012,1,1,FALSE,FALSE,Frontier Nursing University
+12046,1952439507,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+12051,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,2,1,FALSE,FALSE,Frontier Nursing University
+12059,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+12109,1891734323,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2010,1,1,TRUE,FALSE,Frontier Nursing University
+12184,,University of South Carolina,SC,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2024,2,1,FALSE,FALSE,University of South Carolina
+12190,1780796029,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2013,1,1,FALSE,FALSE,Frontier Nursing University
+12219,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+12224,1922156330,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+12237,1831255876,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+12291,1346457009,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2019,1,1,FALSE,FALSE,
+12301,1942402425,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2024,2,1,FALSE,FALSE,Seattle University
+12393,,University of South Carolina,SC,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2025,1,1,FALSE,FALSE,University of South Carolina
+12400,1447454194,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+12410,1205031366,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2020,1,1,FALSE,FALSE,
+12416,1750576518,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2014,1,1,FALSE,FALSE,Frontier Nursing University
+12426,1548466055,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2014,1,1,TRUE,FALSE,Frontier Nursing University
+12444,1891903555,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2014,1,1,FALSE,FALSE,Frontier Nursing University
+12447,,University of South Carolina,SC,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2015,1,1,FALSE,FALSE,University of South Carolina
+12462,1598958555,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2019,3,1,TRUE,FALSE,
+12493,1811185036,Yale University,CT,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2025,1,1,FALSE,FALSE,Yale University
+12548,1942494935,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2011,1,1,FALSE,TRUE,Frontier Nursing University
+12573,,Seattle University,WA,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2021,2,1,FALSE,FALSE,
+12591,,Seattle University,WA,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2011,1,1,FALSE,FALSE,
+12613,1659557569,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+12634,1902824980,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2020,3,1,FALSE,FALSE,Seattle University
+12642,1952464471,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2013,1,1,TRUE,FALSE,Frontier Nursing University
+12655,1629046446,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+12663,1740451053,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+12685,1235386939,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+12702,1225287642,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+12703,1164675039,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+12731,1548423973,Fairfield University,CT,2,generic_collection_unique_first_name_or_midwifery_text,unknown (few matches),2015,1,1,FALSE,TRUE,Fairfield University
+12745,1528228996,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,TRUE,FALSE,Frontier Nursing University
+12753,1750538682,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+12770,1972750735,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+12779,1902055213,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+12803,1215164165,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+12843,1760826226,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+12859,1982193272,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+12891,1356587042,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+12904,1992941249,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+12938,1053646737,University of New Mexico,NM,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2021,1,1,FALSE,FALSE,University of New Mexico
+13020,1619109584,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,TRUE,FALSE,Frontier Nursing University
+13028,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+13030,1376718627,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+13047,1902136047,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+13073,1649402827,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,TRUE,FALSE,Frontier Nursing University
+13109,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2018,3,1,TRUE,FALSE,
+13126,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+13132,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+13135,1568799831,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,1,1,FALSE,FALSE,Frontier Nursing University
+13138,1275860728,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+13153,1114252335,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2013,1,1,FALSE,FALSE,Frontier Nursing University
+13195,1780912824,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+13235,1841522489,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+13254,1932439205,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+13282,1750612370,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+13289,1134449077,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2015,1,1,TRUE,FALSE,
+2182,1104122829,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,TRUE,FALSE,Frontier Nursing University
+2186,,University at Buffalo,NY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2020,1,1,FALSE,FALSE,
+2257,1811106552,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+2462,1306873161,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2022,1,1,FALSE,FALSE,
+2687,,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2021,1,1,FALSE,FALSE,
+3130,1861940298,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2025,1,1,FALSE,FALSE,
+3166,1457350407,University of South Carolina,SC,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,1,1,FALSE,FALSE,
+3392,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2014,1,1,FALSE,FALSE,Frontier Nursing University
+3473,1922174713,Georgia College and State University,GA,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2016,1,1,FALSE,FALSE,Georgia College and State University
+3491,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2015,1,1,TRUE,FALSE,
+3675,1689781759,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,TRUE,Frontier Nursing University
+3718,1497868301,University of Nevada Las Vegas,NV,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2012,1,1,FALSE,TRUE,University of Nevada Las Vegas
+3756,1447643242,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2014,1,1,FALSE,FALSE,Frontier Nursing University
+3763,1952483794,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+4001,1801169925,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+4084,1326120767,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2014,1,1,TRUE,FALSE,Frontier Nursing University
+4452,1730245747,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2021,1,1,FALSE,FALSE,
+4528,1942205695,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2010,1,1,TRUE,FALSE,Frontier Nursing University
+4667,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2015,1,1,FALSE,FALSE,
+4783,1265583165,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+4792,1609084441,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,1,1,FALSE,FALSE,Frontier Nursing University
+4829,1063729358,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,2,1,FALSE,FALSE,
+4857,1932277365,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2021,1,1,FALSE,FALSE,
+4884,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2013,1,1,FALSE,FALSE,Frontier Nursing University
+4937,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2010,1,1,FALSE,FALSE,Frontier Nursing University
+5088,1417945551,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2010,1,1,FALSE,FALSE,Frontier Nursing University
+5099,1770513897,Georgia College and State University,GA,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2014,1,1,FALSE,TRUE,Georgia College and State University
+5140,1073566089,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2014,1,1,TRUE,FALSE,Frontier Nursing University
+5294,1457464695,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+5469,1932427432,Seattle University,WA,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2008,1,1,FALSE,FALSE,
+5551,1255476487,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2015,1,1,FALSE,FALSE,
+5565,1003935545,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2015,1,1,FALSE,FALSE,
+5619,1578600623,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,2,1,FALSE,FALSE,
+5620,1891167631,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,2,1,FALSE,FALSE,Frontier Nursing University
+5627,1376547067,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+5674,1104815570,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2021,1,1,FALSE,FALSE,
+5837,1437154440,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2021,1,1,FALSE,FALSE,
+5949,1306982012,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+6079,1093841587,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2022,2,1,FALSE,FALSE,Seattle University
+6274,1790751303,Bethel University,MN,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2024,1,1,TRUE,FALSE,
+6303,1760489694,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2023,1,1,FALSE,FALSE,
+6438,1598784126,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2022,1,1,FALSE,FALSE,
+6500,1396715124,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2024,1,1,TRUE,FALSE,
+6519,1902203813,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+6540,1154323145,Yale University,CT,3,generic_collection_name_match_only,post-professional DNP,2025,1,1,FALSE,FALSE,
+6560,,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2013,1,1,FALSE,FALSE,
+6566,1225081425,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,1,1,TRUE,FALSE,Frontier Nursing University
+6594,1346245933,Yale University,CT,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2017,1,1,FALSE,FALSE,Yale University
+6622,1689733594,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,1,1,TRUE,FALSE,Frontier Nursing University
+6668,1477731735,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2012,1,1,FALSE,TRUE,Frontier Nursing University
+6690,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2016,1,1,TRUE,FALSE,
+6709,1336173780,Marquette University,WI,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2010,1,1,FALSE,TRUE,Marquette University
+6849,1578500633,Yale University,CT,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2019,1,1,FALSE,FALSE,
+6857,1376623983,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2013,1,1,TRUE,FALSE,Frontier Nursing University
+6868,,Ohio State University,OH,2,generic_collection_unique_first_name_or_midwifery_text,unknown (few matches),2023,1,1,FALSE,FALSE,Ohio State University
+6915,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2023,1,1,FALSE,FALSE,
+6926,1154382216,University of Nevada Las Vegas,NV,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2021,1,1,FALSE,FALSE,University of Nevada Las Vegas
+6950,1316957657,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2012,1,1,FALSE,FALSE,Frontier Nursing University
+7019,1295721058,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2013,1,1,FALSE,FALSE,Frontier Nursing University
+7095,1598866659,Yale University,CT,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,1994,1,1,TRUE,TRUE,Yale University
+7163,1881866960,Yale University,CT,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2017,1,1,TRUE,FALSE,Yale University
+7172,1841399391,Frontier Nursing University,KY,3,generic_collection_name_match_only,post-professional DNP,2012,1,1,FALSE,FALSE,
+7232,1558618397,Marquette University,WI,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2021,1,1,FALSE,FALSE,Marquette University
+7263,1639398803,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2015,1,1,FALSE,FALSE,
+7322,1972676427,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2014,1,1,TRUE,FALSE,Frontier Nursing University
+7336,1538269014,Ohio State University,OH,2,generic_collection_unique_first_name_or_midwifery_text,unknown (few matches),2011,1,1,FALSE,TRUE,Ohio State University
+7346,1922085117,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2011,1,1,TRUE,FALSE,Frontier Nursing University
+7395,1609020056,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,2,1,TRUE,FALSE,
+7399,,Yale University,CT,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2012,1,1,FALSE,FALSE,
+7442,1164600425,Marquette University,WI,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2014,1,1,FALSE,TRUE,Marquette University
+7451,1437120409,Bethel University,MN,3,generic_collection_name_match_only,entry-level DNP (gap ~ 0),2019,1,1,TRUE,FALSE,
+7601,1205894276,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2014,1,1,TRUE,FALSE,Frontier Nursing University
+7739,,University of South Carolina,SC,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,1,1,FALSE,FALSE,
+7751,1417009184,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+7801,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2015,1,1,FALSE,FALSE,
+7924,1114978442,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+7963,,Seattle University,WA,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2011,1,1,FALSE,FALSE,
+7970,1619170776,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+8054,1184729147,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,1,1,TRUE,FALSE,Frontier Nursing University
+8097,1336227321,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+8166,1962482612,Bethel University,MN,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2021,1,1,TRUE,FALSE,
+8206,1366516999,Yale University,CT,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2012,1,1,FALSE,FALSE,
+8264,,Bethel University,MN,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2021,1,1,TRUE,FALSE,
+8280,1992768584,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+8301,1467419531,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2011,1,1,TRUE,FALSE,Frontier Nursing University
+8371,,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,1,1,FALSE,FALSE,
+8418,1619110418,East Carolina University,NC,4,ambiguous_multiple_certificants_on_one_project,unknown (few matches),2026,1,1,FALSE,TRUE,
+8438,1063497253,Marquette University,WI,3,generic_collection_name_match_only,post-professional DNP,2009,1,1,FALSE,FALSE,
+8473,1023038130,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2019,1,1,FALSE,FALSE,
+8498,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2010,1,1,TRUE,FALSE,Frontier Nursing University
+8572,1598778771,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+8579,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2012,1,1,FALSE,FALSE,Frontier Nursing University
+8668,1396105276,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,1,1,TRUE,FALSE,Frontier Nursing University
+8693,,University of South Carolina,SC,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2026,1,1,FALSE,FALSE,
+8748,1922563287,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+8760,1417999111,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,1,1,TRUE,FALSE,Frontier Nursing University
+8797,,Thomas Jefferson University,PA,2,generic_collection_unique_first_name_or_midwifery_text,unknown (few matches),2008,1,1,FALSE,FALSE,Thomas Jefferson University
+8832,1790880128,Marquette University,WI,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2019,1,1,FALSE,TRUE,Marquette University
+8842,1184006934,East Carolina University,NC,4,ambiguous_multiple_certificants_on_one_project,unknown (few matches),2026,1,1,FALSE,FALSE,
+8869,1154346484,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+8870,1467580555,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2010,1,1,FALSE,FALSE,Frontier Nursing University
+8888,1972719094,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+8919,1871574574,Marquette University,WI,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2010,1,1,FALSE,FALSE,Marquette University
+8924,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2012,1,1,FALSE,FALSE,Frontier Nursing University
+8965,1861448029,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2025,1,1,FALSE,FALSE,
+8984,1598836884,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+9020,1043320088,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2010,1,1,FALSE,FALSE,Frontier Nursing University
+9023,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+9047,1871572412,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+9115,1114012606,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2013,1,1,FALSE,FALSE,Frontier Nursing University
+9118,1124086707,University at Buffalo,NY,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2021,1,1,FALSE,TRUE,University at Buffalo
+9198,1346220787,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+9266,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,1,1,FALSE,FALSE,
+9271,1376601609,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+9358,1295708634,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2013,1,1,TRUE,FALSE,Frontier Nursing University
+9360,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2019,1,1,FALSE,FALSE,
+9385,1447225966,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2013,1,1,FALSE,FALSE,Frontier Nursing University
+9433,1528573847,University of South Carolina,SC,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,2,1,FALSE,FALSE,
+9439,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2023,1,1,FALSE,FALSE,
+9448,,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,2,1,FALSE,FALSE,
+9515,1538167523,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2009,1,1,FALSE,FALSE,Frontier Nursing University
+9522,1386276178,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+9586,1811944473,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,1,1,FALSE,FALSE,Frontier Nursing University
+9589,1346215373,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+9800,1801873583,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+9824,1023456183,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2012,1,1,FALSE,FALSE,Frontier Nursing University
+9828,1033274097,Georgia College and State University,GA,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2018,1,1,FALSE,TRUE,Georgia College and State University
+9873,1760403208,Bethel University,MN,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2020,1,1,TRUE,FALSE,
+9874,1114224169,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+9876,1902912827,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2010,1,1,FALSE,FALSE,Frontier Nursing University
+9930,,University of South Carolina,SC,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,1,1,FALSE,FALSE,
+9931,,University of South Carolina,SC,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,1,1,FALSE,FALSE,
+9940,1003811506,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2014,1,1,FALSE,FALSE,Frontier Nursing University
+9972,1659353365,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2013,1,1,FALSE,FALSE,Frontier Nursing University
+CNM0054,1972816270,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,TRUE,FALSE,Frontier Nursing University
+CNM0099,1710281332,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,TRUE,Frontier Nursing University
+CNM0106,1740599943,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2026,1,1,FALSE,FALSE,Frontier Nursing University
+CNM0108,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM0114,1699089615,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM0157,1770898272,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM0159,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2019,1,1,FALSE,FALSE,
+CNM0163,1922313410,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM0189,1134420391,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,TRUE,FALSE,Frontier Nursing University
+CNM0208,1114214053,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM0229,1497982656,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2014,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03670,1366997215,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03682,1295287076,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2016,1,1,TRUE,FALSE,Bethel University
+CNM03689,1700320066,Bethel University,MN,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2016,2,1,TRUE,TRUE,
+CNM03691,1790253763,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,TRUE,FALSE,Frontier Nursing University
+CNM03702,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2016,1,1,TRUE,FALSE,Bethel University
+CNM03719,1891249504,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2016,1,1,TRUE,TRUE,Bethel University
+CNM03728,1467993444,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2014,1,1,FALSE,FALSE,Seattle University
+CNM03731,1851849673,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03748,1881143923,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,TRUE,FALSE,Frontier Nursing University
+CNM03766,1235001132,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03767,1306397088,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03790,1639610603,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03800,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03801,1811449499,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03804,1659820983,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03814,1871030262,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03815,1356781934,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03819,1194272773,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,TRUE,FALSE,Frontier Nursing University
+CNM03825,1104376219,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03831,1083165666,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03843,1013451061,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03851,1659347052,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2016,1,1,TRUE,FALSE,
+CNM03856,1770026460,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2020,1,1,FALSE,FALSE,
+CNM03859,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03860,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2017,1,1,TRUE,FALSE,
+CNM03861,1770034472,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,TRUE,FALSE,Frontier Nursing University
+CNM03862,1861943078,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03864,1588017479,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2016,1,1,TRUE,TRUE,Bethel University
+CNM03878,1861934135,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03883,1578005740,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03885,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03898,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03905,1205379880,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03907,1275603847,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03920,1912449232,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03923,1255783080,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2016,1,1,FALSE,FALSE,Seattle University
+CNM03927,1053852947,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03932,1295136463,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03947,1356886428,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03949,1679017446,Marquette University,WI,3,generic_collection_name_match_only,post-professional DNP,2020,1,1,FALSE,FALSE,
+CNM03955,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03956,1033640727,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03958,1174059968,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03974,1548707482,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03975,1396285375,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,TRUE,FALSE,Frontier Nursing University
+CNM03977,1235492653,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03980,1366778854,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM03997,1528505880,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04000,1982143335,Marquette University,WI,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2026,1,1,FALSE,TRUE,Marquette University
+CNM04001,1558802108,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04005,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,TRUE,FALSE,Frontier Nursing University
+CNM04011,1588196778,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,TRUE,FALSE,Frontier Nursing University
+CNM04013,1780129403,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,TRUE,FALSE,Frontier Nursing University
+CNM04017,1811420193,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04019,1346773173,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04050,1659174696,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2016,1,1,TRUE,TRUE,Bethel University
+CNM04051,1679088736,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04060,1487194643,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,TRUE,FALSE,Frontier Nursing University
+CNM04076,1184162539,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04095,1609393560,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04097,1811434186,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04119,1265966634,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04133,1346775905,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04138,1720579287,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04149,1730690926,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04159,1720503527,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04175,1205350816,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04183,,University at Buffalo,NY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2022,1,1,TRUE,FALSE,
+CNM04189,1780989772,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,TRUE,FALSE,Frontier Nursing University
+CNM04194,1790241834,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04196,1639665755,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04233,1912413428,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04247,1710492947,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04286,1669981742,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2018,3,1,TRUE,FALSE,
+CNM0429,1255630869,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04291,1235659897,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM0430,1780963223,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04301,1770006108,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04305,1922526052,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,TRUE,FALSE,Frontier Nursing University
+CNM04337,1083962401,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2017,1,1,TRUE,FALSE,Bethel University
+CNM04343,,Frontier Nursing University,KY,3,generic_collection_name_match_only,post-professional DNP,2024,1,1,FALSE,FALSE,
+CNM04345,1184140402,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2017,1,1,TRUE,TRUE,Bethel University
+CNM04357,1437671559,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04358,1437669793,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,TRUE,FALSE,Frontier Nursing University
+CNM04361,1356047310,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2017,1,1,TRUE,TRUE,Bethel University
+CNM04363,1871003467,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,TRUE,FALSE,Frontier Nursing University
+CNM04380,1134647225,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2017,1,1,TRUE,TRUE,Bethel University
+CNM04381,1205333135,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2017,1,1,TRUE,FALSE,Bethel University
+CNM04408,1447774039,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2017,1,1,TRUE,TRUE,Bethel University
+CNM04429,1023525284,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2015,1,1,FALSE,FALSE,
+CNM04431,1285822627,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04438,1467963645,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04458,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04463,1679086656,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04511,1376067173,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04547,1972021087,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04625,1497269138,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04634,,University of South Carolina,SC,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2022,1,1,FALSE,FALSE,
+CNM04636,1437658473,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04639,1053839225,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04640,1831691401,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,TRUE,FALSE,Frontier Nursing University
+CNM04645,1225523905,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2024,1,1,FALSE,FALSE,
+CNM04650,1255845178,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04658,1144722422,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04677,1437655610,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04700,1124599519,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04726,1386149318,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04736,1780186627,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04748,1265933766,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04770,,University of Nevada Las Vegas,NV,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2024,1,1,FALSE,FALSE,University of Nevada Las Vegas
+CNM04778,1154598365,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04781,1205032588,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04796,1740782044,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04798,1316376106,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04808,1760987572,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04815,1477047272,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04824,1447736442,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04835,1417395385,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04846,1891251922,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04847,1598242943,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04863,1871085837,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM0489,1386936326,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04890,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2016,1,1,TRUE,FALSE,
+CNM04912,1598255770,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04936,1780166132,University of South Carolina,SC,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2017,1,1,FALSE,FALSE,University of South Carolina
+CNM04951,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2014,2,1,TRUE,FALSE,Bethel University
+CNM04952,1437635893,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04958,1710545967,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2018,2,1,TRUE,TRUE,Bethel University
+CNM04963,1760975320,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04964,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04966,1598241309,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04994,1316432784,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM04997,1821584012,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2018,1,1,TRUE,FALSE,Bethel University
+CNM05007,1578193330,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM0501,1871889808,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05021,1447730486,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05040,1053892448,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,TRUE,Frontier Nursing University
+CNM05041,1730721291,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05068,1841770732,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2018,1,1,TRUE,TRUE,Bethel University
+CNM05070,1356820773,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05072,1003381047,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05073,1437633047,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2018,1,1,TRUE,TRUE,Bethel University
+CNM05089,1831672922,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM0509,1033499215,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05102,1366924193,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05121,1073093258,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,TRUE,FALSE,Frontier Nursing University
+CNM05122,1083189823,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05131,1780159111,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05151,1285289637,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05178,1841765153,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,TRUE,FALSE,Frontier Nursing University
+CNM05192,1124537568,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2018,1,1,FALSE,FALSE,Seattle University
+CNM05195,1740755180,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05202,1962014365,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05211,1467017194,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05216,1336618644,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05217,1669948790,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05237,1013579101,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2019,1,1,FALSE,FALSE,
+CNM05243,1699248484,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05275,1972072825,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,TRUE,FALSE,Frontier Nursing University
+CNM05278,1780148940,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05286,1184180184,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,2,1,FALSE,FALSE,Frontier Nursing University
+CNM05292,1629637061,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,TRUE,FALSE,Frontier Nursing University
+CNM05300,1740303189,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,TRUE,FALSE,Frontier Nursing University
+CNM05313,1881858611,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2018,1,1,FALSE,TRUE,Seattle University
+CNM05315,1639637259,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,TRUE,FALSE,Frontier Nursing University
+CNM05316,,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2020,2,1,FALSE,FALSE,Seattle University
+CNM05334,1437612751,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2016,1,1,FALSE,FALSE,Seattle University
+CNM05335,1174088389,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05350,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05360,1487321576,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05380,1154791119,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05396,1851857635,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05449,1467910372,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,TRUE,FALSE,Frontier Nursing University
+CNM05479,1447711593,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05483,1639723182,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05489,1871146167,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05493,1447811575,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05494,1306572227,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05526,1780246611,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,2,1,FALSE,FALSE,
+CNM05616,1689239576,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2019,1,1,TRUE,FALSE,Bethel University
+CNM05636,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05652,1922653351,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2019,1,1,TRUE,FALSE,Bethel University
+CNM05653,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2016,1,1,TRUE,FALSE,
+CNM05654,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2019,1,1,TRUE,FALSE,Bethel University
+CNM05664,1003478207,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05665,1962056119,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05667,1922294891,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05678,1437709854,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2019,1,1,TRUE,FALSE,Bethel University
+CNM05681,1831745025,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2019,1,1,TRUE,TRUE,Bethel University
+CNM05696,1679120737,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05699,1417509100,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2019,1,1,TRUE,TRUE,Bethel University
+CNM05707,1326678715,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05712,1194373662,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05733,1326689878,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2019,1,1,TRUE,FALSE,Bethel University
+CNM05744,1205483989,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05750,1619521549,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05752,1639727704,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05756,1053961144,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,TRUE,FALSE,Frontier Nursing University
+CNM05763,1477190411,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05789,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,TRUE,FALSE,Frontier Nursing University
+CNM05791,1194305730,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05801,1740826684,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05818,1972067668,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05819,1790336840,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05825,1497386353,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05842,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM05981,1164066775,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06061,1235638677,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06081,1386282176,University at Buffalo,NY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2022,1,1,TRUE,FALSE,
+CNM06091,1154966174,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06108,1063044196,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2026,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06121,1720622517,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06148,1811674955,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06166,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06167,1093355372,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM0618,1295013571,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06198,1487260428,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,TRUE,Frontier Nursing University
+CNM06205,,University of South Carolina,SC,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2010,2,1,FALSE,FALSE,
+CNM06209,1629461090,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06213,,University of South Carolina,SC,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2023,1,1,FALSE,FALSE,University of South Carolina
+CNM06236,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2021,1,1,FALSE,FALSE,
+CNM06239,1073138897,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06264,1346876323,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06270,1295360444,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06271,1639703549,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06273,1114594884,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06286,1295355808,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06301,1851558696,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06302,1588265730,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06307,1851912570,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06313,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2024,1,1,FALSE,FALSE,
+CNM06319,1922622828,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06340,1114527082,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06343,1225645385,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2026,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06373,1083378806,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06378,1992328306,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06381,1528658374,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06401,1063024503,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06442,1538312889,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06464,1023626256,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2020,1,1,TRUE,TRUE,Bethel University
+CNM06470,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2019,1,1,TRUE,FALSE,Bethel University
+CNM06481,1902406929,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2020,1,1,TRUE,FALSE,Bethel University
+CNM06484,1104420777,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2020,1,1,TRUE,FALSE,Bethel University
+CNM06489,1326652256,Bethel University,MN,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2020,1,1,TRUE,TRUE,
+CNM06491,1114596772,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2020,1,1,TRUE,TRUE,Bethel University
+CNM06497,1255945580,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2020,1,1,TRUE,FALSE,Bethel University
+CNM06503,1689097032,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,TRUE,FALSE,Frontier Nursing University
+CNM06504,1033933064,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2020,1,1,TRUE,TRUE,Bethel University
+CNM06508,1740947944,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06528,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06544,1669087151,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2019,1,1,TRUE,TRUE,Bethel University
+CNM06561,1780283572,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2020,1,1,TRUE,FALSE,Bethel University
+CNM06564,1518578764,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2020,1,1,TRUE,FALSE,Bethel University
+CNM06576,1184201451,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06591,1508479908,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2020,1,1,TRUE,FALSE,Bethel University
+CNM06594,1932712288,University at Buffalo,NY,3,generic_collection_name_match_only,post-professional DNP,2024,1,1,FALSE,FALSE,
+CNM06626,1770192288,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06634,1861077083,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06636,1114525789,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,TRUE,FALSE,Frontier Nursing University
+CNM06657,1639776370,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2020,1,1,TRUE,FALSE,Bethel University
+CNM06666,1144892290,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2020,1,1,TRUE,FALSE,Bethel University
+CNM06746,1164018057,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06751,1275118978,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06770,1912591181,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06785,1528465986,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06791,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06814,1124118740,University of Nevada Las Vegas,NV,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2016,1,1,FALSE,FALSE,University of Nevada Las Vegas
+CNM06821,1417625401,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2020,1,1,TRUE,FALSE,Bethel University
+CNM06863,1629674965,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06875,1881286185,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06903,1801561410,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06911,1477134435,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06927,1811574700,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06936,1811560725,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06953,1679140057,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06974,1316520794,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06978,1437722287,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM06989,1205503505,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07001,1891473716,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,TRUE,FALSE,Frontier Nursing University
+CNM07035,1649943549,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07050,1679148977,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07060,,University of South Carolina,SC,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2022,1,1,FALSE,FALSE,University of South Carolina
+CNM07099,,University of South Carolina,SC,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2026,1,1,FALSE,FALSE,
+CNM07121,1447923255,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2021,1,1,TRUE,FALSE,Bethel University
+CNM07132,1376206367,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2021,2,1,TRUE,FALSE,Bethel University
+CNM07138,1407425028,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2021,1,1,TRUE,TRUE,Bethel University
+CNM07150,1891365235,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2021,2,1,TRUE,FALSE,Bethel University
+CNM07161,1184388050,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07163,1790358190,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2021,1,1,TRUE,FALSE,Bethel University
+CNM07164,1174807614,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2021,1,1,TRUE,TRUE,Bethel University
+CNM07181,1174291504,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2020,1,1,TRUE,TRUE,Bethel University
+CNM07193,1750057428,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2021,1,1,TRUE,TRUE,Bethel University
+CNM0722,1538432323,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07225,1487224325,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2021,1,1,TRUE,FALSE,Bethel University
+CNM07234,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2021,1,1,TRUE,FALSE,Bethel University
+CNM07243,1194487223,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2021,1,1,TRUE,FALSE,Bethel University
+CNM07244,1396412953,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2021,1,1,TRUE,FALSE,Bethel University
+CNM07252,1447926274,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2021,3,1,TRUE,TRUE,Bethel University
+CNM07270,1992524201,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2021,1,1,TRUE,FALSE,Bethel University
+CNM07274,1346910601,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07287,1942971627,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07292,1013688324,Bethel University,MN,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2021,1,1,TRUE,FALSE,
+CNM07300,1730856865,Marquette University,WI,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2017,1,1,FALSE,FALSE,
+CNM07321,1619558020,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07378,,University of South Carolina,SC,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,2,1,FALSE,FALSE,
+CNM07430,1457813552,Seattle University,WA,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2021,2,1,FALSE,TRUE,
+CNM07437,1922620590,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07446,1841945813,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07454,1417609587,Bethel University,MN,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2016,2,1,TRUE,FALSE,
+CNM0750,1568731578,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM0752,1174874192,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07534,1407517931,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07544,1184274011,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07546,1306592480,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,TRUE,FALSE,Frontier Nursing University
+CNM07598,1437896065,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07617,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07631,1225786486,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07636,1215135348,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07649,1073244778,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07706,1851033690,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM0772,1497037758,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,TRUE,FALSE,Frontier Nursing University
+CNM07731,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2026,1,1,FALSE,FALSE,Frontier Nursing University
+CNM0775,1710262498,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2010,1,1,FALSE,TRUE,Seattle University
+CNM07806,1073251187,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07824,1134877558,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2022,1,1,TRUE,FALSE,Bethel University
+CNM07833,1265170310,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2022,1,1,TRUE,FALSE,Bethel University
+CNM07838,1083394944,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2022,1,1,TRUE,TRUE,Bethel University
+CNM07840,1861121113,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2022,1,1,TRUE,TRUE,Bethel University
+CNM07841,1053034892,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2022,1,1,TRUE,TRUE,Bethel University
+CNM0785,1538433248,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07869,1366151755,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2022,1,1,TRUE,TRUE,Bethel University
+CNM07871,1922739408,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2021,1,1,TRUE,FALSE,Bethel University
+CNM07873,1568183895,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2022,1,1,TRUE,TRUE,Bethel University
+CNM07879,1699423806,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2022,1,1,TRUE,FALSE,Bethel University
+CNM07895,1669103818,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2022,1,1,TRUE,TRUE,Bethel University
+CNM07896,1699497172,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2022,1,1,TRUE,TRUE,Bethel University
+CNM07912,1831832237,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2022,1,1,TRUE,FALSE,Bethel University
+CNM07921,1104559483,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2022,1,1,TRUE,FALSE,Bethel University
+CNM0794,1437406857,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,TRUE,FALSE,Frontier Nursing University
+CNM07943,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM07948,1376268565,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2022,1,1,TRUE,FALSE,Bethel University
+CNM07988,1174245682,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2022,1,1,TRUE,FALSE,Bethel University
+CNM07996,1467134056,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2022,1,1,TRUE,TRUE,Bethel University
+CNM08008,1194363416,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2022,2,1,FALSE,TRUE,Seattle University
+CNM08013,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,2,1,FALSE,FALSE,Frontier Nursing University
+CNM08042,1578260295,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2020,1,1,TRUE,FALSE,Bethel University
+CNM08098,1124701388,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08105,1548836489,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2022,2,1,FALSE,FALSE,Seattle University
+CNM08114,1780391870,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08118,1659687283,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,TRUE,FALSE,Frontier Nursing University
+CNM08127,1174248223,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,TRUE,FALSE,Frontier Nursing University
+CNM08155,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2022,1,1,TRUE,FALSE,Bethel University
+CNM08159,1891400826,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08160,1508578584,University at Buffalo,NY,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2021,1,1,FALSE,FALSE,University at Buffalo
+CNM08166,1154058493,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08189,1750070777,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08207,,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,1,1,FALSE,FALSE,
+CNM08231,1285340687,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08258,1518651538,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2026,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08260,1396455978,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08286,1831765775,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2022,2,1,FALSE,TRUE,Seattle University
+CNM0832,1043580186,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08322,1700575743,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08332,1275230617,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2026,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08377,1366129066,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08394,1255041729,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08424,1891568820,Yale University,CT,3,generic_collection_name_match_only,post-professional DNP,2022,1,1,FALSE,FALSE,
+CNM08532,1598440653,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08541,1083301170,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08601,1861180416,University of South Carolina,SC,3,generic_collection_name_match_only,post-professional DNP,2024,1,1,FALSE,FALSE,
+CNM08670,1235817818,Georgia College and State University,GA,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2026,1,1,FALSE,TRUE,Georgia College and State University
+CNM08689,1942987953,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2023,1,1,TRUE,FALSE,Bethel University
+CNM08699,1841988748,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2023,1,1,TRUE,FALSE,Bethel University
+CNM08712,1649954959,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2023,1,1,TRUE,FALSE,Bethel University
+CNM08719,1821507112,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2023,1,1,TRUE,FALSE,Bethel University
+CNM08720,1689351041,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2023,1,1,TRUE,FALSE,Bethel University
+CNM08727,1457038036,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2023,1,1,TRUE,FALSE,Bethel University
+CNM08728,1598467045,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2023,1,1,TRUE,FALSE,Bethel University
+CNM08738,1043999378,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08741,1912782566,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2023,1,1,TRUE,FALSE,Bethel University
+CNM08747,1265894273,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2023,1,1,TRUE,FALSE,Bethel University
+CNM08748,1316626310,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2023,1,1,TRUE,FALSE,Bethel University
+CNM08759,1821846882,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2023,1,1,TRUE,TRUE,Bethel University
+CNM08777,,Bethel University,MN,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2016,1,1,TRUE,FALSE,
+CNM08788,1861174070,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08806,1689453805,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08809,1932743598,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2023,2,1,FALSE,TRUE,Seattle University
+CNM08816,1770263352,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2023,2,1,TRUE,FALSE,Seattle University
+CNM08822,1326766056,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2023,2,1,FALSE,TRUE,Seattle University
+CNM08826,1902678204,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08830,1508630203,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08848,1164207734,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2023,1,1,TRUE,FALSE,Bethel University
+CNM08850,1568247815,Seattle University,WA,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2008,1,1,FALSE,TRUE,
+CNM08857,1902643752,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08863,1386413003,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2023,1,1,TRUE,TRUE,Bethel University
+CNM08877,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2016,1,1,TRUE,FALSE,
+CNM0890,1356600480,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08913,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2024,1,1,FALSE,FALSE,
+CNM0893,1790050169,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+CNM08949,1811777006,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2021,1,1,TRUE,FALSE,Bethel University
+CNM08977,,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2023,2,1,FALSE,FALSE,Seattle University
+CNM08988,,University of South Carolina,SC,3,generic_collection_name_match_only,post-professional DNP,2017,1,1,FALSE,FALSE,
+CNM09025,,University at Buffalo,NY,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2020,1,1,FALSE,FALSE,University at Buffalo
+CNM09071,1306689179,Yale University,CT,3,generic_collection_name_match_only,post-professional DNP,2019,1,1,FALSE,FALSE,
+CNM09076,1538546783,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09101,1801666854,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09108,1437979499,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2024,1,1,FALSE,FALSE,
+CNM09197,1518146273,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,TRUE,FALSE,Frontier Nursing University
+CNM09198,1437840774,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09239,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,TRUE,FALSE,Frontier Nursing University
+CNM0927,1437419009,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,TRUE,TRUE,Frontier Nursing University
+CNM09273,1588401632,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2026,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09289,1801557061,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09309,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2022,1,1,FALSE,FALSE,
+CNM09340,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09347,1891540472,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09392,1548845944,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2024,1,1,FALSE,FALSE,
+CNM0941,1740544717,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09481,1417718271,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09487,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,FALSE,Bethel University
+CNM09493,,Frontier Nursing University,KY,3,generic_collection_name_match_only,post-professional DNP,2025,1,1,FALSE,FALSE,
+CNM09497,1093552028,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,TRUE,Bethel University
+CNM09504,1417523374,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2022,2,1,FALSE,FALSE,Seattle University
+CNM09512,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09514,1639908429,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,TRUE,Bethel University
+CNM09523,1235967910,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,TRUE,Bethel University
+CNM09539,1063241560,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,FALSE,Bethel University
+CNM09544,1982433850,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,TRUE,Bethel University
+CNM09545,1144053596,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2026,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09546,1073353041,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,FALSE,Bethel University
+CNM09548,1265676365,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,FALSE,Bethel University
+CNM09549,1083443204,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,FALSE,Bethel University
+CNM09567,1821843764,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,FALSE,Bethel University
+CNM09574,1659117216,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,FALSE,Bethel University
+CNM09576,1225857121,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2026,1,1,FALSE,FALSE,Frontier Nursing University
+CNM0958,1255688719,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09580,,Bethel University,MN,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2024,1,1,TRUE,FALSE,
+CNM09608,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2026,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09610,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2012,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09613,1043054620,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2024,2,1,TRUE,TRUE,Seattle University
+CNM09621,1316757792,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2024,2,1,FALSE,TRUE,Seattle University
+CNM09636,1770336034,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,FALSE,Bethel University
+CNM09645,1902641889,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,TRUE,Bethel University
+CNM09668,1629892591,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2026,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09670,,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2024,2,1,FALSE,FALSE,Seattle University
+CNM09684,1811717283,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,FALSE,Bethel University
+CNM09692,1285454280,Seattle University,WA,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2010,1,1,FALSE,FALSE,
+CNM09697,1851180277,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,FALSE,Bethel University
+CNM0970,1669737292,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2014,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09748,1467207084,University of New Mexico,NM,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2026,2,1,FALSE,TRUE,University of New Mexico
+CNM0977,1275881385,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,1,1,FALSE,FALSE,Frontier Nursing University
+CNM09854,1386438323,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,FALSE,Bethel University
+CNM0990,1952630329,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,TRUE,FALSE,Frontier Nursing University
+CNM0997,1871849877,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM10088,1831072198,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2023,1,1,TRUE,FALSE,Bethel University
+CNM10094,,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2024,2,1,FALSE,FALSE,Seattle University
+CNM1016,1184979007,Frontier Nursing University,KY,3,generic_collection_name_match_only,post-professional DNP,2017,1,1,FALSE,FALSE,
+CNM10198,1992698385,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2025,1,1,TRUE,FALSE,Bethel University
+CNM10209,1649152356,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,2,1,FALSE,FALSE,Frontier Nursing University
+CNM10223,1871716175,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2025,1,1,TRUE,FALSE,Bethel University
+CNM10226,1003706987,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2025,1,1,TRUE,FALSE,Bethel University
+CNM10232,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2025,1,1,TRUE,FALSE,Bethel University
+CNM10236,1538659529,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2025,1,1,TRUE,FALSE,Bethel University
+CNM10269,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2025,1,1,TRUE,FALSE,Bethel University
+CNM10285,1003530460,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2025,2,1,FALSE,TRUE,Seattle University
+CNM10303,1922890359,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2025,1,1,TRUE,FALSE,Bethel University
+CNM1032,1053651737,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1034,1578828406,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM10340,1558828004,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2025,1,1,TRUE,FALSE,Bethel University
+CNM10398,,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2025,2,1,FALSE,FALSE,Seattle University
+CNM10434,1902594922,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2025,2,1,FALSE,TRUE,Seattle University
+CNM10448,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM10465,,Seattle University,WA,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2021,2,1,FALSE,FALSE,
+CNM10500,1902317639,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2025,2,1,FALSE,FALSE,Seattle University
+CNM10515,1932573961,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM10579,,University at Buffalo,NY,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2020,1,1,FALSE,FALSE,University at Buffalo
+CNM10588,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2024,1,1,TRUE,FALSE,Bethel University
+CNM10626,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1064,1144582719,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM10728,,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,2,1,FALSE,FALSE,
+CNM1075,1689976367,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM10950,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2026,1,1,TRUE,FALSE,Bethel University
+CNM10959,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2026,1,1,TRUE,FALSE,Bethel University
+CNM10965,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2026,1,1,TRUE,FALSE,Bethel University
+CNM10971,1841936986,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2026,1,1,TRUE,FALSE,Bethel University
+CNM10972,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2026,1,1,TRUE,FALSE,Bethel University
+CNM10980,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2025,1,1,TRUE,FALSE,Bethel University
+CNM10986,1316829690,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2026,1,1,TRUE,FALSE,Bethel University
+CNM10996,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2026,1,1,TRUE,FALSE,Bethel University
+CNM11009,1194532036,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2026,1,1,TRUE,FALSE,Bethel University
+CNM11015,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2026,1,1,TRUE,FALSE,Bethel University
+CNM11023,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2026,1,1,TRUE,FALSE,Bethel University
+CNM11081,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2025,1,1,TRUE,FALSE,Bethel University
+CNM11101,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2026,1,1,TRUE,FALSE,Bethel University
+CNM11119,,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2026,2,1,FALSE,FALSE,Seattle University
+CNM11120,,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2026,1,1,TRUE,FALSE,Bethel University
+CNM1118,1861741555,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1140,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2019,2,1,FALSE,FALSE,
+CNM1172,1205271178,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1184,1225372493,Yale University,CT,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2012,1,1,FALSE,FALSE,
+CNM1190,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1214,1861719411,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1250,1871830125,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1261,1801140231,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1293,1649604331,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,TRUE,FALSE,Frontier Nursing University
+CNM1394,1760829352,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1414,1801231345,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1478,1336559012,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2013,1,1,FALSE,FALSE,
+CNM1481,1568883627,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1500,1790117315,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1543,,Bethel University,MN,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2016,1,1,TRUE,FALSE,
+CNM1600,,University of New Mexico,NM,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2022,1,1,FALSE,FALSE,University of New Mexico
+CNM1633,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2024,1,1,TRUE,FALSE,
+CNM1635,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2017,1,1,FALSE,FALSE,
+CNM1654,1003290271,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2011,1,1,FALSE,FALSE,Seattle University
+CNM1662,1225468366,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1663,1669804985,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1670,1174952022,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2019,2,1,FALSE,FALSE,
+CNM1687,1124062161,Seattle University,WA,2,generic_collection_unique_first_name_or_midwifery_text,entry-level DNP (gap ~ 0),2004,1,1,FALSE,FALSE,Seattle University
+CNM1766,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,1,1,FALSE,FALSE,
+CNM1785,1053740340,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1792,1518382035,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,2,1,FALSE,FALSE,
+CNM1874,1740680552,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1877,1336564996,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2015,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1891,1164849238,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1900,1285044552,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2023,1,1,FALSE,FALSE,
+CNM1947,1508284654,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1993,1568862654,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM1996,1902218258,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2009,1013315563,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2021,,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2014,2,1,FALSE,FALSE,
+CNM2033,1164189593,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2069,1447650676,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2019,3,1,TRUE,FALSE,
+CNM2070,1073920070,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2072,,University of South Carolina,SC,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2024,1,1,FALSE,FALSE,University of South Carolina
+CNM2122,1063805505,University of New Mexico,NM,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2022,1,1,TRUE,TRUE,University of New Mexico
+CNM2126,1669886578,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2137,1891936720,University at Buffalo,NY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2020,1,1,FALSE,FALSE,
+CNM2163,1861892390,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2021,1,1,FALSE,FALSE,
+CNM2174,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2198,1013146109,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2247,1962809855,Yale University,CT,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2014,1,1,FALSE,FALSE,Yale University
+CNM2276,1376945444,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2278,1538550827,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2294,1578968434,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2025,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2323,1811386600,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2332,1275934184,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2341,1538565767,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2373,1518364058,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,TRUE,FALSE,Frontier Nursing University
+CNM2376,1003211251,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2442,1245628429,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2021,1,1,FALSE,FALSE,
+CNM2482,1598149908,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2499,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,TRUE,FALSE,Frontier Nursing University
+CNM2525,1942692132,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2531,1366833121,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2555,1356734081,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2596,1821485012,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2605,1700252616,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2608,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2021,1,1,FALSE,FALSE,
+CNM2636,,University of Nevada Las Vegas,NV,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2013,1,1,FALSE,FALSE,
+CNM2654,1871961813,Georgia College and State University,GA,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2017,2,1,FALSE,FALSE,Georgia College and State University
+CNM2671,1427432111,University of New Mexico,NM,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2020,1,1,FALSE,TRUE,University of New Mexico
+CNM2678,1235511676,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2710,,University of Nevada Las Vegas,NV,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2019,1,1,FALSE,FALSE,University of Nevada Las Vegas
+CNM2724,1962887497,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2022,1,1,FALSE,FALSE,
+CNM2795,1356712822,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2836,1770956435,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,TRUE,FALSE,Frontier Nursing University
+CNM2872,,University at Buffalo,NY,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2025,1,1,FALSE,FALSE,University at Buffalo
+CNM2878,1467823302,Georgia College and State University,GA,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2015,1,1,FALSE,FALSE,
+CNM2885,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2017,1,1,TRUE,FALSE,
+CNM2886,1760851745,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2894,1770953416,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2907,1922455211,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2926,1437522828,University of Nevada Las Vegas,NV,2,generic_collection_unique_first_name_or_midwifery_text,post-professional DNP,2023,1,1,FALSE,TRUE,University of Nevada Las Vegas
+CNM2944,1518294248,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2021,1,1,FALSE,FALSE,Frontier Nursing University
+CNM2960,1770038929,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3017,1467827360,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3027,1760840045,Seattle University,WA,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2010,1,1,FALSE,FALSE,
+CNM3028,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3033,1750756995,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3045,1376909648,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3046,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3075,1568829109,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3084,1164880829,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2023,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3088,,Frontier Nursing University,KY,4,ambiguous_multiple_certificants_on_one_project,post-professional DNP,2016,1,1,TRUE,FALSE,
+CNM3106,1568826238,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3114,1982053724,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2012,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3129,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3131,1619422094,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3161,1629431051,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3164,1194056093,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3221,1265889398,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2017,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3234,,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2010,2,1,FALSE,FALSE,Frontier Nursing University
+CNM3262,1710335427,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2020,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3266,1518411396,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2016,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3272,1164878542,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3280,1619326642,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3281,1821444969,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3289,1124474226,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2018,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3315,1255781423,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2024,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3341,1609327121,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2022,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3371,,Bethel University,MN,4,ambiguous_multiple_certificants_on_one_project,entry-level DNP (gap ~ 0),2016,1,1,TRUE,FALSE,
+CNM3372,1265882062,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2016,1,1,TRUE,TRUE,Bethel University
+CNM3373,1972058477,Frontier Nursing University,KY,1,collection_is_midwifery_specific,post-professional DNP,2019,1,1,FALSE,FALSE,Frontier Nursing University
+CNM3549,1497061261,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2016,1,1,TRUE,FALSE,Bethel University
+CNM3550,1942653035,Bethel University,MN,1,collection_is_midwifery_specific,entry-level DNP (gap ~ 0),2016,1,1,TRUE,TRUE,Bethel University

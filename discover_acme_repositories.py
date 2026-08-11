@@ -47,7 +47,8 @@ UA = {"User-Agent": "midwifery-workforce-research/1.0 (academic use)"}
 # (institution, state, degrees, repository host candidates)
 ACME = [
     ("Baylor University", "TX", "BS-DNP, post-MS CNM DNP", ["baylor-ir.tdl.org", "digitalcommons.baylor.edu"]),
-    ("Baystate Medical Center", "MA", "Certificate, PGC", []),
+    ("Baystate Medical Center", "MA", "Certificate, PGC",
+     ["scholarlycommons.libraryinfo.bhs.org"]),
     ("Bethel University", "MN", "MS", ["spark.bethel.edu"]),
     ("Boston College", "MA", "MS", ["dlib.bc.edu", "open-bc.primo.exlibrisgroup.com"]),
     ("California State University Fullerton", "CA", "MSN", ["scholarworks.calstate.edu"]),
@@ -89,7 +90,7 @@ ACME = [
     ("University of Nevada Las Vegas", "NV", "MSN", ["digitalscholarship.unlv.edu"]),
     ("University of New Mexico", "NM", "PGC, DNP", ["digitalrepository.unm.edu"]),
     ("University of Pennsylvania", "PA", "MSN", ["repository.upenn.edu"]),
-    ("University of Pittsburgh", "PA", "DNP", ["d-scholarship.pitt.edu"]),
+    ("University of Pittsburgh", "PA", "DNP", ["d-scholarship.pitt.edu"]),  # EPrints
     ("University of South Carolina", "SC", "DNP, MSN, PGC", ["scholarcommons.sc.edu"]),
     ("University of Tennessee Health Science Center", "TN", "DNP", ["dc.uthsc.edu"]),
     ("University of Utah", "UT", "DNP, PGC", ["collections.lib.utah.edu"]),
@@ -101,6 +102,7 @@ ACME = [
 # OAI endpoint shapes, by platform.
 PATHS = [
     ("/do/oai/", "bepress"),            # Digital Commons
+    ("/catalog/oai", "hyrax_eprints"),  # Samvera/Hyrax and some EPrints sites
     ("/oai/request", "dspace6"),
     ("/server/oai/request", "dspace7"),
     ("/oai", "generic"),
@@ -114,6 +116,10 @@ DEGREE_SET_RX = re.compile(
     r"\bdnp\b|doctor of nursing|nursing.*(thes|dissert|etd|project|capstone)"
     r"|(thes|dissert|etd|capstone|scholarly project|doctoral project).*nurs"
     r"|college of nursing|school of nursing|nursing", re.I)
+# "nurs" also matches NURSERY: Minnesota's set list contains "Minnesota
+# Nurserymens Newsletter" and "Seed and Nursery Catalog Books". Excluded so a
+# horticulture collection is never harvested as nursing scholarship.
+NOT_NURSING_RX = re.compile(r"nursery|nurserymen|seed and nursery|horticultur", re.I)
 
 
 def get(url, timeout=25, tries=2):
@@ -149,18 +155,37 @@ def probe_school(row):
             body = get(base + ("&" if "?" in base else "?") + "verb=Identify")
             if not body or "<repositoryName" not in body:
                 continue
-            sets = []
-            s = get(base + ("&" if "?" in base else "?") + "verb=ListSets")
-            if s:
+            # PAGE THROUGH ListSets. The first version issued ONE request and
+            # took whatever came back -- 100 sets. Minnesota publishes 2,488 and
+            # Ohio State 3,052, so a single page saw 3-4% of each repository and
+            # reported "no nursing collections". Ohio State's "Doctor of Nursing
+            # Practice Final Document Projects" (167 records) sat past page 30.
+            # Eight institutions were written off on that evidence.
+            sets, token, pages = [], None, 0
+            while pages < 60:
+                q = base + ("&" if "?" in base else "?") + urllib.parse.urlencode(
+                    {"verb": "ListSets"} if not token
+                    else {"verb": "ListSets", "resumptionToken": token})
+                sx = get(q)
+                if not sx:
+                    break
                 try:
-                    root = ET.fromstring(s)
-                    for st in root.iter(f"{OAI}set"):
-                        spec = st.findtext(f"{OAI}setSpec") or ""
-                        name = st.findtext(f"{OAI}setName") or ""
-                        if DEGREE_SET_RX.search(f"{name} {spec}"):
-                            sets.append(f"{spec}||{name}")
+                    root = ET.fromstring(sx)
                 except ET.ParseError:
-                    pass
+                    break
+                if root.find(f".//{OAI}error") is not None:
+                    break
+                for st in root.iter(f"{OAI}set"):
+                    spec = st.findtext(f"{OAI}setSpec") or ""
+                    name = st.findtext(f"{OAI}setName") or ""
+                    blob = f"{name} {spec}"
+                    if DEGREE_SET_RX.search(blob) and not NOT_NURSING_RX.search(blob):
+                        sets.append(f"{spec}||{name}")
+                rt = root.find(f".//{OAI}resumptionToken")
+                token = rt.text if rt is not None and rt.text else None
+                pages += 1
+                if not token:
+                    break
             return dict(institution=inst, state=state, degrees=degrees,
                         platform=platform, base=base, endpoint=base,
                         n_candidate_sets=len(sets), status="live",
