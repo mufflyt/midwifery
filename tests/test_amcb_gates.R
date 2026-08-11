@@ -23,6 +23,7 @@ root <- {
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 suppressPackageStartupMessages({library(dplyr); library(readr)})
 source(file.path(root, "R", "amcb_match_rules.R"))
+source(file.path(root, "R", "amcb_cohort_membership.R"))
 
 fails <- 0L
 chk <- function(cond, m) {
@@ -243,6 +244,55 @@ cat("\n-- invariants the artifacts must satisfy --\n")
     chk(nrow(m) == 0L, "one NPI, one person (bijection holds)")
   } else {
     chk(FALSE, "current crosswalk present and unique")
+  }
+}
+
+# =============================================================================
+cat("\n-- G5: crosswalk inclusion does NOT imply cohort eligibility --\n")
+# =============================================================================
+# Membership was inferred downstream as filter(!is.na(npi)). Harmless while
+# every strategy produced comparable evidence; not harmless once a deliberately
+# WEAK strategy was added. Class 5 contributed 156 candidates, and under the
+# inferred rule all 156 would have become full cohort members -- 96% of the
+# proposed growth from the weakest, entirely unreviewed tier.
+{
+  chk(is.character(COHORT_MEMBERSHIP_TIERS) && length(COHORT_MEMBERSHIP_TIERS) > 0,
+      sprintf("G5 membership tiers are declared, not inferred [%s]",
+              paste(COHORT_MEMBERSHIP_TIERS, collapse = ", ")))
+  chk(!"sensitivity_name_component" %in% COHORT_MEMBERSHIP_TIERS,
+      "G5 class-5 (surname component) is NOT cohort-eligible")
+  chk(!any(c("quarantined", "unmatched") %in% COHORT_MEMBERSHIP_TIERS),
+      "G5 quarantined and unmatched are NOT cohort-eligible")
+
+  # Having an NPI is necessary and NOT sufficient. This is the whole rule.
+  chk(isTRUE(is_cohort_member("1234567893", "primary_midwifery")) &&
+        isFALSE(is_cohort_member("1234567893", "sensitivity_name_component")) &&
+        isFALSE(is_cohort_member(NA_character_, "primary_midwifery")) &&
+        isFALSE(is_cohort_member("", "primary_midwifery")),
+      "G5 membership requires BOTH an NPI and an allowlisted tier")
+
+  # NEGATIVE CONTROL: if someone adds class 5 back, the guard must notice.
+  chk(sum(is_cohort_member(c("1", "2"), c("primary_midwifery", "sensitivity_name_component"),
+                           allowed = c("primary_midwifery", "sensitivity_name_component"))) == 2L,
+      "G5 negative control: widening the allowlist demonstrably changes membership")
+
+  # Applied to the real crosswalk: the 156 must be candidates, not members.
+  xw <- Sys.glob("artifacts/amcb_npi_crosswalk_c5guard_*.csv")
+  xw <- xw[!grepl("manifest", xw)]
+  if (length(xw) == 1) {
+    x <- read_csv(xw, col_types = cols(.default = "c"), progress = FALSE)
+    s5 <- cohort_membership_summary(x)
+    chk(s5$n_members == 16898 && s5$n_with_npi == 17054 &&
+          s5$n_candidates_not_members == 156,
+        sprintf("G5 crosswalk: %s with an NPI, %s members, %s candidates held out",
+                format(s5$n_with_npi, big.mark = ","),
+                format(s5$n_members, big.mark = ","),
+                format(s5$n_candidates_not_members, big.mark = ",")))
+    chk(sum(is_cohort_member(x$npi, x$linkage_tier) &
+              x$linkage_tier == "sensitivity_name_component") == 0L,
+        "G5 no class-5 row is counted as a cohort member")
+  } else {
+    chk(FALSE, "G5 current crosswalk present")
   }
 }
 
