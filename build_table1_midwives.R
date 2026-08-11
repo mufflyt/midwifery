@@ -397,6 +397,24 @@ if (file.exists("artifacts/dac_cnm_education.csv")) {
   # A Table 1 row per institution would run to hundreds of levels, so the block
   # names the ten most common and pools the rest. The pooled row is labelled as
   # a pool, not as a school.
+  # Title case via the CANONICAL helper, not a local str_to_title(). It already
+  # keeps small words lower inside a name ("... of New York at Stony Brook"),
+  # handles Mc/Mac, preserves state and directional tokens, and leaves
+  # already-mixed-case input alone. A local re-case would drift from it, which
+  # is the duplication R/lib/mysterymaps_dep.R exists to prevent.
+  .title_case <- if (requireNamespace("mysterymaps", quietly = TRUE)) {
+    mysterymaps::mysterymaps_place_title_case
+  } else {
+    mm <- file.path(path.expand("~/mysterymaps"), "R", "text_helpers.R")
+    if (file.exists(mm)) { source(mm); mysterymaps_place_title_case } else {
+      stop(paste0("mysterymaps_place_title_case() not found. It is the canonical ",
+                  "title-case helper (mufflyt/mysterymaps, R/text_helpers.R). ",
+                  "Install the package or fix the path -- do not re-case locally."),
+           call. = FALSE)
+    }
+  }
+  coh <- coh %>% mutate(training_institution = .title_case(training_institution))
+
   .top <- coh %>% filter(!is.na(training_institution)) %>%
     count(training_institution, sort = TRUE) %>% slice_head(n = 10) %>%
     pull(training_institution)
