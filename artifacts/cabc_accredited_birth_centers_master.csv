@@ -1,0 +1,112 @@
+bc_id,facility_name,full_address,city,state,zip_code
+CABC_001,A New Story Birth Center,"16802 145th Avenue, P.O. Box 116, Milaca, MN 56353",Milaca,MN,16802
+CABC_002,A New Story Birth Center,"117 Gillis Avenue NE, Brainerd, MN 56401",Brainerd,MN,56401
+CABC_003,Alma Midwifery,"1608 SE Ankeny Street, Portland, OR 97214",Portland,OR,97214
+CABC_004,Anacortes Birth Center,"902 7th Street, Suite 103, Anacortes, WA 98221",Anacortes,WA,98221
+CABC_005,Anchorage Birth Center,"3730 Rhone Circle, Suite 103, Anchorage, AK 99508",Anchorage,AK,99508
+CABC_006,Astoria Birth Center,"1406 Marine Dr, Astoria, OR 97103",Astoria,OR,97103
+CABC_007,Atlanta Birth Center,"1 Baltimore Place NW, Suite 105, Atlanta, GA 30308",Atlanta,GA,30308
+CABC_008,Auburn Birthing Center,"1915 Wesley Road, Auburn, IN 46706",Auburn,IN,46706
+CABC_009,Austin Area Birthing Center,"4100 Duval Road, Bldg # 2, Suite 101, Austin, TX 78759",Austin,TX,78759
+CABC_010,Austin Area Birthing Center,"2500 West William Cannon Drive, Bldg # 5, Suite 503, Austin, TX 78745",Austin,TX,78745
+CABC_011,Aya Birth &amp; Community Wellness,"1412 Hudson Avenue, Durham, NC 27705",Durham,NC,27705
+CABC_012,Baby Catcher Birth Center,"510 W. University Avenue, Lafayette, LA 70506",Lafayette,LA,70506
+CABC_013,Beginnings Birth Center,"9475 Briar Village Point, Suite 100, Colorado Springs, CO 80920",Colorado Springs,CO,80920
+CABC_014,Bella Vie Gentle Birth Center,"13160 Jerusalem Hill Road NW, Salem, OR 97304",Salem,OR,13160
+CABC_015,Bellingham Birth Center,"2430 Cornwall Avenue, Bellingham, WA 98225",Bellingham,WA,98225
+CABC_016,Birth Care &amp; Family Health Services,"1138 Georgetown Rd, Bart, PA 17503",Bart,PA,17503
+CABC_017,Birth Center at PCC,"6201 West Roosevelt Road, Berwyn, IL 60402",Berwyn,IL,60402
+CABC_018,Birth Center of Baton Rouge,"277 Rue del la Vie, Baton Rouge, LA 70817",Baton Rouge,LA,70817
+CABC_019,Birth Center of Bloomington-Normal,"6 Westport Court, Bloomington, IL 61704",Bloomington,IL,61704
+CABC_020,Birth Center of Denver,"1830 Franklin Street, Suite 330, Denver, CO 80218",Denver,CO,80218
+CABC_021,Birth Detroit,"8575 Heritage Place, Detroit, MI 48204",Detroit,MI,48204
+CABC_022,BirthCare &amp; Women's Health,"1501 King Street, Alexandria, VA 22314",Alexandria,VA,22314
+CABC_023,Birthing Center NYC,"840 Lefferts Avenue, Brooklyn, NY 11203",Brooklyn,NY,11203
+CABC_024,Birthroot Midwives and Birth Center,"1600 Broadway Street, Bellingham, WA 98225",Bellingham,WA,98225
+CABC_025,"Blessed Beginnings Care Center, Inc.","2521 E. Market Street, Nappanee, IN 46550",Nappanee,IN,46550
+CABC_026,Bliss Women's Wellness and Birth Center,"14157 Horseshoe Bend, Conroe, TX 77384",Conroe,TX,14157
+CABC_027,Bloom Waterbirth and Wellness Center,"530 S. State Street, Ukiah, CA 95482",Ukiah,CA,95482
+CABC_028,Blossom Birth Center,"2928 North 18th Place, Phoenix, AZ 85016",Phoenix,AZ,85016
+CABC_029,Boulder Birth &amp; Holistic Health,"2800 Folsom Street, Suite C, Boulder, CO 80304",Boulder,CO,80304
+CABC_030,BSD Birthing Center of Rockland,"2380 North 400 East, Suite D, Logan, UT 84341",Logan,UT,84341
+CABC_031,California Birth Center,"6940 Destiny Drive, Rocklin, CA 95677",Rocklin,CA,95677
+CABC_032,Canyon Medical Center,"2100 SW Camelot Court, Portland, OR 97225",Portland,OR,97225
+CABC_033,Canyon Midwifery,"13470 N 83rd Ave, Suite 300, Peoria, AZ 85381",Peoria,AZ,13470
+CABC_034,Casa Natal Birth &amp; Wellness Center,"246 Union Avenue, Los Gatos, CA 95032",Los Gatos,CA,95032
+CABC_035,Center for Birth,"1500 Eastlake Avenue E, Seattle, WA 98102",Seattle,WA,98102
+CABC_036,Charleston Birth Place,"1300 Hospital Drive, Suite 270, Mount Pleasant, SC 29464",Mount Pleasant,SC,29464
+CABC_037,CHOICES: Center for Reproductive Health,"1203 Poplar Avenue, Memphis, TN 38104",Memphis,TN,38104
+CABC_038,Cocoon Wellness and Birth,"31 Ithaca Street, Waverly, NY 14892",Waverly,NY,14892
+CABC_039,Columbia Birth Center,"948 Stevens Drive, Suite C, Richland, WA 99352",Richland,WA,99352
+CABC_040,Colville Women's Center and Birth Place,"158 E. 1st Avenue, Colville, WA 99114",Colville,WA,99114
+CABC_041,Connecticut Childbirth &amp; Women’s Center,"94 Locust Avenue, Danbury, CT 06810",Danbury,CT,06810
+CABC_042,Corvallis Birth Center,"2314 NW Kings Blvd, Suite A, Corvallis, OR 97330",Corvallis,OR,97330
+CABC_043,Earthside Birth and Wellness,"1122 Logan Avenue, Cheyenne, WY 82001",Cheyenne,WY,82001
+CABC_044,"Emerald Midwifery Consulting, LLC","620 Churchmans Road, Suite 101, Newark, DE 19702",Newark,DE,19702
+CABC_045,Family Health &amp; Birth Center,"2120 Bladensburg Road, NE, Washington, DC 20018",Washington,DC,20018
+CABC_046,FamilyCare OB/GYN &amp; Birth Center,"108 Washington Street West, Suite 201, Charleston, WV 25302",Charleston,WV,25302
+CABC_047,Footprints in Time Midwifery &amp; Family Services (Black River Falls),"502 Main Street, Black River Falls, WI 54615",Black River Falls,WI,54615
+CABC_048,Footprints in Time Midwifery &amp; Family Services(Greenwood),"124 N. Main Street, Greenwood, WI 54437",Greenwood,WI,54437
+CABC_049,Fort Worth Birthing &amp; Wellness Center,"1401 Henderson Street, Fort Worth, TX 76102",Fort Worth,TX,76102
+CABC_050,Full Circle Birth Center,"603 3rd Street SE, Kasson, MN 55944",Kasson,MN,55944
+CABC_051,Genesis Women's Health &amp; Midwifery Center,"2788 Bayard Street, Suite 100, East Point, GA 30344",East Point,GA,30344
+CABC_052,Guiding Star Southwest,"1411 Montana Avenue, El Paso, TX 79902",El Paso,TX,79902
+CABC_053,Haven Women's Health and Birth Center,"226 Asheville Avenue, Suite 20, Cary, NC 27518",Cary,NC,27518
+CABC_054,Hive Birth Center,"499 Chestnut Street, Ashland, OR 97520",Ashland,OR,97520
+CABC_055,Holy Family Birth Center,"9835 Auburn Road, Fort Wayne, IN 46825",Fort Wayne,IN,46825
+CABC_056,Intimate Journey Birth &amp; Wellness Center,"4251 S. Higuera Street, Suite 300, San Luis Obispo, CA 93401",San Luis Obispo,CA,93401
+CABC_057,Juneau Family Health and Birth Center,"1601 Salmon Creek Lane, Juneau, AK 99801",Juneau,AK,99801
+CABC_058,La Vita Bella Birth Center,"310 New Bridge Street, Jacksonville, NC 28540",Jacksonville,NC,28540
+CABC_059,Lakeside Birth Center,"2722 214th Avenue East, Lake Tapps, WA 98391",Lake Tapps,WA,98391
+CABC_060,Lebanon Valley Birth Center,"770 Host Road, Womelsdorf, PA 19567",Womelsdorf,PA,19567
+CABC_061,Lilac Health Asheville Birth and Wellness Center,"390 S. French Broad Avenue, Suite C, Asheville, NC 28801",Asheville,NC,28801
+CABC_062,Mary V. O'Shea Birth Center at St. Peter's University Hospital,"254 Easton Avenue, New Brunswick, NJ 08901",New Brunswick,NJ,08901
+CABC_063,Mat-Su Birth Center,"5730 E. Pilgrim Court, Wasilla, AK 99654",Wasilla,AK,99654
+CABC_064,Midwifery Birth &amp; Wellness Center,"165 Route 73, Voorhees, NJ 08043",Voorhees,NJ,08043
+CABC_065,Minnesota Birth Center (Minneapolis),"2606 Chicago Avenue S, Minneapolis, MN 55407",Minneapolis,MN,55407
+CABC_066,Minnesota Birth Center (St. Paul),"624 Smith Avenue South, St. Paul, MN 55107",Paul,MN,55107
+CABC_067,Moonstone Midwives Birth Center,"2615 Harrison Avenue, Eureka, CA 95501",Eureka,CA,95501
+CABC_068,Mount Vernon Birth Center,"916 S. 3rd Street, Mount Vernon, WA 98273",Mount Vernon,WA,98273
+CABC_069,Natural Beginnings Birth &amp; Wellness Center,"1420 Fern Creek Drive, Statesville, NC 28625",Statesville,NC,28625
+CABC_070,New Birth Wellness Center,"1580 White Oak Drive, Chaska, MN 55318",Chaska,MN,55318
+CABC_071,"New Eden Care Center, Inc.","7980 W. 100 South, Topeka, IN 46571",Topeka,IN,46571
+CABC_072,NorthPointe Birth Center,"5609 E. Rockton Road, Roscoe, IL 61073",Roscoe,IL,61073
+CABC_073,Oregon Birth &amp; Wellness Center,"890 Beltline Road, Springfield, OR 97477",Springfield,OR,97477
+CABC_074,Our Community Birth Center,"188 West B Street, Building O, Springfield, OR 97477",Springfield,OR,97477
+CABC_075,Pacifica Family Maternity Center,"3101 Telegraph Avenue, Berkeley, CA 94705",Berkeley,CA,94705
+CABC_076,Perkin Alternative Birthing Center,"2700 Napolean Avenue, Women&#8217;s Pavilion, 4th Floor, New Orleans, LA 70115",New Orleans,LA,70115
+CABC_077,Potsdam Birth House,"121 Market Street, Potsdam, NY 13676",Potsdam,NY,13676
+CABC_078,Premier Birth Center Chantilly,"4200A Technology Court, Chantilly, VA 20151",Chantilly,VA,20151
+CABC_079,Puget Sound Midwives &amp; Birth Center (Kirkland),"13128 Totem Lake Blvd NE, Suite 101, Kirkland, WA 98034",Kirkland,WA,13128
+CABC_080,Pure Births,"24355 Lyons Avenue, Suite 130, Santa Clarita, CA 91321",Santa Clarita,CA,24355
+CABC_081,Reading Midwife Center for Women's Wellness,"949 New Holland Road, Reading, PA 19607",Reading,PA,19607
+CABC_082,Roots Community Birth Center,"1901 44th Avenue North, Minneapolis, MN 55412",Minneapolis,MN,55412
+CABC_083,Saige Birth Center,"6024 Magazine Street, New Orleans, LA 70118",New Orleans,LA,70118
+CABC_084,San Luis New Vida Birthing Center,"250 South Oak Avenue, San Luis, AZ 85349",San Luis,AZ,85349
+CABC_085,Serenity Birth Center,"332 South Jones Blvd, Las Vegas, NV 89107",Las Vegas,NV,89107
+CABC_086,Seven Sisters Midwifery and Community Birth Center,"74 Maple Street, Florence, MA 01062,",Florence,MA,01062
+CABC_087,Simi Valley Birth Center,"4380 Apricot Road, Simi Valley, CA 93063",Simi Valley,CA,93063
+CABC_088,SolHaven Birth Center,"1691 Lor Ray Drive, North Mankato, MN 56003",North Mankato,MN,56003
+CABC_089,Sprout Birth Center &amp; Natural Health,"22725 44th Avenue W, Suite 101, Mountlake Terrace, WA 98043",Mountlake Terrace,WA,22725
+CABC_090,Stand &amp; Deliver Family Birth Center,"1817 Jessup Drive, Fort Collins, CO 80525",Fort Collins,CO,80525
+CABC_091,Tender Gifts Birth &amp; Wellness Center - Grand Junction,"360 Park Drive, Suite 105, Grand Junction, CO 81501",Grand Junction,CO,81501
+CABC_092,The Birth Cottage,"1108 Washington Avenue, Enumclaw, WA 98022",Enumclaw,WA,98022
+CABC_093,The Birth House,"2117 State Avenue NE, Olympia, WA 98506",Olympia,WA,98506
+CABC_094,The Birth Nest Midwifery &amp; Birth Center,"124 W. Oriole Drive, Fergus Falls, MN 56537",Fergus Falls,MN,56537
+CABC_095,The Birthing Inn,"6002 Westgate Blvd, Suite 120, Tacoma, WA 98406",Tacoma,WA,98406
+CABC_096,The Bridge Birth Center,"3300 NE 54th Street, Vancouver, WA 98663",Vancouver,WA,98663
+CABC_097,The Coit House,"414 Virginia Street, Buffalo, NY 14201",Buffalo,NY,14201
+CABC_098,The Midwife Center for Birth and Women's Health,"2831 Penn Avenue, Pittsburgh, PA 15222",Pittsburgh,PA,15222
+CABC_099,The Midwifery Center at Tucson Medical Center,"5301 East Grant Road, Tuscon, AZ 85712",Tuscon,AZ,85712
+CABC_100,The Natural BirthHouse,"715 Coolidge Street, Suite B, Lafayette, LA 70503",Lafayette,LA,70503
+CABC_101,The Nest Birth and Wellness (Moscow),"424 S. Jefferson Street, Moscow, ID 83843",Moscow,ID,83843
+CABC_102,The Nest Birth and Wellness (Pullman),"425 South Grand Avenue, Pullman, WA 99163",Pullman,WA,99163
+CABC_103,The Special Delivery Birth Center,"102 E. Highland Drive, Arlington, WA 98223",Arlington,WA,98223
+CABC_104,Treasure Valley Midwives,"207 W. Washington Street, Boise, ID 83702",Boise,ID,83702
+CABC_105,Tree of Life Birth &amp; Gynecology,"165 Montgomery Road, Altamonte Springs, FL 32714",Altamonte Springs,FL,32714
+CABC_106,Tree of Life Family Birth Center,"1214 Spring Street, Jeffersonville, IN 47130",Jeffersonville,IN,47130
+CABC_107,True North Birth Center,"20696 Bond Rd. NE Bldg C Ste 110, Poulsbo, WA 98370",Poulsbo,WA,20696
+CABC_108,Twin Cities Birth Center,"968 Grand Avenue, St. Paul, MN 55105",Paul,MN,55105
+CABC_109,Vanderbilt Birth Center,"3212 West End Avenue, Suite 100, Nashville, TN 37203",Nashville,TN,37203
+CABC_110,Wichita Falls Birth &amp; Wellness Center,"2001 Brook Avenue, Wichita Falls, TX 76301",Wichita Falls,TX,76301
+CABC_111,Yelm Family Birth Center,"304 3rd Street SE, Yelm, WA 98597",Yelm,WA,98597
