@@ -4,7 +4,7 @@ Cohort: **11,913** midwives with AMCB status ACTIVE and a primary-tier NPI link.
 Percentages are within category and use the non-missing denominator;
 unknowns are counted on their own row.
 
-Registry-derived rows use the full cohort. Healthgrades-derived rows use a smaller denominator of **11,801**: 112 midwives share a Healthgrades profile with another certificant and cannot be attributed one. They remain in the cohort for every registry-derived row above.
+Registry-derived rows use the full cohort. Healthgrades-derived rows use a smaller denominator of **11,801**: 112 midwives share a Healthgrades profile with another certificant and cannot be attributed one. They remain in the cohort for every registry-derived row above. ACOG district percentages exclude 38 midwives with an overseas-military or US-territory address, so that block sums to 11,875 rather than the full cohort.
 
 | Characteristic | n | % |
 |---|---:|---:|
@@ -21,7 +21,7 @@ Registry-derived rows use the full cohort. Healthgrades-derived rows use a small
 | Nurse Practitioner, Obstetrics & Gynecology | 9 | 0.1 |
 | Registered Nurse | 1 | 0.0 |
 | Unknown / not recorded | 41 | — |
-| **Sex recorded in NPPES** | | |
+| **Sex** | | |
 | Female | 11,829 | 99.4 |
 | Male | 63 | 0.5 |
 | X (not listed as F or M) | 13 | 0.1 |
@@ -35,9 +35,6 @@ Registry-derived rows use the full cohort. Healthgrades-derived rows use a small
 | 45-54 years | 3,391 | 28.5 |
 | 55-64 years | 1,882 | 15.8 |
 | >=65 years | 1,345 | 11.3 |
-| **Age Data Source & Provenance** | | |
-| Direct Verified DOB (OH/WA/FL/HG) | 3,862 | 32.4 |
-| OLS Calibrated Imputation | 8,051 | 67.6 |
 | **Years Since AMCB Initial Certification** | | |
 | <5 years | 2,293 | 19.2 |
 | 5-9 years | 2,746 | 23.1 |
@@ -57,38 +54,14 @@ Registry-derived rows use the full cohort. Healthgrades-derived rows use a small
 | District XI | 536 | 4.5 |
 | District XII | 670 | 5.6 |
 | Unknown / not recorded | 2 | — |
-| Excluded: overseas military or US territory | 38 | — |
 | **Rurality (RUCC 2023)** | | |
 | Metropolitan (RUCC 1-3) | 10,594 | 90.4 |
 | Nonmetropolitan, adjacent (RUCC 4-6) | 784 | 6.7 |
 | Nonmetropolitan, remote (RUCC 7-9) | 336 | 2.9 |
 | Unknown / not recorded | 199 | — |
-| **Years since NPI enumeration** | | |
-| <5 years | 2,223 | 18.7 |
-| 5-9 years | 2,729 | 22.9 |
-| 10-14 years | 2,307 | 19.4 |
-| 15-19 years | 2,162 | 18.2 |
-| >=20 years | 2,484 | 20.9 |
-| Unknown / not recorded | 8 | — |
-| **Years observed in NPPES** | | |
-| <5 years | 3,095 | 26.0 |
-| 5-9 years | 2,746 | 23.1 |
-| 10-14 years | 2,173 | 18.2 |
-| >=15 years | 3,899 | 32.7 |
 | **Language (Healthgrades floor)** | | |
 | At least this many speak a language other than English | 367 | 3.1 |
 | Not listed (absence is not evidence of English-only) | 11,434 | — |
-| **Sex (Healthgrades)** | | |
-| Female | 5,852 | 99.6 |
-| Male | 26 | 0.4 |
-| Unknown / not recorded | 5,923 | — |
-| **Age (Healthgrades)** | | |
-| <35 years | 112 | 3.6 |
-| 35-44 years | 705 | 22.7 |
-| 45-54 years | 790 | 25.5 |
-| 55-64 years | 723 | 23.3 |
-| >=65 years | 769 | 24.8 |
-| Unknown / not recorded | 8,702 | — |
 | **Accepts new patients** | | |
 | Yes | 5,759 | 97.9 |
 | No | 121 | 2.1 |
@@ -97,10 +70,3 @@ Registry-derived rows use the full cohort. Healthgrades-derived rows use a small
 | No | 4,934 | 83.9 |
 | Yes | 946 | 16.1 |
 | Unknown / not recorded | 5,921 | — |
-| **Named as Medicaid provider** | | |
-| No | 5,309 | 98.0 |
-| Yes | 109 | 2.0 |
-| Unknown / not recorded | 6,383 | — |
-| **Healthgrades-derived fields** | | |
-| Eligible for attribution (no shared profile) | 11,801 | 99.1 |
-| Excluded: profile shared with another certificant | 112 | — |

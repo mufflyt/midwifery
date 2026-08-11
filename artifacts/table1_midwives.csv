@@ -9,10 +9,10 @@ Nurse Practitioner,21,0.2,Primary NPPES Specialty Taxonomy
 "Nurse Practitioner, Obstetrics & Gynecology",9,0.1,Primary NPPES Specialty Taxonomy
 Registered Nurse,1,0,Primary NPPES Specialty Taxonomy
 Unknown / not recorded,41,,Primary NPPES Specialty Taxonomy
-Female,11829,99.4,Sex recorded in NPPES
-Male,63,0.5,Sex recorded in NPPES
-X (not listed as F or M),13,0.1,Sex recorded in NPPES
-Unknown / not recorded,8,,Sex recorded in NPPES
+Female,11829,99.4,Sex
+Male,63,0.5,Sex
+X (not listed as F or M),13,0.1,Sex
+Unknown / not recorded,8,,Sex
 Same practice and mailing state,11037,92.6,Practice vs. Mailing State Concordance
 Different practice and mailing state (Cross-state practice),876,7.4,Practice vs. Mailing State Concordance
 <35 years,205,1.7,Calibrated Age (100% Cohort Coverage)
@@ -20,8 +20,6 @@ Different practice and mailing state (Cross-state practice),876,7.4,Practice vs.
 45-54 years,3391,28.5,Calibrated Age (100% Cohort Coverage)
 55-64 years,1882,15.8,Calibrated Age (100% Cohort Coverage)
 >=65 years,1345,11.3,Calibrated Age (100% Cohort Coverage)
-Direct Verified DOB (OH/WA/FL/HG),3862,32.4,Age Data Source & Provenance
-OLS Calibrated Imputation,8051,67.6,Age Data Source & Provenance
 <5 years,2293,19.2,Years Since AMCB Initial Certification
 5-9 years,2746,23.1,Years Since AMCB Initial Certification
 10-19 years,3455,29,Years Since AMCB Initial Certification
@@ -39,40 +37,15 @@ District IX,1015,8.5,ACOG district
 District XI,536,4.5,ACOG district
 District XII,670,5.6,ACOG district
 Unknown / not recorded,2,,ACOG district
-Excluded: overseas military or US territory,38,,ACOG district
 Metropolitan (RUCC 1-3),10594,90.4,Rurality (RUCC 2023)
 "Nonmetropolitan, adjacent (RUCC 4-6)",784,6.7,Rurality (RUCC 2023)
 "Nonmetropolitan, remote (RUCC 7-9)",336,2.9,Rurality (RUCC 2023)
 Unknown / not recorded,199,,Rurality (RUCC 2023)
-<5 years,2223,18.7,Years since NPI enumeration
-5-9 years,2729,22.9,Years since NPI enumeration
-10-14 years,2307,19.4,Years since NPI enumeration
-15-19 years,2162,18.2,Years since NPI enumeration
->=20 years,2484,20.9,Years since NPI enumeration
-Unknown / not recorded,8,,Years since NPI enumeration
-<5 years,3095,26,Years observed in NPPES
-5-9 years,2746,23.1,Years observed in NPPES
-10-14 years,2173,18.2,Years observed in NPPES
->=15 years,3899,32.7,Years observed in NPPES
 At least this many speak a language other than English,367,3.1,Language (Healthgrades floor)
 Not listed (absence is not evidence of English-only),11434,,Language (Healthgrades floor)
-Female,5852,99.6,Sex (Healthgrades)
-Male,26,0.4,Sex (Healthgrades)
-Unknown / not recorded,5923,,Sex (Healthgrades)
-<35 years,112,3.6,Age (Healthgrades)
-35-44 years,705,22.7,Age (Healthgrades)
-45-54 years,790,25.5,Age (Healthgrades)
-55-64 years,723,23.3,Age (Healthgrades)
->=65 years,769,24.8,Age (Healthgrades)
-Unknown / not recorded,8702,,Age (Healthgrades)
 Yes,5759,97.9,Accepts new patients
 No,121,2.1,Accepts new patients
 Unknown / not recorded,5921,,Accepts new patients
 No,4934,83.9,Offers telehealth
 Yes,946,16.1,Offers telehealth
 Unknown / not recorded,5921,,Offers telehealth
-No,5309,98,Named as Medicaid provider
-Yes,109,2,Named as Medicaid provider
-Unknown / not recorded,6383,,Named as Medicaid provider
-Eligible for attribution (no shared profile),11801,99.1,Healthgrades-derived fields
-Excluded: profile shared with another certificant,112,,Healthgrades-derived fields

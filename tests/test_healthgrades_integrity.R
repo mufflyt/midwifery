@@ -70,18 +70,36 @@ chk(all(per_cert$n == 1),
     sprintf("each certificant holds exactly one status (%d hold more)",
             sum(per_cert$n > 1)))
 
-if (file.exists("docs/table1_midwives.md")) {
-  N <- length(COHORT)
-  groups <- list(
-    Certification = c(11794, 119), Sex = c(11829, 63, 13, 8),
-    Rurality = c(10696, 816, 347, 54),
-    YearsSinceEnum = c(2223, 2729, 2307, 2162, 2484, 8),
-    YearsObserved = c(3095, 2746, 2173, 3899),
-    ACOG = c(935, 971, 792, 1772, 1155, 1253, 662, 2112, 1015, 536, 670, 2, 38))
-  for (g in names(groups)) {
-    chk(sum(groups[[g]]) == N,
-        sprintf("Table 1 %s sums to the cohort (%s vs %s)", g,
-                format(sum(groups[[g]]), big.mark = ","), format(N, big.mark = ",")))
+# Table 1 group sums, READ FROM THE ARTIFACT. These were hardcoded constants
+# typed into this test, so they summed to the cohort no matter what the table
+# actually contained -- and they still named YearsSinceEnum, YearsObserved and
+# the ACOG military/territory row after those blocks were removed from Table 1.
+# A test that checks its own arithmetic is not checking the table.
+#
+# Registry-derived categories must sum to the cohort. Healthgrades-derived ones
+# must not, and are excluded by name rather than by assuming which is which.
+if (file.exists("artifacts/table1_midwives.csv")) {
+  t1 <- read_csv("artifacts/table1_midwives.csv", show_col_types = FALSE, progress = FALSE)
+  N  <- length(COHORT)
+  hg_cats <- c("Language (Healthgrades floor)", "Accepts new patients",
+               "Offers telehealth", "Cohort")
+  # ACOG is legitimately SHORT. The military/territory row was removed from the
+  # table body on request, so that block covers N minus those addresses. The
+  # shortfall is read from the header note rather than hardcoded, so the test
+  # fails if the note and the block ever disagree -- which is the actual risk
+  # once a fact lives in prose instead of a row.
+  t1md <- readLines("docs/table1_midwives.md", warn = FALSE)
+  note <- grep("ACOG district percentages exclude", t1md, value = TRUE)[1]
+  acog_excl <- suppressWarnings(as.integer(gsub(",", "",
+    sub(".*exclude ([0-9,]+) midwi.*", "\\1", note))))
+  reg <- t1 %>% filter(!category %in% hg_cats, !is.na(n))
+  for (g in unique(reg$category)) {
+    tot <- sum(reg$n[reg$category == g])
+    want <- if (g == "ACOG district") N - acog_excl else N
+    chk(!is.na(want) && tot == want,
+        sprintf("Table 1 '%s' sums to %s (%s vs %s)", g,
+                if (g == "ACOG district") "the cohort minus stated exclusions" else "the cohort",
+                format(tot, big.mark = ","), format(want, big.mark = ",")))
   }
 }
 
@@ -166,8 +184,15 @@ chk(detect_then_scope >= scope_then_detect,
 
 if (file.exists("docs/table1_midwives.md")) {
   t1txt <- readLines("docs/table1_midwives.md")
-  claimed <- as.integer(sub(".*profile shared with another certificant \\| ([0-9,]+) .*",
-                            "\\1", grep("profile shared with another", t1txt, value = TRUE)[1]))
+  # The count used to sit in a "Excluded: profile shared with another
+  # certificant" row. That block was removed from the table body on request and
+  # the number now lives in the header note, which is where a reader meets the
+  # denominator. Parsed from there so the check follows the figure instead of
+  # being dropped with the row -- the row moving is not the same as the
+  # exclusion going unverified.
+  note <- grep("share a Healthgrades profile", t1txt, value = TRUE)[1]
+  claimed <- suppressWarnings(as.integer(gsub(",", "",
+    sub(".*denominator of \\*\\*[0-9,]+\\*\\*: ([0-9,]+) midwi.*", "\\1", note))))
 
   # VINTAGE, NOT TOLERANCE. The crawl is still running, so the number the live
   # data implies rises every few minutes and Table 1 is stale by construction

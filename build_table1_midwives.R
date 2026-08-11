@@ -194,6 +194,9 @@ if (acog_ok) {
 # publishes it remained, so Table 1 shipped with an empty ACOG section and
 # nothing failed -- blk() on a NULL column returns zero rows AND zero
 # "Unknown", so the category simply disappeared. Restored 2026-08-10.
+n_acog_excluded <- if (acog_ok)
+  sum(coh$nppes_state %in% ACOG_EXPECTED_UNMAPPED, na.rm = TRUE) else 0L
+
 coh$acog_district <- if (acog_ok) {
   suppressWarnings(map_state_to_acog(coh$nppes_state))
 } else {
@@ -394,15 +397,20 @@ t1 <- bind_rows(
   blk(coh, "certification", "Certification"),
   if ("taxonomy_description" %in% names(coh))
     blk(coh, "taxonomy_description", "Primary NPPES Specialty Taxonomy"),
-  blk(coh, "sex", "Sex recorded in NPPES"),
+  # SEX -- ONE BLOCK, MERGED. Healthgrades sex was published separately; the two
+  # are now one row set because the merge adds no coverage and only
+  # confirmation. Measured on this cohort: NPPES has sex for 11,905 (99.9%),
+  # Healthgrades for 5,878 (49.3%), and Healthgrades fills ZERO NPPES gaps --
+  # every midwife it covers already had a value. Where both exist they agree on
+  # 5,876 of 5,878 (99.97%), with 2 disagreements. A merged variable is
+  # therefore identical to the NPPES variable; publishing both blocks implied a
+  # second, independent measurement of the same 11,913 people.
+  blk(coh, "sex", "Sex"),
   if ("state_concordance" %in% names(coh))
     blk(coh, "state_concordance", "Practice vs. Mailing State Concordance"),
   if ("age_band" %in% names(coh))
     blk(coh, "age_band", "Calibrated Age (100% Cohort Coverage)",
         lvls = c("<35 years", "35-44 years", "45-54 years", "55-64 years", ">=65 years")),
-  if ("age_provenance" %in% names(coh))
-    blk(coh, "age_provenance", "Age Data Source & Provenance",
-        lvls = c("Direct Verified DOB (OH/WA/FL/HG)", "Derived State License Issue Date", "OLS Calibrated Imputation")),
   if ("cert_year_band" %in% names(coh))
     blk(coh, "cert_year_band", "Years Since AMCB Initial Certification",
         lvls = c("<5 years", "5-9 years", "10-19 years", "20-29 years", ">=30 years")),
@@ -413,16 +421,9 @@ t1 <- bind_rows(
   blk(coh %>% filter(!nppes_state %in% ACOG_EXPECTED_UNMAPPED),
       "acog_district", "ACOG district",
       lvls = if (acog_ok) ACOG_DISTRICT_LEVELS else NULL),
-  tibble(characteristic = "Excluded: overseas military or US territory",
-         n = sum(coh$nppes_state %in% ACOG_EXPECTED_UNMAPPED, na.rm = TRUE),
-         percent = NA_real_, category = "ACOG district"),
   blk(coh, "rurality", "Rurality (RUCC 2023)",
       lvls = c("Metropolitan (RUCC 1-3)", "Nonmetropolitan, adjacent (RUCC 4-6)",
                "Nonmetropolitan, remote (RUCC 7-9)")),
-  blk(coh, "enum_band", "Years since NPI enumeration",
-      lvls = c("<5 years", "5-9 years", "10-14 years", "15-19 years", ">=20 years")),
-  blk(coh, "active_band", "Years observed in NPPES",
-      lvls = c("<5 years", "5-9 years", "10-14 years", ">=15 years")),
 
   # Language: use Healthgrades data when available; otherwise note it is absent.
   # LANGUAGE IS A FLOOR, NOT A PROPORTION.
@@ -454,27 +455,17 @@ t1 <- bind_rows(
            n = NA_integer_, percent = NA_real_, category = "Language"),
 
   # Healthgrades-derived person-level characteristics
-  blk_hg("hg_gender", "Sex (Healthgrades)", lvls = c("Female", "Male")),
-  blk_hg("hg_age_band", "Age (Healthgrades)",
-          lvls = c("<35 years", "35-44 years", "45-54 years",
-                   "55-64 years", ">=65 years")),
   blk_hg("hg_accepts_new_patients", "Accepts new patients",
           binary_yes = c("TRUE", "true", "Yes", "yes", TRUE)),
   blk_hg("hg_has_telehealth", "Offers telehealth",
           binary_yes = c("TRUE", "true", "Yes", "yes", TRUE)),
-  blk_hg("hg_medicaid_named", "Named as Medicaid provider",
-          binary_yes = c("TRUE", "true", "Yes", "yes", TRUE)),
 
-  # The denominator any Healthgrades-derived row must use. Stated
-  # explicitly so it can never be silently swapped for N: those fields describe
-  # a smaller population than the registry fields above them.
-  tibble(characteristic = "Eligible for attribution (no shared profile)",
-         n = N - length(hg_ambiguous),
-         percent = round(100 * (N - length(hg_ambiguous)) / N, 1),
-         category = "Healthgrades-derived fields"),
-  tibble(characteristic = "Excluded: profile shared with another certificant",
-         n = length(hg_ambiguous), percent = NA_real_,
-         category = "Healthgrades-derived fields")
+  # The "Healthgrades-derived fields" block was removed from the table body on
+  # request. The DENOMINATOR IT CARRIED IS NOT DROPPED -- it moves to the
+  # header note, which already states it, because a Healthgrades row divided by
+  # the wrong N is the error the block existed to prevent. The exclusion count
+  # is also written to artifacts/table1_provenance.csv every build.
+  NULL
 )
 
 write_csv(t1, "artifacts/table1_midwives.csv", na = "")
@@ -501,11 +492,13 @@ md <- c("# Table 1. Characteristics of the ACTIVE certified-midwife cohort", "",
         sprintf(paste0("Registry-derived rows use the full cohort. Healthgrades-derived ",
                        "rows use a smaller denominator of **%s**: %s a Healthgrades ",
                        "profile with another certificant and cannot be attributed one. ",
-                       "They remain in the cohort for every registry-derived row above."),
+                       "They remain in the cohort for every registry-derived row above. ACOG district percentages exclude %s midwives with an overseas-military or US-territory address, so that block sums to %s rather than the full cohort."),
                 format(N - length(hg_ambiguous), big.mark = ","),
                 if (length(hg_ambiguous) == 1L) "one midwife shares"
                 else sprintf("%s midwives share",
-                             format(length(hg_ambiguous), big.mark = ","))), "",
+                             format(length(hg_ambiguous), big.mark = ",")),
+                format(n_acog_excluded, big.mark = ","),
+                format(N - n_acog_excluded, big.mark = ",")), "",
         "| Characteristic | n | % |", "|---|---:|---:|")
 for (cat_i in unique(t1$category)) {
   md <- c(md, sprintf("| **%s** | | |", cat_i))
