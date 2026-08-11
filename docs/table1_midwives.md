@@ -59,6 +59,19 @@ Registry-derived rows use the full cohort. Healthgrades-derived rows use a small
 | Nonmetropolitan, adjacent (RUCC 4-6) | 784 | 6.7 |
 | Nonmetropolitan, remote (RUCC 7-9) | 336 | 2.9 |
 | Unknown / not recorded | 201 | — |
+| **Training institution (CMS DAC + Healthgrades)** | | |
+| GEORGETOWN UNIVERSITY | 94 | 7.7 |
+| UNIVERSITY OF CINCINNATI | 66 | 5.4 |
+| YALE UNIVERSITY | 53 | 4.3 |
+| VANDERBILT UNIVERSITY | 52 | 4.2 |
+| FRONTIER NURSING UNIVERSITY | 46 | 3.7 |
+| EMORY UNIVERSITY | 40 | 3.3 |
+| UNIVERSITY OF ILLINOIS | 35 | 2.9 |
+| STATE UNIVERSITY OF NEW YORK DOWNSTATE MEDICAL CENTER | 32 | 2.6 |
+| OREGON HEALTH SCIENCES UNIVERSITY | 26 | 2.1 |
+| STATE UNIVERSITY OF NEW YORK AT STONY BROOK | 25 | 2.0 |
+| Other named institution | 759 | 61.8 |
+| Unknown / not recorded | 10,692 | — |
 | **Medicare practice group size (CMS DAC)** | | |
 | No group affiliation (solo) | 498 | 10.2 |
 | 2-9 clinicians | 158 | 3.2 |

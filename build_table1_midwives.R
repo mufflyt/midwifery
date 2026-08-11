@@ -350,6 +350,64 @@ if (file.exists("artifacts/dac_cnm_education.csv")) {
       dac_assignment      = label_medicare_assignment(accepts_assignment))
 }
 
+# --- Training institution (DAC + Healthgrades) --------------------------------
+# Requested to support work on where midwives trained. Built from BOTH sources
+# because they barely overlap -- 44 people -- so combining nearly doubles
+# coverage, from 5.9% (DAC) and 4.8% (Healthgrades) to 10.3%.
+#
+# THE TWO SOURCES ARE NOT INTERCHANGEABLE. DAC maps every clinician through a
+# MEDICAL-school code list, so it can only ever name a university that has a
+# medical school; Frontier Nursing University -- the largest US nurse-midwifery
+# programme -- CANNOT appear in it, and shows up 46 times from Healthgrades
+# alone. A DAC-only table would silently omit the institution that trains more
+# midwives than any other.
+#
+# WHAT THIS IS NOT. It is the institution, not the programme and not its
+# location. DAC's "OTHER" (4,171 values) is a placeholder, not a school, and is
+# excluded rather than counted. Mapping an institution to a place would need an
+# ACNM accredited-programme crosswalk, which this repo does not have.
+school_src <- NULL
+if (file.exists("artifacts/dac_cnm_education.csv")) {
+  .norm_school <- function(x) {
+    y <- toupper(str_squish(as.character(x)))
+    y <- str_replace_all(y, "\\\\U0026|\\\\u0026|&AMP;", "AND")
+    y <- str_replace_all(y, "[^A-Z0-9 ]", " ")
+    y <- str_squish(str_replace(y, "^THE ", ""))
+    ifelse(is.na(x) | !nzchar(y), NA_character_, y)
+  }
+  .dac_sch <- read_csv("artifacts/dac_cnm_education.csv", show_col_types = FALSE,
+                       progress = FALSE) %>%
+    mutate(npi = as.character(NPI)) %>% distinct(npi, .keep_all = TRUE) %>%
+    transmute(npi, dac_school = ifelse(!is.na(med_sch_clean) & med_sch_clean != "OTHER",
+                                       med_sch_clean, NA_character_))
+  .hg_sch <- if (!is.null(hg_link) && "hg_education_name" %in% names(hg_link))
+    hg_link %>% distinct(certification_number, .keep_all = TRUE) %>%
+      select(certification_number, hg_school = hg_education_name) else NULL
+
+  coh <- coh %>% mutate(npi = as.character(npi)) %>%
+    left_join(.dac_sch, by = "npi", relationship = "one-to-one")
+  if (!is.null(.hg_sch))
+    coh <- coh %>% left_join(.hg_sch, by = "certification_number",
+                             relationship = "one-to-one")
+  if (!"hg_school" %in% names(coh)) coh$hg_school <- NA_character_
+
+  coh <- coh %>%
+    mutate(training_institution = dplyr::coalesce(.norm_school(dac_school),
+                                                  .norm_school(hg_school)))
+  # A Table 1 row per institution would run to hundreds of levels, so the block
+  # names the ten most common and pools the rest. The pooled row is labelled as
+  # a pool, not as a school.
+  .top <- coh %>% filter(!is.na(training_institution)) %>%
+    count(training_institution, sort = TRUE) %>% slice_head(n = 10) %>%
+    pull(training_institution)
+  coh <- coh %>%
+    mutate(training_institution_top = dplyr::case_when(
+      is.na(training_institution) ~ NA_character_,
+      training_institution %in% .top ~ training_institution,
+      TRUE ~ "Other named institution"))
+  school_src <- .top
+}
+
 # --- HPSA / shortage-area status ----------------------------------------------
 # Produced by assign_hpsa_status.R: point-in-polygon of the geocoded practice
 # location against the HRSA primary-care HPSA layer.
@@ -516,6 +574,11 @@ t1 <- bind_rows(
   blk(coh, "rurality", "Rurality (RUCC 2023)",
       lvls = c("Metropolitan (RUCC 1-3)", "Nonmetropolitan, adjacent (RUCC 4-6)",
                "Nonmetropolitan, remote (RUCC 7-9)")),
+
+  if ("training_institution_top" %in% names(coh))
+    blk(coh, "training_institution_top",
+        "Training institution (CMS DAC + Healthgrades)",
+        lvls = c(school_src, "Other named institution")),
 
   if ("dac_practice_size" %in% names(coh))
     blk(coh, "dac_practice_size",

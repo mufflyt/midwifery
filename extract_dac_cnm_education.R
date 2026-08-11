@@ -142,6 +142,10 @@ strip_med_suffix <- function(x) {
   y <- str_replace(y, regex("\\s*[,-]?\\s*COLLEGE OF MEDICINE.*$", ignore_case = TRUE), "")
   y <- str_replace(y, regex("\\s*[,-]?\\s*COLLEGE OF MED\\b.*$",   ignore_case = TRUE), "")
   y <- str_replace(y, regex("\\s*[,-]?\\s*SCH OF MED\\b.*$",       ignore_case = TRUE), "")
+  # Word order varies: "... MEDICAL SCHOOL" as well as "SCHOOL OF MEDICINE".
+  # "MEDICAL CENTER" is deliberately NOT stripped -- SUNY Downstate Medical
+  # Center is the institution's actual name, not a CMS suffix.
+  y <- str_replace(y, regex("\\s*[,-]?\\s*MEDICAL SCHOOL\\b.*$",  ignore_case = TRUE), "")
   y <- str_squish(y)
   # Never return an empty string where a name existed.
   ifelse(is.na(x), NA_character_, ifelse(nzchar(y), y, x))
