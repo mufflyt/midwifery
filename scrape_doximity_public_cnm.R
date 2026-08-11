@@ -285,17 +285,61 @@ if (RESUME && file.exists(OUT_FILE)) {
 pending <- setdiff(url_df$profile_url, already_done)
 cat(sprintf("pass 2: fetching %d profiles\n", length(pending)))
 
-results <- vector("list", length(pending))
+# INCREMENTAL CHECKPOINTING. This loop used to hold every profile in memory
+# and write once, after the loop. A full run is ~11.7k profiles at ~2.4s each,
+# so that single write sat roughly seven hours downstream of the first fetch --
+# and it had never once executed at that scale. Any kill, crash or laptop sleep
+# lost the entire crawl with nothing to resume from, because DOX_RESUME reads
+# the very file that would never have been written. Flush every
+# CHECKPOINT_EVERY profiles instead, so the worst case is losing one chunk.
+CHECKPOINT_EVERY <- suppressWarnings(as.integer(Sys.getenv("DOX_CHECKPOINT", "250")))
+
+# Appended chunks must all carry the same columns in the same order. The error
+# path of parse_profile() returns only 2 columns, so a chunk that happened to
+# contain only errors would otherwise append a short row and silently shift
+# every field to the wrong header on read-back.
+PROFILE_COLS <- c("profile_url", "parse_status", "uuid", "date_created",
+                  "date_modified", "full_name", "name_clean", "maiden_name",
+                  "name_no_maiden", "specialty", "city", "state",
+                  "address_line", "city_zip", "phone", "affiliation",
+                  "bio_text")
+
+conform <- function(x) {
+  for (cc in setdiff(PROFILE_COLS, names(x))) x[[cc]] <- NA_character_
+  x %>% mutate(across(everything(), as.character)) %>% select(all_of(PROFILE_COLS))
+}
+
+# A fresh (non-resume) run must not append onto a stale file from an earlier
+# crawl; that would silently blend two runs.
+if (!RESUME && file.exists(OUT_FILE)) file.remove(OUT_FILE)
+
+flush_chunk <- function(buf) {
+  if (!length(buf)) return(invisible(0L))
+  chunk <- conform(bind_rows(buf))
+  first <- !file.exists(OUT_FILE)
+  write_csv(chunk, OUT_FILE, na = "", append = !first, col_names = first)
+  invisible(nrow(chunk))
+}
+
+buf <- list()
+written <- 0L
 for (i in seq_along(pending)) {
   if (i %% 50 == 0)
     cat(sprintf("  %d / %d\n", i, length(pending)))
-  results[[i]] <- tryCatch(parse_profile(pending[i]),
-                           error = function(e)
-                             tibble(profile_url = pending[i], parse_status = "error"))
+  buf[[length(buf) + 1L]] <-
+    tryCatch(parse_profile(pending[i]),
+             error = function(e)
+               tibble(profile_url = pending[i], parse_status = "error"))
+  if (length(buf) >= CHECKPOINT_EVERY) {
+    written <- written + flush_chunk(buf); buf <- list()
+    cat(sprintf("  checkpoint: %d profiles on disk\n", written))
+  }
 }
+written <- written + flush_chunk(buf)
 
-profiles <- bind_rows(c(list(existing_profiles), results))
-write_csv(profiles, OUT_FILE, na = "")
+# Read back from disk rather than from memory, so the reported counts describe
+# what was actually persisted.
+profiles <- read_csv(OUT_FILE, show_col_types = FALSE, progress = FALSE)
 ok_n <- sum(profiles$parse_status == "ok", na.rm = TRUE)
 cat(sprintf("pass 2 complete: %d profiles parsed (%d ok)\n", nrow(profiles), ok_n))
 
