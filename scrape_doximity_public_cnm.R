@@ -48,6 +48,10 @@ SLEEP_SEC   <- 2
 # inspected -- without committing to hours of requests. Unset means no cap.
 MAX_PROFILES <- suppressWarnings(as.integer(Sys.getenv("DOX_MAX_PROFILES", NA)))
 
+# Hard ceiling on directory pages so no future pagination change can produce an
+# unbounded crawl again.
+MAX_PAGES <- suppressWarnings(as.integer(Sys.getenv("DOX_MAX_PAGES", "400")))
+
 # The roster is only needed for the match stage and lives outside a worktree
 # (it is gitignored person-level data), so its path is overridable.
 ROSTER_FILE <- Sys.getenv("DOX_ROSTER", "artifacts/amcb_npi_linkage_FROZEN.csv")
@@ -83,9 +87,16 @@ if (RESUME && file.exists(URL_FILE)) {
   cat("pass 1: crawling directory pages\n")
   all_urls <- character(0)
 
+  # PAGINATION IS BY CURSOR, NOT PAGE NUMBER. This used to request
+  # "?page=N". Doximity IGNORES that parameter: pages 1, 2 and 3 return a
+  # byte-identical set of the same 50 profiles. Because unique() absorbed the
+  # duplicates and the loop only stopped when a page yielded zero links, the
+  # crawl could never terminate -- it sat at "total 50" forever. The real
+  # control is a cursor link, "?after=pub%2F<last-slug>", which the page
+  # exposes only as an anchor. Follow that anchor until it stops appearing.
   page_n <- 1L
+  dir_url <- DIR_BASE
   repeat {
-    dir_url <- sprintf("%s?page=%d", DIR_BASE, page_n)
     resp <- safe_get(dir_url)
     if (is.null(resp) || status_code(resp) != 200) break
 
@@ -98,6 +109,7 @@ if (RESUME && file.exists(URL_FILE)) {
     links <- links[!is.na(links) & str_detect(links, "^/pub/")]
 
     if (!length(links)) break
+    before_n <- length(all_urls)
     new_urls <- paste0(BASE, links)
     all_urls <- unique(c(all_urls, new_urls))
     cat(sprintf("  p%d: %d profiles (total %d)\n",
@@ -109,7 +121,28 @@ if (RESUME && file.exists(URL_FILE)) {
                   length(all_urls), MAX_PROFILES))
       break
     }
+
+    # GUARD 1: a page that adds nothing new means the cursor is not advancing.
+    # This is the exact condition the old ?page= loop failed to notice.
+    if (length(all_urls) == before_n) {
+      cat(sprintf("  stopping: page %d added no new URLs (cursor not advancing)\n",
+                  page_n))
+      break
+    }
+
+    # Advance the cursor by reading the "?after=" anchor off the page itself.
+    nxt <- html %>% html_elements("a[href]") %>% html_attr("href")
+    nxt <- nxt[!is.na(nxt) & str_detect(nxt, "after=")]
+    if (!length(nxt)) { cat("  stopping: no next-page cursor on this page\n"); break }
+    dir_url <- paste0(BASE, nxt[1])
+
+    # GUARD 2: hard ceiling. Nothing below may loop without a bound.
     page_n <- page_n + 1L
+    if (page_n > MAX_PAGES) {
+      cat(sprintf("  stopping: hit MAX_PAGES (%d). Raise DOX_MAX_PAGES to go deeper.\n",
+                  MAX_PAGES))
+      break
+    }
   }
 
   url_df <- tibble(profile_url = unique(all_urls))
