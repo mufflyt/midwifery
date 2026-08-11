@@ -59,6 +59,24 @@ Registry-derived rows use the full cohort. Healthgrades-derived rows use a small
 | Nonmetropolitan, adjacent (RUCC 4-6) | 784 | 6.7 |
 | Nonmetropolitan, remote (RUCC 7-9) | 336 | 2.9 |
 | Unknown / not recorded | 201 | — |
+| **Medicare practice group size (CMS DAC)** | | |
+| No group affiliation (solo) | 498 | 10.2 |
+| 2-9 clinicians | 158 | 3.2 |
+| 10-49 clinicians | 519 | 10.7 |
+| 50-249 clinicians | 1,096 | 22.5 |
+| 250-999 clinicians | 1,316 | 27.0 |
+| >=1,000 clinicians | 1,283 | 26.3 |
+| Unknown / not recorded | 7,050 | — |
+| **Number of practice locations (CMS DAC)** | | |
+| 1 location | 3,300 | 67.8 |
+| 2 locations | 1,006 | 20.7 |
+| 3-4 locations | 475 | 9.8 |
+| >=5 locations | 89 | 1.8 |
+| Unknown / not recorded | 7,050 | — |
+| **Medicare assignment (CMS DAC)** | | |
+| Accepts Medicare assignment | 4,451 | 91.4 |
+| May accept assignment (non-participating) | 419 | 8.6 |
+| Unknown / not recorded | 7,050 | — |
 | **Primary-care shortage area (HRSA HPSA)** | | |
 | Designated geographic primary-care HPSA | 335 | 2.9 |
 | Population-group HPSA only (not location-based) | 3,213 | 27.4 |

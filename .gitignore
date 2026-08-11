@@ -167,3 +167,11 @@ artifacts/hpsa_status.csv
 # DAC-derived person-level extracts (public CMS source, but person-level).
 artifacts/dac_cnm_education.csv
 artifacts/dac_cnm_locations.csv
+
+# The blanket *.html above exists to keep multi-megabyte map renders out of the
+# repo. Table 1's renders are 16-37 KB and are the readable form of a published
+# table, so they are exempted. Added after discovering they had never been
+# tracked: an earlier `git add ... 2>/dev/null` hid the "paths are ignored"
+# warning, so they were reported as committed when they were not.
+!docs/table1_midwives.html
+!docs/table1_midwives_gt.html

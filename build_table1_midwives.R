@@ -320,6 +320,36 @@ if (file.exists(calib_age_file)) {
   cat("Merged calibrated empirical age blocks into cohort.\n")
 }
 
+# --- CMS Doctors & Clinicians (DAC): practice structure ----------------------
+# Produced by extract_dac_cnm_education.R, one row per NPI.
+#
+# EVERY DAC VARIABLE IS CAPPED AT DAC MEMBERSHIP, and that membership is not
+# random: DAC is built from PECOS Medicare ENROLLMENT, so these rows describe
+# Medicare-enrolled midwives (40.9% of the cohort), not the workforce. The
+# "Unknown / not recorded" line on each block is overwhelmingly "not enrolled
+# in Medicare", which is a substantive state rather than missing data.
+#
+# WITHIN DAC, a missing num_org_mem means NO GROUP -- solo practice. That is
+# information, so it gets its own level rather than joining the same NA as the
+# 7,050 midwives who are simply not in DAC. Merging them would put 498 solo
+# practitioners in a row that means "we do not know".
+dacx <- NULL
+if (file.exists("artifacts/dac_cnm_education.csv")) {
+  dacx <- read_csv("artifacts/dac_cnm_education.csv", show_col_types = FALSE,
+                   progress = FALSE) %>%
+    mutate(npi = as.character(NPI)) %>%
+    distinct(npi, .keep_all = TRUE) %>%
+    select(npi, num_org_mem, n_locations, accepts_assignment)
+  coh <- coh %>%
+    mutate(npi = as.character(npi)) %>%
+    left_join(dacx, by = "npi", relationship = "one-to-one") %>%
+    mutate(
+      in_dac              = !is.na(n_locations),
+      dac_practice_size   = band_practice_size(num_org_mem, in_dac),
+      dac_practice_sites  = band_practice_locations(n_locations),
+      dac_assignment      = label_medicare_assignment(accepts_assignment))
+}
+
 # --- HPSA / shortage-area status ----------------------------------------------
 # Produced by assign_hpsa_status.R: point-in-polygon of the geocoded practice
 # location against the HRSA primary-care HPSA layer.
@@ -486,6 +516,19 @@ t1 <- bind_rows(
   blk(coh, "rurality", "Rurality (RUCC 2023)",
       lvls = c("Metropolitan (RUCC 1-3)", "Nonmetropolitan, adjacent (RUCC 4-6)",
                "Nonmetropolitan, remote (RUCC 7-9)")),
+
+  if ("dac_practice_size" %in% names(coh))
+    blk(coh, "dac_practice_size",
+        "Medicare practice group size (CMS DAC)",
+        lvls = PRACTICE_SIZE_LEVELS),
+  if ("dac_practice_sites" %in% names(coh))
+    blk(coh, "dac_practice_sites",
+        "Number of practice locations (CMS DAC)",
+        lvls = PRACTICE_LOCATION_LEVELS),
+  if ("dac_assignment" %in% names(coh))
+    blk(coh, "dac_assignment",
+        "Medicare assignment (CMS DAC)",
+        lvls = MEDICARE_ASSIGNMENT_LEVELS),
 
   if ("hpsa_status" %in% names(coh))
     blk(coh, "hpsa_status", "Primary-care shortage area (HRSA HPSA)",

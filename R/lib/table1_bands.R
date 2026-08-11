@@ -212,3 +212,66 @@ band_cert_decade <- function(x, min_year = 1950L, max_year = 2100L) {
   out[ok] <- paste0(as.integer(y[ok] %/% 10L) * 10L, "s")
   out
 }
+
+
+#' Band Medicare practice-group size (CMS DAC `num_org_mem`)
+#'
+#' THREE STATES, NOT TWO. Within DAC a missing `num_org_mem` means the
+#' clinician has NO group affiliation -- solo practice -- which is information,
+#' not absence. Collapsing it into the same NA as "not in DAC at all" would
+#' merge 498 solo midwives with the 7,050 who simply are not Medicare-enrolled,
+#' and the resulting "Unknown" row would mean two different things.
+#'
+#' @param n [numeric]: num_org_mem for clinicians present in DAC.
+#' @param in_dac [logical]: whether the clinician appears in DAC at all.
+#' @return [character] band, or NA where `in_dac` is FALSE.
+band_practice_size <- function(n, in_dac) {
+  n <- suppressWarnings(as.numeric(n))
+  out <- rep(NA_character_, length(n))
+  present <- !is.na(in_dac) & in_dac
+  out[present & is.na(n)]            <- "No group affiliation (solo)"
+  out[present & !is.na(n) & n <   10] <- "2-9 clinicians"
+  out[present & !is.na(n) & n >=  10 & n <  50]  <- "10-49 clinicians"
+  out[present & !is.na(n) & n >=  50 & n < 250]  <- "50-249 clinicians"
+  out[present & !is.na(n) & n >= 250 & n < 1000] <- "250-999 clinicians"
+  out[present & !is.na(n) & n >= 1000]           <- ">=1,000 clinicians"
+  out
+}
+
+PRACTICE_SIZE_LEVELS <- c("No group affiliation (solo)", "2-9 clinicians",
+                          "10-49 clinicians", "50-249 clinicians",
+                          "250-999 clinicians", ">=1,000 clinicians")
+
+#' Band the number of distinct practice locations
+#' @param n [numeric]: distinct addresses in DAC.
+#' @return [character] band, NA where not in DAC.
+band_practice_locations <- function(n) {
+  n <- suppressWarnings(as.numeric(n))
+  out <- rep(NA_character_, length(n))
+  out[!is.na(n) & n == 1]           <- "1 location"
+  out[!is.na(n) & n == 2]           <- "2 locations"
+  out[!is.na(n) & n >= 3 & n <= 4]  <- "3-4 locations"
+  out[!is.na(n) & n >= 5]           <- ">=5 locations"
+  out
+}
+
+PRACTICE_LOCATION_LEVELS <- c("1 location", "2 locations", "3-4 locations",
+                              ">=5 locations")
+
+#' Label the CMS Medicare assignment code
+#'
+#' The codes are Y and M, NOT Y and N. `M` means the clinician MAY accept
+#' assignment -- non-participating -- so labelling it "No" would misstate 419
+#' midwives as refusing Medicare assignment when they do not always refuse it.
+#' @param x [character]: ind_assgn.
+#' @return [character] label, NA where absent.
+label_medicare_assignment <- function(x) {
+  x <- toupper(trimws(as.character(x)))
+  out <- rep(NA_character_, length(x))
+  out[x == "Y"] <- "Accepts Medicare assignment"
+  out[x == "M"] <- "May accept assignment (non-participating)"
+  out
+}
+
+MEDICARE_ASSIGNMENT_LEVELS <- c("Accepts Medicare assignment",
+                                "May accept assignment (non-participating)")
