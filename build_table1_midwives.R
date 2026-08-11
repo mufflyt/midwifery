@@ -320,6 +320,68 @@ if (file.exists(calib_age_file)) {
   cat("Merged calibrated empirical age blocks into cohort.\n")
 }
 
+# --- HPSA / shortage-area status ----------------------------------------------
+# Produced by assign_hpsa_status.R: point-in-polygon of the geocoded practice
+# location against the HRSA primary-care HPSA layer.
+#
+# THE LEVELS ARE NOT INTERCHANGEABLE, and collapsing them would overstate
+# shortage exposure roughly tenfold:
+#   * only 9,819 of 22,033 polygons are DESIGNATED; 12,214 are proposed for
+#     withdrawal, and counting those would inflate the figure by more than half;
+#   * of the designated, 7,467 are POPULATION-GROUP designations that apply to
+#     a group within the area (low-income, migrant, homeless) rather than to
+#     the location -- a midwife whose office sits inside one is not thereby
+#     serving that group. Only the 2,352 geographic designations describe the
+#     place itself.
+# Measured: 2.9% geographic versus 27.8% population-only. A single "in a HPSA"
+# row would have reported the larger number.
+#
+# DISCIPLINE. Every polygon is PRIMARY CARE. There is no obstetric or midwifery
+# HPSA, so this is a proxy for underservice where midwives practise, not a
+# measure of maternity-care shortage.
+hpsa <- NULL
+if (file.exists("artifacts/hpsa_status.csv")) {
+  hpsa <- read_csv("artifacts/hpsa_status.csv", show_col_types = FALSE,
+                   progress = FALSE) %>%
+    distinct(certification_number, .keep_all = TRUE)
+  coh <- coh %>%
+    left_join(hpsa %>% select(certification_number, hpsa_geographic,
+                              hpsa_population_only, hpsa_withdrawal_only),
+              by = "certification_number", relationship = "one-to-one") %>%
+    mutate(hpsa_status = dplyr::case_when(
+      is.na(hpsa_geographic) ~ NA_character_,
+      hpsa_geographic        ~ "Designated geographic primary-care HPSA",
+      hpsa_population_only   ~ "Population-group HPSA only (not location-based)",
+      hpsa_withdrawal_only   ~ "HPSA proposed for withdrawal only",
+      TRUE                   ~ "Not in a primary-care HPSA"))
+}
+
+# --- Medicare participation (Part B and Part D, 2013-2023) --------------------
+# Produced by match_medicare_partb_partd.R against the CMS Physician & Other
+# Practitioners file and the Part D Prescribers file, one row per provider per
+# year, eleven years matched on BOTH sides.
+#
+# ABSENCE IS NOT ZERO. CMS suppresses any provider-year below 11 beneficiaries,
+# so a midwife absent from a file billed nothing OR billed fewer than 11
+# beneficiaries -- indistinguishable here. The rows below say "no record of",
+# never "did not bill", and the negative level is named accordingly.
+mcare <- NULL
+if (file.exists("artifacts/medicare_participation.csv")) {
+  mcare <- read_csv("artifacts/medicare_participation.csv",
+                    show_col_types = FALSE, progress = FALSE) %>%
+    distinct(certification_number, .keep_all = TRUE)
+  coh <- coh %>% left_join(
+    mcare %>% select(certification_number, part_b_any, part_d_any),
+    by = "certification_number", relationship = "one-to-one") %>%
+    mutate(
+      medicare_part_b = dplyr::if_else(is.na(part_b_any), NA_character_,
+        dplyr::if_else(part_b_any, "Billed Part B in at least one year",
+                       "No Part B record (billed <11 beneficiaries, or none)")),
+      medicare_part_d = dplyr::if_else(is.na(part_d_any), NA_character_,
+        dplyr::if_else(part_d_any, "Prescribed under Part D in at least one year",
+                       "No Part D record (billed <11 beneficiaries, or none)")))
+}
+
 # --- Healthgrades banded columns ----------------------------------------------
 if (!is.null(hg_link)) {
   hg_link <- hg_link %>%
@@ -424,6 +486,22 @@ t1 <- bind_rows(
   blk(coh, "rurality", "Rurality (RUCC 2023)",
       lvls = c("Metropolitan (RUCC 1-3)", "Nonmetropolitan, adjacent (RUCC 4-6)",
                "Nonmetropolitan, remote (RUCC 7-9)")),
+
+  if ("hpsa_status" %in% names(coh))
+    blk(coh, "hpsa_status", "Primary-care shortage area (HRSA HPSA)",
+        lvls = c("Designated geographic primary-care HPSA",
+                 "Population-group HPSA only (not location-based)",
+                 "HPSA proposed for withdrawal only",
+                 "Not in a primary-care HPSA")),
+
+  if ("medicare_part_b" %in% names(coh))
+    blk(coh, "medicare_part_b", "Medicare Part B, any year 2013-2023",
+        lvls = c("Billed Part B in at least one year",
+                 "No Part B record (billed <11 beneficiaries, or none)")),
+  if ("medicare_part_d" %in% names(coh))
+    blk(coh, "medicare_part_d", "Medicare Part D, any year 2013-2023",
+        lvls = c("Prescribed under Part D in at least one year",
+                 "No Part D record (billed <11 beneficiaries, or none)")),
 
   # Language: use Healthgrades data when available; otherwise note it is absent.
   # LANGUAGE IS A FLOOR, NOT A PROPORTION.

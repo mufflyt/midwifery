@@ -159,3 +159,7 @@ probe_*.R
 artifacts/ct_*
 artifacts/oh_*
 artifacts/tx_*
+
+# Person-level Medicare participation (NPI-keyed). Summary is tracked.
+artifacts/medicare_participation.csv
+artifacts/hpsa_status.csv
