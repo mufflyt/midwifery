@@ -462,6 +462,57 @@ if (file.exists("artifacts/hpsa_status.csv")) {
       TRUE                   ~ "Not in a primary-care HPSA"))
 }
 
+# --- Hospital affiliation via CCN (CMS facility-affiliation file) ------------
+# Produced by extract_dac_facility_affiliations.R. CMS publishes a facility
+# affiliation file alongside the DAC, keyed NPI -> CCN, and the CCN is a key
+# into cms_hospital_info -- so an affiliation becomes a named hospital with a
+# type, an owner and a birthing-friendly designation, rather than a free-text
+# employer string.
+#
+# THREE STATES, NOT TWO. Only Medicare-enrolled clinicians appear in the DAC at
+# all, so a blank here means one of two different things, and collapsing them
+# would read as "does not work at a hospital":
+#   - not enrolled in Medicare (absent from the DAC entirely); or
+#   - enrolled, but with no hospital privilege recorded by CMS.
+# in_dac separates them. Vintage is asserted upstream: the affiliation file and
+# the DAC must come from the same monthly CMS release. Matching 2026-06 to
+# 2026-06 rather than reusing an April-2025 copy moved coverage from 7.3% to
+# 14.0%, so the vintage is not a formality.
+#
+# MULTI-HOSPITAL MIDWIVES ARE NOT REDUCED TO A "PRIMARY" HOSPITAL. CMS supplies
+# no rank, volume or FTE, so picking one would be arbitrary and would then set
+# a percentage. The rows below are any-flags, which are well defined however
+# many hospitals a midwife holds privileges at.
+if (file.exists("artifacts/dac_hospital_affiliation_person.csv")) {
+  .aff <- read_csv("artifacts/dac_hospital_affiliation_person.csv",
+                   show_col_types = FALSE, progress = FALSE) %>%
+    distinct(certification_number, .keep_all = TRUE) %>%
+    select(certification_number, has_hospital, n_hospitals,
+           any_critical_access, any_birth_friendly, ownership)
+  coh <- coh %>%
+    left_join(.aff, by = "certification_number", relationship = "one-to-one") %>%
+    mutate(
+      has_hospital = coalesce(has_hospital, FALSE),
+      hospital_affiliation = dplyr::case_when(
+        has_hospital                      ~ "Hospital privilege recorded in Medicare",
+        !in_dac                           ~ NA_character_,
+        TRUE                              ~ "Enrolled in Medicare, no hospital privilege recorded"),
+      hospital_count = dplyr::case_when(
+        !has_hospital     ~ NA_character_,
+        n_hospitals == 1L ~ "1 hospital",
+        n_hospitals == 2L ~ "2 hospitals",
+        n_hospitals >= 3L ~ ">=3 hospitals"),
+      hospital_type_band = dplyr::case_when(
+        !has_hospital        ~ NA_character_,
+        any_critical_access  ~ "Any critical-access hospital",
+        TRUE                 ~ "Acute care hospital(s) only"),
+      birthing_friendly_band = dplyr::case_when(
+        !has_hospital       ~ NA_character_,
+        any_birth_friendly  ~ "Affiliated with a birthing-friendly hospital",
+        TRUE                ~ "No birthing-friendly designation among affiliations"),
+      hospital_ownership_band = dplyr::if_else(has_hospital, ownership, NA_character_))
+}
+
 # --- Medicare participation (Part B and Part D, 2013-2023) --------------------
 # Produced by match_medicare_partb_partd.R against the CMS Physician & Other
 # Practitioners file and the Part D Prescribers file, one row per provider per
@@ -633,6 +684,32 @@ t1 <- bind_rows(
                  "HPSA proposed for withdrawal only",
                  "Not in a primary-care HPSA"),
         unknown_label = "No geocoded practice location"),
+
+  if ("hospital_affiliation" %in% names(coh))
+    blk(coh, "hospital_affiliation", "Hospital affiliation (CMS facility affiliation, CCN)",
+        lvls = c("Hospital privilege recorded in Medicare",
+                 "Enrolled in Medicare, no hospital privilege recorded"),
+        unknown_label = "Not enrolled in Medicare (absent from CMS DAC)"),
+  if ("hospital_count" %in% names(coh))
+    blk(coh, "hospital_count", "Number of affiliated hospitals (CCN)",
+        lvls = c("1 hospital", "2 hospitals", ">=3 hospitals"),
+        unknown_label = "No hospital privilege recorded"),
+  if ("hospital_type_band" %in% names(coh))
+    blk(coh, "hospital_type_band", "Affiliated hospital type (CCN)",
+        lvls = c("Acute care hospital(s) only", "Any critical-access hospital"),
+        unknown_label = "No hospital privilege recorded"),
+  if ("hospital_ownership_band" %in% names(coh))
+    # Two denominators differ by design: a midwife can hold a privilege whose
+    # CCN is absent from cms_hospital_info, so ownership is unknown for someone
+    # who IS affiliated. The label names both states rather than filing them
+    # under the same "no privilege" wording used by the other blocks.
+    blk(coh, "hospital_ownership_band", "Affiliated hospital ownership (CCN)",
+        unknown_label = "No hospital privilege recorded, or CCN absent from CMS hospital file"),
+  if ("birthing_friendly_band" %in% names(coh))
+    blk(coh, "birthing_friendly_band", "Birthing-friendly hospital designation (CCN)",
+        lvls = c("Affiliated with a birthing-friendly hospital",
+                 "No birthing-friendly designation among affiliations"),
+        unknown_label = "No hospital privilege recorded"),
 
   if ("medicare_part_b" %in% names(coh))
     blk(coh, "medicare_part_b", "Medicare Part B, any year 2013-2023",

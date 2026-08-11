@@ -28,6 +28,21 @@
 #' @return [character] zero-padded to width 5.
 pad5 <- function(x) stringr::str_pad(as.character(x), 5, "left", "0")
 
+#' Pad a CMS Certification Number (CCN) to six characters
+#'
+#' A CCN is a six-character identifier and is NOT a number: 10,290 rows of the
+#' CMS facility-affiliation file and 164 rows of cms_hospital_info carry a
+#' letter (e.g. "01T001" for a swing-bed unit). Coercing through as.integer()
+#' to zero-pad -- the obvious-looking move -- turns every one of those into NA
+#' and silently drops the facility from any join. Pad the string instead.
+#' @param x [vector]: CCN.
+#' @return [character] zero-padded to width 6, NA preserved.
+pad_ccn <- function(x) {
+  x <- stringr::str_trim(as.character(x))
+  x[!nzchar(x)] <- NA_character_
+  stringr::str_pad(x, 6, "left", "0")
+}
+
 #' Read a CSV with every column as character
 #'
 #' Type guessing is the enemy of an identifier: readr reads a column of bare

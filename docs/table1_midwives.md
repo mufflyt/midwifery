@@ -96,6 +96,36 @@ Registry-derived rows use the full cohort. Healthgrades-derived rows use a small
 | HPSA proposed for withdrawal only | 1,893 | 16.1 |
 | Not in a primary-care HPSA | 6,290 | 53.6 |
 | No geocoded practice location | 189 | — |
+| **Hospital affiliation (CMS facility affiliation, CCN)** | | |
+| Hospital privilege recorded in Medicare | 1,665 | 33.4 |
+| Enrolled in Medicare, no hospital privilege recorded | 3,319 | 66.6 |
+| Not enrolled in Medicare (absent from CMS DAC) | 6,936 | — |
+| **Number of affiliated hospitals (CCN)** | | |
+| 1 hospital | 1,435 | 86.2 |
+| 2 hospitals | 189 | 11.4 |
+| >=3 hospitals | 41 | 2.5 |
+| No hospital privilege recorded | 10,255 | — |
+| **Affiliated hospital type (CCN)** | | |
+| Acute care hospital(s) only | 1,527 | 91.7 |
+| Any critical-access hospital | 138 | 8.3 |
+| No hospital privilege recorded | 10,255 | — |
+| **Affiliated hospital ownership (CCN)** | | |
+| Voluntary non-profit - Private | 1,022 | 61.5 |
+| Government - Hospital District or Authority | 128 | 7.7 |
+| Voluntary non-profit - Other | 108 | 6.5 |
+| Multiple owners across affiliated hospitals | 100 | 6.0 |
+| Voluntary non-profit - Church | 86 | 5.2 |
+| Proprietary | 79 | 4.8 |
+| Government - State | 64 | 3.8 |
+| Government - Local | 52 | 3.1 |
+| Government - Federal | 17 | 1.0 |
+| Tribal | 4 | 0.2 |
+| Physician | 3 | 0.2 |
+| No hospital privilege recorded, or CCN absent from CMS hospital file | 10,257 | — |
+| **Birthing-friendly hospital designation (CCN)** | | |
+| Affiliated with a birthing-friendly hospital | 1,546 | 92.9 |
+| No birthing-friendly designation among affiliations | 119 | 7.1 |
+| No hospital privilege recorded | 10,255 | — |
 | **Medicare Part B, any year 2013-2023** | | |
 | Billed Part B in at least one year | 2,320 | 19.5 |
 | No Part B record (billed <11 beneficiaries, or none) | 9,600 | 80.5 |
