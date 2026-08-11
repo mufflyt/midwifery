@@ -163,3 +163,7 @@ artifacts/tx_*
 # Person-level Medicare participation (NPI-keyed). Summary is tracked.
 artifacts/medicare_participation.csv
 artifacts/hpsa_status.csv
+
+# DAC-derived person-level extracts (public CMS source, but person-level).
+artifacts/dac_cnm_education.csv
+artifacts/dac_cnm_locations.csv
