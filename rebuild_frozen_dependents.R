@@ -46,8 +46,11 @@ VERIFY_ONLY <- identical(Sys.getenv("REBUILD_VERIFY_ONLY", "0"), "1")
 # empirically when county_base changed: R/01 -> R/10 -> R/02 -> R/05 -> R/03.
 REBUILD_ORDER <- list(
   list(layer = "1-linkage-audit", why = "re-audit the cohort itself before anything consumes it",
-       scripts = c("audit_amcb_crosswalk.R", "verify_linkage_arms.R",
-                   "reconcile_linkage.R")),
+       # reconcile_linkage.R is NOT here: it PRODUCES the freeze from
+       # amcb_npi_matched.csv. Running it inside a rebuild regenerates FROZEN
+       # from stale inputs and destroys the promotion the rebuild exists to
+       # propagate -- which is exactly what happened on 2026-08-10.
+       scripts = c("audit_amcb_crosswalk.R", "verify_linkage_arms.R")),
   list(layer = "2-cohort-structure", why = "cohort flow/composition/progression read FROZEN directly",
        scripts = c("R/05-stage-progression.R", "R/06-cohort-flow.R",
                    "R/07-cohort-composition.R")),
@@ -60,7 +63,13 @@ REBUILD_ORDER <- list(
                    "map_midwife_geography.R", "render_midwifery_map.R")),
   list(layer = "5-enrichment-recompute", why = "age/enrichment recomputes from cached inputs (no network)",
        scripts = c("calibrate_amcb_certification_ages.R", "enrich_doximity_cnm_ages.R",
-                   "match_florida_voter_ages.R", "sweep_healthgrades_enrichment.R")),
+                   "match_florida_voter_ages.R", "sweep_healthgrades_enrichment.R",
+                   # Added 2026-08-10: the completeness gate discovered this
+                   # consumer had appeared since the order was declared, and
+                   # REFUSED to rebuild until it was placed. That is the gate
+                   # doing its job -- undeclared, it would have been left
+                   # holding the old cohort with the rebuild reporting success.
+                   "match_medicare_partb_partd.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        scripts = c("build_table1_midwives.R", "provenance_manifest.R"))
 )
@@ -82,6 +91,8 @@ cat(sprintf("FROZEN sha256        : %s\n", digest::digest(file = FROZEN_PATH, al
 cat(sprintf("consumers discovered : %d\n", rep$n_consumers))
 cat(sprintf("  network, excluded  : %d  (%s)\n", rep$n_network_excluded,
             paste(basename(rep$network_excluded), collapse = ", ")))
+cat(sprintf("  PRODUCERS, excluded: %d  (%s)\n", length(rep$producers_excluded),
+            paste(basename(rep$producers_excluded), collapse = ", ")))
 cat(sprintf("  rebuildable        : %d\n", rep$n_rebuildable))
 cat(sprintf("declared in order    : %d\n\n", length(declared)))
 
@@ -179,7 +190,25 @@ for (L in REBUILD_ORDER) {
     code <- attr(st, "status") %||% 0L
     cat(sprintf("   %-45s %s (%.0fs)\n", s, if (code == 0) "ok" else "FAILED",
                 as.numeric(difftime(Sys.time(), t0, units = "secs"))))
-    if (code != 0) failed <- c(failed, s)
+    # FAIL FAST ON THE CULPRIT. The end-of-run hash check caught that FROZEN had
+    # moved but could not say which script moved it, so 19 further scripts ran
+    # against a corrupted cohort before anyone knew. Check after EVERY script.
+    if (!identical(digest::digest(file = FROZEN_PATH, algo = "sha256"), frozen_before)) {
+      stop(sprintf(paste("%s MODIFIED THE FROZEN COHORT. A rebuild must not move",
+                         "the cohort. Halting before further stages run against",
+                         "a changed freeze."), s), call. = FALSE)
+    }
+    if (code != 0) {
+      # SURFACE THE ERROR. The first version captured stdout/stderr and threw
+      # it away, so a failure printed "FAILED" and nothing else -- the operator
+      # had to re-run the script by hand to find out why, which risks writing
+      # concurrently with the stages still running.
+      failed <- c(failed, s)
+      tail_n <- utils::tail(st, 25)
+      cat("      ---- last 25 lines ----\n")
+      cat(paste0("      ", tail_n, collapse = "\n"), "\n")
+      cat("      -----------------------\n")
+    }
   }
 }
 frozen_after <- digest::digest(file = FROZEN_PATH, algo = "sha256")

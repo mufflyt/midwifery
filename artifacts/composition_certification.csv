@@ -1,0 +1,7 @@
+group,level,n,N,pct
+1_retained,Certified Midwife,134,15347,0.8731348146217501
+1_retained,Certified Nurse-Midwife,15213,15347,99.12686518537825
+2_newly_npi_resolved,Certified Midwife,18,1545,1.1650485436893203
+2_newly_npi_resolved,Certified Nurse-Midwife,1527,1545,98.83495145631068
+4_removed,Certified Midwife,7,1396,0.501432664756447
+4_removed,Certified Nurse-Midwife,1389,1396,99.49856733524355

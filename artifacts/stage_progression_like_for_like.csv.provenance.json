@@ -1,6 +1,6 @@
 {
   "artifact": "stage_progression_like_for_like.csv",
-  "written_utc": "2026-08-10 15:32:48 UTC",
+  "written_utc": "2026-08-11 01:29:50 UTC",
   "inputs": [
     {
       "path": "artifacts/frozen_stage2/midwives_with_nppes.csv",

@@ -1,8 +1,8 @@
 field,verdict,distinct_values,cohort_n,cohort_with_value,cohort_pct,publishable
-hg_gender,VARIES,2,11913,5878,49.34,TRUE
-hg_age,VARIES,67,11913,3099,26.01,TRUE
-hg_years_experience,CONSTANT,1,11913,5880,49.36,FALSE
-hg_languages,VARIES,63,11913,367,3.08,TRUE
-hg_accepts_new_patients,VARIES,2,11913,5880,49.36,TRUE
-hg_has_telehealth,VARIES,2,11913,5880,49.36,TRUE
-hg_medicaid_named,VARIES,2,11913,5418,45.48,TRUE
+hg_gender,VARIES,2,11920,5880,49.33,TRUE
+hg_age,VARIES,67,11920,3100,26.01,TRUE
+hg_years_experience,CONSTANT,1,11920,5882,49.35,FALSE
+hg_languages,VARIES,63,11920,367,3.08,TRUE
+hg_accepts_new_patients,VARIES,2,11920,5882,49.35,TRUE
+hg_has_telehealth,VARIES,2,11920,5882,49.35,TRUE
+hg_medicaid_named,VARIES,2,11920,5420,45.47,TRUE

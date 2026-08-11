@@ -1,6 +1,6 @@
 {
   "artifact": "analytic_cohort.csv",
-  "written_utc": "2026-08-10 15:32:44 UTC",
+  "written_utc": "2026-08-11 01:29:39 UTC",
   "inputs": [
     {
       "path": "artifacts/frozen_stage2/midwives_with_nppes.csv",

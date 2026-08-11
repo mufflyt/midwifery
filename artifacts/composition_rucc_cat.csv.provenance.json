@@ -1,0 +1,22 @@
+{
+  "artifact": "composition_rucc_cat.csv",
+  "written_utc": "2026-08-11 01:30:02 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/frozen_cohort/analytic_cohort.csv",
+      "sha256": "926476f361d531e0e8238095a8db84e3fdb0e45212408d7656e642dd0c1ad3bb"
+    },
+    {
+      "path": "artifacts/frozen_cohort/midwives_geography_guarded.csv",
+      "sha256": "9455138198e4d347fe191470a4e30e8e94267689ade8ee4a9acb20d8862d3f5a"
+    },
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
+    },
+    {
+      "path": "artifacts/frozen_stage2/midwives_with_nppes.csv",
+      "sha256": "93dc2e8bc2a2a066f255b84a351050a3594a253e4258575e0fde3e344ec5ff08"
+    }
+  ]
+}

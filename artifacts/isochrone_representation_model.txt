@@ -11,69 +11,69 @@ glm(formula = represented ~ rurality + nppes_state, family = binomial(),
 Coefficients:
                                        Estimate Std. Error z value Pr(>|z|)    
 (Intercept)                            -1.38629    1.11803  -1.240 0.214998    
-ruralityNonmetro, adjacent (RUCC 4-6)  -2.68739    0.09945 -27.022  < 2e-16 ***
-ruralityNonmetro, remote (RUCC 7-9)    -3.21624    0.18008 -17.861  < 2e-16 ***
-nppes_stateAK                         -12.96358  137.67492  -0.094 0.924981    
-nppes_stateAL                           1.23839    1.18024   1.049 0.294055    
-nppes_stateAP                           2.29131    1.86206   1.231 0.218500    
-nppes_stateAR                           1.98665    1.17028   1.698 0.089588 .  
-nppes_stateAZ                           2.13090    1.12648   1.892 0.058537 .  
-nppes_stateCA                           2.95503    1.12110   2.636 0.008393 ** 
-nppes_stateCO                           2.53563    1.12422   2.255 0.024105 *  
-nppes_stateCT                           2.39220    1.12902   2.119 0.034104 *  
+ruralityNonmetro, adjacent (RUCC 4-6)  -2.68679    0.09945 -27.017  < 2e-16 ***
+ruralityNonmetro, remote (RUCC 7-9)    -3.21578    0.18008 -17.858  < 2e-16 ***
+nppes_stateAK                         -12.96360  137.67646  -0.094 0.924982    
+nppes_stateAL                           1.23839    1.18024   1.049 0.294056    
+nppes_stateAP                           2.29098    1.86196   1.230 0.218541    
+nppes_stateAR                           1.98662    1.17028   1.698 0.089592 .  
+nppes_stateAZ                           2.13089    1.12648   1.892 0.058539 .  
+nppes_stateCA                           2.94490    1.12107   2.627 0.008618 ** 
+nppes_stateCO                           2.53559    1.12422   2.255 0.024107 *  
+nppes_stateCT                           2.39219    1.12902   2.119 0.034105 *  
 nppes_stateDC                           5.39363    1.50605   3.581 0.000342 ***
-nppes_stateDE                           2.93249    1.17694   2.492 0.012716 *  
+nppes_stateDE                           2.93229    1.17693   2.491 0.012721 *  
 nppes_stateFL                           2.24969    1.12124   2.006 0.044810 *  
-nppes_stateGA                           2.21308    1.12275   1.971 0.048710 *  
-nppes_stateHI                         -13.01456  224.83200  -0.058 0.953840    
-nppes_stateIA                           1.47874    1.13724   1.300 0.193502    
-nppes_stateID                           2.13237    1.14750   1.858 0.063130 .  
-nppes_stateIL                           3.31584    1.12681   2.943 0.003254 ** 
-nppes_stateIN                           1.29119    1.12813   1.145 0.252397    
-nppes_stateKS                           2.31761    1.14881   2.017 0.043653 *  
-nppes_stateKY                           2.19268    1.14056   1.922 0.054547 .  
-nppes_stateLA                           2.35529    1.15935   2.032 0.042199 *  
-nppes_stateMA                           3.14626    1.12718   2.791 0.005250 ** 
-nppes_stateMD                           3.02892    1.12844   2.684 0.007271 ** 
-nppes_stateME                           2.60466    1.15271   2.260 0.023847 *  
-nppes_stateMI                           2.29838    1.12354   2.046 0.040789 *  
-nppes_stateMN                           2.99594    1.12673   2.659 0.007838 ** 
-nppes_stateMO                           2.47741    1.13985   2.173 0.029747 *  
-nppes_stateMS                           0.81491    1.31648   0.619 0.535913    
-nppes_stateMT                           3.44603    1.17441   2.934 0.003343 ** 
-nppes_stateNC                           2.48168    1.12331   2.209 0.027157 *  
-nppes_stateND                           2.59139    1.21684   2.130 0.033204 *  
-nppes_stateNE                           2.30194    1.16972   1.968 0.049076 *  
-nppes_stateNH                           4.39219    1.14884   3.823 0.000132 ***
+nppes_stateGA                           2.21626    1.12275   1.974 0.048386 *  
+nppes_stateHI                         -13.01458  224.83425  -0.058 0.953840    
+nppes_stateIA                           1.47871    1.13724   1.300 0.193512    
+nppes_stateID                           2.13234    1.14750   1.858 0.063133 .  
+nppes_stateIL                           3.31577    1.12681   2.943 0.003254 ** 
+nppes_stateIN                           1.29117    1.12813   1.145 0.252405    
+nppes_stateKS                           2.31755    1.14880   2.017 0.043658 *  
+nppes_stateKY                           2.19259    1.14056   1.922 0.054557 .  
+nppes_stateLA                           2.35528    1.15935   2.032 0.042200 *  
+nppes_stateMA                           3.14622    1.12718   2.791 0.005251 ** 
+nppes_stateMD                           3.02888    1.12844   2.684 0.007272 ** 
+nppes_stateME                           2.60449    1.15271   2.259 0.023855 *  
+nppes_stateMI                           2.28960    1.12350   2.038 0.041558 *  
+nppes_stateMN                           2.99589    1.12673   2.659 0.007839 ** 
+nppes_stateMO                           2.47733    1.13985   2.173 0.029752 *  
+nppes_stateMS                           0.81478    1.31647   0.619 0.535974    
+nppes_stateMT                           3.44565    1.17440   2.934 0.003347 ** 
+nppes_stateNC                           2.48162    1.12331   2.209 0.027160 *  
+nppes_stateND                           2.59136    1.21684   2.130 0.033206 *  
+nppes_stateNE                           2.30186    1.16972   1.968 0.049083 *  
+nppes_stateNH                           4.39171    1.14884   3.823 0.000132 ***
 nppes_stateNJ                           2.94980    1.12902   2.613 0.008983 ** 
-nppes_stateNM                           2.82130    1.13411   2.488 0.012858 *  
+nppes_stateNM                           2.82122    1.13411   2.488 0.012861 *  
 nppes_stateNV                           2.64795    1.15757   2.288 0.022166 *  
-nppes_stateNY                           3.10979    1.12154   2.773 0.005558 ** 
-nppes_stateOH                           2.34662    1.12362   2.088 0.036757 *  
-nppes_stateOK                           1.68541    1.17592   1.433 0.151783    
-nppes_stateOR                           2.66040    1.12598   2.363 0.018140 *  
-nppes_statePA                           3.27687    1.12591   2.910 0.003609 ** 
-nppes_stateRHINELAND-PFALZ             -9.96353  882.74410  -0.011 0.990994    
+nppes_stateNY                           3.10974    1.12154   2.773 0.005559 ** 
+nppes_stateOH                           2.34657    1.12362   2.088 0.036762 *  
+nppes_stateOK                           1.68525    1.17592   1.433 0.151820    
+nppes_stateOR                           2.66036    1.12598   2.363 0.018142 *  
+nppes_statePA                           3.27675    1.12591   2.910 0.003611 ** 
+nppes_stateRHINELAND-PFALZ             -9.96399  882.74410  -0.011 0.990994    
 nppes_stateRI                           2.72130    1.15508   2.356 0.018476 *  
-nppes_stateSC                           2.32501    1.14488   2.031 0.042278 *  
-nppes_stateSD                           2.85658    1.20654   2.368 0.017904 *  
-nppes_stateTN                           2.97168    1.12964   2.631 0.008523 ** 
-nppes_stateTX                           2.54074    1.12270   2.263 0.023631 *  
-nppes_stateUT                           2.79760    1.13617   2.462 0.013805 *  
-nppes_stateVA                           2.32175    1.12496   2.064 0.039032 *  
-nppes_stateVT                           4.10748    1.16129   3.537 0.000405 ***
-nppes_stateWA                           2.59164    1.12379   2.306 0.021101 *  
-nppes_stateWI                           2.10534    1.12736   1.867 0.061833 .  
-nppes_stateWV                           2.53225    1.16821   2.168 0.030187 *  
-nppes_stateWY                           1.33653    1.43002   0.935 0.349982    
+nppes_stateSC                           2.32494    1.14488   2.031 0.042283 *  
+nppes_stateSD                           2.85646    1.20653   2.368 0.017908 *  
+nppes_stateTN                           2.97160    1.12964   2.631 0.008524 ** 
+nppes_stateTX                           2.54072    1.12270   2.263 0.023633 *  
+nppes_stateUT                           2.79754    1.13617   2.462 0.013807 *  
+nppes_stateVA                           2.32173    1.12496   2.064 0.039034 *  
+nppes_stateVT                           4.10701    1.16129   3.537 0.000405 ***
+nppes_stateWA                           2.59162    1.12379   2.306 0.021102 *  
+nppes_stateWI                           2.10530    1.12736   1.867 0.061838 .  
+nppes_stateWV                           2.53217    1.16821   2.168 0.030192 *  
+nppes_stateWY                           1.33632    1.42999   0.934 0.350048    
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 (Dispersion parameter for binomial family taken to be 1)
 
-    Null deviance: 14038  on 11761  degrees of freedom
-Residual deviance: 11943  on 11706  degrees of freedom
-AIC: 12055
+    Null deviance: 14047  on 11766  degrees of freedom
+Residual deviance: 11953  on 11711  degrees of freedom
+AIC: 12065
 
 Number of Fisher Scoring iterations: 13
 
