@@ -27,9 +27,10 @@
 # key that produced each match is carried on the output so a downstream table
 # can restrict to strong evidence rather than treating all matches alike.
 #
-# VINTAGE. pl_pfile here is the December 2022 dissemination; the organization
-# file is a separate NPPES cut. Locations close and organizations move, so a
-# match asserts co-location as recorded, not present-day employment.
+# VINTAGE. pl_pfile defaults to the August 2026 dissemination (data through
+# 2026-08-09); the organization file is a separate NPPES cut, so the two sides
+# are not from the same instant. Locations close and organizations move, so a
+# match asserts co-location AS RECORDED, not present-day employment.
 #
 # Inputs : artifacts/amcb_npi_linkage_FROZEN.csv
 #          pl_pfile_*.csv                     (PL_FILE)
