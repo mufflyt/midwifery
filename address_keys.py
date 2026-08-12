@@ -20,7 +20,16 @@ def norm(s):
     one building collapse to the same key. That is pre-existing behaviour of
     this classifier, asserted in the tests so a future change is visible.
     """
+    # MISSING INPUT MUST NOT BECOME AN ADDRESS. str(None) is the literal
+    # "NONE", so a missing street previously normalized to the token "NONE"
+    # and could key-match another record whose street also normalized to
+    # "NONE". In a change whose whole purpose is preventing fabricated address
+    # matches, missing input has to be unambiguous.
+    if s is None:
+        return ""
     s = str(s).upper().strip()
+    if not s:
+        return ""
     s = re.sub(r"\bAVENUE\b", "AVE", s)
     s = re.sub(r"\bSTREET\b", "ST", s)
     s = re.sub(r"\bROAD\b", "RD", s)
@@ -48,4 +57,10 @@ def is_hospital_campus(midwife_key, hosp_addrs):
     constantly. That manufactured hospital affiliations that read as
     authoritative and could not be falsified.
     """
+    # A key whose street part is empty ("_NY") carries no address at all. Two
+    # records with MISSING streets would otherwise match each other, which is
+    # the same fabrication this function exists to prevent -- just via absence
+    # rather than substring. Missing never matches.
+    if not str(midwife_key).split("_", 1)[0].strip():
+        return False
     return midwife_key in hosp_addrs

@@ -117,10 +117,23 @@ def main():
     check("MAIN ST N vs MAIN ST S",
           is_hospital_campus(key("100 MAIN ST S", "NY"), hs), False)
 
-    print("\n=== empty / missing addresses never assert a campus ===")
+    print("\n=== missing addresses normalize to empty, not to a token ===")
+    # str(None) is the literal "NONE", so a missing street used to normalize to
+    # the token NONE and could key-match another record that also had no
+    # street. Production-linked, so a regression here fails the suite.
+    for bad in [None, "", "   ", "\t\n"]:
+        check(f"norm({bad!r}) is empty", norm(bad), "")
+
+    print("\n=== missing addresses never assert a campus ===")
     hs = {key("100 MAIN ST", "NY")}
-    for bad in ["", "   ", None]:
-        check(f"empty address {bad!r}", is_hospital_campus(key(bad or "", "NY"), hs), False)
+    for bad in [None, "", "   "]:
+        check(f"missing address {bad!r} vs real hospital set",
+              is_hospital_campus(key(bad, "NY"), hs), False)
+    # Two records that BOTH lack a street must not match each other.
+    check("missing street does not match another missing street",
+          is_hospital_campus(key(None, "NY"), {key("", "NY")}), False)
+    check("a real address still matches itself",
+          is_hospital_campus(key("100 MAIN ST", "NY"), {key("100 MAIN ST", "NY")}), True)
 
     print()
     if FAILURES:
