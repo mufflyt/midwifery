@@ -304,11 +304,11 @@ html_content = f"""<!DOCTYPE html>
                 const openPaymentsUrl = "https://openpaymentsdata.cms.gov/search";
                 const cmsCptUrl = "https://data.cms.gov/provider-summary-by-type-of-service/medicare-physician-other-practitioners";
                 const amcbUrl = "https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800";
-                const cmsHospUrl = "https://data.cms.gov/provider-data/topics/hospitals";
+                const cmsHospUrl = "https://www.medicare.gov/care-compare/";
                 const cabcUrl = "https://birthcenteraccreditation.org/find-accredited-birth-center/";
                 
                 const facilityUrl = m.category === "Accredited Birth Center" ? cabcUrl : cmsHospUrl;
-                const facilityLabel = m.category === "Accredited Birth Center" ? `🏥 ${{m.facility}} (CABC Directory)` : `🏥 ${{m.facility}} (CMS Hospital Provider Data)`;
+                const facilityLabel = m.category === "Accredited Birth Center" ? `🏥 ${{m.facility}} (CABC Directory)` : `🏥 ${{m.facility}} (Medicare Care Compare)`;
                 
                 const popupContent = `
                     <div class="popup-title">
