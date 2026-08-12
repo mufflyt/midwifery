@@ -46,16 +46,10 @@ with open(GEO_FILE, "r", encoding="utf-8", errors="ignore") as f:
             coh[npi]["state"] = r.get("practice_state", "")
             coh[npi]["zip"] = r.get("practice_zip", "")
 
-def norm(s):
-    s = str(s).upper().strip()
-    s = re.sub(r"\bAVENUE\b", "AVE", s)
-    s = re.sub(r"\bSTREET\b", "ST", s)
-    s = re.sub(r"\bROAD\b", "RD", s)
-    s = re.sub(r"\bBOULEVARD\b", "BLVD", s)
-    s = re.sub(r"\bDRIVE\b", "DR", s)
-    s = re.sub(r"\bPARKWAY\b", "PKWY", s)
-    s = re.sub(r"\bSUITE\b.*|\bSTE\b.*|#.*|\bBLDG\b.*|\bP\.O\.\s*BOX\b.*", "", s)
-    return re.sub(r"[^\w\s]", "", s).strip()
+# norm() and is_hospital_campus() live in address_keys.py so the regression
+# tests exercise THIS code rather than a copy of it. A test that defines its
+# own normalizer stays green while production regresses.
+from address_keys import norm, address_key, is_hospital_campus
 
 # 2. Load Hospital Addresses
 hosp_addrs = set()
@@ -99,8 +93,20 @@ for npi, mw in coh.items():
     st = mw.get("state", "").upper()
     key = f"{norm_p1}_{st}"
     
-    # Classify Building Type
-    if key in hosp_addrs or any(h_k in key for h_k in hosp_addrs if len(h_k) > 10):
+    # Classify Building Type.
+    #
+    # EXACT KEY EQUALITY ONLY. This previously also accepted
+    #     any(h_k in key for h_k in hosp_addrs if len(h_k) > 10)
+    # which is a SUBSTRING test, not an address match. A hospital at
+    # "100 MAIN ST_NY" therefore matched a midwife at "2100 MAIN ST_NY",
+    # because the hospital key is literally a substring of the midwife key.
+    # Street numbers are prefixes of other street numbers constantly
+    # (1/11/111 PARK AVE, 12/112 MAIN ST), so this manufactured hospital
+    # affiliations that look authoritative and cannot be falsified. Same
+    # failure class as the substring name matching already recorded for this
+    # project. A missing match must read as "not a hospital campus", never as
+    # the nearest plausible one.
+    if is_hospital_campus(key, hosp_addrs):
         btype = "Hospital Main Campus"
     elif key in cabc_addrs or "BIRTH CENTER" in full_str.upper() or "BIRTHING CENTER" in full_str.upper():
         btype = "Freestanding Birth Center (FBC)"
