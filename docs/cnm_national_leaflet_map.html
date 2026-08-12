@@ -179,8 +179,8 @@
                     facilityUrl = "https://birthcenteraccreditation.org/find-accredited-birth-center/";
                     facilityLabel = `🏥 ${m.facility} (CABC Directory)`;
                 } else {
-                    facilityUrl = `https://npiregistry.cms.hhs.gov/search?organization_name=${encodeURIComponent(m.facility)}`;
-                    facilityLabel = `🏥 ${m.facility} (NPPES Org Registry)`;
+                    facilityUrl = "https://data.cms.gov/provider-characteristics/hospitals-and-other-facilities/provider-of-services-file-hospital-non-hospital-facilities";
+                    facilityLabel = `🏥 ${m.facility} (CMS POS File)`;
                 }
                 
                 const popupContent = `

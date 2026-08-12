@@ -28,7 +28,7 @@ with open(ZIP_GEO_FILE, "r", encoding="utf-8", errors="ignore") as f:
 
 print(f"Loaded {len(zip_coords):,} US ZIP code coordinates.")
 
-# 2. Load Hospital Exact Geocodes and CMS CCN Lookup
+# 2. Load Hospital Exact Geocodes and Enhanced CMS CCN Lookup
 hosp_coords = {}
 with open(HOSP_GEO_FILE, "r", encoding="utf-8", errors="ignore") as f:
     reader = csv.DictReader(f)
@@ -49,9 +49,13 @@ if os.path.exists("data/CMS_Hospital_General_Information.csv"):
         reader = csv.DictReader(f)
         for r in reader:
             name = r.get("Facility Name", "").upper().strip()
+            city = r.get("City/Town", "").upper().strip()
+            st = r.get("State", "").upper().strip()
             ccn = r.get("Facility ID", "").strip()
             if name and ccn:
                 hosp_ccn_map[name] = ccn
+                hosp_ccn_map[f"{name}_{st}"] = ccn
+                hosp_ccn_map[f"{name}_{city}_{st}"] = ccn
 
 print(f"Mapped {len(hosp_ccn_map):,} CMS Hospitals to exact 6-digit CCN Facility IDs.")
 
@@ -62,8 +66,8 @@ with open(MASTER_V4_FILE, "r", encoding="utf-8", errors="ignore") as f:
     for r in reader:
         npi = r.get("npi", "").strip()
         zip_code = r.get("nppes_zip", r.get("zip", ""))[:5].zfill(5)
-        state = r.get("nppes_state", r.get("state", "")).upper()
-        city = r.get("nppes_city", r.get("city", "")).title()
+        state = r.get("nppes_state", r.get("state", "")).upper().strip()
+        city = r.get("nppes_city", r.get("city", "")).title().strip()
         
         addr1 = r.get("nppes_practice_address", r.get("practice_address_1", "")).upper()
         h_key = f"{addr1}_{state}"
@@ -93,8 +97,16 @@ with open(MASTER_V4_FILE, "r", encoding="utf-8", errors="ignore") as f:
                 category = "Outpatient / Community Clinic"
                 color = "#F59E0B" # Amber Gold
                 
-            facility_name = r.get("attributed_hospital_name", r.get("matched_cabc_birth_center", r.get("op_profile_match", "Outpatient Practice")))
-            facility_ccn = r.get("cms_ccn", "").strip() or hosp_ccn_map.get(facility_name.upper().strip(), "")
+            facility_name = r.get("attributed_hospital_name", r.get("matched_cabc_birth_center", r.get("op_profile_match", "Outpatient Practice"))).strip()
+            f_upper = facility_name.upper()
+            city_upper = city.upper()
+            
+            facility_ccn = (
+                r.get("cms_ccn", "").strip() or 
+                hosp_ccn_map.get(f_upper) or 
+                hosp_ccn_map.get(f"{f_upper}_{state}") or 
+                hosp_ccn_map.get(f"{f_upper}_{city_upper}_{state}") or ""
+            )
             
             mws.append({
                 "npi": npi,
@@ -302,8 +314,8 @@ html_content = f"""<!DOCTYPE html>
                     facilityUrl = "https://birthcenteraccreditation.org/find-accredited-birth-center/";
                     facilityLabel = `🏥 ${{m.facility}} (CABC Directory)`;
                 }} else {{
-                    facilityUrl = `https://npiregistry.cms.hhs.gov/search?organization_name=${{encodeURIComponent(m.facility)}}`;
-                    facilityLabel = `🏥 ${{m.facility}} (NPPES Org Registry)`;
+                    facilityUrl = "https://data.cms.gov/provider-characteristics/hospitals-and-other-facilities/provider-of-services-file-hospital-non-hospital-facilities";
+                    facilityLabel = `🏥 ${{m.facility}} (CMS POS File)`;
                 }}
                 
                 const popupContent = `
