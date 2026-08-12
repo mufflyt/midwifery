@@ -275,7 +275,7 @@ html_content = f"""<!DOCTYPE html>
                 const npiUrl = `https://npiregistry.cms.hhs.gov/provider-view/${{m.npi}}`;
                 const openPaymentsUrl = "https://openpaymentsdata.cms.gov/search";
                 const cmsCptUrl = "https://data.cms.gov/provider-summary-by-type-of-service/medicare-physician-other-practitioners";
-                const amcbUrl = "https://www.amcbmidwife.org/";
+                const amcbUrl = "https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800";
                 const cmsHospUrl = "https://data.cms.gov/provider-characteristics/hospitals-and-other-facilities/provider-of-services-file-hospital-non-hospital-facilities";
                 const cabcUrl = "https://birthcenteraccreditation.org/find-accredited-birth-center/";
                 
