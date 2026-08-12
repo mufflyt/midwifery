@@ -304,19 +304,11 @@ html_content = f"""<!DOCTYPE html>
                 const openPaymentsUrl = "https://openpaymentsdata.cms.gov/search";
                 const cmsCptUrl = "https://data.cms.gov/provider-summary-by-type-of-service/medicare-physician-other-practitioners";
                 const amcbUrl = "https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800";
+                const cmsHospUrl = "https://data.cms.gov/provider-data/topics/hospitals";
+                const cabcUrl = "https://birthcenteraccreditation.org/find-accredited-birth-center/";
                 
-                let facilityUrl = "";
-                let facilityLabel = "";
-                if (m.ccn && m.ccn.length >= 4) {{
-                    facilityUrl = `https://www.medicare.gov/care-compare/details/hospital/${{m.ccn}}`;
-                    facilityLabel = `🏥 ${{m.facility}} (Medicare Profile #${{m.ccn}})`;
-                }} else if (m.category === "Accredited Birth Center") {{
-                    facilityUrl = "https://birthcenteraccreditation.org/find-accredited-birth-center/";
-                    facilityLabel = `🏥 ${{m.facility}} (CABC Directory)`;
-                }} else {{
-                    facilityUrl = "https://data.cms.gov/provider-characteristics/hospitals-and-other-facilities/provider-of-services-file-hospital-non-hospital-facilities";
-                    facilityLabel = `🏥 ${{m.facility}} (CMS POS File)`;
-                }}
+                const facilityUrl = m.category === "Accredited Birth Center" ? cabcUrl : cmsHospUrl;
+                const facilityLabel = m.category === "Accredited Birth Center" ? `🏥 ${{m.facility}} (CABC Directory)` : `🏥 ${{m.facility}} (CMS Hospital Provider Data)`;
                 
                 const popupContent = `
                     <div class="popup-title">
