@@ -28,7 +28,7 @@ with open(ZIP_GEO_FILE, "r", encoding="utf-8", errors="ignore") as f:
 
 print(f"Loaded {len(zip_coords):,} US ZIP code coordinates.")
 
-# 2. Load Hospital Exact Geocodes
+# 2. Load Hospital Exact Geocodes and CMS CCN Lookup
 hosp_coords = {}
 with open(HOSP_GEO_FILE, "r", encoding="utf-8", errors="ignore") as f:
     reader = csv.DictReader(f)
@@ -42,6 +42,18 @@ with open(HOSP_GEO_FILE, "r", encoding="utf-8", errors="ignore") as f:
                 hosp_coords[f"{addr}_{st}"] = (lat, lon)
         except (ValueError, TypeError):
             pass
+
+hosp_ccn_map = {}
+if os.path.exists("data/CMS_Hospital_General_Information.csv"):
+    with open("data/CMS_Hospital_General_Information.csv", "r", encoding="utf-8", errors="ignore") as f:
+        reader = csv.DictReader(f)
+        for r in reader:
+            name = r.get("Facility Name", "").upper().strip()
+            ccn = r.get("Facility ID", "").strip()
+            if name and ccn:
+                hosp_ccn_map[name] = ccn
+
+print(f"Mapped {len(hosp_ccn_map):,} CMS Hospitals to exact 6-digit CCN Facility IDs.")
 
 # 3. Load Master Midwife Cohort v4 (N = 11,920)
 mws = []
@@ -81,6 +93,9 @@ with open(MASTER_V4_FILE, "r", encoding="utf-8", errors="ignore") as f:
                 category = "Outpatient / Community Clinic"
                 color = "#F59E0B" # Amber Gold
                 
+            facility_name = r.get("attributed_hospital_name", r.get("matched_cabc_birth_center", r.get("op_profile_match", "Outpatient Practice")))
+            facility_ccn = r.get("cms_ccn", "").strip() or hosp_ccn_map.get(facility_name.upper().strip(), "")
+            
             mws.append({
                 "npi": npi,
                 "cert": r.get("certification_number", ""),
@@ -88,7 +103,8 @@ with open(MASTER_V4_FILE, "r", encoding="utf-8", errors="ignore") as f:
                 "setting": setting,
                 "category": category,
                 "color": color,
-                "facility": r.get("attributed_hospital_name", r.get("matched_cabc_birth_center", r.get("op_profile_match", "Outpatient Practice"))),
+                "facility": facility_name,
+                "ccn": facility_ccn,
                 "address": r.get("nppes_practice_address", r.get("practice_address_1", "")),
                 "city": city,
                 "state": state,
@@ -276,17 +292,26 @@ html_content = f"""<!DOCTYPE html>
                 const openPaymentsUrl = "https://openpaymentsdata.cms.gov/search";
                 const cmsCptUrl = "https://data.cms.gov/provider-summary-by-type-of-service/medicare-physician-other-practitioners";
                 const amcbUrl = "https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800";
-                const cmsHospUrl = "https://data.cms.gov/provider-characteristics/hospitals-and-other-facilities/provider-of-services-file-hospital-non-hospital-facilities";
-                const cabcUrl = "https://birthcenteraccreditation.org/find-accredited-birth-center/";
                 
-                const facilityUrl = m.category === "Accredited Birth Center" ? cabcUrl : cmsHospUrl;
+                let facilityUrl = "";
+                let facilityLabel = "";
+                if (m.ccn && m.ccn.length >= 4) {{
+                    facilityUrl = `https://www.medicare.gov/care-compare/details/hospital/${{m.ccn}}`;
+                    facilityLabel = `🏥 ${{m.facility}} (Medicare Profile #${{m.ccn}})`;
+                }} else if (m.category === "Accredited Birth Center") {{
+                    facilityUrl = "https://birthcenteraccreditation.org/find-accredited-birth-center/";
+                    facilityLabel = `🏥 ${{m.facility}} (CABC Directory)`;
+                }} else {{
+                    facilityUrl = `https://npiregistry.cms.hhs.gov/search?organization_name=${{encodeURIComponent(m.facility)}}`;
+                    facilityLabel = `🏥 ${{m.facility}} (NPPES Org Registry)`;
+                }}
                 
                 const popupContent = `
                     <div class="popup-title">
                         <a href="${{npiUrl}}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${{m.name}}</a>
                     </div>
                     <div class="popup-sub">
-                        <a href="${{facilityUrl}}" target="_blank" style="color: #cbd5e1; text-decoration: underline;">🏥 ${{m.facility}}</a> (Raw Source)
+                        <a href="${{facilityUrl}}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${{facilityLabel}}</a>
                     </div>
                     <a href="${{cmsCptUrl}}" target="_blank" style="text-decoration: none;">
                         <div class="popup-badge ${{badgeClass}}">${{m.cpt_claims}} 🔗</div>
