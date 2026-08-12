@@ -516,8 +516,45 @@ linkage section above is about.
 | **USDA RUCC 2023** | metro / nonmetro-adjacent / nonmetro-remote strata | [ers.usda.gov](https://www.ers.usda.gov/data-products/rural-urban-continuum-codes) | `R/01-build-county-base.R` |
 | **CDC WONDER Natality** | CNM-attended births by county | [wonder.cdc.gov/natality.html](https://wonder.cdc.gov/natality.html) | `R/11-wonder-county-ingest.R` |
 | **County Health Rankings 2025** | low birth weight, infant mortality, uninsured | [countyhealthrankings.org](https://www.countyhealthrankings.org/health-data) | `R/01-build-county-base.R` |
+| **ACME accredited programs** | the 50-program sampling frame for training institution | [theacme.org](https://theacme.org/accredited-midwifery-education-programs/) | `discover_acme_repositories.py` |
+| **University repositories** (OAI-PMH, CONTENTdm) | DNP/thesis authors → `midwifery_program` | 34 institutional repositories | `harvest_dnp_theses.py`, `link_theses_to_amcb.R` |
 | **ABOG roster** (via `isochrones`) | general OB/GYN and subspecialist comparators | not public — board roster | `load_obstetric_providers.R` |
 | **Valhalla isochrones** | 30/60-minute drive-time polygons | generated, not downloaded | `generate_osmde_isochrones.R` |
+
+### Training institution, where it can be recovered
+
+Neither AMCB nor NPPES publishes where a midwife trained, and the DAC carries a
+midwifery school for only **14.3%** of the cohort. A student-authored DNP
+project or thesis is deposited in the degree-granting university's repository,
+so the institution is *structural* — it is which repository holds the record,
+not a string parsed out of an affiliation.
+
+Using ACME's 50 accredited programs as the sampling frame, 34 repositories
+resolved (OAI-PMH for bepress and DSpace; CONTENTdm for Frontier Nursing
+University, which runs neither) and **35,038 author-records** were harvested
+across 25 institutions.
+
+Two variables come out of it, and they are **not** the same thing:
+
+| variable | n | what it means |
+|---|---:|---|
+| `midwifery_program` | **266** (1.2%) | initial CNM/CM education |
+| `later_doctoral_institution` | 321 | a doctorate earned *after* certification |
+
+That split is load-bearing. **43% of usable links are degrees earned after the
+person was already a practising midwife** — median gap 7 years — and Frontier
+alone contributes 280 of them. Recording those as "trained at Frontier" would
+be false. The gap distribution also diagnoses program type: Bethel and Seattle
+sit at a median of 0 years (entry-level), Frontier at 4 with a p90 of 19
+(post-professional).
+
+`midwifery_program` is Bethel 126, Frontier 108, Seattle 24, then single
+digits — **88% from two schools**. Use it to fill gaps and corroborate other
+sources, not to describe where midwives train; see
+[`docs/TECHNICAL_APPENDIX_OAI_TRAINING_INSTITUTION.md`](docs/TECHNICAL_APPENDIX_OAI_TRAINING_INSTITUTION.md)
+for the evidence tiers, the permutation control used to estimate precision, the
+six harvesting defects that produced false-negative institution coverage, and
+why geography was rejected as a corroborator.
 
 ### Access requirements
 

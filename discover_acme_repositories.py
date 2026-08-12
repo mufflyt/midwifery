@@ -112,8 +112,23 @@ PATHS = [
 
 # Collections worth harvesting. Deliberately NOT midwifery-specific: the whole
 # point is that specialty is absent from repository metadata.
+# MIDWIFERY VOCABULARY IS FIRST-CLASS, NOT A SUBSET OF NURSING. The original
+# pattern required the word "nursing", so the three highest-purity collections
+# in the whole corpus were invisible:
+#
+#   "Midwifery & Women's Health Programs"                  Jefferson
+#   "Doctor of Midwifery Advances in Midwifery Projects"   Jefferson
+#   "Nurse-Midwifery Theses and Projects"                  Bethel
+#
+# Jefferson's midwifery sets match AMCB at 6 of 8 authors -- the highest hit
+# rate of any collection here -- and were excluded for saying "midwifery"
+# instead of "nursing". Same class of vocabulary assumption as "thesis" missing
+# "Theses" and "doctoral" missing "Doctor of Nursing Practice": each one
+# manufactures false-negative institution coverage.
 DEGREE_SET_RX = re.compile(
-    r"\bdnp\b|doctor of nursing|nursing.*(thes|dissert|etd|project|capstone)"
+    r"midwif|nurse[-\s]?midwi"                               # midwifery, any form
+    r"|\bdnp\b|\bdm\b|doctor of nursing|doctor of midwif"
+    r"|nursing.*(thes|dissert|etd|project|capstone)"
     r"|(thes|dissert|etd|capstone|scholarly project|doctoral project).*nurs"
     r"|college of nursing|school of nursing|nursing", re.I)
 # "nurs" also matches NURSERY: Minnesota's set list contains "Minnesota
