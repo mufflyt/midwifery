@@ -99,8 +99,20 @@ for npi, mw in coh.items():
     st = mw.get("state", "").upper()
     key = f"{norm_p1}_{st}"
     
-    # Classify Building Type
-    if key in hosp_addrs or any(h_k in key for h_k in hosp_addrs if len(h_k) > 10):
+    # Classify Building Type.
+    #
+    # EXACT KEY EQUALITY ONLY. This previously also accepted
+    #     any(h_k in key for h_k in hosp_addrs if len(h_k) > 10)
+    # which is a SUBSTRING test, not an address match. A hospital at
+    # "100 MAIN ST_NY" therefore matched a midwife at "2100 MAIN ST_NY",
+    # because the hospital key is literally a substring of the midwife key.
+    # Street numbers are prefixes of other street numbers constantly
+    # (1/11/111 PARK AVE, 12/112 MAIN ST), so this manufactured hospital
+    # affiliations that look authoritative and cannot be falsified. Same
+    # failure class as the substring name matching already recorded for this
+    # project. A missing match must read as "not a hospital campus", never as
+    # the nearest plausible one.
+    if key in hosp_addrs:
         btype = "Hospital Main Campus"
     elif key in cabc_addrs or "BIRTH CENTER" in full_str.upper() or "BIRTHING CENTER" in full_str.upper():
         btype = "Freestanding Birth Center (FBC)"
