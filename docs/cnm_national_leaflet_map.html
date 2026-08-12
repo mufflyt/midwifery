@@ -166,17 +166,20 @@
             const markers = filtered.map(m => {
                 const badgeClass = m.has_cpt ? 'badge-active' : 'badge-clinic';
                 const npiUrl = `https://npiregistry.cms.hhs.gov/provider-view/${m.npi}`;
-                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(m.facility + ' ' + m.address + ' ' + m.city + ' ' + m.state + ' ' + m.zip)}`;
-                const openPaymentsUrl = `https://openpaymentsdata.cms.gov/physician/${m.npi}`;
+                const openPaymentsUrl = "https://openpaymentsdata.cms.gov/search";
                 const cmsCptUrl = "https://data.cms.gov/provider-summary-by-type-of-service/medicare-physician-other-practitioners";
                 const amcbUrl = "https://www.amcbmidwife.org/";
+                const cmsHospUrl = "https://data.cms.gov/provider-characteristics/hospitals-and-other-facilities/provider-of-services-file-hospital-non-hospital-facilities";
+                const cabcUrl = "https://birthcenteraccreditation.org/find-accredited-birth-center/";
+                
+                const facilityUrl = m.category === "Accredited Birth Center" ? cabcUrl : cmsHospUrl;
                 
                 const popupContent = `
                     <div class="popup-title">
                         <a href="${npiUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${m.name}</a>
                     </div>
                     <div class="popup-sub">
-                        <a href="${mapsUrl}" target="_blank" style="color: #cbd5e1; text-decoration: underline;">🏥 ${m.facility}</a>
+                        <a href="${facilityUrl}" target="_blank" style="color: #cbd5e1; text-decoration: underline;">🏥 ${m.facility}</a> (Raw Source)
                     </div>
                     <a href="${cmsCptUrl}" target="_blank" style="text-decoration: none;">
                         <div class="popup-badge ${badgeClass}">${m.cpt_claims} 🔗</div>
@@ -184,7 +187,7 @@
                     <div class="popup-detail">
                         <b>NPI:</b> <a href="${npiUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${m.npi}</a> (NPPES Registry)<br>
                         <b>Certification #:</b> <a href="${amcbUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${m.cert}</a> (AMCB Roster)<br>
-                        <b>Practice Address:</b> <a href="${mapsUrl}" target="_blank" style="color: #94a3b8; text-decoration: underline;">${m.address}, ${m.city}, ${m.state} ${m.zip}</a><br>
+                        <b>Practice Address:</b> <a href="${npiUrl}" target="_blank" style="color: #94a3b8; text-decoration: underline;">${m.address}, ${m.city}, ${m.state} ${m.zip}</a> (CMS NPPES File)<br>
                         <b>Setting Tier:</b> ${m.setting}<br>
                         <b>Sunshine Act:</b> <a href="${openPaymentsUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${m.op_status}</a>
                     </div>
