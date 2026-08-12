@@ -384,7 +384,15 @@ amb_samp <- cands %>% semi_join(still_amb, by = "npi") %>%
             resolution_method = "LEFT_AMBIGUOUS",
             affiliation_confidence = "none",
             review_stratum = "left_ambiguous")
-samp <- bind_rows(samp, amb_samp) %>% mutate(human_verdict = "")
+# Review captures WHY a match fails, not just whether. A single overall PPV
+# would hide the thing evidence tiers exist to expose -- telephone matches may
+# be near-perfect while taxonomy-exclusion matches are not.
+samp <- bind_rows(samp, amb_samp) %>%
+  mutate(human_verdict = "",   # correct | incorrect | indeterminate
+         error_type    = "",   # wrong_organization | multiple_legitimate_affiliations |
+                               # address_collision | taxonomy_misleading |
+                               # stale_location | source_conflict | other
+         review_notes  = "")
 write_csv(samp, "artifacts/org_resolution_review_sample.csv", na = "")
 cat(sprintf("\nreview sample written: %s rows across %d strata (human_verdict blank for review)\n",
             format(nrow(samp), big.mark = ","), n_distinct(samp$review_stratum)))
