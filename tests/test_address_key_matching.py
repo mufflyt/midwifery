@@ -24,27 +24,15 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-def norm(s):
-    """Mirror of the normalizer in classify_address_building_type.py."""
-    if not s:
-        return ""
-    s = s.upper().strip()
-    s = re.sub(r"\bSTREET\b", "ST", s)
-    s = re.sub(r"\bAVENUE\b", "AVE", s)
-    s = re.sub(r"\bROAD\b", "RD", s)
-    s = re.sub(r"\bDRIVE\b", "DR", s)
-    s = re.sub(r"\bPARKWAY\b", "PKWY", s)
-    s = re.sub(r"\bSUITE\b.*|\bSTE\b.*|#.*|\bBLDG\b.*|\bP\.O\.\s*BOX\b.*", "", s)
-    return re.sub(r"[^\w\s]", "", s).strip()
+# THE PRODUCTION FUNCTIONS, imported -- not reimplemented. An earlier version
+# of this file defined its own norm() and is_hospital_campus(), so production
+# could regress to substring matching while every test here stayed green. These
+# now exercise the same code classify_address_building_type.py runs.
+from address_keys import norm, address_key, is_hospital_campus
 
 
 def key(addr, state):
-    return f"{norm(addr)}_{state.upper().strip()}"
-
-
-def is_hospital_campus(midwife_key, hosp_addrs):
-    """The FIXED rule: exact key equality, nothing else."""
-    return midwife_key in hosp_addrs
+    return address_key(addr, state)
 
 
 def is_hospital_campus_BUGGY(midwife_key, hosp_addrs):

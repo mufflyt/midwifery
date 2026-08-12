@@ -112,9 +112,14 @@ a <- th %>%
                         sel_addr_norm == op_addr_norm,
     # Would the 8-character test have passed where exact equality fails? Those
     # are the assignments that exist only because the test is loose.
+    # SUBSTRING-ANYWHERE, matching Python's `in`. This was written with
+    # str_starts() -- a PREFIX test -- which is the same simulation mistake
+    # already caught in tests/test_open_payments_type2_bulk.R. A prefix test
+    # understates the old rule, so the substr8_only count it produced (289)
+    # was a floor, not the true exposure.
     substr8_only = !exact_addr_match & !is.na(sel_addr_norm) & !is.na(op_addr_norm) &
-      (str_starts(sel_addr_norm, fixed(substr(op_addr_norm, 1, 8))) |
-       str_starts(op_addr_norm, fixed(substr(sel_addr_norm, 1, 8)))),
+      (str_detect(sel_addr_norm, fixed(substr(op_addr_norm, 1, 8))) |
+       str_detect(op_addr_norm, fixed(substr(sel_addr_norm, 1, 8)))),
     reachable_within_limit = !is.na(alpha_rank) & alpha_rank <= API_LIMIT)
 
 # Complete street-compatible candidate set per record: every organization in

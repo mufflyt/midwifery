@@ -116,6 +116,35 @@ old_b <- old_api_style_match("100 MAIN ST", "44106", dense[sample(nrow(dense)), 
 ok("tests discriminate: old path is order-dependent OR truncates the answer away",
    !identical(old_a, old_b) || is.na(old_a) || old_a != "ZENITH WOMENS HEALTH MIDWIFERY")
 
+cat("\n=== ALIAS DETERMINISM: one NPI, one address, two names ===\n")
+# The resolver used distinct(..., .keep_all = TRUE), which retained whichever
+# organization_name appeared FIRST. The NPI stayed stable but the emitted name
+# could change with row order -- a silent breach of order invariance.
+alias <- tibble(
+  type2_npi = c("1000000030", "1000000030"),
+  organization_name = c("ZED WOMENS HEALTH", "ALPHA WOMENS HEALTH"),
+  addr = c("77 ALIAS WAY", "77 ALIAS WAY"), zip = c("30301", "30301"))
+in1 <- tibble(id = "m", addr = "77 ALIAS WAY", zip = "30301")
+r1 <- resolve_type2_bulk(in1, alias)
+r2 <- resolve_type2_bulk(in1, alias[c(2, 1), ])
+ok("one NPI with two aliases still resolves uniquely",
+   r1$status == "unique_exact" && r1$n_candidates == 1)
+ok("emitted name is identical under organization-row reordering",
+   identical(r1$organization_name, r2$organization_name))
+ok("both aliases are preserved, none silently dropped",
+   grepl("ALPHA WOMENS HEALTH", r1$organization_name, fixed = TRUE) &&
+   grepl("ZED WOMENS HEALTH", r1$organization_name, fixed = TRUE))
+ok("full emitted row is identical under reordering", identical(r1, r2))
+
+cat("\n=== INPUT CONTRACT: duplicate ids must fail loudly ===\n")
+dupin <- tibble(id = c("m", "m"), addr = c("1 A ST", "2 B ST"),
+                zip = c("30301", "30301"))
+err <- tryCatch({ resolve_type2_bulk(dupin, alias); NA_character_ },
+                error = function(e) conditionMessage(e))
+ok("two addresses for one id raises an error rather than pooling",
+   !is.na(err) && grepl("more than one", err))
+ok("the error names the offending id", !is.na(err) && grepl("\\bm\\b", err))
+
 cat("\n=== normalization equivalences still resolve ===\n")
 o4 <- tibble(type2_npi = "1000000020", organization_name = "MERCY WOMENS",
              addr = "100 MAIN STREET", zip = "10001")
