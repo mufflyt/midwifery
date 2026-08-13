@@ -1,0 +1,4 @@
+bon_ingestion_tier,n_midwives,pct_cohort,cpt_attenders,verified_hospitals
+Tier 1: Direct Bulk Open Data,5120,41.9,2122,0
+Tier 2: Nursys e-Notify Compact State,2972,24.3,1292,0
+Tier 3: Dedicated State Portal,4119,33.7,1610,0
