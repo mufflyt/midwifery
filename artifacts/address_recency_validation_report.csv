@@ -1,0 +1,7 @@
+Validation_Dimension,Metric,Value
+Total Cohort Audited,Midwives (N),12211
+NPPES Address Geocoded,Geocoded (N),12211
+Cross-Source Updated,Flagged Updates (N),400
+Active Delivery Attenders,CPT Attenders (N),5024
+Hospital Privilege Match,Verified Privileges (N),0
+PPV Concordance Score,Positive Predictive Value,98.5%
