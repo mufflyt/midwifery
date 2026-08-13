@@ -1,0 +1,43 @@
+state,bon_name,access_type,portal_url
+WA,Washington Department of Health,Bulk CSV Download,https://data.wa.gov/health-care
+FL,Florida Department of Health Medical Quality Assurance,Bulk CSV Download,https://flhealthsource.gov/media/data-downloads/
+TX,Texas Board of Nursing,Bulk CSV Download,https://data.texas.gov/
+NY,New York State Education Dept (NYSED),Bulk Public Database,http://www.op.nysed.gov/opsearches.htm
+NC,North Carolina Board of Nursing,Bulk Open Data,https://www.ncbon.com/
+VA,Virginia Department of Health Professions,Bulk License File,https://www.dhp.virginia.gov/
+OH,Ohio Board of Nursing,Bulk E-License Portal,https://elicense.ohio.gov/
+IN,Indiana Professional Licensing Agency,Bulk Open Data,https://www.in.gov/pla/
+MA,Massachusetts Board of Registration in Nursing,Bulk Open Data,https://www.mass.gov/orgs/board-of-registration-in-nursing
+OR,Oregon State Board of Nursing,Bulk Open Data,https://www.oregon.gov/osbn/
+AZ,Arizona State Board of Nursing,Bulk Open Data,https://www.azbn.gov/
+MT,Montana Board of Nursing,Nursys / Portal Scraper,https://ebiz.mt.gov/pol/
+CO,Colorado Division of Professions (DORA),Nursys / Portal Scraper,https://apps.colorado.gov/dora/licensing/lookup/licenselookup.aspx
+UT,Utah Division of Professional Licensing,Nursys,https://dopl.utah.gov/
+ID,Idaho Board of Nursing,Nursys,https://ibn.idaho.gov/
+WY,Wyoming State Board of Nursing,Nursys,https://wsbn.wyo.gov/
+ND,North Dakota Board of Nursing,Nursys,https://www.ndbon.org/
+SD,South Dakota Board of Nursing,Nursys,https://doh.sd.gov/boards/nursing/
+NE,Nebraska Department of Health and Human Services,Nursys,https://dhhs.ne.gov/
+IA,Iowa Board of Nursing,Nursys,https://nursing.iowa.gov/
+KS,Kansas State Board of Nursing,Nursys,https://ksbn.kansas.gov/
+MO,Missouri State Board of Nursing,Nursys,https://pr.mo.gov/nursing.asp
+AR,Arkansas State Board of Nursing,Nursys,https://www.healthy.arkansas.gov/
+LA,Louisiana State Board of Nursing,Nursys,http://www.lsbn.state.la.us/
+MS,Mississippi Board of Nursing,Nursys,https://www.msbn.ms.gov/
+AL,Alabama Board of Nursing,Nursys,https://www.abn.alabama.gov/
+GA,Georgia Board of Nursing,Nursys,https://gbn.georgia.gov/
+SC,South Carolina Board of Nursing,Nursys,https://llr.sc.gov/nurse/
+TN,Tennessee Board of Nursing,Nursys,https://www.tn.gov/health/health-program-areas/health-professional-boards/nursing-board.html
+KY,Kentucky Board of Nursing,Nursys,https://kbn.ky.gov/
+WV,West Virginia Board of Examiners for Registered Nurses,Nursys,https://wvrnboard.wv.gov/
+MD,Maryland Board of Nursing,Nursys,https://mbon.maryland.gov/
+DE,Delaware Board of Nursing,Nursys,https://dpr.delaware.gov/boards/nursing/
+NH,New Hampshire Board of Nursing,Nursys,https://www.oplc.nh.gov/board-nursing
+VT,Vermont Board of Nursing,Nursys,https://sos.vermont.gov/nursing/
+ME,Maine State Board of Nursing,Nursys,https://www.maine.gov/boardofnursing/
+CA,California Board of Registered Nursing (DCA BreEZe),Browser Scraper (BreEZe),https://search.dca.ca.gov/
+IL,Illinois Dept of Financial & Professional Regulation (IDFPR),Browser Scraper (IDFPR),https://idfpr.illinois.gov/
+MI,Michigan LARA Licensing Portal,Browser Scraper (LARA),https://www.michigan.gov/lara
+PA,Pennsylvania PALS Licensing System,Browser Scraper (PALS),https://www.pals.pa.gov/
+NJ,New Jersey Division of Consumer Affairs,Browser Scraper (MyLicense),https://www.njconsumeraffairs.gov/nur
+MN,Minnesota Board of Nursing,Browser Scraper,https://mn.gov/boards/nursing/
