@@ -26,6 +26,10 @@
 #' Pad a FIPS-like code to five characters
 #' @param x [vector]: code.
 #' @return [character] zero-padded to width 5.
+#' @examples
+#' pad5(c(1001, 8031))          # "01001" "08031"
+#' pad5("8031")                 # "08031" -- character input is safe too
+#' @family identifier padding
 pad5 <- function(x) stringr::str_pad(as.character(x), 5, "left", "0")
 
 #' Reduce a postal ZIP to its five-digit join key
@@ -57,6 +61,10 @@ zip5_key <- function(x) {
 #' and silently drops the facility from any join. Pad the string instead.
 #' @param x [vector]: CCN.
 #' @return [character] zero-padded to width 6, NA preserved.
+#' @examples
+#' pad_ccn(c("1234", "01T001", "010001"))   # "001234" "01T001" "010001"
+#' pad_ccn(c(NA, ""))                       # NA NA
+#' @family identifier padding
 pad_ccn <- function(x) {
   x <- stringr::str_trim(as.character(x))
   x[!nzchar(x)] <- NA_character_
@@ -69,6 +77,10 @@ pad_ccn <- function(x) {
 #' F/M as logical, and a FIPS code as a number that loses its leading zero.
 #' @param f [character(1)]: path.
 #' @return [tbl_df]
+#' @examples
+#' \dontrun{
+#' chr("artifacts/county_base.csv")$GEOID   # "01001", leading zero intact
+#' }
 chr <- function(f) readr::read_csv(f, show_col_types = FALSE,
                                    col_types = readr::cols(.default = readr::col_character()))
 
@@ -81,6 +93,10 @@ chr <- function(f) readr::read_csv(f, show_col_types = FALSE,
 #' @param digits [integer(1)]: decimal places.
 #' @param big [logical(1)]: thousands separator.
 #' @return [character(1)] or NULL.
+#' @examples
+#' fmt(1234.56, digits = 1)     # "1,234.6"
+#' fmt(NA)                      # NULL -- so a whole clause can be gated
+#' if (!is.null(fmt(NA))) "printed" else "clause suppressed"
 fmt <- function(x, digits = 0, big = TRUE) {
   if (is.null(x) || length(x) != 1L || is.na(x)) return(NULL)
   formatC(round(x, digits), format = "f", digits = digits,

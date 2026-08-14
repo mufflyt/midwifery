@@ -40,9 +40,48 @@ FUZZY_STRATEGY <- "surname_block_jw_evidence"
 
 source(file.path("R", "lib", "provenance.R"))  # canonical sha256_of()
 
+#' Does this name field actually carry a middle name?
+#'
+#' @param x `character`: middle-name field, possibly `NA`, empty, or
+#'   whitespace-only.
+#' @return `logical` the length of `x`; never `NA`.
+#'
+#' @details
+#' Whitespace-only counts as ABSENT. NPPES and the AMCB roster both use `""`
+#' and `" "` interchangeably for "no middle name", so testing `!is.na(x)` alone
+#' would treat a blank as a present middle name and turn a both-missing pair
+#' into a spurious conflict.
+#'
+#' @examples
+#' has_middle(c("MAE", "", " ", NA))          # TRUE FALSE FALSE FALSE
+#'
+#' @keywords internal
 has_middle <- function(x) !is.na(x) & nzchar(trimws(x))
 
 #' Classify the middle-name state of a (roster, candidate) pair
+#'
+#' @param roster_mid `character`: middle name as recorded on the AMCB roster.
+#' @param cand_mid `character`: middle name on the candidate NPPES record.
+#'
+#' @return `character` the length of the inputs, one of
+#'   `"both_missing"`, `"missing_npi_side"`, `"missing_roster_side"`,
+#'   `"initial_agreement"`, `"conflict"`.
+#'
+#' @details
+#' The five states exist because ONE-SIDED MISSINGNESS IS NOT DISAGREEMENT.
+#' A roster middle name absent from NPPES tells you nothing about whether the
+#' two records are the same person; scoring it as a mismatch penalises exactly
+#' the people whose records are least complete. Arms A and B of the sensitivity
+#' analysis differ only in how the two `missing_*` states are weighted.
+#'
+#' Comparison is on the INITIAL only, so "MAE" and "M" agree.
+#'
+#' @examples
+#' middle_state("MAE", "M")                   # "initial_agreement"
+#' middle_state("MAE", NA)                    # "missing_npi_side"
+#' middle_state(NA, NA)                       # "both_missing"
+#' middle_state("MAE", "LOUISE")              # "conflict"
+#'
 #' @keywords internal
 #' @noRd
 middle_state <- function(roster_mid, cand_mid) {
@@ -59,9 +98,28 @@ middle_state <- function(roster_mid, cand_mid) {
 
 #' Build the candidate ledger carrying both scoring arms
 #'
-#' @param ledger_path,roster_path,cands_path [character(1)]: pinned inputs.
-#' @return [data.frame] the ledger plus `mid_state`, `delta`, `score_A`,
+#' @param ledger_path `character(1)`: pinned candidate-ledger CSV.
+#' @param roster_path `character(1)`: pinned AMCB roster CSV.
+#' @param cands_path `character(1)`: pinned candidate-pair CSV.
+#'
+#' @return `data.frame`: the ledger plus `mid_state`, `delta`, `score_A`,
 #'   `score_B`, and the roster/candidate name fields used for adjudication.
+#'
+#' @details
+#' All three paths must exist; the function stops rather than silently
+#' producing a short ledger. `delta` is `score_A - score_B` and is non-zero
+#' only for the one-sided-missingness states, which is the whole point of the
+#' comparison.
+#'
+#' @examples
+#' \dontrun{
+#' d <- build_ab_ledger("artifacts/ledger.csv", "artifacts/roster.csv",
+#'                      "artifacts/candidates.csv")
+#' table(d$mid_state)
+#' }
+#'
+#' @seealso [middle_state()] for the classification, [ab_manifest_inputs()]
+#'   for the provenance block.
 #' @family step-functions
 #' @export
 build_ab_ledger <- function(ledger_path, roster_path, cands_path) {
@@ -107,6 +165,29 @@ build_ab_ledger <- function(ledger_path, roster_path, cands_path) {
 }
 
 #' Manifest block describing the pinned inputs and both scoring arms
+#'
+#' @param ledger_path `character(1)`: pinned candidate-ledger CSV.
+#' @param roster_path `character(1)`: pinned AMCB roster CSV.
+#' @param cands_path `character(1)`: pinned candidate-pair CSV.
+#' @param d `data.frame`: the built ledger, used only for its row count.
+#'
+#' @return `list` recording both scoring arms, the weights, and a SHA-256 for
+#'   each of the three inputs plus the git commit.
+#'
+#' @details
+#' The hashes are what make an A/B result re-checkable: a rerun against a
+#' changed roster produces a different digest rather than a quietly different
+#' answer. `git_commit` degrades to `NA` outside a repository rather than
+#' erroring.
+#'
+#' @examples
+#' \dontrun{
+#' m <- ab_manifest_inputs("artifacts/ledger.csv", "artifacts/roster.csv",
+#'                         "artifacts/candidates.csv", d)
+#' m$inputs$roster$sha256
+#' }
+#'
+#' @seealso [build_ab_ledger()], and `sha256_of()` in R/lib/provenance.R.
 #' @family step-functions
 #' @export
 ab_manifest_inputs <- function(ledger_path, roster_path, cands_path, d) {

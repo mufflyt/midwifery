@@ -49,7 +49,21 @@ source(file.path("R", "lib", "provenance.R"))
   ifelse(startsWith(ab, paste0(root, "/")), substring(ab, nchar(root) + 2L), p)
 }
 
+#' @param x [data.frame]: the artifact to write.
+#' @param path [character(1)]: destination CSV path. The provenance sidecar is
+#'   written alongside it as `<path>.provenance.json`.
+#' @param inputs [character]: paths this artifact was derived from. Each is
+#'   hashed with `sha256_of()` so a rerun against changed inputs is detectable
+#'   rather than silent.
 #' @param ... passed through to `readr::write_csv()`.
+#' @return `path`, invisibly, so the call can be piped or assigned.
+#' @examples
+#' \dontrun{
+#' write_with_provenance(county_tbl, "artifacts/county_base.csv",
+#'                       inputs = c("data/acs.csv", "data/rucc.csv"))
+#' check_provenance("artifacts/county_base.csv")   # stale inputs?
+#' }
+#' @seealso [check_provenance()], and `sha256_of()` in R/lib/provenance.R.
 #'
 #' CYCLE 21b. This used to hard-code `na = ""`. Of the 47 write sites in the
 #' pipeline only 10 pass `na = ""` explicitly; the other 37 rely on readr's
