@@ -392,3 +392,11 @@ artifacts/amcb_npi_crosswalk_*panel-midwifery-plus-nursing*.csv
 /artifacts/aabc_matched_birth_center_midwives.csv
 /artifacts/zip_fallback_discordant.csv
 /artifacts/cross_state_diagnosis.csv
+
+# Practice addresses of cohort midwives, keyed address|city|state|zip. No NPI
+# and no name, but it enumerates where 15,000 identified midwives have worked
+# since 2007, which is re-identifying in combination. Rebuildable by rerunning
+# the Census batch geocoder over the panel; the aggregate result it supports is
+# in docs/RESULTS_geographic_persistence.md.
+artifacts/panel_address_county.csv
+artifacts/panel_address_county.csv.provenance.json

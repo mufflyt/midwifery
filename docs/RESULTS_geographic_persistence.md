@@ -89,9 +89,10 @@ their first observed snapshot. The result changes.
 
 Annually the strata remain close — a remote-origin midwife moves county about
 5.0% of years against 4.0% for metro, a quarter more often but small in
-absolute terms. **Over a career the gradient is clear and runs the other way
+absolute terms. **Over a career the gradient runs the other way
 from the earlier result:** 61.9% of remote-origin midwives end in the county
-they started in, against 68.1% of metro-origin ones.
+they started in, against 68.1% of metro-origin ones — but see the
+method comparison below: this gradient is not robust to how county is resolved.
 
 The destination-based cut had nonmetro-adjacent as the *stickiest* stratum
 (61.1% versus 54.5% metro). Origin-based, it is among the least sticky. **The
@@ -117,6 +118,62 @@ absolute rural drain in this cohort. But the nonmetro base is small — about
 1,680 providers against 13,600 metro — so the same absolute flow is a far
 larger share of the rural workforce, and the *rate* of leaving is what a county
 feels.
+
+## Two methods, and neither dominates
+
+The ZCTA crosswalk was rerun through the canonical Census geocoder: 12,722
+addresses batch-geocoded against `Public_AR_Current`, joined to the 3,258
+already present in `~/isochrones/data/geocoding_cache.duckdb`.
+
+**The cache covered only 17% of the panel's distinct addresses**, which is worth
+recording because it is counter-intuitive: the cohort *was* geocoded before, but
+the cache holds their **current** addresses, and the panel is nineteen years of
+**historical** ones. Batch match rate on the residual was 89.4%, consistent with
+the 86.9% this repository documents for the Census stage.
+
+| | ZCTA crosswalk | Census geocoded |
+|---|---:|---:|
+| distinct addresses resolved | **98.2%** | 91.5% |
+| annual same county | 95.9% | **96.2%** |
+| career same county | 67.5% | **69.1%** |
+| career, metro origin | 68.1% | 69.4% |
+| career, nonmetro-adjacent origin | 63.3% | 65.6% |
+| career, nonmetro-remote origin | 61.9% | **66.2%** |
+
+The headline figures agree closely — annual ~96%, career ~67–69% — which is
+reassuring for both.
+
+**The rural gradient does not agree, and the reason is selection.** Census
+geocoding fails disproportionately on rural addresses (rural routes, PO boxes,
+non-standard street lines):
+
+| origin | providers, ZCTA | providers, geocoded | lost |
+|---|---:|---:|---:|
+| Metro | 13,648 | 13,319 | **2.4%** |
+| Nonmetro, adjacent | 1,160 | 1,118 | **3.6%** |
+| Nonmetro, remote | 520 | 405 | **22.1%** |
+
+Geocoding discards **more than a fifth of remote-origin providers** against one
+fortieth of metro ones. Its rural estimate is therefore computed on the subset
+of rural midwives whose addresses are geocodable — skewed toward town-centre
+street addresses and away from the most remote practice settings, which is
+precisely the population the question is about.
+
+So the two methods trade one bias for another. The crosswalk has near-complete
+coverage and misassigns some counties; the geocoder assigns counties exactly and
+loses the rural tail. Under the crosswalk the gradient is monotone and 6.2
+points wide (68.1 → 63.3 → 61.9). Under the geocoder it is non-monotone and 3.2
+points wide (69.4 → 65.6 / 66.2), with remote no longer the least persistent
+stratum.
+
+**A rural persistence penalty is therefore not established.** It is somewhere
+between small and absent, and which you conclude depends on which missingness
+you prefer. Any statement about rural mobility from this panel should be
+reported both ways, or not at all.
+
+Resolving it means geocoding the rural non-matches with a service that handles
+rural routes. The repository's own cascade already has one — the ArcGIS second
+stage — and it was not used here.
 
 ## What this means for modelling a retention intervention
 
