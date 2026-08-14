@@ -63,12 +63,20 @@ claim-headed subsections under Significance, then numbered aims each carrying a
 stated deliverable. Every figure below is produced by this repository and is
 reproducible from the artifacts named beside it.*
 
-**Terminology, following the same convention as that proposal:** *midwives*
-here means **certified nurse-midwives and certified midwives** certified by the
-AMCB. Midwives with alternative training or certification — Certified
-Professional Midwives, state-licensed direct-entry midwives — are **not within
-the scope of this work**, and the consequences of that are set out in
-[SCOPE_AND_LIMITATIONS.md](docs/SCOPE_AND_LIMITATIONS.md).
+**Terminology, following the same convention as that proposal, in its own
+words:**
+
+> "In the US, certified nurse-midwives (referred to in this proposal as
+> “midwives”; midwives with alternative training and/or certification are not
+> within the scope of this proposal) are licensed to provide perinatal,
+> reproductive, and primary care…"
+
+That convention holds throughout this repository, with one widening: the cohort
+is AMCB-certified **CNMs and CMs** (99.0% / 1.0%), since AMCB certifies both.
+Certified Professional Midwives and state-licensed direct-entry midwives are
+outside it. What that costs a reader is set out in
+[SCOPE_AND_LIMITATIONS.md](docs/SCOPE_AND_LIMITATIONS.md) — in short, midwifery
+access is understated, unevenly by state.
 
 ### A. Significance
 
@@ -189,6 +197,19 @@ births are rather than where providers are dense.
 
 *Deliverable:* a provider-year panel artifact with entry, county-change and
 cessation flags, and county-level net-change series for the linked cohort.
+
+**First result, computed 2026-08-14** ([full
+write-up](docs/RESULTS_geographic_persistence.md)): across 180,436
+consecutive-year observations of 15,605 located midwives, **95.9%** are in the
+same county as the year before, but only **67.5%** end their observed span in
+the county they started in (median 13 years). Classified by *origin* county,
+career persistence falls from **68.1%** metro to **61.9%** nonmetro-remote, and
+rural-origin movers go overwhelmingly to metro counties. **Retention is
+geographically sticky year to year and not over a career** — the parameter any
+retention-to-access model needs, now measured rather than assumed. County is
+resolved through `artifacts/zcta_county_crosswalk.csv`, derived from the Census
+relationship file already in `data/` and agreeing with an independent
+construction on 100.00% of 33,791 ZCTAs.
 
 **Two limits are structural and must travel with any result from this aim.**
 First, **the AMCB roster is a single 2026 scrape and its status field is a
@@ -830,6 +851,7 @@ validation agreement to 94.47%.
 | **Congressional districts — CD118** | **2023** — `cb_2023_us_cd118_500k` | [census.gov/geographies](https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html) | district assignment for the district-spread figure | [`build_cd_midwifery_stats.R`](build_cd_midwifery_stats.R) |
 | **Congressional districts — CD119** | **2024** — `cb_2024_us_cd119_500k` | same | the current-Congress provider counts | [`build_cd_provider_counts.R`](build_cd_provider_counts.R) |
 | **ZCTA → county and ZCTA → tract relationship files** | **2020** | `data/zcta_county_2020.txt`, `data/zcta_tract_2020.txt` | the unique-ZIP county fallback that lifts `county_best` above `county_exact` | [`R/02`](R/02-geocoding-completeness.R), [`R/03`](R/03-geography-hierarchy.R), `R/05`, `R/07` |
+| **ZCTA → dominant county** (derived) | **2020** | `artifacts/zcta_county_crosswalk.csv` | one county per ZCTA — the one holding most of its land — for the provider-panel mobility work. **30.1% of ZCTAs span more than one county**, and 1,629 have a dominant county holding under 60% of their land | [`docs/RESULTS_geographic_persistence.md`](docs/RESULTS_geographic_persistence.md) |
 | **Connecticut tract crosswalk** | **2022** | `data/ct_tract_crosswalk_2022.csv`, `data/ct_legacy_to_region_weights.csv` | apportioning legacy CT counties onto the nine planning regions — flagged as apportioned, never silently averaged | [`R/lib/ct_county_crosswalk.R`](R/lib/ct_county_crosswalk.R), [`R/03-geography-hierarchy.R`](R/03-geography-hierarchy.R) |
 | **US Census geocoder** | **live service** — resolves **86.9%** of addresses | `geocoding.geo.census.gov` | first stage of the cascade | [`geocode_midwives.R`](geocode_midwives.R), [`geocode_queue_cascade.R`](geocode_queue_cascade.R) |
 | **ArcGIS geocoder** | **live service** — **9.2%**, the Census residual | ArcGIS World Geocoding | second stage | same |
