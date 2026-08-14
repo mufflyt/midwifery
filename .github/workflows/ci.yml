@@ -162,6 +162,12 @@ jobs:
       - name: Former-name candidate expansion
         run: Rscript tests/test_expand_former_name_candidates.R
 
+      # Ingest of the external former-name export that feeds the expansion:
+      # normalizes any supplied source onto certification_number and proves the
+      # attach -> expand handoff end to end.
+      - name: Former-name external ingest
+        run: Rscript tests/test_load_former_last_names.R
+
       # Age is imputed against a calibrated model (R2 = 0.550), so the validator
       # that bounds it is load-bearing for every age-banded row in Table 1.
       - name: Age-at-certification validation
