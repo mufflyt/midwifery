@@ -202,3 +202,11 @@ jobs:
       # drops or duplicates rows silently corrupts a seven-hour run.
       - name: Checkpoint merge contract
         run: Rscript tests/test_checkpoint_merge.R
+
+      # Semantic invariants ported from ~/isochrones/tests/testthat/, extended
+      # with a real NPI Luhn check -- upstream validated only width and digits,
+      # which accepts 1234567890. The arithmetic tests are hermetic; the ones
+      # reading person-level artifacts SKIP here, because those files are
+      # gitignored, and report as skips rather than passes.
+      - name: Ported invariants (NPI check digit, geography, provenance)
+        run: Rscript -e 'testthat::test_file("tests/test_invariants_midwifery.R", stop_on_failure = TRUE)'
