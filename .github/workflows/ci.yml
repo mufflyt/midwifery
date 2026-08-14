@@ -197,7 +197,10 @@ jobs:
           pkgs <- c("dplyr", "jsonlite", "purrr", "readr", "scales", "stringi",
                     "stringr", "testthat", "tibble", "tidyr",
                     "checkmate", "DBI", "digest", "duckdb", "geosphere",
-                    "here", "httr", "openssl", "xml2")
+                    "here", "httr", "openssl", "xml2",
+                    # the ported upstream suites: assertthat for their
+                    # preconditions, withr for scoped envvars and temp dirs
+                    "assertthat", "withr")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
         shell: Rscript {0}
@@ -337,3 +340,49 @@ jobs:
           Rscript tests/test_open_payments_type2_bulk.R
           Rscript tests/test_table1_blk_hg.R
           Rscript tests/test_pip_materialization.R
+
+      # -----------------------------------------------------------------------
+      # Ported verbatim from mufflyt/isochrones @ 1907a5c40 -- 416 assertions,
+      # zero new code. Each file tests a helper that exists in BOTH repos, so
+      # the upstream contract applies here unaltered and not one assertion was
+      # edited. The hyphenated filenames mark them as ported; test_*.R is ours.
+      #
+      # A failure in these means the local helper has DRIFTED from a contract
+      # someone else is still maintaining. Decide which side is right; do not
+      # edit the assertion to match the code.
+      #
+      # Verified under the three-check protocol in the header before landing:
+      # fresh clone with HOME redirected, every source() chain followed for
+      # packages, and a grep for absolute paths outside the repo.
+      # -----------------------------------------------------------------------
+
+      # The safe-divide family: a zero or NA denominator must never become Inf,
+      # NaN or a silent zero. Every rate in Table 1 and every per-1,000-births
+      # figure on the county map goes through it.
+      - name: Ported - safe_divide family (292 assertions)
+        run: |
+          Rscript -e 'testthat::test_file("tests/test-retraction-bugs-9-14.R", stop_on_failure = TRUE)'
+          Rscript -e 'testthat::test_file("tests/test-safe-divide-zero-threshold-bva.R", stop_on_failure = TRUE)'
+          Rscript -e 'testthat::test_file("tests/test-safe-percent-zero-default-family-bva.R", stop_on_failure = TRUE)'
+          Rscript -e 'testthat::test_file("tests/test-consort-audit-rounds-61-thru-65-2026-05-21.R", stop_on_failure = TRUE)'
+          Rscript -e 'testthat::test_file("tests/test-den-032-safe-pct-manu-na-semantics.R", stop_on_failure = TRUE)'
+
+      # join_safety gates every join in the pipeline on coverage and duplication
+      # bounds. JOIN_REPORT_DIR is set because one block exercises the DEFAULT
+      # report path rather than overriding it, and would otherwise write into
+      # tests/artifacts/ in the checkout.
+      - name: Ported - join_safety (79 assertions)
+        env:
+          JOIN_REPORT_DIR: ${{ runner.temp }}/join_reports
+        run: |
+          mkdir -p "$JOIN_REPORT_DIR"
+          Rscript -e 'testthat::test_file("tests/test-join-safety.R", stop_on_failure = TRUE)'
+          Rscript -e 'testthat::test_file("tests/test-join-safety-semantic-extended.R", stop_on_failure = TRUE)'
+          Rscript -e 'testthat::test_file("tests/test-step2-npi-dedup-bug.R", stop_on_failure = TRUE)'
+
+      # resolve_tract_vintage.R is BYTE-IDENTICAL to upstream, so these two are
+      # the strongest ports here: same code, same contract, no translation.
+      - name: Ported - tract vintage resolution (45 assertions)
+        run: |
+          Rscript -e 'testthat::test_file("tests/test-tract-vintage-boundary-bva-2019-2020-2021.R", stop_on_failure = TRUE)'
+          Rscript -e 'testthat::test_file("tests/test-step8-tract-vintage-routing.R", stop_on_failure = TRUE)'
