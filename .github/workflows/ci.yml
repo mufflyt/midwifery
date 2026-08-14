@@ -27,6 +27,22 @@
 # verified -- run it in a fresh `git clone` of HEAD, which has no gitignored
 # artifacts and no ~/isochrones. Passing locally proves nothing; your working
 # tree has the data.
+#
+# A FRESH CLONE IS NOT ENOUGH ON ITS OWN. It proves no missing FILE; it says
+# nothing about a missing PACKAGE, because your R library still has everything
+# you have ever installed. Seventeen suites were added here having passed a
+# fresh-clone check and CI still went red on the first step, on a package the
+# runner does not install. Check both:
+#
+#   files    fresh `git clone` + HOME redirected to an empty dir
+#   packages follow every source() chain -- including the
+#            source(file.path(root, ...)) forms a naive grep misses -- and
+#            confirm each package it reaches is in the install list below
+#   /tmp     grep the suite for absolute paths outside the repo. A stale file
+#            in /tmp is invisible to a fresh clone and survives a HOME
+#            redirect; cycle6 passed locally for exactly that reason and went
+#            red here. Absent-input branches must SKIP loudly or the suite does
+#            not belong in CI.
 name: CI
 
 on:
@@ -159,10 +175,29 @@ jobs:
 
       # Binary packages from the public RSPM. No compilation, no system geo
       # libraries -- if a package here ever needs one, it does not belong here.
+      #
+      # The second group is what the sourced helpers pull in, NOT what the tests
+      # name directly, which is why they were missed the first time: a test
+      # source()s R/join_safety.R, which requires checkmate at source time and
+      # stops if it is absent. Grepping the test files alone does not find any
+      # of these -- you have to follow the source() chain, including the
+      # source(file.path(root, ...)) forms.
+      #
+      #   checkmate  R/join_safety.R, at source time
+      #   digest     artifact SHA-256 checks (provenance wiring)
+      #   DBI/duckdb the Type-2 candidate universe query
+      #   geosphere  distance checks in the geocode-conflict suite
+      #   here/httr/openssl/xml2  reached through the same helper chain
+      #
+      # None needs GDAL/GEOS/PROJ. xml2, httr and openssl link against libxml2,
+      # libcurl and libssl, which are present on ubuntu-latest already -- that
+      # is the line: standard system libraries yes, geo stack no.
       - name: Install packages
         run: |
-          pkgs <- c("dplyr", "purrr", "readr", "scales", "stringi", "stringr",
-                    "testthat", "tibble", "tidyr")
+          pkgs <- c("dplyr", "jsonlite", "purrr", "readr", "scales", "stringi",
+                    "stringr", "testthat", "tibble", "tidyr",
+                    "checkmate", "DBI", "digest", "duckdb", "geosphere",
+                    "here", "httr", "openssl", "xml2")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
         shell: Rscript {0}
@@ -210,3 +245,95 @@ jobs:
       # gitignored, and report as skips rather than passes.
       - name: Ported invariants (NPI check digit, geography, provenance)
         run: Rscript -e 'testthat::test_file("tests/test_invariants_midwifery.R", stop_on_failure = TRUE)'
+
+      # -----------------------------------------------------------------------
+      # The audit-cycle suites, wired in one at a time.
+      #
+      # tests/ holds 23 numbered cycles, most of which were written against a
+      # working tree and were never runnable anywhere else. Each suite below was
+      # re-run in a fresh clone of HEAD with HOME redirected -- so no
+      # ~/isochrones and no gitignored artifact -- and kept only if it passed
+      # AND asserted something: a suite that reports "SKIP: inputs absent" for
+      # every case is a green tick that means nothing, and is worse than absent
+      # because it looks like coverage.
+      #
+      # Deliberately NOT here, and why:
+      #   cycle11_spatial, cycle14_coverage_surfaces  need sf. See the header.
+      #   healthgrades_integrity                      skips wholesale; vacuous.
+      #   cycle6_field_quality                        reads /tmp/c6_attrs.csv,
+      #                                               a machine-local snapshot,
+      #                                               and FAILS (not skips) when
+      #                                               it is absent. Found by CI
+      #                                               after a fresh-clone check
+      #                                               passed: the clone
+      #                                               redirected HOME but not
+      #                                               /tmp, where a stale copy
+      #                                               was still sitting.
+      #   cycle9, cycle10, cycle18, cycle19, cycle22, cycle5_key_resolution,
+      #   amcb_gates, frozen_dependency               fail in a fresh clone
+      #                                               today -- recorded debt or
+      #                                               absent inputs, not a
+      #                                               regression this file can
+      #                                               assert against.
+      #   amcb_name_normalization, cycle12            need ~/isochrones.
+      #   match_npi_to_hospitals                      downloads from CMS.
+      # Do not add any of them without re-running the fresh-clone check first.
+      # -----------------------------------------------------------------------
+
+      # Dates, keys and denominators: the arithmetic under every rate the paper
+      # reports. A denominator that silently changes cohort moves every percent.
+      - name: Cycle 2-3 (dates, keys, denominators)
+        run: |
+          Rscript tests/test_cycle2_dates_keys.R
+          Rscript tests/test_cycle3_denominators.R
+
+      # Connecticut replaced counties with nine planning regions; every county
+      # rate in the state depends on that apportionment being flagged, not
+      # silently averaged.
+      - name: Cycle 4 (Connecticut apportionment)
+        run: Rscript tests/test_cycle4_ct_apportionment.R
+
+      # Two rows that disagree about where one midwife is must not both survive
+      # into a map. Field quality and units guard the same seam upstream.
+      # cycle6 is NOT here: it reads /tmp/c6_attrs.csv, a machine-local
+      # snapshot, and its absent-branch is chk(FALSE) -- a deliberate failure,
+      # not a skip, because T68/T69 exist to prove FALSE means false rather than
+      # a disguised absence. That evidence cannot be produced on a runner, and
+      # weakening it to a skip would discard the point of the test. It stays a
+      # local check. See the exclusion list above.
+      - name: Cycle 5, 7-8 (geocode conflicts, units, filter bias)
+        run: |
+          Rscript tests/test_cycle5_geocode_conflicts.R
+          Rscript tests/test_cycle7_units.R
+          Rscript tests/test_cycle8_filter_bias.R
+
+      # WONDER cohort definitions and the ACS variable/label pairing: a mislabelled
+      # ACS variable is invisible in the artifact and wrong in the table.
+      - name: Cycle 13, 16-17 (WONDER cohort, ACS variables and labels)
+        run: |
+          Rscript tests/test_cycle13_cohort_wonder.R
+          Rscript tests/test_cycle16_acs_variables.R
+          Rscript tests/test_cycle17_acs_labels.R
+
+      # Congressional-district vintage, provenance wiring and coordinate
+      # precision -- the three things a reader assumes without checking.
+      - name: Cycle 20-21, 23 (congress vintage, provenance, geocode precision)
+        run: |
+          Rscript tests/test_cycle20_congress_vintage.R
+          Rscript tests/test_cycle21_provenance_wiring.R
+          Rscript tests/test_cycle23_geocode_precision.R
+
+      # Birth activity decides who counts as a practising midwife; license
+      # resolution decides which of several licenses is the one. Both are pure.
+      - name: Birth activity and license resolution
+        run: |
+          Rscript tests/test_birth_activity.R
+          Rscript tests/test_license_resolution.R
+
+      # Type-2 (organisational) NPI resolution in bulk, the Table 1
+      # Black/Hispanic banding, and PIP materialisation.
+      - name: Open Payments type-2 bulk, Table 1 banding, PIP materialisation
+        run: |
+          Rscript tests/test_open_payments_type2_bulk.R
+          Rscript tests/test_table1_blk_hg.R
+          Rscript tests/test_pip_materialization.R
