@@ -47,6 +47,10 @@ flowchart LR
 ![County Midwifery Supply](docs/figures/county_supply.png)
 *Figure 4: County-level midwifery supply map highlighting maternity care deserts and active midwife practice sites.*
 
+### 5. 15-Year National Midwifery Workforce Microsimulation (2026–2040)
+![Workforce Microsimulation Projections](artifacts/plots/plot3_microsimulation_workforce_projections.png)
+*Figure 5: Projected 15-year career state transitions, new graduate inflows, and rural-to-urban supply drift (2026–2040).*
+
 Linkage certainty and geographic completeness are separate properties: **65.7% primary linkage is
 the inferential limitation; the geography is essentially complete for anything linked.** Linkage
 also varies sharply by certification status (82.3% ACTIVE vs 19.6% DECEASED), so the linked subset
