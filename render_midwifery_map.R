@@ -242,7 +242,9 @@ m <- mysterymaps_county_access_map(
   overlay_group   = "Midwife locations",   # never NULL: leaflet labels it "null"
   legend_title    = "Midwives per<br/>1,000 births",
   # Whole midwives, and wording that keeps the zero class distinct from the
-  # first positive one after rounding.
+  # first positive one after rounding. jenks_digits must match the digits used
+  # for `sc` above: the template recomputes the scale, and passing labels built
+  # on different breaks would mislabel the colours.
   jenks_digits    = 0L,
   legend_labels   = sc$leg_labs,
   search          = NULL,          # added after the dots exist
@@ -315,6 +317,24 @@ panel <- sprintf('
    the dots from zoom&nbsp;9 in, and the search box finds a midwife by name. AMCB
    certification and NPPES are public records. Credentials shown after each name
    are as recorded in NPPES.</p>
+  <p style="margin:.2em 0 .7em"><b>Age is a band, and usually an estimate.</b>
+   About 5,500 midwives have an age from a state licensure or voter record; for
+   everyone else it is <i>modelled</i> from year of certification and is marked
+   <i>(estimated)</i> in the popup. A band is shown rather than an age even
+   where an exact one is held: the band answers the questions this map poses,
+   and an identified age is not this map&rsquo;s to publish. Treat an estimated
+   band as a statement about people certifying in that year, not about that
+   person.</p>
+  <p style="margin:.2em 0 .7em"><b>Where a midwife trained is shown for about one
+   in eight</b>, and the popup names the source because the three sources are not
+   equivalent. CMS <i>Doctors and Clinicians</i> maps every clinician through a
+   <i>medical</i>-school code list, so it can never name a freestanding
+   nurse-midwifery school; Healthgrades is self-reported; and a university
+   repository names the school structurally, by holding the person&rsquo;s thesis or
+   doctoral project. A blank line means no source named a school, not that none
+   exists. <b>A later doctorate is listed separately from midwifery education</b>
+   &mdash; many midwives return for a doctorate years after certifying, and the
+   two are different facts.</p>
   <p style="margin:.2em 0 .7em"><b>CDC publishes county natality</b> only for
    counties of 100,000 or more residents and pools the rest by state, so
    midwife-attended birth counts are unpublished &mdash; not zero &mdash; for most
@@ -424,6 +444,82 @@ panel <- sprintf('
   cat(sprintf("midwives with a displayable credential: %s of %s\n",
               sum(!is.na(mw$cred_disp)), nrow(mw)))
 
+  # Training institution, from three sources that name DIFFERENT people and are
+  # therefore coalesced rather than chosen between. CMS DAC maps every clinician
+  # through a MEDICAL-school code list, so a freestanding nurse-midwifery school
+  # can never appear in it; Frontier -- the largest US programme -- is absent
+  # from DAC entirely and reaches the map only from Healthgrades and from the
+  # repository harvest. Priority is DAC, then Healthgrades, then repository, so
+  # a self-reported profile never overrides a registry.
+  #
+  # THE TWO EDUCATION VARIABLES ARE NOT THE SAME THING and are shown on separate
+  # lines. 43% of repository links are doctorates earned a median 7 years AFTER
+  # certification -- the person was already a practising midwife when the thesis
+  # was written. Collapsing them into one "trained at" line would assert
+  # something false for 321 people, most of them Frontier DNP students.
+  # See docs/TECHNICAL_APPENDIX_OAI_TRAINING_INSTITUTION.md.
+  source("R/lib/training_institution.R")
+  mw <- training_attach(mw, title_case = mysterymaps_place_title_case)
+
+  # Certification year and age band, from the same calibrated-age artifact
+  # Table 1 reads, so the map and the table cannot disagree about a person.
+  #
+  # THE BAND IS SHOWN, NEVER THE AGE. For 5,469 people the file holds an exact
+  # age from a state licensure or voter record, and printing "68" beside a name
+  # and a street-level dot on a public map republishes an identified age this
+  # study had no need to disclose. The band answers every question the map
+  # poses. For everyone else the age is MODELLED, and the two are labelled
+  # differently: an estimate presented as a record is the more damaging error,
+  # so the estimate carries the qualifier and the record does not.
+  .age <- read_csv("artifacts/amcb_calibrated_ages.csv", show_col_types = FALSE,
+                   progress = FALSE) %>%
+    distinct(certification_number, .keep_all = TRUE) %>%
+    select(certification_number, age_band, is_imputed, cert_year, years_certified)
+  mw <- left_join(mw, .age, by = "certification_number",
+                  relationship = "one-to-one")
+  cat(sprintf("age band: %s of %s (%.1f%%), of which modelled %s\n",
+              sum(!is.na(mw$age_band)), nrow(mw),
+              100 * mean(!is.na(mw$age_band)), sum(mw$is_imputed, na.rm = TRUE)))
+
+  # "Certified 2016 (10 years)" -- the year is the fact and the elapsed span is
+  # what the reader actually wants, so both are shown rather than making them
+  # subtract. Singular "1 year" because "1 years" beside a real name reads as
+  # carelessness about the record.
+  cert_html <- ifelse(
+    is.na(mw$cert_year), "",
+    sprintf("<div>Certified %s%s</div>", mw$cert_year,
+            ifelse(is.na(mw$years_certified), "",
+                   sprintf(" (%s year%s)", mw$years_certified,
+                           ifelse(mw$years_certified == 1, "", "s")))))
+  age_html <- ifelse(
+    is.na(mw$age_band), "",
+    sprintf("<div>Age %s%s</div>",
+            # The bands arrive as "45-54 years" and ">=65 years"; the word
+            # "years" is dropped after "Age" and >= is rendered as a real glyph.
+            str_replace(str_replace(str_squish(str_remove(mw$age_band, "years")),
+                                    "^>=", "≥"), "^<", "under "),
+            # Vectorised deliberately: isTRUE() collapses a vector to ONE value
+            # and would label all 11,797 dots identically. NA is treated as
+            # modelled -- the qualifier must never be dropped by accident.
+            ifelse(is.na(mw$is_imputed) | mw$is_imputed,
+                   " <span style='color:#888'>(estimated)</span>", "")))
+
+  # Empty string, not a spacer div: a "Training: unknown" line on 10,486 of
+  # 11,920 popups would be the most repeated text on the map and would say
+  # nothing. Absence of a school here is absence of a source, not evidence the
+  # person has no degree.
+  train_html <- ifelse(
+    is.na(mw$training_institution), "",
+    sprintf("<div style='margin-top:.4em'>Midwifery education: <strong>%s</strong></div>
+             <div style='color:#666;font-size:11px'>source: %s</div>",
+            mw$training_institution, mw$training_institution_source))
+  doct_html <- ifelse(
+    is.na(mw$later_doctoral_institution), "",
+    sprintf("<div style='margin-top:.3em'>Later doctorate: %s%s</div>",
+            mw$later_doctoral_institution,
+            ifelse(is.na(mw$later_doctoral_year), "",
+                   sprintf(" (%s)", mw$later_doctoral_year))))
+
   base_name <- str_squish(paste(mw$first_name,
                                 coalesce(mw$middle_name, ""), mw$last_name))
   # "Sharon Leann Beatrice Hendricks, CNM"
@@ -443,12 +539,14 @@ panel <- sprintf('
      <div style='font-weight:600'>%s</div>
      <div>National Provider Identifier (NPI): %s</div>
      <div style='color:#666'>%s</div>
+     %s%s%s%s
      <div style='color:#666;font-size:11px;margin-top:.4em'>AMCB certificate %s</div>
      </div>",
     full_name, npi_link,
     mysterymaps_place_title_case(
       paste0(coalesce(mw$practice_city, "\u2014"), ", ",
              coalesce(mw$practice_state, "\u2014"))),
+    cert_html, age_html, train_html, doct_html,
     mw$certification_number)
 
   # NO CLUSTERING. Cluster bubbles replace the data with a count and force the
