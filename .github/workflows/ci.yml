@@ -1,0 +1,69 @@
+# =============================================================================
+# CI: the checks that can run without the data
+# =============================================================================
+# DELIBERATELY SMALL. Almost every test in tests/ loads a multi-megabyte
+# artifact, and several reach outside the repo entirely -- the name-normalisation
+# tests need ~/isochrones, the linkage tests need a 22,309-row FROZEN crosswalk
+# that is gitignored because it is person-level. None of that exists on a runner,
+# so CI runs the subset that is genuinely hermetic and says nothing about the
+# rest. A green tick here means "the keys and the syntax are sound", NOT "the
+# pipeline is correct", and it must not be read as the latter.
+#
+# Runtime is seconds: no sf, no tidyverse, no system geo libraries. That is a
+# feature. A twenty-minute CI that installs GDAL to check a string function gets
+# switched off the first week it goes red for an unrelated reason.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  r-checks:
+    name: R hygiene and join keys
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      # stringr only. Both files under test are dependency-light on purpose;
+      # if this list grows, the thing being tested has stopped being hermetic.
+      - name: Install stringr
+        run: install.packages("stringr")
+        shell: Rscript {0}
+
+      # Runs first: a parse failure makes every later result meaningless.
+      - name: Repo hygiene (parse, foreign paths, ignore rules, duplicate helpers)
+        run: Rscript tests/ci_hygiene.R
+
+      - name: Join-key unit tests
+        run: Rscript tests/test_lib_keys.R
+
+  python-checks:
+    name: Python syntax and address keys
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Compiles every tracked .py. The scrapers import requests/bs4, which are
+      # NOT installed here -- compileall checks syntax without importing, which
+      # is the part worth checking on every push.
+      - name: Compile all tracked Python
+        run: |
+          git ls-files '*.py' | tr '\n' '\0' | xargs -0 python -m py_compile
+          echo "compiled $(git ls-files '*.py' | wc -l) files"
+
+      # Hermetic: pure string functions, no network, no artifacts, no imports
+      # beyond the standard library.
+      - name: Address-key matching tests
+        run: python3 tests/test_address_key_matching.py

@@ -37,6 +37,7 @@ suppressPackageStartupMessages({
   library(DBI); library(duckdb); library(dplyr); library(readr)
   library(stringr); library(tibble)
 })
+source("R/lib/address_keys.R")   # norm_addr/zip5_first_run: one definition
 source("R/lib/common_helpers.R")
 dir.create("artifacts/audit", showWarnings = FALSE, recursive = TRUE)
 
@@ -44,20 +45,6 @@ DB <- Sys.getenv("MEDICARE_DUCKDB",
                  "/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb")
 API_LIMIT <- 10L   # the value the Python matcher used; audited, not changed
 
-norm_addr <- function(x) {
-  y <- toupper(str_trim(as.character(x)))
-  y <- str_replace_all(y, "[.,#]", " ")
-  rep <- c("\\bSTREET\\b"="ST","\\bAVENUE\\b"="AVE","\\bROAD\\b"="RD",
-           "\\bDRIVE\\b"="DR","\\bBOULEVARD\\b"="BLVD","\\bPLACE\\b"="PL",
-           "\\bLANE\\b"="LN","\\bCOURT\\b"="CT","\\bPARKWAY\\b"="PKWY",
-           "\\bHIGHWAY\\b"="HWY","\\bSUITE\\b"="STE","\\bNORTH\\b"="N",
-           "\\bSOUTH\\b"="S","\\bEAST\\b"="E","\\bWEST\\b"="W")
-  for (p in names(rep)) y <- str_replace_all(y, p, rep[[p]])
-  y <- str_trim(str_replace_all(y, "\\s+", " "))
-  y[!nzchar(y)] <- NA_character_
-  y
-}
-zip5 <- function(x) str_extract(as.character(x), "[0-9]{5}")
 
 # --- their assignments -------------------------------------------------------
 th <- chr("artifacts/cohort_midwives_open_payments_type2_organizations_full.csv")
@@ -67,7 +54,7 @@ th <- th %>%
          op_city  = str_trim(str_split_fixed(open_payments_address, ",", 3)[, 2]),
          tail_    = str_trim(str_split_fixed(open_payments_address, ",", 3)[, 3]),
          op_state = str_extract(tail_, "^[A-Z]{2}"),
-         op_zip   = zip5(tail_),
+         op_zip   = zip5_first_run(tail_),
          op_addr_norm = norm_addr(op_addr))
 cat(sprintf("Python assignments audited: %s (%s midwives)\n",
             format(nrow(th), big.mark = ","),
@@ -84,7 +71,7 @@ org <- dbGetQuery(con, "
          taxonomy_1 AS taxonomy
     FROM npi_org_all
    WHERE NULLIF(TRIM(organization_name), '') IS NOT NULL") %>%
-  mutate(z5 = zip5(zip), addr_norm = norm_addr(addr)) %>%
+  mutate(z5 = zip5_first_run(zip), addr_norm = norm_addr(addr)) %>%
   filter(!is.na(z5))
 cat(sprintf("bulk Type-2 organizations (pinned): %s\n", format(nrow(org), big.mark = ",")))
 

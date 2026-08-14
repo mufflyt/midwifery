@@ -225,9 +225,6 @@ artifacts/open_payments_facility_match.csv
 # Doximity public profiles: names, addresses, phone numbers, maiden names
 artifacts/doximity_public_*.csv
 
-# Medicare participation and HPSA status, person level
-artifacts/medicare_participation.csv
-artifacts/hpsa_status.csv
 
 # Diagnostic audit outputs, which quote both organizations and addresses
 artifacts/audit/

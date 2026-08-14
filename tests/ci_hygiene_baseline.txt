@@ -1,0 +1,21 @@
+# Duplicate top-level function definitions that existed when tests/ci_hygiene.R
+# was written (2026-08-13). Format: name: file, file
+#
+# THIS FILE SHOULD ONLY SHRINK. Each line is a function defined in more than one
+# tracked .R file, which means two scripts can behave differently while looking
+# identical. That has already caused real damage here: norm_addr existed four
+# times with divergent suite handling, zip5 three times, and a test shadowed the
+# canonical pad5 so three assertions tested a private lambda.
+#
+# The eight license-resolution entries below were under active development when
+# the check landed and were left alone deliberately. The fix for each is the
+# same: move the definition into R/lib/ and have both callers source it.
+normalize_npi: R/15-build-birth-activity.R, R/resolve_amcb_by_state_license.R
+fmt_n: R/15-build-birth-activity.R, R/resolve_amcb_by_state_license.R
+log_message: R/build_amcb_state_licenses.R, scrape_healthgrades_midwives.R
+normalize_state: R/build_amcb_state_licenses.R, R/resolve_amcb_by_state_license.R, amcb_license_bridge.R
+find_column: R/build_amcb_state_licenses.R, R/resolve_amcb_by_state_license.R
+read_amcb_roster: R/build_amcb_state_licenses.R, amcb_license_bridge.R
+save_license_artifacts: R/build_amcb_state_licenses.R, amcb_license_bridge.R
+normalize_license_number: R/resolve_amcb_by_state_license.R, amcb_license_bridge.R
+g: tests/test_birth_activity.R, tests/test_expand_former_name_candidates.R
