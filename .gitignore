@@ -275,3 +275,40 @@ artifacts/**/*_dob*.csv
 # deliberately. This stops the NEXT one from being added by accident.
 artifacts/**/amcb_npi_linkage_FROZEN*.csv
 artifacts/**/*FROZEN*.csv
+
+# =============================================================================
+# The roster itself: name + certification number, one row per certificant
+# =============================================================================
+# Untracked 2026-08-14, acting on the note above -- these are the copies that
+# "REMAIN TRACKED until someone untracks them deliberately".
+#
+# Ten files, 65 MB, each carrying last_name + first_name + certification_number
+# for all 22,309 certificants, nine of them with the matched NPI beside it. That
+# combination is the linkage this project exists to produce, and publishing it
+# hands over the answer for every person in the roster at once.
+#
+# Every one is REBUILDABLE, which is why untracking is safe:
+#   midwives.csv                  scrape.py
+#   midwives_with_nppes.csv       match_nppes.R
+#   midwives_geocoded.csv         geocode_midwives.R
+#   midwives_status_check.csv     check_npi_deactivation.R
+#   amcb_npi_linkage_FROZEN*.csv  reconcile_linkage.R
+#   amcb_npi_crosswalk_*panel*    match_amcb_to_npi.R
+#
+# LOSING THE LOCAL COPY IS NOT SAFE, and a rebuild is not free -- the crosswalks
+# are the output of a multi-hour matcher run. Keep them outside the repository
+# and record a checksum rather than deleting them.
+#
+# These are still in git HISTORY. Untracking stops future commits; it does not
+# unpublish what every existing clone already has. Purging that needs a history
+# rewrite, which is a separate decision.
+#
+# Deliberately still TRACKED, because neither carries a name: the reduced
+# artifacts/amcb_calibrated_ages.csv (certification_number + final_age) and
+# artifacts/frozen_cohort/analytic_cohort.csv (the 16,892-row cohort allowlist).
+midwives.csv
+midwives_geocoded.csv
+midwives_status_check.csv
+midwives_with_nppes.csv
+artifacts/**/midwives_with_nppes.csv
+artifacts/amcb_npi_crosswalk_*panel-midwifery-plus-nursing*.csv
