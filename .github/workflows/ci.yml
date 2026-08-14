@@ -161,8 +161,8 @@ jobs:
       # libraries -- if a package here ever needs one, it does not belong here.
       - name: Install packages
         run: |
-          pkgs <- c("dplyr", "purrr", "readr", "scales", "stringi", "stringr",
-                    "testthat", "tibble", "tidyr")
+          pkgs <- c("dplyr", "jsonlite", "purrr", "readr", "scales", "stringi",
+                    "stringr", "testthat", "tibble", "tidyr")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
         shell: Rscript {0}
@@ -210,3 +210,81 @@ jobs:
       # gitignored, and report as skips rather than passes.
       - name: Ported invariants (NPI check digit, geography, provenance)
         run: Rscript -e 'testthat::test_file("tests/test_invariants_midwifery.R", stop_on_failure = TRUE)'
+
+      # -----------------------------------------------------------------------
+      # The audit-cycle suites, wired in one at a time.
+      #
+      # tests/ holds 23 numbered cycles, most of which were written against a
+      # working tree and were never runnable anywhere else. Each suite below was
+      # re-run in a fresh clone of HEAD with HOME redirected -- so no
+      # ~/isochrones and no gitignored artifact -- and kept only if it passed
+      # AND asserted something: a suite that reports "SKIP: inputs absent" for
+      # every case is a green tick that means nothing, and is worse than absent
+      # because it looks like coverage.
+      #
+      # Deliberately NOT here, and why:
+      #   cycle11_spatial, cycle14_coverage_surfaces  need sf. See the header.
+      #   healthgrades_integrity                      skips wholesale; vacuous.
+      #   cycle9, cycle10, cycle18, cycle19, cycle22, cycle5_key_resolution,
+      #   amcb_gates, frozen_dependency               fail in a fresh clone
+      #                                               today -- recorded debt or
+      #                                               absent inputs, not a
+      #                                               regression this file can
+      #                                               assert against.
+      #   amcb_name_normalization, cycle12            need ~/isochrones.
+      #   match_npi_to_hospitals                      downloads from CMS.
+      # Do not add any of them without re-running the fresh-clone check first.
+      # -----------------------------------------------------------------------
+
+      # Dates, keys and denominators: the arithmetic under every rate the paper
+      # reports. A denominator that silently changes cohort moves every percent.
+      - name: Cycle 2-3 (dates, keys, denominators)
+        run: |
+          Rscript tests/test_cycle2_dates_keys.R
+          Rscript tests/test_cycle3_denominators.R
+
+      # Connecticut replaced counties with nine planning regions; every county
+      # rate in the state depends on that apportionment being flagged, not
+      # silently averaged.
+      - name: Cycle 4 (Connecticut apportionment)
+        run: Rscript tests/test_cycle4_ct_apportionment.R
+
+      # Two rows that disagree about where one midwife is must not both survive
+      # into a map. Field quality and units guard the same seam upstream.
+      - name: Cycle 5-8 (geocode conflicts, field quality, units, filter bias)
+        run: |
+          Rscript tests/test_cycle5_geocode_conflicts.R
+          Rscript tests/test_cycle6_field_quality.R
+          Rscript tests/test_cycle7_units.R
+          Rscript tests/test_cycle8_filter_bias.R
+
+      # WONDER cohort definitions and the ACS variable/label pairing: a mislabelled
+      # ACS variable is invisible in the artifact and wrong in the table.
+      - name: Cycle 13, 16-17 (WONDER cohort, ACS variables and labels)
+        run: |
+          Rscript tests/test_cycle13_cohort_wonder.R
+          Rscript tests/test_cycle16_acs_variables.R
+          Rscript tests/test_cycle17_acs_labels.R
+
+      # Congressional-district vintage, provenance wiring and coordinate
+      # precision -- the three things a reader assumes without checking.
+      - name: Cycle 20-21, 23 (congress vintage, provenance, geocode precision)
+        run: |
+          Rscript tests/test_cycle20_congress_vintage.R
+          Rscript tests/test_cycle21_provenance_wiring.R
+          Rscript tests/test_cycle23_geocode_precision.R
+
+      # Birth activity decides who counts as a practising midwife; license
+      # resolution decides which of several licenses is the one. Both are pure.
+      - name: Birth activity and license resolution
+        run: |
+          Rscript tests/test_birth_activity.R
+          Rscript tests/test_license_resolution.R
+
+      # Type-2 (organisational) NPI resolution in bulk, the Table 1
+      # Black/Hispanic banding, and PIP materialisation.
+      - name: Open Payments type-2 bulk, Table 1 banding, PIP materialisation
+        run: |
+          Rscript tests/test_open_payments_type2_bulk.R
+          Rscript tests/test_table1_blk_hg.R
+          Rscript tests/test_pip_materialization.R
