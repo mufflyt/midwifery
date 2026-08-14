@@ -1,6 +1,6 @@
 {
   "artifact": "cross_state_diagnosis.csv",
-  "written_utc": "2026-08-11 01:30:52 UTC",
+  "written_utc": "2026-08-11 02:31:58 UTC",
   "inputs": [
     {
       "path": "midwives_geography.csv",
