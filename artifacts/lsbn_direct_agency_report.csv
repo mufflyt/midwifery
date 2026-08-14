@@ -1,0 +1,6 @@
+Property,Value,Notes
+Official Agency Name,Louisiana State Board of Nursing (LSBN),State regulatory board for RNs and APRN-CNMs in Louisiana.
+Official State Website,http://www.lsbn.state.la.us/,Official state government portal.
+Direct License Lookup Portal,https://lsbn.state.la.us/VerifyLicense.aspx,State-maintained license verification engine.
+Physical Headquarters,"17373 Perkins Road, Baton Rouge, LA 70810",State board physical office.
+NCSBN Nursys Integration,Active Member Board (Automated Data Feed),LSBN feeds official license records directly into Nursys.
