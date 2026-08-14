@@ -1,0 +1,11 @@
+state,state_name,bon_agency,reason
+AK,Alaska,Alaska Board of Nursing,Small rural roster; scheduled for Wave 3 scraper.
+HI,Hawaii,Hawaii Department of Commerce & Consumer Affairs (PVL),Island jurisdiction; PVL web form portal.
+RI,Rhode Island,Rhode Island Department of Health,Small New England roster; health.ri.gov licensing lookup.
+DE,Delaware,Delaware Division of Professional Regulation,DPR DELPROS portal.
+VT,Vermont,Vermont Office of Professional Regulation (SOS),SOS licensing lookup portal.
+ND,North Dakota,North Dakota Board of Nursing,Nursys Compact state; scheduled for Wave 3.
+SD,South Dakota,South Dakota Board of Nursing,Nursys Compact state; scheduled for Wave 3.
+WV,West Virginia,West Virginia Board of Examiners for RNs,WVRN portal search.
+WY,Wyoming,Wyoming State Board of Nursing,WSBN license verification portal.
+DC,District of Columbia,DC Board of Nursing (DC Health),District jurisdiction; DC Health portal.
