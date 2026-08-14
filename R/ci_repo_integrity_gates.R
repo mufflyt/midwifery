@@ -1197,6 +1197,20 @@ repo_gate_check_access_dates <- function(root, since = NULL) {
     ]
   }
 
+  # Gitignored payloads are local-only and absent from every checkout, so
+  # including them makes this gate answer differently on a laptop than on a
+  # runner. That inversion is the thing these gates exist to prevent, and it
+  # already had to be fixed once in repo_gate_check_missing_inputs().
+  if (base::length(artifact_paths) > 0L) {
+    matchers <- repo_gate_ignore_matchers(root)
+
+    rel <- base::as.character(fs::path_rel(artifact_paths, root))
+
+    artifact_paths <- artifact_paths[
+      !repo_gate_is_ignored(rel, matchers)
+    ]
+  }
+
   if (base::length(artifact_paths) == 0L) {
     repo_gate_log("No artifact payloads in scope")
 
