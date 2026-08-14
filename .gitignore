@@ -402,3 +402,19 @@ artifacts/amcb_npi_crosswalk_*panel-midwifery-plus-nursing*.csv
 # in docs/RESULTS_geographic_persistence.md.
 artifacts/panel_address_county.csv
 artifacts/panel_address_county.csv.provenance.json
+
+# =============================================================================
+# Person-level BON scrape outputs, untracked 2026-08-14
+# =============================================================================
+# Board-of-Nursing scrapes carrying certification_number, name and NPI. Three
+# sibling files in the block above were already listed here and were re-added
+# anyway: .gitignore governs what git STARTS tracking, not what is already in
+# the index, so an ignore rule alone never protected them. The rules below and
+# the index removal in the same commit are both required.
+#
+# Rebuilt by the harvest_*_bon_*.py / execute_tier*_bon_*.py scrapers.
+/artifacts/la_bon_access_demonstration_report.csv
+/artifacts/louisiana_cnm_board_roster.csv
+/artifacts/scraped_20_state_bons_with_all_specialized_fields.csv
+/artifacts/scraped_20_state_bons_with_direct_urls.csv
+/artifacts/scraped_40_state_bons_midwives_master.csv
