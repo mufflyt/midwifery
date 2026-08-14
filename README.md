@@ -27,8 +27,25 @@ flowchart LR
 | State Boards of Nursing Scraped | 50 States + District of Columbia (51 Jurisdictions Complete) |
 | Direct State BON Verification URLs | 100.0% 1-Click Permalinks Embedded in Interactive Map |
 | Active CPT Delivery Attenders | 5,024 Midwives (41.1% Verified Delivery Attenders) |
-| Prescriptive Authority (RXN) Verified | 3,152 Midwives (34.9% Verified Schedule II-V RXN) |
 | Collaborative Practice (CPA) Filings | 2,170 Midwives (24.0% Ingested CPA OB/GYN Supervision) |
+
+## Key Visualizations & Data Gallery
+
+### 1. State Board of Nursing (BON) Scraped Midwife Volumes by State
+![State Board of Nursing Scraped CNM Volumes](artifacts/plots/plot1_scraped_bon_state_volumes.png)
+*Figure 1: Distribution of verified Certified Nurse-Midwives scraped across state Boards of Nursing.*
+
+### 2. Verified Active CPT Delivery Attenders by State BON
+![Active CPT Delivery Attenders by State](artifacts/plots/plot2_bon_delivery_attenders_by_state.png)
+*Figure 2: Verified active CPT delivery attending midwives (CPT 59400 / 59409 / 59410) by state jurisdiction.*
+
+### 3. Active Midwifery Supply per 100,000 Women of Reproductive Age (15–44)
+![Active State Rate Map](docs/maps/active_state_rate.png)
+*Figure 3: Spatial distribution of active CNMs per 100,000 women aged 15–44 across US states.*
+
+### 4. County-Level Midwifery Supply Distribution
+![County Midwifery Supply](docs/figures/county_supply.png)
+*Figure 4: County-level midwifery supply map highlighting maternity care deserts and active midwife practice sites.*
 
 Linkage certainty and geographic completeness are separate properties: **65.7% primary linkage is
 the inferential limitation; the geography is essentially complete for anything linked.** Linkage

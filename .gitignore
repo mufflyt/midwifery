@@ -78,6 +78,8 @@ artifacts/geocode_final_results.csv
 !docs/pipeline.html
 docs/maps/leaflet_*_files/
 !docs/maps/*.png
+!docs/figures/*.png
+!artifacts/plots/*.png
 !docs/maps/*.html
 !docs/maps/*.csv
 docs/maps/leaflet_counties.html
