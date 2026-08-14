@@ -63,12 +63,20 @@ claim-headed subsections under Significance, then numbered aims each carrying a
 stated deliverable. Every figure below is produced by this repository and is
 reproducible from the artifacts named beside it.*
 
-**Terminology, following the same convention as that proposal:** *midwives*
-here means **certified nurse-midwives and certified midwives** certified by the
-AMCB. Midwives with alternative training or certification — Certified
-Professional Midwives, state-licensed direct-entry midwives — are **not within
-the scope of this work**, and the consequences of that are set out in
-[SCOPE_AND_LIMITATIONS.md](docs/SCOPE_AND_LIMITATIONS.md).
+**Terminology, following the same convention as that proposal, in its own
+words:**
+
+> "In the US, certified nurse-midwives (referred to in this proposal as
+> “midwives”; midwives with alternative training and/or certification are not
+> within the scope of this proposal) are licensed to provide perinatal,
+> reproductive, and primary care…"
+
+That convention holds throughout this repository, with one widening: the cohort
+is AMCB-certified **CNMs and CMs** (99.0% / 1.0%), since AMCB certifies both.
+Certified Professional Midwives and state-licensed direct-entry midwives are
+outside it. What that costs a reader is set out in
+[SCOPE_AND_LIMITATIONS.md](docs/SCOPE_AND_LIMITATIONS.md) — in short, midwifery
+access is understated, unevenly by state.
 
 ### A. Significance
 
@@ -189,6 +197,18 @@ births are rather than where providers are dense.
 
 *Deliverable:* a provider-year panel artifact with entry, county-change and
 cessation flags, and county-level net-change series for the linked cohort.
+
+**First result, computed 2026-08-14** ([full
+write-up](docs/RESULTS_geographic_persistence.md)): across 183,949
+consecutive-year observations of 16,891 located midwives, annual persistence is
+**94.2% by ZIP and 97.9% by state**, which bounds county persistence at
+**94.2–97.9% per year**. Over a median 13-year span, however, only **55.3%**
+remain in the same ZIP and **82.1%** in the same state. Annual mobility is flat
+across rurality strata (metro 94.0%, nonmetro-adjacent 95.1%, nonmetro-remote
+94.1%), though that comparison is stratified by current county and so
+understates rural-origin mobility. **Retention is geographically sticky year to
+year and not over a career**, which is the parameter any retention-to-access
+model needs and now has.
 
 **Two limits are structural and must travel with any result from this aim.**
 First, **the AMCB roster is a single 2026 scrape and its status field is a
