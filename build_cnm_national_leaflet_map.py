@@ -241,21 +241,14 @@ html_content = f"""<!DOCTYPE html>
         <div class="filter-group">
             <input type="text" id="searchInput" placeholder="Search by CNM name, hospital, city..." oninput="updateMap()">
             <select id="settingFilter" onchange="updateMap()">
-                <option value="ALL">All Clinical Settings</option>
-                <option value="Hospital Privileges">Hospital Main Campus / Privileges</option>
-                <option value="Accredited Birth Center">Accredited Freestanding Birth Centers</option>
-                <option value="Hospital / Health System Group">Municipal & Metro Health Groups</option>
-                <option value="Outpatient / Community Clinic">Outpatient Community Practices</option>
+                <option value="ALL">All Certified Nurse-Midwives</option>
                 <option value="CPT_DELIVERY_ONLY">Active CPT Delivery Attenders Only</option>
             </select>
         </div>
     </div>
 
     <div class="legend-card">
-        <div class="legend-item"><span class="dot" style="background:#3B82F6;"></span> Hospital Main Campus / Privileges</div>
-        <div class="legend-item"><span class="dot" style="background:#10B981;"></span> Accredited Freestanding Birth Center</div>
-        <div class="legend-item"><span class="dot" style="background:#8B5CF6;"></span> Health System / Municipal Group</div>
-        <div class="legend-item"><span class="dot" style="background:#F59E0B;"></span> Outpatient Community Practice</div>
+        <div class="legend-item"><span class="dot" style="background:#3B82F6;"></span> Verified Certified Nurse-Midwife Practice</div>
     </div>
 
     <!-- Leaflet JS -->
