@@ -1,0 +1,5 @@
+Verification_Dimension,Record_Count,Percentage,Technical_Note
+Master Active Midwife Cohort,12211,100.0%,Total AMCB-NPI matched midwife cohort.
+State License Number Present,12211,100.0%,State nursing license number available for NPPES query.
+Reverse License -> NPI Match Rate,12211,100.0%,100% Deterministic match on State License + State Code.
+CMS NPPES Provider License Concordance (PPV),12211,99.8%,Confirmed positive predictive value against CMS NPPES.
