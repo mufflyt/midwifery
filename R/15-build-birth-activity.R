@@ -43,6 +43,13 @@
 #' @return A named list: provider activity, location activity, county effective
 #'   supply, validation statistics, activity-state counts, and saved paths.
 #' @export
+
+# write_with_provenance() and prov_inputs(), the same way stage 13 loads them.
+# Guarded so sourcing this file twice, or after another stage, is harmless.
+if (!exists("write_with_provenance", mode = "function")) {
+  source(file.path("R", "lib", "artifact_provenance.R"))
+}
+
 build_midwife_birth_activity <- function(
     roster_path,
     taf_path = NULL,
@@ -342,14 +349,22 @@ build_midwife_birth_activity <- function(
   county_path     <- p("county_effective_midwife_supply")
   validation_path <- p("birth_activity_rural_validation")
 
+  # Every other numbered stage writes through write_with_provenance. This one
+  # was added after that wiring went in and used readr::write_csv directly, so
+  # its four artifacts were the only pipeline outputs a reader could not trace
+  # back to the inputs that produced them. tests/ci_semantic_contracts.R now
+  # asserts the invariant so the next stage cannot be added the same way.
+  activity_inputs <- prov_inputs(roster_path, taf_path, birth_cert_path,
+                                 ascertainment_path, county_base_path)
+
   message("Saving provider activity: ", provider_path)
-  readr::write_csv(provider_activity, provider_path)
+  write_with_provenance(provider_activity, provider_path, inputs = activity_inputs)
   message("Saving provider-location activity: ", location_path)
-  readr::write_csv(location_weights, location_path)
+  write_with_provenance(location_weights, location_path, inputs = activity_inputs)
   message("Saving county effective supply: ", county_path)
-  readr::write_csv(county_effective_supply, county_path)
+  write_with_provenance(county_effective_supply, county_path, inputs = activity_inputs)
   message("Saving rural validation: ", validation_path)
-  readr::write_csv(validation_statistics, validation_path)
+  write_with_provenance(validation_statistics, validation_path, inputs = activity_inputs)
 
   state_counts <- provider_activity |>
     dplyr::count(.data$birth_activity_state, name = "n")
