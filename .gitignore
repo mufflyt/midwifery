@@ -235,3 +235,43 @@ artifacts/audit/
 # copy is NOT reproducible, so keep a backup outside the repo before rerunning
 # the producer once someone has started filling human_verdict.
 artifacts/org_resolution_review_sample.csv
+
+# =============================================================================
+# Tier 1a: named individuals joined to a DATE OF BIRTH
+# =============================================================================
+# voter_dob is a full date of birth taken from state voter files and joined to
+# a named clinician. It was never published by AMCB, CMS or any licensure
+# board -- the linkage is this project's own creation, and it is the most
+# sensitive thing the repository has ever held.
+#
+# NOT REGENERABLE FROM ANYTHING LOCAL. match_ohio_voter_ages.R scrapes the Ohio
+# Secretary of State portal live; no voter file exists on disk. Untracking is
+# safe, LOSING THE LOCAL COPY IS NOT. Keep these in an access-controlled
+# directory outside the repository and record a checksum, rather than deleting
+# them.
+#
+# Nothing downstream breaks: the only consumers are
+# calibrate_amcb_certification_ages.R and each file's own producer, and the
+# reduced output they feed -- artifacts/amcb_calibrated_ages.csv, 22,309 rows of
+# certification_number + final_age with no DOB and no names -- is already
+# tracked and stays tracked.
+artifacts/ohio_voter_license_ages.csv
+artifacts/florida_voter_license_ages.csv
+artifacts/**/*voter*ages*.csv
+artifacts/**/*_dob*.csv
+
+# =============================================================================
+# Guard: frozen person-level copies must not bypass protection by filename
+# =============================================================================
+# `artifacts/amcb_npi_linkage_FROZEN.csv` is an EXACT path, so a date suffix or
+# a subdirectory walks straight past it. Four copies of the 22,309-row
+# AMCB-to-NPI pairing are tracked today under other names
+# (amcb_npi_linkage_FROZEN_2026-08-08.csv,
+# prelinkage_backup_20260810/amcb_npi_linkage_FROZEN.csv,
+# frozen_stage2/midwives_with_nppes.csv, frozen_cohort/analytic_cohort.csv).
+#
+# THIS GLOB IS PREVENTIVE ONLY. .gitignore does not affect files already in the
+# index, so the four existing copies REMAIN TRACKED until someone untracks them
+# deliberately. This stops the NEXT one from being added by accident.
+artifacts/**/amcb_npi_linkage_FROZEN*.csv
+artifacts/**/*FROZEN*.csv
