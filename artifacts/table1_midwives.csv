@@ -37,6 +37,7 @@ District IX,1018,8.6,ACOG district
 District XI,536,4.5,ACOG district
 District XII,670,5.6,ACOG district
 State not mappable to an ACOG district,2,,ACOG district
+Overseas-military or US-territory address (no ACOG district),38,,ACOG district
 Metropolitan (RUCC 1-3),10599,90.4,Rurality (RUCC 2023)
 "Nonmetropolitan, adjacent (RUCC 4-6)",784,6.7,Rurality (RUCC 2023)
 "Nonmetropolitan, remote (RUCC 7-9)",336,2.9,Rurality (RUCC 2023)
@@ -104,9 +105,12 @@ Prescribed under Part D in at least one year,5615,47.1,"Medicare Part D, any yea
 "No Part D record (billed <11 beneficiaries, or none)",6305,52.9,"Medicare Part D, any year 2013-2023"
 At least this many speak a language other than English,367,3.1,Language (Healthgrades floor)
 Not listed (absence is not evidence of English-only),11441,,Language (Healthgrades floor)
+Healthgrades profile shared with another certificant (not attributable),112,,Language (Healthgrades floor)
 Yes,5761,97.9,Accepts new patients
 No,121,2.1,Accepts new patients
 No public Healthgrades profile,5926,,Accepts new patients
+Healthgrades profile shared with another certificant (not attributable),112,,Accepts new patients
 No,4936,83.9,Offers telehealth
 Yes,946,16.1,Offers telehealth
 No public Healthgrades profile,5926,,Offers telehealth
+Healthgrades profile shared with another certificant (not attributable),112,,Offers telehealth

@@ -193,10 +193,12 @@ non-missing denominator; unknowns are counted on their own row.</p>
 <p>Registry-derived rows use the full cohort. Healthgrades-derived rows
 use a smaller denominator of <strong>11,808</strong>: 112 midwives share
 a Healthgrades profile with another certificant and cannot be attributed
-one. They remain in the cohort for every registry-derived row above.
-ACOG district percentages exclude 38 midwives with an overseas-military
-or US-territory address, so that block sums to 11,882 rather than the
-full cohort.</p>
+one. They remain in the cohort for every registry-derived row above, and
+appear on their own row here so the block still sums to the cohort. ACOG
+district percentages likewise exclude 38 midwives with an
+overseas-military or US-territory address (no district exists for them);
+they too are shown on their own row, so every block in this table sums
+to 11,920.</p>
 <table>
 <colgroup>
 <col style="width: 27%" />
@@ -439,6 +441,11 @@ full cohort.</p>
 <tr>
 <td>State not mappable to an ACOG district</td>
 <td style="text-align: right;">2</td>
+<td style="text-align: right;">—</td>
+</tr>
+<tr>
+<td>Overseas-military or US-territory address (no ACOG district)</td>
+<td style="text-align: right;">38</td>
 <td style="text-align: right;">—</td>
 </tr>
 <tr>
@@ -849,6 +856,12 @@ file</td>
 <td style="text-align: right;">—</td>
 </tr>
 <tr>
+<td>Healthgrades profile shared with another certificant (not
+attributable)</td>
+<td style="text-align: right;">112</td>
+<td style="text-align: right;">—</td>
+</tr>
+<tr>
 <td><strong>Accepts new patients</strong></td>
 <td style="text-align: right;"></td>
 <td style="text-align: right;"></td>
@@ -869,6 +882,12 @@ file</td>
 <td style="text-align: right;">—</td>
 </tr>
 <tr>
+<td>Healthgrades profile shared with another certificant (not
+attributable)</td>
+<td style="text-align: right;">112</td>
+<td style="text-align: right;">—</td>
+</tr>
+<tr>
 <td><strong>Offers telehealth</strong></td>
 <td style="text-align: right;"></td>
 <td style="text-align: right;"></td>
@@ -886,6 +905,12 @@ file</td>
 <tr>
 <td>No public Healthgrades profile</td>
 <td style="text-align: right;">5,926</td>
+<td style="text-align: right;">—</td>
+</tr>
+<tr>
+<td>Healthgrades profile shared with another certificant (not
+attributable)</td>
+<td style="text-align: right;">112</td>
 <td style="text-align: right;">—</td>
 </tr>
 </tbody>
