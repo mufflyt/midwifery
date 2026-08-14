@@ -171,7 +171,11 @@ ci_section("A3 provenance coverage does not regress")
 # Pinned to what is true today, not to what we wish were true. The number may
 # only go down: adding an artifact without a sidecar fails, adding one WITH a
 # sidecar passes and lowers the pin for the next person.
-MAX_UNCOVERED <- 145L
+MAX_UNCOVERED <- 90L   # was 145; untracking the person-level artifacts on
+                       # 2026-08-14 removed 55 uncovered files along with them.
+                       # The ratio improved because the numerator left, not
+                       # because provenance wiring improved -- 90 of 107 tracked
+                       # artifacts still have no sidecar.
 
 arts <- suppressWarnings(system2("git", c("ls-files", shQuote("artifacts/*.csv")), stdout = TRUE, stderr = FALSE))
 if (length(arts) == 0) {
