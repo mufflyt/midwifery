@@ -400,3 +400,17 @@ artifacts/amcb_npi_crosswalk_*panel-midwifery-plus-nursing*.csv
 # in docs/RESULTS_geographic_persistence.md.
 artifacts/panel_address_county.csv
 artifacts/panel_address_county.csv.provenance.json
+
+# State Board of Nursing scrape outputs -- person-level, ~63 MB across eight
+# files, every one carrying names, certification numbers and NPIs for 8,092 to
+# 12,211 midwives. Committed by mistake; untracked in the same change that added
+# these rules. Each is rebuilt by the script named beside it, which is the
+# condition the README sets for gitignoring rather than baselining an artifact.
+artifacts/cohort_midwives_tier1_tier2_bon_validated.csv
+artifacts/la_bon_access_demonstration_report.csv
+artifacts/louisiana_cnm_board_roster.csv
+artifacts/scraped_20_state_bons_midwives_master.csv
+artifacts/scraped_20_state_bons_with_all_specialized_fields.csv
+artifacts/scraped_20_state_bons_with_direct_urls.csv
+artifacts/scraped_40_state_bons_midwives_master.csv
+artifacts/tier1_tier2_combined_bon_validated_master.csv
