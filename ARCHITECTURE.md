@@ -52,7 +52,29 @@ flowchart TD
 | `credential_compatibility.R` | The credential gate used by the matcher (`are_credentials_compatible_midwifery()`). Re-implemented for this cohort because the isochrones gate only understands MD/DO. Pure, dependency-free. |
 | `extract_nppes_midwives.R` | Alternative candidate source: extracts midwifery providers from the 9.8 GB NPPES bulk dissemination file to parquet. The pipeline prefers the **live API** (stage 2) because the bulk snapshot is stale; this script is kept for offline/bulk work. |
 | `dbg.py` | Interactive scratch script for poking at the AMCB report by hand. Not part of the pipeline. |
-| `tests/` | pytest suite for the Python parsing/transform logic. See [TEST_COVERAGE.md](TEST_COVERAGE.md). |
+| `tests/` | pytest suite for the Python parsing/transform logic, plus plain-Rscript tests for the R components. See [TEST_COVERAGE.md](TEST_COVERAGE.md). |
+
+### Linkage-improvement components (built, awaiting input data)
+
+Three tools that raise linkage quality once their input columns are supplied.
+Each is a pure, sourceable function with a house-style test (`tests/test_*.R`),
+and each is **inert on today's `midwives.csv`** — it waits on a column the
+current scrape does not produce. None of them decides a match on its own: they
+*expand* or *validate*, and their output is fed through the existing
+conservative resolver.
+
+| Script | Attacks | Awaits (new input) | Emits |
+|--------|---------|--------------------|-------|
+| `amcb_license_bridge.R` | the ambiguous-identity quarantine (same-name people) | `amcb_license_bridge.csv` (`license_number` + `license_state`) | deterministic NPI crosswalk; collision and surname-conflict quarantine |
+| `expand_former_name_candidates.R` | the "no candidate at all" bucket (surname change) | AMCB `former_last_name` | candidate universe tagged `current` / `former` / `both`, plus a rescue summary |
+| `validate_age_at_certification.R` | bad year-of-birth values; a cohort covariate | `birth_year` (reuses the scraped `certification_date`, `MM/YYYY`) | `age_at_certification` + a plausibility `age_flag` |
+
+Guardrails worth knowing: the license bridge never accepts a key that maps to
+more than one NPI, nor one whose legal surname contradicts the roster; the
+former-name expansion runs over the whole roster (surname-only blocking, so it
+reproduces the full candidate universe); the age validator never drops rows and
+blanks the covariate for implausible inputs. See each file header for its
+data-dependency and integration notes.
 
 ## The isochrones dependency
 
@@ -72,13 +94,19 @@ than `~/isochrones`, point the scripts at it with `ISOCHRONES_R` and
 | `GEOCODING_CACHE_PATH` | `geocode_midwives.R` | `~/isochrones/data/geocoding_cache.duckdb` | The shared geocoding cache (DuckDB). |
 | `NPI_DEACTIVATION_REPORT` | `check_npi_deactivation.R` | `~/Documents/NPPES Deactivated NPI Report 20240408.xlsx` | The NPPES Deactivated NPI Report to cross-check against. |
 | `NPI_BUILD_ONLY` | `fetch_npi_candidates.py` | unset | Set to `1` to rebuild `nppes_candidates.csv` from the existing cache without issuing any API requests. |
+| `AMCB_LICENSE_BRIDGE` | `amcb_license_bridge.R` | `amcb_license_bridge.csv` | AMCB→state-board license bridge (`license_number`, `license_state`). |
+| `NPPES_FILE` | `amcb_license_bridge.R` | `npidata_pfile_*.csv` | NPPES dissemination file scanned for license slots. |
+| `PRIOR_LINKAGE` | `amcb_license_bridge.R` | unset | Optional prior linkage artifact to reconcile the deterministic arm against. |
+| `AMCB_ROSTER` / `ARTIFACT_DIR` | `amcb_license_bridge.R` | `midwives.csv` / `artifacts` | Roster input / output directory. |
 
 ## Dependencies
 
 - **Python 3** — the scrapers use only the standard library. `pytest` is needed
   to run the test suite.
 - **R** with: `dplyr`, `readr`, `stringdist`, `tidyr` (matcher); `DBI`,
-  `duckdb` (geocoding, bulk extract); `readxl` (deactivation check).
+  `duckdb` (geocoding, bulk extract); `readxl` (deactivation check);
+  `stringr`, `stringi`, `purrr`, `scales`, `tibble` (the linkage-improvement
+  components above).
 - **The isochrones project** — sourced by the R matcher/geocoder (see above).
 
 ## Getting started
@@ -102,14 +130,20 @@ Rscript check_npi_deactivation.R
 
 ```bash
 pip install pytest
-pytest        # 24 tests over the Python parsing/transform logic
+pytest        # Python parsing/transform logic
+
+# R components (plain Rscript; exit non-zero on any failure)
+Rscript tests/test_amcb_license_bridge.R
+Rscript tests/test_expand_former_name_candidates.R
+Rscript tests/test_validate_age_at_certification.R
 ```
 
 The Python scripts are safe to `import` without running anything — each guards
 its entry point behind `if __name__ == "__main__":`, which is what lets the
-tests reach the pure functions. See [TEST_COVERAGE.md](TEST_COVERAGE.md) for the
-current coverage and the proposed next steps (including a `testthat` plan for
-the R side).
+tests reach the pure functions. The R components are likewise safe to `source()`
+(they define functions without running a pipeline), which is how the R tests
+reach them. See [TEST_COVERAGE.md](TEST_COVERAGE.md) for the current coverage
+and proposed next steps.
 
 ## Reading order for a newcomer
 
