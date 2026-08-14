@@ -150,6 +150,12 @@ jobs:
       - name: State-license table construction
         run: Rscript tests/test_build_amcb_state_licenses.R
 
+      # Projects the license-bridge crosswalk onto reconcile_linkage.R's
+      # npi/npi_match_status vocabulary, so a deterministic license match merges
+      # into the matched artifact instead of being mis-bucketed at the seam.
+      - name: License-bridge -> reconcile adapter
+        run: Rscript tests/test_adapt_license_bridge_to_reconcile.R
+
       # Former/maiden surnames are how a certificant disappears from the roster
       # without leaving practice; this guards the candidate expansion that finds
       # them again.
