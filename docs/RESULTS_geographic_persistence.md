@@ -119,61 +119,53 @@ absolute rural drain in this cohort. But the nonmetro base is small — about
 larger share of the rural workforce, and the *rate* of leaving is what a county
 feels.
 
-## Two methods, and neither dominates
+## Three methods, and the rural penalty holds
 
-The ZCTA crosswalk was rerun through the canonical Census geocoder: 12,722
-addresses batch-geocoded against `Public_AR_Current`, joined to the 3,258
-already present in `~/isochrones/data/geocoding_cache.duckdb`.
+County was resolved three ways. The third is the one to use.
 
-**The cache covered only 17% of the panel's distinct addresses**, which is worth
-recording because it is counter-intuitive: the cohort *was* geocoded before, but
-the cache holds their **current** addresses, and the panel is nineteen years of
-**historical** ones. Batch match rate on the residual was 89.4%, consistent with
-the 86.9% this repository documents for the Census stage.
-
-| | ZCTA crosswalk | Census geocoded |
-|---|---:|---:|
-| distinct addresses resolved | **98.2%** | 91.5% |
-| annual same county | 95.9% | **96.2%** |
-| career same county | 67.5% | **69.1%** |
-| career, metro origin | 68.1% | 69.4% |
-| career, nonmetro-adjacent origin | 63.3% | 65.6% |
-| career, nonmetro-remote origin | 61.9% | **66.2%** |
-
-The headline figures agree closely — annual ~96%, career ~67–69% — which is
-reassuring for both.
-
-**The rural gradient does not agree, and the reason is selection.** Census
-geocoding fails disproportionately on rural addresses (rural routes, PO boxes,
-non-standard street lines):
-
-| origin | providers, ZCTA | providers, geocoded | lost |
+| | ZCTA crosswalk | Census batch only | **3-tier cascade + TIGER PIP** |
 |---|---:|---:|---:|
-| Metro | 13,648 | 13,319 | **2.4%** |
-| Nonmetro, adjacent | 1,160 | 1,118 | **3.6%** |
-| Nonmetro, remote | 520 | 405 | **22.1%** |
+| provider-years resolved | 186,670 | 186,670 | **198,567** |
+| providers | 15,328 | 15,053 | **15,636** |
+| annual same county | 95.9% | 96.2% | **95.9%** |
+| career same county | 67.5% | 69.1% | **67.3%** |
+| career — metro origin | 68.1% | 69.4% | **67.9%** |
+| career — nonmetro-adjacent | 63.3% | 65.6% | **63.2%** |
+| career — nonmetro-remote | 61.9% | 66.2% | **61.0%** |
+| remote-origin providers retained | 520 | 405 | **474** |
 
-Geocoding discards **more than a fifth of remote-origin providers** against one
-fortieth of metro ones. Its rural estimate is therefore computed on the subset
-of rural midwives whose addresses are geocodable — skewed toward town-centre
-street addresses and away from the most remote practice settings, which is
-precisely the population the question is about.
+**The canonical route is `geocode_queue_cascade.R` + `tigris::counties(cb = TRUE,
+year = 2023)`**, the same vintage every other boundary call in this repository
+uses. The cascade resolved **98.1%** of 12,722 addresses — Census 11,290,
+**ArcGIS 1,193**, non-CONUS 198, failed 41 — and point-in-polygon placed
+**100.0%** of the resulting 66,302 distinct points inside a county.
 
-So the two methods trade one bias for another. The crosswalk has near-complete
-coverage and misassigns some counties; the geocoder assigns counties exactly and
-loses the rural tail. Under the crosswalk the gradient is monotone and 6.2
-points wide (68.1 → 63.3 → 61.9). Under the geocoder it is non-monotone and 3.2
-points wide (69.4 → 65.6 / 66.2), with remote no longer the least persistent
-stratum.
+**The rural persistence penalty is real, and the flat result was an artefact.**
+The middle column — a hand-rolled Census-only batch call — lost 22.1% of
+remote-origin providers because the Census geocoder rejects rural routes and PO
+boxes. Restoring them via the ArcGIS tier restores the gradient: 67.9 → 63.2 →
+61.0, monotone and 6.9 points wide, which reproduces the crosswalk's 6.2-point
+gradient from an entirely different construction.
 
-**A rural persistence penalty is therefore not established.** It is somewhere
-between small and absent, and which you conclude depends on which missingness
-you prefer. Any statement about rural mobility from this panel should be
-reported both ways, or not at all.
+Two methods with unrelated failure modes now agree, and the third disagrees for
+a reason that is understood and measured. **Remote-origin midwives are about
+seven percentage points less likely to end their career in the county where
+they started.**
 
-Resolving it means geocoding the rural non-matches with a service that handles
-rural routes. The repository's own cascade already has one — the ArcGIS second
-stage — and it was not used here.
+### A silent degradation worth recording
+
+The cascade returned `county_fips` and `census_tract` **empty for all 12,722
+rows** while reporting 98.1% success. `enrich_with_census_tracts()` needs
+`tracts_y2020_production.rds`, which is a Dropbox/S3 artifact not present on
+this machine, and the function is documented to warn and return its input
+unchanged rather than fail.
+
+An earlier pass of this analysis joined those empty columns, silently fell back
+to cache-only rows, and produced 98.8% annual and 87.7% career persistence on a
+third of the data. Those numbers were wrong and are recorded here because they
+looked entirely plausible. **A geocoder that reports success and returns no
+geography is the failure mode this repository's own Hall of Shame opens by
+naming.** Coordinates were used instead, with the county assigned locally.
 
 ## What this means for modelling a retention intervention
 
