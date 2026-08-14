@@ -76,6 +76,13 @@ jobs:
       - name: Join-key unit tests
         run: Rscript tests/test_lib_keys.R
 
+      # safe_divide() refuses a non-numeric argument instead of coercing it to
+      # NA, which was indistinguishable from a zero denominator. Base R only,
+      # so it belongs in the cheap tier: it costs nothing and it guards the
+      # arithmetic under every rate this project publishes.
+      - name: safe_divide type validation
+        run: Rscript tests/test_safe_divide_types.R
+
       # Base R only -- table1_bands.R has no library() call at all, so this
       # costs nothing beyond the seconds it runs in. Age, tenure and decade
       # banding decide what Table 1 reports, and an off-by-one boundary here

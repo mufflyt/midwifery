@@ -52,10 +52,14 @@
 #'
 #' @param numerator `numeric vector`: Dividend. Recycled to match
 #'   \code{denominator} length when length-1; stops if both are
-#'   length > 1 and unequal.
+#'   length > 1 and unequal. Must be numeric or logical: character and
+#'   factor arguments stop rather than being coerced, because the
+#'   \code{NA} that coercion produced was indistinguishable from the
+#'   \code{NA} a zero denominator produces.
 #' @param denominator `numeric vector`: Divisor. Recycled symmetrically.
 #'   Elements where \code{abs(denominator) < zero_threshold} or
-#'   \code{is.na(denominator)} are treated as zero.
+#'   \code{is.na(denominator)} are treated as zero. Same type rule as
+#'   \code{numerator}.
 #' @param default `numeric scalar`: Value substituted wherever the
 #'   denominator is effectively zero (default: \code{NA_real_}).
 #' @param zero_threshold `numeric scalar`: Absolute tolerance below
@@ -85,9 +89,27 @@ safe_divide <- function(numerator,
   on_zero <- match.arg(on_zero)
 
   # [HARDENING] Input Validation
+  #
+  # A character argument used to be coerced with suppressWarnings(as.numeric()),
+  # so safe_divide("abc", 5) returned NA -- the SAME value a legitimate
+  # zero denominator produces, and therefore unreadable as an error. A count
+  # column read as text ("1,234" out of a CSV) divided to "missing" and every
+  # downstream guard treated it as suppressed-or-absent data. That is the
+  # suppressed-is-not-zero failure this family exists to prevent, reintroduced
+  # by the family itself.
+  #
+  # Character and factor now stop. Factor especially: as.numeric() on a factor
+  # returns LEVEL CODES, so it does not even fail loudly -- it returns confident
+  # nonsense. Logical is still accepted, because a bare NA is logical and
+  # safe_divide(1, NA) -> default is the contract everything relies on.
+  check_numeric_arg <- function(x, nm) {
+    if (is.numeric(x) || is.logical(x)) return(invisible(NULL))
+    stop(sprintf("`%s` must be numeric; got %s. Coerce it deliberately at the call site if that is what you mean -- safe_divide() will not guess, because the NA it used to return was indistinguishable from a zero denominator.",
+                 nm, class(x)[1]), call. = FALSE)
+  }
   if (is.null(numerator) || is.null(denominator)) return(default)
-  if (!is.numeric(numerator)) numerator <- suppressWarnings(as.numeric(numerator))
-  if (!is.numeric(denominator)) denominator <- suppressWarnings(as.numeric(denominator))
+  check_numeric_arg(numerator, "numerator")
+  check_numeric_arg(denominator, "denominator")
 
   # Handle vector operations
   if (length(numerator) != length(denominator)) {
