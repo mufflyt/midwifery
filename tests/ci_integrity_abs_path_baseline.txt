@@ -1,0 +1,33 @@
+# Files that hardcode an absolute path outside the repository.
+#
+# Same rule as tests/ci_leak_baseline.txt and the other ratchets here: this list
+# may shrink and must never grow. Every entry is a real hermeticity defect that
+# ci_hygiene's H2 check does NOT catch, because H2 only flags paths into
+# ANOTHER user's home -- a path into your own home is just as unportable, and
+# these are what that blind spot has allowed to accumulate.
+#
+# Each should become an environment variable with a documented default, the way
+# ISOCHRONES_HOME and HCRIS_DIR already are. Not done here: this commit adds the
+# gate, and fixing five callers is a separate change with its own testing.
+#
+#   R/13-geocode-ob-hospitals.R    "/Users/tylermuffly/isochrones" hardcoded for
+#                                  the geocoding cache. Should be ISOCHRONES_HOME,
+#                                  which already exists and is already used
+#                                  elsewhere for exactly this.
+#   extract_nppes_midwives.R       ~/Documents/NPPES_Data_Dissemination_March_2024.
+#                                  Also the STALE March 2024 snapshot the README
+#                                  says is deliberately not used.
+#   enrich_doximity_cnm_ages.R     ~/Downloads/DoximityData.csv -- an input that
+#                                  lives in a downloads folder is not an input,
+#                                  it is an accident waiting to happen.
+#   build_cd_midwifery_stats.R     reads ~/.Renviron directly rather than letting
+#                                  R load it.
+#   tests/test_cycle6_field_quality.R  /tmp/c6_attrs.csv. This is the file that
+#                                  made cycle6 pass locally and fail in CI; the
+#                                  suite is deliberately excluded from CI and
+#                                  kept as a local check.
+R/13-geocode-ob-hospitals.R
+extract_nppes_midwives.R
+enrich_doximity_cnm_ages.R
+build_cd_midwifery_stats.R
+tests/test_cycle6_field_quality.R
