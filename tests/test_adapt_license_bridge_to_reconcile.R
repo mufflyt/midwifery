@@ -27,7 +27,7 @@ chk <- function(cond, m) {
 }
 
 # reconcile_linkage.R's classifier, reproduced so we test the contract it uses.
-state_of <- function(status) dplyr::case_when(
+reconcile_state_of <- function(status) dplyr::case_when(
   status == "matched" ~ "matched",
   grepl("^ambiguous", status) ~ "quarantined",
   TRUE ~ "unmatched"
@@ -73,11 +73,11 @@ chk(npi("C1") == "N1" && meth("C1") == "license_exact", "matched row carries npi
 chk(npi("C5") == "N5" && meth("C5") == "prior_match", "prior match carries npi + method")
 chk(all(is.na(c(npi("C2"), npi("C3"), npi("C4"), npi("C6")))), "non-matched rows carry no npi")
 
-cat("\n-- reconcile state_of() buckets as intended --\n")
-chk(state_of(st("C1")) == "matched", "C1 -> matched")
-chk(all(state_of(c(st("C2"), st("C3"), st("C4"))) == "quarantined"),
+cat("\n-- reconcile's state_of() buckets as intended --\n")
+chk(reconcile_state_of(st("C1")) == "matched", "C1 -> matched")
+chk(all(reconcile_state_of(c(st("C2"), st("C3"), st("C4"))) == "quarantined"),
     "the three ambiguous kinds -> quarantined")
-chk(state_of(st("C6")) == "unmatched", "C6 -> unmatched")
+chk(reconcile_state_of(st("C6")) == "unmatched", "C6 -> unmatched")
 
 cat("\n-- structure + guard --\n")
 chk(identical(sort(names(out)),
