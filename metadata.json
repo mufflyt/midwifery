@@ -1,0 +1,27 @@
+{
+  "title": "National Certified Nurse-Midwife (CNM) 50-State & DC Workforce & Board of Nursing Registry",
+  "version": "4.0.0",
+  "description": "Comprehensive, multi-source national registry of 12,211 active Certified Nurse-Midwives (CNMs) across all 50 U.S. States and the District of Columbia, linked across AMCB, CMS NPPES, Open Payments, and 50-State Boards of Nursing (BONs).",
+  "author": {
+    "name": "Dr. Tyler Muffly, MD",
+    "affiliation": "University of Colorado School of Medicine / Health Services Research",
+    "github": "https://github.com/mufflyt/midwifery"
+  },
+  "temporal_coverage": "2007-2026",
+  "spatial_coverage": {
+    "country": "United States",
+    "jurisdictions_count": 51,
+    "jurisdictions": ["50 U.S. States", "District of Columbia"],
+    "granularity": ["Point Coordinates", "5-Digit ZIP", "County FIPS", "Census Tract"]
+  },
+  "cohort_statistics": {
+    "total_active_amcb_cnms": 12211,
+    "nppes_npi_matched": 12211,
+    "npi_match_rate_pct": 100.0,
+    "bon_verified_state_licenses": 11355,
+    "active_cpt_delivery_attenders": 5024,
+    "attending_rate_pct": 41.1
+  },
+  "licensing": "MIT License",
+  "last_updated": "2026-08-14T14:43:00-06:00"
+}

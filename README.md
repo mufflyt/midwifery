@@ -3,36 +3,32 @@
 [![CI](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Cite this repository](https://img.shields.io/badge/cite-CITATION.cff-brightgreen.svg)](CITATION.cff)
+[![Dataset Metadata](https://img.shields.io/badge/metadata-metadata.json-orange.svg)](metadata.json)
 [![Changelog](https://img.shields.io/badge/changelog-NEWS.md-lightgrey.svg)](NEWS.md)
 
-*Linking the 22,309 names in the AMCB certification directory to NPI identity,
-practice address and county geography — and reporting linkage certainty and
-geographic completeness as the separate things they are.*
+*Linking all 12,211 active Certified Nurse-Midwives (CNMs) across all 50 U.S. States and the District of Columbia (51 jurisdictions) to NPI identity, 50-State Board of Nursing (BON) licensure, prescriptive authority (RXN), collaborative practice agreements (CPA), and practice geography.*
 
-**[→ Interactive pipeline diagrams](https://claude.ai/code/artifact/9a541a9f-038f-458b-bb9d-d3b0120ca2cd)**
-&nbsp;·&nbsp; [source](docs/pipeline.html)
-
-Flowcharts of the whole chain — AMCB name to NPI to county — with the real counts at every stage
-and the defects each guard caught. (Private link; visible to the repo owner.)
+**[→ Interactive National CNM Workforce Map](docs/cnm_national_leaflet_map.html)**
+&nbsp;·&nbsp; [Pipeline Architecture](ARCHITECTURE.md) &nbsp;·&nbsp; [Dataset Metadata](metadata.json)
 
 ```mermaid
 flowchart LR
-  A["AMCB directory - 22,309 names"] --> B["Candidate generation - 197,081 pairs"]
-  B --> C["Name-evidence class 1 to 4"]
-  C --> D["Accepted links - 16,892"]
-  C --> Q["Quarantined - 3,091"]
-  D --> E["Last-observed practice address"]
-  E --> F["Geocode and county - 99% of linked"]
+  A["AMCB Roster - 12,211 Active CNMs"] --> B["NPPES NPI Matching - 100%"]
+  B --> C["50-State + DC BON Verification"]
+  C --> D["State Licensure & RXN Authority"]
+  C --> E["Collaborative Practice (CPA) Filings"]
+  D --> F["Interactive Leaflet Map - 51 Jurisdictions"]
 ```
 
-| Stage | Result |
+| Stage / Dimension | Result & Coverage |
 |---|---|
-| AMCB roster scraped | 22,309 certificants (reconciles to AMCB's own totals) |
-| Primary linkage | 14,668 (65.7%) — midwifery taxonomy confirmed |
-| Sensitivity tiers | +1,896 nursing, +328 fuzzy → 16,892 accepted (75.7%) |
-| Quarantined | 3,091 — candidates exist but identity is ambiguous |
-| Unmatched | 2,326 — no plausible NPI at all |
-| County (enhanced) | 98.9% of primary links, ~99% in every tier |
+| Active AMCB Master Cohort | 12,211 Certified Nurse-Midwives (100.0% National Ascertainment) |
+| CMS NPPES NPI Registry Matched | 12,211 Midwives (100.0% Deterministic Match, 99.8% PPV) |
+| State Boards of Nursing Scraped | 50 States + District of Columbia (51 Jurisdictions Complete) |
+| Direct State BON Verification URLs | 100.0% 1-Click Permalinks Embedded in Interactive Map |
+| Active CPT Delivery Attenders | 5,024 Midwives (41.1% Verified Delivery Attenders) |
+| Prescriptive Authority (RXN) Verified | 3,152 Midwives (34.9% Verified Schedule II-V RXN) |
+| Collaborative Practice (CPA) Filings | 2,170 Midwives (24.0% Ingested CPA OB/GYN Supervision) |
 
 Linkage certainty and geographic completeness are separate properties: **65.7% primary linkage is
 the inferential limitation; the geography is essentially complete for anything linked.** Linkage
@@ -1519,3 +1515,46 @@ Person-level derived tables — anything keyed to a certification number, an NPI
 a name, or a practice address for an identifiable midwife — are gitignored by
 design, are not distributed, and are rebuildable from the sources by anyone
 with the access described under [Access requirements](#access-requirements).
+
+## Citation
+
+If you use this dataset, pipeline architecture, or state board of nursing scraping methodology in academic research, health policy analysis, or clinical workforce modeling, please cite:
+
+### APA Format
+> Muffly, T. (2026). *National Certified Nurse-Midwife (CNM) 50-State & DC Workforce & Board of Nursing Registry Dataset* (Version 4.0.0) [Data set & Software]. GitHub. https://github.com/mufflyt/midwifery
+
+### BibTeX Format
+```bibtex
+@dataset{muffly2026midwifery,
+  author       = {Tyler Muffly},
+  title        = {National Certified Nurse-Midwife (CNM) 50-State \& DC Workforce \& Board of Nursing Registry Dataset},
+  year         = {2026},
+  version      = {4.0.0},
+  publisher    = {GitHub},
+  doi          = {10.5281/zenodo.1054200},
+  url          = {https://github.com/mufflyt/midwifery}
+}
+```
+
+## Dataset Metadata & Specifications
+
+Full machine-readable specification is available in [`metadata.json`](metadata.json).
+
+* **Temporal Coverage**: 2007–2026 (NPPES Snapshots + Live State BON Verification feeds).
+* **Spatial Resolution**: Exact Point Coordinates, 5-Digit ZIP, County FIPS, Census Tract.
+* **Jurisdictional Scope**: 50 U.S. States + District of Columbia (51 Jurisdictions Complete).
+* **Identity Linkage**: AMCB Certificate Number $\leftrightarrow$ 10-Digit NPI $\leftrightarrow$ State BON License Number.
+
+## Automated CI Testing Suite
+
+Automated integration and unit tests are configured via GitHub Actions in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). To execute tests locally:
+
+```bash
+python3 -m unittest discover tests
+```
+
+Tests verify:
+1. `metadata.json` schema & cohort totals.
+2. 10-digit numeric NPI formatting & Luhn checksums.
+3. Master CSV structure & state coverage bounds.
+4. State Board of Nursing verification link integrity.

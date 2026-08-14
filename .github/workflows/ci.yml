@@ -151,6 +151,9 @@ jobs:
       - name: Scraper and NPI-candidate tests
         run: python -m pytest tests/test_scrape.py tests/test_fetch_npi_candidates.py -q
 
+      - name: Run Midwifery Pipeline Integration Tests
+        run: python3 tests/test_midwifery_pipeline.py
+
   # ---------------------------------------------------------------------------
   # The tier that is allowed to cost something.
   #
