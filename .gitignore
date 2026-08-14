@@ -231,3 +231,10 @@ artifacts/hpsa_status.csv
 
 # Diagnostic audit outputs, which quote both organizations and addresses
 artifacts/audit/
+
+# PPV review sample: 150 rows of certification_number + npi + organization
+# name. Regenerated exactly by resolve_org_ambiguity.R, whose sampling seed is
+# fixed (SEED <- 20260811L), so untracking loses nothing -- but an adjudicated
+# copy is NOT reproducible, so keep a backup outside the repo before rerunning
+# the producer once someone has started filling human_verdict.
+artifacts/org_resolution_review_sample.csv
