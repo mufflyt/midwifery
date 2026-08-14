@@ -22,8 +22,14 @@
 root <- "."
 if (!dir.exists(file.path(root, ".git")) && dir.exists("../.git")) root <- ".."
 
-suppressPackageStartupMessages(library(testthat))
+suppressPackageStartupMessages({
+  library(testthat)
+  library(stringr)          # zip5_key() and friends are built on it
+})
 source(file.path(root, "tests", "helper-invariants.R"))
+# The canonical join keys, so the fixture tests below can assert against the
+# real implementations rather than a copy of them.
+source(file.path(root, "R", "lib", "common_helpers.R"))
 
 # -----------------------------------------------------------------------------
 # HERMETIC: the NPI check digit
@@ -279,4 +285,66 @@ test_that("the linkage holds unique AND arithmetically valid NPIs", {
 
   expect_error(contract_npi_unique(linked, "npi", context = "frozen linkage"), NA)
   expect_error(contract_npi_valid(linked, "npi", context = "frozen linkage"), NA)
+})
+
+# =============================================================================
+# Synthetic fixtures: the same contracts, exercised where the real data cannot go
+# =============================================================================
+# The tests above that read person-level artifacts SKIP on a runner. These do
+# not: they build a roster-shaped fixture that describes nobody, so the contract
+# code paths execute in CI, and -- more usefully -- they plant defects and
+# require the guards to catch them. A guard never seen to fail is not known to
+# work.
+# =============================================================================
+
+source(file.path(root, "tests", "helper-data-generation.R"))
+
+test_that("gen_npi produces NPIs that are actually valid, not merely shaped", {
+  # The ported bug: upstream drew the check digit at random, so ~1 in 10 of its
+  # "valid" NPIs validated. valid_rate must mean what it says or every fixture
+  # built on it is quietly wrong.
+  set.seed(101)
+  v <- gen_npi(200, valid_rate = 1)
+  expect_true(all(npi_luhn_valid(v)))
+
+  set.seed(102)
+  mixed <- gen_npi(200, valid_rate = 0.9)
+  expect_gte(sum(npi_luhn_valid(mixed), na.rm = TRUE), 170L)
+})
+
+test_that("a clean synthetic linkage satisfies every contract", {
+  d <- create_test_amcb_linkage(n = 300, seed = 7)
+  linked <- d[!is.na(d$npi), ]
+
+  expect_error(contract_require_cols(d, c("certification_number", "npi",
+                                          "certification_date", "expiration_date")), NA)
+  expect_error(contract_npi_unique(linked, "npi", context = "synthetic linkage"), NA)
+  expect_error(contract_npi_valid(linked, "npi", context = "synthetic linkage"), NA)
+  expect_validation_ok(validate_cardinality(d, "certification_number", "unique"))
+  expect_validation_ok(validate_temporal_consistency(
+    d$certification_date, d$expiration_date,
+    "certification precedes expiration", format = "%m/%Y"))
+})
+
+test_that("every planted defect is caught by the guard that owns it", {
+  # Each of these is a real failure this pipeline has had or could have.
+  expect_error(
+    contract_npi_unique(create_test_amcb_linkage(50, seed = 8, corrupt = "duplicate_npi"),
+                        "npi", context = "planted duplicate"),
+    "Duplicate NPIs")
+
+  expect_error(
+    contract_npi_valid(create_test_amcb_linkage(50, seed = 9, corrupt = "invalid_npi"),
+                       "npi", context = "planted typo"),
+    "check digit")
+
+  rev <- create_test_amcb_linkage(50, seed = 10, corrupt = "reversed_dates")
+  expect_false(validate_temporal_consistency(rev$certification_date, rev$expiration_date,
+                                             "order", format = "%m/%Y")$ok)
+
+  # The blank-ZIP case is the defect fixed in zip5_key(): "", "  " and "NA" must
+  # not collapse to one joinable key.
+  blank <- create_test_amcb_linkage(50, seed = 11, corrupt = "blank_zip")
+  keys <- zip5_key(blank$practice_zip[1:3])
+  expect_true(all(is.na(keys)))
 })
