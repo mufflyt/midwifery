@@ -1,0 +1,50 @@
+MIT License
+
+Copyright (c) 2026 Tyler Muffly
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-------------------------------------------------------------------------------
+SCOPE OF THIS LICENSE
+
+The MIT terms above cover the SOURCE CODE in this repository -- the R, Python
+and shell that scrape, link, geocode and tabulate -- and nothing else.
+
+They do NOT cover, and cannot grant rights in:
+
+  * The AMCB certification directory. Names, certification numbers, statuses
+    and dates originate with the American Midwifery Certification Board and
+    remain subject to that body's own terms. This repository redistributes no
+    AMCB roster file.
+
+  * NPPES, CMS Doctors & Clinicians, Open Payments, AHRF, ACS, TIGER, RUCC,
+    CDC WONDER and County Health Rankings extracts. Each is a U.S. federal or
+    federally-funded product with its own use terms; most are public domain,
+    but the reuse terms travel with the source, not with this license.
+
+  * Scraped third-party profile content (Healthgrades, Doximity, state Board
+    of Nursing listings). Those pages carry the publisher's terms.
+
+  * The ABOG roster reached through the private `isochrones` checkout, which
+    is not public and is not redistributed here.
+
+Person-level derived tables -- anything keyed to a certification number, an
+NPI, a name or a home-or-practice address for an identifiable midwife -- are
+gitignored by design and are not part of the licensed distribution. See the
+"Data sources" and "Access requirements" sections of README.md.

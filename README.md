@@ -1,5 +1,14 @@
 # midwifery
 
+[![CI](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Cite this repository](https://img.shields.io/badge/cite-CITATION.cff-brightgreen.svg)](CITATION.cff)
+[![Changelog](https://img.shields.io/badge/changelog-NEWS.md-lightgrey.svg)](NEWS.md)
+
+*Linking the 22,309 names in the AMCB certification directory to NPI identity,
+practice address and county geography — and reporting linkage certainty and
+geographic completeness as the separate things they are.*
+
 **[→ Interactive pipeline diagrams](https://claude.ai/code/artifact/9a541a9f-038f-458b-bb9d-d3b0120ca2cd)**
 &nbsp;·&nbsp; [source](docs/pipeline.html)
 
@@ -916,3 +925,106 @@ truncated.
 
 `certification, certification_number, status, certification_date,
 expiration_date, last_name, first_name, middle_name, discipline, primary_source`
+
+## Continuous integration
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push and
+pull request, in about a minute, on two Linux runners. It checks four things:
+every tracked R file parses, no file hardcodes a path into another user's home
+directory, `.gitignore` has no duplicate rules and no function is defined at
+top level in two files; the join-key unit tests (`pad5` vs `zip5_key`, `zip5`
+vs `zip5_first_run`, `zip9`, `phone10`, `norm_addr` vs `norm_addr_drop_unit`,
+`pad_ccn`); that every tracked `.py` compiles; and the address-key matching
+tests.
+
+It installs `stringr` and nothing else — no sf, no tidyverse, no system geo
+libraries. That is deliberate. A twenty-minute CI that installs GDAL to check a
+string function gets switched off the first week it goes red for an unrelated
+reason.
+
+**Read the green tick correctly.** Almost every test in `tests/` loads a
+multi-megabyte artifact, and several reach outside the repository entirely —
+the name-normalisation tests need `~/isochrones`, the linkage tests need the
+22,309-row FROZEN crosswalk that is gitignored because it is person-level.
+None of that exists on a runner. CI runs the subset that is genuinely hermetic
+and says nothing about the rest: green means **the keys and the syntax are
+sound**, not that the pipeline is correct. The real correctness surface is
+`TEST_COVERAGE.md`, the provenance sidecars, and the adversarial audit ledger
+in `docs/`.
+
+## Changelog
+
+[NEWS.md](NEWS.md) records what each change did to the *numbers*, including a
+**Retracted** section per release listing figures that were published and later
+found wrong — the 651 counties described as having no obstetric care, the
+suppressed WONDER cells rendered as zeros, the fertility denominator that
+counted women 15–49 under a name saying 15–44. Those entries are the point of
+the file.
+
+Version numbers there are retrospective groupings of 280 commits, not git tags.
+To reproduce a specific figure, use the commit SHA in that artifact's
+`.provenance.json` sidecar rather than a version string.
+
+## How to cite
+
+If you use this pipeline or the workforce estimates it produces, cite the
+software:
+
+> Muffly, T. (2026). *midwifery: linking the AMCB certification roster to NPI
+> identity and county geography* (Version 0.7.0) [Computer software].
+> https://github.com/mufflyt/midwifery
+
+BibTeX:
+
+```bibtex
+@software{muffly_midwifery_2026,
+  author  = {Muffly, Tyler},
+  title   = {midwifery: linking the {AMCB} certification roster to
+             {NPI} identity and county geography},
+  year    = {2026},
+  version = {0.7.0},
+  url     = {https://github.com/mufflyt/midwifery},
+  license = {MIT}
+}
+```
+
+[`CITATION.cff`](CITATION.cff) carries the same metadata in machine-readable
+form, plus structured citations for all twelve upstream data sources; GitHub
+renders it as a "Cite this repository" button. Two fields in it are marked
+`TODO` because they cannot be inferred — an ORCID, and a Zenodo DOI if you
+archive a release.
+
+**Cite the sources too, not just this repository.** The code is not the
+evidence. Any published estimate rests on the AMCB directory, NPPES, the CMS
+Doctors & Clinicians file, AHRF, ACS, TIGER, RUCC, CDC WONDER and County Health
+Rankings; the [Data sources](#data-sources) table gives the entry point and
+vintage for each, and `CITATION.cff` gives the formal citation with the access
+date.
+
+**Cite the limitation with the number.** Two properties of this dataset are
+easy to conflate and should travel with any figure taken from it:
+
+- **65.7%** of the roster links to an NPI with confirmed midwifery taxonomy
+  (75.7% including the nursing and fuzzy sensitivity tiers). That is the
+  inferential ceiling.
+- Geography is essentially complete — **~99%** — for anything that links. That
+  is not the same claim.
+- Linkage varies sharply by certification status (**82.3%** ACTIVE vs **19.6%**
+  DECEASED), so **the linked subset is not a random sample of the roster** and
+  should not be described as one.
+
+## License
+
+Source code is released under the [MIT License](LICENSE).
+
+The license covers the code and nothing else. It cannot grant rights in the
+AMCB directory content, the federal data extracts (each carries its own terms,
+which travel with the source), or scraped third-party profile pages
+(Healthgrades, Doximity, state Board of Nursing listings). The ABOG roster
+reached through the private `isochrones` checkout is not public and is not
+redistributed here.
+
+Person-level derived tables — anything keyed to a certification number, an NPI,
+a name, or a practice address for an identifiable midwife — are gitignored by
+design, are not distributed, and are rebuildable from the sources by anyone
+with the access described under [Access requirements](#access-requirements).
