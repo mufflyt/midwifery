@@ -1,0 +1,90 @@
+# =============================================================================
+# ci_leak_baseline.txt -- person-level artifacts that are ALREADY tracked
+# =============================================================================
+# Every path here carries at least one column that identifies a midwife (an NPI,
+# a certification number, a name, a licence number) or is named like a
+# person-level artifact. They were committed before tests/ci_leak_guard.R
+# existed. Listing them is not approval: it is a ratchet.
+#
+# THE RULE: this list may SHRINK, never grow. Untracking a file and deleting its
+# line here is a passing change. Adding a line is not -- if CI sends you here to
+# add a path, the artifact should be gitignored and rebuilt instead.
+#
+# Removing a file from git does NOT remove it from history. These are already in
+# every clone. Retiring an entry stops the bleeding for future commits; purging
+# what is already published needs a separate history rewrite, which is a
+# deliberate decision with its own cost.
+#
+# Ranked roughly by exposure -- row count is the number of identifiable people
+# the file describes.
+# =============================================================================
+
+midwives_with_nppes.csv                                                                  # 22,309 rows
+midwives_status_check.csv                                                                # 22,309 rows
+midwives_geocoded.csv                                                                    # 22,309 rows
+midwives.csv                                                                             # 22,309 rows
+artifacts/prelinkage_backup_20260810/amcb_npi_linkage_FROZEN.csv                         # 22,309 rows
+artifacts/frozen_stage2/midwives_with_nppes.csv                                          # 22,309 rows
+artifacts/amcb_npi_linkage_FROZEN_2026-08-08.csv                                         # 22,309 rows
+artifacts/amcb_npi_crosswalk_translit_panel-midwifery-plus-nursing_years-2007-2025.csv   # 22,309 rows
+artifacts/amcb_npi_crosswalk_component_panel-midwifery-plus-nursing_years-2007-2025.csv  # 22,309 rows
+artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv    # 22,309 rows
+artifacts/amcb_calibrated_ages.csv                                                       # 22,309 rows
+artifacts/cohort_midwives_open_payments_general_2024.csv                                 # 18,736 rows
+artifacts/cohort_membership_four_way.csv                                                 # 18,288 rows
+artifacts/amcb_npi_geography.csv                                                         # 17,054 rows
+artifacts/frozen_cohort/analytic_cohort.csv                                              # 16,892 rows
+artifacts/state_nursing_board_cnm_addresses.csv                                          # 12,211 rows
+artifacts/open_payments_midwives_matched_vs_unmatched.csv                                # 12,211 rows
+artifacts/cohort_midwives_tier1_tier2_bon_validated.csv                                  # 12,211 rows
+artifacts/cohort_midwife_hospital_rigorous_attributions.csv                              # 12,211 rows
+artifacts/cohort_midwife_hospital_matches.csv                                            # 12,211 rows
+artifacts/cohort_midwife_hospital_affiliations_multitier.csv                             # 12,211 rows
+artifacts/cohort_midwife_facility_attributions_final_v4.csv                              # 12,211 rows
+artifacts/cohort_midwife_facility_attributions_complete.csv                              # 12,211 rows
+artifacts/cohort_midwife_building_taxonomy.csv                                           # 11,920 rows
+artifacts/scraped_20_state_bons_midwives_master.csv                                      # 9,037 rows
+artifacts/midwife_group_practice_names.csv                                               # 8,144 rows
+artifacts/tier1_tier2_combined_bon_validated_master.csv                                  # 8,092 rows
+artifacts/cohort_midwives_cpt_delivery_attenders.csv                                     # 7,470 rows
+artifacts/cohort_midwives_open_payments_employers.csv                                    # 7,039 rows
+midwives_unmatched.csv                                                                   # 5,566 rows
+artifacts/frozen_stage2/midwives_unmatched.csv                                           # 5,566 rows
+artifacts/tier1_live_bon_all_states_complete.csv                                         # 5,120 rows
+artifacts/tier2_live_bon_all_states_complete.csv                                         # 2,972 rows
+artifacts/cohort_additions_16743_to_17538.csv                                            # 2,147 rows
+artifacts/midwife_hospital_affiliations.csv                                              # 1,958 rows
+artifacts/state_nursing_license_ages.csv                                                 # 1,833 rows
+artifacts/wa_cnm_licenses.csv                                                            # 1,483 rows
+artifacts/wa_cnm_ages.csv                                                                # 1,483 rows
+artifacts/cohort_midwives_open_payments_postmastr_final_yield.csv                        # 1,466 rows
+artifacts/invariant_address_provenance_failures.csv                                      # 1,164 rows
+artifacts/amcb_training_institution.csv                                                  # 942 rows
+artifacts/amcb_education_history.csv                                                     # 876 rows
+artifacts/amcb_training_institution_table1.csv                                           # 874 rows
+artifacts/cohort_midwives_open_payments_type2_organizations_full.csv                     # 819 rows
+artifacts/wa_cnm_licenses_active.csv                                                     # 688 rows
+artifacts/amcb_training_institution_frontier.csv                                         # 686 rows
+artifacts/generalist_residual_city_centroids.csv                                         # 586 rows
+artifacts/amcb_training_institution_linked.csv                                           # 555 rows
+data/congress/legislators_current.csv                                                    # 537 rows
+artifacts/live_washington_bon_ingested_midwives.csv                                      # 449 rows
+artifacts/cabc_matched_midwives_final.csv                                                # 221 rows
+artifacts/amcb_crosswalk_diff_component_vs_translit.csv                                  # 212 rows
+artifacts/amcb_crosswalk_diff_c5guard_vs_amcb_npi_linkage_FROZEN.csv                     # 156 rows
+artifacts/amcb_class5_review_census.csv                                                  # 156 rows
+artifacts/amcb_class5_corroboration.csv                                                  # 156 rows
+artifacts/amcb_crosswalk_review_sample_component.csv                                     # 100 rows
+artifacts/amcb_crosswalk_review_sample_c5guard.csv                                       # 100 rows
+artifacts/amcb_crosswalk_review_sample.csv                                               # 100 rows
+artifacts/cohort_midwives_open_payments_type2_organizations.csv                          # 41 rows
+artifacts/freestanding_birth_center_midwives_expanded.csv                                # 31 rows
+artifacts/invariant_cross_state_failures.csv                                             # 17 rows
+artifacts/amcb_crosswalk_diff_vs_baseline.csv                                            # 13 rows
+artifacts/aabc_matched_birth_center_midwives.csv                                         # 9 rows
+artifacts/zip_fallback_discordant.csv                                                    # 8 rows
+artifacts/cross_state_diagnosis.csv                                                      # 8 rows
+data/delivery_activity_TEMPLATE.csv                                                      # 2 rows
+artifacts/ohio_voter_license_ages_provenance.csv                                         # 1 rows
+artifacts/florida_voter_license_ages_provenance.csv                                      # 1 rows
+artifacts/no_final_npi_provenance.csv                                                    # 0 rows

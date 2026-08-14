@@ -933,7 +933,7 @@ pull request, across three Linux jobs tiered by what they cost to install:
 
 | Job | Installs | Checks |
 |---|---|---|
-| **r-checks** | `stringr` | every tracked R file parses; no hardcoded path into another user's home; no duplicate `.gitignore` rules; no function defined at top level in two files; the join keys (`pad5` vs `zip5_key`, `zip5` vs `zip5_first_run`, `zip9`, `phone10`, `norm_addr` vs `norm_addr_drop_unit`, `pad_ccn`); Table 1 age/tenure/decade banding |
+| **r-checks** | `stringr` | every tracked R file parses; no hardcoded path into another user's home; no duplicate `.gitignore` rules; no function defined at top level in two files; the join keys (`pad5` vs `zip5_key`, `zip5` vs `zip5_first_run`, `zip9`, `phone10`, `norm_addr` vs `norm_addr_drop_unit`, `pad_ccn`); Table 1 age/tenure/decade banding; **the leak guard**; **the artifact contracts** |
 | **python-checks** | `pytest` | every tracked `.py` compiles; address-key matching; the scraper's 500-row APEX pager cap and the NPI API's 200-row candidate cap |
 | **r-unit-tests** | the tidyverse stack, cached | the deterministic license→NPI bridge and its collision handling; state-license table construction; former/maiden-name candidate expansion; age-at-certification validation; the cross-taxonomy rule that a nursing-only match is never promoted into the primary cohort; the checkpoint-merge contract |
 
@@ -948,6 +948,42 @@ and gets switched off in week two.
 `git clone` of HEAD, which has no gitignored artifacts and no `~/isochrones`.
 Passing in your working tree proves nothing, because your working tree has the
 data.
+
+### The leak guard
+
+[`tests/ci_leak_guard.R`](tests/ci_leak_guard.R) reads the header of every
+tracked CSV and fails when a column that identifies a midwife — an NPI, a
+certification number, a name, a licence number — appears in a file that is not
+already on [`tests/ci_leak_baseline.txt`](tests/ci_leak_baseline.txt). It also
+refuses newly tracked files *named* like person-level artifacts (`FROZEN`,
+`review_sample`, `voter`), because a rename must not launder the contents, and
+it fails any tracked file over 50 MB.
+
+**67 files are on the baseline.** They were committed before the guard existed
+and are ranked there by how many identifiable people they describe — six carry
+all 22,309. The list may shrink and never grow: untracking a file and deleting
+its line is a passing change; being sent there to *add* a path means the
+artifact should be gitignored and rebuilt instead.
+
+Removing a file from git does not remove it from history. The baseline stops
+the bleeding for future commits; purging what is already published needs a
+separate history rewrite, which is its own decision with its own cost.
+
+### The artifact contracts
+
+[`tests/ci_artifact_contracts.R`](tests/ci_artifact_contracts.R) reads
+committed artifacts and asserts the properties a reader would assume without
+checking. Each exists because the failure already happened here:
+
+- **Table 1 blocks sum to the cohort.** 19 of 23 blocks must total 11,920
+  exactly; one is multi-select and three have pinned subset denominators, so a
+  *change* in those gaps fails rather than the gaps themselves. Table 1 has
+  twice been rebuilt halfway, publishing rows from two cohorts side by side.
+- **Suppressed is not zero.** No suppressed or WONDER-unreported county may
+  carry a `0`, and no rate derived from a missing count may be populated.
+  Cycles 3, 4 and 15 were all this one bug.
+- **Provenance coverage does not regress.** 145 of 166 tracked artifacts have
+  no `.provenance.json` sidecar; that number may only go down.
 
 **Read the green tick correctly.** Almost every test in `tests/` loads a
 multi-megabyte artifact, and several reach outside the repository entirely —

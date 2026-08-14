@@ -67,6 +67,19 @@ jobs:
       - name: Table 1 banding tests
         run: Rscript tests/test_table1_bands.R
 
+      # The check with the most to prevent. Four commits in one week untracked
+      # person-level artifacts one at a time, each found by hand AFTER it was
+      # committed. This blocks the next one, caps tracked file size, and holds a
+      # baseline of the 67 already in history.
+      - name: Leak guard (person-level columns, file size)
+        run: Rscript tests/ci_leak_guard.R
+
+      # Reads committed artifacts and asserts what a reader would assume without
+      # checking: Table 1 blocks sum to the cohort, a suppressed cell is not a
+      # zero, provenance coverage does not regress.
+      - name: Artifact contracts
+        run: Rscript tests/ci_artifact_contracts.R
+
   python-checks:
     name: Python syntax and address keys
     runs-on: ubuntu-latest
