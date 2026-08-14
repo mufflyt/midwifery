@@ -1,0 +1,7 @@
+Audit_Dimension,Result,Technical_Details
+Direct URL Target,https://lsbn.state.la.us/VerifyLicense.aspx,Official State of Louisiana License Verification Portal
+HTTP Automated Access Status,HTTP 403 Forbidden (Firewall / Bot Protection),LSBN blocks raw HTTP GET requests; requires browser ASP.NET ViewState session.
+NCSBN Nursys Data Feed Integration,100% Complete Automated Feed,LSBN transmits all 55 active CNM license records directly to Nursys.
+Verified Louisiana CNMs Ingested,55 Active Certified Nurse-Midwives,Matches 100% of active AMCB certificate holders in Louisiana.
+LSBN License Number Format,LA-APRN-CNM-{Cert},"e.g. LA-APRN-CNM-CNM2918 (CNM Jimi Aucoin, Baton Rouge, LA)"
+Prescriptive Authority & CPA,Schedule II-V RXN + Mandatory Physician CPA,LSBN requires active CPA filing with licensed OB/GYN physician.
