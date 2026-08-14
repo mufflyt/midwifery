@@ -167,3 +167,116 @@ test_that("every NPI in the linkage carries a valid check digit", {
                               length(bad), length(v),
                               paste(utils::head(bad, 5), collapse = ", ")))
 })
+
+# =============================================================================
+# The ported contracts and schema validators
+# =============================================================================
+# helper-contracts.R came over verbatim; helper-schema-validation.R was
+# translated from DBI/SQL to data frames, because upstream's version needs a
+# DuckDB warehouse this repository does not have. See each file's header.
+# =============================================================================
+
+source(file.path(root, "tests", "helper-contracts.R"))
+source(file.path(root, "tests", "helper-schema-validation.R"))
+
+test_that("the county profile satisfies its column and domain contracts", {
+  skip_if_not(file.exists(county_path), "county_cnm_births.csv not present")
+  d <- utils::read.csv(county_path, check.names = FALSE)
+
+  # The contract_* guards stop() rather than returning an expectation, which is
+  # what makes them usable from pipeline code. Wrapped in expect_error(., NA)
+  # so testthat records an assertion -- an unwrapped guard leaves an EMPTY test,
+  # which reports as a pass and checks nothing (Hall of Shame #6).
+
+  # Columns every downstream figure reads. A rename upstream is silent until a
+  # map comes out empty; this makes it loud.
+  expect_error(contract_require_cols(d, c("GEOID", "state", "n_midwives",
+                                          "n_hosp_active", "n_hosp_ob",
+                                          "suppressed", "wonder_county_reported")), NA)
+
+  # RUCC is 1-9 and nothing else. A 0 or a 10 means the crosswalk changed
+  # vintage without anyone saying so.
+  expect_error(contract_domain(d$rucc_2023, allowed = as.character(1:9)), NA)
+
+  # The suppression flags are logical, not the strings "TRUE"/"T"/"1" in three
+  # different files -- which is how "suppressed" stops meaning suppressed.
+  expect_error(contract_domain(as.character(d$suppressed),
+                               allowed = c("TRUE", "FALSE", "NA", NA)), NA)
+})
+
+test_that("GEOID is a unique key by the ported cardinality validator", {
+  skip_if_not(file.exists(county_path), "county_cnm_births.csv not present")
+  d <- utils::read.csv(county_path, colClasses = "character", check.names = FALSE)
+  expect_validation_ok(validate_cardinality(d, "GEOID", "unique"))
+})
+
+test_that("county domain invariants hold", {
+  skip_if_not(file.exists(county_path), "county_cnm_births.csv not present")
+  d <- utils::read.csv(county_path, check.names = FALSE)
+
+  # The suppressed-is-not-zero rule, expressed as a predicate rather than as
+  # bespoke code -- same invariant ci_artifact_contracts.R asserts, now stated
+  # in the shared vocabulary so it reads the same in both places.
+  expect_validation_ok(validate_domain_invariant(
+    d,
+    function(x) !(as.logical(x$suppressed) %in% TRUE &
+                  !is.na(x$cnm_births_2016_2024) &
+                  x$cnm_births_2016_2024 == 0),
+    "a suppressed county never carries a zero"))
+
+  expect_validation_ok(validate_domain_invariant(
+    d,
+    function(x) is.na(x$n_hosp_ob) | is.na(x$n_hosp_active) |
+                x$n_hosp_ob <= x$n_hosp_active,
+    "obstetric hospitals never exceed active hospitals"))
+})
+
+test_that("published rates stay inside their plausible range", {
+  skip_if_not(file.exists(county_path), "county_cnm_births.csv not present")
+  d <- utils::read.csv(county_path, check.names = FALSE)
+
+  expect_validation_ok(validate_statistical_property(
+    d$cnm_share_of_births_pct, 0, 100,
+    "CNM share of births is a percentage"))
+
+  # A general fertility rate is only interpretable where the denominator can
+  # carry one. De Baca County NM has 145 women aged 15-44 and 70 births, which
+  # is 483 per 1,000 -- noise, not a defect, and bounding the raw maximum would
+  # have flagged it. That is cycle 7's lesson exactly ("a superlative that named
+  # the noisiest county"), so the invariant is restricted to counties with a
+  # denominator of at least 1,000. Among those the observed maximum is 386.
+  big <- d[!is.na(d$women_15_44) & d$women_15_44 >= 1000, ]
+  expect_validation_ok(validate_statistical_property(
+    big$acs_births_per_1000_women_15_44, 0, 450,
+    "ACS fertility rate is possible where the denominator supports one"))
+})
+
+test_that("certification never postdates expiration", {
+  # DATA-BOUND: the roster is gitignored, so this skips on a runner.
+  roster <- file.path(root, "midwives.csv")
+  skip_if_not(file.exists(roster), "midwives.csv is gitignored; run locally")
+  d <- utils::read.csv(roster, colClasses = "character", check.names = FALSE)
+  skip_if_not(all(c("certification_date", "expiration_date") %in% names(d)),
+              "roster lacks the date columns")
+
+  # AMCB publishes MM/YYYY. Passing the format explicitly is deliberate: an
+  # unparsed column would compare as all-NA and pass vacuously.
+  expect_validation_ok(validate_temporal_consistency(
+    d$certification_date, d$expiration_date,
+    "certification precedes expiration", format = "%m/%Y"))
+})
+
+test_that("the linkage holds unique AND arithmetically valid NPIs", {
+  # DATA-BOUND. Uniqueness and validity are different properties: a file can
+  # hold 16,892 unique NPIs several of which are typos.
+  frozen <- file.path(root, "artifacts", "amcb_npi_linkage_FROZEN_2026-08-08.csv")
+  skip_if_not(file.exists(frozen), "frozen linkage is gitignored; run locally")
+  d <- utils::read.csv(frozen, colClasses = "character", check.names = FALSE)
+  skip_if_not("npi" %in% names(d), "no npi column")
+
+  linked <- d[!is.na(d$npi) & nzchar(trimws(d$npi)) & trimws(d$npi) != "NA", ]
+  skip_if(nrow(linked) == 0, "no linked NPIs")
+
+  expect_error(contract_npi_unique(linked, "npi", context = "frozen linkage"), NA)
+  expect_error(contract_npi_valid(linked, "npi", context = "frozen linkage"), NA)
+})
