@@ -1,0 +1,38 @@
+# =============================================================================
+# The shared reporter for the CI check scripts
+# =============================================================================
+# ci_leak_guard.R and ci_artifact_contracts.R both need the same four lines of
+# output plumbing. Defining them twice is precisely the defect H4 exists to
+# catch -- and it did catch it, which is why this file exists. Anything that
+# grows a third caller belongs here too.
+#
+# Names are prefixed because `fail` is already taken at top level by
+# verify_artifact_freshness.R, and a second definition of a common verb is how
+# two files quietly stop meaning the same thing.
+# =============================================================================
+
+ci_failures <- character(0)
+
+ci_fail    <- function(...) ci_failures <<- c(ci_failures, sprintf(...))
+ci_ok      <- function(...) cat(sprintf("  ok   %s\n", sprintf(...)))
+ci_skip    <- function(...) cat(sprintf("  --   %s\n", sprintf(...)))
+ci_section <- function(s)   cat(sprintf("\n-- %s --\n", s))
+
+# Exits non-zero when anything failed, so the step fails the job.
+ci_finish <- function() {
+  cat("\n")
+  if (length(ci_failures)) {
+    for (f in ci_failures) cat(sprintf("FAIL %s\n", f))
+    cat(sprintf("\nFAILED (%d)\n", length(ci_failures)))
+    quit(status = 1)
+  }
+  cat("PASS (0 failures)\n")
+}
+
+# Tracked paths matching a git pathspec. Quoted so git expands the glob
+# recursively rather than the shell expanding it against the working directory.
+ci_tracked <- function(pattern) {
+  out <- suppressWarnings(system2("git", c("ls-files", shQuote(pattern)),
+                                  stdout = TRUE, stderr = FALSE))
+  if (length(out) == 0) character(0) else out
+}
