@@ -80,6 +80,19 @@ jobs:
       - name: Artifact contracts
         run: Rscript tests/ci_artifact_contracts.R
 
+      # Invariants about MEANING across artifacts: no numbered stage writes
+      # without provenance, no fourth rurality dialect, no percent column on a
+      # surprise scale, no geographic id that lost a digit or gained a forged
+      # token.
+      - name: Semantic contracts
+        run: Rscript tests/ci_semantic_contracts.R
+
+      # The join keys, assuming hostile input: missing values that come back
+      # looking joinable, spreadsheet damage, prefix collisions, non-Anglo
+      # addresses, idempotence and length preservation.
+      - name: Adversarial key tests
+        run: Rscript tests/test_adversarial_keys.R
+
   python-checks:
     name: Python syntax and address keys
     runs-on: ubuntu-latest

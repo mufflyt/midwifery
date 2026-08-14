@@ -140,7 +140,15 @@ ob_hospital_addresses <- function(path = POS) {
       prvdr_num = PRVDR_NUM,
       fac_name  = FAC_NAME,
       ob_srvc_cd = OB_SRVC_CD,
-      county_fips = paste0(FIPS_STATE_CD, FIPS_CNTY_CD),
+      # paste0() renders NA as the string "NA", so a facility missing both codes
+      # got county_fips = "NANA" -- a value that is not a county, is not
+      # missing, and joins to every other facility with the same gap. Two
+      # reached the committed artifact (Maniilaq in Alaska, LBJ Tropical in
+      # American Samoa). Same defect family as the "NA" middle initial that
+      # emptied evidence class 2: missing wearing the face of data.
+      county_fips = ifelse(is.na(FIPS_STATE_CD) | is.na(FIPS_CNTY_CD),
+                           NA_character_,
+                           paste0(FIPS_STATE_CD, FIPS_CNTY_CD)),
       # Column names the canonical geocoder expects.
       geocode_address_1 = ST_ADR,
       geocode_city      = CITY_NAME,

@@ -108,8 +108,12 @@ zip5_first_run <- function(x) str_extract(as.character(x), "[0-9]{5}")
 #' @param x [vector]: ZIP as recorded.
 #' @return [character] nine digits, or NA.
 zip9 <- function(x) {
+  # `>= 9` truncated instead of refusing: a ten-digit value -- an NPI pasted
+  # into a ZIP column, a ZIP+4 with a stray digit -- silently became a
+  # well-formed ZIP+4 belonging to somebody else. phone10() below already
+  # requires an exact length for exactly this reason. Match it.
   d <- str_remove_all(as.character(x), "[^0-9]")
-  ifelse(!is.na(d) & nchar(d) >= 9, substr(d, 1, 9), NA_character_)
+  ifelse(!is.na(d) & nchar(d) == 9, d, NA_character_)
 }
 
 #' Ten-digit phone key

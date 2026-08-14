@@ -30,7 +30,15 @@
 #' pad5(c(1001, 8031))          # "01001" "08031"
 #' pad5("8031")                 # "08031" -- character input is safe too
 #' @family identifier padding
-pad5 <- function(x) stringr::str_pad(as.character(x), 5, "left", "0")
+pad5 <- function(x) {
+  # An empty string is not a code, and padding it produces "00000" -- a county
+  # FIPS that does not exist but joins perfectly to every other blank. pad_ccn()
+  # below already treats blank as missing; this did not, which is the same
+  # inconsistency that let a private `pad5` shadow this one. Blank in, NA out.
+  x <- stringr::str_trim(as.character(x))
+  x[!nzchar(x)] <- NA_character_
+  stringr::str_pad(x, 5, "left", "0")
+}
 
 #' Reduce a postal ZIP to its five-digit join key
 #'
@@ -47,9 +55,15 @@ pad5 <- function(x) stringr::str_pad(as.character(x), 5, "left", "0")
 #' @param x [vector]: ZIP as recorded.
 #' @return [character] five digits, NA preserved.
 zip5_key <- function(x) {
-  y <- pad5(stringr::str_sub(stringr::str_remove_all(as.character(x), "[^0-9]"),
-                             1, 5))
-  ifelse(is.na(x), NA_character_, y)
+  # Guarding `is.na(x)` alone was never enough. "", "  ", "NA" and "N/A" all
+  # survive that check, strip to zero digits, and pad to "00000" -- one shared,
+  # perfectly joinable key for every record whose ZIP is missing. That is the
+  # class-2 defect in a different costume: a missing value wearing the face of
+  # a real one. If nothing is left after stripping, nothing is what comes back.
+  digits <- stringr::str_sub(
+    stringr::str_remove_all(as.character(x), "[^0-9]"), 1, 5)
+  digits[is.na(digits) | !nzchar(digits)] <- NA_character_
+  pad5(digits)
 }
 
 #' Pad a CMS Certification Number (CCN) to six characters
