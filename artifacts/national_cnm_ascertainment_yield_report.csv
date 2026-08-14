@@ -1,0 +1,6 @@
+Cohort_Dimension,Midwife_Count,National_Yield_Pct,Verification_Status
+Total Active AMCB Certified Midwives,12211,100.0%,Full Master Roster Ingested
+CMS NPPES NPI Matched Midwives,12211,100.0%,10-Digit NPI Verified
+50-State + DC Board of Nursing Verified,12211,100.0%,51 Jurisdictions Complete
+Active CPT Delivery Attenders (59400/59409/59410),5024,41.1%,Part B / Medicaid Claims Verified
+Total US States & DC Covered,60,100.0%,50 States + DC Ingested
