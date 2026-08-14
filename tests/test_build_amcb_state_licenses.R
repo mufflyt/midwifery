@@ -51,8 +51,14 @@ write_csv(tibble(
   license_status = "ACTIVE", license_type = "CNM"),
   file.path(bd, "TX.csv"))
 
+# Tier 3 is now OFF by default, so this run must NOT accept the cross-state
+# C4. The explicit opt-in run below is what exercises tier 3.
+res_default <- build_amcb_state_licenses(amcb_path = file.path(td, "amcb.csv"),
+                                         board_dir = bd,
+                                         destination_dir = file.path(td, "def"))
 res <- build_amcb_state_licenses(amcb_path = file.path(td, "amcb.csv"),
-                                 board_dir = bd, destination_dir = td)
+                                 board_dir = bd, destination_dir = td,
+                                 allow_national_tier = TRUE)
 b <- res$bridge
 gb <- function(id) b[b$amcb_id == id, ]
 
@@ -85,15 +91,56 @@ cat("\n=== unresolved stays unresolved ===\n")
 ok("C5 is absent from the bridge", nrow(gb("C5")) == 0L)
 ok("C5 is reported unresolved", "C5" %in% res$resolution$unresolved$amcb_id)
 
-cat("\n=== national tier can be switched off ===\n")
-res_off <- build_amcb_state_licenses(amcb_path = file.path(td, "amcb.csv"),
-                                     board_dir = bd,
-                                     destination_dir = file.path(td, "off"),
-                                     allow_national_tier = FALSE)
-ok("C4 is NOT accepted when the national tier is disabled",
-   !("C4" %in% res_off$bridge$amcb_id))
-ok("tiers 1 and 2 are unaffected",
-   all(c("C1","C2") %in% res_off$bridge$amcb_id))
+cat("\n=== TIER 3 IS OFF BY DEFAULT ===\n")
+# The whole point: apparent national uniqueness is an artifact of how few
+# rosters are loaded, so it must never populate the bridge unasked.
+ok("the default run does NOT accept the cross-state C4",
+   !("C4" %in% res_default$bridge$amcb_id))
+ok("C4 is reported unresolved by default",
+   "C4" %in% res_default$resolution$unresolved$amcb_id)
+ok("tiers 1 and 2 still populate the bridge by default",
+   all(c("C1","C2") %in% res_default$bridge$amcb_id))
+
+cat("\n=== acquisition manifest ===\n")
+m <- res_default$manifest
+ok("loaded states are not queued",
+   all(is.na(m$priority[m$roster_loaded])))
+ok("CO and TX are marked loaded",
+   all(m$roster_loaded[m$state %in% c("CO","TX")]))
+ok("priorities are contiguous from 1 where present",
+   { pr <- sort(m$priority[!is.na(m$priority)])
+     length(pr) == 0L || identical(pr, seq_along(pr)) })
+
+# A cohort spread across unloaded states must queue by unresolved count.
+cohort_q <- tibble(amcb_id = paste0("A", 1:8),
+                   amcb_state = c("NY","NY","NY","CA","CA","TX","TX","GA"))
+lic_q <- tibble(license_state = "GA", license_number = "123")
+mq <- build_license_acquisition_manifest(cohort_q, cohort_q, lic_q)
+ok("largest unresolved unloaded state is priority 1",
+   mq$state[mq$priority %in% 1L] == "NY")
+ok("...with its unresolved count", mq$unresolved_amcb[mq$priority %in% 1L] == 3L)
+ok("second priority is the next-largest", mq$state[mq$priority %in% 2L] == "CA")
+ok("the loaded state is never queued",
+   is.na(mq$priority[mq$state == "GA"]) && isTRUE(mq$roster_loaded[mq$state == "GA"]))
+
+lic_ny <- tibble(license_state = "NY", license_number = "111")
+mq2 <- build_license_acquisition_manifest(cohort_q, cohort_q, lic_ny)
+ok("a LOADED large state drops out of the queue",
+   is.na(mq2$priority[mq2$state == "NY"]))
+ok("...and the next-largest unloaded state becomes priority 1",
+   mq2$state[mq2$priority %in% 1L] == "CA")
+
+cat("\n=== per-state resolution audit ===\n")
+sa <- res_default$state_audit
+ok("audit covers the cohort states", "CO" %in% sa$state)
+ok("deterministic + ambiguous + unresolved never exceeds the cohort",
+   all(sa$deterministic_n + sa$unresolved_n <= sa$cohort_n))
+
+cat("\n=== national tier can be switched on explicitly ===\n")
+ok("C4 IS accepted when the national tier is explicitly enabled",
+   "C4" %in% res$bridge$amcb_id)
+ok("and the resolution audit records the tier and state agreement",
+   "exact_first_last_national" %in% res$resolution$audit$match_tier)
 
 cat("\n=== two people sharing one key are dropped, not collapsed ===\n")
 bd2 <- file.path(td, "boards_collide")
@@ -106,8 +153,7 @@ write_csv(tibble(
   file.path(bd2, "CO.csv"))
 res_col <- build_amcb_state_licenses(amcb_path = file.path(td, "amcb.csv"),
                                      board_dir = bd2,
-                                     destination_dir = file.path(td, "col"),
-                                     allow_national_tier = FALSE)
+                                     destination_dir = file.path(td, "col"))
 ok("a key shared by two different names yields no match at all",
    !("C1" %in% res_col$bridge$amcb_id))
 

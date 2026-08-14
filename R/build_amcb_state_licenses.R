@@ -355,7 +355,7 @@ match_exact_national <- function(cohort_tbl, license_tbl) {
 #' @param allow_national_tier Enable tier 3.
 #' @return list(accepted, unresolved, ambiguous)
 resolve_amcb_licenses <- function(cohort_tbl, license_tbl,
-                                  allow_national_tier = TRUE) {
+                                  allow_national_tier = FALSE) {
   log_message("Beginning hierarchical AMCB-to-license resolution.")
 
   tier_1_tbl <- match_exact_middle_state(cohort_tbl, license_tbl)
@@ -400,16 +400,30 @@ resolve_amcb_licenses <- function(cohort_tbl, license_tbl,
   unresolved_tbl <- dplyr::anti_join(
     cohort_tbl, dplyr::distinct(accepted_tbl, .data$amcb_id), by = "amcb_id")
 
-  ambiguous_tbl <- dplyr::bind_rows(
-    dplyr::filter(tier_1_tbl, .data$candidate_n > 1L),
-    dplyr::filter(tier_2_tbl, .data$candidate_n > 1L),
-    if (nrow(tier_3_tbl)) dplyr::filter(tier_3_tbl, .data$candidate_n > 1L))
+  # A disabled tier yields a zero-column tibble; filtering it on a column that
+  # does not exist errors, so each tier is guarded by its own row count rather
+  # than assumed to have been populated.
+  amb_of <- function(x) if (nrow(x)) dplyr::filter(x, .data$candidate_n > 1L) else NULL
+  ambiguous_tbl <- dplyr::bind_rows(amb_of(tier_1_tbl), amb_of(tier_2_tbl),
+                                    amb_of(tier_3_tbl))
+
+  # Same reason: mutate() on an empty, column-less accepted table errors.
+  audit_tbl <- if (nrow(accepted_tbl)) {
+    accepted_tbl |>
+      dplyr::mutate(state_agrees = !is.na(.data$amcb_state) &
+                      .data$amcb_state == .data$license_state) |>
+      dplyr::count(.data$match_tier, .data$state_agrees, name = "n") |>
+      dplyr::arrange(.data$match_tier, dplyr::desc(.data$n))
+  } else {
+    tibble::tibble(match_tier = character(), state_agrees = logical(),
+                   n = integer())
+  }
 
   log_message("Resolution complete: ",
               format(nrow(accepted_tbl), big.mark = ","), " accepted; ",
               format(nrow(unresolved_tbl), big.mark = ","), " unresolved.")
   list(accepted = accepted_tbl, unresolved = unresolved_tbl,
-       ambiguous = ambiguous_tbl)
+       ambiguous = ambiguous_tbl, audit = audit_tbl)
 }
 
 #' Build the canonical AMCB state-license bridge.
@@ -443,6 +457,127 @@ build_license_bridge <- function(accepted_tbl) {
                                        .data$license_number, sep = ":")) |>
     dplyr::distinct(.data$amcb_id, .data$license_state, .data$license_number,
                     .keep_all = TRUE)
+}
+
+#' Build a state-board acquisition priority manifest.
+#'
+#' Ranks states by UNRESOLVED AMCB certificants, so the queue re-orders itself
+#' as rosters arrive instead of hard-coding NY/CA/FL/TX/GA forever. A state
+#' counts as loaded when at least one board row carries it.
+#'
+#' @param cohort_tbl Standardized complete AMCB cohort.
+#' @param unresolved_tbl Current unresolved AMCB cohort.
+#' @param license_tbl Current standardized state-board universe.
+#' @return [tbl_df] one row per state, priority 1..k for unloaded states.
+build_license_acquisition_manifest <- function(cohort_tbl, unresolved_tbl,
+                                               license_tbl) {
+  log_message("[acquisition] Building state acquisition manifest.")
+
+  cohort_state_tbl <- cohort_tbl |>
+    dplyr::filter(!is.na(.data$amcb_state)) |>
+    dplyr::count(state = .data$amcb_state, name = "cohort_n")
+  unresolved_state_tbl <- if (nrow(unresolved_tbl)) {
+    unresolved_tbl |>
+      dplyr::filter(!is.na(.data$amcb_state)) |>
+      dplyr::count(state = .data$amcb_state, name = "unresolved_amcb")
+  } else {
+    tibble::tibble(state = character(), unresolved_amcb = integer())
+  }
+  loaded_state_tbl <- license_tbl |>
+    dplyr::filter(!is.na(.data$license_state)) |>
+    dplyr::distinct(state = .data$license_state) |>
+    dplyr::mutate(roster_loaded = TRUE)
+
+  manifest_tbl <- cohort_state_tbl |>
+    dplyr::full_join(unresolved_state_tbl, by = "state") |>
+    dplyr::left_join(loaded_state_tbl, by = "state") |>
+    dplyr::mutate(
+      cohort_n = tidyr::replace_na(.data$cohort_n, 0L),
+      unresolved_amcb = tidyr::replace_na(.data$unresolved_amcb, 0L),
+      roster_loaded = tidyr::replace_na(.data$roster_loaded, FALSE),
+      resolved_n = .data$cohort_n - .data$unresolved_amcb,
+      resolved_pct = dplyr::if_else(.data$cohort_n > 0L,
+                                    100 * .data$resolved_n / .data$cohort_n,
+                                    NA_real_)) |>
+    # FALSE sorts before TRUE, so unloaded states lead and cumsum() below
+    # numbers them contiguously from 1.
+    dplyr::arrange(.data$roster_loaded, dplyr::desc(.data$unresolved_amcb),
+                   .data$state) |>
+    dplyr::mutate(
+      queueable = !.data$roster_loaded & .data$unresolved_amcb > 0L,
+      priority = dplyr::if_else(.data$queueable, cumsum(.data$queueable),
+                                NA_integer_)) |>
+    dplyr::select("priority", "state", "cohort_n", "unresolved_amcb",
+                  "resolved_n", "resolved_pct", "roster_loaded")
+
+  nxt <- manifest_tbl |> dplyr::filter(!is.na(.data$priority)) |>
+    dplyr::slice_min(.data$priority, n = 1L, with_ties = FALSE)
+  if (nrow(nxt) == 1L) {
+    log_message("[acquisition] Next board: ", nxt$state[[1L]], " with ",
+                format(nxt$unresolved_amcb[[1L]], big.mark = ",", trim = TRUE),
+                " unresolved certificants.")
+  } else {
+    log_message("[acquisition] No unloaded state has unresolved rows.")
+  }
+  manifest_tbl
+}
+
+#' Summarize license resolution by state.
+#' @param cohort_tbl Standardized complete AMCB cohort.
+#' @param resolution Object returned by resolve_amcb_licenses().
+#' @return [tbl_df] per-state resolved / ambiguous / unresolved counts.
+summarize_license_resolution_by_state <- function(cohort_tbl, resolution) {
+  log_message("[acquisition] Summarizing state-level resolution.")
+  cnt <- function(x, nm) {
+    if (!nrow(x) || !"amcb_state" %in% names(x))
+      return(tibble::tibble(state = character(), !!nm := integer()))
+    dplyr::count(x, state = .data$amcb_state, name = nm)
+  }
+  amb <- if (nrow(resolution$ambiguous) &&
+             "amcb_state" %in% names(resolution$ambiguous)) {
+    resolution$ambiguous |>
+      dplyr::distinct(.data$amcb_id, state = .data$amcb_state) |>
+      dplyr::count(.data$state, name = "ambiguous_n")
+  } else {
+    tibble::tibble(state = character(), ambiguous_n = integer())
+  }
+
+  cohort_tbl |>
+    dplyr::count(state = .data$amcb_state, name = "cohort_n") |>
+    dplyr::left_join(cnt(resolution$accepted, "deterministic_n"), by = "state") |>
+    dplyr::left_join(amb, by = "state") |>
+    dplyr::left_join(cnt(resolution$unresolved, "unresolved_n"), by = "state") |>
+    # across() with all_of() on plain names: c(.data$x, .data$y) inside across()
+    # is deprecated and errors under current dplyr.
+    dplyr::mutate(dplyr::across(dplyr::all_of(c("deterministic_n",
+                                                "ambiguous_n", "unresolved_n")),
+                                ~ tidyr::replace_na(.x, 0L)),
+                  deterministic_pct = 100 * .data$deterministic_n /
+                    .data$cohort_n) |>
+    dplyr::arrange(dplyr::desc(.data$unresolved_n), .data$state)
+}
+
+#' Save the acquisition manifest and per-state audit.
+#' @param manifest_tbl Acquisition manifest.
+#' @param state_audit_tbl Per-state resolution audit.
+#' @param artifact_dir Destination directory.
+#' @return Invisibly the saved paths.
+save_license_acquisition_audit <- function(manifest_tbl, state_audit_tbl,
+                                           artifact_dir = "artifacts") {
+  timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+  dir.create(artifact_dir, recursive = TRUE, showWarnings = FALSE)
+  paths <- list(
+    manifest_path = file.path(artifact_dir,
+                              paste0("amcb_license_acquisition_manifest_",
+                                     timestamp, ".csv")),
+    audit_path = file.path(artifact_dir,
+                           paste0("amcb_license_state_audit_", timestamp,
+                                  ".csv")))
+  log_message("[acquisition] Saving manifest: ", paths$manifest_path)
+  readr::write_csv(manifest_tbl, paths$manifest_path, na = "")
+  log_message("[acquisition] Saving state audit: ", paths$audit_path)
+  readr::write_csv(state_audit_tbl, paths$audit_path, na = "")
+  invisible(paths)
 }
 
 #' Save the bridge and audit artifacts.
@@ -486,7 +621,8 @@ save_license_artifacts <- function(bridge_tbl, unresolved_tbl, ambiguous_tbl,
 build_amcb_state_licenses <- function(amcb_path = "data/amcb_roster.csv",
                                       board_dir = "data/raw/state_boards",
                                       destination_dir = "data",
-                                      allow_national_tier = TRUE) {
+                                      artifact_dir = "artifacts",
+                                      allow_national_tier = FALSE) {
   log_message("========== AMCB LICENSE ACQUISITION ==========")
   log_message("AMCB input: ", amcb_path)
   log_message("Board directory: ", board_dir)
@@ -504,8 +640,15 @@ build_amcb_state_licenses <- function(amcb_path = "data/amcb_roster.csv",
   resolution <- resolve_amcb_licenses(cohort_tbl, license_tbl,
                                       allow_national_tier)
   bridge_tbl <- build_license_bridge(resolution$accepted)
+  manifest_tbl <- build_license_acquisition_manifest(cohort_tbl,
+                                                     resolution$unresolved,
+                                                     license_tbl)
+  state_audit_tbl <- summarize_license_resolution_by_state(cohort_tbl,
+                                                           resolution)
   paths <- save_license_artifacts(bridge_tbl, resolution$unresolved,
                                   resolution$ambiguous, destination_dir)
+  audit_paths <- save_license_acquisition_audit(manifest_tbl, state_audit_tbl,
+                                                artifact_dir)
 
   cohort_n <- nrow(cohort_tbl)
   linked_n <- dplyr::n_distinct(bridge_tbl$amcb_id)
@@ -525,7 +668,9 @@ build_amcb_state_licenses <- function(amcb_path = "data/amcb_roster.csv",
   log_message("Canonical dependency created: ", paths$canonical)
   log_message("=========================================")
 
-  invisible(list(bridge = bridge_tbl, resolution = resolution, paths = paths))
+  invisible(list(bridge = bridge_tbl, resolution = resolution,
+                 manifest = manifest_tbl, state_audit = state_audit_tbl,
+                 paths = paths, audit_paths = audit_paths))
 }
 
 # Sourcing this file must NOT run the pipeline. The original ran
