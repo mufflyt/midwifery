@@ -187,3 +187,47 @@ artifacts/dac_cnm_locations.csv
 # and 36 columns that v4 does not.
 artifacts/cohort_midwife_facility_attributions_final_v2.csv
 artifacts/cohort_midwife_facility_attributions_final_v3.csv
+
+# =============================================================================
+# Person-level outputs of the attribute layers (identity + address + phone)
+# =============================================================================
+# README states that person-level rows are gitignored and rebuildable. These
+# rules make that true for the layers added in the organization-linkage,
+# Medicare, HCRIS and Open Payments work. Each file below carries
+# certification_number and/or npi joined to a street address, a phone number,
+# or an employer -- the AMCB-to-NPI pairing the repository already refuses to
+# commit for artifacts/amcb_npi_linkage_FROZEN.csv.
+#
+# Every one is REBUILDABLE by running its producer; nothing here is a source.
+# Aggregates stay tracked deliberately: table1_midwives.csv (111 rows, no
+# person), hcris_affiliated_hospitals_fy2023.csv (902 facilities),
+# org_resolution_ppv.csv, org_resolution_distribution_shift.csv.
+
+# Practice locations, addresses and phones -- 16,334 rows
+artifacts/midwife_practice_locations.csv
+
+# Person -> organization linkage, all variants -- up to 29,670 rows
+artifacts/midwife_org_links.csv
+artifacts/midwife_org_person.csv
+artifacts/midwife_org_person_candidate.csv
+artifacts/midwife_org_affiliations_candidate.csv
+artifacts/midwife_hospital_matches.csv
+
+# Hospital affiliation, person level
+artifacts/dac_facility_affiliations.csv
+artifacts/dac_hospital_affiliation_person.csv
+
+# Open Payments business addresses -- 6,084 rows each
+artifacts/open_payments_business_address.csv
+artifacts/open_payments_recent_address.csv
+artifacts/open_payments_facility_match.csv
+
+# Doximity public profiles: names, addresses, phone numbers, maiden names
+artifacts/doximity_public_*.csv
+
+# Medicare participation and HPSA status, person level
+artifacts/medicare_participation.csv
+artifacts/hpsa_status.csv
+
+# Diagnostic audit outputs, which quote both organizations and addresses
+artifacts/audit/
