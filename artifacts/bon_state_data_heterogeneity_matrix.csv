@@ -1,0 +1,7 @@
+Data_Feature,Provided_By_States,Omitted_By_States,Clinical_Impact
+Prescriptive Authority (RXN / Controlled Substances),"CO, WA, TX, FL, GA, OR, UT, AZ","NY, MA, PA, IL",Discloses independent vs supervised Schedule II-V drug prescribing rights.
+Supervising Physician / Collaborative Practice Agreement (CPA),"NC, FL, TX, GA, AL, SC","WA, CO, OR, MA, VT, ME (Abolished)",Names exact supervising OB/GYN physician in restrictive practice states.
+Attributed Hospital Facility Privileges,"MT, UT, WY, NV, ID","CA, NY, PA, IL, OH",Directly links midwife to accredited delivery hospital staff roster.
+Graduation School & Midwifery Education Year,"CA, VA, OH, IN, MI","WA, FL, NY, TX",Provides academic pedigree and graduate school vintage.
+Continuing Education (CE) Audit Compliance Date,"WA, FL, KY","AZ, CO, MA, OR",Tracks CE audit status and active license maintenance compliance.
+Secondary Practice / Clinic Employment Address,"FL, TX, OH, NC, VA","NY, CA, PA",Reveals multi-site practice locations across satellite clinics.
