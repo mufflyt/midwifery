@@ -91,11 +91,11 @@ res <- expand_amcb_former_name_candidates(
   nppes_first_col = "provider_first_name",
   nppes_last_col = "provider_last_name"
 )
-g <- function(m) res$rescue_summary$n[res$rescue_summary$metric == m]
+rescue_n <- function(m) res$rescue_summary$n[res$rescue_summary$metric == m]
 cat("\n-- attach -> expand end to end --\n")
-chk(g("original_no_candidate") == 3, "C2/C3/C4 have no current-surname candidate")
-chk(g("rescued_into_candidate_universe") == 2, "C2 (Jones) and C3 (Baker/Church) rescued via former name")
-chk(g("still_no_candidate") == 1, "C4 (Stone, no former) stays unrescued")
+chk(rescue_n("original_no_candidate") == 3, "C2/C3/C4 have no current-surname candidate")
+chk(rescue_n("rescued_into_candidate_universe") == 2, "C2 (Jones) and C3 (Baker/Church) rescued via former name")
+chk(rescue_n("still_no_candidate") == 1, "C4 (Stone, no former) stays unrescued")
 
 cat(sprintf("\n%s\n", if (fails == 0L) "ALL PASS" else sprintf("%d FAILED", fails)))
 if (fails > 0L) quit(status = 1L, save = "no")
