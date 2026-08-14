@@ -28,18 +28,18 @@ chk <- function(ok, label) {
   cat(sprintf("  %-4s %s\n", if (isTRUE(ok)) "ok" else "FAIL", label))
   if (!isTRUE(ok)) fails <<- fails + 1L
 }
-errs <- function(expr) inherits(try(expr, silent = TRUE), "try-error")
+refuses <- function(expr) inherits(try(expr, silent = TRUE), "try-error")
 
 cat("\n-- REFUSES NON-NUMERIC --\n")
-chk(errs(safe_divide("10", 5)),  "T1 a character numerator stops")
-chk(errs(safe_divide(10, "5")),  "T2 a character denominator stops")
-chk(errs(safe_divide("abc", 5)), "T3 unparseable text stops rather than returning NA")
+chk(refuses(safe_divide("10", 5)),  "T1 a character numerator stops")
+chk(refuses(safe_divide(10, "5")),  "T2 a character denominator stops")
+chk(refuses(safe_divide("abc", 5)), "T3 unparseable text stops rather than returning NA")
 
 # Factors are the dangerous case: as.numeric() on a factor returns LEVEL CODES,
 # so the old path did not produce NA at all -- factor("3") has one level and
 # divided as 1. Confident nonsense is worse than a missing value.
-chk(errs(safe_divide(factor("3"), 1)), "T4 a factor numerator stops (level codes, not values)")
-chk(errs(safe_divide(1, factor("3"))), "T5 a factor denominator stops")
+chk(refuses(safe_divide(factor("3"), 1)), "T4 a factor numerator stops (level codes, not values)")
+chk(refuses(safe_divide(1, factor("3"))), "T5 a factor denominator stops")
 
 # The message names the argument, so nested rate helpers say which one was wrong.
 msg <- tryCatch(safe_divide("10", 5), error = conditionMessage)
@@ -59,11 +59,11 @@ chk(identical(safe_divide(10, 2), 5), "T15 ordinary division is untouched")
 chk(identical(safe_divide(c(1, 2), c(0, 2)), c(NA, 1)), "T16 vectorised zero-denominator guard")
 
 cat("\n-- THE WRAPPERS INHERIT IT --\n")
-chk(errs(safe_percent("1", 4)),      "T17 safe_percent")
-chk(errs(safe_rate("1", 4)),         "T18 safe_rate")
-chk(errs(safe_ratio("1", 4)),        "T19 safe_ratio")
-chk(errs(safe_pct_manu("1", 4)),     "T20 safe_pct_manu")
-chk(errs(safe_divide_manu("1", 4)),  "T21 safe_divide_manu")
+chk(refuses(safe_percent("1", 4)),      "T17 safe_percent")
+chk(refuses(safe_rate("1", 4)),         "T18 safe_rate")
+chk(refuses(safe_ratio("1", 4)),        "T19 safe_ratio")
+chk(refuses(safe_pct_manu("1", 4)),     "T20 safe_pct_manu")
+chk(refuses(safe_divide_manu("1", 4)),  "T21 safe_divide_manu")
 
 # The zero-denominator semantics the family is named for, unchanged by the
 # validation: safe_percent displays 0, safe_pct_manu reports NA (DEN-032).
