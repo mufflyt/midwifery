@@ -108,7 +108,7 @@ with open(MASTER_V4_FILE, "r", encoding="utf-8", errors="ignore") as f:
                 hosp_ccn_map.get(f"{f_upper}_{city_upper}_{state}") or ""
             )
             
-            bon_url = r.get("bon_direct_profile_url", f"https://www.nursys.com/LVC/LVCVerification.aspx?npi={npi}&state={state}")
+            bon_url = r.get("bon_direct_profile_url", "https://www.nursys.com/LVC/SearchTerms.aspx")
             bon_lic = r.get("scraped_license_num", r.get("certification_number", ""))
             
             mws.append({

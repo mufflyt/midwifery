@@ -49,7 +49,7 @@ with open(v4_file, "r", encoding="utf-8", errors="ignore") as f:
         if st in bon_url_templates:
             r["bon_direct_profile_url"] = bon_url_templates[st].format(lic=lic_clean)
         else:
-            r["bon_direct_profile_url"] = f"https://www.nursys.com/LVC/LVCVerification.aspx?npi={r.get('npi', '')}"
+            r["bon_direct_profile_url"] = f"https://www.nursys.com/LVC/SearchTerms.aspx"
             
         updated_records.append(r)
 
