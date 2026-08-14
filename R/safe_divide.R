@@ -122,6 +122,17 @@ safe_divide <- function(numerator,
 
 #' @title Manuscript Alias: Safe Division
 #' @export
+#' @param num `numeric`: dividend. Manuscript-convention name for
+#'   `numerator`.
+#' @param den `numeric`: divisor. Manuscript-convention name for
+#'   `denominator`.
+#' @param fallback `numeric(1)`: value on a zero denominator. Manuscript
+#'   -convention name for `default`.
+#' @return `numeric` vector.
+#' @examples
+#' safe_divide_manu(1, 4)                     # 0.25
+#' safe_divide_manu(1, 0, fallback = 0)       # 0
+#' @family safe division
 safe_divide_manu <- function(num, den, fallback = NA_real_) {
   safe_divide(num, den, default = fallback)
 }
@@ -133,6 +144,16 @@ safe_divide_manu <- function(num, den, fallback = NA_real_) {
 #' default = 0 caused Step 4/11 to report 0% access when the denominator was
 #' missing, creating phantom care-desert artifacts (DEN-032).
 #' @export
+#' @param num `numeric`: dividend.
+#' @param den `numeric`: divisor.
+#' @param digits `integer(1)`: decimal places. Default 1.
+#' @return `numeric` percentage, `NA_real_` on a zero denominator or a `NULL`
+#'   input. Unlike [safe_percent()] this returns `NA`, not `0`.
+#' @examples
+#' safe_pct_manu(1, 4)                        # 25
+#' safe_pct_manu(1, 0)                        # NA
+#' safe_pct_manu(NULL, 4)                     # NA
+#' @family safe division
 safe_pct_manu <- function(num, den, digits = 1) {
   if (is.null(num) || is.null(den)) return(NA_real_)
   safe_percent(num, den, digits = digits, default = NA_real_)
@@ -140,6 +161,39 @@ safe_pct_manu <- function(num, den, digits = 1) {
 
 
 #' @title Safe Percentage Calculation
+#'
+#' @description
+#' The standard percentage for pipeline metrics and figure annotations:
+#' `round((part / total) * 100, digits)`, returning `default` when `total` is
+#' effectively zero. Defaults to `0` rather than `NA` because a displayed
+#' "0%" is usually more informative than a blank in a figure annotation --
+#' but see the warning below before using it in an analytic table.
+#'
+#' @param part `numeric`: numerator, the subset being expressed as a share.
+#' @param total `numeric`: denominator, the whole. Zero or `NA` yields
+#'   `default`.
+#' @param digits `integer(1)`: decimal places for rounding. Default 1.
+#' @param default `numeric(1)`: value returned when `total` is effectively
+#'   zero. Default `0`.
+#'
+#' @return `numeric` vector the length of the recycled inputs.
+#'
+#' @section A zero denominator is not a zero percentage:
+#' The `default = 0` is a DISPLAY convenience. In an analytic table it makes
+#' "no one in this county" and "this county has no population" identical, which
+#' is the suppressed-is-not-zero error this project has made more than once.
+#' Pass `default = NA_real_` anywhere the result feeds a statistic rather than
+#' a label.
+#'
+#' @examples
+#' safe_percent(25, 200)                      # 12.5
+#' safe_percent(3, 0)                         # 0   -- display default
+#' safe_percent(3, 0, default = NA_real_)     # NA  -- analytic default
+#' safe_percent(c(1, 2), c(10, 0))            # 10.0  0.0
+#'
+#' @seealso [safe_divide()] for the primitive, [safe_rate()] for per-N rates,
+#'   [safe_ratio()] for unitless ratios.
+#' @family safe division
 #' @export
 safe_percent <- function(part, total, digits = 1, default = 0) {
   pct <- safe_divide(part, total, default = default / 100) * 100
@@ -149,6 +203,37 @@ safe_percent <- function(part, total, digits = 1, default = 0) {
 
 
 #' @title Safe Rate Calculation (per N)
+#'
+#' @description
+#' Epidemiological rates such as midwives per 10,000 women aged 15-44, or
+#' births per 1,000. Multiplies the safe quotient by `multiplier` before
+#' rounding.
+#'
+#' @param events `numeric`: count of events in the numerator.
+#' @param exposure `numeric`: population or person-time at risk. Zero or `NA`
+#'   yields `default`.
+#' @param multiplier `numeric(1)`: rate base, e.g. `1000` for per-1,000 or
+#'   `10000` for per-10,000. Default 1.
+#' @param digits `integer(1)`: decimal places. Default 1.
+#' @param default `numeric(1)`: value when `exposure` is effectively zero.
+#'   Default `NA_real_`, deliberately.
+#'
+#' @return `numeric` vector the length of the recycled inputs.
+#'
+#' @section Why the default is NA here and 0 in safe_percent():
+#' A county with no women of reproductive age has no defined midwife rate; it
+#' does not have a rate of zero. Returning `NA` keeps a sparse tract
+#' distinguishable from a genuinely zero-rate one, which matters because the
+#' two behave very differently in a map legend and in any mean taken across
+#' counties.
+#'
+#' @examples
+#' safe_rate(3, 12000, multiplier = 10000)    # 2.5 per 10,000
+#' safe_rate(5, 0, multiplier = 1000)         # NA, not Inf
+#' safe_rate(c(2, 4), c(1000, 0), 1000)       # 2  NA
+#'
+#' @seealso [safe_percent()], [safe_ratio()], [safe_divide()].
+#' @family safe division
 #' @export
 safe_rate <- function(events, exposure, multiplier = 1, digits = 1, default = NA_real_) {
   rate <- safe_divide(events, exposure, default = default) * multiplier
@@ -158,6 +243,27 @@ safe_rate <- function(events, exposure, multiplier = 1, digits = 1, default = NA
 
 
 #' @title Safe Ratio Calculation
+#'
+#' @description
+#' A rounded unitless ratio -- margin-of-error to estimate, clinician to
+#' population, births per midwife. Differs from [safe_percent()] in not
+#' multiplying by 100, and from [safe_rate()] in having no `multiplier`.
+#'
+#' @param numerator `numeric`: dividend.
+#' @param denominator `numeric`: divisor. Zero or `NA` yields `default`.
+#' @param digits `integer(1)`: decimal places. Default 2.
+#' @param default `numeric(1)`: value when the denominator is effectively
+#'   zero. Default `NA_real_`.
+#'
+#' @return `numeric` vector the length of the recycled inputs.
+#'
+#' @examples
+#' safe_ratio(628, 1)                         # 628 births per midwife
+#' safe_ratio(45, 0)                          # NA, not Inf
+#' safe_ratio(1, 3, digits = 4)               # 0.3333
+#'
+#' @seealso [safe_percent()], [safe_rate()], [safe_divide()].
+#' @family safe division
 #' @export
 safe_ratio <- function(numerator, denominator, digits = 2, default = NA_real_) {
   ratio <- safe_divide(numerator, denominator, default = default)
