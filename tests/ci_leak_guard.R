@@ -8,7 +8,7 @@
 #
 # This is the enforcement. It reads the HEADER of every tracked CSV and fails
 # when a person-level column appears in a file that is not already on the
-# baseline. New leaks are blocked today. The 57 files already tracked are listed
+# baseline. New leaks are blocked today. The 67 files already tracked are listed
 # in ci_leak_baseline.txt with their row counts, and the number is only allowed
 # to go DOWN -- untracking one is a passing change, adding one is not.
 #
@@ -23,15 +23,9 @@
 root <- "."
 if (!dir.exists(file.path(root, ".git")) && dir.exists("../.git")) root <- ".."
 
-failures <- character(0)
-fail <- function(...) failures <<- c(failures, sprintf(...))
-ok   <- function(...) cat(sprintf("  ok   %s\n", sprintf(...)))
-sect <- function(s) cat(sprintf("\n-- %s --\n", s))
+source(file.path(root, "tests", "ci_report.R"))
 
-tracked <- function(pattern) {
-  out <- suppressWarnings(system2("git", c("ls-files", shQuote(pattern)), stdout = TRUE, stderr = FALSE))
-  if (length(out) == 0) character(0) else out
-}
+
 
 # -----------------------------------------------------------------------------
 # The column names that make a row about an identifiable person. Deliberately
@@ -68,9 +62,9 @@ baseline <- if (file.exists(baseline_path)) {
 } else character(0)
 
 # -----------------------------------------------------------------------------
-sect("L1 no NEW tracked file carries a person-level column")
+ci_section("L1 no NEW tracked file carries a person-level column")
 
-csvs <- tracked("*.csv")
+csvs <- ci_tracked("*.csv")
 hits <- character(0)
 for (f in csvs) {
   p <- file.path(root, f)
@@ -81,18 +75,18 @@ for (f in csvs) {
 
 new_hits <- setdiff(hits, baseline)
 if (length(new_hits)) {
-  fail("L1: %d tracked file(s) carry a person-level column and are not on the baseline:\n%s",
+  ci_fail("L1: %d tracked file(s) carry a person-level column and are not on the baseline:\n%s",
        length(new_hits),
        paste(sprintf("       %s  [%s]", new_hits,
                      vapply(new_hits, function(f) {
                        paste(intersect(header_cols(file.path(root, f)), PERSON_COLS), collapse = ", ")
                      }, character(1))), collapse = "\n"))
 } else {
-  ok("no new person-level file (%d known, listed in ci_leak_baseline.txt)", length(hits))
+  ci_ok("no new person-level file (%d known, listed in ci_leak_baseline.txt)", length(hits))
 }
 
 # -----------------------------------------------------------------------------
-sect("L2 no tracked file is named like a person-level artifact")
+ci_section("L2 no tracked file is named like a person-level artifact")
 
 # FROZEN crosswalks are person-level by construction: one row per certificant,
 # keyed to a certification number. The name is the tell, so it is checked
@@ -102,15 +96,15 @@ NAME_PATTERNS <- c("FROZEN", "review_sample", "voter", "_dob", "person_level")
 # it carries no rows itself, and flagging source code here would train everyone
 # to ignore this check.
 DATA_EXT <- "\\.(csv|tsv|rds|parquet|jsonl|xlsx?)$"
-data_files <- grep(DATA_EXT, tracked("*"), value = TRUE, ignore.case = TRUE)
+data_files <- grep(DATA_EXT, ci_tracked("*"), value = TRUE, ignore.case = TRUE)
 named_all <- unique(unlist(lapply(NAME_PATTERNS, function(p) grep(p, data_files, value = TRUE))))
 named_new <- setdiff(named_all, baseline)
 
 if (length(named_new)) {
-  fail("L2: %d tracked file(s) named like a person-level artifact, not on the baseline:\n%s",
+  ci_fail("L2: %d tracked file(s) named like a person-level artifact, not on the baseline:\n%s",
        length(named_new), paste(sprintf("       %s", named_new), collapse = "\n"))
 } else {
-  ok("no newly tracked FROZEN / review-sample / voter file")
+  ci_ok("no newly tracked FROZEN / review-sample / voter file")
 }
 
 # The ratchet, reported once both detectors have run. Retiring a baseline entry
@@ -120,18 +114,18 @@ if (length(named_new)) {
 # should have to edit this file to make a green build green again.
 stale <- setdiff(baseline, union(hits, named_all))
 if (length(stale)) {
-  ok("%d baseline entr%s now clean -- delete from ci_leak_baseline.txt:\n%s",
+  ci_ok("%d baseline entr%s now clean -- delete from ci_leak_baseline.txt:\n%s",
      length(stale), if (length(stale) == 1) "y is" else "ies are",
      paste(sprintf("       %s", stale), collapse = "\n"))
 }
 
 # -----------------------------------------------------------------------------
-sect("L3 no tracked file is large enough to be permanent")
+ci_section("L3 no tracked file is large enough to be permanent")
 
 HARD_MB <- 50   # GitHub warns here; history cannot be un-bloated without a rewrite
 WARN_MB <- 25
 
-sizes <- vapply(tracked("*"), function(f) {
+sizes <- vapply(ci_tracked("*"), function(f) {
   p <- file.path(root, f)
   if (file.exists(p)) file.info(p)$size / 1024^2 else 0
 }, numeric(1))
@@ -140,23 +134,17 @@ over_hard <- sizes[sizes > HARD_MB]
 over_warn <- sizes[sizes > WARN_MB & sizes <= HARD_MB]
 
 if (length(over_hard)) {
-  fail("L3: %d tracked file(s) over %d MB -- committing these is not reversible:\n%s",
+  ci_fail("L3: %d tracked file(s) over %d MB -- committing these is not reversible:\n%s",
        length(over_hard), HARD_MB,
        paste(sprintf("       %6.1f MB  %s", over_hard, names(over_hard)), collapse = "\n"))
 } else {
-  ok("no tracked file over %d MB (largest is %.1f MB)", HARD_MB, max(sizes, 0))
+  ci_ok("no tracked file over %d MB (largest is %.1f MB)", HARD_MB, max(sizes, 0))
 }
 if (length(over_warn)) {
-  ok("%d tracked file(s) between %d and %d MB, worth watching:\n%s",
+  ci_ok("%d tracked file(s) between %d and %d MB, worth watching:\n%s",
      length(over_warn), WARN_MB, HARD_MB,
      paste(sprintf("       %6.1f MB  %s", over_warn, names(over_warn)), collapse = "\n"))
 }
 
 # -----------------------------------------------------------------------------
-cat("\n")
-if (length(failures)) {
-  for (f in failures) cat(sprintf("FAIL %s\n", f))
-  cat(sprintf("\nFAILED (%d)\n", length(failures)))
-  quit(status = 1)
-}
-cat("PASS (0 failures)\n")
+ci_finish()
