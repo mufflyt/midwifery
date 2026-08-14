@@ -81,7 +81,7 @@ report("artifact WITH accessed_utc is accepted",
 writeLines(paste0("v <- ", "safe_percent(part, total, default = 0)"),
            file.path(tmp, "R", "pct.R"))
 report("safe_percent(default = 0) is detected",
-       nrow(repo_gate_scan_safe_percent(tmp)) > 0)
+       nrow(repo_gate_scan_percent_zero_default(tmp)) > 0)
 
 # 7. vendored drift, byte-for-byte
 writeLines("f <- function() 1", file.path(tmp, "R", "canon.R"))

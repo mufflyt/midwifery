@@ -24,7 +24,7 @@
 #                       CENSUS_API_KEY, naming the wrong cause.
 #   access dates        the HPSA shapefile's vintage is unrecoverable because
 #                       no download date was ever recorded.
-#   safe_percent        default = 0 turns a missing denominator into "0%", the
+#   safe_percent        a zero default turns a missing denominator into "0%", the
 #                       documented hazard behind three retracted figures.
 #
 # No system(), no system2(), no git CLI.
@@ -1231,9 +1231,9 @@ repo_gate_check_access_dates <- function(root, since = NULL) {
 }
 
 
-repo_gate_scan_safe_percent <- function(root, allow = character()) {
+repo_gate_scan_percent_zero_default <- function(root, allow = character()) {
   repo_gate_log(
-    "Checking analytic code for safe_percent(default = 0)"
+    "Checking analytic code for the hazardous safe_percent default"
   )
 
   paths <- repo_gate_r_files(root)
@@ -1397,7 +1397,7 @@ run_repo_integrity_gates <- function(
     since = access_date_grandfathered
   )
 
-  unsafe_percent <- repo_gate_scan_safe_percent(
+  unsafe_percent <- repo_gate_scan_percent_zero_default(
     root,
     allow = safe_percent_allow
   )
@@ -1450,7 +1450,7 @@ run_repo_integrity_gates <- function(
         access_dates
       ),
       repo_gate_format_failure(
-        "Unsafe safe_percent(default = 0):",
+        "Unsafe safe_percent with default = 0:",
         unsafe_percent
       )
     )
