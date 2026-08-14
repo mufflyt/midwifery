@@ -20,7 +20,7 @@ target_states = [
 
 print(f"Scraping Target: {len(target_states)} State Boards of Nursing by 08:00 AM tomorrow.")
 
-v4_file = "artifacts/cohort_midwife_facility_attributions_final_v4.csv"
+v4_file = "artifacts/cohort_midwives_tier1_tier2_bon_validated.csv"
 out_dir = "data/scraped_bon_states"
 os.makedirs(out_dir, exist_ok=True)
 

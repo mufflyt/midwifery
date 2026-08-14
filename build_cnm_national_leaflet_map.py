@@ -7,7 +7,7 @@ import json
 import os
 import re
 
-MASTER_V4_FILE = "artifacts/cohort_midwife_facility_attributions_final_v4.csv"
+MASTER_V4_FILE = "artifacts/scraped_20_state_bons_midwives_master.csv"
 GEO_FILE = "artifacts/amcb_npi_geography.csv"
 HOSP_GEO_FILE = "artifacts/ob_hospitals_geocoded.csv"
 ZIP_GEO_FILE = "data/us_zip_centroids.csv"
@@ -65,7 +65,7 @@ with open(MASTER_V4_FILE, "r", encoding="utf-8", errors="ignore") as f:
     reader = csv.DictReader(f)
     for r in reader:
         npi = r.get("npi", "").strip()
-        zip_code = r.get("nppes_zip", r.get("zip", ""))[:5].zfill(5)
+        zip_code = r.get("nppes_zip", r.get("zip", r.get("practice_zip", "")))[:5].zfill(5)
         state = r.get("nppes_state", r.get("state", "")).upper().strip()
         city = r.get("nppes_city", r.get("city", "")).title().strip()
         

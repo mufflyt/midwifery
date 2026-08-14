@@ -1,5 +1,0 @@
-state,year,source,adequate_ascertainment,npi_completeness
-CO,2023,birth_certificate,TRUE,0.97
-UT,2023,birth_certificate,TRUE,0.95
-WY,2023,birth_certificate,FALSE,0.41
-CO,2023,taf,TRUE,0.94
