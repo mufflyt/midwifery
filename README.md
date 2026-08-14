@@ -610,22 +610,182 @@ Nothing in this repository is scraped from behind a paywall or a login, and no
 source publishes midwife locations — the geography is derived, which is what the
 linkage section above is about.
 
-| Source | Used for | Original data | Reproducible entry point |
+This section is the reproduction contract: for every source, **what vintage we
+used, which file exactly, what it supplies, and which script consumes it.** It
+is deliberately long. A number in this README can be traced to a script, the
+script to a named input file, and that file to a public URL and a release
+identifier — and where that chain breaks, the break is written down rather than
+smoothed over. See [What is *not* reproducible from a clean
+checkout](#what-is-not-reproducible-from-a-clean-checkout), which is the honest
+part of this section and the one to read first if you intend to rebuild.
+
+### How vintage is pinned
+
+Three mechanisms, in decreasing order of strength. Prefer the strongest one
+available for the artifact you are checking:
+
+1. **`.provenance.json` sidecars.** 29 artifacts carry one, recording every
+   input path with its SHA-256 at write time — see
+   [`data/county_base.csv.provenance.json`](data/county_base.csv.provenance.json)
+   for the shape. This is a byte-level identity claim, not a version string.
+   **145 of 166 tracked artifacts have no sidecar**; CI asserts that number may
+   only go down.
+2. **`artifacts/linkage_manifest.json`**, written by
+   [`provenance_manifest.R`](provenance_manifest.R). Records the git commit,
+   input row counts, the NPPES snapshot years actually present (and which of
+   2007–2025 are missing), and SHA-256 for every input and output of the frozen
+   linkage.
+3. **Release identifiers embedded in filenames**, tabulated below. CMS bulk
+   files carry their extract dates in the name — `pl_pfile_20050523-20260809` is
+   unambiguous in a way that "the August file" is not.
+
+To reproduce a specific published figure, use the **commit SHA in that
+artifact's sidecar**, not the version number in `NEWS.md` — those are
+retrospective groupings of 280 commits, not tags.
+
+### Tier A — cohort and identity
+
+Everything downstream is conditional on these four. An error here cannot be
+repaired later.
+
+| Source | Vintage used | Exact file / endpoint | Supplies | Consumed by |
+|---|---|---|---|---|
+| **AMCB Instant Verification** | **accessed 2026-08-06**; 22,309 certificants (183 CM, 22,126 CNM), reconciling to the directory's own totals | [`ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800`](https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800) → `midwives.csv` | the roster: name, certification, certification number, status, certification and expiration dates. **No location at any level** | [`scrape.py`](scrape.py) → [`match_amcb_to_npi.R`](match_amcb_to_npi.R) → [`reconcile_linkage.R`](reconcile_linkage.R) |
+| **NPPES historical dissemination** | **annual snapshots 2007–2025** (the panel; missing years are enumerated in `linkage_manifest.json`) | `/Volumes/MufflySamsung/nppes_historical_downloads/` → `midwife_panel.csv` | 443,623 NPIs; taxonomy history, name history, practice address *with its observation year* | [`build_midwife_panel.R`](build_midwife_panel.R) → [`extract_nppes_midwives.R`](extract_nppes_midwives.R) |
+| **NPPES full dissemination file** | **July 2026** — `npidata_pfile_20050523-20260713`. A local **March 2024** copy (`npidata_pfile_20050523-20240310`) exists and is *deliberately not used*: two years stale, missing recently certified midwives | [download.cms.gov/nppes](https://download.cms.gov/nppes/NPI_Files.html) | primary practice location, sex code, enumeration date | [`build_midwife_panel.R`](build_midwife_panel.R), [`link_practice_locations_to_org_npi.R`](link_practice_locations_to_org_npi.R) |
+| **NPPES secondary practice locations** (`pl_pfile`) | **August 2026** — `pl_pfile_20050523-20260809`, 1,241,922 secondary locations. The December 2022 file has 681,081; switching lifted cohort secondary locations 2,687 → 5,303 | same download page, `PL` file | the second and subsequent practice addresses that turn one NPI into several candidate organizations | [`link_practice_locations_to_org_npi.R`](link_practice_locations_to_org_npi.R), [`resolve_org_ambiguity.R`](resolve_org_ambiguity.R) |
+| **NPI Registry API** (live, v2.1) | **queried live** — no snapshot, so results drift; a rerun will not reproduce byte-identically | [`npiregistry.cms.hhs.gov/api/`](https://npiregistry.cms.hhs.gov/api/) | surname-blocked candidate NPIs including former/maiden names, and NPIs enumerated under non-midwifery taxonomies | [`fetch_npi_candidates.py`](fetch_npi_candidates.py) → [`match_nppes.R`](match_nppes.R) |
+
+> **Two live-API caveats that bound the linkage.** The registry API caps
+> responses at **200 rows**, so 106 first+last name combinations have truncated
+> candidate lists. And it returns results **alphabetically** — the defect that
+> produced the [16.4%-agreement result](#a-cautionary-result-two-implementations-164-agreement)
+> above. Any claim resting on a live-API pull is a claim about what the API
+> returned that day.
+
+### Tier B — geography and boundaries
+
+Coordinates and boundaries must share a vintage. Mixing them is what dropped
+validation agreement to 94.47%.
+
+| Source | Vintage used | Exact file | Supplies | Consumed by |
+|---|---|---|---|---|
+| **TIGER / cartographic boundary — counties, tracts** | **2023** — `year = 2023` at all 11 boundary call sites, with no second vintage anywhere in the repository | via `tigris` | the polygons every `county_exact` assignment is a point-in-polygon test against | [`map_midwife_geography.R`](map_midwife_geography.R), [`R/03-geography-hierarchy.R`](R/03-geography-hierarchy.R) |
+| **Congressional districts — CD118** | **2023** — `cb_2023_us_cd118_500k` | [census.gov/geographies](https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html) | district assignment for the district-spread figure | [`build_cd_midwifery_stats.R`](build_cd_midwifery_stats.R) |
+| **Congressional districts — CD119** | **2024** — `cb_2024_us_cd119_500k` | same | the current-Congress provider counts | [`build_cd_provider_counts.R`](build_cd_provider_counts.R) |
+| **ZCTA → county and ZCTA → tract relationship files** | **2020** | `data/zcta_county_2020.txt`, `data/zcta_tract_2020.txt` | the unique-ZIP county fallback that lifts `county_best` above `county_exact` | [`R/02`](R/02-geocoding-completeness.R), [`R/03`](R/03-geography-hierarchy.R), `R/05`, `R/07` |
+| **Connecticut tract crosswalk** | **2022** | `data/ct_tract_crosswalk_2022.csv`, `data/ct_legacy_to_region_weights.csv` | apportioning legacy CT counties onto the nine planning regions — flagged as apportioned, never silently averaged | [`R/lib/ct_county_crosswalk.R`](R/lib/ct_county_crosswalk.R), [`R/03-geography-hierarchy.R`](R/03-geography-hierarchy.R) |
+| **US Census geocoder** | **live service** — resolves **86.9%** of addresses | `geocoding.geo.census.gov` | first stage of the cascade | [`geocode_midwives.R`](geocode_midwives.R), [`geocode_queue_cascade.R`](geocode_queue_cascade.R) |
+| **ArcGIS geocoder** | **live service** — **9.2%**, the Census residual | ArcGIS World Geocoding | second stage | same |
+| **City centroid** | derived, not downloaded | — | last resort. Flagged as `city_centroid` precision and **blocked** from travel-time work by `assert_travel_time_eligible()` | same |
+
+Geocode results are cached at `GEOCODING_CACHE_PATH` so a rerun does not re-hit
+the services. **The cache is what makes this stage reproducible** — the two
+geocoders are live and will drift.
+
+### Tier C — county context and denominators
+
+The county spine. `data/county_base.csv` is the join target for all of it, and
+its sidecar pins four of the five inputs by SHA-256.
+
+| Source | Vintage used | Exact file | Supplies | Consumed by |
+|---|---|---|---|---|
+| **ACS 5-year** | **2023 release (2019–2023 pooled)** | [`api.census.gov/data/2023/acs/acs5`](https://api.census.gov/data/2023/acs/acs5); cached at `data/acs5_2023_county*.json` | population, women 15–44 and 15–50, births in the past 12 months, median household income — **every rate denominator in the README** | [`R/01-build-county-base.R`](R/01-build-county-base.R), [`R/12-district-profiles.R`](R/12-district-profiles.R), [`build_cd_midwifery_stats.R`](build_cd_midwifery_stats.R) |
+| **USDA RUCC** | **2023 revision** | `data/rucc_2023.xlsx` | the metro / adjacent / remote strata behind every rural claim; RUCC 1–3, 4–6, 7–9 collapsed | [`R/01`](R/01-build-county-base.R), [`build_table1_midwives.R`](build_table1_midwives.R), [`build_county_midwifery_supply.R`](build_county_midwifery_supply.R), the isochrone-coverage scripts |
+| **NCHS Urban–Rural Classification** | **2013** — the most recent NCHS revision, and much older than RUCC 2023 | `data/nchs_urcodes_2013.xlsx` | a second rurality dialect, retained for comparison | [`R/01-build-county-base.R`](R/01-build-county-base.R) |
+| **CDC/ATSDR Social Vulnerability Index** | **2022** | `data/svi_2022_county.csv` | county social vulnerability | [`R/01-build-county-base.R`](R/01-build-county-base.R) |
+| **County Health Rankings** | **2025 release** | `data/chr_2025_analytic.csv` | low birth weight, infant mortality, uninsured share | [`R/01-build-county-base.R`](R/01-build-county-base.R) |
+| **AHRF** | **2024–2025 release** | `data/ahrf/AHRF2025.csv` — 24 columns selected of 1,927 | county nurse-midwife and OB/GYN counts, births, birth outcomes, birthing rooms | [`build_county_midwifery_supply.R`](build_county_midwifery_supply.R), [`load_obstetric_providers.R`](load_obstetric_providers.R), [`build_cd_midwifery_stats.R`](build_cd_midwifery_stats.R) |
+| **CMS Provider of Services** | hospital file; deduped on superseded providers, restricted to subtypes 01/11 | `data/cms_pos_hospital.csv` | hospitals and the obstetric-service flag `OB_SRVC_CD` by county | [`R/13-geocode-ob-hospitals.R`](R/13-geocode-ob-hospitals.R), [`R/lib/ob_hospitals.R`](R/lib/ob_hospitals.R) |
+| **CDC WONDER Natality** | **2016–2024** | `data/wonder/natality_2016_2024_cnm_by_county.csv` — **a manual web-UI export**, with the query saved as `data/wonder/D66_Defaults.xml` | CNM/CM-attended births by county of residence | [`R/11-wonder-county-ingest.R`](R/11-wonder-county-ingest.R), [`load_natality_to_duckdb.R`](load_natality_to_duckdb.R) |
+
+> **WONDER cannot be automated, and its missingness is not random.** The API
+> refuses sub-national natality outright — *"Only national data are available
+> for this dataset when using the WONDER web service"* — so the county file is a
+> hand-driven export under WONDER's data-use agreement, and reproducing it means
+> replaying `D66_Defaults.xml` through the web UI. Worse for interpretation:
+> WONDER publishes county natality **only for counties of 100,000+**, pooling
+> the rest into "Unidentified Counties". That removes roughly four fifths of US
+> counties **by population** — precisely the rural counties this study is about.
+> **2,657 of 3,235 counties** carry no CNM birth value. The <10-birth
+> suppression rule accounts for only a handful of cells beyond that.
+
+### Tier D — attribute layers
+
+Keyed on the frozen linkage; none may change cohort membership. Each is a
+separate artifact, and each is silent for reasons unrelated to the quantity
+measured — see [Absence is not zero](#absence-is-not-zero-in-four-different-sources).
+
+| Source | Vintage used | Exact file | Supplies | Consumed by |
+|---|---|---|---|---|
+| **CMS Doctors & Clinicians (DAC)** | **June 2026** | `DAC_NationalDownloadableFile_2026-06.csv` | practice-address corroboration, group practice, medical/midwifery school (14.3% coverage), graduation year, CCN facility affiliations | [`extract_dac_midwives.R`](extract_dac_midwives.R), [`extract_dac_cnm_education.R`](extract_dac_cnm_education.R), [`extract_dac_facility_affiliations.R`](extract_dac_facility_affiliations.R) |
+| **Medicare Physician & Other Practitioners (Part B)** and **Part D Prescribers** | **2013–2023**, one row per provider-year | `nber_my_duckdb.duckdb` (external volume). Part D 2022–2023 exist twice — the `_standardized` series is used and the raw duplicates ignored | Part B 19.5% / Part D 47.1% participation | [`match_medicare_partb_partd.R`](match_medicare_partb_partd.R) |
+| **HCRIS hospital cost reports** | **FY2023** (`HCRIS_FY`, overridable) | `/Volumes/MufflySamsung/HCRIS/hosp10/fy2023/` | newborn/nursery volume at affiliated hospitals — **reported by only 37.7% of hospitals** | [`extract_hcris_affiliated_hospitals.R`](extract_hcris_affiliated_hospitals.R) |
+| **HRSA HPSA — primary care** | the file is named `..._CUR_...` (**current at download**); **the download date is not recorded anywhere in the repo** — a reproducibility gap | `HPSA_CMPPC_SHP_DET_CUR_VX.shp` | shortage-area status by point-in-polygon, 98.4% of geocoded | [`assign_hpsa_status.R`](assign_hpsa_status.R) |
+| **Open Payments — general payments** | **program year 2024**, published extract `P06302026_06032026` | `OP_DTL_GNRL_PGYR2024_P06302026_06032026.csv` | recent practice addresses and Type-2 organization candidates. **Never used for any payment-behaviour claim** | [`harvest_open_payments_profile.py`](harvest_open_payments_profile.py), [`link_open_payments_type2_bulk.R`](link_open_payments_type2_bulk.R) |
+| **Open Payments — covered recipient profile supplement** | same extract | `OP_CVRD_RCPNT_PRFL_SPLMTL_P06302026_06032026.csv` | the recipient profile keyed to NPI | same, plus [`resolve_org_ambiguity.R`](resolve_org_ambiguity.R) |
+
+### Tier E — training institution
+
+Neither AMCB nor NPPES publishes where a midwife trained, so the institution is
+recovered *structurally*: which university repository holds the person's
+DNP project or thesis.
+
+| Source | Vintage used | Supplies | Consumed by |
 |---|---|---|---|
-| **AMCB Instant Verification** | the 22,309-name roster: certification number, status, dates | [ams.amcbmidwife.org](https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800) | `match_amcb_to_npi.R` |
-| **NPPES** (NPI registry, 2007–2025 snapshots) | candidate NPIs, taxonomy, practice address | [download.cms.gov/nppes](https://download.cms.gov/nppes/NPI_Files.html) | `extract_nppes_midwives.R` |
-| **CMS Doctors & Clinicians** (2026-06) | practice-address corroboration | [data.cms.gov](https://data.cms.gov/provider-data/topics/doctors-clinicians) | `extract_dac_midwives.R` |
-| **AHRF 2024–2025** | county midwife and OB/GYN counts, births, birth outcomes, birthing rooms | [data.hrsa.gov/data/download](https://data.hrsa.gov/data/download) | `build_county_midwifery_supply.R` |
-| **CMS Provider of Services** | hospitals and obstetric service (`OB_SRVC_CD`) by county | [data.cms.gov](https://data.cms.gov/provider-characteristics/hospitals-and-other-facilities/provider-of-services-file-hospital-non-hospital-facilities) | `R/13-geocode-ob-hospitals.R` |
-| **ACS 5-year 2023** | population, women 15–50, births past 12 months, income | [api.census.gov](https://api.census.gov/data/2023/acs/acs5) | `R/01-build-county-base.R`, `build_cd_midwifery_stats.R` |
-| **TIGER / Cartographic Boundary** | county, tract and congressional-district polygons | [census.gov/geographies](https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html) | `build_cd_provider_counts.R` |
-| **USDA RUCC 2023** | metro / nonmetro-adjacent / nonmetro-remote strata | [ers.usda.gov](https://www.ers.usda.gov/data-products/rural-urban-continuum-codes) | `R/01-build-county-base.R` |
-| **CDC WONDER Natality** | CNM-attended births by county | [wonder.cdc.gov/natality.html](https://wonder.cdc.gov/natality.html) | `R/11-wonder-county-ingest.R` |
-| **County Health Rankings 2025** | low birth weight, infant mortality, uninsured | [countyhealthrankings.org](https://www.countyhealthrankings.org/health-data) | `R/01-build-county-base.R` |
-| **ACME accredited programs** | the 50-program sampling frame for training institution | [theacme.org](https://theacme.org/accredited-midwifery-education-programs/) | `discover_acme_repositories.py` |
-| **University repositories** (OAI-PMH, CONTENTdm) | DNP/thesis authors → `midwifery_program` | 34 institutional repositories | `harvest_dnp_theses.py`, `link_theses_to_amcb.R` |
-| **ABOG roster** (via `isochrones`) | general OB/GYN and subspecialist comparators | not public — board roster | `load_obstetric_providers.R` |
-| **Valhalla isochrones** | 30/60-minute drive-time polygons | generated, not downloaded | `generate_osmde_isochrones.R` |
+| **ACME accredited programs** | the **50-program** frame as published at [theacme.org](https://theacme.org/accredited-midwifery-education-programs/); access date not recorded | the sampling frame | [`discover_acme_repositories.py`](discover_acme_repositories.py) |
+| **34 university repositories** | harvested via **OAI-PMH** (bepress, DSpace) and **CONTENTdm** (Frontier Nursing University, which runs neither); **35,038 author-records** across 25 institutions | `midwifery_program` (n=266) and `later_doctoral_institution` (n=321) | [`harvest_dnp_theses.py`](harvest_dnp_theses.py), [`link_theses_to_amcb.R`](link_theses_to_amcb.R) |
+| **ORCID public API** | live, v3.0 | author disambiguation during the harvest | [`harvest_dnp_theses.py`](harvest_dnp_theses.py) |
+
+The two variables this yields are **not** the same thing, and 43% of usable
+links are doctorates earned *after* certification — see [Training institution,
+where it can be recovered](#training-institution-where-it-can-be-recovered)
+below for the evidence tiers and why that split is load-bearing.
+
+### Tier F — supplementary and corroborating sources
+
+**Lower evidence, and treated as such.** These fill gaps and corroborate; none
+of them establishes identity or geography on its own, and no README figure rests
+on one alone. Most were scraped without a recorded access date, which is a
+reproducibility gap stated rather than hidden.
+
+| Source | What it supplies | Access date | Consumed by |
+|---|---|---|---|
+| **Healthgrades** profiles | practice addresses for AMCB certificants with *no NPI at all*, via schema.org JSON-LD blocks; profile attributes | not recorded; checkpoints timestamped **2026-08-09** | [`scrape_healthgrades_midwives.R`](scrape_healthgrades_midwives.R), [`enrich_healthgrades_profiles.R`](enrich_healthgrades_profiles.R), [`sweep_healthgrades_enrichment.R`](sweep_healthgrades_enrichment.R) |
+| **Doximity** public CNM directory | maiden names and a specialty label; **no NPI** — the UUID is Doximity-internal | not recorded | [`scrape_doximity_public_cnm.R`](scrape_doximity_public_cnm.R), [`enrich_doximity_cnm_ages.R`](enrich_doximity_cnm_ages.R) |
+| **State Boards of Nursing** (~40 portals; Socrata APIs for WA/FL/NY/TX/IL, HTML elsewhere) | licence numbers and issue dates → age-at-certification calibration | live scrapes, per-state, not recorded | [`harvest_live_state_bon_apis.py`](harvest_live_state_bon_apis.py), [`harvest_all_tier1_live_bon_datasets.py`](harvest_all_tier1_live_bon_datasets.py), [`enrich_state_nursing_license_ages.R`](enrich_state_nursing_license_ages.R) |
+| **Florida and Ohio voter files** | date of birth for age validation, under a three-tier disambiguation that **excludes ambiguous collisions rather than guessing** | not recorded | [`match_florida_voter_ages.R`](match_florida_voter_ages.R), [`match_ohio_voter_ages.R`](match_ohio_voter_ages.R), [`parse_ohio_voter_file.py`](parse_ohio_voter_file.py) |
+| **AABC / CABC birth centres** | accredited birth-centre addresses → birth-centre midwife identification | not recorded | [`harvest_aabc_accredited_centers.py`](harvest_aabc_accredited_centers.py), [`extract_all_cabc_birth_centers.py`](extract_all_cabc_birth_centers.py), [`identify_birth_center_midwives.R`](identify_birth_center_midwives.R) |
+| **WebMD, Vitals** | explored as address sources | exploratory only | [`explore_webmd_midwives.py`](explore_webmd_midwives.py), [`explore_vitals_midwives.py`](explore_vitals_midwives.py) |
+
+### Tier G — cross-repository and generated
+
+| Source | Vintage used | Supplies | Consumed by |
+|---|---|---|---|
+| **ABOG roster** via `mufflyt/isochrones` | private board roster, not public and not redistributed here | general OB/GYN and subspecialist comparators for the composition panel | [`load_obstetric_providers.R`](load_obstetric_providers.R) |
+| **Canonical isochrone library** via `mufflyt/isochrones` | **3,909 drive-time origins**, unmodified by this project | the reuse test — 71.5% of ACTIVE primary-linked midwives represented at 5 km | [`match_midwives_to_isochrones.R`](match_midwives_to_isochrones.R), [`characterize_isochrone_representation.R`](characterize_isochrone_representation.R) |
+| **Archived isochrones** | S3 `tyler-valhalla-tiles`, an external drive, Dropbox — **11,592 distinct origins, 7,595 novel; only 42.2% pass polygon validation** | the recovery that lifted coverage 71.5% → 80.9% | [`recover_isochrones_for_unrepresented.R`](recover_isochrones_for_unrepresented.R), [`finalize_isochrone_recovery.R`](finalize_isochrone_recovery.R) |
+| **Name normalization** via `mufflyt/isochrones` | `ISOCHRONES_R` — **exactly one definition across both pipelines**, never vendored | the parsing both sides of every name comparison depend on | [`match_nppes.R`](match_nppes.R), [`R/lib/isochrones_dep.R`](R/lib/isochrones_dep.R) |
+| **Map base** via `mufflyt/mysterymaps` | `mysterymaps_map_base()`; state/county layers drawn against **the same TIGER 2023** the linkage assigned counties from | leaflet base | [`map_midwife_geography.R`](map_midwife_geography.R), [`R/lib/mysterymaps_dep.R`](R/lib/mysterymaps_dep.R) |
+| **Valhalla / osm.de routing** | **generated, not downloaded**; the osm.de public demo server is **disabled in the isochrones config** | 30/60-minute polygons for the unrepresented | [`generate_osmde_isochrones.R`](generate_osmde_isochrones.R), calibrated by [`calibrate_osmde_vs_ec2.R`](calibrate_osmde_vs_ec2.R) |
+
+> **The 30/60-minute surfaces come from two routing engines**, and the split
+> falls along the urban/rural axis by construction. Calibration on 88 shared
+> origins shows the 30-minute area ratio drifting 0.85 → 1.09 across the
+> gradient. **Do not read a rural gradient off the 30-minute band.**
+
+### Files in `data/` that no script reads
+
+Recorded because an unreferenced input is a trap — it looks like provenance and
+is not:
+
+- `data/2024_Gaz_counties_national.txt` and `data/gaz_counties_2024.zip` — the
+  2024 Census Gazetteer. **No script in the repository references either.**
+- `data/acs5_2023_county*.json` are API response caches, read through the ACS
+  helper rather than by filename.
+
+Neither is an input to any published figure. Do not add one to an analysis on
+the strength of it merely being present.
 
 ### Training institution, where it can be recovered
 
@@ -667,14 +827,120 @@ why geography was rejected as a corroborator.
 | What | Requirement |
 |---|---|
 | ACS via `api.census.gov` | **free API key** in `CENSUS_API_KEY` ([request](https://api.census.gov/data/key_signup.html)) |
-| AHRF, POS, TIGER, RUCC, CHR, WONDER | none — direct download |
-| NPPES monthly snapshots | none, but ~1 GB compressed each; kept outside the repo |
-| ABOG roster and isochrone library | a checkout of `mufflyt/isochrones` (private) at `ISOCHRONES_HOME` |
-| Archive isochrone recovery | external drive mounted at `/Volumes/MufflySamsung` |
+| AHRF, POS, TIGER, RUCC, NCHS, SVI, CHR, DAC, Open Payments | none — direct download, no login |
+| CDC WONDER county natality | none, but **manual web-UI export** under WONDER's data-use agreement; the API refuses sub-national natality |
+| NPPES snapshots and `pl_pfile` | none, but ~1 GB compressed each; kept outside the repo |
+| NPI Registry API | none — live, unauthenticated, 200-row response cap |
+| Medicare Part B / Part D, HCRIS, HPSA, DAC affiliations | external drive at `/Volumes/MufflySamsung`, or the corresponding env var |
+| ABOG roster, isochrone library, name normalization | a checkout of `mufflyt/isochrones` (**private**) at `ISOCHRONES_HOME` |
+| Map base | a checkout of `mufflyt/mysterymaps` at `MYSTERYMAPS_HOME` |
+| Archive isochrone recovery | S3 `tyler-valhalla-tiles` plus the external drive |
 | osm.de routing | none — public demo server, rate-limited, **disabled in the isochrones config** |
 
 Two sources are deliberately **not** used: the AMCB primary-source verification
 letter (a paid checkout, never fetched) and any purchased NPPES derivative.
+
+### Environment variables
+
+Every path that varies by machine is an environment variable with a documented
+default, so no analysis depends on one person's directory layout — CI asserts
+that no tracked R file hardcodes a path into another user's home.
+
+| Variable | Default | Needed by |
+|---|---|---|
+| `CENSUS_API_KEY` | none — **required** | `R/01-build-county-base.R`, `R/12-district-profiles.R`, `build_cd_midwifery_stats.R` |
+| `ISOCHRONES_HOME` / `ISOCHRONES_R` / `ISOCHRONES_DIR` | `~/isochrones` | name normalization, ABOG roster, the isochrone library |
+| `MYSTERYMAPS_HOME` | `~/mysterymaps` | map base |
+| `GEOCODING_CACHE_PATH` | project-local | the geocode cascade — **the thing that makes geocoding reproducible** |
+| `MEDICARE_DUCKDB` | `/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb` | `match_medicare_partb_partd.R` |
+| `HCRIS_DIR` / `HCRIS_FY` | `/Volumes/MufflySamsung/HCRIS/hosp10`, `2023` | `extract_hcris_affiliated_hospitals.R` |
+| `HPSA_SHP` | `/Volumes/MufflySamsung/HRSA_HPSA_data/HPSA_CMPPC_SHP_DET_CUR_VX.shp` | `assign_hpsa_status.R` |
+| `NPPES_HISTORY` / `PL_FILE` / `NPPES_VINTAGE_DATE` | external volume | `build_midwife_panel.R`, `link_practice_locations_to_org_npi.R` |
+| `DAC_FILE` | `DAC_NationalDownloadableFile_2026-06.csv` | the DAC extractors |
+| `MIDWIFE_PANEL` / `GEOGRAPHY_FILE` / `STAGE2_FROZEN` | `artifacts/` defaults | stage chaining |
+| `JOIN_MIN_COVERAGE` / `JOIN_MAX_DUPLICATION` / `JOIN_REPORT_DIR` | pipeline defaults | the `join_safety` gate on every join |
+| `WONDER_EXPORT`, `NATALITY_DB`, `TRACT_BOUNDARY_RDS`, `OB_HOSPITALS`, `OP_ADDRESS_FILE` | documented per script | the stage that reads them |
+
+Scripts that need an absent external volume **refuse to run** rather than
+emitting a partial artifact. That is deliberate: a silently degraded number is
+indistinguishable from a good one.
+
+### Rebuilding from scratch, in order
+
+Each stage verifies its predecessor's artifact by SHA-256 before doing any work,
+so the order is not advisory. Stages 1–3 are the reproduction path for
+everything geographic; 4–6 are the attribute layers and can be run in any order
+or skipped.
+
+```sh
+# 0. Prerequisites: CENSUS_API_KEY set; mufflyt/isochrones checked out.
+
+# 1. Cohort — the AMCB roster (writes midwives.csv, 22,309 rows)
+python3 scrape.py
+
+# 2. Identity — candidates, then ranked-class resolution
+python3 fetch_npi_candidates.py        # live NPI Registry API
+Rscript  build_midwife_panel.R         # NPPES 2007-2025 -> midwife_panel.csv
+Rscript  match_amcb_to_npi.R
+Rscript  reconcile_linkage.R           # -> artifacts/amcb_npi_linkage_FROZEN.csv
+Rscript  provenance_manifest.R         # -> artifacts/linkage_manifest.json
+
+# 3. Geography — county spine, then geocode cascade, then point-in-polygon
+Rscript  R/01-build-county-base.R      # ACS + RUCC + NCHS + SVI + CHR
+Rscript  geocode_midwives.R            # Census -> ArcGIS -> centroid, cached
+Rscript  map_midwife_geography.R       # -> artifacts/midwives_geography_FROZEN.csv
+Rscript  R/03-geography-hierarchy.R    # county_exact / county_best
+
+# 4. County context and supply
+Rscript  R/11-wonder-county-ingest.R   # needs the manual WONDER export
+Rscript  R/13-geocode-ob-hospitals.R   # CMS POS
+Rscript  build_county_midwifery_supply.R
+
+# 5. Attribute layers (each needs its external source; each is independent)
+Rscript  extract_dac_midwives.R
+Rscript  match_medicare_partb_partd.R
+Rscript  assign_hpsa_status.R
+Rscript  extract_dac_facility_affiliations.R
+Rscript  extract_hcris_affiliated_hospitals.R
+Rscript  link_practice_locations_to_org_npi.R
+Rscript  resolve_org_ambiguity.R
+
+# 6. Outputs
+Rscript  build_table1_midwives.R       # -> docs/table1_midwives.md
+Rscript  make_readme_figures.R         # every figure above, from artifacts
+```
+
+### What is *not* reproducible from a clean checkout
+
+Read this before planning a rebuild. The pipeline is reproducible in the sense
+that every step is scripted and every artifact records its inputs — **not** in
+the sense that a stranger with this repository can regenerate the published
+numbers. Five things stand between the two:
+
+1. **Two live geocoders and a live registry API.** The NPI Registry API,
+   the Census geocoder and ArcGIS all return what they return *that day*. The
+   geocode cache is what pins the published coordinates; without it, the cascade
+   percentages (86.9% / 9.2%) will not reproduce exactly.
+2. **The manual CDC WONDER export.** No API path exists for county natality.
+   Reproducing `natality_2016_2024_cnm_by_county.csv` means replaying
+   `D66_Defaults.xml` through the web UI by hand.
+3. **A private repository and an external drive.** The ABOG roster and the
+   canonical isochrone library live in `mufflyt/isochrones`, which is private.
+   Medicare, HCRIS, HPSA and the NPPES history live on
+   `/Volumes/MufflySamsung`. Everything in Tier D and the comparator layer is
+   gated on access most readers will not have.
+4. **Undated scrapes.** Healthgrades, Doximity, the state Boards of Nursing, the
+   voter files and the birth-centre directories were captured without a recorded
+   access date, and all are live sites that change. The Healthgrades checkpoints
+   carry file timestamps (2026-08-09) and that is the best available evidence.
+   Nothing in Tier F is byte-reproducible.
+5. **Person-level artifacts are gitignored by design.** The 22,309-row FROZEN
+   crosswalk is not distributed, which is also why CI can only run the hermetic
+   subset of the test suite — see [Continuous
+   integration](#continuous-integration).
+
+What *is* reproducible from a clean checkout: every figure in this README, from
+committed aggregate artifacts, via `Rscript make_readme_figures.R`.
 
 ### Expected files and transformations
 
@@ -692,6 +958,10 @@ files nor person-level rows are committed; both are gitignored and rebuildable.
 | `artifacts/county_midwifery_supply.csv` | AHRF + POS + cohort counts → per-1,000-births rates | `build_county_midwifery_supply.R` |
 | `artifacts/cd_midwifery_stats.csv` | providers assigned to CD118 polygons by point-in-polygon | `build_cd_midwifery_stats.R` |
 | `artifacts/county_profiles/county_sentences.csv` | variety-sentence prose per county | `R/10-county-birth-profiles.R` |
+| `data/wonder/natality_2016_2024_cnm_by_county.csv` | manual web-UI export; suppressed and unreported cells kept as `NA`, never `0` | manual export, query in `D66_Defaults.xml` |
+| `DAC_NationalDownloadableFile_2026-06.csv` | restrict to midwifery taxonomies; NPI → CCN → hospital attributes | manual download |
+| `data/svi_2022_county.csv`, `data/chr_2025_analytic.csv`, `data/nchs_urcodes_2013.xlsx` | joined to the county spine on 5-digit FIPS; pinned by SHA-256 in `county_base.csv.provenance.json` | manual download |
+| `artifacts/linkage_manifest.json` | git commit, input SHA-256s, NPPES snapshot years present and missing | `provenance_manifest.R` |
 | `docs/figures/*.png` | figures rebuilt from committed artifacts | `make_readme_figures.R` |
 
 ## Repository layout
