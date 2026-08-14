@@ -252,9 +252,13 @@ artifacts/org_resolution_review_sample.csv
 #
 # Nothing downstream breaks: the only consumers are
 # calibrate_amcb_certification_ages.R and each file's own producer, and the
-# reduced output they feed -- artifacts/amcb_calibrated_ages.csv, 22,309 rows of
-# certification_number + final_age with no DOB and no names -- is already
-# tracked and stays tracked.
+# reduced output they feed is artifacts/amcb_calibrated_ages.csv, 22,309 rows of
+# certification_number + final_age with no DOB and no names.
+#
+# UPDATED 2026-08-14: that file was untracked too. This block used to say it
+# "stays tracked", which was true when the voter files went and is not true now
+# -- a certification number is the AMCB directory's own primary key, so 22,309
+# of them plus an age is still a row per identifiable person.
 artifacts/ohio_voter_license_ages.csv
 artifacts/florida_voter_license_ages.csv
 artifacts/**/*voter*ages*.csv
@@ -269,6 +273,9 @@ artifacts/**/*_dob*.csv
 # (amcb_npi_linkage_FROZEN_2026-08-08.csv,
 # prelinkage_backup_20260810/amcb_npi_linkage_FROZEN.csv,
 # frozen_stage2/midwives_with_nppes.csv, frozen_cohort/analytic_cohort.csv).
+# All four are untracked as of 2026-08-14. Note that analytic_cohort.csv was
+# never a copy of the pairing: 16,892 rows, certification_number only, no NPI
+# and no name. It is untracked on the certification-number rule, not this one.
 #
 # THIS GLOB IS PREVENTIVE ONLY. .gitignore does not affect files already in the
 # index, so the four existing copies REMAIN TRACKED until someone untracks them
@@ -303,12 +310,80 @@ artifacts/**/*FROZEN*.csv
 # unpublish what every existing clone already has. Purging that needs a history
 # rewrite, which is a separate decision.
 #
-# Deliberately still TRACKED, because neither carries a name: the reduced
-# artifacts/amcb_calibrated_ages.csv (certification_number + final_age) and
-# artifacts/frozen_cohort/analytic_cohort.csv (the 16,892-row cohort allowlist).
+# Both artifacts/amcb_calibrated_ages.csv and
+# artifacts/frozen_cohort/analytic_cohort.csv were held back at this step and
+# untracked on 2026-08-14 with the rest of the baseline.
 midwives.csv
 midwives_geocoded.csv
 midwives_status_check.csv
 midwives_with_nppes.csv
 artifacts/**/midwives_with_nppes.csv
 artifacts/amcb_npi_crosswalk_*panel-midwifery-plus-nursing*.csv
+
+# =============================================================================
+# The remaining person-level artifacts, untracked 2026-08-14
+# =============================================================================
+# 54 files, 93 MB, each keyed to an identifiable midwife by NPI, certification
+# number, name or licence number. Backed up to
+# ~/midwifery_person_level_backup_20260814/ with SHA256SUMS.txt before removal;
+# every one is rebuildable by its producing script, and all remain in git
+# history, so this stops future commits and unpublishes nothing.
+#
+# Listed explicitly rather than by glob: a glob over artifacts/*.csv would also
+# swallow the ~110 aggregate tables that are tracked ON PURPOSE (county
+# profiles, Table 1, PPV summaries), and losing those would quietly break every
+# figure that rebuilds from a committed artifact.
+/artifacts/amcb_calibrated_ages.csv
+/artifacts/cohort_midwives_open_payments_general_2024.csv
+/artifacts/cohort_membership_four_way.csv
+/artifacts/amcb_npi_geography.csv
+/artifacts/frozen_cohort/analytic_cohort.csv
+/artifacts/state_nursing_board_cnm_addresses.csv
+/artifacts/open_payments_midwives_matched_vs_unmatched.csv
+/artifacts/cohort_midwives_tier1_tier2_bon_validated.csv
+/artifacts/cohort_midwife_hospital_rigorous_attributions.csv
+/artifacts/cohort_midwife_hospital_matches.csv
+/artifacts/cohort_midwife_hospital_affiliations_multitier.csv
+/artifacts/cohort_midwife_facility_attributions_final_v4.csv
+/artifacts/cohort_midwife_facility_attributions_complete.csv
+/artifacts/cohort_midwife_building_taxonomy.csv
+/artifacts/scraped_20_state_bons_midwives_master.csv
+/artifacts/midwife_group_practice_names.csv
+/artifacts/tier1_tier2_combined_bon_validated_master.csv
+/artifacts/cohort_midwives_cpt_delivery_attenders.csv
+/artifacts/cohort_midwives_open_payments_employers.csv
+/midwives_unmatched.csv
+/artifacts/frozen_stage2/midwives_unmatched.csv
+/artifacts/tier1_live_bon_all_states_complete.csv
+/artifacts/tier2_live_bon_all_states_complete.csv
+/artifacts/cohort_additions_16743_to_17538.csv
+/artifacts/midwife_hospital_affiliations.csv
+/artifacts/state_nursing_license_ages.csv
+/artifacts/wa_cnm_licenses.csv
+/artifacts/wa_cnm_ages.csv
+/artifacts/cohort_midwives_open_payments_postmastr_final_yield.csv
+/artifacts/invariant_address_provenance_failures.csv
+/artifacts/amcb_training_institution.csv
+/artifacts/amcb_education_history.csv
+/artifacts/amcb_training_institution_table1.csv
+/artifacts/cohort_midwives_open_payments_type2_organizations_full.csv
+/artifacts/wa_cnm_licenses_active.csv
+/artifacts/amcb_training_institution_frontier.csv
+/artifacts/generalist_residual_city_centroids.csv
+/artifacts/amcb_training_institution_linked.csv
+/artifacts/live_washington_bon_ingested_midwives.csv
+/artifacts/cabc_matched_midwives_final.csv
+/artifacts/amcb_crosswalk_diff_component_vs_translit.csv
+/artifacts/amcb_crosswalk_diff_c5guard_vs_amcb_npi_linkage_FROZEN.csv
+/artifacts/amcb_class5_review_census.csv
+/artifacts/amcb_class5_corroboration.csv
+/artifacts/amcb_crosswalk_review_sample_component.csv
+/artifacts/amcb_crosswalk_review_sample_c5guard.csv
+/artifacts/amcb_crosswalk_review_sample.csv
+/artifacts/cohort_midwives_open_payments_type2_organizations.csv
+/artifacts/freestanding_birth_center_midwives_expanded.csv
+/artifacts/invariant_cross_state_failures.csv
+/artifacts/amcb_crosswalk_diff_vs_baseline.csv
+/artifacts/aabc_matched_birth_center_midwives.csv
+/artifacts/zip_fallback_discordant.csv
+/artifacts/cross_state_diagnosis.csv
