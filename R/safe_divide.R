@@ -22,9 +22,18 @@
 #'     whenever you are converting raw counts to millions-scale values inside a
 #'     manuscript script.}
 #'   \item{\code{safe_pct_manu()}}{Returns a rounded percentage value (e.g.,
-#'     \code{45.0}) rather than a proportion, with \code{0} on a zero
-#'     denominator.  Use this for inline manuscript statistics where
-#'     \code{"0\%"} is a more informative display value than \code{NA}.}
+#'     \code{45.0}) rather than a proportion, and \code{NA_real_} on a zero,
+#'     \code{NA} or \code{NULL} denominator.  Use this for inline manuscript
+#'     statistics, where a missing denominator must stay visibly missing.
+#'     This paragraph used to say it returns \code{0}, and recommended it on
+#'     the grounds that \code{"0\%"} displays better than \code{NA} --- that
+#'     is the behaviour DEN-032 retracted, after \code{default = 0} made
+#'     Step 4/11 report 0\% access wherever the denominator was absent and
+#'     manufactured care deserts that were not in the data.  The code has
+#'     returned \code{NA_real_} since; only this summary lagged.  Do not
+#'     restore the old wording without also reading the note on
+#'     \code{safe_percent()} below, which keeps \code{default = 0} and is
+#'     therefore the one to avoid in an analytic table.}
 #'   \item{\code{safe_percent()}}{The standard percentage function for all
 #'     pipeline metrics and figure annotations.  Computes
 #'     \code{round((part / total) * 100, digits)} and returns \code{default}
