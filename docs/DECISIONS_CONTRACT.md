@@ -417,3 +417,54 @@ sums to the cohort, each remainder carries its own named row, and percentages
 continue to use the attributable denominator. Enforced by
 `tests/ci_artifact_contracts.R` (A1), which no longer holds any exemption or
 pinned shortfall.
+
+
+---
+
+## D15 🔴 Does practice setting belong in Table 1? (raised 2026-08-14)
+
+**Question.** Four layers describe where a midwife practises and none appears
+in Table 1. Should one?
+
+**Evidence.** CABC birth centers (221 midwives across 111 centers),
+freestanding birth center identification, a building taxonomy (MOB / hospital
+campus / birth center / outpatient clinic), and CPT delivery claims (7,470
+midwives, 62.67%, confirmed attending deliveries). Table 1's 23 blocks include
+hospital affiliation but no practice setting.
+
+**Why it needs a human.** Coverage is thin and hospital affiliation carries
+part of the signal, so omission may be right. But for a midwifery workforce
+paper, where a midwife practises is close to the central descriptive variable,
+and a reader cannot currently tell whether it was considered and rejected or
+never assembled.
+
+**Options.** (A) Add a practice-setting block with coverage stated. (B) Add
+only the CPT-confirmed delivery-attendance row, which has the best coverage.
+(C) Keep out of Table 1, report in a supplement. (D) Keep out and say why in
+the limitations.
+
+**RULING: none.**
+
+---
+
+## D16 🔴 Rename the county columns that say "midwife" but count CNM/CM (raised 2026-08-14)
+
+**Question.** `n_midwives`, `midwives_per_10k_women`, `births_per_midwife` and
+`no_located_midwife_with_births` count AMCB-certified CNMs and CMs only. The
+generated prose says "certified nurse-midwives"; the column names do not.
+
+**Evidence.** A county flagged `no_located_midwife_with_births = TRUE` reads as
+a maternity-care desert. It means no *AMCB-certified* midwife was located
+there; a county served entirely by CPMs carries that flag while having
+midwifery care. Whichever a reader meets first -- column name or sentence --
+determines what they believe.
+
+**Options.** (A) Rename to `n_cnm_cm`, `cnm_cm_per_10k_women`,
+`births_per_cnm_cm`, `no_located_cnm_cm_with_births`. (B) Keep names, carry the
+qualification in every caption, legend and header. (C) Keep names, document
+only.
+
+**Recommendation: A.** A caption can be dropped when a figure is reused; a
+column name travels with the data.
+
+**RULING: none.**

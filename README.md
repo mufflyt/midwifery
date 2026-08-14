@@ -42,6 +42,15 @@ is not a random sample of the roster.
 Scraper for the [AMCB certification directory](https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800)
 (American Midwifery Certification Board public primary-source verification listing).
 
+> **Scope.** AMCB certifies **CNMs and CMs only**. Certified Professional
+> Midwives (NARM-certified) and state-licensed direct-entry midwives are not in
+> this dataset at all — not as zero rows, but invisible to it, because the
+> source directory never contained them. They attend a large share of community
+> births, unevenly by state, so **this dataset understates midwifery access,
+> most severely where non-AMCB midwifery is strongest**. Columns named
+> `n_midwives` and `midwives_per_10k_women` count CNMs and CMs. See
+> [SCOPE_AND_LIMITATIONS.md](docs/SCOPE_AND_LIMITATIONS.md).
+
 > **New to this codebase?** Start with [ARCHITECTURE.md](ARCHITECTURE.md) for the
 > end-to-end pipeline, per-file roles, environment variables, and how to run and
 > test each stage. This README covers the scraping and matching rationale in

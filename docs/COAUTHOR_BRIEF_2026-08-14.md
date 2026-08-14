@@ -9,6 +9,29 @@ questions the code cannot settle, and states the numbers each one turns on.
 
 ---
 
+## 0. The scope question, which comes first
+
+AMCB certifies **CNMs and CMs only**. Certified Professional Midwives and
+state-licensed direct-entry midwives are **not in this dataset** — invisible to
+it rather than excluded from it, because the source directory never held them.
+
+They attend a large share of community births, and state licensure of
+direct-entry midwifery varies enormously, so the understatement is **uneven by
+state**: a county can have real midwifery care and zero midwives here.
+
+We have not quantified the gap — that needs NARM, state boards or MANA data,
+none of which is ingested. The honest statement today is directional, not
+numeric.
+
+Full detail, including a manuscript sentence and a naming problem live in the
+committed artifacts, in [`SCOPE_AND_LIMITATIONS.md`](SCOPE_AND_LIMITATIONS.md).
+
+**What we need from you:** whether the paper is framed as *CNM/CM workforce*
+throughout — which the data supports — or as *midwifery workforce* with a
+limitation, which it does not.
+
+---
+
 ## 1. What the dataset is, in three numbers
 
 | | |
