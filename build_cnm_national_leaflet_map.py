@@ -108,6 +108,9 @@ with open(MASTER_V4_FILE, "r", encoding="utf-8", errors="ignore") as f:
                 hosp_ccn_map.get(f"{f_upper}_{city_upper}_{state}") or ""
             )
             
+            bon_url = r.get("bon_direct_profile_url", f"https://www.nursys.com/LVC/LVCVerification.aspx?npi={npi}&state={state}")
+            bon_lic = r.get("scraped_license_num", r.get("certification_number", ""))
+            
             mws.append({
                 "npi": npi,
                 "cert": r.get("certification_number", ""),
@@ -121,6 +124,9 @@ with open(MASTER_V4_FILE, "r", encoding="utf-8", errors="ignore") as f:
                 "city": city,
                 "state": state,
                 "zip": zip_code,
+                "active_status": r.get("active_attending_status", "Active CNM Practice"),
+                "bon_url": bon_url,
+                "bon_lic": bon_lic,
                 "cpt_claims": "Active Attending Delivery Provider (CPT 59400/59409/59410)" if has_cpt else "Outpatient / Clinic Practice",
                 "has_cpt": has_cpt,
                 "op_status": r.get("open_payments_status", "Unlinked"),
@@ -325,6 +331,7 @@ html_content = f"""<!DOCTYPE html>
                     <div class="popup-detail">
                         <b>NPI:</b> <a href="${{npiUrl}}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${{m.npi}}</a> (NPPES Registry)<br>
                         <b>Certification #:</b> <a href="${{amcbUrl}}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${{m.cert}}</a> (AMCB Roster)<br>
+                        <b>State BON License:</b> <a href="${{m.bon_url}}" target="_blank" style="color: #38bdf8; font-weight: 600; text-decoration: underline;">📋 Verify ${{m.state}} State License (${{m.bon_lic}}) ↗</a><br>
                         <b>Practice Address:</b> <a href="${{npiUrl}}" target="_blank" style="color: #94a3b8; text-decoration: underline;">${{m.address}}, ${{m.city}}, ${{m.state}} ${{m.zip}}</a> (CMS NPPES File)<br>
                         <b>Setting Tier:</b> ${{m.setting}}<br>
                         <b>Sunshine Act:</b> <a href="${{openPaymentsUrl}}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${{m.op_status}}</a>
