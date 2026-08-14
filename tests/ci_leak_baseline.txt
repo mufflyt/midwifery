@@ -19,16 +19,6 @@
 # the file describes.
 # =============================================================================
 
-midwives_with_nppes.csv                                                                  # 22,309 rows
-midwives_status_check.csv                                                                # 22,309 rows
-midwives_geocoded.csv                                                                    # 22,309 rows
-midwives.csv                                                                             # 22,309 rows
-artifacts/prelinkage_backup_20260810/amcb_npi_linkage_FROZEN.csv                         # 22,309 rows
-artifacts/frozen_stage2/midwives_with_nppes.csv                                          # 22,309 rows
-artifacts/amcb_npi_linkage_FROZEN_2026-08-08.csv                                         # 22,309 rows
-artifacts/amcb_npi_crosswalk_translit_panel-midwifery-plus-nursing_years-2007-2025.csv   # 22,309 rows
-artifacts/amcb_npi_crosswalk_component_panel-midwifery-plus-nursing_years-2007-2025.csv  # 22,309 rows
-artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv    # 22,309 rows
 artifacts/amcb_calibrated_ages.csv                                                       # 22,309 rows
 artifacts/cohort_midwives_open_payments_general_2024.csv                                 # 18,736 rows
 artifacts/cohort_membership_four_way.csv                                                 # 18,288 rows
