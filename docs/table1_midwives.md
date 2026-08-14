@@ -4,7 +4,7 @@ Cohort: **11,920** midwives with AMCB status ACTIVE and a primary-tier NPI link.
 Percentages are within category and use the non-missing denominator;
 unknowns are counted on their own row.
 
-Registry-derived rows use the full cohort. Healthgrades-derived rows use a smaller denominator of **11,808**: 112 midwives share a Healthgrades profile with another certificant and cannot be attributed one. They remain in the cohort for every registry-derived row above. ACOG district percentages exclude 38 midwives with an overseas-military or US-territory address, so that block sums to 11,882 rather than the full cohort.
+Registry-derived rows use the full cohort. Healthgrades-derived rows use a smaller denominator of **11,808**: 112 midwives share a Healthgrades profile with another certificant and cannot be attributed one. They remain in the cohort for every registry-derived row above, and appear on their own row here so the block still sums to the cohort. ACOG district percentages likewise exclude 38 midwives with an overseas-military or US-territory address (no district exists for them); they too are shown on their own row, so every block in this table sums to 11,920.
 
 | Characteristic | n | % |
 |---|---:|---:|
@@ -54,6 +54,7 @@ Registry-derived rows use the full cohort. Healthgrades-derived rows use a small
 | District XI | 536 | 4.5 |
 | District XII | 670 | 5.6 |
 | State not mappable to an ACOG district | 2 | — |
+| Overseas-military or US-territory address (no ACOG district) | 38 | — |
 | **Rurality (RUCC 2023)** | | |
 | Metropolitan (RUCC 1-3) | 10,599 | 90.4 |
 | Nonmetropolitan, adjacent (RUCC 4-6) | 784 | 6.7 |
@@ -135,11 +136,14 @@ Registry-derived rows use the full cohort. Healthgrades-derived rows use a small
 | **Language (Healthgrades floor)** | | |
 | At least this many speak a language other than English | 367 | 3.1 |
 | Not listed (absence is not evidence of English-only) | 11,441 | — |
+| Healthgrades profile shared with another certificant (not attributable) | 112 | — |
 | **Accepts new patients** | | |
 | Yes | 5,761 | 97.9 |
 | No | 121 | 2.1 |
 | No public Healthgrades profile | 5,926 | — |
+| Healthgrades profile shared with another certificant (not attributable) | 112 | — |
 | **Offers telehealth** | | |
 | No | 4,936 | 83.9 |
 | Yes | 946 | 16.1 |
 | No public Healthgrades profile | 5,926 | — |
+| Healthgrades profile shared with another certificant (not attributable) | 112 | — |

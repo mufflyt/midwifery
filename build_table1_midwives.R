@@ -686,8 +686,19 @@ blk_hg <- function(col, category, lvls = NULL, binary_yes = NULL,
   else
     out <- out %>% arrange(desc(n))
   miss <- max(0L, N_hg - known)
-  bind_rows(out, tibble(characteristic = unknown_label,
-                        n = miss, percent = NA_real_, category = category))
+  # Every block sums to the FULL cohort, with each remainder on its own row.
+  # This block used to stop at N_hg and simply omit the midwives who cannot be
+  # attributed a profile: the rows were individually correct and the column did
+  # not add up, so a reader reconciling Table 1 against the cohort found 112
+  # people missing with nothing to explain them. Percentages still use the
+  # attributable denominator -- the extra row is a count, never a rate.
+  unattributable <- length(hg_ambiguous)
+  bind_rows(out,
+            tibble(characteristic = unknown_label,
+                   n = miss, percent = NA_real_, category = category),
+            if (unattributable > 0L)
+              tibble(characteristic = "Healthgrades profile shared with another certificant (not attributable)",
+                     n = unattributable, percent = NA_real_, category = category))
 }
 
 t1 <- bind_rows(
@@ -719,10 +730,18 @@ t1 <- bind_rows(
   # and territory addresses are excluded by decision (no District X), so they
   # are reported on their own line rather than inside "Unknown", which would
   # imply the district is missing when it is not applicable.
-  blk(coh %>% filter(!nppes_state %in% ACOG_EXPECTED_UNMAPPED),
-      "acog_district", "ACOG district",
-      lvls = if (acog_ok) ACOG_DISTRICT_LEVELS else NULL,
-      unknown_label = "State not mappable to an ACOG district"),
+  # The comment above says these are reported on their own line. They were not:
+  # filter() removed them before blk() ever saw them, so the block summed to
+  # 11,882 against a cohort of 11,920 and the 38 were invisible. Now the line
+  # exists, as described.
+  bind_rows(
+    blk(coh %>% filter(!nppes_state %in% ACOG_EXPECTED_UNMAPPED),
+        "acog_district", "ACOG district",
+        lvls = if (acog_ok) ACOG_DISTRICT_LEVELS else NULL,
+        unknown_label = "State not mappable to an ACOG district"),
+    if (n_acog_excluded > 0L)
+      tibble(characteristic = "Overseas-military or US-territory address (no ACOG district)",
+             n = n_acog_excluded, percent = NA_real_, category = "ACOG district")),
   blk(coh, "rurality", "Rurality (RUCC 2023)",
       lvls = c("Metropolitan (RUCC 1-3)", "Nonmetropolitan, adjacent (RUCC 4-6)",
                "Nonmetropolitan, remote (RUCC 7-9)"),
@@ -810,12 +829,15 @@ t1 <- bind_rows(
     local({
       n_yes <- sum(hg_link$hg_lang_flag == "Yes", na.rm = TRUE)
       den   <- N - length(hg_ambiguous)
+      # Third row for the same reason as every other Healthgrades block: the
+      # column must sum to the cohort, with each remainder named.
       tibble(
         characteristic = c(
           "At least this many speak a language other than English",
-          "Not listed (absence is not evidence of English-only)"),
-        n = c(n_yes, den - n_yes),
-        percent = c(round(100 * n_yes / den, 1), NA_real_),
+          "Not listed (absence is not evidence of English-only)",
+          "Healthgrades profile shared with another certificant (not attributable)"),
+        n = c(n_yes, den - n_yes, length(hg_ambiguous)),
+        percent = c(round(100 * n_yes / den, 1), NA_real_, NA_real_),
         category = "Language (Healthgrades floor)")
     })
   else
@@ -860,13 +882,13 @@ md <- c("# Table 1. Characteristics of the ACTIVE certified-midwife cohort", "",
         sprintf(paste0("Registry-derived rows use the full cohort. Healthgrades-derived ",
                        "rows use a smaller denominator of **%s**: %s a Healthgrades ",
                        "profile with another certificant and cannot be attributed one. ",
-                       "They remain in the cohort for every registry-derived row above. ACOG district percentages exclude %s midwives with an overseas-military or US-territory address, so that block sums to %s rather than the full cohort."),
+                       "They remain in the cohort for every registry-derived row above, and appear on their own row here so the block still sums to the cohort. ACOG district percentages likewise exclude %s midwives with an overseas-military or US-territory address (no district exists for them); they too are shown on their own row, so every block in this table sums to %s."),
                 format(N - length(hg_ambiguous), big.mark = ","),
                 if (length(hg_ambiguous) == 1L) "one midwife shares"
                 else sprintf("%s midwives share",
                              format(length(hg_ambiguous), big.mark = ",")),
                 format(n_acog_excluded, big.mark = ","),
-                format(N - n_acog_excluded, big.mark = ",")), "",
+                format(N, big.mark = ",")), "",
         "| Characteristic | n | % |", "|---|---:|---:|")
 for (cat_i in unique(t1$category)) {
   md <- c(md, sprintf("| **%s** | | |", cat_i))

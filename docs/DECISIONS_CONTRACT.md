@@ -303,3 +303,168 @@ is computed twice. D5 depends on the crawl finishing (~8.5 h at the time of
 writing). D6 needs one production nesting report to exist.
 
 Suggested order: **D9 → D8 → D4 → D5 → D2 → D3 → D1 → D7 → D6.**
+
+
+---
+
+# Open items, raised 2026-08-14
+
+D1-D9 were ratified 2026-08-10. The four below arose from work done after that
+date and are **UNRULED**. They are estimand and reporting questions, not
+implementation details, and the pipeline should not answer them on its own.
+
+---
+
+## D10 🔴 May organisation/employer affiliation be reported at all?
+
+**Question.** Organisation affiliation reaches 39.7% coverage. Does it go in
+the manuscript, and if so with what caveat?
+
+**Evidence.** Two independent implementations of the resolver agree on **16.4%**
+of cases. Per-rule positive predictive value is **0.84** (multi_key) and
+**0.96** (cross_source); `artifacts/org_resolution_ppv.csv` carries
+`meets_threshold = FALSE` on every row. The 20 residual cross-method
+disagreements are classified by cause in
+`OPEN_PAYMENTS_LINKAGE_COMPARISON.md`.
+
+**Why it needs a human.** The statistics do not capture the asymmetry: naming
+the *wrong* hospital for a named midwife is a different class of error from
+leaving the cell empty, and the cost of that error is clinical and
+reputational rather than statistical.
+
+**Options.** (A) Report with PPV stated. (B) Report only the cross_source
+stratum. (C) Report as a sensitivity analysis only. (D) Withhold the layer.
+
+**RULING: none.**
+
+---
+
+## D11 🔴 Do the three birth-activity states survive into published tables?
+
+**Question.** `R/15-build-birth-activity.R` classifies each midwife as
+`observed_birth_attendant`, `no_observed_births`, or
+`birth_activity_unobserved`. Does the manuscript carry three levels or a
+binary?
+
+**Evidence.** The third state exists because "she attended no births" and "we
+cannot see births in her state-year-source" are different facts. Cycle 15
+published 651 counties as having no obstetric care by conflating exactly that
+pair. See `METHODS_birth_activity.md`.
+
+**Why it needs a human.** A three-level activity variable is harder to review
+and harder to model. If it collapses, the direction `unobserved` goes IS the
+decision, and it changes the denominator of every activity statement.
+
+**Options.** (A) Three levels throughout. (B) Binary, `unobserved` excluded
+from the denominator. (C) Binary, `unobserved` counted as inactive -- the
+cycle-15 error, listed for completeness and not recommended.
+
+**RULING: none.**
+
+---
+
+## D12 🟡 Is 74% state-board coverage reportable, given it is non-random by state?
+
+**Question.** 9,037 midwives verified across 20 state boards. Reportable, and
+with what statement?
+
+**Evidence.** The 20 states are those publishing bulk open data or belonging to
+the Nursys compact -- an availability sample, not a design. Structurally the
+same problem as linkage varying by certification status (82.3% ACTIVE vs 19.6%
+DECEASED), which the README already discloses.
+
+**Options.** (A) Report with the state list and a non-random-coverage
+statement. (B) Report only within-covered-state comparisons. (C) Use for
+corroboration only, never as a denominator.
+
+**RULING: none.**
+
+---
+
+## D13 🟡 Does a lower-bound Language row belong in Table 1?
+
+**Question.** The row reads "At least this many speak a language other than
+English: 367 (3.1%)", with 11,441 not listed.
+
+**Evidence.** Healthgrades publishes no negative, so absence is not evidence of
+English-only and the only defensible statement is a floor. `hg_languages` is
+present on 6.4% of profiles.
+
+**Why it needs a human.** The number is honest and nearly uninformative. A
+reader who skims will read 3.1% as a prevalence, and the caveat is doing all
+the work.
+
+**Options.** (A) Keep, with the floor stated in the row label as now. (B) Move
+to a supplementary table. (C) Drop, and state in the limitations that language
+was not ascertainable.
+
+**RULING: none.**
+
+---
+
+## Ratified 2026-08-14
+
+## D14 🟢 Every Table 1 block sums to the cohort
+
+**Question.** Healthgrades-derived blocks summed to 11,808 and the ACOG block
+to 11,882, against a cohort of 11,920. Both exclusions were correct -- 112
+midwives share a Healthgrades profile URL and cannot be attributed one; 38 have
+an overseas-military or US-territory address with no ACOG district -- and both
+were invisible in the table.
+
+**RULING (2026-08-14): denominators match, remainders are shown.** Every block
+sums to the cohort, each remainder carries its own named row, and percentages
+continue to use the attributable denominator. Enforced by
+`tests/ci_artifact_contracts.R` (A1), which no longer holds any exemption or
+pinned shortfall.
+
+
+---
+
+## D15 🔴 Does practice setting belong in Table 1? (raised 2026-08-14)
+
+**Question.** Four layers describe where a midwife practises and none appears
+in Table 1. Should one?
+
+**Evidence.** CABC birth centers (221 midwives across 111 centers),
+freestanding birth center identification, a building taxonomy (MOB / hospital
+campus / birth center / outpatient clinic), and CPT delivery claims (7,470
+midwives, 62.67%, confirmed attending deliveries). Table 1's 23 blocks include
+hospital affiliation but no practice setting.
+
+**Why it needs a human.** Coverage is thin and hospital affiliation carries
+part of the signal, so omission may be right. But for a midwifery workforce
+paper, where a midwife practises is close to the central descriptive variable,
+and a reader cannot currently tell whether it was considered and rejected or
+never assembled.
+
+**Options.** (A) Add a practice-setting block with coverage stated. (B) Add
+only the CPT-confirmed delivery-attendance row, which has the best coverage.
+(C) Keep out of Table 1, report in a supplement. (D) Keep out and say why in
+the limitations.
+
+**RULING: none.**
+
+---
+
+## D16 🔴 Rename the county columns that say "midwife" but count CNM/CM (raised 2026-08-14)
+
+**Question.** `n_midwives`, `midwives_per_10k_women`, `births_per_midwife` and
+`no_located_midwife_with_births` count AMCB-certified CNMs and CMs only. The
+generated prose says "certified nurse-midwives"; the column names do not.
+
+**Evidence.** A county flagged `no_located_midwife_with_births = TRUE` reads as
+a maternity-care desert. It means no *AMCB-certified* midwife was located
+there; a county served entirely by CPMs carries that flag while having
+midwifery care. Whichever a reader meets first -- column name or sentence --
+determines what they believe.
+
+**Options.** (A) Rename to `n_cnm_cm`, `cnm_cm_per_10k_women`,
+`births_per_cnm_cm`, `no_located_cnm_cm_with_births`. (B) Keep names, carry the
+qualification in every caption, legend and header. (C) Keep names, document
+only.
+
+**Recommendation: A.** A caption can be dropped when a figure is reused; a
+column name travels with the data.
+
+**RULING: none.**

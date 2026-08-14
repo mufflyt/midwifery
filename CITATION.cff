@@ -34,6 +34,11 @@ authors:
     affiliation: "Denver Health and Hospital Authority, Denver, Colorado, USA"
     # TODO: add your ORCID, e.g. orcid: "https://orcid.org/0000-0002-1825-0097"
     # orcid: "https://orcid.org/XXXX-XXXX-XXXX-XXXX"
+  - family-names: Thumm
+    given-names: Bree
+    # TODO: affiliation and ORCID, supplied by the author rather than guessed.
+    # affiliation: ""
+    # orcid: "https://orcid.org/XXXX-XXXX-XXXX-XXXX"
 repository-code: "https://github.com/mufflyt/midwifery"
 url: "https://github.com/mufflyt/midwifery"
 version: "0.7.0"

@@ -42,10 +42,166 @@ is not a random sample of the roster.
 Scraper for the [AMCB certification directory](https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800)
 (American Midwifery Certification Board public primary-source verification listing).
 
+> **Scope.** AMCB certifies **CNMs and CMs only**. Certified Professional
+> Midwives (NARM-certified) and state-licensed direct-entry midwives are not in
+> this dataset at all — not as zero rows, but invisible to it, because the
+> source directory never contained them. They attend a large share of community
+> births, unevenly by state, so **this dataset understates midwifery access,
+> most severely where non-AMCB midwifery is strongest**. Columns named
+> `n_midwives` and `midwives_per_10k_women` count CNMs and CMs. See
+> [SCOPE_AND_LIMITATIONS.md](docs/SCOPE_AND_LIMITATIONS.md).
+
 > **New to this codebase?** Start with [ARCHITECTURE.md](ARCHITECTURE.md) for the
 > end-to-end pipeline, per-file roles, environment variables, and how to run and
 > test each stage. This README covers the scraping and matching rationale in
 > depth.
+
+## Objective, rationale and aims
+
+*Structured after the format Bree Thumm used in her K01 research strategy:
+claim-headed subsections under Significance, then numbered aims each carrying a
+stated deliverable. Every figure below is produced by this repository and is
+reproducible from the artifacts named beside it.*
+
+**Terminology, following the same convention as that proposal:** *midwives*
+here means **certified nurse-midwives and certified midwives** certified by the
+AMCB. Midwives with alternative training or certification — Certified
+Professional Midwives, state-licensed direct-entry midwives — are **not within
+the scope of this work**, and the consequences of that are set out in
+[SCOPE_AND_LIMITATIONS.md](docs/SCOPE_AND_LIMITATIONS.md).
+
+### A. Significance
+
+**A.1. Midwifery workforce questions are geographic questions.** Access to
+midwifery care is distributed, not aggregate: whether a person can reach a
+midwife depends on where midwives are, relative to where births happen. Yet
+the national workforce literature — including work on burnout, attrition and
+the demography of the certificant population — necessarily characterizes
+midwives as a population rather than as a distribution, because the
+locations have not been available to characterize.
+
+**A.2. The authoritative roster of US midwives contains no locations at all.**
+The AMCB Instant Verification directory publishes **22,309 certificants** with
+certification number, credential, status and dates. It publishes **no address
+at any geographic level** — not state, not ZIP, not county. Every geographic
+statement about this workforce must therefore be *derived*, and the derivation
+is the scientific work.
+
+**A.3. Identity resolution, not geocoding, is the binding constraint.** Turning
+a name into a location requires first turning a name into a person. Against
+NPPES, **65.7%** of the roster resolves to an NPI with midwifery taxonomy
+confirmed (**75.7%** including nursing and fuzzy sensitivity tiers); **13.9%**
+is quarantined because plausible candidates exist but cannot identify one
+person, and **10.4%** has no plausible candidate at all. Once identity is
+settled, geography is nearly free: **~99%** of linked records receive a county.
+**Linkage certainty and geographic completeness are separate properties and
+must be reported separately.**
+
+**A.4. The linked subset is not a random sample, and the difference is
+structural.** Linkage varies sharply by certification status — **82.3%** of
+ACTIVE certificants link versus **19.6%** of DECEASED — so any unqualified
+statement about "midwives" is a statement about the actively certified,
+successfully linked subset. To address these gaps, **our objective is to
+construct a reproducible, evidence-tiered linkage from the AMCB roster to
+national provider registries, locate the resulting cohort, and characterize
+its distribution and movement against birth volume and obstetric
+infrastructure — reporting at every stage what is known, what is ambiguous, and
+what is absent — so that midwifery workforce policy can be evaluated against
+where midwives actually practise rather than how many exist: which communities
+lose access when one practice closes, where retention effort would protect the
+most births, and whether two decades of growth in the certified workforce has
+reached the counties with the least obstetric care.**
+
+### B. Innovation
+
+**First**, identity evidence is *ranked, not scored*. Two certificants with
+identical names, no middle name and no date of birth **are** indistinguishable,
+and a blended similarity score would only manufacture certainty; here a
+candidate resolves only when exactly one sits at the strongest available
+evidence class, and everything else is quarantined as an outcome rather than
+discarded as a failure. **Second**, taxonomy sets the tier but never breaks an
+identity tie, so a nursing-only match is a separate reported stratum and is
+never promoted into the primary cohort. **Third**, every published artifact
+carries a provenance sidecar recording the SHA-256 of each input, so any figure
+can be traced to the run and the inputs that produced it. **Finally**, absence
+is preserved as absence throughout: suppressed CDC WONDER cells, unobserved
+birth activity and unascertained attributes are `NA`, never `0` — a discipline
+this project adopted after conflating the two produced published figures that
+had to be retracted.
+
+### C. Aims
+
+**C.1. Overview of aims.** We will (1) construct and freeze an evidence-tiered
+AMCB-to-NPI linkage with full accounting of the unlinked, (2) locate the linked
+cohort and characterize its distribution against births, rurality and obstetric
+infrastructure, (3) attach attribute layers describing where and how those
+midwives practise, each reported with its own coverage and predictive value,
+and (4) use the 2007–2025 provider panel to describe how the located workforce
+has entered, moved and thinned over two decades.
+
+**C.2. Aim 1. Construct a reproducible, evidence-tiered linkage from the AMCB
+roster to NPPES, with every unlinked record classified by cause.** Candidates
+are generated over the 2007–2025 NPPES panel and ranked into four name-evidence
+classes; a record resolves only at its best available class and only when a
+single candidate occupies it. The two kinds of missingness are held apart —
+*no plausible candidate exists* versus *plausible candidates exist but identity
+is ambiguous* — and preserved in the artifact as `has_candidate`.
+*Deliverable:* a frozen crosswalk (`artifacts/amcb_npi_linkage_FROZEN_*.csv`)
+with per-tier completeness, plus the quarantine and unmatched strata.
+
+**C.3. Aim 2. Locate the linked cohort and characterize its distribution
+against birth volume and obstetric infrastructure.** Last-observed practice
+addresses are geocoded through a Census → ArcGIS → centroid cascade, assigned
+by point-in-polygon to county, tract and congressional district, and joined to
+ACS denominators, USDA RUCC strata, CMS Provider of Services obstetric
+hospitals and CDC WONDER CNM-attended births. Coordinates and ZIP must derive
+from the same address vintage; mixing them dropped validation agreement to
+94.47% versus 99.95% when rebuilt from one vintage. *Deliverable:*
+`artifacts/county_midwifery_supply.csv`, the county and congressional-district
+profiles, Table 1, and the access maps — each carrying the tier and coverage
+its figures rest on.
+
+**C.4. Aim 3. Attach and validate attribute layers describing where and how
+midwives practise.** Employment and organization affiliation via NPPES Type 2
+resolution; hospital privileges via CMS facility affiliation keyed on CCN;
+practice setting via CABC birth-center accreditation and address building
+taxonomy; and observed birth attendance via CPT delivery claims. Each layer is
+reported with its coverage and, where a linkage rule is involved, its positive
+predictive value. *Deliverable:* the attribute artifacts and
+`artifacts/org_resolution_ppv.csv`. **Two decisions this aim depends on are
+unruled** — whether organization affiliation may be reported at its measured
+PPV, and whether the three-state birth-activity variable survives into
+published tables — and are recorded as D10 and D11 in
+[DECISIONS_CONTRACT.md](docs/DECISIONS_CONTRACT.md).
+
+**C.5. Aim 4. Describe entry, geographic mobility and thinning of the located
+workforce across the 2007–2025 provider panel.** The three aims above are
+cross-sectional; this one uses the axis the data already carries. The NPPES
+panel holds one row per provider per annual snapshot with the practice address
+recorded at that time and a deactivation date where one exists, so three
+quantities are directly observable: **entry**, by AMCB initial-certification
+cohort against first NPPES appearance; **mobility**, as change of practice
+county between consecutive snapshots, including the rural-to-urban direction
+that would thin rural supply without changing the national count; and
+**cessation**, via NPI deactivation. Each is reported by rurality stratum and
+ACOG district, against county birth volume, so that movement is measured where
+births are rather than where providers are dense.
+
+*Deliverable:* a provider-year panel artifact with entry, county-change and
+cessation flags, and county-level net-change series for the linked cohort.
+
+**Two limits are structural and must travel with any result from this aim.**
+First, **the AMCB roster is a single 2026 scrape and its status field is a
+current state, not a dated event.** We observe that 5,175 certificants are
+LAPSED and 1,278 RETIRED; we do not observe *when* either happened, so
+time-to-attrition cannot be estimated from this source and any survival
+framing would be false precision. Second, and more serious, **linkage is
+selected on the outcome**: 82.3% of ACTIVE certificants link versus 19.6% of
+DECEASED, so precisely the people who have left the workforce are the people we
+most often cannot locate. Cessation measured on the linked cohort is therefore
+a lower bound of unknown tightness, and the aim reports movement of the
+*located* workforce — a phrase that should appear in every sentence describing
+its results.
 
 ## From a midwife's name to a county on a map
 
