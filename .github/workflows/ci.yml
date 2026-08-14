@@ -30,7 +30,7 @@
 #
 # A FRESH CLONE IS NOT ENOUGH ON ITS OWN. It proves no missing FILE; it says
 # nothing about a missing PACKAGE, because your R library still has everything
-# you have ever installed. Eighteen suites were added here having passed a
+# you have ever installed. Seventeen suites were added here having passed a
 # fresh-clone check and CI still went red on the first step, on a package the
 # runner does not install. Check both:
 #
@@ -38,6 +38,11 @@
 #   packages follow every source() chain -- including the
 #            source(file.path(root, ...)) forms a naive grep misses -- and
 #            confirm each package it reaches is in the install list below
+#   /tmp     grep the suite for absolute paths outside the repo. A stale file
+#            in /tmp is invisible to a fresh clone and survives a HOME
+#            redirect; cycle6 passed locally for exactly that reason and went
+#            red here. Absent-input branches must SKIP loudly or the suite does
+#            not belong in CI.
 name: CI
 
 on:
@@ -255,6 +260,15 @@ jobs:
       # Deliberately NOT here, and why:
       #   cycle11_spatial, cycle14_coverage_surfaces  need sf. See the header.
       #   healthgrades_integrity                      skips wholesale; vacuous.
+      #   cycle6_field_quality                        reads /tmp/c6_attrs.csv,
+      #                                               a machine-local snapshot,
+      #                                               and FAILS (not skips) when
+      #                                               it is absent. Found by CI
+      #                                               after a fresh-clone check
+      #                                               passed: the clone
+      #                                               redirected HOME but not
+      #                                               /tmp, where a stale copy
+      #                                               was still sitting.
       #   cycle9, cycle10, cycle18, cycle19, cycle22, cycle5_key_resolution,
       #   amcb_gates, frozen_dependency               fail in a fresh clone
       #                                               today -- recorded debt or
@@ -281,10 +295,15 @@ jobs:
 
       # Two rows that disagree about where one midwife is must not both survive
       # into a map. Field quality and units guard the same seam upstream.
-      - name: Cycle 5-8 (geocode conflicts, field quality, units, filter bias)
+      # cycle6 is NOT here: it reads /tmp/c6_attrs.csv, a machine-local
+      # snapshot, and its absent-branch is chk(FALSE) -- a deliberate failure,
+      # not a skip, because T68/T69 exist to prove FALSE means false rather than
+      # a disguised absence. That evidence cannot be produced on a runner, and
+      # weakening it to a skip would discard the point of the test. It stays a
+      # local check. See the exclusion list above.
+      - name: Cycle 5, 7-8 (geocode conflicts, units, filter bias)
         run: |
           Rscript tests/test_cycle5_geocode_conflicts.R
-          Rscript tests/test_cycle6_field_quality.R
           Rscript tests/test_cycle7_units.R
           Rscript tests/test_cycle8_filter_bias.R
 
