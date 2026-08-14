@@ -104,8 +104,13 @@ statement about "midwives" is a statement about the actively certified,
 successfully linked subset. To address these gaps, **our objective is to
 construct a reproducible, evidence-tiered linkage from the AMCB roster to
 national provider registries, locate the resulting cohort, and characterize
-its distribution against birth volume and obstetric infrastructure — reporting
-at every stage what is known, what is ambiguous, and what is absent.**
+its distribution and movement against birth volume and obstetric
+infrastructure — reporting at every stage what is known, what is ambiguous, and
+what is absent — so that midwifery workforce policy can be evaluated against
+where midwives actually practise rather than how many exist: which communities
+lose access when one practice closes, where retention effort would protect the
+most births, and whether two decades of growth in the certified workforce has
+reached the counties with the least obstetric care.**
 
 ### B. Innovation
 
@@ -129,8 +134,10 @@ had to be retracted.
 **C.1. Overview of aims.** We will (1) construct and freeze an evidence-tiered
 AMCB-to-NPI linkage with full accounting of the unlinked, (2) locate the linked
 cohort and characterize its distribution against births, rurality and obstetric
-infrastructure, and (3) attach attribute layers describing where and how those
-midwives practise, each reported with its own coverage and predictive value.
+infrastructure, (3) attach attribute layers describing where and how those
+midwives practise, each reported with its own coverage and predictive value,
+and (4) use the 2007–2025 provider panel to describe how the located workforce
+has entered, moved and thinned over two decades.
 
 **C.2. Aim 1. Construct a reproducible, evidence-tiered linkage from the AMCB
 roster to NPPES, with every unlinked record classified by cause.** Candidates
@@ -166,6 +173,35 @@ unruled** — whether organization affiliation may be reported at its measured
 PPV, and whether the three-state birth-activity variable survives into
 published tables — and are recorded as D10 and D11 in
 [DECISIONS_CONTRACT.md](docs/DECISIONS_CONTRACT.md).
+
+**C.5. Aim 4. Describe entry, geographic mobility and thinning of the located
+workforce across the 2007–2025 provider panel.** The three aims above are
+cross-sectional; this one uses the axis the data already carries. The NPPES
+panel holds one row per provider per annual snapshot with the practice address
+recorded at that time and a deactivation date where one exists, so three
+quantities are directly observable: **entry**, by AMCB initial-certification
+cohort against first NPPES appearance; **mobility**, as change of practice
+county between consecutive snapshots, including the rural-to-urban direction
+that would thin rural supply without changing the national count; and
+**cessation**, via NPI deactivation. Each is reported by rurality stratum and
+ACOG district, against county birth volume, so that movement is measured where
+births are rather than where providers are dense.
+
+*Deliverable:* a provider-year panel artifact with entry, county-change and
+cessation flags, and county-level net-change series for the linked cohort.
+
+**Two limits are structural and must travel with any result from this aim.**
+First, **the AMCB roster is a single 2026 scrape and its status field is a
+current state, not a dated event.** We observe that 5,175 certificants are
+LAPSED and 1,278 RETIRED; we do not observe *when* either happened, so
+time-to-attrition cannot be estimated from this source and any survival
+framing would be false precision. Second, and more serious, **linkage is
+selected on the outcome**: 82.3% of ACTIVE certificants link versus 19.6% of
+DECEASED, so precisely the people who have left the workforce are the people we
+most often cannot locate. Cessation measured on the linked cohort is therefore
+a lower bound of unknown tightness, and the aim reports movement of the
+*located* workforce — a phrase that should appear in every sentence describing
+its results.
 
 ## From a midwife's name to a county on a map
 
