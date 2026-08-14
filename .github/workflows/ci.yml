@@ -27,6 +27,17 @@
 # verified -- run it in a fresh `git clone` of HEAD, which has no gitignored
 # artifacts and no ~/isochrones. Passing locally proves nothing; your working
 # tree has the data.
+#
+# A FRESH CLONE IS NOT ENOUGH ON ITS OWN. It proves no missing FILE; it says
+# nothing about a missing PACKAGE, because your R library still has everything
+# you have ever installed. Eighteen suites were added here having passed a
+# fresh-clone check and CI still went red on the first step, on a package the
+# runner does not install. Check both:
+#
+#   files    fresh `git clone` + HOME redirected to an empty dir
+#   packages follow every source() chain -- including the
+#            source(file.path(root, ...)) forms a naive grep misses -- and
+#            confirm each package it reaches is in the install list below
 name: CI
 
 on:
@@ -159,10 +170,29 @@ jobs:
 
       # Binary packages from the public RSPM. No compilation, no system geo
       # libraries -- if a package here ever needs one, it does not belong here.
+      #
+      # The second group is what the sourced helpers pull in, NOT what the tests
+      # name directly, which is why they were missed the first time: a test
+      # source()s R/join_safety.R, which requires checkmate at source time and
+      # stops if it is absent. Grepping the test files alone does not find any
+      # of these -- you have to follow the source() chain, including the
+      # source(file.path(root, ...)) forms.
+      #
+      #   checkmate  R/join_safety.R, at source time
+      #   digest     artifact SHA-256 checks (provenance wiring)
+      #   DBI/duckdb the Type-2 candidate universe query
+      #   geosphere  distance checks in the geocode-conflict suite
+      #   here/httr/openssl/xml2  reached through the same helper chain
+      #
+      # None needs GDAL/GEOS/PROJ. xml2, httr and openssl link against libxml2,
+      # libcurl and libssl, which are present on ubuntu-latest already -- that
+      # is the line: standard system libraries yes, geo stack no.
       - name: Install packages
         run: |
           pkgs <- c("dplyr", "jsonlite", "purrr", "readr", "scales", "stringi",
-                    "stringr", "testthat", "tibble", "tidyr")
+                    "stringr", "testthat", "tibble", "tidyr",
+                    "checkmate", "DBI", "digest", "duckdb", "geosphere",
+                    "here", "httr", "openssl", "xml2")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
         shell: Rscript {0}
