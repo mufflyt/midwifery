@@ -205,7 +205,7 @@ build_completeness <- function() {
   m$.spine_county <- if ("GEOID" %in% names(m)) m$GEOID else
     if ("county_exact" %in% names(m)) m$county_exact else NA_character_
   m <- m %>%
-    mutate(zip5 = pad5(str_sub(str_remove_all(practice_zip, "[^0-9]"), 1, 5))) %>%
+    mutate(zip5 = zip5_key(practice_zip)) %>%
     left_join(zc, by = "zip5", suffix = c("", ".zip")) %>%
     mutate(GEOID_zip = if ("GEOID.zip" %in% names(.)) GEOID.zip else GEOID,
            GEOID_proxy = coalesce(GEOID_zip, .spine_county)) %>%

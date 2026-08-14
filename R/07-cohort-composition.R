@@ -164,7 +164,7 @@ build_composition <- function() {
   d <- membership %>%
     left_join(chars, by = "certification_number", relationship = "many-to-one") %>%
     left_join(link_cols, by = "certification_number", relationship = "many-to-one") %>%
-    mutate(zip5 = pad5(str_sub(str_remove_all(practice_zip, "[^0-9]"), 1, 5)),
+    mutate(zip5 = zip5_key(practice_zip),
            cert_decade = band_cert_decade(certification_date)) %>%
     left_join(zc, by = "zip5", relationship = "many-to-one") %>%
     left_join(select(cb, GEOID, rucc_2023), by = "GEOID", relationship = "many-to-one") %>%

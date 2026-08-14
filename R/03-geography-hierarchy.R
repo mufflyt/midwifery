@@ -292,8 +292,8 @@ build_geography <- function() {
       select(certification_number, practice_zip, practice_state) %>%
       inner_join(prov, by = "certification_number",
                  relationship = "many-to-one") %>%
-      mutate(rz = pad5(str_sub(str_remove_all(practice_zip, "[^0-9]"), 1, 5)),
-             gz = pad5(str_sub(str_remove_all(geo_zip, "[^0-9]"), 1, 5))) %>%
+      mutate(rz = zip5_key(practice_zip),
+             gz = zip5_key(geo_zip)) %>%
       filter((!is.na(rz) & !is.na(gz) & rz != gz) |
                (!is.na(practice_state) & !is.na(geo_state) &
                   practice_state != geo_state))
@@ -354,7 +354,7 @@ build_geography <- function() {
 
   m <- roster %>%
     left_join(coords, by = "certification_number", relationship = "one-to-one") %>%
-    mutate(zip5 = pad5(str_sub(str_remove_all(practice_zip, "[^0-9]"), 1, 5))) %>%
+    mutate(zip5 = zip5_key(practice_zip)) %>%
     left_join(zc, by = "zip5", relationship = "many-to-one")
   assert_identity_preserved(m, spine, "certification_number", "coords + zip join")
 
@@ -421,8 +421,8 @@ build_geography <- function() {
       inner_join(geo %>% select(certification_number, geo_zip = practice_zip) %>%
                    distinct(certification_number, .keep_all = TRUE),
                  by = "certification_number", relationship = "many-to-one") %>%
-      mutate(rz = pad5(str_sub(str_remove_all(roster_zip, "[^0-9]"), 1, 5)),
-             gz = pad5(str_sub(str_remove_all(geo_zip, "[^0-9]"), 1, 5))) %>%
+      mutate(rz = zip5_key(roster_zip),
+             gz = zip5_key(geo_zip)) %>%
       filter(!is.na(rz), !is.na(gz), rz != gz)
     if (nrow(zchk) > 0) {
       fail$zip_provenance <- nrow(zchk)

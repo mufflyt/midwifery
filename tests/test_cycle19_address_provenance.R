@@ -46,6 +46,8 @@ root <- {
 }
 suppressPackageStartupMessages({library(dplyr); library(readr)})
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
+# The ZIP key under test is the production one, sourced rather than restated.
+source("R/lib/common_helpers.R")
 
 fails <- 0L
 chk <- function(cond, m) {
@@ -64,10 +66,15 @@ cat("\n-- BVA --\n")
 # spaces and a lost leading zero must all normalise to the same key or the
 # guard invents disagreements that do not exist.
 {
-  pad5 <- function(x) sprintf("%05s", substr(gsub("[^0-9]", "", x), 1, 5))
-  chk(identical(pad5("02134-1234"), "02134"), "T191a ZIP+4 truncates to five digits")
-  chk(identical(pad5(" 02134 "), "02134"),    "T191b surrounding space is stripped")
-  chk(identical(pad5("2134"), "02134"),       "T191c a lost leading zero is restored, not treated as a different ZIP")
+  # zip5_key() from R/lib/common_helpers.R, NOT a local re-implementation. The
+  # previous version of this block defined its own `pad5` -- shadowing the
+  # canonical helper of that name with different behaviour -- so it asserted
+  # three properties of a private lambda and would have passed unchanged if the
+  # production key had broken.
+  chk(identical(zip5_key("02134-1234"), "02134"), "T191a ZIP+4 truncates to five digits")
+  chk(identical(zip5_key(" 02134 "), "02134"),    "T191b surrounding space is stripped")
+  chk(identical(zip5_key("2134"), "02134"),       "T191c a lost leading zero is restored, not treated as a different ZIP")
+  chk(is.na(zip5_key(NA)),                        "T191d a missing ZIP stays missing rather than becoming \"00000\"")
 }
 
 # T192 (BVA). The comparison must be null-safe at both ends: a missing ZIP on

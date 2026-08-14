@@ -248,7 +248,7 @@ build_progression <- function() {
 
   strata <- g4 %>%
     transmute(certification_number,
-              zip5 = pad5(str_sub(str_remove_all(practice_zip, "[^0-9]"), 1, 5))) %>%
+              zip5 = zip5_key(practice_zip)) %>%
     left_join(zc, by = "zip5", relationship = "many-to-one") %>%
     left_join(select(cb, GEOID, rucc_2023), by = "GEOID", relationship = "many-to-one") %>%
     mutate(rucc_cat = coalesce(

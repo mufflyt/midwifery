@@ -52,7 +52,6 @@ data/zcta_tract_2020.txt
 artifacts/amcb_npi_linkage_panel-*.csv*
 artifacts/linkage_candidate_audit.csv
 artifacts/linkage_pool_diagnostics.csv
-artifacts/identity_flip_audit.csv
 artifacts/geocode_*.csv
 clean_rerun.log
 refactor_run.log

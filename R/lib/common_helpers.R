@@ -28,6 +28,26 @@
 #' @return [character] zero-padded to width 5.
 pad5 <- function(x) stringr::str_pad(as.character(x), 5, "left", "0")
 
+#' Reduce a postal ZIP to its five-digit join key
+#'
+#' pad5() alone is NOT this. A ZIP arrives as "02134-1234", " 02134 " or 2134,
+#' and the three cases must collapse to one key or a comparison invents
+#' disagreements that do not exist -- which is what the address-provenance guard
+#' exists to detect, so a wrong key there manufactures the very failures it
+#' reports. Strip non-digits, take the first five, then pad: ZIP+4 truncates, a
+#' lost leading zero is restored, and surrounding space disappears.
+#'
+#' Named because eight production sites had spelled the same three-call
+#' composition out by hand and a test had re-implemented it privately -- under
+#' the name `pad5`, shadowing the helper above with different behaviour.
+#' @param x [vector]: ZIP as recorded.
+#' @return [character] five digits, NA preserved.
+zip5_key <- function(x) {
+  y <- pad5(stringr::str_sub(stringr::str_remove_all(as.character(x), "[^0-9]"),
+                             1, 5))
+  ifelse(is.na(x), NA_character_, y)
+}
+
 #' Pad a CMS Certification Number (CCN) to six characters
 #'
 #' A CCN is a six-character identifier and is NOT a number: 10,290 rows of the
