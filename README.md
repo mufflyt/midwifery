@@ -929,18 +929,25 @@ expiration_date, last_name, first_name, middle_name, discipline, primary_source`
 ## Continuous integration
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push and
-pull request, in about a minute, on two Linux runners. It checks four things:
-every tracked R file parses, no file hardcodes a path into another user's home
-directory, `.gitignore` has no duplicate rules and no function is defined at
-top level in two files; the join-key unit tests (`pad5` vs `zip5_key`, `zip5`
-vs `zip5_first_run`, `zip9`, `phone10`, `norm_addr` vs `norm_addr_drop_unit`,
-`pad_ccn`); that every tracked `.py` compiles; and the address-key matching
-tests.
+pull request, across three Linux jobs tiered by what they cost to install:
 
-It installs `stringr` and nothing else — no sf, no tidyverse, no system geo
-libraries. That is deliberate. A twenty-minute CI that installs GDAL to check a
-string function gets switched off the first week it goes red for an unrelated
-reason.
+| Job | Installs | Checks |
+|---|---|---|
+| **r-checks** | `stringr` | every tracked R file parses; no hardcoded path into another user's home; no duplicate `.gitignore` rules; no function defined at top level in two files; the join keys (`pad5` vs `zip5_key`, `zip5` vs `zip5_first_run`, `zip9`, `phone10`, `norm_addr` vs `norm_addr_drop_unit`, `pad_ccn`); Table 1 age/tenure/decade banding |
+| **python-checks** | `pytest` | every tracked `.py` compiles; address-key matching; the scraper's 500-row APEX pager cap and the NPI API's 200-row candidate cap |
+| **r-unit-tests** | the tidyverse stack, cached | the deterministic license→NPI bridge and its collision handling; state-license table construction; former/maiden-name candidate expansion; age-at-certification validation; the cross-taxonomy rule that a nursing-only match is never promoted into the primary cohort; the checkpoint-merge contract |
+
+The tiering is deliberate. The first two jobs stay trivially cheap so they are
+never the reason someone switches CI off; the third is allowed to cost a minute
+because it can be disabled on its own without taking the fast checks with it.
+No job may install sf or system geo libraries — a twenty-minute CI that builds
+GDAL to check a string function goes red for an unrelated reason in week one
+and gets switched off in week two.
+
+**Adding a test?** Verify it is hermetic the way these were: run it in a fresh
+`git clone` of HEAD, which has no gitignored artifacts and no `~/isochrones`.
+Passing in your working tree proves nothing, because your working tree has the
+data.
 
 **Read the green tick correctly.** Almost every test in `tests/` loads a
 multi-megabyte artifact, and several reach outside the repository entirely —
