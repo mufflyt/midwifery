@@ -1,0 +1,11 @@
+Field_Name,Variable,Clinical_Value,Sample_Value
+State License / Credential String,scraped_license_num,Uniquely identifies state APRN-CNM practice license.,CO-RN-APRN-10542
+Licensure & Practice Status,scraped_license_status,Confirms active legal authority to practice nurse-midwifery.,Active Verified (BON Direct Scrape)
+Nursys Multi-State Compact Privilege,tier2_compact_privilege,Identifies cross-border practice authority in 25+ Compact states.,Multi-State Practice Privilege Active
+License Expiration / Renewal Date,expiration_date,Tracks workforce retention & upcoming license expirations.,12/2029
+Initial State Licensure Date,firstissuedate,Measures clinician practice longevity and career vintage.,06/2001
+Mandatory Primary Practice Address,nppes_practice_address,Verifies physical employment location reported upon renewal.,777 BANNOCK ST
+Practice Municipality & ZIP Code,nppes_city / nppes_zip,Anchors practice location for travel time and isochrone mapping.,"DENVER, CO 80204"
+Prescriptive Authority (RXN),prescriptive_authority_status,Verifies legal authority to prescribe legend drugs & contraceptives.,Active RXN Prescriptive Authority
+Board Discipline Flag,actiontaken,Identifies public disciplinary orders or clean practice standing.,No / Clean Standing
+State Licensing Board Jurisdiction,scraped_bon_state,Identifies specific state licensing authority.,Colorado DORA / WA DOH
