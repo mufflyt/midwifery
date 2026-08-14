@@ -4,13 +4,13 @@ Notable changes to the pipeline, newest first.
 
 Two conventions worth stating before you read it:
 
-**The version numbers are retrospective.** This repository has no git tags. The
-releases below were reconstructed from 280 commits between 2026-08-06 and
-2026-08-13 and grouped by what actually changed about the *estimates*, not by
-when someone decided to cut a release. Reproducing a specific number should be
-done from the commit SHA recorded in that artifact's `.provenance.json` sidecar,
-not from a version string here. Tagging `v0.7.0` at the current HEAD would make
-these real; until then treat them as chapter headings.
+**Only `v0.7.0` is a real tag.** It points at commit `335d245`. Everything
+below it was reconstructed after the fact from 280 commits between 2026-08-06
+and 2026-08-14, grouped by what actually changed about the *estimates* rather
+than by when someone decided to cut a release — treat 0.1.0 through 0.6.0 as
+chapter headings, not as anything you can check out. Reproducing a specific
+number should be done from the commit SHA recorded in that artifact's
+`.provenance.json` sidecar, not from a version string here.
 
 **Entries record what a change did to the numbers.** A fix that moved county
 ascertainment from 30.6% to 98.9% is a different kind of event from a fix that
@@ -22,9 +22,13 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Unreleased]
+## [0.7.0] — 2026-08-14 — State licensure, and identity that does not need a name
 
-### Added
+Tagged `v0.7.0` at commit `335d245`. The first linkage evidence in this project
+that does not depend on comparing two spellings of a human name — and the first
+release to carry a license, citation metadata and a changelog.
+
+### Added — repository metadata
 - Continuous integration (`.github/workflows/ci.yml`): repo hygiene (every
   tracked R file parses, no foreign home-directory paths, no duplicate
   `.gitignore` rules, no function defined at top level in two files) and the
@@ -40,19 +44,22 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   sources.
 - This file.
 
-### Fixed
-- `ci_hygiene.R` carries a baseline of 9 grandfathered duplicate definitions
-  (`tests/ci_hygiene_baseline.txt`) so the check can block *new* duplicates
-  today while the existing ones are retired one at a time.
+- `NEWS.md` itself.
 
----
+### Added — Table 1 hospital affiliation
+- Five blocks built from the CMS facility affiliation file, keyed on CCN:
+  whether a privilege is recorded, how many hospitals, acute vs critical-access,
+  ownership, and birthing-friendly designation. They reconcile — 1,435 + 189 +
+  41 = 1,665 with a privilege; + 3,319 enrolled without one = 4,984 in the DAC;
+  + 6,936 absent from it = the 11,920-member active cohort. "Not enrolled in
+  Medicare" stays a separate row from "enrolled, no privilege recorded",
+  because collapsing them would invent 6,936 midwives with no hospital.
+- Supporting artifacts, all aggregate and carrying no NPI, name or address:
+  HCRIS FY2023 nursery and bed counts for the affiliated hospitals, the
+  per-rule organization resolution PPV table, and the before/after organization
+  distribution shift.
 
-## [0.7.0] — 2026-08-13 — State licensure, and identity that does not need a name
-
-The first linkage evidence in this project that does not depend on comparing
-two spellings of a human name.
-
-### Added
+### Added — linkage and licensure
 - **Deterministic AMCB → NPI resolution by state license number**
   (`amcb_license_bridge.R`). A license number matched against the NPPES
   `provider_license_number` field is an identifier-to-identifier join: it
@@ -78,11 +85,32 @@ two spellings of a human name.
   gone. The ZIP join key is now named rather than inlined, and a test that was
   shadowing `pad5()` no longer does.
 
+### Fixed
+- **The stage ledger could not answer its own question.**
+  `geocoding_completeness_by_stage.csv` exists to show whether each enrichment
+  stage improves *geographic* ascertainment or merely adds metropolitan sample.
+  It was 42 lines with 7 unique: `COMPLETENESS_STAGE` defaulted to
+  `"unlabelled"` and the write is append-only, so every ad-hoc rerun added
+  another identical, unattributable row — 26 reached the committed artifact,
+  86% noise in a file whose whole purpose is per-stage attribution. The default
+  is removed (an unset stage now warns and writes nothing) and the unlabelled
+  rows are dropped. Nothing is lost: all of them were exact copies of the
+  `2_completed_nppes_matcher` numbers, which remain.
+- `ci_hygiene.R` carries a baseline of 9 grandfathered duplicate definitions
+  (`tests/ci_hygiene_baseline.txt`) so the check can block *new* duplicates
+  today while the existing ones are retired one at a time.
+
 ### Security / privacy
 - Untracked the PPV review sample, the Doximity public-profile artifacts and
   the person-level outputs of the attribute layers. Each carried certification
   numbers or NPIs. All are gitignored and rebuildable.
 - Tests now confine their artifacts to `tempdir()`.
+
+### Known limitation
+- `org_resolution_ppv.csv` ships with `meets_threshold = FALSE` for both review
+  strata (cross_source 0.96, multi_key 0.84). It is published as a measured
+  result, not a passing check, and is consistent with organization affiliation
+  being the weakest attribute layer in the repository (see 0.5.0).
 
 ---
 
@@ -273,4 +301,4 @@ corrected something that had been published.
 
 ---
 
-[Unreleased]: https://github.com/mufflyt/midwifery/compare/main...HEAD
+[0.7.0]: https://github.com/mufflyt/midwifery/releases/tag/v0.7.0
