@@ -435,3 +435,58 @@ that uncommitted changes belong to someone and that `git add` of specific paths
 is not consent to sweep them into an unrelated commit. If two sessions must
 share a repo, partition by *path* and never stage or revert outside your
 partition — process inspection is not a substitute for a claim you can see.
+
+---
+
+## Tier 6 — Destructive operations
+
+### 16. Wrote "losing the local copy is not safe", then deleted the local copies
+
+Asked to untrack the ten roster files — 65 MB carrying `last_name`,
+`first_name` and `certification_number` for all 22,309 certificants — I did it
+with `git rm --cached`, which is the correct verb: it removes a path from the
+index and *leaves the working file alone*. I verified exactly that, and said so:
+"untracked 10; files still on disk". I added a `.gitignore` block warning in
+capital letters that **LOSING THE LOCAL COPY IS NOT SAFE**, because a crosswalk
+rebuild is a multi-hour matcher run. Then I merged the PR, ran `git pull` on
+`main`, and every one of the ten was gone from disk.
+
+**How it presented:** silently, and only because I happened to run `ls` as a
+post-merge sanity check. Nothing errored. `git status` was clean — correctly so,
+since the files were now both absent and ignored. Had I not looked, the next
+signal would have been a pipeline stage failing to find its input, hours or days
+later, with no obvious connection to a merge about `.gitignore`.
+
+**Why it happened:** `git rm --cached` protects the working file *in that
+commit*. It does not protect it across a later checkout or pull. When git moves
+the working tree from a commit where a path is tracked to one where it is
+deleted, it removes the file — and being newly gitignored does not exempt it,
+because at the old HEAD the file was tracked and matched HEAD content exactly.
+The `.gitignore` rule governs what git *starts* tracking, not what it cleans up
+on the way past a deletion.
+
+**Why it survived my own review:** I checked the property at the wrong moment. I
+confirmed "still on disk" immediately after `git rm --cached`, which is the one
+point in the sequence where it could not have been otherwise. The dangerous
+transition was three steps later, and I had already convinced myself the
+question was answered. **A safety check run before the risky step is not a
+safety check.**
+
+**Recovered:** restored from `cd0f3db^` and verified 10/10 byte-identical by
+SHA-256. Recovery was possible only because the deletion commit's parent still
+holds the blobs — which is the same fact that makes untracking a privacy
+half-measure, and which a future history rewrite would destroy. **If those
+copies are ever purged from history, this recovery path goes with them, so the
+local copies must be secured outside the repository first.**
+
+**Anyone else who pulls that commit loses the same files**, for the same reason,
+with no warning. That is a property of the commit, not of my mistake.
+
+**Lesson.** Untracking a file is a two-part operation and only the first part is
+visible: the index changes now, the working tree changes when someone moves
+across the commit. Before removing a path from tracking, copy it somewhere
+outside the repository — not "verify it is still there", *copy it* — and expect
+every other clone to lose it on pull. Treat any operation that changes what git
+considers tracked as destructive to the working tree at some later, unrelated
+moment, and check the invariant *after* the transition that threatens it, not
+before.
