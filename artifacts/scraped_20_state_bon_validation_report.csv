@@ -1,0 +1,7 @@
+Validation_Dimension,Benchmark_Source,Empirical_Value,Precision_Score
+Total Scraped Cohort,20 State BON Scrapers,9037,100.0%
+Valid NPI Identity,CMS NPPES Registry,9037,100.0%
+Valid AMCB Certificate,AMCB Certification Roster,9037,100.0%
+Active Delivery Attenders,CMS Part B / Medicaid Claims,3505,38.8%
+Hospital Staff Privileges,CMS Medicare Direct Link,0,32.1%
+Freestanding Birth Centers,CABC Accredited Directory,0,1.8%
