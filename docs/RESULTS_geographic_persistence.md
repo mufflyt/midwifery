@@ -23,97 +23,111 @@ are.
 | Median years observed per provider | **12** |
 | Consecutive-year pairs | 183,949 |
 
-**County is not recorded in the panel** — it carries practice ZIP and state
-only, and this repository holds no ZIP-to-county crosswalk. County persistence
-is therefore *bounded* rather than measured:
+**County is now measured, not bounded.** The panel carries practice ZIP and
+state only, so an earlier version of this document bounded county persistence
+between ZIP (lower) and state (upper). `artifacts/zcta_county_crosswalk.csv`
+closes it: 33,791 ZCTAs mapped to the county holding the largest share of their
+land area, derived from `data/zcta_county_2020.txt` — the Census 2020
+ZCTA-to-county relationship file **already in this repository**, feeding the
+unique-ZIP county fallback in stages 02, 03, 05 and 07.
 
-- a ZIP change may or may not cross a county line, so **ZIP persistence is a
-  lower bound** on county persistence
-- a state change is almost always a county change, so **state persistence is an
-  upper bound**
+Two things about that crosswalk are worth stating:
 
-Both are reported. Closing the bound needs a ZCTA-to-county crosswalk, which is
-a small ingest and has not been done.
+- **30.1% of ZCTAs span more than one county.** The dominant-county rule
+  resolves them, and the median dominant share is 1.000 — most ZCTAs sit wholly
+  in one county — but 1,629 ZCTAs have a dominant county holding under 60% of
+  their land, and those assignments are genuinely arbitrary.
+- **A USPS ZIP is not a ZCTA.** PO-box and unique business ZIPs have no ZCTA at
+  all. **98.2%** of provider-years matched (197,254 of 200,873); the missing
+  1.8% are disproportionately administrative addresses.
 
----
+Cross-checked against `~/isochrones/data/external/zcta_county_dominant_2020.csv`,
+whose own derivation is unrecorded: **100.00% agreement on all 33,791 ZCTAs**.
+Two independent constructions landing on identical assignments is reasonable
+evidence both are right — and this one records its input's SHA-256, which the
+other does not.
 
-## Annual persistence
+## Persistence
 
-Between consecutive snapshots, among providers observed in both years:
+Consecutive-year pairs, providers observed in both years:
 
-| measure | persistence | annual move rate |
-|---|---:|---:|
-| same ZIP5 | **94.2%** | 5.8% |
-| same state | **97.9%** | 2.1% |
-
-**County persistence lies between 94.2% and 97.9% per year.**
-
-By year, ZIP persistence is stable in a 92–97% band across the whole panel. The
-final year is the exception at **90.7%**, which is more likely an artefact of
-the 2025 snapshot's construction than a real surge in mobility, and should not
-be read as a trend without checking that snapshot's provenance.
-
----
-
-## Persistence over a career
-
-Comparing each provider's **first** and **last** observed snapshot — median
-span **13 years**, 15,757 providers with at least two observations:
-
-| measure | unchanged |
-|---|---:|
-| same ZIP5 | **55.3%** |
-| same state | **82.1%** |
-
-So roughly **45% change ZIP** and **18% change state** over a median 13-year
-observation window.
-
----
-
-## Mobility does not differ meaningfully by rurality
-
-Annual ZIP persistence, stratified by the county the provider occupies in the
-frozen geography:
-
-| stratum | providers | pairs | same ZIP5 |
+| horizon | same county | same ZIP5 | same state |
 |---|---:|---:|---:|
-| Metro (RUCC 1–3) | 13,848 | 161,264 | **94.0%** |
-| Nonmetro, adjacent (4–6) | 1,099 | 12,728 | **95.1%** |
-| Nonmetro, remote (7–9) | 462 | 5,780 | **94.1%** |
+| **year to year** | **95.9%** | 94.2% | 97.9% |
+| **first vs last observation** (median 13-year span) | **67.5%** | 55.3% | 82.1% |
 
-First-versus-last over the full span: metro **54.5%**, nonmetro-adjacent
-**61.1%**, nonmetro-remote **55.9%**.
+180,436 consecutive-year pairs across 15,605 providers. The annual county
+figure falls inside the 94.2–97.9% bound the ZIP/state pair predicted, which is
+a small consistency check on both.
 
-The strata are within about one percentage point of each other annually. On
-this evidence there is **no rural-specific mobility penalty**: rural midwives do
-not churn faster than urban ones.
+Career-length county persistence (67.5%) is much higher than ZIP persistence
+(55.3%): **a large share of ZIP moves do not cross a county line.** Anyone
+using ZIP change as a mobility proxy overstates relocation by about twelve
+percentage points over a career.
 
-### The caveat that limits this result
+By year, ZIP persistence sits in a 92–97% band throughout. The final year is
+the exception at **90.7%**, more likely an artefact of the 2025 snapshot's
+construction than a real surge, and not to be read as a trend without checking
+that snapshot's provenance.
 
-**Stratification is by where a provider is now, not where she started.** The
-frozen geography gives one county per provider — the current one. A midwife who
-began in a remote county and moved to a metro one is counted in the *metro*
-stratum, and her move is recorded as metro mobility.
+## Rurality: the earlier finding was an artefact, and it reversed
 
-That biases the comparison toward showing rural stability, and the direction of
-the bias is exactly the one that matters for the policy question. **The true
-rural-origin mobility rate is understated by an unknown amount.**
+An earlier version of this document reported no rural mobility penalty, and
+flagged that the stratification used each provider's **current** county — so a
+midwife who left a remote county for a metro one was counted as metro, and her
+move as metro mobility. The bias ran in the direction that flattered the
+conclusion.
 
-Fixing it requires classifying each provider by her *first observed* location,
-which needs the ZIP-to-county crosswalk above. Until then, treat "no rural
-mobility penalty" as **suggestive and not established**.
+With the crosswalk, providers can be classified by **origin**: the county of
+their first observed snapshot. The result changes.
 
----
+| origin | providers | annual same county | first vs last, same county |
+|---|---:|---:|---:|
+| Metro (RUCC 1–3) | 13,646 | 96.0% | **68.1%** |
+| Nonmetro, adjacent (4–6) | 1,160 | 95.3% | **63.3%** |
+| Nonmetro, remote (7–9) | 520 | 95.0% | **61.9%** |
+
+Annually the strata remain close — a remote-origin midwife moves county about
+5.0% of years against 4.0% for metro, a quarter more often but small in
+absolute terms. **Over a career the gradient is clear and runs the other way
+from the earlier result:** 61.9% of remote-origin midwives end in the county
+they started in, against 68.1% of metro-origin ones.
+
+The destination-based cut had nonmetro-adjacent as the *stickiest* stratum
+(61.1% versus 54.5% metro). Origin-based, it is among the least sticky. **The
+correction did not shrink the effect; it changed its sign.**
+
+### Where movers go
+
+Career movers, by origin and destination stratum:
+
+| origin | → Metro | → Nonmetro adj | → Nonmetro remote |
+|---|---:|---:|---:|
+| Metro | 3,868 | 301 | 136 |
+| Nonmetro, adjacent | 339 | 48 | 38 |
+| Nonmetro, remote | 125 | 36 | 37 |
+
+Rural-origin midwives who move go overwhelmingly to metro counties — 80% of
+adjacent-origin movers and 63% of remote-origin movers. Metro-origin movers
+overwhelmingly stay metro (90%).
+
+**Net flows are nevertheless close to balanced**: 464 nonmetro-origin movers
+end in metro, while 437 metro-origin movers end nonmetro. There is no large
+absolute rural drain in this cohort. But the nonmetro base is small — about
+1,680 providers against 13,600 metro — so the same absolute flow is a far
+larger share of the rural workforce, and the *rate* of leaving is what a county
+feels.
 
 ## What this means for modelling a retention intervention
 
-**Over short horizons, retention is geographically sticky.** At 94–98% annual
-county persistence, a midwife retained this year is very likely practising in
+**Over short horizons, retention is geographically sticky.** At **95.9%**
+annual county persistence, a midwife retained this year is very likely practising in
 the same county next year. The geographic incidence of a one-to-three-year
 retention effect falls approximately where the affected midwives already are,
 and a county-level incidence model is defensible without a mobility correction.
 
-**Over a career, it is not.** With ~45% changing ZIP over a median 13 years,
+**Over a career, it is not.** With **32.5%** changing county over a median 13
+years — and 38.1% of remote-origin midwives doing so —
 any claim that retaining midwives sustains supply *in a specific county* over a
 decade needs the mobility term in it. The national count and the county
 distribution decouple over time.

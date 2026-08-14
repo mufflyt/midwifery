@@ -1,0 +1,10 @@
+{
+  "artifact": "zcta_county_crosswalk.csv",
+  "written_utc": "2026-08-14 12:39:11 UTC",
+  "inputs": [
+    {
+      "path": "data/zcta_county_2020.txt",
+      "sha256": "3ed41278d637dc249e0323306f68be8a6c234e3090f4de88ef328dee71aeaaaf"
+    }
+  ]
+}
