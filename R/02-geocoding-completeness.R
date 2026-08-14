@@ -262,15 +262,29 @@ build_completeness <- function() {
   # Stage-specific ascertainment: appended, never overwritten, so the methods
   # can show empirically whether each enrichment source improves GEOGRAPHIC
   # ascertainment or merely adds metropolitan sample.
-  stage <- Sys.getenv("COMPLETENESS_STAGE", unset = "unlabelled")
-  row <- known %>%
-    select(rucc_cat, pct) %>%
-    tidyr::pivot_wider(names_from = rucc_cat, values_from = pct) %>%
-    mutate(stage = stage, n_matched = nrow(m), rural_gap_pp = -spread) %>%
-    relocate(stage)
+  stage <- Sys.getenv("COMPLETENESS_STAGE", unset = "")
   hist_f <- file.path(ART, "geocoding_completeness_by_stage.csv")
-  write_with_provenance(row, hist_f, append = file.exists(hist_f), inputs = prov_inputs("county_base.csv", "healthgrades_midwives.csv", "midwives_geocoded.csv"))
-  cli::cli_alert_success("stage '{stage}' appended to {hist_f}")
+
+  # An append-only ledger with a default label is an append-only ledger that
+  # fills up with noise: every ad-hoc rerun with COMPLETENESS_STAGE unset used
+  # to add another identical "unlabelled" row, and 26 of them reached the
+  # committed artifact before anyone looked. A row nobody can attribute to a
+  # stage cannot answer the question this file exists to answer, so refuse the
+  # write instead of recording it.
+  if (!nzchar(stage)) {
+    cli::cli_alert_warning(
+      "COMPLETENESS_STAGE is unset; not appending to {.path {basename(hist_f)}}. \\
+       Set it to the enrichment stage under test to record a row."
+    )
+  } else {
+    row <- known %>%
+      select(rucc_cat, pct) %>%
+      tidyr::pivot_wider(names_from = rucc_cat, values_from = pct) %>%
+      mutate(stage = stage, n_matched = nrow(m), rural_gap_pp = -spread) %>%
+      relocate(stage)
+    write_with_provenance(row, hist_f, append = file.exists(hist_f), inputs = prov_inputs("county_base.csv", "healthgrades_midwives.csv", "midwives_geocoded.csv"))
+    cli::cli_alert_success("stage '{stage}' appended to {hist_f}")
+  }
 
   invisible(list(rucc = by_rucc, state = by_state, characteristics = by_char))
 }
