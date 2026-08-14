@@ -42,6 +42,7 @@ suppressPackageStartupMessages({
   library(DBI); library(duckdb); library(dplyr); library(readr)
   library(stringr); library(tibble)
 })
+source("R/lib/address_keys.R")   # norm_addr/zip5/zip9/phone10: one definition
 source("R/lib/common_helpers.R")
 
 DB <- Sys.getenv("MEDICARE_DUCKDB",
@@ -60,27 +61,6 @@ for (f in c(DB, HOSP))
 #' Deliberately does NOT strip suite/unit: two suites in one building are
 #' different workplaces, and merging them would assert an affiliation the
 #' source does not record.
-norm_addr <- function(x) {
-  y <- toupper(str_trim(as.character(x)))
-  y <- str_replace_all(y, "[.,#]", " ")
-  y <- str_replace_all(y, "\\s+", " ")
-  rep <- c("\\bSTREET\\b" = "ST", "\\bAVENUE\\b" = "AVE", "\\bROAD\\b" = "RD",
-           "\\bDRIVE\\b" = "DR", "\\bBOULEVARD\\b" = "BLVD", "\\bPLACE\\b" = "PL",
-           "\\bLANE\\b" = "LN", "\\bCOURT\\b" = "CT", "\\bPARKWAY\\b" = "PKWY",
-           "\\bHIGHWAY\\b" = "HWY", "\\bSUITE\\b" = "STE", "\\bNORTH\\b" = "N",
-           "\\bSOUTH\\b" = "S", "\\bEAST\\b" = "E", "\\bWEST\\b" = "W")
-  for (p in names(rep)) y <- str_replace_all(y, p, rep[[p]])
-  y <- str_trim(str_replace_all(y, "\\s+", " "))
-  y[!nzchar(y)] <- NA_character_
-  y
-}
-zip5 <- function(x) {
-  # str_extract already yields NA when there is no 5-digit run, so no
-  # emptiness guard is needed. The earlier one called tidyr::replace_na()
-  # without tidyr loaded -- the same use-without-declare defect that kept the
-  # Doximity scraper from ever running.
-  str_extract(as.character(x), "[0-9]{5}")
-}
 
 # --- cohort ------------------------------------------------------------------
 coh <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv",
@@ -114,7 +94,7 @@ cat(sprintf("open payments address rows: %s across %s midwives\n",
 
 # Most recent address, deterministically resolved.
 recent <- raw %>%
-  mutate(addr_norm = norm_addr(addr), zip = zip5(zip)) %>%
+  mutate(addr_norm = norm_addr(addr), zip = zip5_first_run(zip)) %>%
   filter(!is.na(addr_norm)) %>%
   group_by(npi) %>% filter(yr == max(yr)) %>%
   count(npi, yr, addr, addr_norm, city, st, zip, name = "times_reported") %>%
@@ -138,7 +118,7 @@ cat("written: artifacts/open_payments_recent_address.csv\n")
 hosp <- chr(HOSP) %>%
   mutate(cms_ccn   = pad_ccn(prvdr_num),
          addr_norm = norm_addr(geocode_address_1),
-         zip       = zip5(geocode_zip)) %>%
+         zip       = zip5_first_run(geocode_zip)) %>%
   filter(!is.na(addr_norm), !is.na(cms_ccn)) %>%
   select(cms_ccn, hospital_name = fac_name, addr_norm, zip,
          hospital_city = geocode_city, hospital_state = geocode_state) %>%

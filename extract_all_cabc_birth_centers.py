@@ -2,16 +2,41 @@
 # =============================================================================
 # Precision CABC Accredited Birth Center Master Parser & Cohort Matcher
 # =============================================================================
+import os
 import re
 import csv
+import sys
 
-HTML_FILE = "/Users/tmuffly/.gemini/antigravity/brain/8b54cf89-ea59-406d-b675-3b5a984f2732/.system_generated/steps/883/content.md"
+# The CABC accredited-centre directory renders its listings client-side, so the
+# input is a SAVED SNAPSHOT of the rendered page rather than a fetch. That
+# snapshot is not in the repo, and the path this script used to carry pointed
+# into a scratch directory on an account that does not exist on this machine
+# (/Users/tmuffly/...), so the script has not been runnable as committed. It is
+# kept because it documents how the two tracked artifacts were produced.
+#
+# To re-run: save the rendered directory page to the path below. Re-parsing a
+# fresh capture will NOT reproduce the tracked artifacts byte for byte -- CABC
+# accreditation is a moving roster, and that is a real change in the source,
+# not a bug in this parser.
+HTML_FILE = os.environ.get("CABC_SNAPSHOT", "data/cabc_directory_snapshot.html")
 MIDWIVES_FILE = "artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv"
 GEO_FILE = "artifacts/amcb_npi_geography.csv"
 OUT_BC_MASTER = "artifacts/cabc_accredited_birth_centers_master.csv"
 OUT_MATCHES = "artifacts/cabc_matched_midwives_final.csv"
 
 print("=== Precision CABC Accredited Birth Center Master Extractor ===")
+
+# Fail with the reason and the remedy. Reading a missing snapshot used to raise
+# a bare FileNotFoundError naming someone else's home directory, which reads as
+# a broken machine rather than a missing input.
+if not os.path.exists(HTML_FILE):
+    sys.exit(
+        f"CABC snapshot not found at {HTML_FILE}.\n"
+        "Save the rendered CABC accredited-centre directory page there, or set\n"
+        "CABC_SNAPSHOT to its location. The two artifacts this script writes\n"
+        "(artifacts/cabc_accredited_birth_centers_master.csv and\n"
+        "artifacts/cabc_matched_midwives_final.csv) are already committed."
+    )
 
 with open(HTML_FILE, "r", encoding="utf-8", errors="ignore") as f:
     text = f.read()

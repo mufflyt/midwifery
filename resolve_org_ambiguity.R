@@ -47,6 +47,7 @@ suppressPackageStartupMessages({
   library(DBI); library(duckdb); library(dplyr); library(readr)
   library(stringr); library(tibble)
 })
+source("R/lib/address_keys.R")   # norm_addr/zip5/zip9/phone10: one definition
 source("R/lib/common_helpers.R")
 
 DB <- Sys.getenv("MEDICARE_DUCKDB",
@@ -65,28 +66,6 @@ SEED <- 20260811L   # fixed so the review sample is reproducible
 # midwife inherit every organization on a hospital campus (max 85 affiliations
 # before this cap). Tunable so the choice can be shown as a sensitivity.
 MAX_KEY_ORGS <- suppressWarnings(as.integer(Sys.getenv("MAX_KEY_ORGS", "10")))
-
-norm_addr <- function(x) {
-  y <- toupper(str_trim(as.character(x)))
-  y <- str_replace_all(y, "[.,#]", " ")
-  rep <- c("\\bSTREET\\b"="ST","\\bAVENUE\\b"="AVE","\\bROAD\\b"="RD",
-           "\\bDRIVE\\b"="DR","\\bBOULEVARD\\b"="BLVD","\\bPLACE\\b"="PL",
-           "\\bLANE\\b"="LN","\\bCOURT\\b"="CT","\\bPARKWAY\\b"="PKWY",
-           "\\bHIGHWAY\\b"="HWY","\\bSUITE\\b"="STE","\\bNORTH\\b"="N",
-           "\\bSOUTH\\b"="S","\\bEAST\\b"="E","\\bWEST\\b"="W")
-  for (p in names(rep)) y <- str_replace_all(y, p, rep[[p]])
-  y <- str_trim(str_replace_all(y, "\\s+", " "))
-  y[!nzchar(y)] <- NA_character_
-  y
-}
-zip9 <- function(x) { d <- str_remove_all(as.character(x), "[^0-9]")
-  ifelse(!is.na(d) & nchar(d) >= 9, substr(d, 1, 9), NA_character_) }
-zip5 <- function(x) { d <- str_remove_all(as.character(x), "[^0-9]")
-  ifelse(!is.na(d) & nchar(d) >= 5, substr(d, 1, 5), NA_character_) }
-phone10 <- function(x) {
-  d <- str_remove_all(as.character(x), "[^0-9]")
-  d <- ifelse(!is.na(d) & nchar(d) == 11 & substr(d,1,1) == "1", substr(d,2,11), d)
-  ifelse(!is.na(d) & nchar(d) == 10, d, NA_character_) }
 
 # --- Tier B: taxonomies INCOMPATIBLE with a CNM practice affiliation ----------
 # NUCC prefixes. This list only ever REMOVES candidates; nothing here promotes

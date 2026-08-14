@@ -15,6 +15,7 @@
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr)
 })
+source("R/lib/address_keys.R")   # norm_addr/zip5/zip9/phone10: one definition
 
 source("R/lib/common_helpers.R")
 source("R/lib/match_npi_to_hospitals.R")
@@ -34,24 +35,12 @@ mws <- chr(MW_FILE) %>%
 N_cohort <- nrow(mws)
 cat(sprintf("Cohort size: %s active primary-linked midwives\n", format(N_cohort, big.mark = ",")))
 
-norm_addr <- function(x) {
-  x <- str_to_upper(trimws(x))
-  x <- str_replace_all(x, "\\bAVENUE\\b", "AVE")
-  x <- str_replace_all(x, "\\bSTREET\\b", "ST")
-  x <- str_replace_all(x, "\\bROAD\\b", "RD")
-  x <- str_replace_all(x, "\\bBOULEVARD\\b", "BLVD")
-  x <- str_replace_all(x, "\\bDRIVE\\b", "DR")
-  x <- str_replace_all(x, "\\bPARKWAY\\b", "PKWY")
-  x <- str_replace_all(x, "\\bSUITE\\b.*|\\bSTE\\b.*|#.*", "")
-  str_trim(x)
-}
-
 geo <- chr(GEO_FILE)
 mw_addr <- mws %>%
   left_join(geo, by = "npi") %>%
   mutate(
     addr1_raw   = practice_address_1,
-    addr1_clean = norm_addr(practice_address_1),
+    addr1_clean = norm_addr_drop_unit(practice_address_1),
     city_clean  = str_to_upper(trimws(practice_city)),
     state_clean = str_to_upper(trimws(practice_state)),
     zip_clean   = str_sub(str_trim(practice_zip), 1, 5)
@@ -62,7 +51,7 @@ hosps <- chr(HOSP_FILE) %>%
   mutate(
     cms_ccn    = pad_ccn(prvdr_num),
     hosp_name  = str_to_upper(trimws(fac_name)),
-    hosp_addr1 = norm_addr(geocode_address_1),
+    hosp_addr1 = norm_addr_drop_unit(geocode_address_1),
     hosp_city  = str_to_upper(trimws(geocode_city)),
     hosp_state = str_to_upper(trimws(geocode_state)),
     hosp_zip   = str_sub(str_trim(geocode_zip), 1, 5)

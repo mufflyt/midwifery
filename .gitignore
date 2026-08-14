@@ -174,3 +174,16 @@ artifacts/dac_cnm_locations.csv
 # warning, so they were reported as committed when they were not.
 !docs/table1_midwives.html
 !docs/table1_midwives_gt.html
+
+# Facility-attribution intermediates. The chain is
+#   update_final_facility_classification.R      -> _final_v2
+#   integrate_cpt_claims_into_facility_...R     -> _final_v3
+#   analyze_open_payments_clinical_depth.R      -> _final_v4
+# v2 and v3 are strict COLUMN SUBSETS of v4 and exist only to be read by the
+# next stage, so 16 MB of near-duplicate person-level rows were tracked to
+# record a state that the head of the chain already contains. Regenerate by
+# running the producers in order. _final_v4 stays tracked, as do
+# _attributions_complete and _hospital_rigorous_attributions, which carry 22
+# and 36 columns that v4 does not.
+artifacts/cohort_midwife_facility_attributions_final_v2.csv
+artifacts/cohort_midwife_facility_attributions_final_v3.csv

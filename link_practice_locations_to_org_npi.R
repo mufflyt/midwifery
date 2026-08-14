@@ -43,6 +43,7 @@ suppressPackageStartupMessages({
   library(DBI); library(duckdb); library(dplyr); library(readr)
   library(stringr); library(tibble)
 })
+source("R/lib/address_keys.R")   # norm_addr/zip5/zip9/phone10: one definition
 source("R/lib/common_helpers.R")
 
 DB <- Sys.getenv("MEDICARE_DUCKDB",
@@ -58,35 +59,11 @@ PL <- Sys.getenv("PL_FILE", file.path(
 for (f in c(DB, PL))
   if (!file.exists(f)) stop(sprintf("Required input not found: %s", f), call. = FALSE)
 
-norm_addr <- function(x) {
-  y <- toupper(str_trim(as.character(x)))
-  y <- str_replace_all(y, "[.,#]", " ")
-  rep <- c("\\bSTREET\\b"="ST","\\bAVENUE\\b"="AVE","\\bROAD\\b"="RD",
-           "\\bDRIVE\\b"="DR","\\bBOULEVARD\\b"="BLVD","\\bPLACE\\b"="PL",
-           "\\bLANE\\b"="LN","\\bCOURT\\b"="CT","\\bPARKWAY\\b"="PKWY",
-           "\\bHIGHWAY\\b"="HWY","\\bSUITE\\b"="STE","\\bNORTH\\b"="N",
-           "\\bSOUTH\\b"="S","\\bEAST\\b"="E","\\bWEST\\b"="W")
-  for (p in names(rep)) y <- str_replace_all(y, p, rep[[p]])
-  y <- str_trim(str_replace_all(y, "\\s+", " "))
-  y[!nzchar(y)] <- NA_character_
-  y
-}
+
 # ZIP+4 only counts when all nine digits are present; a 5-digit value must not
 # masquerade as a ZIP+4 match, which would silently weaken the strongest
 # address key into the weakest one.
-zip9 <- function(x) {
-  d <- str_remove_all(as.character(x), "[^0-9]")
-  ifelse(!is.na(d) & nchar(d) >= 9, substr(d, 1, 9), NA_character_)
-}
-zip5 <- function(x) {
-  d <- str_remove_all(as.character(x), "[^0-9]")
-  ifelse(!is.na(d) & nchar(d) >= 5, substr(d, 1, 5), NA_character_)
-}
-phone10 <- function(x) {
-  d <- str_remove_all(as.character(x), "[^0-9]")
-  d <- ifelse(!is.na(d) & nchar(d) == 11 & substr(d, 1, 1) == "1", substr(d, 2, 11), d)
-  ifelse(!is.na(d) & nchar(d) == 10, d, NA_character_)
-}
+
 
 coh <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv",
                 show_col_types = FALSE, progress = FALSE) %>%
