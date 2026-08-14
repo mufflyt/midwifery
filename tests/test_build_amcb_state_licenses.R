@@ -55,9 +55,11 @@ write_csv(tibble(
 # C4. The explicit opt-in run below is what exercises tier 3.
 res_default <- build_amcb_state_licenses(amcb_path = file.path(td, "amcb.csv"),
                                          board_dir = bd,
-                                         destination_dir = file.path(td, "def"))
+                                         destination_dir = file.path(td, "def"),
+                                         artifact_dir = file.path(td, "def_art"))
 res <- build_amcb_state_licenses(amcb_path = file.path(td, "amcb.csv"),
                                  board_dir = bd, destination_dir = td,
+                                 artifact_dir = file.path(td, "art"),
                                  allow_national_tier = TRUE)
 b <- res$bridge
 gb <- function(id) b[b$amcb_id == id, ]
@@ -153,7 +155,8 @@ write_csv(tibble(
   file.path(bd2, "CO.csv"))
 res_col <- build_amcb_state_licenses(amcb_path = file.path(td, "amcb.csv"),
                                      board_dir = bd2,
-                                     destination_dir = file.path(td, "col"))
+                                     destination_dir = file.path(td, "col"),
+                                     artifact_dir = file.path(td, "col_art"))
 ok("a key shared by two different names yields no match at all",
    !("C1" %in% res_col$bridge$amcb_id))
 
@@ -177,7 +180,8 @@ write_csv(tibble(certification_number = c("C1","C1"),
                  first_name = c("A","B"), last_name = c("X","Y"),
                  state = "CO"), file.path(td, "amcb_dup.csv"))
 e <- tryCatch({ build_amcb_state_licenses(file.path(td, "amcb_dup.csv"), bd,
-                                          file.path(td, "dup")); NA_character_ },
+                                          file.path(td, "dup"),
+                                          file.path(td, "dup_art")); NA_character_ },
               error = function(e) conditionMessage(e))
 ok("duplicate AMCB ids raise an error", !is.na(e) && grepl("not unique", e))
 
