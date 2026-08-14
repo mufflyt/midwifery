@@ -9,9 +9,24 @@
 # rest. A green tick here means "the keys and the syntax are sound", NOT "the
 # pipeline is correct", and it must not be read as the latter.
 #
-# Runtime is seconds: no sf, no tidyverse, no system geo libraries. That is a
-# feature. A twenty-minute CI that installs GDAL to check a string function gets
-# switched off the first week it goes red for an unrelated reason.
+# Three jobs, deliberately tiered by what they cost to install:
+#
+#   r-checks       base R + stringr. Seconds. Hygiene and the join keys.
+#   python-checks  stdlib + pytest. Seconds. Syntax, address keys, scraper logic.
+#   r-unit-tests   the tidyverse stack. A minute or two, cached. Pure-function
+#                  tests that happen to be written against dplyr.
+#
+# The tiering is the point. The first two must stay trivially cheap so they are
+# never the reason someone switches CI off; the third is allowed to cost more
+# because it can be disabled on its own without taking the fast checks with it.
+# What NONE of them may do is install sf or system geo libraries. A twenty-minute
+# CI that builds GDAL to check a string function goes red for an unrelated reason
+# in week one and gets switched off in week two.
+#
+# Before adding a test here, verify it is hermetic the way the existing ones were
+# verified -- run it in a fresh `git clone` of HEAD, which has no gitignored
+# artifacts and no ~/isochrones. Passing locally proves nothing; your working
+# tree has the data.
 name: CI
 
 on:
@@ -45,6 +60,13 @@ jobs:
       - name: Join-key unit tests
         run: Rscript tests/test_lib_keys.R
 
+      # Base R only -- table1_bands.R has no library() call at all, so this
+      # costs nothing beyond the seconds it runs in. Age, tenure and decade
+      # banding decide what Table 1 reports, and an off-by-one boundary here
+      # moves published percentages.
+      - name: Table 1 banding tests
+        run: Rscript tests/test_table1_bands.R
+
   python-checks:
     name: Python syntax and address keys
     runs-on: ubuntu-latest
@@ -67,3 +89,84 @@ jobs:
       # beyond the standard library.
       - name: Address-key matching tests
         run: python3 tests/test_address_key_matching.py
+
+      # pytest is the only install in this job. Both scrape.py and
+      # fetch_npi_candidates.py import nothing outside the standard library, and
+      # the suites monkeypatch the network layer rather than reaching it.
+      - name: Install pytest
+        run: python -m pip install --quiet --disable-pip-version-check pytest
+
+      # Covers the two failure modes that silently truncate the roster: the
+      # 500-row APEX cap in the directory pager, and the 200-row response cap in
+      # the NPI API's candidate lists.
+      - name: Scraper and NPI-candidate tests
+        run: python -m pytest tests/test_scrape.py tests/test_fetch_npi_candidates.py -q
+
+  # ---------------------------------------------------------------------------
+  # The tier that is allowed to cost something.
+  #
+  # Every test below is a pure-function test -- no artifact, no network, no
+  # ~/isochrones -- that happens to be written against dplyr because the rest of
+  # the pipeline is. Each was verified in a fresh clone of HEAD before being
+  # added here, so a red result means a real regression, not missing data.
+  #
+  # Packages are cached on the workflow file's hash: the install only re-runs
+  # when this list changes.
+  # ---------------------------------------------------------------------------
+  r-unit-tests:
+    name: R unit tests (pure functions)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Cache R packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: ${{ runner.os }}-r-tidy-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: ${{ runner.os }}-r-tidy-
+
+      # Binary packages from the public RSPM. No compilation, no system geo
+      # libraries -- if a package here ever needs one, it does not belong here.
+      - name: Install packages
+        run: |
+          pkgs <- c("dplyr", "purrr", "readr", "scales", "stringi", "stringr",
+                    "testthat", "tibble", "tidyr")
+          missing <- pkgs[!pkgs %in% rownames(installed.packages())]
+          if (length(missing)) install.packages(missing)
+        shell: Rscript {0}
+
+      # The deterministic license->NPI bridge: the one linkage path that does not
+      # depend on comparing two spellings of a name. Its collision handling is
+      # what keeps a shared license key from asserting a shared identity.
+      - name: AMCB license bridge
+        run: Rscript tests/test_amcb_license_bridge.R
+
+      - name: State-license table construction
+        run: Rscript tests/test_build_amcb_state_licenses.R
+
+      # Former/maiden surnames are how a certificant disappears from the roster
+      # without leaving practice; this guards the candidate expansion that finds
+      # them again.
+      - name: Former-name candidate expansion
+        run: Rscript tests/test_expand_former_name_candidates.R
+
+      # Age is imputed against a calibrated model (R2 = 0.550), so the validator
+      # that bounds it is load-bearing for every age-banded row in Table 1.
+      - name: Age-at-certification validation
+        run: Rscript tests/test_validate_age_at_certification.R
+
+      # A nursing-only match must never be promoted into the primary midwifery
+      # cohort. This is that rule, as a test.
+      - name: Cross-taxonomy hierarchy
+        run: Rscript tests/test_cross_taxonomy_hierarchy.R
+
+      # Pass 2 of the Healthgrades sweep checkpoints incrementally; a merge that
+      # drops or duplicates rows silently corrupts a seven-hour run.
+      - name: Checkpoint merge contract
+        run: Rscript tests/test_checkpoint_merge.R
