@@ -207,6 +207,103 @@ geography `53bb087a59a4…` · NPPES snapshots 2007–2025 · CMS Doctors & Clin
 the frozen artifact is unmodified and remains the reference. Every artifact
 carries a manifest recording its inputs' SHA-256.
 
+## Attribute layers: what we know about each midwife
+
+Identity and geography answer *who* and *where*. Four further layers answer
+*what kind of practice* — each keyed on the frozen linkage, each written as its
+own artifact, none of them allowed to change cohort membership.
+
+```mermaid
+flowchart LR
+  ID["Frozen linkage - 11,920 ACTIVE, primary-linked"] --> MED["Medicare participation"]
+  ID --> HPSA["Shortage area"]
+  ID --> ORG["Organization affiliation"]
+  ID --> HOSP["Hospital affiliation - CCN"]
+  HOSP --> HCRIS["HCRIS cost reports - newborn volume"]
+  ORG --> T1["Table 1"]
+  MED --> T1
+  HPSA --> T1
+  HOSP --> T1
+```
+
+| Layer | Producer | Coverage | Key |
+|---|---|---:|---|
+| Medicare Part B / Part D, 2013–2023 | `match_medicare_partb_partd.R` | 19.5% / 47.1% | NPI |
+| Primary-care shortage area | `assign_hpsa_status.R` | 98.4% geocoded | point-in-polygon |
+| Hospital affiliation | `extract_dac_facility_affiliations.R` | 14.0% | CCN |
+| Newborn volume at those hospitals | `extract_hcris_affiliated_hospitals.R` | 75.8% of linked CCNs | CCN |
+| Organization affiliation | `link_practice_locations_to_org_npi.R` | 39.7% | phone / ZIP+4 / ZIP5 |
+| — conservatively resolved | `resolve_org_ambiguity.R` | 46.3% | + taxonomy, cross-source |
+
+### Absence is not zero, in four different sources
+
+The same discipline recurs because the same mistake recurs. Each of these
+sources is silent for reasons that have nothing to do with the quantity being
+measured:
+
+- **CMS suppresses** any provider-year below 11 beneficiaries, so a midwife
+  absent from Part B billed *nothing or fewer than eleven patients*, and the two
+  are indistinguishable.
+- **The DAC lists only Medicare enrollees**, so absence means *not enrolled* or
+  *enrolled without recorded privileges* — kept as two separate Table 1 levels,
+  never collapsed into one "no".
+- **CDC WONDER withholds** county cells under 10 births and publishes county
+  natality only for counties of 100,000+. **2,657 of 3,235 counties** carry no
+  CNM birth value; those births are unpublished, not absent.
+- **HCRIS nursery lines** are reported by only 37.7% of hospitals. A hospital
+  with no nursery line has not reported "no births".
+
+Every one of these is a labelled level or an `NA`, never a `0`.
+
+### Organization affiliation: what it took to get 39.7%
+
+CMS exposes **both** practice locations for an individual NPI — the primary one
+on the main NPPES file and any number of secondary ones on `pl_pfile`. Joining
+both to the Type-2 (organization) NPIs registered at the *same* location turns
+an address into a named hospital, FQHC, OB/GYN group or health system.
+
+Using the current dissemination mattered: the August 2026 `pl_pfile` carries
+1,241,922 secondary locations against 681,081 in the December 2022 file, lifting
+cohort secondary locations from 2,687 to 5,303.
+
+Three rules keep the number honest:
+
+**Exact keys only, never proximity.** Locations join on telephone, ZIP+4 plus
+street, or ZIP5 plus street. There is no nearest-facility fallback: practising
+400 m from a hospital is not evidence of working there, and a distance rule
+produces an affiliation that cannot be falsified.
+
+**Ambiguity is reported, not resolved.** Medical office buildings hold many
+organizations at one address. Where a key matches several, **no** organization
+is assigned — 4,750 midwives sit in that state, as many as were resolved.
+Taking the first, the largest, or the most medical-sounding would have pushed
+this past 9,000 fabricated names.
+
+**Shared infrastructure is not evidence.** A phone number maps to a median of
+one organization nationally and 99% map to ≤6 — but the maximum is 880, a
+switchboard. Keys above a threshold are discarded; without that guard one
+midwife inherited 85 affiliations from a single hospital campus.
+
+### A cautionary result: two implementations, 16.4% agreement
+
+Two independent Open Payments → organization matchers agreed on the Type-2 NPI
+for only **74 of 450** overlapping midwives. The cause was not normalization.
+One queried the live NPPES API by city/state/ZIP with `limit=10`; the API
+returns results **alphabetically**, so a ZIP holding 200+ organizations was
+truncated to the alphabetically first ten and any organization sorting after
+roughly "C" was unreachable. 68.4% of its assignments began with "A" or a digit,
+against 6.9% for the independent resolver.
+
+Rebuilt against the complete local Type-2 table
+(`link_open_payments_type2_bulk.R`), agreement among cases where both methods
+independently resolve rose to **72.2%** — on 72 cases, so promising rather than
+settled. The remaining disagreements are mostly not matching failures at all:
+for 11 of 20, the two pipelines had read *different* Open Payments addresses.
+
+The general lesson is recorded because it will recur: **apparent uniqueness is
+conditional on how much of the universe you loaded.** Incomplete coverage makes
+a common name look *more* unique, not less.
+
 ## Maps
 
 Built with [mufflyt/mysterymaps](https://github.com/mufflyt/mysterymaps) (`mysterymaps_map_base()`
@@ -624,10 +721,25 @@ midwifery/
 │   ├── maps/                       static and leaflet map output
 │   └── HALL_OF_SHAME.md            defects written here, and what each cost
 ├── tests/                      contract tests
+│   ├── test_address_key_matching.py     exact address keys, adversarial
+│   └── test_open_payments_type2_bulk.R  candidate universe, order invariance
 ├── qa/                         quality-assurance snapshots
 ├── vignettes/                  amcb-midwife-npi-matching.Rmd
 ├── logs/
 └── *.R                         entry points (see Usage)
+    ├── match_medicare_partb_partd.R      Part B / Part D participation
+    ├── assign_hpsa_status.R              HRSA shortage-area status
+    ├── extract_dac_cnm_education.R       CMS DAC: school, group, locations
+    ├── extract_dac_facility_affiliations.R  NPI -> CCN -> hospital attributes
+    ├── extract_hcris_affiliated_hospitals.R HCRIS newborn volume by CCN
+    ├── load_natality_to_duckdb.R         WONDER natality into the warehouse
+    ├── link_practice_locations_to_org_npi.R  primary + secondary -> Type-2 NPI
+    ├── resolve_org_ambiguity.R           tiered, conservative org resolution
+    ├── report_org_resolution_ppv.R       PPV per rule, Wilson intervals
+    ├── link_open_payments_type2_bulk.R   bulk-table candidate universe
+    ├── audit_python_org_selection.R      diagnostic: selection-defect audit
+    ├── address_keys.py                   canonical address-key helpers
+    └── build_table1_midwives.R           Table 1
 ```
 
 This is a **pipeline repository, not an R package** — deliberately. There is no

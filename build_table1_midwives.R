@@ -560,6 +560,48 @@ if (!is.null(hg_link)) {
 # HPSA's 189 is NO GEOCODE. Only the last is missing data in the ordinary
 # sense; the other two are substantive findings that read as data-quality
 # problems when they share a row label with genuine missingness.
+#' Build one Table 1 category block
+#'
+#' @description
+#' Turns a single column into a block of Table 1 rows: one row per level with
+#' n and within-category percent, followed by a row counting the unknowns.
+#' Percentages use the NON-MISSING denominator, so a block's levels sum to
+#' 100% and the unknown row is reported separately with no percent.
+#'
+#' @param df `data.frame`: cohort, one row per midwife.
+#' @param col `character(1)`: column in `df` to tabulate. Must exist -- see
+#'   the error behaviour below.
+#' @param category `character(1)`: block heading as it appears in Table 1.
+#' @param lvls `character` or `NULL`: level order. When supplied, levels are
+#'   emitted in this order and any value outside it is a hard error rather
+#'   than a silently dropped row. When `NULL`, levels are ordered by
+#'   descending n.
+#' @param unknown_label `character(1)`: label for the missing row. Every block
+#'   names its own, because "unknown" means something different in each:
+#'   the DAC's is NOT ENROLLED IN MEDICARE, Healthgrades' is NO PUBLIC
+#'   PROFILE, HPSA's is NO GEOCODE. Only the last is missingness in the
+#'   ordinary sense.
+#'
+#' @return `tbl_df` with `characteristic`, `n`, `percent`, `category`.
+#'
+#' @section An absent column is an error, not an empty block:
+#' `df[[col]]` on a missing column returns `NULL`; `as.character(NULL)` has
+#' zero rows and `sum(is.na(NULL))` is `0`, so the category would vanish
+#' entirely -- no rows, no unknown, no warning. That is exactly how the ACOG
+#' district block disappeared from a published table. This function therefore
+#' stops.
+#'
+#' @examples
+#' \dontrun{
+#' blk(coh, "sex", "Sex", unknown_label = "Sex not recorded in NPPES")
+#' blk(coh, "rurality", "Rurality (RUCC 2023)",
+#'     lvls = RURALITY_LABELS_LONG,
+#'     unknown_label = "County not resolved (no RUCC code)")
+#' }
+#'
+#' @seealso [blk_hg()] for Healthgrades-derived blocks, which carry a smaller
+#'   denominator.
+#' @keywords internal
 blk <- function(df, col, category, lvls = NULL,
                 unknown_label = "Unknown / not recorded") {
   # AN ABSENT COLUMN IS AN ERROR, NOT AN EMPTY BLOCK. df[[col]] on a missing
@@ -591,6 +633,37 @@ blk <- function(df, col, category, lvls = NULL,
 
 # Parallel helper for Healthgrades-derived rows. Uses the HG-eligible
 # denominator (N - shared-profile exclusions) rather than the full cohort N.
+#' Build one Healthgrades-derived Table 1 block
+#'
+#' @description
+#' As [blk()], but reads the Healthgrades link table and uses the SMALLER
+#' Healthgrades denominator rather than the full cohort. Returns a
+#' single "not available" row instead of failing when Healthgrades data is
+#' absent, since these blocks are optional enrichment rather than registry
+#' facts.
+#'
+#' @param col `character(1)`: column in the Healthgrades link table.
+#' @param category `character(1)`: block heading.
+#' @param lvls `character` or `NULL`: level order, as in [blk()].
+#' @param binary_yes `character(1)` or `NULL`: when supplied, the column is
+#'   collapsed to Yes/No by testing equality against this value.
+#' @param unknown_label `character(1)`: label for midwives with no public
+#'   profile. This is a substantive finding, not missing data.
+#'
+#' @return `tbl_df` with `characteristic`, `n`, `percent`, `category`.
+#'
+#' @section Denominator:
+#' `N_hg` is the cohort minus the midwives who share a Healthgrades profile
+#' with another certificant and so cannot be attributed one. Reporting these
+#' rows against the full cohort would understate every percentage.
+#'
+#' @examples
+#' \dontrun{
+#' blk_hg("accepts_new_patients", "Accepts new patients", binary_yes = "Yes")
+#' }
+#'
+#' @seealso [blk()]
+#' @keywords internal
 blk_hg <- function(col, category, lvls = NULL, binary_yes = NULL,
                    unknown_label = "No public Healthgrades profile") {
   if (is.null(hg_link) || !col %in% names(hg_link)) {

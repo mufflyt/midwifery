@@ -122,7 +122,15 @@ wonder_post <- function(request_xml) {
 #' companion flag rather than silently becoming zero.
 #'
 #' @param doc [xml_document]: from `wonder_post()`.
+#' @param n_group [integer(1)]: number of grouping variables (`B-1`, `B-2`,
+#'   ...) requested, so the parser knows how many leading label columns precede
+#'   the measures. Default 1.
 #' @return [data.frame] one row per data-table row.
+#' @examples
+#' \dontrun{
+#' doc <- wonder_post(body)
+#' wonder_parse(doc, n_group = 2L)   # grouped by state AND year
+#' }
 #' @family wonder
 #' @export
 wonder_parse <- function(doc, n_group = 1L) {

@@ -123,6 +123,31 @@ RURALITY_LABELS_COHORT <- c("Metro (RUCC 1-3)",
                             "Nonmetro, adjacent (4-6)",
                             "Nonmetro, remote (7-9)")
 
+#' Band a county RUCC code into three rurality classes
+#'
+#' @param rucc `vector`: 2023 Rural-Urban Continuum Code, 1-9. Character and
+#'   factor input are handled; see the warning below.
+#' @param labels `character(3)`: labels for metropolitan (RUCC 1-3),
+#'   nonmetropolitan adjacent (4-6) and nonmetropolitan remote (7-9), in that
+#'   order. Must be length 3.
+#'
+#' @return `character` the length of `rucc`, `NA` where the code is missing or
+#'   outside 1-9.
+#'
+#' @section Factors silently become level indices:
+#' `as.integer()` on a factor returns the LEVEL INDEX, not the value, so
+#' `factor("7")` becomes `2` and a remote county is published as metropolitan.
+#' `readxl` and `readr` both return factors under some options, so this
+#' converts through `as.character()` first. That is the entire reason this
+#' function exists rather than an inline `cut()`.
+#'
+#' @examples
+#' band_rurality(c(1, 5, 9))
+#' band_rurality(factor(c("7", "1")))          # correct despite the factor
+#' band_rurality(c(0, 10, NA))                 # NA NA NA -- out of range
+#'
+#' @family Table 1 banding
+#' @export
 band_rurality <- function(rucc, labels = RURALITY_LABELS_LONG) {
   stopifnot(length(labels) == 3L)
   # as.character() FIRST: as.integer() on a factor returns the level index, so
@@ -202,6 +227,30 @@ band_hg_age <- function(age) {
   out
 }
 
+#' Band a certification year into its decade
+#'
+#' @param x `vector`: certification year, or anything [parse_enum_year()]
+#'   accepts (character, factor, date-like).
+#' @param min_year `integer(1)`: earliest plausible year. Values below become
+#'   `NA` rather than a decade label. Default 1950.
+#' @param max_year `integer(1)`: latest plausible year. Default 2100.
+#'
+#' @return `character` the length of `x`: labels like `"1990s"`, `NA` where the
+#'   year is missing or outside the plausible range.
+#'
+#' @section Type stability on empty input:
+#' Built with an explicit `rep()` and index assignment rather than `ifelse()`,
+#' which is type-unstable on zero-length input: it returns `logical(0)` instead
+#' of `character(0)`, which then poisons a downstream `bind_rows()` or
+#' `factor()` with the wrong column type. Caught by T12a.
+#'
+#' @examples
+#' band_cert_decade(c(1994, 2003, 2019))       # "1990s" "2000s" "2010s"
+#' band_cert_decade(c(1899, NA))               # NA NA -- outside range, missing
+#' band_cert_decade(character(0))              # character(0), not logical(0)
+#'
+#' @family Table 1 banding
+#' @export
 band_cert_decade <- function(x, min_year = 1950L, max_year = 2100L) {
   y <- parse_enum_year(x, min_year = min_year, max_year = max_year)
   # NOT ifelse(): it is type-unstable on zero-length input, returning

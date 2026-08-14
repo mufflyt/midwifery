@@ -65,6 +65,19 @@
 #' @name mysterymaps_dep
 NULL
 
+#' Path to the canonical mysterymaps source
+#'
+#' @return [character(1)] absolute path to the directory holding the `mm_*`
+#'   helpers, honouring the `MYSTERYMAPS_HOME` environment variable when set.
+#' @details
+#' Resolved rather than hard-coded so a checkout in a different location does
+#' not silently fall back to a stale copy -- the drift this file exists to
+#' prevent.
+#' @examples
+#' \dontrun{
+#' mm_home()
+#' }
+#' @keywords internal
 mm_home <- function() {
   cand <- c(Sys.getenv("MYSTERYMAPS_HOME"), path.expand("~/isochrones-main"))
   cand <- cand[nzchar(cand)]
@@ -83,6 +96,16 @@ mm_home <- function() {
 #' restored on exit.
 #'
 #' @return Invisibly, the character vector of `mm_*` objects loaded.
+#' @param quiet [logical(1)]: suppress the source() messages.
+#'   Default TRUE.
+#' @return invisibly TRUE once the helpers are attached; stops if the
+#'   canonical source cannot be found, rather than continuing with a
+#'   partially loaded namespace.
+#' @examples
+#' \dontrun{
+#' load_mysterymaps()
+#' mm_jenks_zero_scale(values)
+#' }
 load_mysterymaps <- function(quiet = TRUE) {
   home <- mm_home()
   owd <- setwd(home); on.exit(setwd(owd), add = TRUE)
