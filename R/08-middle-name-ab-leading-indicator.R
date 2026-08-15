@@ -98,7 +98,11 @@ run_ab <- function() {
   A <- top2(d, "score_A", "_A")
   B <- top2(d, "score_B", "_B")
 
-  cmp <- inner_join(A, B, by = "roster_id") %>%
+  # top2() summarise()s to one row per roster_id on both sides, so this is a
+  # strict one-to-one. Declaring it is the assertion that arms A and B still
+  # see identical roster membership -- the premise the whole A/B comparison
+  # rests on. If either arm ever gains or duplicates a roster_id, this stops.
+  cmp <- inner_join(A, B, by = "roster_id", relationship = "one-to-one") %>%
     filter(n_cand_A >= 2) %>%
     mutate(
       top_changed = top_npi_A != top_npi_B,
@@ -148,7 +152,10 @@ run_ab <- function() {
   set.seed(20260808)
   matched <- binned %>%
     filter(transition == "completely_unchanged") %>%
-    inner_join(want, by = c("cand_bin", "score_bin")) %>%
+    # want is count(cand_bin, score_bin): one row per stratum, many binned
+    # rows meet it.
+    inner_join(want, by = c("cand_bin", "score_bin"),
+               relationship = "many-to-one") %>%
     group_by(cand_bin, score_bin) %>%
     arrange(roster_id, .by_group = TRUE) %>%
     # row_number() rather than slice_head(n = first(n_want)): slice_head
@@ -163,7 +170,9 @@ run_ab <- function() {
     arrange(desc(score_A), candidate_npi, .by_group = TRUE) %>%
     slice_head(n = 2) %>%
     ungroup() %>%
-    left_join(select(cmp, roster_id, transition), by = "roster_id") %>%
+    # cmp is one row per roster_id; evidence carries up to two (slice_head).
+    left_join(select(cmp, roster_id, transition), by = "roster_id",
+              relationship = "many-to-one") %>%
     mutate(arm_group = if_else(roster_id %in% changed$roster_id,
                                "changed", "matched_unchanged")) %>%
     select(roster_id, arm_group, transition, candidate_npi, strategy_name,

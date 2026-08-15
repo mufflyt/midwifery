@@ -121,7 +121,8 @@ merge_fallbacks <- function(d, fb) {
   cli::cli_alert_info("fallback resolved {n_new} of {nrow(fb)}")
 
   merged <- d %>%
-    left_join(fb, by = "prvdr_num") %>%
+    # one fallback record per provider number
+    left_join(fb, by = "prvdr_num", relationship = "many-to-one") %>%
     mutate(
       # A centroid is a town, not a hospital. Recorded, never smoothed over.
       coord_precision = case_when(

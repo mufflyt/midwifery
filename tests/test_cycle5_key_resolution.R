@@ -111,7 +111,14 @@ cat("\n-- SEMANTIC --\n")
   # This asserts the count cannot GROW. That is a genuine contract -- a new bare
   # .keep_all fails the build -- and it is not the same as declaring the debt
   # paid. The ledger carries the remaining inventory.
-  BASELINE <- 14L
+  # 2026-08-15: the count had drifted UP to 21 -- the ratchet caught it, which
+  # is the only reason it was noticed. Ten sites were given explicit arrange()
+  # tie-breaks rather than raising this number: three in training_institution.R,
+  # three in match_npi_to_hospitals.R, three in 05-stage-progression.R, and the
+  # address witness in 04-diagnose-cross-state.R. Each arrange() states a real
+  # precedence (prefer the geocoded row, prefer the row naming a school) rather
+  # than sorting to satisfy the grep. Baseline lowered 14 -> 11 to lock that in.
+  BASELINE <- 11L
   chk(length(offenders) <= BASELINE,
       sprintf("T44 bare .keep_all count does not grow beyond the recorded debt [%d of %d allowed]",
               length(offenders), BASELINE))

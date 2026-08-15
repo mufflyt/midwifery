@@ -232,7 +232,9 @@ run_bc <- function() {
       abs(mA - mB) > 1e-12            ~ "margin_changed",
       TRUE                            ~ "completely_unchanged"))
 
-  x <- dec %>% left_join(ab, by = "roster_id") %>%
+  # ab is group_by(roster_id) %>% summarise(): one row per roster.
+  x <- dec %>% left_join(ab, by = "roster_id",
+                         relationship = "many-to-one") %>%
     mutate(bc_outcome = case_when(
       status_C == "ambiguous_contested_npi" ~ "ambiguous_contested_npi",
       status_C == "ambiguous_tied_evidence" ~ "ambiguous_tied_evidence",
@@ -285,8 +287,10 @@ run_bc <- function() {
   contested_npis <- x %>% filter(roster_id %in% contested_ids) %>% pull(top_npi) %>% unique()
   ev <- d %>%
     filter(roster_id %in% contested_ids | candidate_npi %in% contested_npis) %>%
+    # x carries one row per roster_id; d carries one row per CANDIDATE, so
+    # the evidence frame keeps every candidate and repeats the roster verdict.
     left_join(select(x, roster_id, ab_status, status_B, status_C, npi_B, npi_C),
-              by = "roster_id") %>%
+              by = "roster_id", relationship = "many-to-one") %>%
     arrange(candidate_npi, roster_id, desc(score_B))
   write_with_provenance(ev, file.path(OUT, "contested_evidence.csv"), na = "", inputs = prov_inputs(LEDGER, ROSTER, CANDS))
   cli::cli_alert_info("contested: {length(contested_ids)} people over {length(contested_npis)} NPIs; {nrow(ev)} evidence rows preserved")

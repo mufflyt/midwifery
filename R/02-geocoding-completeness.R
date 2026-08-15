@@ -206,11 +206,18 @@ build_completeness <- function() {
     if ("county_exact" %in% names(m)) m$county_exact else NA_character_
   m <- m %>%
     mutate(zip5 = zip5_key(practice_zip)) %>%
-    left_join(zc, by = "zip5", suffix = c("", ".zip")) %>%
+    # load_zip_county() slice_max()es to one row per zip5, so many midwives
+    # meet one ZIP record. Declaring it makes dplyr fail loudly if that
+    # de-duplication ever regresses, instead of silently fanning the cohort out.
+    left_join(zc, by = "zip5", suffix = c("", ".zip"),
+              relationship = "many-to-one") %>%
     mutate(GEOID_zip = if ("GEOID.zip" %in% names(.)) GEOID.zip else GEOID,
            GEOID_proxy = coalesce(GEOID_zip, .spine_county)) %>%
+    # county_base.csv is one row per county (3,235 rows, 3,235 GEOIDs), so many
+    # midwives meet one county record.
     left_join(select(cb, GEOID, rucc_2023, state_cb = state),
-              by = c("GEOID_proxy" = "GEOID")) %>%
+              by = c("GEOID_proxy" = "GEOID"),
+              relationship = "many-to-one") %>%
     mutate(rucc_cat = coalesce(
       band_rurality(rucc_2023, RURALITY_LABELS_COHORT), "Unknown"))
 

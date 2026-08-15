@@ -52,6 +52,10 @@ training_source_dac <- function(path = "artifacts/dac_cnm_education.csv") {
   if (!file.exists(path)) return(NULL)
   read_csv(path, show_col_types = FALSE, progress = FALSE) %>%
     mutate(npi = as.character(NPI)) %>%
+    # Which duplicate row wins is a scientific choice, so state it: prefer a
+    # row that names a real school over one DAC could not code, then sort by
+    # the school string so the survivor does not depend on file order.
+    arrange(npi, is.na(med_sch_clean) | med_sch_clean == "OTHER", med_sch_clean) %>%
     distinct(npi, .keep_all = TRUE) %>%
     # "OTHER" is DAC's placeholder for a school it could not code -- 4,171
     # values. It is not an institution and is dropped, not counted.
@@ -72,8 +76,15 @@ training_source_healthgrades <- function(
   if (!is.null(eligible)) lk <- filter(lk, certification_number %in% eligible)
   lk %>%
     distinct(certification_number, hg_url) %>%
+    # healthgrades_profile_attrs.csv is one row per hg_url (8,231 of 8,231).
+    # The distinct() below guards the LEFT side -- one certificant holding two
+    # profile URLs -- not fan-out from the right.
     left_join(read_csv(attrs_path, show_col_types = FALSE, progress = FALSE) %>%
-                select(hg_url, hg_education_name), by = "hg_url") %>%
+                select(hg_url, hg_education_name), by = "hg_url",
+              relationship = "many-to-one") %>%
+    # A certificant with two profile URLs: prefer the one that actually carries
+    # a school, then the lexically first URL for determinism.
+    arrange(certification_number, is.na(hg_education_name), hg_url) %>%
     distinct(certification_number, .keep_all = TRUE) %>%
     select(certification_number, hg_school = hg_education_name)
 }
@@ -82,6 +93,10 @@ training_source_repository <- function(
     path = "artifacts/amcb_education_history.csv") {
   if (!file.exists(path)) return(NULL)
   read_csv(path, show_col_types = FALSE, progress = FALSE) %>%
+    # Prefer the row naming a midwifery program over a blank one, then sort by
+    # the program so the survivor does not depend on row order.
+    arrange(certification_number, !nzchar(coalesce(midwifery_program, "")),
+            midwifery_program) %>%
     distinct(certification_number, .keep_all = TRUE) %>%
     transmute(certification_number,
               rep_school = ifelse(nzchar(coalesce(midwifery_program, "")),

@@ -68,7 +68,12 @@ normalize_license <- function(value) {
 #' Normalize a US state to a two-letter abbreviation.
 #' @param value Character vector.
 #' @return [character] abbreviation, NA when unrecognised.
-normalize_state <- function(value) {
+# NOT the same function as normalize_state() in R/resolve_amcb_by_state_license.R.
+# This one str_squish()es and accepts "WASHINGTON DC" / "WASHINGTON D C"; that one
+# uses trimws() and exact matching. Both behaviours are wanted where they are, so
+# they carry distinct names rather than being merged -- merging would loosen
+# license-key construction, which is a linkage change, not a cleanup.
+normalize_state_lenient <- function(value) {
   # state.name / state.abb live in `datasets`, NOT `base`. base::state.name
   # errors with "object 'state.name' not found", which would make every call
   # here fail before a single key could be built.
@@ -95,7 +100,9 @@ normalize_state <- function(value) {
 #' Find the first matching column name, in candidate priority order.
 #' @param names_available Source column names. @param candidates Candidates.
 #' @return [character(1)] or NA_character_.
-find_column <- function(names_available, candidates) {
+# Case-INSENSITIVE. R/resolve_amcb_by_state_license.R has a case-SENSITIVE
+# find_column(); same reasoning as above, so the names differ.
+find_column_ci <- function(names_available, candidates) {
   match_position <- match(stringr::str_to_lower(candidates),
                           stringr::str_to_lower(names_available))
   match_position <- match_position[!is.na(match_position)]
@@ -109,7 +116,7 @@ find_column <- function(names_available, candidates) {
 #' @return Vector of length nrow(source_tbl).
 pull_candidate_column <- function(source_tbl, candidates,
                                   default = NA_character_) {
-  source_name <- find_column(names(source_tbl), candidates)
+  source_name <- find_column_ci(names(source_tbl), candidates)
   if (is.na(source_name)) return(rep(default, nrow(source_tbl)))
   source_tbl[[source_name]]
 }
@@ -140,9 +147,9 @@ standardize_board_roster <- function(path) {
   # The filename is only a FALLBACK for the license state, and a weak one:
   # "colorado.csv" would yield "DO" from its last two letters. It is used only
   # when the file carries no state column, and it is validated through
-  # normalize_state(), so an unrecognisable value becomes NA rather than a
+  # normalize_state_lenient(), so an unrecognisable value becomes NA rather than a
   # plausible-looking wrong state.
-  file_state <- normalize_state(
+  file_state <- normalize_state_lenient(
     stringr::str_to_upper(stringr::str_extract(
       tools::file_path_sans_ext(basename(path)), "[A-Za-z]{2}$")))
 
@@ -180,7 +187,7 @@ standardize_board_roster <- function(path) {
       last_norm = normalize_name(.data$last_name_raw),
       middle_initial = stringr::str_sub(.data$middle_norm, 1L, 1L),
       license_number = normalize_license(.data$license_number_raw),
-      license_state = normalize_state(.data$license_state_raw)) |>
+      license_state = normalize_state_lenient(.data$license_state_raw)) |>
     dplyr::filter(!is.na(.data$license_number), !is.na(.data$license_state),
                   !is.na(.data$first_norm), !is.na(.data$last_norm))
 
@@ -270,7 +277,7 @@ read_amcb_roster <- function(amcb_path) {
       middle_norm = normalize_name(.data$amcb_middle_name),
       last_norm = normalize_name(.data$amcb_last_name),
       middle_initial = stringr::str_sub(.data$middle_norm, 1L, 1L),
-      amcb_state = normalize_state(.data$amcb_state_raw))
+      amcb_state = normalize_state_lenient(.data$amcb_state_raw))
 
   if (anyDuplicated(cohort_tbl$amcb_id) > 0L)
     stop("AMCB identifier is not unique; resolve identity before linkage.",
