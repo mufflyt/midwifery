@@ -1,0 +1,130 @@
+# Tracked artifacts with no .provenance.json sidecar.
+#
+# Same rule as tests/ci_leak_baseline.txt: may shrink, must never grow. A3 used
+# to hold a COUNT (MAX_UNCOVERED). A count says how much debt exists; it does
+# not say which files, so it cannot tell a new uncovered artifact from an old
+# one when the total happens to stay flat, and the only way to record a real
+# reduction is to edit the number -- which looks identical to raising it.
+#
+# WHY THESE CANNOT SIMPLY BE FIXED. Twenty of them were added on 2026-08-13/14
+# by the state-board-of-nursing work. Every producing script reads one of the
+# eight person-level master files that #38 untracked, and those are gitignored
+# by design and absent from every checkout. So the artifacts cannot be
+# regenerated -- not in CI, not in a fresh clone, not locally without re-running
+# live multi-state portal scrapes that would return different data. Their
+# inputs+sha256 cannot be recovered, only re-recorded at production time by
+# whoever runs the pipeline next.
+#
+# There is also no Python path to provenance: write_with_provenance() exists
+# only in R/lib/artifact_provenance.R, and 13 of the 20 producers are Python.
+# Until that gap is closed, "write it through write_with_provenance()" is not
+# advice a Python producer can follow.
+#
+# Removing a line requires the artifact to gain a real sidecar -- inputs and
+# their SHA-256 as recorded when it was written, not reconstructed afterwards.
+artifacts/.county_agreement_by_precision.csv
+artifacts/ab_middle_name/evidence_top2.csv
+artifacts/ab_middle_name/transitions_all.csv
+artifacts/ab_middle_name/transitions_exposed.csv
+artifacts/acme_dnp_authors.csv
+artifacts/acme_institution_audit.csv
+artifacts/acme_repository_registry.csv
+artifacts/address_recency_validation_report.csv
+artifacts/amcb_age_calibration_provenance.csv
+artifacts/amcb_vs_bon_confirmation_report.csv
+artifacts/bc_resolver/bc_transitions.csv
+artifacts/bc_resolver/contested_evidence.csv
+artifacts/bc_resolver/crosstab_counts.csv
+artifacts/bc_resolver/crosstab_row_pct.csv
+artifacts/bc_resolver/targeted_questions.csv
+artifacts/bon_extracted_fields_inventory.csv
+artifacts/bon_state_data_heterogeneity_matrix.csv
+artifacts/cabc_accredited_birth_centers_master.csv
+artifacts/cabc_birth_centers_master_clean.csv
+artifacts/cabc_birth_centers_master_perfect.csv
+artifacts/cabc_matched_midwives_perfect.csv
+artifacts/cd_midwifery_stats.csv
+artifacts/cd_obstetric_workforce.csv
+artifacts/cohort_additions_by_mechanism.csv
+artifacts/cohort_flow_16743_to_17538.csv
+artifacts/cohort_flow_bidirectional.csv
+artifacts/cohort_midwives_matched_to_cabc_birth_centers.csv
+artifacts/cohort_midwives_open_payments_type2_postmastr_full.csv
+artifacts/cohort_midwives_open_payments_type2_standardized_matches.csv
+artifacts/cohort_transitions.csv
+artifacts/commencement_pdf_inventory.csv
+artifacts/county_midwifery_supply.csv
+artifacts/coverage_clip_provenance.csv
+artifacts/coverage_nesting_report.csv
+artifacts/dac_hospital_affiliation_summary.csv
+artifacts/district_profiles/district_sentences.csv
+artifacts/dora_identification_technical_report.csv
+artifacts/exclusion_ledger.csv
+artifacts/florida_voter_license_ages_provenance.csv
+artifacts/frontier_dnp_projects.csv
+artifacts/geography_by_linkage_status.csv
+artifacts/geography_class_counts.csv
+artifacts/hcris_affiliated_hospitals_fy2023.csv
+artifacts/healthgrades_field_usability.csv
+artifacts/historical_isochrone_recovery_by_rucc.csv
+artifacts/historical_isochrone_recovery_catalog.csv
+artifacts/historical_isochrone_recovery_validated.csv
+artifacts/historical_isochrone_recovery_waterfall.csv
+artifacts/hpsa_status_summary.csv
+artifacts/isochrone_coverage_after_validated_recovery.csv
+artifacts/isochrone_coverage_with_recovery.csv
+artifacts/isochrone_representation_by_county.csv
+artifacts/isochrone_representation_by_rucc.csv
+artifacts/isochrone_representation_by_state.csv
+artifacts/linkage_completeness_by_status.csv
+artifacts/linkage_identity_changes.csv
+artifacts/live_wa_bon_summary_matrix.csv
+artifacts/louisiana_amcb_concordance_matrix.csv
+artifacts/louisiana_workforce_epidemiology_report.csv
+artifacts/lsbn_direct_agency_report.csv
+artifacts/lsbn_live_portal_audit_report.csv
+artifacts/medicare_participation_summary.csv
+artifacts/midwifery_microsimulation_projections_2026_2040.csv
+artifacts/midwifery_theses_oai.csv
+artifacts/national_cnm_ascertainment_yield_report.csv
+artifacts/newly_resolved_by_prior_status.csv
+artifacts/npi_state_license_crosswalk_report.csv
+artifacts/npi_vs_state_license_mapping_sample.csv
+artifacts/oai_source_concentration.csv
+artifacts/ob_hospitals_fallback_log.csv
+artifacts/ob_hospitals_geocoded.csv
+artifacts/obgyn_cpa_filings_schema_and_sample.csv
+artifacts/ohio_voter_license_ages_provenance.csv
+artifacts/org_resolution_distribution_shift.csv
+artifacts/org_resolution_ppv.csv
+artifacts/represented_subset_access_by_band.csv
+artifacts/represented_subset_access_by_band_rucc.csv
+artifacts/scraped_20_state_bon_summary_matrix.csv
+artifacts/scraped_20_state_bon_validation_report.csv
+artifacts/scraped_40_state_bon_summary_matrix.csv
+artifacts/specialized_bon_fields_summary.csv
+artifacts/state_by_state_bon_strategy.csv
+artifacts/state_nursing_board_licensure_summary.csv
+artifacts/state_nursing_license_ages_provenance.csv
+artifacts/state_obstetric_workforce.csv
+artifacts/step00_summary/join_left_20260809_234744.978.csv
+artifacts/step00_summary/join_left_20260809_234745.092.csv
+artifacts/step00_summary/join_left_20260809_234830.504.csv
+artifacts/step00_summary/join_left_20260809_234830.624.csv
+artifacts/step00_summary/join_left_20260809_234838.631.csv
+artifacts/step00_summary/join_left_20260809_234838.740.csv
+artifacts/step00_summary/join_left_20260809_234846.751.csv
+artifacts/step00_summary/join_left_20260809_234846.889.csv
+artifacts/step00_summary/join_left_unmatched_left_right_20260809_234745.092_3a4e5ba8.csv
+artifacts/step00_summary/join_left_unmatched_left_right_20260809_234830.624_3a4e5ba8.csv
+artifacts/step00_summary/join_left_unmatched_left_right_20260809_234838.740_3a4e5ba8.csv
+artifacts/step00_summary/join_left_unmatched_left_right_20260809_234846.889_3a4e5ba8.csv
+artifacts/table1_midwives.csv
+artifacts/table1_provenance.csv
+artifacts/tier1_complete_state_breakdown.csv
+artifacts/tier1_tier2_bon_state_breakdown.csv
+artifacts/tier1_tier2_bon_summary_matrix.csv
+artifacts/tier2_complete_state_breakdown.csv
+artifacts/wa_cnm_provenance.csv
+artifacts/wonder/national_births_by_attendant_year.csv
+artifacts/zip_fallback_validation.csv
