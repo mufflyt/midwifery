@@ -1,0 +1,14 @@
+{
+  "artifact": "state_nursing_board_licensure_summary.csv",
+  "written_utc": "2026-08-15 03:17:23 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/cohort_midwife_facility_attributions_final_v4.csv",
+      "sha256": "880cc06f3fb87d97c9fcba5a1ef1250ffe051aee41f07990520baf287244b180"
+    },
+    {
+      "path": "artifacts/state_nursing_board_cnm_addresses.csv",
+      "sha256": "6e011dccf9c341bbc54dabd8ea82226932054873baa52512444bb07263e14df4"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "artifact": "state_obstetric_workforce.csv",
+  "written_utc": "2026-08-15 03:17:39 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/cd_midwifery_stats.csv",
+      "sha256": "a9e0da0f8b813e085dc80f4ee8bce0492788c12662540b2c15e81d15e0d3208a"
+    }
+  ]
+}

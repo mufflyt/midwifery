@@ -1,0 +1,22 @@
+{
+  "artifact": "isochrone_representation_by_county.csv",
+  "written_utc": "2026-08-15 03:17:38 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/county_midwifery_supply.csv",
+      "sha256": "2507750d93a20ba76b5b927dbd18cd024ae03f5844689a5c2977c734f285502e"
+    },
+    {
+      "path": "data/ahrf/AHRF2025.csv",
+      "sha256": "f4f7c5dd6f7acc75f4851c2c9b192ad6c74e4db9534a738323f623aa8268e085"
+    },
+    {
+      "path": "data/cms_pos_hospital.csv",
+      "sha256": "bcfb9c680f02fdc05a4c82b90e434ad96bb52ea0a1f04eb424bb3dad5a9ffe3d"
+    },
+    {
+      "path": "data/county_base.csv",
+      "sha256": "72e6acb856728843e4a8ec54cdac2642841a931d523cc07ed8942b3f1988ca5f"
+    }
+  ]
+}

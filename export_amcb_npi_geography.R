@@ -23,6 +23,9 @@
 #
 # Output : artifacts/amcb_npi_geography.csv  (PERSON-LEVEL, gitignored)
 #          artifacts/amcb_npi_geography_by_state.csv  (aggregate, safe to track)
+#
+# Output name is _export on purpose: artifacts/amcb_npi_geography.csv is a
+# DIFFERENT artifact owned by enrich_amcb_crosswalk_geography.R.
 # =============================================================================
 suppressPackageStartupMessages({library(dplyr); library(readr)})
 
@@ -33,7 +36,13 @@ root <- {
 }
 
 FROZEN <- file.path(root, "artifacts", "amcb_npi_linkage_FROZEN.csv")
-OUT    <- file.path(root, "artifacts", "amcb_npi_geography.csv")
+# NOT artifacts/amcb_npi_geography.csv. That path already belongs to
+# enrich_amcb_crosswalk_geography.R (its GEO_OUT default), is read by 17 other
+# scripts, and is named in tests/test_amcb_gates.R as that producer's output.
+# This script took the name without checking and overwrote the enrichment
+# output on every run -- invisibly, because the file is gitignored and so has
+# no git history to notice the change.
+OUT    <- file.path(root, "artifacts", "amcb_npi_geography_export.csv")
 OUT_AGG <- file.path(root, "artifacts", "amcb_npi_geography_by_state.csv")
 
 source(file.path(root, "R", "lib", "artifact_provenance.R"))
