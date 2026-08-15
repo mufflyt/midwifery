@@ -1,0 +1,45 @@
+# =============================================================================
+# ci_nightly_exceptions.txt -- tests the nightly may not execute normally
+# =============================================================================
+# The nightly DISCOVERS tests by glob. This file is the only way a discovered
+# test is treated differently, and it lists ONLY exceptions -- never the normal
+# tests. If this file ever grows to resemble a test manifest, the discovery
+# contract has been inverted and the nightly has stopped protecting anything.
+#
+# Format:  <path><TAB or spaces><class>  # reason
+#
+# class is one of:
+#   external-private   needs a private repository this public CI cannot clone.
+#                      Runs in the `external-deps` job, reported, NOT fatal.
+#   external-network   needs a third-party service to be up. Runs in the
+#                      `network-tests` job, reported, NOT fatal.
+#
+# There is deliberately no "skip" class. A test that nobody runs and nobody
+# reports on is indistinguishable from a deleted test, and 21 files already
+# reached that state once in this repository.
+#
+# tests/ci_nightly_registry_check.R fails the build when an entry names a file
+# that no longer exists, so a stale exception cannot quietly outlive its cause.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Requires ~/isochrones/R/string_normalization.R. midwifery/R/string_normalization.R
+# is a shim that source()s the canonical file from the sibling repository and
+# hard-stops when it is absent, which is correct behaviour -- one normalizer,
+# not two. mufflyt/isochrones is PRIVATE and mufflyt/midwifery is PUBLIC, so a
+# runner has no credentials to fetch it.
+#
+# To make these blocking, add a deploy key or read-only PAT for mufflyt/isochrones
+# as a repository secret and clone it in the `external-deps` job. Until then the
+# canonical-normalizer contract is verified locally, not nightly.
+# -----------------------------------------------------------------------------
+tests/test_amcb_name_normalization.R    external-private  # canonical normalize_string()
+tests/test_cycle12_names_territories.R  external-private  # canonical name keys
+tests/test_cycle4_ct_apportionment.R    external-private  # canonical name keys
+
+# -----------------------------------------------------------------------------
+# Downloads a CMS Facility_Affiliation file at source() time via
+# R/lib/match_npi_to_hospitals.R. That URL returned 404 on 2026-08-15. An
+# upstream dead link is worth a warning, not a red build.
+# -----------------------------------------------------------------------------
+tests/test_match_npi_to_hospitals.R     external-network  # data.cms.gov 404

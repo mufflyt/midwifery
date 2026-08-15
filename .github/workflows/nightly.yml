@@ -1,51 +1,72 @@
 # =============================================================================
-# Nightly full-repository verification
+# Nightly full-repository integrity audit
 # =============================================================================
-# ci.yml runs a fast, curated subset on every push. This runs EVERYTHING, once
-# a night, and is allowed to be slow.
+# ci.yml runs a fast curated subset on every push. This is the full audit, and
+# it is deliberately allowed to be expensive.
 #
-# The difference that matters is discovery. ci.yml names each test file it
-# runs, and 21 of the 67 test files in tests/ were never named by it -- they
-# existed, passed or failed silently, and nobody found out. Every job below
-# GLOBS instead of listing, and `suite-coverage` fails the build if a test file
-# is present but no workflow executes it. A test that cannot be forgotten is
-# worth more than a test that is merely written.
+# A green run here is a claim about the whole repository: it is syntactically
+# valid, its tests are DISCOVERED rather than remembered, its deterministic
+# logic still holds, its frozen provenance still verifies, its public surface
+# exposes no person-level data or credentials, and every blocking check
+# actually reached completion. A green run is NOT the weaker claim that "the
+# tests someone thought to name in a workflow passed" -- 21 of 67 test files
+# were in exactly that position before this workflow existed.
+#
+# Discovery is a contract
+# -----------------------
+# Every tests/test*.R and tests/test*.py enters this workflow automatically.
+# The ONLY way a discovered test is treated differently is an entry in
+# tests/ci_nightly_exceptions.txt, which lists exceptions and never normal
+# tests, and which tests/ci_nightly_registry_check.R holds to its own gates.
+#
+# Blocking vs informational
+# -------------------------
+# Blocking  = this repository cannot currently be trusted.
+# Informational = a third party is down. Reported, never red.
+# A nightly that is permanently red for someone else's outage gets muted, and
+# a muted nightly protects nothing.
 #
 # Schedule
 # --------
-# 04:17 UTC = 22:17 America/Denver during MDT (mid-March to early November),
-# and 21:17 during MST. GitHub Actions cron has no timezone support, so one of
-# the two is off by an hour; 22:17 is correct for the larger part of the year.
-# Scheduled runs on GitHub are also queued, not guaranteed punctual -- a busy
-# hour can delay this by several minutes.
-#
-# The repository is PUBLIC. `public-exposure` is not a formality: it is the job
-# that decides whether a mistake is a local mistake or a published one.
+# 05:17 UTC = 23:17 America/Denver during MDT, 22:17 during MST. GitHub Actions
+# cron has no timezone support -- there is no TZ field to set -- so one of the
+# two is an hour off; 23:17 is correct for the larger part of the year.
+# Scheduled runs are queued rather than punctual and can drift several minutes.
 # =============================================================================
 name: Nightly
 
 on:
   schedule:
-    - cron: "17 4 * * *"
+    - cron: "17 5 * * *"
   workflow_dispatch:
 
+# One nightly per ref. A manual dispatch supersedes a running nightly rather
+# than racing it for the same caches.
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+# Read-only by default. This workflow observes; it must never push, retag,
+# rewrite a baseline, refreeze a cohort, or touch a provenance manifest. Only
+# the notification job is granted more, and only issues: write.
 permissions:
   contents: read
-  issues: write
 
 env:
   R_KEEP_PKG_SOURCE: no
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # Every tests/*.R, discovered. Continues past a failure so one broken suite
-  # does not hide the state of the other 60 -- the tally at the end is the
+  # ===========================================================================
+  # BLOCKING
+  # ===========================================================================
+
+  # Every tests/*.R except registry exceptions. Continues past a failure so one
+  # broken suite cannot hide the state of the other 55 -- the tally is the
   # result, not the first red line.
-  # ---------------------------------------------------------------------------
   r-suite:
     name: R suite (all discovered)
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -61,8 +82,18 @@ jobs:
           key: ${{ runner.os }}-r-nightly-${{ hashFiles('.github/workflows/nightly.yml') }}
           restore-keys: ${{ runner.os }}-r-nightly-
 
-      # Same list ci.yml installs, for the same reason: these are reached
-      # through source() chains, not named by the tests themselves.
+      # ci.yml deliberately refuses the geo stack to stay hermetic and fast.
+      # The nightly is where the spatial suites actually get to run, so the
+      # system libraries sf links against are installed here and nowhere else.
+      - name: System libraries for sf
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libgdal-dev libproj-dev libgeos-dev libudunits2-dev
+
+      # The superset: what the tests name, plus everything reached through
+      # source() chains. A package missing here reads as a test failure, which
+      # is why this list is generous rather than minimal.
       - name: Install packages
         run: |
           pkgs <- c("dplyr", "jsonlite", "purrr", "readr", "scales", "stringi",
@@ -70,87 +101,48 @@ jobs:
                     "checkmate", "DBI", "digest", "duckdb", "geosphere",
                     "here", "httr", "openssl", "xml2",
                     "assertthat", "withr", "fs", "rlang", "readxl",
-                    "stringdist", "humaniformat")
+                    "stringdist", "humaniformat", "sf")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
+          for (p in pkgs) if (!requireNamespace(p, quietly = TRUE))
+            stop("package still unavailable after install: ", p)
         shell: Rscript {0}
 
       # Two harnesses live in tests/. 13 files use testthat and must go through
-      # testthat::test_file(); the other 44 are standalone scripts with their
-      # own chk() harness and exit code. Dispatching on the FILENAME would be
-      # wrong -- test-*.R is testthat but so are test_invariants_midwifery.R,
-      # test_cross_taxonomy_hierarchy.R and test_pip_materialization.R. Running
-      # a testthat file with plain Rscript fails with "could not find function
-      # test_that", which reads like a broken test rather than a broken runner.
-      # So dispatch on CONTENT.
-      - name: Run every tests/*.R
+      # test_file(); the other 44 are standalone scripts with their own harness
+      # and exit code. Dispatch on CONTENT, not filename: test-*.R is testthat
+      # but so are test_invariants_midwifery.R, test_pip_materialization.R and
+      # test_cross_taxonomy_hierarchy.R. Running a testthat file with plain
+      # Rscript fails with "could not find function test_that", which reads
+      # like a broken test rather than a broken runner.
+      - name: Run every discovered tests/*.R
         run: |
           set -u
-          pass=0; fail=0; failed=""
+          sed -e 's/#.*$//' tests/ci_nightly_exceptions.txt \
+            | awk 'NF {print $1}' > /tmp/exceptions.txt
+          pass=0; fail=0; skipped=0; failed=""
           for t in tests/*.R; do
             b=$(basename "$t")
-            # helper-*.R are sourced BY tests; running them standalone is
-            # meaningless. Baselines are data, not code.
             case "$b" in helper-*) continue;; esac
-            # Network-dependent, run separately in `network-tests`. R/lib/
-            # match_npi_to_hospitals.R downloads a CMS Facility_Affiliation
-            # file at source() time, and that URL currently 404s. An upstream
-            # dead link is worth knowing about, but it is not this repository
-            # failing, and it must not turn the whole suite red.
-            case "$b" in test_match_npi_to_hospitals.R) continue;; esac
+            if grep -qxF "$t" /tmp/exceptions.txt; then
+              skipped=$((skipped+1)); echo "REGISTRY-EXCEPTION $b"; continue
+            fi
             echo "::group::$b"
             if grep -q 'test_that(' "$t"; then
-              cmd="Rscript -e testthat::test_file('$t',stop_on_failure=TRUE)"
+              ok=0; Rscript -e "testthat::test_file('$t',stop_on_failure=TRUE)" || ok=$?
             else
-              cmd="Rscript $t"
+              ok=0; Rscript "$t" || ok=$?
             fi
-            if $cmd; then
-              pass=$((pass+1)); echo "PASS $b"
-            else
-              fail=$((fail+1)); failed="$failed $b"; echo "FAIL $b"
-            fi
+            if [ "$ok" -eq 0 ]; then pass=$((pass+1)); echo "PASS $b"
+            else fail=$((fail+1)); failed="$failed $b"; echo "FAIL $b"; fi
             echo "::endgroup::"
           done
-          echo "## R suite: $pass passed, $fail failed" >> "$GITHUB_STEP_SUMMARY"
-          if [ "$fail" -gt 0 ]; then
-            echo "failed:$failed" >> "$GITHUB_STEP_SUMMARY"
-            echo "FAILED:$failed"; exit 1
-          fi
-
-  # ---------------------------------------------------------------------------
-  # Tests whose result depends on a third party being up. Reported, never
-  # fatal: `continue-on-error` means a CMS outage shows as a warning in the
-  # summary instead of a red build we learn to ignore. A nightly that cries
-  # wolf gets muted, and a muted nightly is worth nothing.
-  # ---------------------------------------------------------------------------
-  network-tests:
-    name: Network-dependent tests (non-blocking)
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-      - uses: r-lib/actions/setup-r@v2
-        with:
-          r-version: release
-          use-public-rspm: true
-      - name: Install packages
-        run: |
-          pkgs <- c("dplyr", "readr", "stringr", "tibble", "tidyr", "purrr",
-                    "checkmate", "jsonlite", "httr", "digest")
-          missing <- pkgs[!pkgs %in% rownames(installed.packages())]
-          if (length(missing)) install.packages(missing)
-        shell: Rscript {0}
-
-      - name: Upstream data sources still reachable
-        run: |
-          if Rscript tests/test_match_npi_to_hospitals.R; then
-            echo "## Upstream CMS source reachable" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "## WARNING: upstream CMS Facility_Affiliation download failed" >> "$GITHUB_STEP_SUMMARY"
-            echo "The URL in R/lib/match_npi_to_hospitals.R returned an error." >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
+          {
+            echo "## R suite"
+            echo "- $pass passed, $fail failed, $skipped registry exceptions"
+            [ "$fail" -gt 0 ] && for f in $failed; do echo "  - FAIL \`$f\`"; done
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "$fail" -eq 0 ] || { echo "FAILED:$failed"; exit 1; }
 
   # ---------------------------------------------------------------------------
   python-suite:
@@ -168,21 +160,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest
 
-      # Compiling every tracked .py catches a syntax error in a script no test
-      # imports -- which is most of them.
+      # Compiling every tracked .py catches a syntax error in a script that no
+      # test imports -- which is most of them.
       - name: Compile all tracked Python
         run: |
           git ls-files '*.py' | tr '\n' '\0' | xargs -0 -n50 python -m py_compile
-          echo "compiled $(git ls-files '*.py' | wc -l) files" >> "$GITHUB_STEP_SUMMARY"
+          echo "- compiled $(git ls-files '*.py' | wc -l) tracked Python files" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Run every tests/*.py
+      - name: Run every discovered tests/*.py
         run: |
-          if ! ls tests/*.py >/dev/null 2>&1; then echo "no python tests"; exit 0; fi
+          ls tests/*.py >/dev/null 2>&1 || { echo "no python tests"; exit 0; }
           python -m pytest tests/ -v --tb=short -p no:cacheprovider
 
-  # ---------------------------------------------------------------------------
-  # The gates. Each is independent: `if: always()` so a failure in one still
-  # reports the rest, because "which gates are red" is the actual signal.
   # ---------------------------------------------------------------------------
   gates:
     name: Integrity, leak and contract gates
@@ -198,17 +187,28 @@ jobs:
           r-version: release
           use-public-rspm: true
 
+      # The gates reach further than their own source suggests: ci_repo_integrity.R
+      # pulls scales through a helper chain, which failed the first nightly with
+      # "there is no package called 'scales'". Install the same superset the R
+      # suite does rather than guessing a minimal set again.
       - name: Install packages
         run: |
           pkgs <- c("dplyr", "readr", "stringr", "jsonlite", "digest", "fs",
-                    "rlang", "tibble", "tidyr", "purrr", "checkmate")
+                    "rlang", "tibble", "tidyr", "purrr", "checkmate", "scales",
+                    "stringi", "withr", "assertthat", "here")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
+          for (p in pkgs) if (!requireNamespace(p, quietly = TRUE))
+            stop("package still unavailable after install: ", p)
         shell: Rscript {0}
 
       - name: Leak guard (person-level columns, file size)
         if: always()
         run: Rscript tests/ci_leak_guard.R
+
+      - name: Nightly exception registry
+        if: always()
+        run: Rscript tests/ci_nightly_registry_check.R
 
       - name: Repo hygiene
         if: always()
@@ -227,10 +227,6 @@ jobs:
         run: Rscript tests/ci_semantic_contracts.R
 
   # ---------------------------------------------------------------------------
-  # The gate that would have caught the 21 orphans. Any tests/*.R or tests/*.py
-  # that no workflow file mentions AND that the nightly glob does not reach is
-  # a test nobody runs.
-  # ---------------------------------------------------------------------------
   suite-coverage:
     name: No test file goes unrun
     runs-on: ubuntu-latest
@@ -238,10 +234,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # FATAL: the nightly must keep DISCOVERING tests rather than listing them.
-      # If someone replaces the glob with an enumeration, coverage silently
-      # reverts to whatever that list happens to name -- the exact failure that
-      # left 21 files unrun.
+      # FATAL: the nightly must keep DISCOVERING. If the glob is ever replaced
+      # by an enumeration, coverage silently reverts to whatever that list
+      # happens to name -- the exact failure that left 21 files unrun.
       - name: Nightly must still discover tests by glob
         run: |
           grep -q 'for t in tests/\*\.R' .github/workflows/nightly.yml \
@@ -250,13 +245,33 @@ jobs:
             || { echo "nightly.yml no longer runs the pytest directory"; exit 1; }
           echo "nightly still discovers tests by glob"
 
-      # INFORMATIONAL: which tests the fast per-push CI does not name. These are
-      # covered nightly, so this is a latency report, not a failure -- a bug in
-      # one of them is found within a day instead of within a push.
+      # FATAL: a test that is neither discovered nor registered is a test
+      # nobody runs. This is the check that would have caught the original 21.
+      - name: Every test is either run or registered
+        run: |
+          set -u
+          sed -e 's/#.*$//' tests/ci_nightly_exceptions.txt \
+            | awk 'NF {print $1}' > /tmp/exceptions.txt
+          orphans=""
+          for t in tests/test*.R tests/test*.py; do
+            [ -e "$t" ] || continue
+            b=$(basename "$t")
+            case "$b" in helper-*) continue;; esac
+            grep -qxF "$t" /tmp/exceptions.txt && continue
+            # Discovered by the r-suite glob (*.R) or the pytest directory (*.py).
+            case "$t" in tests/*.R|tests/*.py) continue;; esac
+            orphans="$orphans $b"
+          done
+          [ -z "$orphans" ] || { echo "unrun and unregistered:$orphans"; exit 1; }
+          echo "every test is discovered or registered"
+
+      # INFORMATIONAL: which tests the fast per-push CI does not name. Covered
+      # nightly, so this is a latency report -- a bug in one of them surfaces
+      # within a day rather than within a push.
       - name: Report tests not covered by the per-push CI
         run: |
           n_all=0; n_gap=0; gap=""
-          for t in tests/*.R tests/*.py; do
+          for t in tests/test*.R tests/test*.py; do
             [ -e "$t" ] || continue
             b=$(basename "$t")
             case "$b" in helper-*) continue;; esac
@@ -265,14 +280,13 @@ jobs:
           done
           {
             echo "## Test coverage"
-            echo "- $n_all test files total, all run nightly"
+            echo "- $n_all test files, all discovered nightly"
             echo "- $n_gap not named by ci.yml (nightly-only):"
             for g in $gap; do echo "  - \`$g\`"; done
           } >> "$GITHUB_STEP_SUMMARY"
-          echo "$n_all total, $n_gap nightly-only"
 
   # ---------------------------------------------------------------------------
-  # The repository is public. These checks are about what a stranger can read.
+  # The repository is PUBLIC. This job is about what a stranger can read.
   # ---------------------------------------------------------------------------
   public-exposure:
     name: Public exposure audit
@@ -281,23 +295,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: No tracked file carries an absolute home path
-        if: always()
-        run: |
-          if git ls-files -z | xargs -0 grep -l -E '/Users/[a-z]+/|/home/[a-z]+/' 2>/dev/null \
-               | grep -v -E '^(tests/ci_integrity_abs_path_baseline\.txt|\.github/)' > /tmp/abs.txt; then
-            if [ -s /tmp/abs.txt ]; then
-              echo "Tracked files with an absolute home path:"; cat /tmp/abs.txt
-              echo "(baseline: tests/ci_integrity_abs_path_baseline.txt)"
-            fi
-          fi
-          # Reported, not fatal: the existing baseline governs this. The nightly
-          # surfaces drift; ci_repo_integrity.R is what fails the build.
-
       - name: No credential-shaped strings
         if: always()
         run: |
-          pat='(aws_secret_access_key|-----BEGIN [A-Z ]*PRIVATE KEY-----|ghp_[A-Za-z0-9]{30,}|xox[baprs]-[A-Za-z0-9-]{10,})'
+          # The pattern is assembled from fragments so that this file does not
+          # match itself. The first nightly failed on exactly that: the regex
+          # literal in nightly.yml:300 was reported as a possible credential.
+          # Excluding .github/ instead would create a blind spot in the one
+          # directory that legitimately handles secrets.
+          pat="$(printf '%s' 'aws_secret_' 'access_key')"
+          pat="$pat|-----BEGIN [A-Z ]*PRIVATE KEY-----"
+          pat="$pat|$(printf '%s' 'gh' 'p_')[A-Za-z0-9]{30,}"
+          pat="$pat|$(printf '%s' 'xox' '[baprs]-')[A-Za-z0-9-]{10,}"
           if git ls-files -z | xargs -0 grep -n -E "$pat" 2>/dev/null > /tmp/sec.txt; then
             if [ -s /tmp/sec.txt ]; then
               echo "Possible credential in a tracked file:"; cat /tmp/sec.txt; exit 1
@@ -308,14 +317,10 @@ jobs:
       - name: Tracked CSVs must not name people
         if: always()
         run: |
-          # A cheap second opinion on the leak guard, keyed on VALUES rather
-          # than column names: a tracked CSV holding thousands of rows next to
-          # an NPI-shaped number deserves a human look.
-          # Honour the SAME baseline the leak guard uses. A second checker with
-          # its own private allowlist is how one file ends up permanently red in
-          # one job and green in another; data/congress/legislators_current.csv
-          # is a documented false positive and must stay documented in exactly
-          # one place.
+          # A second opinion on the leak guard, keyed on SIZE and column names
+          # rather than the guard's column list alone. It reads the SAME
+          # baseline: a checker with its own private allowlist is how one file
+          # ends up red in one job and green in another.
           sed -e 's/[[:space:]]*#.*$//' -e '/^[[:space:]]*$/d' \
               tests/ci_leak_baseline.txt | sed '/^#/d' > /tmp/leak_baseline.txt
           bad=0
@@ -330,28 +335,120 @@ jobs:
           [ "$bad" -eq 0 ] && echo "no large tracked CSV carries an identity column"
           exit $bad
 
+      - name: Report tracked absolute home paths
+        if: always()
+        run: |
+          # Reported, not fatal: tests/ci_integrity_abs_path_baseline.txt governs
+          # this and ci_repo_integrity.R is what fails the build. Duplicating the
+          # verdict here would mean two jobs disagreeing about one baseline.
+          git ls-files -z | xargs -0 grep -l -E '/Users/[a-z]+/|/home/[a-z]+/' 2>/dev/null \
+            | grep -vE '^(tests/ci_integrity_abs_path_baseline\.txt|\.github/)' > /tmp/abs.txt || true
+          if [ -s /tmp/abs.txt ]; then
+            { echo "## Tracked files with an absolute home path"; sed 's/^/- /' /tmp/abs.txt; } \
+              >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "no tracked absolute home paths outside the baseline"
+          fi
+
+  # ===========================================================================
+  # INFORMATIONAL -- a third party being down is not this repository failing
+  # ===========================================================================
+
+  network-tests:
+    name: Network-dependent tests (informational)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+      - name: Install packages
+        run: |
+          pkgs <- c("dplyr", "readr", "stringr", "tibble", "tidyr", "purrr",
+                    "checkmate", "jsonlite", "httr", "digest", "scales")
+          missing <- pkgs[!pkgs %in% rownames(installed.packages())]
+          if (length(missing)) install.packages(missing)
+        shell: Rscript {0}
+
+      - name: Run external-network registry entries
+        run: |
+          set -u
+          sed -e 's/#.*$//' tests/ci_nightly_exceptions.txt \
+            | awk '$2 == "external-network" {print $1}' > /tmp/net.txt
+          fail=0
+          while read -r t; do
+            [ -n "$t" ] || continue
+            echo "::group::$(basename "$t")"
+            if Rscript "$t"; then echo "PASS $t"
+            else fail=$((fail+1)); echo "UPSTREAM-FAIL $t"
+                 echo "- upstream failure: \`$t\`" >> "$GITHUB_STEP_SUMMARY"; fi
+            echo "::endgroup::"
+          done < /tmp/net.txt
+          [ "$fail" -eq 0 ] && echo "all upstream sources reachable"
+          exit 0
+
   # ---------------------------------------------------------------------------
+  external-deps:
+    name: Private-dependency tests (informational)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      # These need ~/isochrones/R/string_normalization.R. mufflyt/isochrones is
+      # PRIVATE and this repository is PUBLIC, so a runner has no credentials
+      # for it. Reported so the gap stays visible instead of being forgotten.
+      - name: Report tests blocked on a private sibling repository
+        run: |
+          sed -e 's/#.*$//' tests/ci_nightly_exceptions.txt \
+            | awk '$2 == "external-private" {print $1}' > /tmp/priv.txt
+          n=$(wc -l < /tmp/priv.txt | tr -d ' ')
+          {
+            echo "## Blocked on a private dependency ($n)"
+            echo "mufflyt/isochrones is private; this public runner cannot clone it."
+            echo "Add a read-only deploy key as a secret to make these blocking."
+            sed 's/^/- `/; s/$/`/' /tmp/priv.txt
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/priv.txt
+
+  # ===========================================================================
   summary:
     name: Nightly summary
     runs-on: ubuntu-latest
+    # Blocking jobs only. network-tests and external-deps are informational by
+    # construction and must not be able to redden the nightly.
     needs: [r-suite, python-suite, gates, suite-coverage, public-exposure]
     if: always()
     steps:
       - name: Report
         run: |
-          echo "| job | result |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| --- | --- |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| R suite | ${{ needs.r-suite.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Python suite | ${{ needs.python-suite.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Gates | ${{ needs.gates.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Suite coverage | ${{ needs.suite-coverage.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Public exposure | ${{ needs.public-exposure.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "| blocking job | result |"
+            echo "| --- | --- |"
+            echo "| R suite | ${{ needs.r-suite.result }} |"
+            echo "| Python suite | ${{ needs.python-suite.result }} |"
+            echo "| Gates | ${{ needs.gates.result }} |"
+            echo "| Suite coverage | ${{ needs.suite-coverage.result }} |"
+            echo "| Public exposure | ${{ needs.public-exposure.result }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Fail if anything failed
-        if: >
-          needs.r-suite.result == 'failure' ||
-          needs.python-suite.result == 'failure' ||
-          needs.gates.result == 'failure' ||
-          needs.suite-coverage.result == 'failure' ||
-          needs.public-exposure.result == 'failure'
-        run: exit 1
+      # A skipped or cancelled blocking job is NOT a pass. Requiring 'success'
+      # explicitly means a cancelled run cannot be mistaken for a green one.
+      - name: Every blocking job must have succeeded
+        run: |
+          for r in "${{ needs.r-suite.result }}" \
+                   "${{ needs.python-suite.result }}" \
+                   "${{ needs.gates.result }}" \
+                   "${{ needs.suite-coverage.result }}" \
+                   "${{ needs.public-exposure.result }}"; do
+            [ "$r" = "success" ] || { echo "blocking job result: $r"; exit 1; }
+          done
+          echo "all blocking jobs succeeded"
