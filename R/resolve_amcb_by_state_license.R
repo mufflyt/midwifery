@@ -30,6 +30,12 @@
 #' @return Named list: deterministic matches, quarantine records, conflicts,
 #'   updated crosswalk, audit summary, saved paths.
 #' @export
+# normalize_npi() and fmt_n() are canonical in R/lib/common_helpers.R. The
+# exists() guard keeps this idempotent when the numbered scripts are sourced
+# in sequence into one environment, which is how the pipeline runs.
+if (!exists("normalize_npi", mode = "function")) {
+  source(file.path("R", "lib", "common_helpers.R"))
+}
 resolve_amcb_by_state_license <- function(
     amcb_path,
     state_license_path,
@@ -454,11 +460,7 @@ normalize_identifier <- function(x) {
 #' @param x NPI.
 #' @return [character] ten digits, NA otherwise.
 #' @keywords internal
-normalize_npi <- function(x) {
-  normalized <- stringr::str_replace_all(as.character(x), "[^0-9]", "")
-  normalized[nchar(normalized) != 10L] <- NA_character_
-  normalized
-}
+# normalize_npi() is canonical in R/lib/common_helpers.R, sourced above.
 
 #' Find the first available column from a candidate list
 #' @param available Existing column names. @param candidates Candidate names.
@@ -483,4 +485,4 @@ assert_file_exists <- function(path) {
 #' @param x [numeric]
 #' @return [character]
 #' @keywords internal
-fmt_n <- function(x) format(x, big.mark = ",", trim = TRUE)
+# fmt_n() is canonical in R/lib/common_helpers.R, sourced above.

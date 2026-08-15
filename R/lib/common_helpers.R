@@ -145,3 +145,44 @@ with_iso_wd <- function(expr) {
 `%|na|%` <- function(a, b) {
   if (is.null(a) || length(a) == 0L || all(is.na(a))) b else a
 }
+
+# -----------------------------------------------------------------------------
+# 2026-08-15. Four more names were defined in two files each, caught by the
+# duplicate-definition ratchet in tests/test_cycle9_joins.R when it went 0 -> 4.
+#
+# Two had byte-identical bodies and are merged here. The other two -- normalize_state
+# and find_column -- had DIVERGENT bodies, so they are deliberately NOT merged.
+# Following the doctrine already stated at the top of this file: the strict and
+# lenient versions are both wanted, and collapsing them would silently change a
+# caller's semantics. They keep distinct names in their own files instead.
+#
+# The divergence, for the record:
+#   normalize_state  R/resolve_amcb_by_state_license.R  trimws, exact match
+#                    R/build_amcb_state_licenses.R      str_squish, plus
+#                                                       "WASHINGTON DC" variants
+#   find_column      R/resolve_amcb_by_state_license.R  case-SENSITIVE
+#                    R/build_amcb_state_licenses.R      case-INSENSITIVE
+#
+# Merging either would have LOOSENED license-key construction -- more states
+# resolved, more columns matched, therefore more license keys and more candidate
+# matches. That is a linkage change, and a linkage change does not belong in a
+# de-duplication commit.
+# -----------------------------------------------------------------------------
+
+#' Normalize an NPI to ten digits, or NA
+#'
+#' Strips every non-digit and rejects anything that is not exactly ten
+#' characters. Identical bodies previously lived in
+#' R/resolve_amcb_by_state_license.R and R/15-build-birth-activity.R.
+#' @param x NPI vector, any type.
+#' @return [character] ten-digit NPIs, NA where the input was not one.
+normalize_npi <- function(x) {
+  normalized <- stringr::str_replace_all(as.character(x), "[^0-9]", "")
+  normalized[nchar(normalized) != 10L] <- NA_character_
+  normalized
+}
+
+#' Format an integer with thousands separators
+#' @param x Numeric vector.
+#' @return [character]
+fmt_n <- function(x) format(x, big.mark = ",", trim = TRUE)

@@ -161,16 +161,16 @@ ok("a key shared by two different names yields no match at all",
    !("C1" %in% res_col$bridge$amcb_id))
 
 cat("\n=== normalizers ===\n")
-ok("normalize_state handles names, abbreviations and junk",
-   identical(normalize_state(c("Colorado","co","CO","Narnia", NA)),
+ok("normalize_state_lenient handles names, abbreviations and junk",
+   identical(normalize_state_lenient(c("Colorado","co","CO","Narnia", NA)),
              c("CO","CO","CO",NA,NA)))
-ok("normalize_state does not error (datasets, not base)",
-   !is.na(normalize_state("Utah")))
+ok("normalize_state_lenient does not error (datasets, not base)",
+   !is.na(normalize_state_lenient("Utah")))
 ok("normalize_license strips punctuation and case",
    normalize_license(" rn-12 345 ") == "RN12345")
 ok("normalize_name blanks become NA", is.na(normalize_name("   ")))
 ok("a filename that is not a state code yields NA, not a bogus state",
-   is.na(normalize_state(str_to_upper(str_extract("colorado", "[A-Za-z]{2}$")))))
+   is.na(normalize_state_lenient(str_to_upper(str_extract("colorado", "[A-Za-z]{2}$")))))
 
 cat("\n=== sourcing must not execute the pipeline ===\n")
 ok("no object was created by sourcing", !exists("license_build", inherits = FALSE))

@@ -50,6 +50,13 @@ if (!exists("write_with_provenance", mode = "function")) {
   source(file.path("R", "lib", "artifact_provenance.R"))
 }
 
+# normalize_npi() and fmt_n() are canonical in R/lib/common_helpers.R. The
+# exists() guard keeps this idempotent when the numbered scripts are sourced
+# in sequence into one environment, which is how the pipeline runs.
+if (!exists("normalize_npi", mode = "function")) {
+  source(file.path("R", "lib", "common_helpers.R"))
+}
+
 build_midwife_birth_activity <- function(
     roster_path,
     taf_path = NULL,
@@ -562,11 +569,7 @@ find_first_column <- function(available, candidates) {
 #' @param x NPI vector.
 #' @return [character] ten-digit NPIs, NA otherwise.
 #' @keywords internal
-normalize_npi <- function(x) {
-  normalized <- stringr::str_replace_all(as.character(x), "[^0-9]", "")
-  normalized[nchar(normalized) != 10L] <- NA_character_
-  normalized
-}
+# normalize_npi() is canonical in R/lib/common_helpers.R, sourced above.
 
 #' Normalize a county FIPS to five characters
 #' @param x County FIPS vector.
@@ -592,7 +595,7 @@ format_p_value <- function(x) {
 #' @param x [numeric]
 #' @return [character]
 #' @keywords internal
-fmt_n <- function(x) format(x, big.mark = ",", trim = TRUE)
+# fmt_n() is canonical in R/lib/common_helpers.R, sourced above.
 
 #' Null-coalescing helper
 #' @param x Value. @param y Replacement.

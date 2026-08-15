@@ -91,13 +91,25 @@ diagnose <- function() {
            practice_state, practice_zip, npi,
            any_of(c("match_tier", "match_stage", "match_score",
                     "match_resolution", "match_status"))) %>%
+    # This frame supplies the ADDRESS witness in a three-way discordance test,
+    # so which duplicate survives can change the verdict. Prefer a row with an
+    # NPI and a usable address over one without, then break remaining ties on
+    # the NPI itself rather than on file order.
+    arrange(certification_number, is.na(npi), is.na(practice_state),
+            is.na(practice_zip), npi) %>%
     distinct(certification_number, .keep_all = TRUE)
 
   d <- disc %>%
     select(certification_number, GEOID_coord, GEOID_unique) %>%
+    # Both right-hand sides are one row per certificant: the geography file is
+    # the spine, and src was distinct()ed above. What these declarations buy is
+    # a loud failure if either ever gains a duplicate, because a fan-out here
+    # would inflate the discordance count -- the very number this script exists
+    # to report.
     left_join(select(geo, certification_number, latitude, longitude,
-                     geocode_match, quality_score), by = "certification_number") %>%
-    left_join(src, by = "certification_number")
+                     geocode_match, quality_score), by = "certification_number",
+              relationship = "many-to-one") %>%
+    left_join(src, by = "certification_number", relationship = "many-to-one")
 
   cli::cli_alert_info("Re-deriving county from coordinates (cached FIPS ignored)...")
   d$GEOID_fresh <- fresh_county(d)
@@ -108,7 +120,9 @@ diagnose <- function() {
   fips_lu <- tigris::fips_codes %>% distinct(state, state_code)
 
   d <- d %>%
-    left_join(fips_lu, by = c("practice_state" = "state")) %>%
+    # fips_lu is distinct(state, state_code): one row per state.
+    left_join(fips_lu, by = c("practice_state" = "state"),
+              relationship = "many-to-one") %>%
     mutate(
       st_address = state_code,
       st_zip     = st(GEOID_unique),

@@ -201,7 +201,9 @@ run_geocode <- function() {
   out <- bind_rows(
     hit %>% mutate(source = "cache"),
     if (!is.null(geocoded))
-      todo %>% inner_join(as.data.frame(geocoded), by = c("prvdr_num" = "id")) %>%
+      # one geocode result per submitted id
+      todo %>% inner_join(as.data.frame(geocoded), by = c("prvdr_num" = "id"),
+                          relationship = "many-to-one") %>%
         mutate(source = "geocoded")) %>%
     mutate(latitude  = coalesce(latitude, lat),
            longitude = coalesce(longitude, lon)) %>%

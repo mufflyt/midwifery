@@ -213,6 +213,9 @@ build_progression <- function() {
   if (file.exists(lf)) {
     link <- read_csv(lf, show_col_types = FALSE,
                      col_types = cols(.default = col_character())) %>%
+      # FROZEN linkage: prefer the row that carries an NPI, so a duplicated
+      # certification number cannot silently drop a linked person.
+      arrange(certification_number, is.na(npi), npi) %>%
       distinct(certification_number, .keep_all = TRUE)
   }
 
@@ -259,11 +262,15 @@ build_progression <- function() {
   asc <- list()
   if (file.exists(GEO12)) {
     a <- read_csv(GEO12, show_col_types = FALSE) %>%
+      # Ascertainment is counted on latitude below, so prefer the geocoded row.
+      arrange(certification_number, is.na(latitude)) %>%
       distinct(certification_number, .keep_all = TRUE)
     asc[["1-2_coordinates_only"]] <- a$certification_number[!is.na(a$latitude)]
   }
   if (file.exists(GEO3)) {
     a <- read_csv(GEO3, show_col_types = FALSE, col_types = cols(.default = col_character())) %>%
+      # Ascertainment is counted on county_best below, so prefer the resolved row.
+      arrange(certification_number, is.na(county_best)) %>%
       distinct(certification_number, .keep_all = TRUE)
     asc[["3_unambiguous_zip_fallback"]] <- a$certification_number[!is.na(a$county_best)]
   }

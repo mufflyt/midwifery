@@ -10,12 +10,22 @@
 # The eight license-resolution entries below were under active development when
 # the check landed and were left alone deliberately. The fix for each is the
 # same: move the definition into R/lib/ and have both callers source it.
-normalize_npi: R/15-build-birth-activity.R, R/resolve_amcb_by_state_license.R
-fmt_n: R/15-build-birth-activity.R, R/resolve_amcb_by_state_license.R
 log_message: R/build_amcb_state_licenses.R, scrape_healthgrades_midwives.R
-normalize_state: R/build_amcb_state_licenses.R, R/resolve_amcb_by_state_license.R, amcb_license_bridge.R
-find_column: R/build_amcb_state_licenses.R, R/resolve_amcb_by_state_license.R
+normalize_state: R/resolve_amcb_by_state_license.R, amcb_license_bridge.R
 read_amcb_roster: R/build_amcb_state_licenses.R, amcb_license_bridge.R
 save_license_artifacts: R/build_amcb_state_licenses.R, amcb_license_bridge.R
 normalize_license_number: R/resolve_amcb_by_state_license.R, amcb_license_bridge.R
 g: tests/test_birth_activity.R, tests/test_expand_former_name_candidates.R
+
+# 2026-08-15. Four entries retired. normalize_npi and fmt_n had byte-identical
+# bodies and now live once in R/lib/common_helpers.R. find_column and
+# normalize_state did NOT: their copies differ in case sensitivity and in which
+# state spellings they accept, so they were given distinct names instead of
+# being merged -- collapsing them would have loosened license-key construction,
+# which is a linkage change rather than a cleanup.
+#
+# normalize_state still has two genuinely different implementations:
+#   R/resolve_amcb_by_state_license.R  states + DC, exact match
+#   amcb_license_bridge.R              states + DC + PR/GU/VI/AS/MP, via normalize_text()
+# Retiring that last pair means deciding whether the bridge's territory support
+# belongs in the resolver, which is a scientific question, not a rename.

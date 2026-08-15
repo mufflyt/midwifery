@@ -60,6 +60,10 @@ build_ob_hospitals_artifact <- function(target_path = DEFAULT_HOSPITAL_PATH) {
         longitude = NA_character_
       ) %>%
       filter(!is.na(prvdr_num)) %>%
+      # One row per CCN. Prefer the record that actually names the facility and
+      # carries a county, so the survivor is the most complete row rather than
+      # whichever CMS happened to list first.
+      arrange(prvdr_num, is.na(fac_name), is.na(county_fips), fac_name) %>%
       distinct(prvdr_num, .keep_all = TRUE)
     
     readr::write_csv(mapped, target_path)
@@ -167,6 +171,9 @@ match_npi_to_hospitals <- function(npis,
       hospital_latitude,
       hospital_longitude
     ) %>%
+    # Prefer a geocoded hospital row over an un-geocoded one; a hospital with
+    # no coordinates cannot be placed on a map.
+    arrange(cms_ccn, is.na(hospital_latitude), hospital_name) %>%
     distinct(cms_ccn, .keep_all = TRUE)
 
   # 3. Read CMS Facility Affiliation dataset
@@ -198,7 +205,8 @@ match_npi_to_hospitals <- function(npis,
   # 4. Join affiliations to hospital master
   affils <- dac_filtered %>%
     filter(!is.na(cms_ccn)) %>%
-    left_join(hospitals, by = "cms_ccn") %>%
+    # hospital master is one row per CCN.
+    left_join(hospitals, by = "cms_ccn", relationship = "many-to-one") %>%
     select(
       npi,
       facility_type,
@@ -212,6 +220,9 @@ match_npi_to_hospitals <- function(npis,
       hospital_latitude,
       hospital_longitude
     ) %>%
+    # One affiliation per (provider, hospital). Same rule as above: the
+    # placeable row wins.
+    arrange(npi, cms_ccn, is.na(hospital_latitude), hospital_name) %>%
     distinct(npi, cms_ccn, .keep_all = TRUE)
 
   # 5. Calculate per-NPI privilege summary
@@ -225,14 +236,18 @@ match_npi_to_hospitals <- function(npis,
     mutate(
       is_enrolled_dac = npi %in% enrolled_npis
     ) %>%
-    left_join(npi_summary, by = "npi") %>%
+    # npi_summary is summarised per npi; base_df is unique_npis.
+    left_join(npi_summary, by = "npi", relationship = "many-to-one") %>%
     mutate(
       n_hospitals = dplyr::coalesce(n_hospitals, 0L),
       has_hospital_privilege = n_hospitals > 0L
     )
   
   out <- base_df %>%
-    left_join(affils, by = "npi")
+    # DELIBERATE fan-out: one NPI holds many hospital affiliations, so the
+    # output is affiliation-level, not provider-level. Declared so the row
+    # multiplication is visibly intended rather than an accident.
+    left_join(affils, by = "npi", relationship = "one-to-many")
   
   if (!include_unmatched) {
     out <- out %>% filter(has_hospital_privilege == TRUE)
