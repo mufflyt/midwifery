@@ -1,0 +1,10 @@
+{
+  "artifact": "amcb_npi_geography_by_state.csv",
+  "written_utc": "2026-08-15 03:35:00 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
+    }
+  ]
+}
