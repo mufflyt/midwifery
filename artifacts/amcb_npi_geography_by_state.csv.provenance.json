@@ -1,6 +1,6 @@
 {
   "artifact": "amcb_npi_geography_by_state.csv",
-  "written_utc": "2026-08-15 03:35:00 UTC",
+  "written_utc": "2026-08-15 03:52:33 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",

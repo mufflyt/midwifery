@@ -95,9 +95,28 @@ out <- out %>%
 
 write_csv(out, OUT)
 
+# SMALL CELLS ARE SUPPRESSED, NOT ROUNDED AND NOT DROPPED.
+#
+# 64 of 164 state x tier cells hold fewer than 11 people, the smallest being 1.
+# This repository already applies that threshold to CMS data and <10 to WONDER,
+# and the reason those rules exist applies here: a cell reading
+# "AL, sensitivity_fuzzy, 1" is a count of one identifiable person, in a file
+# that is tracked and therefore travels further than the person-level export
+# ever will.
+#
+# The row is KEPT with n = NA and suppressed = TRUE rather than deleted,
+# because a missing row and a suppressed row mean different things and this
+# project has published wrong numbers three times from exactly that confusion.
+# A reader can see the state had midwives in that tier without learning how
+# few. n_suppressed_cells records how much is withheld, so a total computed
+# from this file is visibly incomplete rather than quietly wrong.
+SUPPRESS_BELOW <- 11L
+
 agg <- out %>%
   filter(!is.na(nppes_state), nzchar(nppes_state)) %>%
   count(nppes_state, linkage_tier, name = "n") %>%
+  mutate(suppressed = n < SUPPRESS_BELOW,
+         n = if_else(suppressed, NA_integer_, as.integer(n))) %>%
   arrange(nppes_state, desc(n))
 
 # The aggregate is tracked, so it gets a sidecar in the same call that writes
@@ -125,4 +144,6 @@ print(out %>%
                   pct = round(100 * with_state / n, 1),
                   .groups = "drop") %>%
         arrange(desc(n)))
-cat(sprintf("\nperson-level -> %s (gitignored)\naggregate    -> %s\n", OUT, OUT_AGG))
+cat(sprintf("\naggregate cells: %d, suppressed (<%d): %d\n",
+            nrow(agg), SUPPRESS_BELOW, sum(agg$suppressed)))
+cat(sprintf("person-level -> %s (gitignored)\naggregate    -> %s\n", OUT, OUT_AGG))
