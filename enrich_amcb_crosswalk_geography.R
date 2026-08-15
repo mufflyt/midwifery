@@ -215,6 +215,24 @@ geo_out <- geo %>%
            practice_state != mailing_state)
 
 stopifnot(!any(duplicated(geo_out$npi)))
+# Deterministic row order before writing. Identical inputs -- the same
+# crosswalk sha and the same NPPES bulk vintage -- produced identical ROWS in a
+# different ORDER on every run, so the artifact_sha256 this script records a few
+# lines below could never match a rebuild. A hash that changes when nothing
+# changed records which run happened, not which data was produced, and every
+# provenance chain that cites this artifact inherits that.
+#
+# npi is the artifact's unique key -- verified, not assumed: 17,054 rows,
+# 17,054 distinct npi, no NA -- so it totally orders the rows and no tie-break
+# is needed.
+#
+# NOTE for anyone comparing against the pre-fix manifest: this deliberately
+# changes the serialization, so the new hash will NOT reproduce the historical
+# one. The content is the same set of rows; the bytes are not. The old hash
+# cannot be validated by any rebuild, which is the defect being fixed rather
+# than a discrepancy to explain away.
+geo_out <- geo_out[order(geo_out$npi), , drop = FALSE]
+
 write_csv(geo_out, GEO_OUT, na = "")
 
 manifest <- list(
