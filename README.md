@@ -124,7 +124,8 @@ must be reported separately.**
 
 **A.4. The linked subset is not a random sample, and the difference is
 structural.** Linkage varies sharply by certification status — **78.0%** of
-ACTIVE certificants link versus **18.6%** of DECEASED — so any unqualified
+ACTIVE certificants reach the PRIMARY tier (84.6% link on any accepted tier)
+versus **18.6%** of DECEASED at primary — so any unqualified
 statement about "midwives" is a statement about the actively certified,
 successfully linked subset. To address these gaps, **our objective is to
 construct a reproducible, evidence-tiered linkage from the AMCB roster to
@@ -234,8 +235,8 @@ current state, not a dated event.** We observe that 5,175 certificants are
 LAPSED and 1,278 RETIRED; we do not observe *when* either happened, so
 time-to-attrition cannot be estimated from this source and any survival
 framing would be false precision. Second, and more serious, **linkage is
-selected on the outcome**: 78.0% of ACTIVE certificants link versus 18.6% of
-DECEASED, so precisely the people who have left the workforce are the people we
+selected on the outcome**: 78.0% of ACTIVE certificants reach the primary tier
+against 18.6% of DECEASED, so precisely the people who have left the workforce are the people we
 most often cannot locate. Cessation measured on the linked cohort is therefore
 a lower bound of unknown tightness, and the aim reports movement of the
 *located* workforce — a phrase that should appear in every sentence describing
@@ -648,7 +649,24 @@ certification date in all 14 cases** — 28 distinct people sharing 14 names, no
 | + `county_exact` | 11,693 | 98.1 | 52.4 |
 
 **The workforce-map denominator is the ACTIVE roster, not all 22,309 records: 11,873 of 15,285
-ACTIVE certificants (77.6%) are mappable on primary evidence.** Once an ACTIVE person is
+ACTIVE certificants (77.6%) are mappable on PRIMARY evidence.**
+
+"Linked" and "primary-linked" are not the same population and this README has
+conflated them. Stated as three separate counts, for ACTIVE certificants:
+
+| | n | % of ACTIVE |
+|---|---:|---:|
+| AMCB ACTIVE (denominator) | 15,285 | 100.0 |
+| …with an accepted NPI, **any** tier | **12,934** | **84.6** |
+| …with NPPES practice geography | 12,934 | 84.6 |
+| …of which reach the **primary** tier | 11,920 | 78.0 |
+
+So 78.0% is the primary-tier rate, not the link rate; the accepted-match rate is
+84.6%, and the 1,014-person difference is the nursing-taxonomy and fuzzy-surname
+tiers. Every geography figure below is quoted on the PRIMARY tier, which is the
+conservative choice and the reason the two numbers differ.
+
+Once an ACTIVE person is
 primary-linked, geography is essentially complete — 99.6% have `county_best`, 98.1% `county_exact`.
 **The limiting step is identity linkage, not geocoding.** (The 53.2% column is the same rows against
 the full historical roster, which mixes in lapsed, retired and deceased records; it is not the
@@ -1564,9 +1582,14 @@ easy to conflate and should travel with any figure taken from it:
   inferential ceiling.
 - Geography is essentially complete — **~99%** — for anything that links. That
   is not the same claim.
-- Linkage varies sharply by certification status (**78.0%** ACTIVE vs **18.6%**
-  DECEASED), so **the linked subset is not a random sample of the roster** and
-  should not be described as one.
+- Linkage varies sharply by certification status (**78.0%** of ACTIVE reach the
+  primary tier, against **18.6%** of DECEASED), so **the linked subset is not a
+  random sample of the roster** and should not be described as one.
+- **"Linked" and "primary-linked" are different populations.** Of 15,285 ACTIVE
+  certificants, **12,934 (84.6%)** have an accepted NPI on some tier and all
+  12,934 carry NPPES geography; **11,920 (78.0%)** reach the primary tier. Every
+  geography figure here is quoted on the primary tier, which is the conservative
+  choice. Quote whichever you mean, and say which.
 
 ## License
 
