@@ -170,11 +170,19 @@ ci_section("A3 provenance coverage does not regress")
 # Pinned to what is true today, not to what we wish were true. The number may
 # only go down: adding an artifact without a sidecar fails, adding one WITH a
 # sidecar passes and lowers the pin for the next person.
-MAX_UNCOVERED <- 90L   # was 145; untracking the person-level artifacts on
-                       # 2026-08-14 removed 55 uncovered files along with them.
-                       # The ratio improved because the numerator left, not
-                       # because provenance wiring improved -- 90 of 107 tracked
-                       # artifacts still have no sidecar.
+# A NAMED LIST, not a number. The count said how much debt existed; it could not
+# say which files, so a new uncovered artifact was invisible whenever an old one
+# left, and recording a genuine reduction meant editing the number -- an edit
+# indistinguishable from raising it to make CI pass.
+#
+# tests/ci_artifact_provenance_baseline.txt names every artifact that lacks a
+# sidecar today. Adding one that is not on that list fails. Removing a line
+# requires the artifact to gain a REAL sidecar: inputs and their SHA-256 as
+# recorded when it was written, not reconstructed afterwards.
+#
+# The list may shrink and must never grow, which is the same rule the leak
+# baseline runs on and, unlike a threshold, it cannot be quietly relaxed.
+BASELINE <- file.path(root, "tests", "ci_artifact_provenance_baseline.txt")
 
 arts <- suppressWarnings(system2("git", c("ls-files", shQuote("artifacts/*.csv")), stdout = TRUE, stderr = FALSE))
 if (length(arts) == 0) {
@@ -183,16 +191,25 @@ if (length(arts) == 0) {
   sidecars <- suppressWarnings(system2("git", c("ls-files", shQuote("artifacts/*.provenance.json")), stdout = TRUE, stderr = FALSE))
   have <- sub("\\.provenance\\.json$", "", sidecars)
   uncovered <- setdiff(arts, have)
-  n <- length(uncovered)
 
-  if (n > MAX_UNCOVERED) {
-    ci_fail("A3: %d tracked artifacts have no .provenance.json sidecar, up from %d. New artifacts must be written through write_with_provenance().\n       newest offenders: %s",
-         n, MAX_UNCOVERED, paste(utils::head(setdiff(uncovered, character(0)), 5), collapse = ", "))
-  } else if (n < MAX_UNCOVERED) {
-    ci_ok("%d of %d artifacts lack a sidecar, DOWN from %d -- lower MAX_UNCOVERED to %d to hold the gain",
-       n, length(arts), MAX_UNCOVERED, n)
+  grandfathered <- if (file.exists(BASELINE)) {
+    x <- trimws(readLines(BASELINE, warn = FALSE))
+    x[nzchar(x) & !startsWith(x, "#")]
+  } else character(0)
+
+  new_offenders <- setdiff(uncovered, grandfathered)
+  fixed <- setdiff(grandfathered, uncovered)
+
+  if (length(new_offenders)) {
+    ci_fail("A3: %d tracked artifact(s) have no .provenance.json sidecar and are not on the baseline. Write them through write_with_provenance() (R) so the sidecar records the inputs and their SHA-256:\n       %s",
+            length(new_offenders), paste(utils::head(new_offenders, 8), collapse = "\n       "))
+  } else if (length(fixed)) {
+    ci_ok("%d of %d artifacts lack a sidecar; %d gained one -- delete these line(s) from the baseline to hold the gain: %s",
+          length(uncovered), length(arts), length(fixed),
+          paste(utils::head(fixed, 5), collapse = ", "))
   } else {
-    ci_ok("%d of %d artifacts lack a sidecar; no regression", n, length(arts))
+    ci_ok("%d of %d tracked artifacts lack a sidecar; all are on the baseline, none new",
+          length(uncovered), length(arts))
   }
 }
 
