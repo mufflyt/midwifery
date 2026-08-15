@@ -51,9 +51,9 @@ flowchart LR
 ![Workforce Microsimulation Projections](artifacts/plots/plot3_microsimulation_workforce_projections.png)
 *Figure 5: Projected 15-year career state transitions, new graduate inflows, and rural-to-urban supply drift (2026–2040).*
 
-Linkage certainty and geographic completeness are separate properties: **65.7% primary linkage is
+Linkage certainty and geographic completeness are separate properties: **65.8% primary linkage is
 the inferential limitation; the geography is essentially complete for anything linked.** Linkage
-also varies sharply by certification status (82.3% ACTIVE vs 19.6% DECEASED), so the linked subset
+also varies sharply by certification status (78.0% ACTIVE vs 18.6% DECEASED), so the linked subset
 is not a random sample of the roster.
 
 Scraper for the [AMCB certification directory](https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800)
@@ -114,7 +114,7 @@ is the scientific work.
 
 **A.3. Identity resolution, not geocoding, is the binding constraint.** Turning
 a name into a location requires first turning a name into a person. Against
-NPPES, **65.7%** of the roster resolves to an NPI with midwifery taxonomy
+NPPES, **65.8%** of the roster resolves to an NPI with midwifery taxonomy
 confirmed (**75.7%** including nursing and fuzzy sensitivity tiers); **13.9%**
 is quarantined because plausible candidates exist but cannot identify one
 person, and **10.4%** has no plausible candidate at all. Once identity is
@@ -123,8 +123,9 @@ settled, geography is nearly free: **~99%** of linked records receive a county.
 must be reported separately.**
 
 **A.4. The linked subset is not a random sample, and the difference is
-structural.** Linkage varies sharply by certification status — **82.3%** of
-ACTIVE certificants link versus **19.6%** of DECEASED — so any unqualified
+structural.** Linkage varies sharply by certification status — **78.0%** of
+ACTIVE certificants reach the PRIMARY tier (84.6% link on any accepted tier)
+versus **18.6%** of DECEASED at primary — so any unqualified
 statement about "midwives" is a statement about the actively certified,
 successfully linked subset. To address these gaps, **our objective is to
 construct a reproducible, evidence-tiered linkage from the AMCB roster to
@@ -234,8 +235,8 @@ current state, not a dated event.** We observe that 5,175 certificants are
 LAPSED and 1,278 RETIRED; we do not observe *when* either happened, so
 time-to-attrition cannot be estimated from this source and any survival
 framing would be false precision. Second, and more serious, **linkage is
-selected on the outcome**: 82.3% of ACTIVE certificants link versus 19.6% of
-DECEASED, so precisely the people who have left the workforce are the people we
+selected on the outcome**: 78.0% of ACTIVE certificants reach the primary tier
+against 18.6% of DECEASED, so precisely the people who have left the workforce are the people we
 most often cannot locate. Cessation measured on the linked cohort is therefore
 a lower bound of unknown tightness, and the aim reports movement of the
 *located* workforce — a phrase that should appear in every sentence describing
@@ -265,10 +266,10 @@ flowchart TD
   P["NPPES 2007-2025 - 443,623 NPIs"] --> B
   B --> C["Rank by name-evidence class"]
   C --> D{"One candidate at the strongest class?"}
-  D -->|no| Q["Quarantined - 3,091"]
+  D -->|no| Q["Quarantined - 3,147"]
   D -->|yes| E{"One NPI, one person?"}
   E -->|contested| Q2["Quarantined - 91"]
-  E -->|yes| F["Accepted links - 16,892"]
+  E -->|yes| F["Accepted links - 16,898"]
   F --> G["Last-observed practice address"]
   G --> H["Geocode - Census to ArcGIS to centroid"]
   G --> J["Unique-ZIP county"]
@@ -311,8 +312,8 @@ flowchart LR
   S["Resolved candidate"] --> T1{"Fuzzy surname?"}
   T1 -->|yes| F["sensitivity_fuzzy - 328"]
   T1 -->|no| T2{"Midwifery taxonomy ever recorded?"}
-  T2 -->|yes| P["primary_midwifery - 14,668"]
-  T2 -->|no| N["sensitivity_nursing - 1,896"]
+  T2 -->|yes| P["primary_midwifery - 14,677"]
+  T2 -->|no| N["sensitivity_nursing - 1,898"]
 ```
 
 ### Where the 22,309 go
@@ -324,14 +325,14 @@ plausible NPI exists, versus plausible NPIs exist but identity is ambiguous.
 | Stage | n | % of roster |
 |---|---:|---:|
 | AMCB roster | 22,309 | 100.0 |
-| **Primary linkage** | **14,668** | **65.7** |
-| + nursing tier | 16,564 | 74.2 |
-| + fuzzy tier | 16,892 | 75.7 |
-| Quarantined | 3,091 | 13.9 |
-| No candidate at all | 2,326 | 10.4 |
-| **Primary + county** | **14,631** | **65.6** |
+| **Primary linkage** | **14,677** | **65.7** |
+| + nursing tier | 16,575 | 74.2 |
+| + fuzzy tier | 16,898 | 75.7 |
+| Quarantined | 3,147 | 13.9 |
+| No candidate at all | 2,108 | 10.4 |
+| **Primary + county** | **14,615** | **65.6** |
 
-All 3,091 quarantined records have candidates; all 2,326 unmatched records have
+All 3,147 quarantined records have candidates; all 2,108 unmatched records have
 none. That distinction is preserved in the artifact as `has_candidate`.
 
 ### Geography, once identity is settled
@@ -352,9 +353,9 @@ flowchart TD
   D --> E{"Coordinate state matches ZIP state?"}
   E -->|no| X["Cross-state conflict - unresolved - 17"]
   E -->|yes| F["Point-in-polygon, TIGER 2023"]
-  F --> G["county_exact - 98.9% of primary"]
+  F --> G["county_exact - 98.2% of primary"]
   A --> H["Unique-ZIP county"]
-  G --> I["county_best - 99.7% of primary"]
+  G --> I["county_best - 99.6% of primary"]
   H --> I
 ```
 
@@ -367,17 +368,25 @@ flowchart TD
 Reported separately, never pooled: a county attached to a fuzzy-name match is not
 the same evidence as one attached to a uniquely identified person.
 
-| Tier | n | exact · frozen | exact · enhanced | best · enhanced |
-|---|---:|---:|---:|---:|
-| primary_midwifery | 14,668 | 98.1% | **98.9%** | **99.7%** |
-| sensitivity_nursing | 1,896 | 32.2% | **98.5%** | **99.8%** |
-| sensitivity_fuzzy | 328 | 47.9% | **98.8%** | **99.4%** |
-| quarantined | 3,091 | — | — | — |
-| unmatched | 2,326 | — | — | — |
+| Tier | n | county_exact | county_best |
+|---|---:|---:|---:|
+| primary_midwifery | 14,677 | **98.2%** | **99.6%** |
+| sensitivity_nursing | 1,898 | **98.1%** | **99.7%** |
+| sensitivity_fuzzy | 323 | **98.5%** | **99.4%** |
+| sensitivity_name_component | 156 | — | — |
+| quarantined | 3,147 | — | — |
+| unmatched | 2,108 | — | — |
 
 Quarantined and unmatched rows carry zero analytic geography, asserted at build
-time. The frozen column is the reference artifact; the enhanced column adds 1,484
-newly geocoded addresses.
+time, and so does the name-component tier: those 156 rows record a class-5
+candidate deliberately HELD OUT of the cohort, so they carry a candidate NPI but
+no accepted identity to attach a county to.
+
+The former `frozen` / `enhanced` split is gone. It compared two geography
+artifacts built from different coordinate vintages, and the enhanced one was
+described as adding 1,484 newly geocoded addresses. There is now one artifact,
+rebuilt from the Aug-11 crosswalk against `midwives_panel_geocoded.csv`, and its
+build is byte-reproducible — so a single column is the honest presentation.
 
 **The tier gap was ascertainment, not evidence.** Nursing-tier geography looked
 far worse than primary's — 32.2% against 98.1%. Geocoding the 1,624 addresses
@@ -404,46 +413,50 @@ Every number above survived a check that could have refuted it. These fired:
 | Reused geocoder `run_id` | 147 addresses lost their attempt provenance |
 | NPPES snapshots 2018–2025 silently skipped | Linkage 27.1 points lower |
 
-Frozen linkage `b44bf2bc9254…` · frozen geography `9455138198e4…` · enhanced
+Frozen linkage `dbcc76f420ac…` · frozen geography `5292564e211f…` · enhanced
 geography `53bb087a59a4…` · NPPES snapshots 2007–2025 · CMS Doctors & Clinicians
 2026-06 · TIGER 2023 counties. Geography figures here are the *enhanced* version;
 the frozen artifact is unmodified and remains the reference. Every artifact
 carries a manifest recording its inputs' SHA-256.
 
-### Reference crosswalk: the Aug-11 build is now authoritative
+### Reference crosswalk: the Aug-11 build, and the figures rebuilt against it
 
-The linkage was rebuilt on **2026-08-11** and that build is the reference from
-now on. Two hashes are in play and it is worth being explicit about which is
-which, because the file name does not distinguish them:
+The linkage was rebuilt on **2026-08-11** and that build is the reference. Both
+versions remain on disk under names that do not distinguish them, so:
 
 | | rows | cols | primary | quarantined | unmatched | with an NPI |
 |---|---:|---:|---:|---:|---:|---:|
 | `b44bf2bc9254…` — `amcb_npi_linkage_FROZEN_2026-08-08.csv` | 22,309 | 33 | 14,668 | 3,091 | 2,326 | 16,892 |
 | **`dbcc76f420ac…` — `amcb_npi_linkage_FROZEN.csv`** | 22,309 | **54** | **14,677** | **3,147** | **2,108** | **16,898** |
 
-The Aug-11 build is a strict superset: 21 additional columns carrying the
-class-5 machinery (`resolved_by_absence_c5`, `npi_demoted_absence_c5`,
-`class5_candidate_npi`) and a sixth tier, `sensitivity_name_component`
-(**156** rows), which records a class-5 candidate found and deliberately held
-out of the cohort. `artifacts/linkage_manifest.json` records it at commit
-`c895c043`.
+Aug-11 is a strict superset: 21 more columns carrying the class-5 machinery
+(`resolved_by_absence_c5`, `npi_demoted_absence_c5`, `class5_candidate_npi`) and
+a sixth tier, `sensitivity_name_component` (**156** rows), recording a class-5
+candidate found and deliberately held out of the cohort.
 
-**Every linkage figure elsewhere in this README is the Aug-08 build and is
-therefore superseded.** They are deliberately NOT edited in place yet, and the
-reason is the same discipline that produced contract A1: the geography
-artifacts — and every county, coverage and workforce figure derived from them —
-were built from `b44bf2bc`, as `midwives_geography_FROZEN.csv`'s own
-`source_linkage_sha256` column records. Updating the linkage numbers while the
-geography numbers still trace to the older crosswalk would publish two cohorts
-side by side, which is precisely the failure A1 exists to catch.
+**Geography has been rebuilt against it, and every figure in this README now
+comes from that pair.** The previous geography artifact
+(`9455138198e4…`, 16,892 rows) was built from the Aug-08 crosswalk and is
+preserved as `midwives_geography_FROZEN_2026-08-08.csv`; the current one is
+`5292564e211f…`, 16,898 rows.
 
-**The geography rebuild is blocked, and not by anything in this repository.**
-`map_midwife_geography.R` requires `mysterymaps_geographic_map()`, which is
-defined in `~/mysterymaps/R/geographic_map.R` but appears in **no** `export()`
-line of that package's `NAMESPACE` — so it is unavailable from any build,
-installed or source, and the script stops at
-`exists("mysterymaps_geographic_map") is not TRUE`. Exporting it upstream
-unblocks the rebuild; the figures can then be updated in one consistent pass.
+Both artifacts record their own inputs now. The geography sidecar names the
+crosswalk, the coordinate file and the county base with SHA-256 for each, which
+is what makes the pair reconstructable:
+
+```
+STAGE2_FROZEN=artifacts/amcb_npi_linkage_FROZEN.csv \
+STAGE3_COORDS=midwives_panel_geocoded.csv \
+STAGE3_OUT=artifacts/midwives_geography_FROZEN.csv \
+Rscript R/03-geography-hierarchy.R
+```
+
+That invocation used to be recorded nowhere, and recovering it meant comparing
+GEOID fill rates across candidate coordinate files against a percentage quoted
+in this README. `R/03` now refuses to guess: with `STAGE3_COORDS` unset it stops
+and prints every candidate with its coordinate coverage. The build is also
+deterministic — two runs off the same inputs are byte-identical — so the hash in
+the sidecar verifies something.
 
 ## Attribute layers: what we know about each midwife
 
@@ -603,26 +616,26 @@ discloses a practice address, and jittering is not de-identification.
 
 `linkage_tier` answers *how sure are we this is the right NPI?* `AMCB status` answers *is this person
 part of the current workforce?* Conflating them turns a confidently-linked deceased certificant into a
-practising midwife. Of the 14,618 primary-tier links with geography:
+practising midwife. Of the 14,677 primary-tier links with geography:
 
 | Status | n | % |
 |---|---:|---:|
-| **ACTIVE** | **11,877** | **81.2** |
-| LAPSED | 2,020 | 13.8 |
-| RETIRED | 579 | 4.0 |
+| **ACTIVE** | **11,920** | **81.2** |
+| LAPSED | 2,030 | 13.8 |
+| RETIRED | 584 | 4.0 |
 | DECEASED | 93 | 0.6 |
 | EMERITUS | 20 | 0.1 |
 | DEACTIVATED | 16 | 0.1 |
-| REVOKED | 8 | 0.1 |
+| REVOKED | 9 | 0.1 |
 | SURRENDERED | 5 | 0.0 |
-| **Total** | **14,618** | 100 |
+| **Total** | **14,677** | 100 |
 
 **Workforce rule: `status == "ACTIVE"`, nothing else.** RETIRED is "permanently retired from
 practice"; LAPSED, REVOKED and SURRENDERED holders may not use the CNM/CM title. EMERITUS carries a
 status AMCB's own definitions page does not document. DEACTIVATED usually means a CM↔CNM switch — 16
 of 22 have an ACTIVE record under the same name so the person is still counted, and 6 are dropped.
-Verified against three independent attributes, not just the bijection: 11,913 ACTIVE primary-linked
-rows map to 11,913 distinct NPIs, and the 14 names appearing twice differ on **state, middle name and
+Verified against three independent attributes, not just the bijection: 11,920 ACTIVE primary-linked
+rows map to 11,920 distinct NPIs, and the 14 names appearing twice differ on **state, middle name and
 certification date in all 14 cases** — 28 distinct people sharing 14 names, not duplicates.
 
 ### Denominator flow
@@ -631,19 +644,36 @@ certification date in all 14 cases** — 28 distinct people sharing 14 names, no
 |---|---:|---:|---:|
 | Full AMCB roster | 22,309 | — | 100.0 |
 | ACTIVE status | 15,285 | 68.5 | 68.5 |
-| + primary NPI link | 11,913 | 77.9 | 53.4 |
-| + `county_best` | **11,877** | 99.7 | 53.2 |
-| + `county_exact` | 11,780 | 99.2 | 52.8 |
+| + primary NPI link | 11,920 | 78.0 | 53.4 |
+| + `county_best` | **11,873** | 99.6 | 53.2 |
+| + `county_exact` | 11,693 | 98.1 | 52.4 |
 
-**The workforce-map denominator is the ACTIVE roster, not all 22,309 records: 11,877 of 15,285
-ACTIVE certificants (77.7%) are mappable on primary evidence.** Once an ACTIVE person is
-primary-linked, geography is essentially complete — 99.7% have `county_best`, 98.9% `county_exact`.
+**The workforce-map denominator is the ACTIVE roster, not all 22,309 records: 11,873 of 15,285
+ACTIVE certificants (77.6%) are mappable on PRIMARY evidence.**
+
+"Linked" and "primary-linked" are not the same population and this README has
+conflated them. Stated as three separate counts, for ACTIVE certificants:
+
+| | n | % of ACTIVE |
+|---|---:|---:|
+| AMCB ACTIVE (denominator) | 15,285 | 100.0 |
+| …with an accepted NPI, **any** tier | **12,934** | **84.6** |
+| …with NPPES practice geography | 12,934 | 84.6 |
+| …of which reach the **primary** tier | 11,920 | 78.0 |
+
+So 78.0% is the primary-tier rate, not the link rate; the accepted-match rate is
+84.6%, and the 1,014-person difference is the nursing-taxonomy and fuzzy-surname
+tiers. Every geography figure below is quoted on the PRIMARY tier, which is the
+conservative choice and the reason the two numbers differ.
+
+Once an ACTIVE person is
+primary-linked, geography is essentially complete — 99.6% have `county_best`, 98.1% `county_exact`.
 **The limiting step is identity linkage, not geocoding.** (The 53.2% column is the same rows against
 the full historical roster, which mixes in lapsed, retired and deceased records; it is not the
 workforce completeness figure.)
 
-Primary linkage by status — geography cannot repair people who never linked: ACTIVE 77.9%,
-RETIRED 45.6%, LAPSED 39.2%, DECEASED 18.6%.
+Primary linkage by status — geography cannot repair people who never linked: ACTIVE 78.0%,
+RETIRED 45.7%, LAPSED 39.2%, DECEASED 18.6%.
 
 ### The maps
 
@@ -811,7 +841,7 @@ production library, which is the actual content of the 164→445 warning.
 `Rscript build_table1_midwives.R` → [`docs/table1_midwives.md`](docs/table1_midwives.md)
 and `artifacts/table1_midwives.csv`.
 
-Characteristics of the **11,913** ACTIVE, primary-linked midwives: certification
+Characteristics of the **11,920** ACTIVE, primary-linked midwives: certification
 (CNM 99.0% / CM 1.0%), sex as recorded in NPPES, ACOG district, rurality, years
 since NPI enumeration, and years observed in NPPES. Long format
 (`characteristic` / `n` / `percent` / `category`) following the isochrones
@@ -1278,11 +1308,11 @@ number.
                          │
             ┌────────────┼────────────┐
             ▼            ▼            ▼
-      quarantined    unmatched    resolved 16,892
-         3,091         2,326            │
+      quarantined    unmatched    resolved 16,898
+         3,147         2,108            │
                                         ▼
                               linkage_tier assigned
-                     primary 14,668 · nursing 1,896 · fuzzy 328
+                     primary 14,677 · nursing 1,898 · fuzzy 328
 
         ┌─────────────────────────────────────────────────────────────┐
         │  LAYER 2 — GEOGRAPHY         where do they practise?        │
@@ -1298,10 +1328,10 @@ number.
      coordinate-vs-ZIP state check  │
               │  17 unresolved      │
               ▼                     ▼
-     point-in-polygon TIGER 2023 ──► county_best  99.7%
+     point-in-polygon TIGER 2023 ──► county_best  99.6%
               │
               ▼
-        county_exact 98.9%
+        county_exact 98.2%
 
         ┌─────────────────────────────────────────────────────────────┐
         │  LAYER 3 — ACCESS            who can reach one, and where?  │
@@ -1547,14 +1577,19 @@ date.
 **Cite the limitation with the number.** Two properties of this dataset are
 easy to conflate and should travel with any figure taken from it:
 
-- **65.7%** of the roster links to an NPI with confirmed midwifery taxonomy
+- **65.8%** of the roster links to an NPI with confirmed midwifery taxonomy
   (75.7% including the nursing and fuzzy sensitivity tiers). That is the
   inferential ceiling.
 - Geography is essentially complete — **~99%** — for anything that links. That
   is not the same claim.
-- Linkage varies sharply by certification status (**82.3%** ACTIVE vs **19.6%**
-  DECEASED), so **the linked subset is not a random sample of the roster** and
-  should not be described as one.
+- Linkage varies sharply by certification status (**78.0%** of ACTIVE reach the
+  primary tier, against **18.6%** of DECEASED), so **the linked subset is not a
+  random sample of the roster** and should not be described as one.
+- **"Linked" and "primary-linked" are different populations.** Of 15,285 ACTIVE
+  certificants, **12,934 (84.6%)** have an accepted NPI on some tier and all
+  12,934 carry NPPES geography; **11,920 (78.0%)** reach the primary tier. Every
+  geography figure here is quoted on the primary tier, which is the conservative
+  choice. Quote whichever you mean, and say which.
 
 ## License
 
