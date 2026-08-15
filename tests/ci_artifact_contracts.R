@@ -14,6 +14,9 @@
 #   A2  Cycles 3, 4 and 15 were all one bug -- a suppressed cell rendered as 0 --
 #       and it published wrong numbers three times before anyone noticed. A
 #       suppressed cell means "not published", and 0 means "none happened".
+#   A4  A row carried an NPPES city and state while carrying no NPI at all --
+#       geography with no identity behind it, in a pipeline whose whole claim is
+#       that location is downstream of identity resolution.
 #   A3  write_with_provenance is described as wired across every pipeline write.
 #       21 of 166 tracked artifacts have a sidecar. The ratchet holds that ratio
 #       and lets it improve.
@@ -210,6 +213,73 @@ if (length(arts) == 0) {
   } else {
     ci_ok("%d of %d tracked artifacts lack a sidecar; all are on the baseline, none new",
           length(uncovered), length(arts))
+  }
+}
+
+# -----------------------------------------------------------------------------
+ci_section("A4 geography never appears without an identity behind it")
+
+# The claim this project rests on is
+#
+#     AMCB person -> resolved NPI -> NPPES practice address
+#
+# never AMCB name -> city. A row may legitimately carry NPPES geography in two
+# states, and only two:
+#
+#   npi is set                    the identity was accepted; the address is that
+#                                 NPI's.
+#   class5_candidate_npi is set   a class-5 candidate was found and deliberately
+#                                 HELD OUT of the cohort. The address describes
+#                                 that candidate, and the candidate's NPI is
+#                                 recorded in its own column precisely so it can
+#                                 never be mistaken for an accepted one. 156 rows
+#                                 are in this state by design.
+#
+# Anything else is a city with nothing behind it. Eight rows are in that state
+# today: quarantined, "1 candidate(s), 1 tied at best evidence class 5; not
+# resolvable on name alone", where the candidate's geography was kept and its
+# NPI dropped. The same situation as the 156, recorded incoherently.
+#
+# WHY A COUNT AND NOT A NAMED LIST, when A3 argues the opposite. Naming these
+# rows means writing certification numbers into a tracked file, which the leak
+# guard exists to prevent. A count is the strongest check that does not itself
+# leak. It may only go down.
+#
+# The crosswalk is person-level and gitignored, so this SKIPS on a runner and
+# asserts locally, where the file exists.
+KNOWN_ORPHANS <- 8L
+
+FROZEN_XWALK <- file.path(root, "artifacts", "amcb_npi_linkage_FROZEN.csv")
+
+if (!file.exists(FROZEN_XWALK)) {
+  ci_skip("amcb_npi_linkage_FROZEN.csv absent (person-level, gitignored); A4 asserts locally only")
+} else {
+  x <- utils::read.csv(FROZEN_XWALK, colClasses = "character",
+                       check.names = FALSE, nrows = -1L)
+
+  need <- c("npi", "class5_candidate_npi", "nppes_state", "nppes_city")
+  missing_cols <- setdiff(need, names(x))
+
+  if (length(missing_cols)) {
+    ci_fail("A4: crosswalk lacks column(s): %s", paste(missing_cols, collapse = ", "))
+  } else {
+    filled <- function(v) !is.na(v) & nzchar(trimws(v))
+
+    has_geo      <- filled(x$nppes_state) | filled(x$nppes_city)
+    has_identity <- filled(x$npi) | filled(x$class5_candidate_npi)
+
+    orphans <- sum(has_geo & !has_identity)
+
+    if (orphans > KNOWN_ORPHANS) {
+      ci_fail("A4: %d row(s) carry NPPES geography with neither an accepted npi nor a recorded class5_candidate_npi, UP from %d. A city with no identity behind it inverts the pipeline: location must follow identity resolution, never precede it.",
+              orphans, KNOWN_ORPHANS)
+    } else if (orphans < KNOWN_ORPHANS) {
+      ci_ok("%d orphaned-geography row(s), DOWN from %d -- lower KNOWN_ORPHANS to %d to hold the gain",
+            orphans, KNOWN_ORPHANS, orphans)
+    } else {
+      ci_ok("%d orphaned-geography row(s); no regression (156 held-out class-5 candidates are NOT counted -- they record their candidate NPI)",
+            orphans)
+    }
   }
 }
 
