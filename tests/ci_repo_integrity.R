@@ -100,11 +100,19 @@ read_baseline <- function(path) {
 # Two ratchets, both the same rule as tests/ci_leak_baseline.txt: the list may
 # shrink and must never grow.
 #
-# The 534 artifacts predate the accessed_utc requirement and cannot have one
-# invented for them -- the HPSA shapefile is the cautionary case, its vintage is
-# simply gone. New payloads must carry one.
-grandfathered_artifacts <- read_baseline(
-  file.path(root, "tests", "ci_integrity_access_baseline.txt")
+# The access-date gate covers DOWNLOADED SOURCE DATA, not derived output. The
+# distinction is origin, not directory: data/county_base.csv lives under data/
+# but is built by R/01-build-county-base.R, and its inputs+sha256 sidecar is the
+# right provenance for it -- a download date would be meaningless. Derived
+# artifacts stay with ci_artifact_contracts A3, which already ratchets sidecar
+# coverage; policing them here as well meant two gates measuring the same debt
+# with incompatible field names.
+#
+# The 17 files below predate the requirement. Their dates cannot be invented,
+# and several publishers revise in place, so re-downloading would not recover
+# when the committed copy was fetched.
+grandfathered_sources <- read_baseline(
+  file.path(root, "tests", "ci_integrity_source_access_baseline.txt")
 )
 abs_path_baseline <- read_baseline(
   file.path(root, "tests", "ci_integrity_abs_path_baseline.txt")
@@ -122,7 +130,8 @@ run_repo_integrity_gates(
   absolute_path_exclude = c(self_referential, abs_path_baseline),
   assertion_patterns = assertion_patterns,
   missing_input_ignore = missing_input_ignore,
-  access_date_grandfathered = grandfathered_artifacts,
+  access_date_grandfathered = grandfathered_sources,
+  access_date_scope = "data",
   missing_input_baseline = missing_input_baseline,
   safe_percent_allow = c("R/safe_divide\\.R", self_referential)
 )

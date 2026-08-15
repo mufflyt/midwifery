@@ -1066,31 +1066,74 @@ repo_gate_check_missing_inputs <- function(
 }
 
 
-repo_gate_find_artifact_files <- function(root) {
-  artifact_dir <- fs::path(
-    root,
-    "artifacts"
-  )
+# Downloaded source data, not derived output. The distinction is ORIGIN, not
+# directory: data/county_base.csv lives here but is BUILT by
+# R/01-build-county-base.R, and its provenance is the inputs+sha256 its sidecar
+# already records. A file we fetched from a publisher has no inputs -- its
+# provenance is a URL and a date, and the date is the part that becomes
+# unrecoverable, because publishers revise in place.
+repo_gate_find_source_files <- function(root, scope_dirs = "data") {
+  dirs <- fs::path(root, scope_dirs)
+  dirs <- dirs[fs::dir_exists(dirs)]
 
-  if (!fs::dir_exists(artifact_dir)) {
+  if (base::length(dirs) == 0L) {
     return(base::character())
   }
 
   fs::dir_ls(
-    artifact_dir,
+    dirs,
     recurse = TRUE,
     type = "file"
   )
 }
 
 
+# A sidecar carrying a non-empty `inputs` array means WE built the file, so the
+# inputs+sha256 contract governs it and a download date would be meaningless.
+repo_gate_is_derived <- function(path) {
+  candidates <- repo_gate_sidecar_candidates(path)
+  candidates <- candidates[fs::file_exists(candidates)]
+
+  if (base::length(candidates) == 0L) {
+    return(FALSE)
+  }
+
+  for (candidate in candidates) {
+    metadata <- tryCatch(
+      jsonlite::fromJSON(candidate, simplifyVector = FALSE),
+      error = function(err) NULL
+    )
+
+    if (base::is.null(metadata)) {
+      next
+    }
+
+    if (!base::is.list(metadata) || base::is.null(base::names(metadata))) {
+      next
+    }
+
+    if (
+      !base::is.null(metadata[["inputs"]]) &&
+        base::length(metadata[["inputs"]]) > 0L
+    ) {
+      return(TRUE)
+    }
+  }
+
+  FALSE
+}
+
+
 repo_gate_sidecar_candidates <- function(path) {
-  base::c(
+  # Never treat a file as its own sidecar: path_ext_set() on a .json payload
+  # returns the payload itself, and reading a bare JSON array as metadata
+  # errors out.
+  base::setdiff(base::c(
     base::paste0(path, ".json"),
     fs::path_ext_set(path, "json"),
     base::paste0(path, ".provenance.json"),
     base::paste0(path, ".metadata.json")
-  ) |>
+  ), path) |>
     base::unique()
 }
 
@@ -1108,7 +1151,8 @@ repo_gate_read_accessed_utc <- function(path) {
     return(
       tibble::tibble(
         sidecar = NA_character_,
-        accessed_utc = NA_character_
+        accessed_utc = NA_character_,
+        source_url = NA_character_
       )
     )
   }
@@ -1126,7 +1170,12 @@ repo_gate_read_accessed_utc <- function(path) {
       next
     }
 
+    if (!base::is.list(metadata) || base::is.null(base::names(metadata))) {
+      next
+    }
+
     accessed <- metadata[["accessed_utc"]]
+    src <- metadata[["source_url"]]
 
     if (
       !base::is.null(accessed) &&
@@ -1136,7 +1185,12 @@ repo_gate_read_accessed_utc <- function(path) {
       return(
         tibble::tibble(
           sidecar = base::as.character(candidate),
-          accessed_utc = base::as.character(accessed)
+          accessed_utc = base::as.character(accessed),
+          source_url = if (base::is.null(src) || !base::length(src)) {
+            NA_character_
+          } else {
+            base::as.character(src)[[1L]]
+          }
         )
       )
     }
@@ -1144,7 +1198,8 @@ repo_gate_read_accessed_utc <- function(path) {
 
   tibble::tibble(
     sidecar = base::as.character(candidates[[1L]]),
-    accessed_utc = NA_character_
+    accessed_utc = NA_character_,
+    source_url = NA_character_
   )
 }
 
@@ -1171,73 +1226,93 @@ repo_gate_valid_utc <- function(value) {
 # `since` is a ratchet, not an amnesty. Artifacts already committed without a
 # recorded access date cannot have one invented for them -- see the HPSA
 # shapefile, whose vintage is gone. New payloads must carry one.
-repo_gate_check_access_dates <- function(root, since = NULL) {
+repo_gate_check_access_dates <- function(
+  root,
+  since = NULL,
+  scope_dirs = "data"
+) {
   repo_gate_log(
-    "Checking artifacts/ for provenance sidecars with accessed_utc"
+    "Checking downloaded source data for accessed_utc and source_url"
   )
 
-  paths <- repo_gate_find_artifact_files(root)
+  paths <- repo_gate_find_source_files(root, scope_dirs = scope_dirs)
 
   if (base::length(paths) == 0L) {
-    repo_gate_log("No artifact payloads found")
+    repo_gate_log("No source payloads found")
 
     return(tibble::tibble())
   }
 
-  metadata_files <- stringr::str_detect(
+  # A .json can be EITHER a sidecar or a payload: data/acs5_2023_county.json is
+  # a downloaded API response and must be checked. Treat a .json as metadata
+  # only when it is named like a sidecar, or when stripping .json leaves a file
+  # that actually exists beside it.
+  is_sidecar <- stringr::str_detect(
     paths,
-    "\\.(json|ya?ml|md|txt)$"
-  )
+    "\\.(provenance|metadata)\\.json$"
+  ) |
+    (
+      stringr::str_detect(paths, "\\.json$") &
+        fs::file_exists(stringr::str_remove(paths, "\\.json$"))
+    ) |
+    stringr::str_detect(paths, "\\.(ya?ml|md)$")
 
-  artifact_paths <- paths[!metadata_files]
-
-  if (!base::is.null(since)) {
-    artifact_paths <- artifact_paths[
-      !base::as.character(fs::path_rel(artifact_paths, root)) %in% since
-    ]
-  }
+  payloads <- paths[!is_sidecar]
 
   # Gitignored payloads are local-only and absent from every checkout, so
   # including them makes this gate answer differently on a laptop than on a
-  # runner. That inversion is the thing these gates exist to prevent, and it
-  # already had to be fixed once in repo_gate_check_missing_inputs().
-  if (base::length(artifact_paths) > 0L) {
+  # runner -- the inversion these gates exist to prevent.
+  if (base::length(payloads) > 0L) {
     matchers <- repo_gate_ignore_matchers(root)
 
-    rel <- base::as.character(fs::path_rel(artifact_paths, root))
-
-    artifact_paths <- artifact_paths[
-      !repo_gate_is_ignored(rel, matchers)
+    payloads <- payloads[
+      !repo_gate_is_ignored(
+        base::as.character(fs::path_rel(payloads, root)),
+        matchers
+      )
     ]
   }
 
-  if (base::length(artifact_paths) == 0L) {
-    repo_gate_log("No artifact payloads in scope")
+  # Files WE built are governed by their inputs+sha256 sidecar, not by a
+  # download date they never had.
+  if (base::length(payloads) > 0L) {
+    payloads <- payloads[
+      !purrr::map_lgl(payloads, repo_gate_is_derived)
+    ]
+  }
+
+  if (!base::is.null(since) && base::length(payloads) > 0L) {
+    payloads <- payloads[
+      !base::as.character(fs::path_rel(payloads, root)) %in% since
+    ]
+  }
+
+  if (base::length(payloads) == 0L) {
+    repo_gate_log("No downloaded payloads in scope")
 
     return(tibble::tibble())
   }
 
   findings <- purrr::map_dfr(
-    artifact_paths,
+    payloads,
     function(path) {
-      provenance <- repo_gate_read_accessed_utc(
-        path
-      )
+      provenance <- repo_gate_read_accessed_utc(path)
 
       tibble::tibble(
-        artifact = base::as.character(fs::path_rel(path, root)),
+        source_file = base::as.character(fs::path_rel(path, root)),
         sidecar = provenance$sidecar,
         accessed_utc = provenance$accessed_utc,
-        valid_accessed_utc = repo_gate_valid_utc(
-          provenance$accessed_utc
-        )
+        source_url = provenance$source_url,
+        ok = repo_gate_valid_utc(provenance$accessed_utc) &&
+          !base::is.na(provenance$source_url) &&
+          base::nzchar(provenance$source_url)
       )
     }
   ) |>
-    dplyr::filter(!.data$valid_accessed_utc)
+    dplyr::filter(!.data$ok)
 
   repo_gate_log(
-    "Artifacts missing valid access dates: ",
+    "Downloaded files without accessed_utc + source_url: ",
     scales::comma(base::nrow(findings))
   )
 
@@ -1339,6 +1414,7 @@ run_repo_integrity_gates <- function(
   missing_input_ignore = base::character(),
   missing_input_baseline = base::character(),
   access_date_grandfathered = NULL,
+  access_date_scope = "data",
   safe_percent_allow = base::character()
 ) {
   root <- fs::path_abs(root)
@@ -1408,7 +1484,8 @@ run_repo_integrity_gates <- function(
 
   access_dates <- repo_gate_check_access_dates(
     root,
-    since = access_date_grandfathered
+    since = access_date_grandfathered,
+    scope_dirs = access_date_scope
   )
 
   unsafe_percent <- repo_gate_scan_percent_zero_default(
@@ -1460,7 +1537,7 @@ run_repo_integrity_gates <- function(
         missing_inputs
       ),
       repo_gate_format_failure(
-        "Artifacts without accessed_utc:",
+        "Downloaded files without accessed_utc + source_url:",
         access_dates
       ),
       repo_gate_format_failure(

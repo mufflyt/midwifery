@@ -64,18 +64,47 @@ writeLines('d <- read.csv("data/gone.csv")', file.path(tmp, "R", "reads.R"))
 report("input that does not exist is detected",
        nrow(repo_gate_check_missing_inputs(tmp)) > 0)
 
-# 5. artifact without accessed_utc
-writeLines("a,b\n1,2", file.path(tmp, "artifacts", "new.csv"))
-report("artifact without accessed_utc is detected",
+# 5. a downloaded source file with no accessed_utc / source_url
+dir.create(file.path(tmp, "data"), recursive = TRUE, showWarnings = FALSE)
+writeLines("a,b\n1,2", file.path(tmp, "data", "downloaded.csv"))
+report("downloaded file without accessed_utc is detected",
        nrow(repo_gate_check_access_dates(tmp)) > 0)
 
-# 5b. and accepts one WITH a valid accessed_utc
+# 5b. accepted once it carries BOTH fields
 writeLines(
-  '{"source_url":"https://x","accessed_utc":"2026-08-14T16:18:00Z"}',
-  file.path(tmp, "artifacts", "new.csv.provenance.json")
+  '{"source_url":"https://example.org/x.csv","accessed_utc":"2026-08-14T16:18:00Z"}',
+  file.path(tmp, "data", "downloaded.csv.provenance.json")
 )
-report("artifact WITH accessed_utc is accepted",
+report("downloaded file WITH accessed_utc + source_url is accepted",
        nrow(repo_gate_check_access_dates(tmp)) == 0)
+
+# 5c. a date alone is not enough -- without source_url you cannot tell what was
+#     fetched, only when
+writeLines('{"accessed_utc":"2026-08-14T16:18:00Z"}',
+           file.path(tmp, "data", "downloaded.csv.provenance.json"))
+report("accessed_utc without source_url is still detected",
+       nrow(repo_gate_check_access_dates(tmp)) > 0)
+unlink(file.path(tmp, "data", "downloaded.csv"))
+unlink(file.path(tmp, "data", "downloaded.csv.provenance.json"))
+
+# 5d. THE RULE THE RE-SCOPE RESTS ON. A file WE built carries inputs+sha256 and
+#     has no download date; demanding one is a category error. data/county_base.csv
+#     is exactly this -- it lives under data/ but R/01-build-county-base.R makes it.
+writeLines("a,b\n1,2", file.path(tmp, "data", "derived.csv"))
+writeLines(
+  '{"artifact":"derived.csv","written_utc":"2026-08-14 00:00:00 UTC","inputs":[{"path":"data/x.csv","sha256":"deadbeef"}]}',
+  file.path(tmp, "data", "derived.csv.provenance.json")
+)
+report("a DERIVED file (inputs sidecar) is exempt from the download date",
+       nrow(repo_gate_check_access_dates(tmp)) == 0)
+
+# 5e. a .json payload is not a sidecar for itself
+writeLines('[{"x":1}]', file.path(tmp, "data", "api_response.json"))
+report("a .json payload is checked, not mistaken for its own sidecar",
+       nrow(repo_gate_check_access_dates(tmp)) > 0)
+unlink(file.path(tmp, "data", "api_response.json"))
+unlink(file.path(tmp, "data", "derived.csv"))
+unlink(file.path(tmp, "data", "derived.csv.provenance.json"))
 
 # 6. safe_percent(default = 0)
 writeLines(paste0("v <- ", "safe_percent(part, total, default = 0)"),
