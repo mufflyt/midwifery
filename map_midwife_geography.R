@@ -33,11 +33,71 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(ggplot2); library(sf); library(leaflet)
 })
 
-MM <- Sys.getenv("MYSTERYMAPS_DIR", "/tmp/mysterymaps")
-for (f in c("map_create_base.R", "geographic_map.R", "map_acceptance_rate.R")) {
-  p <- file.path(MM, "R", f)
-  if (file.exists(p)) suppressWarnings(suppressMessages(source(p)))
+# The mysterymaps SOURCE checkout, which is not the same dependency as
+# R/lib/mysterymaps_dep.R's mm_home(): that one resolves the staged urogyn
+# helpers (R/mysterymaps_urogyn.R, in ~/isochrones-main), while the three files
+# below live in the package source (~/mysterymaps/R). Two locations, two
+# purposes -- hence two variables, resolved here in order of specificity.
+#
+# This used to default to "/tmp/mysterymaps", and the source() was guarded by
+# if (file.exists(p)). On this machine that directory EXISTS and is EMPTY, so
+# all three sources were skipped in silence and the failure surfaced two lines
+# later as
+#
+#     Error: exists("mysterymaps_geographic_map") is not TRUE
+#
+# which sent the reader hunting for a missing export in another repository.
+# There was nothing wrong with the function; the loader had quietly loaded
+# nothing. An absent dependency must say which variable to set and where it
+# looked -- the same rule the isochrones and mysterymaps dep files already
+# follow.
+MM_FILES <- c("map_create_base.R", "geographic_map.R", "map_acceptance_rate.R")
+
+MM <- local({
+  has_files <- function(d) all(file.exists(file.path(d, "R", MM_FILES)))
+
+  # An EXPLICIT variable that does not hold the files is an error, not an
+  # invitation to look elsewhere. Falling through to a different checkout would
+  # silently use something other than what the caller asked for -- the same
+  # failure in a new costume, and the reason R/lib/isochrones_dep.R refuses to
+  # fall back to a stale copy.
+  for (v in c("MYSTERYMAPS_DIR", "MYSTERYMAPS_HOME")) {
+    set <- Sys.getenv(v)
+    if (nzchar(set) && !has_files(set)) {
+      stop(sprintf(paste0(
+        "%s is set to \"%s\", which does not contain R/{%s}.\n",
+        "  Point it at your mufflyt/mysterymaps checkout, or unset it to let\n",
+        "  this script resolve ~/mysterymaps itself. It is NOT falling back:\n",
+        "  an explicit setting that is wrong must fail, not be ignored."),
+        v, set, paste(MM_FILES, collapse = ", ")), call. = FALSE)
+    }
+  }
+
+  cand <- c(Sys.getenv("MYSTERYMAPS_DIR"),
+            Sys.getenv("MYSTERYMAPS_HOME"),
+            path.expand("~/mysterymaps"))
+  cand <- unique(cand[nzchar(cand)])
+  hit <- cand[vapply(cand, has_files, logical(1))]
+
+  if (!length(hit)) {
+    stop(sprintf(paste0(
+      "mysterymaps source not found. Needed all of: %s\n",
+      "  Searched : %s\n",
+      "  Fix      : set MYSTERYMAPS_DIR to your mufflyt/mysterymaps checkout,\n",
+      "             e.g. MYSTERYMAPS_DIR=~/mysterymaps\n",
+      "  NOTE     : this is the package SOURCE, not the ~/isochrones-main\n",
+      "             checkout that R/lib/mysterymaps_dep.R resolves."),
+      paste(MM_FILES, collapse = ", "),
+      paste(cand, collapse = ", ")), call. = FALSE)
+  }
+
+  hit[[1L]]
+})
+
+for (f in MM_FILES) {
+  suppressWarnings(suppressMessages(source(file.path(MM, "R", f))))
 }
+cat("mysterymaps source:", MM, "\n")
 stopifnot(exists("mysterymaps_geographic_map"), exists("mysterymaps_map_base"))
 cat("mysterymaps loaded:", paste(ls(pattern = "^mysterymaps_"), collapse = ", "), "\n")
 

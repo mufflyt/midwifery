@@ -122,8 +122,22 @@ report("a one-comment difference in a vendored copy is detected", !d$identical)
 ev <- file.path(tmp, "event.json")
 writeLines('{"head_commit":{"message":"spotlight CNM Jane Doe NPI 1306048970"}}', ev)
 Sys.setenv(GITHUB_EVENT_PATH = ev)
-report("10-digit NPI in commit metadata is detected",
+report("a real NPI in commit metadata is detected",
        nrow(repo_gate_scan_identifiers(tmp)) > 0)
+
+# A SHA-256 prefix is not an NPI. This repository's commit messages are full of
+# hashes, and the naive "any ten digits" rule flagged 9455138198 -- the first
+# ten digits of 9455138198e4d347 -- in a commit that was discussing artifact
+# hashes. A gate that cries wolf on hashes here would be switched off in a week.
+writeLines('{"head_commit":{"message":"geography artifact 9455138198e4d347 unchanged"}}', ev)
+report("a SHA-256 prefix is NOT reported as an NPI",
+       nrow(repo_gate_scan_identifiers(tmp)) == 0)
+
+# Ten digits alone are not enough: a real NPI satisfies Luhn over 80840 + its
+# first nine digits, and an arbitrary run does so about one time in ten.
+writeLines('{"head_commit":{"message":"see record 1234567890 for details"}}', ev)
+report("a 10-digit run failing the check digit is not reported",
+       nrow(repo_gate_scan_identifiers(tmp)) == 0)
 Sys.unsetenv("GITHUB_EVENT_PATH")
 
 unlink(tmp, recursive = TRUE)
