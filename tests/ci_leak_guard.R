@@ -39,7 +39,17 @@ PERSON_COLS <- c(
   "first_name", "last_name", "middle_name", "full_name", "provider_name",
   "provider_first_name", "provider_last_name", "provider_middle_name",
   "dob", "date_of_birth", "birth_date", "birth_year",
-  "license_number", "home_address", "residential_address"
+  "license_number", "home_address", "residential_address",
+  # Matching-evidence artifacts name the same people with a side prefix rather
+  # than the plain column: artifacts/ab_middle_name/evidence_top2.csv carries
+  # roster_first/roster_last for 14,852 AMCB certificants, and
+  # artifacts/bc_resolver/contested_evidence.csv carries them for 8,645. Both
+  # sat tracked and undetected because the guard only knew "first_name". A
+  # roster surname beside a candidate NPI is exactly the pairing this file
+  # exists to keep out of a public repository.
+  "roster_first", "roster_last", "roster_middle", "roster_name",
+  "cand_first", "cand_last", "cand_middle", "candidate_npi",
+  "nppes_matched_first", "nppes_matched_last"
 )
 
 header_cols <- function(path) {

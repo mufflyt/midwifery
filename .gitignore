@@ -423,3 +423,9 @@ artifacts/panel_address_county.csv.provenance.json
 # artifacts/amcb_npi_geography.csv, which belongs to
 # enrich_amcb_crosswalk_geography.R and is read by 17 scripts.
 artifacts/amcb_npi_geography_export.csv
+
+# Person-level matching evidence: roster names beside candidate NPIs.
+# Reproducible from R/08-middle-name-ab-leading-indicator.R and
+# R/09-bc-resolver-interaction.R; never tracked.
+artifacts/ab_middle_name/evidence_top2.csv
+artifacts/bc_resolver/contested_evidence.csv

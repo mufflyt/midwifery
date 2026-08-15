@@ -1,0 +1,357 @@
+# =============================================================================
+# Nightly full-repository verification
+# =============================================================================
+# ci.yml runs a fast, curated subset on every push. This runs EVERYTHING, once
+# a night, and is allowed to be slow.
+#
+# The difference that matters is discovery. ci.yml names each test file it
+# runs, and 21 of the 67 test files in tests/ were never named by it -- they
+# existed, passed or failed silently, and nobody found out. Every job below
+# GLOBS instead of listing, and `suite-coverage` fails the build if a test file
+# is present but no workflow executes it. A test that cannot be forgotten is
+# worth more than a test that is merely written.
+#
+# Schedule
+# --------
+# 04:17 UTC = 22:17 America/Denver during MDT (mid-March to early November),
+# and 21:17 during MST. GitHub Actions cron has no timezone support, so one of
+# the two is off by an hour; 22:17 is correct for the larger part of the year.
+# Scheduled runs on GitHub are also queued, not guaranteed punctual -- a busy
+# hour can delay this by several minutes.
+#
+# The repository is PUBLIC. `public-exposure` is not a formality: it is the job
+# that decides whether a mistake is a local mistake or a published one.
+# =============================================================================
+name: Nightly
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  R_KEEP_PKG_SOURCE: no
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Every tests/*.R, discovered. Continues past a failure so one broken suite
+  # does not hide the state of the other 60 -- the tally at the end is the
+  # result, not the first red line.
+  # ---------------------------------------------------------------------------
+  r-suite:
+    name: R suite (all discovered)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Cache R packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: ${{ runner.os }}-r-nightly-${{ hashFiles('.github/workflows/nightly.yml') }}
+          restore-keys: ${{ runner.os }}-r-nightly-
+
+      # Same list ci.yml installs, for the same reason: these are reached
+      # through source() chains, not named by the tests themselves.
+      - name: Install packages
+        run: |
+          pkgs <- c("dplyr", "jsonlite", "purrr", "readr", "scales", "stringi",
+                    "stringr", "testthat", "tibble", "tidyr",
+                    "checkmate", "DBI", "digest", "duckdb", "geosphere",
+                    "here", "httr", "openssl", "xml2",
+                    "assertthat", "withr", "fs", "rlang", "readxl",
+                    "stringdist", "humaniformat")
+          missing <- pkgs[!pkgs %in% rownames(installed.packages())]
+          if (length(missing)) install.packages(missing)
+        shell: Rscript {0}
+
+      # Two harnesses live in tests/. 13 files use testthat and must go through
+      # testthat::test_file(); the other 44 are standalone scripts with their
+      # own chk() harness and exit code. Dispatching on the FILENAME would be
+      # wrong -- test-*.R is testthat but so are test_invariants_midwifery.R,
+      # test_cross_taxonomy_hierarchy.R and test_pip_materialization.R. Running
+      # a testthat file with plain Rscript fails with "could not find function
+      # test_that", which reads like a broken test rather than a broken runner.
+      # So dispatch on CONTENT.
+      - name: Run every tests/*.R
+        run: |
+          set -u
+          pass=0; fail=0; failed=""
+          for t in tests/*.R; do
+            b=$(basename "$t")
+            # helper-*.R are sourced BY tests; running them standalone is
+            # meaningless. Baselines are data, not code.
+            case "$b" in helper-*) continue;; esac
+            # Network-dependent, run separately in `network-tests`. R/lib/
+            # match_npi_to_hospitals.R downloads a CMS Facility_Affiliation
+            # file at source() time, and that URL currently 404s. An upstream
+            # dead link is worth knowing about, but it is not this repository
+            # failing, and it must not turn the whole suite red.
+            case "$b" in test_match_npi_to_hospitals.R) continue;; esac
+            echo "::group::$b"
+            if grep -q 'test_that(' "$t"; then
+              cmd="Rscript -e testthat::test_file('$t',stop_on_failure=TRUE)"
+            else
+              cmd="Rscript $t"
+            fi
+            if $cmd; then
+              pass=$((pass+1)); echo "PASS $b"
+            else
+              fail=$((fail+1)); failed="$failed $b"; echo "FAIL $b"
+            fi
+            echo "::endgroup::"
+          done
+          echo "## R suite: $pass passed, $fail failed" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$fail" -gt 0 ]; then
+            echo "failed:$failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "FAILED:$failed"; exit 1
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Tests whose result depends on a third party being up. Reported, never
+  # fatal: `continue-on-error` means a CMS outage shows as a warning in the
+  # summary instead of a red build we learn to ignore. A nightly that cries
+  # wolf gets muted, and a muted nightly is worth nothing.
+  # ---------------------------------------------------------------------------
+  network-tests:
+    name: Network-dependent tests (non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+      - name: Install packages
+        run: |
+          pkgs <- c("dplyr", "readr", "stringr", "tibble", "tidyr", "purrr",
+                    "checkmate", "jsonlite", "httr", "digest")
+          missing <- pkgs[!pkgs %in% rownames(installed.packages())]
+          if (length(missing)) install.packages(missing)
+        shell: Rscript {0}
+
+      - name: Upstream data sources still reachable
+        run: |
+          if Rscript tests/test_match_npi_to_hospitals.R; then
+            echo "## Upstream CMS source reachable" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## WARNING: upstream CMS Facility_Affiliation download failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "The URL in R/lib/match_npi_to_hospitals.R returned an error." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+  # ---------------------------------------------------------------------------
+  python-suite:
+    name: Python suite (all discovered)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
+      # Compiling every tracked .py catches a syntax error in a script no test
+      # imports -- which is most of them.
+      - name: Compile all tracked Python
+        run: |
+          git ls-files '*.py' | tr '\n' '\0' | xargs -0 -n50 python -m py_compile
+          echo "compiled $(git ls-files '*.py' | wc -l) files" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run every tests/*.py
+        run: |
+          if ! ls tests/*.py >/dev/null 2>&1; then echo "no python tests"; exit 0; fi
+          python -m pytest tests/ -v --tb=short -p no:cacheprovider
+
+  # ---------------------------------------------------------------------------
+  # The gates. Each is independent: `if: always()` so a failure in one still
+  # reports the rest, because "which gates are red" is the actual signal.
+  # ---------------------------------------------------------------------------
+  gates:
+    name: Integrity, leak and contract gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Install packages
+        run: |
+          pkgs <- c("dplyr", "readr", "stringr", "jsonlite", "digest", "fs",
+                    "rlang", "tibble", "tidyr", "purrr", "checkmate")
+          missing <- pkgs[!pkgs %in% rownames(installed.packages())]
+          if (length(missing)) install.packages(missing)
+        shell: Rscript {0}
+
+      - name: Leak guard (person-level columns, file size)
+        if: always()
+        run: Rscript tests/ci_leak_guard.R
+
+      - name: Repo hygiene
+        if: always()
+        run: Rscript tests/ci_hygiene.R
+
+      - name: Repository integrity gates
+        if: always()
+        run: Rscript tests/ci_repo_integrity.R
+
+      - name: Artifact contracts
+        if: always()
+        run: Rscript tests/ci_artifact_contracts.R
+
+      - name: Semantic contracts
+        if: always()
+        run: Rscript tests/ci_semantic_contracts.R
+
+  # ---------------------------------------------------------------------------
+  # The gate that would have caught the 21 orphans. Any tests/*.R or tests/*.py
+  # that no workflow file mentions AND that the nightly glob does not reach is
+  # a test nobody runs.
+  # ---------------------------------------------------------------------------
+  suite-coverage:
+    name: No test file goes unrun
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      # FATAL: the nightly must keep DISCOVERING tests rather than listing them.
+      # If someone replaces the glob with an enumeration, coverage silently
+      # reverts to whatever that list happens to name -- the exact failure that
+      # left 21 files unrun.
+      - name: Nightly must still discover tests by glob
+        run: |
+          grep -q 'for t in tests/\*\.R' .github/workflows/nightly.yml \
+            || { echo "nightly.yml no longer globs tests/*.R"; exit 1; }
+          grep -q 'pytest tests/' .github/workflows/nightly.yml \
+            || { echo "nightly.yml no longer runs the pytest directory"; exit 1; }
+          echo "nightly still discovers tests by glob"
+
+      # INFORMATIONAL: which tests the fast per-push CI does not name. These are
+      # covered nightly, so this is a latency report, not a failure -- a bug in
+      # one of them is found within a day instead of within a push.
+      - name: Report tests not covered by the per-push CI
+        run: |
+          n_all=0; n_gap=0; gap=""
+          for t in tests/*.R tests/*.py; do
+            [ -e "$t" ] || continue
+            b=$(basename "$t")
+            case "$b" in helper-*) continue;; esac
+            n_all=$((n_all+1))
+            grep -q "$b" .github/workflows/ci.yml || { n_gap=$((n_gap+1)); gap="$gap $b"; }
+          done
+          {
+            echo "## Test coverage"
+            echo "- $n_all test files total, all run nightly"
+            echo "- $n_gap not named by ci.yml (nightly-only):"
+            for g in $gap; do echo "  - \`$g\`"; done
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "$n_all total, $n_gap nightly-only"
+
+  # ---------------------------------------------------------------------------
+  # The repository is public. These checks are about what a stranger can read.
+  # ---------------------------------------------------------------------------
+  public-exposure:
+    name: Public exposure audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: No tracked file carries an absolute home path
+        if: always()
+        run: |
+          if git ls-files -z | xargs -0 grep -l -E '/Users/[a-z]+/|/home/[a-z]+/' 2>/dev/null \
+               | grep -v -E '^(tests/ci_integrity_abs_path_baseline\.txt|\.github/)' > /tmp/abs.txt; then
+            if [ -s /tmp/abs.txt ]; then
+              echo "Tracked files with an absolute home path:"; cat /tmp/abs.txt
+              echo "(baseline: tests/ci_integrity_abs_path_baseline.txt)"
+            fi
+          fi
+          # Reported, not fatal: the existing baseline governs this. The nightly
+          # surfaces drift; ci_repo_integrity.R is what fails the build.
+
+      - name: No credential-shaped strings
+        if: always()
+        run: |
+          pat='(aws_secret_access_key|-----BEGIN [A-Z ]*PRIVATE KEY-----|ghp_[A-Za-z0-9]{30,}|xox[baprs]-[A-Za-z0-9-]{10,})'
+          if git ls-files -z | xargs -0 grep -n -E "$pat" 2>/dev/null > /tmp/sec.txt; then
+            if [ -s /tmp/sec.txt ]; then
+              echo "Possible credential in a tracked file:"; cat /tmp/sec.txt; exit 1
+            fi
+          fi
+          echo "no credential-shaped strings in tracked files"
+
+      - name: Tracked CSVs must not name people
+        if: always()
+        run: |
+          # A cheap second opinion on the leak guard, keyed on VALUES rather
+          # than column names: a tracked CSV holding thousands of rows next to
+          # an NPI-shaped number deserves a human look.
+          # Honour the SAME baseline the leak guard uses. A second checker with
+          # its own private allowlist is how one file ends up permanently red in
+          # one job and green in another; data/congress/legislators_current.csv
+          # is a documented false positive and must stay documented in exactly
+          # one place.
+          sed -e 's/[[:space:]]*#.*$//' -e '/^[[:space:]]*$/d' \
+              tests/ci_leak_baseline.txt | sed '/^#/d' > /tmp/leak_baseline.txt
+          bad=0
+          for f in $(git ls-files '*.csv'); do
+            grep -qxF "$f" /tmp/leak_baseline.txt && continue
+            rows=$(wc -l < "$f" 2>/dev/null || echo 0)
+            [ "$rows" -gt 500 ] || continue
+            if head -1 "$f" | grep -qiE '(^|,)(npi|candidate_npi|roster_last|last_name)(,|$)'; then
+              echo "large tracked CSV with an identity column: $f ($rows rows)"; bad=1
+            fi
+          done
+          [ "$bad" -eq 0 ] && echo "no large tracked CSV carries an identity column"
+          exit $bad
+
+  # ---------------------------------------------------------------------------
+  summary:
+    name: Nightly summary
+    runs-on: ubuntu-latest
+    needs: [r-suite, python-suite, gates, suite-coverage, public-exposure]
+    if: always()
+    steps:
+      - name: Report
+        run: |
+          echo "| job | result |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| R suite | ${{ needs.r-suite.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Python suite | ${{ needs.python-suite.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Gates | ${{ needs.gates.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Suite coverage | ${{ needs.suite-coverage.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Public exposure | ${{ needs.public-exposure.result }} |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if anything failed
+        if: >
+          needs.r-suite.result == 'failure' ||
+          needs.python-suite.result == 'failure' ||
+          needs.gates.result == 'failure' ||
+          needs.suite-coverage.result == 'failure' ||
+          needs.public-exposure.result == 'failure'
+        run: exit 1
