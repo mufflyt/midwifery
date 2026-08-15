@@ -410,6 +410,41 @@ geography `53bb087a59a4…` · NPPES snapshots 2007–2025 · CMS Doctors & Clin
 the frozen artifact is unmodified and remains the reference. Every artifact
 carries a manifest recording its inputs' SHA-256.
 
+### Reference crosswalk: the Aug-11 build is now authoritative
+
+The linkage was rebuilt on **2026-08-11** and that build is the reference from
+now on. Two hashes are in play and it is worth being explicit about which is
+which, because the file name does not distinguish them:
+
+| | rows | cols | primary | quarantined | unmatched | with an NPI |
+|---|---:|---:|---:|---:|---:|---:|
+| `b44bf2bc9254…` — `amcb_npi_linkage_FROZEN_2026-08-08.csv` | 22,309 | 33 | 14,668 | 3,091 | 2,326 | 16,892 |
+| **`dbcc76f420ac…` — `amcb_npi_linkage_FROZEN.csv`** | 22,309 | **54** | **14,677** | **3,147** | **2,108** | **16,898** |
+
+The Aug-11 build is a strict superset: 21 additional columns carrying the
+class-5 machinery (`resolved_by_absence_c5`, `npi_demoted_absence_c5`,
+`class5_candidate_npi`) and a sixth tier, `sensitivity_name_component`
+(**156** rows), which records a class-5 candidate found and deliberately held
+out of the cohort. `artifacts/linkage_manifest.json` records it at commit
+`c895c043`.
+
+**Every linkage figure elsewhere in this README is the Aug-08 build and is
+therefore superseded.** They are deliberately NOT edited in place yet, and the
+reason is the same discipline that produced contract A1: the geography
+artifacts — and every county, coverage and workforce figure derived from them —
+were built from `b44bf2bc`, as `midwives_geography_FROZEN.csv`'s own
+`source_linkage_sha256` column records. Updating the linkage numbers while the
+geography numbers still trace to the older crosswalk would publish two cohorts
+side by side, which is precisely the failure A1 exists to catch.
+
+**The geography rebuild is blocked, and not by anything in this repository.**
+`map_midwife_geography.R` requires `mysterymaps_geographic_map()`, which is
+defined in `~/mysterymaps/R/geographic_map.R` but appears in **no** `export()`
+line of that package's `NAMESPACE` — so it is unavailable from any build,
+installed or source, and the script stops at
+`exists("mysterymaps_geographic_map") is not TRUE`. Exporting it upstream
+unblocks the rebuild; the figures can then be updated in one consistent pass.
+
 ## Attribute layers: what we know about each midwife
 
 Identity and geography answer *who* and *where*. Four further layers answer
