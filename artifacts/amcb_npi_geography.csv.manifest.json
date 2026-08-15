@@ -1,11 +1,11 @@
 {
   "artifact": "amcb_npi_geography.csv",
-  "artifact_sha256": "4340015f2e0c0807463fa2e734ab6bf020f573e0d2ae46f7aae6c835dfef24c9",
+  "artifact_sha256": "ee248e64fbd44a1234da2f42a308e4dd8d8b48a635d15c6615a356b630d896b5",
   "artifact_rows": 17054,
   "crosswalk": "amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv",
   "crosswalk_sha256": "4eb27a91359b244b8f7ce5e6a8e6d455331f53830c735e9e6c5680bae2315545",
   "nppes_bulk_file": "npidata_pfile_20050523-20251109.csv",
   "nppes_bulk_vintage": "2025-11-09",
-  "source_script_sha256": "63a2bae7d7802038e2c7f1e6bb7fca9adf0dc32566616effdbee6cb686df1a2c",
+  "source_script_sha256": "156b2339e4eb6c72fb5c5b2067c9aca15978fd91693ab3cc08b73a19100ed827",
   "columns": ["npi", "practice_address_1", "practice_address_2", "practice_city", "practice_state", "practice_zip", "mailing_address_1", "mailing_city", "mailing_state", "mailing_zip", "nppes_enumeration_date", "nppes_last_update_date", "nppes_deactivation_date", "taxonomy_code", "taxonomy_selection_rule", "taxonomy_description", "nppes_geo_source", "nppes_geo_vintage", "practice_mailing_state_differs"]
 }
