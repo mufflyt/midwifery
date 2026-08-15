@@ -1,0 +1,42 @@
+# Downloaded source files with no recorded accessed_utc + source_url.
+#
+# Same rule as tests/ci_leak_baseline.txt: may shrink, must never grow. A new
+# entry means a file entered the repository from an outside publisher without
+# anyone recording where it came from or when -- and that is not recoverable
+# later. The HPSA shapefile is the cautionary case: it is named
+# HPSA_CMPPC_SHP_DET_CUR_VX.shp, "CUR" meaning current-at-download, and its
+# vintage is simply gone. Every figure derived from it is undated.
+#
+# It cannot be fixed by inventing dates. These files predate the requirement,
+# and several publishers REVISE IN PLACE -- re-downloading today would produce
+# different bytes under the same name, so a fresh download cannot be used to
+# reconstruct when the committed copy was fetched.
+#
+# Three entries are not downloads at all and are here only because they carry
+# no sidecar; they would be better fixed by giving them one that records what
+# they are:
+#   birth_activity_ascertainment_TEMPLATE.csv, delivery_activity_TEMPLATE.csv
+#       authored in this repository as blank templates.
+#   wonder/D66_Defaults.xml
+#       the saved WONDER query, authored by whoever drove the web UI. It is
+#       the recipe for natality_2016_2024_cnm_by_county.csv, not a download.
+#   ct_legacy_to_region_weights.csv
+#       built from the Census API by R/lib/ct_county_crosswalk.R, so it is
+#       derived; it lacks the inputs sidecar that would exempt it.
+data/2024_Gaz_counties_national.txt
+data/acs5_2023_county_births.json
+data/acs5_2023_county_subject.json
+data/acs5_2023_county.json
+data/birth_activity_ascertainment_TEMPLATE.csv
+data/chr_2025_analytic.csv
+data/congress/legislators_current.csv
+data/ct_legacy_to_region_weights.csv
+data/ct_tract_crosswalk_2022.csv
+data/delivery_activity_TEMPLATE.csv
+data/gaz_counties_2024.zip
+data/nchs_urcodes_2013.xlsx
+data/rucc_2023.xlsx
+data/svi_2022_county.csv
+data/wonder/D66_Defaults.xml
+data/wonder/natality_2016_2024_cnm_by_county.csv
+data/zcta_county_2020.txt

@@ -210,7 +210,12 @@ jobs:
                     "here", "httr", "openssl", "xml2",
                     # the ported upstream suites: assertthat for their
                     # preconditions, withr for scoped envvars and temp dirs
-                    "assertthat", "withr")
+                    "assertthat", "withr",
+                    # the integrity gates, plus two the gates themselves found
+                    # undeclared: rlang (R/lib/ct_county_crosswalk.R) and readxl
+                    # (R/build_amcb_state_licenses.R). Both resolve today only
+                    # by luck.
+                    "fs", "rlang", "readxl")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
         shell: Rscript {0}
@@ -402,3 +407,19 @@ jobs:
         run: |
           Rscript -e 'testthat::test_file("tests/test-tract-vintage-boundary-bva-2019-2020-2021.R", stop_on_failure = TRUE)'
           Rscript -e 'testthat::test_file("tests/test-step8-tract-vintage-routing.R", stop_on_failure = TRUE)'
+
+      # -----------------------------------------------------------------------
+      # Repository integrity gates. Eight checks, each written because the
+      # corresponding failure actually happened -- most of them on the day this
+      # was added. R/ci_repo_integrity_gates.R names the incident behind each.
+      #
+      # The gate-of-gates runs FIRST, deliberately. A checker with an inverted
+      # condition or an over-broad allowance passes exactly like a clean
+      # repository, and nobody watches a green checker. It plants one defect per
+      # gate and asserts each is detected.
+      # -----------------------------------------------------------------------
+      - name: Integrity gates detect planted defects
+        run: Rscript tests/test_repo_integrity_gates.R
+
+      - name: Repository integrity gates
+        run: Rscript tests/ci_repo_integrity.R
