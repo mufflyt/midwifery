@@ -121,8 +121,64 @@ check_provenance <- function(path) {
 #' @param ... paths, given as literals or as the script's own path constants.
 #' @return [character] those that exist, in the order supplied.
 #' @family provenance
-prov_inputs <- function(...) {
+prov_inputs <- function(..., roots = c(".", "artifacts", "data"), quiet = FALSE) {
   p <- unlist(list(...), use.names = FALSE)
   p <- p[!is.na(p) & nzchar(p)]
-  p[file.exists(p)]
+
+  # WHY THIS IS NOT `p[file.exists(p)]` ANY MORE.
+  #
+  # It was, and that one expression is why provenance in this repository looks
+  # complete and is not. Call sites pass bare basenames -- prov_inputs(
+  # "county_base.csv") -- while the file lives at data/county_base.csv. The
+  # path did not resolve, so it was dropped, so the sidecar recorded one fewer
+  # input, and nothing said a word. An audit found 71 of 93 literal input paths
+  # in this repository being discarded exactly that way: 76% of every input
+  # anyone declared.
+  #
+  # A silently short provenance record is worse than none. It answers "what
+  # produced this?" with a confident, incomplete list, and the reader cannot
+  # tell the difference. Recovering one such omission -- which coordinate file
+  # built the geography artifact -- took hours of comparing GEOID fill rates
+  # against a percentage quoted in the README.
+  #
+  # So: resolve a bare name against the roots it is almost certainly relative
+  # to, and if it still cannot be found, SAY SO. A declared input that is not
+  # there is either a typo or a missing file, and both are worth knowing before
+  # the artifact is written rather than after it is published.
+  # artifacts/ has one level of subdirectories -- frozen_cohort, county_profiles,
+  # district_profiles, ab_middle_name, bc_resolver -- and 20 of the 22 inputs
+  # that still could not be found were simply in one of them. Search them too,
+  # one level only: deeper recursion starts matching same-named files in
+  # unrelated trees, and an input resolved to the wrong file is worse than one
+  # reported missing.
+  search_roots <- unique(c(roots,
+    list.dirs("artifacts", recursive = FALSE, full.names = TRUE)))
+
+  resolve_one <- function(x) {
+    if (file.exists(x)) return(x)
+    cand <- file.path(search_roots, x)
+    hit <- cand[file.exists(cand)]
+    if (length(hit) == 1L) return(hit)
+    if (length(hit) > 1L) {
+      warning(sprintf(
+        "prov_inputs(): '%s' is ambiguous -- it exists at %s. Pass the path you mean.",
+        x, paste(hit, collapse = " and ")), call. = FALSE)
+      return(hit[[1L]])
+    }
+    NA_character_
+  }
+
+  resolved <- vapply(p, resolve_one, character(1), USE.NAMES = FALSE)
+
+  missing <- p[is.na(resolved)]
+  if (length(missing) && !isTRUE(quiet)) {
+    warning(sprintf(paste0(
+      "prov_inputs(): %d declared input(s) could not be found and will NOT be ",
+      "recorded in the sidecar:\n  %s\nSearched: %s. ",
+      "An input that is not recorded cannot be traced later."),
+      length(missing), paste(missing, collapse = "\n  "),
+      paste(roots, collapse = ", ")), call. = FALSE)
+  }
+
+  resolved[!is.na(resolved)]
 }
