@@ -762,6 +762,27 @@ repo_gate_commit_messages <- function(root) {
 }
 
 
+
+# NPI check digit: Luhn over the 15-digit string 80840 + the first 9 digits,
+# which is the standard's own definition rather than a generic mod-10.
+repo_gate_npi_check_digit_ok <- function(x) {
+  if (!stringr::str_detect(x, "^[0-9]{10}$")) {
+    return(FALSE)
+  }
+
+  d <- base::as.integer(base::strsplit(
+    base::paste0("80840", base::substr(x, 1, 9)), "")[[1L]])
+
+  # double every second digit from the right of the 14-digit body
+  idx <- base::rev(base::seq_along(d))
+  d[idx %% 2L == 1L] <- d[idx %% 2L == 1L] * 2L
+  d[d > 9L] <- d[d > 9L] - 9L
+
+  check <- (10L - (base::sum(d) %% 10L)) %% 10L
+
+  base::identical(check, base::as.integer(base::substr(x, 10, 10)))
+}
+
 repo_gate_scan_identifiers <- function(root) {
   repo_gate_log("Scanning commit metadata for patient/provider identifiers")
 
@@ -771,7 +792,21 @@ repo_gate_scan_identifiers <- function(root) {
     return(tibble::tibble())
   }
 
-  npi_pattern <- "(?<![0-9])[0-9]{10}(?![0-9])"
+  # Two filters, because the naive "any 10 digits" rule fires on this
+  # repository's own commit messages. It flagged 9455138198 -- the first ten
+  # digits of the SHA-256 9455138198e4d347, quoted in a commit that was
+  # discussing artifact hashes. A gate that cries wolf on hashes in a repo whose
+  # commits are full of hashes gets switched off in a week.
+  #
+  #   1. not inside a longer hex token, so a SHA prefix is not an NPI;
+  #   2. passes the NPI check digit. A real NPI satisfies Luhn over
+  #      80840 + the first 9 digits; an arbitrary 10-digit run does so about
+  #      one time in ten.
+  #
+  # Both are necessary. Luhn alone still admits a hash prefix one time in ten,
+  # and this project has already been bitten by a generator whose "valid" NPIs
+  # were valid exactly that often.
+  npi_pattern <- "(?<![0-9a-fA-F])[0-9]{10}(?![0-9a-fA-F])"
 
   findings <- purrr::map_dfr(
     base::seq_along(messages),
@@ -781,13 +816,15 @@ repo_gate_scan_identifiers <- function(root) {
         npi_pattern
       )[[1L]]
 
+      matches <- matches[purrr::map_lgl(matches, repo_gate_npi_check_digit_ok)]
+
       if (base::length(matches) == 0L) {
         return(tibble::tibble())
       }
 
       tibble::tibble(
         message_index = index,
-        identifier_type = "possible_npi",
+        identifier_type = "npi_shaped_and_check_digit_valid",
         identifier = matches
       )
     }
