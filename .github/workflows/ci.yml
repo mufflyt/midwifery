@@ -151,8 +151,13 @@ jobs:
       - name: Scraper and NPI-candidate tests
         run: python -m pytest tests/test_scrape.py tests/test_fetch_npi_candidates.py -q
 
+      # -v so the SKIP REASONS appear in the log. Three of these four tests read
+      # a person-level artifact that is gitignored by design and therefore never
+      # present in a checkout; without -v the step prints "OK (skipped=3)" and a
+      # reader cannot tell a deliberate skip from a test that quietly does
+      # nothing. Loud skipping is the contract -- see the header.
       - name: Run Midwifery Pipeline Integration Tests
-        run: python3 tests/test_midwifery_pipeline.py
+        run: python3 tests/test_midwifery_pipeline.py -v
 
   # ---------------------------------------------------------------------------
   # The tier that is allowed to cost something.
