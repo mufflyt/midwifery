@@ -418,3 +418,8 @@ artifacts/panel_address_county.csv.provenance.json
 /artifacts/scraped_20_state_bons_with_all_specialized_fields.csv
 /artifacts/scraped_20_state_bons_with_direct_urls.csv
 /artifacts/scraped_40_state_bons_midwives_master.csv
+
+# Person-level export from export_amcb_npi_geography.R. NOT
+# artifacts/amcb_npi_geography.csv, which belongs to
+# enrich_amcb_crosswalk_geography.R and is read by 17 scripts.
+artifacts/amcb_npi_geography_export.csv

@@ -1,0 +1,10 @@
+{
+  "artifact": "scraped_20_state_bon_validation_report.csv",
+  "written_utc": "2026-08-15 03:20:51 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/scraped_20_state_bons_midwives_master.csv",
+      "sha256": "67e85e0c1cdec4284e2923837f544a542d8f418942e14151bd4bceca6163f348"
+    }
+  ]
+}

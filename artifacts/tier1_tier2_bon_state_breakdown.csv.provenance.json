@@ -1,0 +1,14 @@
+{
+  "artifact": "tier1_tier2_bon_state_breakdown.csv",
+  "written_utc": "2026-08-15 03:17:45 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/cohort_midwives_tier1_tier2_bon_validated.csv",
+      "sha256": "949a39cc47f93f184cd83d25f567b226c11b2b0daec199ae9d6fcb5490b61b94"
+    },
+    {
+      "path": "artifacts/tier1_tier2_bon_summary_matrix.csv",
+      "sha256": "072f360c7df3add92087e401efbcd3969bad00c66fc4c82b70c1c6d5867b5084"
+    }
+  ]
+}

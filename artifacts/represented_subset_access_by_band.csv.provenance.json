@@ -1,0 +1,18 @@
+{
+  "artifact": "represented_subset_access_by_band.csv",
+  "written_utc": "2026-08-15 03:20:49 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/midwife_isochrone_match.csv",
+      "sha256": "01557ee51bc4dd96b9b4d11c93e30614b78beb2c481fc8e413716f1a3f4fd5e2"
+    },
+    {
+      "path": "artifacts/represented_subset_access_by_band_rucc.csv",
+      "sha256": "c7318efda47db7f4719072ac2fcff64d8b0c420ac9acc6678b9d79b3a5719bcb"
+    },
+    {
+      "path": "data/rucc_2023.xlsx",
+      "sha256": "aeaae451663c7ea70cd15ef26fdc991bebcaf3a39d658ab2133d321530777df5"
+    }
+  ]
+}

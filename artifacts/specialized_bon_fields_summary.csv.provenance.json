@@ -1,0 +1,10 @@
+{
+  "artifact": "specialized_bon_fields_summary.csv",
+  "written_utc": "2026-08-15 03:17:22 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/scraped_20_state_bons_with_all_specialized_fields.csv",
+      "sha256": "a20745b8b92989835a3fbef9314177d294db0e776f906e8f516fb52892c82bbb"
+    }
+  ]
+}

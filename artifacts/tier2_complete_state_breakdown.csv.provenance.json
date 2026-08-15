@@ -1,0 +1,10 @@
+{
+  "artifact": "tier2_complete_state_breakdown.csv",
+  "written_utc": "2026-08-15 03:17:25 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/tier2_live_bon_all_states_complete.csv",
+      "sha256": "4354ffd2c4e7fb7ece79bbbbc3bd0f82e5b081d5490cda92612b232f9afa9a87"
+    }
+  ]
+}

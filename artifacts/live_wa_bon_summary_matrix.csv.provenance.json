@@ -1,0 +1,10 @@
+{
+  "artifact": "live_wa_bon_summary_matrix.csv",
+  "written_utc": "2026-08-15 03:17:22 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/live_washington_bon_ingested_midwives.csv",
+      "sha256": "69d276fa2cf5690a9ac745d236a6662fe7f724bc43ba3dc27b67dfb47b6c281c"
+    }
+  ]
+}
