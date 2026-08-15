@@ -62,7 +62,6 @@ artifacts/exclusion_ledger.csv
 artifacts/florida_voter_license_ages_provenance.csv
 artifacts/frontier_dnp_projects.csv
 artifacts/geography_by_linkage_status.csv
-artifacts/geography_class_counts.csv
 artifacts/hcris_affiliated_hospitals_fy2023.csv
 artifacts/healthgrades_field_usability.csv
 artifacts/historical_isochrone_recovery_by_rucc.csv
@@ -112,4 +111,3 @@ artifacts/table1_midwives.csv
 artifacts/table1_provenance.csv
 artifacts/wa_cnm_provenance.csv
 artifacts/wonder/national_births_by_attendant_year.csv
-artifacts/zip_fallback_validation.csv
