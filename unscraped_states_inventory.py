@@ -4,6 +4,8 @@
 # =============================================================================
 import csv
 
+from artifact_provenance import write_with_provenance
+
 unscraped_states = [
     {"state": "AK", "state_name": "Alaska", "bon_agency": "Alaska Board of Nursing", "reason": "Small rural roster; scheduled for Wave 3 scraper."},
     {"state": "HI", "state_name": "Hawaii", "bon_agency": "Hawaii Department of Commerce & Consumer Affairs (PVL)", "reason": "Island jurisdiction; PVL web form portal."},
@@ -18,9 +20,15 @@ unscraped_states = [
 ]
 
 out_csv = "artifacts/remaining_unscraped_states_inventory.csv"
-with open(out_csv, "w", encoding="utf-8", newline="") as f:
-    writer = csv.DictWriter(f, fieldnames=["state", "state_name", "bon_agency", "reason"])
-    writer.writeheader()
-    writer.writerows(unscraped_states)
+
+# inputs=() is the truth here, not an omission: this inventory is a literal in
+# this file, so the artifact derives from the script and nothing else. The
+# sidecar is written in the same call as the CSV so the two cannot separate.
+write_with_provenance(
+    unscraped_states,
+    out_csv,
+    fieldnames=["state", "state_name", "bon_agency", "reason"],
+    inputs=(),
+)
 
 print(f"=== Successfully generated Remaining 10 Unscraped States Inventory: {out_csv} ===")

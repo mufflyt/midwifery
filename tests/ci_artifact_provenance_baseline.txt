@@ -97,7 +97,6 @@ artifacts/obgyn_cpa_filings_schema_and_sample.csv
 artifacts/ohio_voter_license_ages_provenance.csv
 artifacts/org_resolution_distribution_shift.csv
 artifacts/org_resolution_ppv.csv
-artifacts/remaining_unscraped_states_inventory.csv
 artifacts/represented_subset_access_by_band.csv
 artifacts/represented_subset_access_by_band_rucc.csv
 artifacts/scraped_20_state_bon_summary_matrix.csv
