@@ -589,6 +589,19 @@ out <- amcb %>%
   # and a later one leaves the row holding an NPI while calling itself
   # quarantined.
   mutate(npi_demoted_absence_c5 = resolved_by_absence_c5,
+         # Keep the demoted NPI before dropping it. Demotion removes the CLAIM
+         # that this is the person; it does not make the candidate we found
+         # disappear, and the row keeps that candidate's nppes_city/state/zip.
+         # Without this line those fields describe an NPI recorded nowhere on
+         # the row -- a city with no identity behind it, which is the inversion
+         # contract A4 now fails on and which produced 8 such rows in the
+         # current crosswalk.
+         #
+         # The held-out class-5 rows already do exactly this, which is why 156
+         # of them carry geography coherently and these 8 did not: same
+         # situation, recorded two different ways.
+         class5_candidate_npi = if_else(resolved_by_absence_c5, npi,
+                                        NA_character_),
          npi = if_else(resolved_by_absence_c5, NA_character_, npi),
          npi_tax_class = if_else(npi_demoted_absence_c5, NA_character_, npi_tax_class),
          name_evidence_class = if_else(npi_demoted_absence_c5,
