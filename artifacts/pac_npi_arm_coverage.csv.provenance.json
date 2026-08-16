@@ -1,0 +1,10 @@
+{
+  "artifact": "pac_npi_arm_coverage.csv",
+  "written_utc": "2026-08-16 20:30:11 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/pac_npi_ever.csv",
+      "sha256": "2d420fd7df948b094b4f266615fabad28622245b395db18d950bf06853630dcf"
+    }
+  ]
+}

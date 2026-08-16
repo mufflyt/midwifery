@@ -1,0 +1,7 @@
+arm,class,n_pac_ids,pct
+pecos_reassignment,absent_from_ppef,822,15.8
+pecos_reassignment,mapped_ambiguous,2200,42.3
+pecos_reassignment,mapped_unique,2183,41.9
+care_compare,absent_from_ppef,50,2
+care_compare,mapped_ambiguous,1373,56.2
+care_compare,mapped_unique,1020,41.8

@@ -474,3 +474,14 @@ artifacts/organization_affiliation_resolved.csv
 artifacts/organization_affiliation_resolved.csv.provenance.json
 artifacts/nppes_colocation_2025.csv
 artifacts/nppes_colocation_2025.csv.provenance.json
+
+# PAC ID <-> NPI crosswalk and the identity reconciliation. The crosswalk halves
+# are organization-level CMS data but large (753k / 388k rows); the pairings
+# table is keyed on midwife NPI and is person-level. Tracked forms are the
+# summary, cardinality, transition, coverage, conflict and provenance files.
+artifacts/pac_npi_snapshot.csv
+artifacts/pac_npi_snapshot.csv.provenance.json
+artifacts/pac_npi_ever.csv
+artifacts/pac_npi_ever.csv.provenance.json
+artifacts/organization_identity_pairings.csv
+artifacts/organization_identity_pairings.csv.provenance.json

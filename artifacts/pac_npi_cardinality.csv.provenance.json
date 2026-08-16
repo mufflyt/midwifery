@@ -1,0 +1,10 @@
+{
+  "artifact": "pac_npi_cardinality.csv",
+  "written_utc": "2026-08-16 20:22:47 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/pac_npi_snapshot.csv",
+      "sha256": "eecaaa886076185244dfe53b490464ba22f92807421fbc11d4718badcadab65f"
+    }
+  ]
+}
