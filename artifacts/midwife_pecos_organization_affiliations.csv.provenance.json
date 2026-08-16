@@ -1,0 +1,22 @@
+{
+  "artifact": "midwife_pecos_organization_affiliations.csv",
+  "written_utc": "2026-08-16 15:09:45 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv",
+      "sha256": "4eb27a91359b244b8f7ce5e6a8e6d455331f53830c735e9e6c5680bae2315545"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/pecos_data/ppefenrol.csv",
+      "sha256": "90afc10bb8050b29f8875efccdd8367a6c96c10bb3d7f11101a5d9b997da1c36"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/pecos_data/ppefreassign.csv",
+      "sha256": "2b96e5bc6403ed6b2d8cf9845a47243bc1d0a9b0c37c53b5fb1694a69be65752"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/pecos_data/ppefaddr.csv",
+      "sha256": "f6911fe48fe383d7e45372ac416832ae021fad05478b263a6b0b14d2a0caefdc"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
-# Estimand and reporting decisions — contract
+# Estimand and reporting decisions - contract
 
-Nine open questions surfaced by the 21-cycle adversarial run. Each was
+Open questions surfaced by the 21-cycle adversarial run. Each was
 deliberately **not** answered by a test or a cycle: they are choices about what
 the study measures and claims, and a passing suite is not authority to make
 them.
@@ -13,6 +13,16 @@ explicitly so it is not mistaken for a settled choice.
 
 Status legend: 🔴 blocks publication · 🟡 affects a published number ·
 🟢 affects wording or diagnostics only
+
+---
+
+## Durable Rule: CNM/CM Scope Is Intentional, Not a Limitation
+
+All workforce counts, geographic analyses, access measures, employer analyses,
+training analyses, and projections refer exclusively to CNMs and CMs. The
+project does not attempt to measure total midwifery supply. Exclusion of CPMs,
+LMs/LDMs, traditional midwives, or unlicensed practitioners must not be
+described as missingness, undercoverage, or a study limitation.
 
 ---
 
@@ -465,9 +475,9 @@ for counts that include AMCB-certified CNMs and CMs only. The generated prose
 said "certified nurse-midwives"; the column names did not.
 
 **Evidence.** A county flagged `no_located_midwife_with_births = TRUE` read as
-a maternity-care desert. It meant no *AMCB-certified* CNM/CM was located
-there; a county served entirely by CPMs could carry that flag while having
-midwifery care. Whichever a reader met first -- column name or sentence --
+broader than the study estimand. It meant no *AMCB-certified* CNM/CM was
+located there, but the column name implied all midwives regardless of
+credential. Whichever a reader met first -- column name or sentence --
 determined what they believed.
 
 **Options.** (A) Rename to `n_cnm_cm`, `cnm_cm_per_10k_women`,
