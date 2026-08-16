@@ -253,5 +253,60 @@ cat("\n-- surname components --\n")
       "T20 missing/empty surname yields zero tokens")
 }
 
+# T21 (adversarial). THE TOKEN-SET RULE ITSELF. amcb_person_matches() requires
+# the surname AND a shared given-name token. Nothing tested that conjunction:
+# mutation testing changed `same_last & shared` to `same_last | shared` and the
+# entire suite still passed, which means the central identity rule in this
+# repository was unguarded.
+#
+# Loosened to OR, every "Mary" matches every other "Mary" regardless of
+# surname. That is not a near-miss; it is the difference between an identity
+# system and a first-name lookup.
+{
+  tok <- function(...) list(c(...))
+
+  # Both conditions hold -> match.
+  chk(isTRUE(amcb_person_matches("SMITH", tok("MARY"), "SMITH", tok("MARY"))),
+      "T21a same surname and a shared given token is a match")
+
+  # Surname only -> NOT a match. This is what the OR mutation broke.
+  chk(!isTRUE(amcb_person_matches("SMITH", tok("MARY"), "SMITH", tok("JANE"))),
+      "T21b same surname with NO shared given token is NOT a match")
+
+  # Given token only -> NOT a match. The other half of the conjunction.
+  chk(!isTRUE(amcb_person_matches("SMITH", tok("MARY"), "JONES", tok("MARY"))),
+      "T21c a shared given token with a DIFFERENT surname is NOT a match")
+
+  # Neither -> obviously not.
+  chk(!isTRUE(amcb_person_matches("SMITH", tok("MARY"), "JONES", tok("JANE"))),
+      "T21d neither surname nor given token shared is not a match")
+
+  # A missing surname is an absence, not a wildcard.
+  chk(!isTRUE(amcb_person_matches(NA_character_, tok("MARY"), NA_character_, tok("MARY"))),
+      "T21e two missing surnames do not match each other")
+  chk(!isTRUE(amcb_person_matches("", tok("MARY"), "", tok("MARY"))),
+      "T21f two empty surnames do not match each other")
+
+  # Middle names count as given tokens: the set intersects on any element.
+  chk(isTRUE(amcb_person_matches("SMITH", tok("MARY", "ANNE"),
+                                 "SMITH", tok("ANNE", "ELIZABETH"))),
+      "T21g the given-name sets need only intersect, not be equal")
+
+  # An empty given set cannot intersect anything.
+  chk(!isTRUE(amcb_person_matches("SMITH", list(character(0)),
+                                  "SMITH", tok("MARY"))),
+      "T21h an empty given-name set matches nobody")
+}
+
+# T22 (adversarial). The minimum surname-token length is a real threshold, not
+# a formatting detail: at 2 characters, particles and initials become blocking
+# keys and unrelated people collide. Pinned by VALUE so lowering it fails here
+# rather than quietly widening every candidate pool.
+{
+  chk(AMCB_MIN_SURNAME_TOKEN == 4L,
+      sprintf("T22 the surname-token floor is 4 characters [%d]",
+              AMCB_MIN_SURNAME_TOKEN))
+}
+
 cat(sprintf("\n%s (%d failures)\n", if (fails == 0L) "PASS" else "FAIL", fails))
 quit(status = if (fails == 0L) 0L else 1L)

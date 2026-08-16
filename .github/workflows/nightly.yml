@@ -235,6 +235,59 @@ jobs:
         run: Rscript tests/ci_semantic_contracts.R
 
   # ---------------------------------------------------------------------------
+  # Does the suite DETECT anything? Every other job asks whether the code is
+  # right. This one introduces plausible bugs and checks the tests turn red.
+  # A mutation that SURVIVES is a hole in the tests, and it fails this job.
+  #
+  # Runs a rotating slice so a nightly stays minutes rather than an hour; the
+  # whole catalogue cycles over successive days. MUTATION_ALL=1 on a manual
+  # dispatch runs everything.
+  # ---------------------------------------------------------------------------
+  mutation-testing:
+    name: Mutation testing (does the suite detect anything?)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: System libraries for sf
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libgdal-dev libproj-dev libgeos-dev libudunits2-dev
+
+      - name: Install packages
+        run: |
+          pkgs <- c("dplyr", "jsonlite", "purrr", "readr", "scales", "stringi",
+                    "stringr", "testthat", "tibble", "tidyr", "checkmate",
+                    "DBI", "digest", "duckdb", "geosphere", "here", "httr",
+                    "openssl", "xml2", "assertthat", "withr", "fs", "rlang",
+                    "readxl", "stringdist", "humaniformat", "sf")
+          missing <- pkgs[!pkgs %in% rownames(installed.packages())]
+          if (length(missing)) install.packages(missing)
+        shell: Rscript {0}
+
+      - name: Introduce plausible bugs and require the tests to catch them
+        run: Rscript tests/ci_mutation_testing.R
+
+      # The runner restores every file it mutates and verifies this itself, but
+      # a mutation escaping into a later job would be far worse than a failed
+      # build, so the workspace is checked independently here too.
+      - name: The workspace must be unmodified
+        if: always()
+        run: |
+          git diff --quiet || {
+            echo "MUTATION ESCAPED -- working tree is dirty:"; git diff --stat; exit 1; }
+          echo "workspace clean; no mutation escaped"
+
+  # ---------------------------------------------------------------------------
   suite-coverage:
     name: No test file goes unrun
     runs-on: ubuntu-latest
@@ -433,7 +486,7 @@ jobs:
     runs-on: ubuntu-latest
     # Blocking jobs only. network-tests and external-deps are informational by
     # construction and must not be able to redden the nightly.
-    needs: [r-suite, python-suite, gates, suite-coverage, public-exposure]
+    needs: [r-suite, python-suite, gates, suite-coverage, public-exposure, mutation-testing]
     if: always()
     steps:
       - name: Report
@@ -446,6 +499,7 @@ jobs:
             echo "| Gates | ${{ needs.gates.result }} |"
             echo "| Suite coverage | ${{ needs.suite-coverage.result }} |"
             echo "| Public exposure | ${{ needs.public-exposure.result }} |"
+            echo "| Mutation testing | ${{ needs.mutation-testing.result }} |"
           } >> "$GITHUB_STEP_SUMMARY"
 
       # A skipped or cancelled blocking job is NOT a pass. Requiring 'success'
@@ -456,7 +510,8 @@ jobs:
                    "${{ needs.python-suite.result }}" \
                    "${{ needs.gates.result }}" \
                    "${{ needs.suite-coverage.result }}" \
-                   "${{ needs.public-exposure.result }}"; do
+                   "${{ needs.public-exposure.result }}" \
+                   "${{ needs.mutation-testing.result }}"; do
             [ "$r" = "success" ] || { echo "blocking job result: $r"; exit 1; }
           done
           echo "all blocking jobs succeeded"
