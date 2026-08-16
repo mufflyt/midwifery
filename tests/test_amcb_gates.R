@@ -302,6 +302,8 @@ cat("\n-- G5: crosswalk inclusion does NOT imply cohort eligibility --\n")
               paste(COHORT_MEMBERSHIP_TIERS, collapse = ", ")))
   chk(!"sensitivity_name_component" %in% COHORT_MEMBERSHIP_TIERS,
       "G5 class-5 (surname component) is NOT cohort-eligible")
+  chk("sensitivity_unknown_taxonomy" %in% COHORT_MEMBERSHIP_TIERS,
+      "G5 unknown taxonomy remains cohort-eligible but not primary")
   chk(!any(c("quarantined", "unmatched") %in% COHORT_MEMBERSHIP_TIERS),
       "G5 quarantined and unmatched are NOT cohort-eligible")
 

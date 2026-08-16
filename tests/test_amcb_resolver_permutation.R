@@ -317,7 +317,8 @@ cat("\n-- the pipeline must USE these rules, not carry a second copy --\n")
       "WIRE1 match_amcb_to_npi.R sources R/amcb_resolver.R")
 
   for (fn in c("amcb_per_npi(", "amcb_pool_stats(",
-               "amcb_resolve_best_class(", "amcb_quarantined_ids(")) {
+               "amcb_resolve_best_class(", "amcb_quarantined_ids(",
+               "amcb_linkage_tier(")) {
     chk(grepl(fn, src, fixed = TRUE),
         sprintf("WIRE2 the pipeline calls %s()", sub("[(]$", "", fn)))
   }
@@ -328,6 +329,8 @@ cat("\n-- the pipeline must USE these rules, not carry a second copy --\n")
       "WIRE3 the pipeline no longer carries its own copy of the n_at_best_class rule")
   chk(!grepl("best_evidence_class = min(name_evidence_class)", src, fixed = TRUE),
       "WIRE4 the pipeline no longer carries its own copy of the best-class rule")
+  chk(!grepl('~ "primary_midwifery"', src, fixed = TRUE),
+      "WIRE5 the pipeline no longer carries its own copy of the tier fall-through")
 }
 
 cat(sprintf("\n%s (%d failures)\n", if (fails == 0L) "PASS" else "FAIL", fails))

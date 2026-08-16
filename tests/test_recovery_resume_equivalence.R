@@ -314,6 +314,66 @@ cat("\n-- NEGATIVE CONTROL: the harness can detect a broken resume --\n")
 }
 
 # -----------------------------------------------------------------------------
+cat("\n-- A: atomic writes (DEBT.md D1) --\n")
+# -----------------------------------------------------------------------------
+# A checkpoint was saveRDS() then write_csv(), both straight to their final
+# paths. Killed between them, the checkpoint outruns its output; killed during
+# either, a truncated file replaces a complete one. Both now go through a temp
+# file and a rename, which is atomic within a filesystem.
+{
+  d <- file.path(tempdir(), paste0("atom_", paste(sample(letters, 8), collapse = "")))
+  dir.create(d, showWarnings = FALSE, recursive = TRUE)
+  out <- file.path(d, "out.csv")
+
+  atomic_write_csv(data.frame(id = 1:5, v = letters[1:5]), out)
+  chk(nrow(read_csv(out, show_col_types = FALSE, progress = FALSE)) == 5L,
+      "A1 an atomic write produces the file it was given")
+
+  # A writer that dies mid-write must leave the PREVIOUS file untouched.
+  before <- readLines(out, warn = FALSE)
+  err <- tryCatch({
+    atomic_write(function(p) { writeLines("id,v", p); stop("killed mid-write") }, out)
+    NULL
+  }, error = function(e) conditionMessage(e))
+  chk(!is.null(err), "A2 a writer that dies propagates the error")
+  chk(identical(readLines(out, warn = FALSE), before),
+      "A3 and the previous file survives a crash mid-write, byte for byte")
+
+  # An empty file must not replace a full one. This is the shape of the
+  # 2026-08-09 truncation: a complete CSV overwritten with almost nothing.
+  err2 <- tryCatch({
+    atomic_write_csv(data.frame(), out); NULL
+  }, error = function(e) conditionMessage(e))
+  chk(!is.null(err2) || nrow(read_csv(out, show_col_types = FALSE,
+                                      progress = FALSE)) == 5L,
+      "A4 an empty write is refused rather than replacing a full file")
+  chk(nrow(read_csv(out, show_col_types = FALSE, progress = FALSE)) == 5L,
+      "A5 the good file is still there afterwards")
+
+  # No temp files left behind, whatever happened above.
+  leftovers <- list.files(d, pattern = "^[.].*[.]tmp[0-9]+$", all.files = TRUE)
+  chk(length(leftovers) == 0L,
+      sprintf("A6 no temporary files are left behind [%d]", length(leftovers)))
+
+  # The production scripts must actually use it.
+  for (f in c("scrape_healthgrades_midwives.R", "enrich_healthgrades_profiles.R")) {
+    src <- paste(readLines(file.path(root, f), warn = FALSE), collapse = "\n")
+    code <- readLines(file.path(root, f), warn = FALSE)
+    code <- paste(code[!grepl("^\\s*#", code)], collapse = "\n")
+    chk(grepl("atomic_saveRDS(", src, fixed = TRUE) &&
+          grepl("atomic_write_csv(", src, fixed = TRUE),
+        sprintf("A7 %s writes checkpoints and output atomically", f))
+    # A BARE saveRDS, not the atomic one. atomic_saveRDS(done, CHECKPOINT)
+    # CONTAINS the string saveRDS(done, CHECKPOINT), so a substring test matches
+    # the fix and reports it as the defect -- the same superset-match mistake
+    # that made an earlier check grep its own explanatory comment.
+    bare <- grepl("(?<!atomic_)saveRDS\\(done, CHECKPOINT\\)", code, perl = TRUE)
+    chk(!bare,
+        sprintf("A8 %s no longer has a BARE saveRDS to the final path", f))
+  }
+}
+
+# -----------------------------------------------------------------------------
 cat("\n-- LIMITS --\n")
 # -----------------------------------------------------------------------------
 {

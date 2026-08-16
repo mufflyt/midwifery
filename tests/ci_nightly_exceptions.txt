@@ -23,11 +23,10 @@
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# Requires ~/isochrones/R/string_normalization.R. midwifery/R/string_normalization.R
-# is a shim that source()s the canonical file from the sibling repository and
-# hard-stops when it is absent, which is correct behaviour -- one normalizer,
-# not two. mufflyt/isochrones is PRIVATE and mufflyt/midwifery is PUBLIC, so a
-# runner has no credentials to fetch it.
+# Requires a private mufflyt/isochrones checkout. Some entries source canonical
+# name-key helpers; the Stage 2 entry runs the canonical rank_one_to_one()
+# ordering contract. mufflyt/isochrones is PRIVATE and mufflyt/midwifery is
+# PUBLIC, so a runner has no credentials to fetch it.
 #
 # To make these blocking, add a deploy key or read-only PAT for mufflyt/isochrones
 # as a repository secret and clone it in the `external-deps` job. Until then the
@@ -36,10 +35,24 @@
 tests/test_amcb_name_normalization.R    external-private  # canonical normalize_string()
 tests/test_cycle12_names_territories.R  external-private  # canonical name keys
 tests/test_cycle4_ct_apportionment.R    external-private  # canonical name keys
+tests/test_isochrones_stage2_rank_one_to_one.R  external-private  # canonical rank_one_to_one()
 
 # -----------------------------------------------------------------------------
-# Downloads a CMS Facility_Affiliation file at source() time via
-# R/lib/match_npi_to_hospitals.R. That URL returned 404 on 2026-08-15. An
-# upstream dead link is worth a warning, not a red build.
+# Downloads a CMS Facility_Affiliation file at run time, so it depends on
+# data.cms.gov being up. Stays informational for that reason and no other.
+#
+# UPDATED 2026-08-16. The reason used to be "that URL returns 404", which was
+# true but was not an outage: CMS rotates the resource id on every refresh, and
+# the pinned _1782750576 had been superseded by _1785521778 on 2026-07-31.
+# resolve_facility_affiliation_url() now resolves the current URL from the
+# provider-data catalog, and the test passes.
+#
+# I briefly retired this entry on the strength of that. That was wrong. A fixed
+# URL does not make the test hermetic -- it still needs CMS to answer -- and
+# promoting it to blocking would put a third party's uptime in front of every
+# nightly. The entry stays; only its reason changed.
+#
+# Worth noting the shape anyway: an exception can outlive its stated cause, and
+# the only thing that surfaces that is trying the excepted test again.
 # -----------------------------------------------------------------------------
-tests/test_match_npi_to_hospitals.R     external-network  # data.cms.gov 404
+tests/test_match_npi_to_hospitals.R     external-network  # needs data.cms.gov

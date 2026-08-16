@@ -39,9 +39,10 @@
 #' rebuild. See docs/ and the freeze manifest.
 #' @export
 COHORT_MEMBERSHIP_TIERS <- c(
-  "primary_midwifery",     # exact/near-exact identity, midwifery taxonomy
-  "sensitivity_nursing",   # same identity evidence, nursing-taxonomy NPI
-  "sensitivity_fuzzy"      # fuzzy surname within edit distance 2, exact given
+  "primary_midwifery",             # exact/near-exact identity, midwifery taxonomy
+  "sensitivity_nursing",           # same identity evidence, nursing-taxonomy NPI
+  "sensitivity_fuzzy",             # fuzzy surname within edit distance 2, exact given
+  "sensitivity_unknown_taxonomy"    # identity evidence present; taxonomy label dirty
 )
 
 #' Is this crosswalk row a member of the primary analytic cohort?

@@ -70,3 +70,68 @@ resume_output <- function(done) {
   if (!length(done)) return(NULL)
   dplyr::bind_rows(done)
 }
+
+# =============================================================================
+# Atomic writes
+# =============================================================================
+# A checkpoint used to be `saveRDS()` followed by `write_csv()`, both writing
+# straight to their final paths. Two ways that loses data:
+#
+#   * killed BETWEEN the two calls -> a checkpoint newer than its output;
+#   * killed DURING either write   -> a truncated file where a complete one was.
+#
+# The output is 3.4 MB and is rewritten WHOLLY every checkpoint, so the window
+# is not small, and it is the reason CKPT_EVERY was set to 10 rather than 5:
+# more frequent checkpoints cut livelock exposure but raised torn-write
+# exposure. Making the write atomic removes that trade.
+#
+# rename() within a filesystem is atomic on POSIX and on Windows via
+# file.rename(): a reader sees either the old file or the new one, never a
+# half-written one. Writing to a temp file in the SAME DIRECTORY matters --
+# across filesystems rename degrades to copy-then-delete, which is exactly the
+# non-atomic behaviour being removed.
+# =============================================================================
+
+#' Write via a temporary file and rename into place
+#'
+#' @param write_fn function(path) that writes the payload to `path`.
+#' @param path final destination.
+#' @param validate optional function(path) returning TRUE if the temp file is
+#'   acceptable. A write that produced nonsense should not replace a good file
+#'   just because it completed.
+#' @return `path`, invisibly.
+atomic_write <- function(write_fn, path, validate = NULL) {
+  dir <- dirname(path)
+  if (!dir.exists(dir)) dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  # Same directory, so rename() stays within one filesystem and stays atomic.
+  tmp <- file.path(dir, sprintf(".%s.tmp%d", basename(path), Sys.getpid()))
+  on.exit(if (file.exists(tmp)) unlink(tmp), add = TRUE)
+
+  write_fn(tmp)
+  if (!file.exists(tmp)) {
+    stop("atomic_write(): the writer produced no file for ", path, call. = FALSE)
+  }
+  if (!is.null(validate) && !isTRUE(validate(tmp))) {
+    stop("atomic_write(): validation refused the new ", basename(path),
+         "; the previous file is untouched", call. = FALSE)
+  }
+  if (!file.rename(tmp, path)) {
+    stop("atomic_write(): could not rename into place: ", path, call. = FALSE)
+  }
+  invisible(path)
+}
+
+#' Atomic saveRDS
+atomic_saveRDS <- function(object, path) {
+  atomic_write(function(p) saveRDS(object, p), path,
+               validate = function(p) file.info(p)$size > 0)
+}
+
+#' Atomic readr::write_csv
+#'
+#' Validates that the temp file has at least a header before it replaces
+#' anything. An empty CSV replacing a full one is the failure this guards.
+atomic_write_csv <- function(x, path, ...) {
+  atomic_write(function(p) readr::write_csv(x, p, ...), path,
+               validate = function(p) length(readLines(p, n = 1L, warn = FALSE)) == 1L)
+}

@@ -126,6 +126,21 @@ amcb_resolve <- function(candidates) {
        quarantined_ids = amcb_quarantined_ids(candidates, rs))
 }
 
+#' Normalise NPI taxonomy class labels used by the AMCB resolver
+#'
+#' Upstream taxonomy class values are data, not control flow. Case or whitespace
+#' drift should not change a nursing NPI into primary midwifery evidence, and an
+#' unrecognised value should fail closed into its own sensitivity tier.
+normalise_npi_tax_class <- function(npi_tax_class) {
+  x <- tolower(trimws(as.character(npi_tax_class)))
+  x[is.na(npi_tax_class) | !nzchar(x)] <- NA_character_
+  dplyr::case_when(
+    x == "midwife" ~ "midwife",
+    x == "nursing" ~ "nursing",
+    TRUE ~ NA_character_
+  )
+}
+
 #' Assign the linkage tier
 #'
 #' Extracted from match_amcb_to_npi.R for the same reason as the rules above:
@@ -140,7 +155,9 @@ amcb_resolve <- function(candidates) {
 #'
 #' @param npi `character`: resolved NPI, NA when unresolved.
 #' @param name_evidence_class `integer`: 1 (strongest) to 5 (weakest).
-#' @param npi_tax_class `character`: "midwife" or "nursing".
+#' @param npi_tax_class `character`: "midwife" or "nursing"; case/whitespace
+#'   are normalised. Anything else becomes `sensitivity_unknown_taxonomy` rather
+#'   than falling through to `primary_midwifery`.
 #' @param demoted_absence_c5 `logical`: class-5 candidate held out by the guard.
 #' @param match_status `character`: e.g. "ambiguous_pool", used only when there
 #'   is no NPI.
@@ -148,7 +165,8 @@ amcb_resolve <- function(candidates) {
 amcb_linkage_tier <- function(npi, name_evidence_class, npi_tax_class,
                               demoted_absence_c5 = FALSE,
                               match_status = NA_character_) {
-  n <- max(length(npi), length(name_evidence_class))
+  n <- max(length(npi), length(name_evidence_class), length(npi_tax_class),
+           length(demoted_absence_c5), length(match_status))
   rep_to <- function(x) if (length(x) == 1L) rep(x, n) else x
   npi <- rep_to(npi); name_evidence_class <- rep_to(name_evidence_class)
   npi_tax_class <- rep_to(npi_tax_class)
@@ -156,11 +174,13 @@ amcb_linkage_tier <- function(npi, name_evidence_class, npi_tax_class,
   match_status <- rep_to(match_status)
 
   has <- !is.na(npi) & nzchar(npi)
+  tax <- normalise_npi_tax_class(npi_tax_class)
   dplyr::case_when(
     has & name_evidence_class == 5L        ~ "sensitivity_name_component",
     has & name_evidence_class == 4L        ~ "sensitivity_fuzzy",
-    has & npi_tax_class == "nursing"       ~ "sensitivity_nursing",
-    has                                    ~ "primary_midwifery",
+    has & tax == "nursing"                 ~ "sensitivity_nursing",
+    has & tax == "midwife"                 ~ "primary_midwifery",
+    has                                    ~ "sensitivity_unknown_taxonomy",
     demoted_absence_c5 %in% TRUE           ~ "quarantined",
     grepl("^ambiguous", match_status)      ~ "quarantined",
     TRUE                                   ~ "unmatched")

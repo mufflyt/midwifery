@@ -585,7 +585,10 @@ out <- amcb %>%
                                        NA_integer_, name_evidence_class)) %>%
   mutate(npi_match_status = case_when(
     npi_demoted_absence_c5 ~ "ambiguous_unruled_out_component",
-    !is.na(npi) & npi_tax_class == "nursing" ~ "matched_nursing_taxonomy",
+    !is.na(npi) & normalise_npi_tax_class(npi_tax_class) == "nursing" ~
+      "matched_nursing_taxonomy",
+    !is.na(npi) & is.na(normalise_npi_tax_class(npi_tax_class)) ~
+      "matched_unknown_taxonomy",
     !is.na(npi)                  ~ "matched",
     amcb_id %in% quarantined_ids ~ "ambiguous_tied_names",
     amcb_id %in% lost_bijection  ~ "ambiguous_contested_npi",
@@ -595,17 +598,10 @@ out <- amcb %>%
   # "no plausible NPI exists" and "plausible NPIs exist but identity is
   # ambiguous" are different kinds of missingness and must stay separable.
   mutate(has_candidate = n_candidates_pre_rank > 0,
-         linkage_tier = case_when(
-           # Fuzzy identity evidence is sensitivity-only whatever the taxonomy.
-           # Its own tier, not folded into sensitivity_fuzzy: the two have
-           # different failure modes and must stay separable.
-           !is.na(npi) & name_evidence_class == 5L  ~ "sensitivity_name_component",
-           !is.na(npi) & name_evidence_class == 4L  ~ "sensitivity_fuzzy",
-           !is.na(npi) & npi_tax_class == "nursing" ~ "sensitivity_nursing",
-           !is.na(npi)                              ~ "primary_midwifery",
-           npi_demoted_absence_c5                   ~ "quarantined",
-           grepl("^ambiguous", npi_match_status)    ~ "quarantined",
-           TRUE                                     ~ "unmatched"),
+         linkage_tier = amcb_linkage_tier(
+           npi, name_evidence_class, npi_tax_class,
+           demoted_absence_c5 = npi_demoted_absence_c5,
+           match_status = npi_match_status),
          # candidate_count is the pool BEFORE resolution -- how many NPIs were
          # ever plausible for this person. Reporting the post-bijection count
          # would always be 0 or 1 and would hide every ambiguity.
@@ -647,10 +643,11 @@ out <- amcb %>%
 stopifnot(nrow(out) == nrow(amcb), !any(duplicated(out$amcb_id)))
 stopifnot(all(out$linkage_tier %in% c("primary_midwifery", "sensitivity_nursing",
                                       "sensitivity_fuzzy", "sensitivity_name_component",
+                                      "sensitivity_unknown_taxonomy",
                                       "quarantined", "unmatched")),
           sum(table(out$linkage_tier)) == nrow(amcb),
           !any(out$linkage_tier == "primary_midwifery" &
-                 out$npi_tax_class == "nursing", na.rm = TRUE))
+                 normalise_npi_tax_class(out$npi_tax_class) != "midwife", na.rm = TRUE))
 # Atomic publish: a failed or half-finished run must not leave something that
 # looks like a valid linkage artifact. Write to a temp path, then rename only
 # after every assertion above has passed.

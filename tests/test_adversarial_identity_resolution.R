@@ -173,8 +173,9 @@ cat("\n-- B3: the eligibility policy itself is pinned --\n")
 # only by being surprised, so it is pinned here by value.
 {
   chk(identical(sort(COHORT_MEMBERSHIP_TIERS),
-                sort(c("primary_midwifery", "sensitivity_nursing", "sensitivity_fuzzy"))),
-      sprintf("B3a cohort-eligible tiers are exactly the three declared [%s]",
+                sort(c("primary_midwifery", "sensitivity_nursing",
+                       "sensitivity_fuzzy", "sensitivity_unknown_taxonomy"))),
+      sprintf("B3a cohort-eligible tiers are exactly the four declared [%s]",
               paste(COHORT_MEMBERSHIP_TIERS, collapse = ", ")))
   chk(!("sensitivity_name_component" %in% COHORT_MEMBERSHIP_TIERS),
       "B3b class-5 surname fragments are NOT cohort-eligible")
@@ -203,6 +204,12 @@ cat("\n-- B4: the TIER itself, not merely eligibility --\n")
   chk(identical(amcb_linkage_tier("2000000001", 2L, "nursing"),
                 "sensitivity_nursing"),
       "B4 class 2 with a nursing-taxonomy NPI -> sensitivity_nursing")
+  chk(identical(amcb_linkage_tier("2000000001", 2L, "NURSING"),
+                "sensitivity_nursing"),
+      "B4 nursing taxonomy is normalised before tier assignment")
+  chk(identical(amcb_linkage_tier("2000000001", 2L, "garbage"),
+                "sensitivity_unknown_taxonomy"),
+      "B4 unknown taxonomy fails closed to sensitivity_unknown_taxonomy")
 
   # Missing evidence must never be read as agreement. classify() only ever
   # hands is_cohort_member() RESOLVED rows, so a mutation making an absent NPI

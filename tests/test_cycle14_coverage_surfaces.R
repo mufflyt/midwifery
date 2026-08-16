@@ -59,6 +59,16 @@ cat("\n-- BVA --\n")
       "T133 inversion flags >50% of state land, not 49.9%")
 }
 
+# T133b. The production rule uses census AWATER, not land area. Michigan's mask
+# can legitimately be large relative to land; the inverted five are enormous
+# relative to their census water area and must be excluded from clipping.
+{
+  chk(identical(is_water_mask_larger_than_awater(c(95, 450, 1620),
+                                                 c(100, 100, 10)),
+                c(FALSE, FALSE, TRUE)),
+      "T133b mask inversion is judged against AWATER, not state land area")
+}
+
 cat("\n-- SEMANTIC --\n")
 
 # T134. THE DEFECT. A missing mask directory must STOP a final build. The
@@ -127,6 +137,23 @@ cat("\n-- ADVERSARIAL --\n")
   chk(length(offenders) == 0,
       sprintf("T138 no build gates the land clip on a bare dir.exists [%s]",
               if (length(offenders)) paste(offenders, collapse = ", ") else "none"))
+}
+
+# T138b. ENFORCE THE DC FIX. The bug was not missing data: DC_water_mask.fgb was
+# present, but the build hand-filtered DC out of the canonical CONUS state list
+# and then verified the filtered list against itself. The build must use the
+# canonical list directly, including DC.
+{
+  src <- readLines("build_midwifery_isochrone_map.R", warn = FALSE)
+  code <- sub("#.*$", "", src)
+  collapsed <- paste(code, collapse = "\n")
+  excludes_dc <- grepl("setdiff\\s*\\([^\\n]*CONUS_STATE_ABBR[^\\n]*DC",
+                       collapsed)
+  uses_canonical <- grepl("states\\s*<-\\s*mufflyaccess::CONUS_STATE_ABBR",
+                          collapsed)
+  chk(!excludes_dc && uses_canonical,
+      sprintf("T138b water clipping uses the canonical CONUS state list including DC [canonical=%s excludes_dc=%s]",
+              uses_canonical, excludes_dc))
 }
 
 # T139. Reported area must not depend on which CRS the surface happens to be

@@ -88,18 +88,49 @@ if (file.exists("artifacts/table1_midwives.csv")) {
   # shortfall is read from the header note rather than hardcoded, so the test
   # fails if the note and the block ever disagree -- which is the actual risk
   # once a fact lives in prose instead of a row.
+  # TWO DRIFTS FIXED 2026-08-16, and the data was innocent of both.
+  #
+  # 1. The pattern was the literal "ACOG district percentages exclude". The note
+  #    now reads "...percentages LIKEWISE exclude 38 midwives". One inserted
+  #    word made grep() return NA, acog_excl NA, and the comparison NA -- so
+  #    the assertion had stopped checking anything while still being red.
+  #    Anchoring on "ACOG district" plus "exclude" survives that kind of edit.
+  #
+  # 2. The expectation was N - acog_excl. That encoded an older Table 1 in
+  #    which the excluded midwives were dropped from the block. They are now
+  #    carried as their own row -- "Overseas-military or US-territory address
+  #    (no ACOG district) | 38" -- precisely so the block still sums to the
+  #    cohort, which the note also states. So the block sums to N, and 11,882
+  #    was the wrong target.
+  #
+  # Both facts are still checked, just the right way round: the note's number
+  # must match the row that carries it, and every block must sum to N.
   t1md <- readLines("docs/table1_midwives.md", warn = FALSE)
-  note <- grep("ACOG district percentages exclude", t1md, value = TRUE)[1]
+  note <- grep("ACOG district.*exclude", t1md, value = TRUE)[1]
+  chk(!is.na(note) && nzchar(note),
+      "Table 1 note about ACOG-district exclusions is still present")
   acog_excl <- suppressWarnings(as.integer(gsub(",", "",
     sub(".*exclude ([0-9,]+) midwi.*", "\\1", note))))
+  chk(!is.na(acog_excl),
+      sprintf("the excluded count parses out of the note [%s]", acog_excl))
+
   reg <- t1 %>% filter(!category %in% hg_cats, !is.na(n))
+
+  # PROSE AGAINST DATA: the number the note claims is excluded must equal the
+  # row that carries those people. This is the check the old grep was reaching
+  # for, and the one that actually catches the note and the block disagreeing.
+  excl_row <- reg$n[reg$category == "ACOG district" &
+                      grepl("no ACOG district|Overseas", reg$characteristic)]
+  chk(length(excl_row) == 1L && !is.na(acog_excl) && excl_row == acog_excl,
+      sprintf("the note's %s excluded matches the row carrying them (%s)",
+              format(acog_excl, big.mark = ","),
+              if (length(excl_row) == 1L) format(excl_row, big.mark = ",") else "no such row"))
+
   for (g in unique(reg$category)) {
     tot <- sum(reg$n[reg$category == g])
-    want <- if (g == "ACOG district") N - acog_excl else N
-    chk(!is.na(want) && tot == want,
-        sprintf("Table 1 '%s' sums to %s (%s vs %s)", g,
-                if (g == "ACOG district") "the cohort minus stated exclusions" else "the cohort",
-                format(tot, big.mark = ","), format(want, big.mark = ",")))
+    chk(tot == N,
+        sprintf("Table 1 '%s' sums to the cohort (%s vs %s)", g,
+                format(tot, big.mark = ","), format(N, big.mark = ",")))
   }
 }
 

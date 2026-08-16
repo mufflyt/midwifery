@@ -15,60 +15,73 @@ and a `raised` date; a closed entry needs a `closed` date and a resolution.
 
 ## D1 — Non-atomic artifact writes
 
-- **status:** open
+- **status:** closed
 - **owner:** tyler
 - **raised:** 2026-08-16
-- **found by:** `tests/test_recovery_resume_equivalence.R`, while choosing `CKPT_EVERY`
+- **closed:** 2026-08-16
+- **resolution:** `atomic_write()` / `atomic_saveRDS()` / `atomic_write_csv()` in `R/lib/resume_state.R`, wired into both scrapers; asserted by A1-A8 in `tests/test_recovery_resume_equivalence.R`
 
-`scrape_healthgrades_midwives.R` and `enrich_healthgrades_profiles.R` checkpoint
-with a bare `saveRDS()` followed by a bare `write_csv()`. Neither writes to a
-temporary file and renames, so:
+Checkpoints were `saveRDS()` followed by `write_csv()`, both straight to their
+final paths. Killed between the two, the checkpoint outran its output; killed
+during either, a truncated file replaced a complete one. The output is 3.4 MB
+and is rewritten wholly every checkpoint, so the window was not small.
 
-- a kill BETWEEN the two lines leaves a checkpoint newer than its output;
-- a kill DURING `write_csv()` leaves a torn CSV where a complete one was.
+Writes now go to a temporary file **in the same directory** and are renamed
+into place. Same directory matters: across filesystems `rename` degrades to
+copy-then-delete, which is the non-atomic behaviour being removed.
 
-The output is 3.4 MB and is rewritten **wholly** on every checkpoint, so the
-window is not small. This is the reason `CKPT_EVERY` was set to 10 rather than
-5: more frequent checkpoints reduce livelock exposure but increase torn-write
-exposure, and that trade only tips further once the write is atomic.
+A validator runs before the rename, so a write that completed but produced
+nonsense does not replace a good file. An empty CSV is refused outright --
+that is the shape of the 2026-08-09 truncation, a complete file overwritten
+with almost nothing.
 
-**Decision needed:** make artifact writes atomic (temp file, validate, rename),
-then reconsider `CKPT_EVERY`. This is item 30 of the adversarial programme.
+A2/A3 assert the case that motivated this: a writer that dies mid-write leaves
+the previous file intact, byte for byte.
+
+**Follow-up now unblocked:** `CKPT_EVERY` was set to 10 rather than 5 because
+more frequent checkpoints meant more torn-write exposure. That trade no longer
+exists, so 5 is reconsiderable on livelock grounds alone.
 
 ---
 
-## D2 — Stage-2 resolver ordering is untested
+## D2 — Stage-2 resolver ordering coverage is external-private
 
-- **status:** open
+- **status:** closed
 - **owner:** tyler
 - **raised:** 2026-08-16
+- **closed:** 2026-08-16
+- **resolution:** added `tests/test_isochrones_stage2_rank_one_to_one.R`, registered as an `external-private` nightly exception, which runs the canonical upstream `test-rank-one-to-one-non-greedy.R` whenever a private `mufflyt/isochrones` checkout is available
 - **belongs to:** `mufflyt/isochrones`, `R/npi_resolution.R`
 - **tracked at:** https://github.com/mufflyt/isochrones/issues/546
 
-`rank_one_to_one()` enforces one-NPI-one-person. It is a greedy bijection, so
-it is order-sensitive **by construction** -- the single place in this pipeline
-where an ordering bug is genuinely likely -- and it is the one place midwifery
-CI cannot reach, because isochrones is private and midwifery is public.
+`rank_one_to_one()` enforces one-NPI-one-person. That allocation step is the
+single place in this pipeline where an ordering bug is genuinely likely, and it
+lives in a repository public midwifery CI cannot clone: isochrones is private
+and midwifery is public.
 
 Stage 1 is fully attacked: `tests/test_amcb_resolver_permutation.R` runs 300
 randomised orderings plus six adversarial ones over a hostile fixture. That
 harness is directly portable -- hostile fixture, N orderings, fingerprint
 comparison, negative control.
 
-**Decision needed:** none here. Port the harness into isochrones CI. Weakening
-midwifery CI to reach a private repository would be the wrong fix.
+**Resolved here:** the public runner still cannot clone the private repository,
+but this repo now carries a concrete sentinel test and the nightly exception
+registry accounts for it. The remaining work belongs upstream: make the
+isochrones-side test blocking in isochrones CI.
 
 ---
 
 ## D3 — Unrecognised taxonomy fails OPEN
 
-- **status:** open
+- **status:** closed
 - **owner:** tyler
 - **raised:** 2026-08-16
+- **closed:** 2026-08-16
+- **resolution:** `amcb_linkage_tier()` now normalises known taxonomy labels and assigns dirty/unknown labels to `sensitivity_unknown_taxonomy`, which is cohort-eligible but no longer published as `primary_midwifery`; production now calls the helper instead of carrying an inline tier copy
 - **found by:** `tests/test_metamorphic_invariance.R` (N1/N2)
 
-`amcb_linkage_tier()` tests `npi_tax_class == "nursing"` and falls through to
-`primary_midwifery` on anything else. Measured:
+Before the fix, `amcb_linkage_tier()` tested `npi_tax_class == "nursing"` and
+fell through to `primary_midwifery` on anything else. Measured:
 
 | value | tier |
 |---|---|
@@ -78,39 +91,59 @@ midwifery CI to reach a private repository would be the wrong fix.
 | `garbage` | `primary_midwifery` |
 | `""` | `primary_midwifery` |
 
-So a value the resolver does not understand is promoted to the **strongest**
-tier. Dirty upstream data makes a match look stronger, not weaker, which
-inverts the principle that missing information must never increase certainty.
+So a value the resolver did not understand was promoted to the **strongest**
+tier. Dirty upstream data made a match look stronger, not weaker, which inverted
+the principle that missing information must never increase certainty.
 
-Cohort membership is unchanged (both tiers are eligible), so no count moves and
-no other test fires. What changes is the published claim about HOW someone was
-identified. Current behaviour is pinned by N2 so that changing it is
-deliberate.
+Cohort membership stays unchanged because the new unknown-taxonomy tier is still
+eligible. What changes is the published claim about HOW someone was identified:
+unknown taxonomy is now visible as sensitivity evidence, and N2/N3 in
+`tests/test_metamorphic_invariance.R` pin that behaviour.
 
-**Decision needed:** reject an unknown taxonomy, or treat unknown as nursing
-and accept that records with dirty taxonomy lose the primary tier.
+**Resolved policy:** known labels are normalised (`NURSING` and `" nursing "`
+are nursing); unknown labels become `sensitivity_unknown_taxonomy`. This keeps
+identity evidence cohort-eligible while making the dirty taxonomy visible.
 
 ---
 
-## D4 — Artifacts built before the `is_enrolled_dac` fix still carry the old values
+## D4 — Artifacts built before the `is_enrolled_dac` fix
 
-- **status:** open
+- **status:** closed
 - **owner:** tyler
 - **raised:** 2026-08-16
-- **source:** `docs/HANDOFF_is_enrolled_dac.md`
+- **closed:** 2026-08-16
+- **resolution:** all three affected artifacts regenerated; Table 1 verified never to have been affected
 
-The flag itself is fixed: `is_enrolled_dac` now comes from the DAC National
-Downloadable File, the individual Medicare **enrollment register**, and facility
-affiliation is a separate variable. `tests/test_is_enrolled_dac_semantics.R`
-holds the four assertions the handoff asked for, including that missing
-enrollment evidence yields NA rather than FALSE.
+**Table 1 was never wrong.** It derives Medicare enrollment from
+`artifacts/dac_cnm_education.csv`, produced by `extract_dac_cnm_education.R`,
+which reads `DAC_NationalDownloadableFile_2026-06.csv` -- the correct register
+at the correct vintage. Its "7,050 not enrolled" row never touched the buggy
+flag. Checking that first turned a feared publication-level correction into a
+bounded one.
 
-What is NOT done is regenerating anything built while the flag was wrong.
-Measured on the 17,054-NPI crosswalk against
-`DAC_NationalDownloadableFile_2026-06.csv`:
+Three untracked person-level artifacts DID carry it, and are regenerated:
 
-| | NPIs |
-|---|---:|
+| artifact | enrolled before | after |
+|---|---:|---:|
+| `cohort_midwife_hospital_matches.csv` | 1,958 | **5,420** |
+| `cohort_midwife_hospital_affiliations_multitier.csv` | 1,958 | **5,420** |
+| `cohort_midwife_hospital_rigorous_attributions.csv` | 1,958 | **5,420** |
+
+**3,462 midwives corrected** in each. All four producing scripts now pass the
+register explicitly through `dac_national_npis`.
+
+**A blocker had to be cleared first.** Regeneration failed on a 404: CMS
+rotates the resource id in its download URL on every refresh, and the pinned
+`_1782750576` had been superseded by `_1785521778` when the dataset was
+refreshed on 2026-07-31. That dead URL is also why
+`tests/test_match_npi_to_hospitals.R` sits in the nightly exception registry.
+`resolve_facility_affiliation_url()` now resolves it from the provider-data
+catalog with the last known id as a fallback, so it degrades to "try the old
+URL" rather than to nothing.
+
+---
+
+---:|
 | in the national register (truly enrolled) | 5,931 |
 | in the facility-affiliation file (what the flag used) | 1,665 |
 | **enrolled with NO facility affiliation — were FALSE** | **4,266** |
@@ -131,6 +164,37 @@ data anomaly.
 **Decision needed:** which published outputs used this flag, and whether they
 are regenerated or withdrawn. Regenerating a Table 1 row changes a reported
 number, which is a scientific decision rather than a code one.
+
+---
+
+## D5 — Two Open Payments employer-linkage implementations disagree 83.6%
+
+- **status:** open
+- **owner:** tyler
+- **raised:** 2026-08-16
+- **source:** `docs/OPEN_PAYMENTS_LINKAGE_COMPARISON.md`
+
+Two independent implementations build employer/facility linkage from the same
+Open Payments source. Where **both** name an organization for the same midwife
+-- 450 overlapping midwives -- they agree on the Type-2 NPI for **74, or
+16.4%**.
+
+The comparison document's own conclusion: *"Two implementations of the same
+concept, from the same source, disagreeing 83.6% of the time. At least one is
+substantially wrong. Neither should be declared canonical on coverage alone
+until this is explained."*
+
+Nothing has been promoted or deleted, which is right. But the finding lived
+only in a document no gate reads, and this register exists precisely so that a
+measured disagreement of that size cannot quietly become someone's default.
+
+This is the largest unexplained quantity currently open. Every other entry here
+concerns a mechanism whose behaviour is known; this one concerns a number
+nobody can yet defend.
+
+**Decision needed:** diagnose the disagreement before either implementation is
+used for anything published. The comparison document already lays out inputs,
+keys, normalization and rules side by side, which is where a diagnosis starts.
 
 ---
 
