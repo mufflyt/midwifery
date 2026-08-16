@@ -152,14 +152,20 @@ cat("\n-- E2: killed repeatedly, many times in one job --\n")
 cat("\n-- E4: LIVELOCK -- dying faster than the checkpoint interval --\n")
 # -----------------------------------------------------------------------------
 # A job that dies before it ever saves makes NO progress and repeats the same
-# work forever. This is not hypothetical arithmetic: scrape_healthgrades_midwives.R
-# uses CKPT_EVERY = 25 with a 2-second delay, so it checkpoints roughly once
-# every 50 seconds. A rate-limit ban, a dropped connection or a sleeping laptop
-# arriving more often than that leaves the scraper re-fetching the same 25
+# work forever. When this test was written, scrape_healthgrades_midwives.R and
+# enrich_healthgrades_profiles.R both used CKPT_EVERY = 25 with a 2-second
+# delay -- a checkpoint roughly once every 50 seconds -- so anything killing
+# the job more often than once a minute left it re-fetching the same 25
 # profiles indefinitely, looking busy and achieving nothing.
 #
-# Asserted rather than fixed. Lowering CKPT_EVERY trades I/O against exposure
-# and is an operational decision, not a test's to make.
+# RESOLVED 2026-08-16: both are now CKPT_EVERY = 10, a ~20s window. Not lowered
+# further; the output is rewritten wholly on every checkpoint by a plain
+# write_csv() with no temp-file-and-rename, so each extra write is another
+# chance to be interrupted mid-write. See DEBT.md.
+#
+# The property below is structural and holds at ANY interval: dying faster than
+# you save means never finishing. It is asserted against this file's own
+# CKPT_EVERY so it keeps meaning something if that value changes again.
 {
   p <- fresh()
   for (i in seq_len(6L)) run_job(p$ckpt, p$out, die_after = CKPT_EVERY - 1L)

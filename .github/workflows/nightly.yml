@@ -222,6 +222,13 @@ jobs:
         if: always()
         run: Rscript tests/ci_nightly_registry_check.R
 
+      # DEBT.md is a hand-maintained list whose whole value is being accurate,
+      # which is the same shape of object as the rebuild order that silently
+      # omitted five FROZEN consumers. It gets the same treatment.
+      - name: Known-debt register
+        if: always()
+        run: Rscript tests/ci_debt_check.R
+
       - name: Repo hygiene
         if: always()
         run: Rscript tests/ci_hygiene.R

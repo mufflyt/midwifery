@@ -239,6 +239,18 @@ MUTATIONS <- list(
     killers = c("tests/test_recovery_resume_equivalence.R")
   ),
 
+  # ---- metamorphic / serialization (item 3) --------------------------------
+  list(
+    id = "metamorphic-pad5-drops-blank-guard",
+    file = "R/lib/common_helpers.R",
+    find = "  x <- stringr::str_trim(as.character(x))\n  x[!nzchar(x)] <- NA_character_\n  stringr::str_pad(x, 6, \"left\", \"0\")",
+    repl = "  x <- stringr::str_trim(as.character(x))\n  stringr::str_pad(x, 6, \"left\", \"0\")",
+    why = paste("Removes the blank guard from pad_ccn(), so an empty string",
+                "becomes \"000000\" -- a CCN that does not exist but joins",
+                "perfectly to every other blank record."),
+    killers = c("tests/test_lib_keys.R", "tests/test_metamorphic_invariance.R")
+  ),
+
   # ---- geography -----------------------------------------------------------
   list(
     id = "coordinate-lon-lat-swap",

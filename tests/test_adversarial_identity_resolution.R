@@ -71,32 +71,9 @@ DECOY$step <- as.integer(DECOY$step)
 # -----------------------------------------------------------------------------
 # The production decision chain, as one call. Nothing here reimplements a rule.
 # -----------------------------------------------------------------------------
-to_candidates <- function(df) {
-  data.frame(
-    amcb_id = df$amcb_id, npi = df$npi,
-    name_evidence_class = df$name_evidence_class,
-    taxonomy_axis = df$taxonomy_axis,
-    match_method = "corpus", match_strategy = df$name_evidence_class,
-    mid_match = 0L,
-    nppes_matched_last = if (!is.null(df$variant)) df$variant else "V",
-    nppes_matched_first = "F", nppes_mid_init = "",
-    stringsAsFactors = FALSE)
-}
-
-#' Outcome per person: "member", "held_out", or "quarantined".
-classify <- function(df) {
-  cands <- to_candidates(df)
-  res <- amcb_resolve(cands)
-  out <- setNames(rep("quarantined", length(unique(cands$amcb_id))),
-                  sort(unique(cands$amcb_id)))
-  if (nrow(res$resolved)) {
-    tier <- amcb_linkage_tier(res$resolved$npi, res$resolved$name_evidence_class,
-                              res$resolved$taxonomy_axis)
-    mem <- is_cohort_member(res$resolved$npi, tier)
-    out[res$resolved$amcb_id] <- ifelse(mem, "member", "held_out")
-  }
-  list(outcome = out, resolved = res$resolved, pool = res$pool_stats)
-}
+source(file.path(root, "tests", "helper-resolver-chain.R"))
+to_candidates <- chain_to_candidates
+classify <- function(df) chain_classify(df, detail = TRUE)
 
 npi_of <- function(res, id) {
   r <- res$resolved[res$resolved$amcb_id == id, , drop = FALSE]

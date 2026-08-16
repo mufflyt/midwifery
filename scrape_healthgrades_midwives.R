@@ -47,7 +47,22 @@ OUTPUT      <- "healthgrades_midwives.csv"
 CHECKPOINT  <- "healthgrades_checkpoint.rds"
 LOG_FILE    <- "healthgrades_scrape_log.txt"
 DELAY_SEC   <- as.numeric(Sys.getenv("HG_DELAY", "2"))
-CKPT_EVERY  <- 25L
+# CKPT_EVERY chosen 2026-08-16 after tests/test_recovery_resume_equivalence.R
+# (E4) demonstrated a LIVELOCK: a job that dies before it ever checkpoints
+# makes zero progress and repeats the same work forever. At the old value of
+# 25, with DELAY_SEC = 2, that window was ~50 seconds -- so anything killing
+# the job more often than once a minute (a rate-limit ban, a dropped
+# connection, a sleeping laptop) left it re-fetching the same 25 profiles
+# indefinitely.
+#
+# 10 halves-and-then-some the exposure (~20s) at 2,230 writes per full roster
+# rather than 892. NOT lowered to 5, which would have been ~10s: the output is
+# 3.4 MB and is rewritten WHOLLY on every checkpoint via a plain write_csv(),
+# with no temp-file-and-rename, so each additional write is another chance to
+# be interrupted mid-write and leave a torn CSV. Buying 10 more seconds of
+# livelock protection for 5x the torn-write exposure is the wrong trade until
+# the write is made atomic. See DEBT.md.
+CKPT_EVERY  <- 10L
 
 `%||%` <- function(a, b) if (is.null(a) || length(a) == 0) b else a
 

@@ -42,17 +42,35 @@
 #'   nppes_matched_last, nppes_matched_first, nppes_mid_init, mid_match.
 #' @return one row per amcb_id x npi, carrying the strongest evidence class.
 amcb_per_npi <- function(candidates) {
+  # DETERMINISTIC TIEBREAK, 2026-08-16. The picks below were which.min(), which
+  # returns the FIRST minimum -- so when a person had two candidate rows for one
+  # NPI tied at the same evidence class, the recorded spelling was whichever
+  # arrived first. The permutation suite measured it: the recorded variant
+  # changed in 231 of 300 candidate orderings while the accepted identity never
+  # moved once.
+  #
+  # Identity was never at risk, so this is not a linkage change. But the
+  # recorded spelling is what a human READS in amcb_crosswalk_review_sample_*.csv
+  # and amcb_class5_review_census.csv when judging whether a weak match is real,
+  # and two reviewers running the pipeline on different days should not be shown
+  # different evidence for the same person.
+  #
+  # Sorting first makes first() a property of the DATA rather than of the row
+  # order, and keeps the strongest evidence class winning exactly as before.
   candidates |>
+    dplyr::arrange(.data$amcb_id, .data$npi, .data$name_evidence_class,
+                   .data$nppes_matched_last, .data$nppes_matched_first,
+                   .data$nppes_mid_init) |>
     dplyr::group_by(.data$amcb_id, .data$npi) |>
     dplyr::summarise(
       name_evidence_class = min(.data$name_evidence_class),
       mid_match = max(.data$mid_match),
       taxonomy_axis = dplyr::first(.data$taxonomy_axis),
-      match_method = .data$match_method[which.min(.data$name_evidence_class)],
-      match_strategy = .data$match_strategy[which.min(.data$name_evidence_class)],
-      nppes_matched_last = .data$nppes_matched_last[which.min(.data$name_evidence_class)],
-      nppes_matched_first = .data$nppes_matched_first[which.min(.data$name_evidence_class)],
-      nppes_mid_init = .data$nppes_mid_init[which.min(.data$name_evidence_class)],
+      match_method = dplyr::first(.data$match_method),
+      match_strategy = dplyr::first(.data$match_strategy),
+      nppes_matched_last = dplyr::first(.data$nppes_matched_last),
+      nppes_matched_first = dplyr::first(.data$nppes_matched_first),
+      nppes_mid_init = dplyr::first(.data$nppes_mid_init),
       .groups = "drop")
 }
 
