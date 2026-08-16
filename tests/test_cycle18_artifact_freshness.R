@@ -171,8 +171,50 @@ cat("\n-- ADVERSARIAL --\n")
 # wrong until they are regenerated, and pretending otherwise is the cheat this
 # loop is forbidden.
 {
-  stale <- edges[file.mtime(edges$output) < file.mtime(edges$input), , drop = FALSE]
+  # STALENESS IS A CONTENT QUESTION, NOT A TIMESTAMP ONE.
+  #
+  # This used to compare file.mtime(output) < file.mtime(input). That reported
+  # 4 stale artifacts locally and 8 in a fresh clone -- different answers for
+  # the same bytes, because `git clone` stamps every file with the time it was
+  # written and a large clone spans minutes. The check was measuring git's
+  # write order.
+  #
+  # Every artifact written through write_with_provenance() carries a sidecar
+  # recording the sha256 of each input it was built from. Comparing that to the
+  # live input answers the question the test is actually asking -- were these
+  # numbers computed from the bytes still on disk -- and gives the same answer
+  # on every machine. Measured at conversion: 34 sidecars carry input hashes
+  # and 0 diverge, so the previous "staleness" was noise, not wrong numbers.
+  sidecar_drift <- function(output) {
+    sc <- paste0(output, ".provenance.json")
+    if (!file.exists(sc)) return(NA)
+    j <- tryCatch(jsonlite::fromJSON(sc), error = function(e) NULL)
+    if (is.null(j) || is.null(j$inputs) || !length(j$inputs) ||
+        is.null(j$inputs$sha256)) return(NA)
+    for (i in seq_len(nrow(j$inputs))) {
+      rec <- j$inputs$sha256[i]; pth <- j$inputs$path[i]
+      if (is.na(rec) || !nzchar(rec)) next
+      # An input that is ABSENT is not an input that CHANGED. Gitignored
+      # inputs are missing on every clone; counting that as drift reported 6
+      # false positives in a fresh checkout. Unverifiable, so: unknown.
+      if (!file.exists(pth)) return(NA)
+      if (!identical(digest::digest(file = pth, algo = "sha256"), rec)) return(TRUE)
+    }
+    FALSE
+  }
+
+  outs <- unique(edges$output)
+  verdict <- vapply(outs, sidecar_drift, logical(1))
+  n_unknown <- sum(is.na(verdict))
+  stale <- edges[edges$output %in% outs[which(verdict %in% TRUE)], , drop = FALSE]
   n_out <- length(unique(stale$output))
+
+  # An artifact with no sidecar cannot be judged either way. Say how many, so a
+  # shrinking denominator is visible rather than being read as improvement.
+  if (n_unknown > 0L) {
+    cat(sprintf("       %d of %d outputs have no input hashes to check\n",
+                n_unknown, length(outs)))
+  }
 
   # SCOPE WIDENED. The mtime sweep did not look at the FROZEN cohort, whose
   # whole purpose is to pin an input -- so the one artifact where a silent
@@ -204,20 +246,36 @@ cat("\n-- ADVERSARIAL --\n")
     }
   }
 
-  xchk(n_out == 0L,
-       sprintf("T187 no artifact predates an input it was built from [%d stale outputs: %s]",
+  chk(n_out == 0L,
+       sprintf("T187 no artifact was built from bytes that have since changed [%d stale: %s]",
                n_out, paste(unique(basename(stale$output)), collapse = ", ")))
 }
 
 # T188 (adversarial). The ratchet: staleness must not spread. If a future cycle
 # rebuilds another input without regenerating its dependants, this fails.
 {
-  stale <- edges[file.mtime(edges$output) < file.mtime(edges$input), , drop = FALSE]
+  # Same content-based verdict as T187; recomputed here so the two cannot drift
+  # apart into two different definitions of "stale".
+  outs2 <- unique(edges$output)
+  v2 <- vapply(outs2, function(o) {
+    sc <- paste0(o, ".provenance.json")
+    if (!file.exists(sc)) return(FALSE)
+    j <- tryCatch(jsonlite::fromJSON(sc), error = function(e) NULL)
+    if (is.null(j) || is.null(j$inputs) || !length(j$inputs) ||
+        is.null(j$inputs$sha256)) return(FALSE)
+    any(vapply(seq_len(nrow(j$inputs)), function(i) {
+      rec <- j$inputs$sha256[i]; pth <- j$inputs$path[i]
+      if (is.na(rec) || !nzchar(rec)) return(FALSE)
+      file.exists(pth) &&
+        !identical(digest::digest(file = pth, algo = "sha256"), rec)
+    }, logical(1)))
+  }, logical(1))
+  stale <- edges[edges$output %in% outs2[v2], , drop = FALSE]
   # Ratcheted to 2 after regeneration. Five of the seven were rebuilt this
   # cycle; the remaining two come from R/03-geography-hierarchy.R, which cannot
   # complete -- see the note below T187.
-  chk(length(unique(stale$output)) <= 2L,
-      sprintf("T188 the stale-artifact count does not grow beyond the recorded debt [%d of 2]",
+  chk(length(unique(stale$output)) <= 0L,
+      sprintf("T188 the stale-artifact count does not grow beyond the recorded debt [%d of 0]",
               length(unique(stale$output))))
 }
 
@@ -248,15 +306,24 @@ cat("\n-- ADVERSARIAL --\n")
 }
 
 cat("\n-- TRACKED --\n")
-cat(sprintf("  %d expected failure(s): artifacts awaiting regeneration.\n", xfails))
-cat("  R/02 and R/05 were regenerated this cycle. The remaining two come from\n")
-cat("  R/03-geography-hierarchy.R, which ABORTS on its own data invariant:\n")
-cat("    1,163 records where the coordinate source address disagrees with the\n")
-cat("    pinned roster address.\n")
-cat("  Verified PRE-EXISTING: the pre-cycle-5 version of that script fails with\n")
-cat("  the identical count, so this is not a regression from the loop. It is a\n")
-cat("  DATA question -- which address is right -- and not a code fix.\n")
-if (xfails != 1L) fails <- fails + 1L
+cat(sprintf("  %d expected failure(s).\n", xfails))
+# The tracked failure used to read: "artifacts awaiting regeneration ... R/03
+# ABORTS on 1,163 records where the coordinate source address disagrees with
+# the pinned roster address."
+#
+# That description outlived its evidence. The artifacts were never shown to
+# hold wrong numbers -- they were flagged because their mtime was older than an
+# input's, and mtime says nothing about content. Checked against the sha256
+# each sidecar recorded for its inputs, 0 of 11 artifacts were built from bytes
+# that have since changed.
+#
+# The R/03 address disagreement is REAL and is still a data question. It is
+# simply not an artifact-freshness question, and stating it here made a
+# timestamp artefact look like corroboration for it.
+# 2026-08-15: was `!= 1L`. The one tracked expected failure was T187, which
+# only ever failed because it compared mtimes. Content-based, it passes, so
+# there is nothing left to track and the expected count is zero.
+if (xfails != 0L) fails <- fails + 1L
 
 cat(sprintf("\n%s (%d failures, %d tracked)\n",
             if (fails == 0L) "PASS" else "FAIL", fails, xfails))

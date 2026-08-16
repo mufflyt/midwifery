@@ -386,35 +386,40 @@ build_geography <- function() {
       # whole stage on any string difference between the roster ZIP/state and
       # the address the coordinates were geocoded from.
       #
-      # Classified against the ZCTA-county crosswalk, the 1,163 disagreements
-      # break down as follows. These are the STRICT per-ZIP counts, and they
-      # match artifacts/invariant_address_provenance_failures.csv exactly --
-      # quote these, not the land-dominant figures an earlier draft of this
-      # comment carried (612/318/209/24), which assigned every multi-county ZIP
-      # to its largest county and so reported only 24 unresolvable instead of
-      # 427:
+      # Classified against the ZCTA-county crosswalk, the disagreements break
+      # down as follows. These are the STRICT per-ZIP counts and they match
+      # artifacts/invariant_address_provenance_failures.csv exactly --
+      # tests/test_cycle19_address_provenance.R (T194b) checks this comment
+      # against that file, because a script that reports one number and writes
+      # another is worse than no evidence at all.
       #
-      #   390  land in a DIFFERENT STATE
-      #   175  land in a different county, same state
-      #   171  land in the SAME county (ZIP differs, county does not)
-      #   427  ZIP spans several counties and cannot place the person at all
+      #   8  land in a DIFFERENT STATE
+      #   2  land in the SAME county (ZIP differs, county does not)
+      #   4  ZIP spans several counties and cannot place the person at all
       #
-      # 565 of 1,163 (48.6%) DEFINITELY move the record to a different county,
-      # and a further 427 (36.7%) cannot be placed either way. Only 171 (14.7%)
-      # are demonstrably harmless. County is the unit of every access finding
-      # here, so the invariant is not a string-matching nuisance -- and
-      # loosening it to "same county is fine" would still admit 48.6% of these
-      # while silently guessing at another 36.7%.
+      # 14 records in total.
+      #
+      # THESE NUMBERS CHANGED, AND THE REASON MATTERS. This comment previously
+      # reported 1,163 disagreements (390 different-state, 175 different-county
+      # same-state, 171 same-county, 427 unresolvable). That measurement was
+      # taken against midwives_geocoded.csv, which was the WRONG coordinate
+      # base -- it carried 23.8% GEOID coverage and produced county_exact of
+      # 28.5% against a published 98.8%. Rebuilt on midwives_panel_geocoded.csv
+      # (16,898 rows, the accepted set), the same invariant finds 14.
+      #
+      # So the 1,163 was very largely an artefact of comparing against the
+      # wrong geocode table, not 1,163 real address conflicts. The 14 that
+      # remain are real and still worth a look: 8 of them place a certificant
+      # in a different STATE, which no rounding or ZIP-boundary story explains.
       #
       # Classification uses GEOID_unique, which is NA for a ZIP spanning several
       # counties. That is deliberate: such a ZIP genuinely cannot place a
       # person, so it is reported as unresolvable rather than assigned to
-      # whichever county holds the most land. The counts above were measured
-      # with the land-dominant assignment and so understate "unresolvable".
+      # whichever county holds the most land.
       #
-      # What WAS missing is triage. All 1,163 were reported at one severity, so
-      # a human could not tell the 612 cross-state cases from the 209 harmless
-      # ones. The evidence file now carries that classification.
+      # County is the unit of every access finding here, so this invariant is
+      # not a string-matching nuisance. Loosening it to "same state is fine"
+      # would wave through the 8 cross-state cases, which are the worst ones.
       bad_prov <- bad_prov %>%
         dplyr::left_join(dplyr::select(zc, zip5, .cty_r = GEOID_unique),
                          by = c("rz" = "zip5"), relationship = "many-to-one") %>%
