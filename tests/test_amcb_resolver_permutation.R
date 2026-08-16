@@ -37,7 +37,11 @@ chk <- function(cond, m) {
   else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
 }
 
-cand <- function(amcb_id, npi, cls, tax = "midwife", method = "m", variant = "V") {
+# Named mk_cand rather than cand: test_cross_taxonomy_hierarchy.R already
+# defines cand() at top level and ci_hygiene H4 caught the collision. Worth
+# knowing that gate reads `git ls-files`, so a NEW file is invisible to it
+# until committed -- this passed locally and failed in CI for that reason.
+mk_cand <- function(amcb_id, npi, cls, tax = "midwife", method = "m", variant = "V") {
   data.frame(amcb_id = amcb_id, npi = npi, name_evidence_class = as.integer(cls),
              taxonomy_axis = tax, match_method = method,
              match_strategy = as.integer(cls), mid_match = 0L,
@@ -50,56 +54,56 @@ cand <- function(amcb_id, npi, cls, tax = "midwife", method = "m", variant = "V"
 # -----------------------------------------------------------------------------
 FIX <- dplyr::bind_rows(
   # P1 clean: one candidate, class 1. Must resolve, every ordering.
-  cand("P1", "1000000001", 1),
+  mk_cand("P1", "1000000001", 1),
 
   # P2 EXACT TIE at the best class. Two different NPIs, both class 2. The
   # correct answer is AMBIGUOUS -- and a greedy pick would silently choose
   # whichever arrived first.
-  cand("P2", "1000000002", 2),
-  cand("P2", "1000000003", 2),
+  mk_cand("P2", "1000000002", 2),
+  mk_cand("P2", "1000000003", 2),
 
   # P3 tie broken by evidence: one class 2, one class 3. Must resolve to the
   # class 2 NPI regardless of which row is seen first.
-  cand("P3", "1000000004", 2),
-  cand("P3", "1000000005", 3),
+  mk_cand("P3", "1000000004", 2),
+  mk_cand("P3", "1000000005", 3),
 
   # P4 THREE-WAY tie at class 3. Ambiguous.
-  cand("P4", "1000000006", 3),
-  cand("P4", "1000000007", 3),
-  cand("P4", "1000000008", 3),
+  mk_cand("P4", "1000000006", 3),
+  mk_cand("P4", "1000000007", 3),
+  mk_cand("P4", "1000000008", 3),
 
   # P5 and P6 both want NPI ...009 at class 2, and each also has a weaker
   # alternative. Stage 1 resolves both; the bijection is stage 2's problem.
   # Included so a future contested-NPI rule is exercised by these permutations.
-  cand("P5", "1000000009", 2),
-  cand("P5", "1000000010", 4),
-  cand("P6", "1000000009", 2),
-  cand("P6", "1000000011", 4),
+  mk_cand("P5", "1000000009", 2),
+  mk_cand("P5", "1000000010", 4),
+  mk_cand("P6", "1000000009", 2),
+  mk_cand("P6", "1000000011", 4),
 
   # P7 taxonomy must NOT break an identity tie. Same class, different taxonomy.
   # If taxonomy ever becomes a tiebreak, this person stops being ambiguous and
   # this test fails -- which is the intent.
-  cand("P7", "1000000012", 2, tax = "midwife"),
-  cand("P7", "1000000013", 2, tax = "nursing"),
+  mk_cand("P7", "1000000012", 2, tax = "midwife"),
+  mk_cand("P7", "1000000013", 2, tax = "nursing"),
 
   # P8 class 5 alone. Resolvable at stage 1; held out later by tier rules.
-  cand("P8", "1000000014", 5),
+  mk_cand("P8", "1000000014", 5),
 
   # P9 SAME NPI twice, tied on class, different recorded variants. The accepted
   # identity is unambiguous; only which spelling is RECORDED can wobble.
-  cand("P9", "1000000015", 2, variant = "AAA"),
-  cand("P9", "1000000015", 2, variant = "BBB"),
+  mk_cand("P9", "1000000015", 2, variant = "AAA"),
+  mk_cand("P9", "1000000015", 2, variant = "BBB"),
 
   # P10 same NPI twice at DIFFERENT classes: the stronger must always win.
-  cand("P10", "1000000016", 4, variant = "WEAK"),
-  cand("P10", "1000000016", 2, variant = "STRONG"),
+  mk_cand("P10", "1000000016", 4, variant = "WEAK"),
+  mk_cand("P10", "1000000016", 2, variant = "STRONG"),
 
   # P11 resolves AT class 4, and P12 at class 5. Without these, no resolved row
   # ever carries a class-4 or class-5 confidence and the ordering between them
   # is untested -- which is exactly how the class4/class5 swap survived its
   # first mutation run.
-  cand("P11", "1000000017", 4),
-  cand("P12", "1000000018", 5)
+  mk_cand("P11", "1000000017", 4),
+  mk_cand("P12", "1000000018", 5)
 )
 
 N_PERM <- as.integer(Sys.getenv("PERMUTATIONS", "300"))
