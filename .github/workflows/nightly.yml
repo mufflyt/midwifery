@@ -129,14 +129,18 @@ jobs:
           sed -e 's/#.*$//' tests/ci_nightly_exceptions.txt \
             | awk 'NF {print $1}' > /tmp/exceptions.txt
           pass=0; fail=0; skipped=0; failed=""
-          for t in tests/*.R; do
+          for t in tests/test*.R; do
             b=$(basename "$t")
             case "$b" in helper-*) continue;; esac
             if grep -qxF "$t" /tmp/exceptions.txt; then
               skipped=$((skipped+1)); echo "REGISTRY-EXCEPTION $b"; continue
             fi
             echo "::group::$b"
-            if grep -q 'test_that(' "$t"; then
+            # Match a real CALL SITE, not a mention. ci_mutation_testing.R
+            # contains the literal "test_that(" inside a string and was
+            # dispatched to testthat, which resolved its root differently and
+            # failed looking for tests/tests/mutation_catalogue.R.
+            if grep -qE '^[[:space:]]*test_that\(' "$t"; then
               ok=0; Rscript -e "testthat::test_file('$t',stop_on_failure=TRUE)" || ok=$?
             else
               ok=0; Rscript "$t" || ok=$?
@@ -300,8 +304,8 @@ jobs:
       # happens to name -- the exact failure that left 21 files unrun.
       - name: Nightly must still discover tests by glob
         run: |
-          grep -q 'for t in tests/\*\.R' .github/workflows/nightly.yml \
-            || { echo "nightly.yml no longer globs tests/*.R"; exit 1; }
+          grep -q 'for t in tests/test\*\.R' .github/workflows/nightly.yml \
+            || { echo "nightly.yml no longer globs tests/test*.R"; exit 1; }
           grep -q 'pytest tests/' .github/workflows/nightly.yml \
             || { echo "nightly.yml no longer runs the pytest directory"; exit 1; }
           echo "nightly still discovers tests by glob"
@@ -325,6 +329,25 @@ jobs:
           done
           [ -z "$orphans" ] || { echo "unrun and unregistered:$orphans"; exit 1; }
           echo "every test is discovered or registered"
+
+      # FATAL: narrowing r-suite to tests/test*.R means the ci_*.R gates are no
+      # longer swept up by the glob -- they are named explicitly in `gates` and
+      # `mutation-testing`. That is deliberate (running the mutation runner
+      # inside the suite it mutates is actively wrong), but it creates a new way
+      # to orphan a gate, so the gates are policed here too.
+      - name: Every ci_*.R gate is named by some job
+        run: |
+          set -u
+          # ci_report.R defines the shared reporter and is SOURCED by the gates,
+          # never run standalone -- the same category as helper-*.R.
+          orphans=""
+          for f in tests/ci_*.R; do
+            b=$(basename "$f")
+            [ "$b" = "ci_report.R" ] && continue
+            grep -q "$b" .github/workflows/nightly.yml || orphans="$orphans $b"
+          done
+          [ -z "$orphans" ] || { echo "gates no job runs:$orphans"; exit 1; }
+          echo "every ci_*.R gate is named by a job"
 
       # INFORMATIONAL: which tests the fast per-push CI does not name. Covered
       # nightly, so this is a latency report -- a bug in one of them surfaces
