@@ -95,7 +95,19 @@ cat("\n-- G1: committed artifacts must be reproducible from committed source --\
                   else ""))
     }
   }
-  chk(checked > 0L, sprintf("G1 gate actually examined artifacts [%d]", checked))
+  # This is an anti-vacuous check and it is RIGHT to fail when the gate looked
+  # at nothing -- that is how a gate quietly stops gating. But on a runner the
+  # artifacts are gitignored, so "examined 0" is expected rather than alarming.
+  # Distinguish the two: absent inputs skip, a present-but-unexamined artifact
+  # still fails.
+  if (checked > 0L) {
+    chk(TRUE, sprintf("G1 gate actually examined artifacts [%d]", checked))
+  } else if (length(Sys.glob("artifacts/amcb_npi_crosswalk_*.csv")) ||
+             file.exists("artifacts/amcb_npi_geography.csv")) {
+    chk(FALSE, "G1 gate examined 0 artifacts although artifacts are present")
+  } else {
+    skip("G1 artifact reproducibility: no committed artifacts to examine")
+  }
 
   # NEGATIVE CONTROLS. A gate that has never been observed to fail is
   # decoration. Both of these must be caught.
@@ -109,19 +121,27 @@ cat("\n-- G1: committed artifacts must be reproducible from committed source --\
 
   # (b) historical: a8552fa published a crosswalk carrying three columns its
   # own committed matcher could not produce. This gate must fail that commit.
+  # A shallow clone (actions/checkout defaults to depth 1) does not contain
+  # a8552fa. system2() returns character(0) for a missing object rather than
+  # erroring, so this read as a FAILED negative control instead of an
+  # unreachable one. Treat empty output as unreachable; the nightly checks out
+  # full history so it actually runs there.
   hist_ok <- tryCatch({
-    src_old <- paste(system2("git", c("show", "a8552fa:match_amcb_to_npi.R"),
-                             stdout = TRUE, stderr = FALSE), collapse = "\n")
+    raw_old <- system2("git", c("show", "a8552fa:match_amcb_to_npi.R"),
+                       stdout = TRUE, stderr = FALSE)
+    if (!length(raw_old)) stop("a8552fa unreachable (shallow clone)")
+    src_old <- paste(raw_old, collapse = "\n")
     hdr <- system2("git", c("show",
       "a8552fa:artifacts/amcb_npi_crosswalk_translit_panel-midwifery-plus-nursing_years-2007-2025.csv"),
       stdout = TRUE, stderr = FALSE)[1]
+    if (is.na(hdr) || !nzchar(hdr)) stop("a8552fa artifact unreachable")
     cols_old <- strsplit(hdr, ",", fixed = TRUE)[[1]]
     bad <- explains(cols_old, src_old, passthrough("midwives.csv"))
     length(bad) == 3L && all(c("nppes_matched_last", "nppes_matched_first",
                                "nppes_name_changed_since_match") %in% bad)
   }, error = function(e) NA)
   if (is.na(hist_ok)) {
-    cat("  skip G1 historical negative control (commit a8552fa unreachable)\n")
+    skip("G1 historical negative control (commit a8552fa unreachable in a shallow clone)")
   } else {
     chk(hist_ok, "G1 negative control: would have failed a8552fa (3 columns)")
   }

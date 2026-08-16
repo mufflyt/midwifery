@@ -68,7 +68,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
+      # Full history, not the default depth 1. test_amcb_gates.R proves its G1
+      # gate would have caught commit a8552fa, which published a crosswalk with
+      # three columns its own matcher could not produce. In a shallow clone that
+      # commit is absent, `git show` returns nothing, and the negative control
+      # reported a FAILURE instead of being unreachable -- a gate whose proof
+      # of working silently stopped working.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: r-lib/actions/setup-r@v2
         with:
