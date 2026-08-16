@@ -415,5 +415,9 @@ classify_arm <- function(path, col, label) {
 arm_cov <- bind_rows(
   classify_arm("artifacts/midwife_reassignment_spells.csv", "org_pac_id", "pecos_reassignment"),
   classify_arm("artifacts/midwife_organization_panel.csv",  "org_pac_id", "care_compare"))
+# write_with_provenance(), not write_csv(): every tracked artifact needs a
+# .provenance.json sidecar recording its inputs and their SHA-256, and the
+# artifact-contract gate A3 fails without one.
 if (!is.null(arm_cov) && nrow(arm_cov))
-  write_csv(arm_cov, "artifacts/pac_npi_arm_coverage.csv", na = "")
+  write_with_provenance(arm_cov, "artifacts/pac_npi_arm_coverage.csv", na = "",
+                        inputs = prov_inputs(OUT_EVER))
