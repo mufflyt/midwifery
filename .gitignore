@@ -451,3 +451,8 @@ artifacts/midwife_pecos_organization_affiliations.csv
 artifacts/midwife_organization_panel.csv
 # 839 MB CMS Care Compare snapshots, discovered by vintage.
 DAC_NationalDownloadableFile_*.csv
+
+# CMS revalidation raw snapshots and warehouse live on the external volume
+# (~21 GB); see archive_revalidation_reassignment.R.
+artifacts/revalidation_archive/
+data/revalidation/

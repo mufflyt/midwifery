@@ -196,18 +196,69 @@ nobody can yet defend.
 used for anything published. The comparison document already lays out inputs,
 keys, normalization and rules side by side, which is where a diagnosis starts.
 
-## D6 — The two organization arms agree on 43%, and it is not obvious that either is wrong
+## D6 — Care Compare and PECOS agree on 43% of organization relationships
 
-- **status:** open
+- **status:** closed
 - **owner:** tyler
 - **raised:** 2026-08-16
-- **source:** `build_pecos_organization_affiliations.R`, `build_care_compare_organization_panel.R`
+- **closed:** 2026-08-16
+- **resolution:** interpretation corrected and recorded as a ruling in `docs/DECISIONS_CONTRACT.md`; arms kept separate behind `classify_affiliation_status()`
 
-Two independent arms now resolve a midwife's organization. Of 2,825 midwives
-carrying an organization PAC id in both:
+**The original framing was wrong.** D6 read the 43.4% agreement as "current
+versus cumulative", with PECOS as an ever-affiliated history. It is not: the
+PPEF population is restricted to enrollments **currently approved** as of the
+data version, so PPEF was never cumulative.
 
-| | |
-|---|---:|
+The correct reading is narrower and more useful:
+
+> A PPEF reassignment is a Medicare reassignment relationship **on file in
+> PECOS at the snapshot date** -- neither employment nor an all-time history.
+
+CMS instructs practitioners to update PECOS when they end a reassignment or end
+employment, and warns that failing to withdraw leaves billing relationships on
+file. So an on-file reassignment can **lag** the real relationship without
+being a historical record of it.
+
+**Why the 43% is preserved rather than reconciled.** At least four things could
+produce it, and the data cannot yet separate them:
+
+1. PECOS carries genuine concurrent billing affiliations Care Compare omits;
+2. some PECOS relationships are administratively stale;
+3. Care Compare is incomplete for CNM/CMs;
+4. the two products operationalise "group affiliation" differently.
+
+Resolving them by source precedence would manufacture certainty. So each arm is
+retained separately and `R/lib/organization_affiliation_status.R` derives a
+status from their combination:
+
+| status | pairs | % |
+|---|---:|---:|
+| `medicare_reassignment_only` | 9,174 | 61.3 |
+| `probable_current` | 4,558 | 30.4 |
+| `high_confidence_current` | 1,240 | 8.3 |
+
+5,329 midwives have at least one current affiliation. **4,463 have only
+`medicare_reassignment_only`** -- a reassignment on file with no Care Compare
+corroboration. Under the original framing those would have been labelled
+historical. They are not: that status asserts a relationship is on file and
+says current practice status is uncertain, which is all the data supports.
+
+**The endpoint changed too.** Not "who employs this CNM/CM?" but "what practice
+organizations is this CNM/CM affiliated with, and how strong is the evidence
+that each affiliation is current?"
+
+**Longitudinal work now has a real basis.** The CMS Revalidation Clinic Group
+Practice Reassignment dataset publishes monthly and CMS keeps prior months at
+distinct URLs: 39 releases from 2021-12 to 2026-08, carrying group PAC id,
+revalidation due dates for both sides, and an individual employer-association
+count. `archive_revalidation_reassignment.R` downloads each, keeps the raw
+file, and loads it into a DuckDB warehouse. That is an interval-censored
+affiliation history available now, rather than one accumulated over a year --
+subject to the same rule that first and last appearance are bounds, not dates.
+
+---
+
+---:|
 | share at least one org PAC id | 1,227 (**43.4%**) |
 | disjoint PAC id sets | 1,598 |
 | Care Compare only | 2,506 midwives |
