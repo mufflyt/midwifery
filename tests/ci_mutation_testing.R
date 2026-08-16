@@ -43,8 +43,11 @@ ONE_ID  <- Sys.getenv("MUTATION_ID", "")
 SLICE   <- as.integer(Sys.getenv("MUTATION_SLICE", "3"))
 
 fails <- 0L
-say  <- function(...) cat(sprintf(...))
-bad  <- function(...) { fails <<- fails + 1L; cat(sprintf(...)) }
+# Prefixed because `say` and `bad` are already defined at top level in
+# sweep_healthgrades_enrichment.R and test_healthgrades_integrity.R. The
+# hygiene gate H4 caught this file doing exactly what it exists to warn about.
+mut_say  <- function(...) cat(sprintf(...))
+mut_fail <- function(...) { fails <<- fails + 1L; cat(sprintf(...)) }
 
 # -----------------------------------------------------------------------------
 # File custody. Everything below depends on this being airtight.
@@ -103,7 +106,7 @@ run_test <- function(path) {
 sel <- MUTATIONS
 if (nzchar(ONE_ID)) {
   sel <- Filter(function(m) identical(m$id, ONE_ID), MUTATIONS)
-  if (!length(sel)) { bad("no mutation with id '%s'\n", ONE_ID); quit(status = 1) }
+  if (!length(sel)) { mut_fail("no mutation with id '%s'\n", ONE_ID); quit(status = 1) }
 } else if (!RUN_ALL) {
   n <- length(MUTATIONS)
   day <- as.integer(format(Sys.Date(), "%j"))
@@ -111,8 +114,8 @@ if (nzchar(ONE_ID)) {
   sel <- MUTATIONS[unique(idx)]
 }
 
-say("\n================ MUTATION TESTING ================\n")
-say("catalogue: %d mutations; this run: %d (%s)\n\n", length(MUTATIONS), length(sel),
+mut_say("\n================ MUTATION TESTING ================\n")
+mut_say("catalogue: %d mutations; this run: %d (%s)\n\n", length(MUTATIONS), length(sel),
     if (nzchar(ONE_ID)) "single" else if (RUN_ALL) "full" else "rotating slice")
 
 # -----------------------------------------------------------------------------
@@ -124,32 +127,32 @@ say("catalogue: %d mutations; this run: %d (%s)\n\n", length(MUTATIONS), length(
 IN_CI <- nzchar(Sys.getenv("GITHUB_ACTIONS"))
 unreachable <- Filter(function(m) IN_CI && identical(m$ci_reachable, FALSE), sel)
 if (length(unreachable)) {
-  say("-- coverage limit --\n")
+  mut_say("-- coverage limit --\n")
   for (m in unreachable) {
-    say("  --   UNMEASURED %s: its killer (%s) cannot run here\n",
+    mut_say("  --   UNMEASURED %s: its killer (%s) cannot run here\n",
         m$id, paste(basename(m$killers), collapse = ", "))
   }
-  say("       %d of %d mutations are unmeasured in this environment.\n\n",
+  mut_say("       %d of %d mutations are unmeasured in this environment.\n\n",
       length(unreachable), length(sel))
   sel <- Filter(function(m) !(IN_CI && identical(m$ci_reachable, FALSE)), sel)
 }
 if (!length(sel)) {
-  say("no measurable mutations in this environment\n")
-  say("\nPASS (0 failures)\n"); quit(status = 0)
+  mut_say("no measurable mutations in this environment\n")
+  mut_say("\nPASS (0 failures)\n"); quit(status = 0)
 }
 
-say("-- control: killers must pass BEFORE any mutation --\n")
+mut_say("-- control: killers must pass BEFORE any mutation --\n")
 killers <- unique(unlist(lapply(sel, `[[`, "killers")))
 control <- vapply(killers, run_test, logical(1))
 
 for (k in names(control)) {
-  if (isTRUE(control[[k]])) say("  ok   %s passes unmutated\n", basename(k))
-  else bad("  FAIL %s does not pass UNMUTATED -- every mutation it guards would look 'killed' for the wrong reason\n",
+  if (isTRUE(control[[k]])) mut_say("  ok   %s passes unmutated\n", basename(k))
+  else mut_fail("  FAIL %s does not pass UNMUTATED -- every mutation it guards would look 'killed' for the wrong reason\n",
            basename(k))
 }
 if (any(!control %in% TRUE)) {
-  bad("\nCONTROL FAILED. Refusing to report mutation results built on a broken baseline.\n")
-  say("\nFAILED (%d)\n", fails)
+  mut_fail("\nCONTROL FAILED. Refusing to report mutation results built on a broken baseline.\n")
+  mut_say("\nFAILED (%d)\n", fails)
   quit(status = 1)
 }
 
@@ -158,12 +161,12 @@ if (any(!control %in% TRUE)) {
 # -----------------------------------------------------------------------------
 results <- list()
 for (m in sel) {
-  say("\n-- %s --\n", m$id)
-  say("   %s\n", paste(strwrap(m$why, width = 74, prefix = "   "), collapse = "\n"))
+  mut_say("\n-- %s --\n", m$id)
+  mut_say("   %s\n", paste(strwrap(m$why, width = 74, prefix = "   "), collapse = "\n"))
 
   st <- apply_mutation(m)
   if (!identical(st, "ok")) {
-    bad("  FAIL mutation could not be applied (%s): the catalogue entry has rotted and was testing nothing\n", st)
+    mut_fail("  FAIL mutation could not be applied (%s): the catalogue entry has rotted and was testing nothing\n", st)
     results[[m$id]] <- "BROKEN"
     restore_all()
     next
@@ -174,12 +177,12 @@ for (m in sel) {
 
   killed_by <- names(verdicts)[verdicts %in% FALSE]
   if (length(killed_by)) {
-    say("  ok   KILLED by %s\n", paste(basename(killed_by), collapse = ", "))
+    mut_say("  ok   KILLED by %s\n", paste(basename(killed_by), collapse = ", "))
     results[[m$id]] <- "KILLED"
   } else {
-    bad("  FAIL SURVIVED -- %s still pass with this bug present.\n",
+    mut_fail("  FAIL SURVIVED -- %s still pass with this bug present.\n",
         paste(basename(m$killers), collapse = ", "))
-    bad("       This is a hole in the TESTS, not a bug in the code.\n")
+    mut_fail("       This is a hole in the TESTS, not a bug in the code.\n")
     results[[m$id]] <- "SURVIVED"
   }
 }
@@ -187,25 +190,25 @@ for (m in sel) {
 # -----------------------------------------------------------------------------
 # Custody check. Non-negotiable.
 # -----------------------------------------------------------------------------
-say("\n-- file custody --\n")
+mut_say("\n-- file custody --\n")
 dirty <- verify_clean()
 if (length(dirty)) {
-  bad("  FAIL %d file(s) left MUTATED: %s\n", length(dirty), paste(dirty, collapse = ", "))
-  bad("       Restore them from git before doing anything else.\n")
+  mut_fail("  FAIL %d file(s) left MUTATED: %s\n", length(dirty), paste(dirty, collapse = ", "))
+  mut_fail("       Restore them from git before doing anything else.\n")
 } else {
-  say("  ok   all %d mutated file(s) restored byte-for-byte\n", length(ls(ORIGINALS)))
+  mut_say("  ok   all %d mutated file(s) restored byte-for-byte\n", length(ls(ORIGINALS)))
 }
 
 # -----------------------------------------------------------------------------
-say("\n================ RESULT ================\n")
+mut_say("\n================ RESULT ================\n")
 tab <- table(unlist(results))
-for (k in names(tab)) say("  %-9s %d\n", k, tab[[k]])
+for (k in names(tab)) mut_say("  %-9s %d\n", k, tab[[k]])
 if (length(results)) {
-  say("  mutation score: %d/%d killed\n",
+  mut_say("  mutation score: %d/%d killed\n",
       sum(unlist(results) == "KILLED"), length(results))
 }
 if (length(unreachable)) {
-  say("  UNMEASURED:    %d (killer not runnable here, NOT counted as killed)\n",
+  mut_say("  UNMEASURED:    %d (killer not runnable here, NOT counted as killed)\n",
       length(unreachable))
 }
 
