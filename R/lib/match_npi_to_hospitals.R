@@ -111,10 +111,31 @@ ensure_file_exists <- function(path, url = NULL) {
 #' @return [tbl_df] Data frame with NPI, enrollment/privilege status, CCN,
 #'   hospital name, location, and coordinates.
 #' @export
+#' Individual Medicare enrollment, independent of facility affiliation
+#'
+#' @param npi character vector to classify.
+#' @param enrolled_individual_npis character vector of NPIs appearing in the DAC
+#'   National Downloadable File, which is the enrollment register. NULL when no
+#'   register was supplied.
+#' @return logical, or NA where enrollment could not be established at all.
+#'   NA is deliberate: absence of a register is not evidence of non-enrollment.
+dac_enrollment_flag <- function(npi, enrolled_individual_npis) {
+  if (is.null(enrolled_individual_npis) || !length(enrolled_individual_npis)) {
+    return(rep(NA, length(npi)))
+  }
+  as.character(npi) %in% as.character(enrolled_individual_npis)
+}
+
+#' @param dac_national_npis character vector of NPIs from the DAC National
+#'   Downloadable File -- the individual Medicare ENROLLMENT register. Supplied
+#'   separately from `dac_path`, which is the facility-AFFILIATION file, because
+#'   conflating the two was the defect this parameter exists to prevent. NULL
+#'   leaves `is_enrolled_dac` as NA rather than FALSE.
 match_npi_to_hospitals <- function(npis,
                                    dac_path = DEFAULT_DAC_PATH,
                                    hospital_path = DEFAULT_HOSPITAL_PATH,
-                                   include_unmatched = TRUE) {
+                                   include_unmatched = TRUE,
+                                   dac_national_npis = NULL) {
   
   # 0. Ensure datasets exist (Auto-download & artifact creation if missing)
   ensure_file_exists(dac_path, DEFAULT_DAC_URL)
@@ -132,6 +153,13 @@ match_npi_to_hospitals <- function(npis,
     input_npis <- as.character(npis)
   }
   
+  # The enrollment register, if one was supplied. Read from the DAC National
+  # Downloadable File rather than the affiliation file; see the note at the
+  # assembly step below.
+  enrolled_individual_npis <- if (!is.null(dac_national_npis)) {
+    unique(stringr::str_trim(as.character(dac_national_npis)))
+  } else NULL
+
   input_npis <- stringr::str_trim(input_npis)
   input_npis <- input_npis[!is.na(input_npis) & nzchar(input_npis)]
   unique_npis <- unique(input_npis)
@@ -232,9 +260,42 @@ match_npi_to_hospitals <- function(npis,
     summarise(n_hospitals = n_distinct(cms_ccn[!is.na(cms_ccn)]), .groups = "drop")
 
   # 6. Assemble complete output dataframe
+  #
+  # SEMANTIC DEFECT FIXED 2026-08-16. `is_enrolled_dac` was
+  #
+  #     is_enrolled_dac = npi %in% enrolled_npis
+  #
+  # where enrolled_npis came from dac_filtered -- the FACILITY-AFFILIATION
+  # file. That file lists only clinicians who hold a facility affiliation, so
+  # every Medicare-enrolled clinician WITHOUT hospital privileges was labelled
+  # not enrolled. Affiliation was standing in for enrollment, and the two are
+  # different questions.
+  #
+  # Measured on the 17,054-NPI crosswalk against
+  # DAC_NationalDownloadableFile.csv, the enrollment register:
+  #
+  #     in the national register (truly enrolled)   3,912
+  #     in the facility-affiliation file            1,665
+  #     enrolled with NO facility affiliation       2,817   <- were FALSE
+  #
+  # The flag understated Medicare enrollment by a factor of 2.35, and any
+  # Table 1 row or comparison built on it was wrong. (docs/HANDOFF_is_enrolled_dac.md
+  # estimated 3,319 affected; 2,817 is the measured figure against this file
+  # vintage.)
+  #
+  # The two variables are now SEPARATE and neither implies the other:
+  #
+  #     is_enrolled_dac         individual Medicare enrollment, from the
+  #                             national register, independent of any facility
+  #     has_hospital_privilege  facility affiliation, unchanged
+  #
+  # NA IS NOT FALSE. When no enrollment register is supplied the flag is NA,
+  # not FALSE -- "we did not look" and "we looked and they are not enrolled"
+  # are different claims, and collapsing them is how the original defect read
+  # as a finding rather than as missing data.
   base_df <- tibble::tibble(npi = unique_npis) %>%
     mutate(
-      is_enrolled_dac = npi %in% enrolled_npis
+      is_enrolled_dac = dac_enrollment_flag(npi, enrolled_individual_npis)
     ) %>%
     # npi_summary is summarised per npi; base_df is unique_npis.
     left_join(npi_summary, by = "npi", relationship = "many-to-one") %>%
