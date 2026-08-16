@@ -492,3 +492,54 @@ column name travels with the data.
 `n_cnm_cm`, `cnm_cm_per_10k_women`, `births_per_cnm_cm`, and
 `no_located_cnm_cm_with_births` for county profiles, with analogous CNM/CM
 names for district profiles.
+
+---
+
+## PECOS reassignment: temporal interpretation
+
+**Question.** What does a PPEF reassignment record mean about time, and may a
+midwife's organization be called her employer?
+
+**What the sources say.** The PPEF population is restricted to provider
+enrollments **currently approved** as of the PPEF data version, and the
+REASSIGNMENT file carries the reassignment relationships attached to those
+enrollments. So PPEF is not an all-time history. But CMS also instructs
+practitioners to update PECOS when they "end reassignment to one organization"
+or "end employment with an organization", and warns that failing to withdraw
+leaves problematic billing relationships on file. So an on-file reassignment
+may lag the underlying practice relationship.
+
+**RULING (2026-08-16).**
+
+A PPEF reassignment indicates a Medicare reassignment relationship **on file in
+PECOS at the PPEF snapshot date**. It is neither an employment relationship nor
+an all-time affiliation history. Because practitioners and organizations must
+update Medicare enrollment records when reassignment or employment
+relationships end, an on-file reassignment may lag the underlying practice
+relationship. Accordingly, PECOS-only relationships are classified as
+`medicare_reassignment_on_file` and are not labelled current employment
+without corroboration.
+
+Care Compare, PECOS/PPEF, NPPES and other organization evidence are retained
+**separately**. Cross-source disagreement is not resolved by source precedence
+alone.
+
+Longitudinal PECOS relationships are inferred only from **dated snapshots**.
+First and last appearance provide interval-censored evidence and must not be
+interpreted as exact employment start or termination dates.
+
+**Consequence for the endpoint.** The question this project answers is not
+"who employs this CNM/CM?" but:
+
+> What practice organizations is this CNM/CM affiliated with, and how strong is
+> the evidence that each affiliation is current?
+
+That is both scientifically cleaner and something the available public data can
+actually answer.
+
+**Correction recorded.** DEBT.md D6 originally framed the 43.4% cross-arm
+agreement as "current versus cumulative". That was wrong: PPEF is restricted to
+currently-approved enrollments and was never a cumulative history. The
+disagreement is between two current-ish measures with different update
+disciplines and different publication rules, which is why it is preserved as
+information rather than reconciled.
