@@ -1,0 +1,14 @@
+{
+  "artifact": "pac_npi_snapshot_manifest.csv",
+  "written_utc": "2026-08-16 20:21:10 UTC",
+  "inputs": [
+    {
+      "path": "/Volumes/MufflySamsung 1/ppef_raw/PPEF_Enrollment_Extract_2026.04.01.csv",
+      "sha256": "315b6d49141cece730070aea0c8a4a5c544fe7ac31433f0406f5e57715d1f624"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/ppef_raw/PPEF_Enrollment_Extract_2026.07.17.csv",
+      "sha256": "e5d362addc825ced40e6ae2da378bbe12a22cb9a25572a1742f663bb5a72c435"
+    }
+  ]
+}

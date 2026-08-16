@@ -1,0 +1,9 @@
+snapshot_date,entity_kind,pac_npi_resolution,n_pairs
+2026-04-01,organization,incomplete_additional_npis_not_published,5464
+2026-04-01,organization,multi_location_entity,100948
+2026-04-01,organization,npi_holds_multiple_pac_ids,744
+2026-04-01,organization,unique,270483
+2026-07-17,organization,incomplete_additional_npis_not_published,6659
+2026-07-17,organization,multi_location_entity,100216
+2026-07-17,organization,npi_holds_multiple_pac_ids,694
+2026-07-17,organization,unique,268414

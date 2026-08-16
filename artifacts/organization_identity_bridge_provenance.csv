@@ -1,0 +1,6 @@
+bridge_source,n_evidence_rows,pct,scope
+ever_crosswalk,11100,85.4,all_bridged_evidence
+snapshot_matched,1900,14.6,all_bridged_evidence
+both_snapshot_matched,1,0.1,newly_reconciled_pairings
+one_snapshot_matched,127,10.6,newly_reconciled_pairings
+relies_on_ever_crosswalk,1075,89.4,newly_reconciled_pairings
