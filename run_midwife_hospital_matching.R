@@ -25,8 +25,12 @@ mws <- chr(MW_FILE) %>%
 N_cohort <- nrow(mws)
 cat(sprintf("Cohort size: %s active primary-linked midwives\n\n", format(N_cohort, big.mark = ",")))
 
-# 2. Execute match_npi_to_hospitals()
-results <- match_npi_to_hospitals(mws$npi, include_unmatched = TRUE)
+# The enrollment register, loaded by the canonical helper in
+# R/lib/match_npi_to_hospitals.R (sourced above).
+DAC_NATIONAL_NPIS <- load_dac_national_npis()
+
+results <- match_npi_to_hospitals(mws$npi, include_unmatched = TRUE,
+                                  dac_national_npis = DAC_NATIONAL_NPIS)
 
 # Join midwife metadata (name, cert, state)
 state_col <- names(mws)[str_detect(names(mws), "nppes_state|^state$")][1]

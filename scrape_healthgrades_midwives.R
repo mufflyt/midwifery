@@ -38,6 +38,11 @@ suppressPackageStartupMessages({
   library(dplyr); library(stringr); library(readr); library(tibble)
   library(humaniformat)
 })
+# Atomic checkpoint/output writes. A plain saveRDS() + write_csv() pair can be
+# killed between the two calls, or mid-write, leaving a checkpoint newer than
+# its output or a truncated CSV where a complete one was. See DEBT.md D1.
+source(file.path("R", "lib", "resume_state.R"))
+
 
 # The FULL AMCB roster (22,309), not a subset. The frozen linkage carries
 # certification_number, last_name and first_name for every certificant
@@ -728,16 +733,16 @@ main <- function(n_limit = NA_integer_) {
     done[[as.character(r$certification_number)]] <- res
 
     if (i %% CKPT_EVERY == 0 || i == nrow(todo)) {
-      saveRDS(done, CHECKPOINT)
+      atomic_saveRDS(done, CHECKPOINT)
       out <- bind_rows(done)
-      write_csv(out, OUTPUT, na = "")
+      atomic_write_csv(out, OUTPUT, na = "")
       log_message(sprintf("  checkpoint %d/%d -> %s (%d rows)",
                           i, nrow(todo), OUTPUT, nrow(out)))
     }
   }
 
   out <- bind_rows(done)
-  write_csv(out, OUTPUT, na = "")
+  atomic_write_csv(out, OUTPUT, na = "")
 
   # A profile URL claimed by more than one certificant cannot describe both.
   # 185 URLs matched 204 certificants in the first pass; at roster scale that

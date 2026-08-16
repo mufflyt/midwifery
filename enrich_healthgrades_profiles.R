@@ -24,6 +24,11 @@
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(tibble); library(stringr)
 })
+# Atomic checkpoint/output writes. A plain saveRDS() + write_csv() pair can be
+# killed between the two calls, or mid-write, leaving a checkpoint newer than
+# its output or a truncated CSV where a complete one was. See DEBT.md D1.
+source(file.path("R", "lib", "resume_state.R"))
+
 
 # Reuse the canonical fetch/parse helpers rather than restating them. The
 # scraper's `if (sys.nframe() == 0)` guard keeps sourcing from starting a crawl.
@@ -92,14 +97,14 @@ main <- function(n_limit = NA_integer_) {
     done[[u]] <- res
 
     if (i %% CKPT_EVERY == 0 || i == length(todo)) {
-      saveRDS(done, CHECKPOINT)
+      atomic_saveRDS(done, CHECKPOINT)
       write_csv(bind_rows(done), OUTPUT, na = "")
       log_message(sprintf("  checkpoint %d/%d -> %s", i, length(todo), OUTPUT))
     }
   }
 
   out <- bind_rows(done)
-  write_csv(out, OUTPUT, na = "")
+  atomic_write_csv(out, OUTPUT, na = "")
 
   ok <- filter(out, hg_attr_status == "ok")
   log_message("--- fill rates (of parsed profiles) ---")

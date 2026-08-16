@@ -19,7 +19,35 @@ suppressPackageStartupMessages({
 source("R/lib/common_helpers.R")
 
 DEFAULT_DAC_PATH <- "data/CMS_Facility_Affiliation.csv"
-DEFAULT_DAC_URL <- "https://data.cms.gov/provider-data/sites/default/files/resources/b7c4080ae144663e43353a9c35cd3f53_1782750576/Facility_Affiliation.csv"
+# CMS ROTATES THE RESOURCE ID ON EVERY REFRESH, so a hardcoded download URL
+# rots silently. This one did: the pinned id _1782750576 began returning 404
+# after the dataset was refreshed on 2026-07-31 to _1785521778, which is why
+# tests/test_match_npi_to_hospitals.R sits in the nightly exception registry
+# and why regenerating the hospital artifacts was blocked.
+#
+# Resolved from the provider-data catalog instead, with the last known id as a
+# fallback so an unreachable catalog degrades to "try the old URL" rather than
+# to no URL at all.
+DEFAULT_DAC_URL_FALLBACK <- "https://data.cms.gov/provider-data/sites/default/files/resources/b7c4080ae144663e43353a9c35cd3f53_1785521778/Facility_Affiliation.csv"
+
+resolve_facility_affiliation_url <- function() {
+  out <- tryCatch({
+    u <- paste0("https://data.cms.gov/provider-data/api/1/metastore/",
+                "schemas/dataset/items?show-reference-ids=true")
+    j <- jsonlite::fromJSON(u, simplifyVector = FALSE)
+    hit <- Filter(function(x) grepl("affiliation", tolower(x$title %||% "")), j)
+    urls <- unlist(lapply(hit, function(x)
+      unlist(lapply(x$distribution %||% list(), function(d) {
+        dd <- d$data %||% d
+        dd$downloadURL %||% dd$accessURL %||% NULL
+      }))))
+    urls <- grep("Facility_Affiliation", urls, value = TRUE)
+    if (length(urls)) urls[1] else NULL
+  }, error = function(e) NULL)
+  if (is.null(out) || !nzchar(out)) DEFAULT_DAC_URL_FALLBACK else out
+}
+
+DEFAULT_DAC_URL <- resolve_facility_affiliation_url()
 
 # The individual Medicare ENROLLMENT register, which is a different file from
 # DEFAULT_DAC_PATH above -- that one is facility AFFILIATION. Conflating them
@@ -145,6 +173,34 @@ dac_enrollment_flag <- function(npi, enrolled_individual_npis) {
 #' @param dac_national_npis character vector of NPIs from the DAC National
 #'   Downloadable File -- the individual Medicare ENROLLMENT register. Supplied
 #'   separately from `dac_path`, which is the facility-AFFILIATION file, because
+#' Load the individual Medicare ENROLLMENT register
+#'
+#' Defined here rather than in each caller. It was pasted into all three
+#' hospital-attribution scripts and ci_hygiene H4 caught it -- three copies of
+#' "where enrollment comes from" is precisely how two of them would later
+#' disagree about it.
+#'
+#' @param path DAC National Downloadable File. Named with its vintage on
+#'   purpose; an unversioned copy on an external volume is what produced a
+#'   measurement against a two-year-old register.
+#' @return character vector of NPIs, or NULL when the register is absent, which
+#'   leaves is_enrolled_dac as NA rather than FALSE.
+load_dac_national_npis <- function(
+    path = Sys.getenv("DAC_NATIONAL_FILE", DEFAULT_DAC_NATIONAL_PATH)) {
+  if (!file.exists(path)) {
+    warning("enrollment register not found at ", path,
+            "; is_enrolled_dac will be NA", call. = FALSE)
+    return(NULL)
+  }
+  suppressPackageStartupMessages({library(DBI); library(duckdb)})
+  con <- DBI::dbConnect(duckdb::duckdb())
+  on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+  DBI::dbGetQuery(con, sprintf(
+    "SELECT DISTINCT CAST(NPI AS VARCHAR) AS npi
+     FROM read_csv_auto('%s', header=TRUE, all_varchar=TRUE, ignore_errors=TRUE)",
+    path))$npi
+}
+
 #'   conflating the two was the defect this parameter exists to prevent. NULL
 #'   leaves `is_enrolled_dac` as NA rather than FALSE.
 match_npi_to_hospitals <- function(npis,

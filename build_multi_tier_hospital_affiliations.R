@@ -24,8 +24,12 @@ mws <- chr(MW_FILE) %>%
 N_cohort <- nrow(mws)
 cat(sprintf("Cohort size: %s active primary-linked midwives\n", format(N_cohort, big.mark = ",")))
 
-# 2. Load CMS Direct Hospital Affiliations (Tier 1)
-cms_affils <- match_npi_to_hospitals(mws$npi, include_unmatched = TRUE)
+# The enrollment register, loaded by the canonical helper in
+# R/lib/match_npi_to_hospitals.R (sourced above).
+DAC_NATIONAL_NPIS <- load_dac_national_npis()
+
+cms_affils <- match_npi_to_hospitals(mws$npi, include_unmatched = TRUE,
+                                     dac_national_npis = DAC_NATIONAL_NPIS)
 
 # 3. Load Geocoded Practice Locations & Hospitals (Tier 2 Spatial Proximity)
 cat("Computing Spatial Isochrone Proximity to Nearest OB Delivery Hospital...\n")

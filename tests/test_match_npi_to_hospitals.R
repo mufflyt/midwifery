@@ -29,7 +29,25 @@ cat("  PASSED (pad_ccn('1T001') -> '01T001').\n\n")
 cat("Test 3: Match known NPI 1841988748...\n")
 res_npi <- match_npi_to_hospitals("1841988748")
 stopifnot(nrow(res_npi) == 1)
-stopifnot(res_npi$is_enrolled_dac[1] == TRUE)
+
+# UPDATED 2026-08-16. This asserted is_enrolled_dac == TRUE for an NPI whose
+# only evidence is a facility affiliation -- which is precisely the defect
+# docs/HANDOFF_is_enrolled_dac.md describes. The test encoded the bug: it
+# treated "has a hospital privilege" as proof of Medicare enrollment.
+#
+# Without an enrollment register the flag is now NA, because "we did not look"
+# and "we looked and they are not enrolled" are different claims.
+stopifnot(is.na(res_npi$is_enrolled_dac[1]))
+
+# Supply the register and it resolves. Affiliation is untouched either way --
+# the two variables are independent, which is the whole point of the fix.
+res_reg <- match_npi_to_hospitals("1841988748",
+                                  dac_national_npis = c("1841988748"))
+stopifnot(isTRUE(res_reg$is_enrolled_dac[1]))
+res_out <- match_npi_to_hospitals("1841988748",
+                                  dac_national_npis = c("9999999999"))
+stopifnot(isFALSE(res_out$is_enrolled_dac[1]))
+
 stopifnot(res_npi$has_hospital_privilege[1] == TRUE)
 stopifnot(res_npi$cms_ccn[1] == "140281")
 stopifnot(res_npi$hospital_name[1] == "NORTHWESTERN MEMORIAL HOSPITAL")

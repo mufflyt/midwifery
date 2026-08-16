@@ -23,11 +23,10 @@
 # transformation that perturbs anything shows up as a changed identity rather
 # than as a rounding difference in a number nobody checks.
 #
-# NOT EVERYTHING IS INVARIANT, AND THAT IS THE POINT. Case and whitespace in an
-# ENUM column are not cosmetic: taxonomy_axis == "midwife" is a comparison
-# against a literal. The suite asserts invariance where invariance is claimed,
-# and asserts DETECTION where it is not -- silently accepting "MIDWIFE" would
-# be worse than rejecting it.
+# NOT EVERYTHING IS INVARIANT, AND THAT IS THE POINT. Case and whitespace in a
+# known taxonomy ENUM are now normalised; corrupt taxonomy values are not. The
+# suite asserts invariance where invariance is claimed, and asserts DETECTION
+# where it is not.
 # =============================================================================
 
 root <- {
@@ -210,51 +209,37 @@ cat("\n-- N: transformations that are NOT cosmetic must be DETECTED --\n")
 # quietly accepted as the same one. A suite that asserted blanket
 # case-insensitivity here would be asserting a bug.
 {
-  # FINDING, 2026-08-16. Upper-casing taxonomy_axis moves NOBODY between
-  # member / held_out / quarantined, so an outcome-level assertion sees
-  # nothing. The tier underneath does move, and it moves the wrong way:
+  # FINDING FIXED, 2026-08-16. Upper-casing taxonomy_axis moved NOBODY between
+  # member / held_out / quarantined, so an outcome-level assertion saw nothing.
+  # The tier underneath moved the wrong way: unrecognised taxonomy values fell
+  # through to primary_midwifery. The claim about HOW someone was identified was
+  # wrong even though cohort counts did not move.
   #
-  #     "nursing"    -> sensitivity_nursing
-  #     "NURSING"    -> primary_midwifery      <- case drift
-  #     " nursing "  -> primary_midwifery      <- whitespace
-  #     "garbage"    -> primary_midwifery      <- corrupt value
-  #
-  # amcb_linkage_tier() tests `npi_tax_class == "nursing"` and falls through to
-  # primary_midwifery on anything else. So an UNRECOGNISED taxonomy value is
-  # promoted to the STRONGEST tier -- a fail-OPEN. Bad upstream data does not
-  # make a match look weaker, it makes it look stronger, which is the opposite
-  # of what a resolver should do with information it does not understand.
-  #
-  # Both tiers are cohort-eligible, so no count changes and no existing test
-  # fires. What changes is the published claim about HOW someone was
-  # identified.
-  #
-  # NOT FIXED HERE. The remedy is a policy decision -- reject an unknown
-  # taxonomy, or treat unknown as nursing and lose the primary tier for records
-  # with dirty data. Current behaviour is pinned below so that changing it is
-  # deliberate rather than accidental.
+  # The policy now is fail-closed but cohort-preserving: normalise known labels;
+  # put unknown labels in their own sensitivity tier; never publish dirty
+  # taxonomy as primary midwifery evidence.
   tier <- function(tax) amcb_linkage_tier("2000000001", 2L, tax)
 
   chk(identical(tier("nursing"), "sensitivity_nursing"),
       "N1 the exact value 'nursing' yields sensitivity_nursing")
+  chk(identical(tier("NURSING"), "sensitivity_nursing") &&
+        identical(tier(" nursing "), "sensitivity_nursing") &&
+        identical(tier("Nursing"), "sensitivity_nursing"),
+      "N2 known taxonomy labels are normalised for case and whitespace")
 
-  for (bad in c("NURSING", " nursing ", "Nursing", "garbage", "")) {
-    chk(identical(tier(bad), "primary_midwifery"),
-        sprintf("N2 CURRENT BEHAVIOUR: taxonomy %-12s -> %s (fail-OPEN, see comment)",
+  for (bad in c("garbage", "", NA_character_)) {
+    chk(identical(tier(bad), "sensitivity_unknown_taxonomy"),
+        sprintf("N3 dirty taxonomy %-12s -> %s, not primary_midwifery",
                 sprintf("'%s'", bad), tier(bad)))
   }
 
-  cat("\n       ^^ N2 pins a fail-OPEN, it does not endorse it. An unrecognised\n")
-  cat("          taxonomy is promoted to the strongest tier. Raised for a\n")
-  cat("          policy decision; see the commit message.\n\n")
-
-  # What IS safely assertable today: an unrecognised taxonomy must never make
-  # anyone MORE cohort-eligible than the clean value does.
+  # What IS safely assertable today: taxonomy drift must never make anyone MORE
+  # cohort-eligible than the clean value does.
   rank_of <- c(quarantined = 0L, held_out = 1L, member = 2L)
   upper <- CORPUS; upper$taxonomy_axis <- toupper(upper$taxonomy_axis)
   got <- classify(upper)[names(REF)]
   chk(all(rank_of[got] <= rank_of[REF]),
-      "N3 an unrecognised taxonomy never increases anyone's cohort eligibility")
+      "N4 taxonomy case drift never increases anyone's cohort eligibility")
 }
 
 # =============================================================================

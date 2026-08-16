@@ -114,3 +114,19 @@ is_inverted_water_mask <- function(mask_area_km2, state_land_km2, max_pct = 50) 
   r <- 100 * mask_area_km2 / state_land_km2
   !is.na(r) & r > max_pct
 }
+
+#' Is a state's "water mask" too large for that state's census water area?
+#'
+#' The land-percentage heuristic is useful for synthetic tests, but the real
+#' failure separates cleanly on census AWATER: Michigan legitimately has a large
+#' water mask, while the inverted AR/IA/KS/MO/WV masks are 45-162x their census
+#' water area.
+#'
+#' @param mask_area_km2,census_water_km2 [numeric]: areas.
+#' @param max_ratio [numeric(1)]: maximum tolerated mask-to-AWATER ratio.
+#' @return [logical] TRUE where the mask is too large to be trusted as water.
+is_water_mask_larger_than_awater <- function(mask_area_km2, census_water_km2,
+                                             max_ratio = 5) {
+  r <- mask_area_km2 / census_water_km2
+  !is.na(r) & is.finite(r) & r > max_ratio
+}

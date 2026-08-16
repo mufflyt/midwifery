@@ -46,8 +46,8 @@ MUTATIONS <- list(
   list(
     id = "membership-admit-class5",
     file = "R/amcb_cohort_membership.R",
-    find = '  "sensitivity_fuzzy"      # fuzzy surname within edit distance 2, exact given\n)',
-    repl = '  "sensitivity_fuzzy",     # fuzzy surname within edit distance 2, exact given\n  "sensitivity_name_component"\n)',
+    find = '  "sensitivity_unknown_taxonomy"    # identity evidence present; taxonomy label dirty\n)',
+    repl = '  "sensitivity_unknown_taxonomy",   # identity evidence present; taxonomy label dirty\n  "sensitivity_name_component"\n)',
     why = paste("Promotes class-5 (shared surname COMPONENT only) into the",
                 "cohort. These are deliberately held out because a shared name",
                 "fragment is not an identity claim."),
@@ -174,12 +174,24 @@ MUTATIONS <- list(
   list(
     id = "adversarial-class5-eligible",
     file = "R/amcb_cohort_membership.R",
-    find = "  \"sensitivity_fuzzy\"      # fuzzy surname within edit distance 2, exact given\n)",
-    repl = "  \"sensitivity_fuzzy\",     # fuzzy surname within edit distance 2, exact given\n  \"sensitivity_name_component\"\n)",
+    find = "  \"sensitivity_unknown_taxonomy\"    # identity evidence present; taxonomy label dirty\n)",
+    repl = "  \"sensitivity_unknown_taxonomy\",   # identity evidence present; taxonomy label dirty\n  \"sensitivity_name_component\"\n)",
     why = paste("Admits class-5 surname FRAGMENTS to the analytic cohort. A",
                 "shared name fragment is not an identity claim, and the corpus",
                 "carries an attractive class-5 decoy for exactly this."),
     killers = c("tests/test_adversarial_identity_resolution.R")
+  ),
+
+  list(
+    id = "adversarial-taxonomy-unknown-becomes-primary",
+    file = "R/amcb_resolver.R",
+    find = '    has                                    ~ "sensitivity_unknown_taxonomy",',
+    repl = '    has                                    ~ "primary_midwifery",',
+    why = paste("Promotes dirty or unrecognised taxonomy values into the strongest",
+                "tier. Counts may not move, but the published claim about how the",
+                "identity was established becomes false."),
+    killers = c("tests/test_metamorphic_invariance.R",
+                "tests/test_adversarial_identity_resolution.R")
   ),
 
   list(
@@ -263,6 +275,19 @@ MUTATIONS <- list(
                 "data -- a clean logical column, a plausible Table 1 row, and",
                 "a wrong number."),
     killers = c("tests/test_is_enrolled_dac_semantics.R")
+  ),
+
+  # ---- atomic writes (DEBT.md D1) ------------------------------------------
+  list(
+    id = "atomic-write-skips-validation",
+    file = "R/lib/resume_state.R",
+    find = "  if (!is.null(validate) && !isTRUE(validate(tmp))) {",
+    repl = "  if (FALSE) {",
+    why = paste("Removes the pre-rename validation, so a write that completed",
+                "but produced nonsense replaces a good file. An empty CSV",
+                "overwriting a complete one is the exact shape of the",
+                "2026-08-09 truncation."),
+    killers = c("tests/test_recovery_resume_equivalence.R")
   ),
 
   # ---- geography -----------------------------------------------------------

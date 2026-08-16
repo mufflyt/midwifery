@@ -429,3 +429,7 @@ artifacts/amcb_npi_geography_export.csv
 # R/09-bc-resolver-interaction.R; never tracked.
 artifacts/ab_middle_name/evidence_top2.csv
 artifacts/bc_resolver/contested_evidence.csv
+
+# 126 MB CMS download, refreshed on demand by
+# R/lib/match_npi_to_hospitals.R via resolve_facility_affiliation_url().
+data/CMS_Facility_Affiliation.csv

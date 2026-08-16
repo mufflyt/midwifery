@@ -69,8 +69,12 @@ city_hosp_counts <- hosps %>%
     .groups = "drop"
   )
 
-# 3. Tier 1: CMS Direct DAC Matches
-cms_affils <- match_npi_to_hospitals(mws$npi, include_unmatched = TRUE) %>%
+# The enrollment register, loaded by the canonical helper in
+# R/lib/match_npi_to_hospitals.R (sourced above).
+DAC_NATIONAL_NPIS <- load_dac_national_npis()
+
+cms_affils <- match_npi_to_hospitals(mws$npi, include_unmatched = TRUE,
+                                     dac_national_npis = DAC_NATIONAL_NPIS) %>%
   select(npi, is_enrolled_dac, has_hospital_privilege, n_hospitals, cms_ccn, facility_type, hospital_name, hospital_city, hospital_state)
 
 # 4. Tier 2: Exact Street Address Matches
