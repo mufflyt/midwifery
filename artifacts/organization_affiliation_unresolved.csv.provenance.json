@@ -1,0 +1,10 @@
+{
+  "artifact": "organization_affiliation_unresolved.csv",
+  "written_utc": "2026-08-16 19:28:50 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv",
+      "sha256": "4eb27a91359b244b8f7ce5e6a8e6d455331f53830c735e9e6c5680bae2315545"
+    }
+  ]
+}

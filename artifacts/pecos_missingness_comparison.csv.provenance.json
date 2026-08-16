@@ -1,10 +1,10 @@
 {
   "artifact": "pecos_missingness_comparison.csv",
-  "written_utc": "2026-08-16 17:08:25 UTC",
+  "written_utc": "2026-08-16 19:18:38 UTC",
   "inputs": [
     {
       "path": "artifacts/affiliation_coverage_matrix.csv",
-      "sha256": "dfb7f1d479d5850a782ebc00ea14c095bd1242b3426e0715fbd3ec46a6e0c10f"
+      "sha256": "e19bffdc4a81f09df55a68565d1e913b8d9912dc2d09d476297b9cd693410504"
     }
   ]
 }

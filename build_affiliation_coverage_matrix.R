@@ -84,7 +84,14 @@ ARMS <- tibble::tribble(
   "birth_center_cabc",        "artifacts/cabc_matched_midwives_final.csv",                   "npi",                   TRUE,
   "birth_center_aabc",        "artifacts/aabc_matched_birth_center_midwives.csv",            "npi",                   TRUE,
   "birth_center_freestanding","artifacts/freestanding_birth_center_midwives_expanded.csv",   "npi",                   TRUE,
-  "open_payments_org",        "artifacts/cohort_midwives_open_payments_type2_organizations.csv", "midwife_npi",       TRUE
+  "open_payments_org",        "artifacts/cohort_midwives_open_payments_type2_organizations.csv", "midwife_npi",       TRUE,
+  # NPPES co-location: the midwife's practice location (primary or secondary)
+  # matched to a Type-2 NPI registered at the SAME location, on telephone,
+  # ZIP+4+street or ZIP5+street. Built by link_practice_locations_to_org_npi.R.
+  # This is the only arm here that does not depend on Medicare enrollment, so
+  # it is the one that can see a midwife PECOS cannot. Omitting it from the
+  # first version of this matrix overstated the unresolved group by 651.
+  "nppes_org_colocation",     "artifacts/midwife_org_person.csv",                            "npi",                   FALSE
 )
 
 seen_in_arm <- function(file, key) {

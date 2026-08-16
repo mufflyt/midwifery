@@ -50,15 +50,10 @@ source("link_open_payments_type2_bulk.R")   # op_norm_addr(), op_zip5()
 DB <- Sys.getenv("MEDICARE_DUCKDB",
                  "/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb")
 
-#' Normalize an organization legal name for equivalence testing
-#' Strips corporate suffixes and punctuation so "MERCY CLINIC, LLC" and
-#' "MERCY CLINIC INC" compare equal.
-norm_org <- function(x) {
-  y <- toupper(str_trim(replace(as.character(x), is.na(as.character(x)), "")))
-  y <- str_replace_all(y, "[^A-Z0-9 ]", " ")
-  y <- str_replace_all(y, "\\b(INC|LLC|PC|PA|LLP|CORP|CORPORATION|COMPANY|CO|THE|OF|AND)\\b", " ")
-  str_trim(str_replace_all(y, "\\s+", " "))
-}
+# norm_org() moved to R/lib/org_names.R when the affiliation resolver became a
+# second caller. Defined once, so the two callers cannot drift apart on what
+# counts as the same organization.
+source(file.path("R", "lib", "org_names.R"))
 
 # THE TWO PIPELINES DO NOT READ THE SAME OPEN PAYMENTS ADDRESS. The Python
 # path takes it from CMS_Open_Payments_Profile_Supplement.csv (a profile

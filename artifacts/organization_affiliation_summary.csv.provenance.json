@@ -1,0 +1,10 @@
+{
+  "artifact": "organization_affiliation_summary.csv",
+  "written_utc": "2026-08-16 19:28:50 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/organization_affiliation_resolved.csv",
+      "sha256": "052144d447bb98e594787511b5ec3c3076a4c76e57e2964bfc154ea3c633cf2c"
+    }
+  ]
+}

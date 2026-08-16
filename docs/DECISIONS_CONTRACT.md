@@ -587,3 +587,37 @@ advances only on distinct content vintages, and is snapshot-counted rather than
 computed from label dates.
 
 Enforced by `tests/test_vintage_distinctness.R`.
+
+## Organization identity across arms with no shared identifier
+
+**Question.** PECOS and Care Compare identify an organization by PAC ID, NPPES
+co-location by Type-2 NPI, the hospital arms by CCN. No public crosswalk joins
+all three. On what basis may two arms be said to name the SAME organization?
+
+**RULING (2026-08-16).**
+
+Cross-arm agreement is established on the **normalised legal name**
+(`R/lib/org_names.R`, `norm_org()`), and every identifier each arm supplied is
+carried on the output row rather than collapsed.
+
+`norm_org()` strips corporate suffixes, punctuation and apostrophes. It does
+**not** stem, reorder or fuzzy-match. "FAIRVIEW CLINICS" and "FAIRVIEW HEALTH
+SERVICES" remain distinct; "WOMENS CARE FLORIDA" and "FLORIDA WOMAN CARE"
+remain distinct.
+
+**The error runs in one direction, deliberately.** Two arms naming one
+organization differently will not be merged, so `multi_source_confirmed` is an
+**undercount** and `affiliation_evidence_count` is a **lower bound**. Distinct
+organizations are not merged into one. An undercount of corroboration is the
+safe direction: it understates confidence rather than inventing it.
+
+Consequently `affiliation_evidence_count` may never be used to assert that an
+affiliation lacks support elsewhere -- only that this table did not find it.
+
+**Correction recorded.** The first source-coverage matrix omitted the NPPES
+co-location arm (`link_practice_locations_to_org_npi.R`), which is the only arm
+independent of Medicare enrollment. That overstated the unresolved ACTIVE group
+as 2,387 when it was 1,736, and understated cross-arm coverage of the
+PECOS-invisible as 2.5% when it was 14.7%.
+
+Enforced by `tests/test_organization_affiliation_resolver.R`.

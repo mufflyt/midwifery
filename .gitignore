@@ -466,3 +466,11 @@ artifacts/midwife_reassignment_spells.csv
 artifacts/midwife_reassignment_spells.csv.provenance.json
 artifacts/affiliation_coverage_matrix.csv
 artifacts/affiliation_coverage_matrix.csv.provenance.json
+
+# Organization affiliation resolver: one row per midwife x organization, keyed
+# on NPI and certification number, with the organization named. Person-level.
+# The tracked forms are the *_summary.csv and *_unresolved.csv aggregates.
+artifacts/organization_affiliation_resolved.csv
+artifacts/organization_affiliation_resolved.csv.provenance.json
+artifacts/nppes_colocation_2025.csv
+artifacts/nppes_colocation_2025.csv.provenance.json
