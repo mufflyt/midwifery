@@ -1,0 +1,10 @@
+{
+  "artifact": "organization_identity_coverage.csv",
+  "written_utc": "2026-08-16 20:23:08 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/organization_identity_pairings.csv",
+      "sha256": "b8ccecd5e996fd5bae4d98938e3e691cad88720f0bacbf732cd213c13b986e04"
+    }
+  ]
+}

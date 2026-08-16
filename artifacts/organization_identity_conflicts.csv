@@ -1,0 +1,4 @@
+source_a,source_b,comparison_type,n_pairings
+care_compare_group,nppes_org_colocation,npi-pac,1677
+care_compare_group,pecos_reassignment,pac-pac,4387
+nppes_org_colocation,pecos_reassignment,npi-pac,3277

@@ -1,0 +1,3 @@
+snapshot_date,source,bytes,sha256,is_republication,republication_of,use_for_panel
+2026-04-01,ppef_extract,321081120,315b6d49141cece730070aea0c8a4a5c544fe7ac31433f0406f5e57715d1f624,FALSE,,TRUE
+2026-07-17,ppef_extract,320536185,e5d362addc825ced40e6ae2da378bbe12a22cb9a25572a1742f663bb5a72c435,FALSE,,TRUE

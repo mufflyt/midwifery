@@ -1,0 +1,9 @@
+direction,entity_kind,band,n_ids,snapshot_date
+npis_per_pac_id,individual,1,4346382,2026-07-17
+npis_per_pac_id,organization,1,275767,2026-07-17
+npis_per_pac_id,organization,10+,1375,2026-07-17
+npis_per_pac_id,organization,2,6718,2026-07-17
+npis_per_pac_id,organization,3-9,5974,2026-07-17
+pac_ids_per_npi,organization,1,375016,2026-07-17
+pac_ids_per_npi,organization,2,477,2026-07-17
+pac_ids_per_npi,organization,3-9,4,2026-07-17
