@@ -1,10 +1,10 @@
 {
   "artifact": "county_cnm_births.csv",
-  "written_utc": "2026-08-11 02:31:59 UTC",
+  "written_utc": "2026-08-16 14:40:21 UTC",
   "inputs": [
     {
       "path": "artifacts/county_profiles/county_birth_profiles.csv",
-      "sha256": "c0793d8022ce6a44e94f47c873968198d1f23882a10cb14e52b47b91d4a12b7d"
+      "sha256": "8336000205718f87862204c4e59f0b9ce9781ab9a6c1c1b262a360ed2906e9d1"
     }
   ]
 }

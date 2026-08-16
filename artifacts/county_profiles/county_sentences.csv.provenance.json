@@ -1,6 +1,6 @@
 {
   "artifact": "county_sentences.csv",
-  "written_utc": "2026-08-10 15:32:26 UTC",
+  "written_utc": "2026-08-16 14:40:19 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",
@@ -8,7 +8,7 @@
     },
     {
       "path": "artifacts/midwives_geography_FROZEN.csv",
-      "sha256": "9455138198e4d347fe191470a4e30e8e94267689ade8ee4a9acb20d8862d3f5a"
+      "sha256": "5292564e211fd36b7aba79f1820fe51708b2d75437b2f7ca6cb600ca0b372de8"
     }
   ]
 }

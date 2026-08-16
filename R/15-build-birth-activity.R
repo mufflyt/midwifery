@@ -13,21 +13,21 @@
 #'
 #' @section Absence is not zero:
 #' A midwife missing from claims or vital records is NOT recorded as having
-#' attended zero births. She is recorded as `birth_activity_unobserved` unless
-#' her state-year-source is explicitly declared adequately ascertained. This is
+#' attended zero births. Her activity state is left missing unless her
+#' state-year-source is explicitly declared adequately ascertained. This is
 #' the same discipline the repository already applies to suppressed CDC WONDER
 #' cells and to CMS provider-years below 11 beneficiaries, and it is the whole
 #' point of the ascertainment table: without it, "we did not look here" and
 #' "she attended no births" become the same number, and every county with poor
 #' data reporting would appear to have an inactive workforce.
 #'
-#' @section Three activity states:
+#' @section Activity states:
 #' \describe{
 #'   \item{observed_birth_attendant}{births observed; `birth_active = TRUE`}
 #'   \item{no_observed_births}{none observed AND ascertainment declared
 #'     adequate; `birth_active = FALSE`}
-#'   \item{birth_activity_unobserved}{none observed and ascertainment NOT
-#'     established; `birth_active = NA`, `observed_births = NA`}
+#'   \item{NA}{none observed and ascertainment NOT established;
+#'     `birth_active = NA`, `observed_births = NA`}
 #' }
 #'
 #' @param roster_path Path to the AMCB/NPI/geography roster (frozen artifact).
@@ -284,7 +284,7 @@ build_midwife_birth_activity <- function(
       birth_activity_state = dplyr::case_when(
         .data$observed_any_birth ~ "observed_birth_attendant",
         .data$ascertainment_adequate ~ "no_observed_births",
-        TRUE ~ "birth_activity_unobserved"),
+        TRUE ~ NA_character_),
       birth_active = dplyr::case_when(
         .data$birth_activity_state == "observed_birth_attendant" ~ TRUE,
         .data$birth_activity_state == "no_observed_births" ~ FALSE,
@@ -375,10 +375,10 @@ build_midwife_birth_activity <- function(
 
   state_counts <- provider_activity |>
     dplyr::count(.data$birth_activity_state, name = "n")
-  n_of <- function(s) sum(provider_activity$birth_activity_state == s)
+  n_of <- function(s) sum(provider_activity$birth_activity_state == s, na.rm = TRUE)
   message("Observed birth attendants: ", fmt_n(n_of("observed_birth_attendant")))
   message("Ascertainable zero-birth midwives: ", fmt_n(n_of("no_observed_births")))
-  message("Unobserved activity state: ", fmt_n(n_of("birth_activity_unobserved")))
+  message("Unobserved activity state: ", fmt_n(sum(is.na(provider_activity$birth_activity_state))))
 
   if (nrow(validation_statistics) > 0L) {
     v <- validation_statistics[1L, ]

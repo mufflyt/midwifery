@@ -12,23 +12,22 @@ questions the code cannot settle, and states the numbers each one turns on.
 ## 0. The scope question, which comes first
 
 AMCB certifies **CNMs and CMs only**. Certified Professional Midwives and
-state-licensed direct-entry midwives are **not in this dataset** — invisible to
-it rather than excluded from it, because the source directory never held them.
+state-licensed direct-entry midwives are outside this study's inclusion
+criteria.
 
 They attend a large share of community births, and state licensure of
-direct-entry midwifery varies enormously, so the understatement is **uneven by
-state**: a county can have real midwifery care and zero midwives here.
+direct-entry midwifery varies enormously. A county can have real midwifery care
+and zero CNMs/CMs here.
 
-We have not quantified the gap — that needs NARM, state boards or MANA data,
-none of which is ingested. The honest statement today is directional, not
-numeric.
+We have not quantified non-AMCB midwifery supply -- that needs NARM, state
+boards or MANA data, none of which is ingested. The honest statement today is
+scope-based, not numeric.
 
 Full detail, including a manuscript sentence and a naming problem live in the
 committed artifacts, in [`SCOPE_AND_LIMITATIONS.md`](SCOPE_AND_LIMITATIONS.md).
 
-**What we need from you:** whether the paper is framed as *CNM/CM workforce*
-throughout — which the data supports — or as *midwifery workforce* with a
-limitation, which it does not.
+**Decision applied 2026-08-16:** the paper is framed as *CNM/CM workforce*
+throughout.
 
 ---
 
@@ -49,9 +48,9 @@ early, in those words.
 
 ## 2. Questions that need your clinical judgement
 
-These are drafted as D10–D13 in
-[`DECISIONS_CONTRACT.md`](DECISIONS_CONTRACT.md) and are **open** — no ruling
-has been made.
+These were drafted as D10-D13 in
+[`DECISIONS_CONTRACT.md`](DECISIONS_CONTRACT.md). Rulings were recorded on
+2026-08-16.
 
 ### D10 — May we report organisation/employer affiliation at all?
 
@@ -66,7 +65,7 @@ employer?** Naming the wrong hospital for a named midwife is a different kind
 of error from a missing cell, and you are better placed than the code to say
 whether a 16% agreement rate is a footnote or a reason to drop the layer.
 
-### D11 — Do the three birth-activity states survive into published tables?
+### D11 — Birth activity is binary with unobserved rows excluded
 
 `R/15-build-birth-activity.R` (now documented in
 [`METHODS_birth_activity.md`](METHODS_birth_activity.md)) classifies each
@@ -76,20 +75,18 @@ midwife as:
 |---|---|
 | `observed_birth_attendant` | births observed in the claims/certificate data |
 | `no_observed_births` | none observed **and** ascertainment declared adequate for her state-year-source |
-| `birth_activity_unobserved` | none observed and ascertainment **not** established |
+| `NA` | none observed and ascertainment **not** established |
 
-The third is not "she attended no births". Collapsing it into the second is the
-same error that published 651 counties as having no obstetric care, and it
-would be undetectable in the output. **Does a three-level activity variable
-survive peer review, or does the manuscript need a binary?** If binary, which
-way does `unobserved` go, and what does the table footnote say?
+The missing state is not "she attended no births". It is excluded from binary
+activity denominators rather than published as a third category or counted as
+inactive.
 
-### D12 — Is 74% state-board coverage reportable, given it is non-random by state?
+### D12 — State-board coverage is reportable as an availability sample
 
-9,037 midwives verified across 20 state boards. The 20 are the states that
-publish bulk data or belong to the Nursys compact — an availability sample, not
-a design. Same shape as the ACTIVE/DECEASED bias above: usable with a stated
-limitation, misleading without one.
+9,037 midwives verified across the first 20 state boards. The states that
+publish bulk data or belong to the Nursys compact are an availability sample,
+not a design. Usable with the state list and a non-random-coverage statement;
+misleading without one.
 
 ### D13 — Table 1's `Language` row understates by construction
 
@@ -98,8 +95,8 @@ The row reads "At least this many speak a language other than English: **367
 inconsistently, so absence is not evidence of English-only — the variable is a
 **floor**, not a rate.
 
-Does a floor belong in Table 1 at all? It is honest and it is nearly useless,
-and a reader who skims will read 3.1% as a prevalence.
+Decision applied 2026-08-16: the lower-bound row stays, with "at least this
+many" in the label.
 
 ---
 

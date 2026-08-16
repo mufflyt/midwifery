@@ -1,0 +1,10 @@
+{
+  "artifact": "district_sentences.csv",
+  "written_utc": "2026-08-16 14:44:43 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/midwives_geography_FROZEN.csv",
+      "sha256": "5292564e211fd36b7aba79f1820fe51708b2d75437b2f7ca6cb600ca0b372de8"
+    }
+  ]
+}

@@ -1,14 +1,13 @@
 # Observed birth activity — `R/15-build-birth-activity.R`
 
 The layer that answers "did this midwife attend births", and the one place in
-this pipeline where **not knowing** is a third answer rather than a missing
-value.
+this pipeline where **not knowing** must stay missing rather than becoming zero.
 
 Everything else here follows from that.
 
 ---
 
-## Why a third state exists
+## Why unobserved stays missing
 
 A midwife with no observed delivery could be either of two entirely different
 people:
@@ -27,9 +26,9 @@ is built to be structurally incapable of repeating it.
 |---|---|---|---|
 | `observed_birth_attendant` | `TRUE` | count | deliveries observed |
 | `no_observed_births` | `FALSE` | `0` | none observed **and** ascertainment declared adequate for her state-year-source |
-| `birth_activity_unobserved` | `NA` | `NA` | none observed and ascertainment **not** established |
+| `NA` | `NA` | `NA` | none observed and ascertainment **not** established |
 
-The third row is the point. `birth_active` is `NA`, not `FALSE`, and
+The missing row is the point. `birth_active` is `NA`, not `FALSE`, and
 `observed_births` is `NA`, not `0`, so any downstream mean, rate or count
 propagates the missingness instead of silently absorbing a zero.
 
@@ -64,7 +63,7 @@ input most deserving of review.
 | `county_base_path` | county covariates, for the rurality validation |
 
 At least one of TAF or birth certificates must be supplied; the function stops
-rather than producing a table of `unobserved` for everyone.
+rather than producing a table of missing activity for everyone.
 
 | output | contents |
 |---|---|
@@ -92,25 +91,22 @@ Any manuscript language should say so, or a reader will hear "half-time".
 
 ## The rurality validation
 
-`validate_activity_by_rurality()` reports the distribution of the three
-activity states across metro / nonmetro-adjacent / nonmetro-remote counties.
+`validate_activity_by_rurality()` reports the distribution of observed,
+ascertainable zero, and missing activity across metro / nonmetro-adjacent /
+nonmetro-remote counties.
 
 Read it as a **data-quality** check, not a finding. A rural excess of
-`birth_activity_unobserved` means our sources see rural deliveries less well —
-which is a statement about the sources. Reporting that excess as a rural
-workforce difference would be the same error the three-state design exists to
-prevent, arriving through the back door.
+missing activity means our sources see rural deliveries less well -- which is a
+statement about the sources. Reporting that excess as a rural workforce
+difference would repeat the absence-as-zero error through the back door.
 
 ---
 
-## Open question for the manuscript
+## Manuscript decision
 
-Whether the three states survive into published tables, or collapse to a
-binary, is **not settled** — it is D11 in
-[`DECISIONS_CONTRACT.md`](DECISIONS_CONTRACT.md), awaiting clinical input. If
-they collapse, the direction `birth_activity_unobserved` goes is the whole
-decision, and the table needs a footnote saying which way and how many people
-moved.
+The 2026-08-16 ruling for D11 is binary reporting with unobserved activity
+excluded from the denominator. That is why unobserved rows are encoded as `NA`
+rather than as a publishable category.
 
 ---
 
