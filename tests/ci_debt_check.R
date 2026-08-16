@@ -46,7 +46,11 @@ if (!length(head_idx)) {
   ci_finish()
 }
 
-parse_entry <- function(start, end) {
+# Named parse_debt_entry, not parse_entry: ci_nightly_registry_check.R already
+# defines parse_entry() for the exception registry. They parse different
+# formats for different gates, so distinct names is the right fix here rather
+# than a shared helper -- there is no common operation to extract.
+parse_debt_entry <- function(start, end) {
   block <- lines[start:end]
   id <- sub("^## (D[0-9]+).*$", "\\1", block[1])
   field <- function(name) {
@@ -62,7 +66,7 @@ parse_entry <- function(start, end) {
 
 bounds <- c(head_idx, length(lines) + 1L)
 entries <- lapply(seq_along(head_idx), function(i)
-  parse_entry(bounds[i], bounds[i + 1L] - 1L))
+  parse_debt_entry(bounds[i], bounds[i + 1L] - 1L))
 
 ci_ok("%d debt entr%s parsed", length(entries),
       if (length(entries) == 1L) "y" else "ies")
