@@ -1,13 +1,19 @@
-# Scope: CNM/CM inclusion criteria
+# Study scope: CNM/CM supply
 
 Written 2026-08-14 for co-author review; updated 2026-08-16 after the inclusion
-criterion was ratified. This document exists because the difference between
-"CNM/CM workforce" and "total midwifery workforce" changes how a reader reads
-every map in this project.
+criterion was ratified. This document records the study estimand and the
+language that must travel with county, state, district, access, employer,
+training, and projection outputs.
 
 ---
 
-## The cohort, precisely
+## Study scope
+
+This study evaluates the supply, distribution, characteristics, and
+accessibility of Certified Nurse-Midwives (CNMs) and Certified Midwives (CMs) in
+the United States. Other categories of midwifery practitioners are outside the
+prespecified study population and are not included in the denominator,
+analyses, or interpretation.
 
 Everything here descends from one source: the **American Midwifery
 Certification Board** public verification directory.
@@ -25,38 +31,15 @@ AMCB status **ACTIVE** and a **primary-tier NPI link** — 11,920 people, out of
 
 So a statement from this dataset is a statement about *actively certified
 nurse-midwives and certified midwives who could be matched to an NPI*. It is
-three restrictions deep, and each one is defensible on its own. Stacked, they
-are easy to forget.
+three restrictions deep, and each one is part of the stated estimand rather
+than an attempt to measure a broader workforce.
 
----
-
-## Who is outside the inclusion criteria, and why it matters clinically
-
-**Certified Professional Midwives (CPMs)** are certified by the North American
-Registry of Midwives, not AMCB. They are outside this study's inclusion
-criteria, not an accidentally missing subgroup.
-
-The same is true of **state-licensed and licensed direct-entry midwives (LMs,
-LDMs)**, whose credential is issued by a state rather than a national
-certifying body, and of any traditional or unlicensed practitioner.
-
-This is not a technicality for a midwifery workforce paper. CPMs and LMs attend
-a large share of **community births** — home births and freestanding
-birth-center births — and their distribution across states is very uneven,
-because state licensure of direct-entry midwifery varies enormously. In states
-where licensed midwifery is well established, a county can have substantial
-midwifery care and **zero CNMs/CMs in this dataset**.
-
-The implication is one-way and predictable: **CNM/CM supply is not total
-midwifery supply**, especially where non-AMCB midwifery is strongest.
-
-### What we have not done
-
-We have not quantified non-AMCB midwifery supply. Doing so needs a source outside this
-repository — NARM's certificant registry, state licensing boards, or MANA
-statistics — and none has been ingested. Until it is, the correct statement is
-scope-based ("outside this CNM/CM cohort"), not numeric. **Do not put a
-percentage on non-AMCB midwifery without the data behind it.**
+**Durable rule.** CNM/CM scope is intentional, not a limitation. All workforce
+counts, geographic analyses, access measures, employer analyses, training
+analyses, and projections refer exclusively to CNMs and CMs. The project does
+not attempt to measure total midwifery supply. Exclusion of CPMs, LMs/LDMs,
+traditional midwives, or unlicensed practitioners must not be described as
+missingness, undercoverage, or a study limitation.
 
 ---
 
@@ -124,13 +107,11 @@ an omission.
 - how CNM/CM supply compares against births, obstetric hospitals and OB/GYN
   supply
 
-**Not safe to say from this inclusion-defined cohort alone:**
+**Outside the study scope:**
 
-- "midwifery access" or "midwife supply" when meant as total midwifery
-- that a county has no midwives of any credential
-- anything about home birth or community birth
-- state-to-state comparisons of *total* midwifery workforce, because the
-  invisible share differs by state in a way we have not measured
+- estimates of practitioner groups other than CNMs and CMs
+- statements about all midwives regardless of credential
+- denominators, access measures, or projections for a total-midwifery estimand
 
 ---
 
@@ -139,6 +120,6 @@ an omission.
 If nothing else from this document survives, this should:
 
 > This analysis includes midwives certified by the American Midwifery
-> Certification Board (CNM and CM). Certified Professional Midwives and
-> state-licensed direct-entry midwives are outside the inclusion criteria, so
-> results describe CNM/CM supply rather than total midwifery supply.
+> Certification Board (CNM and CM). Other categories of midwifery practitioners
+> are outside the prespecified study population and are not included in the
+> denominator, analyses, or interpretation.

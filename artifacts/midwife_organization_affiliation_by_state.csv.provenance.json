@@ -1,0 +1,10 @@
+{
+  "artifact": "midwife_organization_affiliation_by_state.csv",
+  "written_utc": "2026-08-16 15:09:47 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/midwife_pecos_organization_affiliations.csv",
+      "sha256": "5e44da7a6f0da60d84005dc9f5c7e3d04f9df4ace0cb557ecd35e9d698fd2723"
+    }
+  ]
+}

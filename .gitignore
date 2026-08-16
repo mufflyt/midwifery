@@ -433,3 +433,7 @@ artifacts/bc_resolver/contested_evidence.csv
 # 126 MB CMS download, refreshed on demand by
 # R/lib/match_npi_to_hospitals.R via resolve_facility_affiliation_url().
 data/CMS_Facility_Affiliation.csv
+
+# PECOS organization affiliations: person-level (amcb_id, midwife NPI,
+# organization NPI). Reproducible from build_pecos_organization_affiliations.R.
+artifacts/midwife_pecos_organization_affiliations.csv
