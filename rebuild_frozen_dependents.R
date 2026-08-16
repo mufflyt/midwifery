@@ -60,7 +60,22 @@ REBUILD_ORDER <- list(
   list(layer = "4-derived-products", why = "products that consume cohort + geography",
        scripts = c("load_obstetric_providers.R", "match_midwives_to_isochrones.R",
                    "characterize_isochrone_representation.R",
-                   "map_midwife_geography.R", "render_midwifery_map.R")),
+                   "map_midwife_geography.R", "render_midwifery_map.R",
+                   # Added 2026-08-15, by the same completeness gate and for the
+                   # same reason as match_medicare_partb_partd.R below: these
+                   # four appeared since the order was declared and all read
+                   # amcb_npi_linkage_FROZEN. Undeclared, a rebuild would have
+                   # left them holding the previous cohort while reporting
+                   # success -- the exact failure this gate exists to prevent.
+                   #
+                   # Order within the layer is a real dependency, not a guess:
+                   # extract_dac writes dac_facility_affiliations.csv and
+                   # link_practice_locations writes midwife_org_person.csv,
+                   # and resolve_org_ambiguity reads BOTH, so it must follow.
+                   "extract_dac_facility_affiliations.R",
+                   "link_practice_locations_to_org_npi.R",
+                   "resolve_org_ambiguity.R",
+                   "match_open_payments_to_facility.R")),
   list(layer = "5-enrichment-recompute", why = "age/enrichment recomputes from cached inputs (no network)",
        scripts = c("calibrate_amcb_certification_ages.R", "enrich_doximity_cnm_ages.R",
                    "match_florida_voter_ages.R", "sweep_healthgrades_enrichment.R",
@@ -71,7 +86,12 @@ REBUILD_ORDER <- list(
                    # holding the old cohort with the rebuild reporting success.
                    "match_medicare_partb_partd.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
-       scripts = c("build_table1_midwives.R", "provenance_manifest.R"))
+       # export_amcb_npi_geography.R writes the tracked state aggregate and
+       # the gitignored person-level export, both of which read the crosswalk
+       # and its geography. It is a publication product, so it belongs after
+       # everything it summarises.
+       scripts = c("build_table1_midwives.R", "export_amcb_npi_geography.R",
+                   "provenance_manifest.R"))
 )
 declared <- unlist(lapply(REBUILD_ORDER, `[[`, "scripts"))
 

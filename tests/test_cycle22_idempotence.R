@@ -42,6 +42,7 @@ root <- {
 }
 suppressPackageStartupMessages({library(dplyr); library(readr)})
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
+source(file.path(root, "tests", "helper-optional-inputs.R"))
 
 fails <- 0L
 chk <- function(cond, m) {
@@ -147,15 +148,32 @@ cat("\n-- SEMANTIC --\n")
 # where it genuinely failed (T228), and pinned here as a per-script contract for
 # the ones cheap to verify.
 {
-  runnable <- c("R/02-geocoding-completeness.R", "R/04-diagnose-cross-state.R")
-  twice_ok <- vapply(runnable, function(s) {
-    a <- system2("Rscript", s, stdout = FALSE, stderr = FALSE)
-    b <- system2("Rscript", s, stdout = FALSE, stderr = FALSE)
-    a == 0L && b == 0L
-  }, logical(1))
-  chk(all(twice_ok),
-      sprintf("T227 every cheaply-runnable script completes on a second run [%s]",
-              paste(basename(runnable), ifelse(twice_ok, "ok", "FAILED"), collapse = ", ")))
+  # "Cheaply runnable" also means "has something to run ON". Both of these read
+  # person-level spines that are gitignored, so on a runner they exit non-zero
+  # for want of input and the assertion reported an idempotence defect that was
+  # never demonstrated. Attempt only the scripts whose inputs are present.
+  candidates <- list(
+    "R/02-geocoding-completeness.R" = c("midwives_geocoded.csv",
+                                        "data/county_base.csv"),
+    "R/04-diagnose-cross-state.R"   = c("midwives_geography.csv",
+                                        "midwives_with_nppes.csv"))
+  runnable <- names(candidates)[vapply(names(candidates), function(s)
+    have_inputs(candidates[[s]], sprintf("T227 idempotence of %s", basename(s))),
+    logical(1))]
+
+  if (!length(runnable)) {
+    cat("  --   SKIP T227: no cheaply-runnable script has its inputs present\n")
+  } else {
+    twice_ok <- vapply(runnable, function(s) {
+      a <- system2("Rscript", s, stdout = FALSE, stderr = FALSE)
+      b <- system2("Rscript", s, stdout = FALSE, stderr = FALSE)
+      a == 0L && b == 0L
+    }, logical(1))
+    chk(all(twice_ok),
+        sprintf("T227 every cheaply-runnable script completes on a second run [%s]",
+                paste(basename(runnable), ifelse(twice_ok, "ok", "FAILED"),
+                      collapse = ", ")))
+  }
 }
 
 cat("\n-- ADVERSARIAL --\n")
@@ -200,5 +218,7 @@ cat("\n-- ADVERSARIAL --\n")
   }
 }
 
-cat(sprintf("\n%s (%d failures)\n", if (fails == 0L) "PASS" else "FAIL", fails))
+optional_inputs_summary()
+cat(sprintf("\n%s (%d failures, %d skipped)\n",
+            if (fails == 0L) "PASS" else "FAIL", fails, optional_skip_count()))
 quit(status = if (fails == 0L) 0L else 1L)

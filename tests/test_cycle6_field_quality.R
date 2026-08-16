@@ -10,6 +10,7 @@
 # =============================================================================
 
 source("R/lib/field_quality.R")
+source(file.path("tests", "helper-optional-inputs.R"))
 suppressPackageStartupMessages({library(dplyr); library(readr)})
 
 fails <- 0L
@@ -122,7 +123,7 @@ if (have_attrs) {
       sprintf("T68 boolean keys present on every one of %s profiles (NA counts: %s) -- FALSE means false",
               format(nrow(a), big.mark = ","), paste(nas, collapse = "/")))
 } else {
-  chk(FALSE, "T68 attribute snapshot missing")
+  have_inputs(ATTRS, "T68 boolean-key completeness on the Healthgrades snapshot")
 }
 
 # T69. hg_age must be a plausible adult age. A regex that drifts onto another
@@ -134,7 +135,7 @@ if (have_attrs) {
       sprintf("T69 hg_age lies in a plausible adult range [%d, %d] over %d values",
               min(ag), max(ag), length(ag)))
 } else {
-  chk(FALSE, "T69 attribute snapshot missing")
+  have_inputs(ATTRS, "T69 hg_age plausible-range check")
 }
 
 # T70. ENFORCE THE SWEEP. Any Healthgrades-derived field published by Table 1
@@ -150,6 +151,8 @@ if (have_attrs) {
               length(blocks), if (guarded) "present" else "ABSENT"))
 }
 
-cat(sprintf("\n%s (%d failure%s)\n", if (fails == 0L) "PASS" else "FAILURES",
-            fails, if (fails == 1L) "" else "s"))
+optional_inputs_summary()
+cat(sprintf("\n%s (%d failure%s, %d skipped)\n",
+            if (fails == 0L) "PASS" else "FAILURES",
+            fails, if (fails == 1L) "" else "s", optional_skip_count()))
 quit(status = if (fails == 0L) 0L else 1L)
