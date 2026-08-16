@@ -17,15 +17,22 @@
 # clean logical, the Table 1 row it feeds is plausible, and the number is simply
 # wrong -- the pattern docs/HALL_OF_SHAME.md opens by naming: silent success.
 #
-# MEASURED on the 17,054-NPI crosswalk against DAC_NationalDownloadableFile.csv:
+# MEASURED on the 17,054-NPI crosswalk against
+# DAC_NationalDownloadableFile_2026-06.csv:
 #
-#     in the national register (truly enrolled)   3,912
+#     in the national register (truly enrolled)   5,931
 #     in the facility-affiliation file            1,665
-#     enrolled with NO facility affiliation       2,817
+#     enrolled with NO facility affiliation       4,266
 #
-# a 2.35x understatement. The handoff estimated 3,319 affected; 2,817 is the
-# measured figure against this file vintage, and the difference is worth saying
-# out loud rather than repeating the estimate.
+# a 3.56x understatement. The handoff estimated 3,319 affected; the measured
+# figure is 4,266.
+#
+# CORRECTED 2026-08-16. My first pass used a 2024-05 copy of the register from
+# an external volume and reported 3,912 / 2,817, plus 570 NPIs with a facility
+# affiliation but no register entry, which I flagged as an unexplained anomaly.
+# It was not an anomaly. Against the correct 2026-06 file the 570 is ZERO --
+# they were providers who enrolled between the two vintages. The stale file
+# understated the understatement.
 #
 # Hermetic: the register is a character vector here, so the semantics are
 # testable without the 655 MB national file.
@@ -114,6 +121,35 @@ cat("\n-- REGRESSION: the affiliation file must never be the register --\n")
       "R2 using the ENROLLMENT register does not")
   chk(!identical(as_register, dac_enrollment_flag("1000000002", REGISTER)),
       "R3 the two sources give DIFFERENT answers, so the distinction is real")
+}
+
+# -----------------------------------------------------------------------------
+cat("\n-- C: affiliation is a strict SUBSET of enrollment --\n")
+# -----------------------------------------------------------------------------
+# A conservation law rather than a unit test. You cannot hold a facility
+# affiliation without being enrolled in Medicare, so every affiliated NPI must
+# appear in the enrollment register. Measured against the 2026-06 file: all
+# 1,665 affiliated NPIs are in the register, none outside it.
+#
+# This is also the check that would have caught my stale-file mistake
+# immediately. Against the 2024-05 register 570 affiliated NPIs sat OUTSIDE it,
+# which I reported as an unexplained anomaly when it was really a two-year
+# vintage gap. A nonzero count here means the register is older than the
+# affiliation file, not that the data is strange.
+{
+  register <- c("1000000001", "1000000002", "1000000003", "1000000009")
+  affiliated <- c("1000000001", "1000000009")
+  outside <- setdiff(affiliated, register)
+  chk(length(outside) == 0L,
+      sprintf("C1 every affiliated NPI is in the enrollment register [%d outside]",
+              length(outside)))
+
+  # And the check must be able to fail, or it is decoration.
+  stale_register <- c("1000000001", "1000000002")      # missing ...009
+  outside_stale <- setdiff(affiliated, stale_register)
+  chk(length(outside_stale) == 1L,
+      sprintf("C2 a STALE register is detected as affiliations outside it [%d]",
+              length(outside_stale)))
 }
 
 # -----------------------------------------------------------------------------

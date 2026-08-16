@@ -20,6 +20,22 @@ source("R/lib/common_helpers.R")
 
 DEFAULT_DAC_PATH <- "data/CMS_Facility_Affiliation.csv"
 DEFAULT_DAC_URL <- "https://data.cms.gov/provider-data/sites/default/files/resources/b7c4080ae144663e43353a9c35cd3f53_1782750576/Facility_Affiliation.csv"
+
+# The individual Medicare ENROLLMENT register, which is a different file from
+# DEFAULT_DAC_PATH above -- that one is facility AFFILIATION. Conflating them
+# was the defect docs/HANDOFF_is_enrolled_dac.md describes.
+#
+# NAMED WITH ITS VINTAGE ON PURPOSE. A 2024-05 copy of this file also exists on
+# an external volume, and reaching for it produced a measurement that was wrong
+# twice over: it understated enrollment (3,912 rather than 5,931) and it
+# manufactured a 570-NPI "anomaly" that was only a two-year gap between the
+# register and the affiliation file. An unversioned name invites exactly that
+# mistake; the version in the filename makes staleness visible at the call site.
+#
+# Gitignored at 840 MB. The subset law in
+# tests/test_is_enrolled_dac_semantics.R (C1) catches a stale register: every
+# affiliated NPI must appear in it, and none may sit outside.
+DEFAULT_DAC_NATIONAL_PATH <- "DAC_NationalDownloadableFile_2026-06.csv"
 DEFAULT_HOSPITAL_PATH <- "artifacts/ob_hospitals_geocoded.csv"
 DEFAULT_HOSP_INFO_URL <- "https://data.cms.gov/provider-data/sites/default/files/resources/893c372430d9d71a1c52737d01239d47_1777413958/Hospital_General_Information.csv"
 
@@ -272,16 +288,28 @@ match_npi_to_hospitals <- function(npis,
   # different questions.
   #
   # Measured on the 17,054-NPI crosswalk against
-  # DAC_NationalDownloadableFile.csv, the enrollment register:
+  # DAC_NationalDownloadableFile_2026-06.csv, the enrollment register:
   #
-  #     in the national register (truly enrolled)   3,912
+  #     in the national register (truly enrolled)   5,931
   #     in the facility-affiliation file            1,665
-  #     enrolled with NO facility affiliation       2,817   <- were FALSE
+  #     enrolled with NO facility affiliation       4,266   <- were FALSE
   #
-  # The flag understated Medicare enrollment by a factor of 2.35, and any
-  # Table 1 row or comparison built on it was wrong. (docs/HANDOFF_is_enrolled_dac.md
-  # estimated 3,319 affected; 2,817 is the measured figure against this file
-  # vintage.)
+  # The flag understated Medicare enrollment by a factor of 3.56, and any
+  # Table 1 row or comparison built on it was wrong. docs/HANDOFF_is_enrolled_dac.md
+  # estimated 3,319 affected; the measured figure is 4,266.
+  #
+  # VINTAGE MATTERS, and getting it wrong cost me a false anomaly. My first
+  # measurement used a 2024-05 copy of this file sitting on an external volume
+  # and reported 3,912 enrolled, 2,817 mislabelled, and 570 NPIs that had a
+  # facility affiliation but no entry in the register -- which I flagged as
+  # unexplained. Against the correct 2026-06 file that 570 is ZERO: they were
+  # simply providers who enrolled between the two vintages.
+  #
+  # The right relationship is a strict subset -- you cannot hold a facility
+  # affiliation without being enrolled -- and it holds exactly: all 1,665
+  # affiliated NPIs appear in the register. Any nonzero count outside it means
+  # the register is older than the affiliation file, not that the data is
+  # strange. tests/test_is_enrolled_dac_semantics.R asserts the subset.
   #
   # The two variables are now SEPARATE and neither implies the other:
   #

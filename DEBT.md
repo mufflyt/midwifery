@@ -106,22 +106,27 @@ holds the four assertions the handoff asked for, including that missing
 enrollment evidence yields NA rather than FALSE.
 
 What is NOT done is regenerating anything built while the flag was wrong.
-Measured on the 17,054-NPI crosswalk:
+Measured on the 17,054-NPI crosswalk against
+`DAC_NationalDownloadableFile_2026-06.csv`:
 
 | | NPIs |
 |---|---:|
-| in the national register (truly enrolled) | 3,912 |
+| in the national register (truly enrolled) | 5,931 |
 | in the facility-affiliation file (what the flag used) | 1,665 |
-| **enrolled with NO facility affiliation — were FALSE** | **2,817** |
-| affiliation but absent from the national register | 570 |
+| **enrolled with NO facility affiliation — were FALSE** | **4,266** |
+| affiliation but absent from the register | 0 |
 
-A 2.35x understatement of Medicare enrollment. The handoff estimated 3,319
-affected; 2,817 is the measured figure against this file vintage, and the
-difference is stated rather than the estimate repeated.
+A **3.56x** understatement of Medicare enrollment. The handoff estimated 3,319
+affected; the measured figure is 4,266.
 
-The 570 with an affiliation but no entry in the national register are a second,
-smaller question -- most likely a vintage mismatch between the two CMS files --
-and are not explained yet.
+**Corrected 2026-08-16.** The first measurement used a 2024-05 copy of the
+register from an external volume and reported 3,912 enrolled, 2,817
+mislabelled, and 570 affiliated NPIs with no register entry, which was raised
+as an unexplained anomaly. It was not one: against the correct 2026-06 file the
+570 is **zero**, and those providers had simply enrolled between the two
+vintages. The stale file understated the understatement. The subset law is now
+asserted (C1/C2) so a stale register announces itself instead of looking like a
+data anomaly.
 
 **Decision needed:** which published outputs used this flag, and whether they
 are regenerated or withdrawn. Regenerating a Table 1 row changes a reported
