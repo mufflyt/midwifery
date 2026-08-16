@@ -92,6 +92,7 @@ cat("reusing:", paste(c("rank_one_to_one", "safe_pct"), collapse = ", "), "\n")
 # normaliser. See tests/test_amcb_name_normalization.R.
 source(file.path(root_dir, "R", "amcb_name_keys.R"))
 source(file.path(root_dir, "R", "amcb_match_rules.R"))
+source(file.path(root_dir, "R", "amcb_resolver.R"))
 cat("name keys: amcb_name_key() via canonical normalize_string()",
     "(transliterating)\n")
 
@@ -470,42 +471,18 @@ cand_audit <- candidates %>%
 write_csv(cand_audit, file.path(OUT_DIR, "linkage_candidate_audit.csv"), na = "")
 
 # --- Resolution: identity first, taxonomy second -----------------------------
-per_npi <- candidates %>%
-  group_by(amcb_id, npi) %>%
-  summarise(name_evidence_class = min(name_evidence_class),
-            mid_match = max(mid_match), taxonomy_axis = first(taxonomy_axis),
-            match_method = match_method[which.min(name_evidence_class)],
-            match_strategy = match_strategy[which.min(name_evidence_class)],
-            # Taken from the SAME candidate row that supplied the method, so
-            # the recorded variant is the one whose evidence class won.
-            nppes_matched_last = nppes_matched_last[which.min(name_evidence_class)],
-            nppes_matched_first = nppes_matched_first[which.min(name_evidence_class)],
-            nppes_mid_init = nppes_mid_init[which.min(name_evidence_class)],
-            .groups = "drop")
+# The resolution rules live in R/amcb_resolver.R so they can be tested without
+# person-level inputs. tests/test_amcb_resolver_permutation.R runs them over a
+# hostile fixture in 300 randomised candidate orderings. Inline here, they could
+# only be exercised by running this whole pipeline, which needs gitignored data.
+per_npi <- amcb_per_npi(candidates)
 
-pool_stats <- per_npi %>%
-  group_by(amcb_id) %>%
-  summarise(n_candidates_pre_rank = n(),
-            n_midwifery_candidates = sum(taxonomy_axis == "midwife"),
-            n_nursing_only_candidates = sum(taxonomy_axis == "nursing"),
-            best_evidence_class = min(name_evidence_class),
-            n_at_best_class = sum(name_evidence_class == min(name_evidence_class)),
-            .groups = "drop")
+pool_stats <- amcb_pool_stats(per_npi)
 
-resolved <- per_npi %>%
-  inner_join(pool_stats, by = "amcb_id") %>%
-  filter(name_evidence_class == best_evidence_class) %>%
-  # Exactly one candidate at the strongest class resolves. Several means they
-  # are indistinguishable on the evidence we hold -- taxonomy must NOT break
-  # that tie, because it says nothing about which person the name refers to.
-  filter(n_at_best_class == 1L) %>%
-  mutate(resolution = if_else(name_evidence_class == 1L,
-                              "unique_best_class_with_middle", "unique_best_class"),
-         # Class 5 sits below class 4: a partial surname is weaker evidence than
-         # a whole surname within edit distance 2.
-         confidence_score = c(1.0, 0.9, 0.7, 0.5, 0.35)[name_evidence_class])
+resolved <- amcb_resolve_best_class(per_npi, pool_stats)
 
-quarantined_ids <- setdiff(unique(candidates$amcb_id), unique(resolved$amcb_id))
+quarantined_ids <- amcb_quarantined_ids(candidates, resolved)
+
 
 cat("\nresolved by best name-evidence class:\n")
 print(as.data.frame(count(resolved, name_evidence_class, taxonomy_axis)))
