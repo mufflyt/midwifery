@@ -3,7 +3,7 @@
 # Tests for build_midwife_birth_activity()
 # =============================================================================
 # The property that matters most: a midwife absent from every activity source
-# must be `birth_activity_unobserved` with observed_births = NA, UNLESS her
+# must have missing activity status with observed_births = NA, UNLESS her
 # state-year is declared adequately ascertained. If that ever collapses to a
 # zero, the layer silently converts "we did not look" into "she attends no
 # births" -- and every poorly-reporting state would appear to hold an inactive
@@ -85,8 +85,8 @@ ok("INACTIVE certificant excluded", !("5555555555" %in% pa$npi_activity))
 ok("six ACTIVE midwives retained", nrow(pa) == 6L)
 
 cat("\n=== ABSENCE IS NOT ZERO (the core property) ===\n")
-ok("WY midwife with no records is birth_activity_unobserved",
-   g("3333333333")$birth_activity_state == "birth_activity_unobserved")
+ok("WY midwife with no records has missing activity status",
+   is.na(g("3333333333")$birth_activity_state))
 ok("...her observed_births is NA, not 0",
    is.na(g("3333333333")$observed_births))
 ok("...her birth_active is NA, not FALSE",
@@ -163,9 +163,8 @@ res2 <- build_midwife_birth_activity(
   activity_year = YEAR, save_dir = file.path(td, "out2"),
   reference_births = 100)
 pa2 <- res2$provider_activity
-ok("NA ascertainment leaves the CO no-record midwife unobserved",
-   pa2$birth_activity_state[pa2$npi_activity == "2222222222"] ==
-     "birth_activity_unobserved")
+ok("NA ascertainment leaves the CO no-record midwife with missing activity status",
+   is.na(pa2$birth_activity_state[pa2$npi_activity == "2222222222"]))
 
 cat("\n=== contract failures are loud ===\n")
 dup <- bind_rows(roster, roster[1, ])

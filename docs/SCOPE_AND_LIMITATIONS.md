@@ -1,8 +1,8 @@
-# Scope: who this dataset counts, and who it does not
+# Scope: CNM/CM inclusion criteria
 
-Written 2026-08-14 for co-author review. This document exists because the
-answer was implicit everywhere and stated nowhere, and because the difference
-between "midwives" and "the midwives we can see" changes how a reader reads
+Written 2026-08-14 for co-author review; updated 2026-08-16 after the inclusion
+criterion was ratified. This document exists because the difference between
+"CNM/CM workforce" and "total midwifery workforce" changes how a reader reads
 every map in this project.
 
 ---
@@ -30,12 +30,11 @@ are easy to forget.
 
 ---
 
-## Who is missing, and why it matters clinically
+## Who is outside the inclusion criteria, and why it matters clinically
 
 **Certified Professional Midwives (CPMs)** are certified by the North American
-Registry of Midwives, not AMCB. They are **not in this dataset at all** — not
-as a category with zero rows, not as an excluded group. They are simply
-invisible to it, because the source directory never contained them.
+Registry of Midwives, not AMCB. They are outside this study's inclusion
+criteria, not an accidentally missing subgroup.
 
 The same is true of **state-licensed and licensed direct-entry midwives (LMs,
 LDMs)**, whose credential is issued by a state rather than a national
@@ -46,55 +45,46 @@ a large share of **community births** — home births and freestanding
 birth-center births — and their distribution across states is very uneven,
 because state licensure of direct-entry midwifery varies enormously. In states
 where licensed midwifery is well established, a county can have substantial
-midwifery care and **zero midwives in this dataset**.
+midwifery care and **zero CNMs/CMs in this dataset**.
 
-The direction of the error is one-way and predictable: **this dataset
-understates midwifery access, most severely exactly where non-AMCB midwifery is
-strongest.**
+The implication is one-way and predictable: **CNM/CM supply is not total
+midwifery supply**, especially where non-AMCB midwifery is strongest.
 
 ### What we have not done
 
-We have not quantified the gap. Doing so needs a source outside this
+We have not quantified non-AMCB midwifery supply. Doing so needs a source outside this
 repository — NARM's certificant registry, state licensing boards, or MANA
 statistics — and none has been ingested. Until it is, the correct statement is
-directional ("understates, unevenly by state"), not numeric. **Do not put a
-percentage on this without the data behind it.**
+scope-based ("outside this CNM/CM cohort"), not numeric. **Do not put a
+percentage on non-AMCB midwifery without the data behind it.**
 
 ---
 
-## The naming problem, which is live in committed artifacts
+## The naming problem, now corrected in the producer
 
-The prose and the column names disagree, and the prose is the correct one.
+The prose and the old column names disagreed, and the prose was the correct one.
 
 The generated county sentences say:
 
 > "3 **certified nurse-midwives** were located here. That is 0.7 per 10,000
 > women aged 15-44…"
 
-The columns in the same file say:
+The old columns in the same file said:
 
-| column | reads as | actually counts |
+| old column | reads as | replacement |
 |---|---|---|
-| `n_midwives` | all midwives | AMCB-certified CNM/CM, ACTIVE, NPI-linked |
-| `midwives_per_10k_women` | midwifery supply | CNM/CM supply |
-| `births_per_midwife` | births per midwife | births per CNM/CM |
-| `no_located_midwife_with_births` | **no midwife here** | no *CNM/CM* located here |
+| `n_midwives` | all midwives | `n_cnm_cm` |
+| `midwives_per_10k_women` | midwifery supply | `cnm_cm_per_10k_women` |
+| `births_per_midwife` | births per midwife | `births_per_cnm_cm` |
+| `no_located_midwife_with_births` | **no midwife here** | `no_located_cnm_cm_with_births` |
 
-The last one is the dangerous one. A county flagged
-`no_located_midwife_with_births = TRUE` reads as a maternity-care desert. It
-means no AMCB-certified midwife was located there — a county served entirely by
-CPMs would carry that flag while having midwifery care.
+The last one was the dangerous one. A county flagged
+`no_located_midwife_with_births = TRUE` read as a maternity-care desert. The
+renamed column says what it means: no AMCB-certified CNM/CM was located there.
 
-Anyone loading the CSV sees the column name, not the sentence. Anyone reading
-the sentence is correctly informed. Whichever a reader meets first determines
-what they believe.
-
-**Recommendation:** rename to `n_cnm_cm`, `cnm_cm_per_10k_women`,
-`births_per_cnm_cm`, `no_located_cnm_cm_with_births`, or — if renaming breaks
-too many downstream consumers — carry the qualification in every caption,
-figure legend and table header that uses them. Renaming is the safer of the
-two, because a caption can be dropped when a figure is reused and a column name
-travels with the data.
+Anyone loading the CSV sees the column name, not the sentence. The 2026-08-16
+decision therefore renames the county outputs so the inclusion criteria travel
+with the data.
 
 ---
 
@@ -132,12 +122,12 @@ an omission.
 - how many actively certified CNMs/CMs are locatable, and where
 - how CNM/CM supply varies by county, rurality and ACOG district
 - how CNM/CM supply compares against births, obstetric hospitals and OB/GYN
-  supply, *provided the comparison names the credential*
+  supply
 
-**Not safe to say without the missing data:**
+**Not safe to say from this inclusion-defined cohort alone:**
 
-- "midwifery access" or "midwife supply" unqualified
-- that a county has no midwives
+- "midwifery access" or "midwife supply" when meant as total midwifery
+- that a county has no midwives of any credential
 - anything about home birth or community birth
 - state-to-state comparisons of *total* midwifery workforce, because the
   invisible share differs by state in a way we have not measured
@@ -148,8 +138,7 @@ an omission.
 
 If nothing else from this document survives, this should:
 
-> This analysis includes only midwives certified by the American Midwifery
+> This analysis includes midwives certified by the American Midwifery
 > Certification Board (CNM and CM). Certified Professional Midwives and
-> state-licensed direct-entry midwives are not represented, so midwifery supply
-> is understated to a degree that varies by state with the prevalence of
-> non-AMCB credentials.
+> state-licensed direct-entry midwives are outside the inclusion criteria, so
+> results describe CNM/CM supply rather than total midwifery supply.

@@ -1,6 +1,6 @@
 {
   "artifact": "district_profiles.csv",
-  "written_utc": "2026-08-10 11:18:37 UTC",
+  "written_utc": "2026-08-16 14:44:43 UTC",
   "inputs": [
     {
       "path": "data/congress/legislators_current.csv",

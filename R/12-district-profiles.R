@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-#' @title Step 12: Congressional-district midwifery profiles and sentences
+#' @title Step 12: Congressional-district CNM/CM profiles and sentences
 #'
 #' @description
 #' Builds a district-level table and renders map prose for each congressional
@@ -218,8 +218,8 @@ run_districts <- function() {
   cli::cli_alert_success("B27001 bracket denominators and B13016 age splits are internally consistent")
   cli::cli_alert_info("districts: {nrow(d)}")
 
-  # ---- midwives by point-in-polygon ---------------------------------------
-  cli::cli_h2("Assigning located midwives to districts")
+  # ---- CNMs/CMs by point-in-polygon ---------------------------------------
+  cli::cli_h2("Assigning located CNMs/CMs to districts")
   mw <- read_csv(GEO, show_col_types = FALSE, progress = FALSE,
                  col_types = cols(.default = col_character())) %>%
     mutate(latitude = as.numeric(latitude), longitude = as.numeric(longitude)) %>%
@@ -241,10 +241,10 @@ run_districts <- function() {
   hit <- st_join(pts, cds[, c("GEOID")], join = st_within)
 
   n_assigned <- sum(!is.na(hit$GEOID))
-  cli::cli_alert_info("midwives with coordinates: {nrow(mw)}; inside a district: {n_assigned} ({round(100*n_assigned/nrow(mw),1)}%)")
+  cli::cli_alert_info("CNMs/CMs with coordinates: {nrow(mw)}; inside a district: {n_assigned} ({round(100*n_assigned/nrow(mw),1)}%)")
 
   mw_cd <- st_drop_geometry(hit) %>% filter(!is.na(GEOID)) %>%
-    count(GEOID, name = "n_midwives")
+    count(GEOID, name = "n_cnm_cm")
 
   # "ZZ" is not a district: TIGER/ACS emit it for unassigned water area. These
   # rows carry zero population and would otherwise dilute every rank and appear
@@ -254,11 +254,11 @@ run_districts <- function() {
   if (n_zz) cli::cli_alert_info("dropped {n_zz} 'ZZ' water/unassigned pseudo-districts")
 
   d <- d %>% left_join(mw_cd, by = "GEOID", relationship = "many-to-one") %>%
-    mutate(n_midwives = coalesce(n_midwives, 0L),
-           midwives_per_10k_women = if_else(women_15_44 > 0,
-                                            1e4 * n_midwives / women_15_44, NA_real_),
-           births_per_midwife = if_else(n_midwives > 0 & births_12mo > 0,
-                                        births_12mo / n_midwives, NA_real_))
+    mutate(n_cnm_cm = coalesce(n_cnm_cm, 0L),
+           cnm_cm_per_10k_women = if_else(women_15_44 > 0,
+                                          1e4 * n_cnm_cm / women_15_44, NA_real_),
+           births_per_cnm_cm = if_else(n_cnm_cm > 0 & births_12mo > 0,
+                                       births_12mo / n_cnm_cm, NA_real_))
 
   # ---- representative badge ------------------------------------------------
   reps <- load_house_roster() %>%
@@ -304,7 +304,7 @@ run_districts <- function() {
 
   # ---- ranks + sentences ---------------------------------------------------
   d <- d %>% mutate(
-    rank_mw_high       = mm_rank(midwives_per_10k_women),
+    rank_cnm_cm_high   = mm_rank(cnm_cm_per_10k_women),
     rank_births_high   = mm_rank(births_12mo),
     rank_medicaid_high = mm_rank(pct_medicaid_women),
     rank_gfr_high      = mm_rank(gfr),
@@ -322,18 +322,18 @@ run_districts <- function() {
                         file.path(OUT, "district_profiles.csv"),
                         inputs = file.path("data", "congress", "legislators_current.csv"),
                         na = "")
-  write_with_provenance(select(d, GEOID, district_display, rep_name, party, n_midwives,
+  write_with_provenance(select(d, GEOID, district_display, rep_name, party, n_cnm_cm,
                    births_12mo, sentences, rep_badge),
             file.path(OUT, "district_sentences.csv"), na = "", inputs = prov_inputs(file.path(ART, "midwives_geography_FROZEN.csv")))
 
   cli::cli_h2("Examples")
-  ex <- d %>% arrange(desc(n_midwives)) %>% slice(1) %>%
-    bind_rows(d %>% filter(n_midwives == 0) %>% arrange(desc(births_12mo)) %>% slice(1)) %>%
+  ex <- d %>% arrange(desc(n_cnm_cm)) %>% slice(1) %>%
+    bind_rows(d %>% filter(n_cnm_cm == 0) %>% arrange(desc(births_12mo)) %>% slice(1)) %>%
     bind_rows(d %>% arrange(desc(pct_medicaid_women)) %>% slice(1))
   for (i in seq_len(nrow(ex))) cat("\n*", ex$sentences[i], "\n")
 
   manifest <- list(
-    analysis = "Congressional-district midwifery profiles",
+    analysis = "Congressional-district CNM/CM profiles",
     engine = "mufflyt/isochrones R/variety_sentences.R (canonical; not reimplemented)",
     acs_year = ACS_YEAR,
     boundary_vintage = d$boundary_vintage[1],
@@ -343,7 +343,7 @@ run_districts <- function() {
     inputs = list(geography = list(path = GEO, sha256 = sha256_of(GEO), rows = nrow(mw)),
                   roster = list(path = LEG_CACHE, sha256 = sha256_of(LEG_CACHE))),
     districts = n_d,
-    midwives_assigned = n_assigned,
+    cnm_cm_assigned = n_assigned,
     git_commit = tryCatch(system2("git", c("rev-parse", "HEAD"), stdout = TRUE)[1],
                           error = function(e) NA_character_),
     generated_at = format(Sys.time(), "%Y-%m-%d %H:%M:%S"))
@@ -359,18 +359,18 @@ district_sentences <- function(r, n_d) {
   a <- sprintf("%s covers about %s women aged 15-44, with roughly %s births in the past 12 months.",
                r$district_display, fmt(r$women_15_44), fmt(r$births_12mo))
 
-  b <- if (r$n_midwives == 0) {
+  b <- if (r$n_cnm_cm == 0) {
     # Plain statement; the ascertainment caveat belongs once in the notes,
     # not repeated per district. See R/10 for the full reasoning.
-    "No certified nurse-midwife was located in this district."
+    "No AMCB-certified CNM/CM was located in this district."
   } else {
     tail_bits <- c(
-      if (!is.null(fmt(r$midwives_per_10k_women, 1)))
-        sprintf("%s per 10,000 women aged 15-44", fmt(r$midwives_per_10k_women, 1)),
-      if (!is.null(fmt(r$births_per_midwife)))
-        sprintf("roughly %s births per located midwife", fmt(r$births_per_midwife)))
-    sprintf("%s certified nurse-midwi%s located here%s%s.",
-            fmt(r$n_midwives), if (r$n_midwives == 1) "fe was" else "ves were",
+      if (!is.null(fmt(r$cnm_cm_per_10k_women, 1)))
+        sprintf("%s per 10,000 women aged 15-44", fmt(r$cnm_cm_per_10k_women, 1)),
+      if (!is.null(fmt(r$births_per_cnm_cm)))
+        sprintf("roughly %s births per located CNM/CM", fmt(r$births_per_cnm_cm)))
+    sprintf("%s AMCB-certified CNM/CM%s located here%s%s.",
+            fmt(r$n_cnm_cm), if (r$n_cnm_cm == 1) " was" else "s were",
             if (length(tail_bits)) " -- " else "", oxford_join(tail_bits))
   }
 
@@ -413,8 +413,8 @@ district_sentences <- function(r, n_d) {
   if (length(pick)) parts <- c(parts, sprintf("It has %s.", oxford_join(pick)))
 
   sup <- c(
-    if (!is.na(r$rank_mw_high) && r$rank_mw_high <= SUPERLATIVE_N)
-      mm_superlative_phrase(r$rank_mw_high, n_d, "density of located nurse-midwives",
+    if (!is.na(r$rank_cnm_cm_high) && r$rank_cnm_cm_high <= SUPERLATIVE_N)
+      mm_superlative_phrase(r$rank_cnm_cm_high, n_d, "density of located CNMs/CMs",
                             "high", "congressional district", "districts"),
     if (!is.na(r$rank_medicaid_high) && r$rank_medicaid_high <= SUPERLATIVE_N)
       mm_superlative_phrase(r$rank_medicaid_high, n_d,

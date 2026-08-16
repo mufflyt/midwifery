@@ -196,7 +196,7 @@ test_that("the county profile satisfies its column and domain contracts", {
 
   # Columns every downstream figure reads. A rename upstream is silent until a
   # map comes out empty; this makes it loud.
-  expect_error(contract_require_cols(d, c("GEOID", "state", "n_midwives",
+  expect_error(contract_require_cols(d, c("GEOID", "state", "n_cnm_cm",
                                           "n_hosp_active", "n_hosp_ob",
                                           "suppressed", "wonder_county_reported")), NA)
 

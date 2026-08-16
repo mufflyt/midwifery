@@ -309,9 +309,9 @@ Suggested order: **D9 → D8 → D4 → D5 → D2 → D3 → D1 → D7 → D6.**
 
 # Open items, raised 2026-08-14
 
-D1-D9 were ratified 2026-08-10. The four below arose from work done after that
-date and are **UNRULED**. They are estimand and reporting questions, not
-implementation details, and the pipeline should not answer them on its own.
+D1-D9 were ratified 2026-08-10. The items below arose from work done after
+that date. Ratified items state the policy the pipeline must follow; items
+still marked `RULING: none` remain human reporting decisions.
 
 ---
 
@@ -335,16 +335,20 @@ reputational rather than statistical.
 **Options.** (A) Report with PPV stated. (B) Report only the cross_source
 stratum. (C) Report as a sensitivity analysis only. (D) Withhold the layer.
 
-**RULING: none.**
+**RULING (2026-08-16): use Open Payments only as fallback evidence.** Open
+Payments may name an organisation only when no stronger NPPES/DAC source has
+already named one, the Open Payments address resolves to exactly one Type-2
+NPI at that address, and the result is marked weak evidence. It must not
+override a stronger organisation assignment.
 
 ---
 
 ## D11 🔴 Do the three birth-activity states survive into published tables?
 
-**Question.** `R/15-build-birth-activity.R` classifies each midwife as
-`observed_birth_attendant`, `no_observed_births`, or
-`birth_activity_unobserved`. Does the manuscript carry three levels or a
-binary?
+**Question.** `R/15-build-birth-activity.R` distinguishes observed birth
+attendants from people with no observed births, while rows outside the
+observable state-year-source frame are missing (`NA`). Does the manuscript
+carry three levels or a binary?
 
 **Evidence.** The third state exists because "she attended no births" and "we
 cannot see births in her state-year-source" are different facts. Cycle 15
@@ -359,14 +363,17 @@ decision, and it changes the denominator of every activity statement.
 from the denominator. (C) Binary, `unobserved` counted as inactive -- the
 cycle-15 error, listed for completeness and not recommended.
 
-**RULING: none.**
+**RULING (2026-08-16): binary activity among observable rows; unobserved is
+`NA`.** The published activity variable is binary for rows where birth
+activity is observable. Rows outside the observable state-year-source frame
+stay missing and are excluded from activity denominators.
 
 ---
 
 ## D12 🟡 Is 74% state-board coverage reportable, given it is non-random by state?
 
-**Question.** 9,037 midwives verified across 20 state boards. Reportable, and
-with what statement?
+**Question.** 11,355 midwives verified across the 40-state state-board
+availability sample. Reportable, and with what statement?
 
 **Evidence.** The 20 states are those publishing bulk open data or belonging to
 the Nursys compact -- an availability sample, not a design. Structurally the
@@ -377,7 +384,9 @@ DECEASED), which the README already discloses.
 statement. (B) Report only within-covered-state comparisons. (C) Use for
 corroboration only, never as a denominator.
 
-**RULING: none.**
+**RULING (2026-08-16): report as an availability sample.** Report the count
+with the state list and a non-random coverage statement. Do not describe it as
+a designed or nationally representative denominator.
 
 ---
 
@@ -398,7 +407,9 @@ the work.
 to a supplementary table. (C) Drop, and state in the limitations that language
 was not ascertainable.
 
-**RULING: none.**
+**RULING (2026-08-16): keep the lower-bound row.** The row may remain when
+the label states "at least this many" so readers do not mistake absence of a
+Healthgrades language field for English-only status.
 
 ---
 
@@ -449,15 +460,15 @@ the limitations.
 
 ## D16 🔴 Rename the county columns that say "midwife" but count CNM/CM (raised 2026-08-14)
 
-**Question.** `n_midwives`, `midwives_per_10k_women`, `births_per_midwife` and
-`no_located_midwife_with_births` count AMCB-certified CNMs and CMs only. The
-generated prose says "certified nurse-midwives"; the column names do not.
+**Question.** County and district profile columns used generic "midwife" names
+for counts that include AMCB-certified CNMs and CMs only. The generated prose
+said "certified nurse-midwives"; the column names did not.
 
-**Evidence.** A county flagged `no_located_midwife_with_births = TRUE` reads as
-a maternity-care desert. It means no *AMCB-certified* midwife was located
-there; a county served entirely by CPMs carries that flag while having
-midwifery care. Whichever a reader meets first -- column name or sentence --
-determines what they believe.
+**Evidence.** A county flagged `no_located_midwife_with_births = TRUE` read as
+a maternity-care desert. It meant no *AMCB-certified* CNM/CM was located
+there; a county served entirely by CPMs could carry that flag while having
+midwifery care. Whichever a reader met first -- column name or sentence --
+determined what they believed.
 
 **Options.** (A) Rename to `n_cnm_cm`, `cnm_cm_per_10k_women`,
 `births_per_cnm_cm`, `no_located_cnm_cm_with_births`. (B) Keep names, carry the
@@ -467,4 +478,7 @@ only.
 **Recommendation: A.** A caption can be dropped when a figure is reused; a
 column name travels with the data.
 
-**RULING: none.**
+**RULING (2026-08-16): rename to CNM/CM-specific columns.** Use
+`n_cnm_cm`, `cnm_cm_per_10k_women`, `births_per_cnm_cm`, and
+`no_located_cnm_cm_with_births` for county profiles, with analogous CNM/CM
+names for district profiles.

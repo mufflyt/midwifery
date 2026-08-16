@@ -137,10 +137,10 @@ county_sentences <- function(r, n_counties) {
     sprintf("%s.", r$county_label)
   }
 
-  # B: the midwifery spine, always present. Phrased as ASCERTAINMENT, never as
-  # supply: the count is midwives we could locate after roster linkage and
+  # B: the CNM/CM spine, always present. Phrased as ASCERTAINMENT, never as
+  # total midwifery supply: the count is AMCB-certified CNMs/CMs we could locate after roster linkage and
   # geocoding, so a zero is "none located", not "none practising".
-  b <- if (r$n_midwives == 0) {
+  b <- if (r$n_cnm_cm == 0) {
     # PLAIN, not hedged. This previously read "...which reflects roster,
     # linkage and geocoding coverage as much as who practises here" -- a
     # methods caveat repeated on ~1,600 counties, so the map spent its ink
@@ -158,14 +158,14 @@ county_sentences <- function(r, n_counties) {
     # 10,000 women aged 15-44 and roughly 145 births per located midwife" --
     # made a reader hold three numbers and two denominators at once.
     lead <- sprintf("%s %s located here.",
-                    mysterymaps_pluralize(r$n_midwives, "certified nurse-midwife",
+                    mysterymaps_pluralize(r$n_cnm_cm, "certified nurse-midwife",
                                           "certified nurse-midwives"),
-                    if (r$n_midwives == 1) "was" else "were")
+                    if (r$n_cnm_cm == 1) "was" else "were")
     rate_bits <- c(
-      if (!is.null(fmt(r$midwives_per_10k_women, 1)))
-        sprintf("%s per 10,000 women aged 15-44", fmt(r$midwives_per_10k_women, 1)),
-      if (!is.null(fmt(r$births_per_midwife)))
-        sprintf("about %s births for each one", fmt(r$births_per_midwife)))
+      if (!is.null(fmt(r$cnm_cm_per_10k_women, 1)))
+        sprintf("%s per 10,000 women aged 15-44", fmt(r$cnm_cm_per_10k_women, 1)),
+      if (!is.null(fmt(r$births_per_cnm_cm)))
+        sprintf("about %s births for each one", fmt(r$births_per_cnm_cm)))
     if (length(rate_bits)) {
       paste(lead, sprintf("That is %s.", oxford_join(rate_bits)))
     } else lead
@@ -264,9 +264,9 @@ county_sentences <- function(r, n_counties) {
   # not interesting; asserting a rank for every county would be noise and would
   # imply precision the underlying estimates do not carry.
   sup <- c(
-    if (!is.na(r$rank_mw_high) && r$rank_mw_high <= SUPERLATIVE_N)
-      mm_superlative_phrase(r$rank_mw_high, n_counties,
-                            "density of located nurse-midwives", "high", "county", "counties"),
+    if (!is.na(r$rank_cnm_cm_high) && r$rank_cnm_cm_high <= SUPERLATIVE_N)
+      mm_superlative_phrase(r$rank_cnm_cm_high, n_counties,
+                            "density of located CNMs/CMs", "high", "county", "counties"),
     if (!is.na(r$rank_cnm_high) && r$rank_cnm_high <= SUPERLATIVE_N)
       mm_superlative_phrase(r$rank_cnm_high, n_counties,
                             "share of births attended by a nurse-midwife", "high", "county", "counties"),
@@ -323,48 +323,48 @@ run_profiles <- function() {
   n_roster <- nrow(geo)
   n_located <- sum(!is.na(geo$county_best))
 
-  mw <- geo %>%
+  cnm_cm <- geo %>%
     filter(!is.na(county_best)) %>%
-    count(county_best, name = "n_midwives") %>%
+    count(county_best, name = "n_cnm_cm") %>%
     rename(GEOID = county_best)
 
   # A midwife county that is absent from the county spine would be silently
   # dropped by a left join and its midwives would vanish from every total.
-  stopifnot(all(mw$GEOID %in% base$GEOID))
+  stopifnot(all(cnm_cm$GEOID %in% base$GEOID))
 
   prof <- base %>%
-    left_join(mw, by = "GEOID", relationship = "one-to-one") %>%
+    left_join(cnm_cm, by = "GEOID", relationship = "one-to-one") %>%
     mutate(
-      n_midwives = coalesce(n_midwives, 0L),
+      n_cnm_cm = coalesce(n_cnm_cm, 0L),
       county_label = paste0(county_name, ", ", state),
       # "Randall County", "Acadia Parish", "Anchorage Municipality",
       # "Baltimore city" -- taken from acs_name rather than pasting " County"
       # onto county_name, which would invent "Acadia County" and
       # "Baltimore city County".
       county_unit = sub(",.*$", "", acs_name),
-      midwives_per_10k_women = if_else(!is.na(women_15_44) & women_15_44 > 0,
-                                       1e4 * n_midwives / women_15_44, NA_real_),
-      births_per_midwife = if_else(n_midwives > 0 & !is.na(births_past_12mo),
-                                   births_past_12mo / n_midwives, NA_real_),
-      # A county with births but no located midwife is the row worth surfacing;
+      cnm_cm_per_10k_women = if_else(!is.na(women_15_44) & women_15_44 > 0,
+                                     1e4 * n_cnm_cm / women_15_44, NA_real_),
+      births_per_cnm_cm = if_else(n_cnm_cm > 0 & !is.na(births_past_12mo),
+                                  births_past_12mo / n_cnm_cm, NA_real_),
+      # A county with births but no located CNM/CM is the row worth surfacing;
       # it is a candidate for follow-up, NOT an established care desert.
-      no_located_midwife_with_births = n_midwives == 0 &
+      no_located_cnm_cm_with_births = n_cnm_cm == 0 &
         !is.na(births_past_12mo) & births_past_12mo > 0)
 
-  # Every midwife with a county must survive into exactly one county row.
+  # Every CNM/CM with a county must survive into exactly one county row.
   stopifnot(
     nrow(prof) == nrow(base),
-    sum(prof$n_midwives) == n_located,
+    sum(prof$n_cnm_cm) == n_located,
     !any(duplicated(prof$GEOID)))
   cli::cli_alert_success(
-    "Join invariants passed: {nrow(prof)} counties, all {n_located} located midwives retained.")
+    "Join invariants passed: {nrow(prof)} counties, all {n_located} located CNMs/CMs retained.")
 
   # Ranks for the superlative clause. mm_rank() takes the MINIMUM rank on ties,
   # so two joint-highest counties are both "the highest" rather than 1st and
   # 2nd -- it never asserts an order the data does not support.
   prof <- prof %>%
     mutate(
-      rank_mw_high     = mm_rank(midwives_per_10k_women),
+      rank_cnm_cm_high = mm_rank(cnm_cm_per_10k_women),
       rank_cnm_high    = mm_rank(cnm_share_of_births_pct),
       rank_births_high = mm_rank(births_past_12mo),
       # CYCLE 7. Ranking the raw rate made the "highest fertility" superlative
@@ -393,22 +393,22 @@ run_profiles <- function() {
   source(file.path("R", "lib", "artifact_provenance.R"))
   write_with_provenance(prof, file.path(OUT, "county_birth_profiles.csv"),
                         inputs = BASE, na = "")
-  write_with_provenance(select(prof, GEOID, county_label, state, n_midwives, births_past_12mo, sentences),
+  write_with_provenance(select(prof, GEOID, county_label, state, n_cnm_cm, births_past_12mo, sentences),
             file.path(OUT, "county_sentences.csv"), na = "", inputs = prov_inputs(file.path("data", "county_base.csv"), file.path(ART, "midwives_geography_FROZEN.csv")))
 
   cli::cli_h2("Coverage")
   cli::cli_alert_info("roster rows: {n_roster}; located to a county: {n_located} ({round(100*n_located/n_roster,1)}%)")
-  cli::cli_alert_info("counties with >=1 located midwife: {sum(prof$n_midwives > 0)} of {nrow(prof)}")
-  cli::cli_alert_info("counties with births but no located midwife: {sum(prof$no_located_midwife_with_births)}")
+  cli::cli_alert_info("counties with >=1 located CNM/CM: {sum(prof$n_cnm_cm > 0)} of {nrow(prof)}")
+  cli::cli_alert_info("counties with births but no located CNM/CM: {sum(prof$no_located_cnm_cm_with_births)}")
 
   cli::cli_h2("Example profiles")
   ex <- prof %>%
     filter(!is.na(births_past_12mo)) %>%
-    arrange(desc(n_midwives)) %>%
+    arrange(desc(n_cnm_cm)) %>%
     slice(1) %>%
-    bind_rows(prof %>% filter(n_midwives > 0, rucc_2023 >= 7) %>%
+    bind_rows(prof %>% filter(n_cnm_cm > 0, rucc_2023 >= 7) %>%
                 arrange(desc(births_past_12mo)) %>% slice(1)) %>%
-    bind_rows(prof %>% filter(no_located_midwife_with_births) %>%
+    bind_rows(prof %>% filter(no_located_cnm_cm_with_births) %>%
                 arrange(desc(births_past_12mo)) %>% slice(1))
   for (i in seq_len(nrow(ex))) cat("\n*", ex$sentences[i], "\n")
 
@@ -439,7 +439,7 @@ run_profiles <- function() {
       "state or county.' This is an API restriction, NOT the <10 births",
       "suppression rule. County x attendant requires a manual export from the",
       "WONDER web UI under its data-use agreement."),
-    midwife_source = "AMCB roster after NPI linkage and geocoding -- an UNDERCOUNT of practising midwives",
+    midwife_source = "AMCB-certified CNM/CM roster after NPI linkage and geocoding",
     wonder_natality_excluded_because =
       "county-level natality sub-totals are suppressed below 10 births, which removes precisely the low-volume rural counties this analysis is about",
     inputs = list(
@@ -449,7 +449,7 @@ run_profiles <- function() {
     git_commit = tryCatch(system2("git", c("rev-parse", "HEAD"), stdout = TRUE)[1],
                           error = function(e) NA_character_),
     counties = nrow(prof),
-    counties_with_located_midwife = sum(prof$n_midwives > 0),
+    counties_with_located_cnm_cm = sum(prof$n_cnm_cm > 0),
     generated_at = format(Sys.time(), "%Y-%m-%d %H:%M:%S"))
   write_json(manifest, file.path(OUT, "manifest.json"), auto_unbox = TRUE)
   cli::cli_alert_success("manifest written (input SHAs + git commit pinned)")

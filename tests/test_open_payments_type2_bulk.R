@@ -159,6 +159,16 @@ cat("\n=== empty / missing addresses never resolve ===\n")
 r <- resolve_type2_bulk(tibble(id = c("a","b"), addr = c("", NA), zip = c("10001","10001")), o4)
 ok("blank and NA addresses -> no_match", all(r$status == "no_match"))
 
+cat("\n=== production fallback policy ===\n")
+resolver_src <- paste(readLines("resolve_org_ambiguity.R", warn = FALSE), collapse = "\n")
+ok("Open Payments-only fallback is wired as weak evidence",
+   grepl("open_payments_only_unique_address", resolver_src, fixed = TRUE) &&
+     grepl('affiliation_confidence = "weak"', resolver_src, fixed = TRUE))
+ok("Open Payments fallback excludes NPIs already resolved by stronger sources",
+   grepl("anti_join\\(resolved_strongish, by = \"npi\"\\)", resolver_src))
+ok("Open Payments fallback is assembled after stronger tiers",
+   grepl("bind_rows\\(resolved_A, tierB, tierD, tierF\\)", resolver_src))
+
 cat("\n")
 if (length(FAILS)) {
   cat(sprintf("FAILED: %d\n", length(FAILS)))

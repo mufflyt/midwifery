@@ -29,6 +29,8 @@
 #   D  cross-source corroboration: an independent artifact (hospital CCN name,
 #      Open Payments address) agrees with exactly one candidate
 #                                                           -> moderate/high
+#   F  Open Payments fallback: no NPPES/DAC organization was named, and the Open
+#      Payments business address resolves to exactly one Type-2 NPI -> weak
 #   E  ZIP5-only, shared office building, proximity, city/state: LEFT
 #      AMBIGUOUS. Not resolved.
 #
@@ -49,6 +51,7 @@ suppressPackageStartupMessages({
 })
 source("R/lib/address_keys.R")   # norm_addr/zip5/zip9/phone10: one definition
 source("R/lib/common_helpers.R")
+source("link_open_payments_type2_bulk.R") # resolve_type2_bulk(): exact OP fallback
 
 DB <- Sys.getenv("MEDICARE_DUCKDB",
                  "/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb")
@@ -279,8 +282,43 @@ if (nrow(ext) && nrow(amb_rest)) {
 cat(sprintf("Tier D resolved by cross-source: %s midwives\n",
             format(if (nrow(tierD)) n_distinct(tierD$npi) else 0L, big.mark = ",")))
 
+# --- TIER F: Open Payments fallback when no stronger source names an org -------
+resolved_strongish <- bind_rows(resolved_A, tierB, tierD) %>%
+  distinct(npi)
+
+tierF <- tibble()
+if (file.exists("artifacts/open_payments_recent_address.csv")) {
+  # One most-reported recent Open Payments business address per NPI. This is
+  # fallback evidence only: it never overrides a named NPPES/DAC organization and
+  # it still refuses ambiguous address->Type-2 matches.
+  op_fallback_addr <- chr("artifacts/open_payments_recent_address.csv") %>%
+    mutate(times_reported_num = suppressWarnings(as.numeric(times_reported))) %>%
+    arrange(npi, desc(coalesce(times_reported_num, 0)), desc(yr), addr, zip) %>%
+    group_by(npi) %>%
+    slice(1) %>%
+    ungroup() %>%
+    anti_join(resolved_strongish, by = "npi") %>%
+    transmute(id = npi, addr, zip)
+
+  if (nrow(op_fallback_addr)) {
+    op_bulk_org <- org %>%
+      transmute(type2_npi, organization_name,
+                addr = org_addr_keep, zip = z5)
+    tierF <- resolve_type2_bulk(op_fallback_addr, op_bulk_org) %>%
+      filter(status == "unique_exact") %>%
+      transmute(npi = id, type2_npi, organization_name,
+                organization_taxonomy = NA_character_,
+                evidence_key = "open_payments_address",
+                evidence_strength = "weak",
+                resolution_method = "open_payments_only_unique_address",
+                affiliation_confidence = "weak")
+  }
+}
+cat(sprintf("Tier F resolved by Open Payments fallback: %s midwives\n",
+            format(if (nrow(tierF)) n_distinct(tierF$npi) else 0L, big.mark = ",")))
+
 # --- assemble long form ------------------------------------------------------
-long <- bind_rows(resolved_A, tierB, tierD) %>%
+long <- bind_rows(resolved_A, tierB, tierD, tierF) %>%
   distinct(npi, type2_npi, .keep_all = TRUE) %>%
   mutate(source_vintage = PL_VINTAGE) %>%
   left_join(coh, by = "npi") %>%
@@ -349,6 +387,7 @@ strata <- list(
                                      resolution_method == "unique_strong_key"),
   taxonomy_excl    = long %>% filter(resolution_method == "taxonomy_exclusion_unique"),
   cross_source     = long %>% filter(str_starts(resolution_method, "cross_source")),
+  op_fallback      = long %>% filter(resolution_method == "open_payments_only_unique_address"),
   multi_key        = long %>% filter(resolution_method == "multi_key_agreement"))
 samp <- bind_rows(lapply(names(strata), function(s) {
   d <- strata[[s]]
