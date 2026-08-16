@@ -1,0 +1,10 @@
+{
+  "artifact": "nppes_colocation_2025_summary.csv",
+  "written_utc": "2026-08-16 19:27:15 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/nppes_colocation_2025.csv",
+      "sha256": "0f97c543595bd02aad39a2293aa732931491a8f3f54ce148170b8d67edaa9e0f"
+    }
+  ]
+}

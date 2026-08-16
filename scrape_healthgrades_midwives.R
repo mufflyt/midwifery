@@ -42,6 +42,10 @@ suppressPackageStartupMessages({
 # killed between the two calls, or mid-write, leaving a checkpoint newer than
 # its output or a truncated CSV where a complete one was. See DEBT.md D1.
 source(file.path("R", "lib", "resume_state.R"))
+# luhn_check_npi(), parse_physician_name_enhanced() and are_nickname_variants()
+# all come from the isochrones checkout; none is re-implemented here.
+source(file.path("R", "lib", "isochrones_dep.R"))
+load_isochrones_name_tools(quiet = TRUE)
 
 
 # The FULL AMCB roster (22,309), not a subset. The frozen linkage carries
@@ -91,24 +95,11 @@ log_message <- function(msg) {
 
 # --- NPI recovery (ported from scrape_healthgrades_obgyn.R) ----------------
 
-#' Validate a 10-digit NPI with the Luhn checksum
-#'
-#' NPI uses Luhn over the number prefixed with 80840. Essential here: a 1.7 MB
-#' page contains many 10-digit runs, and without the checksum the regexes
-#' return phone numbers and internal ids as NPIs.
-#'
-#' @param npi [character(1)]: candidate 10-digit string.
-#' @return [logical(1)] TRUE when the checksum validates.
-luhn_check_npi <- function(npi) {
-  if (is.na(npi) || !str_detect(npi, "^[0-9]{10}$")) return(FALSE)
-  digits <- as.integer(strsplit(paste0("80840", substr(npi, 1, 9)), "")[[1]])
-  digits <- rev(digits)
-  odd <- seq(1, length(digits), by = 2)
-  digits[odd] <- digits[odd] * 2
-  digits[digits > 9] <- digits[digits > 9] - 9
-  check <- (10 - (sum(digits) %% 10)) %% 10
-  check == as.integer(substr(npi, 10, 10))
-}
+# luhn_check_npi() is NOT defined here. It is the canonical implementation in
+# isochrones R/utils/npi_luhn_qa.R, loaded by load_isochrones_name_tools()
+# above. isochrones already carried three copies of the Luhn check; a fourth in
+# this file made four, and the whole point of the checksum is that every caller
+# agrees on it.
 
 #' Pull a Luhn-valid NPI out of raw profile HTML
 #'
@@ -195,36 +186,37 @@ name_tokens <- function(x) {
 
 #' Parse a full name into normalised given/surname parts
 #'
-#' humaniformat::parse_names() rather than hand-rolled splitting, because the
-#' hand-rolled version cannot handle the particles that actually occur on this
-#' roster: "Sybelle B.E. van Erven", "Carolyn Gisela van Duuren", "Emily duBois
-#' Hollander". Naive last-token logic returns "Erven"/"Duuren"/"Hollander" with
-#' the particle stranded in the middle name; parse_names() keeps "van Erven"
-#' and "van Duuren" intact.
+#' Thin adapter over isochrones' parse_physician_name_enhanced(), which is the
+#' canonical parser: humaniformat-backed, vectorised, and carrying the edge
+#' cases this cohort actually hits (particles like "van Erven", the DO-vs-
+#' Vietnamese-surname ambiguity, trailing credentials). It also returns a parse
+#' confidence, which a hand-rolled splitter cannot.
 #'
-#' Applied to BOTH sides. That symmetry is the point: whatever convention the
-#' parser imposes on a compound name, it imposes identically on the roster
-#' string and the Healthgrades string, so the two remain comparable even where
-#' the parse is debatable.
+#' Applied to BOTH sides of every comparison. That symmetry is the point:
+#' whatever convention the parser imposes on a compound name it imposes
+#' identically on the roster string and the scraped string, so the two stay
+#' comparable even where the parse is debatable.
 #'
 #' @param full [character(1)]: a whole name, e.g. "Christine Barlow Reed".
-#' @return [list] `first` and `last`, lowercased with apostrophes stripped.
+#' @return [list] `first`, `middle`, `last` (lowercased, apostrophes stripped)
+#'   and `rest`, the tokens after the leading given name.
 parse_person <- function(full) {
   if (is.na(full) || !nzchar(str_squish(full))) {
-    return(list(first = NA_character_, last = NA_character_))
+    return(list(first = NA_character_, middle = NA_character_,
+                last = NA_character_, rest = character(0)))
   }
-  p <- humaniformat::parse_names(str_squish(full))
+  p <- parse_physician_name_enhanced(str_squish(full))
   norm1 <- function(s) {
-    if (is.na(s)) return(NA_character_)
-    tolower(str_squish(str_replace_all(s, "[’'`]", "")))
+    if (length(s) == 0 || is.na(s)) return(NA_character_)
+    tolower(str_squish(str_replace_all(s, "[\u2019\u0027`]", "")))
   }
-  list(first = norm1(p$first_name), middle = norm1(p$middle_name),
-       last = norm1(p$last_name),
+  list(first = norm1(p$first_name[1]), middle = norm1(p$middle_name[1]),
+       last = norm1(p$last_name[1]),
        # Everything after the leading token. Unhyphenated compound surnames --
-       # "Sherece Dyer Hill", "Emily Young Johnson", "Wendy McQueen Miya" --
-       # are split by parse_names() into middle + last, so the roster's single
-       # "Dyer" can never equal the parsed last name "Hill". Comparing the
-       # whole trailing pool instead keeps those together.
+       # "Sherece Dyer Hill", "Emily Young Johnson" -- are split into middle +
+       # last by any parser, so the roster's single "Dyer" can never equal the
+       # parsed last name "Hill". Comparing the whole trailing pool keeps them
+       # together. isochrones has no equivalent, so this part stays local.
        rest = name_tokens(str_squish(str_remove(full, "^\\S+\\s*"))))
 }
 
@@ -264,6 +256,14 @@ given_forms <- function(p) {
 given_name_match <- function(a, b) {
   if (is.na(a) || is.na(b) || !nzchar(a) || !nzchar(b)) return(FALSE)
   if (identical(a, b)) return(TRUE)
+  # Nickname dictionary FIRST, from isochrones. It resolves the pairs a prefix
+  # rule structurally cannot -- Beth/Elizabeth, Peggy/Margaret, Betty/Elizabeth
+  # -- which were previously logged here as permanent misses. It correctly
+  # rejects Linda/Melinda and Elissa/Melissa.
+  if (isTRUE(are_nickname_variants(a, b))) return(TRUE)
+  # Prefix rule retained: isochrones has no principled equivalent (only a
+  # 3-character containment hack in its Healthgrades verifier), and this is what
+  # admits Carol/Caroline, Sara/Sarah, Jo Ann/Joann.
   n <- min(nchar(a), nchar(b))
   n >= 3 && substr(a, 1, n) == substr(b, 1, n)
 }

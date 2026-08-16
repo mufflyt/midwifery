@@ -1,11 +1,11 @@
 pecos_visible,coverage_class,n_midwives,suppressed
 FALSE,multi_source,,TRUE
-FALSE,no_organization_evidence,5210,FALSE
-FALSE,single_source,123,FALSE
-FALSE,two_source,,TRUE
-TRUE,multi_source,1753,FALSE
-TRUE,single_source,4618,FALSE
-TRUE,two_source,5340,FALSE
+FALSE,no_organization_evidence,4559,FALSE
+FALSE,single_source,746,FALSE
+FALSE,two_source,31,FALSE
+TRUE,multi_source,3583,FALSE
+TRUE,single_source,3159,FALSE
+TRUE,two_source,4969,FALSE
 ,arm:pecos_reassignment,11711,FALSE
 ,arm:care_compare_group,7036,FALSE
 ,arm:dac_facility_affiliation,1665,FALSE
@@ -14,3 +14,4 @@ TRUE,two_source,5340,FALSE
 ,arm:birth_center_aabc,,TRUE
 ,arm:birth_center_freestanding,31,FALSE
 ,arm:open_payments_org,41,FALSE
+,arm:nppes_org_colocation,4728,FALSE
