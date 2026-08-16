@@ -140,7 +140,15 @@ cat("\n-- G1: committed artifacts must be reproducible from committed source --\
     length(bad) == 3L && all(c("nppes_matched_last", "nppes_matched_first",
                                "nppes_name_changed_since_match") %in% bad)
   }, error = function(e) NA)
-  if (is.na(hist_ok)) {
+  # The control compares a8552fa's artifact columns against that commit's
+  # matcher, ALLOWING roster passthrough. Without midwives.csv the passthrough
+  # set is empty, every roster column reads as unexplained, and `bad` exceeds
+  # the expected 3 -- the control fails for want of an allowlist rather than
+  # because the gate stopped working. midwives.csv is gitignored, so that is
+  # the runner's normal state.
+  if (!file.exists("midwives.csv")) {
+    skip("G1 historical negative control (midwives.csv absent; passthrough allowlist unavailable)")
+  } else if (is.na(hist_ok)) {
     skip("G1 historical negative control (commit a8552fa unreachable in a shallow clone)")
   } else {
     chk(hist_ok, "G1 negative control: would have failed a8552fa (3 columns)")
