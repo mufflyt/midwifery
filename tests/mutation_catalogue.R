@@ -204,6 +204,41 @@ MUTATIONS <- list(
     killers = c("tests/test_adversarial_identity_resolution.R")
   ),
 
+  # ---- recovery / resume (item 29) -----------------------------------------
+  # This code has already destroyed data once. Every way it could do so again.
+  list(
+    id = "resume-ignores-prior-output",
+    file = "R/lib/resume_state.R",
+    find = "  if (is.null(prior) || !nrow(prior) || !id_col %in% names(prior)) return(done)",
+    repl = "  return(done)",
+    why = paste("Reproduces the 2026-08-09 incident exactly: recovery ignores",
+                "the prior output, so a missing checkpoint truncates the CSV",
+                "that held the work. 482 KB became 552 bytes and 5,963",
+                "completed searches were lost."),
+    killers = c("tests/test_recovery_resume_equivalence.R")
+  ),
+
+  list(
+    id = "resume-stale-file-wins",
+    file = "R/lib/resume_state.R",
+    find = "  recovered[names(done)] <- done",
+    repl = "  recovered <- recovered",
+    why = paste("Lets a stale output file overwrite fresher checkpoint entries,",
+                "so completed work is silently replaced by older results."),
+    killers = c("tests/test_recovery_resume_equivalence.R")
+  ),
+
+  list(
+    id = "resume-redoes-everything",
+    file = "R/lib/resume_state.R",
+    find = "  todo <- roster[!as.character(roster[[id_col]]) %in% names(done), , drop = FALSE]",
+    repl = "  todo <- roster",
+    why = paste("Drops the already-done filter, so every resume re-runs the",
+                "entire roster. At 22,309 certificants and a 2-second delay",
+                "that is 12 hours of redundant requests per restart."),
+    killers = c("tests/test_recovery_resume_equivalence.R")
+  ),
+
   # ---- geography -----------------------------------------------------------
   list(
     id = "coordinate-lon-lat-swap",
