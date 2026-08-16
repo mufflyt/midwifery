@@ -456,3 +456,13 @@ DAC_NationalDownloadableFile_*.csv
 # (~21 GB); see archive_revalidation_reassignment.R.
 artifacts/revalidation_archive/
 data/revalidation/
+
+# Organization-linkage panels are PERSON-LEVEL: one row per midwife x
+# organization x snapshot, keyed on NPI and certification number. The tracked,
+# suppressed aggregates are *_summary.csv, which are NOT ignored below.
+artifacts/midwife_reassignment_panel.csv
+artifacts/midwife_reassignment_panel.csv.provenance.json
+artifacts/midwife_reassignment_spells.csv
+artifacts/midwife_reassignment_spells.csv.provenance.json
+artifacts/affiliation_coverage_matrix.csv
+artifacts/affiliation_coverage_matrix.csv.provenance.json
