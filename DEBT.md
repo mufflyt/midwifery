@@ -196,6 +196,49 @@ nobody can yet defend.
 used for anything published. The comparison document already lays out inputs,
 keys, normalization and rules side by side, which is where a diagnosis starts.
 
+## D6 — The two organization arms agree on 43%, and it is not obvious that either is wrong
+
+- **status:** open
+- **owner:** tyler
+- **raised:** 2026-08-16
+- **source:** `build_pecos_organization_affiliations.R`, `build_care_compare_organization_panel.R`
+
+Two independent arms now resolve a midwife's organization. Of 2,825 midwives
+carrying an organization PAC id in both:
+
+| | |
+|---|---:|
+| share at least one org PAC id | 1,227 (**43.4%**) |
+| disjoint PAC id sets | 1,598 |
+| Care Compare only | 2,506 midwives |
+| PECOS only | 4,456 midwives |
+
+Matching on organization NAME instead gives 43.1%, so the disagreement is
+real and not a name-normalisation artefact.
+
+**This is probably not the same kind of problem as D5.** There, two
+implementations of ONE concept disagreed 83.6% of the time and at least one had
+to be wrong. Here the two arms may be measuring different relations:
+
+- Care Compare is a curated directory of where CMS lists a clinician
+  **practising** -- mean 1.09 organizations per midwife, max 6.
+- PECOS reassignment records **every entity receiving reassigned benefits**,
+  and a reassignment is not obliged to be terminated promptly -- mean 1.43,
+  max 16.
+
+The clearest disagreement in the data has Care Compare listing one
+organization and PECOS listing seven, none shared. That pattern is what a
+current-directory versus cumulative-billing distinction would look like.
+
+**Decision needed:** establish whether PECOS reassignments persist after a
+relationship ends. If they do, 43% is the expected agreement between a current
+and a cumulative measure, and the two arms should be combined as
+`current_affiliation` versus `ever_affiliated` rather than reconciled. If they
+do not, then one arm is wrong and this becomes a D5-shaped problem.
+
+The PPEF reassignment file carries no date column, so this cannot be settled
+from the file alone.
+
 ---
 
 ## Closed

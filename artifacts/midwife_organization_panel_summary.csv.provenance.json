@@ -1,0 +1,10 @@
+{
+  "artifact": "midwife_organization_panel_summary.csv",
+  "written_utc": "2026-08-16 15:26:56 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/midwife_organization_panel.csv",
+      "sha256": "c5d5f29935b5c00887ea8afca9101b45447c5670c829471cec215f0b7367c8cb"
+    }
+  ]
+}

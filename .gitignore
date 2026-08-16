@@ -115,6 +115,14 @@ data/cms_pos_hospital.csv
 
 # osm.de routing run: coordinates derived from person records, plus bulk polygons
 artifacts/route_queue_osmde.csv
+artifacts/route_queue_osmde_all_midwives.csv
+artifacts/route_queue_osmde_all_midwives.csv.provenance.json
+# certification_number x exact practice coordinates: person-level, same class as
+# the route queue. Rebuildable from build_osmde_route_queue_all_midwives.R.
+artifacts/osmde_location_crosswalk.csv
+artifacts/osmde_location_crosswalk.csv.provenance.json
+artifacts/osmde_still_unmeasured.csv
+artifacts/osmde_still_unmeasured.csv.provenance.json
 artifacts/isochrones_osmde/
 artifacts/iso_recovery_pro/
 # reference boundaries, redownloadable from Census
@@ -437,3 +445,9 @@ data/CMS_Facility_Affiliation.csv
 # PECOS organization affiliations: person-level (amcb_id, midwife NPI,
 # organization NPI). Reproducible from build_pecos_organization_affiliations.R.
 artifacts/midwife_pecos_organization_affiliations.csv
+
+# Care Compare organization panel: person-level (NPI x organization x vintage).
+# Reproducible from build_care_compare_organization_panel.R.
+artifacts/midwife_organization_panel.csv
+# 839 MB CMS Care Compare snapshots, discovered by vintage.
+DAC_NationalDownloadableFile_*.csv
