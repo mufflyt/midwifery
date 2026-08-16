@@ -40,7 +40,7 @@ chk <- function(cond, m) {
 }
 RES <- "build_organization_affiliation_resolver.R"
 COL <- "build_nppes_colocation_2025.R"
-code_of <- function(f) {
+resolver_code_of <- function(f) {
   if (!file.exists(f)) return("")
   ln <- readLines(f, warn = FALSE)
   paste(ln[!grepl("^\\s*#", ln)], collapse = "\n")
@@ -65,7 +65,7 @@ cat("\n-- N: norm_org() merges suffixes and nothing else --\n")
   chk(identical(norm_org(NA), ""),
       "N6 a missing name is '' not NA, so it groups instead of vanishing")
   # An empty key must never become an organization.
-  chk(grepl("nzchar\\(org_key\\)", code_of(RES)),
+  chk(grepl("nzchar\\(org_key\\)", resolver_code_of(RES)),
       "N7 the resolver drops rows with no usable organization name")
   # Defined exactly once: two callers, one definition.
   defs <- length(grep("^norm_org <- function",
@@ -81,7 +81,7 @@ cat("\n-- N: norm_org() merges suffixes and nothing else --\n")
 cat("\n-- C: the two classes answer different questions --\n")
 # =============================================================================
 {
-  code <- code_of(RES)
+  code <- resolver_code_of(RES)
   chk(grepl("affiliation_class", code) && grepl("currentness_class", code),
       "C1 both classes are produced")
   # Currentness must come from the ruling's own classifier, not a second ladder
@@ -108,7 +108,7 @@ cat("\n-- L: the non-Medicare layer is identifiable --\n")
 # The whole point of the second layer is seeing people the first cannot. If
 # that cannot be read off the output, the layer cannot be evaluated.
 {
-  code <- code_of(RES)
+  code <- resolver_code_of(RES)
   chk(grepl("evidence_layer", code), "L1 evidence_layer is produced")
   chk(grepl("non_medicare_only", code) && grepl("medicare_only", code),
       "L2 with values that separate the layers")
@@ -126,7 +126,7 @@ cat("\n-- L: the non-Medicare layer is identifiable --\n")
 cat("\n-- K: co-location keys are exact, ambiguity yields nothing --\n")
 # =============================================================================
 {
-  code <- code_of(COL)
+  code <- resolver_code_of(COL)
   chk(nzchar(code), "K1 the co-location builder exists")
   if (nzchar(code)) {
     # The prohibition from CLAUDE.md: proximity is not employment.
@@ -157,7 +157,7 @@ cat("\n-- E: nothing is an employer --\n")
 # =============================================================================
 {
   for (f in c(RES, COL)) {
-    code <- code_of(f)
+    code <- resolver_code_of(f)
     if (!nzchar(code)) next
     chk(!grepl('"[^"]*employer[^"]*"', code),
         sprintf("E1 no string literal names an employer [%s]", basename(f)))

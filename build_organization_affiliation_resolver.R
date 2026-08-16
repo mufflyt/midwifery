@@ -78,7 +78,7 @@ cli::cli_alert_info("spine: {format(nrow(spine), big.mark = ',')} resolved midwi
 # --- each arm, reduced to a common shape -------------------------------------
 # npi | org_id | org_id_type | organization_name | first_evidence | last_evidence
 collect <- list()
-note <- function(arm, d) {
+arm_note <- function(arm, d) {
   if (is.null(d) || !nrow(d)) { cli::cli_alert_warning("{arm}: no rows"); return(invisible()) }
   d$arm <- arm
   collect[[arm]] <<- d
@@ -90,7 +90,7 @@ cli::cli_h2("Arms")
 
 # PECOS reassignment -- carries real dates, from the spell table.
 if (have("artifacts/midwife_reassignment_spells.csv")) {
-  note("pecos_reassignment", rd("artifacts/midwife_reassignment_spells.csv") %>%
+  arm_note("pecos_reassignment", rd("artifacts/midwife_reassignment_spells.csv") %>%
     transmute(npi = midwife_npi, org_id = org_pac_id, org_id_type = "pac_id",
               organization_name, first_evidence = first_seen_vintage,
               last_evidence = last_seen_vintage) %>%
@@ -99,7 +99,7 @@ if (have("artifacts/midwife_reassignment_spells.csv")) {
 
 # Care Compare -- dated by vintage; collapse to the observed span.
 if (have("artifacts/midwife_organization_panel.csv")) {
-  note("care_compare_group", rd("artifacts/midwife_organization_panel.csv") %>%
+  arm_note("care_compare_group", rd("artifacts/midwife_organization_panel.csv") %>%
     filter(has_group %in% c("TRUE", "true")) %>%
     group_by(npi = midwife_npi, org_id = org_pac_id, organization_name) %>%
     summarise(first_evidence = min(vintage), last_evidence = max(vintage),
@@ -135,7 +135,7 @@ if (have("artifacts/midwife_org_person.csv")) {
            else bind_rows(coloc, older %>% filter(!npi %in% coloc$npi))
 }
 if (!is.null(coloc)) {
-  note("nppes_org_colocation", coloc %>%
+  arm_note("nppes_org_colocation", coloc %>%
     mutate(first_evidence = NA_character_, last_evidence = NA_character_) %>%
     select(-colocation_vintage) %>%
     filter(!is.na(npi), nzchar(npi)))
@@ -143,14 +143,14 @@ if (!is.null(coloc)) {
 
 # Facility / hospital arms -- CCN-identified, undated.
 if (have("artifacts/dac_facility_affiliations.csv")) {
-  note("facility_affiliation", rd("artifacts/dac_facility_affiliations.csv") %>%
+  arm_note("facility_affiliation", rd("artifacts/dac_facility_affiliations.csv") %>%
     transmute(npi, org_id = ccn, org_id_type = "ccn",
               organization_name = facility_name,
               first_evidence = NA_character_, last_evidence = NA_character_) %>%
     filter(!is.na(npi), nzchar(npi)))
 }
 if (have("artifacts/midwife_hospital_affiliations.csv")) {
-  note("hospital_affiliation", rd("artifacts/midwife_hospital_affiliations.csv") %>%
+  arm_note("hospital_affiliation", rd("artifacts/midwife_hospital_affiliations.csv") %>%
     transmute(npi, org_id = cms_ccn, org_id_type = "ccn",
               organization_name = hospital_name,
               first_evidence = NA_character_, last_evidence = NA_character_) %>%
@@ -171,13 +171,13 @@ bc_rows <- lapply(bc, function(x) {
                  first_evidence = NA_character_, last_evidence = NA_character_)
 })
 bc_rows <- bind_rows(bc_rows)
-if (nrow(bc_rows)) note("birth_center_registry",
+if (nrow(bc_rows)) arm_note("birth_center_registry",
                         bc_rows %>% filter(!is.na(npi), nzchar(npi),
                                            !is.na(organization_name),
                                            nzchar(organization_name)))
 
 if (have("artifacts/cohort_midwives_open_payments_type2_organizations.csv")) {
-  note("open_payments_org",
+  arm_note("open_payments_org",
        rd("artifacts/cohort_midwives_open_payments_type2_organizations.csv") %>%
          transmute(npi = midwife_npi, org_id = type2_organization_npi,
                    org_id_type = "npi_type2",
@@ -225,11 +225,11 @@ for (a in ARMS_SEEN) pair[[a]] <- str_detect(pair$arms, fixed(a))
 # Ordered most to least informative. Deliberately NOT a currentness statement:
 # that is the separate column below, because "how many sources" and "how
 # current" are different questions and one column cannot answer both.
-g <- function(nm) if (nm %in% names(pair)) pair[[nm]] else rep(FALSE, nrow(pair))
-p_pecos <- g("pecos_reassignment"); p_cc <- g("care_compare_group")
-p_nppes <- g("nppes_org_colocation")
-p_fac   <- g("facility_affiliation") | g("hospital_affiliation")
-p_bc    <- g("birth_center_registry"); p_op <- g("open_payments_org")
+arm_flag <- function(nm) if (nm %in% names(pair)) pair[[nm]] else rep(FALSE, nrow(pair))
+p_pecos <- arm_flag("pecos_reassignment"); p_cc <- arm_flag("care_compare_group")
+p_nppes <- arm_flag("nppes_org_colocation")
+p_fac   <- arm_flag("facility_affiliation") | arm_flag("hospital_affiliation")
+p_bc    <- arm_flag("birth_center_registry"); p_op <- arm_flag("open_payments_org")
 
 pair <- pair %>% mutate(
   affiliation_class = case_when(
