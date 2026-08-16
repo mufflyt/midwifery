@@ -133,6 +133,30 @@ MUTATIONS <- list(
     killers = c("tests/test_amcb_gates.R")
   ),
 
+  # ---- the resolver ---------------------------------------------------------
+  list(
+    id = "resolver-accept-ambiguous",
+    file = "R/amcb_resolver.R",
+    find = "    dplyr::filter(.data$n_at_best_class == 1L) |>",
+    repl = "    dplyr::filter(.data$n_at_best_class >= 1L) |>",
+    why = paste("Exactly one candidate at the strongest evidence class is what",
+                "makes a match unambiguous. Relaxed to >= 1, every tied person",
+                "resolves -- to all of their tied candidates at once -- and the",
+                "quarantine that protects ambiguous identities empties."),
+    killers = c("tests/test_amcb_resolver_permutation.R")
+  ),
+
+  list(
+    id = "resolver-class5-outranks-class4",
+    file = "R/amcb_resolver.R",
+    find = "      confidence_score = c(1.0, 0.9, 0.7, 0.5, 0.35)[.data$name_evidence_class])",
+    repl = "      confidence_score = c(1.0, 0.9, 0.7, 0.35, 0.5)[.data$name_evidence_class])",
+    why = paste("Swaps the confidence of class 4 and class 5, making a partial",
+                "surname fragment more trustworthy than a whole surname within",
+                "edit distance 2."),
+    killers = c("tests/test_amcb_resolver_permutation.R")
+  ),
+
   # ---- geography -----------------------------------------------------------
   list(
     id = "coordinate-lon-lat-swap",
