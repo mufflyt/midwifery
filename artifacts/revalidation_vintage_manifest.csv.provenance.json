@@ -1,0 +1,162 @@
+{
+  "artifact": "revalidation_vintage_manifest.csv",
+  "written_utc": "2026-08-16 17:14:23 UTC",
+  "inputs": [
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2021-12.csv",
+      "sha256": "c90cfc17653d75b0f3b4cb735410a2b53e6f2e1f1df0e720842e3a6a5b0c97ee"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2022-03.csv",
+      "sha256": "5c70104c9a5874d83f48aa76b8a2df15db6bf7e4cfe6cf83816fe99832d32740"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2022-05.csv",
+      "sha256": "4a7c4ce44b60bf2b3ed35935c6adaf7e9aadc7f213aee014a6832fa7669984df"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2022-07.csv",
+      "sha256": "0983b62aabd37c71a38864a45cff44f3e432fd2f39a51c3a934b054ceb3babd2"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2022-08.csv",
+      "sha256": "e9c3cdd9a1268f94083e5dee06f56d322b3a838435f48976a20b42dbef8366d5"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2022-10.csv",
+      "sha256": "adbbacae9a57cb01a96adb209028017945fcc9b3e2984b1f105c96f2ab256c9a"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2022-11.csv",
+      "sha256": "a0fde25972655be665cc5bc3452aa2b7e7f89b219c323f2610185f12c7ab6cc1"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2023-02.csv",
+      "sha256": "b3aeb1301ee51997b1e640ec14073eedb8ac0fe7514cb67da83541c28d9230ba"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2023-05.csv",
+      "sha256": "14e862d0a0d6eb809f90a70e9794b1a68156dea8991eead34de21ef0b02deae9"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2023-06.csv",
+      "sha256": "eb2884c2953f87d20f17bcbb1a6dedea0365a58664e163e68f4346cec1b4c825"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2023-07.csv",
+      "sha256": "6a2399f0558daa71300df7909d406e6a153fcfc8f64a168d54aae8b8a7f9ae6e"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2023-08.csv",
+      "sha256": "284f0be04d5f660e8c07aeeba51e56f207282b4afe462b8e034168642c26124e"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2023-09.csv",
+      "sha256": "c5e6b8d706da68f3d0dc0fbeda6ea73173c8cd11589563b81e73464da9f20800"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2023-10.csv",
+      "sha256": "0fa6458c1be1f1dcfcdfc8d1f22d5bd5dde04c446afaf3221106173604ab9361"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2023-11.csv",
+      "sha256": "a6ea1ca8da77761bce46688e0a4f9776deeddbb49e94f26d28dc4ead0a751e27"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2023-12.csv",
+      "sha256": "2a13efa658e89ae8f35b79011544f46c239d3db7ec64e5e36d36a28cffe88eed"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2024-01.csv",
+      "sha256": "7d4a7cdd4bb68e7459ba3717f29a4b53984ad63e645d165f23c93660adbea484"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2024-03.csv",
+      "sha256": "0a7a8889bf0a41cc252d789c77b434b24db5c4f6e52dbbeee9e10cefde786d71"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2024-08.csv",
+      "sha256": "0a7a8889bf0a41cc252d789c77b434b24db5c4f6e52dbbeee9e10cefde786d71"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2024-12.csv",
+      "sha256": "a9bb78fb6a914e34b447edd5942585f839c31746e6d672098e3e240b21c8c6b4"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2025-01.csv",
+      "sha256": "38a7df9b60d599b904cd04b1e486f9bf2478a867eee9a220159607ffbe3741e2"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2025-02.csv",
+      "sha256": "1b6a26485fc8140403352ea9ec50abbb729a01f87444dcf9cda226ab2c9dfa30"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2025-03.csv",
+      "sha256": "aea72f140ed0e35b60397e231770b659b195501b8fbe1c9fc8ed9c882997751b"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2025-04.csv",
+      "sha256": "6e142ff185b6c4c7a9e3b55cf8bc0afcaae2fc4c50a29d90ff22328a772632d9"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2025-05.csv",
+      "sha256": "1813959eac2edce88f91a934b7dda0cf0eb8894c8c9896d5b9ade9e10fac92e6"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2025-06.csv",
+      "sha256": "d1eeb69c82addd121d1ab58d086ad02fa503db44bd1e7f24c0acd8c3925389ba"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2025-07.csv",
+      "sha256": "b08fb5dd237b9007d3323127277c5c6640522288e6dec962bfad828c38b0dc29"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2025-08.csv",
+      "sha256": "4ae27b56a26d7d260985d2764655c0f10cadec5e32cf82d6c392beed49627377"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2025-09.csv",
+      "sha256": "882123aed53bc521b955bfe44b1785d7a17f2b6b76f7aae72412ec76ed910777"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2025-10.csv",
+      "sha256": "cc4dd5a1d39fbd43d75bd2118c8e8233f963ce1216e49ddd7ef792292ee77d39"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2025-11.csv",
+      "sha256": "cfdeee8ab09a306ee57e616e41942484160c16276d14af56bf4937fd12e66a39"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2025-12.csv",
+      "sha256": "697520358ed242a05b9bab8fc247143e5a9a08aafaac0192d49f293e3b7400e8"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2026-01.csv",
+      "sha256": "fc89ca50d8f2f0f5ded421ac4b3ab1c5c817e88552fa6a5e7c855a6b7c4ed104"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2026-02.csv",
+      "sha256": "f832c95f23e1a5fe29cea179ef093e73c0da61b5adb88d6128e3149f56879349"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2026-03.csv",
+      "sha256": "60a3406e348a4aa8d9907ac9b021c9204e1c938b08b89281c6d6ddf2dae7025f"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2026-04.csv",
+      "sha256": "9d75b6e82089f7908f68e82dca12e808ed2a27ce8a8f34c5a945147cc7f1123b"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2026-05.csv",
+      "sha256": "2be5352e3dc45d3c202e31e056ee37cb55ee0c6a9da0d3c8bb95722594827b93"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2026-07.csv",
+      "sha256": "6b1443ae43a35855a3119fc5732b24c279320da60a43910e185bd65e5b514aed"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2026-08.csv",
+      "sha256": "865f1a6b2eedb33f10f90abbb186939647ae7b447315c0c773db956b6541711d"
+    }
+  ]
+}

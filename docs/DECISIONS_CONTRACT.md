@@ -149,6 +149,15 @@ which is exactly what made cycle 7's floor rurally biased.
 
 `GFR_MAX_PLAUSIBLE <- 200` stands; no reliability filter is added. 16 counties excluded. Small-denominator imprecision is accepted and not corrected.
 
+**SUPERSEDED RULING (2026-08-16): Option B for county data, plus simulation for
+rank claims.**
+
+ACS MOEs are now retained for the fertility numerator and denominator.
+`SE = MOE / 1.645`, CV, and a reliability class are emitted in
+`data/county_base.csv`. The raw point estimate remains available, while
+ranking support is carried as `acs_fertility_top_decile_probability`; map
+display also receives a state-shrunk estimate with the raw-weight recorded.
+
 ---
 
 ## D5 🔴 Minimum cohort coverage for a Healthgrades field to be publishable
@@ -543,3 +552,38 @@ currently-approved enrollments and was never a cumulative history. The
 disagreement is between two current-ish measures with different update
 disciplines and different publication rules, which is why it is preserved as
 information rather than reconciled.
+
+## Snapshot vintages: a publication label is not an observation date
+
+**Question.** CMS publishes the Revalidation Clinic Group Practice Reassignment
+file monthly. Two labels, 2024-03 and 2024-08, carry byte-identical content
+(same sha256, same size, same row count) downloaded from two different URLs
+under two different month directories. May both be treated as observations?
+
+**What the sources say.** CMS rotates resource IDs on every refresh and does
+not guarantee that a month directory corresponds to a distinct data cut. The
+duplication is upstream; the download was correct.
+
+**RULING (2026-08-16).**
+
+A snapshot vintage is an **observation** only if its content is distinct from
+every earlier vintage. Where two labels carry identical content, the **earlier
+label is retained** -- that is when the content was actually current -- and the
+later label is recorded as a republication and excluded from the panel.
+
+Distinctness is established by **sha256 of the raw file**, recorded in the
+tracked `artifacts/revalidation_vintage_manifest.csv`. Where the raw volume is
+unavailable, a row-count fingerprint is the fallback; it is weaker, and a
+disagreement between the two is reported rather than silently resolved.
+
+Detection is **never** by month name. The next republication will not be
+2024-08, and a hardcoded month would not catch it.
+
+**Why it matters.** Between those two labels CMS published nothing. A
+relationship that ended in April 2024 would still read as on file in the
+2024-08 vintage: five months of continuity nobody observed, in a panel whose
+stated purpose is to avoid asserting exactly that. Spell duration therefore
+advances only on distinct content vintages, and is snapshot-counted rather than
+computed from label dates.
+
+Enforced by `tests/test_vintage_distinctness.R`.
