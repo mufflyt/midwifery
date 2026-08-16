@@ -157,6 +157,53 @@ MUTATIONS <- list(
     killers = c("tests/test_amcb_resolver_permutation.R")
   ),
 
+  # ---- adversarial identity attacks (items 7/45/46) ------------------------
+  # Each of these is a way to make the resolver confidently wrong. The
+  # adversarial corpus exists to kill them.
+  list(
+    id = "adversarial-taxonomy-breaks-ties",
+    file = "R/amcb_resolver.R",
+    find = "    dplyr::filter(.data$name_evidence_class == .data$best_evidence_class) |>\n    dplyr::filter(.data$n_at_best_class == 1L) |>",
+    repl = "    dplyr::filter(.data$name_evidence_class == .data$best_evidence_class) |>\n    dplyr::group_by(.data$amcb_id) |>\n    dplyr::filter(dplyr::n() == 1L | .data$taxonomy_axis == \"midwife\") |>\n    dplyr::slice(1L) |> dplyr::ungroup() |>",
+    why = paste("Lets taxonomy break an identity tie. Taxonomy says what an NPI",
+                "does for a living; it says nothing about WHICH person a name",
+                "refers to, so using it to resolve is confidently wrong."),
+    killers = c("tests/test_adversarial_identity_resolution.R")
+  ),
+
+  list(
+    id = "adversarial-class5-eligible",
+    file = "R/amcb_cohort_membership.R",
+    find = "  \"sensitivity_fuzzy\"      # fuzzy surname within edit distance 2, exact given\n)",
+    repl = "  \"sensitivity_fuzzy\",     # fuzzy surname within edit distance 2, exact given\n  \"sensitivity_name_component\"\n)",
+    why = paste("Admits class-5 surname FRAGMENTS to the analytic cohort. A",
+                "shared name fragment is not an identity claim, and the corpus",
+                "carries an attractive class-5 decoy for exactly this."),
+    killers = c("tests/test_adversarial_identity_resolution.R")
+  ),
+
+  list(
+    id = "adversarial-tier-fuzzy-becomes-primary",
+    file = "R/amcb_resolver.R",
+    find = "    has & name_evidence_class == 4L        ~ \"sensitivity_fuzzy\",",
+    repl = "    has & name_evidence_class == 4L        ~ \"primary_midwifery\",",
+    why = paste("Promotes fuzzy-surname matches to the primary tier, erasing the",
+                "distinction between exact identity evidence and a surname",
+                "within edit distance 2."),
+    killers = c("tests/test_adversarial_identity_resolution.R")
+  ),
+
+  list(
+    id = "adversarial-missing-is-agreement",
+    file = "R/amcb_cohort_membership.R",
+    find = "  has_npi <- !is.na(npi) & nzchar(npi)",
+    repl = "  has_npi <- is.na(npi) | nzchar(npi)",
+    why = paste("Treats a MISSING npi as agreement, so an unresolved person",
+                "becomes a cohort member. Missing information must never make a",
+                "match more certain."),
+    killers = c("tests/test_adversarial_identity_resolution.R")
+  ),
+
   # ---- geography -----------------------------------------------------------
   list(
     id = "coordinate-lon-lat-swap",
