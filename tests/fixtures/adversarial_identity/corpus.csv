@@ -1,4 +1,4 @@
-family,kind,amcb_id,synthetic_npi,name_evidence_class,taxonomy_axis,variant,expect,expect_synthetic_npi,why
+family,kind,synthetic_person,synthetic_npi,name_evidence_class,taxonomy_axis,variant,expect,expect_synthetic_npi,why
 positive-exact-middle,positive,POS01,2000000001,1,midwife,ALVAREZ,member,2000000001,exact first+last with a corroborating middle name
 positive-exact-nomiddle,positive,POS02,2000000002,2,midwife,BRENNAN,member,2000000002,exact first+last; middle absent on one side so class 2 not 1
 positive-hyphenated,positive,POS03,2000000003,2,midwife,CRAFT-BLACKSHEAR,member,2000000003,hyphenated surname matched whole; not split into fragments

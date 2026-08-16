@@ -3,8 +3,9 @@
 A permanent, versioned synthetic corpus of the ways an identity resolver gets
 fooled. Items 7, 45 and 46 of the adversarial testing programme.
 
-**No real people.** Every identifier here is invented. The NPI-shaped columns
-are named `synthetic_npi` rather than `npi` on purpose: `tests/ci_leak_guard.R`
+**No real people.** Every identifier here is invented. The identifier columns are
+named `synthetic_person` and `synthetic_npi` rather than `amcb_id` and `npi`
+on purpose: `tests/ci_leak_guard.R`
 flags any tracked CSV carrying a column called `npi`, and its baseline is a
 ratchet that may shrink and never grow. Invented identifiers for invented
 people should not look like person-level data.
@@ -34,7 +35,7 @@ silently.
 
 - `family` — the adversarial family; rows sharing a family are one scenario
 - `kind` — `positive`, `negative`, or `collision`
-- `amcb_id` — synthetic person
+- `synthetic_person` — synthetic person
 - `synthetic_npi` — synthetic candidate identifier
 - `name_evidence_class` — 1 strongest … 5 weakest, as candidate generation assigns
 - `taxonomy_axis` — `midwife` or `nursing`

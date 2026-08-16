@@ -58,6 +58,9 @@ DECOY  <- read.csv(file.path(FIXDIR, "decoy_escalation.csv"), colClasses = "char
 # CSV, and its baseline is a ratchet that may shrink and never grow. These are
 # invented identifiers for invented people, so the right move is not to buy an
 # exemption but to not look like person-level data in the first place.
+# amcb_id is in PERSON_COLS too. Same reasoning, same fix.
+names(CORPUS)[names(CORPUS) == "synthetic_person"] <- "amcb_id"
+names(DECOY)[names(DECOY) == "synthetic_person"] <- "amcb_id"
 names(CORPUS)[names(CORPUS) == "synthetic_npi"] <- "npi"
 names(CORPUS)[names(CORPUS) == "expect_synthetic_npi"] <- "expect_npi"
 names(DECOY)[names(DECOY) == "synthetic_npi"] <- "npi"
