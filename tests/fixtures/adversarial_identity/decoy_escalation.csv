@@ -1,0 +1,17 @@
+family,step,description,amcb_id,synthetic_npi,name_evidence_class,taxonomy_axis,expect
+decoy-alvarez,0,true candidate alone,DEC01,2000000301,1,midwife,member
+decoy-alvarez,1,irrelevant decoy (weak fragment),DEC01,2000000302,5,midwife,member
+decoy-alvarez,2,same surname only (fuzzy),DEC01,2000000303,4,midwife,member
+decoy-alvarez,3,surname + first initial,DEC01,2000000304,3,midwife,member
+decoy-alvarez,4,exact first + surname,DEC01,2000000305,2,midwife,member
+decoy-alvarez,5,exact full name with middle - EVIDENCE NOW EQUAL,DEC01,2000000306,1,midwife,quarantined
+decoy-brennan,0,true candidate alone,DEC02,2000000311,2,midwife,member
+decoy-brennan,1,irrelevant decoy,DEC02,2000000312,5,midwife,member
+decoy-brennan,2,fuzzy surname decoy,DEC02,2000000313,4,midwife,member
+decoy-brennan,3,same first initial + surname,DEC02,2000000314,3,midwife,member
+decoy-brennan,4,exact name - EVIDENCE NOW EQUAL,DEC02,2000000315,2,midwife,quarantined
+decoy-brennan,5,a further equal candidate cannot un-ambiguate,DEC02,2000000316,2,midwife,quarantined
+decoy-taxonomy,0,true candidate alone,DEC03,2000000321,2,midwife,member
+decoy-taxonomy,1,equal identity evidence but nursing taxonomy,DEC03,2000000322,2,nursing,quarantined
+decoy-stronger-class,0,true candidate at class 2,DEC04,2000000331,2,midwife,member
+decoy-stronger-class,1,decoy at a STRONGER class 1 outranks the incumbent,DEC04,2000000332,1,midwife,member

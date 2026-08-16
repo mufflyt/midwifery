@@ -107,3 +107,43 @@ amcb_resolve <- function(candidates) {
   list(per_npi = pn, pool_stats = ps, resolved = rs,
        quarantined_ids = amcb_quarantined_ids(candidates, rs))
 }
+
+#' Assign the linkage tier
+#'
+#' Extracted from match_amcb_to_npi.R for the same reason as the rules above:
+#' the tier decides whether a resolved identity is eligible for the analytic
+#' cohort, and that policy could not be exercised without the whole pipeline.
+#'
+#' Ordering matters and is deliberate. Fuzzy identity evidence is
+#' sensitivity-only WHATEVER the taxonomy, so classes 5 and 4 are tested before
+#' taxonomy is consulted. Class 5 keeps its own tier rather than being folded
+#' into sensitivity_fuzzy: a partial surname and a whole surname within edit
+#' distance 2 have different failure modes and must stay separable.
+#'
+#' @param npi `character`: resolved NPI, NA when unresolved.
+#' @param name_evidence_class `integer`: 1 (strongest) to 5 (weakest).
+#' @param npi_tax_class `character`: "midwife" or "nursing".
+#' @param demoted_absence_c5 `logical`: class-5 candidate held out by the guard.
+#' @param match_status `character`: e.g. "ambiguous_pool", used only when there
+#'   is no NPI.
+#' @return `character` tier.
+amcb_linkage_tier <- function(npi, name_evidence_class, npi_tax_class,
+                              demoted_absence_c5 = FALSE,
+                              match_status = NA_character_) {
+  n <- max(length(npi), length(name_evidence_class))
+  rep_to <- function(x) if (length(x) == 1L) rep(x, n) else x
+  npi <- rep_to(npi); name_evidence_class <- rep_to(name_evidence_class)
+  npi_tax_class <- rep_to(npi_tax_class)
+  demoted_absence_c5 <- rep_to(demoted_absence_c5)
+  match_status <- rep_to(match_status)
+
+  has <- !is.na(npi) & nzchar(npi)
+  dplyr::case_when(
+    has & name_evidence_class == 5L        ~ "sensitivity_name_component",
+    has & name_evidence_class == 4L        ~ "sensitivity_fuzzy",
+    has & npi_tax_class == "nursing"       ~ "sensitivity_nursing",
+    has                                    ~ "primary_midwifery",
+    demoted_absence_c5 %in% TRUE           ~ "quarantined",
+    grepl("^ambiguous", match_status)      ~ "quarantined",
+    TRUE                                   ~ "unmatched")
+}

@@ -1,0 +1,28 @@
+family,kind,amcb_id,synthetic_npi,name_evidence_class,taxonomy_axis,variant,expect,expect_synthetic_npi,why
+positive-exact-middle,positive,POS01,2000000001,1,midwife,ALVAREZ,member,2000000001,exact first+last with a corroborating middle name
+positive-exact-nomiddle,positive,POS02,2000000002,2,midwife,BRENNAN,member,2000000002,exact first+last; middle absent on one side so class 2 not 1
+positive-hyphenated,positive,POS03,2000000003,2,midwife,CRAFT-BLACKSHEAR,member,2000000003,hyphenated surname matched whole; not split into fragments
+positive-apostrophe,positive,POS04,2000000004,2,midwife,O'DONNELL,member,2000000004,apostrophe surname survives normalization as one token
+positive-accent,positive,POS05,2000000005,2,midwife,MUNOZ,member,2000000005,accented spelling transliterates to the same key as the roster
+positive-multirow,positive,POS06,2000000006,2,midwife,SANGANI,member,2000000006,same person appears as several NPPES rows for ONE npi
+positive-multirow,positive,POS06,2000000006,3,midwife,SANGANI-ALT,member,2000000006,second spelling of the same npi; strongest class must win
+positive-nursing-taxonomy,positive,POS07,2000000007,2,nursing,EKONG,member,2000000007,identity evidence is exact; nursing taxonomy is a sensitivity tier not a rejection
+positive-moved-state,positive,POS08,2000000008,2,midwife,FAIRWEATHER,member,2000000008,provider moved state; identity evidence unchanged so geography is irrelevant here
+negative-same-name-two-people,negative,NEG01,2000000101,2,midwife,SMITH,quarantined,,two DIFFERENT npis tie at class 2; nothing distinguishes them
+negative-same-name-two-people,negative,NEG01,2000000102,2,midwife,SMITH,quarantined,,the tie partner
+negative-common-surname-state,negative,NEG02,2000000103,2,midwife,GARCIA,quarantined,,common surname; two exact-name candidates in one state
+negative-common-surname-state,negative,NEG02,2000000104,2,midwife,GARCIA,quarantined,,the tie partner
+negative-first-initial-only,negative,NEG03,2000000105,3,midwife,NGUYEN,quarantined,,surname plus first INITIAL only; two candidates so it cannot be unique
+negative-first-initial-only,negative,NEG03,2000000106,3,midwife,NGUYEN,quarantined,,the tie partner
+negative-normalized-collision,negative,NEG04,2000000107,2,midwife,JOSE,quarantined,,Jose and Jose are genuinely different people whose normalized keys collide
+negative-normalized-collision,negative,NEG04,2000000108,2,midwife,JOSE,quarantined,,the collision partner
+negative-class5-attractive,negative,NEG05,2000000109,5,midwife,WALKER,held_out,2000000109,a surname FRAGMENT only; resolves at stage 1 but must not enter the cohort
+policy-fuzzy-is-eligible,positive,NEG06,2000000110,4,midwife,MERCOGLIANO,member,2000000110,DECLARED POLICY: sensitivity_fuzzy is in COHORT_MEMBERSHIP_TIERS so a surname within edit distance 2 plus exact given name IS cohort-eligible. The corpus first encoded the opposite assumption and this case caught it.
+negative-taxonomy-decides,negative,NEG07,2000000111,2,midwife,PATEL,quarantined,,identical identity evidence; taxonomy differs and must NOT break the tie
+negative-taxonomy-decides,negative,NEG07,2000000112,2,nursing,PATEL,quarantined,,the taxonomy-split partner
+collision-npi-contested,collision,COL01,2000000201,2,midwife,ROSSI,member,2000000201,two people claim one npi; stage 1 resolves both and stage 2 must break it
+collision-npi-contested,collision,COL02,2000000201,2,midwife,ROSSI,member,2000000201,the contending person for the same npi
+collision-twin,collision,COL03,2000000202,1,midwife,TWIN-A,quarantined,,twins; indistinguishable names both at the strongest class
+collision-twin,collision,COL03,2000000203,1,midwife,TWIN-B,quarantined,,the twin partner
+collision-maiden-married,collision,COL04,2000000204,2,midwife,KETCHAM,quarantined,,person A former surname equals person B current surname
+collision-maiden-married,collision,COL04,2000000205,2,midwife,KETCHAM,quarantined,,the former-name collision partner
