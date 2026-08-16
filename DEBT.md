@@ -92,6 +92,43 @@ and accept that records with dirty taxonomy lose the primary tier.
 
 ---
 
+## D4 — Artifacts built before the `is_enrolled_dac` fix still carry the old values
+
+- **status:** open
+- **owner:** tyler
+- **raised:** 2026-08-16
+- **source:** `docs/HANDOFF_is_enrolled_dac.md`
+
+The flag itself is fixed: `is_enrolled_dac` now comes from the DAC National
+Downloadable File, the individual Medicare **enrollment register**, and facility
+affiliation is a separate variable. `tests/test_is_enrolled_dac_semantics.R`
+holds the four assertions the handoff asked for, including that missing
+enrollment evidence yields NA rather than FALSE.
+
+What is NOT done is regenerating anything built while the flag was wrong.
+Measured on the 17,054-NPI crosswalk:
+
+| | NPIs |
+|---|---:|
+| in the national register (truly enrolled) | 3,912 |
+| in the facility-affiliation file (what the flag used) | 1,665 |
+| **enrolled with NO facility affiliation — were FALSE** | **2,817** |
+| affiliation but absent from the national register | 570 |
+
+A 2.35x understatement of Medicare enrollment. The handoff estimated 3,319
+affected; 2,817 is the measured figure against this file vintage, and the
+difference is stated rather than the estimate repeated.
+
+The 570 with an affiliation but no entry in the national register are a second,
+smaller question -- most likely a vintage mismatch between the two CMS files --
+and are not explained yet.
+
+**Decision needed:** which published outputs used this flag, and whether they
+are regenerated or withdrawn. Regenerating a Table 1 row changes a reported
+number, which is a scientific decision rather than a code one.
+
+---
+
 ## Closed
 
 ## D0 — Provenance determinism of the recorded name variant

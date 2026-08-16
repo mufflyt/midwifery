@@ -251,6 +251,20 @@ MUTATIONS <- list(
     killers = c("tests/test_lib_keys.R", "tests/test_metamorphic_invariance.R")
   ),
 
+  # ---- is_enrolled_dac (retraction-level, docs/HANDOFF_is_enrolled_dac.md) ---
+  list(
+    id = "enrollment-missing-becomes-false",
+    file = "R/lib/match_npi_to_hospitals.R",
+    find = "    return(rep(NA, length(npi)))",
+    repl = "    return(rep(FALSE, length(npi)))",
+    why = paste("Turns 'we did not look' into 'they are not enrolled'.",
+                "Collapsing missing evidence into FALSE is exactly how the",
+                "original defect read as a finding rather than as missing",
+                "data -- a clean logical column, a plausible Table 1 row, and",
+                "a wrong number."),
+    killers = c("tests/test_is_enrolled_dac_semantics.R")
+  ),
+
   # ---- geography -----------------------------------------------------------
   list(
     id = "coordinate-lon-lat-swap",
