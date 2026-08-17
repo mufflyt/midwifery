@@ -485,3 +485,15 @@ artifacts/pac_npi_ever.csv
 artifacts/pac_npi_ever.csv.provenance.json
 artifacts/organization_identity_pairings.csv
 artifacts/organization_identity_pairings.csv.provenance.json
+
+# Unresolved-affiliation diagnostics: person-level (one row per midwife NPI,
+# with candidate organizations). Tracked forms are the *_summary and *_yield
+# aggregates.
+artifacts/unresolved_affiliation_reasons.csv
+artifacts/unresolved_affiliation_reasons.csv.provenance.json
+artifacts/unresolved_disambiguation_candidates.csv
+artifacts/unresolved_disambiguation_candidates.csv.provenance.json
+artifacts/endpoint_location_candidates.csv
+artifacts/endpoint_location_candidates.csv.provenance.json
+artifacts/external_source_candidates.csv
+artifacts/external_source_candidates.csv.provenance.json

@@ -1,0 +1,7 @@
+signal,resolved_uniquely,narrowed_still_ambiguous,eliminated_all_candidates,pct_resolved,exploratory,n_ambiguous_input
+0 baseline (no signal),5,816,0,0.6,FALSE,821
+1 taxonomy compatible,112,624,85,13.6,FALSE,821
+2 org address <=10 clinicians,76,298,447,9.3,TRUE,821
+3 org address <=3 clinicians,87,172,562,10.6,TRUE,821
+1+2 cumulative,96,206,519,11.7,TRUE,821
+1+2+3 cumulative,88,113,620,10.7,TRUE,821

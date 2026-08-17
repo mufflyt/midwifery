@@ -1,0 +1,5 @@
+character,n,pct
+single_clinician_no_suite,404,57.5
+many_clinicians_same_address_no_type2_org,113,16.1
+few_clinicians_same_address,101,14.4
+single_clinician_with_suite,84,12
