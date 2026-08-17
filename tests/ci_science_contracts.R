@@ -268,8 +268,13 @@ if (!file.exists(file.path(root, WRAP))) {
   SUFFIX <- "\\bAVENUE\\b|\\bBOULEVARD\\b|\\bPARKWAY\\b|\\bSTREET\\b\\s*[\"']?\\s*,"
   if (any(grepl(SUFFIX, w))) {
     ci_fail("SCI5: %s contains a street-suffix table.\n       It must delegate to the isochrones parser, not reimplement it.", WRAP)
-  } else if (!any(grepl("normalize_addresses_canonical", w))) {
-    ci_fail("SCI5: %s never calls normalize_addresses_canonical().\n       It is not delegating to anything.", WRAP)
+  } else if (!any(grepl("(parse|normalize)_addresses_canonical", w))) {
+    # EITHER canonical entry point counts. The wrapper was moved from
+    # normalize_addresses_canonical() -- marked deprecated upstream -- to
+    # parse_addresses_canonical(), and this check named only the old one, so it
+    # reported a correctly-delegating wrapper as delegating to nothing. The rule
+    # is "calls the canonical parser", not "calls one particular function of it".
+    ci_fail("SCI5: %s calls neither parse_addresses_canonical() nor normalize_addresses_canonical().\n       It is not delegating to anything.", WRAP)
   } else {
     ci_ok("%s delegates to the canonical parser and holds no suffix table", WRAP)
   }
