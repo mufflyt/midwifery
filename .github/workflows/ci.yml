@@ -103,6 +103,9 @@ jobs:
       - name: Artifact contracts
         run: Rscript tests/ci_artifact_contracts.R
 
+      - name: Science invariants (defects that actually occurred)
+        run: Rscript tests/test_science_invariants.R
+
       # Invariants about MEANING across artifacts: no numbered stage writes
       # without provenance, no fourth rurality dialect, no percent column on a
       # surprise scale, no geographic id that lost a digit or gained a forged
