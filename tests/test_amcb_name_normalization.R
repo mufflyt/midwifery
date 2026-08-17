@@ -15,6 +15,7 @@
 # Run: Rscript tests/test_amcb_name_normalization.R
 # =============================================================================
 
+source(file.path("tests", "helper-external-data.R"))
 root <- {
   a <- grep("--file=", commandArgs(), value = TRUE)
   if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
@@ -157,7 +158,11 @@ cat("\n-- adversarial --\n")
 # non-ASCII name characters must produce a pure-ASCII key -- if any survives,
 # it cannot match NPPES and the fix is incomplete.
 {
-  roster <- file.path(root, "midwives.csv")
+  # midwives.csv is gitignored, so a worktree has none; MIDWIFERY_TEST_DATA_DIR
+  # supplies it. Without this T12 fails on a missing file and reads as a code
+  # regression when it is only an unmet data contract.
+  roster <- mw_data_path("midwives.csv")
+  if (!file.exists(roster)) roster <- file.path(root, "midwives.csv")
   if (!file.exists(roster)) {
     chk(FALSE, "T12 midwives.csv present")
   } else {
