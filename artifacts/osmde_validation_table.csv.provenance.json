@@ -1,6 +1,6 @@
 {
-  "artifact": "osmde_full_cohort_coverage_by_rucc.csv",
-  "written_utc": "2026-08-17 02:10:10 UTC",
+  "artifact": "osmde_validation_table.csv",
+  "written_utc": "2026-08-17 02:10:11 UTC",
   "inputs": [
     {
       "path": "artifacts/osmde_location_crosswalk.csv",
