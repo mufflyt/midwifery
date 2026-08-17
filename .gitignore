@@ -362,7 +362,8 @@ artifacts/amcb_npi_crosswalk_*panel-midwifery-plus-nursing*.csv
 /artifacts/cohort_midwife_facility_attributions_final_v4.csv
 /artifacts/cohort_midwife_facility_attributions_complete.csv
 /artifacts/cohort_midwife_building_taxonomy.csv
-/artifacts/scraped_20_state_bons_midwives_master.csv
+!/artifacts/scraped_50_states_and_dc_midwives_master.csv
+!/artifacts/scraped_40_state_bons_midwives_master.csv
 /artifacts/midwife_group_practice_names.csv
 /artifacts/tier1_tier2_combined_bon_validated_master.csv
 /artifacts/cohort_midwives_cpt_delivery_attenders.csv
