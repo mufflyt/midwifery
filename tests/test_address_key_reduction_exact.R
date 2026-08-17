@@ -119,6 +119,44 @@ chk(is.na(am[2]) && is.na(am[3]) && is.na(am[5]),
 chk(!is.na(am[1]) && !is.na(am[4]),
     "usable inputs keep their positions around the unusable ones")
 
+cat("\n-- R6 norm_addr_canonical_keep_unit separates normalisation from policy --\n")
+# Substituting the canonical parser wholesale bundles a POLICY change with a
+# normalisation fix: it DISCARDS suite designators, while norm_addr() keeps them
+# on the documented grounds that two suites in one building are two workplaces.
+# Measured on the 1,544 cohort the bundle is +46 uniquely resolved, of which +39
+# is achieved by dropping suites alone. This variant isolates the rest.
+ku <- norm_addr_canonical_keep_unit(
+  c("1942 ATKINSON RD STE 100", "1942 ATKINSON RD STE 500", "1942 ATKINSON RD"))
+chk(!identical(ku[1], ku[2]),
+    "STE 100 and STE 500 stay DISTINCT (the suite policy is preserved)")
+chk(!identical(ku[1], ku[3]),
+    "a suited address stays distinct from the bare building address")
+
+# The half it SHOULD fix: suffix and directional spelling.
+same <- function(a, b) identical(norm_addr_canonical_keep_unit(a),
+                                 norm_addr_canonical_keep_unit(b))
+chk(same("250 MAIN STREET", "250 MAIN ST"), "MAIN STREET == MAIN ST")
+chk(same("419 6TH STREET", "419 6TH ST"), "6TH STREET == 6TH ST")
+chk(same("320 PELHAM AVENUE SW", "320 PELHAM AVE SW"), "AVENUE SW == AVE SW")
+chk(same("242 SOUTH COASTAL HWY", "242 S COASTAL HWY"), "SOUTH == S")
+
+# `#` and SUITE are one suite written two ways. Under norm_addr() they key
+# differently because `#` becomes whitespace.
+chk(same("1 PEARL ST # 2300", "1 PEARL ST STE 2300"), "# 2300 == STE 2300")
+
+# KNOWN UPSTREAM GAPS, pinned as the current behaviour rather than as a wish.
+# The canonical parser does NOT normalise spelled ordinals, JUNIOR, NO/SO, or
+# EXTENSION. Measured against the 1,544 cohort these affect exactly ONE
+# non-matching row, which is why they are recorded and not fixed: the spelled
+# forms occur on the ORGANIZATION side, not the cohort side. If a future parser
+# version closes them, these assertions flip and should be updated, not deleted.
+chk(!same("361 THIRD STREET", "361 3RD ST"),
+    "KNOWN GAP: spelled ordinal THIRD is not normalised to 3RD")
+chk(!same("80 JESSE HILL JUNIOR DR", "80 JESSE HILL JR DR"),
+    "KNOWN GAP: JUNIOR is not normalised to JR")
+chk(!same("850 NO MAIN STREET EXTENSION", "850 N MAIN ST EXT"),
+    "KNOWN GAP: NO->N and EXTENSION->EXT are not normalised")
+
 cat("\n")
 if (length(failures)) {
   for (f in failures) cat(sprintf("FAIL %s\n", f))

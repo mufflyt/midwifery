@@ -134,9 +134,16 @@ PICK_BASELINE <- c(
   "resolve_org_ambiguity.R"
 )
 
+# A pick GUARDED by a uniqueness test is not a pick -- it takes the ONLY
+# candidate. `if (n_distinct(org_npi) == 1L) first(org_name) else NA` is
+# fail-closed resolution written explicitly, and flagging it would push authors
+# toward less legible code that reads the same to this gate.
+GUARDED <- "(n_distinct\\([^)]*\\)|\\bn\\b|n_orgs?)\\s*==\\s*1L?\\b"
+
 off <- character(0); known <- character(0)
 for (f in analysis_files()) {
   hits <- grep(PICK, code_lines(f), value = TRUE, perl = TRUE)
+  hits <- hits[!grepl(GUARDED, hits, perl = TRUE)]
   if (!length(hits)) next
   entry <- sprintf("%s: %s", f, trimws(hits[1]))
   if (f %in% PICK_BASELINE) known <- c(known, entry) else off <- c(off, entry)
@@ -284,13 +291,19 @@ if (!file.exists(file.path(root, WRAP))) {
 # address_keys.R are grandfathered by name and counted, so the number can only
 # go down.
 LEGACY <- c("norm_addr", "norm_addr_drop_unit")
+# norm_addr_canonical_keep_unit is sanctioned deliberately, not grandfathered.
+# Swapping in the canonical parser wholesale bundles a POLICY change with a
+# normalisation fix -- it DISCARDS suites, which norm_addr() keeps because two
+# suites in one building are two workplaces. That variant isolates the
+# normalisation half so the policy can be decided separately. It delegates to
+# norm_addr_canonical() and holds no street-suffix table of its own.
 defs <- character(0)
 for (f in analysis_files()) {
   d <- grep("^\\s*(norm_addr[a-z_]*|normali[sz]e_addr[a-z_]*)\\s*<-\\s*function",
             code_lines(f), value = TRUE)
   if (length(d)) defs <- c(defs, sprintf("%s: %s", f, trimws(d)))
 }
-extra <- defs[!grepl(sprintf("\\b(%s|norm_addr_canonical)\\s*<-",
+extra <- defs[!grepl(sprintf("\\b(%s|norm_addr_canonical|norm_addr_canonical_keep_unit)\\s*<-",
                              paste(LEGACY, collapse = "|")), defs)]
 if (length(extra)) {
   ci_fail("SCI5b: %d address normaliser(s) defined outside the sanctioned set:\n%s\n       Sanctioned: %s (legacy) and norm_addr_canonical (delegating).",

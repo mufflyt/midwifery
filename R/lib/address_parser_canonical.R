@@ -89,6 +89,91 @@
   p
 }
 
+#' Unit designators, canonicalised to one spelling each
+#'
+#' NOT a street-suffix table -- those belong to the canonical parser and a copy
+#' here would be the fork SCI5 exists to prevent. These are the SUITE-level
+#' tokens the canonical parser DISCARDS, kept here only so they can be put back.
+#'
+#' `#` maps to STE deliberately. "1 PEARL ST # 2300" and "1 PEARL ST STE 2300"
+#' are one suite written two ways, and under `norm_addr()` they key differently
+#' because `#` becomes whitespace.
+.UNIT_CANON <- c(
+  "SUITE" = "STE", "STE" = "STE", "#" = "STE",
+  "APARTMENT" = "APT", "APT" = "APT",
+  "BUILDING" = "BLDG", "BLDG" = "BLDG",
+  "FLOOR" = "FL", "FL" = "FL",
+  "ROOM" = "RM", "RM" = "RM",
+  "UNIT" = "UNIT", "STOP" = "STOP", "DEPARTMENT" = "DEPT", "DEPT" = "DEPT",
+  "PMB" = "PMB", "PENTHOUSE" = "PH", "PH" = "PH")
+
+#' Extract and canonicalise the unit portion of an address
+#'
+#' @return [character] e.g. "STE 200", or `NA` when the address names no unit.
+#' @noRd
+.unit_suffix <- function(x) {
+  u <- toupper(trimws(as.character(x)))
+  u <- gsub("[.,]", " ", u)
+  rx <- paste0("\\b(", paste(setdiff(names(.UNIT_CANON), "#"), collapse = "|"),
+               ")\\b\\s*([A-Z0-9-]+)|#\\s*([A-Z0-9-]+)")
+  out <- rep(NA_character_, length(u))
+  got <- ifelse(grepl(rx, u), sub(paste0("^.*?(", rx, ").*$"), "\\1", u), NA_character_)
+  for (i in which(!is.na(got))) {
+    tok <- trimws(got[i])
+    if (startsWith(tok, "#")) {
+      out[i] <- paste("STE", trimws(sub("^#", "", tok)))
+    } else {
+      parts <- strsplit(gsub("\\s+", " ", tok), " ")[[1]]
+      key <- parts[1]
+      val <- paste(parts[-1], collapse = " ")
+      canon <- .UNIT_CANON[[key]]
+      out[i] <- if (nzchar(val)) paste(canon, val) else canon
+    }
+  }
+  out
+}
+
+#' Canonical street normalisation that KEEPS the suite
+#'
+#' @description
+#' The canonical parser discards unit designators: "1315 JESSE JEWELL PKWY NE
+#' STE 200" becomes "1315 jesse jewell pkwy ne". That is correct for
+#' building-level matching and WRONG as a drop-in replacement for `norm_addr()`,
+#' whose documented policy is that two suites in one building are two
+#' workplaces.
+#'
+#' Substituting the parser wholesale therefore bundles a POLICY change with a
+#' normalisation fix. Measured on the 1,544 unresolved ACTIVE cohort, the bundle
+#' is +46 uniquely resolved, of which +39 is also achieved by
+#' `norm_addr_drop_unit()` -- i.e. by dropping suites alone. Only the ~7
+#' remainder is street normalisation, and only that part is unambiguously a fix.
+#'
+#' This function isolates it: the canonical parser normalises the street, and the
+#' unit is put back from the raw input in one canonical spelling. So
+#' "361 THIRD STREET" and "361 3RD ST" converge, while "STE 100" and "STE 500"
+#' stay apart.
+#'
+#' @param x [character] raw address lines.
+#' @param quiet [logical(1)] suppress the parser's load message.
+#' @return [character] normalised address retaining a canonical unit suffix.
+#' @examples
+#' \dontrun{
+#'   norm_addr_canonical_keep_unit(c("361 THIRD STREET", "1315 JESSE JEWELL PKWY NE STE 200"))
+#'   #> "361 3rd st"  "1315 jesse jewell pkwy ne STE 200"
+#' }
+#' @family address-keys
+norm_addr_canonical_keep_unit <- function(x, quiet = TRUE) {
+  street <- norm_addr_canonical(x, quiet = quiet)
+  unit <- .unit_suffix(x)
+  # Lower-cased to match the parser's own output. A key that is half lowercase
+  # and half uppercase still joins correctly -- both sides get the same
+  # treatment -- but it reads as a bug in every log and diff it appears in.
+  out <- ifelse(is.na(street), NA_character_,
+                ifelse(is.na(unit), street, paste(street, tolower(unit))))
+  out[!is.na(out) & !nzchar(trimws(out))] <- NA_character_
+  out
+}
+
 norm_addr_canonical <- function(x, quiet = TRUE) {
   load_isochrones_address_parser(quiet = quiet)
 

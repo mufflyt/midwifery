@@ -151,6 +151,15 @@ chk(!with_planted("ok_label_carry.R",
                     "  summarise(resolution_method = first(resolution_method))")),
     "SCI2 does NOT flag a method LABEL carried through a group")
 
+# A pick GUARDED by a uniqueness test takes the ONLY candidate, which is
+# fail-closed resolution stated explicitly. build_embedded_org_name_arm.R writes
+# it this way and the gate flagged it; without this case, tightening SCI2 to
+# allow the guard could later be widened back and nothing would notice.
+chk(!with_planted("ok_guarded_pick.R",
+                  c("res <- cand %>% group_by(npi) %>% summarise(",
+                    "  org_npi = if (n_distinct(org_npi) == 1L) first(org_npi) else NA_character_)")),
+    "SCI2 does NOT flag a pick guarded by n_distinct(...) == 1")
+
 chk(!with_planted("ok_voter_file.R",
                   c("# healthgrades",
                     "fl_voter_path <- \"artifacts/florida_voter_license_ages.csv\"")),
