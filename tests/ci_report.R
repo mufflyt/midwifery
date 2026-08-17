@@ -36,3 +36,13 @@ ci_tracked <- function(pattern) {
                                   stdout = TRUE, stderr = FALSE))
   if (length(out) == 0) character(0) else out
 }
+
+# Read a committed CSV as all-character, returning NULL rather than raising.
+# ci_semantic_contracts.R and ci_science_contracts.R both need it; defining it
+# twice is precisely what H4 exists to catch, and it did.
+ci_read_head <- function(path, n = -1L, root = ".") {
+  tryCatch(utils::read.csv(file.path(root, path), stringsAsFactors = FALSE,
+                           nrows = n, check.names = FALSE,
+                           colClasses = "character"),
+           error = function(e) NULL)
+}
