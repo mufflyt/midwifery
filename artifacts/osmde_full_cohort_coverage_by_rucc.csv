@@ -1,0 +1,5 @@
+rurality,n_midwives,n_canonical_5km,n_osmde_exact,pct_canonical_5km,pct_osmde_exact
+Metro (RUCC 1-3),10648,8195,10648,77,100
+"Nonmetro, adjacent (RUCC 4-6)",789,176,789,22.3,100
+"Nonmetro, remote (RUCC 7-9)",337,47,337,13.9,100
+,23,11,23,47.8,100
