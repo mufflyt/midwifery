@@ -172,7 +172,10 @@ cli::cli_alert_success("candidate organizations (exact, not sampled): {format(nr
 RANK <- c(no_usable_key = 0L, key_matched_no_org = 1L,
           ambiguous_many_orgs = 2L, unique_org_available = 3L)
 
-classify <- function(norm_fn, label) {
+# Named classify_with_normaliser, not classify: tests/test_adversarial_identity_resolution.R
+# already defines a top-level classify(), and two functions of one name in one
+# session let load order decide which runs. ci_hygiene H4 caught the collision.
+classify_with_normaliser <- function(norm_fn, label) {
   cli::cli_h2(label)
   t0 <- Sys.time()
   mka <- norm_fn(mw$addr)
@@ -217,9 +220,9 @@ classify <- function(norm_fn, label) {
 }
 
 arms <- bind_rows(
-  classify(norm_addr,           "norm_addr (production)"),
-  classify(norm_addr_drop_unit, "norm_addr_drop_unit"),
-  classify(function(a) norm_addr_canonical(a, quiet = TRUE), "canonical postmastr")
+  classify_with_normaliser(norm_addr,           "norm_addr (production)"),
+  classify_with_normaliser(norm_addr_drop_unit, "norm_addr_drop_unit"),
+  classify_with_normaliser(function(a) norm_addr_canonical(a, quiet = TRUE), "canonical postmastr")
 )
 
 # --- the validation gate -----------------------------------------------------
