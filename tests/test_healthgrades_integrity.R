@@ -25,9 +25,16 @@ ok   <- function(m) cat(sprintf("  ok   %s\n", m))
 bad  <- function(m) { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
 chk  <- function(cond, m) if (isTRUE(cond)) ok(m) else bad(m)
 
-LINK   <- "artifacts/amcb_npi_linkage_FROZEN.csv"
-HITS   <- "healthgrades_midwives.csv"
-ATTRS  <- "healthgrades_profile_attrs.csv"
+# Gitignored row-level inputs; a fresh checkout or worktree cannot hold them.
+# MIDWIFERY_TEST_DATA_DIR supplies them explicitly. Unset, these stay
+# repo-relative and the SKIP below behaves exactly as before.
+source(file.path("tests", "helper-external-data.R"))
+LINK   <- mw_data_path("artifacts/amcb_npi_linkage_FROZEN.csv")
+HITS   <- mw_data_path("healthgrades_midwives.csv")
+ATTRS  <- mw_data_path("healthgrades_profile_attrs.csv")
+invisible(mw_data_report(c("artifacts/amcb_npi_linkage_FROZEN.csv",
+                           "healthgrades_midwives.csv",
+                           "healthgrades_profile_attrs.csv")))
 
 if (!file.exists(LINK) || !file.exists(HITS)) {
   cat("SKIP: inputs absent\n"); quit(status = 0)
@@ -78,8 +85,8 @@ chk(all(per_cert$n == 1),
 #
 # Registry-derived categories must sum to the cohort. Healthgrades-derived ones
 # must not, and are excluded by name rather than by assuming which is which.
-if (file.exists("artifacts/table1_midwives.csv")) {
-  t1 <- read_csv("artifacts/table1_midwives.csv", show_col_types = FALSE, progress = FALSE)
+if (file.exists(mw_data_path("artifacts/table1_midwives.csv"))) {
+  t1 <- read_csv(mw_data_path("artifacts/table1_midwives.csv"), show_col_types = FALSE, progress = FALSE)
   N  <- length(COHORT)
   hg_cats <- c("Language (Healthgrades floor)", "Accepts new patients",
                "Offers telehealth", "Cohort")
@@ -213,7 +220,7 @@ chk(detect_then_scope >= scope_then_detect,
     sprintf("collision detection precedes cohort scoping (%d found vs %d if scoped first)",
             detect_then_scope, scope_then_detect))
 
-if (file.exists("docs/table1_midwives.md")) {
+if (file.exists(mw_data_path("docs/table1_midwives.md"))) {
   t1txt <- readLines("docs/table1_midwives.md")
   # The count used to sit in a "Excluded: profile shared with another
   # certificant" row. That block was removed from the table body on request and
@@ -235,7 +242,7 @@ if (file.exists("docs/table1_midwives.md")) {
   # the vintage stamp recorded when it was built. Drift against the live crawl
   # is reported as drift. If the stamp is missing, fall back to the strict
   # live comparison rather than skipping the check.
-  prov_f <- "artifacts/table1_provenance.csv"
+  prov_f <- mw_data_path("artifacts/table1_provenance.csv")
   if (file.exists(prov_f)) {
     prov <- read_csv(prov_f, show_col_types = FALSE, progress = FALSE)
     chk(!is.na(claimed) && claimed == prov$hg_ambiguous_cohort[1],
@@ -264,7 +271,7 @@ cat("\n3. PROVENANCE\n")
 # having FAILED NPI linkage, so they are harder to find on any site. Pooling
 # them with fresh searches biases the hit rate downward. The pooled rate is
 # not an estimate of anything.
-prior_f <- "prior_run_checkpoint_20260809T191817.rds"
+prior_f <- mw_data_path("prior_run_checkpoint_20260809T191817.rds")
 if (file.exists(prior_f)) {
   prior <- names(readRDS(prior_f))
   fr <- x %>% filter(!certification_number %in% prior)
