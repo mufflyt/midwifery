@@ -499,3 +499,12 @@ artifacts/external_source_candidates.csv
 artifacts/external_source_candidates.csv.provenance.json
 artifacts/no_org_anomaly_cases.csv
 artifacts/no_org_anomaly_cases.csv.provenance.json
+
+# Person-level affiliation diagnostics. Each row is one CNM/CM's NPI with their
+# practice address, so these are person-level by construction. Their script
+# headers already declared them gitignored; the rules were missing, which is the
+# same gap that put 67 person-level artifacts into history one file at a time.
+artifacts/address_match_failure_cases.csv
+artifacts/address_match_failure_cases.csv.provenance.json
+artifacts/embedded_org_name_candidates.csv
+artifacts/embedded_org_name_candidates.csv.provenance.json

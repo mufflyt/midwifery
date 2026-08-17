@@ -1,0 +1,9 @@
+failure_class,n,pct_of_cohort,verdict
+matched_exactly,763,49.4,matches under the production key
+no_org_at_zip_and_house_number,513,33.2,no organization registered there at all
+unit_only_difference,125,8.1,POLICY: unit designators deliberately retained
+genuinely_different_street,63,4.1,correct non-match: house-number coincidence
+no_house_number,62,4,no address key possible; see the embedded-name arm
+street_typo_near_miss,9,0.6,NOT safely fixable; see the fuzzy false-match rate
+street_variant_normalisable,9,0.6,FIXABLE by the canonical parser
+POLICY_relax_suite_key_would_resolve,19,1.2,of 125 unit-only cases; 106 would become ambiguous
