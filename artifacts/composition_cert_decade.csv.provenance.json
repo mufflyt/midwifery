@@ -1,7 +1,15 @@
 {
   "artifact": "composition_cert_decade.csv",
-  "written_utc": "2026-08-11 01:30:03 UTC",
+  "written_utc": "2026-08-23 23:10:00 UTC",
   "inputs": [
+    {
+      "path": "data/county_base.csv",
+      "sha256": "72e6acb856728843e4a8ec54cdac2642841a931d523cc07ed8942b3f1988ca5f"
+    },
+    {
+      "path": "data/zcta_county_2020.txt",
+      "sha256": "3ed41278d637dc249e0323306f68be8a6c234e3090f4de88ef328dee71aeaaaf"
+    },
     {
       "path": "artifacts/frozen_cohort/analytic_cohort.csv",
       "sha256": "926476f361d531e0e8238095a8db84e3fdb0e45212408d7656e642dd0c1ad3bb"

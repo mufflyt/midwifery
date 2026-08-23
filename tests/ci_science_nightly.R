@@ -364,16 +364,31 @@ ci_section("SCN4 no group collapses onto one level of a variable that varies els
 # two levels, and the vocabulary must contain more than one level overall.
 SCN4_MIN <- 100L
 
-# KNOWN, AWAITING A DECISION -- not forgiven.
+# A group that sits entirely in an UNKNOWN level is doing the right thing. This
+# gate's own failure message says "if the variable is unknown for it, say
+# Unknown" -- so firing on a table that says exactly that is the gate
+# contradicting its own remedy. It did: the moment the Alaska defect was fixed
+# and 1,545 midwives moved from "Nonmetro, remote (7-9)" to "Unknown", SCN4
+# flagged the corrected artifact. A collapse onto a REAL level is a failed
+# join; a collapse onto an absence level is a measurement nobody could make.
+SCN4_ABSENT <- "^\\s*(unknown|unk|missing|not reported|not observed|not available|none|n/?a)\\s*$"
+
+# EMPTY, and it should stay that way.
 #
-# composition_rucc_cat.csv puts all 1,545 of `2_newly_npi_resolved` in
-# "Nonmetro, remote (7-9)". The retained group is 86% metro and carries an
-# explicit "Unknown" level, and composition_practice_state.csv omits this group
-# altogether -- it has no practice state. A cohort with no geography cannot be
-# 100% remote rural; the level should be Unknown. Left in place because the
-# correct value is a question for whoever owns the RUCC join, and because a
-# rural share is exactly the quantity this project reports.
-SCN4_BASELINE <- c("artifacts/composition_rucc_cat.csv")
+# It held composition_rucc_cat.csv for one day. All 1,545 midwives in
+# `2_newly_npi_resolved` were published as "Nonmetro, remote (7-9)", and the
+# cause was not the RUCC banding: 903 rows of the Census ZCTA-county file have
+# no ZCTA, two of the four private copies of the ZIP->county crosswalk failed
+# to drop them, group_by() collapsed all 903 into one NA-keyed row pointing at
+# Yukon-Koyukuk, Alaska, and left_join() matches NA to NA. Every midwife with
+# no practice ZIP was placed in a remote Alaskan county with a real RUCC, which
+# is why coalesce(..., "Unknown") never fired. Fixed by defining the crosswalk
+# once, in R/lib/zip_county_crosswalk.R, where an NA key is an error.
+#
+# This gate found it. Nothing else in the repository would have: the code reads
+# correctly at every one of the four sites, and the wrong answer is only
+# visible in the arithmetic of the output.
+SCN4_BASELINE <- character(0)
 
 off <- character(0); known <- character(0); n_checked <- 0L
 for (f in names(SCN)) {
@@ -393,6 +408,7 @@ for (f in names(SCN)) {
     for (i in flat) {
       one <- s$d[[lv]][key == b$levels[i] & !is.na(s$nums[[b$count]]) &
                        s$nums[[b$count]] > 0][1]
+      if (!is.na(one) && grepl(SCN4_ABSENT, one, ignore.case = TRUE)) next
       entry <- sprintf("%s: %s `%s` (n = %s) is 100%% `%s`; sibling groups span up to %d level(s)",
                        f, b$group, b$levels[i], format(b$denv[i]), one,
                        max(n_levels, na.rm = TRUE))
@@ -508,6 +524,27 @@ SCN_UNRES <- "unresolved|unascertained|unmatched|unknown_n|n_missing"
 # disposition table nobody can add up in four terms is not one a reader adds up
 # either.
 scn_completes <- function(uv, target, others, nums) {
+  # The denominator column itself is not a term in its own decomposition.
+  others <- others[!vapply(others, function(nm) {
+    v <- nums[[nm]]; ok <- !is.na(v) & !is.na(target)
+    any(ok) && all(v[ok] == target[ok])
+  }, logical(1))]
+
+  # TRY THE WHOLE SET FIRST. An exhaustive breakdown -- one column per
+  # disposition, which is what a table SHOULD look like -- decomposes the
+  # denominator into as many terms as it has categories, and the subset search
+  # below never reaches that far. linkage_completeness_by_status.csv was
+  # rewritten to be exhaustive in exactly this shape, seven dispositions
+  # summing to n, and this gate still called it unaccounted because it only
+  # looked four terms deep. A gate that rejects the corrected form of the very
+  # thing it asked for teaches people to ignore it.
+  if (length(others)) {
+    s <- uv
+    for (nm in others) s <- s + nums[[nm]]
+    ok <- !is.na(s) & !is.na(target)
+    if (any(ok) && all(s[ok] == target[ok])) return(others)
+  }
+
   depth <- if (length(others) > 15L) 2L else 4L
   depth <- min(depth, length(others))
   for (k in seq_len(depth)) {
@@ -523,19 +560,18 @@ scn_completes <- function(uv, target, others, nums) {
   NULL
 }
 
-# KNOWN, AWAITING A DECISION -- not forgiven.
+# EMPTY, and it should stay that way.
 #
-# linkage_completeness_by_status.csv breaks 22,309 linkage attempts into
-# primary, sensitivity_fuzzy, quarantined and unmatched. Those four sum to
-# 20,473. The remaining 1,836 -- 8.2%, and 845 of them ACTIVE midwives -- hold
-# a `match_status` none of the four `sum(match_status == ...)` terms in
-# provenance_manifest.R counts, so they are in the denominator behind
-# pct_primary and in none of the dispositions beside it.
-#
-# Not fixed here: the fix is a fifth term in the producing summarise(), and it
-# needs the FROZEN person-level crosswalk to know what to call it. That file is
-# gitignored and absent from every runner. The baseline can only shrink.
-SCN6_BASELINE <- c("artifacts/linkage_completeness_by_status.csv")
+# It held linkage_completeness_by_status.csv for one day. Four hand-named
+# dispositions summed to 20,473 of 22,309 rows, leaving 1,836 people (8.2%,
+# 845 of them ACTIVE) inside the denominator and outside every column beside
+# it. The names were also stale: the producing script tested a `match_status`
+# column the frozen linkage had renamed, and `frozen$match_status` on a tibble
+# returns NULL rather than raising, so the JSON manifest reported zero
+# primaries without complaint. Fixed by pivoting the disposition column instead
+# of enumerating it, so `n` is the sum of the columns rather than an
+# independent count and the two cannot disagree.
+SCN6_BASELINE <- character(0)
 
 off <- character(0); known <- character(0); n_part <- 0L
 for (f in names(SCN)) {

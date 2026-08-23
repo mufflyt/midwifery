@@ -255,6 +255,33 @@ scn_allowed("an unresolved count in a summary that publishes no percentage",
     "built_at,cohort_n,with_hospital,hospitals_linked,ccn_unresolved,any_critical,multi_hospital",
     "2026-08-11T08:54:40,11920,1665,902,4,138,230")))
 
+# Pinned because BOTH of these fired on the CORRECTED form of the artifact they
+# were built to police, on the day the defects were fixed. A gate that rejects
+# the fix it asked for is worse than no gate: it teaches people to ignore it.
+
+# SCN4 told composition_rucc_cat.csv to say Unknown for a group with no
+# geography. The rebuilt artifact said Unknown for all 1,545, and SCN4 flagged
+# it again as a collapsed stratum.
+scn_allowed("a 500-member group sitting entirely in an explicit Unknown level",
+  list("artifacts/composition_demo.csv" = c(
+    "group,level,n,N,pct",
+    "g1,a,400,1000,40", "g1,b,300,1000,30", "g1,c,200,1000,20", "g1,d,100,1000,10",
+    "g2,Unknown,500,500,100",
+    "g3,a,80,200,40",   "g3,b,60,200,30",   "g3,c,40,200,20",   "g3,d,20,200,10",
+    "g4,a,50,50,100")))
+
+# SCN6 asked linkage_completeness_by_status.csv for a breakdown that reaches
+# its denominator. The rebuilt artifact gives seven dispositions summing
+# exactly to n, and SCN6 called it unaccounted because it searched only four
+# terms deep.
+scn_allowed("an exhaustive disposition table whose seven columns sum to n",
+  list("artifacts/dispositions_demo.csv" = c(
+    "status,n,contested,tied_names,unruled_out,held_out,matched,nursing_taxonomy,unmatched,pct_matched",
+    "ACTIVE,15285,42,1538,5,99,11981,953,667,78.4",
+    "LAPSED,5175,41,1115,0,40,2050,898,1031,39.6",
+    "RETIRED,1278,7,238,2,12,589,186,244,46.1",
+    "DECEASED,499,4,153,0,5,94,83,160,18.8")))
+
 # Pinned because SCN4's floor is what separates a failed join from a small
 # stratum that really is uniform.
 scn_allowed("a 50-member group legitimately sitting in one level",
