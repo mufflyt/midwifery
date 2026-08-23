@@ -6,11 +6,20 @@
 #
 # A green run here is a claim about the whole repository: it is syntactically
 # valid, its tests are DISCOVERED rather than remembered, its deterministic
-# logic still holds, its frozen provenance still verifies, its public surface
-# exposes no person-level data or credentials, and every blocking check
+# logic still holds, its frozen provenance still verifies, its published
+# numbers still reproduce from the numbers printed beside them, its public
+# surface exposes no person-level data or credentials, and every blocking check
 # actually reached completion. A green run is NOT the weaker claim that "the
 # tests someone thought to name in a workflow passed" -- 21 of 67 test files
 # were in exactly that position before this workflow existed.
+#
+# The science is nightly for a reason
+# -----------------------------------
+# ci.yml can afford to read an artifact's header row; it cannot afford to read
+# 149 artifacts end to end. So the checks that recompute a percentage from its
+# own denominator, an interval from its own sample, and a breakdown against its
+# own total live in the `science` job here. They are the only checks in this
+# repository that would notice a number in the paper being wrong.
 #
 # Discovery is a contract
 # -----------------------
@@ -244,6 +253,88 @@ jobs:
       - name: Semantic contracts
         if: always()
         run: Rscript tests/ci_semantic_contracts.R
+
+  # ---------------------------------------------------------------------------
+  # The published numbers, recomputed.
+  #
+  # Every other gate asks a question about the repository. This one asks the
+  # question a reader of the paper asks: does this number follow from the
+  # numbers printed beside it? It reads all 149 tracked artifacts end to end --
+  # every row of every percentage column, not the header row the per-push gates
+  # can afford -- and recomputes each percentage from its own numerator and
+  # denominator, each confidence interval from its own sample, each breakdown
+  # against its own total.
+  #
+  # Its own job rather than a step inside `gates` for two reasons. It is base R
+  # with no dependencies at all, so it starts in seconds where `gates` first
+  # installs fifteen packages; and a scientific claim failing is a different
+  # kind of news from a hygiene rule failing, which the summary table should be
+  # able to say without anyone opening a log.
+  #
+  # Three findings are baselined in the gate, each with the reason and the
+  # numbers, and each baseline can only shrink.
+  # ---------------------------------------------------------------------------
+  science:
+    name: Published numbers reproduce
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      # No install step, and this step keeps it that way. The gate recomputes
+      # Wilson intervals from the closed form rather than calling a package,
+      # precisely so a nightly claim about the science cannot go red because
+      # CRAN was slow. Asserted statically rather than by "it ran without an
+      # install", which stays true right up until the runner image ships the
+      # package by accident. If this ever needs a contributed package, that is
+      # a signal to reconsider the gate, not to add the package.
+      - name: The science gates depend on nothing but base R
+        run: |
+          set -u
+          for f in tests/ci_science_contracts.R tests/ci_science_nightly.R \
+                   tests/test_science_nightly_detect.R; do
+            if grep -nE '^[[:space:]]*(library|require)\(' "$f"; then
+              echo "$f attaches a package"; exit 1
+            fi
+          done
+          # The namespace sweep skips ci_science_contracts.R on purpose: its
+          # SCI2 pattern contains the LITERAL "(dplyr::)?" inside a regex, to
+          # match a call site in the files it polices. It makes no such call.
+          # A grep cannot tell a string from an expression, and the alternative
+          # -- weakening the pattern so the gate stops matching `dplyr::first`
+          # -- would trade a real check for a tidy one.
+          for f in tests/ci_science_nightly.R tests/test_science_nightly_detect.R; do
+            bad=$(grep -oE '\b[A-Za-z0-9.]+::' "$f" | sort -u \
+                  | grep -vE '^(base|stats|utils|tools|methods|grDevices|graphics)::$' || true)
+            [ -z "$bad" ] || { echo "$f reaches outside base R: $bad"; exit 1; }
+          done
+          echo "base R only"
+
+      # The per-push science gates, run again here. They are cheap and they
+      # were ORPHANED: commit e8e2213 added them to ci.yml alone, so the
+      # nightly's own "every ci_*.R gate is named by some job" check had a
+      # counterexample sitting in the repository. A gate that runs only on
+      # push does not cover a night when nobody pushed.
+      - name: Science contracts (the code does not overclaim)
+        if: always()
+        run: Rscript tests/ci_science_contracts.R
+
+      - name: Published numbers reproduce from the numbers beside them
+        if: always()
+        run: Rscript tests/ci_science_nightly.R
+
+      # The gates above assert things about artifacts; this asserts things
+      # about the gates. It is ALSO discovered by the r-suite glob -- it is a
+      # tests/test*.R file -- and is named here as well so that a failure of
+      # the science gates and a failure of their proof land in the same job.
+      - name: The science gates detect planted defects
+        if: always()
+        run: Rscript tests/test_science_nightly_detect.R
 
   # ---------------------------------------------------------------------------
   # Does the suite DETECT anything? Every other job asks whether the code is
@@ -516,7 +607,7 @@ jobs:
     runs-on: ubuntu-latest
     # Blocking jobs only. network-tests and external-deps are informational by
     # construction and must not be able to redden the nightly.
-    needs: [r-suite, python-suite, gates, suite-coverage, public-exposure, mutation-testing]
+    needs: [r-suite, python-suite, gates, science, suite-coverage, public-exposure, mutation-testing]
     if: always()
     steps:
       - name: Report
@@ -527,6 +618,7 @@ jobs:
             echo "| R suite | ${{ needs.r-suite.result }} |"
             echo "| Python suite | ${{ needs.python-suite.result }} |"
             echo "| Gates | ${{ needs.gates.result }} |"
+            echo "| Science (published numbers) | ${{ needs.science.result }} |"
             echo "| Suite coverage | ${{ needs.suite-coverage.result }} |"
             echo "| Public exposure | ${{ needs.public-exposure.result }} |"
             echo "| Mutation testing | ${{ needs.mutation-testing.result }} |"
@@ -539,6 +631,7 @@ jobs:
           for r in "${{ needs.r-suite.result }}" \
                    "${{ needs.python-suite.result }}" \
                    "${{ needs.gates.result }}" \
+                   "${{ needs.science.result }}" \
                    "${{ needs.suite-coverage.result }}" \
                    "${{ needs.public-exposure.result }}" \
                    "${{ needs.mutation-testing.result }}"; do
