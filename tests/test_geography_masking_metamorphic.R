@@ -61,9 +61,24 @@ chk <- function(cond, m) if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m)) else {
 
 XW   <- file.path("data", "zcta_county_2020.txt")
 RUCC <- file.path("data", "rucc_2023.xlsx")
-if (!file.exists(XW) || !file.exists(RUCC)) {
-  cat("  SKIP inputs absent (data/zcta_county_2020.txt, data/rucc_2023.xlsx)\n")
-  cat("PASS (0 failures)\n"); quit(status = 0)
+
+# A HARD FAILURE, not a skip. Both are TRACKED public files -- the Census
+# ZCTA-county relationship file and the USDA rurality codes -- so on any
+# checkout they are present. If one is renamed, deleted, or made unreachable by
+# a change to how the runner checks out, the scientific law below stops being
+# evaluated. Skipping there would let the law disappear while CI stays green,
+# which is the precise failure this whole suite exists to prevent: a gate that
+# reports success because it did not run.
+#
+# The PRIVATE frozen linkage further down may legitimately skip -- it is
+# person-level and no public runner has it. A public input may not.
+missing_public <- c(XW, RUCC)[!file.exists(c(XW, RUCC))]
+if (length(missing_public)) {
+  cat(sprintf("  FAIL required public input(s) absent: %s\n",
+              paste(missing_public, collapse = ", ")))
+  cat("       These are tracked files. Their absence means the geography law is\n")
+  cat("       not being evaluated at all -- which is a failure, not a skip.\n\n")
+  cat("FAILED (1)\n"); quit(status = 1)
 }
 
 # --- the resolver under test, mirroring the pipeline exactly -----------------
@@ -195,9 +210,19 @@ if (!file.exists(FROZEN)) {
   cat("       (set MIDWIFERY_TEST_DATA_DIR or run locally to exercise it)\n")
 } else {
   fz <- suppressWarnings(read_csv(FROZEN, show_col_types = FALSE, progress = FALSE))
-  zc <- grep("zip", names(fz), ignore.case = TRUE, value = TRUE)[1]
-  if (is.na(zc)) {
-    cat("  SKIP the frozen linkage carries no ZIP column\n")
+  # NAMED, not matched. This was grep("zip", names(fz))[1], which silently takes
+  # whichever ZIP-ish column sorts first. The frozen linkage carries exactly one
+  # today -- nppes_zip, the practice ZIP -- but a mailing_zip or home_zip added
+  # later could capture that position and the gate would go on reporting a
+  # confident result about the wrong variable. A scientific gate does not get to
+  # choose its own subject.
+  PRACTICE_ZIP <- "nppes_zip"
+  zc <- PRACTICE_ZIP
+  if (!(PRACTICE_ZIP %in% names(fz))) {
+    fails <- fails + 1L
+    cat(sprintf("  FAIL the frozen linkage is present but has no `%s` column.\n", PRACTICE_ZIP))
+    cat("       The practice-ZIP field was renamed or removed. Point this at the\n")
+    cat("       new name deliberately -- do not let the gate pick one.\n")
   } else {
     v <- as.character(fz[[zc]]); v <- v[!is.na(v) & nzchar(v)]
     ndig <- nchar(gsub("[^0-9]", "", v))
