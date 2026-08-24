@@ -103,9 +103,6 @@ jobs:
       - name: Artifact contracts
         run: Rscript tests/ci_artifact_contracts.R
 
-      - name: Science invariants (defects that actually occurred)
-        run: Rscript tests/test_science_invariants.R
-
       # Invariants about MEANING across artifacts: no numbered stage writes
       # without provenance, no fourth rurality dialect, no percent column on a
       # surprise scale, no geographic id that lost a digit or gained a forged
@@ -231,6 +228,15 @@ jobs:
       # The deterministic license->NPI bridge: the one linkage path that does not
       # depend on comparing two spellings of a name. Its collision handling is
       # what keeps a shared license key from asserting a shared identity.
+      # Belongs in THIS job, not in r-checks. The tiering at the top of this
+      # file is deliberate -- r-checks is base R plus stringr and must stay
+      # trivially cheap -- and this suite needs dplyr, readr and stringr, which
+      # only this job installs. Placed in r-checks it failed with "there is no
+      # package called 'dplyr'", which reads as a broken test rather than a
+      # step in the wrong tier.
+      - name: Science invariants (defects that actually occurred)
+        run: Rscript tests/test_science_invariants.R
+
       - name: AMCB license bridge
         run: Rscript tests/test_amcb_license_bridge.R
 
