@@ -1,0 +1,18 @@
+{
+  "artifact": "endpoint_location_yield.csv",
+  "written_utc": "2026-08-17 04:10:02 UTC",
+  "inputs": [
+    {
+      "path": "/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2026/endpoint_pfile_20050523-20260809.csv",
+      "sha256": "04c5179b06d15520a21c3ae4e95f2b915cd386d28389e8585f7d1731b4cb37f8"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2026/pl_pfile_20050523-20260809.csv",
+      "sha256": "c1ae3f40217dd65b181ed9a581949fc6d8d50145623c65fcca331786236812c7"
+    },
+    {
+      "path": "/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2026/npidata_pfile_20050523-20260809.csv",
+      "sha256": "fa037d5a3a50083be5d9b7e6404cf9dcc5917be893fdca8ce48a6d6c37a248c0"
+    }
+  ]
+}

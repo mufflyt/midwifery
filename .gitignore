@@ -501,6 +501,29 @@ artifacts/pac_npi_ever.csv.provenance.json
 artifacts/organization_identity_pairings.csv
 artifacts/organization_identity_pairings.csv.provenance.json
 
+# Unresolved-affiliation diagnostics: person-level (one row per midwife NPI,
+# with candidate organizations). Tracked forms are the *_summary and *_yield
+# aggregates.
+artifacts/unresolved_affiliation_reasons.csv
+artifacts/unresolved_affiliation_reasons.csv.provenance.json
+artifacts/unresolved_disambiguation_candidates.csv
+artifacts/unresolved_disambiguation_candidates.csv.provenance.json
+artifacts/endpoint_location_candidates.csv
+artifacts/endpoint_location_candidates.csv.provenance.json
+artifacts/external_source_candidates.csv
+artifacts/external_source_candidates.csv.provenance.json
+artifacts/no_org_anomaly_cases.csv
+artifacts/no_org_anomaly_cases.csv.provenance.json
+
+# Person-level affiliation diagnostics. Each row is one CNM/CM's NPI with their
+# practice address, so these are person-level by construction. Their script
+# headers already declared them gitignored; the rules were missing, which is the
+# same gap that put 67 person-level artifacts into history one file at a time.
+artifacts/address_match_failure_cases.csv
+artifacts/address_match_failure_cases.csv.provenance.json
+artifacts/embedded_org_name_candidates.csv
+artifacts/embedded_org_name_candidates.csv.provenance.json
+
 # Verification runs: one directory per verifier invocation, plus the `latest`
 # symlink promoted atomically on success (R/lib/validation_run.R). Machine-local
 # provenance, regenerable from verify_osmde_full_cohort_coverage.R.

@@ -87,6 +87,82 @@ load_variety_sentence_engine <- function(quiet = FALSE) {
   invisible(engine)
 }
 
+#' Source the isochrones canonical address parser
+#'
+#' @description
+#' `R/address_parsing_standardized.R` is the canonical address parser --
+#' postmastr with a regex fallback, a YAML healthcare dictionary that
+#' standardises building designators and medical facility names, and a DuckDB
+#' result cache. Its own banner reads "End of address parsing duplication".
+#'
+#' It was duplicated here anyway. `norm_addr()` and `norm_addr_drop_unit()` in
+#' `R/lib/address_keys.R` are a hand-rolled abbreviation table covering a
+#' fraction of the same ground. Measured against the 702 midwives with no
+#' organization at their practice address, the hand-rolled table failed on
+#' three classes the canonical parser handles: street-suffix expansion
+#' ("HIGHLAND AVENUE" vs "HIGHLAND AVE"), building designators
+#' ("SUGAR MAPLE DR BLDG 830") and suite designators ("PKWY NE STE 200").
+#'
+#' @section Why ISOCHRONES_R and not isochrones_home():
+#' The same reason [load_isochrones_name_tools()] gives, and it is not a
+#' stylistic choice. `ISOCHRONES_HOME` and `ISOCHRONES_R` resolve to DIFFERENT
+#' checkouts on this machine. Sourcing the parser from one while the name code
+#' comes from the other puts two vintages of `normalize_string()` in a single
+#' session and lets load order decide which runs.
+#'
+#' @section Working directory:
+#' The parser `source()`s siblings by RELATIVE path and reads
+#' `config/address_parsing_config.yml` relative to the working directory, so it
+#' can only be loaded from the isochrones root. `on.exit` restores the caller's
+#' directory even on failure -- an unrestored working directory would redirect
+#' every later `write_with_provenance()` call in the calling script into the
+#' wrong repository.
+#'
+#' @section KNOWN UPSTREAM DEFECT:
+#' USPS suffix abbreviation is applied to street-NAME tokens, so
+#' "80 JESSE HILL JR DR SE" normalises to "80 jesse hl jr dr se" -- "Hill" is
+#' part of a person's name (Jesse Hill Jr. Drive, Atlanta), not a suffix.
+#' Harmless while both sides of a join are normalised identically, wrong when a
+#' source spells the name differently. Fix it upstream; a local workaround
+#' re-forks the parser.
+#'
+#' @param quiet [logical(1)]: suppress the confirmation message.
+#' @return Invisibly, the path sourced.
+#' @family dependencies
+#' @export
+load_isochrones_address_parser <- function(quiet = FALSE) {
+  if (exists("normalize_addresses_canonical", mode = "function"))
+    return(invisible("already loaded"))
+
+  iso_r <- Sys.getenv("ISOCHRONES_R", path.expand("~/isochrones/R"))
+  root <- dirname(iso_r)
+  parser <- file.path(iso_r, "address_parsing_standardized.R")
+  if (!file.exists(parser)) {
+    stop(sprintf(paste0(
+      "Canonical address parser not found at %s.\n",
+      "  Set ISOCHRONES_R to the isochrones R/ directory, or clone the repo\n",
+      "  to ~/isochrones. Use ISOCHRONES_R, not ISOCHRONES_HOME: the two point\n",
+      "  at different checkouts on this machine, and all borrowed code must\n",
+      "  come from one.\n",
+      "  Deliberately NOT falling back to norm_addr(): it is a weaker\n",
+      "  hand-rolled table and produces different join keys from the same\n",
+      "  addresses."), parser), call. = FALSE)
+  }
+
+  owd <- getwd()
+  on.exit(setwd(owd), add = TRUE)
+  setwd(root)
+  suppressWarnings(suppressMessages(source(parser)))
+  setwd(owd)
+
+  if (!exists("normalize_addresses_canonical", mode = "function")) {
+    stop("Sourced ", parser,
+         " but normalize_addresses_canonical() is still undefined.", call. = FALSE)
+  }
+  if (!quiet) message("isochrones address parser loaded from ", parser)
+  invisible(parser)
+}
+
 #' Source the isochrones name-matching and NPI-validation tools
 #'
 #' @description

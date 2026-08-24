@@ -1,0 +1,660 @@
+---
+title: "Geographic Persistence of the Certified Nurse-Midwife and Certified Midwife Workforce in the United States, 2007--2025"
+running-head: "Geographic Persistence of US Midwives"
+author:
+  - name: Tyler Muffly, MD
+  - name: Bree Thumm, "[degrees]"
+date: today
+format:
+  docx:
+    # reference-doc: templates/green_journal_template.docx
+    #
+    # Uncomment for the submission render. To build the template: open a blank
+    # Word document, apply the Green Journal style guide -- Times New Roman
+    # 12 pt, one-inch margins, double-spaced, continuous line numbers -- and
+    # save it to manuscript/templates/green_journal_template.docx. The same
+    # commented-out line and the same instructions sit in
+    # ~/isochrones/manuscript/manuscript_GREEN_JOURNAL_WORD_with_tmm_edits.Rmd;
+    # this is the second manuscript to need it, so build it once and point both
+    # files at it rather than making a third copy.
+    number-sections: false
+    fig-cap-location: top
+  html:
+    toc: true
+    toc-depth: 3
+    embed-resources: true
+    theme: cosmo
+bibliography: references.bib
+csl: green-journal.csl
+link-citations: true
+params:
+  dev_mode: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+# Render from the manuscript/ directory or from the repository root; resolve
+# either way rather than depending on which one the caller happened to use.
+root <- if (dir.exists("artifacts")) "." else ".."
+source(file.path(root, "manuscript", "R", "build_stats_catalog.R"))
+source(file.path(root, "manuscript", "R", "inline_stats.R"))
+
+# DEV MODE. A missing statistic renders as a bold [PENDING] marker instead of
+# stopping the build. Set params$dev_mode: false -- or render with
+# MANUSCRIPT_DEV_MODE unset -- for the submission render, where a missing
+# number must fail loudly rather than reach a reviewer as an empty space.
+if (isTRUE(params$dev_mode)) {
+  Sys.setenv(MANUSCRIPT_DEV_MODE = "1")
+} else {
+  Sys.unsetenv("MANUSCRIPT_DEV_MODE")
+}
+
+# REBUILT ON EVERY RENDER. Not cached, deliberately -- see the header of
+# build_stats_catalog.R for the three-vintages-of-one-number problem this
+# solves. If an input artifact has moved, this manuscript moves with it.
+K <- mw_init_stats(root)
+```
+
+::: {.callout-note appearance="simple"}
+Statistics catalog rebuilt `r K$meta$built` under R `r K$meta$r_version`.
+Every number below is computed at render time from the artifacts named in
+`manuscript/R/build_stats_catalog.R`. None is typed into this document.
+:::
+
+# Abstract
+
+**OBJECTIVE:** To estimate how often certified nurse-midwives and certified
+midwives remain in the same county over annual and career horizons, and whether
+persistence differs by the rurality of the county in which they were first
+observed practicing.
+
+**METHODS:** Retrospective cohort study using only publicly available records.
+The American Midwifery Certification Board verification directory
+(`r mw_n("linkage.total")` certification records) was linked to the National
+Plan and Provider Enumeration System using ranked name-evidence classes,
+resolving a record only when exactly one candidate occupied its strongest
+available class. The cohort was followed across
+`r mw_safe_stat("panel.snapshots")` consecutive annual provider snapshots
+(`r mw_safe_stat("panel.year_min")`--`r mw_safe_stat("panel.year_max")`).
+County was assigned from practice ZIP through a ZCTA-to-county crosswalk and,
+in sensitivity analysis, through a geocoding cascade with point-in-polygon
+assignment. Annual persistence was the same county in consecutive snapshots;
+career persistence the same county at first and last observation. Origin
+rurality was the Rural-Urban Continuum Code of the first observed county.
+Proportions carry Wilson score intervals; ordered strata were compared with a
+Cochran-Armitage test for trend.
+
+**RESULTS:** `r mw_n("linkage.matched")`
+(`r mw_safe_stat("linkage.matched_pct", "%.1f")`%) of records resolved to a
+single provider with midwifery taxonomy; `r mw_n("linkage.ambiguous")`
+(`r mw_safe_stat("linkage.ambiguous_pct", "%.1f")`%) were left unresolved as
+indistinguishable. The cohort comprised `r mw_n("panel.cohort_n")` providers
+contributing `r mw_n("panel.provider_years")` provider-years (median
+`r mw_safe_stat("panel.median_years")` years observed). Annual same-county
+persistence was
+`r mw_pct_ci(mw_stat("persist.annual_county"), mw_stat("persist.annual_county_lo"), mw_stat("persist.annual_county_hi"))`
+across `r mw_n("panel.pairs_used")` consecutive-year pairs. Career same-county
+persistence, over a median `r mw_safe_stat("panel.median_span")`-year span, was
+`r mw_safe_stat("persist.career_county", "%.1f")`%. By origin rurality it was
+`r mw_pct_ci(K$rural$table$pct[1], K$rural$table$lo[1], K$rural$table$hi[1])`
+for metropolitan,
+`r mw_pct_ci(K$rural$table$pct[2], K$rural$table$lo[2], K$rural$table$hi[2])`
+for nonmetropolitan adjacent, and
+`r mw_pct_ci(K$rural$table$pct[3], K$rural$table$lo[3], K$rural$table$hi[3])`
+for nonmetropolitan remote counties (`r mw_pval(K$rural$trend_p)` for trend;
+metropolitan minus remote `r mw_safe_stat("rural.diff", "%.1f")` percentage
+points, 95% CI `r mw_safe_stat("rural.diff_lo", "%.1f")`--`r mw_safe_stat("rural.diff_hi", "%.1f")`).
+Rural-origin midwives who moved went predominantly to metropolitan counties.
+
+**CONCLUSION:** Retention of certified midwives is geographically sticky over
+one to three years but materially less so across a career. Models projecting
+county-level access gains from retention interventions should carry an explicit
+mobility term at decade horizons.
+
+# Introduction
+
+Whether a pregnant person can reach a midwife depends not on how many midwives
+have been certified but on where they practice relative to where births occur.
+Access to midwifery care is a distributed quantity. Rural counties have lost
+obstetric services steadily over the past two decades[@ref42], and rural
+hospital closures have accelerated that loss[@Kaufman2016rural], so the
+distribution of the remaining perinatal workforce has direct consequences for
+who can reach care[@ref6]. Yet the national midwifery workforce literature has
+necessarily characterized midwives as a population rather than as a
+distribution[@todo_midwife_supply], because their locations have not been
+available to characterize.
+
+The reason is structural. The authoritative roster of certified midwives in the
+United States publishes certification number, credential, status, and dates for
+every certificant. It publishes no address at any geographic level: not county,
+not ZIP code, not state. Every geographic statement about this workforce must
+therefore be derived by linking the roster to a registry that does carry
+location, and the quality of that derivation governs the quality of every
+downstream claim.
+
+This constraint matters most for retention. Workforce retention is widely
+proposed as a route to improving obstetric access, particularly in rural
+counties losing services[@todo_midwife_attrition]. That argument contains an
+unmeasured geographic assumption: that a midwife retained in the profession is
+a midwife retained *in the same community*. If mobility is high, retention
+preserves the national workforce while redistributing it, and a county-level
+access gain cannot be assumed from a national retention effect. If mobility is
+low, retention is geographically sticky and the incidence of a retention effect
+falls approximately where the affected midwives already practice. We are aware
+of no national estimate of this quantity for certified midwives. Our objective
+was to estimate it directly, at both short and career horizons, and to test
+whether it differs by the rurality of the county where a midwife began
+practice.
+
+# Methods
+
+## Data sources
+
+All sources were publicly available; no proprietary vendor file, purchased
+roster, or restricted-access dataset was used. The certification roster came
+from the American Midwifery Certification Board public verification
+directory[@amcb2026]. Provider identity and practice address came from the
+National Plan and Provider Enumeration System, using the historical
+dissemination files for each year from `r mw_safe_stat("panel.year_min")`
+through `r mw_safe_stat("panel.year_max")`[@nppes], a complete series with no
+missing year. County boundaries were the 2023 Census cartographic boundary
+files[@census_cb2023]; ZIP-to-county correspondence was the Census 2020
+ZCTA-to-county relationship file[@census_zcta]; rurality was the 2023 US
+Department of Agriculture Rural-Urban Continuum Code[@rucc2023].
+
+The study population was midwives certified by the American Midwifery
+Certification Board, comprising certified nurse-midwives and certified
+midwives. Certified professional midwives and state-licensed direct-entry
+midwives are certified by other bodies, are not enumerated in this directory,
+and are outside the prespecified study population; they are not included in any
+denominator, analysis, or interpretation.
+
+## Record linkage
+
+Because neither source carries a shared identifier, linkage was by name over
+the `r mw_safe_stat("panel.year_min")`--`r mw_safe_stat("panel.year_max")`
+provider panel. Candidate pairs were ranked into ordered name-evidence classes
+rather than scored on a blended similarity metric. A certification record
+resolved to a provider only when exactly one candidate occupied its strongest
+available evidence class. Where two or more candidates were indistinguishable
+at that class -- most commonly identical surname and given name with no middle
+name available on either side -- the record was left unresolved and retained as
+a reported stratum rather than assigned to the most probable candidate.
+
+This fail-closed rule trades coverage for correctness deliberately. Two
+certificants with identical names, no middle name, and no date of birth are
+genuinely indistinguishable in these data, and a similarity score would
+manufacture certainty rather than establish it. Provider taxonomy assigned the
+evidence tier but was never permitted to break an identity tie; a match
+supported only by nursing taxonomy was reported as a separate stratum and never
+promoted into the primary cohort.
+
+## Cohort and follow-up
+
+The analytic cohort was the set of providers resolved by the frozen linkage.
+Each was followed across the `r mw_safe_stat("panel.snapshots")` annual
+snapshots. A provider-year was one snapshot in which a provider appeared with a
+usable practice address. Providers were not required to appear in every year;
+entry and exit are themselves observed quantities.
+
+## Geographic assignment
+
+The provider panel carries practice ZIP code and state, not county. In the
+primary analysis, county was assigned by mapping each ZIP to the county holding
+the largest share of that ZCTA's land area, across
+`r mw_n("geo.zctas")` ZCTAs. Because
+`r mw_safe_stat("geo.span_multi_pct", "%.1f")`% of ZCTAs span more than one
+county, this rule is consequential: `r mw_n("geo.arbitrary_zctas")` ZCTAs have a
+dominant county holding under 60% of their land, and those assignments are
+arbitrary. A US Postal Service ZIP is not a ZCTA, and post-office-box and
+unique-business ZIPs have no ZCTA at all;
+`r mw_safe_stat("geo.py_matched_pct", "%.1f")`% of provider-years matched, and
+the unmatched remainder is disproportionately administrative addresses.
+
+In sensitivity analysis, addresses were geocoded through a three-tier cascade
+(Census geocoder, then ArcGIS, then centroid fallback) and assigned to county
+by point-in-polygon. The cascade resolved
+`r mw_safe_stat("geo.cascade_pct", "%.1f")`% of `r mw_n("geo.cascade_addresses")`
+distinct addresses, and point-in-polygon placed
+`r mw_safe_stat("geo.pip_pct", "%.1f")`% of the resulting
+`r mw_n("geo.pip_points")` distinct points inside a county.
+
+## Outcomes
+
+Annual persistence was the proportion of consecutive-year pairs, among
+providers observed in both years, in which county was unchanged. Career
+persistence was the proportion of providers whose county at last observation
+equaled their county at first observation. Both definitions were also applied
+to ZIP code and to state, which bound the county estimate from below and above
+and serve as an internal consistency check.
+
+Origin rurality was the Rural-Urban Continuum Code stratum of the county of a
+provider's *first* observed snapshot, banded as metropolitan (codes 1--3),
+nonmetropolitan adjacent to a metropolitan area (4--6), and nonmetropolitan
+remote (7--9). Classification by origin rather than by current county is
+essential: classifying by current county counts a midwife who left a remote
+county for a metropolitan one as metropolitan, and attributes her move to
+metropolitan mobility.
+
+## Statistical analysis
+
+Proportions carry 95% Wilson score intervals, chosen over the normal
+approximation because the remote stratum is small. Trend across the three
+ordered rurality strata was tested with the Cochran-Armitage test; the
+difference between extreme strata carries a normal-approximation interval.
+Analyses were performed in R version `r K$meta$r_version`[@rlang]. Analysis code
+and every published artifact are archived[@midwifery_repo].
+
+## Reproducibility and ethics
+
+This study used only publicly available records and did not involve human
+subjects research; institutional review board review was therefore not
+required. Every published figure is written with a provenance record listing
+the SHA-256 checksum of each input file. Person-level intermediate files are
+not redistributed.
+
+# Results
+
+## Cohort
+
+Of `r mw_n("linkage.total")` certification records,
+`r mw_n("linkage.matched")` (`r mw_safe_stat("linkage.matched_pct", "%.1f")`%)
+resolved to exactly one provider with confirmed midwifery taxonomy. Linkage was
+strongly related to certification status --
+`r mw_safe_stat("linkage.active_pct", "%.1f")`% of ACTIVE against
+`r mw_safe_stat("linkage.dead_pct", "%.1f")`% of DECEASED certificants -- so
+providers who have left the workforce are under-represented, and every estimate
+below describes the *located* workforce rather than all certificants. The full
+disposition of every record, the evidence classes behind it, and an analysis of
+the resulting selection appear in Appendix 1, available online at
+http://links.lww.com/AOG/XXXX.
+
+The analytic cohort comprised `r mw_n("panel.cohort_n")` linked providers, of
+whom `r mw_n("panel.observed")` were observed at least once. They contributed
+`r mw_n("panel.provider_years")` provider-years, with a median of
+`r mw_safe_stat("panel.median_years")` years observed per provider. The cohort
+was `r mw_safe_stat("table1.cnm_pct", "%.0f")`% certified nurse-midwives and
+`r mw_safe_stat("table1.cm_pct", "%.0f")`% certified midwives, and
+`r mw_safe_stat("table1.female_pct", "%.1f")`% female. Its distribution was
+heavily metropolitan: `r mw_safe_stat("cohort.metro_pct", "%.1f")`%
+metropolitan, `r mw_safe_stat("cohort.adj_pct", "%.1f")`% nonmetropolitan
+adjacent, `r mw_safe_stat("cohort.remote_pct", "%.1f")`% nonmetropolitan
+remote, and `r mw_safe_stat("cohort.unk_pct", "%.1f")`% with no assignable
+county (Table 1). State-level supply and the midwife share of birth
+attendants are mapped in Figures 3 and 4. An interactive national map of the
+located cohort, showing each midwife's last observed practice location with
+links to the corresponding state board of nursing verification record, is
+available at https://mufflyt.github.io/midwifery/cnm_national_leaflet_map.html[@map_cnm_national].
+
+## Persistence
+
+Annual same-county persistence was
+`r mw_pct_ci(mw_stat("persist.annual_county"), mw_stat("persist.annual_county_lo"), mw_stat("persist.annual_county_hi"))`
+across `r mw_n("panel.pairs_used")` consecutive-year pairs contributed by
+`r mw_n("panel.providers_used")` providers. Over a career, spanning a median of
+`r mw_safe_stat("panel.median_span")` years between first and last observation,
+`r mw_safe_stat("persist.career_county", "%.1f")`% of providers ended in the
+county where they began (Table 2).
+
+The county estimate falls between the ZIP-code estimate below it and the state
+estimate above it at both horizons, as it must, which is a consistency check on
+all three. Career county persistence
+(`r mw_safe_stat("persist.career_county", "%.1f")`%) substantially exceeded
+career ZIP persistence (`r mw_safe_stat("persist.career_zip", "%.1f")`%),
+indicating that a large share of address changes do not cross a county line.
+Studies using ZIP change as a mobility proxy will overstate relocation by
+roughly `r sprintf("%.0f", K$persist$career_county - K$persist$career_zip)`
+percentage points over a career.
+
+## Rurality
+
+Annual persistence differed little across origin strata: a remote-origin
+midwife changed county in about
+`r mw_safe_stat("rural.annual_remote_move", "%.1f")`% of years against
+`r mw_safe_stat("rural.annual_metro_move", "%.1f")`% for a metropolitan-origin
+midwife. Over a career the gradient was larger and monotone (Table 3,
+Figure 1). Career
+same-county persistence was
+`r mw_pct_ci(K$rural$table$pct[1], K$rural$table$lo[1], K$rural$table$hi[1])`
+for metropolitan origin,
+`r mw_pct_ci(K$rural$table$pct[2], K$rural$table$lo[2], K$rural$table$hi[2])`
+for nonmetropolitan adjacent, and
+`r mw_pct_ci(K$rural$table$pct[3], K$rural$table$lo[3], K$rural$table$hi[3])`
+for nonmetropolitan remote origin (`r mw_pval(K$rural$trend_p)` for trend). The
+difference between the extreme strata was
+`r mw_safe_stat("rural.diff", "%.1f")` percentage points (95% CI
+`r mw_safe_stat("rural.diff_lo", "%.1f")`--`r mw_safe_stat("rural.diff_hi", "%.1f")`).
+
+## Where movers go
+
+Among providers who changed county over their career, destination was strongly
+asymmetric (Table 4, Figure 2). Of nonmetropolitan-adjacent-origin movers,
+`r mw_safe_stat("movers.adj_to_metro_pct", "%.0f")`% ended in a metropolitan
+county, as did `r mw_safe_stat("movers.remote_to_metro_pct", "%.0f")`% of
+remote-origin movers; `r mw_safe_stat("movers.metro_stay_pct", "%.0f")`% of
+metropolitan-origin movers remained metropolitan.
+
+Net flows were nevertheless close to balanced:
+`r mw_n("movers.out_of_nonmetro")` nonmetropolitan-origin movers ended
+metropolitan while `r mw_n("movers.into_nonmetro")` metropolitan-origin movers
+ended nonmetropolitan. There is no large absolute rural drain in this cohort.
+However, the nonmetropolitan base is small --
+`r formatC(sum(K$rural$table$n[2:3]), format = "d", big.mark = ",")` providers
+against `r formatC(K$rural$table$n[1], format = "d", big.mark = ",")`
+metropolitan -- so an equal absolute flow represents a far larger share of the
+rural workforce, and it is the rate of departure, not its count, that a county
+experiences.
+
+## Sensitivity analyses
+
+Resolving county through the geocoding cascade and point-in-polygon assignment
+rather than the ZCTA crosswalk reproduced the result from an independent
+construction: annual persistence `r mw_safe_stat("geo.sens_annual", "%.1f")`%,
+career persistence `r mw_safe_stat("geo.sens_career", "%.1f")`%, and a monotone
+rural gradient of `r mw_safe_stat("geo.sens_metro", "%.1f")`%,
+`r mw_safe_stat("geo.sens_adj", "%.1f")`%, and
+`r mw_safe_stat("geo.sens_remote", "%.1f")`% across the three strata,
+`r mw_safe_stat("geo.sens_gradient", "%.1f")` percentage points wide.
+
+A third approach, using the Census batch geocoder alone, produced a visibly
+flatter gradient (`r mw_safe_stat("geo.census_only_metro", "%.1f")`%,
+`r mw_safe_stat("geo.census_only_adj", "%.1f")`%,
+`r mw_safe_stat("geo.census_only_remote", "%.1f")`%). The cause is measurable:
+the Census geocoder rejects rural route and post-office-box addresses and lost
+`r mw_safe_stat("geo.census_only_loss_pct", "%.1f")`% of remote-origin
+providers, precisely the stratum whose persistence is lowest. Restoring those
+providers through the ArcGIS tier restores the gradient. Two methods with
+unrelated failure modes agree, and the third disagrees for a reason that is
+understood.
+
+# Discussion
+
+In a national cohort of certified midwives followed across
+`r mw_safe_stat("panel.snapshots")` annual provider snapshots, geographic
+persistence was high year to year and substantially lower across a career:
+`r mw_safe_stat("persist.annual_county", "%.1f")`% of consecutive-year pairs
+were in the same county, but only
+`r mw_safe_stat("persist.career_county", "%.1f")`% of providers ended their
+observed career where they began. Persistence declined monotonically with the
+rurality of the county of first practice, with remote-origin midwives about
+`r mw_safe_stat("rural.diff", "%.0f")` percentage points less likely than
+metropolitan-origin midwives to end where they started.
+
+These two findings carry different implications for the same policy argument,
+and the horizon is what separates them. Over one to three years, retention is
+geographically sticky enough that the incidence of a retention effect falls
+approximately where the affected midwives already practice, and a county-level
+incidence model is defensible without a mobility correction. Over a decade it
+is not: with roughly
+`r sprintf("%.0f", 100 - K$persist$career_county)`% of providers changing county
+over a median `r mw_safe_stat("panel.median_span")` years, and
+`r mw_safe_stat("rural.career_remote_move", "%.0f")`% of remote-origin
+providers doing so, national headcount and county distribution decouple. A
+model claiming that retaining midwives sustains supply in a specific county
+over a decade needs a mobility term, and that term now has an empirical value
+rather than an assumption.
+
+The rurality gradient sharpens the point. The counties with the least obstetric
+infrastructure are the counties whose midwives are least likely to
+remain[@ref42], so the same national retention effect delivers less local
+access where local access is scarcest. Because rural-origin movers
+overwhelmingly relocate to metropolitan counties, a retention intervention that
+is geographically untargeted will tend to consolidate the workforce where it is
+already dense.
+
+This analysis also illustrates a methodological hazard worth reporting. An
+earlier version of this work, stratifying by each provider's *current* county
+rather than county of origin, found no rural mobility penalty. That
+specification counts a midwife who left a remote county as metropolitan and
+attributes her move to metropolitan mobility; correcting it did not merely
+attenuate the effect but reversed its direction. Any workforce mobility
+analysis stratified on a time-varying geographic attribute is exposed to this
+error[@todo_provider_mobility].
+
+## Strengths and limitations
+
+The principal strength is that the cohort is an enumeration rather than a
+sample, followed annually for `r mw_safe_stat("panel.snapshots")` years with a
+complete snapshot series, and that every input is public, so the analysis is
+reproducible end to end from archived code and checksummed inputs. The county
+outcome was resolved by two constructions with unrelated failure modes that
+agree.
+
+The principal limitation is that linkage is selected on an outcome correlated
+with the exposure. Only `r mw_safe_stat("linkage.active_pct", "%.1f")`% of
+ACTIVE certificants and `r mw_safe_stat("linkage.dead_pct", "%.1f")`% of
+DECEASED certificants resolve, so providers who exited the workforce are
+under-represented, and persistence among those we observe is not persistence
+among all certificants. The direction of this bias is toward overstating
+persistence.
+
+Second, practice address in the provider registry is the address a provider
+maintains for enumeration, which may lag an actual relocation or reflect an
+administrative rather than clinical site; both would bias persistence upward.
+Third, `r mw_n("linkage.ambiguous")` records were deliberately left unresolved,
+and if indistinguishable names are not distributed at random with respect to
+mobility, the cohort is not representative of the roster. Fourth, county
+assignment from ZIP is arbitrary for the `r mw_n("geo.arbitrary_zctas")` ZCTAs
+whose dominant county holds under 60% of their land, although the sensitivity
+analysis argues this does not drive the result. Finally, the population is
+restricted to midwives certified by a single certifying body; midwifery care
+delivered by certified professional midwives and state-licensed direct-entry
+midwives is not represented, so midwifery access is understated, and unevenly
+so across states[@todo_midwife_outcomes].
+
+## Conclusion
+
+Retention of certified midwives is geographically sticky over short horizons
+and materially less so over a career, with the weakest persistence among
+midwives who began practice in the most rural counties. Retention interventions
+intended to improve local obstetric access should state their time horizon
+explicitly, and should be targeted geographically rather than applied
+uniformly, because the communities most likely to lose a midwife are those
+least able to replace one.
+
+\newpage
+
+# Tables
+
+```{r tbl1}
+# TABLE 1 -- cohort characteristics.
+#
+# SELECTED, not dumped. artifacts/table1_midwives.csv carries 20 characteristic
+# blocks, several of which (Medicare practice group size, telehealth, training
+# institution) belong to other papers. The blocks named here are the ones a
+# reader of a MOBILITY paper needs in order to judge who moved: credential,
+# sex, age, time since certification, and the rurality the persistence analysis
+# stratifies on. Named explicitly so adding a block to the artifact cannot
+# silently lengthen Table 1.
+BLOCKS <- c("Certification",
+            "Sex",
+            "Calibrated Age (100% Cohort Coverage)",
+            "Years Since AMCB Initial Certification",
+            "Rurality (RUCC 2023)")
+
+t1src <- readr::read_csv(file.path(root, "artifacts", "table1_midwives.csv"),
+                         show_col_types = FALSE, progress = FALSE)
+t1src$category <- trimws(t1src$category)
+
+rows <- list()
+for (b in BLOCKS) {
+  blk <- t1src[t1src$category == b, ]
+  if (!nrow(blk)) next
+  rows[[length(rows) + 1]] <- data.frame(
+    Characteristic = paste0("**", b, "**"), `n (%)` = "", check.names = FALSE)
+  for (i in seq_len(nrow(blk))) {
+    pct <- blk$percent[i]
+    rows[[length(rows) + 1]] <- data.frame(
+      Characteristic = paste0("\u00a0\u00a0", blk$characteristic[i]),
+      `n (%)` = if (is.na(pct)) {
+        sprintf("%s (not recorded)", formatC(blk$n[i], format = "d", big.mark = ","))
+      } else {
+        sprintf("%s (%.1f)", formatC(blk$n[i], format = "d", big.mark = ","), pct)
+      },
+      check.names = FALSE)
+  }
+}
+t1out <- do.call(rbind, rows)
+
+knitr::kable(t1out, row.names = FALSE, align = "lr",
+  caption = sprintf("Table 1. Characteristics of the %s actively certified, primary-linked midwives. Values are n (%%) unless noted. Percentages within a block are computed on the members of that block with the characteristic recorded, so a block containing a not-recorded row does not sum to 100.",
+                    formatC(t1src$n[1], format = "d", big.mark = ",")))
+```
+
+```{r tbl2}
+t2 <- data.frame(
+  Horizon = c("Year to year", "First vs last observation"),
+  `Same county` = sprintf("%.1f", c(K$persist$annual_county, K$persist$career_county)),
+  `Same ZIP code` = sprintf("%.1f", c(K$persist$annual_zip, K$persist$career_zip)),
+  `Same state` = sprintf("%.1f", c(K$persist$annual_state, K$persist$career_state)),
+  check.names = FALSE)
+knitr::kable(t2, row.names = FALSE, align = "lrrr",
+  caption = "Table 2. Persistence at two horizons, by geographic unit. Values are percentages.")
+```
+
+```{r tbl3}
+r <- K$rural$table
+t3 <- data.frame(
+  `Origin stratum` = r$origin,
+  Providers = formatC(r$n, format = "d", big.mark = ","),
+  `Same county, %` = sprintf("%.1f", r$pct),
+  `95% CI` = sprintf("%.1f-%.1f", r$lo, r$hi),
+  check.names = FALSE)
+knitr::kable(t3, row.names = FALSE, align = "lrrr",
+  caption = sprintf("Table 3. Career same-county persistence by rurality of the county of first observed practice. %s for trend; metropolitan minus remote %.1f percentage points (95%% CI %.1f-%.1f).",
+                    gsub("\\*", "", mw_pval(K$rural$trend_p)),
+                    K$rural$diff, K$rural$diff_lo, K$rural$diff_hi))
+```
+
+```{r tbl4}
+m <- K$movers$table
+t4 <- data.frame(`Origin stratum` = rownames(m), check.names = FALSE)
+for (cn in colnames(m)) t4[[cn]] <- formatC(m[, cn], format = "d", big.mark = ",")
+knitr::kable(t4, row.names = FALSE, align = "lrrr",
+  caption = sprintf("Table 4. Destination stratum of providers who changed county over their career. Net flow: %s nonmetropolitan-origin providers ended metropolitan; %s metropolitan-origin providers ended nonmetropolitan.",
+                    formatC(K$movers$out_of_nonmetro, format = "d", big.mark = ","),
+                    formatC(K$movers$into_nonmetro, format = "d", big.mark = ",")))
+```
+
+
+\newpage
+
+# Figures
+
+```{r fig1, fig.width=6.5, fig.height=3.4, fig.cap="Figure 1. Career same-county persistence by rurality of the county of first observed practice. Points are proportions; bars are 95% Wilson score intervals. The axis is restricted to the range of the data and does not begin at zero, so distances between points are comparable but the marks must not be read as areas."}
+suppressPackageStartupMessages(library(ggplot2))
+
+# FORM. Three ordered strata, one measure, uncertainty that matters -- the
+# remote stratum has 520 providers and its interval is three times the width of
+# the metropolitan one. That is a dot-and-whisker, not a bar chart: bars imply a
+# zero baseline, and the informative range here is 55-72%, so a zero-based bar
+# would compress the whole finding into the top eighth of the panel.
+#
+# GRAYSCALE BY CONSTRUCTION. Obstetrics & Gynecology prints many figures without
+# color. There is one series, so no hue carries identity and nothing is lost.
+r <- K$rural$table
+r$origin <- factor(r$origin, levels = rev(r$origin))
+
+ggplot(r, aes(x = pct, y = origin)) +
+  geom_errorbarh(aes(xmin = lo, xmax = hi), height = 0.10, linewidth = 0.5,
+                 color = "grey35") +
+  geom_point(size = 3.1, color = "grey15") +
+  geom_text(aes(label = sprintf("%.1f%%", pct)), vjust = -1.5, size = 3.5,
+            color = "grey15") +
+  scale_x_continuous(limits = c(55, 71), breaks = seq(55, 70, 5),
+                     labels = function(x) paste0(x, "%")) +
+  labs(x = "Ended career in county of first practice", y = NULL) +
+  theme_classic(base_size = 11) +
+  theme(axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.major.x = element_line(color = "grey92", linewidth = 0.3),
+        plot.margin = margin(6, 14, 6, 6))
+```
+
+```{r fig2, fig.width=6.5, fig.height=3.2, fig.cap="Figure 2. Destination of providers who changed county over their career, as a percentage of movers from each origin stratum. Counts are given in Table 4. Rural-origin movers relocate predominantly to metropolitan counties; metropolitan-origin movers overwhelmingly remain metropolitan."}
+# FORM. The counts in Table 4 span 36 to 3,868, so a heatmap or a count bar
+# would show one dark cell and eight pale ones -- the magnitude swamps the
+# pattern. The FINDING is compositional: where movers from each origin end up.
+# So the measure is the row percentage, and 100% stacked bars carry it.
+#
+# The fill is an ordered gray ramp because the destination strata are ordered
+# (metropolitan -> adjacent -> remote), which is a sequential encoding, not a
+# categorical one. Every segment wide enough to hold one is directly labeled,
+# so identity never rests on the fill alone.
+m <- K$movers$table
+d <- data.frame(
+  origin = rep(rownames(m), times = ncol(m)),
+  dest   = rep(colnames(m), each = nrow(m)),
+  n      = as.vector(m))
+d$origin <- factor(d$origin, levels = rev(rownames(m)))
+d$dest   <- factor(d$dest, levels = colnames(m))
+d$pct    <- 100 * d$n / ave(d$n, d$origin, FUN = sum)
+
+ggplot(d, aes(x = pct, y = origin, fill = dest)) +
+  geom_col(width = 0.62, color = "white", linewidth = 0.7,
+           position = position_stack(reverse = TRUE)) +
+  geom_text(aes(label = ifelse(pct >= 7, sprintf("%.0f%%", pct), ""), color = dest),
+            position = position_stack(vjust = 0.5, reverse = TRUE), size = 3.3,
+            show.legend = FALSE) +
+  scale_fill_manual(values = c("To metropolitan"      = "grey30",
+                               "To nonmetro adjacent" = "grey65",
+                               "To nonmetro remote"   = "grey86"),
+                    name = NULL) +
+  scale_color_manual(values = c("To metropolitan"      = "white",
+                                "To nonmetro adjacent" = "grey15",
+                                "To nonmetro remote"   = "grey15")) +
+  scale_x_continuous(expand = c(0, 0), labels = function(x) paste0(x, "%")) +
+  labs(x = "Percentage of movers from that origin", y = NULL) +
+  theme_classic(base_size = 11) +
+  theme(axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.position = "bottom",
+        legend.key.size = unit(0.42, "cm"),
+        plot.margin = margin(6, 14, 6, 6))
+```
+
+```{r fig3, fig.width=7.2, fig.height=4.6, fig.cap="Figure 3. Certified nurse-midwives and certified midwives per 1,000 births, by state. Alaska, Hawaii and the territories are omitted from the projection. Territories are also excluded from the color scale: Guam records two midwives against zero births, a rate of 2,000 per 1,000, which would compress all 51 mapped jurisdictions into a single class."}
+# Built with {mysterymaps} (github.com/mufflyt/mysterymaps), the canonical map
+# library for this group. R/lib/mysterymaps_dep.R records why nothing here
+# re-implements a scale or a legend locally.
+#
+# SCOPE IS THE 50 STATES AND DC, which is the manuscript's population, not a
+# cosmetic filter. The territories carry rates computed on zero births.
+sw <- readr::read_csv(file.path(root, "artifacts", "state_obstetric_workforce.csv"),
+                      show_col_types = FALSE, progress = FALSE) |>
+  dplyr::filter(.data$state %in% c(state.abb, "DC"), .data$births > 0)
+
+# print() is load-bearing: the builder returns invisible(p), so without it
+# knitr runs the chunk, draws nothing, and leaves a caption over blank space.
+print(mysterymaps::mysterymaps_geographic_map(
+  data        = as.data.frame(sw),
+  state_col   = "state",
+  outcome_col = "midwives_per_1k_births",
+  fill_label  = "Midwives per\n1,000 births",
+  palette     = "viridis",
+  low_states_warn = 0L,
+  # The default legend formatter is scales::percent_format(), correct only for a
+  # proportion on [0, 1]. It rendered this column's 0.53-10.79 as "250%" to
+  # "1 000%". The `labels` argument was added to the library for this.
+  labels      = function(x) sprintf("%.0f", x)))
+```
+
+```{r fig4, fig.width=7.2, fig.height=4.6, fig.cap="Figure 4. Midwife share of the identified birth-attendant workforce, by state. The denominator is midwives plus generalist obstetrician-gynecologists plus maternal-fetal medicine subspecialists; it excludes family physicians and certified professional midwives, both of which attend births, so the share is an upper bound on midwives' share of that larger workforce."}
+print(mysterymaps::mysterymaps_geographic_map(
+  data        = as.data.frame(dplyr::mutate(sw,
+                  share_pct = 100 * .data$midwife_share_of_attendants)),
+  state_col   = "state",
+  outcome_col = "share_pct",
+  fill_label  = "Midwife share of\nbirth attendants",
+  palette     = "cividis",
+  low_states_warn = 0L,
+  labels      = function(x) paste0(sprintf("%.0f", x), "%")))
+```
+
+\newpage
+
+# References
+
+::: {#refs}
+:::

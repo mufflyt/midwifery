@@ -726,8 +726,15 @@ is not de-identification, and in a rural county with one CNM the jitter is cosme
 
 ## Isochrone reuse: a negative validation result
 
-No isochrones were generated. The question was whether the project's existing library of 3,909
-drive-time origins can be reused for midwives. An isochrone is a polygon around a *point* and is
+> **Superseded, and kept because it is the reason the routing happened.** Everything in this
+> section and the next describes an attempt to answer the access question by REUSING polygons the
+> project already had. It failed, twice, and the failure was rural-selective. That is what
+> justified generating isochrones for the whole cohort, which
+> [Resolution](#resolution-the-full-cohort-was-routed) below reports. The coverage percentages
+> here are historical: current coverage is **100% in every rurality stratum**.
+
+At the time, no isochrones had been generated. The question was whether the project's existing
+library of 3,909 drive-time origins can be reused for midwives. An isochrone is a polygon around a *point* and is
 agnostic to whose practice prompted it, so reuse is legitimate wherever a midwife falls within the
 project's 5 km reuse radius of an existing origin.
 
@@ -778,6 +785,10 @@ interpreted as workforce-access differences.
 **Withdrawn:** the earlier claim that the rural gradient is "robust to both biases" predates this
 coverage analysis and has not been tested against it.
 
+**Superseded:** this table is access to a *represented subset*, and the subset no longer exists as a
+constraint — every midwife now has an exact polygon. Recompute against the full cohort before
+quoting any national or rural access figure. The numbers above must not be carried forward.
+
 ## Existing-isochrone recovery search
 
 Before generating anything, we searched for polygons we already possess elsewhere. No routing was
@@ -827,13 +838,71 @@ object in S3 at all**, and are counted as failing.
 1,116 of the 3,365 (33.2%) are rescued from artifacts we already had, without a single routing call.
 Rural coverage more than doubles. But it does not close the gap: **2,249 midwives still have no
 usable existing polygon**, and coverage remains steeply rural-selective (84.6% metro vs 39.3% remote).
-The recovery is a real improvement and not a solution — the differential-coverage objection to a
-national or rural travel-time estimate still stands.
+The recovery is a real improvement and not a solution — and that is where reuse stopped being worth
+pursuing, and routing started.
 
 Recovered origins are published as a separate `historical_isochrone_recovery` artifact with
 source-level provenance. Nothing has been merged into `artifacts/isochrones/`, and
 `provider_isochrones.rds` was read as a *candidate* source only — never substituted for the
 production library, which is the actual content of the 164→445 warning.
+
+
+### Resolution: the full cohort was routed
+
+Reuse was abandoned and the cohort was routed directly on
+`valhalla1.openstreetmap.de`. **Coverage is now complete, and it is no longer rural-selective** —
+which retires the differential-coverage objection that blocks every access estimate above.
+
+The denominator below is the same one the reuse analysis used — **ACTIVE, primary-linked, usable
+coordinates** — so the two are comparable line for line. It is not the whole roster: the routing job
+covered the full panel, and 11,797 is what remains after the ACTIVE and primary-linkage filters.
+The 8,359 figure quoted afterwards is smaller again because it counts distinct *locations*, and
+midwives sharing a practice address share a polygon.
+
+| | midwives | reuse (canonical, 5 km) | exact polygon | usable polygons |
+|---|---:|---:|---:|---:|
+| Metro (RUCC 1-3) | 10,648 | 77.0% | **100%** | 10,648 / 10,648 |
+| Nonmetro, adjacent (RUCC 4-6) | 789 | 22.3% | **100%** | 789 / 789 |
+| Nonmetro, remote (RUCC 7-9) | 337 | 13.9% | **100%** | 337 / 337 |
+| Unclassified | 23 | 47.8% | **100%** | 23 / 23 |
+| **National** | **11,797** | **71.5%** | **100%** | **11,797 / 11,797** |
+
+Coverage alone would not be worth much; the polygons also have to be sound. Every quality gate in
+`artifacts/osmde_validation_table.csv` passes: 8,359 unique routed locations queued and 8,359
+retrieved, a 30- and a 60-minute polygon for each, zero unreadable cache entries, zero queued-but-
+absent, zero cached-but-absent, and the origin contained inside its own polygon in every case at
+both bands. 46 geometries were invalid on arrival and were repaired; none was dropped.
+
+**One caveat stated plainly.** Strict containment — every vertex of the 30-minute polygon inside the
+60-minute polygon — fails for 2,852 locations. The largest observed
+excursion is 35 m, against an operational tolerance of
+50 m derived from the generator's own Douglas-Peucker simplification
+epsilon. At that gate the substantive failure count is **0**. The
+tolerance is method-derived, *not* a proven bound, and
+`artifacts/osmde_tolerance_provenance.csv` says so; the per-location detail is in
+`artifacts/osmde_strict_containment_summary.csv`. Read it as simplification noise at the polygon
+boundary rather than as routing error, and do not treat the tolerance as a guarantee.
+
+**What still needs recomputing, specifically.** Complete coverage of the *inputs* is not the same as
+a rebuilt *surface*, and the two have come apart:
+
+| | origins dissolved | built |
+|---|---:|---:|
+| `artifacts/maps/midwifery_isochrone_union_30min.rds` | 4,714 | 2026-08-10 |
+| `artifacts/maps/midwifery_isochrone_union_60min.rds` | 4,666 | 2026-08-10 |
+| routed by the full-cohort job | **8,359** | 2026-08-24 |
+
+The published dissolved surfaces hold **56% of the routed origins** and predate the routing by two
+weeks. They are gitignored, so nothing in this repository ships them and no committed figure depends
+on them — but `render_midwifery_map.R` and `build_midwifery_isochrone_map.R` both read them, and a
+map rebuilt from them today would look complete while covering a little over half the cohort. That
+is the same rural-selective error this section spent two attempts diagnosing, arriving through a
+stale intermediate instead of a thin library.
+
+**Rebuild the unions before recomputing anything.** Every access figure in the two sections above
+was calculated on the represented subset and is a lower bound on a limitation that no longer exists;
+none should be quoted until the surfaces are regenerated from the full 8,359 and the arithmetic is
+rerun against them.
 
 
 ## Table 1

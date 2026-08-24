@@ -1,0 +1,4 @@
+reason,n,endpoint_evidence,endpoint_resolved,secondary_evidence,secondary_resolved,either_resolved,both_resolved,pct_either
+ambiguous_many_orgs,835,7,7,38,2,9,0,1.1
+key_matched_no_org,702,1,1,45,0,1,0,0.1
+no_usable_key,7,0,0,0,0,0,0,0

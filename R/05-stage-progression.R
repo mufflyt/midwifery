@@ -49,6 +49,7 @@ source(file.path("R", "lib", "artifact_provenance.R"))
 # duplicated across files sourced into one environment, where load order
 # decided which definition won.
 source(file.path("R", "lib", "common_helpers.R"))
+source(file.path("R", "lib", "zip_county_crosswalk.R"))
 
 ART <- "artifacts"; DATA <- "data"
 FROZEN_DIR <- file.path(ART, "frozen_cohort")
@@ -242,12 +243,10 @@ build_progression <- function() {
   # --- Rurality stratum, fixed once for the frozen cohort ------------------
   cb <- read_csv(file.path(DATA, "county_base.csv"), show_col_types = FALSE,
                  col_types = cols(GEOID = col_character()))
-  zc <- read_delim(file.path(DATA, "zcta_county_2020.txt"), delim = "|",
-                   show_col_types = FALSE, progress = FALSE) %>%
-    transmute(zip5 = pad5(GEOID_ZCTA5_20), GEOID = pad5(GEOID_COUNTY_20),
-              land = suppressWarnings(as.numeric(AREALAND_PART))) %>%
-    group_by(zip5) %>% slice_max(land, n = 1, with_ties = FALSE) %>%
-    ungroup() %>% select(zip5, GEOID)
+  # Same defect as R/07 carried: no !is.na(GEOID_ZCTA5_20) filter, so a
+  # missing practice ZIP resolved to a real Alaskan county rather than to
+  # nothing. See R/lib/zip_county_crosswalk.R.
+  zc <- zip_county_dominant(file.path(DATA, "zcta_county_2020.txt"))
 
   strata <- g4 %>%
     transmute(certification_number,

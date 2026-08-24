@@ -58,6 +58,7 @@ source(file.path("R", "lib", "artifact_provenance.R"))
 # duplicated across files sourced into one environment, where load order
 # decided which definition won.
 source(file.path("R", "lib", "common_helpers.R"))
+source(file.path("R", "lib", "zip_county_crosswalk.R"))
 
 DATA <- "data"; ART <- "artifacts"
 # Default to the guarded linkage. The earlier Stage 2 roster had no
@@ -211,10 +212,7 @@ zip_county_ct_2022 <- function() {
 zip_county_unique <- function() {
   f <- file.path(DATA, "zcta_county_2020.txt")
   if (!file.exists(f)) stop("Missing ", f, call. = FALSE)
-  read_delim(f, delim = "|", show_col_types = FALSE, progress = FALSE) %>%
-    filter(!is.na(GEOID_ZCTA5_20), !is.na(GEOID_COUNTY_20)) %>%
-    transmute(zip5 = pad5(GEOID_ZCTA5_20), GEOID = pad5(GEOID_COUNTY_20),
-              land = suppressWarnings(as.numeric(AREALAND_PART))) %>%
+  zcta_county_parts(f) %>%
     group_by(zip5) %>%
     summarise(n_county = n(),
               top_land_share = max(land) / sum(land),

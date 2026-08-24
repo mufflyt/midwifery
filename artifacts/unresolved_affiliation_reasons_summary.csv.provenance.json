@@ -1,0 +1,10 @@
+{
+  "artifact": "unresolved_affiliation_reasons_summary.csv",
+  "written_utc": "2026-08-17 03:29:35 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/unresolved_affiliation_reasons.csv",
+      "sha256": "0828676d76d78064e51b8dc665c8f48ff64c93bfee6c4a85aeef336ae733577d"
+    }
+  ]
+}

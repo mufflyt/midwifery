@@ -1,0 +1,10 @@
+{
+  "artifact": "address_fuzzy_false_match_rate.csv",
+  "written_utc": "2026-08-17 13:35:24 UTC",
+  "inputs": [
+    {
+      "path": "/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2025/npidata_pfile_20050523-20251109.csv",
+      "sha256": "c664b03c20dd81848240310a3e474700d559c06a2364f9ae2b7ccf96d2920c32"
+    }
+  ]
+}

@@ -116,6 +116,32 @@ jobs:
       - name: Adversarial key tests
         run: Rscript tests/test_adversarial_keys.R
 
+      # Runs BEFORE the gates it checks, for the same reason the integrity
+      # gate-of-gates does: a science gate with a regex that matches nothing
+      # passes exactly like a clean repository. This plants one defect per gate
+      # and asserts each is caught, and pins four near-misses that must NOT
+      # fail -- both false positives the gates produced on their first run are
+      # cases here, so the precision cannot silently regress.
+      #
+      # It shells out to Rscript once per case in a temporary git repo, so it
+      # costs ~90s. That is the whole reason the gates below are trustworthy.
+      - name: Science gates detect planted defects
+        run: Rscript tests/test_science_contracts_detect.R
+
+      # What neither of the contract files above asks: whether the CODE claims
+      # more than the DATA supports. Affiliation never labelled employment,
+      # resolution fail-closed, absence not read as a negative from a
+      # partial-coverage source, author-chosen cuts declared exploratory, one
+      # address normaliser, and independent external sources never pooled into
+      # a single verdict.
+      #
+      # SCI2 carries a baseline of three pre-existing tie-break sites, listed
+      # in the file with the reason each is there. The baseline can only
+      # shrink: it fails if a fourth appears AND if a baselined one is fixed
+      # without being removed from the list.
+      - name: Science contracts
+        run: Rscript tests/ci_science_contracts.R
+
   python-checks:
     name: Python syntax and address keys
     runs-on: ubuntu-latest

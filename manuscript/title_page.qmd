@@ -1,0 +1,104 @@
+---
+title: "Title Page"
+format:
+  docx:
+    # reference-doc: templates/green_journal_template.docx
+    number-sections: false
+  html:
+    embed-resources: true
+params:
+  dev_mode: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+root <- if (dir.exists("artifacts")) "." else ".."
+source(file.path(root, "manuscript", "R", "build_stats_catalog.R"))
+source(file.path(root, "manuscript", "R", "inline_stats.R"))
+if (isTRUE(params$dev_mode)) Sys.setenv(MANUSCRIPT_DEV_MODE = "1") else
+  Sys.unsetenv("MANUSCRIPT_DEV_MODE")
+K <- mw_init_stats(root)
+
+# Word counts are MEASURED, not remembered. The journal asks for two counts,
+# and a title page that states a count the manuscript no longer has is the same
+# class of defect this whole apparatus exists to prevent -- a number typed once
+# and outliving its source. Both are counted from the .qmd at render time.
+wc <- mw_wordcount(file.path(root, "manuscript", "midwife_persistence.qmd"))
+```
+
+<!--
+Obstetrics & Gynecology submits the title page as a SEPARATE file from the
+blinded manuscript, so this is its own document rather than a front section of
+midwife_persistence.qmd. The Précis is a title-page element and is deliberately
+NOT repeated in the manuscript body or the abstract.
+
+Same arrangement as ~/isochrones/manuscript/title_page_WORKFORCE_CLIFF.Rmd.
+-->
+
+# Title Page
+
+**Title:** Geographic Persistence of the Certified Nurse-Midwife and Certified
+Midwife Workforce in the United States, `r mw_safe_stat("panel.year_min")`--`r mw_safe_stat("panel.year_max")`
+
+**Running head:** Geographic Persistence of US Midwives
+
+**Précis:** Among certified midwives linked to national provider records,
+`r mw_safe_stat("persist.annual_county", "%.1f")`% remained in the same county
+year to year but only `r mw_safe_stat("persist.career_county", "%.1f")`% across
+a career.
+
+---
+
+**Authors:**
+
+Tyler Muffly, MD^1,2^
+
+Bree Thumm, [degrees]^[affiliation]^
+
+**Affiliations:**
+
+^1^Department of Obstetrics and Gynecology, Denver Health Medical Center,
+Denver, Colorado.
+
+^2^Department of Obstetrics and Gynecology, University of Colorado School of
+Medicine, Aurora, Colorado.
+
+**Corresponding author:**
+
+Tyler Muffly, MD
+Department of Obstetrics and Gynecology
+Denver Health Medical Center
+777 Bannock Street, Denver, CO 80204
+Email: tyler.muffly@dhha.org
+
+---
+
+**Financial Disclosure:** [To be completed. The authors did not report any
+potential conflicts of interest.]
+
+**Funding:** [To be completed.]
+
+**Institutional Review Board:** This analysis used only publicly available
+records -- a professional certification directory, the national provider
+registry, and federal geographic and rurality reference files. It is
+public-records research that does not involve human subjects, so institutional
+review board review was not required.
+
+**Presented at:** [None / to be completed.]
+
+**Word count (abstract):** `r wc$abstract`
+
+**Word count (main text, excluding abstract, references, tables, and table legends):** `r formatC(wc$body, format = "d", big.mark = ",")`
+
+**Tables:** `r wc$tables` &nbsp;&nbsp; **Figures:** `r wc$figures` &nbsp;&nbsp; **Supplemental digital content:** 1 (Appendix 1)
+
+---
+
+**Data availability:** All source data are public. Analysis code, every derived
+artifact, and a provenance record giving the SHA-256 checksum of each input are
+archived at https://github.com/mufflyt/midwifery
+(doi:10.5281/zenodo.1054200). Person-level intermediate files are not
+redistributed.
+
+**Each author has confirmed compliance with the journal's requirements for
+authorship.**

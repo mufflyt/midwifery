@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-08-11 01:34:19 UTC",
-  "git_commit": "c895c04383f14ccde2ea97290363939542ffdab4",
+  "generated_utc": "2026-08-23 23:11:54 UTC",
+  "git_commit": "a170eb239e38b5f355a55966369cfa19b0ce47fb",
   "inputs": {
     "amcb_roster": {
       "path": "midwives.csv",
@@ -38,11 +38,19 @@
   },
   "linkage": {
     "total_rows": 22309,
-    "primary": 0,
-    "sensitivity_fuzzy": 0,
-    "quarantined": 0,
-    "unmatched": 0,
-    "resolution": [],
+    "dispositions": {
+      "ambiguous_contested_npi": 95,
+      "ambiguous_tied_names": 3044,
+      "ambiguous_unruled_out_component": 8,
+      "candidate_class5_held_out_of_cohort": 156,
+      "matched": 14764,
+      "matched_nursing_taxonomy": 2134,
+      "unmatched": 2108
+    },
+    "resolution": {
+      "unique_best_class": 7651,
+      "unique_best_class_with_middle": 9411
+    },
     "ab_gain_records": 6041,
     "ab_gain_pp": 27.1,
     "identity_flips": 81,

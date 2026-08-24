@@ -1,0 +1,10 @@
+{
+  "artifact": "unresolved_disambiguation_yield.csv",
+  "written_utc": "2026-08-17 04:00:50 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/unresolved_disambiguation_candidates.csv",
+      "sha256": "2d09eea1117b7aad51abddd98bcff3646ad14a4ebfc445feafc767ec1cb2c20b"
+    }
+  ]
+}

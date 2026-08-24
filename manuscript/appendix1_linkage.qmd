@@ -1,0 +1,185 @@
+---
+title: "Appendix 1. Record linkage from the certification roster to the national provider registry"
+subtitle: "Supplemental Digital Content"
+format:
+  docx:
+    # reference-doc: templates/green_journal_template.docx
+    number-sections: false
+  html:
+    toc: true
+    embed-resources: true
+bibliography: references.bib
+csl: green-journal.csl
+params:
+  dev_mode: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+root <- if (dir.exists("artifacts")) "." else ".."
+source(file.path(root, "manuscript", "R", "build_stats_catalog.R"))
+source(file.path(root, "manuscript", "R", "inline_stats.R"))
+if (isTRUE(params$dev_mode)) Sys.setenv(MANUSCRIPT_DEV_MODE = "1") else
+  Sys.unsetenv("MANUSCRIPT_DEV_MODE")
+
+# WIRED TO THE SAME CATALOG AS THE MAIN DOCUMENT, deliberately.
+# ~/isochrones/manuscript/supplement_GREEN_JOURNAL_WORD.Rmd renders independently
+# and re-declares its constants, with a long comment explaining that they MIRROR
+# the main document's catalog values. Mirroring is the thing that drifts: it is
+# the same defect as a number typed into a paragraph, one indirection further
+# out. The supplement and the manuscript here read one catalog, so a supplement
+# figure cannot disagree with the body that cites it.
+K <- mw_init_stats(root)
+```
+
+# eMethods 1. Why linkage is the binding constraint
+
+The certification roster publishes credential, status and dates for every
+certificant and **no address at any geographic level**. It carries no National
+Provider Identifier, no date of birth, and no practice affiliation. The
+provider registry carries practice address for every enumerated clinician but
+no certification number. The two must therefore be joined on name, and every
+geographic statement in the main analysis rests on that join.
+
+Name is a weak key in this population. Certified nurse-midwives are
+overwhelmingly female (`r mw_safe_stat("table1.female_pct", "%.1f")`% of the
+linked cohort), a population with a high rate of surname change, and the
+registry's historical files record whatever name was current in each annual
+snapshot. Middle name is absent from the roster entirely and is missing from a
+large share of registry records.
+
+# eMethods 2. Ranked evidence classes, and the fail-closed rule
+
+Candidate pairs were ranked into ordered classes of name evidence rather than
+scored on a blended similarity metric. A record resolved only when **exactly
+one** candidate occupied its strongest available class.
+
+Two consequences follow, and both are intended.
+
+**A record with several equally good candidates does not resolve.** Two
+certificants with identical surname and given name, no middle name on either
+side, and no date of birth are genuinely indistinguishable in these data. A
+similarity score would return a winner, and the winner would be an artifact of
+the scoring function rather than a fact about either person. Such records are
+retained as a reported stratum, not discarded.
+
+**Taxonomy sets the tier but never breaks a tie.** Provider taxonomy was used
+to decide which class a candidate belongs to. It was never permitted to select
+between two candidates within a class, because a taxonomy field describes what
+a clinician is enumerated as, not which clinician a certification number
+belongs to. A match supported only by nursing taxonomy is reported as its own
+stratum and is never promoted into the primary cohort.
+
+The cost of the rule is coverage:
+`r mw_safe_stat("linkage.ambiguous_pct", "%.1f")`% of records
+(`r mw_n("linkage.ambiguous")`) are left unresolved that a scored matcher would
+have assigned. The benefit is that the resolved set contains no manufactured
+identities.
+
+# eResults 1. Disposition of every record
+
+```{r tblS1}
+d <- K$linkage$table
+disp <- setdiff(names(d), c("status", "n", "pct_matched"))
+lab <- c(matched = "Resolved, midwifery taxonomy",
+         matched_nursing_taxonomy = "Resolved, nursing taxonomy only",
+         ambiguous_tied_names = "Unresolved, tied names",
+         ambiguous_contested_npi = "Unresolved, contested identifier",
+         ambiguous_unruled_out_component = "Unresolved, component not ruled out",
+         unmatched = "Unresolved, no plausible candidate",
+         candidate_class5_held_out_of_cohort = "Held out of cohort by design")
+tot <- sum(d$n)
+t <- data.frame(Disposition = ifelse(is.na(lab[disp]), disp, lab[disp]),
+                No. = vapply(disp, function(cn) sum(d[[cn]]), numeric(1)),
+                check.names = FALSE)
+t$`%` <- sprintf("%.1f", 100 * t$No. / tot)
+t <- t[order(-t$No.), ]
+t$No. <- formatC(t$No., format = "d", big.mark = ",")
+t <- rbind(t, data.frame(Disposition = "Total",
+                         No. = formatC(tot, format = "d", big.mark = ","),
+                         `%` = "100.0", check.names = FALSE))
+knitr::kable(t, row.names = FALSE, align = "lrr",
+  caption = sprintf("Table S1. Disposition of all %s certification records. The dispositions are exhaustive and mutually exclusive; they sum to the total by construction rather than by arithmetic performed after the fact.",
+                    formatC(tot, format = "d", big.mark = ",")))
+```
+
+Of `r mw_n("linkage.total")` records, `r mw_n("linkage.matched")`
+(`r mw_safe_stat("linkage.matched_pct", "%.1f")`%) resolved to a single
+provider with confirmed midwifery taxonomy and `r mw_n("linkage.nursing")`
+(`r mw_safe_stat("linkage.nursing_pct", "%.1f")`%) on nursing taxonomy alone,
+giving `r mw_safe_stat("linkage.any_tier_pct", "%.1f")`% resolved on any
+accepted tier. `r mw_n("linkage.ambiguous")`
+(`r mw_safe_stat("linkage.ambiguous_pct", "%.1f")`%) had plausible candidates
+that could not be distinguished, `r mw_n("linkage.unmatched")`
+(`r mw_safe_stat("linkage.unmatched_pct", "%.1f")`%) had no plausible
+candidate at all, and `r mw_n("linkage.heldout")`
+(`r mw_safe_stat("linkage.heldout_pct", "%.1f")`%) were held out by design.
+
+The distinction between the last two is worth preserving. *No plausible
+candidate* and *several indistinguishable candidates* are different states of
+knowledge: the first is consistent with a clinician who never enumerated, the
+second with one who did and whose record cannot be told from a colleague's.
+Collapsing them into a single "unmatched" category, which is the common
+practice, would discard the information that separates a coverage problem from
+an identity problem.
+
+# eResults 2. Linkage is selected on certification status
+
+```{r tblS2}
+d <- K$linkage$table
+t2 <- data.frame(
+  `Certification status` = d$status,
+  Records = formatC(d$n, format = "d", big.mark = ","),
+  Resolved = formatC(d$matched, format = "d", big.mark = ","),
+  `Resolved, %` = sprintf("%.1f", d$pct_matched),
+  check.names = FALSE)
+knitr::kable(t2, row.names = FALSE, align = "lrrr",
+  caption = "Table S2. Resolution on midwifery taxonomy by certification status, ordered by number of records.")
+```
+
+Resolution ranges from `r mw_safe_stat("linkage.active_pct", "%.1f")`% among
+ACTIVE certificants to `r mw_safe_stat("linkage.dead_pct", "%.1f")`% among
+DECEASED certificants. The gradient is mechanical rather than mysterious: the
+registry is a registry of clinicians who enumerated to bill, enumeration became
+near-universal only over the study period, and a clinician who left practice
+before enumeration was routine has no registry record to be linked to.
+
+**This is the central threat to validity in the main analysis, and its
+direction is knowable.** The persistence estimates describe providers who both
+linked and remained observable in the annual snapshots. Providers who left the
+workforce are systematically less likely to be in that set. Because leaving the
+workforce and leaving a county are positively associated -- a clinician who
+retires often stops appearing in the registry entirely rather than appearing at
+a new address -- the observed cohort is enriched for people who stayed, in both
+senses. **The reported persistence figures are therefore upper bounds on
+persistence among all certificants.**
+
+The magnitude of that bias cannot be estimated from these data, because the
+unlinked have no observed geography by definition. It could be bounded by
+linking the roster to a source that does not require enumeration -- a state
+licensure file, or a death index for the DECEASED stratum -- which is the
+natural next step and is not attempted here.
+
+# eResults 3. What the unresolved records are not
+
+`r mw_n("linkage.ambiguous")` unresolved records are not a random sample of the
+roster. Tied names concentrate in common surnames, which are unevenly
+distributed across ancestry groups, and any analysis stratifying on race,
+ethnicity or national origin using this cohort would inherit that
+non-randomness. The main analysis does not stratify on those attributes, which
+is one reason it does not report them.
+
+# eMethods 3. Reproducibility
+
+The linkage is frozen: a fixed crosswalk file with a recorded SHA-256
+checksum, not a matcher re-run at analysis time. Every artifact in this
+appendix is written with a provenance record listing the checksum of each of
+its inputs, and the numbers in this document are recomputed from those
+artifacts at render time rather than transcribed. Code and artifacts are
+archived[@midwifery_repo]; the person-level crosswalk itself is not
+redistributed.
+
+# References
+
+::: {#refs}
+:::

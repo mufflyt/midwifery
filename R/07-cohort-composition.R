@@ -65,6 +65,7 @@ source(file.path("R", "lib", "artifact_provenance.R"))
 # duplicated across files sourced into one environment, where load order
 # decided which definition won.
 source(file.path("R", "lib", "common_helpers.R"))
+source(file.path("R", "lib", "zip_county_crosswalk.R"))
 
 ART <- "artifacts"; DATA <- "data"
 STAGE2 <- file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")
@@ -152,12 +153,10 @@ build_composition <- function() {
                     any_of(c("npi_match_method", "npi_match_resolution")))
 
   # Rurality: same ZIP-based source for all four groups.
-  zc <- read_delim(file.path(DATA, "zcta_county_2020.txt"), delim = "|",
-                   show_col_types = FALSE, progress = FALSE) %>%
-    transmute(zip5 = pad5(GEOID_ZCTA5_20), GEOID = pad5(GEOID_COUNTY_20),
-              land = suppressWarnings(as.numeric(AREALAND_PART))) %>%
-    group_by(zip5) %>% slice_max(land, n = 1, with_ties = FALSE) %>%
-    ungroup() %>% select(zip5, GEOID)
+  # Was an inline copy that omitted the !is.na(GEOID_ZCTA5_20) filter the
+  # other copies carried, so every ZIP-less midwife joined a single NA-keyed
+  # row and was published as Yukon-Koyukuk, Alaska. See R/lib/zip_county_crosswalk.R.
+  zc <- zip_county_dominant(file.path(DATA, "zcta_county_2020.txt"))
   cb <- read_csv(file.path(DATA, "county_base.csv"), show_col_types = FALSE,
                  col_types = cols(GEOID = col_character()))
 

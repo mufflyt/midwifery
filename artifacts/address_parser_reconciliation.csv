@@ -1,0 +1,4 @@
+parser,ambiguous_many_orgs,key_matched_no_org,no_usable_key,unique_org_available,newly_unique,lost_unique,net_unique,harness_validated,nppes_vintage,org_universe,candidate_orgs
+canonical postmastr,886,605,7,46,46,0,46,TRUE,npidata_pfile_20050523-20251109.csv,1867280,9620
+norm_addr (production),835,702,7,0,,,,TRUE,npidata_pfile_20050523-20251109.csv,1867280,9620
+norm_addr_drop_unit,858,640,7,39,39,0,39,TRUE,npidata_pfile_20050523-20251109.csv,1867280,9620

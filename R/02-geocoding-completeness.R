@@ -86,6 +86,7 @@ source(file.path("R", "lib", "artifact_provenance.R"))
 # duplicated across files sourced into one environment, where load order
 # decided which definition won.
 source(file.path("R", "lib", "common_helpers.R"))
+source(file.path("R", "lib", "zip_county_crosswalk.R"))
 
 DATA <- "data"; ART <- "artifacts"
 dir.create(ART, showWarnings = FALSE)
@@ -102,15 +103,7 @@ load_zip_county <- function() {
     stop("Missing ", f, ". Download the Census ZCTA-county relationship file.",
          call. = FALSE)
   }
-  read_delim(f, delim = "|", show_col_types = FALSE, progress = FALSE) %>%
-    filter(!is.na(GEOID_ZCTA5_20), !is.na(GEOID_COUNTY_20)) %>%
-    transmute(zip5 = pad5(GEOID_ZCTA5_20),
-              GEOID = pad5(GEOID_COUNTY_20),
-              land = suppressWarnings(as.numeric(AREALAND_PART))) %>%
-    group_by(zip5) %>%
-    slice_max(land, n = 1, with_ties = FALSE) %>%
-    ungroup() %>%
-    select(zip5, GEOID)
+  zip_county_dominant(f)
 }
 
 #' Completeness rate with a Wilson score interval
