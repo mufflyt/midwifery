@@ -220,7 +220,16 @@ jobs:
                     # undeclared: rlang (R/lib/ct_county_crosswalk.R) and readxl
                     # (R/build_amcb_state_licenses.R). Both resolve today only
                     # by luck.
-                    "fs", "rlang", "readxl")
+                    "fs", "rlang", "readxl",
+                    # G2 in test_science_invariants.R reaches
+                    # name_matches_roster() by sourcing
+                    # scrape_healthgrades_midwives.R, which attaches rvest at
+                    # the top. Without it the suite dies at G2 and the seven
+                    # pinned false matches -- ANDERSON/SANDERSON,
+                    # WILLIAMS/WILLIAMSON, MARTIN/MARTINEZ and the rest, each
+                    # of which wrote a wrong certificant row in production --
+                    # stop being checked on every push.
+                    "rvest")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
         shell: Rscript {0}
