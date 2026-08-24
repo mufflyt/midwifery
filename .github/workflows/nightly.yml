@@ -464,6 +464,11 @@ jobs:
       #
       # tests/test_law_coverage_detect.R proves this gate can fail, across all
       # six of those modes. Without that it is a report that always says N/N.
+      # L7 needs dplyr (middle_state uses case_when), so it is NOT in the base-R
+      # namespace guard and is not named in this job. It is a tests/test*.R file
+      # and the r-suite glob discovers it; the coverage gate below runs it again
+      # to read its evidence markers, which is cheap and keeps the registry the
+      # only place that decides what counts as a law.
       - name: Every scientific law was actually exercised
         if: always()
         run: |

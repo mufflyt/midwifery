@@ -26,3 +26,4 @@ L3	missing geography stays missing	tests/ci_science_laws.R	tests/test_science_la
 L4	more travel time cannot reduce access	tests/ci_science_laws.R	tests/test_science_laws_detect.R	public
 L5	every routed provider is in the union	tests/ci_science_laws.R	tests/test_science_laws_detect.R	public
 L6	masking evidence cannot invent geography	tests/test_geography_masking_metamorphic.R	tests/test_geography_masking_metamorphic.R	public
+L7	contradictory identity evidence cannot increase certainty	tests/test_identity_collision_corpus.R	tests/test_identity_corpus_detect.R	public
