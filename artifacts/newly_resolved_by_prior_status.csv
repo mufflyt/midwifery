@@ -1,8 +1,7 @@
 s2_decision,mechanism,n,pct_of_group
-Ambiguous,unique_top_score,973,84.1
-Ambiguous,no_resolution_recorded,155,13.4
-Ambiguous,resolved_by_middle,29,2.5
-No match,unique_top_score,179,75.5
-No match,no_resolution_recorded,58,24.5
-Review,no_resolution_recorded,461,61.2
-Review,unique_top_score,292,38.8
+Ambiguous,unique_best_class,328,59.1
+Ambiguous,unique_best_class_with_middle,227,40.9
+No match,unique_best_class,140,68.6
+No match,unique_best_class_with_middle,64,31.4
+Review,unique_best_class,691,87.9
+Review,unique_best_class_with_middle,95,12.1

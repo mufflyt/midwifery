@@ -115,9 +115,9 @@ is the scientific work.
 **A.3. Identity resolution, not geocoding, is the binding constraint.** Turning
 a name into a location requires first turning a name into a person. Against
 NPPES, **65.8%** of the roster resolves to an NPI with midwifery taxonomy
-confirmed (**75.7%** including nursing and fuzzy sensitivity tiers); **13.9%**
+confirmed (**75.7%** including nursing and fuzzy sensitivity tiers); **14.1%**
 is quarantined because plausible candidates exist but cannot identify one
-person, and **10.4%** has no plausible candidate at all. Once identity is
+person, and **10.1%** has no plausible candidate at all. Once identity is
 settled, geography is nearly free: **~99%** of linked records receive a county.
 **Linkage certainty and geographic completeness are separate properties and
 must be reported separately.**
@@ -883,26 +883,32 @@ tolerance is method-derived, *not* a proven bound, and
 `artifacts/osmde_strict_containment_summary.csv`. Read it as simplification noise at the polygon
 boundary rather than as routing error, and do not treat the tolerance as a guarantee.
 
-**What still needs recomputing, specifically.** Complete coverage of the *inputs* is not the same as
-a rebuilt *surface*, and the two have come apart:
+**Recomputed.** The surfaces were rebuilt from all 8,359 routed locations and the access
+arithmetic rerun against them (`access_full_cohort.R` →
+`artifacts/full_cohort_access_by_band{,_rucc}.csv`). The dissolved surfaces went from 4,714 to
+11,602 origins at 30 minutes and 4,666 to 11,554 at 60, and covered area rose 17.8% and 8.4%.
 
-| | origins dissolved | built |
-|---|---:|---:|
-| `artifacts/maps/midwifery_isochrone_union_30min.rds` | 4,714 | 2026-08-10 |
-| `artifacts/maps/midwifery_isochrone_union_60min.rds` | 4,666 | 2026-08-10 |
-| routed by the full-cohort job | **8,359** | 2026-08-24 |
+Binary access at the tract point-on-surface, ACS 2023 female population, same method as the
+represented-subset run so the two are comparable:
 
-The published dissolved surfaces hold **56% of the routed origins** and predate the routing by two
-weeks. They are gitignored, so nothing in this repository ships them and no committed figure depends
-on them — but `render_midwifery_map.R` and `build_midwifery_isochrone_map.R` both read them, and a
-map rebuilt from them today would look complete while covering a little over half the cohort. That
-is the same rural-selective error this section spent two attempts diagnosing, arriving through a
-stale intermediate instead of a thin library.
+| | 30 min, subset | 30 min, full | 60 min, subset | 60 min, full |
+|---|---:|---:|---:|---:|
+| Metro (RUCC 1-3) | 86.2% | **95.9%** | 96.8% | **99.5%** |
+| Nonmetro, adjacent (RUCC 4-6) | 17.8% | **65.4%** | 67.9% | **94.4%** |
+| Nonmetro, remote (RUCC 7-9) | 5.2% | **39.7%** | 35.4% | **82.6%** |
+| **All women** | 76.3% | **90.6%** | 91.3% | **98.2%** |
 
-**Rebuild the unions before recomputing anything.** Every access figure in the two sections above
-was calculated on the represented subset and is a lower bound on a limitation that no longer exists;
-none should be quoted until the surfaces are regenerated from the full 8,359 and the arithmetic is
-rerun against them.
+**The old figures were wrong, and wrong in the direction the coverage gap predicted.** Rural access
+was understated by a factor of three to eight: 30-minute access for remote-rural women is 39.7%, not
+5.2%, and for adjacent-rural women 65.4%, not 17.8%. Metro moved least, 86.2% to 95.9%, because
+metro midwives were the ones the canonical library already represented.
+
+**The rural gradient survives, smaller and now trustworthy.** At 30 minutes the metro-to-remote
+spread is 56.2 percentage points, against 81.0 in the represented subset. It was never mostly an
+artifact of missing polygons — but a quarter of it was, and that quarter is now gone. What remains
+is a workforce distribution rather than a library gap: 95.9% of metropolitan women are within 30
+minutes of a midwife, against 39.7% of remote-rural women, measured on a surface that covers every
+routed midwife.
 
 
 ## Table 1

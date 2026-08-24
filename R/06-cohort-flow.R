@@ -95,8 +95,24 @@ build_flow <- function() {
   )
 
   # --- Provenance pins: true of THESE frozen inputs ---
-  PIN_ADDED   <- 2147L
-  PIN_REMOVED <- 1352L
+  # RE-PINNED for the 16,892 cohort. These were 2147 and 1352, which are the
+  # deltas of the SUPERSEDED 17,538 analytic cohort -- 16743 - 1352 = 15391
+  # retained, + 2147 = 17538. That cohort was re-frozen to 16,892 and every
+  # published artifact moved with it: artifacts/cohort_flow_16743_to_16892.csv
+  # records 1396 removed, composition_*.csv carry N = 15347 retained and 1545
+  # newly resolved, and the manuscript reports 16,892 throughout.
+  #
+  # The pins were never updated, so this stage has failed since that re-freeze
+  # and the failure went unseen because nothing runs the pipeline in CI. The
+  # guard was right on every one of those runs; only the numbers it was
+  # comparing against were stale.
+  #
+  # Updated per this script's own instruction -- "if that was deliberate,
+  # update the pins and say why in the commit". It was deliberate, it already
+  # shipped, and the invariants directly above (which are arithmetic, not
+  # vintage) passed throughout.
+  PIN_ADDED   <- 1545L
+  PIN_REMOVED <- 1396L
   if (length(added) != PIN_ADDED || length(removed) != PIN_REMOVED) {
     stop(sprintf(paste0(
       "[PROVENANCE] The frozen inputs no longer produce the pinned cohort deltas.\n",

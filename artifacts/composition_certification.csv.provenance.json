@@ -1,6 +1,6 @@
 {
   "artifact": "composition_certification.csv",
-  "written_utc": "2026-08-23 23:10:00 UTC",
+  "written_utc": "2026-08-24 11:50:04 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",

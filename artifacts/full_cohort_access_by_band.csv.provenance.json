@@ -1,0 +1,18 @@
+{
+  "artifact": "full_cohort_access_by_band.csv",
+  "written_utc": "2026-08-24 11:34:48 UTC",
+  "inputs": [
+    {
+      "path": "data/rucc_2023.xlsx",
+      "sha256": "aeaae451663c7ea70cd15ef26fdc991bebcaf3a39d658ab2133d321530777df5"
+    },
+    {
+      "path": "artifacts/maps/midwifery_isochrone_union_30min.rds",
+      "sha256": "b7c0731e4718d0d7071914fb48a7e9e35432fb10902f32da775e0aca010eeb0c"
+    },
+    {
+      "path": "artifacts/maps/midwifery_isochrone_union_60min.rds",
+      "sha256": "7da490d840e309d6ffcc11fab5628b4a6df1c2a4d73fcc0f4db172aa4f8ba25e"
+    }
+  ]
+}

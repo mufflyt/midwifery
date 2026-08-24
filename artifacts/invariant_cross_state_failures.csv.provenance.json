@@ -1,0 +1,10 @@
+{
+  "artifact": "invariant_cross_state_failures.csv",
+  "written_utc": "2026-08-24 11:54:15 UTC",
+  "inputs": [
+    {
+      "path": "data/county_base.csv",
+      "sha256": "72e6acb856728843e4a8ec54cdac2642841a931d523cc07ed8942b3f1988ca5f"
+    }
+  ]
+}

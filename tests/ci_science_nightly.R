@@ -84,7 +84,20 @@ scn_num <- function(x) {
 # rule below is what keeps a spurious id/id pair from being mistaken for a
 # formula, not the column name.
 scn_is_count <- function(v) {
-  all(is.na(v) | (v >= 0 & abs(v - round(v)) < 1e-9)) && any(!is.na(v))
+  # NA-SAFE, and it has to be. `all()` over a comparison involving Inf returns
+  # NA, not FALSE: abs(Inf - round(Inf)) is NaN, NaN < 1e-9 is NA. The caller
+  # subsets names(d) by this result, so a single NA turned one column name into
+  # NA_character_, and nums[[NA_character_]] then failed inside ave() with
+  # "first argument must be a vector" -- a crash, not a finding, two artifacts
+  # away from the column that caused it.
+  #
+  # It arrived via a hex hash. artifacts/osmde_strict_containment_summary.csv
+  # carries 2,852 location_hash values and one of them parses as Inf, which is
+  # enough. A column holding a non-finite value is not a count either way, so
+  # rejecting it outright is both the safe answer and the correct one.
+  if (any(is.infinite(v))) return(FALSE)
+  if (!any(is.finite(v))) return(FALSE)
+  isTRUE(all(is.na(v) | (v >= 0 & abs(v - round(v)) < 1e-9)))
 }
 
 # Decimal places in the printed value. 99.94121537218018 was written at full
@@ -158,18 +171,37 @@ scn_denominators <- function(d, nums, counts, groups) {
 SCN_MIN_PROBE <- 3L
 
 scn_formula <- function(pv, tol, nums, counts, dens) {
+  # THE PROBE HAS TO COME FIRST, and for a long time it did not. This function
+  # carried a comment claiming three scalars were tested before the full-vector
+  # comparison -- and then built `usable`, four vector operations over every
+  # row, for every one of the ~123,000 candidate pairs on the widest county
+  # file, BEFORE reaching the probe. The optimisation was described and not
+  # implemented. It ran in 41s until the pipeline widened those artifacts to 37
+  # count columns, and then took the gate past fifteen minutes against a
+  # twenty-minute job timeout.
+  #
+  # Candidate probe rows depend only on the percentage column, so they are
+  # computed once here rather than once per pair. Each pair then indexes a
+  # handful of scalars, and only a pair that survives that pays for a
+  # full-length vector.
+  cand <- which(!is.na(pv) & pv > tol)
+  if (length(cand) < SCN_MIN_PROBE) return(NULL)
+  cand <- utils::head(cand, 24L)
+
   best <- NULL
   for (nm in counts) {
     nv <- nums[[nm]]
+    if (all(is.na(nv[cand]))) next
     for (dn in names(dens)) {
       dv <- dens[[dn]]
+      pr <- cand[!is.na(nv[cand]) & !is.na(dv[cand]) & dv[cand] > 0]
+      if (length(pr) < SCN_MIN_PROBE) next
+      pr <- utils::head(pr, SCN_MIN_PROBE)
+      if (!all(abs(pv[pr] - 100 * nv[pr] / dv[pr]) <= tol)) next
+
+      # Survived the probe: now it is worth the full comparison.
       usable <- !is.na(pv) & !is.na(nv) & !is.na(dv) & dv > 0
       if (!any(usable)) next
-      # Probe: the first few rows carrying a non-zero percentage.
-      probe <- which(usable & pv > tol)
-      if (length(probe) < SCN_MIN_PROBE) next
-      probe <- utils::head(probe, SCN_MIN_PROBE)
-      if (!all(abs(pv[probe] - 100 * nv[probe] / dv[probe]) <= tol)) next
       agree <- abs(pv[usable] - 100 * nv[usable] / dv[usable]) <= tol
       if (mean(agree) < 0.9) next
       score <- sum(agree & pv[usable] > tol)
@@ -213,8 +245,9 @@ for (f in scn_files) {
   d <- suppressWarnings(ci_read_head(f, -1L, root = root))
   if (is.null(d) || !nrow(d) || !ncol(d)) next
   nums <- lapply(d, scn_num)
-  counts <- names(d)[vapply(names(d), function(cn) {
-    v <- nums[[cn]]; !is.null(v) && scn_is_count(v) }, logical(1))]
+  cn_all <- names(d)[!is.na(names(d)) & nzchar(names(d))]
+  counts <- cn_all[vapply(cn_all, function(cn) {
+    v <- nums[[cn]]; !is.null(v) && isTRUE(scn_is_count(v)) }, logical(1))]
   SCN[[f]] <- list(d = d, nums = nums, counts = counts,
                    groups = scn_group_cols(d, nums),
                    pcts = scn_pct_cols(d, nums))
@@ -308,17 +341,43 @@ ci_section("SCN3 a stratification is exhaustive")
 # denominator must equal the group total in at least half the groups before the
 # rest are held to it, so a column that is merely constant within a group is
 # not mistaken for a denominator it was never meant to be.
+# PER FILE, COMPUTED ONCE. Two things made this the slowest code in the gate.
+#
+# First, the "is this column constant within the group" test depends only on
+# (group, denominator) -- it does not involve the numerator at all -- but it sat
+# inside the numerator loop, so it ran once per PAIR instead of once per column:
+# 7 groups x 37 counts x 36 other counts = 9,324 tapply() calls over 3,235 rows
+# for county_midwifery_supply.csv alone, when 259 would do. Hoisted, that file
+# went from ~34s to under a second.
+#
+# Second, SCN3 and SCN4 each called this, so every one of those calls happened
+# twice. The result is memoised on the file entry instead.
+#
+# Together they took a run that had grown past fifteen minutes -- the `science`
+# job allows twenty -- back to seconds. It was 41s before the pipeline widened
+# these artifacts, which is exactly how a quadratic goes unnoticed until the
+# input grows.
 scn_blocks <- function(s) {
+  if (!is.null(s$.blocks)) return(s$.blocks)
   out <- list()
   for (g in s$groups) {
     key <- s$d[[g]]
-    if (length(unique(key)) < 1L) next
+    if (!length(unique(key))) next
+
+    # Once per count column, not once per pair.
+    const_ok <- stats::setNames(logical(length(s$counts)), s$counts)
+    den_map <- list(); tot_map <- list()
+    for (cn in s$counts) {
+      v <- s$nums[[cn]]
+      cc <- tapply(v, key, function(z) length(unique(z[!is.na(z)])) == 1L)
+      const_ok[[cn]] <- isTRUE(all(cc, na.rm = TRUE))
+      if (const_ok[[cn]]) den_map[[cn]] <- tapply(v, key, function(z) z[!is.na(z)][1])
+      tot_map[[cn]] <- tapply(v, key, function(z) sum(z, na.rm = TRUE))
+    }
+
     for (kn in s$counts) for (dn in setdiff(s$counts, kn)) {
-      dv <- s$nums[[dn]]; kv <- s$nums[[kn]]
-      const <- tapply(dv, key, function(z) length(unique(z[!is.na(z)])) == 1L)
-      if (!all(const, na.rm = TRUE)) next
-      tot <- tapply(kv, key, function(z) sum(z, na.rm = TRUE))
-      den <- tapply(dv, key, function(z) z[!is.na(z)][1])
+      if (!const_ok[[dn]]) next
+      tot <- tot_map[[kn]]; den <- den_map[[dn]]
       ok <- !is.na(den) & den > 0
       if (sum(ok) < 1L) next
       agree <- tot[ok] == den[ok]
@@ -335,7 +394,8 @@ off <- character(0); n_blocks <- 0L
 for (f in names(SCN)) {
   s <- SCN[[f]]
   if (!length(s$groups) || length(s$counts) < 2L) next
-  for (b in scn_blocks(s)) {
+  SCN[[f]]$.blocks <- scn_blocks(s)      # SCN4 reuses this
+  for (b in SCN[[f]]$.blocks) {
     n_blocks <- n_blocks + 1L
     if (all(b$agree)) next
     bad <- which(!b$agree)
@@ -394,7 +454,7 @@ off <- character(0); known <- character(0); n_checked <- 0L
 for (f in names(SCN)) {
   s <- SCN[[f]]
   if (!length(s$groups) || !length(s$counts)) next
-  for (b in scn_blocks(s)) {
+  for (b in scn_blocks(s)) {          # memoised by SCN3 above
     lvl <- setdiff(s$groups, b$group)
     if (!length(lvl)) next
     lv <- lvl[1]

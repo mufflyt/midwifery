@@ -1,0 +1,18 @@
+{
+  "artifact": "targeted_questions.csv",
+  "written_utc": "2026-08-24 11:51:16 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/match_ledger.csv",
+      "sha256": "0d74fff4fe61acd42a0fd432ba7e0e884eb0ec83aceddfad8e9ad02b3186a82d"
+    },
+    {
+      "path": "midwives.csv",
+      "sha256": "fe035788018f076db16f8dbe9c1b484f062d5ee3af8f6106547ed1886e127d11"
+    },
+    {
+      "path": "nppes_candidates.csv",
+      "sha256": "79aa15a7827610c1da8588d0712a779f50191fe16678f9ab54feee99cd73034d"
+    }
+  ]
+}

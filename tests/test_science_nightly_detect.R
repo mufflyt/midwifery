@@ -282,6 +282,19 @@ scn_allowed("an exhaustive disposition table whose seven columns sum to n",
     "RETIRED,1278,7,238,2,12,589,186,244,46.1",
     "DECEASED,499,4,153,0,5,94,83,160,18.8")))
 
+# Pinned because this CRASHED the gate rather than failing it. A hex hash column
+# where one value parses as Inf made scn_is_count() return NA, that NA became a
+# column NAME, and ave() died with "first argument must be a vector" two
+# artifacts later. The suite reported an error, not a finding, and would have
+# taken the whole nightly down the first night after the artifact landed.
+scn_allowed("a hash column where one value parses as Inf",
+  list("artifacts/hashes_demo.csv" = c(
+    "location_hash,n,total,pct",
+    "def4197aeea37650,40,100,40",
+    "1e999,30,100,30",
+    "911008f29bb15f4c,20,100,20",
+    "0e0,10,100,10")))
+
 # Pinned because SCN4's floor is what separates a failed join from a small
 # stratum that really is uniform.
 scn_allowed("a 50-member group legitimately sitting in one level",

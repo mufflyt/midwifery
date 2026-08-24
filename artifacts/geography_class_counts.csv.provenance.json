@@ -1,6 +1,6 @@
 {
   "artifact": "geography_class_counts.csv",
-  "written_utc": "2026-08-15 14:35:29 UTC",
+  "written_utc": "2026-08-24 11:54:15 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",

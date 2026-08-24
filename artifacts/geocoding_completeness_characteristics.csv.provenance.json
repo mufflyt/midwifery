@@ -1,6 +1,6 @@
 {
   "artifact": "geocoding_completeness_characteristics.csv",
-  "written_utc": "2026-08-23 23:16:27 UTC",
+  "written_utc": "2026-08-24 11:49:42 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",

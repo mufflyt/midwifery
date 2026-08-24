@@ -59,6 +59,7 @@ source(file.path("R", "lib", "artifact_provenance.R"))
 # decided which definition won.
 source(file.path("R", "lib", "common_helpers.R"))
 source(file.path("R", "lib", "zip_county_crosswalk.R"))
+source(file.path("R", "lib", "frozen_pin.R"))
 
 DATA <- "data"; ART <- "artifacts"
 # Default to the guarded linkage. The earlier Stage 2 roster had no
@@ -667,6 +668,11 @@ build_geography <- function() {
   #
   # Both are now recorded with their SHA-256, which is what makes the
   # STAGE2_FROZEN / STAGE3_COORDS pair reconstructable from the artifact alone.
+  # A pipeline run must not re-pin the geography every county figure rests on.
+  # R/05 has had this guard on its frozen INPUT since the cohort was moved by
+  # accident twice; this is the same protection for a frozen OUTPUT.
+  guard_frozen_write(out, GEO_OUT)
+
   write_with_provenance(out, GEO_OUT, na = "",
                         inputs = c(prov_inputs(file.path(DATA, "county_base.csv")),
                                    FROZEN, GEO_IN))

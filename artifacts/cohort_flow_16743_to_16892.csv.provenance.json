@@ -1,6 +1,6 @@
 {
   "artifact": "cohort_flow_16743_to_16892.csv",
-  "written_utc": "2026-08-23 23:10:30 UTC",
+  "written_utc": "2026-08-24 11:49:46 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",
