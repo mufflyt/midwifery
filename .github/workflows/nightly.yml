@@ -307,6 +307,7 @@ jobs:
           set -u
           for f in tests/ci_science_contracts.R tests/ci_science_nightly.R \
                    tests/ci_science_laws.R tests/test_science_laws_detect.R \
+                   tests/ci_law_coverage.R \
                    tests/test_science_nightly_detect.R; do
             if grep -nE '^[[:space:]]*(library|require)\(' "$f"; then
               echo "$f attaches a package"; exit 1
@@ -319,7 +320,7 @@ jobs:
           # -- weakening the pattern so the gate stops matching `dplyr::first`
           # -- would trade a real check for a tidy one.
           for f in tests/ci_science_nightly.R tests/ci_science_laws.R \
-                   tests/test_science_laws_detect.R \
+                   tests/test_science_laws_detect.R tests/ci_law_coverage.R \
                    tests/test_science_nightly_detect.R; do
             bad=$(grep -oE '\b[A-Za-z0-9.]+::' "$f" | sort -u \
                   | grep -vE '^(base|stats|utils|tools|methods|grDevices|graphics)::$' || true)
@@ -446,6 +447,41 @@ jobs:
           [ "$rc" -eq 0 ] || exit "$rc"
           if [ "$elapsed" -gt "$BUDGET" ]; then
             echo "::error::test_science_laws_detect.R took ${elapsed}s against a ${BUDGET}s budget."
+            exit 1
+          fi
+
+      # COVERAGE, which is a different question from correctness. Every gate
+      # above answers "did the science hold?". This answers "was the science
+      # checked at all?" -- and a law that never ran is indistinguishable, in a
+      # green build, from a law that passed.
+      #
+      # It fails on GAPS, not on test failures: a registered law that emitted no
+      # evidence, one that passed on zero subjects, one with no planted defect,
+      # one whose defect survived, a registry pointing at a file that is gone,
+      # or any unexpected skip. A public law may never skip, because its inputs
+      # are tracked; only a law registered `private-ok` may, and that skip is
+      # counted and printed rather than swallowed.
+      #
+      # tests/test_law_coverage_detect.R proves this gate can fail, across all
+      # six of those modes. Without that it is a report that always says N/N.
+      - name: Every scientific law was actually exercised
+        if: always()
+        run: |
+          set -u
+          BUDGET=600
+          start=$(date +%s)
+          rc=0; Rscript tests/ci_law_coverage.R | tee /tmp/cov.txt || rc=${PIPESTATUS[0]}
+          elapsed=$(( $(date +%s) - start ))
+          {
+            echo "| law coverage | ${elapsed}s | ${BUDGET}s |"
+            echo ""
+            echo '```'
+            sed -n '/Scientific laws declared/,/Unexpected skips/p' /tmp/cov.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          if [ "$elapsed" -gt "$BUDGET" ]; then
+            echo "::error::ci_law_coverage.R took ${elapsed}s against a ${BUDGET}s budget."
             exit 1
           fi
 

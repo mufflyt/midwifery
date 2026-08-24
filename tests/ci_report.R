@@ -46,3 +46,21 @@ ci_read_head <- function(path, n = -1L, root = ".") {
                            colClasses = "character"),
            error = function(e) NULL)
 }
+
+# --- Evidence for the law-coverage registry ---------------------------------
+# tests/ci_law_coverage.R parses these. They are printed, not returned, because
+# the coverage checker runs each gate as a subprocess and reads its output --
+# the same way a reader would, and the same way a runner does.
+#
+#   [LAW] L3 EXERCISED            the law was evaluated at all
+#   [CONTROL] L3 negative n=903   how many subjects it was evaluated ON. Zero is
+#                                 a vacuous pass and coverage rejects it.
+#   [LAW] L3 SKIPPED reason       evaluated on nothing, deliberately. Legal only
+#                                 for a law the registry marks private-ok.
+ci_law_exercised <- function(law, n_subjects) {
+  cat(sprintf("[LAW] %s EXERCISED\n", law))
+  cat(sprintf("[CONTROL] %s negative n=%s\n", law, format(n_subjects)))
+}
+ci_law_skipped <- function(law, reason) {
+  cat(sprintf("[LAW] %s SKIPPED %s\n", law, reason))
+}
