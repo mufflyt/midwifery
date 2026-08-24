@@ -198,6 +198,7 @@ are gitignored person-level artifacts; see
 [SCOPE_AND_LIMITATIONS.md](SCOPE_AND_LIMITATIONS.md).
 
 **These figures describe the *located* workforce.** Linkage is selected on
-outcome — 82.3% of ACTIVE certificants link versus 19.6% of DECEASED — so
+outcome — 78.0% of ACTIVE certificants reach the primary tier versus 18.6% of
+DECEASED — so
 providers who left the workforce are systematically under-represented, and
 persistence among those we can see is not persistence among all certificants.

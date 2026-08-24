@@ -115,9 +115,9 @@ is the scientific work.
 **A.3. Identity resolution, not geocoding, is the binding constraint.** Turning
 a name into a location requires first turning a name into a person. Against
 NPPES, **65.8%** of the roster resolves to an NPI with midwifery taxonomy
-confirmed (**75.7%** including nursing and fuzzy sensitivity tiers); **13.9%**
+confirmed (**75.7%** including nursing and fuzzy sensitivity tiers); **14.1%**
 is quarantined because plausible candidates exist but cannot identify one
-person, and **10.4%** has no plausible candidate at all. Once identity is
+person, and **10.1%** has no plausible candidate at all. Once identity is
 settled, geography is nearly free: **~99%** of linked records receive a county.
 **Linkage certainty and geographic completeness are separate properties and
 must be reported separately.**
