@@ -220,7 +220,16 @@ jobs:
                     # undeclared: rlang (R/lib/ct_county_crosswalk.R) and readxl
                     # (R/build_amcb_state_licenses.R). Both resolve today only
                     # by luck.
-                    "fs", "rlang", "readxl")
+                    "fs", "rlang", "readxl",
+                    # G2 in test_science_invariants.R reaches
+                    # name_matches_roster() by sourcing
+                    # scrape_healthgrades_midwives.R, which attaches rvest at
+                    # the top. Without it the suite dies at G2 and the seven
+                    # pinned false matches -- ANDERSON/SANDERSON,
+                    # WILLIAMS/WILLIAMSON, MARTIN/MARTINEZ and the rest, each
+                    # of which wrote a wrong certificant row in production --
+                    # stop being checked on every push.
+                    "rvest", "humaniformat")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
         shell: Rscript {0}
@@ -228,6 +237,15 @@ jobs:
       # The deterministic license->NPI bridge: the one linkage path that does not
       # depend on comparing two spellings of a name. Its collision handling is
       # what keeps a shared license key from asserting a shared identity.
+      # Belongs in THIS job, not in r-checks. The tiering at the top of this
+      # file is deliberate -- r-checks is base R plus stringr and must stay
+      # trivially cheap -- and this suite needs dplyr, readr and stringr, which
+      # only this job installs. Placed in r-checks it failed with "there is no
+      # package called 'dplyr'", which reads as a broken test rather than a
+      # step in the wrong tier.
+      - name: Science invariants (defects that actually occurred)
+        run: Rscript tests/test_science_invariants.R
+
       - name: AMCB license bridge
         run: Rscript tests/test_amcb_license_bridge.R
 

@@ -127,7 +127,11 @@ artifacts/osmde_location_crosswalk.csv
 artifacts/osmde_location_crosswalk.csv.provenance.json
 artifacts/osmde_still_unmeasured.csv
 artifacts/osmde_still_unmeasured.csv.provenance.json
+# Both forms on purpose. The trailing-slash rule matches a DIRECTORY only, so a
+# worktree that reaches the polygons through a symlink of the same name was not
+# covered and the link showed up as committable.
 artifacts/isochrones_osmde/
+artifacts/isochrones_osmde
 artifacts/iso_recovery_pro/
 # reference boundaries, redownloadable from Census
 data/cd118/
@@ -496,3 +500,8 @@ artifacts/pac_npi_ever.csv
 artifacts/pac_npi_ever.csv.provenance.json
 artifacts/organization_identity_pairings.csv
 artifacts/organization_identity_pairings.csv.provenance.json
+
+# Verification runs: one directory per verifier invocation, plus the `latest`
+# symlink promoted atomically on success (R/lib/validation_run.R). Machine-local
+# provenance, regenerable from verify_osmde_full_cohort_coverage.R.
+artifacts/validation/
