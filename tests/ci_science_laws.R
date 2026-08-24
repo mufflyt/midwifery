@@ -106,6 +106,10 @@ if (length(off)) {
           length(off), paste(sprintf("       %s", off), collapse = "\n"),
           paste(sprintf("%s (%s)", names(LAW_COHORTS), LAW_COHORTS), collapse = "; "))
 } else {
+  # POSITIVE CONTROL: the membership test must reject a value that is not
+  # registered. Without it, a registry containing every possible value -- or a
+  # test that never evaluates membership -- would pass silently.
+  ci_law_positive("L1", !("99999" %in% names(LAW_COHORTS)))
   ci_law_exercised("L1", seen)
   ci_ok("all %d cohort_n declaration(s) name a registered cohort", seen)
 }
@@ -160,6 +164,8 @@ if (length(off)) {
   ci_fail("L2: %d accounting identity violation(s):\n%s\n       People are inside a denominator and outside every column beside it.",
           length(off), paste(sprintf("       %s", off), collapse = "\n"))
 } else {
+  # POSITIVE CONTROL: the identity check must notice parts that do not sum.
+  ci_law_positive("L2", { t <- 100; p <- c(70, 20); abs(sum(p) - t) > 0.5 })
   ci_law_exercised("L2", n_checked)
   ci_ok("all %d declared accounting identit%s hold", n_checked,
         if (n_checked == 1L) "y" else "ies")
@@ -233,6 +239,10 @@ if (!file.exists(xw)) {
         ci_fail("L3: %d cohort group(s) placed entirely in one real geography:\n%s\n       A group with no practice ZIP must be Unknown. County 02290 -- Yukon-\n       Koyukuk Census Area -- is what a missing ZIP resolved to when the\n       crosswalk kept its NA key.",
                 length(off3), paste(sprintf("       %s", off3), collapse = "\n"))
       } else {
+        # POSITIVE CONTROL: a real level must be recognised as NOT an absence level,
+        # which is the whole basis of the collapse test.
+        ci_law_positive("L3", !grepl(LAW_ABSENT, "Nonmetro, remote (7-9)", ignore.case = TRUE) &&
+                              grepl(LAW_ABSENT, "Unknown", ignore.case = TRUE))
         ci_law_exercised("L3", nrow(comp))
         ci_ok("no cohort group is placed entirely in a single real geography")
       }
@@ -266,6 +276,8 @@ if (is.null(acc)) {
     ci_fail("L4: %d stratum/band pair(s) where more travel time gives LESS access:\n%s\n       The 60-minute surface contains the 30-minute surface from the same\n       origins, so this is impossible unless the two were built from different\n       inputs -- which is what a stale union looks like.",
             length(off), paste(sprintf("       %s", off), collapse = "\n"))
   } else {
+    # POSITIVE CONTROL: the monotonicity comparison must flag a decrease.
+    ci_law_positive("L4", { a <- c(95, 80); a[1] > a[2] + 1e-9 })
     ci_law_exercised("L4", n_pairs)
     ci_ok("access is monotone in the travel-time band across %d pair(s)", n_pairs)
   }
@@ -318,6 +330,8 @@ if (is.null(vt) || !file.exists(a30)) {
       ci_fail("L5: %d surface(s) cover fewer origins than were routed:\n%s\n       A union built before the routing finished understates access while\n       looking complete. Rebuild with build_midwifery_isochrone_map.R.",
               length(off), paste(sprintf("       %s", off), collapse = "\n"))
     } else {
+      # POSITIVE CONTROL: the coverage comparison must flag a short union.
+      ci_law_positive("L5", 450 < routed)
       ci_law_exercised("L5", routed)
       ci_ok("every dissolved surface covers at least the %s routed locations",
             format(routed, big.mark = ","))

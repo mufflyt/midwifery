@@ -27,3 +27,5 @@ L4	more travel time cannot reduce access	tests/ci_science_laws.R	tests/test_scie
 L5	every routed provider is in the union	tests/ci_science_laws.R	tests/test_science_laws_detect.R	public
 L6	masking evidence cannot invent geography	tests/test_geography_masking_metamorphic.R	tests/test_geography_masking_metamorphic.R	public
 L7	contradictory identity evidence cannot increase certainty	tests/test_identity_collision_corpus.R	tests/test_identity_corpus_detect.R	public
+L8	identical inputs produce identical outputs	tests/test_deterministic_rebuild.R	tests/test_determinism_cache_detect.R	public
+L9	a cache may change runtime, not the answer	tests/test_cache_isolation.R	tests/test_determinism_cache_detect.R	public

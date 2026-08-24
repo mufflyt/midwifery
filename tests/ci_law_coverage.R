@@ -70,7 +70,7 @@ for (s in sources) if (isTRUE(outs[[s]]$missing))
   ci_fail("registered file %s does not exist. A law whose gate is absent is a law\n       nobody is checking.", s)
 
 # --- score every law ---------------------------------------------------------
-state <- character(nrow(reg)); subj <- integer(nrow(reg))
+state <- character(nrow(reg)); subj <- integer(nrow(reg)); pos <- integer(nrow(reg))
 mut_total <- integer(nrow(reg)); mut_killed <- integer(nrow(reg))
 unexpected_skips <- 0L
 
@@ -87,10 +87,21 @@ for (i in seq_len(nrow(reg))) {
   if (length(m)) n <- as.integer(sub(".*n=[ ]*", "", m))
   subj[i] <- n
 
+  # POSITIVE CONTROL, required and not inferred. A law with only a negative
+  # control has proved it did not fire; it has not proved it COULD. Until this
+  # was added, coverage parsed `negative` alone and a law whose detector was
+  # inert would have counted as fully covered.
+  pm <- regmatches(gate, regexpr(sprintf("\\[CONTROL\\] %s positive n=[ ]*[0-9]+", law), gate))
+  pos[i] <- if (length(pm)) as.integer(sub(".*n=[ ]*", "", pm)) else 0L
+
   muts <- regmatches(mtxt, gregexpr(sprintf("\\[MUTATION\\] %s \\S+ (DETECTED|SURVIVED)", law), mtxt))[[1]]
   mut_total[i]  <- length(muts)
   mut_killed[i] <- sum(grepl("DETECTED$", muts))
 
+  # PASS means "ran, on a non-empty subject set". The positive-control
+  # requirement is checked separately below so that a law missing one is
+  # reported as missing a positive control -- not as never having run, which is
+  # a different defect with a different fix.
   state[i] <- if (exercised && n > 0L) "PASS"
               else if (skipped && identical(reg$privacy[i], "private-ok")) "EXPECTED_PRIVATE_SKIP"
               else "FAIL"
@@ -98,9 +109,9 @@ for (i in seq_len(nrow(reg))) {
 }
 
 for (i in seq_len(nrow(reg))) {
-  cat(sprintf("  %-4s %-42s %-22s subjects=%-8s defects=%d/%d\n",
-              reg$law[i], substr(reg$title[i], 1, 42), state[i],
-              format(subj[i], big.mark = ","), mut_killed[i], mut_total[i]))
+  cat(sprintf("  %-4s %-40s %-22s neg=%-8s pos=%-3d defects=%d/%d\n",
+              reg$law[i], substr(reg$title[i], 1, 40), state[i],
+              format(subj[i], big.mark = ","), pos[i], mut_killed[i], mut_total[i]))
 }
 
 # --- the coverage contract ---------------------------------------------------
@@ -116,6 +127,7 @@ tot_mut <- sum(mut_total); tot_killed <- sum(mut_killed)
 cat(sprintf("  Scientific laws declared:    %d\n", n_law))
 cat(sprintf("  Laws exercised:              %d/%d\n", n_pass + n_priv, n_law))
 cat(sprintf("  Negative controls (n>0):     %d/%d\n", n_neg, n_law))
+cat(sprintf("  Positive controls (n>0):     %d/%d\n", sum(pos > 0L), sum(state == "PASS")))
 cat(sprintf("  Laws with a planted defect:  %d/%d\n", sum(mut_total > 0L), n_law))
 cat(sprintf("  Planted defects detected:    %d/%d\n", tot_killed, tot_mut))
 cat(sprintf("  Expected private skips:      %d\n", n_priv))
@@ -134,6 +146,16 @@ if (length(vac)) {
   ci_fail("%d law(s) passed vacuously on zero subjects:\n%s",
           length(vac), paste(sprintf("       %s", reg$law[vac]), collapse = "\n"))
 }
+# Only a law that RAN can be held to a positive control. A registered
+# private-ok law whose person-level input is absent emitted nothing at all --
+# requiring proof from a run that did not happen would make the private-ok path
+# impossible to satisfy, which the coverage-detect harness caught immediately.
+nopos <- which(state == "PASS" & pos == 0L)
+if (length(nopos)) {
+  ci_fail("%d law(s) have no POSITIVE control:\n%s\n       A negative control proves the law did not fire. Only a positive control\n       proves it could -- without one, an inert detector reads as a clean pass.",
+          length(nopos), paste(sprintf("       %s (%s)", reg$law[nopos], reg$title[nopos]),
+                               collapse = "\n"))
+}
 nomut <- which(mut_total == 0L)
 if (length(nomut)) {
   ci_fail("%d law(s) have no planted defect:\n%s\n       Without one there is no evidence the law can fail, and a law that cannot\n       fail is a sentence, not a law.",
@@ -149,9 +171,10 @@ if (length(surv)) {
 if (unexpected_skips > 0L) {
   ci_fail("%d unexpected skip(s). A public law may not skip: its inputs are tracked,\n       so absence means the law is not being evaluated at all.", unexpected_skips)
 }
-if (!length(bad) && !length(nomut) && !length(surv) && unexpected_skips == 0L) {
-  ci_ok("%d/%d laws exercised, %d/%d planted defects detected, 0 unexpected skips",
-        n_pass + n_priv, n_law, tot_killed, tot_mut)
+if (!length(bad) && !length(nomut) && !length(surv) && !length(nopos) &&
+    unexpected_skips == 0L) {
+  ci_ok("%d/%d laws exercised, %d/%d positive controls, %d/%d planted defects detected, 0 unexpected skips",
+        n_pass + n_priv, n_law, sum(pos > 0L), n_law, tot_killed, tot_mut)
 }
 
 ci_finish()

@@ -45,8 +45,8 @@ REGISTRY_OK <- c(
   "law\ttitle\tgate\tmutation\tprivacy",
   "L1\tfirst law\ttests/fake_gate.R\ttests/fake_mutation.R\tpublic",
   "L2\tsecond law\ttests/fake_gate.R\ttests/fake_mutation.R\tpublic")
-GATE_OK <- c('cat("[LAW] L1 EXERCISED\\n"); cat("[CONTROL] L1 negative n=10\\n")',
-             'cat("[LAW] L2 EXERCISED\\n"); cat("[CONTROL] L2 negative n=20\\n")')
+GATE_OK <- c('cat("[LAW] L1 EXERCISED\\n"); cat("[CONTROL] L1 negative n=10\\n"); cat("[CONTROL] L1 positive n=1\\n")',
+             'cat("[LAW] L2 EXERCISED\\n"); cat("[CONTROL] L2 negative n=20\\n"); cat("[CONTROL] L2 positive n=1\\n")')
 MUT_OK  <- c('cat("[MUTATION] L1 planted-one DETECTED\\n")',
              'cat("[MUTATION] L2 planted-two DETECTED\\n")')
 
@@ -74,8 +74,17 @@ r <- cov_run(gate = GATE_OK[1])
 chk(r$failed && grepl("were not exercised", r$text), "a registered law that emits nothing")
 
 r <- cov_run(gate = c(GATE_OK[1],
-  'cat("[LAW] L2 EXERCISED\\n"); cat("[CONTROL] L2 negative n=0\\n")'))
+  'cat("[LAW] L2 EXERCISED\\n"); cat("[CONTROL] L2 negative n=0\\n"); cat("[CONTROL] L2 positive n=1\\n")'))
 chk(r$failed, "a law that passes on zero subjects")
+
+# A law with a negative control and NO positive control. It has proved it did
+# not fire; it has not proved it could. Until the coverage gate required this,
+# an inert detector counted as fully covered -- which is the same shape as a
+# law that never ran.
+r <- cov_run(gate = c(GATE_OK[1],
+  'cat("[LAW] L2 EXERCISED\\n"); cat("[CONTROL] L2 negative n=20\\n")'))
+chk(r$failed && grepl("no POSITIVE control", r$text),
+    "a law with a negative control but no positive control")
 
 r <- cov_run(mut = MUT_OK[1])
 chk(r$failed && grepl("no planted defect", r$text), "a law with no planted defect")
