@@ -306,6 +306,7 @@ jobs:
         run: |
           set -u
           for f in tests/ci_science_contracts.R tests/ci_science_nightly.R \
+                   tests/ci_science_laws.R tests/test_science_laws_detect.R \
                    tests/test_science_nightly_detect.R; do
             if grep -nE '^[[:space:]]*(library|require)\(' "$f"; then
               echo "$f attaches a package"; exit 1
@@ -317,7 +318,9 @@ jobs:
           # A grep cannot tell a string from an expression, and the alternative
           # -- weakening the pattern so the gate stops matching `dplyr::first`
           # -- would trade a real check for a tidy one.
-          for f in tests/ci_science_nightly.R tests/test_science_nightly_detect.R; do
+          for f in tests/ci_science_nightly.R tests/ci_science_laws.R \
+                   tests/test_science_laws_detect.R \
+                   tests/test_science_nightly_detect.R; do
             bad=$(grep -oE '\b[A-Za-z0-9.]+::' "$f" | sort -u \
                   | grep -vE '^(base|stats|utils|tools|methods|grDevices|graphics)::$' || true)
             [ -z "$bad" ] || { echo "$f reaches outside base R: $bad"; exit 1; }
@@ -399,6 +402,53 @@ jobs:
       # about the gates. It is ALSO discovered by the r-suite glob -- it is a
       # tests/test*.R file -- and is named here as well so that a failure of
       # the science gates and a failure of their proof land in the same job.
+      # LAWS, as distinct from contracts and recomputation. A contract asks
+      # whether the code overclaims; recomputation asks whether a number follows
+      # from the numbers beside it. A law asks whether something impossible has
+      # happened -- a cohort that is not any registered cohort, people inside a
+      # denominator and outside every column, a group with no ZIP placed in a
+      # real county, access falling as travel time rises, a union covering fewer
+      # origins than were routed. Every one of the five was violated in
+      # production and reached an artifact.
+      - name: Scientific laws hold
+        if: always()
+        run: |
+          set -u
+          BUDGET=300
+          start=$(date +%s)
+          rc=0; Rscript tests/ci_science_laws.R || rc=$?
+          elapsed=$(( $(date +%s) - start ))
+          echo "| scientific laws | ${elapsed}s | ${BUDGET}s |" >> "$GITHUB_STEP_SUMMARY"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          if [ "$elapsed" -gt "$BUDGET" ]; then
+            echo "::error::ci_science_laws.R took ${elapsed}s against a ${BUDGET}s budget."
+            exit 1
+          fi
+
+      # THE MUTATION MATRIX. Reports N/N, so a partial regression reads as a
+      # number rather than as a wall of ok lines nobody counts. If it ever says
+      # 9/10, one law has stopped being a law and the suite is still green
+      # everywhere else.
+      - name: Every scientific law is proven to detect its violation
+        if: always()
+        run: |
+          set -u
+          BUDGET=600
+          start=$(date +%s)
+          rc=0; Rscript tests/test_science_laws_detect.R | tee /tmp/laws.txt || rc=${PIPESTATUS[0]}
+          elapsed=$(( $(date +%s) - start ))
+          score=$(grep -oE "[0-9]+/[0-9]+ scientific mutations detected" /tmp/laws.txt || echo "not reported")
+          {
+            echo "| law mutation matrix | ${elapsed}s | ${BUDGET}s |"
+            echo ""
+            echo "**${score}**"
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          if [ "$elapsed" -gt "$BUDGET" ]; then
+            echo "::error::test_science_laws_detect.R took ${elapsed}s against a ${BUDGET}s budget."
+            exit 1
+          fi
+
       - name: The science gates detect planted defects
         if: always()
         run: |
