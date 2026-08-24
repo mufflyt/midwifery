@@ -293,6 +293,15 @@ jobs:
       # install", which stays true right up until the runner image ships the
       # package by accident. If this ever needs a contributed package, that is
       # a signal to reconsider the gate, not to add the package.
+      - name: Start the timing table
+        if: always()
+        run: |
+          {
+            echo "## Science job timings"
+            echo "| step | elapsed | budget |"
+            echo "| --- | ---: | ---: |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: The science gates depend on nothing but base R
         run: |
           set -u
@@ -320,13 +329,71 @@ jobs:
       # nightly's own "every ci_*.R gate is named by some job" check had a
       # counterexample sitting in the repository. A gate that runs only on
       # push does not cover a night when nobody pushed.
+      # WALL-CLOCK BUDGETS. A gate that stops finishing is not a slow gate, it is
+      # an absent one -- and it reports the same "not green" as a broken
+      # repository, which reads as flakiness and gets muted.
+      #
+      # This is not hypothetical. ci_science_nightly.R ran in about 5 seconds
+      # for weeks. Its formula search carried a comment claiming a cheap
+      # three-scalar probe ran before the expensive full-vector comparison; the
+      # code did the comparison first, for every one of ~123,000 candidate
+      # pairs. Nothing about the gate changed. A pipeline run widened two county
+      # artifacts to 37 numeric columns, the quadratic stopped being invisible,
+      # and the gate went past fifteen minutes against this job's twenty-minute
+      # timeout. It was caught by hand during a merge. A budget catches it on
+      # the first nightly.
+      #
+      # The numbers are deliberately loose. Observed runtime is 5.1s warm and
+      # stable across runs, but a runner is always cold, shares a CPU, and reads
+      # 152 artifacts off a network disk; one local measurement under load came
+      # in at 129s. These budgets are set to catch a regression of the order
+      # actually seen -- 100x and up -- not to police a factor of two. Do not
+      # tighten them against a warm local run.
+      #
+      # ELAPSED IS PRINTED EVERY NIGHT, passing or failing, so drift is visible
+      # in the summary long before it breaches. The breach is the backstop; the
+      # trend is the signal.
+      #
+      # Correctness is checked before speed: a gate that FAILS reports its
+      # failure and exits on that, never on the budget.
       - name: Science contracts (the code does not overclaim)
         if: always()
-        run: Rscript tests/ci_science_contracts.R
+        run: |
+          set -u
+          BUDGET=300
+          start=$(date +%s)
+          rc=0; Rscript tests/ci_science_contracts.R || rc=$?
+          elapsed=$(( $(date +%s) - start ))
+          echo "| science contracts | ${elapsed}s | ${BUDGET}s |" >> "$GITHUB_STEP_SUMMARY"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          if [ "$elapsed" -gt "$BUDGET" ]; then
+            echo "::error::ci_science_contracts.R took ${elapsed}s against a ${BUDGET}s budget."
+            echo "The gate PASSED; it is too slow. Something it reads got bigger, or a"
+            echo "loop that was affordable at the old size no longer is. Profile before"
+            echo "raising the budget -- the last time this happened the cause was a"
+            echo "quadratic hidden behind a comment describing an optimisation the code"
+            echo "did not perform."
+            exit 1
+          fi
 
       - name: Published numbers reproduce from the numbers beside them
         if: always()
-        run: Rscript tests/ci_science_nightly.R
+        run: |
+          set -u
+          BUDGET=300
+          start=$(date +%s)
+          rc=0; Rscript tests/ci_science_nightly.R || rc=$?
+          elapsed=$(( $(date +%s) - start ))
+          echo "| published numbers | ${elapsed}s | ${BUDGET}s |" >> "$GITHUB_STEP_SUMMARY"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          if [ "$elapsed" -gt "$BUDGET" ]; then
+            echo "::error::ci_science_nightly.R took ${elapsed}s against a ${BUDGET}s budget."
+            echo "The gate PASSED; it is too slow. This gate reads every tracked artifact"
+            echo "end to end, so it grows with the artifacts -- but it grew 100x once from"
+            echo "a probe that never ran before the work it was supposed to skip. Profile"
+            echo "before raising the budget."
+            exit 1
+          fi
 
       # The gates above assert things about artifacts; this asserts things
       # about the gates. It is ALSO discovered by the r-suite glob -- it is a
@@ -334,7 +401,21 @@ jobs:
       # the science gates and a failure of their proof land in the same job.
       - name: The science gates detect planted defects
         if: always()
-        run: Rscript tests/test_science_nightly_detect.R
+        run: |
+          set -u
+          BUDGET=600
+          start=$(date +%s)
+          rc=0; Rscript tests/test_science_nightly_detect.R || rc=$?
+          elapsed=$(( $(date +%s) - start ))
+          echo "| detect planted defects | ${elapsed}s | ${BUDGET}s |" >> "$GITHUB_STEP_SUMMARY"
+          [ "$rc" -eq 0 ] || exit "$rc"
+          if [ "$elapsed" -gt "$BUDGET" ]; then
+            echo "::error::test_science_nightly_detect.R took ${elapsed}s against a ${BUDGET}s budget."
+            echo "It runs the real gate once per planted defect in a temporary git repo, so"
+            echo "it costs roughly (cases x gate runtime) plus an R startup each. A breach"
+            echo "here usually means the GATE got slower, not this harness."
+            exit 1
+          fi
 
   # ---------------------------------------------------------------------------
   # Does the suite DETECT anything? Every other job asks whether the code is
