@@ -1,0 +1,10 @@
+# Rendered output, all of it. The .qmd plus the catalog reproduce these on
+# demand, and a committed .docx goes stale against the artifacts the moment one
+# changes -- which is the whole failure this manuscript is built to avoid.
+#
+# Was midwife_persistence.* only, so title_page.docx and appendix1_linkage.docx
+# were committed by a `git add manuscript/` that looked clean.
+*.docx
+*.html
+*_files/
+/.quarto/
