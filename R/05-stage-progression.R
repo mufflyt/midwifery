@@ -25,8 +25,14 @@
 #' equals the frozen cohort size; geography classes sum to the denominator.
 #'
 #' Output : artifacts/stage_progression_like_for_like.csv,
-#'          artifacts/cohort_flow_16743_to_15706.csv,
+#'          artifacts/cohort_flow_<stage2>_to_<final>.csv,
 #'          artifacts/frozen_cohort/analytic_cohort.csv
+#'
+#' The flow filename is DERIVED from the two cohort sizes, not fixed. This
+#' header named cohort_flow_16743_to_15706.csv, a vintage no longer reachable:
+#' the cohort has since been 17,538 and is now 16,892, so the file on disk is
+#' cohort_flow_16743_to_16892.csv. Writing any literal size here means the
+#' header goes stale at the next re-freeze, which is what happened.
 #'
 #' @family step-functions
 #' @concept missingness

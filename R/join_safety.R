@@ -486,8 +486,9 @@ join_coverage_report <- function(left_before, joined_rows,
 #' @details
 #' **Pipeline usage:** Used in 20+ enrichment steps for adding demographics,
 #' Medicare claims, retirement data, etc. See
-#' \code{R/11-create-access-by-group.R}
-#' for example.
+#' \code{R/01-build-county-base.R} for example. (This pointed at
+#' \code{R/11-create-access-by-group.R}, which exists in no checkout -- a
+#' cross-reference to a file that was never here or has been renamed away.)
 #'
 #' **Validation workflow:**
 #' \enumerate{
