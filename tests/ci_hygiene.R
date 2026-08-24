@@ -72,7 +72,15 @@ cat("\n-- H4 no function defined at top level in two files --\n")
 # Allowlisted repeats. Each is a private helper whose duplication is harmless
 # because it is never a JOIN KEY or a normalisation -- the two categories where
 # divergence silently changes results.
-ALLOW <- c("chk", "xchk", "error", "pick", "f", "ok", "rd", "fmt", "mk", "sel",
+# `ok`, `bad`, `chk` and `skip` are the four members of the standalone-test
+# harness this repository writes over and over: print a pass, count a failure,
+# assert, note a skip. `ok` and `chk` were already listed -- and are the most
+# duplicated names in the tree, 8 files and 49 files respectively -- so listing
+# the other two completes a set rather than opening a new hole. All four are
+# console output. None is a join key or a normalisation, which is the line H4
+# actually polices.
+ALLOW <- c("chk", "xchk", "error", "pick", "f", "ok", "bad", "skip",
+           "rd", "fmt", "mk", "sel",
            "main", "code", "as_lgl", "rate", "key_of", "nonascii", "fetch_one",
            "assign_cd", "centroid_counts", "assign_county_from_points",
            "drop_zip", "disagree")
