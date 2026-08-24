@@ -883,9 +883,26 @@ tolerance is method-derived, *not* a proven bound, and
 `artifacts/osmde_strict_containment_summary.csv`. Read it as simplification noise at the polygon
 boundary rather than as routing error, and do not treat the tolerance as a guarantee.
 
-What still needs recomputing: every access figure in the two sections above was calculated on the
-represented subset and is a lower bound on a population that no longer limits us. The national and
-rural access numbers should be rebuilt against the full cohort before any of them is quoted.
+**What still needs recomputing, specifically.** Complete coverage of the *inputs* is not the same as
+a rebuilt *surface*, and the two have come apart:
+
+| | origins dissolved | built |
+|---|---:|---:|
+| `artifacts/maps/midwifery_isochrone_union_30min.rds` | 4,714 | 2026-08-10 |
+| `artifacts/maps/midwifery_isochrone_union_60min.rds` | 4,666 | 2026-08-10 |
+| routed by the full-cohort job | **8,359** | 2026-08-24 |
+
+The published dissolved surfaces hold **56% of the routed origins** and predate the routing by two
+weeks. They are gitignored, so nothing in this repository ships them and no committed figure depends
+on them — but `render_midwifery_map.R` and `build_midwifery_isochrone_map.R` both read them, and a
+map rebuilt from them today would look complete while covering a little over half the cohort. That
+is the same rural-selective error this section spent two attempts diagnosing, arriving through a
+stale intermediate instead of a thin library.
+
+**Rebuild the unions before recomputing anything.** Every access figure in the two sections above
+was calculated on the represented subset and is a lower bound on a limitation that no longer exists;
+none should be quoted until the surfaces are regenerated from the full 8,359 and the arithmetic is
+rerun against them.
 
 
 ## Table 1
