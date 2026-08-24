@@ -106,6 +106,7 @@ if (length(off)) {
           length(off), paste(sprintf("       %s", off), collapse = "\n"),
           paste(sprintf("%s (%s)", names(LAW_COHORTS), LAW_COHORTS), collapse = "; "))
 } else {
+  ci_law_exercised("L1", seen)
   ci_ok("all %d cohort_n declaration(s) name a registered cohort", seen)
 }
 
@@ -130,7 +131,7 @@ off <- character(0); n_checked <- 0L
 for (idy in LAW_IDENTITIES) {
   if (is.na(idy$what)) next
   d <- suppressWarnings(ci_read_head(idy$file, -1L, root = root))
-  if (is.null(d)) { ci_skip("L2: %s absent; skipped", idy$file); next }
+  if (is.null(d)) { { ci_law_skipped("L2", "input absent"); ci_skip("L2: %s absent; skipped", idy$file) }; next }
   if (!(idy$total %in% names(d))) {
     ci_fail("L2: %s has no `%s` column -- the identity cannot be checked, which is\n       itself a failure: the artifact changed shape under a declared law.",
             idy$file, idy$total)
@@ -159,6 +160,7 @@ if (length(off)) {
   ci_fail("L2: %d accounting identity violation(s):\n%s\n       People are inside a denominator and outside every column beside it.",
           length(off), paste(sprintf("       %s", off), collapse = "\n"))
 } else {
+  ci_law_exercised("L2", n_checked)
   ci_ok("all %d declared accounting identit%s hold", n_checked,
         if (n_checked == 1L) "y" else "ies")
 }
@@ -171,7 +173,7 @@ ci_section("L3 missing geography stays missing")
 # crosswalk that caused it, which is derived from a tracked Census file.
 xw <- file.path(root, "data", "zcta_county_2020.txt")
 if (!file.exists(xw)) {
-  ci_skip("L3: %s absent; skipped", xw)
+  { ci_law_skipped("L3", "input absent"); ci_skip("L3: %s absent; skipped", xw) }
 } else {
   raw <- readLines(xw, warn = FALSE)
   hdr <- strsplit(raw[1], "|", fixed = TRUE)[[1]]
@@ -231,6 +233,7 @@ if (!file.exists(xw)) {
         ci_fail("L3: %d cohort group(s) placed entirely in one real geography:\n%s\n       A group with no practice ZIP must be Unknown. County 02290 -- Yukon-\n       Koyukuk Census Area -- is what a missing ZIP resolved to when the\n       crosswalk kept its NA key.",
                 length(off3), paste(sprintf("       %s", off3), collapse = "\n"))
       } else {
+        ci_law_exercised("L3", nrow(comp))
         ci_ok("no cohort group is placed entirely in a single real geography")
       }
     }
@@ -243,7 +246,7 @@ ci_section("L4 more travel time cannot reduce access")
 acc <- suppressWarnings(ci_read_head("artifacts/full_cohort_access_by_band_rucc.csv",
                                      -1L, root = root))
 if (is.null(acc)) {
-  ci_skip("L4: full_cohort_access_by_band_rucc.csv absent; skipped")
+  { ci_law_skipped("L4", "input absent"); ci_skip("L4: full_cohort_access_by_band_rucc.csv absent; skipped") }
 } else {
   off <- character(0); n_pairs <- 0L
   for (s in unique(acc$rurality)) {
@@ -263,6 +266,7 @@ if (is.null(acc)) {
     ci_fail("L4: %d stratum/band pair(s) where more travel time gives LESS access:\n%s\n       The 60-minute surface contains the 30-minute surface from the same\n       origins, so this is impossible unless the two were built from different\n       inputs -- which is what a stale union looks like.",
             length(off), paste(sprintf("       %s", off), collapse = "\n"))
   } else {
+    ci_law_exercised("L4", n_pairs)
     ci_ok("access is monotone in the travel-time band across %d pair(s)", n_pairs)
   }
 
@@ -289,7 +293,7 @@ ci_section("L5 every routed provider participates in the union")
 vt <- suppressWarnings(ci_read_head("artifacts/osmde_validation_table.csv", -1L, root = root))
 a30 <- file.path(root, "artifacts", "maps", "midwifery_isochrone_union_30min.rds")
 if (is.null(vt) || !file.exists(a30)) {
-  ci_skip("L5: validation table or dissolved surface absent; skipped")
+  { ci_law_skipped("L5", "input absent"); ci_skip("L5: validation table or dissolved surface absent; skipped") }
 } else {
   routed <- law_num(vt$observed[vt$check == "locations successfully retrieved"])
   if (!length(routed) || is.na(routed)) {
@@ -314,6 +318,7 @@ if (is.null(vt) || !file.exists(a30)) {
       ci_fail("L5: %d surface(s) cover fewer origins than were routed:\n%s\n       A union built before the routing finished understates access while\n       looking complete. Rebuild with build_midwifery_isochrone_map.R.",
               length(off), paste(sprintf("       %s", off), collapse = "\n"))
     } else {
+      ci_law_exercised("L5", routed)
       ci_ok("every dissolved surface covers at least the %s routed locations",
             format(routed, big.mark = ","))
     }

@@ -272,6 +272,15 @@ brk_band <- unique(na.omit(broke$band))
 chk(length(brk_band) == 1L && !is.na(brk_band[1]),
     sprintf("which carries a real rurality band: %s", paste(brk_band, collapse = ",")))
 
+# Evidence for tests/ci_law_coverage.R. Emitted at the end so it reflects what
+# actually ran: the subject count is the number of ZIPs masked, and the positive
+# control is the historical one -- this file plants its own defect by rebuilding
+# the crosswalk the broken way, so it is both the law and its own mutation.
 cat("\n")
+cat(sprintf("[LAW] L6 EXERCISED\n"))
+cat(sprintf("[CONTROL] L6 negative n=%d\n", length(subjects)))
+cat(sprintf("[MUTATION] L6 historical-crosswalk %s\n",
+            if (invented_by_defect > 0L) "DETECTED" else "SURVIVED"))
+
 if (fails) { cat(sprintf("FAILED (%d)\n", fails)); quit(status = 1) }
 cat("PASS (0 failures)\n")

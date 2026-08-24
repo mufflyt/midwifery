@@ -109,6 +109,10 @@ kills <- function(label, code, edits) {
   r <- law_with(edits)
   hit <- r$failed && grepl(sprintf("%s:", code), r$text, fixed = TRUE)
   if (hit) caught <<- caught + 1L
+  # Evidence for tests/ci_law_coverage.R: which law, which defect, and whether
+  # the law killed it. A law with no DETECTED line has no positive control.
+  cat(sprintf("[MUTATION] %s %s %s\n", code,
+              gsub("[^A-Za-z0-9]+", "-", label), if (hit) "DETECTED" else "SURVIVED"))
   chk(hit, sprintf("%s  %s", code, label))
   if (!r$failed) cat("       the gate passed; the mutation survived\n")
   else if (!hit) cat(sprintf("       failed, but not as %s -- another law took the hit\n", code))
