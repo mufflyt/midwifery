@@ -83,6 +83,10 @@ docs/maps/leaflet_*_files/
 !docs/maps/*.html
 !docs/maps/*.csv
 docs/maps/leaflet_counties.html
+# Withdrawn from the published site: superseded and not worth its 31 MB.
+# build_complete_leaflet_map.R still writes it, so without this line the
+# next run of that script would silently re-add it under !docs/maps/*.html.
+docs/maps/midwifery_access_map_v2.html
 qa/
 docs/maps/leaflet_active_counties.html
 
