@@ -229,7 +229,7 @@ jobs:
                     # WILLIAMS/WILLIAMSON, MARTIN/MARTINEZ and the rest, each
                     # of which wrote a wrong certificant row in production --
                     # stop being checked on every push.
-                    "rvest")
+                    "rvest", "humaniformat")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
         shell: Rscript {0}
