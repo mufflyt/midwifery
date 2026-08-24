@@ -1,0 +1,2 @@
+observed_max_excursion_m,operational_tolerance_m,operational_tolerance_basis,sensitivity_tolerance_m,sensitivity_basis,strict_failures,substantive_failures_at_gate,generalize_m,denoise,engine
+35,50,"1 x generator Douglas-Peucker simplification epsilon (generalize=50); method-derived, not a proven bound",100,conservative reporting threshold; not a demonstrated worst case,2852,0,50,0.3,valhalla1.openstreetmap.de

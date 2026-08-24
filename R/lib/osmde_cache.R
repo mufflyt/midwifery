@@ -154,20 +154,25 @@ osmde_assemble <- function(cache_dir, chunk = 500L, verbose = TRUE) {
       geometry           = sf::st_geometry(g))
   }
 
-  out <- NULL
+  # Chunks are accumulated in a list and bound ONCE. Binding each chunk onto a
+  # growing result copies the whole accumulated object every time, which at
+  # 8,359 locations is quadratic in what is already the largest object in memory.
   grp <- split(keys, ceiling(seq_along(keys) / chunk))
+  parts <- vector("list", length(grp))
   for (i in seq_along(grp)) {
-    part <- lapply(grp[[i]], one)
-    part <- part[!vapply(part, is.null, logical(1))]
-    if (!length(part)) next
-    part <- do.call(rbind, part)
-    part <- sf::st_cast(part, "MULTIPOLYGON", warn = FALSE)
-    out <- if (is.null(out)) part else rbind(out, part)
+    p <- lapply(grp[[i]], one)
+    p <- p[!vapply(p, is.null, logical(1))]
+    if (!length(p)) next
+    parts[[i]] <- sf::st_cast(do.call(rbind, p), "MULTIPOLYGON", warn = FALSE)
     if (verbose)
       cat(sprintf("  assembled %s/%s locations\n",
                   format(min(i * chunk, length(keys)), big.mark = ","),
                   format(length(keys), big.mark = ",")))
     invisible(gc())
   }
+  parts <- parts[!vapply(parts, is.null, logical(1))]
+  if (!length(parts)) stop("cache held no readable retrievals: ", cache_dir)
+  out <- do.call(rbind, parts)
+  rm(parts); invisible(gc())
   sf::st_transform(out, 4326)
 }

@@ -83,6 +83,10 @@ docs/maps/leaflet_*_files/
 !docs/maps/*.html
 !docs/maps/*.csv
 docs/maps/leaflet_counties.html
+# Withdrawn from the published site: superseded and not worth its 31 MB.
+# build_complete_leaflet_map.R still writes it, so without this line the
+# next run of that script would silently re-add it under !docs/maps/*.html.
+docs/maps/midwifery_access_map_v2.html
 qa/
 docs/maps/leaflet_active_counties.html
 
@@ -123,7 +127,11 @@ artifacts/osmde_location_crosswalk.csv
 artifacts/osmde_location_crosswalk.csv.provenance.json
 artifacts/osmde_still_unmeasured.csv
 artifacts/osmde_still_unmeasured.csv.provenance.json
+# Both forms on purpose. The trailing-slash rule matches a DIRECTORY only, so a
+# worktree that reaches the polygons through a symlink of the same name was not
+# covered and the link showed up as committable.
 artifacts/isochrones_osmde/
+artifacts/isochrones_osmde
 artifacts/iso_recovery_pro/
 # reference boundaries, redownloadable from Census
 data/cd118/
@@ -515,3 +523,8 @@ artifacts/address_match_failure_cases.csv
 artifacts/address_match_failure_cases.csv.provenance.json
 artifacts/embedded_org_name_candidates.csv
 artifacts/embedded_org_name_candidates.csv.provenance.json
+
+# Verification runs: one directory per verifier invocation, plus the `latest`
+# symlink promoted atomically on success (R/lib/validation_run.R). Machine-local
+# provenance, regenerable from verify_osmde_full_cohort_coverage.R.
+artifacts/validation/
