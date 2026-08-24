@@ -37,33 +37,37 @@ base <- data.frame(id  = c("a", "b", "c"),
                    lab = c("x", "y", "z"), stringsAsFactors = FALSE)
 utils::write.csv(base, pinned, row.names = FALSE)
 
-refuses <- function(new, path = pinned) {
+# Named guard_refuses, not refuses: H4 forbids a top-level function defined in
+# two tracked files, and tests/test_safe_divide_types.R already has a refuses().
+# The collision was invisible until this file was staged, because ci_hygiene.R
+# reads `git ls-files` -- an untracked new test is one H4 cannot see yet.
+guard_refuses <- function(new, path = pinned) {
   inherits(try(guard_frozen_write(new, path), silent = TRUE), "try-error")
 }
 
 cat("\n-- it must PROCEED when nothing would change --\n")
-chk(!refuses(base, file.path(dir, "absent.csv")), "an absent target is a first write")
-chk(!refuses(base), "a rebuild that reproduces the artifact")
+chk(!guard_refuses(base, file.path(dir, "absent.csv")), "an absent target is a first write")
+chk(!guard_refuses(base), "a rebuild that reproduces the artifact")
 
 # THE REGRESSION. Same numbers, formatting a reader cannot see.
 noise <- base; noise$val <- c(1.5000000000001, 2.25, 3.125)
-chk(!refuses(noise), "float formatting noise below 1e-9 is not a change")
+chk(!guard_refuses(noise), "float formatting noise below 1e-9 is not a change")
 
 cat("\n-- it must REFUSE a real change --\n")
 num <- base; num$val[2] <- 99
-chk(refuses(num), "a numeric value moved")
+chk(guard_refuses(num), "a numeric value moved")
 str_ <- base; str_$lab[3] <- "CHANGED"
-chk(refuses(str_), "a string value moved")
-chk(refuses(base[1:2, ]), "the row count moved")
+chk(guard_refuses(str_), "a string value moved")
+chk(guard_refuses(base[1:2, ]), "the row count moved")
 wide <- base; wide$extra <- 1L
-chk(refuses(wide), "a column was added")
+chk(guard_refuses(wide), "a column was added")
 
 cat("\n-- and the escape hatch must work, but only when asked --\n")
 withr_env <- Sys.getenv("ALLOW_REFREEZE")
 Sys.setenv(ALLOW_REFREEZE = "1")
-chk(!refuses(num), "ALLOW_REFREEZE=1 permits a deliberate re-pin")
+chk(!guard_refuses(num), "ALLOW_REFREEZE=1 permits a deliberate re-pin")
 if (nzchar(withr_env)) Sys.setenv(ALLOW_REFREEZE = withr_env) else Sys.unsetenv("ALLOW_REFREEZE")
-chk(refuses(num), "and refuses again once it is unset")
+chk(guard_refuses(num), "and refuses again once it is unset")
 
 cat("\n-- the message has to name what moved --\n")
 msg <- tryCatch(guard_frozen_write(num, pinned), error = function(e) conditionMessage(e))
