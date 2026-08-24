@@ -1,6 +1,6 @@
 {
   "artifact": "no_final_npi_provenance.csv",
-  "written_utc": "2026-08-23 23:10:01 UTC",
+  "written_utc": "2026-08-24 11:50:05 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",

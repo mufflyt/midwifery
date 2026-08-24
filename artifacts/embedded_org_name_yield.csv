@@ -1,0 +1,9 @@
+stratum,n,of_no_house_number,of_unresolved
+generic_name_rejected,1,62,1544
+military_postal_no_name,8,62,1544
+name_candidate,29,62,1544
+not_a_name,24,62,1544
+matched:same_state:military_facility_name_unique,7,62,1544
+matched:same_state:org_name_embedded_unique,5,62,1544
+matched:same_zip5:military_facility_name_unique,7,62,1544
+matched:same_zip5:org_name_embedded_unique,5,62,1544

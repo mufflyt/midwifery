@@ -1,0 +1,14 @@
+{
+  "artifact": "ob_hospitals_geocoded.csv",
+  "written_utc": "2026-08-24 11:52:23 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/ob_hospitals_geocoded.csv",
+      "sha256": "19e9359707b1470d88e322808a8f430157d526ba23ef95cf0e9b432685b6ecf8"
+    },
+    {
+      "path": "artifacts/ob_hospitals_fallback_log.csv",
+      "sha256": "22e394060c3d9db0af5b1cd3d43c91b1b3bfa3efcc2d11c28deddadff7a64a2b"
+    }
+  ]
+}

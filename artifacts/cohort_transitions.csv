@@ -1,11 +1,8 @@
 transition,n
-Accept -> Accept (retained),15391
-Accept -> npi_withdrawn_by_identity_guard,1342
-Ambiguous -> Accepted (final NPI present),1002
-"Review -> In cohort, NO final NPI",461
-Review -> Accepted (final NPI present),292
-No match -> Accepted (final NPI present),179
-"Ambiguous -> In cohort, NO final NPI",155
-"No match -> In cohort, NO final NPI",58
-Accept -> npi_reassigned_and_excluded,9
-Accept -> absent_from_guarded_linkage,1
+Accept -> Accept (retained),15347
+Accept -> npi_withdrawn_by_identity_guard,1393
+Review -> Accepted (final NPI present),786
+Ambiguous -> Accepted (final NPI present),555
+No match -> Accepted (final NPI present),204
+Accept -> absent_from_guarded_linkage,2
+Accept -> npi_reassigned_and_excluded,1

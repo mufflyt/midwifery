@@ -1,6 +1,6 @@
 {
   "artifact": "cross_state_diagnosis.csv",
-  "written_utc": "2026-08-11 02:31:58 UTC",
+  "written_utc": "2026-08-24 11:49:45 UTC",
   "inputs": [
     {
       "path": "midwives_geography.csv",
@@ -9,6 +9,10 @@
     {
       "path": "midwives_with_nppes.csv",
       "sha256": "93dc2e8bc2a2a066f255b84a351050a3594a253e4258575e0fde3e344ec5ff08"
+    },
+    {
+      "path": "artifacts/zip_fallback_discordant.csv",
+      "sha256": "46cd178e7c53dddb248f35b5c4ff3b6584e87caec93fd7d2f56ce1f98d62edd6"
     }
   ]
 }

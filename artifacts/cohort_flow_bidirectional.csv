@@ -1,9 +1,8 @@
 population,reason,n,stage2_cohort,final_cohort
-retained,in both cohorts,15391,16743,17538
-added,Admitted to cohort without a final NPI,674,16743,17538
-added,Previously ambiguous -> newly resolved,1002,16743,17538
-added,Previously held for review -> newly resolved,292,16743,17538
-added,Previously unmatched -> newly accepted linkage,179,16743,17538
-removed,absent_from_guarded_linkage,1,16743,17538
-removed,npi_reassigned_and_excluded,9,16743,17538
-removed,npi_withdrawn_by_identity_guard,1342,16743,17538
+retained,in both cohorts,15347,16743,16892
+added,Previously ambiguous -> newly resolved,555,16743,16892
+added,Previously held for review -> newly resolved,786,16743,16892
+added,Previously unmatched -> newly accepted linkage,204,16743,16892
+removed,absent_from_guarded_linkage,2,16743,16892
+removed,npi_reassigned_and_excluded,1,16743,16892
+removed,npi_withdrawn_by_identity_guard,1393,16743,16892
