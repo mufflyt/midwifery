@@ -190,6 +190,13 @@ artifacts/dac_cnm_locations.csv
 !docs/table1_midwives.html
 !docs/table1_midwives_gt.html
 
+# The GitHub Pages landing page. Same reasoning as the Table 1 renders: the
+# blanket rule is aimed at multi-megabyte map output, and this is 6 KB of hand
+# written index over files that are already tracked. Without the exemption
+# `git add docs/index.html` fails with "paths are ignored" -- which is exactly
+# how the Table 1 renders went missing, and it happened again here.
+!docs/index.html
+
 # Facility-attribution intermediates. The chain is
 #   update_final_facility_classification.R      -> _final_v2
 #   integrate_cpt_claims_into_facility_...R     -> _final_v3

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>US Midwifery Workforce Maps</title>
+<style>
+  :root{
+    --paper:#fbfbf9; --ink:#161d1a; --soft:#4a544f; --rule:#d3d9d4; --accent:#1b5e3f;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--paper:#111614;--ink:#e7ece8;--soft:#9daaa2;--rule:#293129;--accent:#78c79a}
+  }
+  *{box-sizing:border-box}
+  body{background:var(--paper);color:var(--ink);font-family:var(--serif);
+       font-size:17px;line-height:1.6;margin:0;padding:clamp(1.5rem,5vw,3.5rem) 1.2rem 5rem}
+  .wrap{max-width:64ch;margin:0 auto}
+  h1{font-size:clamp(1.5rem,4vw,2rem);line-height:1.2;margin:0 0 .4rem;text-wrap:balance}
+  .sub{color:var(--soft);margin:0 0 2rem}
+  h2{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+     color:var(--accent);font-weight:400;margin:2.4rem 0 .9rem;
+     padding-bottom:.45rem;border-bottom:1px solid var(--rule)}
+  .card{border:1px solid var(--rule);border-left:3px solid var(--accent);
+        padding:1rem 1.15rem;margin-bottom:1rem}
+  .card a{font-weight:600;color:var(--accent);text-decoration:none;font-size:1.05rem}
+  .card a:hover{text-decoration:underline}
+  .card p{margin:.4rem 0 0;font-size:.92rem;color:var(--soft)}
+  .size{font-family:var(--mono);font-size:.72rem;color:var(--soft)}
+  footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--rule);
+         font-size:.85rem;color:var(--soft)}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>US Midwifery Workforce Maps</h1>
+<p class="sub">Certified nurse-midwives and certified midwives, located from public
+records. Companion material to the <a href="https://github.com/mufflyt/midwifery">midwifery</a>
+analysis repository.</p>
+
+<h2>Interactive maps</h2>
+
+<div class="card">
+  <a href="maps/midwifery_access_map_v2.html">Midwifery access map</a>
+  <span class="size">&nbsp;31 MB</span>
+  <p>County-level supply with drive-time coverage. Large file — allow a moment to load.</p>
+</div>
+
+<div class="card">
+  <a href="cnm_national_leaflet_map.html">National CNM map</a>
+  <span class="size">&nbsp;6 MB</span>
+  <p>Located certified nurse-midwives nationally, with board-of-nursing verification links.</p>
+</div>
+
+<h2>Static figures</h2>
+
+<div class="card">
+  <a href="figures/county_supply.png">County midwifery supply</a>
+  <p>County-level supply, highlighting counties with no located midwife.</p>
+</div>
+
+<div class="card">
+  <a href="maps/active_state_rate.png">Active midwives per 100,000 women 15–44</a>
+  <p>State-level rate among women of reproductive age.</p>
+</div>
+
+<div class="card">
+  <a href="maps/active_county_counts.png">Active midwives by county</a>
+  <p>Counts of actively certified, located midwives.</p>
+</div>
+
+<h2>Methods and limitations</h2>
+
+<div class="card">
+  <a href="https://github.com/mufflyt/midwifery/blob/main/docs/SCOPE_AND_LIMITATIONS.md">Scope and limitations</a>
+  <p>The cohort is AMCB-certified CNMs and CMs only. Certified professional midwives
+  and state-licensed direct-entry midwives are outside it, so midwifery access is
+  understated, unevenly by state.</p>
+</div>
+
+<div class="card">
+  <a href="https://github.com/mufflyt/midwifery/blob/main/docs/RESULTS_geographic_persistence.md">Geographic persistence, 2007–2025</a>
+  <p>How often a midwife stays in the same county: 95.9% year to year, 67.5% across a career.</p>
+</div>
+
+<footer>
+  <p><strong>Sources.</strong> All public: the AMCB certification directory, the CMS
+  National Plan and Provider Enumeration System, US Census geography, and USDA
+  Rural-Urban Continuum Codes.</p>
+  <p><strong>What these maps show.</strong> Last-observed practice location, not
+  confirmed current practice. They are a distribution of practice locations rather
+  than a measure of access: patients cross county lines, and not every certificant
+  is linked to a location, so a county with no marker is not a county without
+  midwifery care.</p>
+  <p>Code and data: <a href="https://github.com/mufflyt/midwifery">github.com/mufflyt/midwifery</a>
+  · doi:10.5281/zenodo.1054200</p>
+</footer>
+
+</div>
+</body>
+</html>
