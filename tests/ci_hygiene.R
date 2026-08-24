@@ -79,7 +79,13 @@ cat("\n-- H4 no function defined at top level in two files --\n")
 # the other two completes a set rather than opening a new hole. All four are
 # console output. None is a join key or a normalisation, which is the line H4
 # actually polices.
-ALLOW <- c("chk", "xchk", "error", "pick", "f", "ok", "bad", "skip",
+# `kills` is the mutation-harness verb -- plant a defect, require the gate to
+# die on it -- and it now appears in two harnesses with a third and fourth
+# coming as more laws are registered. Same category as ok/bad/chk/skip above:
+# console plumbing around a subprocess, never a join key or a normalisation.
+# Its partner `survives` is not listed because it is not yet duplicated; add it
+# when it is, deliberately, rather than in anticipation.
+ALLOW <- c("chk", "xchk", "error", "pick", "f", "ok", "bad", "skip", "kills",
            "rd", "fmt", "mk", "sel",
            "main", "code", "as_lgl", "rate", "key_of", "nonascii", "fetch_one",
            "assign_cd", "centroid_counts", "assign_county_from_points",

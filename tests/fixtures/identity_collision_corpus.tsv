@@ -1,0 +1,41 @@
+# =============================================================================
+# Adversarial identity-collision corpus -- FROZEN
+# =============================================================================
+# Synthetic throughout. No row describes a real person: the names are
+# constructed to collide, and that is the whole point. Real collisions live in
+# the frozen linkage, which is person-level and gitignored, so a corpus that
+# could run in public CI had to be built rather than sampled.
+#
+# Each row is a ROSTER record and a CANDIDATE record that a matcher might pair.
+# The expectations are what this repository's identity functions ACTUALLY
+# return today, frozen so a change has to be deliberate:
+#
+#   expect_middle   middle_state() from R/lib/ab_middle_name_common.R
+#   expect_cred_ok  are_credentials_compatible_midwifery() from
+#                   credential_compatibility.R
+#   distinguishable whether ANY available evidence separates this pair. "no"
+#                   means the pair is ambiguous BY CONSTRUCTION -- there is
+#                   nothing to resolve on -- and a matcher that picks a winner
+#                   is manufacturing a distinction the data does not contain.
+#
+# Adding a row is cheap and encouraged. Changing an expectation is a decision.
+# =============================================================================
+case_id	category	roster_first	roster_middle	roster_last	roster_cred	cand_first	cand_middle	cand_last	cand_cred	expect_middle	expect_cred_ok	distinguishable	note
+C01	identical_name_same_state	MARIA		GARCIA	CNM	MARIA		GARCIA	CNM	both_missing	TRUE	no	two certificants, one name, no middle on either side
+C02	identical_name_same_state	MARIA		GARCIA	CNM	MARIA	ELENA	GARCIA	CNM	missing_roster_side	TRUE	no	roster has no middle; the candidate's cannot confirm or deny
+C03	twins_middle_conflict	MARIA	ELENA	GARCIA	CNM	MARIA	SOFIA	GARCIA	CNM	conflict	TRUE	yes	different middles: the one dimension that separates them
+C04	initials_only	MARIA	E	GARCIA	CNM	MARIA	ELENA	GARCIA	CNM	initial_agreement	TRUE	no	an initial agrees with any name starting with it
+C05	initials_only	MARIA	E	GARCIA	CNM	MARIA	ESTHER	GARCIA	CNM	initial_agreement	TRUE	no	and with a DIFFERENT name starting with it
+C06	maiden_former_name	SARAH	JANE	OBRIEN	CNM	SARAH	JANE	MILLER	CNM	initial_agreement	TRUE	yes	surname change; middles agree, surnames do not
+C07	hyphenated	ANNA		NELSON-BECKER	CNM	ANNA		NELSON	CNM	both_missing	TRUE	yes	hyphenated vs unhyphenated surname
+C08	swapped_first_middle	JEAN	MARIE	DUPONT	CNM	MARIE	JEAN	DUPONT	CNM	conflict	TRUE	yes	first and middle transposed
+C09	near_miss_given_name	LINDA	A	JONES	CNM	MELINDA		JONES	CNM	missing_npi_side	TRUE	yes	LINDA must not match MELINDA -- an observed false match
+C10	near_miss_surname	LAURA		ANDERSON	CNM	LAURA		SANDERSON	CNM	both_missing	TRUE	yes	ANDERSON must not match SANDERSON -- an observed false match
+C11	contradictory_credential	MARIA	ELENA	GARCIA	CNM	MARIA	ELENA	GARCIA	MD	initial_agreement	FALSE	yes	same name, incompatible credential: a namesake physician
+C12	credential_masked	MARIA	ELENA	GARCIA	CNM	MARIA	ELENA	GARCIA		initial_agreement	TRUE	no	the SAME pair with the credential removed
+C13	credential_unknown_both	MARIA	ELENA	GARCIA		MARIA	ELENA	GARCIA		initial_agreement	TRUE	no	neither side declares a credential
+C14	compatible_nonphysician	MARIA	ELENA	GARCIA	CNM	MARIA	ELENA	GARCIA	RN	initial_agreement	TRUE	no	RN is not a physician credential; the gate permits it
+C15	shared_address_distinct_people	ANNA	B	SCHMIDT	CNM	ANNA	C	SCHMIDT	CNM	conflict	TRUE	yes	same practice address, different middle initial
+C16	middle_masked_from_conflict	MARIA	ELENA	GARCIA	CNM	MARIA		GARCIA	CNM	missing_npi_side	TRUE	no	C03's conflicting middle removed from one side
+C17	middle_masked_both	MARIA		GARCIA	CNM	MARIA		GARCIA	CNM	both_missing	TRUE	no	C03's conflicting middles removed from both sides
+C18	suffix_only_difference	JOHN		SMITH	CM	JOHN		SMITH	CM	both_missing	TRUE	no	Jr/Sr not carried on either side; nothing separates them
