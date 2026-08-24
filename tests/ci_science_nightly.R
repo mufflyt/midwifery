@@ -84,7 +84,20 @@ scn_num <- function(x) {
 # rule below is what keeps a spurious id/id pair from being mistaken for a
 # formula, not the column name.
 scn_is_count <- function(v) {
-  all(is.na(v) | (v >= 0 & abs(v - round(v)) < 1e-9)) && any(!is.na(v))
+  # NA-SAFE, and it has to be. `all()` over a comparison involving Inf returns
+  # NA, not FALSE: abs(Inf - round(Inf)) is NaN, NaN < 1e-9 is NA. The caller
+  # subsets names(d) by this result, so a single NA turned one column name into
+  # NA_character_, and nums[[NA_character_]] then failed inside ave() with
+  # "first argument must be a vector" -- a crash, not a finding, two artifacts
+  # away from the column that caused it.
+  #
+  # It arrived via a hex hash. artifacts/osmde_strict_containment_summary.csv
+  # carries 2,852 location_hash values and one of them parses as Inf, which is
+  # enough. A column holding a non-finite value is not a count either way, so
+  # rejecting it outright is both the safe answer and the correct one.
+  if (any(is.infinite(v))) return(FALSE)
+  if (!any(is.finite(v))) return(FALSE)
+  isTRUE(all(is.na(v) | (v >= 0 & abs(v - round(v)) < 1e-9)))
 }
 
 # Decimal places in the printed value. 99.94121537218018 was written at full
@@ -213,8 +226,9 @@ for (f in scn_files) {
   d <- suppressWarnings(ci_read_head(f, -1L, root = root))
   if (is.null(d) || !nrow(d) || !ncol(d)) next
   nums <- lapply(d, scn_num)
-  counts <- names(d)[vapply(names(d), function(cn) {
-    v <- nums[[cn]]; !is.null(v) && scn_is_count(v) }, logical(1))]
+  cn_all <- names(d)[!is.na(names(d)) & nzchar(names(d))]
+  counts <- cn_all[vapply(cn_all, function(cn) {
+    v <- nums[[cn]]; !is.null(v) && isTRUE(scn_is_count(v)) }, logical(1))]
   SCN[[f]] <- list(d = d, nums = nums, counts = counts,
                    groups = scn_group_cols(d, nums),
                    pcts = scn_pct_cols(d, nums))
