@@ -38,6 +38,7 @@ if (!dir.exists(file.path(root, ".git")) && dir.exists("../.git")) root <- ".."
 source(file.path(root, "tests", "ci_report.R"))
 
 REG <- file.path(root, "tests", "science_law_registry.tsv")
+REGISTRY_REL <- "tests/science_law_registry.tsv"
 if (!file.exists(REG)) {
   ci_fail("the law registry %s is missing. Without it nothing declares what this\n       repository claims to enforce, and coverage cannot be measured.", REG)
   ci_finish()
@@ -67,10 +68,77 @@ names(reg) <- hdr
 #
 # A replayed log is not weaker evidence: it is the SAME run's output, and the
 # step that produced it already failed the build if the law failed.
+#
+# THAT SENTENCE USED TO BE AN ASSERTION THIS PROGRAM DID NOT PROVE. Replay was
+# accepted on the strength of a filename -- LAW_EVIDENCE_DIR set and
+# <basename>.log present -- and nothing bound the contents to what coverage was
+# evaluating. It held only because the nightly runs on a fresh runner and tees
+# each step itself; that is workflow topology, not a property of the checker. A
+# green log left behind by an earlier commit satisfied every condition, and
+# coverage would have reported it as this run's result.
+#
+# evidence_verdict() below now proves it: source path, source content hash,
+# registry hash, commit, and a single run identity across the whole set. A
+# mismatch FAILS -- it is custody corruption, not missing evidence, and quietly
+# re-running the gate would convert it into a green build.
 EVID <- Sys.getenv("LAW_EVIDENCE_DIR")
 
 ci_section(sprintf("scientific laws declared: %d", nrow(reg)))
 if (nzchar(EVID)) cat(sprintf("  (replaying evidence from %s where available)\n", EVID))
+
+# --- evidence custody --------------------------------------------------------
+# Replay was introduced because coverage re-running every gate and every mutation
+# harness took it past its own 600s budget. What it did NOT establish is that a
+# replayed log is evidence for THIS evaluation. The comment asserted "the same
+# run's output"; the program relied on workflow topology to make that true, and a
+# green log left in the directory by an earlier commit satisfied every check.
+#
+# So the claim is now proven rather than assumed. Each gate stamps its output
+# with the hash of its own source, the hash of the registry, and the commit.
+# Coverage recomputes all three. Nothing here trusts a filename or an mtime.
+evidence_field <- function(txt, key) {
+  m <- regmatches(txt, regexpr(sprintf("\\[EVIDENCE\\][^\n]*%s=[^ \n]+", key), txt))
+  if (!length(m)) return(NA_character_)
+  sub(sprintf(".*%s=([^ \n]+).*", key), "\\1", m[1])
+}
+
+evidence_verdict <- function(txt, rel) {
+  # Two stamps FOR THE SAME SOURCE is two runs concatenated. Each half may be
+  # internally valid while the whole describes no single execution, so the count
+  # is checked before anything is read out of it.
+  #
+  # Counted per source, not in total, because a mutation harness runs real gates
+  # in subprocesses and prints their output when a scaffold fails. Those carry
+  # their own stamp naming a DIFFERENT source; treating them as duplication would
+  # turn one failure into a custody error and hide what actually broke.
+  own <- gregexpr(sprintf("[EVIDENCE] source=%s ", rel), txt, fixed = TRUE)[[1]]
+  n_stamp <- if (own[1] == -1L) 0L else length(own)
+  if (n_stamp > 1L)
+    return(sprintf("it carries %d [EVIDENCE] stamps, so it is more than one run's
+       output in a single file", n_stamp))
+  if (!grepl("[EVIDENCE]", txt, fixed = TRUE))
+    return("it carries no [EVIDENCE] stamp, so it is unbound text that merely
+       contains the right markers")
+  src <- evidence_field(txt, "source")
+  if (!identical(src, rel))
+    return(sprintf("it was produced by %s, not %s", src, rel))
+  want_src <- ci_evidence_source_hash(rel)
+  got_src <- evidence_field(txt, "src_md5")
+  if (!identical(got_src, want_src))
+    return(sprintf("%s has changed since it ran (%s now, %s then)",
+                   rel, substr(want_src, 1, 8), substr(got_src, 1, 8)))
+  want_reg <- ci_evidence_source_hash(REGISTRY_REL)
+  got_reg <- evidence_field(txt, "registry_md5")
+  if (!identical(got_reg, want_reg))
+    return(sprintf("the registry has changed since it ran (%s now, %s then)",
+                   substr(want_reg, 1, 8), substr(got_reg, 1, 8)))
+  want_commit <- ci_evidence_commit()
+  got_commit <- evidence_field(txt, "commit")
+  if (!identical(got_commit, want_commit) && !identical(want_commit, "unknown"))
+    return(sprintf("it was produced at commit %s, not %s",
+                   substr(got_commit, 1, 8), substr(want_commit, 1, 8)))
+  "ok"
+}
 
 # --- run each distinct gate once, keep its output ----------------------------
 run_file <- function(rel) {
@@ -78,9 +146,20 @@ run_file <- function(rel) {
   if (!file.exists(f)) return(list(text = "", missing = TRUE))
   if (nzchar(EVID)) {
     cached <- file.path(EVID, paste0(basename(rel), ".log"))
-    if (file.exists(cached))
-      return(list(text = paste(readLines(cached, warn = FALSE), collapse = "\n"),
-                  missing = FALSE, replayed = TRUE))
+    if (file.exists(cached)) {
+      txt <- paste(readLines(cached, warn = FALSE), collapse = "\n")
+      v <- evidence_verdict(txt, rel)
+      if (identical(v, "ok"))
+        return(list(text = txt, missing = FALSE, replayed = TRUE,
+                    run = evidence_field(txt, "run")))
+      # FAILS CLOSED. A log that does not match what is being evaluated is not
+      # absent evidence, it is WRONG evidence, and quietly re-running the gate
+      # would turn a custody failure into a green build with a longer runtime.
+      # Absence still falls back to execution, deliberately; corruption does not.
+      ci_fail("evidence for %s is not evidence for this evaluation: %s\n       A replayed log must be bound to the commit, registry and sources it\n       was produced from. Delete %s to re-run the gate.", rel, v, cached)
+      return(list(text = "", missing = FALSE, replayed = TRUE, rejected = TRUE,
+                  run = NA_character_))
+    }
   }
   out <- suppressWarnings(system2("sh",
     c("-c", shQuote(sprintf("cd %s && Rscript %s 2>&1", shQuote(root), shQuote(rel)))),
@@ -89,6 +168,17 @@ run_file <- function(rel) {
 }
 sources <- unique(c(reg$gate, reg$mutation))
 outs <- stats::setNames(lapply(sources, run_file), sources)
+
+# NO MIXING. Every replayed log must come from one evidence set. Logs that each
+# match the current commit and sources are individually valid, but a set stitched
+# together from two runs is a set nobody produced, and the scoreboard it yields
+# describes no single state of the repository.
+replayed_runs <- unique(stats::na.omit(vapply(outs,
+  function(o) if (isTRUE(o$replayed) && !isTRUE(o$rejected)) as.character(o$run) else NA_character_,
+  character(1))))
+if (length(replayed_runs) > 1L)
+  ci_fail("replayed evidence comes from %d different runs (%s). A scoreboard\n       assembled from more than one run describes no single state of the tree.",
+          length(replayed_runs), paste(replayed_runs, collapse = ", "))
 
 for (s in sources) if (isTRUE(outs[[s]]$missing))
   ci_fail("registered file %s does not exist. A law whose gate is absent is a law\n       nobody is checking.", s)

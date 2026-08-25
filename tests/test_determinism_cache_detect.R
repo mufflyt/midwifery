@@ -15,6 +15,21 @@
 #   L9  a partial record counted as complete
 # =============================================================================
 
+EVIDENCE_SOURCE <- "tests/test_determinism_cache_detect.R"
+
+# EVIDENCE CUSTODY. Stamps this run with what it is evidence FOR -- the file's
+# own content hash, the registry's, and the commit -- so tests/ci_law_coverage.R
+# can prove a replayed log belongs to the evaluation it is being used for
+# instead of trusting its filename. The helper is sourced, never re-declared:
+# two copies of a custody check are two things that can disagree.
+local({
+  r <- file.path(getwd(), "tests", "ci_report.R")
+  if (file.exists(r)) {
+    e <- new.env(); sys.source(r, envir = e)
+    e$ci_law_evidence_header(EVIDENCE_SOURCE)
+  }
+})
+
 root <- {
   a <- grep("--file=", commandArgs(), value = TRUE)
   if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))

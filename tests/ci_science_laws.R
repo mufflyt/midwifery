@@ -44,6 +44,8 @@
 root <- "."
 if (!dir.exists(file.path(root, ".git")) && dir.exists("../.git")) root <- ".."
 source(file.path(root, "tests", "ci_report.R"))
+# EVIDENCE CUSTODY: see ci_law_evidence_header(). First line this gate emits.
+ci_law_evidence_header("tests/ci_science_laws.R")
 
 law_num <- function(x) suppressWarnings(as.numeric(x))
 

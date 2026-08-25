@@ -70,3 +70,38 @@ ci_law_positive <- function(law, detected) {
 ci_law_skipped <- function(law, reason) {
   cat(sprintf("[LAW] %s SKIPPED %s\n", law, reason))
 }
+
+# --- EVIDENCE CUSTODY --------------------------------------------------------
+# A replayed log must be evidence for the evaluation being performed, not merely
+# a correctly named text file. Coverage cannot know that by reading [LAW] lines:
+# a green log copied from the previous commit carries exactly the same markers
+# as one produced a second ago.
+#
+# So every gate stamps its own output with what it was evidence FOR. Coverage
+# recomputes each field and refuses the log if any disagrees. The binding is
+# self-contained -- it travels inside the evidence rather than in a side manifest
+# that can be lost, rewritten, or left behind by a failed step.
+#
+# Content hashes, not timestamps. An mtime says when a file was touched, which
+# is the mistake L10 was written to reject; a hash says what it contained.
+ci_evidence_source_hash <- function(rel) {
+  f <- file.path(getwd(), rel)
+  if (!file.exists(f)) return("absent")
+  unname(tools::md5sum(f))
+}
+
+ci_evidence_commit <- function() {
+  out <- suppressWarnings(system2("git", c("rev-parse", "HEAD"),
+                                  stdout = TRUE, stderr = FALSE))
+  if (length(out) != 1L || !nzchar(out)) "unknown" else out
+}
+
+# Printed as the FIRST line a gate emits, so a truncated log cannot look bound.
+ci_law_evidence_header <- function(source_rel) {
+  cat(sprintf("[EVIDENCE] source=%s src_md5=%s registry_md5=%s commit=%s run=%s\n",
+              source_rel,
+              ci_evidence_source_hash(source_rel),
+              ci_evidence_source_hash("tests/science_law_registry.tsv"),
+              ci_evidence_commit(),
+              { r <- Sys.getenv("LAW_RUN_ID"); if (nzchar(r)) r else "adhoc" }))
+}
