@@ -149,6 +149,10 @@ cat("       ONLY by an initial against a full name is not distinguished at all.\
 cat("\n")
 cat("[LAW] L7 EXERCISED\n")
 cat(sprintf("[CONTROL] L7 negative n=%d\n", nrow(cp)))
+# POSITIVE: the corpus contains pairs the evidence DOES separate -- a middle
+# conflict and a credential conflict -- so the instrument demonstrably responds.
+cat(sprintf("[CONTROL] L7 positive n=%d\n",
+            sum(got_mid == "conflict") + sum(!got_cred)))
 
 if (fails) { cat(sprintf("FAILED (%d)\n", fails)); quit(status = 1) }
 cat("PASS (0 failures)\n")

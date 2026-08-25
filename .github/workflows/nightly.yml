@@ -469,6 +469,10 @@ jobs:
       # and the r-suite glob discovers it; the coverage gate below runs it again
       # to read its evidence markers, which is cheap and keeps the registry the
       # only place that decides what counts as a law.
+      # L8 and L9 need sf/dplyr/readr, so they are NOT in the base-R namespace
+      # guard and are not named here. Both are tests/test*.R and the r-suite glob
+      # discovers them; the coverage gate below runs them again to read their
+      # evidence markers.
       - name: Every scientific law was actually exercised
         if: always()
         run: |

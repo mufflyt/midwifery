@@ -279,6 +279,9 @@ chk(length(brk_band) == 1L && !is.na(brk_band[1]),
 cat("\n")
 cat(sprintf("[LAW] L6 EXERCISED\n"))
 cat(sprintf("[CONTROL] L6 negative n=%d\n", length(subjects)))
+# POSITIVE: the historical control proved the defective crosswalk DOES
+# invent geography, so the law demonstrably fires.
+cat(sprintf("[CONTROL] L6 positive n=%d\n", as.integer(invented_by_defect > 0L)))
 cat(sprintf("[MUTATION] L6 historical-crosswalk %s\n",
             if (invented_by_defect > 0L) "DETECTED" else "SURVIVED"))
 

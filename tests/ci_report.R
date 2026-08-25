@@ -61,6 +61,12 @@ ci_law_exercised <- function(law, n_subjects) {
   cat(sprintf("[LAW] %s EXERCISED\n", law))
   cat(sprintf("[CONTROL] %s negative n=%s\n", law, format(n_subjects)))
 }
+# A POSITIVE control: proof the law's detector responds to a violation, checked
+# on a synthetic bad value before the law is applied to real data. A law with
+# only a negative control proves it did not fire; it does not prove it could.
+ci_law_positive <- function(law, detected) {
+  cat(sprintf("[CONTROL] %s positive n=%d\n", law, as.integer(isTRUE(detected))))
+}
 ci_law_skipped <- function(law, reason) {
   cat(sprintf("[LAW] %s SKIPPED %s\n", law, reason))
 }
