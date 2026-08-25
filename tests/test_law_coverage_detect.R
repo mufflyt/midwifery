@@ -92,6 +92,97 @@ chk(r$failed && grepl("no planted defect", r$text), "a law with no planted defec
 r <- cov_run(mut = c(MUT_OK[1], 'cat("[MUTATION] L2 planted-two SURVIVED\\n")'))
 chk(r$failed && grepl("survive", r$text), "a planted defect that survives")
 
+cat("\n-- evidence custody: a replayed log must be evidence for THIS evaluation --\n")
+# Replay exists because re-running every gate took coverage past its own budget.
+# It introduced a new way to be wrong: a green log left in the directory by an
+# earlier commit carries exactly the markers coverage is looking for. These
+# defects are all stale-green -- the log is well-formed and says everything
+# passed, and none of them may be believed.
+cov_run_ev <- function(evidence, registry = REGISTRY_OK,
+                       gate = GATE_OK, mut = MUT_OK) {
+  dir <- file.path(tempdir(), paste0("cov_ev_", as.integer(stats::runif(1) * 1e9)))
+  dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+  cov_scaffold(dir, registry, gate, mut)
+  ev <- file.path(dir, "evidence"); dir.create(ev, showWarnings = FALSE)
+  for (nm in names(evidence)) writeLines(evidence[[nm]], file.path(ev, nm))
+  out <- suppressWarnings(system2("sh",
+    c("-c", shQuote(sprintf("cd %s && LAW_EVIDENCE_DIR=evidence Rscript tests/ci_law_coverage.R 2>&1",
+                            shQuote(dir)))), stdout = TRUE, stderr = TRUE))
+  st <- attr(out, "status")
+  list(text = paste(out, collapse = "\n"), failed = !is.null(st) && st != 0L)
+}
+
+# A correctly bound log, built the way a gate builds one.
+bound <- function(dir_files, src, run = "r1", src_md5 = NULL, reg_md5 = NULL) {
+  c(sprintf("[EVIDENCE] source=%s src_md5=%s registry_md5=%s commit=unknown run=%s",
+            src,
+            if (is.null(src_md5)) dir_files$src else src_md5,
+            if (is.null(reg_md5)) dir_files$reg else reg_md5, run),
+    dir_files$body)
+}
+
+# Hashes are computed inside the scratch repo, so the harness never assumes what
+# the gate file contains.
+md5_of <- function(lines) {
+  f <- tempfile(); writeLines(lines, f); on.exit(unlink(f))
+  unname(tools::md5sum(f))
+}
+GATE_BODY <- c("[LAW] L1 EXERCISED", "[CONTROL] L1 negative n=10",
+               "[CONTROL] L1 positive n=1", "[LAW] L2 EXERCISED",
+               "[CONTROL] L2 negative n=20", "[CONTROL] L2 positive n=1")
+MUT_BODY  <- c("[MUTATION] L1 planted-one DETECTED",
+               "[MUTATION] L2 planted-two DETECTED")
+H <- list(gate = list(src = md5_of(GATE_OK), reg = md5_of(REGISTRY_OK), body = GATE_BODY),
+          mut  = list(src = md5_of(MUT_OK),  reg = md5_of(REGISTRY_OK), body = MUT_BODY))
+
+EV_OK <- list("fake_gate.R.log"     = bound(H$gate, "tests/fake_gate.R"),
+              "fake_mutation.R.log" = bound(H$mut,  "tests/fake_mutation.R"))
+
+r <- cov_run_ev(EV_OK)
+chk(!r$failed, "correctly bound evidence replays and passes")
+if (r$failed) cat(r$text, "\n")
+
+r <- cov_run_ev(list("fake_gate.R.log" = GATE_BODY,
+                     "fake_mutation.R.log" = bound(H$mut, "tests/fake_mutation.R")))
+chk(r$failed && grepl("no \\[EVIDENCE\\] stamp", r$text),
+    "a fabricated log carrying the right markers but no stamp")
+
+r <- cov_run_ev(modifyList(EV_OK, list(
+  "fake_gate.R.log" = bound(H$gate, "tests/fake_gate.R",
+                            src_md5 = "0000000000000000deadbeef00000000"))))
+chk(r$failed && grepl("has changed since it ran", r$text),
+    "a green log from a commit where the GATE differed")
+
+r <- cov_run_ev(modifyList(EV_OK, list(
+  "fake_gate.R.log" = bound(H$gate, "tests/fake_gate.R",
+                            reg_md5 = "0000000000000000deadbeef00000000"))))
+chk(r$failed && grepl("registry has changed", r$text),
+    "a log generated before the registry changed")
+
+r <- cov_run_ev(modifyList(EV_OK, list(
+  "fake_gate.R.log" = bound(H$gate, "tests/fake_mutation.R"))))
+chk(r$failed && grepl("was produced by", r$text),
+    "a log whose stamp names a different source than its filename")
+
+r <- cov_run_ev(list(
+  "fake_gate.R.log"     = bound(H$gate, "tests/fake_gate.R", run = "r1"),
+  "fake_mutation.R.log" = bound(H$mut,  "tests/fake_mutation.R", run = "r2")))
+chk(r$failed && grepl("different runs", r$text),
+    "evidence stitched together from two different runs")
+
+r <- cov_run_ev(modifyList(EV_OK, list(
+  "fake_gate.R.log" = c(bound(H$gate, "tests/fake_gate.R"),
+                        bound(H$gate, "tests/fake_gate.R")))))
+chk(r$failed && grepl("more than one run", r$text),
+    "duplicated evidence concatenated into one file")
+
+# ABSENCE IS NOT CORRUPTION. A missing log means the nightly did not tee that
+# step, and re-running the gate is the right answer. Only MISMATCH fails closed.
+r <- cov_run_ev(list("fake_gate.R.log" = bound(H$gate, "tests/fake_gate.R")))
+chk(!r$failed, "a missing log still falls back to executing the gate")
+if (r$failed) cat(r$text, "\n")
+
 r <- cov_run(gate = c(GATE_OK[1], 'cat("[LAW] L2 SKIPPED input absent\\n")'))
 chk(r$failed && grepl("Unexpected skips:            1", r$text),
     "a PUBLIC law that skips is an unexpected skip")

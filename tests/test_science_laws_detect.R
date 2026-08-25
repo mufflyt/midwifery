@@ -30,6 +30,10 @@ if (!dir.exists(file.path(root, ".git")) && dir.exists("../.git")) root <- norma
 
 GATE   <- file.path(root, "tests", "ci_science_laws.R")
 REPORT <- file.path(root, "tests", "ci_report.R")
+local({
+  e <- new.env(); sys.source(REPORT, envir = e)
+  e$ci_law_evidence_header("tests/test_science_laws_detect.R")
+})
 LIB    <- file.path(root, "R", "lib", "zip_county_crosswalk.R")
 stopifnot(file.exists(GATE), file.exists(REPORT), file.exists(LIB))
 

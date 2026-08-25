@@ -278,6 +278,11 @@ jobs:
     name: Published numbers reproduce
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      # ONE IDENTITY FOR THIS JOB'S EVIDENCE. Every gate stamps its output with
+      # it, and tests/ci_law_coverage.R refuses a set whose logs disagree --
+      # so a scoreboard can never be assembled from two runs.
+      LAW_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
 
@@ -296,6 +301,12 @@ jobs:
       - name: Start the timing table
         if: always()
         run: |
+          # WIPED, not just created. Replay validity must not depend on the
+          # runner handing us a clean /tmp: a reused runner would otherwise
+          # offer last run's logs to this run's coverage. The stamps would
+          # catch it, but a property that holds by construction beats one that
+          # holds because a checker noticed.
+          rm -rf /tmp/law-evidence
           mkdir -p /tmp/law-evidence
           {
             echo "## Science job timings"

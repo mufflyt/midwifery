@@ -41,6 +41,21 @@
 # Yukon-Koyukuk before the artifact shipped.
 # =============================================================================
 
+EVIDENCE_SOURCE <- "tests/test_geography_masking_metamorphic.R"
+
+# EVIDENCE CUSTODY. Stamps this run with what it is evidence FOR -- the file's
+# own content hash, the registry's, and the commit -- so tests/ci_law_coverage.R
+# can prove a replayed log belongs to the evaluation it is being used for
+# instead of trusting its filename. The helper is sourced, never re-declared:
+# two copies of a custody check are two things that can disagree.
+local({
+  r <- file.path(getwd(), "tests", "ci_report.R")
+  if (file.exists(r)) {
+    e <- new.env(); sys.source(r, envir = e)
+    e$ci_law_evidence_header(EVIDENCE_SOURCE)
+  }
+})
+
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(readxl)
 })
