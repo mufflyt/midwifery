@@ -1554,6 +1554,71 @@ and gets switched off in week two.
 Passing in your working tree proves nothing, because your working tree has the
 data.
 
+### The nightly: laws about the science
+
+[`.github/workflows/nightly.yml`](.github/workflows/nightly.yml) asks a
+different question from `ci.yml`. The push checks ask whether the *code* is
+sound. The nightly asks whether the *science* still holds — whether every
+published number still reproduces from the numbers beside it, and whether the
+properties this study depends on are still true.
+
+[`tests/science_law_registry.tsv`](tests/science_law_registry.tsv) is the
+machine-readable list of what the repository claims to enforce. It is data, not
+prose, because a law that is written but not registered is not enforced, and
+neither fact can be inferred from a filename or a comment.
+
+| Law | Says |
+|---|---|
+| **L1** | cohort provenance is single-vintage |
+| **L2** | population is conserved — parts sum to their whole, *and* no share exceeds its declared denominator |
+| **L3** | missing geography stays missing (the frozen Alaska regression) |
+| **L4** | more travel time cannot reduce access |
+| **L5** | every routed provider is in the union |
+| **L6** | masking evidence cannot invent geography |
+| **L7** | contradictory identity evidence cannot increase certainty |
+| **L8** | identical inputs produce identical outputs |
+| **L9** | a cache may change runtime, not the answer |
+| **L10** | every mutable scientific input has a declared vintage |
+
+Each law must do five things, and
+[`tests/ci_law_coverage.R`](tests/ci_law_coverage.R) fails the build if any is
+missing: be **registered**, be **exercised**, run on a **non-zero number of
+subjects**, carry a **positive control** proving its detector responds to a
+violation, and have a **planted defect** that it kills. A law with only a
+negative control has proved it did not fire; it has not proved it could. **30
+planted defects, 30 detected.**
+
+Coverage fails on *gaps*, not on test failures — a registered law that emitted
+no evidence, one that passed on zero subjects, one whose defect survived, a
+registry pointing at a file that is gone. `tests/test_law_coverage_detect.R`
+proves the coverage gate itself can fail across every one of those modes;
+without that it is a report that always says N/N.
+
+**Every step carries a wall-clock budget.** A gate that stops finishing is not
+a slow gate, it is an absent one, and it reports the same "not green" as a
+broken repository — which reads as flakiness and gets muted. This is not
+hypothetical: `ci_science_nightly.R` ran in about five seconds for weeks while
+a quadratic hid behind a comment claiming a cheap probe ran first, and went past
+fifteen minutes the moment a pipeline run widened two artifacts to 37 numeric
+columns. Elapsed time is printed every night, passing or failing, so drift is
+visible long before it breaches.
+
+**Replayed evidence is bound to what it is evidence for.** Coverage re-runs
+every gate and every mutation harness, which at ten laws exceeded its own
+budget, so it replays output the nightly already produced. A replayed log is
+accepted only when its stamp matches the current commit, the current registry
+hash, and the current hash of the gate that wrote it — content hashes, never
+timestamps. A mismatch **fails closed**; only genuine absence falls back to
+running the gate. Without that binding, a green log left behind by an earlier
+commit is indistinguishable from this run's result.
+
+**One law does not currently run on a clean checkout.** L5 needs a dissolved
+isochrone surface under gitignored `artifacts/maps/`, so on any runner coverage
+reports 9/10 and fails. That is logged as [D7](DEBT.md) with the three possible
+fixes, and it is a worked example of the warning above: every `10/10` reported
+while this suite was being built came from a working tree that happened to hold
+the untracked file.
+
 ### The leak guard
 
 [`tests/ci_leak_guard.R`](tests/ci_leak_guard.R) reads the header of every

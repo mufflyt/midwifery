@@ -254,6 +254,18 @@ required. Every published figure is written with a provenance record listing
 the SHA-256 checksum of each input file. Person-level intermediate files are
 not redistributed.
 
+Ten properties of the analysis -- among them that population is conserved, that
+absent geography is never imputed, that degrading an input cannot improve the
+answer, and that identical inputs produce identical outputs -- are declared in a
+machine-readable registry and evaluated automatically. Each carries a
+deliberately planted defect that it is required to detect, so that a check
+reporting no violations has also demonstrated that it is capable of reporting
+one. Appendix 2, available online at http://links.lww.com/AOG/XXXX, documents
+what is verified, one defect these checks identified before it reached any
+reported figure, and -- at greater length -- what such verification cannot
+establish, including that it cannot detect the differential linkage described
+above.
+
 # Results
 
 ## Cohort
