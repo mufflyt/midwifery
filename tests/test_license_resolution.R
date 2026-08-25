@@ -170,6 +170,85 @@ ok("and the emitted npi is the deterministic one",
    r3$updated_crosswalk$npi[r3$updated_crosswalk$amcb_id_license == "A1"] ==
      "1000000001")
 
+cat("\n=== the study frame is a boundary, not a suggestion ===\n")
+# REGRESSION. Before the fix this invocation reported "3 of 2 AMCB certificants
+# (150.0%)": the A1-A8 license fixture stayed eligible for deterministic
+# resolution while the roster held only A1 and A2, so A8 was resolved, counted,
+# and written into the deterministic-match artifact for a study frame it was
+# never part of. The percentage was the symptom; the escaped population was the
+# defect.
+roster3 <- c("A1", "A2")
+ok("no deterministic match names anyone outside the roster",
+   length(setdiff(r3$deterministic_matches$amcb_id_license, roster3)) == 0L)
+ok("exactly 2 of 2 certificants resolve, not 3 of 2",
+   nrow(r3$deterministic_matches) == 2L)
+ok("every audit share lies within [0,100]",
+   all(r3$audit_summary$pct_of_amcb >= 0 & r3$audit_summary$pct_of_amcb <= 100))
+ok("distinct resolved ids never exceed distinct roster ids",
+   dplyr::n_distinct(r3$deterministic_matches$amcb_id_license) <=
+     dplyr::n_distinct(roster3))
+
+# The out-of-frame resolution is EVIDENCE, not garbage. It is removed from the
+# claim and kept as a labelled diagnostic, so nothing is discarded untraceably.
+ok("A8 is retained as an explicit out-of-frame diagnostic",
+   "A8" %in% r3$out_of_frame_matches$amcb_id_license)
+ok("...and is labelled with why it is out of frame",
+   all(r3$out_of_frame_matches$out_of_frame_reason ==
+         "amcb_id_absent_from_supplied_roster"))
+
+# The artifact on disk is what other code reads, so assert on the FILE.
+dm_file <- read_csv(r3$saved_paths[["deterministic"]], show_col_types = FALSE)
+ok("the WRITTEN artifact contains no out-of-frame id",
+   length(setdiff(dm_file$amcb_id_license, roster3)) == 0L)
+ok("quarantine rows are labelled in-frame or not",
+   "in_study_frame" %in% names(r3$quarantine_records))
+
+cat("\n=== shrinking the roster cannot retain people it removed ===\n")
+# MONOTONICITY. Holding the external license/NPPES universe fixed, removing a
+# person from the roster must remove them from the answer.
+write_csv(tibble(certification_number = c("A1")), file.path(td, "amcb_a1.csv"))
+r5 <- resolve_amcb_by_state_license(
+  amcb_path = file.path(td, "amcb_a1.csv"),
+  state_license_path = file.path(td, "lic.csv"),
+  nppes_path = file.path(td, "nppes.csv"),
+  save_dir = file.path(td, "out6"))
+ok("a one-person roster resolves at most one person",
+   nrow(r5$deterministic_matches) <= 1L)
+ok("and resolves nobody it was not asked about",
+   all(r5$deterministic_matches$amcb_id_license == "A1"))
+ok("A2, removed from the roster, is no longer resolved",
+   !"A2" %in% r5$deterministic_matches$amcb_id_license)
+
+cat("\n=== narrowing the frame must not WIDEN the answer ===\n")
+# This is the test that decides WHERE the fix belongs, and it is the reason the
+# roster restriction is applied to the claim rather than to the license file.
+#
+# A6 and A7 share board key CO 31313, so the key identifies no one and neither
+# resolves. Give NPPES a row for that key and the only thing still preventing a
+# resolution is the collision itself. Now ask about a roster of A6 alone: if the
+# license universe were filtered to the roster BEFORE the collision check, A7's
+# row would vanish, CO 31313 would look unique, and A6 would resolve -- certainty
+# manufactured by deleting the evidence that contradicted it.
+nppes_31313 <- read_csv(file.path(td, "nppes.csv"), show_col_types = FALSE,
+                        col_types = readr::cols(.default = readr::col_character())) |>
+  dplyr::bind_rows(tibble(
+    NPI = "1000000031",
+    `Provider License Number_1` = "31313",
+    `Provider License Number State Code_1` = "CO",
+    `Healthcare Provider Taxonomy Code_1` = "367A00000X"))
+write_csv(nppes_31313, file.path(td, "nppes_31313.csv"))
+write_csv(tibble(certification_number = "A6"), file.path(td, "amcb_a6.csv"))
+r6 <- resolve_amcb_by_state_license(
+  amcb_path = file.path(td, "amcb_a6.csv"),
+  state_license_path = file.path(td, "lic.csv"),
+  nppes_path = file.path(td, "nppes_31313.csv"),
+  save_dir = file.path(td, "out7"))
+ok("A6 alone still does NOT resolve on a key it shares with A7",
+   !"A6" %in% r6$deterministic_matches$amcb_id_license)
+ok("...because the collision is still detected against the full universe",
+   any(grepl("duplicate_state_board_key",
+             r6$quarantine_records$license_resolution_status)))
+
 cat("\n=== order invariance ===\n")
 set.seed(7)
 lic <- read_csv(file.path(td, "lic.csv"), show_col_types = FALSE)

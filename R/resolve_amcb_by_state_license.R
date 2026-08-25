@@ -191,6 +191,36 @@ resolve_amcb_by_state_license <- function(
       deterministic_key_states = .data$license_states,
       deterministic_key_count = .data$n_license_keys)
 
+  # --- THE STUDY-FRAME BOUNDARY ----------------------------------------------
+  # Everything above this line is EVIDENCE and is deliberately computed over the
+  # whole external license universe. Everything below is a CLAIM about the
+  # roster this invocation was asked about, and may only name people in it.
+  #
+  # The boundary sits here, and not earlier, for a scientific reason. The
+  # collision checks above ask whether a license key identifies one person:
+  # A6 and A7 share CO 31313, so neither resolves. Restrict the license file to
+  # the roster FIRST and a roster holding only A6 would drop A7's row, the key
+  # would look unique, and A6 would resolve -- gaining certainty that exists
+  # only because the contradicting evidence was removed. That is the failure L6
+  # and L7 exist to forbid, so narrowing the frame must never widen the answer.
+  #
+  # Restricting the claim instead can only ever remove people, never add them.
+  roster_ids <- unique(amcb_core$amcb_id_license)
+
+  deterministic_matches_all <- deterministic_matches
+  deterministic_matches <- deterministic_matches_all |>
+    dplyr::filter(.data$amcb_id_license %in% roster_ids)
+
+  # NOT DISCARDED. An out-of-frame resolution is real evidence about the
+  # external universe; it is simply not a finding about this roster. Dropping it
+  # silently would replace one accounting error with another.
+  out_of_frame_matches <- deterministic_matches_all |>
+    dplyr::filter(!.data$amcb_id_license %in% roster_ids) |>
+    dplyr::mutate(out_of_frame_reason = "amcb_id_absent_from_supplied_roster")
+  message("Deterministic matches outside the supplied roster: ",
+          fmt_n(nrow(out_of_frame_matches)),
+          " (retained as an out-of-frame diagnostic, not counted as resolved)")
+
   conflicting_amcb_matches <- amcb_npi_cardinality |>
     dplyr::filter(.data$n_deterministic_npi > 1L) |>
     dplyr::mutate(license_resolution_status = "quarantined_amcb_maps_multiple_npi")
@@ -291,6 +321,17 @@ resolve_amcb_by_state_license <- function(
                        npi = NA_character_,
                        license_resolution_status = .data$license_resolution_status))
 
+  # A quarantine row for someone outside the roster describes the external
+  # universe, not this study population. Both are kept, but a reader can no
+  # longer mistake one for the other, and the audit counts only the in-frame
+  # rows against the in-frame denominator.
+  quarantine_records <- quarantine_records |>
+    dplyr::mutate(in_study_frame = .data$amcb_id_license %in% roster_ids)
+  message("Quarantine rows in frame: ",
+          fmt_n(sum(quarantine_records$in_study_frame)),
+          "; out of frame: ",
+          fmt_n(sum(!quarantine_records$in_study_frame)))
+
   audit_summary <- build_license_resolution_summary(
     amcb_roster = amcb_core, state_licenses = state_licenses,
     deterministic_matches = deterministic_matches,
@@ -306,8 +347,14 @@ resolve_amcb_by_state_license <- function(
   conflict_path      <- p("amcb_license_vs_existing_conflicts")
   audit_path         <- p("amcb_license_resolution_summary")
 
+  out_of_frame_path  <- p("amcb_license_matches_out_of_frame")
+
   message("Saving deterministic matches: ", deterministic_path)
   readr::write_csv(deterministic_matches, deterministic_path)
+  # Written even when empty, so its absence means "this run did not check"
+  # rather than "this run found none".
+  message("Saving out-of-frame diagnostic: ", out_of_frame_path)
+  readr::write_csv(out_of_frame_matches, out_of_frame_path)
   message("Saving license quarantine: ", quarantine_path)
   readr::write_csv(quarantine_records, quarantine_path)
   message("Saving deterministic-first crosswalk: ", crosswalk_path)
@@ -317,8 +364,45 @@ resolve_amcb_by_state_license <- function(
   message("Saving audit summary: ", audit_path)
   readr::write_csv(audit_summary, audit_path)
 
+  # --- POPULATION CONSERVATION ------------------------------------------------
+  # These are assertions, not tests, because they must hold on every real run
+  # and not only when someone remembers to run the suite. Each one failed --
+  # or could have failed -- against the defect this replaces.
+  stray <- setdiff(deterministic_matches$amcb_id_license, roster_ids)
+  if (length(stray))
+    stop(sprintf(paste0("INVARIANT: %d deterministic match(es) name an AMCB id ",
+                        "absent from the supplied roster (%s). A resolution ",
+                        "outside the study frame is not a finding about this ",
+                        "population."),
+                 length(stray), paste(utils::head(stray, 5), collapse = ", ")),
+         call. = FALSE)
+
+  n_resolved_ids <- dplyr::n_distinct(deterministic_matches$amcb_id_license)
+  n_roster_ids <- length(roster_ids)
+  if (n_resolved_ids > n_roster_ids)
+    stop(sprintf(paste0("INVARIANT: %d distinct resolved certificants exceeds ",
+                        "the %d in the roster. Resolution cannot create people."),
+                 n_resolved_ids, n_roster_ids), call. = FALSE)
+
+  claimed <- quarantine_records[!quarantine_records$in_study_frame, , drop = FALSE]
+  if (nrow(claimed) > 0L && !"in_study_frame" %in% names(quarantine_records))
+    stop("INVARIANT: out-of-frame quarantine rows are not labelled as such.",
+         call. = FALSE)
+
+  xstray <- setdiff(updated_crosswalk$amcb_id_license, roster_ids)
+  if (length(xstray))
+    stop(sprintf(paste0("INVARIANT: the emitted crosswalk names %d id(s) ",
+                        "outside the roster (%s)."),
+                 length(xstray), paste(utils::head(xstray, 5), collapse = ", ")),
+         call. = FALSE)
+
   resolved_n <- nrow(deterministic_matches)
   roster_n <- nrow(amcb_core)
+  pct <- 100 * resolved_n / roster_n
+  if (is.finite(pct) && (pct < 0 || pct > 100))
+    stop(sprintf(paste0("INVARIANT: reported resolution of %.1f%% is outside ",
+                        "[0,100] (%d of %d)."), pct, resolved_n, roster_n),
+         call. = FALSE)
   message(sprintf(paste0("License-key resolution identified %s of %s AMCB ",
                          "certificants (%.1f%%) deterministically."),
                   fmt_n(resolved_n), fmt_n(roster_n),
@@ -330,11 +414,13 @@ resolve_amcb_by_state_license <- function(
 
   message("resolve_amcb_by_state_license(): complete.")
   list(deterministic_matches = deterministic_matches,
+       out_of_frame_matches = out_of_frame_matches,
        quarantine_records = quarantine_records,
        crosswalk_conflicts = crosswalk_conflicts,
        updated_crosswalk = updated_crosswalk,
        audit_summary = audit_summary,
        saved_paths = c(deterministic = deterministic_path,
+                       out_of_frame = out_of_frame_path,
                        quarantine = quarantine_path,
                        crosswalk = crosswalk_path,
                        conflicts = conflict_path,
@@ -394,21 +480,48 @@ build_license_resolution_summary <- function(amcb_roster, state_licenses,
                                              crosswalk_conflicts,
                                              updated_crosswalk) {
   roster_n <- nrow(amcb_roster)
-  license_person_n <- nrow(dplyr::distinct(state_licenses, .data$amcb_id_license))
-  deterministic_n <- nrow(dplyr::distinct(deterministic_matches,
+  roster_ids <- unique(amcb_roster$amcb_id_license)
+
+  # EVERY NUMERATOR IS RESTRICTED TO THE DENOMINATOR'S POPULATION. This is what
+  # was wrong before: the counts were drawn from the whole external license
+  # universe while the denominator was the roster, so a two-person roster could
+  # report 8 people with a state license (400%) and 3 of 2 resolved (150%).
+  # The percentages are not clipped -- clipping would hide the defect rather
+  # than remove it. They are in [0,100] because each count is now a subset of
+  # the roster, and the assertions below prove it rather than assuming it.
+  in_frame <- function(d) {
+    if (!"amcb_id_license" %in% names(d)) return(d[0, , drop = FALSE])
+    dplyr::filter(d, .data$amcb_id_license %in% roster_ids)
+  }
+  license_person_n <- nrow(dplyr::distinct(in_frame(state_licenses),
+                                           .data$amcb_id_license))
+  deterministic_n <- nrow(dplyr::distinct(in_frame(deterministic_matches),
                                           .data$amcb_id_license))
+  quarantine_n <- nrow(in_frame(quarantine_records))
+  conflict_n <- nrow(in_frame(crosswalk_conflicts))
   resolved_total_n <- updated_crosswalk |>
     dplyr::filter(!is.na(.data$npi)) |>
+    in_frame() |>
     dplyr::distinct(.data$amcb_id_license) |> nrow()
 
   n <- c(roster_n, license_person_n, deterministic_n,
-         nrow(quarantine_records), nrow(crosswalk_conflicts), resolved_total_n)
-  tibble::tibble(
+         quarantine_n, conflict_n, resolved_total_n)
+  out <- tibble::tibble(
     metric = c("amcb_roster", "amcb_with_state_license",
                "deterministically_resolved", "license_quarantine_rows",
                "existing_matches_contradicted", "resolved_after_license_first"),
     n = n,
     pct_of_amcb = 100 * n / roster_n)
+  # A percentage above 100 here is not a rounding artifact, it is a population
+  # that escaped its frame. Fail rather than publish an impossible number.
+  bad <- out$metric[is.finite(out$pct_of_amcb) &
+                      (out$pct_of_amcb < 0 | out$pct_of_amcb > 100)]
+  if (length(bad))
+    stop(sprintf(paste0("INVARIANT: %s reports a share outside [0,100] of a ",
+                        "%d-person roster. A count was drawn from a wider ",
+                        "population than its denominator."),
+                 paste(bad, collapse = ", "), roster_n), call. = FALSE)
+  out
 }
 
 #' Normalize a state license number

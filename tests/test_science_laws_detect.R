@@ -9,7 +9,9 @@
 # The mutations are the ones that actually happened, shrunk to fixtures:
 #
 #   L1  a cohort silently off by one, and a whole superseded vintage
-#   L2  a disposition column dropped, so the parts no longer reach the whole
+#   L2  a disposition column dropped, so the parts no longer reach the whole;
+#       and a share that exceeds its own denominator -- the real 150% defect,
+#       which breaks no addition and so is invisible to the sum rule
 #   L3  the crosswalk guard removed; the ZCTA filter removed; and the
 #       newly-resolved group placed back in remote-rural Alaska
 #   L4  a 30-minute figure raised above its own 60-minute figure, and the two
@@ -151,6 +153,25 @@ kills("a disposition column dropped, parts no longer reach the whole", "L2",
 kills("ten percent of unmatched records vanish", "L2",
   list("artifacts/linkage_completeness_by_status.csv" = c(
     "status,n,matched,unmatched,pct_matched", "ACTIVE,100,70,27,70.0", "LAPSED,50,20,30,40.0")))
+
+# THE REAL DEFECT, REPRODUCED. This is the artifact that
+# resolve_amcb_by_state_license() actually emitted when its deterministic
+# matches were taken from the whole external license universe while the
+# denominator was the roster it was asked about: a two-person study frame
+# reporting 8 people with a state license and 3 of 2 resolved. Nothing here
+# fails an addition, which is why the parts-sum rule alone never saw it.
+kills("a roster restriction removed, so a study frame resolves more people than it holds", "L2",
+  list("artifacts/amcb_license_resolution_summary.csv" = c(
+    "metric,n,pct_of_amcb",
+    "amcb_roster,2,100",
+    "amcb_with_state_license,8,400",
+    "deterministically_resolved,3,150",
+    "license_quarantine_rows,5,250")))
+kills("a single share creeps just past its denominator", "L2",
+  list("artifacts/amcb_license_resolution_summary.csv" = c(
+    "metric,n,pct_of_amcb",
+    "amcb_roster,16892,100",
+    "deterministically_resolved,16893,100.006")))
 
 # The two crosswalk fixtures are GREPPED by the gate, never sourced, so they
 # carry no package-qualified calls. That is deliberate: the nightly asserts
