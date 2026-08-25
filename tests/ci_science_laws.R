@@ -16,7 +16,7 @@
 #       written four hours apart from the SAME filter. An artifact may not
 #       declare a cohort size that is not a registered cohort.
 #
-#   L2  POPULATION IS CONSERVED. linkage_completeness_by_status.csv reported four
+#   L2  POPULATION IS CONSERVED, in two shapes. linkage_completeness_by_status.csv reported four
 #       dispositions summing to 20,473 of 22,309 rows. 1,836 people, 845 of them
 #       ACTIVE, were inside the denominator behind a published percentage and
 #       outside every column beside it. Parts must sum to their whole.
@@ -160,12 +160,47 @@ for (idy in LAW_IDENTITIES) {
                           length(bad), format(tot[bad[1]] - sums[bad[1]])))
   }
 }
+# THE SECOND SHAPE OF THE SAME LAW. The identity check above asks whether the
+# parts sum to the whole. This asks whether any part EXCEEDS the whole, which is
+# the same conservation principle read the other way and is a defect the sum
+# check cannot see: a single share of 150% breaks no addition.
+#
+# It exists because resolve_amcb_by_state_license() reported "3 of 2 AMCB
+# certificants (150.0%)". Its deterministic matches were drawn from the whole
+# external state-license universe while the denominator was the roster it was
+# asked about, so a person outside the study frame was counted as resolved
+# within it -- and written to the artifact. A column that names itself a share
+# OF something has declared its own denominator, so it is checkable here.
+share_bad <- character(0); n_shares <- 0L
+for (f in ci_tracked("artifacts/*.csv")) {
+  d <- suppressWarnings(ci_read_head(f, -1L, root = root))
+  if (is.null(d)) next
+  for (cn in grep("^pct_of_", names(d), value = TRUE)) {
+    v <- law_num(d[[cn]])
+    if (all(is.na(v))) next
+    n_shares <- n_shares + 1L
+    o <- which(is.finite(v) & (v < -1e-9 | v > 100 + 1e-9))
+    if (length(o))
+      share_bad <- c(share_bad, sprintf("%s: %s = %s on %d row(s)",
+                                        f, cn, format(v[o[1]]), length(o)))
+  }
+}
+if (length(share_bad))
+  off <- c(off, sprintf("share exceeds its declared denominator -- %s", share_bad))
+n_checked <- n_checked + n_shares
+
 if (length(off)) {
   ci_fail("L2: %d accounting identity violation(s):\n%s\n       People are inside a denominator and outside every column beside it.",
           length(off), paste(sprintf("       %s", off), collapse = "\n"))
 } else {
   # POSITIVE CONTROL: the identity check must notice parts that do not sum.
-  ci_law_positive("L2", { t <- 100; p <- c(70, 20); abs(sum(p) - t) > 0.5 })
+  # POSITIVE CONTROL, both shapes: parts that do not sum, and a share that
+  # exceeds its denominator. A law that can only catch one of them is half a law.
+  ci_law_positive("L2", {
+    parts_fire <- { t <- 100; p <- c(70, 20); abs(sum(p) - t) > 0.5 }
+    share_fire <- { v <- c(100, 150); any(is.finite(v) & v > 100 + 1e-9) }
+    parts_fire && share_fire
+  })
   ci_law_exercised("L2", n_checked)
   ci_ok("all %d declared accounting identit%s hold", n_checked,
         if (n_checked == 1L) "y" else "ies")
