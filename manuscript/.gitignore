@@ -8,3 +8,9 @@
 *.html
 *_files/
 /.quarto/
+
+# R session noise. Left behind by rendering in this directory; it is not part
+# of the manuscript and would otherwise be swept up by a `git add manuscript/`.
+.Rhistory
+.RData
+.Rproj.user/
