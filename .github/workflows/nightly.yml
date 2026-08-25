@@ -296,6 +296,7 @@ jobs:
       - name: Start the timing table
         if: always()
         run: |
+          mkdir -p /tmp/law-evidence
           {
             echo "## Science job timings"
             echo "| step | elapsed | budget |"
@@ -417,7 +418,7 @@ jobs:
           set -u
           BUDGET=300
           start=$(date +%s)
-          rc=0; Rscript tests/ci_science_laws.R || rc=$?
+          rc=0; Rscript tests/ci_science_laws.R 2>&1 | tee /tmp/law-evidence/ci_science_laws.R.log; rc=${PIPESTATUS[0]}
           elapsed=$(( $(date +%s) - start ))
           echo "| scientific laws | ${elapsed}s | ${BUDGET}s |" >> "$GITHUB_STEP_SUMMARY"
           [ "$rc" -eq 0 ] || exit "$rc"
@@ -436,7 +437,7 @@ jobs:
           set -u
           BUDGET=600
           start=$(date +%s)
-          rc=0; Rscript tests/test_science_laws_detect.R | tee /tmp/laws.txt || rc=${PIPESTATUS[0]}
+          rc=0; Rscript tests/test_science_laws_detect.R 2>&1 | tee /tmp/law-evidence/test_science_laws_detect.R.log > /tmp/laws.txt; rc=${PIPESTATUS[0]}
           elapsed=$(( $(date +%s) - start ))
           score=$(grep -oE "[0-9]+/[0-9]+ scientific mutations detected" /tmp/laws.txt || echo "not reported")
           {
@@ -479,7 +480,7 @@ jobs:
           set -u
           BUDGET=600
           start=$(date +%s)
-          rc=0; Rscript tests/ci_law_coverage.R | tee /tmp/cov.txt || rc=${PIPESTATUS[0]}
+          rc=0; LAW_EVIDENCE_DIR=/tmp/law-evidence Rscript tests/ci_law_coverage.R | tee /tmp/cov.txt; rc=${PIPESTATUS[0]}
           elapsed=$(( $(date +%s) - start ))
           {
             echo "| law coverage | ${elapsed}s | ${BUDGET}s |"

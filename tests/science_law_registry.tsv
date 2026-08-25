@@ -29,3 +29,4 @@ L6	masking evidence cannot invent geography	tests/test_geography_masking_metamor
 L7	contradictory identity evidence cannot increase certainty	tests/test_identity_collision_corpus.R	tests/test_identity_corpus_detect.R	public
 L8	identical inputs produce identical outputs	tests/test_deterministic_rebuild.R	tests/test_determinism_cache_detect.R	public
 L9	a cache may change runtime, not the answer	tests/test_cache_isolation.R	tests/test_determinism_cache_detect.R	public
+L10	every mutable scientific input has a declared vintage	tests/test_cache_vintage_declared.R	tests/test_cache_vintage_detect.R	public

@@ -121,6 +121,36 @@ check_provenance <- function(path) {
 #' @param ... paths, given as literals or as the script's own path constants.
 #' @return [character] those that exist, in the order supplied.
 #' @family provenance
+#' Declare the geocoding cache as an input, by content
+#'
+#' A cache that decides coordinates is a scientific input, and until this
+#' existed none of the 112 provenance sidecars in this repository named one:
+#' 14 artifacts were transitively cache-dependent and 0 recorded which cache
+#' they used. Any stage that consults the cache should append this to its
+#' inputs so a later reader can tell C_v from C_v+1.
+#'
+#' Content-derived, not mtime. See R/lib/cache_vintage.R for why, and for what
+#' counts as scientifically relevant.
+#'
+#' @param path [character]: the DuckDB cache.
+#' @return [character] one declared-input token carrying entry count and hash,
+#'   or a token that says the cache was unavailable -- never nothing, because a
+#'   silently absent declaration is the defect this replaces.
+#' @keywords internal
+#' @noRd
+prov_cache_input <- function(path) {
+  vf <- file.path("R", "lib", "cache_vintage.R")
+  if (!exists("geocode_cache_fingerprint", mode = "function")) {
+    if (!file.exists(vf)) return(sprintf("geocode_cache:UNAVAILABLE:%s", basename(path)))
+    source(vf, local = FALSE)
+  }
+  fp <- geocode_cache_fingerprint(path)
+  if (!isTRUE(fp$available))
+    return(sprintf("geocode_cache:UNAVAILABLE:%s:%s", basename(path), fp$reason))
+  sprintf("geocode_cache:%s:n=%d:sha256=%s", basename(path), fp$n_entries,
+          substr(fp$content_sha256, 1, 32))
+}
+
 prov_inputs <- function(..., roots = c(".", "artifacts", "data"), quiet = FALSE) {
   p <- unlist(list(...), use.names = FALSE)
   p <- p[!is.na(p) & nzchar(p)]

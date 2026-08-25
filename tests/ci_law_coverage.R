@@ -52,16 +52,40 @@ reg <- do.call(rbind, lapply(lines[-1], function(l) {
 reg <- as.data.frame(reg, stringsAsFactors = FALSE)
 names(reg) <- hdr
 
+# EVIDENCE MAY BE REPLAYED. Coverage re-runs every registered gate and every
+# mutation harness, and those have grown: the determinism harness alone runs the
+# full L8/L9 suite six times. Re-running them here took the gate past its own
+# 600s budget, which is the same "a checker that stops finishing is an absent
+# checker" problem the budgets exist to catch -- arriving through the checker of
+# checkers.
+#
+# So when LAW_EVIDENCE_DIR names a directory holding <basename>.log for a gate,
+# that output is read instead of regenerated. The nightly tees each law step
+# there, so nothing runs twice. Unset -- which is how it runs locally -- every
+# gate is executed, and the answer is identical either way because the evidence
+# markers are the same text in both cases.
+#
+# A replayed log is not weaker evidence: it is the SAME run's output, and the
+# step that produced it already failed the build if the law failed.
+EVID <- Sys.getenv("LAW_EVIDENCE_DIR")
+
 ci_section(sprintf("scientific laws declared: %d", nrow(reg)))
+if (nzchar(EVID)) cat(sprintf("  (replaying evidence from %s where available)\n", EVID))
 
 # --- run each distinct gate once, keep its output ----------------------------
 run_file <- function(rel) {
   f <- file.path(root, rel)
   if (!file.exists(f)) return(list(text = "", missing = TRUE))
+  if (nzchar(EVID)) {
+    cached <- file.path(EVID, paste0(basename(rel), ".log"))
+    if (file.exists(cached))
+      return(list(text = paste(readLines(cached, warn = FALSE), collapse = "\n"),
+                  missing = FALSE, replayed = TRUE))
+  }
   out <- suppressWarnings(system2("sh",
     c("-c", shQuote(sprintf("cd %s && Rscript %s 2>&1", shQuote(root), shQuote(rel)))),
     stdout = TRUE, stderr = TRUE))
-  list(text = paste(out, collapse = "\n"), missing = FALSE)
+  list(text = paste(out, collapse = "\n"), missing = FALSE, replayed = FALSE)
 }
 sources <- unique(c(reg$gate, reg$mutation))
 outs <- stats::setNames(lapply(sources, run_file), sources)
