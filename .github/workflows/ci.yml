@@ -343,11 +343,22 @@ jobs:
       #                                               /tmp, where a stale copy
       #                                               was still sitting.
       #   cycle9, cycle10, cycle18, cycle19, cycle22, cycle5_key_resolution,
-      #   amcb_gates, frozen_dependency               fail in a fresh clone
+      #   amcb_gates                                   fail in a fresh clone
       #                                               today -- recorded debt or
       #                                               absent inputs, not a
       #                                               regression this file can
       #                                               assert against.
+      #   frozen_dependency  ADDED 2026-08-28, below. It used to belong on
+      #                      this list -- T5 (declared REBUILD_ORDER set ==
+      #                      discovered FROZEN-consumer set) failed on any
+      #                      checkout, fresh or not, whenever a consumer script
+      #                      existed that nobody had declared. That happened
+      #                      three times (2026-08-10, -08-15, -08-28) and each
+      #                      time sat undetected until the next Nightly run,
+      #                      because this file was the only place a PR was
+      #                      gated at all and it excluded exactly this test.
+      #                      It needs only dplyr/readr/jsonlite, already
+      #                      installed below, and costs ~1s.
       #   amcb_name_normalization, cycle12            need ~/isochrones.
       #   match_npi_to_hospitals                      downloads from CMS.
       # Do not add any of them without re-running the fresh-clone check first.
@@ -472,3 +483,105 @@ jobs:
 
       - name: Repository integrity gates
         run: Rscript tests/ci_repo_integrity.R
+
+      # A script that reads amcb_npi_linkage_FROZEN.csv but is not declared in
+      # rebuild_frozen_dependents.R's REBUILD_ORDER is invisible to a re-freeze:
+      # it silently keeps the stale cohort while the rebuild reports success.
+      # Three separate scripts have shipped this way (2026-08-10, -08-15,
+      # -08-28), each caught only by the next Nightly run, hours or days after
+      # merge. This is that same check, gating the PR instead.
+      - name: FROZEN dependency completeness (T5)
+        run: Rscript tests/test_frozen_dependency.R
+
+  # ---------------------------------------------------------------------------
+  # Path-filtered: the science-law suite (tests/ci_law_coverage.R) is Nightly's
+  # job, not this file's -- it is expensive (the L8/L9 determinism harness runs
+  # its own suite six times) and several of its gates need the geo stack this
+  # file otherwise refuses. But "only Nightly checks it" is exactly how L5-L10
+  # sat broken on main for two days: a PR that edits a registered gate, its
+  # mutation harness, or the registry itself can silently desync coverage, and
+  # nobody sees it until the next scheduled run.
+  #
+  # RELEVANCE IS COMPUTED FROM THE REGISTRY, NOT A SEPARATE PATH LIST. A
+  # hardcoded `paths:` filter on the pull_request trigger would need to be
+  # hand-kept in sync with tests/science_law_registry.tsv -- exactly the
+  # prose-mirrors-data drift the registry exists to prevent (see its own
+  # header: "THE MAPPING IS DATA, NOT PROSE"). This job instead reads the
+  # registry at run time and diffs the changed files against its gate and
+  # mutation columns, so a new law or a moved gate file is covered
+  # automatically, with nothing here to fall out of sync.
+  # ---------------------------------------------------------------------------
+  science-law-coverage:
+    name: Science-law coverage (path-filtered)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LAW_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}-ci
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Fails OPEN, not closed: no usable base ref (workflow_dispatch, a
+      # force-push whose `before` is the all-zero SHA, a shallow-history edge
+      # case) runs the check rather than silently skipping it. A skip is only
+      # ever earned by proving the diff, never assumed by default.
+      - name: Decide whether this change touches a registered law gate
+        id: relevance
+        run: |
+          set -u
+          BASE="${{ github.event.pull_request.base.sha || github.event.before || '' }}"
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE" 2>/dev/null; then
+            echo "no usable base ref -- running the coverage check to be safe"
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed=$(git diff --name-only "$BASE" "${{ github.sha }}")
+          registry="tests/science_law_registry.tsv"
+          relevant=$(awk -F'\t' 'NR>1 && $1 !~ /^#/ {print $3; print $4}' "$registry" | sort -u)
+          relevant=$(printf '%s\n%s\n' "$relevant" "$registry")
+          hit=$(comm -12 <(printf '%s\n' "$changed" | sort -u) <(printf '%s\n' "$relevant" | sort -u))
+          if [ -n "$hit" ]; then
+            echo "law-relevant file(s) changed:"
+            echo "$hit"
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "no registered law-gate file changed in this diff."
+            echo "This is the fast path, not a silent no-op: Nightly still runs the full"
+            echo "law-coverage check every 24h regardless of what changed."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: r-lib/actions/setup-r@v2
+        if: steps.relevance.outputs.run == 'true'
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      # sf needs the geo stack ci.yml otherwise refuses (see the file header).
+      # Confined to this job, and only installed when the relevance check
+      # above says it is actually needed.
+      - name: System libraries for sf
+        if: steps.relevance.outputs.run == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libgdal-dev libproj-dev libgeos-dev libudunits2-dev
+
+      # Exactly the packages L6-L10's gates need, mirrored from
+      # nightly.yml's own install step for the same job -- see that file for
+      # why installing them (rather than rewriting the gates to avoid them)
+      # was the judgment call.
+      - name: Install packages needed by L6-L10's gates
+        if: steps.relevance.outputs.run == 'true'
+        run: |
+          pkgs <- c("dplyr", "readr", "stringr", "readxl", "sf", "DBI", "duckdb")
+          missing <- pkgs[!pkgs %in% rownames(installed.packages())]
+          if (length(missing)) install.packages(missing)
+          for (p in pkgs) if (!requireNamespace(p, quietly = TRUE))
+            stop("package still unavailable after install: ", p)
+        shell: Rscript {0}
+
+      - name: Law coverage (every registered law was exercised)
+        if: steps.relevance.outputs.run == 'true'
+        run: Rscript tests/ci_law_coverage.R
