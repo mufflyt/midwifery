@@ -311,7 +311,13 @@ jobs:
       # error visible again, not what caused it.
       - name: Install packages needed by L6-L10's gates
         run: |
-          pkgs <- c("dplyr", "readr", "stringr", "readxl", "sf", "DBI", "duckdb")
+          # jsonlite and openssl: found only by following source() chains and
+          # pkg::fn() calls (test_cache_vintage_declared.R, and
+          # R/lib/cache_vintage.R via test_deterministic_rebuild.R), not by
+          # grepping library() at the top of the gate files. See ci.yml's copy
+          # of this list for how that was confirmed.
+          pkgs <- c("dplyr", "readr", "stringr", "readxl", "sf", "DBI", "duckdb",
+                    "jsonlite", "openssl")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
           for (p in pkgs) if (!requireNamespace(p, quietly = TRUE))

@@ -575,25 +575,21 @@ jobs:
       - name: Install packages needed by L6-L10's gates
         if: steps.relevance.outputs.run == 'true'
         run: |
-          pkgs <- c("dplyr", "readr", "stringr", "readxl", "sf", "DBI", "duckdb")
+          # jsonlite and openssl found only by following source() chains and
+          # pkg::fn() calls, not by grepping for library() at the top of the
+          # gate files: test_cache_vintage_declared.R calls jsonlite::read_json
+          # (a provenance sidecar) and, via R/lib/cache_vintage.R,
+          # openssl::sha256(); test_deterministic_rebuild.R calls
+          # openssl::sha256() itself. Confirmed the hard way -- the first
+          # version of this list passed 8/10 laws and left L8/L10 failing with
+          # "there is no package called 'openssl'" on this exact runner.
+          pkgs <- c("dplyr", "readr", "stringr", "readxl", "sf", "DBI", "duckdb",
+                    "jsonlite", "openssl")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
           for (p in pkgs) if (!requireNamespace(p, quietly = TRUE))
             stop("package still unavailable after install: ", p)
         shell: Rscript {0}
-
-      # TEMPORARY DIAGNOSTIC, removed once L8/L10 pass on this runner.
-      # ci_law_coverage.R captures gate subprocess output internally and never
-      # streams it, so a run-time-only failure here is invisible in the log.
-      - name: DEBUG - run L8 and L10 gates directly, streamed
-        if: steps.relevance.outputs.run == 'true'
-        run: |
-          echo "::group::L8 gate: test_deterministic_rebuild.R"
-          Rscript tests/test_deterministic_rebuild.R; echo "exit=$?"
-          echo "::endgroup::"
-          echo "::group::L10 gate: test_cache_vintage_declared.R"
-          Rscript tests/test_cache_vintage_declared.R; echo "exit=$?"
-          echo "::endgroup::"
 
       - name: Law coverage (every registered law was exercised)
         if: steps.relevance.outputs.run == 'true'
