@@ -51,6 +51,9 @@ py_available <- nzchar(Sys.which("python3"))
 if (!py_available) {
   cat("  --   SKIP cross-implementation check: python3 not on PATH\n")
 } else {
+  # Archived 2026-08-28 to @archive/run_midwifery_microsimulation.py,
+  # superseded by this R file. Still the pinned oracle this equivalence
+  # check depends on -- see the archived file's own header.
   script <- sprintf('
 import sys
 sys.path.insert(0, %s)
@@ -58,7 +61,7 @@ import run_midwifery_microsimulation as sim
 import json
 rows = sim.project_workforce(12211)
 print(json.dumps(rows))
-', shQuote(normalizePath(root)))
+', shQuote(normalizePath(file.path(root, "@archive"))))
   py_json <- tryCatch(
     system2("python3", c("-c", shQuote(script)), stdout = TRUE, stderr = TRUE),
     error = function(e) NA

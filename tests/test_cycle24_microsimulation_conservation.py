@@ -2,22 +2,36 @@
 # =============================================================================
 # Adversarial loop, cycle 24 — 4 BVA / 3 semantic / 3 adversarial
 # =============================================================================
-# Target: run_midwifery_microsimulation.py. Zero prior tests existed for this
-# file despite it producing a README-embedded, 15-year national workforce
-# forecast (artifacts/midwifery_microsimulation_projections_2026_2040.csv,
+# Target (at cycle time): run_midwifery_microsimulation.py. Zero prior tests
+# existed for this file despite it producing a README-embedded, 15-year
+# national workforce forecast
+# (artifacts/midwifery_microsimulation_projections_2026_2040.csv,
 # artifacts/plots/plot3_microsimulation_workforce_projections.png) -- exactly
 # the class of public-facing scientific artifact this loop exists to protect.
 #
+# Archived 2026-08-28 to @archive/run_midwifery_microsimulation.py, superseded
+# by the R port (run_midwifery_microsimulation.R). Kept and still tested here
+# because it is the pinned oracle the R port's cross-implementation test
+# checks against -- see tests/test_run_midwifery_microsimulation.R.
+#
 # See docs/ADVERSARIAL_LOOP_LEDGER.md, Cycle 24, for the full defect writeup.
-import importlib
 import subprocess
 import sys
 import unittest
 from pathlib import Path
 
-import run_midwifery_microsimulation as sim
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
+ARCHIVE_DIR = REPO_ROOT / "@archive"
+SIM_FILE = ARCHIVE_DIR / "run_midwifery_microsimulation.py"
+
+# Archived 2026-08-28 (superseded by run_midwifery_microsimulation.R) but
+# still the pinned oracle this cycle's tests, and the R port's own
+# cross-implementation check, both depend on. sys.path insertion, not a
+# plain `import`, because pytest's conftest.py only puts the repo ROOT on
+# sys.path, and a plain `python3 -m unittest` run from elsewhere would not
+# find the module inside `@archive/` otherwise.
+sys.path.insert(0, str(ARCHIVE_DIR))
+import run_midwifery_microsimulation as sim
 
 
 def old_buggy_split(inflow, rural_share=0.08):
@@ -178,7 +192,7 @@ class TestAdversarial(unittest.TestCase):
         test session's own sys.modules."""
         result = subprocess.run(
             [sys.executable, "-c",
-             f"import sys; sys.path.insert(0, {str(REPO_ROOT)!r}); "
+             f"import sys; sys.path.insert(0, {str(ARCHIVE_DIR)!r}); "
              "import run_midwifery_microsimulation; print('OK')"],
             cwd="/tmp", capture_output=True, text=True, timeout=30,
         )
@@ -199,7 +213,7 @@ class TestAdversarial(unittest.TestCase):
         (initial_workforce == 12,211 today) but are not guaranteed by the
         contract. The function must scale with whatever count the input file
         actually contains next year, not with today's number baked in."""
-        source = (REPO_ROOT / "run_midwifery_microsimulation.py").read_text()
+        source = SIM_FILE.read_text()
         code_lines = [ln for ln in source.splitlines() if not ln.strip().startswith("#")]
         code_only = "\n".join(code_lines)
         self.assertNotIn("12211", code_only,

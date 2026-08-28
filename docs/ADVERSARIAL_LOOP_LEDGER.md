@@ -3276,3 +3276,53 @@ midwives are now actually removed from the rural count instead of remaining
 as phantom population. This moves the forecast's headline rural-decline
 number in the more pessimistic direction and should be flagged to anyone who
 has already cited the previous 9.9% figure.
+
+### Addendum (same cycle, on request) — Python archived; a data-driven case library added
+
+Two follow-on requests against this same target, out of the 30-minute cycle
+cadence:
+
+1. **`run_midwifery_microsimulation.py` archived** to
+   `@archive/run_midwifery_microsimulation.py`, superseded by the R port.
+   Kept, not deleted -- it remains the pinned oracle
+   `tests/test_run_midwifery_microsimulation.R` cross-checks the R port
+   against. Both files' path references updated accordingly.
+
+2. **`tests/microsimulation_case_library.tsv`** -- a data-driven case
+   library (18 cases, schema documented in the file's own header) for
+   `project_workforce()`, run by `tests/test_microsimulation_case_library.R`.
+   Designing the hard cases (not variants of T24-1..10 above; genuinely
+   different parameters -- the share/rate arguments and `years`, none of
+   which the earlier tests touched) found **4 more real, unguarded input
+   gaps**, all fixed with minimal validation, same "guards error, not
+   filter" convention as the rest of this repository:
+
+   - `rural_baseline_pct` / `rural_grad_share` outside `[0, 1]` were
+     unvalidated. At realistic scale (100,000), `rural_baseline_pct = 1.5`
+     produced a **sustained** `Urban_Practicing_CNMs = -41,821` across
+     multiple years, not a one-off rounding blip.
+   - `annual_retire_rate` / `annual_rural_drift` outside `[0, 1]` likewise
+     unvalidated; `annual_retire_rate = 1.5` published
+     `Rural_Practicing_CNMs = -15` in the very first output row.
+   - Non-integer `initial_workforce` (e.g. 12211.7, plausible from an
+     upstream mean instead of a count) silently propagated: `Total_Active_
+     CNM_Workforce` published as **12501.7** -- a fractional person in a
+     headcount.
+   - `years` had no ordering contract: an empty vector returned bare `NULL`
+     instead of a typed empty frame (this repo's own established
+     convention, ledger cycle 1 T41); an out-of-order or duplicated `years`
+     vector ran without error, producing rows that were internally
+     consistent (conservation held) but chronologically mislabelled --
+     `years = c(2030, 2026, 2028)` ran three simulated steps in that
+     literal order, and `years = c(2026, 2026, 2027)` produced two rows
+     both labelled "2026" carrying different totals.
+
+   All four fixed by validating inputs before the simulation loop runs;
+   verified the library's hard cases actually discriminate by re-running
+   them against the pre-fix code (9 of 18 failed) and against the fix
+   (0 of 18 fail). Applied to the R port only, per the archived Python
+   file's own header -- the two implementations are cross-checked on the
+   baseline case only, so this is a deliberate, documented divergence, not
+   an oversight.
+
+   Wired into `ci.yml` alongside the rest of this cycle's tests.
