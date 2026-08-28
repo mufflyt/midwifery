@@ -185,6 +185,14 @@ jobs:
       - name: Run Midwifery Pipeline Integration Tests
         run: python3 tests/test_midwifery_pipeline.py -v
 
+      # Workforce microsimulation: population-conservation contract (found
+      # broken, fixed, cycle 24 of the adversarial loop) plus the R port's
+      # cross-implementation agreement with this file.
+      - name: Microsimulation conservation and cross-implementation contract
+        run: |
+          python3 -m unittest tests.test_cycle24_microsimulation_conservation -v
+          Rscript tests/test_run_midwifery_microsimulation.R
+
   # ---------------------------------------------------------------------------
   # The tier that is allowed to cost something.
   #
