@@ -7,10 +7,23 @@
 # in doubt; the enforcement did not exist.
 #
 # This is the enforcement. It reads the HEADER of every tracked CSV and fails
-# when a person-level column appears in a file that is not already on the
-# baseline. New leaks are blocked today. The 67 files already tracked are listed
-# in ci_leak_baseline.txt with their row counts, and the number is only allowed
-# to go DOWN -- untracking one is a passing change, adding one is not.
+# when a person-level column appears in a file that is not already known.
+# New leaks are blocked today. "Known" is the union of two separate lists,
+# kept apart deliberately:
+#
+#   ci_leak_baseline.txt            false positives ONLY -- the guard is
+#                                    wrong about these. May only shrink.
+#   ci_leak_reviewed_exceptions.txt genuinely person-level files someone with
+#                                    authority reviewed and accepted, in the
+#                                    open, for a stated reason. Also may only
+#                                    shrink, but for a different cause: an
+#                                    entry leaves this list when the file is
+#                                    untracked, not when the guard turns out
+#                                    to have been wrong about it.
+#
+# Blending them into one list would let a real, reviewed exception hide under
+# the same "just a false positive" cover as the other 67 -- reading either
+# file alone should give an honest answer about which kind of entry it holds.
 #
 # It also caps tracked file size. A 1.5 GB JSONL and an 840 MB CSV sit untracked
 # in the working directory; one `git add -A` writes them into history where no
@@ -63,13 +76,27 @@ header_cols <- function(path) {
   tolower(trimws(parts))
 }
 
-baseline_path <- file.path(root, "tests", "ci_leak_baseline.txt")
-baseline <- if (file.exists(baseline_path)) {
-  b <- readLines(baseline_path, warn = FALSE)
+read_path_list <- function(p) {
+  if (!file.exists(p)) return(character(0))
+  b <- readLines(p, warn = FALSE)
   b <- trimws(b)
   b <- b[nzchar(b) & !startsWith(b, "#")]
   sub("\\s+#.*$", "", b)
-} else character(0)
+}
+
+# TWO SEPARATE LISTS, deliberately not merged into one on disk. baseline is
+# false positives only -- the guard is wrong about these, and the list may
+# only shrink. reviewed_exceptions is genuinely person-level files someone
+# with authority reviewed and accepted in the open, for a stated reason (see
+# that file's own header). Blending them would let a real exception get
+# waved through under cover of "it's probably just a false positive like the
+# others" -- the whole point of keeping them apart is that a reader checking
+# either file gets an honest answer about which kind of entry it's looking at.
+baseline_path <- file.path(root, "tests", "ci_leak_baseline.txt")
+exceptions_path <- file.path(root, "tests", "ci_leak_reviewed_exceptions.txt")
+baseline <- read_path_list(baseline_path)
+reviewed_exceptions <- read_path_list(exceptions_path)
+known <- union(baseline, reviewed_exceptions)
 
 # -----------------------------------------------------------------------------
 ci_section("L1 no NEW tracked file carries a person-level column")
@@ -83,16 +110,17 @@ for (f in csvs) {
   if (any(cols %in% PERSON_COLS)) hits <- c(hits, f)
 }
 
-new_hits <- setdiff(hits, baseline)
+new_hits <- setdiff(hits, known)
 if (length(new_hits)) {
-  ci_fail("L1: %d tracked file(s) carry a person-level column and are not on the baseline:\n%s",
+  ci_fail("L1: %d tracked file(s) carry a person-level column and are neither a documented false positive (ci_leak_baseline.txt) nor a reviewed exception (ci_leak_reviewed_exceptions.txt):\n%s",
        length(new_hits),
        paste(sprintf("       %s  [%s]", new_hits,
                      vapply(new_hits, function(f) {
                        paste(intersect(header_cols(file.path(root, f)), PERSON_COLS), collapse = ", ")
                      }, character(1))), collapse = "\n"))
 } else {
-  ci_ok("no new person-level file (%d known, listed in ci_leak_baseline.txt)", length(hits))
+  ci_ok("no new person-level file (%d known: %d false positive(s) in ci_leak_baseline.txt, %d reviewed exception(s) in ci_leak_reviewed_exceptions.txt)",
+     length(hits), length(intersect(hits, baseline)), length(intersect(hits, reviewed_exceptions)))
 }
 
 # -----------------------------------------------------------------------------
@@ -108,25 +136,34 @@ NAME_PATTERNS <- c("FROZEN", "review_sample", "voter", "_dob", "person_level")
 DATA_EXT <- "\\.(csv|tsv|rds|parquet|jsonl|xlsx?)$"
 data_files <- grep(DATA_EXT, ci_tracked("*"), value = TRUE, ignore.case = TRUE)
 named_all <- unique(unlist(lapply(NAME_PATTERNS, function(p) grep(p, data_files, value = TRUE))))
-named_new <- setdiff(named_all, baseline)
+named_new <- setdiff(named_all, known)
 
 if (length(named_new)) {
-  ci_fail("L2: %d tracked file(s) named like a person-level artifact, not on the baseline:\n%s",
+  ci_fail("L2: %d tracked file(s) named like a person-level artifact, neither a documented false positive nor a reviewed exception:\n%s",
        length(named_new), paste(sprintf("       %s", named_new), collapse = "\n"))
 } else {
   ci_ok("no newly tracked FROZEN / review-sample / voter file")
 }
 
-# The ratchet, reported once both detectors have run. Retiring a baseline entry
-# must be a passing change, so a shrinking list is fine and a growing one is not.
-# A STALE entry is worth reporting because it means the baseline is describing a
-# file that is no longer tracked -- but it is a note, not a failure: nobody
-# should have to edit this file to make a green build green again.
-stale <- setdiff(baseline, union(hits, named_all))
-if (length(stale)) {
-  ci_ok("%d baseline entr%s now clean -- delete from ci_leak_baseline.txt:\n%s",
-     length(stale), if (length(stale) == 1) "y is" else "ies are",
-     paste(sprintf("       %s", stale), collapse = "\n"))
+# The ratchet, reported once both detectors have run. Retiring an entry from
+# either list must be a passing change, so a shrinking list is fine and a
+# growing one is not. Checked separately per file so a note about a stale
+# reviewed exception can never be mistaken for a stale false positive, or
+# vice versa -- they get fixed by editing different files for different
+# reasons. STALE is a note, not a failure: nobody should have to edit either
+# file to make a green build green again.
+present <- union(hits, named_all)
+stale_baseline <- setdiff(baseline, present)
+stale_exceptions <- setdiff(reviewed_exceptions, present)
+if (length(stale_baseline)) {
+  ci_ok("%d ci_leak_baseline.txt entr%s now clean -- delete from ci_leak_baseline.txt:\n%s",
+     length(stale_baseline), if (length(stale_baseline) == 1) "y is" else "ies are",
+     paste(sprintf("       %s", stale_baseline), collapse = "\n"))
+}
+if (length(stale_exceptions)) {
+  ci_ok("%d ci_leak_reviewed_exceptions.txt entr%s now clean -- delete from ci_leak_reviewed_exceptions.txt:\n%s",
+     length(stale_exceptions), if (length(stale_exceptions) == 1) "y is" else "ies are",
+     paste(sprintf("       %s", stale_exceptions), collapse = "\n"))
 }
 
 # -----------------------------------------------------------------------------
