@@ -2,7 +2,7 @@
 title: "Title Page"
 format:
   docx:
-    # reference-doc: templates/green_journal_template.docx
+    # reference-doc: templates/midwifery_journal_template.docx
     number-sections: false
   html:
     embed-resources: true
@@ -27,12 +27,12 @@ wc <- mw_wordcount(file.path(root, "manuscript", "midwife_persistence.qmd"))
 ```
 
 <!--
-Obstetrics & Gynecology submits the title page as a SEPARATE file from the
-blinded manuscript, so this is its own document rather than a front section of
-midwife_persistence.qmd. The Précis is a title-page element and is deliberately
-NOT repeated in the manuscript body or the abstract.
-
-Same arrangement as ~/isochrones/manuscript/title_page_WORKFORCE_CLIFF.Rmd.
+Kept as its own file from the blinded manuscript body, the arrangement carried
+over from the earlier Obstetrics & Gynecology draft. Midwifery (Elsevier) does
+not use a title-page Précis; instead it requires Highlights -- 3-5 bullet
+points, each <=85 characters -- uploaded as a SEPARATE document at submission.
+See manuscript/highlights.qmd, built from the same statistics catalog so it
+cannot drift from the numbers reported here or in the abstract.
 -->
 
 # Title Page
@@ -41,11 +41,6 @@ Same arrangement as ~/isochrones/manuscript/title_page_WORKFORCE_CLIFF.Rmd.
 Midwife Workforce in the United States, `r mw_safe_stat("panel.year_min")`--`r mw_safe_stat("panel.year_max")`
 
 **Running head:** Geographic Persistence of US Midwives
-
-**Précis:** Among certified midwives linked to national provider records,
-`r mw_safe_stat("persist.annual_county", "%.1f")`% remained in the same county
-year to year but only `r mw_safe_stat("persist.career_county", "%.1f")`% across
-a career.
 
 ---
 
@@ -90,7 +85,7 @@ review board review was not required.
 
 **Word count (main text, excluding abstract, references, tables, and table legends):** `r formatC(wc$body, format = "d", big.mark = ",")`
 
-**Tables:** `r wc$tables` &nbsp;&nbsp; **Figures:** `r wc$figures` &nbsp;&nbsp; **Supplemental digital content:** 1 (Appendix 1)
+**Tables:** `r wc$tables` &nbsp;&nbsp; **Figures:** `r wc$figures` &nbsp;&nbsp; **Supplementary material:** 2 (S1 record linkage, S2 automated verification) &nbsp;&nbsp; **Highlights:** see manuscript/highlights.qmd, submitted as a separate document per journal requirement
 
 ---
 

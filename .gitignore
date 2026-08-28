@@ -294,6 +294,22 @@ artifacts/florida_voter_license_ages.csv
 artifacts/**/*voter*ages*.csv
 artifacts/**/*_dob*.csv
 
+# Raw Florida Division of Elections statewide voter extract: name + full date
+# of birth for every Florida registrant, not just the midwives matched out of
+# it. match_florida_voter_ages.R reads this file at any of the paths below if
+# present; until now none of them were gitignored, so dropping the extract
+# into artifacts/ to run the matcher would have left it one `git add -A` away
+# from being tracked. Same Tier 1a sensitivity as the Ohio DOB files above,
+# and same instruction: keep the extract in an access-controlled directory
+# outside the repository and record a checksum, do not rely on this ignore
+# rule as the only safeguard against committing it.
+artifacts/fl_voter_extract.csv
+artifacts/fl_voter_extract.txt
+artifacts/fl_voter_extract.csv.gz
+artifacts/fl_voter_extract.txt.gz
+fl_voter_extract.csv
+artifacts/**/*fl_voter_extract*
+
 # =============================================================================
 # Guard: frozen person-level copies must not bypass protection by filename
 # =============================================================================

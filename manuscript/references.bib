@@ -6,11 +6,19 @@
 % 1. DATA SOURCES. Every source the analysis actually reads. Verifiable.
 % 2. REUSED. Entries carried over verbatim from the curated bibliographies in
 %    ~/isochrones/manuscript (references_WORKFORCE_CLIFF.bib,
-%    references_ogjournal.bib). Already vetted for the Green Journal.
-% 3. TODO. Named gaps. NOT invented entries -- a fabricated citation that looks
-%    real is worse than a visible hole, because the hole gets filled and the
-%    fabrication gets published.
+%    references_ogjournal.bib). Journal-agnostic factual sources -- rurality
+%    of obstetric access, workforce counts -- so they hold regardless of which
+%    journal's style is applied on top of them.
+% 3. FILLED. Originally TODO placeholders naming a gap rather than inventing a
+%    citation to fill it. Each is now a real, Europe-PMC-verified source; see
+%    the section below for what was checked before it was entered.
 % =============================================================================
+%
+% TARGET JOURNAL: Midwifery (Elsevier, ISSN 0266-6138). Reference style is
+% Vancouver/ICMJE (numbered, order of first citation) -- see
+% manuscript/midwifery-journal.csl. Changed from the Green Journal
+% (Obstetrics & Gynecology) on 2026-08-28; the entries below did not need to
+% change, only the CSL rendering them does.
 
 % --- 1. Data sources ---------------------------------------------------------
 
@@ -127,35 +135,66 @@
   url    = {https://mufflyt.github.io/midwifery/cnm_national_leaflet_map.html}
 }
 
-% --- 3. TODO: gaps this manuscript has, named rather than invented ------------
+% --- 3. Filled during the Midwifery-journal restructure (2026-08-28) ----------
 %
-% Each @misc below is a PLACEHOLDER. It will render as a visible, obviously
-% wrong citation, which is the intent: it cannot be mistaken for a real source
-% and it cannot be missed at proof. Replace before submission.
-%
-%   todo_midwife_attrition  midwifery workforce attrition / intent to leave
-%   todo_midwife_supply     national CNM/CM supply and distribution
-%   todo_provider_mobility  physician or provider geographic mobility, for
-%                           comparison with the 67.5% career figure
-%   todo_midwife_outcomes   midwifery care and perinatal outcomes, for the
-%                           Discussion's access-matters premise
+% The four placeholders below were resolved to real, verified sources -- each
+% checked against Europe PMC for author list, journal, volume, issue, pages
+% and DOI before being entered here, not typed from memory. None is invented.
+% The bibkeys are kept close to the old todo_* names in comments so the
+% Introduction's citation swap is traceable back to the gap it fills.
 
-@misc{todo_midwife_attrition,
-  title = {[CITATION NEEDED: midwifery workforce attrition and intent to leave]},
-  year  = {0000}
+% was todo_midwife_attrition
+@article{Thumm2022burnout,
+  author  = {Thumm, Elizabeth Bayliss and Smith, Dawn Corbett and Squires, Allison P and Breedlove, Ginny and Meek, Paula M},
+  title   = {Burnout of the {US} midwifery workforce and the role of practice environment},
+  journal = {Health Services Research},
+  year    = {2022},
+  volume  = {57},
+  number  = {2},
+  pages   = {351--363},
+  doi     = {10.1111/1475-6773.13922}
 }
 
-@misc{todo_midwife_supply,
-  title = {[CITATION NEEDED: national CNM/CM supply and distribution]},
-  year  = {0000}
+% was todo_midwife_supply
+@article{Sheffield2024rural,
+  author  = {Sheffield, Emma C and Fritz, Alexandra H and Interrante, Julia D and Kozhimannil, Katy B},
+  title   = {The Availability of Midwifery Care in Rural {United States} Communities},
+  journal = {Journal of Midwifery \& Women's Health},
+  year    = {2024},
+  volume  = {69},
+  number  = {6},
+  pages   = {929--936},
+  doi     = {10.1111/jmwh.13676}
 }
 
-@misc{todo_provider_mobility,
-  title = {[CITATION NEEDED: provider geographic mobility for comparison]},
-  year  = {0000}
+% was todo_provider_mobility
+@article{McGrail2017mobility,
+  author  = {McGrail, Matthew R and Wingrove, Peter M and Petterson, Stephen M and Bazemore, Andrew W},
+  title   = {Mobility of {US} Rural Primary Care Physicians During 2000--2014},
+  journal = {Annals of Family Medicine},
+  year    = {2017},
+  volume  = {15},
+  number  = {4},
+  pages   = {322--328},
+  doi     = {10.1370/afm.2096}
 }
 
-@misc{todo_midwife_outcomes,
-  title = {[CITATION NEEDED: midwifery care and perinatal outcomes]},
-  year  = {0000}
+@misc{NetworkPHL2023directentry,
+  author       = {{Network for Public Health Law}},
+  title        = {Reproductive Health and Equity 50-State Survey: Direct Entry Midwives},
+  year         = {2023},
+  howpublished = {Edina (MN): Network for Public Health Law},
+  note         = {State-by-state legal status of certified professional and other direct-entry midwives, cited for the Discussion's point that this population is outside the AMCB directory and its state-level regulation is uneven},
+  url          = {https://www.networkforphl.org/wp-content/uploads/2023/05/Direct-Entry-Midwives-50-State-Survey.pdf}
+}
+
+% was todo_midwife_outcomes
+@article{Sandall2024cochrane,
+  author  = {Sandall, Jane and {Fernandez Turienzo}, Cristina and Devane, Declan and Soltani, Hora and Gillespie, Paddy and Gates, Simon and Jones, Leanne V and Shennan, Andrew H and Rayment-Jones, Hannah},
+  title   = {Midwife continuity of care models versus other models of care for childbearing women},
+  journal = {Cochrane Database of Systematic Reviews},
+  year    = {2024},
+  volume  = {4},
+  pages   = {CD004667},
+  doi     = {10.1002/14651858.CD004667.pub6}
 }

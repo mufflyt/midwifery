@@ -311,6 +311,17 @@ jobs:
       - name: Checkpoint merge contract
         run: Rscript tests/test_checkpoint_merge.R
 
+      # Ten real NPPES schema/concurrency hazards found in a manual bug hunt
+      # (2026-08-27) against build_midwife_panel.R: an accented name under an
+      # ASCII header, a stray whitespace byte, a missing middle-name column, a
+      # taxonomy code in a non-first slot, a lowercase taxonomy code, an
+      # unrecognisable schema, two files claiming one year, a renamed-column
+      # era, and both a stale and a genuinely live lock file. All ten passed
+      # when this was promoted to a permanent test; nothing else in CI would
+      # notice if a future change broke one.
+      - name: Panel builder hardening (NPPES schema drift, lock safety)
+        run: Rscript tests/test_build_midwife_panel.R
+
       # Semantic invariants ported from ~/isochrones/tests/testthat/, extended
       # with a real NPI Luhn check -- upstream validated only width and digits,
       # which accepts 1234567890. The arithmetic tests are hermetic; the ones
