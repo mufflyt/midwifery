@@ -738,82 +738,226 @@ gates whose failure is actually unexpected.
 
 ---
 
-## Quick audit script skeleton
+## 29. A self-hosted/persistent runner inverts item 4's "nothing carries over" assumption — audit for state that outlives a job
 
-```bash
-#!/usr/bin/env bash
-# Run from inside each repo. Not exhaustive -- a starting point per item above.
-set -u
-echo "== 1. Tiering: does pull_request trigger a comprehensive suite, or only schedule? =="
-grep -B2 -A5 "^on:" .github/workflows/*.yml
+**Rule**: item 4 is correct for GitHub-hosted runners, which are destroyed
+after every job. A self-hosted runner that reuses the same machine (and,
+critically, the same checkout directory) across jobs makes the *opposite*
+assumption dangerous: anything not actively cleaned WILL persist, and a
+package manager, lockfile, or installed artifact that a fresh-runner world
+never has to reconcile against its own prior state can hit code paths that
+are simply untested upstream. Before trusting self-hosted-runner advice
+copied from ephemeral-runner experience, ask "if this exact job ran twice in
+a row on the same machine, what would be different the second time?"
 
-echo "== 3. Fresh-clone hygiene: any test reading /tmp or a hardcoded home path? =="
-grep -rn "/tmp/\|/Users/\|~/\|Sys.getenv(\"HOME\")" tests/*.R 2>/dev/null | grep -v tempfile
+**How to check**: for every install/cache/lockfile step on a self-hosted
+runner, trace what it writes outside the job's own checkout (a package
+manager's own library, a tool's private dependency cache, a lockfile the
+next checkout won't `git clean`) and whether a second run would find that
+state already present.
 
-echo "== 9. Stale claims in comments =="
-grep -rn "fails in a fresh clone today\|currently fails\|for now\|as of 20" .github/workflows/*.yml
-
-echo "== 10. Meta-gates without a *_detect.R sibling =="
-for f in tests/ci_*.R tests/test_*_gate*.R 2>/dev/null; do
-  [ -f "$f" ] || continue
-  base=$(basename "$f" .R)
-  detect="tests/test_${base#ci_}_detect.R"
-  [ -f "$detect" ] || echo "no detect-sibling found for $f (expected something like $detect)"
-done
-
-echo "== 12. Steps with no visible budget/timeout =="
-grep -B3 "run: |" .github/workflows/*.yml | grep -c "BUDGET="
-
-echo "== 13. Jobs in the workflow vs. jobs required by branch protection =="
-repo=$(gh repo view --json nameWithOwner -q .nameWithOwner)
-grep -h "^    name:" .github/workflows/*.yml | sed 's/^    name: //' | sort -u > /tmp/wf_job_names.txt
-gh api "repos/$repo/branches/main/protection" --jq '.required_status_checks.contexts[]' 2>/dev/null | sort -u > /tmp/required_checks.txt
-echo "in workflow but NOT required (check deliberately, not by accident):"
-comm -23 /tmp/wf_job_names.txt /tmp/required_checks.txt
-
-echo "== 14. Rolling (non-pinned) package mirrors =="
-grep -n "packagemanager.posit.co.*/latest\|pypi.org/simple\b" .github/workflows/*.yml
-
-echo "== 15. Missing concurrency cancellation =="
-for f in .github/workflows/*.yml; do
-  grep -q "^concurrency:" "$f" || echo "no concurrency: block in $f"
-done
-
-echo "== 16. No explicit permissions: block =="
-for f in .github/workflows/*.yml; do
-  grep -q "^permissions:" "$f" || echo "no top-level permissions: block in $f (using default token scope)"
-done
-```
+**Incident**: isochrones' self-hosted-runner rollout (2026-08-24 through
+-08-28) hit five distinct instances of exactly this, each invisible on the
+project's prior GitHub-hosted history: (a) `/tmp/Rtmp*` session directories
+from R processes killed mid-job accumulated to 75GB and filled the disk;
+(b) `setup-r-dependencies@v2`'s default `pak-version: stable` silently
+re-fetched a `pak` build targeting a different R patch version than the one
+actually installed, breaking `pak`'s own private `cli` library
+("Cannot load cli from the private library") across every workflow using
+it; (c) a previous job's `.github/pkg.lock` — untracked, so never removed by
+`actions/checkout`'s default clean — survived into the next job's reused
+checkout and fed `pak`'s solver a plan computed against stale content; (d)
+installing a package's own source (`local::.`) hit a reproducible internal
+pkgdepends error ("Cannot select new package installation task") specific
+to the package already being present from a prior run, a fresh-install-only
+code path ephemeral runners never exercise; (e) four concurrent runner
+agents shared one machine's `apt`/`dpkg` lock and collided on it. All five
+were fixed (see the workflow files' own commit history), but each cost real
+debugging time precisely because the failure mode doesn't exist in the
+mental model most GitHub Actions advice, including item 4 above, is written
+against.
 
 ---
 
-*Compiled 2026-08-28 from the midwifery repo's CI-hardening session
-(PRs #93, #94; branch-protection fix applied directly to `main`) — every
-incident cited above is a real failure from that
-session, not a hypothetical.*
+## 30. An unrelated OS-level scheduled task can silently steal a resource your CI needs — rule out a background interloper before debugging your own tooling
 
-*Items 22-25 added 2026-08-28 from a separate CI-hardening session on the
-private_equity repo, applying this checklist against its actual workflows
-(items 1-21 were audited too; most were structurally not applicable there —
-no path-filtered triggers, no cross-job state sharing to audit — and are not
-re-cited to avoid implying a false incident). Each of 22-25 is, likewise, a
-real failure from that session, not a hypothetical.*
+**Rule**: on a long-lived (non-ephemeral) machine, cron jobs, systemd timers,
+and unattended-upgrade mechanisms run independently of anything CI-related
+and can hold a system-level lock or resource your job needs. A failure that
+*looks* like a bug in code you just wrote — because the symptom is in your
+own recently-touched wrapper or script — can actually be a completely
+unrelated background process that happened to be running at the same time.
 
-*Items 26-28, and the `covr` addendum to item 21, added 2026-08-28 from a
-CI-hardening session on the `simulation` repo, triggered by a direct
-"why does this keep breaking" investigation of its nightly workflow. Two
-long-standing failures (the `coverage` job red on every run for 10+
-consecutive nights, and a growing GitHub issue collecting a near-daily
-comment) were root-caused, not just described: the fix for item 26's
-incident was verified by reproducing the exact CI failure locally (`covr`
-with `clean = FALSE` to preserve its normally-deleted failure output),
-confirming 26 failures across 12 files before the fix and 0 after. Item 27's
-incident was independently confirmed live: `gh api repos/OWNER/REPO/pages`
-returned 404 before the fix and the expected site metadata after.*
+**How to check**: when a resource-contention error (a lock file, a busy
+port, a "device or resource busy") appears on a persistent machine, `ps aux`
+for anything unrelated holding it *before* assuming the bug is in the CI
+code itself. `systemctl list-timers` surfaces scheduled culprits directly.
+
+**Incident**: isochrones' self-hosted runner hit `apt-get`/`dpkg` lock
+errors that looked exactly like a concurrency bug in a same-day fix (four
+runner agents racing on the shared apt lock, item 29(e) above) — and a
+`flock`-based wrapper built to fix *that* still failed identically. The
+actual holder, found via `ps aux`, was `apt.systemd.daily` — Ubuntu's stock
+daily update timer — which had been stuck holding the lock for **11+
+hours**, entirely unrelated to any CI activity. Killing the stuck process
+and permanently disabling `apt-daily.timer`, `apt-daily-upgrade.timer`, and
+`unattended-upgrades.service` (none of which belong on a CI box) resolved
+it; the earlier `flock` wrapper fix, while independently correct, had not
+been the actual cause of that specific outage.
 
 ---
 
-## 29. Top-level side-effect code in an R package's `R/` directory breaks any tool that sources the package, not just the pipeline run
+## 31. Before an elaborate "unreachable"/"hung" theory, re-verify the address itself hasn't changed
+
+**Rule**: infrastructure that can restart (a stopped-and-started VM, a
+container rescheduled onto new networking) commonly gets a new address on
+restart. A connection failure to a server that was reachable minutes ago is
+often nothing more exotic than retrying a now-stale address — check this
+before reaching for a deeper theory (resource exhaustion, a networking bug,
+a security-group regression).
+
+**How to check**: for any "was reachable, now isn't" investigation on
+restartable infrastructure, confirm the current address/endpoint
+independently (`aws ec2 describe-instances --query
+'...PublicIpAddress'`, a DNS lookup, a status API) before spending time on
+a more elaborate hypothesis.
+
+**Incident**: while load-testing isochrones' self-hosted runner, SSH access
+appeared to fail under heavy concurrent CI load, and the investigation spent
+real time on a connection-tracking-exhaustion theory (plausible given
+observed multi-million-packet traffic volumes). The actual cause: the EC2
+instance's idle-stop timer had fired and a webhook had since restarted it,
+assigning a **new public IP** — every "unreachable" SSH attempt in between
+was to the old address. `aws ec2 describe-instances` confirmed the new IP
+in one call; the box itself was healthy the entire time (confirmed
+separately once the correct address was used).
+
+---
+
+## 32. A newly-built "fast path" variant of an existing check needs to be run for real before it's trusted, regardless of how sound its design looks on read-through
+
+**Rule**: generalizes item 10 (meta-gates need their own proving test) and
+item 9 (stale claims decay) to a broader case: *any* new CI code path —
+not just completeness gates — is unverified until it has actually executed
+once, successfully, in the environment it will really run in. A carefully
+reasoned design is not evidence it works; only a real, observed pass is.
+
+**How to check**: for every CI path added or meaningfully changed, has it
+been triggered for real (not just read) at least once since the change? A
+path gated behind a rare trigger condition (a specific event type, a rare
+file-change pattern) is the highest-risk case, precisely because it's the
+easiest to leave unexercised for a long time.
+
+**Incident**: isochrones' `pkgdown.yaml` grew a slimmed "PR-time roxygen
+check only" path on 2026-08-24 to avoid running the full, expensive site
+build on every PR. It sat unexercised — no PR or `workflow_dispatch` run
+ever actually hit it — until 2026-08-28's CI-hardening session dispatched
+it directly, four days after being merged. Its first real run failed
+immediately: `roxygen2::roxygenise()` calls `load_all()`, which sources the
+project's `01-setup.R`, which has an unconditional hard `stop()` if a
+specific external drive isn't mounted — true on every CI runner, hosted or
+self-hosted, meaning this path could never have succeeded from the day it
+was written. The design (skip the expensive build, keep the doc-comment
+check) was sound; the fact that it had never once actually run was the gap.
+
+---
+
+## 33. An identical failure signature surviving a targeted fix is evidence against the theory, not a reason to reinforce it
+
+**Rule**: when a fix targets a specific hypothesized cause and the retest
+produces the *exact same* failure (same message, same stack trace, same
+step) rather than a different one, the natural instinct is "the fix didn't
+fully apply, try harder." The better-supported read is the opposite: an
+unchanged failure signature after a real, verified-applied fix means the
+theory of causation was wrong, and a different cause should be sought — not
+that the same fix needs reinforcing.
+
+**How to check**: after any targeted fix, diff the failure signature
+before and after, not just pass/fail. "Still red" and "red in the identical
+place with the identical message" are different signals; only the latter
+is evidence the theory itself needs revisiting.
+
+**Incident**: isochrones' `pkgdown` full-build job hit a `pak`/`pkgdepends`
+internal solver error ("Cannot select new package installation task").
+First theory: a stale `.github/pkg.lock` left by a prior run on the
+persistent self-hosted runner — cleared it, reran, identical error. Second
+theory: the local package was already installed from an earlier bulk
+install, confusing an install-vs-upgrade code path — removed it, reran,
+identical error again, character-for-character. Only the third theory
+(`local::.`'s install-in-place path itself hitting an untested edge case,
+independent of any persisted state) actually changed the outcome once
+applied — dropping `local::.` in favor of the action's own default
+dependency-only resolution (`deps::.`) fixed it. The first two "fixes" were
+each individually reasonable and each correctly ruled *out* by the
+unchanged failure signature, not confirmed as incomplete.
+
+---
+
+## 34. Before writing a test against a file, `git ls-files` it — "exists on my disk" and "exists after a fresh clone" are different questions
+
+**Rule**: sharpens items 3 and 6 into a concrete pre-write step, aimed at
+the specific moment a *new* test is authored, not just at auditing
+inherited ones. A file sitting on the machine you're developing on (your
+own checkout, a persistent CI runner's reused work directory) proves
+nothing about whether it's actually part of the committed repository. Check
+`git ls-files <path>` — not `file.exists()` — before designing any
+regression test around a data file's presence or content.
+
+**How to check**: `git ls-files <path>` returns nothing → the file is
+either untracked or gitignored, and any test reading it needs the item 6
+PRIVATE-OK treatment (a legitimate, expected skip), never the PUBLIC
+treatment (an unexpected skip fails the build).
+
+**Incident**: isochrones' `test-data-regression-daily-guard.R` was written
+(2026-08-27) and initially passed cleanly, including on the self-hosted
+runner, against `data/abog_pipeline/canonical_abog_npi_LATEST.rds` and
+similar derived files. A same-project CI Best Practices audit the following
+day ran `git ls-files` against every path the suite read and found three of
+six were never actually committed — `*.rds` and `*.csv` are blanket-
+gitignored repo-wide by deliberate policy, narrow allowlist only — meaning
+the suite had been "passing" purely off stale leftover files on the
+persistent runner and the author's own machine (item 3's exact failure
+mode, but for tests written *that same week*, not inherited legacy ones).
+Fixed by reclassifying: two tests rewritten to pin the files' committed
+metadata sidecars instead of the gitignored data itself; one test
+reclassified explicitly PRIVATE-OK (runs deeper checks when the file
+happens to be present, skips cleanly when it isn't); two tests replaced
+outright with checks against genuinely tracked files. `git ls-files` before
+writing, not `file.exists()` after failing, would have caught this at
+authoring time.
+
+---
+
+## 35. In a multi-agent or multi-contributor session, check very recent commits before doing full root-cause work — someone else may have already fixed it
+
+**Rule**: when more than one person or agent can push to the same branch
+concurrently, a failure under investigation may already be resolved by a
+commit that landed while the investigation was in progress. This isn't
+covered by any single-investigator debugging discipline (including items
+1-28 above, which all implicitly assume one thread of work at a time) —
+it's a distinct check specific to concurrent contribution.
+
+**How to check**: `git log --oneline -10 -- <path>` on the specific file or
+area under investigation before starting deep root-cause work, especially
+if `main` has moved since the investigation began. If a recent commit's
+message plausibly targets the same symptom, verify against it before
+re-deriving the same fix independently.
+
+**Incident**: an isochrones CI-hardening session was mid-investigation of a
+`test-s3-sync-atomic-staging.R` failure in the `Step 8 Incident Regression`
+job when a re-check of the check-run status showed it passing — a
+*separate*, concurrently-running Claude Code session (working in a
+different terminal window on the same repo, confirmed via a screenshot
+showing its own "Root cause found and fixed" summary) had independently
+diagnosed and pushed a fix for the identical failure minutes earlier. No
+duplicate work was done in that instance only because the check happened to
+land before the independent re-derivation was complete — a `git log` check
+at the *start* of the investigation would have surfaced the same
+information without the timing dependency.
+
+---
+
+## 36. Top-level side-effect code in an R package's `R/` directory breaks any tool that sources the package, not just the pipeline run
 
 **Rule**: `roxygen2::roxygenise()`, `devtools::load_all()`, `R CMD check`, and
 most lint/doc tooling all work by *sourcing every file in `R/`* — not just
@@ -861,7 +1005,7 @@ fixed file-by-file as each one is discovered failing.
 
 ---
 
-## 30. A narrow, discriminating auto-retry for infrastructure setup hangs is safe; a generic retry-until-green is not
+## 37. A narrow, discriminating auto-retry for infrastructure setup hangs is safe; a generic retry-until-green is not
 
 **Rule**: a third-party setup action (`r-lib/actions/setup-r` or similar)
 hanging until its timeout kills the job is a real, recurring GitHub Actions
@@ -895,7 +1039,7 @@ prove the positive path fires too.
 
 ---
 
-## 31. A fail-open guard's precondition check must prove the SAME thing the guarded command needs — ref-resolvability is not ancestor-reachability
+## 38. A fail-open guard's precondition check must prove the SAME thing the guarded command needs — ref-resolvability is not ancestor-reachability
 
 **Rule**: item 8 says a relevance/applicability check should fail open when
 it can't determine applicability. But "fail open" only works if the
@@ -934,7 +1078,7 @@ and the ancestry the diff command actually needed weren't the same check.
 
 ---
 
-## 32. A public, tokenless cross-repo verification harness must verify read access to its actual target before running, and refuse loudly if the target is unreadable
+## 39. A public, tokenless cross-repo verification harness must verify read access to its actual target before running, and refuse loudly if the target is unreadable
 
 **Rule**: a "verifier repo" architecture — a separate, public CI harness that
 validates a *different* "production" repo by checking it out via
@@ -973,7 +1117,7 @@ claims to have verified.
 
 ---
 
-## 33. A test matrix across OS runners can fail on graphics-device/system-library availability alone — same R version, same code, different platform capability
+## 40. A test matrix across OS runners can fail on graphics-device/system-library availability alone — same R version, same code, different platform capability
 
 **Rule**: `strategy: matrix:` builds across `ubuntu-latest`/`macos-latest`/etc.
 exist specifically to catch platform-dependent behavior, and graphics-device
@@ -1003,7 +1147,7 @@ any change in the test's own logic.
 
 ---
 
-## 34. Pattern-matched mutation testing needs its own staleness/ambiguity check, and that check's failures need a remediation owner — not just a correct hard-fail
+## 41. Pattern-matched mutation testing needs its own staleness/ambiguity check, and that check's failures need a remediation owner — not just a correct hard-fail
 
 **Rule**: a mutation-testing harness that injects each mutant by matching a
 text/regex pattern against the *live* source (rather than an AST transform
@@ -1046,28 +1190,7 @@ the entire time.
 
 ---
 
-*Items 29-34 added 2026-08-28 from four parallel investigations covering
-`isochrones`, `mysterycall`, `cliff`, `twostep`, `mufflyaccess`,
-`mysterymaps`, `isochrones-ci`, `fpmrs-bibliometrics`, `researchpaths`,
-`grace-ent`, `sling-volume-patterns`, and `isoaccessr` — every `mufflyt/`
-repo with CI beyond the four already covered by items 1-28. Each item is
-root-caused against real run logs (specific run IDs, exact error text), not
-inferred from reading workflow YAML alone. Several leads were investigated
-and explicitly NOT written up because the evidentiary bar wasn't met: a test
-sharding pattern in isochrones' `suite-sharded.yml` (structurally interesting,
-no tied failure found in the time available), a `render-proposal` failure
-pattern in `isoaccessr` (plausibly the same class as item 27, but the actual
-run logs were past GitHub's retention window and couldn't be confirmed rather
-than guessed), a one-off 44-minute `setup-r-dependencies` hang in
-`mysterymaps` (real, but a single occurrence rather than a pattern), and
-`twostep`'s permanently-failing nightly SSOT test (real, but the same shape
-as item 20 rather than something new). `researchpaths`, `grace-ent`,
-`sling-volume-patterns` had no failure history worth investigating (too new,
-or an abandoned branch with no resolution to extract a lesson from).*
-
----
-
-## 35. A function name defined at top level in two different files decides its behavior by source order, not by intent — guard the class, not just the instance that already bit you
+## 42. A function name defined at top level in two different files decides its behavior by source order, not by intent — guard the class, not just the instance that already bit you
 
 **Rule**: R has no compile-time duplicate-symbol error. If `foo <- function(...)`
 exists at top level in two different files that both get `source()`d into the
@@ -1106,7 +1229,7 @@ did, rather than a single sweep catching the whole class.
 
 ---
 
-## 36. A negative-control test existing and passing locally is not the same as CI ever running it — verify the file is actually wired into a workflow's file list
+## 43. A negative-control test existing and passing locally is not the same as CI ever running it — verify the file is actually wired into a workflow's file list
 
 **Rule**: item 10 establishes that a meta-gate needs a mutation-tested sibling
 proving it fires. That sibling test still provides zero protection if no
@@ -1145,7 +1268,7 @@ sibling gate-contract test it was modeled on, which does trigger on every
 
 ---
 
-## 37. For persistent (non-ephemeral) self-hosted runners, add a scheduled health check for the runner's own toolchain — independent of any real CI job ever hitting the drift first
+## 44. For persistent (non-ephemeral) self-hosted runners, add a scheduled health check for the runner's own toolchain — independent of any real CI job ever hitting the drift first
 
 **Rule**: item 4 warns not to *assume* state carries over between sibling
 jobs on a GitHub-hosted ephemeral runner. Self-hosted runners invert that
@@ -1182,7 +1305,7 @@ to a monitor rather than a real job).
 
 ---
 
-## 38. When building a NEW compatibility/health check, exercise the real failure path directly — a metadata comparison (a recorded version string, a `Built:` field) is not equivalent, in either direction
+## 45. When building a NEW compatibility/health check, exercise the real failure path directly — a metadata comparison (a recorded version string, a `Built:` field) is not equivalent, in either direction
 
 **Rule**: it's tempting to diagnose a suspected version-compatibility problem
 by comparing recorded metadata (a package's `Built:` R version, a config
@@ -1218,13 +1341,113 @@ simulated crash and simulated non-success output before trusting it.
 
 ---
 
-*Items 35-38 added 2026-08-28 from the same isochrones CI-hardening session
+## Quick audit script skeleton
+
+```bash
+#!/usr/bin/env bash
+# Run from inside each repo. Not exhaustive -- a starting point per item above.
+set -u
+echo "== 1. Tiering: does pull_request trigger a comprehensive suite, or only schedule? =="
+grep -B2 -A5 "^on:" .github/workflows/*.yml
+
+echo "== 3. Fresh-clone hygiene: any test reading /tmp or a hardcoded home path? =="
+grep -rn "/tmp/\|/Users/\|~/\|Sys.getenv(\"HOME\")" tests/*.R 2>/dev/null | grep -v tempfile
+
+echo "== 9. Stale claims in comments =="
+grep -rn "fails in a fresh clone today\|currently fails\|for now\|as of 20" .github/workflows/*.yml
+
+echo "== 10. Meta-gates without a *_detect.R sibling =="
+for f in tests/ci_*.R tests/test_*_gate*.R 2>/dev/null; do
+  [ -f "$f" ] || continue
+  base=$(basename "$f" .R)
+  detect="tests/test_${base#ci_}_detect.R"
+  [ -f "$detect" ] || echo "no detect-sibling found for $f (expected something like $detect)"
+done
+
+echo "== 12. Steps with no visible budget/timeout =="
+grep -B3 "run: |" .github/workflows/*.yml | grep -c "BUDGET="
+
+echo "== 13. Jobs in the workflow vs. jobs required by branch protection =="
+repo=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+grep -h "^    name:" .github/workflows/*.yml | sed 's/^    name: //' | sort -u > /tmp/wf_job_names.txt
+gh api "repos/$repo/branches/main/protection" --jq '.required_status_checks.contexts[]' 2>/dev/null | sort -u > /tmp/required_checks.txt
+echo "in workflow but NOT required (check deliberately, not by accident):"
+comm -23 /tmp/wf_job_names.txt /tmp/required_checks.txt
+
+echo "== 14. Rolling (non-pinned) package mirrors =="
+grep -n "packagemanager.posit.co.*/latest\|pypi.org/simple\b" .github/workflows/*.yml
+
+echo "== 15. Missing concurrency cancellation =="
+for f in .github/workflows/*.yml; do
+  grep -q "^concurrency:" "$f" || echo "no concurrency: block in $f"
+done
+
+echo "== 16. No explicit permissions: block =="
+for f in .github/workflows/*.yml; do
+  grep -q "^permissions:" "$f" || echo "no top-level permissions: block in $f (using default token scope)"
+done
+```
+---
+
+*Compiled 2026-08-28 from the midwifery repo's CI-hardening session
+(PRs #93, #94; branch-protection fix applied directly to `main`) — every
+incident cited above is a real failure from that
+session, not a hypothetical.*
+
+*Items 22-25 added 2026-08-28 from a separate CI-hardening session on the
+private_equity repo, applying this checklist against its actual workflows
+(items 1-21 were audited too; most were structurally not applicable there —
+no path-filtered triggers, no cross-job state sharing to audit — and are not
+re-cited to avoid implying a false incident). Each of 22-25 is, likewise, a
+real failure from that session, not a hypothetical.*
+
+*Items 26-28, and the `covr` addendum to item 21, added 2026-08-28 from a
+CI-hardening session on the `simulation` repo, triggered by a direct
+"why does this keep breaking" investigation of its nightly workflow. Two
+long-standing failures (the `coverage` job red on every run for 10+
+consecutive nights, and a growing GitHub issue collecting a near-daily
+comment) were root-caused, not just described: the fix for item 26's
+incident was verified by reproducing the exact CI failure locally (`covr`
+with `clean = FALSE` to preserve its normally-deleted failure output),
+confirming 26 failures across 12 files before the fix and 0 after. Item 27's
+incident was independently confirmed live: `gh api repos/OWNER/REPO/pages`
+returned 404 before the fix and the expected site metadata after.*
+*Items 29-35 added 2026-08-28 from a multi-day CI-hardening session on the
+`isochrones` repo, centered on standing up a genuinely working self-hosted
+GitHub Actions runner (EC2, webhook-triggered auto-start, idle-based
+auto-stop) and then stress-testing it until it stopped breaking. That
+runner's defining property — state persists across jobs, unlike a
+GitHub-hosted runner — is the root cause behind five of these seven items
+(29-33); the other two (34, 35) surfaced from applying this same checklist's
+own items 3, 6, and 9 against the session's own just-written data-regression
+test suite and a genuinely concurrent second Claude Code session working the
+same branch. Every incident cited in 29-35 is a real failure hit and fixed
+during that session, confirmed via a passing rerun, not a hypothetical.*
+*Items 36-41 added 2026-08-28 from four parallel investigations covering
+`isochrones`, `mysterycall`, `cliff`, `twostep`, `mufflyaccess`,
+`mysterymaps`, `isochrones-ci`, `fpmrs-bibliometrics`, `researchpaths`,
+`grace-ent`, `sling-volume-patterns`, and `isoaccessr` — every `mufflyt/`
+repo with CI beyond the four already covered by items 1-28. Each item is
+root-caused against real run logs (specific run IDs, exact error text), not
+inferred from reading workflow YAML alone. Several leads were investigated
+and explicitly NOT written up because the evidentiary bar wasn't met: a test
+sharding pattern in isochrones' `suite-sharded.yml` (structurally interesting,
+no tied failure found in the time available), a `render-proposal` failure
+pattern in `isoaccessr` (plausibly the same class as item 27, but the actual
+run logs were past GitHub's retention window and couldn't be confirmed rather
+than guessed), a one-off 44-minute `setup-r-dependencies` hang in
+`mysterymaps` (real, but a single occurrence rather than a pattern), and
+`twostep`'s permanently-failing nightly SSOT test (real, but the same shape
+as item 20 rather than something new). `researchpaths`, `grace-ent`,
+`sling-volume-patterns` had no failure history worth investigating (too new,
+or an abandoned branch with no resolution to extract a lesson from).*
+*Items 42-45 added 2026-08-28 from the same isochrones CI-hardening session
 that produced this file's items 1-12 audit against `mufflyt/isochrones`
 directly (a separate exercise from the four-repo sweep behind items 29-34,
 run the same day). Items 4 and 10 from that audit were fixed in the same
 session, not just described: item 4 via `runner-health-check.yml` (the
-subject of item 37), item 10 via a new negative-control test for
-`scripts/ci_hygiene.R` (the subject of item 36, which is also where that
-fix's own wiring gap was caught and closed). Item 38 documents a mistake
-made and corrected while building item 37's fix, in the same session, not a
+subject of item 44), item 10 via a new negative-control test for
+`scripts/ci_hygiene.R` (the subject of item 43, which is also where that
+fix's own wiring gap was caught and closed). Item 45 documents a mistake
+made and corrected while building item 44's fix, in the same session, not a
 hypothetical caution.*
