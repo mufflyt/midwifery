@@ -22,6 +22,129 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — Laws about the science, and a population that escaped its frame
+
+No published estimate changed in this section. That is the finding, not an
+omission: the defect it opens with was caught before it reached anything, and
+the rest is machinery for catching the next one. Where a number *could* have
+moved and did not, this says so explicitly.
+
+### Fixed — a study frame that resolved more people than it held
+
+`resolve_amcb_by_state_license()` reported **`3 of 2 AMCB certificants
+(150.0%)`**. `deterministic_matches` was built from every qualifying id in the
+state-license file, and the roster it was asked about was consulted only
+afterwards in a left join — so a person outside the declared study population
+was resolved, counted, and written to the artifact as a finding about it.
+
+Four of the six audit metrics were counts drawn from the external universe over
+a roster denominator:
+
+| metric | n | pct_of_amcb |
+|---|---|---|
+| amcb_roster | 2 | 100% |
+| amcb_with_state_license | 8 | **400%** |
+| deterministically_resolved | 3 | **150%** |
+| license_quarantine_rows | 5 | **250%** |
+
+**Impact on published estimates: zero, and this was checked rather than
+assumed.** No `amcb_deterministic_license_matches_*` or license-resolution
+summary artifact has ever been committed, and the function has no production
+caller — only the test suite reaches it. Nothing needed regenerating. The defect
+was latent and would have corrupted the first real run.
+
+The full A1–A8 roster still reports **3 of 8 (37.5%)**, unchanged. A frame fix
+must not move a legitimate estimate.
+
+The restriction is applied to the **claim**, never to the evidence, and the
+existing fixture is why. A6 and A7 share board key CO 31313, so the key
+identifies nobody and neither resolves. Filtering the license file to a roster
+holding only A6 would drop A7's row, the key would look unique, and A6 would
+resolve — certainty manufactured by deleting the evidence that contradicted it.
+Narrowing a study frame must never widen its answer. Out-of-frame resolutions
+are retained as a labelled diagnostic rather than discarded.
+
+### Added — ten laws about the science, each proven able to fail
+
+`tests/science_law_registry.tsv` is the machine-readable list of what this
+repository claims to enforce; `tests/ci_law_coverage.R` refuses to pass unless
+every declared law was exercised, was non-vacuous, and had a planted defect
+killed. A law that never ran is indistinguishable, in a green build, from a law
+that passed.
+
+- **L1** cohort provenance is single-vintage
+- **L2** population is conserved — in two shapes. The parts-sum rule cannot see
+  a single share of 150%, because that breaks no addition, so L2 also holds that
+  no share may exceed its declared denominator (checked on the 8 tracked
+  artifacts carrying a `pct_of_*` column; none currently violate)
+- **L3** missing geography stays missing — the frozen Alaska regression
+- **L4** more travel time cannot reduce access
+- **L5** every routed provider is in the union
+- **L6** masking evidence cannot invent geography — 400 real Census ZIPs masked
+  16 ways; its planted defect *is* the historical Yukon-Koyukuk bug, rebuilt
+- **L7** contradictory identity evidence cannot increase certainty
+- **L8** identical inputs produce identical outputs
+- **L9** a cache may change runtime, not the answer
+- **L10** every mutable scientific input has a declared vintage
+
+30 planted defects, 30 detected.
+
+### Added — the geocoding cache is a declared input
+
+Coordinates decide counties, and counties decide rurality, which is a headline
+of this study. Across 112 provenance sidecars there were 105 distinct declared
+inputs and **not one was a cache**, so the pipeline computed `Y = f(X, whatever
+the cache holds now)` while recording only `X`. Walking the provenance graph:
+**14 artifacts are transitively cache-dependent, 0 declared a cache identity**,
+and `midwives_geography_FROZEN.csv` has no sidecar at all.
+
+`R/lib/cache_vintage.R` gives the cache a content-derived identity — nine
+scientific fields, sorted in SQL, coordinates at 6 dp, with `created_at` /
+`last_accessed` / `access_count` excluded **by name** because a fingerprint that
+moved when someone *read* the cache would be useless as an identity. Live cache:
+55,843 entries, sha `95d9837f9197291d`.
+
+This is **not** an argument for an immutable cache. A cache that resolves more
+addresses next month is better evidence; a later snapshot is a *new declared
+input* — visible, attributable, a reason for a number to move — rather than
+drift.
+
+The 14 existing artifacts are **baselined, not back-filled**. They were built
+against a snapshot nobody recorded, and stamping them now would assert a vintage
+that is not the one that produced them. The baseline can only shrink.
+
+### Fixed — replayed evidence is now bound to what it is evidence for
+
+Coverage re-runs every gate and every mutation harness, and at ten laws that
+took it past its own 600s budget — a checker that stops finishing is an absent
+checker, arriving through the checker of checkers. Replay fixed the runtime and
+introduced a custody hole: a log was accepted because it had the right filename,
+and its contents were then trusted.
+
+The gap is measurable. Replaying evidence against a tree that had moved
+underneath it reported **10/10 laws exercised, 0 unexpected skips**; direct
+execution of the same registry against the same tree reported **1/10 and 9**.
+
+Every gate now stamps its output with its own source hash, the registry hash,
+the commit and a run identity, and coverage recomputes all of it. Content
+hashes, not timestamps — an mtime says when a file was touched, which is the
+mistake L10 exists to reject. **Mismatch fails closed**; absence still falls
+back to executing the gate. Verified on a pinned worktree: identical exit status
+and identical scoreboard both ways, 303s versus 0s.
+
+### Known — L5 does not run on a clean checkout
+
+Logged as **[D7](DEBT.md)** rather than fixed, because the fix is a policy
+choice. L5's dissolved-surface input lives under gitignored `artifacts/maps/`
+while L5 is registered `public`, where a skip is defined as a failure — so on
+any runner, coverage reports 9/10 and fails.
+
+Every `10/10, 0 unexpected skips` reported while this suite was being built was
+produced in a working tree holding that untracked file. The gate was right; the
+environment used to check it was not.
+
+---
+
 ## [0.7.0] — 2026-08-14 — State licensure, and identity that does not need a name
 
 Tagged `v0.7.0` at commit `335d245`. The first linkage evidence in this project
