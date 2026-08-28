@@ -37,6 +37,7 @@ artifacts/bc_resolver/contested_evidence.csv
 artifacts/bc_resolver/crosstab_counts.csv
 artifacts/bc_resolver/crosstab_row_pct.csv
 artifacts/bc_resolver/targeted_questions.csv
+artifacts/bon_contamination_inventory.csv
 artifacts/bon_extracted_fields_inventory.csv
 artifacts/bon_state_data_heterogeneity_matrix.csv
 artifacts/cabc_accredited_birth_centers_master.csv
