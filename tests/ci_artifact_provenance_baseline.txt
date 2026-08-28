@@ -93,6 +93,7 @@ artifacts/obgyn_cpa_filings_schema_and_sample.csv
 artifacts/ohio_voter_license_ages_provenance.csv
 artifacts/org_resolution_distribution_shift.csv
 artifacts/org_resolution_ppv.csv
+artifacts/scraped_50_states_and_dc_midwives_master.csv
 artifacts/state_by_state_bon_strategy.csv
 artifacts/state_nursing_license_ages_provenance.csv
 artifacts/step00_summary/join_left_20260809_234744.978.csv

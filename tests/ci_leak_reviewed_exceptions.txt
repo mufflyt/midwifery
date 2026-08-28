@@ -1,0 +1,34 @@
+# =============================================================================
+# ci_leak_reviewed_exceptions.txt -- genuinely person-level files, tracked on
+# purpose, not by accident
+# =============================================================================
+# This is NOT ci_leak_baseline.txt. That file is false positives only -- files
+# the guard flags on a column name or filename pattern that carry no
+# identifiable person. Every entry there can be defended as "the guard is
+# wrong about this one." Nothing here can be defended that way: every file
+# below genuinely does carry real names, NPIs, or certification numbers for
+# real, identifiable midwives, and it is tracked anyway because someone with
+# the authority to make that call reviewed it and said so, in the open,
+# with a reason -- not because a check was silenced to make CI pass.
+#
+# THE BAR FOR AN ENTRY HERE: a named person made a deliberate decision, on a
+# specific date, for a stated reason. "It was easier than untracking it" is
+# not a reason. Anyone reading this file should be able to reconstruct why
+# each file is here without asking.
+#
+# Format matches ci_leak_baseline.txt: one path per line, comments with #.
+# =============================================================================
+
+# State Board of Nursing licensure scrape (50 states + DC): certification
+# number, name, NPI, and license-verification fields for 11,356 midwives.
+# Reviewed and accepted by Tyler Muffly, 2026-08-28, for two stated reasons:
+# (1) the underlying source -- state BON license lookups and the AMCB public
+# verification directory -- is itself public, per-certificant record by
+# record, even though this project does not otherwise republish AMCB-sourced
+# identity data in bulk; (2) this project's AMCB-affiliated co-author already
+# has direct, independent access to the equivalent underlying roster through
+# her own role there, so tracking this file does not expose her to anything
+# she could not already see. This is a narrower justification than "AMCB data
+# is fine to publish" -- it applies to this file, reviewed on this date, not
+# as a standing exemption for future person-level artifacts.
+artifacts/scraped_50_states_and_dc_midwives_master.csv
