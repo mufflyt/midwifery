@@ -309,6 +309,20 @@ jobs:
       # misreported them as "no subjects" instead of the real "no package
       # called X" -- installing what they actually need is what makes that
       # error visible again, not what caused it.
+      #
+      # sf needs the geo stack this job otherwise never installs (the r-suite
+      # job above installs it for its own reasons; this job is separate and
+      # does not inherit it). Missing this step, `install.packages("sf")` has
+      # no binary available and falls back to compiling from source, which
+      # then fails outright without libgdal/libproj/libgeos/libudunits2 --
+      # confirmed on this exact runner (run 33180290956, 2026-08-28): "Error:
+      # package still unavailable after install: sf".
+      - name: System libraries for sf
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libgdal-dev libproj-dev libgeos-dev libudunits2-dev
+
       - name: Install packages needed by L6-L10's gates
         run: |
           # jsonlite and openssl: found only by following source() chains and
