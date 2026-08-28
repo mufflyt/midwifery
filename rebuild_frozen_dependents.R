@@ -60,6 +60,15 @@ REBUILD_ORDER <- list(
   list(layer = "4-derived-products", why = "products that consume cohort + geography",
        scripts = c("load_obstetric_providers.R", "match_midwives_to_isochrones.R",
                    "characterize_isochrone_representation.R",
+                   # Added 2026-08-28, by the same completeness gate (T5) and for
+                   # the same reason as the 2026-08-15/2026-08-10 additions below:
+                   # this script appeared (PR #76, 2026-08-23) reading both
+                   # amcb_npi_linkage_FROZEN and midwives_geography_FROZEN
+                   # directly, and was never declared. Placed here, not earlier,
+                   # because its own header states it measures against "the SAME
+                   # denominator characterize_isochrone_representation.R used" --
+                   # it must follow that script within the layer.
+                   "verify_osmde_full_cohort_coverage.R",
                    "map_midwife_geography.R", "render_midwifery_map.R",
                    # Added 2026-08-15, by the same completeness gate and for the
                    # same reason as match_medicare_partb_partd.R below: these

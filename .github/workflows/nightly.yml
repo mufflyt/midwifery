@@ -291,13 +291,33 @@ jobs:
           r-version: release
           use-public-rspm: true
 
-      # No install step, and this step keeps it that way. The gate recomputes
-      # Wilson intervals from the closed form rather than calling a package,
-      # precisely so a nightly claim about the science cannot go red because
-      # CRAN was slow. Asserted statically rather than by "it ran without an
-      # install", which stays true right up until the runner image ships the
-      # package by accident. If this ever needs a contributed package, that is
-      # a signal to reconsider the gate, not to add the package.
+      # L1-L5's gates (ci_science_laws.R and friends, enforced package-free by
+      # "The science gates depend on nothing but base R" below) still need no
+      # install step, for the reason this comment used to state alone: a
+      # nightly claim about the science cannot go red because CRAN was slow.
+      #
+      # L6-L10, added 2026-08-24/25, did not hold that line: their gates
+      # (test_geography_masking_metamorphic.R, test_identity_collision_corpus.R,
+      # test_deterministic_rebuild.R, test_cache_isolation.R,
+      # test_cache_vintage_declared.R) call dplyr/readr/stringr/readxl/sf/
+      # DBI/duckdb directly. Rewriting five gates to reimplement spatial joins,
+      # SQL and xlsx parsing in base R -- to hold a principle none of them were
+      # written to honour -- was judged higher-risk than installing seven
+      # packages: those gates exist to be TRUSTED verifiers, and a rushed
+      # base-R rewrite risks a subtler bug than the dependency it removes.
+      # 2026-08-26/27/28: every Nightly run since they merged silently
+      # misreported them as "no subjects" instead of the real "no package
+      # called X" -- installing what they actually need is what makes that
+      # error visible again, not what caused it.
+      - name: Install packages needed by L6-L10's gates
+        run: |
+          pkgs <- c("dplyr", "readr", "stringr", "readxl", "sf", "DBI", "duckdb")
+          missing <- pkgs[!pkgs %in% rownames(installed.packages())]
+          if (length(missing)) install.packages(missing)
+          for (p in pkgs) if (!requireNamespace(p, quietly = TRUE))
+            stop("package still unavailable after install: ", p)
+        shell: Rscript {0}
+
       - name: Start the timing table
         if: always()
         run: |
@@ -314,6 +334,10 @@ jobs:
             echo "| --- | ---: | ---: |"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # This enumeration is deliberately narrow: it enforces the base-R-only
+      # rule on L1-L5's gates (and the harness itself), not on L6-L10's, which
+      # are installed above precisely because they are not held to it. Adding
+      # them here would just fail on packages they are permitted to use.
       - name: The science gates depend on nothing but base R
         run: |
           set -u
