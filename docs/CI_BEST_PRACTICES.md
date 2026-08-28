@@ -1064,3 +1064,167 @@ than guessed), a one-off 44-minute `setup-r-dependencies` hang in
 as item 20 rather than something new). `researchpaths`, `grace-ent`,
 `sling-volume-patterns` had no failure history worth investigating (too new,
 or an abandoned branch with no resolution to extract a lesson from).*
+
+---
+
+## 35. A function name defined at top level in two different files decides its behavior by source order, not by intent — guard the class, not just the instance that already bit you
+
+**Rule**: R has no compile-time duplicate-symbol error. If `foo <- function(...)`
+exists at top level in two different files that both get `source()`d into the
+same environment, whichever runs *last* silently wins, and nothing generic
+catches this — only a check built for that one specific function name. A
+guard added after the first instance ("no second definition of `X`") protects
+`X` and nothing else; the same mistake recurs under a different name the next
+time a function gets extracted into a module and the old copy isn't deleted.
+
+**How to check**:
+```bash
+# top-level `name <- function(...)` assignments across production R/,
+# excluding archives — collisions are lines with count > 1
+grep -rhoE '^[A-Za-z_.][A-Za-z0-9_.]* *<- *function' R/ --include='*.R' \
+  | grep -v '/@archive/' \
+  | sed -E 's/ *<-.*//' | sort | uniq -c | sort -rn | awk '$1>1'
+```
+For each collision, trace which copy actually runs in production (does one
+file `source()` the other into the same scope, with the later call winning?)
+before assuming either is dead code.
+
+**Incident**: `mufflyt/isochrones`, 2026-08-28 — found three separate
+instances of this exact pattern in one session, not one: `haversine_distance()`
+(pre-existing, already a named incident in this repo's own
+`spatial-units-and-library-contract.yml`), `compute_raster_overlap_allocation()`
+(`R/08-area-weighted-overlap.R`'s copy had none of `R/step8_modules/overlap_engine.R`'s
+adaptive rasterization, OOM-guard chunking, or the R147 fix for a real
+performance regression — and was silently shadowed at runtime by a
+`source(..., local = TRUE)` call later in the same file), and `sprintf_safe()`
+(`R/log_safe.R`'s documented "never fails" version vs. `R/log_glue_safe.R`'s
+unconditional alias to a different implementation with a different contract
+on a placeholder-count mismatch). Each existing guard test protected exactly
+one prior function name; extending the guard to a fourth, fifth, or sixth
+collision would have required noticing each one by hand, same as this session
+did, rather than a single sweep catching the whole class.
+
+---
+
+## 36. A negative-control test existing and passing locally is not the same as CI ever running it — verify the file is actually wired into a workflow's file list
+
+**Rule**: item 10 establishes that a meta-gate needs a mutation-tested sibling
+proving it fires. That sibling test still provides zero protection if no
+workflow's test invocation actually includes it — a curated `test_files <-
+c(...)` list (see item 2's same shape, one level up: not just "does this
+package get installed" but "does this test file get *run* at all") does not
+grow automatically when a new file is added to `tests/`. Writing the test is
+necessary; confirming it is reachable from a real CI trigger is a separate,
+easy-to-skip step.
+
+**How to check**: for a new or updated meta-gate test file, grep every
+workflow for its path:
+```bash
+grep -rl "test-your-new-file\.R" .github/workflows/
+```
+No hits means the file exists, may pass every time it's run by hand, and
+never runs in CI at all. Separately confirm the workflow(s) it *is* wired
+into actually trigger on `pull_request` (not `schedule`-only — see item 1) —
+a test correctly wired into a nightly-only workflow still leaves a same-day
+regression unguarded until the next scheduled run.
+
+**Incident**: `mufflyt/isochrones`, 2026-08-28 — a new negative-control test
+for `scripts/ci_hygiene.R` (written to close the item-10 gap found in this
+repo's own audit) passed cleanly under `testthat::test_file()` run by hand,
+but the workflow that owns the script it tests (`hygiene.yml`) never invokes
+any `testthat` file at all — it runs `Rscript scripts/ci_hygiene.R` directly,
+by design, to stay dependency-free (its own header: "a check that costs
+minutes is the check somebody switches off"). The only place a new
+`tests/testthat/*.R` file gets picked up automatically is the sharded full
+suite, which had been red for 9+ continuous days in this repo at the time —
+relying on it alone for a brand-new gate's only signal would have meant the
+gate effectively never ran. Fixed by adding the new file's path to
+`nightly-smoke.yaml`'s existing curated `test_files` list, next to the
+sibling gate-contract test it was modeled on, which does trigger on every
+`pull_request`.
+
+---
+
+## 37. For persistent (non-ephemeral) self-hosted runners, add a scheduled health check for the runner's own toolchain — independent of any real CI job ever hitting the drift first
+
+**Rule**: item 4 warns not to *assume* state carries over between sibling
+jobs on a GitHub-hosted ephemeral runner. Self-hosted runners invert that
+risk entirely: if `install-r: false` (or equivalent "assume it's already
+here") is set anywhere, the runner's own toolchain persists across every
+job, every workflow, and every day with nothing in the repo watching it.
+Nothing about the repo's *code* has to change for a runner to drift out of a
+working state — a manual `install.packages("pak")` on the box, a partial
+OS-level R upgrade, anything. The first thing to notice should not be a real
+job failing for what looks like an unrelated reason.
+
+**How to check**: `grep -l "install-r: false" .github/workflows/*.yml` — if
+any hits exist, is there a *separate*, scheduled (`on: schedule` +
+`workflow_dispatch`), independent-of-any-real-job workflow that verifies the
+runner pool's own toolchain health? Does it identify which specific runner
+it landed on (hostname / `$RUNNER_NAME`) in its output, so a problem confined
+to one box in a multi-runner pool is traceable across the schedule's history
+rather than reading as an intermittent flake?
+
+**Incident**: `mufflyt/isochrones`'s `secrets` workflow crashed on
+`isochrones-ci-runner-1` on 2026-08-26 — `Error in load_private_package("cli")
+: Cannot load cli from the private library`, dead in 31 seconds, before the
+credential scan it exists to run ever started. R on that runner was 4.5.2;
+`pak`'s own bundled private `cli` had been installed under R 4.5.3. Nothing
+in the repo's code or that day's commits caused it — the runner's own state
+had simply drifted. No workflow in the repo checked for this independently;
+it was found only because a real job happened to hit it. Fixed by adding
+`runner-health-check.yml`: a `schedule`-triggered job (every 6 hours),
+fanned out to 4 parallel replicas per run to raise the odds of covering more
+than one runner in the pool per run (a single scheduled job can only land on
+whichever runner is idle, not "every runner" — see item 37's own sibling
+concern, item 4, for the same single-runner-per-job constraint applied here
+to a monitor rather than a real job).
+
+---
+
+## 38. When building a NEW compatibility/health check, exercise the real failure path directly — a metadata comparison (a recorded version string, a `Built:` field) is not equivalent, in either direction
+
+**Rule**: it's tempting to diagnose a suspected version-compatibility problem
+by comparing recorded metadata (a package's `Built:` R version, a config
+file's declared version) against the current environment, because it's cheap
+and doesn't require reproducing the actual crash. That comparison can be
+wrong both ways: too loose (two versions differ and it still works fine in
+practice — most packages tolerate a patch-level R bump) and too strict
+(flagging a mismatch that has never actually caused a problem, training
+people to ignore the check — the exact failure mode item 20 warns about).
+When the real operation is available to invoke directly and cheaply, prefer
+it over inferring compatibility secondhand.
+
+**How to check**: for a new health/compatibility check, ask: does the
+package or tool already ship its own self-diagnostic (e.g. `pak::pak_sitrep()`,
+`renv::status()`, `torch::install_torch()`'s own verification), and does the
+check call that directly rather than parsing a version string and asserting
+equality?
+
+**Incident**: `mufflyt/isochrones`, 2026-08-28 — the first draft of the item
+37 runner-health-check compared each critical package's recorded `Built:` R
+version against `getRversion()` and rejected any patch-level mismatch. That
+produced a false positive on the very first machine it was tested against:
+`dplyr` built under R 4.6.0, running under R 4.6.1, working perfectly fine in
+practice (ordinary R patch releases do not reliably break package ABI
+compatibility). The real incident this check exists to catch (item 37) is
+narrower and stranger than a generic version mismatch — `pak`'s private
+library bundling specifically, evidently more version-sensitive than typical
+package installs. Rewritten to call `pak::pak_sitrep()` directly (which
+exercises the exact private-library load that crashed) and check its printed
+output for the literal success line ("Dependencies can be loaded") rather
+than infer compatibility from a version string; verified against both a
+simulated crash and simulated non-success output before trusting it.
+
+---
+
+*Items 35-38 added 2026-08-28 from the same isochrones CI-hardening session
+that produced this file's items 1-12 audit against `mufflyt/isochrones`
+directly (a separate exercise from the four-repo sweep behind items 29-34,
+run the same day). Items 4 and 10 from that audit were fixed in the same
+session, not just described: item 4 via `runner-health-check.yml` (the
+subject of item 37), item 10 via a new negative-control test for
+`scripts/ci_hygiene.R` (the subject of item 36, which is also where that
+fix's own wiring gap was caught and closed). Item 38 documents a mistake
+made and corrected while building item 37's fix, in the same session, not a
+hypothetical caution.*
