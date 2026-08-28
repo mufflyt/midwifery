@@ -76,6 +76,7 @@ artifacts/isochrone_representation_by_rucc.csv
 artifacts/isochrone_representation_by_state.csv
 artifacts/linkage_completeness_by_status.csv
 artifacts/linkage_identity_changes.csv
+artifacts/live_washington_bon_ingested_midwives_from_tracked_roster.csv
 artifacts/louisiana_amcb_concordance_matrix.csv
 artifacts/louisiana_workforce_epidemiology_report.csv
 artifacts/lsbn_direct_agency_report.csv
