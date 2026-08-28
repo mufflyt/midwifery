@@ -1,0 +1,14 @@
+path,producer,original_claim,original_numerator,original_denominator,synthetic_contribution,genuine_observed_contribution,action
+artifacts/amcb_vs_bon_confirmation_report.csv,verify_amcb_vs_bon_cross_confirmation.py,Direct State BON License Confirmed / 100% Verified Dual-Source National Cohort,11355,11355,11355,374,RETRACT
+artifacts/scraped_20_state_bon_validation_report.csv,validate_scraped_20_state_bon_results.R,Total Scraped Cohort 20 State BON Scrapers,9037,9037,9037,0,RETRACT
+artifacts/scraped_20_state_bon_summary_matrix.csv,analyze_20_state_bon_scrape.R,Per-state midwives across 20 boards,9037,9037,9037,0,RETRACT
+artifacts/scraped_40_state_bon_summary_matrix.csv,analyze_40_state_bon_scrape.R,Per-state midwives across 40 boards,11355,11355,11355,0,RETRACT
+artifacts/tier1_complete_state_breakdown.csv,analyze_tier1_complete_results.R,Tier-1 board evidence across 11 states,5120,5120,4746,374,RECOMPUTE
+artifacts/cohort_midwives_tier1_tier2_bon_validated.csv,execute_tier1_tier2_bon_ingestion.py,Filename asserts BON validation,5120,5120,4746,374,RELABEL
+artifacts/tier1_tier2_combined_bon_validated_master.csv,execute_tier1_tier2_bon_ingestion.py,Filename asserts BON validation,5120,5120,4746,374,RELABEL
+artifacts/specialized_bon_fields_summary.csv,analyze_specialized_bon_fields.R,BON field heterogeneity across states,NA,NA,all non-WA,WA only,RECOMPUTE
+artifacts/bon_state_data_heterogeneity_matrix.csv,extract_detailed_bon_heterogeneity_fields.py,Cross-state BON field heterogeneity,NA,NA,all non-WA,WA only,RECOMPUTE
+docs/DECISIONS_CONTRACT.md D12,manual,74% state-board coverage; 11355 verified across 40-state sample,11355,15400,11355,374,RETRACT
+docs/COAUTHOR_BRIEF_2026-08-14.md D12,manual,9037 midwives verified across first 20 state boards,9037,NA,9037,0,RETRACT
+README.md:17;28;1634,manual,50-State + DC BON Verification / Live State BON Verification feeds,NA,NA,all non-WA,WA only,RETRACT
+artifacts/live_wa_bon_summary_matrix.csv,WA DOH Socrata ingestion,VERIFIED_LIVE_BON Washington,374,449,0,374,RETAIN
