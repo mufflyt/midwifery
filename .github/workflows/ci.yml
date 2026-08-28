@@ -582,6 +582,19 @@ jobs:
             stop("package still unavailable after install: ", p)
         shell: Rscript {0}
 
+      # TEMPORARY DIAGNOSTIC, removed once L8/L10 pass on this runner.
+      # ci_law_coverage.R captures gate subprocess output internally and never
+      # streams it, so a run-time-only failure here is invisible in the log.
+      - name: DEBUG - run L8 and L10 gates directly, streamed
+        if: steps.relevance.outputs.run == 'true'
+        run: |
+          echo "::group::L8 gate: test_deterministic_rebuild.R"
+          Rscript tests/test_deterministic_rebuild.R; echo "exit=$?"
+          echo "::endgroup::"
+          echo "::group::L10 gate: test_cache_vintage_declared.R"
+          Rscript tests/test_cache_vintage_declared.R; echo "exit=$?"
+          echo "::endgroup::"
+
       - name: Law coverage (every registered law was exercised)
         if: steps.relevance.outputs.run == 'true'
         run: Rscript tests/ci_law_coverage.R
