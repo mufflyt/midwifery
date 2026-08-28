@@ -1,0 +1,221 @@
+---
+title: "Appendix 2. Verification of the analytic pipeline"
+subtitle: "Supplemental Digital Content"
+format:
+  docx:
+    # reference-doc: templates/green_journal_template.docx
+    number-sections: false
+  html:
+    toc: true
+    embed-resources: true
+bibliography: references.bib
+csl: green-journal.csl
+params:
+  dev_mode: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+root <- if (dir.exists("artifacts")) "." else ".."
+source(file.path(root, "manuscript", "R", "build_stats_catalog.R"))
+source(file.path(root, "manuscript", "R", "inline_stats.R"))
+if (isTRUE(params$dev_mode)) Sys.setenv(MANUSCRIPT_DEV_MODE = "1") else
+  Sys.unsetenv("MANUSCRIPT_DEV_MODE")
+
+# Same catalog as the main document and Appendix 1. See appendix1_linkage.qmd
+# for why these read one catalog rather than mirroring its values.
+K <- mw_init_stats(root)
+```
+
+# eMethods 2. What was verified, and what verification cannot establish
+
+Analyses of administrative data are usually described in terms of the sources
+consumed and the exclusions applied. That description is necessary and it is
+not sufficient: it says what the analyst intended, not what the code did. This
+appendix documents the second question. It states the properties the pipeline
+is required to hold, how each is checked, one defect the checks found before it
+reached any reported figure, and — at the end, in more detail than is
+conventional — what these checks do **not** establish.
+
+None of the machinery described here changed a single reported estimate. That
+is a result rather than an omission, and where a number could have moved and did
+not, it is said so explicitly.
+
+## Properties the pipeline is required to hold
+
+Ten properties are declared in a machine-readable registry
+(`tests/science_law_registry.tsv`) and evaluated nightly. They are stated as
+properties of the *answer* rather than as unit tests of functions, because a
+function can be individually correct while the composition of several is wrong.
+
+| | Property |
+|---|---|
+| L1 | Every artifact declaring a cohort size declares a registered one. A superseded cohort vintage cannot silently return. |
+| L2 | Population is conserved. Parts sum to their whole, and no share exceeds its declared denominator. |
+| L3 | Missing geography stays missing. A record with no usable ZIP is never assigned a county. |
+| L4 | More travel time cannot reduce measured access. |
+| L5 | Every routed provider appears in the dissolved access surface. |
+| L6 | Masking evidence cannot invent geography. Degrading an input can only degrade the answer. |
+| L7 | Contradictory identity evidence cannot increase certainty. |
+| L8 | Identical inputs produce identical outputs. |
+| L9 | A cache may change runtime, not the answer. |
+| L10 | Every mutable scientific input has a declared vintage. |
+
+Each property must satisfy five conditions, and the build fails if any is
+absent: it is registered; it is actually evaluated; it is evaluated on a
+non-zero number of subjects; it carries a *positive control* demonstrating that
+its detector responds to a violation; and it carries a deliberately planted
+defect that it detects. Thirty defects are planted across the ten
+properties and all thirty are detected.
+
+The fourth condition is the one that is usually missing. A check that reports
+"no violations found" has demonstrated that it did not fire. It has not
+demonstrated that it *could* fire, and those two states are indistinguishable in
+a passing build. An inert check is worse than no check, because it is credited
+as reassurance.
+
+## Two properties, stated as scientific claims
+
+**L6 — masking evidence cannot invent geography.** This property exists because
+its violation occurred. An earlier version of the ZIP-to-county crosswalk
+grouped Census records by ZIP without first excluding the 903 rows that carry no
+ZIP code. Those rows collapsed to a single key of missing value, and because a
+left join matches a missing key to a missing key, every subject with no usable
+ZIP was assigned that row's county — a real, remote, rural county in Alaska.
+Absent geography was not merely mishandled; it was converted into a specific
+and plausible location, and it carried a rurality classification into downstream
+estimates. The property is now checked by masking 400 real Census ZIP codes in
+sixteen ways and asserting that no masked subject acquires a county. Its planted
+defect is the historical bug itself, rebuilt.
+
+**L7 — contradictory identity evidence cannot increase certainty.** Linkage in
+this study rests on name comparison (Appendix 1). The governing requirement is
+therefore directional: removing or contradicting evidence must never produce a
+*more* confident match. This is checked against a frozen corpus of adversarial
+identity cases.
+
+The same principle decided the design of the fix described next, and it is worth
+stating plainly because it is not intuitive: **narrowing a study frame must
+never widen its answer.**
+
+## A defect found before it reached any reported figure
+
+The deterministic license-resolution routine reported that it had resolved
+`3 of 2` certificants — 150.0% — for a two-person roster.
+
+The percentage was the symptom. The defect was that the set of deterministic
+matches was constructed from every qualifying identifier in the state-license
+file, and the roster the routine had been asked about was consulted only
+afterwards. A person outside the declared study population was therefore
+resolved, counted, and written to the output artifact as a finding about that
+population. Four of the routine's six audit metrics were affected, reporting
+400%, 150% and 250% of their denominator.
+
+**No reported estimate is affected.** No artifact from this routine has ever
+been committed to the repository, and the routine has no caller in the
+production pipeline; it is reached only by its test suite. There was nothing to
+regenerate. The defect was latent and would have corrupted the first production
+run.
+
+The repair is worth documenting because the obvious version of it is wrong. The
+natural fix — restrict the license file to the roster before resolving — would
+have introduced a more serious error than the one it removed. Two certificants
+in the test fixture share a single board license key, so that key identifies
+nobody and neither resolves. Filtering the license file to a roster containing
+only the first would delete the second's record, the key would then appear
+unique, and the first would resolve. The routine would have gained certainty
+that existed only because the contradicting evidence had been removed — the
+failure that L6 and L7 exist to forbid.
+
+The restriction is therefore applied to the *claim* and never to the *evidence*.
+Collision and cardinality checks continue to run against the entire external
+license universe, because that universe is the evidence about whether a key
+identifies one person. Only the set of people the routine may report on is
+restricted, and restricting a claim can remove people but never add them.
+Resolutions falling outside the frame are retained as an explicitly labelled
+diagnostic rather than discarded, since they remain valid evidence about the
+external universe and are merely not findings about this study population.
+
+## Reproducibility of the computation itself
+
+Three properties address whether the computation is stable and whether its
+inputs are known.
+
+**Determinism (L8).** Rebuilding from identical inputs must produce identical
+outputs. Order of input records must not affect any result.
+
+**Cache isolation (L9).** A cache may change how long a computation takes; it
+may not change what the computation returns.
+
+**Declared vintage (L10).** L8 and L9 establish that the computation is
+deterministic *given* its inputs. L10 establishes that the inputs are known.
+This was not previously true. Geocoding coordinates determine counties, and
+counties determine the rurality classification reported in the main analysis;
+those coordinates come from a cache that is written to over time. Across 112
+provenance records there were 105 distinct declared inputs and none was a cache.
+Fourteen artifacts depend on the cache transitively and none declared it. The
+pipeline computed its result as a function of its declared inputs *and whatever
+the cache happened to hold*, while recording only the former — so two analysts
+running identical code against identical declared inputs could legitimately
+obtain different geography with nothing recording why.
+
+The cache now carries a content-derived identity: a hash over the nine
+scientifically relevant fields, insensitive to row and column order, with
+access-time fields excluded by name because an identity that changed when the
+cache was merely *read* would be useless.
+
+This is not an argument for freezing the cache. A cache that resolves more
+addresses next month is better evidence, and forbidding improvement would be a
+worse policy than tolerating drift. A later snapshot is a **new declared
+input** — visible, attributable, and a legitimate reason for a number to move.
+The fourteen pre-existing artifacts are recorded as historical debt rather than
+retrospectively stamped: they were built against a snapshot nobody recorded, and
+assigning them a vintage now would assert a provenance that is not the one that
+produced them.
+
+## What these checks do not establish
+
+This section is longer than is customary because the risk that a verification
+appendix is read as a guarantee is real, and the specific limits matter more
+than the general disclaimer.
+
+**They do not validate the linkage against truth.** Every property here is
+internal: it constrains the pipeline to be self-consistent, deterministic, and
+honest about its inputs. None of them establishes that a linked
+certificant–registry pair is the same human being. That question is addressed in
+Appendix 1 and remains the binding constraint on every geographic statement in
+this analysis. A pipeline can satisfy all ten properties while resting on a
+systematically biased linkage.
+
+**Linkage completeness differs sharply by certification status**, and this is
+the limitation most likely to affect inference. Records for certificants whose
+status is active link at a substantially higher rate than records for those
+recorded as deceased. Any analysis stratified on or adjusted for status
+inherits that differential, and no property described here detects it, because
+a differentially incomplete linkage is perfectly self-consistent.
+
+**They do not establish that the reported estimate is the right estimate.** L2
+requires that parts sum to their whole; it does not ask whether the whole is the
+correct denominator for the scientific question. L4 requires that access cannot
+fall as travel time rises; it does not establish that the travel times are
+correct.
+
+**Absence of a violation is not evidence of correctness in an unchecked area.**
+The registry states what is enforced. Properties not in it are not enforced, and
+the registry's value is precisely that this cannot be inferred from a filename
+or a comment.
+
+**One property is not currently evaluated in the reference environment.** L5
+requires a derived isochrone surface that is excluded from version control, so
+on a clean checkout it does not run and the coverage check fails rather than
+passing silently. This is the intended behaviour — a property that cannot be
+evaluated is reported as unevaluated rather than credited as satisfied — but it
+means L5's guarantee currently rests on local execution. It is recorded as open
+debt.
+
+That last point generalizes. Every figure in this appendix was verified in an
+environment that happened to contain data a clean checkout does not, and the
+discrepancy was found only when the checks were deliberately re-run in isolation.
+Verification machinery is subject to the same failure it is built to detect: it
+can report success because it was asked the question in a setting where the
+answer was guaranteed.

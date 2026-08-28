@@ -318,3 +318,53 @@ human decision.
 `amcb_per_npi()` now sorts before taking the first row, making the survivor a
 property of the data rather than of row order. Variant instability: 231/300 to
 0/300.
+
+---
+
+## D7 — L5 cannot run on a clean checkout, and the coverage gate says so
+
+- **status:** open
+- **owner:** tyler
+- **raised:** 2026-08-25
+- **source:** `tests/science_law_registry.tsv`, `.gitignore:145`
+
+L5 (*every routed provider is in the union*) needs two inputs. One,
+`artifacts/osmde_validation_table.csv`, is tracked. The other,
+`artifacts/maps/midwifery_isochrone_union_30min.rds`, is **gitignored** --
+`.gitignore:145` excludes `artifacts/maps/` wholesale.
+
+L5 is registered `public`, and the registry defines that as *"must run on any
+runner; a skip is a FAILURE."* So on any checkout holding only tracked files --
+which is every GitHub runner -- L5 skips and `tests/ci_law_coverage.R` fails
+with one unexpected skip. Measured in an isolated worktree at `origin/main`:
+
+    Laws exercised:              9/10
+    Unexpected skips:            1
+    FAIL 1 law(s) were not exercised: L5 (public) -- no subjects
+
+**This was masked by the way it was verified, not by the gate.** Every
+`10/10, 0 unexpected skips` reported while the law suite was being built --
+including in PR #88 -- was produced in a working tree that happens to hold that
+untracked `.rds`. The README already warns about exactly this: *"Passing in
+your working tree proves nothing, because your working tree has the data."* The
+coverage gate was correct throughout; the environment it was run in was not.
+
+The gate is doing its job here. A law nobody can evaluate is indistinguishable,
+in a green build, from a law that passed, and refusing to run is the honest
+outcome.
+
+**Decision needed:** three routes, and they differ in what they cost.
+
+1. **Have the nightly build or restore the surface** before the science job.
+   Keeps L5 at full strength on every runner. Costs runtime, and the surface is
+   derived from the private isochrone library.
+2. **Track the artifact.** Simple, but `artifacts/maps/` is excluded for size,
+   and the leak baseline may only shrink.
+3. **Add a registry state** distinguishing *pipeline-derived, absent from git*
+   from *person-level private*. Honest about why the skip happens and keeps it
+   counted rather than swallowed -- but it adds a fourth state to a three-state
+   contract, and every state that permits a skip is a state a law can hide in.
+
+Route 3 is the smallest change and the largest concession. Nothing should be
+re-registered `private-ok` in the meantime: that label would assert the input is
+person-level, which it is not.
