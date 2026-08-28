@@ -53,6 +53,33 @@ project_workforce <- function(initial_workforce,
     stop(sprintf("initial_workforce must be non-negative, got %s", initial_workforce),
          call. = FALSE)
   }
+  if (abs(initial_workforce - round(initial_workforce)) > 1e-9) {
+    stop(sprintf("initial_workforce must be a whole number of people, got %s",
+                 initial_workforce), call. = FALSE)
+  }
+  for (nm in c("rural_baseline_pct", "rural_grad_share")) {
+    v <- get(nm)
+    if (v < 0 || v > 1) {
+      stop(sprintf("%s must be in [0, 1], got %s", nm, v), call. = FALSE)
+    }
+  }
+  for (nm in c("annual_retire_rate", "annual_rural_drift")) {
+    v <- get(nm)
+    if (v < 0 || v > 1) {
+      stop(sprintf("%s must be in [0, 1], got %s", nm, v), call. = FALSE)
+    }
+  }
+  if (length(years) > 1 && any(diff(years) <= 0)) {
+    stop("years must be strictly increasing with no duplicates", call. = FALSE)
+  }
+  if (length(years) == 0) {
+    return(data.frame(
+      Simulation_Year = integer(0), Total_Active_CNM_Workforce = numeric(0),
+      New_Graduate_Inflow = numeric(0), Retirement_Outflow = numeric(0),
+      Urban_Practicing_CNMs = numeric(0), Rural_Practicing_CNMs = numeric(0),
+      Rural_Workforce_Share_Pct = numeric(0), Projected_Births_Attended = numeric(0)
+    ))
+  }
 
   current_active <- initial_workforce
   current_rural  <- as.integer(initial_workforce * rural_baseline_pct)

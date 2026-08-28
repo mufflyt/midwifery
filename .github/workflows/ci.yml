@@ -193,6 +193,11 @@ jobs:
           python3 -m unittest tests.test_cycle24_microsimulation_conservation -v
           Rscript tests/test_run_midwifery_microsimulation.R
 
+      # Data-driven: adding a hard case means adding a row to
+      # tests/microsimulation_case_library.tsv, not writing a new test.
+      - name: Microsimulation case library
+        run: Rscript tests/test_microsimulation_case_library.R
+
   # ---------------------------------------------------------------------------
   # The tier that is allowed to cost something.
   #
