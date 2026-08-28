@@ -11,6 +11,12 @@
 # reason to add a line is a genuinely new false positive, and it needs the same
 # one-line justification the entries below carry.
 #
+# If the file CI is flagging genuinely does carry real person-level data and
+# someone with the authority to decide has reviewed and accepted tracking it
+# anyway, that is a DIFFERENT list: tests/ci_leak_reviewed_exceptions.txt. Do
+# not add it here -- an entry here claims "the guard is wrong," and that claim
+# needs to stay true for every line in this file.
+#
 # Untracking never removed these files from git history. Every existing clone
 # still has them; a history rewrite is a separate decision with its own cost.
 # =============================================================================
