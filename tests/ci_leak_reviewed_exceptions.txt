@@ -32,3 +32,21 @@
 # is fine to publish" -- it applies to this file, reviewed on this date, not
 # as a standing exemption for future person-level artifacts.
 artifacts/scraped_50_states_and_dc_midwives_master.csv
+
+# Live Washington DOH Board of Nursing credential cross-reference: 449 WA-state
+# midwives from the roster above, matched against data.wa.gov's public Socrata
+# API (dataset qxh8-f4bd) by name, with 374 confirmed VERIFIED_LIVE_BON and a
+# real, current credential number, status and expiration date per match.
+# Reviewed and accepted by Tyler Muffly, 2026-08-28, for the same reasons as
+# the roster CSV above, plus one specific to this file: the WA DOH credential
+# fields are sourced live from Washington's own public open-data API, not
+# scraped or synthesized -- this is the one file in this project's BON-license
+# work confirmed NOT to carry the fabricated-license defect documented in
+# docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md (see that file's
+# contamination inventory, RETAIN row). Produced by
+# harvest_live_wa_bon_from_tracked_roster.py against the already-reviewed
+# roster above, since the original producer's cohort input
+# (artifacts/cohort_midwife_facility_attributions_final_v4.csv) is itself
+# gitignored, person-level, and not practically regenerable -- see that
+# script's own header for what rebuilding it would actually require.
+artifacts/live_washington_bon_ingested_midwives_from_tracked_roster.csv
