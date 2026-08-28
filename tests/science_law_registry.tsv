@@ -24,7 +24,13 @@ L1	cohort provenance is single-vintage	tests/ci_science_laws.R	tests/test_scienc
 L2	population is conserved	tests/ci_science_laws.R	tests/test_science_laws_detect.R	public
 L3	missing geography stays missing	tests/ci_science_laws.R	tests/test_science_laws_detect.R	public
 L4	more travel time cannot reduce access	tests/ci_science_laws.R	tests/test_science_laws_detect.R	public
-L5	every routed provider is in the union	tests/ci_science_laws.R	tests/test_science_laws_detect.R	public
+# L5 was `public` until 2026-08-28: its actual subject, the dissolved isochrone
+# union RDS (artifacts/maps/*.rds), is gitignored (artifacts/maps/ blanket
+# rule) -- it can never exist on a fresh checkout, so `public` made every CI
+# run an unconditional, permanent failure rather than a signal of anything.
+# Reclassified to match its true input class, the same as the FROZEN linkage
+# check further down this gate.
+L5	every routed provider is in the union	tests/ci_science_laws.R	tests/test_science_laws_detect.R	private-ok
 L6	masking evidence cannot invent geography	tests/test_geography_masking_metamorphic.R	tests/test_geography_masking_metamorphic.R	public
 L7	contradictory identity evidence cannot increase certainty	tests/test_identity_collision_corpus.R	tests/test_identity_corpus_detect.R	public
 L8	identical inputs produce identical outputs	tests/test_deterministic_rebuild.R	tests/test_determinism_cache_detect.R	public
