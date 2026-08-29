@@ -20,6 +20,11 @@
 #
 #   PASS                   the law ran and was evaluated on a non-empty subject
 #                          set. n=0 is a vacuous pass and is rejected.
+#   EXPECTED_DERIVED_SKIP  the law is registered `derived-ok` and its input is a
+#                          pipeline-derived artifact excluded from version
+#                          control. Counted and NAMED separately: it is a law
+#                          no runner enforces, and that number must not hide
+#                          inside a category that sounds unavoidable.
 #   EXPECTED_PRIVATE_SKIP  the law is registered `private-ok` and its
 #                          person-level input is absent. Legal, counted, and
 #                          reported -- never silent.
@@ -164,7 +169,37 @@ run_file <- function(rel) {
   out <- suppressWarnings(system2("sh",
     c("-c", shQuote(sprintf("cd %s && Rscript %s 2>&1", shQuote(root), shQuote(rel)))),
     stdout = TRUE, stderr = TRUE))
-  list(text = paste(out, collapse = "\n"), missing = FALSE, replayed = FALSE)
+  st <- attr(out, "status")
+  list(text = paste(out, collapse = "\n"), missing = FALSE, replayed = FALSE,
+       status = if (is.null(st)) 0L else as.integer(st))
+}
+
+# A THIRD STATE THIS GATE USED TO BE BLIND TO. It was built on the principle
+# that a law which did not run is indistinguishable from one that passed. It
+# turned out there is another case it could not distinguish, and unlike the
+# first it was diagnosable for free: a gate that DIED reads exactly like a gate
+# that ran and said nothing, because both arrive as text with no markers in it.
+#
+# Every nightly from 2026-08-26 scored L6-L10 as "no subjects". All five had
+# crashed on their first line with "no package called X" -- their gates need
+# dplyr/readr/sf/DBI/duckdb and the science job installs nothing. The build
+# failed, correctly, on the gap; it named the wrong cause, and the real error was
+# sitting in captured output that nothing looked at.
+#
+# A NON-ZERO EXIT IS NOT BY ITSELF A CRASH. A gate that evaluates its law and
+# finds a violation also exits non-zero, and that is a working gate reporting a
+# real result -- coverage asks whether the law was CHECKED, not whether it
+# passed. The signature of a crash is dying non-zero having emitted no evidence
+# at all.
+gate_crashed <- function(o) {
+  isTRUE(o$status != 0L) && !grepl("[LAW] ", o$text, fixed = TRUE)
+}
+
+# The last few lines, which is where R puts the reason.
+crash_tail <- function(txt, n = 3L) {
+  ls <- Filter(nzchar, trimws(strsplit(txt, "\n")[[1]]))
+  if (!length(ls)) return("(no output at all)")
+  paste(utils::tail(ls, n), collapse = "\n              ")
 }
 sources <- unique(c(reg$gate, reg$mutation))
 outs <- stats::setNames(lapply(sources, run_file), sources)
@@ -182,6 +217,10 @@ if (length(replayed_runs) > 1L)
 
 for (s in sources) if (isTRUE(outs[[s]]$missing))
   ci_fail("registered file %s does not exist. A law whose gate is absent is a law\n       nobody is checking.", s)
+
+for (s in sources) if (gate_crashed(outs[[s]]))
+  ci_fail("%s CRASHED (exit %d) without evaluating anything:\n              %s\n       This is not a law with no subjects -- it is a gate that died before it\n       could have any. The distinction was invisible until the exit status was\n       read, and it cost five laws several nights of being scored as vacuous.",
+          s, outs[[s]]$status, crash_tail(outs[[s]]$text))
 
 # --- score every law ---------------------------------------------------------
 state <- character(nrow(reg)); subj <- integer(nrow(reg)); pos <- integer(nrow(reg))
@@ -216,8 +255,17 @@ for (i in seq_len(nrow(reg))) {
   # requirement is checked separately below so that a law missing one is
   # reported as missing a positive control -- not as never having run, which is
   # a different defect with a different fix.
+  # TWO REASONS A SKIP CAN BE LEGITIMATE, AND THEY ARE NOT THE SAME REASON.
+  # `private-ok` says the input is person-level and no runner may hold it.
+  # `derived-ok` says the input is a pipeline-derived artifact excluded from
+  # version control for size -- L5 needs a 31 MB dissolved isochrone surface.
+  # Both permit a skip; only one of them is about privacy. Collapsing them, which
+  # is what registering L5 `private-ok` did, makes the registry assert that a
+  # derived surface is person-level data, and the privacy column is the
+  # machine-readable statement of WHY a law may be absent.
   state[i] <- if (exercised && n > 0L) "PASS"
               else if (skipped && identical(reg$privacy[i], "private-ok")) "EXPECTED_PRIVATE_SKIP"
+              else if (skipped && identical(reg$privacy[i], "derived-ok")) "EXPECTED_DERIVED_SKIP"
               else "FAIL"
   if (state[i] == "FAIL" && (skipped || !exercised)) unexpected_skips <- unexpected_skips + 1L
 }
@@ -234,17 +282,27 @@ ci_section("coverage")
 n_law <- nrow(reg)
 n_pass <- sum(state == "PASS")
 n_priv <- sum(state == "EXPECTED_PRIVATE_SKIP")
+n_deriv <- sum(state == "EXPECTED_DERIVED_SKIP")
 n_neg  <- sum(subj > 0L)
 n_mut_ok <- sum(mut_total > 0L & mut_killed == mut_total)
 tot_mut <- sum(mut_total); tot_killed <- sum(mut_killed)
 
 cat(sprintf("  Scientific laws declared:    %d\n", n_law))
-cat(sprintf("  Laws exercised:              %d/%d\n", n_pass + n_priv, n_law))
+cat(sprintf("  Laws exercised:              %d/%d\n", n_pass + n_priv + n_deriv, n_law))
 cat(sprintf("  Negative controls (n>0):     %d/%d\n", n_neg, n_law))
 cat(sprintf("  Positive controls (n>0):     %d/%d\n", sum(pos > 0L), sum(state == "PASS")))
 cat(sprintf("  Laws with a planted defect:  %d/%d\n", sum(mut_total > 0L), n_law))
 cat(sprintf("  Planted defects detected:    %d/%d\n", tot_killed, tot_mut))
 cat(sprintf("  Expected private skips:      %d\n", n_priv))
+# COUNTED AND NAMED, never folded into the private total. A derived skip is a
+# law that CI is not enforcing, and the whole point of separating it is that the
+# number stays visible instead of being absorbed into a category that sounds
+# unavoidable.
+cat(sprintf("  Expected derived skips:      %d%s\n", n_deriv,
+            if (n_deriv > 0L)
+              sprintf("   (%s -- not enforced on any runner; see DEBT.md D9)",
+                      paste(reg$law[state == "EXPECTED_DERIVED_SKIP"], collapse = ", "))
+            else ""))
 cat(sprintf("  Unexpected skips:            %d\n", unexpected_skips))
 
 bad <- which(state == "FAIL")

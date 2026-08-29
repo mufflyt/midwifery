@@ -375,9 +375,11 @@ person-level, which it is not.
 
 ## D8 — The coverage gate cannot tell a crashed law from a silent one
 
-- **status:** open
+- **status:** closed
 - **owner:** tyler
 - **raised:** 2026-08-29
+- **closed:** 2026-08-29
+- **resolution:** `run_file()` now returns `attr(out, "status")` and `gate_crashed()` reports a non-zero exit *with no `[LAW]` markers* as CRASHED, with the last lines of output. A non-zero exit alone is NOT a crash — a gate that evaluates its law and finds a violation also exits non-zero, and calling that a crash would turn every genuine law failure into a false diagnosis. Three controls in `tests/test_law_coverage_detect.R`.
 - **source:** `tests/ci_law_coverage.R` `run_file()`, commit `0e0c89c`
 
 `run_file()` executes each gate with `system2(..., stdout = TRUE, stderr = TRUE)`
@@ -410,9 +412,11 @@ reported as crashed.
 
 ## D9 — L5 is registered `private-ok`, but its input is not private
 
-- **status:** open
+- **status:** closed
 - **owner:** tyler
 - **raised:** 2026-08-29
+- **closed:** 2026-08-29
+- **resolution:** Added a fourth privacy state, `derived-ok`, meaning *pipeline-derived input excluded from version control for size* — not a privacy claim. L5 is registered under it, and coverage now reports `Expected derived skips` separately from `Expected private skips`, naming the law and stating that no runner enforces it. Rebuilding the surface in CI was ruled out rather than chosen: it is 31 MB and built by `build_midwifery_isochrone_map.R` from the private `~/isochrones` checkout, which no runner has. **The enforcement gap is unchanged — it is now labelled honestly and counted in the open, instead of being absorbed into a category that sounds unavoidable.** Six controls in `tests/test_law_coverage_detect.R`, including one proving `derived-ok` cannot launder a `public` law's skip.
 - **source:** `tests/science_law_registry.tsv`, closing of **D7**
 
 D7 is closed and this is what closing it cost.

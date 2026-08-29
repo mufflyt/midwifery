@@ -92,6 +92,59 @@ chk(r$failed && grepl("no planted defect", r$text), "a law with no planted defec
 r <- cov_run(mut = c(MUT_OK[1], 'cat("[MUTATION] L2 planted-two SURVIVED\\n")'))
 chk(r$failed && grepl("survive", r$text), "a planted defect that survives")
 
+cat("\n-- a derived-ok skip is legal, counted, and named --\n")
+# D9. `private-ok` and `derived-ok` both permit a skip, and only one of them is
+# a statement about privacy. L5 was registered private-ok to turn a red nightly
+# green, which made the registry assert that a 31 MB dissolved isochrone surface
+# is person-level data. The states are separate so the count of laws NO RUNNER
+# ENFORCES stays visible rather than being absorbed into a category that sounds
+# unavoidable.
+REG_DERIVED <- c(
+  "law\ttitle\tgate\tmutation\tprivacy",
+  "L1\tfirst law\ttests/fake_gate.R\ttests/fake_mutation.R\tpublic",
+  "L2\tsecond law\ttests/fake_gate.R\ttests/fake_mutation.R\tderived-ok")
+GATE_DERIVED_SKIP <- c(GATE_OK[1], 'cat("[LAW] L2 SKIPPED input absent\\n")')
+
+r <- cov_run(registry = REG_DERIVED, gate = GATE_DERIVED_SKIP)
+chk(!r$failed, "a derived-ok law may skip when its derived input is absent")
+chk(grepl("Expected derived skips:      1", r$text),
+    "...and the skip is counted under its own heading, not the private one")
+chk(grepl("Expected private skips:      0", r$text),
+    "...leaving the private count untouched")
+chk(grepl("not enforced on any runner", r$text),
+    "...and says plainly that no runner is enforcing it")
+chk(grepl("Unexpected skips:            0", r$text),
+    "...while unexpected skips stay at zero")
+
+# THE LABEL MUST NOT LAUNDER A PUBLIC LAW. derived-ok is a permission attached
+# to a named law, not a way for any skip to become acceptable.
+r <- cov_run(registry = REG_DERIVED,
+             gate = c('cat("[LAW] L1 SKIPPED input absent\\n")',
+                      'cat("[LAW] L2 SKIPPED input absent\\n")'))
+chk(r$failed && grepl("unexpected skip", r$text),
+    "a PUBLIC law skipping is still unexpected even beside a derived-ok one")
+
+cat("\n-- a gate that dies is reported as dead, not as vacuous --\n")
+# D8. Every nightly from 2026-08-26 scored five laws as "no subjects" when all
+# five had crashed on their first line with "no package called X". The exit
+# status was already in hand and was being discarded, so a gate that DIED and a
+# gate that ran and said nothing arrived identically: text with no markers.
+r <- cov_run(gate = c('stop("no package called sf")'))
+chk(r$failed && grepl("CRASHED", r$text),
+    "a gate that dies before emitting anything is reported as CRASHED")
+chk(grepl("no package called sf", r$text),
+    "...and the reason it died is surfaced, not swallowed")
+
+# THE OTHER HALF OF THE RULE, and the reason a bare non-zero exit is not enough
+# to call it a crash. A gate that evaluates its law, finds a violation and exits
+# non-zero is a WORKING gate reporting a real result. Coverage asks whether the
+# law was checked, not whether it passed, so this must not be reported as a
+# crash -- doing so would turn every genuine law failure into a false diagnosis.
+r <- cov_run(gate = c(GATE_OK,
+  'cat("FAILED (1)\\n"); quit(status = 1)'))
+chk(!grepl("CRASHED", r$text),
+    "a gate that exits non-zero having emitted evidence is NOT called a crash")
+
 cat("\n-- evidence custody: a replayed log must be evidence for THIS evaluation --\n")
 # Replay exists because re-running every gate took coverage past its own budget.
 # It introduced a new way to be wrong: a green log left in the directory by an

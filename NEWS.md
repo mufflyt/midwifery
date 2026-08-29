@@ -76,9 +76,17 @@ with the deviation from the job's base-R-only design documented: rewriting
 spatial, SQL and xlsx logic in base R was judged higher-risk than installing the
 packages.
 
-**The gate still cannot tell a crashed gate from a silent one** — `run_file()`
-captures output but discards the exit status, so both read as "no subjects". The
-build failed, correctly, but named the wrong cause. Recorded as **[D8](DEBT.md)**.
+**The gate could not tell a crashed gate from a silent one** — `run_file()`
+captured output but discarded the exit status, so both read as "no subjects".
+The build failed, correctly, but named the wrong cause. Now fixed: a non-zero
+exit *with no `[LAW]` markers* is reported as CRASHED, with the last lines of
+output.
+
+A non-zero exit alone is deliberately **not** treated as a crash. A gate that
+evaluates its law and finds a violation also exits non-zero, and that is a
+working gate reporting a real result — coverage asks whether a law was *checked*,
+not whether it passed. Calling that a crash would turn every genuine law failure
+into a false diagnosis. Three controls hold both halves of the rule.
 
 ### Changed — L5 reclassified `private-ok`, closing D7
 
@@ -86,13 +94,27 @@ L5's dissolved isochrone surface is gitignored, so the law could never run on a
 fresh checkout while registered `public`, where a skip is a failure. It is now
 `private-ok`.
 
-This closes D7 by the route D7 argued against, and the tradeoff should be
-explicit: `private-ok` means "may skip when person-level data is absent", and
-this input is not person-level — it is a derived surface excluded for size. The
-build is green again and L5 is now unevaluated on every runner, counted as an
-*expected* skip. That is a real reduction in enforcement, taken deliberately to
-stop a red nightly, and it is reopened as **[D9](DEBT.md)** rather than left as a
-silent semantic drift.
+This closed D7 by the route D7 argued against: `private-ok` means "may skip when
+person-level data is absent", and this input is not person-level — it is a
+derived surface excluded for size. The build went green and L5 became
+unevaluated on every runner, counted as an *expected* skip.
+
+**Now resolved with a fourth state.** `derived-ok` means *pipeline-derived input
+excluded from version control for size*, and makes no claim about privacy. L5 is
+registered under it, and coverage reports
+
+```
+  Expected private skips:      0
+  Expected derived skips:      1   (L5 -- not enforced on any runner; see DEBT.md D9)
+  Unexpected skips:            0
+```
+
+Rebuilding the surface in CI was ruled out rather than chosen: it is 31 MB and
+built from the private `~/isochrones` checkout, which no runner has. **The
+enforcement gap is unchanged. What changed is that it is now labelled honestly
+and counted in the open**, instead of being absorbed into a category that sounds
+unavoidable. Six controls, including one proving `derived-ok` cannot launder a
+`public` law's skip.
 
 ### Added — CI hardening and a cross-repo checklist
 

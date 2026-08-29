@@ -1,6 +1,9 @@
 # midwifery
 
 [![CI](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml)
+[![Nightly](https://github.com/mufflyt/midwifery/actions/workflows/nightly.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/nightly.yml)
+[![Scientific laws](https://img.shields.io/badge/scientific%20laws-10%20declared%2C%2030%20planted%20defects-blueviolet.svg)](tests/science_law_registry.tsv)
+[![Known debt](https://img.shields.io/badge/known%20debt-1%20open%2C%209%20closed-informational.svg)](DEBT.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Cite this repository](https://img.shields.io/badge/cite-CITATION.cff-brightgreen.svg)](CITATION.cff)
 [![Dataset Metadata](https://img.shields.io/badge/metadata-metadata.json-orange.svg)](metadata.json)
@@ -1615,6 +1618,13 @@ violation, and have a **planted defect** that it kills. A law with only a
 negative control has proved it did not fire; it has not proved it could. **30
 planted defects, 30 detected.**
 
+A gate that **dies** is reported as dead, not as vacuous: a non-zero exit with no
+`[LAW]` markers is CRASHED, with the reason attached. A non-zero exit on its own
+is not — a gate that finds a real violation also exits non-zero, and conflating
+the two would turn every genuine law failure into a false diagnosis. Five laws
+were once scored "no subjects" for several nights while all five were in fact
+crashing on their first line.
+
 Coverage fails on *gaps*, not on test failures — a registered law that emitted
 no evidence, one that passed on zero subjects, one whose defect survived, a
 registry pointing at a file that is gone. `tests/test_law_coverage_detect.R`
@@ -1650,13 +1660,23 @@ the gate list from the registry, so a law added tomorrow is covered today. Budge
 
 **One law does not currently run on a clean checkout.** L5 needs a dissolved
 isochrone surface under gitignored `artifacts/maps/`, so on any runner coverage
-reports 9/10 and fails. That was logged as D7 and is now
-**closed** — L5 is registered `private-ok`, so the skip is expected and the
-nightly is green again. The enforcement that CI used to provide is gone with it,
-which is carried forward as [D9](DEBT.md): `private-ok` means *person-level data
-absent*, and this input is a derived surface excluded for size. It remains a
-worked example of the warning above — every `10/10` reported while this suite was
-being built came from a working tree that happened to hold the untracked file.
+reports 9/10 and fails. L5 is registered
+`derived-ok` — a state meaning *pipeline-derived input excluded from version
+control for size*, which makes no claim about privacy — so the skip is expected
+and reported under its own heading:
+
+```
+Expected private skips:      0
+Expected derived skips:      1   (L5 -- not enforced on any runner; see DEBT.md D9)
+Unexpected skips:            0
+```
+
+**The enforcement gap is real and is stated rather than hidden.** L5 holds
+locally, where the 31 MB surface exists; no runner checks it. Rebuilding it in
+CI was ruled out because it comes from the private `isochrones` checkout. This
+remains a worked example of the warning above — every `10/10` reported while this
+suite was being built came from a working tree that happened to hold the
+untracked file.
 
 ### The leak guard
 
