@@ -183,6 +183,21 @@ write_union_manifest <- function(paths, out) {
   d <- do.call(rbind, lapply(rows, function(r) as.data.frame(r, stringsAsFactors = FALSE)))
   d <- d[order(d$band_minutes), , drop = FALSE]
   dir.create(dirname(out), recursive = TRUE, showWarnings = FALSE)
-  utils::write.csv(d, out, row.names = FALSE)
+
+  # THROUGH THE PROVENANCE WRITER, not write.csv. This is a tracked artifact
+  # derived from two untracked ones, which is precisely the case a sidecar
+  # exists for: the surfaces cannot be redistributed, so the SHA-256 of each is
+  # the only durable record of which ones these numbers came from. The MD5 in
+  # the rows lets the gate re-derive them; the sidecar says what they were.
+  # Falls back to a plain write only where the provenance helper is not
+  # loadable, so this file stays usable on its own.
+  prov <- file.path("R", "lib", "artifact_provenance.R")
+  if (file.exists(prov) && requireNamespace("readr", quietly = TRUE) &&
+      requireNamespace("jsonlite", quietly = TRUE)) {
+    source(prov, local = TRUE)
+    write_with_provenance(d, out, inputs = paths)
+  } else {
+    utils::write.csv(d, out, row.names = FALSE)
+  }
   invisible(d)
 }

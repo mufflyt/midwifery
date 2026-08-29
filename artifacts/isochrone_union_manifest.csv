@@ -1,3 +1,3 @@
-"band_minutes","n_origins_dissolved","area_km2","water_removed_km2","source_file","source_bytes","source_md5"
-30,11602,2054080.6,9711.2,"midwifery_isochrone_union_30min.rds",32014424,"00bedaa75259cbf8502855c612ce9d9e"
-60,11554,4503365.8,25117.5,"midwifery_isochrone_union_60min.rds",34703348,"50ddfee06fe31858f5e28558243b803e"
+band_minutes,n_origins_dissolved,area_km2,water_removed_km2,source_file,source_bytes,source_md5
+30,11602,2054080.6,9711.2,midwifery_isochrone_union_30min.rds,32014424,00bedaa75259cbf8502855c612ce9d9e
+60,11554,4503365.8,25117.5,midwifery_isochrone_union_60min.rds,34703348,50ddfee06fe31858f5e28558243b803e

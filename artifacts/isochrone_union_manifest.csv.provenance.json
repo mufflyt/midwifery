@@ -1,0 +1,14 @@
+{
+  "artifact": "isochrone_union_manifest.csv",
+  "written_utc": "2026-08-29 18:25:53 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/maps/midwifery_isochrone_union_30min.rds",
+      "sha256": "ae7abec94de14f08da5cbaae1e9c109bfdd2ae5d659324048a7b40b1fed14da0"
+    },
+    {
+      "path": "artifacts/maps/midwifery_isochrone_union_60min.rds",
+      "sha256": "af12a75154c202bddb744ca881ad32f5971779ae394ded3229af269560c608da"
+    }
+  ]
+}
