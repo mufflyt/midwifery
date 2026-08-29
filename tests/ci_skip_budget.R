@@ -18,6 +18,13 @@
 # forbidden is a skip nobody declared, and -- equally -- a declaration nobody
 # revisited after the reason expired.
 #
+# TWO SKIP MECHANISMS, because there are two. ci_skip() prints `  --   `; a file
+# CI runs through testthat::test_file() reports `[ FAIL n | WARN n | SKIP n |
+# PASS n ]`. The first version of this budget counted only the first, so a suite
+# could have converted every assertion into a testthat skip and the summary
+# would still have read `Observed skips: 4`. test_invariants_midwifery.R skips
+# three assertions on a runner today and none of them were counted.
+#
 # FEEDS THE SCIENTIFIC GATE by running inside a job that gate already requires.
 # A skip-budget failure fails that job, and the aggregate gate refuses to call
 # the pull request green. There is no separate wiring to fall out of date.
@@ -64,6 +71,17 @@ skippers <- Filter(function(f) {
   !(f %in% NOT_GATES) &&
     any(grepl("ci_skip\\(", readLines(file.path(root, f), warn = FALSE)))
 }, ci_tracked("tests/*.R"))
+# testthat targets are named in ci.yml rather than discoverable from the source,
+# because a file only skips through testthat when CI chooses to run it that way.
+# Absent in the synthetic repositories the detector builds, and absent is not a
+# failure there -- a scratch repo with no workflow has no testthat targets to
+# declare. Guarded rather than assumed, because an unguarded readLines() here
+# crashes the checker instead of reporting anything.
+ciyml_path <- file.path(root, ".github", "workflows", "ci.yml")
+ciyml <- if (file.exists(ciyml_path)) readLines(ciyml_path, warn = FALSE) else character(0)
+tt_targets <- unique(sub('.*testthat::test_file\\("([^"]+)".*', "\\1",
+                         grep('testthat::test_file\\("', ciyml, value = TRUE)))
+skippers <- unique(c(skippers, tt_targets))
 undeclared <- setdiff(skippers, bud$gate)
 orphaned <- setdiff(bud$gate, ci_tracked("tests/*.R"))
 if (length(undeclared)) {
@@ -74,7 +92,8 @@ if (length(orphaned)) {
   ci_fail("SB1: budget names gate(s) that do not exist: %s.", paste(orphaned, collapse = ", "))
 }
 if (!length(undeclared) && !length(orphaned)) {
-  ci_ok("all %d gate(s) that call ci_skip() are declared", length(skippers))
+  ci_ok("all %d gate(s) that can skip are declared (%d via ci_skip, %d via testthat)",
+        length(skippers), length(skippers) - length(tt_targets), length(tt_targets))
 }
 
 # --- SB2 the counts ----------------------------------------------------------
@@ -87,14 +106,33 @@ for (i in seq_len(nrow(rows))) {
   g <- rows$gate[i]
   expect <- suppressWarnings(as.integer(rows[[col]][i]))
   if (is.na(expect)) next
-  out <- suppressWarnings(system2("Rscript", c(shQuote(file.path(root, g))),
-                                  stdout = TRUE, stderr = TRUE))
-  n <- sum(grepl("^  --   ", out))
+  kind <- if ("kind" %in% names(rows)) rows$kind[i] else "ci_skip"
+  if (identical(kind, "testthat")) {
+    out <- suppressWarnings(system2("Rscript",
+      c("-e", shQuote(sprintf('testthat::test_file("%s", stop_on_failure = FALSE)', g))),
+      stdout = TRUE, stderr = TRUE))
+    # The progress display prints a running summary; the last one is the total.
+    sums <- grep("SKIP [0-9]+", out, value = TRUE)
+    if (!length(sums)) {
+      # NON-VACUITY. No summary means the file did not run, and a file that did
+      # not run has zero skips in exactly the way a deleted test does.
+      unexpected <- c(unexpected, sprintf("%s: produced no testthat summary line, so its skips could not be counted", g))
+      n <- NA_integer_
+    } else {
+      n <- as.integer(sub(".*SKIP ([0-9]+).*", "\\1", sums[length(sums)]))
+    }
+  } else {
+    out <- suppressWarnings(system2("Rscript", c(shQuote(file.path(root, g))),
+                                    stdout = TRUE, stderr = TRUE))
+    n <- sum(grepl("^  --   ", out))
+  }
+  if (is.na(n)) next
   obs_total <- obs_total + n; exp_total <- exp_total + expect
   mark <- if (n == expect) "ok" else if (n > expect) "NEW" else "STALE"
   detail <- c(detail, sprintf("| `%s` | %d | %d | %s |", g, n, expect, mark))
   if (n > expect) {
-    lines <- sub("^  --   ", "", out[grepl("^  --   ", out)])
+    lines <- if (identical(kind, "testthat")) grep("SKIP [0-9]+", out, value = TRUE)
+             else sub("^  --   ", "", out[grepl("^  --   ", out)])
     unexpected <- c(unexpected, sprintf("%s: %d skip(s), budget allows %d\n              %s",
                                         g, n, expect,
                                         paste(substr(lines, 1, 90), collapse = "\n              ")))

@@ -37,8 +37,8 @@ sb_scaffold <- function(n_skips, expect) {
     if (n_skips > 0) sprintf("ci_skip('synthetic skip %d')", seq_len(n_skips)) else character(0),
     "ci_ok('did something')", "ci_finish()"),
     file.path(d, "tests", "ci_fake_gate.R"))
-  writeLines(c("gate\twhen\tfull\tlean\treason",
-               sprintf("tests/ci_fake_gate.R\tpr\t%d\t%d\ta synthetic gate", expect, expect)),
+  writeLines(c("gate\tkind\twhen\tfull\tlean\treason",
+               sprintf("tests/ci_fake_gate.R\tci_skip\tpr\t%d\t%d\ta synthetic gate", expect, expect)),
              file.path(d, "tests", "skip_budget.tsv"))
   # git ls-files drives SB1's completeness scan, so the scratch repo needs to be
   # one. Without this the scan sees no gates and the budget passes vacuously --
@@ -74,6 +74,44 @@ chk(r$code != 0 && grepl("stale budget entry", r$text, fixed = TRUE) &&
       grepl("Stale expected skips:  1", r$text, fixed = TRUE),
     "an expected skip that DISAPPEARED fails, so the budget cannot become a graveyard")
 
+cat("\n-- the other skip mechanism --\n")
+
+#' A scratch repo whose gate skips through testthat rather than ci_skip()
+#'
+#' The blind spot this covers: a file CI runs via testthat::test_file() reports
+#' `[ FAIL n | WARN n | SKIP n | PASS n ]`, which the `  --   ` scan never saw.
+#' @keywords internal
+#' @noRd
+sb_tt_scaffold <- function(n_skips, expect) {
+  d <- file.path(tempdir(), paste0("sbtt_", as.integer(stats::runif(1) * 1e9)))
+  dir.create(file.path(d, "tests"), recursive = TRUE, showWarnings = FALSE)
+  for (f in c("ci_report.R", "lib_manuscript_numbers.R", "ci_skip_budget.R"))
+    file.copy(file.path(root, "tests", f), file.path(d, "tests", f))
+  writeLines(c(
+    "library(testthat)",
+    sprintf("test_that('skipper %d', { skip('synthetic') })", seq_len(n_skips)),
+    "test_that('a real assertion', { expect_true(TRUE) })"),
+    file.path(d, "tests", "test_fake_tt.R"))
+  writeLines(c("gate\tkind\twhen\tfull\tlean\treason",
+               sprintf("tests/test_fake_tt.R\ttestthat\tpr\t%d\t%d\tsynthetic", expect, expect)),
+             file.path(d, "tests", "skip_budget.tsv"))
+  system2("git", c("-C", shQuote(d), "init", "-q"), stdout = FALSE, stderr = FALSE)
+  system2("git", c("-C", shQuote(d), "add", "-A", "-f"), stdout = FALSE, stderr = FALSE)
+  d
+}
+
+r <- sb_run_in(sb_tt_scaffold(2, 2))
+chk(r$code == 0 && grepl("Observed skips:        2", r$text, fixed = TRUE),
+    "two testthat skips, budgeted for two, pass and ARE counted")
+
+r <- sb_run_in(sb_tt_scaffold(2, 0))
+chk(r$code != 0 && grepl("Unexpected skips:      1", r$text, fixed = TRUE),
+    "a testthat skip nobody budgeted for fails -- the blind spot, closed")
+
+r <- sb_run_in(sb_tt_scaffold(0, 2))
+chk(r$code != 0 && grepl("Stale expected skips:  1", r$text, fixed = TRUE),
+    "a testthat skip that disappeared is stale, same as a ci_skip one")
+
 cat("\n-- completeness --\n")
 
 # NON-EMPTY but missing the gate: an empty budget short-circuits at SB0 and
@@ -81,8 +119,8 @@ cat("\n-- completeness --\n")
 # property. A nightly placeholder keeps the budget populated without SB2 trying
 # to run it.
 d <- sb_scaffold(1, 1)
-writeLines(c("gate\twhen\tfull\tlean\treason",
-             "tests/ci_report.R\tnightly\t-\t-\tplaceholder, not run in this tier"),
+writeLines(c("gate\tkind\twhen\tfull\tlean\treason",
+             "tests/ci_report.R\tci_skip\tnightly\t-\t-\tplaceholder, not run in this tier"),
            file.path(d, "tests", "skip_budget.tsv"))
 system2("git", c("-C", shQuote(d), "add", "-A", "-f"), stdout = FALSE, stderr = FALSE)
 r <- sb_run_in(d)
@@ -90,9 +128,9 @@ chk(r$code != 0 && grepl("not in the budget", r$text, fixed = TRUE),
     "a gate that can skip but is undeclared fails")
 
 d <- sb_scaffold(1, 1)
-writeLines(c("gate\twhen\tfull\tlean\treason",
-             "tests/ci_fake_gate.R\tpr\t1\t1\ta synthetic gate",
-             "tests/ci_gate_that_never_existed.R\tpr\t0\t0\tnothing"),
+writeLines(c("gate\tkind\twhen\tfull\tlean\treason",
+             "tests/ci_fake_gate.R\tci_skip\tpr\t1\t1\ta synthetic gate",
+             "tests/ci_gate_that_never_existed.R\tci_skip\tpr\t0\t0\tnothing"),
            file.path(d, "tests", "skip_budget.tsv"))
 system2("git", c("-C", shQuote(d), "add", "-A", "-f"), stdout = FALSE, stderr = FALSE)
 r <- sb_run_in(d)
@@ -100,7 +138,7 @@ chk(r$code != 0 && grepl("do not exist", r$text, fixed = TRUE),
     "a budget naming a gate that does not exist fails")
 
 d <- sb_scaffold(1, 1)
-writeLines("gate\twhen\tfull\tlean\treason", file.path(d, "tests", "skip_budget.tsv"))
+writeLines("gate\tkind\twhen\tfull\tlean\treason", file.path(d, "tests", "skip_budget.tsv"))
 invisible(file.remove(file.path(d, "tests", "ci_fake_gate.R")))
 system2("git", c("-C", shQuote(d), "add", "-A", "-f"), stdout = FALSE, stderr = FALSE)
 r <- sb_run_in(d)
