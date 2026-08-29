@@ -296,7 +296,9 @@ remote, and `r mw_safe_stat("cohort.unk_pct", "%.1f")`% with no assignable
 county (Table 1). State-level supply and the midwife share of birth
 attendants are mapped in Figures 3 and 4. An interactive national map of the
 located cohort, showing each midwife's last observed practice location with
-links to the corresponding state board of nursing verification record, is
+a deep link to the corresponding state board of nursing lookup page -- a route
+to a board's own record, not an assertion that the record was checked
+(Appendix 3) -- is
 available at https://mufflyt.github.io/midwifery/cnm_national_leaflet_map.html[@map_cnm_national].
 
 ## Persistence

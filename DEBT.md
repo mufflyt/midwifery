@@ -323,9 +323,11 @@ property of the data rather than of row order. Variant instability: 231/300 to
 
 ## D7 — L5 cannot run on a clean checkout, and the coverage gate says so
 
-- **status:** open
+- **status:** closed
 - **owner:** tyler
 - **raised:** 2026-08-25
+- **closed:** 2026-08-29
+- **resolution:** L5 reclassified `private-ok` in `tests/science_law_registry.tsv` (commit `0e0c89c`), so the skip is expected rather than a failure. This is route 3 of the three below, using the existing label instead of adding a state. The enforcement cost is carried forward as **D9**.
 - **source:** `tests/science_law_registry.tsv`, `.gitignore:145`
 
 L5 (*every routed provider is in the union*) needs two inputs. One,
@@ -368,3 +370,78 @@ outcome.
 Route 3 is the smallest change and the largest concession. Nothing should be
 re-registered `private-ok` in the meantime: that label would assert the input is
 person-level, which it is not.
+
+---
+
+## D8 — The coverage gate cannot tell a crashed law from a silent one
+
+- **status:** open
+- **owner:** tyler
+- **raised:** 2026-08-29
+- **source:** `tests/ci_law_coverage.R` `run_file()`, commit `0e0c89c`
+
+`run_file()` executes each gate with `system2(..., stdout = TRUE, stderr = TRUE)`
+and keeps only the text. **The exit status is never read.** A gate that ran
+cleanly and emitted no markers, and a gate that died on its first line, are
+therefore indistinguishable: both arrive as text containing no `[LAW] ...
+EXERCISED`, and both are scored "no subjects".
+
+This is not theoretical. Every nightly from 2026-08-26 reported L6-L10 as having
+no subjects. All five had in fact **crashed instantly** with "no package called
+X", because their gates need dplyr/readr/stringr/readxl/sf/DBI/duckdb and the
+science job installs no packages. The build failed -- correctly, on the gap --
+but named the wrong cause, and the real error was sitting in the captured text
+that nothing looked at.
+
+The gate was designed around the principle that a law which does not run is
+indistinguishable from one that passed. It turns out there is a third state it
+also cannot distinguish, and that one is diagnosable for free: a non-zero exit
+status is already in hand and is being discarded.
+
+**Decision needed:** none, really -- this is a small fix rather than a policy
+question. Capture `attr(out, "status")`, and report a non-zero exit as a crash
+with the last lines of output, distinct from both "exercised" and "skipped". The
+reason it is filed rather than done is that it changes the meaning of a gate's
+output during a week when three other things changed it, and it deserves its own
+mutation in `tests/test_law_coverage_detect.R` proving a crashed gate is
+reported as crashed.
+
+---
+
+## D9 — L5 is registered `private-ok`, but its input is not private
+
+- **status:** open
+- **owner:** tyler
+- **raised:** 2026-08-29
+- **source:** `tests/science_law_registry.tsv`, closing of **D7**
+
+D7 is closed and this is what closing it cost.
+
+L5 (*every routed provider is in the union*) is now registered `private-ok`, a
+label the registry defines as *"may skip when person-level data is absent, and
+that skip is EXPECTED, not unexpected."* L5's missing input is
+`artifacts/maps/midwifery_isochrone_union_30min.rds` -- a derived isochrone
+surface excluded by `.gitignore:145` for **size**. It is not person-level data.
+
+Two consequences, and the first is the one that matters:
+
+1. **L5 is now unevaluated on every runner and nothing complains.** Before, the
+   nightly went red; now the skip is counted as expected and the build is green.
+   The law still holds locally, where the surface exists, but the enforcement
+   that CI provides is gone. "A law that does not run is indistinguishable from
+   one that passed" is the sentence the coverage gate was written around, and
+   this is a sanctioned instance of it.
+2. **The registry now asserts something untrue** about why L5 skips. The privacy
+   column is the machine-readable statement of *why* a law may be absent, and a
+   reader who trusts it will conclude the isochrone surface is person-level.
+
+Nothing here argues the reclassification was wrong as a stopgap: a permanently
+red nightly gets muted, and a muted nightly checks nothing at all. The point is
+that the cost was paid quietly and should not stay quiet.
+
+**Decision needed:** either restore enforcement -- have the nightly build or
+restore the surface before the science job, which keeps L5 at full strength -- or
+add a registry state that says what is actually true (*pipeline-derived, absent
+from version control*), so the skip stays counted and honestly labelled. The
+second is a fourth state in a three-state contract, which is a real cost;
+every state that permits a skip is a state a law can hide in.

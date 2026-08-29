@@ -22,7 +22,96 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Unreleased] — Laws about the science, and a population that escaped its frame
+## [Unreleased] — 2026-08-29 — Board verification retracted, and the laws start reporting honestly
+
+### Retracted — "11,355 midwives board-verified across 40 states" → 374, in one state
+
+Most purported state Board-of-Nursing licence numbers in this repository were
+**synthesized from `certification_number`** rather than observed from a board.
+Two templates, `{STATE}-RN-CNM-{cert}` and `{STATE}-RN-APRN-{cert}`, are
+re-encodings of the AMCB identifier with a state prefix. Of eleven "Tier 1"
+states only Washington and Florida had a Socrata endpoint configured at all; the
+other nine were `None`.
+
+| artifact | synthetic | genuine |
+|---|---|---|
+| `scraped_40_state_bons_midwives_master.csv` | 11,355 / 11,355 | 0 |
+| `scraped_20_state_bons_midwives_master.csv` | 9,037 / 9,037 | 0 |
+| `tier1_live_bon_all_states_complete.csv` | 4,746 / 5,120 | **374** |
+| `tier1_tier2_combined_bon_validated_master.csv` | 4,746 / 5,120 | **374** |
+
+Genuine observed board evidence is **374 Washington DOH `credentialnumber`
+records**, corroborated independently by `live_wa_bon_summary_matrix.csv`.
+
+**Identity linkage is not affected and requires no recomputation.** Traced
+read-only across the repository: no R code reads `tier1_license_number`,
+`scraped_license_num`, `bon_verification_status` or `tier1_verification_source`;
+the synthesized values never entered candidate generation, never resolved an NPI
+ambiguity, and never changed FROZEN membership. Every `npi_match_method` in the
+FROZEN crosswalk is name-derived.
+
+What *is* affected is reported board-verification coverage. The prior debate in
+`docs/DECISIONS_CONTRACT.md` D12 — whether 74% state-board coverage is reportable
+given non-random state selection — was arguing about the wrong thing: observed
+coverage is **3.3%, Washington only**. The availability-sample caveat is not the
+issue; the numerator is.
+
+`README.md` is corrected: the Figure 1 caption no longer says "verified", the
+header table now separates *permalinks to a board* from *checks against one*, and
+a new figure plots claimed against observed. Full account in
+`docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md`; per-path inventory in
+`artifacts/bon_contamination_inventory.csv`.
+
+### Fixed — five laws had been crashing, and coverage called it "no subjects"
+
+Every nightly from 2026-08-26 reported L5–L10 as having no subjects. Two causes,
+and the second is a defect in the coverage gate rather than in the laws.
+
+L6–L10's gates call dplyr, readr, stringr, readxl, sf, DBI and duckdb, but the
+science job deliberately installs no packages, so all five **crashed instantly**
+with "no package called X". That crash text matched neither the EXERCISED nor the
+SKIPPED marker, so it was counted as a vacuous pass rather than surfaced as the
+error it was. A scoped install step for exactly those seven packages was added,
+with the deviation from the job's base-R-only design documented: rewriting
+spatial, SQL and xlsx logic in base R was judged higher-risk than installing the
+packages.
+
+**The gate still cannot tell a crashed gate from a silent one** — `run_file()`
+captures output but discards the exit status, so both read as "no subjects". The
+build failed, correctly, but named the wrong cause. Recorded as **[D8](DEBT.md)**.
+
+### Changed — L5 reclassified `private-ok`, closing D7
+
+L5's dissolved isochrone surface is gitignored, so the law could never run on a
+fresh checkout while registered `public`, where a skip is a failure. It is now
+`private-ok`.
+
+This closes D7 by the route D7 argued against, and the tradeoff should be
+explicit: `private-ok` means "may skip when person-level data is absent", and
+this input is not person-level — it is a derived surface excluded for size. The
+build is green again and L5 is now unevaluated on every runner, counted as an
+*expected* skip. That is a real reduction in enforcement, taken deliberately to
+stop a red nightly, and it is reopened as **[D9](DEBT.md)** rather than left as a
+silent semantic drift.
+
+### Added — CI hardening and a cross-repo checklist
+
+- A FROZEN-dependency check: `verify_osmde_full_cohort_coverage.R` read two
+  FROZEN artifacts without being in `REBUILD_ORDER`, so a re-freeze would have
+  left it holding a stale cohort.
+- `docs/CI_BEST_PRACTICES.md`, merged with the `isochrones` copy into one
+  canonical superset.
+- The leak guard's exception list split into false positives versus reviewed
+  real exceptions (`tests/ci_leak_reviewed_exceptions.txt`).
+- A live Washington BON cross-reference using the tracked roster as a substitute
+  cohort, and the 50-state + DC scraped roster committed.
+- `tests/verify_replay_equivalence.sh`: the replay-equivalence experiment as a
+  runnable file. It previously existed only as a scratch script, so the custody
+  claim in the previous section could not be re-checked by anyone.
+
+---
+
+## [Unreleased] — 2026-08-25 — Laws about the science, and a population that escaped its frame
 
 No published estimate changed in this section. That is the finding, not an
 omission: the defect it opens with was caught before it reached anything, and

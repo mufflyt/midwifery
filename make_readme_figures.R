@@ -200,5 +200,79 @@ if (file.exists(cal)) {
   message("calibration artifact absent; engine_calibration.png not regenerated")
 }
 
+# --- 6. the board-verification retraction, as a picture ----------------------
+# A RETRACTION IS EASIER TO IGNORE AS A SENTENCE THAN AS A PICTURE. Most
+# purported state Board-of-Nursing licence numbers in this repository were
+# synthesized from certification_number ({STATE}-RN-CNM-{cert}) rather than
+# observed from a board, so artifacts named *_validated_master.csv carrying a
+# field named bon_verification_status were counting a re-encoding of the AMCB
+# identifier as independent licensure evidence.
+#
+# Plotted from the inventory rather than from the numbers in the prose, so the
+# figure cannot drift from the retraction it illustrates.
+inv_path <- "artifacts/bon_contamination_inventory.csv"
+if (file.exists(inv_path)) {
+  # The contribution columns are CHARACTER: three rows describe their scope in
+  # words ("WA only", "all non-WA") because a per-artifact count was not
+  # established for them. Those rows are dropped from the figure and counted in
+  # the caption rather than coerced -- a word silently becoming NA and then
+  # zero would understate the very thing being plotted.
+  inv_raw <- read_csv(inv_path, show_col_types = FALSE)
+  inv <- inv_raw %>%
+    mutate(syn_n = suppressWarnings(as.numeric(.data$synthetic_contribution)),
+           gen_n = suppressWarnings(as.numeric(.data$genuine_observed_contribution))) %>%
+    filter(!is.na(.data$syn_n), !is.na(.data$gen_n), .data$original_numerator > 0) %>%
+    mutate(label = str_remove(basename(.data$path), "[.]csv$"),
+           label = str_trunc(.data$label, 42)) %>%
+    arrange(desc(.data$original_numerator)) %>%
+    distinct(.data$label, .keep_all = TRUE)
+
+  n_dropped <- nrow(inv_raw) - nrow(inv)
+  # DO NOT SUM DOWN THIS COLUMN. The inventory has one row per ARTIFACT, and the
+  # artifacts overlap: the same 374 Washington records appear in six of them and
+  # the same 11,355 in two. Adding the rows produced "76,910 claimed, 2,244
+  # observed", which describes no population that exists -- the same error, in a
+  # figure, that L2 exists to catch in an artifact. The headline is the largest
+  # single claim and the observed evidence behind it, both taken from one row.
+  worst <- inv[which.max(inv$original_numerator), ]
+  claimed_headline <- worst$original_numerator
+  genuine_headline <- max(inv$gen_n)
+
+  long <- inv %>%
+    select(.data$label, synthesized = .data$syn_n, observed = .data$gen_n) %>%
+    tidyr::pivot_longer(-.data$label, names_to = "class", values_to = "n") %>%
+    mutate(class = factor(.data$class, levels = c("synthesized", "observed")))
+
+  p6 <- ggplot(long, aes(stats::reorder(.data$label, .data$n, sum), .data$n,
+                         fill = .data$class)) +
+    geom_col(width = 0.68) +
+    coord_flip() +
+    scale_fill_manual(values = c(synthesized = "#cb181d", observed = "#238b45"),
+                      name = NULL,
+                      labels = c("synthesized from certification_number",
+                                 "observed from a state board")) +
+    scale_y_continuous(labels = scales::comma) +
+    labs(title = sprintf("Board verification: %s claimed across 40 states, %s observed in one",
+                         scales::comma(claimed_headline), scales::comma(genuine_headline)),
+         subtitle = paste0(
+           "Licence numbers of the form {STATE}-RN-CNM-{certification_number} are a re-encoding of\n",
+           "the AMCB identifier, not licensure evidence. The only genuine board values are 374\n",
+           "Washington DOH credentialnumber records. Identity linkage is unaffected: no R code\n",
+           "reads these fields, and every accepted NPI match is name-derived."),
+         x = NULL, y = "Records",
+         caption = sprintf(paste0("artifacts/bon_contamination_inventory.csv - ",
+                                  "%d of %d inventory rows shown; %d describe their scope in words ",
+                                  "rather than a count.\nBars are per artifact and OVERLAP, so they must not be added. ",
+                                  "See docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md"),
+                           nrow(inv), nrow(inv_raw), n_dropped)) +
+    theme_mw() +
+    theme(legend.position = "bottom")
+  ggsave(file.path(FIG, "bon_verification_retraction.png"), p6,
+         width = 11, height = 5.2, dpi = 150, bg = "white")
+  message("wrote bon_verification_retraction.png")
+} else {
+  message("contamination inventory absent; bon_verification_retraction.png not regenerated")
+}
+
 message("\nfigures in ", FIG, ":")
 for (f in list.files(FIG, pattern = "[.]png$")) message("  ", f)

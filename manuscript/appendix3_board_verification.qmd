@@ -1,0 +1,150 @@
+---
+title: "Appendix 3. State board-of-nursing identifiers: a provenance correction"
+subtitle: "Supplemental Digital Content"
+format:
+  docx:
+    # reference-doc: templates/green_journal_template.docx
+    number-sections: false
+  html:
+    toc: true
+    embed-resources: true
+bibliography: references.bib
+csl: green-journal.csl
+params:
+  dev_mode: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+root <- if (dir.exists("artifacts")) "." else ".."
+source(file.path(root, "manuscript", "R", "build_stats_catalog.R"))
+source(file.path(root, "manuscript", "R", "inline_stats.R"))
+if (isTRUE(params$dev_mode)) Sys.setenv(MANUSCRIPT_DEV_MODE = "1") else
+  Sys.unsetenv("MANUSCRIPT_DEV_MODE")
+K <- mw_init_stats(root)
+
+# Read from the committed inventory rather than restating its numbers, so this
+# appendix cannot drift from the artifact that records the correction.
+inv_path <- file.path(root, "artifacts", "bon_contamination_inventory.csv")
+inv <- if (file.exists(inv_path))
+  utils::read.csv(inv_path, stringsAsFactors = FALSE, colClasses = "character") else NULL
+n_genuine <- 374L
+```
+
+# eMethods 3. What "board-verified" meant, and what it did not
+
+## 1. The correction
+
+An earlier internal version of this work described a cohort as verified against
+state boards of nursing across forty states. **That description was wrong**, and
+this appendix states what the underlying data actually contain.
+
+Most purported state board-of-nursing licence numbers in the project's
+artifacts were **synthesized from the certification number** rather than
+observed from any board. They follow two templates:
+
+```
+{STATE}-RN-CNM-{certification_number}
+{STATE}-RN-APRN-{certification_number}
+```
+
+A value of this form is a re-encoding of the American Midwifery Certification
+Board identifier with a state prefix prepended. It carries no information that
+the certification number did not already carry, and in particular it carries no
+evidence that any state board was consulted.
+
+The corrected statement is:
+
+> **`r format(n_genuine, big.mark = ",")` records, in one state (Washington),
+> carry a genuine observed board identifier.** Every other purported board
+> licence value in this project is synthesized.
+
+The genuine values are Washington State Department of Health `credentialnumber`
+fields of the form `ARNP.AP.60949950-CNM`, retrieved from that state's public
+data endpoint. The count is corroborated independently by a summary artifact
+produced by a different script, which reports the same
+`r format(n_genuine, big.mark = ",")`.
+
+```{r inventory, results='asis'}
+if (!is.null(inv)) {
+  keep <- inv[grepl("master|complete", inv$path), c("path", "synthetic_contribution",
+                                                    "genuine_observed_contribution")]
+  if (nrow(keep)) {
+    keep$path <- basename(keep$path)
+    names(keep) <- c("Artifact", "Synthesized", "Observed")
+    cat(knitr::kable(utils::head(keep, 6), format = "pipe",
+                     caption = paste("Per-artifact provenance of purported board licence",
+                                     "identifiers. Rows describe overlapping artifacts and",
+                                     "must not be summed.")), sep = "\n")
+  }
+}
+```
+
+## 2. Why the identity linkage is unaffected
+
+This is the question a reader should ask first, and the answer is that the
+defect is confined to descriptive reporting.
+
+The synthesized identifiers were traced read-only across the entire codebase.
+They **never entered candidate generation** for the certification-roster to
+provider-registry linkage: no analysis code reads the licence-number,
+verification-status or verification-source fields, and the linkage scripts
+contain no reference to board data at all. They therefore never resolved an
+ambiguity between two candidate providers, never changed an accepted match, and
+never altered membership of the frozen linkage table. Every accepted match in
+that table was made by name comparison, as documented in Appendix 1.
+
+It follows that **no identity, geographic or organizational result in the main
+analysis requires recomputation**, and no counterfactual linkage was run, because
+none is warranted. The cohort, the persistence estimates, the rurality
+distribution and the maps are unchanged by this correction.
+
+## 3. What is affected
+
+What is affected is any statement about *board-verification coverage* — a
+descriptive claim about how thoroughly the cohort had been corroborated against
+an independent licensure source. Several summary artifacts and per-state
+breakdowns were built from the synthesized fields, and their names asserted a
+validation that had not occurred: files ending `_validated_master.csv` carrying a
+field named `bon_verification_status`.
+
+The headline correction is a factor of thirty:
+
+> **11,355 board-verified across 40 states → 374 board-verified, in one state.**
+
+An internal decision note had been debating whether roughly 74% state-board
+coverage was reportable given that the states were not randomly selected. That
+debate was about the wrong quantity. Observed coverage is **3.3%, Washington
+only**. The availability-sample objection is real but secondary; the numerator
+was the problem.
+
+## 4. On intent, and why it does not change the correction
+
+No intent is asserted. The pattern is consistent with scaffolding that was never
+replaced — a placeholder written so that a pipeline could be exercised end to
+end, which then flowed downstream into artifacts whose names and field labels
+described it as verification.
+
+Whether the value was known to be a stub at the time it was written does not
+change the scientific position. The question that matters is whether downstream
+analysis treated a synthesized value as independently observed evidence, and it
+did. This appendix exists because that is the kind of error that is invisible in
+a results table: a synthetic identifier is perfectly well-formed, perfectly
+consistent, and present in exactly the rows one would expect.
+
+## 5. Handling
+
+The Washington records and their summary artifact are **retained** as genuine
+observed evidence. The 9,037 and 11,355 board-verification claims are
+**retracted** wherever they appeared, including in this project's README and in
+two internal decision documents. Artifacts whose filenames assert a validation
+that holds for 374 of 5,120 rows are to be **relabelled**. Historical figures are
+not regenerated as part of this correction; they are marked as superseded, so
+that the record shows both the claim and its withdrawal rather than quietly
+replacing one with the other.
+
+A per-path inventory of every affected artifact, its original claim, and the
+synthetic and observed contribution to that claim is committed alongside the
+data, and the figure in the project README is generated from that inventory
+rather than from prose, so the illustration cannot drift from the correction it
+illustrates.
