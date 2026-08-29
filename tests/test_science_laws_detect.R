@@ -35,7 +35,13 @@ local({
   e$ci_law_evidence_header("tests/test_science_laws_detect.R")
 })
 LIB    <- file.path(root, "R", "lib", "zip_county_crosswalk.R")
-stopifnot(file.exists(GATE), file.exists(REPORT), file.exists(LIB))
+# L12 compares the artifacts against the value the manuscript renders, so the
+# catalog has to exist in the scratch repository too. Copied rather than
+# stubbed: a stub would prove the comparison runs, not that the real assembler
+# agrees with the real artifacts.
+CATALOG <- file.path(root, "manuscript", "R", "build_stats_catalog.R")
+stopifnot(file.exists(GATE), file.exists(REPORT), file.exists(LIB),
+          file.exists(CATALOG))
 
 caught <- 0L; planted <- 0L; allowed <- 0L; near <- 0L
 failures <- character(0)
@@ -44,34 +50,60 @@ chk <- function(ok, m) { if (isTRUE(ok)) cat(sprintf("  ok   %s\n", m))
 
 # --- a scratch repository that satisfies every law ---------------------------
 law_scaffold <- function(dir) {
-  for (d in c("tests", "artifacts/maps", "R/lib", "data"))
+  for (d in c("tests", "artifacts/maps", "R/lib", "data", "manuscript/R"))
     dir.create(file.path(dir, d), recursive = TRUE, showWarnings = FALSE)
-  file.copy(GATE,   file.path(dir, "tests", "ci_science_laws.R"))
-  file.copy(REPORT, file.path(dir, "tests", "ci_report.R"))
-  file.copy(LIB,    file.path(dir, "R", "lib", "zip_county_crosswalk.R"))
+  file.copy(GATE,    file.path(dir, "tests", "ci_science_laws.R"))
+  file.copy(REPORT,  file.path(dir, "tests", "ci_report.R"))
+  file.copy(LIB,     file.path(dir, "R", "lib", "zip_county_crosswalk.R"))
+  file.copy(CATALOG, file.path(dir, "manuscript", "R", "build_stats_catalog.R"))
 
   # L1: a registered cohort
   writeLines(c("stage,cohort_n,n", "1,16892,100"),
              file.path(dir, "artifacts", "stage_progression_like_for_like.csv"))
   # L2: dispositions that sum to n
-  writeLines(c("status,n,matched,unmatched,pct_matched",
-               "ACTIVE,100,70,30,70.0",
-               "LAPSED,50,20,30,40.0"),
+  # Carries every disposition the manuscript catalog reads, because L12 builds
+  # that catalog here. A two-column fixture satisfied L2 and crashed the
+  # catalog on a missing subscript, which took the whole gate down and made
+  # every law in the file look broken at once.
+  writeLines(c("status,n,matched,matched_nursing_taxonomy,ambiguous,unmatched,candidate_class5_held_out_of_cohort,pct_matched",
+               "ACTIVE,100,70,10,5,10,5,70.0",
+               "LAPSED,40,20,4,2,12,2,50.0",
+               "DECEASED,10,0,1,1,7,1,0.0"),
              file.path(dir, "artifacts", "linkage_completeness_by_status.csv"))
   # L3: a ZCTA file with blank ZCTAs, and a composition table that says Unknown
   writeLines(c("GEOID_ZCTA5_20|GEOID_COUNTY_20|AREALAND_PART",
                "01001|01001|100", "|02290|500", "01002|01003|200"),
              file.path(dir, "data", "zcta_county_2020.txt"))
+  # ALSO L12's fixture, and DERIVED to agree with the bounds table below: 75 of
+  # the 90 with known rurality are metropolitan, so both artifacts must say
+  # 83.33%. The first version of this scaffold gave them unrelated numbers, and
+  # L12 -- whose entire subject is two artifacts disagreeing -- failed on the
+  # clean scaffold before any defect was planted.
   writeLines(c("group,level,n,N,pct",
-               "1_retained,Metro (RUCC 1-3),80,100,80",
-               "1_retained,Unknown,20,100,20",
-               "2_newly_npi_resolved,Unknown,50,50,100"),
+               "1_retained,Metro (RUCC 1-3),75,110,68.18181818181819",
+               "1_retained,\"Nonmetro, adjacent (4-6)\",10,110,9.090909090909092",
+               "1_retained,\"Nonmetro, remote (7-9)\",5,110,4.545454545454546",
+               "1_retained,Unknown,20,110,18.181818181818183",
+               "2_newly_npi_resolved,Unknown,40,40,100"),
              file.path(dir, "artifacts", "composition_rucc_cat.csv"))
   # L4: monotone access
   writeLines(c("rurality,band_minutes,women_with_access,women_total,pct_women_with_access",
                "Metro (RUCC 1-3),30,80,100,80.0",
                "Metro (RUCC 1-3),60,95,100,95.0"),
              file.path(dir, "artifacts", "full_cohort_access_by_band_rucc.csv"))
+  # L11: bounds DERIVED from the completeness fixture above -- 150 certificants,
+  # 90 matched, so 60 unlinked and every interval exactly 40 points wide.
+  # Deliberately not a second completeness table: the first version of this
+  # wrote its own, silently replaced L2's fixture with a single row, and broke
+  # every law in the scaffold at once.
+  # Full precision, not 83.3: L12 compares two independent computations of the
+  # same quantity at 1e-6, and a rounded fixture would fail it for being rounded
+  # rather than for being wrong.
+  writeLines(c("rurality,n_linked_in_cat,n_linked,n_roster,observed_pct,manski_lower_pct,manski_upper_pct,zip_lower_pct,zip_upper_pct",
+               "Metro,75,90,150,83.33333333333333,50,90,60,88",
+               "Rural,15,90,150,16.666666666666668,10,50,8,40"),
+             file.path(dir, "artifacts", "linkage_selection_bounds.csv"))
+
   # L5: routed count, and surfaces that cover it
   writeLines(c("check,expected,observed,gates,pass,status",
                "locations successfully retrieved,900,900,yes,TRUE,PASS"),
@@ -233,9 +265,11 @@ kills("the crosswalk stops filtering ZCTA-less rows", "L3",
 kills("the ZIP-less group is placed back in remote-rural Alaska", "L3",
   list("artifacts/composition_rucc_cat.csv" = c(
     "group,level,n,N,pct",
-    "1_retained,Metro (RUCC 1-3),80,100,80",
-    "1_retained,Unknown,20,100,20",
-    "2_newly_npi_resolved,\"Nonmetro, remote (7-9)\",50,50,100")))
+    "1_retained,Metro (RUCC 1-3),75,110,68.18181818181819",
+    "1_retained,\"Nonmetro, adjacent (4-6)\",10,110,9.090909090909092",
+    "1_retained,\"Nonmetro, remote (7-9)\",5,110,4.545454545454546",
+    "1_retained,Unknown,20,110,18.181818181818183",
+    "2_newly_npi_resolved,\"Nonmetro, remote (7-9)\",40,40,100")))
 
 kills("thirty-minute access exceeds sixty-minute access", "L4",
   list("artifacts/full_cohort_access_by_band_rucc.csv" = c(
@@ -269,6 +303,59 @@ local({
   # code into the [MUTATION] stream would corrupt the coverage scoreboard.
 })
 
+kills("bounds narrower than the missingness allows", "L11",
+  list("artifacts/linkage_selection_bounds.csv" = c(
+    "rurality,n_linked_in_cat,n_linked,n_roster,observed_pct,manski_lower_pct,manski_upper_pct",
+    "Metro,75,90,150,83.3,70,90",
+    "Rural,15,90,150,16.7,10,50")))
+kills("a point estimate outside its own interval", "L11",
+  list("artifacts/linkage_selection_bounds.csv" = c(
+    "rurality,n_linked_in_cat,n_linked,n_roster,observed_pct,manski_lower_pct,manski_upper_pct",
+    "Metro,75,90,150,95.0,50,90",
+    "Rural,15,90,150,16.7,10,50")))
+kills("bounds describing a different roster than the completeness table", "L11",
+  list("artifacts/linkage_selection_bounds.csv" = c(
+    "rurality,n_linked_in_cat,n_linked,n_roster,observed_pct,manski_lower_pct,manski_upper_pct",
+    "Metro,50,120,200,41.7,25,65",
+    "Rural,10,120,200,8.3,5,45")))
+
+# L12. THE THREE NUMBERS THAT ACTUALLY SHIPPED, shrunk to fixtures. Each of
+# these is a locally defensible artifact that disagrees with another one, which
+# is the only way this defect ever appears -- nobody writes an artifact they
+# know to be wrong.
+kills("the metropolitan share counts the unknown-rurality members in its denominator", "L12",
+  list("artifacts/linkage_selection_bounds.csv" = c(
+    "rurality,n_linked_in_cat,n_linked,n_roster,observed_pct,manski_lower_pct,manski_upper_pct",
+    # 75/110 rather than 75/90: the 86.5% defect exactly, an estimate diluted by
+    # the people whose rurality is the thing that is missing.
+    "Metro,75,90,150,68.18181818181819,50,90",
+    "Rural,15,90,150,16.666666666666668,10,50")))
+kills("the bounds are anchored on a different cohort than the composition", "L12",
+  list("artifacts/composition_rucc_cat.csv" = c(
+    "group,level,n,N,pct",
+    # 78 metropolitan of 93 known -- the 160-person cohort drift, which moves
+    # the share by half a point and breaks no other law in the file.
+    "1_retained,Metro (RUCC 1-3),78,113,69.02654867256638",
+    "1_retained,\"Nonmetro, adjacent (4-6)\",10,113,8.849557522123893",
+    "1_retained,\"Nonmetro, remote (7-9)\",5,113,4.424778761061947",
+    "1_retained,Unknown,20,113,17.699115044247787",
+    "2_newly_npi_resolved,Unknown,40,40,100")))
+kills("a percentage that no longer recomputes from the counts beside it", "L12",
+  list("artifacts/linkage_selection_bounds.csv" = c(
+    "rurality,n_linked_in_cat,n_linked,n_roster,observed_pct,manski_lower_pct,manski_upper_pct",
+    # The counts still reconcile with the composition; only the percentage was
+    # edited. A hand-corrected artifact looks exactly like this.
+    "Metro,75,90,150,89.34122871946707,50,90",
+    "Rural,15,90,150,16.666666666666668,10,50")))
+kills("a group whose cells no longer sum to the N printed on its rows", "L12",
+  list("artifacts/composition_rucc_cat.csv" = c(
+    "group,level,n,N,pct",
+    "1_retained,Metro (RUCC 1-3),75,110,68.18181818181819",
+    "1_retained,\"Nonmetro, adjacent (4-6)\",10,110,9.090909090909092",
+    "1_retained,\"Nonmetro, remote (7-9)\",5,110,4.545454545454546",
+    "1_retained,Unknown,20,110,18.181818181818183",
+    "2_newly_npi_resolved,Unknown,40,50,80")))
+
 cat("\n-- near misses that must stay green --\n")
 
 survives("a union holding MORE origins than were routed (canonical + recovered)",
@@ -284,9 +371,11 @@ survives("equal access at two bands (a saturated stratum)",
 survives("a group legitimately entirely Unknown",
   list("artifacts/composition_rucc_cat.csv" = c(
     "group,level,n,N,pct",
-    "1_retained,Metro (RUCC 1-3),80,100,80",
-    "1_retained,Unknown,20,100,20",
-    "2_newly_npi_resolved,Unknown,50,50,100")))
+    "1_retained,Metro (RUCC 1-3),75,110,68.18181818181819",
+    "1_retained,\"Nonmetro, adjacent (4-6)\",10,110,9.090909090909092",
+    "1_retained,\"Nonmetro, remote (7-9)\",5,110,4.545454545454546",
+    "1_retained,Unknown,20,110,18.181818181818183",
+    "2_newly_npi_resolved,Unknown,40,40,100")))
 
 # -----------------------------------------------------------------------------
 cat(sprintf("\n%d/%d scientific mutations detected; %d/%d near misses allowed\n",

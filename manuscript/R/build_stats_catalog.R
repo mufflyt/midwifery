@@ -131,13 +131,103 @@ mw_build_catalog <- function(root = ".") {
       v <- ret$pct[ret$level == lvl]
       if (length(v)) v[1] else NA_real_
     }
+    # TWO CORRECTIONS TO THE PUBLISHED 86.5%, and they pull in opposite
+    # directions, which is why the figure looked defensible for so long.
+    #
+    # DENOMINATOR CONTENT. 86.5% is 13,277 of 15,347, and 486 of that 15,347
+    # have no assignable county. Putting them in the denominator of a
+    # metropolitan share treats "we could not tell" as "not metropolitan",
+    # which is the one thing the data does not say.
+    #
+    # DENOMINATOR POPULATION. 15,347 is the RETAINED subgroup, not the analytic
+    # cohort. The prose around this number says "the analytic cohort", which is
+    # 16,892 (panel.cohort_n) -- the retained subgroup plus 1,545 newly
+    # NPI-resolved members, every one of whom is Unknown rurality because none
+    # carries a practice ZIP. Reporting a subgroup's composition under the
+    # cohort's name is how a reader ends up unable to reconcile any two
+    # denominators in the paper.
+    #
+    # So the frame is the analytic cohort throughout: 14,861 of 16,892 members
+    # have an assignable county and 2,031 do not, and the metropolitan share is
+    # taken among the 14,861. That reconciles exactly with n_linked in the
+    # bounds artifact, which is the point.
+    cohort_groups <- c("1_retained", "2_newly_npi_resolved",
+                       "3_in_cohort_no_final_npi")
+    inc <- comp %>% dplyr::filter(.data$group %in% cohort_groups)
+    getn <- function(lvl) {
+      v <- inc$n[inc$level == lvl]
+      if (length(v)) sum(v) else 0
+    }
+    metro_n <- getn("Metro (RUCC 1-3)")
+    adj_n <- getn("Nonmetro, adjacent (4-6)")
+    remote_n <- getn("Nonmetro, remote (7-9)")
+    known_n <- metro_n + adj_n + remote_n
+    cohort_n <- known_n + getn("Unknown")
     cat_$cohort <- list(
+      cohort_n   = cohort_n,
+      known_n    = known_n,
+      unknown_n  = getn("Unknown"),
+      metro_n    = metro_n,
+      metro_pct  = 100 * metro_n / known_n,
+      adj_pct    = 100 * adj_n / known_n,
+      remote_pct = 100 * remote_n / known_n,
+      # Kept, clearly named, so that a reader reconciling this manuscript
+      # against an earlier draft can find where 86.5% went. Not for prose.
       retained_n = if (nrow(ret)) ret$N[1] else NA_real_,
-      metro_pct  = getp("Metro (RUCC 1-3)"),
-      adj_pct    = getp("Nonmetro, adjacent (4-6)"),
-      remote_pct = getp("Nonmetro, remote (7-9)"),
-      unk_pct    = getp("Unknown")
+      metro_pct_retained_with_unknown = getp("Metro (RUCC 1-3)")
     )
+  }
+
+  # --- Selection bounds on the rurality distribution -------------------------
+  # The cohort is not a random sample of the roster, so the metropolitan share
+  # above is a property of the subgroup and not of the workforce. These are the
+  # numbers that say how far apart those two can be. They come from
+  # analyze_linkage_selection_bias.R, which reconstructs the rurality
+  # assignment from the same helpers R/07-cohort-composition.R uses and refuses
+  # to write unless it reproduces composition_rucc_cat.csv cell for cell -- so
+  # bounds$metro_pct and cohort$metro_pct are two arithmetic paths to one
+  # quantity, and L12 fails the build if they ever stop agreeing.
+  lsb <- rd(file.path(MW_ART, "linkage_selection_bounds.csv"))
+  if (!is.null(lsb)) {
+    m <- lsb[grepl("^Metro", lsb$rurality), ]
+    # A COLUMN THAT IS NOT THERE IS NA, NOT A CRASH. m$absent[1] is NULL, and
+    # abs(NULL) raises "non-numeric argument to mathematical function" -- an
+    # error that names neither the column nor the artifact. mw_stat() already
+    # fails loudly and by name on a missing key, so the right behaviour here is
+    # to produce the missing key rather than to die assembling it.
+    col1 <- function(nm, f = identity) {
+      if (!nm %in% names(m)) return(NA_real_)
+      v <- suppressWarnings(as.numeric(m[[nm]][1]))
+      if (is.na(v)) NA_real_ else f(v)
+    }
+    if (nrow(m)) {
+      cat_$bounds <- list(
+        roster_n         = col1("n_roster"),
+        cohort_known_n   = col1("n_linked"),
+        unobserved_n     = col1("n_roster") - col1("n_linked"),
+        metro_pct        = col1("observed_pct"),
+        # The reported interval is the one that does NOT discard the non-cohort
+        # certificants whose ZIP resolves. The wider manski_* pair, which treats
+        # every non-cohort certificant as unobserved, is carried for the
+        # appendix: it is the correct answer to a question nobody is asking once
+        # 1,358 of those people can in fact be located.
+        lower_pct        = col1("zip_lower_pct"),
+        upper_pct        = col1("zip_upper_pct"),
+        manski_lower_pct = col1("manski_lower_pct"),
+        manski_upper_pct = col1("manski_upper_pct"),
+        active_lower_pct = col1("active_lower_pct"),
+        active_upper_pct = col1("active_upper_pct"),
+        ipw_pct          = col1("ipw_pct"),
+        outside_n        = col1("n_outside_observed"),
+        outside_pct      = col1("outside_observed_pct"),
+        # Reported as a magnitude: the prose says "below the cohort" in words,
+        # and a rendered minus sign beside it reads as a double negative.
+        outside_diff_pp  = col1("outside_minus_cohort_pp", abs),
+        tip_threshold    = col1("tipping_threshold_pct"),
+        tip_required     = col1("tipping_required_unobserved_pct"),
+        tip_departure    = col1("tipping_departure_pp", abs)
+      )
+    }
   }
 
   # --- Persistence -----------------------------------------------------------

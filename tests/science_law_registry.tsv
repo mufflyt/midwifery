@@ -41,3 +41,10 @@ L7	contradictory identity evidence cannot increase certainty	tests/test_identity
 L8	identical inputs produce identical outputs	tests/test_deterministic_rebuild.R	tests/test_determinism_cache_detect.R	public
 L9	a cache may change runtime, not the answer	tests/test_cache_isolation.R	tests/test_determinism_cache_detect.R	public
 L10	every mutable scientific input has a declared vintage	tests/test_cache_vintage_declared.R	tests/test_cache_vintage_detect.R	public
+L11	an estimate from the linked subset is not a property of the roster	tests/ci_science_laws.R	tests/test_science_laws_detect.R	public
+# L12 is the law the other eleven could not have caught. Each of them checks
+# one artifact against itself, and the metropolitan share was wrong in a way
+# that left every individual artifact internally consistent -- 86.5%, 89.34%
+# and 89.8% for one quantity, each locally defensible. It is `public` because
+# every input it reads is tracked.
+L12	one scientific quantity has one value in every representation	tests/ci_science_laws.R	tests/test_science_laws_detect.R	public

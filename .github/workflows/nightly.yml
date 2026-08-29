@@ -330,8 +330,10 @@ jobs:
           # R/lib/cache_vintage.R via test_deterministic_rebuild.R), not by
           # grepping library() at the top of the gate files. See ci.yml's copy
           # of this list for how that was confirmed.
+          # tidyr added 2026-08-29 for L12, which builds the manuscript stats
+          # catalog to compare the rendered value against its artifacts.
           pkgs <- c("dplyr", "readr", "stringr", "readxl", "sf", "DBI", "duckdb",
-                    "jsonlite", "openssl")
+                    "jsonlite", "openssl", "tidyr")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
           for (p in pkgs) if (!requireNamespace(p, quietly = TRUE))

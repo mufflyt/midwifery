@@ -154,11 +154,34 @@ a new address -- the observed cohort is enriched for people who stayed, in both
 senses. **The reported persistence figures are therefore upper bounds on
 persistence among all certificants.**
 
-The magnitude of that bias cannot be estimated from these data, because the
-unlinked have no observed geography by definition. It could be bounded by
-linking the roster to a source that does not require enumeration -- a state
-licensure file, or a death index for the DECEASED stratum -- which is the
+For the PERSISTENCE estimates the magnitude of that bias cannot be quantified
+from these data. Persistence requires repeated observation, and the
+certificants outside the cohort have none by construction; no arithmetic
+recovers a trajectory that was never observed. Narrowing that bound would
+require linking the roster to a source that does not require enumeration -- a
+state licensure file, or a death index for the DECEASED stratum -- which is the
 natural next step and is not attempted here.
+
+For the COMPOSITION estimates it can. An earlier version of this appendix said
+otherwise, and that was too strong: rurality is missing because a practice ZIP
+code failed to resolve, not because a certificant failed to enter the cohort,
+and those are different events. Placing every certificant with no assignable
+county entirely inside and then entirely outside each rurality category bounds
+the roster-wide metropolitan share between
+`r mw_safe_stat("bounds.lower_pct", "%.1f")`% and
+`r mw_safe_stat("bounds.upper_pct", "%.1f")`% with no assumption about the
+missingness mechanism at all. Discarding the
+`r mw_n("bounds.outside_n")` non-cohort certificants whose ZIP code does
+resolve would widen that to
+`r mw_safe_stat("bounds.manski_lower_pct", "%.1f")`%--`r mw_safe_stat("bounds.manski_upper_pct", "%.1f")`%,
+which is a wider interval bought by ignoring evidence rather than by being more
+careful. Restricting to ACTIVE certificants, the population a workforce claim
+usually means, gives
+`r mw_safe_stat("bounds.active_lower_pct", "%.1f")`%--`r mw_safe_stat("bounds.active_upper_pct", "%.1f")`%.
+Under the further assumption that certification status explains the
+missingness, inverse-probability weighting returns
+`r mw_safe_stat("bounds.ipw_pct", "%.1f")`%; it is reported as a sensitivity
+and not as a correction, because status plainly does not explain all of it.
 
 # eResults 3. What the unresolved records are not
 

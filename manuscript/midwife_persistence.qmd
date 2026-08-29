@@ -288,12 +288,35 @@ whom `r mw_n("panel.observed")` were observed at least once. They contributed
 `r mw_safe_stat("panel.median_years")` years observed per provider. The cohort
 was `r mw_safe_stat("table1.cnm_pct", "%.0f")`% certified nurse-midwives and
 `r mw_safe_stat("table1.cm_pct", "%.0f")`% certified midwives, and
-`r mw_safe_stat("table1.female_pct", "%.1f")`% female. Its distribution was
-heavily metropolitan: `r mw_safe_stat("cohort.metro_pct", "%.1f")`%
-metropolitan, `r mw_safe_stat("cohort.adj_pct", "%.1f")`% nonmetropolitan
-adjacent, `r mw_safe_stat("cohort.remote_pct", "%.1f")`% nonmetropolitan
-remote, and `r mw_safe_stat("cohort.unk_pct", "%.1f")`% with no assignable
-county (Table 1). State-level supply and the midwife share of birth
+`r mw_safe_stat("table1.female_pct", "%.1f")`% female. Among the
+`r mw_n("cohort.known_n")` cohort members with an assignable practice county,
+`r mw_n("cohort.metro_n")` (`r mw_safe_stat("cohort.metro_pct", "%.1f")`%)
+practiced in metropolitan counties,
+`r mw_safe_stat("cohort.adj_pct", "%.1f")`% in nonmetropolitan adjacent
+counties and `r mw_safe_stat("cohort.remote_pct", "%.1f")`% in nonmetropolitan
+remote counties; rurality could not be assigned for the remaining
+`r mw_n("cohort.unknown_n")` (Table 1).
+
+That distribution describes the cohort, and cohort membership differed
+substantially by certification status, so it need not describe the roster of
+`r mw_n("bounds.roster_n")` certificants from which the cohort was drawn.
+Making no assumption about the missingness mechanism, the roster-wide
+metropolitan share was bounded between
+`r mw_safe_stat("bounds.lower_pct", "%.1f")`% and
+`r mw_safe_stat("bounds.upper_pct", "%.1f")`%. The direction of the selection
+is not, however, purely a matter of assumption: among the
+`r mw_n("bounds.outside_n")` certificants outside the cohort whose practice ZIP
+code nonetheless permitted a county assignment,
+`r mw_safe_stat("bounds.outside_pct", "%.1f")`% were metropolitan --
+`r mw_safe_stat("bounds.outside_diff_pp", "%.1f")` percentage points below the
+cohort rather than above it. For the roster-wide share to fall as low as
+`r mw_safe_stat("bounds.tip_threshold", "%.0f")`%, the
+`r mw_n("bounds.unobserved_n")` certificants with no assignable county would
+have to be only `r mw_safe_stat("bounds.tip_required", "%.1f")`%
+metropolitan, `r mw_safe_stat("bounds.tip_departure", "%.1f")` percentage
+points below what was observed in the cohort.
+
+State-level supply and the midwife share of birth
 attendants are mapped in Figures 3 and 4. An interactive national map of the
 located cohort, showing each midwife's last observed practice location with
 a deep link to the corresponding state board of nursing lookup page -- a route
@@ -442,6 +465,22 @@ DECEASED certificants resolve, so providers who exited the workforce are
 under-represented, and persistence among those we observe is not persistence
 among all certificants. The direction of this bias is toward overstating
 persistence.
+
+That limitation binds the persistence estimates more tightly than the
+composition ones, and the difference is worth stating rather than leaving to
+the reader. Persistence cannot be bounded here at all: it requires repeated
+observation, and the certificants outside the cohort have none. The
+metropolitan share can be, and is -- `r mw_safe_stat("bounds.lower_pct", "%.1f")`%
+to `r mw_safe_stat("bounds.upper_pct", "%.1f")`% roster-wide with no assumption
+about the missingness mechanism (Appendix 1). More usefully, the missingness is
+not entirely opaque: the `r mw_n("bounds.outside_n")` certificants outside the
+cohort who could nonetheless be placed were
+`r mw_safe_stat("bounds.outside_pct", "%.1f")`% metropolitan, marginally *less*
+metropolitan than the cohort rather than more. If the certificants who could
+not be placed resemble those who could, the cohort slightly overstates how
+metropolitan the workforce is -- a bias in the same direction as the
+persistence bias, and of a magnitude the tipping-point calculation shows the
+rurality conclusion survives.
 
 Second, practice address in the provider registry is the address a provider
 maintains for enumeration, which may lag an actual relocation or reflect an
