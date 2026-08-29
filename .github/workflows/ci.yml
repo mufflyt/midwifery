@@ -89,6 +89,7 @@ jobs:
       - name: Aggregate scientific gate (self-test)
         run: Rscript tests/test_aggregate_gate.R
 
+
       - name: Join-key unit tests
         run: Rscript tests/test_lib_keys.R
 
@@ -338,6 +339,22 @@ jobs:
       # drops or duplicates rows silently corrupts a seven-hour run.
       - name: Checkpoint merge contract
         run: Rscript tests/test_checkpoint_merge.R
+
+      # A published result may be generated or it may be typed, and not both.
+      # Scoped to manuscript/protected_results.tsv -- a registry of results, not
+      # a rule against digits, because a checker that is wrong about years and
+      # section numbers gets switched off.
+      #
+      # HERE RATHER THAN IN THE HYGIENE JOB, which is where it was first put and
+      # where it went red: it builds the stats catalog, and the catalog needs
+      # dplyr, readr and tidyr. The hygiene tier installs stringr and nothing
+      # else, and adding the tidyverse to it to hold one check would stop it
+      # being the cheap tier. This job already provisions all three.
+      - name: Manuscript protected results (no typed literals)
+        run: Rscript tests/ci_manuscript_numbers.R
+
+      - name: Manuscript protected results (planted defects)
+        run: Rscript tests/test_manuscript_numbers_detect.R
 
       # The R half of the microsimulation contract whose Python half runs in the
       # Python job above. Placed HERE because this is the job with an R
