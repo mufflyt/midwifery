@@ -185,18 +185,17 @@ jobs:
       - name: Run Midwifery Pipeline Integration Tests
         run: python3 tests/test_midwifery_pipeline.py -v
 
-      # Workforce microsimulation: population-conservation contract (found
-      # broken, fixed, cycle 24 of the adversarial loop) plus the R port's
-      # cross-implementation agreement with this file.
-      - name: Microsimulation conservation and cross-implementation contract
-        run: |
-          python3 -m unittest tests.test_cycle24_microsimulation_conservation -v
-          Rscript tests/test_run_midwifery_microsimulation.R
-
-      # Data-driven: adding a hard case means adding a row to
-      # tests/microsimulation_case_library.tsv, not writing a new test.
-      - name: Microsimulation case library
-        run: Rscript tests/test_microsimulation_case_library.R
+      # Workforce microsimulation: the population-conservation contract, found
+      # broken and fixed in cycle 24 of the adversarial loop.
+      #
+      # PYTHON ONLY. This job installs Python and nothing else, so the two R
+      # halves of this contract -- the port's cross-implementation agreement and
+      # the case library -- live in the R job below. They were originally placed
+      # here, beside the Python test they check against, which reads well and
+      # exits 127: `Rscript: command not found`. Proximity in the file is not a
+      # runtime.
+      - name: Microsimulation conservation contract
+        run: python3 -m unittest tests.test_cycle24_microsimulation_conservation -v
 
   # ---------------------------------------------------------------------------
   # The tier that is allowed to cost something.
@@ -323,6 +322,17 @@ jobs:
       # drops or duplicates rows silently corrupts a seven-hour run.
       - name: Checkpoint merge contract
         run: Rscript tests/test_checkpoint_merge.R
+
+      # The R half of the microsimulation contract whose Python half runs in the
+      # Python job above. Placed HERE because this is the job with an R
+      # toolchain; needs only readr and jsonlite, both already in the list above.
+      - name: Microsimulation cross-implementation agreement
+        run: Rscript tests/test_run_midwifery_microsimulation.R
+
+      # Data-driven: adding a hard case means adding a row to
+      # tests/microsimulation_case_library.tsv, not writing a new test.
+      - name: Microsimulation case library
+        run: Rscript tests/test_microsimulation_case_library.R
 
       # Ten real NPPES schema/concurrency hazards found in a manual bug hunt
       # (2026-08-27) against build_midwife_panel.R: an accented name under an
