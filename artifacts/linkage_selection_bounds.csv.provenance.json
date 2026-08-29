@@ -1,0 +1,18 @@
+{
+  "artifact": "linkage_selection_bounds.csv",
+  "written_utc": "2026-08-29 19:13:20 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
+    },
+    {
+      "path": "artifacts/midwives_geography_FROZEN.csv",
+      "sha256": "5292564e211fd36b7aba79f1820fe51708b2d75437b2f7ca6cb600ca0b372de8"
+    },
+    {
+      "path": "data/rucc_2023.xlsx",
+      "sha256": "aeaae451663c7ea70cd15ef26fdc991bebcaf3a39d658ab2133d321530777df5"
+    }
+  ]
+}

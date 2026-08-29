@@ -72,6 +72,16 @@ law_scaffold <- function(dir) {
                "Metro (RUCC 1-3),30,80,100,80.0",
                "Metro (RUCC 1-3),60,95,100,95.0"),
              file.path(dir, "artifacts", "full_cohort_access_by_band_rucc.csv"))
+  # L11: bounds DERIVED from the completeness fixture above -- 150 certificants,
+  # 90 matched, so 60 unlinked and every interval exactly 40 points wide.
+  # Deliberately not a second completeness table: the first version of this
+  # wrote its own, silently replaced L2's fixture with a single row, and broke
+  # every law in the scaffold at once.
+  writeLines(c("rurality,n_linked_in_cat,n_linked,n_roster,observed_pct,manski_lower_pct,manski_upper_pct",
+               "Metro,75,90,150,83.3,50,90",
+               "Rural,15,90,150,16.7,10,50"),
+             file.path(dir, "artifacts", "linkage_selection_bounds.csv"))
+
   # L5: routed count, and surfaces that cover it
   writeLines(c("check,expected,observed,gates,pass,status",
                "locations successfully retrieved,900,900,yes,TRUE,PASS"),
@@ -268,6 +278,22 @@ local({
   # rather than a violation of a registered law, and putting an unregistered
   # code into the [MUTATION] stream would corrupt the coverage scoreboard.
 })
+
+kills("bounds narrower than the missingness allows", "L11",
+  list("artifacts/linkage_selection_bounds.csv" = c(
+    "rurality,n_linked_in_cat,n_linked,n_roster,observed_pct,manski_lower_pct,manski_upper_pct",
+    "Metro,75,90,150,83.3,70,90",
+    "Rural,15,90,150,16.7,10,50")))
+kills("a point estimate outside its own interval", "L11",
+  list("artifacts/linkage_selection_bounds.csv" = c(
+    "rurality,n_linked_in_cat,n_linked,n_roster,observed_pct,manski_lower_pct,manski_upper_pct",
+    "Metro,75,90,150,95.0,50,90",
+    "Rural,15,90,150,16.7,10,50")))
+kills("bounds describing a different roster than the completeness table", "L11",
+  list("artifacts/linkage_selection_bounds.csv" = c(
+    "rurality,n_linked_in_cat,n_linked,n_roster,observed_pct,manski_lower_pct,manski_upper_pct",
+    "Metro,50,120,200,41.7,25,65",
+    "Rural,10,120,200,8.3,5,45")))
 
 cat("\n-- near misses that must stay green --\n")
 

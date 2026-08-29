@@ -448,4 +448,93 @@ if (is.null(vt) || is.null(UNION_MF)) {
   }
 }
 
+# -----------------------------------------------------------------------------
+ci_section("L11 an estimate from the linked subset is not a property of the roster")
+
+# THE LAWS ABOVE CANNOT SEE THIS ONE. A differentially incomplete linkage is
+# perfectly self-consistent: parts sum to their whole (L2), no share exceeds its
+# denominator (L2), geography that is missing stays missing (L3), the
+# computation is deterministic (L8) and every input has a declared vintage
+# (L10). All of them pass on a cohort that has quietly become a sample of the
+# easy-to-find.
+#
+# Geography exists only for the primary matched cohort -- 14,764 of 22,309 --
+# and linkage runs from 78.4% of ACTIVE certificants down to 18.8% of DECEASED.
+# So every geographic statement describes the LOCATED workforce, and the
+# distance between that and the workforce is unobservable by construction: the
+# geography of the unlinked is missing precisely because they did not link.
+#
+# The law is not "the bias is small". It is that the bias must be DECLARED, and
+# that the declaration must be arithmetically honest:
+#
+#   B1  the bounds artifact exists (it is tracked, so absence is a failure)
+#   B2  it describes the same roster as the published completeness table
+#   B3  every point estimate lies inside its own bounds
+#   B4  the width equals the unlinked fraction EXACTLY
+#
+# B4 is the one that cannot be satisfied by accident. Worst-case bounds have a
+# closed form: unobserved people can be placed entirely inside or entirely
+# outside a category, so upper - lower is 100 * (1 - f) for every category, no
+# matter what the observed distribution looks like. A narrower interval is not a
+# tighter analysis; it is an assumption someone declined to state.
+LSB <- suppressWarnings(ci_read_head("artifacts/linkage_selection_bounds.csv", -1L, root = root))
+COMP <- suppressWarnings(ci_read_head("artifacts/linkage_completeness_by_status.csv", -1L, root = root))
+
+if (is.null(LSB)) {
+  ci_fail("L11: artifacts/linkage_selection_bounds.csv is absent. It is tracked, so\n       this is a missing artifact rather than a permitted skip. Regenerate it\n       with analyze_linkage_selection_bias.R.")
+} else {
+  need <- c("rurality", "n_linked", "n_roster", "observed_pct",
+            "manski_lower_pct", "manski_upper_pct")
+  miss <- setdiff(need, names(LSB))
+  if (length(miss)) {
+    ci_fail("L11: the bounds artifact is missing column(s): %s.", paste(miss, collapse = ", "))
+  } else {
+    nr <- law_num(LSB$n_roster); nl <- law_num(LSB$n_linked)
+    obs <- law_num(LSB$observed_pct)
+    lo <- law_num(LSB$manski_lower_pct); hi <- law_num(LSB$manski_upper_pct)
+    off <- character(0)
+
+    # B2 -- the same population the published table describes.
+    if (!is.null(COMP) && "n" %in% names(COMP)) {
+      roster_published <- sum(law_num(COMP$n), na.rm = TRUE)
+      if (any(is.finite(nr)) && abs(nr[1] - roster_published) > 0.5)
+        off <- c(off, sprintf("bounds describe %s certificants, the completeness table %s",
+                              format(nr[1], big.mark = ","),
+                              format(roster_published, big.mark = ",")))
+    }
+
+    # B3 -- a point estimate outside its own interval is arithmetically broken.
+    bad_in <- which(is.finite(obs) & is.finite(lo) & is.finite(hi) &
+                      (obs < lo - 1e-6 | obs > hi + 1e-6))
+    for (i in bad_in)
+      off <- c(off, sprintf("%s: observed %.1f%% lies outside [%.1f, %.1f]",
+                            LSB$rurality[i], obs[i], lo[i], hi[i]))
+
+    # B4 -- the width IS the missingness. Not a target, an identity.
+    if (any(is.finite(nr)) && any(is.finite(nl))) {
+      want <- 100 * (nr - nl) / nr
+      bad_w <- which(is.finite(want) & abs((hi - lo) - want) > 0.05)
+      for (i in bad_w)
+        off <- c(off, sprintf("%s: interval is %.1f points wide, but %s of %s certificants are unlinked, which admits %.1f",
+                              LSB$rurality[i], hi[i] - lo[i],
+                              format(nr[i] - nl[i], big.mark = ","),
+                              format(nr[i], big.mark = ","), want[i]))
+    }
+
+    if (length(off)) {
+      ci_fail("L11: %d selection-bound violation(s):\n%s\n       A point estimate from the linked subset may be reported as a property\n       of the roster only alongside bounds that are honest about what was not\n       observed.",
+              length(off), paste(sprintf("       %s", off), collapse = "\n"))
+    } else {
+      # POSITIVE CONTROL: the width identity must reject a narrowed interval.
+      ci_law_positive("L11", {
+        n_r <- 100; n_l <- 60; narrowed <- 10
+        abs(narrowed - 100 * (n_r - n_l) / n_r) > 0.05
+      })
+      ci_law_exercised("L11", nrow(LSB))
+      ci_ok("%d rurality bound(s) declared, each %.1f points wide against %.1f%% linkage",
+            nrow(LSB), (hi - lo)[1], 100 * nl[1] / nr[1])
+    }
+  }
+}
+
 ci_finish()
