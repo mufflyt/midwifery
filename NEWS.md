@@ -22,6 +22,64 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-08-29 — The metropolitan share had three values, and CI had two meanings of green
+
+### Changed — headline rurality estimate: 86.5% → **89.3% metropolitan**
+
+The published figure was 13,277 of 15,347, and two things were wrong with that
+denominator at once, which is why it survived so long. It put the 486 members
+with **no assignable county** into the denominator of a metropolitan share,
+treating "we could not tell" as "not metropolitan". And 15,347 is the *retained
+subgroup*, while the sentence around it said "the analytic cohort", which is
+16,892.
+
+The frame is now the cohort throughout: **14,861 of 16,892** members have an
+assignable county, **13,277 (89.3%)** of those are metropolitan, and 2,031 have
+none. 86.5% survives in the stats catalog as
+`cohort.metro_pct_retained_with_unknown` so a reader reconciling against an
+earlier draft can find where it went.
+
+### Added — the rurality result is now bounded rather than caveated
+
+Linkage is selected on certification status, so the cohort's distribution need
+not describe the roster of 22,309. Making no assumption about the missingness
+mechanism, the roster-wide metropolitan share is bounded **64.9%–92.2%**.
+
+The most informative number is not a bound. Rurality is missing because a
+practice ZIP failed to resolve, **not** because a certificant failed to enter the
+cohort — different events, and conflating them discards evidence. **1,358 of the
+5,417 non-cohort certificants carry a resolving ZIP, and they are 87.7%
+metropolitan against the cohort's 89.3%.** That 1.6-point gap is the only direct
+evidence available on the *direction* of the selection, and it points the same
+way as the persistence bias. For the roster-wide share to fall to 75%, the 7,448
+certificants with no assignable county would have to be 46.4% metropolitan — a
+departure of 43.0 points.
+
+### Added — three values for one quantity is now a build failure
+
+86.5% (manuscript), 89.34% (composition artifact) and 89.8% (selection bounds)
+were in circulation simultaneously. None was fabricated; each was locally
+defensible over a different denominator, and every existing law checked one
+artifact against itself, so none could see the three together.
+
+- **L12** checks artifacts against *each other*, and against the value the
+  manuscript renders. Twelve laws now, 37/37 planted defects detected.
+- **Protected results** — 32 quantities that must be generated, never typed.
+  Nothing had to be converted: the manuscript was already clean.
+- **Skip budget** — a new skipped test is a regression unless it is written down.
+
+### Fixed — a required CI check reported success in 6, 8 and 10 seconds while evaluating nothing
+
+On three consecutive pull requests the science-law coverage job took a path
+filter's fast path, skipped every law step by an `if:`, and exited zero. The tick
+was green, the required status was satisfied, and duration was the only external
+evidence that anything was wrong.
+
+`Scientific gate` now refuses a pull request unless every component **ran** and
+succeeded — skipped, cancelled, missing and exited-zero-having-done-nothing are
+each distinguished from PASS. And the laws run unconditionally on every pull
+request, because a fast path and a required gate cannot both be right.
+
 ## [Unreleased] — 2026-08-29 — Board verification retracted, and the laws start reporting honestly
 
 ### Retracted — "11,355 midwives board-verified across 40 states" → 374, in one state
