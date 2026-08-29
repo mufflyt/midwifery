@@ -1027,6 +1027,18 @@ repaired later.
 > above. Any claim resting on a live-API pull is a claim about what the API
 > returned that day.
 
+> **The NPPES file format changed in December 2024**, and `build_midwife_panel.R`
+> gained a second parsing path to read it. The two paths were validated to
+> produce byte-identical output on the December 2024 snapshot (393,409 rows,
+> zero mismatches), and ten adversarial schema/concurrency fixtures spanning
+> the 2007–2026 file history — an accented name under an ASCII header, a
+> missing column, a lowercase taxonomy code, a live lock file — are now a
+> permanent test (`tests/test_build_midwife_panel.R`). The same investigation
+> found that AMCB's `certification_date` is a renewal date rather than an
+> original-certification date for **0.9%** of linked ACTIVE certificants,
+> which understates "years since certification" for that subset. See
+> [`docs/TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md`](docs/TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md).
+
 ### Tier B — geography and boundaries
 
 Coordinates and boundaries must share a vintage. Mixing them is what dropped

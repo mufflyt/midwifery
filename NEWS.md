@@ -255,6 +255,69 @@ Every `10/10, 0 unexpected skips` reported while this suite was being built was
 produced in a working tree holding that untracked file. The gate was right; the
 environment used to check it was not.
 
+### Fixed — the Florida voter extract had no gitignore protection at all
+
+`match_florida_voter_ages.R` has looked for a Florida statewide voter file at
+`artifacts/fl_voter_extract.{csv,txt,csv.gz,txt.gz}` since it was written, but
+none of those paths were gitignored. Name plus full date of birth for every
+registrant in the extract — not just the midwives matched out of it — was one
+`git add -A` away from being tracked, the same Tier 1a sensitivity as the Ohio
+and Washington DOB files already carved out above them in `.gitignore`. Added
+before any extract file has ever existed on disk, so nothing was ever at risk;
+the gap is closed rather than a leak cleaned up.
+
+### Added — permanent regression coverage for two decades of NPPES format drift
+
+Ten adversarial fixtures — an accented name under an ASCII header, a
+whitespace byte, a missing column, a lowercase taxonomy code, an
+unrecognisable schema, a duplicate-year file, a renamed-column era, a stale
+lock, and a lock genuinely held by a live process — were run by hand against
+`build_midwife_panel.R` (2026-08-27) and all ten passed. Promoted to
+`tests/test_build_midwife_panel.R`, wired into `ci.yml`, so the next NPPES
+format change is not free to break one silently.
+
+The December 2024 NPPES format change ("reshaped" files) that motivated the
+bug hunt was itself validated rather than assumed correct: the reshaped-path
+extraction of the December 2024 snapshot matches the production panel's
+original-path extraction of the same snapshot on all 393,409 rows, zero
+mismatches on NPI, `tax_class`, or `last_name`. See
+[`docs/TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md`](docs/TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md).
+
+### Documented — AMCB `certification_date` is a renewal date for 0.9% of linked certificants
+
+Joining ACTIVE certificants to their first observed year as a midwife in the
+panel, 104 of 11,354 (0.9%) already appear under a midwifery taxonomy in
+NPPES *before* their AMCB `certification_date` — by as much as 18 years. All
+104 remained continuously observable as a midwife through 2026, which is the
+signature of an ongoing practitioner, not a linkage error. The far more
+plausible reading is that `certification_date` is, for this subset, a
+renewal or recertification date rather than the original one, and the public
+verification directory does not distinguish the two.
+
+**Impact: Table 1's "Years Since AMCB Initial Certification" is a slight,
+one-directional underestimate for this ~0.9% of the cohort** — it can only
+understate tenure, never overstate it. This is a limitation of the AMCB
+roster as a source, not an artifact of this project's linkage, and is now
+recorded rather than silently absorbed into the tenure variable. Same
+appendix as above, §4.
+
+### Changed — geographic-persistence manuscript retargeted to *Midwifery* (Elsevier)
+
+`manuscript/midwife_persistence.qmd` was built for *Obstetrics & Gynecology*
+(the Green Journal); Introduction and Materials and Methods are rewritten for
+*Midwifery* (Elsevier, impact factor 2.7, Q1) — the highest-impact journal
+specifically in the midwifery discipline, as opposed to O&G's higher overall
+but discipline-adjacent impact factor. Concretely: the structured abstract
+now uses the journal's own Background/Aim/Methods/Findings/Conclusion
+headings (verified against real *Midwifery* retrospective-cohort papers via
+Europe PMC, not assumed); references switched from the Green Journal's CSL to
+`manuscript/midwifery-journal.csl` (Elsevier/Vancouver, numbered); four
+citation placeholders in `references.bib` that previously read `[CITATION
+NEEDED]` were resolved to real, Europe-PMC-verified sources rather than left
+or invented; and `manuscript/highlights.qmd` was added, since *Midwifery*
+requires Highlights (3-5 bullets, ≤85 characters) as a separate submission
+document in place of the Green Journal's title-page Précis.
+
 ---
 
 ## [0.7.0] — 2026-08-14 — State licensure, and identity that does not need a name

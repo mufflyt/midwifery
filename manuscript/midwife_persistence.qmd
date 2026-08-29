@@ -7,16 +7,16 @@ author:
 date: today
 format:
   docx:
-    # reference-doc: templates/green_journal_template.docx
+    # reference-doc: templates/midwifery_journal_template.docx
     #
-    # Uncomment for the submission render. To build the template: open a blank
-    # Word document, apply the Green Journal style guide -- Times New Roman
-    # 12 pt, one-inch margins, double-spaced, continuous line numbers -- and
-    # save it to manuscript/templates/green_journal_template.docx. The same
-    # commented-out line and the same instructions sit in
-    # ~/isochrones/manuscript/manuscript_GREEN_JOURNAL_WORD_with_tmm_edits.Rmd;
-    # this is the second manuscript to need it, so build it once and point both
-    # files at it rather than making a third copy.
+    # Uncomment for the submission render. Midwifery (Elsevier) does not
+    # publish a downloadable Word template the way some society journals do;
+    # its guide for authors asks only for a plain double-spaced manuscript
+    # (Times New Roman or Arial, 12 pt, line numbers continuous through the
+    # document) with the structured abstract and keywords first, then text,
+    # acknowledgments/disclosures and references, then tables, then figures.
+    # Build the template by applying that formatting to a blank Word document
+    # and saving it here if a fixed reference-doc turns out to be needed.
     number-sections: false
     fig-cap-location: top
   html:
@@ -25,7 +25,7 @@ format:
     embed-resources: true
     theme: cosmo
 bibliography: references.bib
-csl: green-journal.csl
+csl: midwifery-journal.csl
 link-citations: true
 params:
   dev_mode: true
@@ -64,104 +64,128 @@ Every number below is computed at render time from the artifacts named in
 
 # Abstract
 
-**OBJECTIVE:** To estimate how often certified nurse-midwives and certified
-midwives remain in the same county over annual and career horizons, and whether
-persistence differs by the rurality of the county in which they were first
-observed practicing.
+**Background:** Retention is widely proposed as a route to sustaining
+midwife-led obstetric access, particularly in counties losing maternity
+services. That argument carries an unmeasured geographic assumption: that a
+midwife retained in the profession is a midwife retained in the same
+community. No national estimate of this quantity has existed for certified
+midwives.
 
-**METHODS:** Retrospective cohort study using only publicly available records.
-The American Midwifery Certification Board verification directory
+**Aim:** To estimate how often certified nurse-midwives and certified
+midwives remain in the same county over annual and career horizons, and
+whether persistence differs by the rurality of the county where they began
+practicing.
+
+**Methods:** Retrospective cohort study using only public records. The
+American Midwifery Certification Board verification directory
 (`r mw_n("linkage.total")` certification records) was linked to the National
 Plan and Provider Enumeration System using ranked name-evidence classes,
 resolving a record only when exactly one candidate occupied its strongest
 available class. The cohort was followed across
-`r mw_safe_stat("panel.snapshots")` consecutive annual provider snapshots
+`r mw_safe_stat("panel.snapshots")` annual provider snapshots
 (`r mw_safe_stat("panel.year_min")`--`r mw_safe_stat("panel.year_max")`).
-County was assigned from practice ZIP through a ZCTA-to-county crosswalk and,
-in sensitivity analysis, through a geocoding cascade with point-in-polygon
-assignment. Annual persistence was the same county in consecutive snapshots;
-career persistence the same county at first and last observation. Origin
-rurality was the Rural-Urban Continuum Code of the first observed county.
-Proportions carry Wilson score intervals; ordered strata were compared with a
-Cochran-Armitage test for trend.
+County was assigned from practice ZIP code and, in sensitivity analysis, by
+geocoding with point-in-polygon assignment. Annual persistence was the same
+county in consecutive snapshots; career persistence the same county at first
+and last observation. Origin rurality was the Rural-Urban Continuum Code of
+the first observed county. Proportions carry Wilson score intervals; ordered
+strata were compared with the Cochran-Armitage trend test.
 
-**RESULTS:** `r mw_n("linkage.matched")`
+**Findings:** `r mw_n("linkage.matched")`
 (`r mw_safe_stat("linkage.matched_pct", "%.1f")`%) of records resolved to a
-single provider with midwifery taxonomy; `r mw_n("linkage.ambiguous")`
-(`r mw_safe_stat("linkage.ambiguous_pct", "%.1f")`%) were left unresolved as
-indistinguishable. The cohort comprised `r mw_n("panel.cohort_n")` providers
-contributing `r mw_n("panel.provider_years")` provider-years (median
-`r mw_safe_stat("panel.median_years")` years observed). Annual same-county
+single provider with midwifery taxonomy, contributing
+`r mw_n("panel.provider_years")` provider-years. Annual same-county
 persistence was
-`r mw_pct_ci(mw_stat("persist.annual_county"), mw_stat("persist.annual_county_lo"), mw_stat("persist.annual_county_hi"))`
-across `r mw_n("panel.pairs_used")` consecutive-year pairs. Career same-county
-persistence, over a median `r mw_safe_stat("panel.median_span")`-year span, was
-`r mw_safe_stat("persist.career_county", "%.1f")`%. By origin rurality it was
+`r mw_pct_ci(mw_stat("persist.annual_county"), mw_stat("persist.annual_county_lo"), mw_stat("persist.annual_county_hi"))`;
+career persistence, over a median `r mw_safe_stat("panel.median_span")`-year
+span, was `r mw_safe_stat("persist.career_county", "%.1f")`%. Career
+persistence fell monotonically with origin rurality, from
 `r mw_pct_ci(K$rural$table$pct[1], K$rural$table$lo[1], K$rural$table$hi[1])`
-for metropolitan,
-`r mw_pct_ci(K$rural$table$pct[2], K$rural$table$lo[2], K$rural$table$hi[2])`
-for nonmetropolitan adjacent, and
+for metropolitan-origin midwives to
 `r mw_pct_ci(K$rural$table$pct[3], K$rural$table$lo[3], K$rural$table$hi[3])`
-for nonmetropolitan remote counties (`r mw_pval(K$rural$trend_p)` for trend;
-metropolitan minus remote `r mw_safe_stat("rural.diff", "%.1f")` percentage
-points, 95% CI `r mw_safe_stat("rural.diff_lo", "%.1f")`--`r mw_safe_stat("rural.diff_hi", "%.1f")`).
-Rural-origin midwives who moved went predominantly to metropolitan counties.
+for nonmetropolitan-remote-origin midwives (`r mw_pval(K$rural$trend_p)` for
+trend), and rural-origin movers relocated predominantly to metropolitan
+counties.
 
-**CONCLUSION:** Retention of certified midwives is geographically sticky over
-one to three years but materially less so across a career. Models projecting
-county-level access gains from retention interventions should carry an explicit
-mobility term at decade horizons.
+**Conclusion:** Certified-midwife retention is geographically sticky over one
+to three years but materially less so across a career, and least sticky where
+midwives began practice in the most rural counties. Workforce models
+projecting county-level access gains from retention should carry an explicit
+mobility term at decade horizons, targeted to rurality rather than applied
+uniformly.
+
+**Keywords:** midwifery workforce; retention; geographic mobility; rural
+health services; workforce planning; record linkage
 
 # Introduction
 
 Whether a pregnant person can reach a midwife depends not on how many midwives
 have been certified but on where they practice relative to where births occur.
-Access to midwifery care is a distributed quantity. Rural counties have lost
-obstetric services steadily over the past two decades[@ref42], and rural
-hospital closures have accelerated that loss[@Kaufman2016rural], so the
-distribution of the remaining perinatal workforce has direct consequences for
-who can reach care[@ref6]. Yet the national midwifery workforce literature has
-necessarily characterized midwives as a population rather than as a
-distribution[@todo_midwife_supply], because their locations have not been
-available to characterize.
+Rural counties have lost obstetric services steadily over the past two
+decades[@ref42], rural hospital closures have accelerated that loss
+[@Kaufman2016rural], and even where a birthing hospital survives, midwifery
+care itself is unevenly available: more than one-third of rural communities in
+the United States report no locally available certified midwife
+[@Sheffield2024rural]. The distribution of the remaining perinatal workforce
+therefore has direct consequences for who can reach care[@ref6].
 
-The reason is structural. The authoritative roster of certified midwives in the
-United States publishes certification number, credential, status, and dates for
-every certificant. It publishes no address at any geographic level: not county,
-not ZIP code, not state. Every geographic statement about this workforce must
-therefore be derived by linking the roster to a registry that does carry
-location, and the quality of that derivation governs the quality of every
-downstream claim.
+Workforce retention is a widely proposed response. Burnout and intent to leave
+are prevalent among certified midwives in the United States[@Thumm2022burnout],
+and retaining midwives already in the workforce is repeatedly framed as more
+tractable than training new ones. That argument carries an unstated geographic
+assumption: that a midwife retained in the profession is a midwife retained
+*in the same community*. If mobility is high, retention preserves the national
+workforce while redistributing it, and a county-level access gain cannot be
+assumed from a national retention effect. If mobility is low, retention is
+geographically sticky and the benefit of a retention effect falls
+approximately where the retained midwives already practice. Retention research
+to date has answered whether a midwife stays; it has not, for this workforce,
+answered where.
 
-This constraint matters most for retention. Workforce retention is widely
-proposed as a route to improving obstetric access, particularly in rural
-counties losing services[@todo_midwife_attrition]. That argument contains an
-unmeasured geographic assumption: that a midwife retained in the profession is
-a midwife retained *in the same community*. If mobility is high, retention
-preserves the national workforce while redistributing it, and a county-level
-access gain cannot be assumed from a national retention effect. If mobility is
-low, retention is geographically sticky and the incidence of a retention effect
-falls approximately where the affected midwives already practice. We are aware
-of no national estimate of this quantity for certified midwives. Our objective
-was to estimate it directly, at both short and career horizons, and to test
-whether it differs by the rurality of the county where a midwife began
-practice.
+This gap reflects an absence of tools rather than an absence of interest. The
+authoritative roster of certified midwives in the United States publishes
+certification number, credential, status, and dates for every certificant. It
+publishes no address at any geographic level: not county, not ZIP code, not
+state. Every geographic statement about this workforce -- including a claim
+about where a retained midwife goes on to practice -- must therefore be
+derived by linking the roster to a registry that does carry location, and the
+quality of that derivation governs the quality of every downstream claim.
+Comparable mobility measurement exists for other clinicians: United States
+rural primary care physicians change practice location often enough that
+mobility materially affects local supply[@McGrail2017mobility]. No equivalent
+national estimate has existed for certified midwives.
 
-# Methods
+The clinical stakes of an untargeted retention effort are not abstract.
+Midwife-led continuity of care reduces preterm birth, instrumental birth, and
+combined fetal and neonatal loss relative to other models of maternity
+care[@Sandall2024cochrane], so a county that loses its midwife loses not only
+a clinician but a model of care with a measurably different outcome profile.
+Our objective was to estimate national geographic persistence of the certified
+nurse-midwife and certified midwife workforce directly, at both short and
+career horizons, and to test whether it differs by the rurality of the county
+where a midwife began practice.
 
-## Data sources
+# Materials and methods
 
-All sources were publicly available; no proprietary vendor file, purchased
-roster, or restricted-access dataset was used. The certification roster came
-from the American Midwifery Certification Board public verification
-directory[@amcb2026]. Provider identity and practice address came from the
-National Plan and Provider Enumeration System, using the historical
-dissemination files for each year from `r mw_safe_stat("panel.year_min")`
-through `r mw_safe_stat("panel.year_max")`[@nppes], a complete series with no
-missing year. County boundaries were the 2023 Census cartographic boundary
-files[@census_cb2023]; ZIP-to-county correspondence was the Census 2020
-ZCTA-to-county relationship file[@census_zcta]; rurality was the 2023 US
-Department of Agriculture Rural-Urban Continuum Code[@rucc2023].
+## Design
+
+This was a retrospective cohort study using only publicly available records,
+reported for a national, enumerated population of certified midwives rather
+than a survey sample. No proprietary vendor file, purchased roster, or
+restricted-access dataset was used at any stage.
+
+## Data sources and study population
+
+The certification roster came from the American Midwifery Certification Board
+public verification directory[@amcb2026]. Provider identity and practice
+address came from the National Plan and Provider Enumeration System, using the
+historical dissemination files for each year from
+`r mw_safe_stat("panel.year_min")` through `r mw_safe_stat("panel.year_max")`
+[@nppes], a complete series with no missing year. County boundaries were the
+2023 Census cartographic boundary files[@census_cb2023]; ZIP-to-county
+correspondence was the Census 2020 ZCTA-to-county relationship
+file[@census_zcta]; rurality was the 2023 US Department of Agriculture
+Rural-Urban Continuum Code[@rucc2023].
 
 The study population was midwives certified by the American Midwifery
 Certification Board, comprising certified nurse-midwives and certified
@@ -220,7 +244,7 @@ distinct addresses, and point-in-polygon placed
 `r mw_safe_stat("geo.pip_pct", "%.1f")`% of the resulting
 `r mw_n("geo.pip_points")` distinct points inside a county.
 
-## Outcomes
+## Outcome measures
 
 Annual persistence was the proportion of consecutive-year pairs, among
 providers observed in both years, in which county was unchanged. Career
@@ -246,7 +270,7 @@ difference between extreme strata carries a normal-approximation interval.
 Analyses were performed in R version `r K$meta$r_version`[@rlang]. Analysis code
 and every published artifact are archived[@midwifery_repo].
 
-## Reproducibility and ethics
+## Ethical considerations and reproducibility
 
 This study used only publicly available records and did not involve human
 subjects research; institutional review board review was therefore not
@@ -260,11 +284,10 @@ answer, and that identical inputs produce identical outputs -- are declared in a
 machine-readable registry and evaluated automatically. Each carries a
 deliberately planted defect that it is required to detect, so that a check
 reporting no violations has also demonstrated that it is capable of reporting
-one. Appendix 2, available online at http://links.lww.com/AOG/XXXX, documents
-what is verified, one defect these checks identified before it reached any
-reported figure, and -- at greater length -- what such verification cannot
-establish, including that it cannot detect the differential linkage described
-above.
+one. Supplementary Material S2 documents what is verified, one defect these
+checks identified before it reached any reported figure, and -- at greater
+length -- what such verification cannot establish, including that it cannot
+detect the differential linkage described above.
 
 # Results
 
@@ -279,8 +302,7 @@ strongly related to certification status --
 providers who have left the workforce are under-represented, and every estimate
 below describes the *located* workforce rather than all certificants. The full
 disposition of every record, the evidence classes behind it, and an analysis of
-the resulting selection appear in Appendix 1, available online at
-http://links.lww.com/AOG/XXXX.
+the resulting selection appear in Supplementary Material S1.
 
 The analytic cohort comprised `r mw_n("panel.cohort_n")` linked providers, of
 whom `r mw_n("panel.observed")` were observed at least once. They contributed
@@ -447,7 +469,7 @@ specification counts a midwife who left a remote county as metropolitan and
 attributes her move to metropolitan mobility; correcting it did not merely
 attenuate the effect but reversed its direction. Any workforce mobility
 analysis stratified on a time-varying geographic attribute is exposed to this
-error[@todo_provider_mobility].
+error[@McGrail2017mobility].
 
 ## Strengths and limitations
 
@@ -494,7 +516,7 @@ analysis argues this does not drive the result. Finally, the population is
 restricted to midwives certified by a single certifying body; midwifery care
 delivered by certified professional midwives and state-licensed direct-entry
 midwives is not represented, so midwifery access is understated, and unevenly
-so across states[@todo_midwife_outcomes].
+so across states[@NetworkPHL2023directentry].
 
 ## Conclusion
 
@@ -604,8 +626,11 @@ suppressPackageStartupMessages(library(ggplot2))
 # zero baseline, and the informative range here is 55-72%, so a zero-based bar
 # would compress the whole finding into the top eighth of the panel.
 #
-# GRAYSCALE BY CONSTRUCTION. Obstetrics & Gynecology prints many figures without
-# color. There is one series, so no hue carries identity and nothing is lost.
+# GRAYSCALE BY CONSTRUCTION. Kept from the earlier print-journal draft rather
+# than exploited now that color is free online: there is one series, so no
+# hue would carry identity that grayscale loses, and grayscale stays legible
+# for colorblind readers and in a black-and-white printout without a second
+# version of the figure to maintain.
 r <- K$rural$table
 r$origin <- factor(r$origin, levels = rev(r$origin))
 

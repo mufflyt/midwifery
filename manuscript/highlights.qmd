@@ -1,0 +1,58 @@
+---
+title: "Highlights"
+format:
+  docx:
+    number-sections: false
+  html:
+    embed-resources: true
+params:
+  dev_mode: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+root <- if (dir.exists("artifacts")) "." else ".."
+source(file.path(root, "manuscript", "R", "build_stats_catalog.R"))
+source(file.path(root, "manuscript", "R", "inline_stats.R"))
+if (isTRUE(params$dev_mode)) Sys.setenv(MANUSCRIPT_DEV_MODE = "1") else
+  Sys.unsetenv("MANUSCRIPT_DEV_MODE")
+K <- mw_init_stats(root)
+```
+
+<!--
+Midwifery (Elsevier) requires Highlights as a document separate from the
+manuscript: 3-5 bullet points, each <=85 characters including spaces, present
+tense, no jargon/abbreviations, covering only the paper's core results (see
+https://www.sciencedirect.com/journal/midwifery/publish/guide-for-authors).
+
+Built from the same statistics catalog as the abstract and title page rather
+than typed by hand, for the same reason the rest of this manuscript is: a
+number here that drifts from the reported result is worse than no number.
+The chunk below fails loudly if a bullet exceeds the character limit instead
+of silently truncating it, matching this repo's dev-mode-fails-loud pattern.
+-->
+
+```{r highlights-build}
+h <- c(
+  sprintf("Certified midwives are tracked nationally across %s annual practice snapshots.",
+          mw_safe_stat("panel.snapshots")),
+  sprintf("Same-county retention is %.0f%% year to year but only %.0f%% across a career.",
+          K$persist$annual_county, K$persist$career_county),
+  "Career retention falls as the rurality of a midwife's first county rises.",
+  "Rural-origin midwives who relocate move mostly to metropolitan counties.",
+  "Retention models need an explicit mobility term at decade-length horizons."
+)
+
+over <- nchar(h) > 85
+if (any(over)) {
+  stop(sprintf(
+    "highlights.qmd: %d bullet(s) exceed the journal's 85-character limit:\n%s",
+    sum(over),
+    paste(sprintf("  [%d chars] %s", nchar(h[over]), h[over]), collapse = "\n")
+  ))
+}
+```
+
+```{r highlights-print, results='asis'}
+cat(paste0("- ", h), sep = "\n")
+```
