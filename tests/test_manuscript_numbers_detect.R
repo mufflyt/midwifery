@@ -23,9 +23,15 @@ ART <- c("composition_rucc_cat.csv", "linkage_selection_bounds.csv",
          "linkage_completeness_by_status.csv", "table1_midwives.csv")
 
 #' A scratch repository whose manuscript is correct, then whatever is overridden
+#'
+#' mn_ prefixed: ci_hygiene H4 fails on a top-level function defined in two
+#' tracked files, and `scaffold` is already taken by
+#' tests/test_science_contracts_detect.R. It caught this one -- but only after
+#' the file was staged, because H4 reads git ls-files and an unstaged file is
+#' invisible to it.
 #' @keywords internal
 #' @noRd
-scaffold <- function(qmd_lines, artifact_edits = list()) {
+mn_scaffold <- function(qmd_lines, artifact_edits = list()) {
   d <- file.path(tempdir(), paste0("mn_", as.integer(stats::runif(1) * 1e9)))
   for (s in c("tests", "manuscript/R", "artifacts"))
     dir.create(file.path(d, s), recursive = TRUE, showWarnings = FALSE)
@@ -43,13 +49,6 @@ scaffold <- function(qmd_lines, artifact_edits = list()) {
     writeLines(artifact_edits[[nm]], file.path(d, "artifacts", nm))
   writeLines(qmd_lines, file.path(d, "manuscript", "paper.qmd"))
   d
-}
-
-run <- function(dir) {
-  out <- tempfile(); on.exit(unlink(out), add = TRUE)
-  code <- suppressWarnings(system2("Rscript", c(shQuote(GATE)), stdout = out, stderr = out,
-                                   env = c(sprintf("R_SCRATCH=%s", dir))))
-  list(code = code, text = paste(readLines(out, warn = FALSE), collapse = "\n"))
 }
 
 # The gate resolves its root from getwd(), so each scenario runs inside its own
@@ -75,10 +74,10 @@ refs <- local({
 
 cat("\n-- green: the things a paper legitimately contains --\n")
 
-r <- run_in(scaffold(c("# Paper", refs)))
+r <- run_in(mn_scaffold(c("# Paper", refs)))
 chk(r$code == 0, "a manuscript that generates every protected value passes")
 
-r <- run_in(scaffold(c("# Paper",
+r <- run_in(mn_scaffold(c("# Paper",
   "Data covered 2007 to 2025, using the 2023 Census cartographic boundary files",
   "and the 2020 ZCTA relationship file. Proportions carry 95% Wilson intervals.",
   "RUCC bands are 1--3, 4--6 and 7--9; the threshold was 60% of land area.",
@@ -87,18 +86,18 @@ chk(r$code == 0, "years, RUCC bands, a 95% CI label, a 60% threshold and section
 
 cat("\n-- red: a protected result typed instead of generated --\n")
 
-r <- run_in(scaffold(c("# Paper",
+r <- run_in(mn_scaffold(c("# Paper",
   "Among the cohort, 89.3% practiced in metropolitan counties.", refs)))
 chk(r$code != 0 && grepl("types 89.3", r$text, fixed = TRUE) &&
       grepl("cohort.metro_pct", r$text, fixed = TRUE),
     "a typed 89.3 is caught and named as cohort.metro_pct")
 
-r <- run_in(scaffold(c("# Paper",
+r <- run_in(mn_scaffold(c("# Paper",
   "The cohort comprised 14,861 midwives with an assignable county.", refs)))
 chk(r$code != 0 && grepl("types 14,861", r$text, fixed = TRUE),
     "a typed count with a thousands separator is caught")
 
-r <- run_in(scaffold(c("# Paper", "A total of 14861 records resolved.", refs)))
+r <- run_in(mn_scaffold(c("# Paper", "A total of 14861 records resolved.", refs)))
 chk(r$code != 0 && grepl("types 14861", r$text, fixed = TRUE),
     "the same count typed without the separator is caught")
 
@@ -109,7 +108,7 @@ hdr <- strsplit(lsb[1], ",")[[1]]
 oi <- which(hdr == "observed_pct")
 bent <- lsb
 row <- strsplit(lsb[2], ",")[[1]]; row[oi] <- "77.7"; bent[2] <- paste(row, collapse = ",")
-r <- run_in(scaffold(c("# Paper", refs),
+r <- run_in(mn_scaffold(c("# Paper", refs),
                      list("linkage_selection_bounds.csv" = bent)))
 chk(r$code != 0 && grepl("P4", r$text, fixed = TRUE),
     "cohort.metro_pct and bounds.metro_pct disagreeing is caught by P4")
@@ -136,7 +135,7 @@ row2[ki] <- "13000"
 row2[nl] <- as.character(new_known)
 row2[oi] <- sprintf("%.14f", 100 * 13000 / new_known)
 lsb2[2] <- paste(row2, collapse = ",")
-r <- run_in(scaffold(c("# Paper", refs),
+r <- run_in(mn_scaffold(c("# Paper", refs),
                      list("composition_rucc_cat.csv" = comp2,
                           "linkage_selection_bounds.csv" = lsb2)))
 chk(r$code == 0, "a changed canonical value with a regenerated manuscript still passes")
