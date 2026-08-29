@@ -1,0 +1,57 @@
+# =============================================================================
+# Protected scientific results
+# =============================================================================
+# Quantities that have a canonical source and must never be independently typed
+# into manuscript prose. This is a REGISTRY, not a ban on digits: years,
+# citation keys, RUCC bands, section numbers, a 95% confidence level and a 60%
+# land-share threshold are legitimate literals and are not listed here.
+#
+# key      dotted path into manuscript/R/build_stats_catalog.R
+# fmt      how the paper renders it. `n` means a count, matched both as 14,861
+#          and 14861. A percentage is matched at the precision it is reported
+#          at, because 89.3 and 89.34 are different literals and only the
+#          reported one is the one that drifts.
+# equals   another key that must carry the same value. Two representations of
+#          one estimand may not disagree -- this is the manuscript-side twin of
+#          scientific law L12.
+# why      what breaks if this is typed instead of generated
+#
+# NOT LISTED, DELIBERATELY: table1.cm_pct renders as "1" and movers.* render as
+# two-digit numbers. A one- or two-character literal matches section numbers,
+# RUCC codes and table references, so protecting them would fire constantly on
+# correct prose and the gate would be switched off within a week. They are
+# generated in the manuscript today; they are simply not enforceable this way.
+# =============================================================================
+key	fmt	equals	why
+cohort.known_n	n		the denominator of the metropolitan share; the defect that started this was a wrong denominator
+cohort.metro_n	n		the numerator of the metropolitan share
+cohort.unknown_n	n		members with no assignable county; putting them in a denominator is how 86.5% happened
+cohort.metro_pct	%.1f	bounds.metro_pct	the headline rurality result, and it had three values at once
+cohort.adj_pct	%.1f		reported beside the metropolitan share and must move with it
+cohort.remote_pct	%.1f		reported beside the metropolitan share and must move with it
+bounds.roster_n	n		the roster the bounds are a statement about
+bounds.unobserved_n	n		certificants with no assignable county; the width of the bound is a function of this
+bounds.lower_pct	%.1f		the reported selection bound
+bounds.upper_pct	%.1f		the reported selection bound
+bounds.manski_lower_pct	%.1f		the wider bound quoted in Appendix 1
+bounds.manski_upper_pct	%.1f		the wider bound quoted in Appendix 1
+bounds.active_lower_pct	%.1f		the ACTIVE-restricted bound quoted in Appendix 1
+bounds.ipw_pct	%.1f		reported as a sensitivity and must not be mistaken for a correction
+bounds.outside_n	n		the non-cohort certificants who could still be placed
+bounds.outside_pct	%.1f		the only direct evidence on the direction of the selection
+bounds.tip_required	%.1f		the tipping point
+bounds.tip_departure	%.1f		the tipping point, in points of departure
+linkage.total	n		the certification roster
+linkage.matched	n		records resolving to one provider
+linkage.matched_pct	%.1f		the linkage rate, which had three values in circulation before the catalog existed
+linkage.ambiguous	n		records deliberately left unresolved
+linkage.active_pct	%.1f		the selection rate by status, cited in the Discussion
+linkage.dead_pct	%.1f		the selection rate by status, cited in the Discussion
+panel.cohort_n	n		the analytic cohort
+panel.provider_years	n		the observation base for every persistence estimate
+persist.annual_county	%.1f		the annual persistence estimate
+persist.career_county	%.1f		the career persistence estimate
+rural.diff	%.1f		the metropolitan-minus-remote gradient
+rural.diff_lo	%.1f		the gradient interval
+rural.diff_hi	%.1f		the gradient interval
+table1.female_pct	%.1f		a Table 1 composition figure reported in prose

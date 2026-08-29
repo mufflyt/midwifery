@@ -89,6 +89,16 @@ jobs:
       - name: Aggregate scientific gate (self-test)
         run: Rscript tests/test_aggregate_gate.R
 
+      # A published result may be generated or it may be typed, and not both.
+      # Scoped to manuscript/protected_results.tsv -- this is a registry of
+      # results, not a rule against digits, because a checker that is wrong
+      # about years and section numbers gets switched off.
+      - name: Manuscript protected results (no typed literals)
+        run: Rscript tests/ci_manuscript_numbers.R
+
+      - name: Manuscript protected results (planted defects)
+        run: Rscript tests/test_manuscript_numbers_detect.R
+
       - name: Join-key unit tests
         run: Rscript tests/test_lib_keys.R
 

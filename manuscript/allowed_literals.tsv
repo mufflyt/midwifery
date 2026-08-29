@@ -1,0 +1,11 @@
+# =============================================================================
+# Numbers that may be typed even though they collide with a protected result
+# =============================================================================
+# Every entry needs a reason. An allowlist without reasons becomes the place
+# failures are sent to die.
+#
+# file     manuscript file basename, or * for any
+# literal  the exact rendered form, as the gate would match it
+# reason   why this occurrence is legitimate
+# =============================================================================
+file	literal	reason
