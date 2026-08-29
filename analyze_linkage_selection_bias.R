@@ -227,7 +227,18 @@ tipping <- function(cc, threshold_pct) {
 }
 
 METRO <- grep("^Metro", CATS, value = TRUE)[1]
-tip <- if (!is.na(METRO)) tipping(METRO, 75) else c(NA_real_, NA_real_)
+TIP_THRESHOLD <- 75
+tip <- if (!is.na(METRO)) tipping(METRO, TIP_THRESHOLD) else c(NA_real_, NA_real_)
+
+# --- what the unobserved look like, for the quarter of them that is visible ---
+# WHETHER THE UNOBSERVED RESEMBLE THE COHORT is the question the bounds cannot
+# answer and this can, for the non-cohort certificants whose ZIP does resolve.
+# It is the only direct evidence about the direction of the selection, so it is
+# written into the artifact rather than printed and lost: a number the
+# manuscript reports must be generated, not read off a console log.
+outside <- d |> filter(!in_cohort, zip_observed)
+outside_pct <- vapply(CATS, function(cc)
+  100 * sum(outside$rurality == cc) / nrow(outside), numeric(1))
 
 # --- assemble ----------------------------------------------------------------
 # n_cohort_all is the denominator the manuscript prints against: the retained
@@ -255,6 +266,16 @@ res <- lapply(CATS, function(cc) {
     active_lower_pct = act["lower_pct", cc],
     active_upper_pct = act["upper_pct", cc],
     ipw_pct = ipw$ipw_pct[match(cc, ipw$rurality)],
+    n_outside_observed = nrow(outside),
+    outside_observed_pct = outside_pct[[cc]],
+    outside_minus_cohort_pp = outside_pct[[cc]] - overall["observed_pct", cc],
+    # The tipping point is a question about ONE category against ONE threshold,
+    # so it is populated for that category and left NA elsewhere rather than
+    # invented for the others. A column of plausible numbers nobody asked for is
+    # how a reader ends up quoting the tipping point for remote counties.
+    tipping_threshold_pct = if (identical(cc, METRO)) TIP_THRESHOLD else NA_real_,
+    tipping_required_unobserved_pct = if (identical(cc, METRO)) tip[[1]] else NA_real_,
+    tipping_departure_pp = if (identical(cc, METRO)) tip[[2]] else NA_real_,
     stringsAsFactors = FALSE)
 }) |> bind_rows() |>
   mutate(bound_width_pp = .data$manski_upper_pct - .data$manski_lower_pct,
@@ -290,9 +311,6 @@ by_st <- d |>
 message("\n--- cohort membership and observed rurality by certification status ---")
 print(as.data.frame(by_st), row.names = FALSE)
 
-# WHETHER THE UNOBSERVED LOOK LIKE THE COHORT is the question the bounds cannot
-# answer and this table can, for the quarter of them that is visible.
-outside <- d |> filter(!in_cohort, zip_observed)
 message(sprintf("\n--- rurality of the %s NON-COHORT certificants whose ZIP does resolve ---",
                 format(nrow(outside), big.mark = ",")))
 print(as.data.frame(outside |> count(rurality, name = "n") |>

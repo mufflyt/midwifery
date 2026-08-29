@@ -1609,6 +1609,18 @@ neither fact can be inferred from a filename or a comment.
 | **L8** | identical inputs produce identical outputs |
 | **L9** | a cache may change runtime, not the answer |
 | **L10** | every mutable scientific input has a declared vintage |
+| **L11** | an estimate from the linked subset is not a property of the roster |
+| **L12** | one scientific quantity has one value in every representation |
+
+L12 is the one the other eleven could not have caught. Each of them checks a
+single artifact against itself, and the cohort's metropolitan share was wrong in
+a way that left every individual artifact internally consistent: 86.5% in the
+manuscript, 89.34% implied by the composition table, and 89.8% anchoring the
+selection bounds, each locally defensible and computed over a different
+denominator. L12 does not pin the value — pinning one would block legitimate
+science. It pins the **identity** between representations, and it reaches
+through to the value the manuscript actually renders by building the stats
+catalog and comparing that too.
 
 Each law must do five things, and
 [`tests/ci_law_coverage.R`](tests/ci_law_coverage.R) fails the build if any is

@@ -595,8 +595,11 @@ jobs:
           # openssl::sha256() itself. Confirmed the hard way -- the first
           # version of this list passed 8/10 laws and left L8/L10 failing with
           # "there is no package called 'openssl'" on this exact runner.
+          # tidyr added 2026-08-29 for L12, which builds
+          # manuscript/R/build_stats_catalog.R to compare the value the
+          # manuscript renders against the artifacts it claims to come from.
           pkgs <- c("dplyr", "readr", "stringr", "readxl", "sf", "DBI", "duckdb",
-                    "jsonlite", "openssl")
+                    "jsonlite", "openssl", "tidyr")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
           for (p in pkgs) if (!requireNamespace(p, quietly = TRUE))

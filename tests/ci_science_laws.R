@@ -537,4 +537,166 @@ if (is.null(LSB)) {
   }
 }
 
+ci_section("L12 one scientific quantity has one value in every representation")
+
+# =============================================================================
+# L12 the same estimand, computed twice, must agree
+# =============================================================================
+# WHAT WENT WRONG. The metropolitan share of the cohort was in circulation as
+# three numbers at once: 86.5% in the manuscript, 89.34% implied by the
+# composition artifact, and 89.8% anchoring the selection bounds. None was
+# fabricated. 86.5% put the members with no assignable county into the
+# denominator of a metropolitan share; 89.8% was computed over a different
+# cohort using a different rurality assignment. Each was locally defensible and
+# no gate could see the three together, because every existing law checks one
+# artifact against itself.
+#
+# L12 checks artifacts against EACH OTHER. It does not pin 89.34 -- pinning a
+# value would block legitimate science and is what the scientific-diff ratchet
+# is for. It pins the IDENTITY: wherever the same quantity is represented, the
+# representations must agree.
+#
+#   bounds observed anchor
+#     == composition metropolitan share among known rurality
+#     == the stats catalog value the manuscript renders
+#
+# and separately, the denominators must close:
+#
+#   known rurality + unknown rurality == the cohort
+#
+# The two paths are genuinely independent. The composition artifact is written
+# by R/07-cohort-composition.R from the ZIP-county crosswalk; the bounds
+# artifact is written by analyze_linkage_selection_bias.R from the roster; the
+# catalog is assembled by manuscript/R/build_stats_catalog.R. A single wrong
+# denominator cannot satisfy all three at once, which is the entire point.
+CRC <- suppressWarnings(ci_read_head("artifacts/composition_rucc_cat.csv", -1L, root = root))
+
+if (is.null(LSB) || is.null(CRC)) {
+  ci_fail("L12: %s is absent. Both are tracked, so this is a missing artifact\n       rather than a permitted skip.",
+          if (is.null(LSB)) "artifacts/linkage_selection_bounds.csv" else
+            "artifacts/composition_rucc_cat.csv")
+} else {
+  # The cohort is every group except the removed one. 3_in_cohort_no_final_npi
+  # is empty in the current vintage and is named anyway: a group that appears
+  # later must join the denominator automatically rather than silently not.
+  L12_COHORT_GROUPS <- c("1_retained", "2_newly_npi_resolved",
+                         "3_in_cohort_no_final_npi")
+  L12_METRO  <- "Metro (RUCC 1-3)"
+  L12_ADJ    <- "Nonmetro, adjacent (4-6)"
+  L12_REMOTE <- "Nonmetro, remote (7-9)"
+
+  inc <- CRC[CRC$group %in% L12_COHORT_GROUPS, , drop = FALSE]
+  gn <- function(lvl) {
+    v <- law_num(inc$n[inc$level == lvl])
+    if (!length(v)) 0 else sum(v, na.rm = TRUE)
+  }
+  metro_n <- gn(L12_METRO); adj_n <- gn(L12_ADJ); rem_n <- gn(L12_REMOTE)
+  unk_n <- gn("Unknown")
+  known_n <- metro_n + adj_n + rem_n
+  comp_pct <- if (known_n > 0) 100 * metro_n / known_n else NA_real_
+
+  mrow <- LSB[grepl("^Metro", LSB$rurality), , drop = FALSE]
+  off <- character(0)
+  agree <- function(a, b, what, tol = 1e-6) {
+    if (is.finite(a) && is.finite(b) && abs(a - b) > tol)
+      off <<- c(off, sprintf("%s: %.6f vs %.6f (%.3f pp apart)", what, a, b, a - b))
+  }
+
+  if (!nrow(mrow)) {
+    ci_fail("L12: the bounds artifact has no metropolitan row to reconcile.")
+  } else {
+    b_obs <- law_num(mrow$observed_pct)[1]
+    b_k   <- law_num(mrow$n_linked_in_cat)[1]
+    b_n   <- law_num(mrow$n_linked)[1]
+
+    # I1 -- the anchor of the bounds is the composition's own metropolitan share.
+    agree(b_obs, comp_pct, "bounds observed_pct vs composition metro/known")
+
+    # I2 -- and that percentage is arithmetic on the integers printed beside it.
+    # A percentage that does not recompute from its own numerator and
+    # denominator is the signature of a hand-edited artifact.
+    agree(b_obs, 100 * b_k / b_n, "bounds observed_pct vs its own n_linked_in_cat/n_linked")
+
+    # I3 -- both are describing the same set of people.
+    agree(b_n, known_n, "bounds n_linked vs composition known-rurality n")
+    agree(b_k, metro_n, "bounds n_linked_in_cat vs composition metro n")
+
+    # I4 -- the denominators close. Known plus unknown is the cohort, and the
+    # published subgroup's cells sum to the N printed on every one of its rows.
+    for (g in unique(CRC$group)) {
+      rows <- CRC[CRC$group == g, , drop = FALSE]
+      cells <- sum(law_num(rows$n), na.rm = TRUE)
+      Ns <- unique(law_num(rows$N))
+      if (length(Ns) != 1) {
+        off <- c(off, sprintf("group %s carries %d different N values", g, length(Ns)))
+      } else if (abs(cells - Ns) > 0.5) {
+        off <- c(off, sprintf("group %s: cells sum to %s, N says %s",
+                              g, format(cells, big.mark = ","), format(Ns, big.mark = ",")))
+      }
+    }
+
+    # I5 -- THE VALUE THE MANUSCRIPT ACTUALLY RENDERS. The chain is worth
+    # nothing if the prose reaches a fourth number, so the catalog is built here
+    # and its keys are compared to the artifacts above.
+    # THE BUILD ITSELF IS PART OF THE LAW, and it must not be allowed to abort
+    # the gate: an uncaught error here once took down every law in the file and
+    # reported fourteen simultaneous failures for one missing column. A catalog
+    # that cannot be assembled is an L12 failure, reported as one.
+    K <- NULL
+    cat_err <- tryCatch({
+      suppressPackageStartupMessages({
+        source(file.path(root, "manuscript", "R", "build_stats_catalog.R"))
+      })
+      K <- mw_build_catalog(root)
+      NULL
+    }, error = function(e) conditionMessage(e))
+    if (!is.null(cat_err)) {
+      off <- c(off, sprintf("the stats catalog could not be built: %s", cat_err))
+    } else {
+      agree(K$cohort$metro_pct, comp_pct, "catalog cohort.metro_pct vs composition")
+      agree(K$bounds$metro_pct, b_obs, "catalog bounds.metro_pct vs bounds artifact")
+      agree(K$cohort$known_n, known_n, "catalog cohort.known_n vs composition")
+      agree(K$cohort$unknown_n, unk_n, "catalog cohort.unknown_n vs composition")
+      agree(K$cohort$known_n + K$cohort$unknown_n, K$cohort$cohort_n,
+            "catalog known + unknown vs cohort_n")
+
+      # I6 -- and it must be RENDERED from the catalog, not typed beside it. A
+      # protected value appearing as a literal in the prose is a number that has
+      # stopped being recomputed, which is how 86.5% outlived its definition.
+      protect <- c(K$cohort$metro_pct, K$cohort$metro_pct_retained_with_unknown,
+                   K$bounds$lower_pct, K$bounds$upper_pct, K$bounds$outside_pct,
+                   K$bounds$tip_required, K$bounds$tip_departure)
+      lits <- unique(sprintf("%.1f", protect[is.finite(protect)]))
+      qmds <- list.files(file.path(root, "manuscript"), pattern = "[.]qmd$",
+                         full.names = TRUE)
+      for (q in qmds) {
+        txt <- readLines(q, warn = FALSE)
+        # Only prose lines. An inline `r ...` call may legitimately contain a
+        # format string or a threshold argument.
+        prose <- txt[!grepl("`r ", txt, fixed = TRUE)]
+        for (lit in lits) {
+          hit <- grep(lit, prose, fixed = TRUE)
+          if (length(hit))
+            off <- c(off, sprintf("%s carries the literal %s in prose; it must come from the catalog",
+                                  basename(q), lit))
+        }
+      }
+    }
+
+    if (length(off)) {
+      ci_fail("L12: %d identity violation(s):\n%s\n       The same scientific quantity is being represented by more than one\n       value. Fix the representation that is wrong; do not widen the tolerance.",
+              length(off), paste(sprintf("       %s", off), collapse = "\n"))
+    } else {
+      # POSITIVE CONTROL: the comparator must reject a disagreement. 86.5 and
+      # 89.34 are the two values that actually shipped, so they are what the
+      # detector is proved against.
+      ci_law_positive("L12", abs(86.51202189352968 - 89.34122871946707) > 1e-6)
+      ci_law_exercised("L12", nrow(CRC) + nrow(LSB))
+      ci_ok("%s metropolitan share agrees across composition, bounds and catalog at %.2f%% on %s of %s cohort members",
+            L12_METRO, comp_pct, format(known_n, big.mark = ","),
+            format(known_n + unk_n, big.mark = ","))
+    }
+  }
+}
+
 ci_finish()
