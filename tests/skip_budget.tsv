@@ -23,6 +23,12 @@
 # is gitignored by design and therefore the sharpest available signal.
 #
 # gate    path to the gate script
+# kind    ci_skip   a gate that prints `  --   ` through ci_skip()
+#         testthat  a file CI runs via testthat::test_file(), whose skips are
+#                   reported as `[ FAIL n | WARN n | SKIP n | PASS n ]` and were
+#                   invisible to this budget until 2026-08-29. A suite could
+#                   convert every assertion into a testthat skip and the budget
+#                   would still have said `Observed skips: 4`.
 # when    pr      run and counted by the pull-request check
 #         nightly declared but not run here, so the completeness check can see
 #                 it without the PR tier paying for it
@@ -30,9 +36,20 @@
 # lean    expected skips on a bare checkout
 # reason  why these skips are legitimate. An entry without one is a hiding place.
 # =============================================================================
-gate	when	full	lean	reason
-tests/ci_artifact_contracts.R	pr	0	1	A4 reads the person-level frozen linkage, which is gitignored; on a bare checkout it can only be asserted locally
-tests/ci_semantic_contracts.R	pr	0	0	declares no skips in either environment; listed so that gaining one is a failure rather than a surprise
-tests/ci_science_contracts.R	pr	1	2	SCI2 has known tie-break sites awaiting a policy decision, and the affiliation coverage matrix is not built on a bare checkout
-tests/ci_science_laws.R	pr	1	1	L1 carries one off-vintage declaration awaiting a rebuild; the same in both environments because its inputs are tracked
-tests/ci_science_nightly.R	nightly	-	-	nightly tier only; declared so the completeness check does not report it as an undeclared skipping gate
+gate	kind	when	full	lean	reason
+tests/ci_artifact_contracts.R	ci_skip	pr	0	1	A4 reads the person-level frozen linkage, which is gitignored; on a bare checkout it can only be asserted locally
+tests/ci_semantic_contracts.R	ci_skip	pr	0	0	declares no skips in either environment; listed so that gaining one is a failure rather than a surprise
+tests/ci_science_contracts.R	ci_skip	pr	1	2	SCI2 has known tie-break sites awaiting a policy decision, and the affiliation coverage matrix is not built on a bare checkout
+tests/ci_science_laws.R	ci_skip	pr	1	1	L1 carries one off-vintage declaration awaiting a rebuild; the same in both environments because its inputs are tracked
+tests/ci_science_nightly.R	ci_skip	nightly	-	-	nightly tier only; declared so the completeness check does not report it as an undeclared skipping gate
+tests/test-consort-audit-rounds-61-thru-65-2026-05-21.R	testthat	pr	0	0	hermetic arithmetic; declared so that gaining a skip is a failure
+tests/test-den-032-safe-pct-manu-na-semantics.R	testthat	pr	0	0	hermetic arithmetic
+tests/test-join-safety-semantic-extended.R	testthat	pr	0	0	hermetic join-cardinality fixtures
+tests/test-join-safety.R	testthat	pr	0	0	hermetic join-cardinality fixtures
+tests/test-retraction-bugs-9-14.R	testthat	pr	0	0	227 hermetic assertions; a skip here would mean a retraction stopped being checked
+tests/test-safe-divide-zero-threshold-bva.R	testthat	pr	0	0	hermetic boundary analysis
+tests/test-safe-percent-zero-default-family-bva.R	testthat	pr	0	0	hermetic boundary analysis
+tests/test-step2-npi-dedup-bug.R	testthat	pr	0	0	hermetic fixture of a real dedup defect
+tests/test-step8-tract-vintage-routing.R	testthat	pr	0	0	hermetic vintage routing
+tests/test-tract-vintage-boundary-bva-2019-2020-2021.R	testthat	pr	0	0	hermetic boundary analysis
+tests/test_invariants_midwifery.R	testthat	pr	0	3	three assertions read person-level artifacts that are gitignored, so they skip on a runner and run only where the data is. The file itself says a skip is reported as a skip, never as a pass -- and until now nothing counted them
