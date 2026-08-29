@@ -130,3 +130,59 @@ is_water_mask_larger_than_awater <- function(mask_area_km2, census_water_km2,
   r <- mask_area_km2 / census_water_km2
   !is.na(r) & is.finite(r) & r > max_ratio
 }
+
+# --- the union manifest ------------------------------------------------------
+# WHY A MANIFEST EXISTS AT ALL. L4 and L5 are laws about the dissolved surfaces,
+# and neither one touches a polygon. L5 asks whether the union dissolved at
+# least as many origins as were routed; L4 asks whether the 30-minute area is
+# within the 60-minute area. Every quantity either law reads is a SCALAR sitting
+# beside 30 MB of geometry, and it was the geometry -- gitignored for size --
+# that made the laws unrunnable anywhere but a machine that had built them.
+# L5 was reclassified `derived-ok` for that reason and stopped being enforced on
+# any runner (DEBT.md D9), which is the outcome the coverage gate exists to
+# prevent, arrived at deliberately.
+#
+# So the scalars are written to a tracked CSV and the laws read that instead.
+#
+# THE OBVIOUS OBJECTION IS THE RIGHT ONE: a tracked summary of an untracked
+# artifact can go stale, and a stale summary asserting a number nobody can check
+# is worse than an honest skip. That is why every row carries the size and MD5
+# of the file it was derived from, and why the gate re-derives the row wherever
+# the surface IS present and fails on any disagreement. On a developer machine
+# the manifest is checked against the real thing on every run; on a runner it is
+# used. Drift is caught where the evidence to catch it exists.
+UNION_MANIFEST_FIELDS <- c("band_minutes", "n_origins_dissolved", "area_km2",
+                           "water_removed_km2")
+
+# Base R only, deliberately: the science gates may not load sf, and this must
+# describe the same object they would read.
+union_manifest_row <- function(path) {
+  u <- readRDS(path)
+  row <- lapply(UNION_MANIFEST_FIELDS, function(f) {
+    if (!f %in% names(u))
+      stop(sprintf("INVARIANT: %s carries no `%s`; the manifest would describe a surface that does not exist.",
+                   basename(path), f), call. = FALSE)
+    v <- u[[f]]
+    if (length(v) != 1L || !is.numeric(v))
+      stop(sprintf("INVARIANT: %s$%s is not a single number.", basename(path), f),
+           call. = FALSE)
+    as.numeric(v)
+  })
+  names(row) <- UNION_MANIFEST_FIELDS
+  c(row, list(source_file = basename(path),
+              source_bytes = as.numeric(file.size(path)),
+              source_md5 = unname(tools::md5sum(path))))
+}
+
+write_union_manifest <- function(paths, out) {
+  paths <- paths[file.exists(paths)]
+  if (!length(paths))
+    stop("INVARIANT: no dissolved surface to describe; refusing to write an empty manifest, which would read as 'no surfaces exist' rather than 'none were found'.",
+         call. = FALSE)
+  rows <- lapply(paths, union_manifest_row)
+  d <- do.call(rbind, lapply(rows, function(r) as.data.frame(r, stringsAsFactors = FALSE)))
+  d <- d[order(d$band_minutes), , drop = FALSE]
+  dir.create(dirname(out), recursive = TRUE, showWarnings = FALSE)
+  utils::write.csv(d, out, row.names = FALSE)
+  invisible(d)
+}

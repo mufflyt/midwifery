@@ -184,6 +184,7 @@ band_union <- function(b) {
 unions <- lapply(BANDS, band_union)
 names(unions) <- as.character(BANDS)
 
+
 # --- nesting: a smaller band must lie inside every larger one ----------------
 # haa_dissolve_isochrones() in mufflyt/isochrones enforces this by cumulative
 # union, ascending. Dissolving each band independently -- which this script did
@@ -369,6 +370,21 @@ if (clip_prov$clip_applied) {
 for (b in names(unions))
   saveRDS(unions[[b]], file.path(OUTDIR,
           sprintf("midwifery_isochrone_union_%smin.rds", b)))
+
+# THE SURFACES ARE GITIGNORED; THE LAWS ABOUT THEM ARE NOT. L4 and L5 read only
+# scalars -- origins dissolved, area -- so those go to a tracked manifest, and
+# the laws read that instead of 30 MB of geometry they never touch. Written
+# HERE, after the water clip and the nesting enforcement above, because those
+# steps change area_km2: a manifest written at the first saveRDS would describe
+# surfaces that no longer exist by the time the script ends.
+#
+# tests/ci_science_laws.R re-derives every row from the surfaces wherever they
+# are present and fails on disagreement, so a manifest that drifts announces
+# itself instead of asserting a number no runner can check.
+write_union_manifest(
+  file.path(OUTDIR, sprintf("midwifery_isochrone_union_%smin.rds", names(unions))),
+  file.path("artifacts", "isochrone_union_manifest.csv"))
+cat("[manifest] artifacts/isochrone_union_manifest.csv rewritten from the surfaces\n")
 
 # --- 3. simplify for the browser --------------------------------------------
 # Analysis geometry is saved above at full resolution; only the web copy is
