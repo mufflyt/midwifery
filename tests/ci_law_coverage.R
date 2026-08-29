@@ -288,7 +288,13 @@ n_mut_ok <- sum(mut_total > 0L & mut_killed == mut_total)
 tot_mut <- sum(mut_total); tot_killed <- sum(mut_killed)
 
 cat(sprintf("  Scientific laws declared:    %d\n", n_law))
-cat(sprintf("  Laws exercised:              %d/%d\n", n_pass + n_priv + n_deriv, n_law))
+# EXERCISED MEANS RAN, and a skipped law did not run. This line used to add the
+# skips back in, so a reader scanning the summary saw "10/10" while nine laws had
+# been evaluated -- the exact shape D9 exists to prevent, in the one line most
+# likely to be read on its own. The skips are accounted for immediately below, so
+# nothing is hidden by removing them from here: exercised + private + derived
+# equals the declared total.
+cat(sprintf("  Laws exercised:              %d/%d\n", n_pass, n_law))
 cat(sprintf("  Negative controls (n>0):     %d/%d\n", n_neg, n_law))
 cat(sprintf("  Positive controls (n>0):     %d/%d\n", sum(pos > 0L), sum(state == "PASS")))
 cat(sprintf("  Laws with a planted defect:  %d/%d\n", sum(mut_total > 0L), n_law))
@@ -345,8 +351,12 @@ if (unexpected_skips > 0L) {
 }
 if (!length(bad) && !length(nomut) && !length(surv) && !length(nopos) &&
     unexpected_skips == 0L) {
+  # Same correction as the header. This line counted private skips as exercised
+  # and derived skips as not, which is two different answers to one question in
+  # a single report; it only read correctly above because no private-ok law was
+  # skipping at the time.
   ci_ok("%d/%d laws exercised, %d/%d positive controls, %d/%d planted defects detected, 0 unexpected skips",
-        n_pass + n_priv, n_law, sum(pos > 0L), n_law, tot_killed, tot_mut)
+        n_pass, n_law, sum(pos > 0L), n_law, tot_killed, tot_mut)
 }
 
 ci_finish()

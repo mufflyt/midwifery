@@ -104,6 +104,7 @@ excluded from version control for size*, and makes no claim about privacy. L5 is
 registered under it, and coverage reports
 
 ```
+  Laws exercised:              9/10
   Expected private skips:      0
   Expected derived skips:      1   (L5 -- not enforced on any runner; see DEBT.md D9)
   Unexpected skips:            0

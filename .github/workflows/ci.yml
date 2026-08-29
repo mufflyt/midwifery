@@ -538,8 +538,20 @@ jobs:
           fi
           changed=$(git diff --name-only "$BASE" "${{ github.sha }}")
           registry="tests/science_law_registry.tsv"
-          relevant=$(awk -F'\t' 'NR>1 && $1 !~ /^#/ {print $3; print $4}' "$registry" | sort -u)
-          relevant=$(printf '%s\n%s\n' "$relevant" "$registry")
+          # $1 == "law" drops the HEADER ROW. NR>1 alone does not: comment lines
+          # precede the header, so it survived and put the literal strings
+          # "gate" and "mutation" into the relevant-path list as though they
+          # were filenames. Harmless only because no such files exist.
+          relevant=$(awk -F'\t' '!/^#/ && NF > 1 && $1 != "law" {print $3; print $4}' "$registry" | sort -u)
+          # THE CHECKER MUST TRIGGER ON ITSELF. The list above holds the gates a
+          # law is evaluated BY; it did not hold the gate that checks that the
+          # laws were evaluated AT ALL, nor the harness proving that gate can
+          # fail. So a change to tests/ci_law_coverage.R took the fast path and
+          # reported success without running the thing it had just modified --
+          # which is how a coverage fix landed with a green tick that had
+          # verified nothing about it.
+          relevant=$(printf '%s\n%s\n%s\n%s\n' "$relevant" "$registry" \
+                            "tests/ci_law_coverage.R" "tests/test_law_coverage_detect.R")
           hit=$(comm -12 <(printf '%s\n' "$changed" | sort -u) <(printf '%s\n' "$relevant" | sort -u))
           if [ -n "$hit" ]; then
             echo "law-relevant file(s) changed:"
