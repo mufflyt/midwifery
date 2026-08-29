@@ -73,6 +73,14 @@ jobs:
       - name: Repo hygiene (parse, foreign paths, ignore rules, duplicate helpers)
         run: Rscript tests/ci_hygiene.R
 
+      # PR #100 spent a full red CI round trip on `Rscript: command not found`
+      # because two R steps were added to the Python job. Base R, under a
+      # second, and it fails on exactly that. Placed in this job because this
+      # job is the cheap one -- a workflow defect should not wait behind a
+      # two-minute test suite to be reported.
+      - name: Workflow contracts (a job installs what it runs)
+        run: Rscript tests/ci_workflow_contracts.R
+
       - name: Join-key unit tests
         run: Rscript tests/test_lib_keys.R
 
