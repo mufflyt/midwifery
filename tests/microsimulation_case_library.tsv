@@ -1,0 +1,63 @@
+# =============================================================================
+# The microsimulation case library
+# =============================================================================
+# MACHINE-READABLE cases for run_midwifery_microsimulation.R's
+# project_workforce(). tests/test_microsimulation_case_library.R reads this
+# file, calls project_workforce() with each row's parameters, and checks the
+# row's declared invariants generically -- adding a case means adding a row,
+# not writing a new R function.
+#
+# A row is either a VALID case (expect_error = FALSE), where the declared
+# invariants must hold on the returned data.frame, or an INVALID case
+# (expect_error = TRUE), where project_workforce() must raise an error
+# matching error_pattern rather than return a result at all -- silently
+# returning a wrong-but-plausible-looking answer is the failure mode this
+# library exists to catch, so a case with expect_error = TRUE that does NOT
+# error is the library's own test failing, not a skip.
+#
+# Columns
+#   case_id                 stable identifier, MC01, MC02, ...
+#   category                bva | semantic | adversarial
+#   description             what this case is checking, and why
+#   initial_workforce       first argument to project_workforce()
+#   years_spec              "a:b" (R range) or a comma-separated explicit
+#                           list, e.g. "2026,2026,2027" for duplicate-year
+#                           cases or "2030,2026,2028" for out-of-order ones.
+#                           Empty means integer(0) -- the zero-years case.
+#   annual_new_graduates    numeric parameter, or blank for the default
+#   annual_retire_rate      numeric parameter, or blank for the default
+#   annual_rural_drift      numeric parameter, or blank for the default
+#   rural_baseline_pct      numeric parameter, or blank for the default
+#   rural_grad_share        numeric parameter, or blank for the default
+#   expect_error            TRUE if project_workforce() must raise an error
+#   error_pattern           regex the error message must match (grepl, fixed
+#                           = FALSE); blank when expect_error = FALSE
+#   expected_nrow           blank, or the exact row count the result must
+#                           have (used for the zero-years case and the
+#                           full-horizon sanity case)
+#   require_conservation    TRUE: Rural + Urban == Total for every row
+#   require_nonnegative     TRUE: no count column is ever negative
+#   require_integer_counts  TRUE: every count column is a whole number
+#                           (a headcount with a fractional person is wrong
+#                           regardless of which direction it rounds)
+#   notes                   what a human should take away from this case
+# =============================================================================
+case_id	category	description	initial_workforce	years_spec	annual_new_graduates	annual_retire_rate	annual_rural_drift	rural_baseline_pct	rural_grad_share	expect_error	error_pattern	expected_nrow	require_conservation	require_nonnegative	require_integer_counts	notes
+MC01	bva	Control case: the real published 15-year baseline	12211	2026:2040						FALSE		15	TRUE	TRUE	TRUE	Anchor case. If this ever fails, something broke the actual published forecast, not just an edge case.
+MC02	bva	Zero baseline workforce	0	2026:2040						FALSE			TRUE	TRUE	TRUE	A brand-new specialty or a cohort filter matching nobody is a valid, if unusual, input.
+MC03	bva	rural_baseline_pct at its valid upper edge (100% rural)	1000	2026:2028				1		FALSE			TRUE	TRUE	TRUE	1.0 is a VALID boundary value, distinct from MC05's 1.5 (invalid, out of range).
+MC04	bva	rural_baseline_pct at its valid lower edge (0% rural)	1000	2026:2028				0		FALSE			TRUE	TRUE	TRUE	0.0 is a VALID boundary value, distinct from MC06's -0.2 (invalid).
+MC05	adversarial	rural_baseline_pct above 1 (150% rural at baseline)	1000	2026				1.5		TRUE	rural_baseline_pct					Pre-fix: silently produced a sustained negative Urban_Practicing_CNMs (-41,821 at N=100,000) that did not self-correct across years, not a one-off blip.
+MC06	adversarial	rural_baseline_pct below 0 (-20%)	1000	2026				-0.2		TRUE	rural_baseline_pct					Pre-fix: published Rural_Practicing_CNMs = -132 directly in the output row.
+MC07	bva	rural_grad_share at its valid upper edge (100% of new grads rural)	1000	2026:2028					1	FALSE			TRUE	TRUE	TRUE	Valid boundary: every new graduate enters rural practice.
+MC08	bva	rural_grad_share at its valid lower edge (0%)	1000	2026:2028					0	FALSE			TRUE	TRUE	TRUE	Valid boundary: no new graduate enters rural practice; rural can only shrink.
+MC09	adversarial	rural_grad_share above 1 (120% of new grads, impossible)	1000	2026					1.2	TRUE	rural_grad_share					A share above 1 is not a share; the previous code had no guard against it.
+MC10	semantic	annual_rural_drift at its valid upper edge (100% annual drift)	5000	2026:2030			1			FALSE			TRUE	TRUE	TRUE	Every currently-rural provider drifts to urban every year; rural population is sustained only by new-grad inflow. Tests the extreme, not the typical 4.1%.
+MC11	semantic	annual_retire_rate = 0 (no attrition at all)	5000	2026:2030		0				FALSE			TRUE	TRUE	TRUE	Pure growth case; retirement outflow must be exactly zero every year, not merely small.
+MC12	adversarial	annual_retire_rate above 1 (150% annual attrition)	1000	2026:2028		1.5				TRUE	annual_retire_rate					Pre-fix: published Rural_Practicing_CNMs = -15 in the first output year.
+MC13	bva	Full attrition with zero replacement (workforce must hit exactly zero and hold)	5000	2026:2030	0	1				FALSE			TRUE	TRUE	TRUE	Retirement removes everyone every year and nothing replaces them; Total_Active_CNM_Workforce must be 0 in every row, not merely small or negative.
+MC14	adversarial	Non-integer initial_workforce (12211.7, e.g. from an upstream mean instead of a count)	12211.7	2026						TRUE	whole number					Pre-fix: Total_Active_CNM_Workforce published as 12501.7 -- a fractional person in a headcount.
+MC15	bva	Very large initial_workforce (scale stress, not a typical national cohort)	5000000	2026:2028						FALSE			TRUE	TRUE	TRUE	Confirms the arithmetic does not degrade (silent overflow, precision loss) at 400x the real cohort size.
+MC16	adversarial	Empty years vector	1000							FALSE		0				A caller building an empty year range (e.g. an off-by-one date filter) must get a typed, zero-row result, not NULL -- matches this repo's established ""typed empty frame"" convention (ledger cycle 1, T41).
+MC17	adversarial	Years given out of chronological order (2030, 2026, 2028)	1000	2030,2026,2028						TRUE	strictly increasing					Pre-fix: silently ran 3 simulated steps labelled 2030/2026/2028 in THAT order -- state depends on position in the vector, not on the year value, so the output rows were internally consistent but chronologically mislabelled.
+MC18	adversarial	Duplicate years (2026 appears twice)	1000	2026,2026,2027						TRUE	strictly increasing					Pre-fix: two output rows both labelled ""2026"" carried different Total_Active_CNM_Workforce values -- the same identifier naming two different answers.

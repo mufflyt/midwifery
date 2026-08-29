@@ -3138,3 +3138,191 @@ explicitly is not enough if you never look at what is *already* staged.
 
 **The form that prevents it:** `git commit -- <paths>` commits exactly those
 paths regardless of index state. Adopted from here.
+
+---
+
+## Cycle 24 — 2026-08-28 — 4 BVA / 3 semantic / 3 adversarial
+
+**New 12-hour session.** The loop resumes numbering from 23 rather than
+restarting at 1 -- the whole point of this ledger is that later cycles do not
+repeat earlier ones, and 23 cycles of prior coverage are load-bearing context,
+not a reason to start over. Plan: cycles 24-47 (24 cycles total for this
+session), approximately every 30 minutes, rotating 4/3/3, 3/4/3, 3/3/4 as
+before.
+
+**Target.** `run_midwifery_microsimulation.py` -- the 15-year national CNM
+workforce forecast, README-embedded (`artifacts/plots/plot3_microsimulation_
+workforce_projections.png`) and previously **zero tests**. Directly named by
+this session's own prioritization: supply/demand forecasts, workforce counts,
+entrant/exit calculations, public-facing figures.
+
+**Tests added** — `tests/test_cycle24_microsimulation_conservation.py`
+(T24-1 .. T24-10, plus anti-ceremony companion T24-5b)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T24-1 | BVA | zero initial workforce never goes negative, still conserves |
+| T24-2 | BVA | single-year run matches a hand computation exactly |
+| T24-3 | BVA | 100% attrition rate (ceiling) conserves, stays non-negative |
+| T24-4 | BVA | conservation holds for every initial value 0-2000 (rounding sweep) |
+| T24-5 | semantic | Rural + Urban == Total for every year of the real 15-year run |
+| T24-5b | anti-ceremony | the ORIGINAL split logic is confirmed to violate T24-5 |
+| T24-6 | semantic | the published share is numeric, not a `"13.8%"` string |
+| T24-7 | semantic | retirees allocate by CURRENT composition, not the new-grad split |
+| T24-8 | adversarial | module import performs no file I/O, works from any CWD |
+| T24-9 | adversarial | negative initial workforce is rejected, not silently propagated |
+| T24-10 | adversarial | no hardcoded reliance on today's 12,211 cohort size |
+
+### The defect: a published figure where a sub-population exceeds the whole
+
+Retirement outflow was subtracted only from the aggregate `current_active`
+counter -- **never from either the rural or urban sub-population**. Each
+sub-population only ever grew (drift is zero-sum between them; new-graduate
+inflow only adds). Over the real 15-year, 12,211-baseline run this project
+already publishes, `Urban_Practicing_CNMs + Rural_Practicing_CNMs` exceeded
+`Total_Active_CNM_Workforce` by a gap that grew every year:
+
+| year | published total | published rural+urban | gap |
+|---|---:|---:|---:|
+| 2026 | 12,501 | 12,890 | 389 |
+| 2030 | 13,570 | 15,606 | 2,036 |
+| 2040 | 15,706 | 22,396 | **6,690 (43% over)** |
+
+`plot_microsimulation_projections.R` plots `Urban_Practicing_CNMs` at full
+scale against `Total_Active_CNM_Workforce` on the same axis -- by 2040 the
+"Urban CNM Workforce" line (20,844) sits **above** the "Total Active CNMs"
+line (15,706) on a chart embedded in this project's own README. A second,
+smaller instance of the same class: the new-graduate 8%/92% rural/urban split
+was two independently-truncated `int()` calls that did not generally sum to
+`inflow` (`int(680*.08)=54`, `int(680*.92)=625`, sum 679 -- one person lost
+every single year regardless of the outflow bug).
+
+**Fix.** `project_workforce()` extracted from the flat script (which had no
+`if __name__ == "__main__":` guard -- T24-8 -- and read a hardcoded relative
+path with no way to test it without the real, gitignored master file). Both
+allocations now compute one share and derive the other by subtraction, so
+each always sums to exactly the total being allocated: outflow by the
+*current* post-drift rural/urban composition (T24-7 -- not by the new-grad
+share, a different population, which T24-7 specifically guards against as
+the most plausible wrong fix), inflow by `rural_grad_share` as before.
+`Rural_Workforce_Share_Pct` also changed from a formatted `"13.8%"` string to
+a plain float (T24-6) -- a units/contract fix, not a numeric change; grepped
+first to confirm no consumer parses the old string form.
+
+**Same-class sweep.** Grepped the repo for other consumers of this artifact
+or column: `plot_microsimulation_projections.R` reads only the counts it
+already used correctly. No other script references
+`midwifery_microsimulation_projections_2026_2040.csv` or
+`Rural_Workforce_Share_Pct`. This appears to be an isolated instance, not
+another copy of a repeated pattern -- unlike most of cycles 1-8's findings.
+
+**Anti-ceremony check.** T24-5b reproduces the original split logic verbatim
+and confirms it actually violates the conservation contract T24-5 pins --
+proving T24-5 discriminates rather than passing vacuously.
+
+**Regenerated artifacts.** Both the CSV and the PNG were rebuilt from the
+same published baseline (`initial_workforce = 12211`, the first row of the
+previously committed file), so only the defective columns move:
+`Total_Active_CNM_Workforce`, `New_Graduate_Inflow`, `Retirement_Outflow`,
+and `Projected_Births_Attended` are byte-identical to the previous publication
+(those aggregate calculations were never wrong); `Urban_Practicing_CNMs`,
+`Rural_Practicing_CNMs`, and `Rural_Workforce_Share_Pct` all changed.
+
+### Full suite
+
+Python: `python3 -m unittest discover -s tests -p "test_*.py"` -- 17 tests,
+**15 pass, 2 error, 3 skip**. The 2 errors (`test_scrape.py`,
+`test_fetch_npi_candidates.py`) are a **pre-existing, unrelated** local
+environment gap: both require `pytest`, which is absent from this machine's
+system Python (externally-managed, PEP 668) but present in CI, where these
+files already run via `ci.yml`. Verified pre-existing by stashing this
+cycle's changes and re-running: identical `ModuleNotFoundError` on the
+unmodified tree. Not fixed here -- a global `pip install` on a
+system-managed Python is out of scope for this loop and not this cycle's
+problem to solve. The 3 skips are the standing person-level-artifact skip
+from `test_midwifery_pipeline.py`, unrelated to this cycle.
+
+### Unresolved / carried forward from cycles 1-23 (unchanged, not re-litigated this cycle)
+
+- **DECISION NEEDED:** GFR reliability method (c8); `women_15_44` partial vs
+  NA (c7); Table 1 censoring (c1); `ct_partial` reporting (c4); minimum
+  Healthgrades field coverage (c6); GFR numerator universe 15-50 vs 15-44 (c8).
+- **DATA QUESTION:** 1,163 address disagreements blocking R/03 (c19).
+- **NEW, low priority (c23):** 2,784 geocoded hospitals with no consumer.
+- **UPSTREAM (isochrones):** `extract_first_initial()` accent bug (c12).
+- 18 undeclared joins (c10); 4 duplicate helpers (c9); 14 `.keep_all` (c5).
+
+### New carried forward from this cycle
+
+- The microsimulation is a **deterministic cohort-component projection**, not
+  a stochastic microsimulation of individuals (no random draw occurs anywhere
+  in it, despite the module historically calling `random.seed(42)`). Whether
+  the model should actually simulate individual-level transitions with an
+  age structure -- the file's own docstring calls it a "microsimulation" of
+  "15-year career state transitions" -- is a **modeling-scope decision**, not
+  a code fix, and is out of scope for this loop. Documented in the module
+  docstring so the mismatch is visible rather than silently implied.
+- Retirement is applied as a flat 3.2% hazard uniform across the whole
+  workforce regardless of tenure or age. Real retirement hazards are
+  age-dependent. Not addressed here: doing so would be a structural model
+  change, not a defect fix.
+
+**Estimand changed: yes, materially, and it is a correction rather than a
+choice between defensible readings** -- a sub-population count that provably
+exceeded its own total had no defensible prior value. Published
+`Rural_Workforce_Share_Pct` is now **lower** than before at every year (13.4%
+vs 13.8% in 2026, widening to **6.9% vs 9.9% by 2040**) because retiring rural
+midwives are now actually removed from the rural count instead of remaining
+as phantom population. This moves the forecast's headline rural-decline
+number in the more pessimistic direction and should be flagged to anyone who
+has already cited the previous 9.9% figure.
+
+### Addendum (same cycle, on request) — Python archived; a data-driven case library added
+
+Two follow-on requests against this same target, out of the 30-minute cycle
+cadence:
+
+1. **`run_midwifery_microsimulation.py` archived** to
+   `@archive/run_midwifery_microsimulation.py`, superseded by the R port.
+   Kept, not deleted -- it remains the pinned oracle
+   `tests/test_run_midwifery_microsimulation.R` cross-checks the R port
+   against. Both files' path references updated accordingly.
+
+2. **`tests/microsimulation_case_library.tsv`** -- a data-driven case
+   library (18 cases, schema documented in the file's own header) for
+   `project_workforce()`, run by `tests/test_microsimulation_case_library.R`.
+   Designing the hard cases (not variants of T24-1..10 above; genuinely
+   different parameters -- the share/rate arguments and `years`, none of
+   which the earlier tests touched) found **4 more real, unguarded input
+   gaps**, all fixed with minimal validation, same "guards error, not
+   filter" convention as the rest of this repository:
+
+   - `rural_baseline_pct` / `rural_grad_share` outside `[0, 1]` were
+     unvalidated. At realistic scale (100,000), `rural_baseline_pct = 1.5`
+     produced a **sustained** `Urban_Practicing_CNMs = -41,821` across
+     multiple years, not a one-off rounding blip.
+   - `annual_retire_rate` / `annual_rural_drift` outside `[0, 1]` likewise
+     unvalidated; `annual_retire_rate = 1.5` published
+     `Rural_Practicing_CNMs = -15` in the very first output row.
+   - Non-integer `initial_workforce` (e.g. 12211.7, plausible from an
+     upstream mean instead of a count) silently propagated: `Total_Active_
+     CNM_Workforce` published as **12501.7** -- a fractional person in a
+     headcount.
+   - `years` had no ordering contract: an empty vector returned bare `NULL`
+     instead of a typed empty frame (this repo's own established
+     convention, ledger cycle 1 T41); an out-of-order or duplicated `years`
+     vector ran without error, producing rows that were internally
+     consistent (conservation held) but chronologically mislabelled --
+     `years = c(2030, 2026, 2028)` ran three simulated steps in that
+     literal order, and `years = c(2026, 2026, 2027)` produced two rows
+     both labelled "2026" carrying different totals.
+
+   All four fixed by validating inputs before the simulation loop runs;
+   verified the library's hard cases actually discriminate by re-running
+   them against the pre-fix code (9 of 18 failed) and against the fix
+   (0 of 18 fail). Applied to the R port only, per the archived Python
+   file's own header -- the two implementations are cross-checked on the
+   baseline case only, so this is a deliberate, documented divergence, not
+   an oversight.
+
+   Wired into `ci.yml` alongside the rest of this cycle's tests.
