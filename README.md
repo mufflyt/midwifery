@@ -1,6 +1,9 @@
 # midwifery
 
 [![CI](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml)
+[![Nightly](https://github.com/mufflyt/midwifery/actions/workflows/nightly.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/nightly.yml)
+[![Scientific laws](https://img.shields.io/badge/scientific%20laws-10%20declared%2C%2030%20planted%20defects-blueviolet.svg)](tests/science_law_registry.tsv)
+[![Known debt](https://img.shields.io/badge/known%20debt-1%20open%2C%209%20closed-informational.svg)](DEBT.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Cite this repository](https://img.shields.io/badge/cite-CITATION.cff-brightgreen.svg)](CITATION.cff)
 [![Dataset Metadata](https://img.shields.io/badge/metadata-metadata.json-orange.svg)](metadata.json)
@@ -25,7 +28,8 @@ flowchart LR
 | Active AMCB Master Cohort | 12,211 Certified Nurse-Midwives (100.0% National Ascertainment) |
 | CMS NPPES NPI Registry Matched | 12,211 Midwives (100.0% Deterministic Match, 99.8% PPV) |
 | State Boards of Nursing Scraped | 50 States + District of Columbia (51 Jurisdictions Complete) |
-| Direct State BON Verification URLs | 100.0% 1-Click Permalinks Embedded in Interactive Map |
+| Direct State BON Permalinks | 100.0% 1-Click Lookup URLs Embedded in Interactive Map (a link to a board, not a check against one) |
+| **Board-verified against a state board** | **374 records, Washington only (3.3%)** — see the retraction below |
 | Active CPT Delivery Attenders | 5,024 Midwives (41.1% Verified Delivery Attenders) |
 | Collaborative Practice (CPA) Filings | 2,170 Midwives (24.0% Ingested CPA OB/GYN Supervision) |
 
@@ -33,23 +37,49 @@ flowchart LR
 
 ### 1. State Board of Nursing (BON) Scraped Midwife Volumes by State
 ![State Board of Nursing Scraped CNM Volumes](artifacts/plots/plot1_scraped_bon_state_volumes.png)
-*Figure 1: Distribution of verified Certified Nurse-Midwives scraped across state Boards of Nursing.*
+*Figure 1: Volume of records **scraped** from each state Board of Nursing. These
+are roster volumes, not board verifications — the word "verified" previously
+used in this caption has been retracted. See Figure 2 and
+[docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md](docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md).*
 
-### 2. Verified Active CPT Delivery Attenders by State BON
+### 2. Board verification, retracted: 11,355 claimed, 374 observed
+![Board verification claimed against board verification observed](docs/figures/bon_verification_retraction.png)
+*Figure 2: Most purported state BON licence numbers in this repository were
+**synthesized from `certification_number`** in the form
+`{STATE}-RN-CNM-{cert}` — a re-encoding of the AMCB identifier, not licensure
+evidence. Only 374 Washington DOH `credentialnumber` records are genuine
+observed board evidence. The bars are per artifact and **overlap**, so they must
+not be added.*
+
+> **What this does and does not affect.** Identity linkage is **clean**: no R
+> code reads these fields, and every accepted NPI match in the FROZEN crosswalk
+> is name-derived, so no identity, geography or organization assignment needs
+> recomputation. What is affected is *reported board-verification coverage* —
+> the claim "11,355 midwives board-verified across 40 states" becomes **374, in
+> one state**.
+
+### 3. Active CPT Delivery Attenders by State BON
 ![Active CPT Delivery Attenders by State](artifacts/plots/plot2_bon_delivery_attenders_by_state.png)
-*Figure 2: Verified active CPT delivery attending midwives (CPT 59400 / 59409 / 59410) by state jurisdiction.*
+*Figure 3: Active CPT delivery attending midwives (CPT 59400 / 59409 / 59410) by state jurisdiction.*
 
-### 3. Active Midwifery Supply per 100,000 Women of Reproductive Age (15–44)
+### 4. Active Midwifery Supply per 100,000 Women of Reproductive Age (15–44)
 ![Active State Rate Map](docs/maps/active_state_rate.png)
-*Figure 3: Spatial distribution of active CNMs per 100,000 women aged 15–44 across US states.*
+*Figure 4: Spatial distribution of active CNMs per 100,000 women aged 15–44 across US states.*
 
-### 4. County-Level Midwifery Supply Distribution
+### 5. County-Level Midwifery Supply Distribution
 ![County Midwifery Supply](docs/figures/county_supply.png)
-*Figure 4: County-level midwifery supply map highlighting maternity care deserts and active midwife practice sites.*
+*Figure 5: County-level midwifery supply map highlighting maternity care deserts and active midwife practice sites.*
 
-### 5. 15-Year National Midwifery Workforce Microsimulation (2026–2040)
+### 6. 15-Year National Midwifery Workforce Microsimulation (2026–2040)
 ![Workforce Microsimulation Projections](artifacts/plots/plot3_microsimulation_workforce_projections.png)
-*Figure 5: Projected 15-year career state transitions, new graduate inflows, and rural-to-urban supply drift (2026–2040).*
+*Figure 6: Projected 15-year career state transitions, new graduate inflows, and rural-to-urban supply drift (2026–2040).*
+
+### 7. Where Active Midwives Actually Practice, by County
+![Active certified midwives by last-observed practice county](docs/maps/active_county_counts.png)
+*Figure 7: Active certificants by last-observed practice county. Grey is **no
+linked practice location in that county**, which is not the same as no midwife:
+34% of the roster never linked, so this is the distribution of located practice
+locations rather than of access. Patients cross county lines.*
 
 Linkage certainty and geographic completeness are separate properties: **65.8% primary linkage is
 the inferential limitation; the geography is essentially complete for anything linked.** Linkage
@@ -1588,6 +1618,13 @@ violation, and have a **planted defect** that it kills. A law with only a
 negative control has proved it did not fire; it has not proved it could. **30
 planted defects, 30 detected.**
 
+A gate that **dies** is reported as dead, not as vacuous: a non-zero exit with no
+`[LAW]` markers is CRASHED, with the reason attached. A non-zero exit on its own
+is not — a gate that finds a real violation also exits non-zero, and conflating
+the two would turn every genuine law failure into a false diagnosis. Five laws
+were once scored "no subjects" for several nights while all five were in fact
+crashing on their first line.
+
 Coverage fails on *gaps*, not on test failures — a registered law that emitted
 no evidence, one that passed on zero subjects, one whose defect survived, a
 registry pointing at a file that is gone. `tests/test_law_coverage_detect.R`
@@ -1612,12 +1649,34 @@ timestamps. A mismatch **fails closed**; only genuine absence falls back to
 running the gate. Without that binding, a green log left behind by an earlier
 commit is indistinguishable from this run's result.
 
+**The equivalence claim is re-checkable.**
+[`tests/verify_replay_equivalence.sh`](tests/verify_replay_equivalence.sh) runs
+both legs against a pinned commit in its own worktree and compares them, then
+corrupts one stamp and requires the rejection. It exists because the claim was
+originally verified once, by hand, in a scratch directory that no longer exists
+— and a property nobody else can re-check has already started to rot. It reads
+the gate list from the registry, so a law added tomorrow is covered today. Budget
+10–15 minutes; do not run it against a tree you are editing.
+
 **One law does not currently run on a clean checkout.** L5 needs a dissolved
 isochrone surface under gitignored `artifacts/maps/`, so on any runner coverage
-reports 9/10 and fails. That is logged as [D7](DEBT.md) with the three possible
-fixes, and it is a worked example of the warning above: every `10/10` reported
-while this suite was being built came from a working tree that happened to hold
-the untracked file.
+reports 9/10 and fails. L5 is registered
+`derived-ok` — a state meaning *pipeline-derived input excluded from version
+control for size*, which makes no claim about privacy — so the skip is expected
+and reported under its own heading:
+
+```
+Expected private skips:      0
+Expected derived skips:      1   (L5 -- not enforced on any runner; see DEBT.md D9)
+Unexpected skips:            0
+```
+
+**The enforcement gap is real and is stated rather than hidden.** L5 holds
+locally, where the 31 MB surface exists; no runner checks it. Rebuilding it in
+CI was ruled out because it comes from the private `isochrones` checkout. This
+remains a worked example of the warning above — every `10/10` reported while this
+suite was being built came from a working tree that happened to hold the
+untracked file.
 
 ### The leak guard
 
