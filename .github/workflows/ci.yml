@@ -81,6 +81,14 @@ jobs:
       - name: Workflow contracts (a job installs what it runs)
         run: Rscript tests/ci_workflow_contracts.R
 
+      # The aggregate gate decides whether this pull request is scientifically
+      # green, so its logic is tested here rather than trusted: all-success
+      # passes, and skipped, cancelled, failed, missing and ran-nothing are each
+      # refused BY KIND. It also parses this file and fails if a job exists that
+      # the gate neither depends on nor requires.
+      - name: Aggregate scientific gate (self-test)
+        run: Rscript tests/test_aggregate_gate.R
+
       - name: Join-key unit tests
         run: Rscript tests/test_lib_keys.R
 
@@ -557,6 +565,14 @@ jobs:
     name: Science-law coverage (path-filtered)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # THE JOB MUST SAY WHETHER IT DID THE WORK. Every law step below is gated on
+    # steps.relevance.outputs.run, so when the filter takes the fast path this
+    # job exits zero having evaluated nothing -- and a green tick is
+    # indistinguishable from a 6m30s run that checked twelve laws. It was
+    # indistinguishable, three times, on #99, #105 and #100. Exporting the
+    # decision lets the aggregate gate refuse to call that scientifically green.
+    outputs:
+      executed: ${{ steps.relevance.outputs.run }}
     env:
       LAW_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}-ci
     steps:
@@ -674,3 +690,34 @@ jobs:
       - name: Law coverage (every registered law was exercised)
         if: steps.relevance.outputs.run == 'true'
         run: Rscript tests/ci_law_coverage.R
+
+  # ---------------------------------------------------------------------------
+  # The single status branch protection should require.
+  #
+  # Every check above reports on itself, and a status that is green because a
+  # job declined to run looks exactly like one that is green because a job
+  # passed. This job is the difference. It runs with if: always() so that a
+  # skipped or cancelled dependency still reaches it -- a gate that is itself
+  # skipped when its subject is skipped protects nothing.
+  #
+  # Deliberately cheap: bash and jq, both already on the runner, no toolchain
+  # and no data. It adds seconds to every pull request and is the only status
+  # anyone needs to read.
+  # ---------------------------------------------------------------------------
+  scientific-gate:
+    name: Scientific gate
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [r-checks, python-checks, r-unit-tests, science-law-coverage]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Every required component ran and succeeded
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+          # Kept in step with the needs: list above by
+          # tests/test_aggregate_gate.R, which parses this file and fails if a
+          # job exists that neither list names. Adding a job and forgetting to
+          # require it is the quiet way to lose coverage.
+          REQUIRED: "r-checks python-checks r-unit-tests science-law-coverage"
+        run: bash tests/ci_aggregate_gate.sh
