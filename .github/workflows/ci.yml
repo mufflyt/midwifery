@@ -616,6 +616,29 @@ jobs:
         id: relevance
         run: |
           set -u
+          # A PULL REQUEST ALWAYS RUNS THE LAWS. The filter below is kept for
+          # push, where nothing is being gated and six minutes on a docs commit
+          # is pure cost.
+          #
+          # It is switched off here because it and the required aggregate gate
+          # cannot both be right. Once `Scientific gate` refuses to call a pull
+          # request green unless the laws actually executed, a fast path does
+          # not save six minutes -- it produces a red required status on any
+          # change the filter judged irrelevant. The choice is between running
+          # the science on every pull request and inventing a second meaning of
+          # green, and this repository has spent a day establishing that the
+          # second one is not worth having: the coverage check reported success
+          # in 6, 8 and 10 seconds on three consecutive pull requests while
+          # evaluating nothing.
+          #
+          # The saving was real and is being given up deliberately. Six and a
+          # half minutes per pull request buys the guarantee that a green tick
+          # means twelve laws were evaluated.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "pull request: the laws run unconditionally, whatever changed."
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           BASE="${{ github.event.pull_request.base.sha || github.event.before || '' }}"
           if [ -z "$BASE" ] || ! git cat-file -e "$BASE" 2>/dev/null; then
             echo "no usable base ref -- running the coverage check to be safe"

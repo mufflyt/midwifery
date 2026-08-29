@@ -163,4 +163,26 @@ if (!length(gate_at)) {
   }
 }
 
+# --- and the laws are not filtered out from under it ---------------------------
+# THE GATE AND THE FILTER CANNOT BOTH BE RIGHT. `Scientific gate` refuses a pull
+# request whose coverage job reported executed=false, and the path filter
+# produces exactly that on any change it judges irrelevant. So the filter is
+# switched off for pull_request, and this asserts it stays off. Reintroducing
+# the fast path there would not fail visibly -- it would turn every
+# docs-only pull request red and invite someone to make the gate non-required
+# again, which is the bypass this whole mechanism exists to close.
+ci_section("the science laws are unconditional on pull_request")
+# Both tokens on one line, rather than a shape. The first version of this
+# pinned the exact spacing of `${{ github.event_name }}" = "pull_request"` and
+# failed on the line it was written to match.
+rel <- grep("github[.]event_name", ln, value = TRUE)
+rel <- grep("pull_request", rel, value = TRUE)
+if (!length(rel)) {
+  ci_fail("the relevance step has no unconditional pull_request branch. Coverage can
+       report executed=false on a pull request, which makes the required
+       Scientific gate red on any change the filter judges irrelevant.")
+} else {
+  ci_ok("the relevance step short-circuits to run=true on pull_request")
+}
+
 ci_finish()
