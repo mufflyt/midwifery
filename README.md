@@ -1627,8 +1627,8 @@ Each law must do five things, and
 missing: be **registered**, be **exercised**, run on a **non-zero number of
 subjects**, carry a **positive control** proving its detector responds to a
 violation, and have a **planted defect** that it kills. A law with only a
-negative control has proved it did not fire; it has not proved it could. **30
-planted defects, 30 detected.**
+negative control has proved it did not fire; it has not proved it could. **37
+planted defects, 37 detected.**
 
 A gate that **dies** is reported as dead, not as vacuous: a non-zero exit with no
 `[LAW]` markers is CRASHED, with the reason attached. A non-zero exit on its own
