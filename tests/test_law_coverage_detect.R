@@ -124,6 +124,34 @@ r <- cov_run(registry = REG_DERIVED,
 chk(r$failed && grepl("unexpected skip", r$text),
     "a PUBLIC law skipping is still unexpected even beside a derived-ok one")
 
+cat("\n-- a skipped law is never counted as exercised --\n")
+# The summary used to add the skips back into the exercised count, so a report
+# could read "10/10 laws exercised" when nine had run. The two lines disagreed
+# with each other as well: the header counted BOTH skip kinds as exercised and
+# the verdict line counted only private ones, which went unnoticed because no
+# private-ok law happened to be skipping. Exercised means ran.
+r <- cov_run(registry = REG_DERIVED, gate = GATE_DERIVED_SKIP)
+chk(grepl("Laws exercised:              1/2", r$text),
+    "a derived-ok skip leaves the exercised count at 1 of 2, not 2 of 2")
+chk(grepl("1/2 laws exercised", r$text),
+    "...and the verdict line agrees with the header")
+
+REG_PRIVATE <- c(
+  "law\ttitle\tgate\tmutation\tprivacy",
+  "L1\tfirst law\ttests/fake_gate.R\ttests/fake_mutation.R\tpublic",
+  "L2\tsecond law\ttests/fake_gate.R\ttests/fake_mutation.R\tprivate-ok")
+r <- cov_run(registry = REG_PRIVATE,
+             gate = c(GATE_OK[1], 'cat("[LAW] L2 SKIPPED input absent\\n")'))
+chk(grepl("Laws exercised:              1/2", r$text),
+    "a private-ok skip is not counted as exercised either")
+chk(grepl("1/2 laws exercised", r$text),
+    "...and again the two lines agree")
+
+# NOTHING IS LOST BY THE CORRECTION: the skip is still on its own line, so
+# exercised plus skipped still accounts for every declared law.
+chk(grepl("Expected private skips:      1", r$text),
+    "...with the skip still reported, so the total still adds up")
+
 cat("\n-- a gate that dies is reported as dead, not as vacuous --\n")
 # D8. Every nightly from 2026-08-26 scored five laws as "no subjects" when all
 # five had crashed on their first line with "no package called X". The exit

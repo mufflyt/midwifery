@@ -1666,6 +1666,7 @@ control for size*, which makes no claim about privacy — so the skip is expecte
 and reported under its own heading:
 
 ```
+Laws exercised:              9/10
 Expected private skips:      0
 Expected derived skips:      1   (L5 -- not enforced on any runner; see DEBT.md D9)
 Unexpected skips:            0
