@@ -356,6 +356,17 @@ jobs:
       - name: Manuscript protected results (planted defects)
         run: Rscript tests/test_manuscript_numbers_detect.R
 
+      # A new skipped test is a regression until someone writes down why.
+      # HERE, not in a job of its own, because this job is already a dependency
+      # of the scientific gate: a skip-budget failure fails this job and the
+      # aggregate gate refuses the pull request, with no separate wiring to fall
+      # out of date.
+      - name: Skip budget
+        run: Rscript tests/ci_skip_budget.R
+
+      - name: Skip budget (planted defects)
+        run: Rscript tests/test_skip_budget_detect.R
+
       # The R half of the microsimulation contract whose Python half runs in the
       # Python job above. Placed HERE because this is the job with an R
       # toolchain; needs only readr and jsonlite, both already in the list above.
