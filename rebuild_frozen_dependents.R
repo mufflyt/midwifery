@@ -84,7 +84,18 @@ REBUILD_ORDER <- list(
                    "extract_dac_facility_affiliations.R",
                    "link_practice_locations_to_org_npi.R",
                    "resolve_org_ambiguity.R",
-                   "match_open_payments_to_facility.R")),
+                   "match_open_payments_to_facility.R",
+                   # Added 2026-08-29, by the same completeness gate (T5), which
+                   # caught it in the pull request that introduced it rather than
+                   # a fortnight later. It reads amcb_npi_linkage_FROZEN for the
+                   # roster and midwives_geography_FROZEN for the geography of
+                   # the linked subset, and it exists to state how far the
+                   # published geography can be from the roster -- so a rebuild
+                   # that left it holding the previous cohort would publish
+                   # bounds for a population that no longer exists. Last in the
+                   # layer: it reads the cohort and the geography and writes
+                   # nothing either of them consumes.
+                   "analyze_linkage_selection_bias.R")),
   list(layer = "5-enrichment-recompute", why = "age/enrichment recomputes from cached inputs (no network)",
        scripts = c("calibrate_amcb_certification_ages.R", "enrich_doximity_cnm_ages.R",
                    "match_florida_voter_ages.R", "sweep_healthgrades_enrichment.R",
