@@ -553,6 +553,29 @@ jobs:
           relevant=$(printf '%s\n%s\n%s\n%s\n' "$relevant" "$registry" \
                             "tests/ci_law_coverage.R" "tests/test_law_coverage_detect.R")
           hit=$(comm -12 <(printf '%s\n' "$changed" | sort -u) <(printf '%s\n' "$relevant" | sort -u))
+          # THE LIST ABOVE HOLDS THE FILES A LAW IS EVALUATED BY. It does not
+          # hold the files a law READS, and since L12 those are not the same
+          # set. L12 builds manuscript/R/build_stats_catalog.R and scans every
+          # manuscript/*.qmd for a protected literal, so a pure prose edit can
+          # fail it -- and PR #99 changed six manuscript files and took the fast
+          # path, reporting a 6-second success that had verified nothing about
+          # the law most likely to fire on it.
+          #
+          # Matched by pattern because these are directories and globs, not the
+          # fixed filenames comm can compare. Erring toward running: a needless
+          # 6-minute job is a cost, a green tick that checked nothing is a
+          # defect.
+          # This file is on the list, and finding that out cost a second round
+          # trip: the pull request that FIXED this filter changed only
+          # .github/workflows/ci.yml, so it took the fast path and reported an
+          # 8-second success for a filter nobody had exercised. The workflow
+          # that defines the law job is law-relevant by definition -- it decides
+          # whether the laws run at all.
+          inputs='^manuscript/R/|^manuscript/.*[.]qmd$|^artifacts/(linkage_selection_bounds|composition_rucc_cat|linkage_completeness_by_status)[.]csv$|^[.]github/workflows/(ci|nightly)[.]yml$'
+          input_hit=$(printf '%s\n' "$changed" | grep -E "$inputs" || true)
+          if [ -n "$input_hit" ]; then
+            hit=$(printf '%s\n%s\n' "$hit" "$input_hit" | grep -v '^$' || true)
+          fi
           if [ -n "$hit" ]; then
             echo "law-relevant file(s) changed:"
             echo "$hit"
