@@ -288,6 +288,75 @@ if (!file.exists(xw)) {
 }
 
 # -----------------------------------------------------------------------------
+# THE DISSOLVED-SURFACE MANIFEST
+#
+# L4 and L5 are laws about the dissolved isochrone surfaces, and neither one
+# touches a polygon: every quantity they read is a scalar sitting beside 30 MB
+# of geometry. The geometry is gitignored for size, which made both laws
+# unrunnable anywhere but a machine that had built them -- L5 was reclassified
+# `derived-ok` for exactly that reason and stopped being enforced on any runner
+# (DEBT.md D9). A law nobody runs is the thing this whole suite exists to catch.
+#
+# artifacts/isochrone_union_manifest.csv carries those scalars in 327 bytes and
+# is tracked, so the laws run everywhere.
+#
+# A TRACKED SUMMARY OF AN UNTRACKED ARTIFACT CAN GO STALE, and a stale summary
+# asserting a number nobody can check would be worse than an honest skip. So
+# wherever the surface IS present -- a developer machine, the pipeline -- the
+# row is re-derived from it and any disagreement fails. The manifest is checked
+# against the real thing wherever the real thing exists, and used where it does
+# not.
+UNION_MANIFEST_REL <- "artifacts/isochrone_union_manifest.csv"
+
+law_union_manifest <- function() {
+  d <- suppressWarnings(ci_read_head(UNION_MANIFEST_REL, -1L, root = root))
+  if (is.null(d) || !nrow(d)) return(NULL)
+  need <- c("band_minutes", "n_origins_dissolved", "area_km2", "source_file",
+            "source_bytes", "source_md5")
+  if (!all(need %in% names(d))) {
+    ci_fail("the union manifest is missing column(s): %s. A manifest that has\n       changed shape cannot be compared against the surface it describes.",
+            paste(setdiff(need, names(d)), collapse = ", "))
+    return(NULL)
+  }
+  for (cn in c("band_minutes", "n_origins_dissolved", "area_km2", "source_bytes"))
+    d[[cn]] <- law_num(d[[cn]])
+
+  # --- the drift guard ---
+  drift <- character(0); n_checked <- 0L
+  for (i in seq_len(nrow(d))) {
+    f <- file.path(root, "artifacts", "maps", d$source_file[i])
+    if (!file.exists(f)) next
+    n_checked <- n_checked + 1L
+    u <- tryCatch(readRDS(f), error = function(e) NULL)
+    if (is.null(u)) { drift <- c(drift, sprintf("%s could not be read", d$source_file[i])); next }
+    same <- function(a, b) isTRUE(abs(a - b) <= 1e-6 * max(1, abs(b)))
+    if (!same(d$n_origins_dissolved[i], as.numeric(u$n_origins_dissolved)))
+      drift <- c(drift, sprintf("%s: manifest says %s origins, the surface holds %s",
+                                d$source_file[i], format(d$n_origins_dissolved[i], big.mark = ","),
+                                format(as.numeric(u$n_origins_dissolved), big.mark = ",")))
+    if (!same(d$area_km2[i], as.numeric(u$area_km2)))
+      drift <- c(drift, sprintf("%s: manifest says %s km2, the surface is %s km2",
+                                d$source_file[i], format(round(d$area_km2[i])),
+                                format(round(as.numeric(u$area_km2)))))
+    got <- unname(tools::md5sum(f))
+    if (!identical(got, d$source_md5[i]))
+      drift <- c(drift, sprintf("%s: manifest describes %s, the file on disk is %s",
+                                d$source_file[i], substr(d$source_md5[i], 1, 8), substr(got, 1, 8)))
+  }
+  if (length(drift)) {
+    ci_fail("the union manifest disagrees with the surfaces it describes:\n%s\n       Regenerate it with write_union_manifest(). A tracked summary that has\n       drifted from its source asserts a number no runner can check, which is\n       worse than not having one.",
+            paste(sprintf("       %s", drift), collapse = "\n"))
+  } else if (n_checked > 0L) {
+    ci_ok("the union manifest matches all %d surface(s) present here", n_checked)
+  } else {
+    ci_ok("the union manifest is used as-is (no surface present to re-derive from)")
+  }
+  d
+}
+
+UNION_MF <- law_union_manifest()
+
+# -----------------------------------------------------------------------------
 ci_section("L4 more travel time cannot reduce access")
 
 acc <- suppressWarnings(ci_read_head("artifacts/full_cohort_access_by_band_rucc.csv",
@@ -320,19 +389,17 @@ if (is.null(acc)) {
   }
 
   # The same law on area, read straight off the surfaces when they are present.
-  a30 <- file.path(root, "artifacts", "maps", "midwifery_isochrone_union_30min.rds")
-  a60 <- file.path(root, "artifacts", "maps", "midwifery_isochrone_union_60min.rds")
-  if (file.exists(a30) && file.exists(a60)) {
-    s30 <- readRDS(a30); s60 <- readRDS(a60)
-    if (s30$area_km2 > s60$area_km2) {
+  if (!is.null(UNION_MF) && all(c(30, 60) %in% UNION_MF$band_minutes)) {
+    a_30 <- UNION_MF$area_km2[UNION_MF$band_minutes == 30]
+    a_60 <- UNION_MF$area_km2[UNION_MF$band_minutes == 60]
+    if (a_30 > a_60) {
       ci_fail("L4: the 30-minute surface (%s km2) is LARGER than the 60-minute surface (%s km2).",
-              format(round(s30$area_km2), big.mark = ","),
-              format(round(s60$area_km2), big.mark = ","))
+              format(round(a_30), big.mark = ","), format(round(a_60), big.mark = ","))
     } else {
       ci_ok("the 30-minute surface is contained in area by the 60-minute surface")
     }
   } else {
-    ci_skip("L4: dissolved surfaces are gitignored and absent; area check skipped")
+    ci_fail("L4: the union manifest does not carry both a 30- and a 60-minute band,\n       so the containment check cannot run. It is tracked, so absence is a\n       failure rather than a skip.")
   }
 }
 
@@ -340,29 +407,34 @@ if (is.null(acc)) {
 ci_section("L5 every routed provider participates in the union")
 
 vt <- suppressWarnings(ci_read_head("artifacts/osmde_validation_table.csv", -1L, root = root))
-a30 <- file.path(root, "artifacts", "maps", "midwifery_isochrone_union_30min.rds")
-if (is.null(vt) || !file.exists(a30)) {
-  { ci_law_skipped("L5", "input absent"); ci_skip("L5: validation table or dissolved surface absent; skipped") }
+# BOTH INPUTS ARE NOW TRACKED, so absence is a failure rather than a skip. This
+# law spent several days registered `derived-ok` and therefore unenforced on
+# every runner, because the only thing standing between it and a clean checkout
+# was 30 MB of geometry it never reads.
+if (is.null(vt) || is.null(UNION_MF)) {
+  ci_fail("L5: %s absent. Both inputs are tracked, so this is a missing artifact\n       rather than a permitted skip.",
+          if (is.null(vt)) "artifacts/osmde_validation_table.csv" else UNION_MANIFEST_REL)
 } else {
   routed <- law_num(vt$observed[vt$check == "locations successfully retrieved"])
   if (!length(routed) || is.na(routed)) {
     ci_skip("L5: the validation table does not report retrieved locations")
   } else {
-    off <- character(0)
-    for (b in c(30, 60)) {
-      f <- file.path(root, "artifacts", "maps",
-                     sprintf("midwifery_isochrone_union_%dmin.rds", b))
-      if (!file.exists(f)) next
-      u <- readRDS(f)
+    off <- character(0); n_bands <- 0L
+    for (i in seq_len(nrow(UNION_MF))) {
+      b <- UNION_MF$band_minutes[i]
+      n_dis <- UNION_MF$n_origins_dissolved[i]
+      if (is.na(b) || is.na(n_dis)) next
+      n_bands <- n_bands + 1L
       # The union also dissolves canonical and recovered origins, so it may hold
       # MORE than the osm.de set -- but never fewer, which is the stale case.
-      if (u$n_origins_dissolved < routed) {
+      if (n_dis < routed) {
         off <- c(off, sprintf("%d-min union holds %s origins against %s routed (%.0f%%)",
-                              b, format(u$n_origins_dissolved, big.mark = ","),
-                              format(routed, big.mark = ","),
-                              100 * u$n_origins_dissolved / routed))
+                              b, format(n_dis, big.mark = ","),
+                              format(routed, big.mark = ","), 100 * n_dis / routed))
       }
     }
+    if (n_bands == 0L)
+      ci_fail("L5: the union manifest carries no usable band, so the law has no subjects.")
     if (length(off)) {
       ci_fail("L5: %d surface(s) cover fewer origins than were routed:\n%s\n       A union built before the routing finished understates access while\n       looking complete. Rebuild with build_midwifery_isochrone_map.R.",
               length(off), paste(sprintf("       %s", off), collapse = "\n"))

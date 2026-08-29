@@ -85,6 +85,36 @@ law_scaffold <- function(dir) {
   system2("git", c("-C", shQuote(dir), "add", "-A", "-f"), stdout = FALSE, stderr = FALSE)
 }
 
+# L4 and L5 read scalars from a tracked manifest rather than from 30 MB of
+# geometry, so the scaffold needs one. It is DERIVED from whatever surfaces the
+# scratch repo currently holds, and regenerated AFTER the edits are applied --
+# so a mutation that plants a short union still reaches the law, instead of
+# tripping the drift guard and failing for the wrong reason. That distinction is
+# the point: drift and a broken law are different defects.
+law_write_manifest <- function(dir) {
+  fs <- list.files(file.path(dir, "artifacts", "maps"),
+                   pattern = "^midwifery_isochrone_union_[0-9]+min[.]rds$",
+                   full.names = TRUE)
+  if (!length(fs)) return(invisible(NULL))
+  rows <- lapply(fs, function(f) {
+    u <- readRDS(f)
+    data.frame(band_minutes = as.numeric(u$band_minutes),
+               n_origins_dissolved = as.numeric(u$n_origins_dissolved),
+               area_km2 = as.numeric(u$area_km2),
+               water_removed_km2 = if (!is.null(u$water_removed_km2))
+                 as.numeric(u$water_removed_km2) else 0,
+               source_file = basename(f),
+               source_bytes = as.numeric(file.size(f)),
+               source_md5 = unname(tools::md5sum(f)),
+               stringsAsFactors = FALSE)
+  })
+  d <- do.call(rbind, rows)
+  utils::write.csv(d[order(d$band_minutes), , drop = FALSE],
+                   file.path(dir, "artifacts", "isochrone_union_manifest.csv"),
+                   row.names = FALSE)
+  invisible(d)
+}
+
 # The cd is load-bearing: the gate resolves its root as getwd(), and
 # system2("Rscript", <path>) would leave it at the caller's, so every plant
 # would silently run against the real repository.
@@ -106,6 +136,11 @@ law_with <- function(edits) {
     dir.create(dirname(tgt), recursive = TRUE, showWarnings = FALSE)
     if (is.function(edits[[nm]])) edits[[nm]](tgt) else writeLines(edits[[nm]], tgt)
   }
+  # Regenerate UNLESS the mutation supplied a manifest of its own -- otherwise a
+  # planted manifest would be silently overwritten by a correct one and the
+  # defect would test nothing.
+  if (!"artifacts/isochrone_union_manifest.csv" %in% names(edits))
+    law_write_manifest(dir)
   system2("git", c("-C", shQuote(dir), "add", "-A", "-f"), stdout = FALSE, stderr = FALSE)
   law_run(dir)
 }
@@ -139,7 +174,7 @@ local({
   dir <- file.path(tempdir(), paste0("law_clean_", as.integer(stats::runif(1) * 1e9)))
   dir.create(dir, recursive = TRUE, showWarnings = FALSE)
   on.exit(unlink(dir, recursive = TRUE), add = TRUE)
-  law_scaffold(dir); r <- law_run(dir)
+  law_scaffold(dir); law_write_manifest(dir); r <- law_run(dir)
   chk(!r$failed, "an unperturbed scaffold produces no failures")
   if (r$failed) cat(r$text, "\n")
 })
@@ -216,6 +251,23 @@ kills("the two surfaces are swapped", "L4",
 kills("a union built from half the routed origins", "L5",
   list("artifacts/maps/midwifery_isochrone_union_30min.rds" = function(p)
     saveRDS(data.frame(band_minutes = 30L, n_origins_dissolved = 450L, area_km2 = 500), p)))
+
+# THE MANIFEST'S OWN FAILURE MODE. Moving L4 and L5 onto a tracked summary of an
+# untracked artifact bought enforcement on every runner and introduced one way
+# to be wrong that did not exist before: the summary can drift from the surface
+# it describes, and a drifted summary asserts a number nobody can check. It is
+# guarded wherever the surface is present, and that guard is planted here.
+local({
+  r <- law_with(list("artifacts/isochrone_union_manifest.csv" = c(
+    "\"band_minutes\",\"n_origins_dissolved\",\"area_km2\",\"water_removed_km2\",\"source_file\",\"source_bytes\",\"source_md5\"",
+    "30,777,500,0,\"midwifery_isochrone_union_30min.rds\",1,\"deadbeefdeadbeefdeadbeefdeadbeef\"",
+    "60,1000,900,0,\"midwifery_isochrone_union_60min.rds\",1,\"deadbeefdeadbeefdeadbeefdeadbeef\"")))
+  chk(r$failed && grepl("manifest disagrees with the surfaces", r$text),
+      "the union manifest describing a surface that is no longer there")
+  # NOT counted as a law mutation. It is a defect in the gate's own evidence
+  # rather than a violation of a registered law, and putting an unregistered
+  # code into the [MUTATION] stream would corrupt the coverage scoreboard.
+})
 
 cat("\n-- near misses that must stay green --\n")
 
