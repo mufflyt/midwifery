@@ -256,7 +256,8 @@ take the first.
 ## Cohort and follow-up
 
 The analytic cohort was the set of `r mw_n("panel.cohort_n")` providers resolved
-by the frozen linkage. Each was followed across the
+by the frozen linkage; the disposition of every certification record, and the
+denominators each subsequent proportion is taken against, are given in Figure 1. Each was followed across the
 `r mw_safe_stat("panel.snapshots")` annual snapshots. A provider-year was one
 snapshot in which a provider appeared with a usable practice address. Providers
 were not required to appear in every year; entry and exit are themselves
@@ -429,7 +430,7 @@ substantially by certification status, so it need not describe the roster of
 Making no assumption about the missingness mechanism, the roster-wide
 metropolitan share was bounded between
 `r mw_safe_stat("bounds.lower_pct", "%.1f")`% and
-`r mw_safe_stat("bounds.upper_pct", "%.1f")`%. The direction of the selection
+`r mw_safe_stat("bounds.upper_pct", "%.1f")`% (Figure 2). The direction of the selection
 is not, however, purely a matter of assumption: among the
 `r mw_n("bounds.outside_n")` certificants outside the cohort whose practice ZIP
 code nonetheless permitted a county assignment,
@@ -443,7 +444,7 @@ metropolitan, `r mw_safe_stat("bounds.tip_departure", "%.1f")` percentage
 points below what was observed in the cohort.
 
 State-level supply and the midwife share of birth
-attendants are mapped in Figures 3 and 4. An interactive national map of the
+attendants are mapped in Figures 5 and 6. An interactive national map of the
 located cohort, showing each midwife's last observed practice location with
 a deep link to the corresponding state board of nursing lookup page -- a route
 to a board's own record, not an assertion that the record was checked
@@ -477,7 +478,7 @@ midwife changed county in about
 `r mw_safe_stat("rural.annual_remote_move", "%.1f")`% of years against
 `r mw_safe_stat("rural.annual_metro_move", "%.1f")`% for a metropolitan-origin
 midwife. Over a career the gradient was larger and monotone (Table 3,
-Figure 1). Career
+Figure 3). Career
 same-county persistence was
 `r mw_pct_ci(K$rural$table$pct[1], K$rural$table$lo[1], K$rural$table$hi[1])`
 for metropolitan origin,
@@ -492,7 +493,7 @@ difference between the extreme strata was
 ## Where movers go
 
 Among providers who changed county over their career, destination was strongly
-asymmetric (Table 4, Figure 2). Of nonmetropolitan-adjacent-origin movers,
+asymmetric (Table 4, Figure 4). Of nonmetropolitan-adjacent-origin movers,
 `r mw_safe_stat("movers.adj_to_metro_pct", "%.0f")`% ended in a metropolitan
 county, as did `r mw_safe_stat("movers.remote_to_metro_pct", "%.0f")`% of
 remote-origin movers; `r mw_safe_stat("movers.metro_stay_pct", "%.0f")`% of
@@ -732,7 +733,22 @@ knitr::kable(t4, row.names = FALSE, align = "lrrr",
 
 # Figures
 
-```{r fig1, fig.width=6.5, fig.height=3.4, fig.cap="Figure 1. Career same-county persistence by rurality of the county of first observed practice. Points are proportions; bars are 95% Wilson score intervals. The axis is restricted to the range of the data and does not begin at zero, so distances between points are comparable but the marks must not be read as areas."}
+```{r fig1, fig.cap="Figure 1. Flow of certification records from the American Midwifery Certification Board roster to the rurality strata. Dispositions are mutually exclusive and sum to the roster. Both resolved strata enter the analytic cohort; a match carrying only nursing taxonomy is found but is not promoted into the primary midwifery stratum. The metropolitan share is taken among cohort members with an assignable practice county, not among the cohort and not among the roster."}
+# STATIC, and generated rather than drawn by hand: make_cohort_flow_figure.R
+# reads every count from the stats catalog and refuses to write a figure whose
+# parts do not sum to the roster. A flow diagram is the one place in this paper
+# where a reader can check the arithmetic by eye, so it must not be a picture
+# that has drifted from the artifacts.
+knitr::include_graphics(file.path(root, "docs", "figures", "cohort_flow.png"))
+```
+
+```{r fig2, fig.cap="Figure 2. Metropolitan share of the certification roster: the estimate observed in the located cohort, two sensitivity estimates, and three bounds ordered by the assumption each requires. The dashed line marks the share observed among cohort members with an assignable county. The interval that discards locatable non-cohort records is wider than the one reported, and is shown so that the cost of ignoring that evidence is visible rather than asserted."}
+# The figure the binding limitation did not have. Ordered by assumption rather
+# than by width, because assumption is the axis a reader chooses along.
+knitr::include_graphics(file.path(root, "docs", "figures", "selection_bounds.png"))
+```
+
+```{r fig3, fig.width=6.5, fig.height=3.4, fig.cap="Figure 3. Career same-county persistence by rurality of the county of first observed practice. Points are proportions; bars are 95% Wilson score intervals. The axis is restricted to the range of the data and does not begin at zero, so distances between points are comparable but the marks must not be read as areas."}
 suppressPackageStartupMessages(library(ggplot2))
 
 # FORM. Three ordered strata, one measure, uncertainty that matters -- the
@@ -765,7 +781,7 @@ ggplot(r, aes(x = pct, y = origin)) +
         plot.margin = margin(6, 14, 6, 6))
 ```
 
-```{r fig2, fig.width=6.5, fig.height=3.2, fig.cap="Figure 2. Destination of providers who changed county over their career, as a percentage of movers from each origin stratum. Counts are given in Table 4. Rural-origin movers relocate predominantly to metropolitan counties; metropolitan-origin movers overwhelmingly remain metropolitan."}
+```{r fig4, fig.width=6.5, fig.height=3.2, fig.cap="Figure 4. Destination of providers who changed county over their career, as a percentage of movers from each origin stratum. Counts are given in Table 4. Rural-origin movers relocate predominantly to metropolitan counties; metropolitan-origin movers overwhelmingly remain metropolitan."}
 # FORM. The counts in Table 4 span 36 to 3,868, so a heatmap or a count bar
 # would show one dark cell and eight pale ones -- the magnitude swamps the
 # pattern. The FINDING is compositional: where movers from each origin end up.
@@ -807,7 +823,7 @@ ggplot(d, aes(x = pct, y = origin, fill = dest)) +
         plot.margin = margin(6, 14, 6, 6))
 ```
 
-```{r fig3, fig.width=7.2, fig.height=4.6, fig.cap="Figure 3. Certified nurse-midwives and certified midwives per 1,000 births, by state. Alaska, Hawaii and the territories are omitted from the projection. Territories are also excluded from the color scale: Guam records two midwives against zero births, a rate of 2,000 per 1,000, which would compress all 51 mapped jurisdictions into a single class."}
+```{r fig5, fig.width=7.2, fig.height=4.6, fig.cap="Figure 5. Certified nurse-midwives and certified midwives per 1,000 births, by state. Alaska, Hawaii and the territories are omitted from the projection. Territories are also excluded from the color scale: Guam records two midwives against zero births, a rate of 2,000 per 1,000, which would compress all 51 mapped jurisdictions into a single class."}
 # Built with {mysterymaps} (github.com/mufflyt/mysterymaps), the canonical map
 # library for this group. R/lib/mysterymaps_dep.R records why nothing here
 # re-implements a scale or a legend locally.
@@ -833,7 +849,7 @@ print(mysterymaps::mysterymaps_geographic_map(
   labels      = function(x) sprintf("%.0f", x)))
 ```
 
-```{r fig4, fig.width=7.2, fig.height=4.6, fig.cap="Figure 4. Midwife share of the identified birth-attendant workforce, by state. The denominator is midwives plus generalist obstetrician-gynecologists plus maternal-fetal medicine subspecialists; it excludes family physicians and certified professional midwives, both of which attend births, so the share is an upper bound on midwives' share of that larger workforce."}
+```{r fig6, fig.width=7.2, fig.height=4.6, fig.cap="Figure 6. Midwife share of the identified birth-attendant workforce, by state. The denominator is midwives plus generalist obstetrician-gynecologists plus maternal-fetal medicine subspecialists; it excludes family physicians and certified professional midwives, both of which attend births, so the share is an upper bound on midwives' share of that larger workforce."}
 print(mysterymaps::mysterymaps_geographic_map(
   data        = as.data.frame(dplyr::mutate(sw,
                   share_pct = 100 * .data$midwife_share_of_attendants)),

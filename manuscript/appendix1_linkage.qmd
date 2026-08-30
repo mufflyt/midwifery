@@ -137,6 +137,10 @@ knitr::kable(t2, row.names = FALSE, align = "lrrr",
   caption = "Table S2. Resolution on midwifery taxonomy by certification status, ordered by number of records.")
 ```
 
+```{r efig1, fig.cap="eFigure 1. Cohort resolution and ascertainment by certification status, for statuses with at least 100 certificants. The distance between the two marks is the cross-taxonomy rule: a match carrying only nursing taxonomy is found in the registry but is not promoted into the primary midwifery cohort."}
+knitr::include_graphics(file.path(root, "docs", "figures", "linkage_by_status.png"))
+```
+
 TWO RATES ARE REPORTED IN THIS STUDY AND THEY ARE NOT THE SAME QUANTITY.
 *Cohort resolution* is the share of certificants who resolved to a provider
 record carrying midwifery taxonomy, which is what admits a person to the
