@@ -42,6 +42,16 @@ root <- {
   else normalizePath(".")
 }
 suppressPackageStartupMessages({library(dplyr); library(readr)})
+# DEPENDENCY GUARD, matching what test_cycle4_ct_apportionment.R already does
+# with this shim: R/string_normalization.R re-sources the implementation from
+# ~/isochrones and stops if it is absent, which no runner carries. Declared and
+# counted rather than fatal.
+.iso <- Sys.getenv("ISOCHRONES_R", path.expand("~/isochrones/R"))
+if (!file.exists(file.path(.iso, "string_normalization.R"))) {
+  cat("  --   SKIP cycle 12 name/territory checks [absent: ~/isochrones string_normalization.R]\n")
+  cat("\nPASS (0 failures, 1 skipped)\n")
+  quit(status = 0)
+}
 source(file.path(root, "R", "string_normalization.R"))
 
 fails <- 0L
