@@ -144,6 +144,43 @@ registry is a registry of clinicians who enumerated to bill, enumeration became
 near-universal only over the study period, and a clinician who left practice
 before enumeration was routine has no registry record to be linked to.
 
+That mechanism is testable, because certification era and certification status
+vary independently. If the shortfall were a failure of name matching, certifying
+before the registry existed would depress linkage for everyone who did so. It
+does not. Among certificants who are still ACTIVE, linkage is
+`r mw_safe_stat("floor.active_pre_pct", "%.1f")`% for the
+`r mw_n("floor.active_pre_n")` certified before NPPES enumeration opened and
+`r mw_safe_stat("floor.active_era_pct", "%.1f")`% for the
+`r mw_n("floor.active_era_n")` certified after -- a difference of
+`r mw_safe_stat("floor.active_gap_pp", "%.1f")` percentage points. **Certifying
+before the registry existed costs a practising midwife essentially nothing.**
+
+The era difference in the roster as a whole --
+`r mw_safe_stat("floor.pre_pct", "%.1f")`% against
+`r mw_safe_stat("floor.era_pct", "%.1f")`% -- is therefore not an era effect on
+matching. It is what happens when era is confounded with having left practice.
+The shortfall concentrates where both conditions hold: of certificants who
+qualified before enumeration opened, linkage is
+`r mw_safe_stat("floor.dead_pre_pct", "%.1f")`% among the
+`r mw_n("floor.dead_pre_n")` DECEASED,
+`r mw_safe_stat("floor.lapsed_pre_pct", "%.1f")`% among the
+`r mw_n("floor.lapsed_pre_n")` LAPSED, and
+`r mw_safe_stat("floor.retired_pre_pct", "%.1f")`% among those RETIRED. Of the
+records for which no candidate was found at all,
+`r mw_n("floor.never_pre")` qualified before enumeration opened against
+`r mw_n("floor.never_era")` after.
+
+**Part of the unlinked fraction is therefore not recoverable by better linkage,
+and should not be described as though it were.** A certificant who qualified in
+the 1990s and left practice before 2006 has no NPI to be matched to; the record
+was never created. This distinction matters for what the study may claim rather
+than only for how complete it is. A matching shortfall is a limitation of
+method, could in principle be repaired, and has unknown direction. A
+registry-coverage boundary cannot be repaired from these data at all -- and it
+falls almost entirely on people who had already left the workforce, which is the
+population a workforce estimate is not about. The ACTIVE-restricted bounds
+reported in eResults 2 are the ones that carry a mechanism rather than a caveat.
+
 **This is the central threat to validity in the main analysis, and its
 direction is knowable.** The persistence estimates describe providers who both
 linked and remained observable in the annual snapshots. Providers who left the

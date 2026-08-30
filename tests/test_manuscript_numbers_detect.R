@@ -19,8 +19,13 @@ pass <- 0L; fail_n <- 0L; failures <- character(0)
 chk <- function(ok, m) { if (isTRUE(ok)) { pass <<- pass + 1L; cat(sprintf("  ok   %s\n", m)) }
   else { fail_n <<- fail_n + 1L; failures <<- c(failures, m); cat(sprintf("  FAIL %s\n", m)) } }
 
+# Every artifact the catalog needs to resolve a REGISTERED key. Adding a
+# protected quantity without adding its source here fails the green cases --
+# which is the scaffold telling you the registry outran the fixture, not a
+# defect in the gate.
 ART <- c("composition_rucc_cat.csv", "linkage_selection_bounds.csv",
-         "linkage_completeness_by_status.csv", "table1_midwives.csv")
+         "linkage_completeness_by_status.csv", "table1_midwives.csv",
+         "linkage_coverage_floor.csv")
 
 #' A scratch repository whose manuscript is correct, then whatever is overridden
 #'

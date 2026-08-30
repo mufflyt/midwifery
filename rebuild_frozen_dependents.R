@@ -102,7 +102,14 @@ REBUILD_ORDER <- list(
                    # the wrong estimate -- the exact failure the invariant
                    # exists to catch. Last in the layer: it reads the cohort and
                    # writes nothing any other script consumes.
-                   "analyze_linkage_selection_bias.R")),
+                   "analyze_linkage_selection_bias.R",
+                   # Added 2026-08-29. Reads amcb_npi_linkage_FROZEN for
+                   # certification date and status, and writes an aggregate of
+                   # linkage by era. A rebuild that left it holding the previous
+                   # roster would publish a coverage floor for a cohort that no
+                   # longer exists -- the same failure the bounds script above
+                   # was added to prevent.
+                   "analyze_linkage_coverage_floor.R")),
   list(layer = "5-enrichment-recompute", why = "age/enrichment recomputes from cached inputs (no network)",
        scripts = c("calibrate_amcb_certification_ages.R", "enrich_doximity_cnm_ages.R",
                    "match_florida_voter_ages.R", "sweep_healthgrades_enrichment.R",

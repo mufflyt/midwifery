@@ -178,6 +178,42 @@ mw_build_catalog <- function(root = ".") {
     )
   }
 
+  # --- How much of the linkage gap is a registry boundary --------------------
+  # The paper reports linkage at 66.2% and reads the remainder as a matching
+  # limitation. Era and status vary independently, and the comparison says
+  # otherwise: certifying before NPPES existed costs a practising certificant
+  # nothing. What the gap tracks is having LEFT the workforce before the
+  # registry existed to record you.
+  fl <- rd(file.path(MW_ART, "linkage_coverage_floor.csv"))
+  if (!is.null(fl)) {
+    pick <- function(e, s) {
+      r <- fl[fl$era == e & fl$status == s, ]
+      if (nrow(r)) r[1, ] else NULL
+    }
+    g <- function(e, s, col) { r <- pick(e, s); if (is.null(r)) NA_real_ else r[[col]] }
+    cat_$floor <- list(
+      pre_n           = g("pre_nppes", "ALL", "n"),
+      pre_pct         = g("pre_nppes", "ALL", "pct_linked"),
+      era_n           = g("nppes_era", "ALL", "n"),
+      era_pct         = g("nppes_era", "ALL", "pct_linked"),
+      active_pre_n    = g("pre_nppes", "ACTIVE", "n"),
+      active_pre_pct  = g("pre_nppes", "ACTIVE", "pct_linked"),
+      active_era_n    = g("nppes_era", "ACTIVE", "n"),
+      active_era_pct  = g("nppes_era", "ACTIVE", "pct_linked"),
+      dead_pre_n      = g("pre_nppes", "DECEASED", "n"),
+      dead_pre_pct    = g("pre_nppes", "DECEASED", "pct_linked"),
+      lapsed_pre_n    = g("pre_nppes", "LAPSED", "n"),
+      lapsed_pre_pct  = g("pre_nppes", "LAPSED", "pct_linked"),
+      retired_pre_pct = g("pre_nppes", "RETIRED", "pct_linked"),
+      never_pre       = g("pre_nppes", "ALL", "never_found"),
+      never_era       = g("nppes_era", "ALL", "never_found")
+    )
+    # The gap between the two ACTIVE strata is the whole argument, so it is
+    # computed here rather than left to a reader subtracting two rendered
+    # percentages and getting a third number that is in no artifact.
+    cat_$floor$active_gap_pp <- abs(cat_$floor$active_era_pct - cat_$floor$active_pre_pct)
+  }
+
   # --- Selection bounds on the rurality distribution -------------------------
   # The cohort is not a random sample of the roster, so the metropolitan share
   # above is a property of the subgroup and not of the workforce. These are the

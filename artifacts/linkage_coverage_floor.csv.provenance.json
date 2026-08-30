@@ -1,0 +1,10 @@
+{
+  "artifact": "linkage_coverage_floor.csv",
+  "written_utc": "2026-08-30 01:10:05 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
+    }
+  ]
+}
