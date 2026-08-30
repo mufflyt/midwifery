@@ -332,18 +332,39 @@ build_midwife_birth_activity <- function(
       effective_birth_fte = sum(.data$county_birth_fte, na.rm = TRUE),
       .groups = "drop")
 
+  # A genuinely unascertained cohort member (roster_county_fips known,
+  # birth_activity_state NA) contributes NO row to location_weights at all --
+  # she has no observed delivery location to be assigned to -- so she is
+  # invisible to county_observed_supply above by construction, not merely
+  # dropped by summarise()'s na.rm. Her PRACTICE county is still known from
+  # the roster, so it is not absent information; it is information the
+  # aggregation above never looks at. Counted here from provider_activity
+  # (which retains every active cohort member, ascertained or not) so that a
+  # county's effective_birth_fte can be read alongside how many of its own
+  # roster members contributed nothing to it because they were never looked
+  # at, rather than that number staying invisible -- the same discipline
+  # ct_partial applies to a partially-suppressed Connecticut planning region.
+  unascertained_by_county <- provider_activity |>
+    dplyr::filter(is.na(.data$birth_activity_state),
+                  !is.na(.data$roster_county_fips)) |>
+    dplyr::count(GEOID = .data$roster_county_fips,
+                 name = "n_unascertained_roster")
+
   # A county with no OBSERVED attendant is given 0 here. That is a statement
   # about observation, not about supply: in a state whose ascertainment is not
   # established, zero means unobserved. Downstream maps must restrict to
   # adequately ascertained states before reading these as real zeros.
   county_effective_supply <- county_base |>
     dplyr::left_join(county_observed_supply, by = "GEOID") |>
+    dplyr::left_join(unascertained_by_county, by = "GEOID") |>
     dplyr::mutate(
       observed_birth_attendants =
         tidyr::replace_na(.data$observed_birth_attendants, 0L),
       observed_midwife_births =
         tidyr::replace_na(.data$observed_midwife_births, 0),
-      effective_birth_fte = tidyr::replace_na(.data$effective_birth_fte, 0))
+      effective_birth_fte = tidyr::replace_na(.data$effective_birth_fte, 0),
+      n_unascertained_roster =
+        tidyr::replace_na(.data$n_unascertained_roster, 0L))
 
   message("Testing whether observed birth activity differs by rurality.")
   validation_statistics <- validate_activity_by_rurality(provider_activity,

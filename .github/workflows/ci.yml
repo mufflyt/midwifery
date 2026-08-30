@@ -446,6 +446,7 @@ jobs:
       - name: Birth activity and license resolution
         run: |
           Rscript tests/test_birth_activity.R
+          Rscript tests/test_cycle25_birth_activity_fte.R
           Rscript tests/test_license_resolution.R
 
       # Type-2 (organisational) NPI resolution in bulk, the Table 1
