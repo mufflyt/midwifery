@@ -4473,3 +4473,83 @@ panels). Wired into `ci.yml`.
 not published estimates -- the fix changes which specific locations get
 re-routed for calibration or the order a work queue is processed in, not any
 reported number.
+## Cycle 32 (session-cycle 9 of 24) — 2026-08-29 — 3 BVA / 3 semantic / 4 adversarial
+
+**Target.** `resolve_type2_bulk()` / `op_zip5()` / `op_norm_addr()` in
+`link_open_payments_type2_bulk.R` — the Open Payments-address-to-NPPES-
+Type-2-organization resolver. `tests/test_open_payments_type2_bulk.R`
+already covers order invariance, alias determinism, duplicate-id rejection,
+ZIP participation, and street-prefix-collision avoidance; this cycle probed
+edges that file does not touch (both 0-row join boundaries, the abbreviation
+dictionary's word-boundary safety across its full entry list rather than
+just STREET/ST, and a large-N ambiguous cluster), which surfaced two real
+defects via direct empirical probing before any test was written.
+
+**Finding 1 — a numeric zip column silently drops leading zeros and
+misresolves as `no_match`.** `op_zip5(2138)` (an R integer, e.g. from a
+data.frame column an upstream reader guessed as numeric) returns `NA`,
+identical to a genuinely absent ZIP — unlike `op_zip5("02138")`, which
+correctly returns `"02138"`. Every id in that state resolves to `"no_match"`,
+on the page indistinguishable from a real non-match, which would silently
+suppress matches for every New England / New Jersey / Puerto Rico ZIP code
+(00xxx–09xxx) if the address or organization source ever yields a numeric zip
+column. Fixed with a loud type-contract check at the top of
+`resolve_type2_bulk()` — both `addr` and `zip`, on both input frames, must
+already be `character`, or the function stops with a message naming the
+offending column and type — matching this repo's own established convention
+in `R/lib/address_keys.R`'s `zip5()`, whose header explicitly rejects padding
+a short zip for exactly this reason ("inventing 02134 would forge a match").
+Also defensively `CAST(... AS VARCHAR)` in the CLI's DuckDB query for `addr`
+and `zip` (only `type2_npi` was cast before), since the warehouse's actual
+column types could not be verified in this environment (external volume, not
+mounted here) — the guard now fails loudly rather than silently if the
+warehouse ever stores either column numerically.
+
+**Finding 2 — an NA organization name silently rendered as an empty string
+next to a "resolved" status.** `paste(sort(unique(x)), collapse = ...)`
+returns `""`, not `NA`, when every element of `x` is `NA`, because `sort()`
+drops `NA` by default. A Type-2 organization with no name on file in the
+bulk NPPES extract (a real, observed NPPES gap) therefore produced
+`status == "unique_exact"` — a positive resolution — paired with
+`organization_name == ""`, which reads as "resolved, name is intentionally
+blank" rather than "name unknown". Fixed with a `paste_sorted_unique()`
+helper that returns `NA_character_` when there are no non-missing values,
+applied at both collapse sites (`o`'s per-alias name and `hits`'s
+`candidate_names`/`candidate_npis`).
+
+**Tests.** `tests/test_cycle32_open_payments_type2_bulk.R`, 10 tests
+(T32-1..10). T32-7 and T32-8 carry anti-ceremony companions and were
+confirmed to discriminate: `git stash`-ing the fix reproduced 3 real
+failures (T32-7, T32-8, T32-9 — the factor-`addr` guard is the same code
+path as the zip guard) against the pre-fix code, 0 after `git stash pop`.
+
+**Full suite.** New file: 10/10 pass. Re-ran
+`tests/test_open_payments_type2_bulk.R` (all pass, 0 regressions) and
+confirmed by inspection that `resolve_org_ambiguity.R`'s only production call
+site (`tierF <- resolve_type2_bulk(op_fallback_addr, op_bulk_org)`, line 307)
+already passes character `addr`/`zip` on both sides — `op_fallback_addr`
+is read via `chr()` (forces all columns to character, `R/lib/
+common_helpers.R`), and `op_bulk_org`'s `addr`/`zip` come from `norm_addr()`/
+`zip5()` (`R/lib/address_keys.R`), both of which return `character` — so the
+new type guard cannot break this caller. `classify_residual_disagreements.R`
+only calls the standalone `op_norm_addr()`/`op_zip5()` helpers directly, not
+the guarded `resolve_type2_bulk()`, so it is unaffected.
+
+**Unresolved / carried forward.** None new. Standing carried-forward items
+(cycles 1-23's decisions, cycle 26's OLS bound, cycle 30's `derange()`
+fallback reporting) remain untouched.
+
+**Estimand changed:** no.
+
+**Next candidate leads (not yet investigated):** scenario parameters more
+broadly; validation/backtesting beyond the permutation-control angle;
+uncertainty propagation beyond the OLS extrapolation (cycle 26) and the
+derangement fallback (cycle 30) — e.g. a geocoding-confidence or match-score
+field computed and then silently dropped before a downstream table; the rest
+of the Open Payments pipeline not yet touched (`crossref_open_payments_to_
+type2_npi.py`, `match_open_payments_to_facility.R`,
+`build_organization_affiliation_resolver.R`, `crossref_all_open_payments_
+type2.py` and its documented 51.0%-exact-match/83.2%-alphabetical-first-ten
+baseline this cycle's target file replaced — worth checking whether the
+comparison/migration path between old and new candidate sets is itself
+tested anywhere).
