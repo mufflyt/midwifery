@@ -25,6 +25,10 @@ what it may be used to claim.
 
 ## 2. One quantity had three values
 
+These are the values **as they stood when the defect was found**. The counts
+behind them have since changed — see §9 — but the failure they describe is the
+point, and rewriting them would erase it.
+
 | value | where | denominator |
 |---|---|---|
 | 86.5% | manuscript | 13,277 / 15,347 — the **retained subgroup**, including 486 members with no assignable county |
@@ -41,9 +45,9 @@ treats "we could not tell" as "not metropolitan" — the one thing the data does
 not say. And 15,347 is the retained subgroup, while the sentence reporting it
 said "the analytic cohort", which is 16,892.
 
-The frame is now the analytic cohort throughout: **14,861 of 16,892** members
-carry an assignable county, **13,277 of those (89.3%)** are metropolitan, and
-**2,031** have none. 86.5% is retained in the stats catalog as
+The frame is now the analytic cohort throughout: **16,636 of 16,892** members
+carry an assignable county, **14,874 of those (89.4%)** are metropolitan, and
+**256** have none. 86.5% is retained in the stats catalog as
 `cohort.metro_pct_retained_with_unknown` so that a reader reconciling against an
 earlier draft can find where it went.
 
@@ -70,11 +74,11 @@ write unless it reproduces `composition_rucc_cat.csv` cell for cell.
 
 | | assumption | metropolitan share, roster-wide |
 |---|---|---|
-| observed | none; describes the cohort only | 89.3% |
-| **reported bound** | **none** | **64.9% – 92.2%** |
-| wider bound | none, but discards observed evidence (§5) | 59.5% – 92.9% |
-| ACTIVE-restricted | the question is about practising midwives | 69.4% – 92.2% |
-| IPW | missingness is explained by certification status | 89.1% |
+| observed | none; describes the cohort only | 89.4% |
+| **reported bound** | **none** | **72.1% – 91.4%** |
+| wider bound | none, but discards observed evidence (§5) | 66.7% – 92.1% |
+| ACTIVE-restricted | the question is about practising midwives | 75.1% – 91.7% |
+| IPW | missingness is explained by certification status | 89.2% |
 
 The IPW figure is reported as a sensitivity and never as a correction. Status
 plainly does not explain all of the missingness; if it did, the bounds would not
@@ -92,8 +96,8 @@ Rurality is missing because a practice ZIP failed to resolve — **not** because
 certificant failed to enter the cohort. Those are different events, and
 conflating them discards evidence.
 
-**1,358 of the 5,417 non-cohort certificants carry a resolving ZIP.** They are
-**87.7% metropolitan**, against the cohort's 89.3% — 1.6 points *below*, not
+**1,376 of the 5,417 non-cohort certificants carry a resolving ZIP.** They are
+**87.9% metropolitan**, against the cohort's 89.4% — 1.5 points *below*, not
 above.
 
 This is the only direct evidence available on the *direction* of the selection,
@@ -101,13 +105,13 @@ and it points the same way as the persistence bias: if the certificants who
 could not be placed resemble those who could, the cohort slightly overstates how
 metropolitan the workforce is.
 
-Reporting the wider 59.5–92.9% interval would mean buying five points of
-apparent caution by ignoring 1,358 people who can in fact be located. The
+Reporting the wider 66.7–92.1% interval would mean buying five points of
+apparent caution by ignoring 1,376 people who can in fact be located. The
 reported bound keeps them.
 
 **Tipping point.** For the roster-wide metropolitan share to fall to 75%, the
-7,448 certificants with no assignable county would have to be **46.4%**
-metropolitan — a departure of **43.0 points** from what was observed. The
+5,673 certificants with no assignable county would have to be **32.7%**
+metropolitan — a departure of **56.7 points** from what was observed. The
 qualitative conclusion survives a departure that large; that is what makes it
 reportable despite the width.
 
@@ -216,3 +220,48 @@ checkout. Both are declared FROZEN consumers in
 [`rebuild_frozen_dependents.R`](../rebuild_frozen_dependents.R), so a rebuild
 cannot leave them holding a previous cohort. The artifacts they write are
 aggregate and carry provenance sidecars naming their inputs.
+
+## 9. Two joins that never happened
+
+Everything above was first written against a cohort in which **2,031 members had
+no assignable county**. That figure was three different things wearing one
+label, and only 256 of them were missing data.
+
+| | n | nature |
+|---|---|---|
+| address never fetched | 1,545 | stage-2 addresses were keyed on the **stage-2 NPI**, and the newly-NPI-resolved group is defined by not having had one. All 1,545 were published as 100% Unknown rurality. |
+| Connecticut vintage mismatch | 249 | the relationship file is 2020 and reports CT under its eight legacy counties; `county_base.csv` is 2023 and reports the nine planning regions. Same ground, no join. |
+| genuinely unassignable | 256 | PO box, unique, or non-geographic ZIP |
+
+Both were recovered. The first from the frozen geography artifact, which holds a
+practice ZIP for every one of them; the second through `ct_zip_to_region()`,
+which goes ZIP → tract → planning region rather than apportioning through the
+legacy county — seven of the eight legacy counties straddle two or three
+regions, and two regions are RUCC 4, so a county-weighted assignment would have
+swept every rural Connecticut midwife into a metropolitan region.
+
+**The headline barely moved: 89.34% → 89.41%.** The recovered group is 87.5%
+metropolitan against the retained group's 88.1%, so it was not a hidden rural
+population — which is the answer to whether recovering it was safe, and not one
+that could have been assumed.
+
+The bounds tightened, because the unobserved fraction shrank:
+
+| | before | after |
+|---|---|---|
+| reported bound | 64.9 – 92.2% | **72.1 – 91.4%** |
+| wider bound | 59.5 – 92.9% | 66.7 – 92.1% |
+| ACTIVE-restricted | 69.4 – 92.2% | 75.1 – 91.7% |
+| tipping departure | 43.0 pp | **56.7 pp** |
+
+**How it was found, and how it should have been found.** It surfaced because
+2,031 appeared as a node in a cohort flow diagram, next to its complement, where
+the total had to reconcile. That is luck: `practice_state` had the same defect in
+a less visible form — `compose()` filters `NA` before computing `N`, so the group
+did not appear as missing, it did not appear at all — and no figure would ever
+have shown it.
+
+Scientific law **L13** now checks what a flow diagram cannot: every group appears
+for every variable, and missingness is not concentrated in one group. L3 could
+not have caught either, and not by accident — its detect suite carries a near
+miss named *"a group legitimately entirely Unknown"* that must stay green.
