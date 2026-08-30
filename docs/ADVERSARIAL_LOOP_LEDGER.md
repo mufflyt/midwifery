@@ -3755,6 +3755,108 @@ changed in the same newly-merged PR #128, already carrying the PR's own new
 `tests/ci_science_laws.R` mutation-testing coverage — worth a closer read to
 confirm that coverage is as thorough as its "21/21 mutations detected" claim
 suggests, rather than assuming it fully closes the file).
+## Cycle 46 (session-cycle 23 of 24) — 2026-08-30 — 3 BVA / 4 semantic / 3 adversarial
+
+**Correction, 2026-08-30.** As first written this test carried "literal
+replicas" of `mw_wilson()`, `mw_trend()` and `mw_diff()`, guarded only by a
+grep asserting the real file still contained the guard's text. The stated
+reason -- that `build_stats_catalog.R` needs gitignored artifacts -- holds
+only for `mw_build_catalog()`; the file's top level loads packages and sets
+`MW_ART`, nothing more, so it sources cleanly on a bare runner. The three
+helpers are now bound out of a `sys.source()`d environment, and T46-0 is a
+behavioural check (the shipped `mw_wilson()` raises on a non-positive z)
+rather than a grep for the guard's text. Verified by regressing the shipped
+`mw_wilson()` (`4n^2` -> `2n^2`), which now fails T46-1 and T46-2 where
+against the replicas it failed nothing.
+**Target:** `mw_wilson()`, `mw_trend()`, `mw_diff()` in `manuscript/R/
+build_stats_catalog.R` — direct continuation of Cycle 45, which fixed the
+formatting layer (`inline_stats.R`) sitting on top of these; this cycle
+targets the arithmetic underneath (the Wilson score CI, Cochran-Armitage
+trend test, and two-proportion difference/CI that feed every CI and
+p-value reaching the manuscript). Priority lead carried forward from the
+Cycle 45 resuming-note.
+
+**Finding, confirmed empirically before any fix (per this loop's standing
+discipline):** both `mw_wilson()` and `mw_diff()` accept a normal deviate
+`z` (default 1.96) and use it *linearly*, not squared, in the half-width
+term (`half <- z * sqrt(...) / d`, `d - z*se` / `d + z*se`). A non-positive
+`z` therefore silently **swaps the lower and upper bound** instead of
+raising an error — `mw_wilson(63, 200, z = -1.96)` returns `c(38.24,
+25.46)` (lo > hi), and `mw_diff(136, 200, 90, 200, z = -1.96)` returns the
+identical inversion. This is the *same defect class* independently present
+in two functions — explicitly investigated whether the Cycle 45 finding
+recurs elsewhere, per the mega-prompt's meta-instruction, and it does, one
+layer down.
+
+**Verified not exercised by any real call site before finalizing:**
+`grep -n "mw_wilson(\|mw_diff("` on `build_stats_catalog.R` shows both real
+call sites (the panel persistence CI, the rurality-gradient strata CIs via
+`mapply`, and the metro-vs-remote difference) omit `z` entirely, always
+using the 1.96 default. The guard is purely defensive against a future
+call (e.g. a 90% interval passed as `-1.645` by a typo) — latent, not
+currently triggered.
+
+**Fix.** Added the same one-line `stop()` guard to both functions:
+`if (z <= 0) stop(...)`, naming the offending value and clarifying `z` is
+a normal deviate, not a signed offset. `mw_trend()` was left unchanged — it
+has no `z` parameter and no equivalent order-of-operations risk.
+
+**Investigated, not fixed:** `mw_wilson(x, 0)` / `mw_diff(x1, 0, ...)`
+(a zero denominator) divide by zero, silently propagating `NaN`/`Inf`.
+Every real call site's `n` is a positive count (`pairs_used`, hardcoded
+strata sizes), so this is never triggered today. Left as a documented,
+undecided ambiguity (same treatment as Cycle 45's `mw_n()` finding) rather
+than guessing what a zero-trial CI should mean.
+
+**Cross-function safety-net check (T46-10):** confirmed that `mw_trend()`'s
+own degenerate case — a single stratum, where the trend test's denominator
+is a sum of one all-zero deviation-squared term, i.e. dividing by zero —
+produces `z = NaN`, `p = NaN` with no guard in `mw_trend()` itself, but
+this is already safely absorbed by `mw_pval()`'s pre-existing
+`is.na(p)` branch (predates Cycle 45; not something either cycle added),
+rendering `"**[PENDING: P]**"` rather than crashing or printing `"NaN"`
+into manuscript prose. No fix needed here — verified the existing pipeline
+is already safe end-to-end for this input.
+
+**Tests.** `tests/test_cycle46_catalog_interval_stats.R`, 10 tests
+(T46-1..10, plus an uncounted T46-0 setup check that the real file still
+carries the guard the replicas assume): 3 BVA (Wilson lower bound clips to
+exactly 0 at x=0, upper bound clips to exactly 100 at x=n, `mw_trend()` at
+the 2-stratum minimum vs. the degenerate 1-stratum case), 4 semantic (the
+Wilson CI always brackets the raw proportion, `mw_diff()`'s three return
+values are internally ordered, `mw_trend()` is genuinely order-sensitive —
+reversing stratum order negates z but preserves the two-sided p — proving
+it tests trend across *ordered* strata as documented), 3 adversarial
+(T46-8/T46-9 are anti-ceremony pairs reproducing the retired unguarded
+`mw_wilson`/`mw_diff` bodies to prove the inversion actually happens before
+confirming the fixed versions stop instead; T46-10 is the cross-function
+safety-net check above).
+
+**Full suite.** New file: 10/10 pass. Re-ran all four manuscript-adjacent
+test files after the fix: `tests/ci_manuscript_numbers.R` PASS (0
+failures), `tests/test_manuscript_numbers_detect.R` PASS (7/7),
+`tests/ci_science_laws.R` PASS (21/21 mutations detected, 5/5 near misses
+allowed, 0 failures), `tests/test_science_laws_detect.R` PASS — all
+unchanged from pre-fix, confirming the new guards are purely additive.
+
+**Unresolved / carried forward.** `mw_wilson()`/`mw_diff()`'s zero-
+denominator behavior (new this cycle, deliberately left undecided, same
+treatment as Cycle 45's `mw_n()` finding). `mw_n()`'s own non-integer/
+negative-count ambiguity (Cycle 45) untouched. All standing items from
+cycles 1-23 and this session's carried-forward ambiguities (26, 30, 33, 34,
+38) untouched.
+
+**Estimand changed:** no — both fixes are purely additive guards on a `z`
+sign/magnitude no real call site ever passes; every real call site's
+rendered CI and p-value is byte-for-byte unchanged.
+
+**Next candidate leads (not yet investigated, 1 cycle remains after this
+one):** `mw_wordcount()`'s `.docx` XML parsing in `inline_stats.R` (several
+silent-`NA`-on-missing-section branches, untested); scenario parameters
+(still not directly targeted by ANY cycle 24-46 despite repeated flagging
+across many resuming-notes — strong candidate for Cycle 47, the final
+numbered cycle, given it has never been picked up); `match_open_payments_
+to_facility.R`; `analyze_linkage_selection_bias.R`.
 ## Cycle 47 (session-cycle 24 of 24, FINAL numbered cycle) — 2026-08-30 — 3 BVA / 3 semantic / 4 adversarial
 
 **Correction, 2026-08-30.** As first written this test carried "literal
