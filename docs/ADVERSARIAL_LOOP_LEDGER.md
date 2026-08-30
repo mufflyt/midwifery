@@ -3404,6 +3404,75 @@ group+level helper would require inventing which column identifies a
 person, which `compose()` is not given — left as a documented assumption
 (T37-8), not a defect fixed this cycle.
 
+## Cycle 36 (session-cycle 13 of 24) — 2026-08-30 — 4 BVA / 3 semantic / 3 adversarial
+
+**Note on branch base.** This is the first cycle where `origin/main` actually
+moved since cycle 24 began: PR #128 ("Two joins that never happened, and
+1,775 midwives who had an address all along") merged, adding, among other
+things, a brand-new `R/lib/flow_diagram.R` (182 lines, zero prior test
+coverage) that renders the manuscript's cohort-flow figure
+(`docs/figures/cohort_flow.{pdf,png,svg}`). This is exactly the kind of
+recently-changed, weakly-covered, public-figure-generating file this loop's
+own inventory step is supposed to catch — it became this cycle's target.
+
+**Target.** `R/lib/flow_diagram.R`'s `fd_layout()` (pure, no graphics device
+needed) and `fd_render()`.
+
+**Finding 1 — an undocumented node kind silently corrupted every subsequent
+tier.** `fd_node()`'s own `@param kind` documents exactly 5 valid values
+(lead, keep, band, drop, plain). A 6th, undocumented value, `"multi"`, had a
+special case in `fd_layout()` that set that node's height to `NA`. The
+per-tier vertical-position update, `y <- y + max(nodes$h[i]) + tier_gap`,
+does not drop `NA` by default, so one node with `h = NA` silently poisoned
+every **subsequent tier's** `y` position too — verified empirically with a
+3-tier fixture: tier 3's `y` became `NA` from a `"multi"` node in tier 2,
+with no error anywhere in the pipeline. `"multi"` has no live caller today
+(confirmed against `make_cohort_flow_figure.R`, the only production call
+site), so this was dormant — but the next edit adding a multi-value node
+would have silently corrupted the published figure below it.
+
+**Finding 2 — a typo'd edge endpoint rendered with no error.**
+`fd_render()`'s lookup, `nodes[nodes$id == edges$from[e], ]`, silently
+returns a 0-row frame for an undefined id, and the diagram renders with the
+arrow simply missing — no error, no visible sign that a TRANSITION (the
+entire point of an edge in a cohort-flow diagram) vanished.
+
+**Fix.** Both failure modes are the same underlying pattern — malformed
+input silently corrupting output instead of failing loudly — fixed with a
+`stop()` the moment each is detected: `fd_layout()` now validates `kind`
+against the documented 5-value set; `fd_render()` now validates every edge's
+`from`/`to` against the actual node ids before drawing anything. This
+matches the file's own stated design philosophy verbatim (its comments
+already praise visible failure over silent loss: *"Clipping a box off-canvas
+loses a count silently; moving it shows the spec is wrong"*).
+
+**Verified no regression to the real figure.** Extracted the actual
+node/edge specification from `make_cohort_flow_figure.R` (10 nodes, 10
+edges, no `"multi"` kind, no typo'd ids) and ran it through the patched
+`fd_write()` end-to-end with dummy stat values — completed cleanly, both new
+guards inert for the real spec.
+
+**Investigated, not a defect:** duplicate node ids (e.g. two `fd_node()`
+calls both using `id = "cohort"`) already fail loudly at `fd_layout()` — an
+uninformative message ("replacement has 2 rows, data has 3", from R's own
+data.frame machinery), but a real error, never silent corruption. Pinned
+(T36-10), not improved, since it is already safe.
+
+Also documented, not fixed: mixing explicit and auto (`NA`) `at` values
+within one tier computes the auto positions from an even split of the full
+tier BEFORE the explicit ones are overwritten on top, so the auto siblings
+do not redistribute around wherever the explicit ones actually land. The
+file's own header already disclaims automatic layout search, and the one
+production call site always supplies an explicit `at` for every node in
+every tier, so this path is never exercised in the published figure.
+
+**Tests.** `tests/test_cycle36_flow_diagram.R`, 10 tests (T36-1..10). T36-8
+and T36-9 carry anti-ceremony companions and were confirmed to discriminate
+via `git stash` (2 real failures pre-fix, 0 post-fix).
+
+**Full suite.** New file: 10/10 pass. `tests/ci_hygiene.R`: 0 failures, no
+new duplicate definitions. No existing test referenced this file, so
+nothing to regress.
 **Unresolved / carried forward.** None new. Standing items from cycles 26,
 30, 33, 34 untouched.
 
@@ -3418,3 +3487,17 @@ beyond the OLS extrapolation (cycle 26) and the derangement fallback (cycle
 30); `analyze_linkage_selection_bias.R` (the other file substantially
 changed in PR #128, not yet directly targeted -- this cycle focused on
 R/07-cohort-composition.R instead).
+
+**Estimand changed:** no — the figure's actual published content (10 real
+nodes/edges, no "multi", no typos) is byte-for-byte unaffected; the fix only
+adds loud failure for inputs the real figure never uses.
+
+**Next candidate leads (not yet investigated):** scenario parameters more
+broadly (still not directly targeted by any cycle 24-36); `match_open_
+payments_to_facility.R`; uncertainty propagation beyond the OLS extrapolation
+(cycle 26) and the derangement fallback (cycle 30); `R/07-cohort-
+composition.R` and `analyze_linkage_selection_bias.R` (both substantially
+changed in the same newly-merged PR #128, already carrying the PR's own new
+`tests/ci_science_laws.R` mutation-testing coverage — worth a closer read to
+confirm that coverage is as thorough as its "21/21 mutations detected" claim
+suggests, rather than assuming it fully closes the file).

@@ -513,6 +513,10 @@ jobs:
       - name: Cohort composition ledger
         run: Rscript tests/test_cycle37_composition_ledger.R
 
+      # Flow-diagram layout engine (grid, base R -- no extra package): the
+      # pure layout math behind the published cohort-flow figure.
+      - name: Flow diagram layout engine
+        run: Rscript tests/test_cycle36_flow_diagram.R
       # -----------------------------------------------------------------------
       # Ported verbatim from mufflyt/isochrones @ 1907a5c40 -- 416 assertions,
       # zero new code. Each file tests a helper that exists in BOTH repos, so
