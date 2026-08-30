@@ -110,6 +110,19 @@ mw_build_catalog <- function(root = ".") {
       unmatched_pct  = 100 * unname(sums[["unmatched"]]) / tot,
       heldout        = unname(sums[["candidate_class5_held_out_of_cohort"]]),
       heldout_pct    = 100 * unname(sums[["candidate_class5_held_out_of_cohort"]]) / tot,
+      # TWO RATES, NAMED. `active_pct` is resolution into the PRIMARY cohort --
+      # an NPI carrying midwifery taxonomy. `active_ascertained_pct` is whether
+      # the certificant was found in NPPES AT ALL, including the nursing-only
+      # matches the cross-taxonomy rule declines to promote. They differ by six
+      # points among ACTIVE certificants and seventeen among DECEASED, and the
+      # paper needs both: ascertainment is the right denominator for a question
+      # about registry coverage, cohort resolution for a question about who the
+      # analysis is about. Reporting either alone, unlabelled, is how a reader
+      # ends up unable to reconcile 78.4% with 84.6%.
+      active_ascertained_pct = 100 * (lc$matched[lc$status == "ACTIVE"] +
+        lc$matched_nursing_taxonomy[lc$status == "ACTIVE"]) / lc$n[lc$status == "ACTIVE"],
+      dead_ascertained_pct = 100 * (lc$matched[lc$status == "DECEASED"] +
+        lc$matched_nursing_taxonomy[lc$status == "DECEASED"]) / lc$n[lc$status == "DECEASED"],
       active_n       = lc$n[lc$status == "ACTIVE"],
       active_matched = lc$matched[lc$status == "ACTIVE"],
       active_pct     = lc$pct_matched[lc$status == "ACTIVE"],

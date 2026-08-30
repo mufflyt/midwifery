@@ -137,9 +137,26 @@ knitr::kable(t2, row.names = FALSE, align = "lrrr",
   caption = "Table S2. Resolution on midwifery taxonomy by certification status, ordered by number of records.")
 ```
 
-Resolution ranges from `r mw_safe_stat("linkage.active_pct", "%.1f")`% among
+TWO RATES ARE REPORTED IN THIS STUDY AND THEY ARE NOT THE SAME QUANTITY.
+*Cohort resolution* is the share of certificants who resolved to a provider
+record carrying midwifery taxonomy, which is what admits a person to the
+analytic cohort. *Ascertainment* is the share found in the registry at all,
+including those whose only match carries nursing taxonomy -- a certified
+nurse-midwife must hold registered-nurse licensure and may have enumerated
+under either, and the cross-taxonomy rule declines to promote a nursing-only
+match into the midwifery cohort (eMethods 2). Ascertainment answers whether the
+registry knows the person exists; cohort resolution answers whether this
+analysis is about them.
+
+Cohort resolution ranges from
+`r mw_safe_stat("linkage.active_pct", "%.1f")`% among
 ACTIVE certificants to `r mw_safe_stat("linkage.dead_pct", "%.1f")`% among
-DECEASED certificants. The gradient is mechanical rather than mysterious: the
+DECEASED certificants; ascertainment, from
+`r mw_safe_stat("linkage.active_ascertained_pct", "%.1f")`% to
+`r mw_safe_stat("linkage.dead_ascertained_pct", "%.1f")`%. The coverage
+analysis below is stated on ascertainment, because a question about what the
+registry ever recorded must not be answered with a number that also encodes a
+cohort-membership rule. The gradient is mechanical rather than mysterious: the
 registry is a registry of clinicians who enumerated to bill, enumeration became
 near-universal only over the study period, and a clinician who left practice
 before enumeration was routine has no registry record to be linked to.

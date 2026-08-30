@@ -483,10 +483,21 @@ agree.
 The principal limitation is that linkage is selected on an outcome correlated
 with the exposure. Only `r mw_safe_stat("linkage.active_pct", "%.1f")`% of
 ACTIVE certificants and `r mw_safe_stat("linkage.dead_pct", "%.1f")`% of
-DECEASED certificants resolve, so providers who exited the workforce are
-under-represented, and persistence among those we observe is not persistence
-among all certificants. The direction of this bias is toward overstating
-persistence.
+DECEASED certificants resolve *into the analytic cohort* -- that is, to a
+provider record carrying midwifery taxonomy -- so providers who exited the
+workforce are under-represented, and persistence among those we observe is not
+persistence among all certificants. The direction of this bias is toward
+overstating persistence.
+
+Two selection rates appear in this paper and they answer different questions.
+The figures above are cohort resolution. Ascertainment -- whether a certificant
+was found in the provider registry at all, including matches to a nursing-only
+record that the cross-taxonomy rule declines to promote -- is higher:
+`r mw_safe_stat("linkage.active_ascertained_pct", "%.1f")`% of ACTIVE and
+`r mw_safe_stat("linkage.dead_ascertained_pct", "%.1f")`% of DECEASED
+certificants. Ascertainment is the right denominator for a question about
+registry coverage; cohort resolution is the right one for a question about who
+this analysis is about. Appendix 1 reports both.
 
 That limitation binds the persistence estimates more tightly than the
 composition ones, and the difference is worth stating rather than leaving to
