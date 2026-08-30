@@ -210,8 +210,22 @@ real <- link_on(au)
 # matches arise from name collision alone. Reported per institution, because
 # collision risk scales with collection breadth: Frontier (all midwifery
 # students) ran 9%, Seattle (all nursing specialties) ran 38%.
+#
+# A plain sample() is a permutation, not a DERANGEMENT: it has ~1 expected
+# fixed point regardless of vector length (verified: ~62% chance of at least
+# one, for n = 10, 30, or 100), so roughly six times in ten this "negative"
+# control silently leaves at least one row's given_tokens matched back to its
+# own true surname -- a real match hiding inside what is meant to be a clean
+# null. For a small institution (Frontier-sized cohorts), one such
+# contaminated row is a non-trivial share of that institution's reported
+# permutation rate, understating how much of the real match rate is genuine
+# signal rather than name collision. Rejection-sampled to a true derangement:
+# P(zero fixed points) is ~37% per draw, so this terminates in a few tries.
+# derange() is defined in R/lib/derangement.R -- the canonical home, so the
+# cycle-30 test exercises this exact implementation rather than a copy.
+source(file.path(root_dir, "R", "lib", "derangement.R"))
 set.seed(20260810)
-ctrl <- link_on(au %>% mutate(given_tokens = sample(given_tokens)))
+ctrl <- link_on(au %>% mutate(given_tokens = derange(given_tokens)))
 
 # --- per-institution window --------------------------------------------------
 # Fitted from the institution's own matched gaps: p10..p90 of the real matches,

@@ -3327,6 +3327,119 @@ cadence:
 
    Wired into `ci.yml` alongside the rest of this cycle's tests.
 
+---
+
+## Cycles 25-29 (session-cycles 2-6 of 24) — 2026-08-29 — status notes
+
+All five still open as separate PRs as of cycle 30 (#115, #118, #119, #120,
+#121). One-line summaries so cycle 30 does not repeat any of them.
+
+- **25** (3/4/3): `R/15-build-birth-activity.R` -- unascertained-provider
+  visibility. Added `n_unascertained_roster`.
+- **26** (3/3/4): `calibrate_amcb_certification_ages.R` -- unbounded OLS
+  extrapolation fed an unguarded age-band rule. Routed through `band_hg_age()`.
+- **27** (4/3/3): `resolve_org_ambiguity.R` -- review-sample RNG
+  reproducibility (shared seed + row-position sampling). Re-seeded + sorted
+  per stratum.
+- **28** (3/4/3): `check_npi_deactivation.R` -- one more `.keep_all` site.
+  Routed through `assert_unique_keys(dedupe = TRUE)`.
+- **29** (3/3/4): `calibrate_osmde_vs_ec2.R` / `build_osmde_route_queue_
+  all_midwives.R` -- the same RNG-reproducibility class as 27, through a
+  grouped `slice_sample()` and an incidental sort-order dependency. Both
+  fixed.
+
+---
+
+## Cycle 30 (session-cycle 7 of 24) — 2026-08-29 — 4 BVA / 3 semantic / 3 adversarial -- halfway point
+
+**Target.** `link_theses_to_amcb.R`'s permutation-based negative control --
+the per-institution false-positive-rate baseline ("Frontier ran 9%, Seattle
+ran 38%"). A genuinely different validation/backtesting question from
+cycles 27/29 (which asked "is the SAMPLE reproducible"): does the
+permutation actually produce a clean statistical null, or can it silently
+retain real signal? Zero prior tests.
+
+**Tests added** — `tests/test_cycle30_permutation_derangement.R` (T30-1 .. T30-10)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T30-1 | BVA | length-0 input returns character(0), no error |
+| T30-2 | BVA | length-1 input returns itself, does not hang |
+| T30-3 | BVA | two identical values (impossible to derange) terminates, doesn't hang |
+| T30-4 | BVA | 500 distinct names achieve a true zero-fixed-point derangement |
+| T30-5 | semantic | a plain permutation has ~1 expected fixed point regardless of size |
+| T30-6 | semantic | the derangement is a genuine permutation of the input multiset |
+| T30-7 | semantic | a realistic institutional cohort achieves exactly zero fixed points |
+| T30-8 | anti-ceremony | the RETIRED plain sample() has >=1 fixed point >50% of the time |
+| T30-9 | adversarial | an impossible derangement warns rather than silently contaminating |
+| T30-10 | adversarial | no bare sample(given_tokens) survives in production |
+
+### The finding: a permutation is not a derangement
+
+`ctrl <- link_on(au %>% mutate(given_tokens = sample(given_tokens)))` shuffles
+first names against surnames to estimate how many "matches" arise from name
+collision alone -- a negative control whose whole point is a clean null with
+**zero** true pairings surviving. `sample(x)` returns a random permutation,
+not a derangement: **verified empirically that it carries ~1 expected fixed
+point regardless of vector length** (measured 1.02 over 3,000 trials at
+n=30), and a **63% chance of at least one** row where the shuffled given name
+lands back on its own true surname by chance. For a small institution
+(Frontier-sized cohorts, tens of theses), one such contaminated row is a
+non-trivial share of that institution's reported permutation rate -- a real
+match hiding inside what the comment calls "collision alone," which
+understates how much of the real match rate is genuine signal.
+
+**Fix.** Rejection-sampled to a true value-based derangement (`derange()`):
+resample until no row's shuffled `given_tokens` equals its own original
+value, capped at 1,000 tries with a best-effort fallback. The cap matters:
+a VALUE-based derangement (not merely an index-based one) can be
+**mathematically impossible** for a multiset -- two rows sharing the exact
+same first name can never both fail to match themselves under any
+permutation, and repeated first names are the norm in real cohort data, not
+the exception. An uncapped rejection loop would hang forever on exactly the
+data this control is meant to run on. Verified the pathological case (two
+identical values) terminates within the cap and warns rather than silently
+returning contaminated output (T30-3, T30-9).
+
+### Full suite
+
+`tests/test_cycle30_permutation_derangement.R`: 10/10 pass. Production file
+re-parses clean (cannot run end-to-end here -- needs the real, gitignored
+thesis-harvest artifacts). Discovered by the `tests/test_cycle*.R` glob in `ci.yml`, so no per-test
+step is added.
+
+
+**Correction, 2026-08-30.** As first written this test hand-copied `derange()`
+out of `link_theses_to_amcb.R` ("Mirrors the FIXED derange() ... exactly") and
+asserted against the copy, so it would have stayed green through any
+regression of the shipped function. H4 caught it as a duplicate definition --
+a naming rule catching a scientific defect. `derange()` now lives in
+`R/lib/derangement.R`; the script and this test both source it. Verified by
+regressing the library back to a plain `sample()`, which now fails T30-4,
+T30-7, and T30-9 where before it failed nothing.
+### Unresolved / carried forward
+
+- All items from cycles 1-29 unchanged.
+- **NEW, low priority:** `derange()`'s best-effort fallback for a
+  mathematically-impossible case still returns SOME residual contamination
+  (warned, not silenced) -- whether the calling script should instead drop
+  that institution's permutation estimate entirely when a warning fires is a
+  judgment call, not decided here.
+- `match_nppes.R`'s single `sample()` call and `R/09-bc-resolver-
+  interaction.R`'s permutation were both inventoried and found NOT to need
+  this fix: the former is a spot-check self-test where any random sample
+  serves its purpose equally well (identity of the sampled rows doesn't
+  matter, only that a failure reproduces on retry); the latter already
+  IS a row-order-invariance test, already correctly designed with its own
+  `stopifnot()` across 5 trials.
+
+**Estimand changed: possibly, but not measured here.** The reported
+per-institution permutation rates ("Frontier 9%, Seattle 38%") were computed
+against the RETIRED, contamination-prone control; re-running with `derange()`
+would very likely lower them slightly, but by how much depends on each
+institution's own name-repetition structure and is a job for whoever next
+regenerates `artifacts/midwifery_theses_oai.csv`-adjacent outputs, not for
+this loop to estimate without the real data.
 ## Cycle 37 (session-cycle 14 of 24) — 2026-08-30 — 3 BVA / 4 semantic / 3 adversarial
 
 **Note on branch base.** `origin/main` moved again this cycle (PR #130,
