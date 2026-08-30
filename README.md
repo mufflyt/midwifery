@@ -42,9 +42,32 @@ are roster volumes, not board verifications — the word "verified" previously
 used in this caption has been retracted. See Figure 2 and
 [docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md](docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md).*
 
-### 2. Board verification, retracted: 11,355 claimed, 374 observed
+### 2. One middle-initial rule was deleting matches and manufacturing them at once
+![The middle-name veto's two-sided footprint](docs/figures/middle_name_veto.png)
+*Figure 2: The linkage deletes any candidate whose middle initial disagrees with
+the roster's, compared at position 1 only. Of 2,240 roster rows with an
+exact-first-and-last-name candidate deleted that way, **1,454** were ruled in by
+a middle name agreeing on another candidate — the veto changed nothing for them;
+**218** resolved ONLY because every rival was deleted, and were published as
+`matched` with no flag; and **568** resolved nothing, including **82** whose only
+candidate was deleted and who were then published as "no candidate", which is
+indistinguishable from absence from the registry. Comparing middle names as
+token sets rather than by position moved **+153 cohort members**. See
+[docs/TECHNICAL_APPENDIX_RECORD_LINKAGE.md](docs/TECHNICAL_APPENDIX_RECORD_LINKAGE.md)
+and the [cohort flow](docs/figures/cohort_flow.png).*
+
+### 3. Cohort flow, roster to rurality
+![AMCB roster to analytic cohort to RUCC stratum](docs/figures/cohort_flow.png)
+*Figure 3: 22,309 certificants to the analytic cohort and its rurality strata.
+The **5,411 unresolved** are four different things wearing one label: records
+tied on name evidence, records with no candidate at all, records held out by the
+class-5 guard — and **519 certified in 2025–2026**, outside the 2007–2025 NPPES
+panel window entirely, which are not linkage failures and cannot be recovered by
+any matching rule.*
+
+### 4. Board verification, retracted: 11,355 claimed, 374 observed
 ![Board verification claimed against board verification observed](docs/figures/bon_verification_retraction.png)
-*Figure 2: Most purported state BON licence numbers in this repository were
+*Figure 4: Most purported state BON licence numbers in this repository were
 **synthesized from `certification_number`** in the form
 `{STATE}-RN-CNM-{cert}` — a re-encoding of the AMCB identifier, not licensure
 evidence. Only 374 Washington DOH `credentialnumber` records are genuine
@@ -58,25 +81,25 @@ not be added.*
 > the claim "11,355 midwives board-verified across 40 states" becomes **374, in
 > one state**.
 
-### 3. Active CPT Delivery Attenders by State BON
+### 5. Active CPT Delivery Attenders by State BON
 ![Active CPT Delivery Attenders by State](artifacts/plots/plot2_bon_delivery_attenders_by_state.png)
-*Figure 3: Active CPT delivery attending midwives (CPT 59400 / 59409 / 59410) by state jurisdiction.*
+*Figure 5: Active CPT delivery attending midwives (CPT 59400 / 59409 / 59410) by state jurisdiction.*
 
-### 4. Active Midwifery Supply per 100,000 Women of Reproductive Age (15–44)
+### 6. Active Midwifery Supply per 100,000 Women of Reproductive Age (15–44)
 ![Active State Rate Map](docs/maps/active_state_rate.png)
-*Figure 4: Spatial distribution of active CNMs per 100,000 women aged 15–44 across US states.*
+*Figure 6: Spatial distribution of active CNMs per 100,000 women aged 15–44 across US states.*
 
-### 5. County-Level Midwifery Supply Distribution
+### 7. County-Level Midwifery Supply Distribution
 ![County Midwifery Supply](docs/figures/county_supply.png)
-*Figure 5: County-level midwifery supply map highlighting maternity care deserts and active midwife practice sites.*
+*Figure 7: County-level midwifery supply map highlighting maternity care deserts and active midwife practice sites.*
 
-### 6. 15-Year National Midwifery Workforce Microsimulation (2026–2040)
+### 8. 15-Year National Midwifery Workforce Microsimulation (2026–2040)
 ![Workforce Microsimulation Projections](artifacts/plots/plot3_microsimulation_workforce_projections.png)
-*Figure 6: Projected 15-year career state transitions, new graduate inflows, and rural-to-urban supply drift (2026–2040).*
+*Figure 8: Projected 15-year career state transitions, new graduate inflows, and rural-to-urban supply drift (2026–2040).*
 
-### 7. Where Active Midwives Actually Practice, by County
+### 9. Where Active Midwives Actually Practice, by County
 ![Active certified midwives by last-observed practice county](docs/maps/active_county_counts.png)
-*Figure 7: Active certificants by last-observed practice county. Grey is **no
+*Figure 9: Active certificants by last-observed practice county. Grey is **no
 linked practice location in that county**, which is not the same as no midwife:
 34% of the roster never linked, so this is the distribution of located practice
 locations rather than of access. Patients cross county lines.*

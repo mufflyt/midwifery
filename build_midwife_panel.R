@@ -37,6 +37,38 @@ stopifnot(dir.exists(ROOT))
 # midwives. Nursing codes are included and LABELLED, so the matcher can weigh
 # them as weaker evidence rather than treating all candidates alike.
 MIDWIFE_TAX <- c("367A00000X", "176B00000X")
+
+# WHY THERE ARE TWO SCOPES (2026-08-30).
+#
+# The enumerated NURSING_TAX below is 4 of the ~14 Nurse Practitioner codes, 2
+# of the ~30 Registered Nurse codes and 1 of the Clinical Nurse Specialist
+# codes. The reasoning that admitted nursing codes at all -- a CNM holds RN
+# licensure and may enumerate under either profession -- does not stop at the
+# four NP specialties someone happened to list. A CNM who also holds a Family
+# NP credential and enumerated under 363LF0000X, or who is recorded as a
+# Maternal Newborn RN under 163WM0102X, is not in this pool by ANY route. She
+# cannot be found by a better name rule, a wider blocking key or a relaxed
+# veto; she is not in the candidate universe at all.
+#
+# Audited against the frozen linkage: 1,282 of the 2,108 "no candidate" rows
+# have their exact surname present in the NARROW pool but no candidate, and 63
+# have neither name anywhere in it. How much of that gap is taxonomy scope
+# rather than name matching was UNMEASURABLE without this second pool.
+#
+# scope = "narrow" reproduces the published panel EXACTLY and stays the
+# default, because it defines the primary midwifery tier in a frozen cohort.
+# scope = "wide" takes every specialty in the three nursing families and exists
+# to MEASURE the ceiling, not to replace the primary panel. Prefix families,
+# not a longer hand-list: the hand-list is what drifted.
+PANEL_SCOPE <- Sys.getenv("PANEL_TAX_SCOPE", "narrow")
+if (!PANEL_SCOPE %in% c("narrow", "wide")) {
+  stop(sprintf("PANEL_TAX_SCOPE must be 'narrow' or 'wide', got '%s'",
+               PANEL_SCOPE), call. = FALSE)
+}
+# 363L Nurse Practitioner | 163W Registered Nurse | 364S Clinical Nurse Specialist
+WIDE_TAX_PREFIX <- c("363L", "163W", "364S")
+WIDE_TAX_EXACT  <- c(MIDWIFE_TAX, "367500000X")   # + CRNA, as before
+
 NURSING_TAX <- c("363LW0102X",  # Women's Health NP
                  "363LX0001X",  # OB-GYN NP
                  "363L00000X",  # Nurse Practitioner
@@ -46,6 +78,25 @@ NURSING_TAX <- c("363LW0102X",  # Women's Health NP
                  "367500000X",  # Certified Registered Nurse Anesthetist
                  "364SW0102X")  # CNS, Women's Health
 PANEL_TAX <- c(MIDWIFE_TAX, NURSING_TAX)
+
+#' SQL predicate selecting the panel's taxonomy scope, for one code expression.
+#'
+#' ONE definition, used by BOTH readers. The classic and reshaped paths each
+#' built their own `IN (...)` clause from PANEL_TAX; widening the scope in one
+#' and not the other would produce a panel whose composition depended on which
+#' release format a year happened to ship in -- a difference that looks exactly
+#' like a real change in the workforce.
+panel_tax_predicate <- function(expr) {
+  if (PANEL_SCOPE == "narrow") {
+    return(sprintf("UPPER(TRIM(%s)) IN ('%s')", expr,
+                   paste(PANEL_TAX, collapse = "','")))
+  }
+  parts <- c(sprintf("UPPER(TRIM(%s)) LIKE '%s%%'", expr, WIDE_TAX_PREFIX),
+             sprintf("UPPER(TRIM(%s)) IN ('%s')", expr,
+                     paste(WIDE_TAX_EXACT, collapse = "','")))
+  paste0("(", paste(parts, collapse = " OR "), ")")
+}
+cat(sprintf("taxonomy scope: %s\n", PANEL_SCOPE))
 
 files <- list.files(ROOT, pattern = "^npidata(_pfile)?_[0-9]{8}-[0-9]{8}\\.csv$",
                     recursive = TRUE, full.names = TRUE)
@@ -83,7 +134,7 @@ cat(sprintf("%d yearly snapshots: %s\n", length(files),
 #' Build the panel rows for one reshaped (post-2024, per-field) NBER snapshot
 #' @keywords internal
 #' @noRd
-process_reshaped_year <- function(con, dir, year, snap_date_str, panel_tax, midwife_tax) {
+process_reshaped_year <- function(con, dir, year, snap_date_str, midwife_tax) {
   byvar_dir <- file.path(dir, "byvar")
   field_file <- function(field) {
     hits <- list.files(byvar_dir, pattern = sprintf("^%s_[0-9]{6}\\.csv$", field), full.names = TRUE)
@@ -110,8 +161,7 @@ process_reshaped_year <- function(con, dir, year, snap_date_str, panel_tax, midw
     "SELECT npi, UPPER(TRIM(%s)) AS code FROM %s",
     names(tax_files), sapply(tax_files, csv)), collapse = " UNION ALL ")
   tax_hits <- dbGetQuery(con, sprintf(
-    "SELECT npi, code FROM (%s) WHERE code IN ('%s')",
-    tax_union, paste(panel_tax, collapse = "','")))
+    "SELECT npi, code FROM (%s) WHERE %s", tax_union, panel_tax_predicate("code")))
   if (!nrow(tax_hits)) {
     cat(sprintf("  [reshaped %d] 0 rows matched PANEL_TAX -- skipped\n", year))
     return(NULL)
@@ -144,6 +194,7 @@ process_reshaped_year <- function(con, dir, year, snap_date_str, panel_tax, midw
     "SELECT n.npi, %s,
             CASE WHEN EXISTS (SELECT 1 FROM rs_tax_hits h WHERE h.npi = n.npi AND h.code IN ('%s'))
                  THEN 'midwife' ELSE 'nursing' END AS tax_class,
+            '%s' AS tax_scope,
             %d AS snapshot_year, '%s' AS snapshot_date
      FROM rs_npis n
      %s
@@ -153,14 +204,20 @@ process_reshaped_year <- function(con, dir, year, snap_date_str, panel_tax, midw
      -- silently zeroed the whole snapshot.
      WHERE UPPER(TRIM(j_entity.entity)) = 'INDIVIDUAL'",
     paste(selects, collapse = ", "), paste(midwife_tax, collapse = "','"),
-    year, snap_date_str, paste(joins, collapse = "\n     "))
+    PANEL_SCOPE, year, snap_date_str, paste(joins, collapse = "\n     "))
   dbGetQuery(con, sql)
 }
 
 con <- dbConnect(duckdb::duckdb())
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
-out_path <- "midwife_panel.csv"
+out_path <- Sys.getenv(
+  "MIDWIFE_PANEL_OUT",
+  # The scope is in the FILENAME. Both panels are legitimate and they are not
+  # interchangeable; a wide panel sitting at midwife_panel.csv would be picked
+  # up silently by match_amcb_to_npi.R and change the published cohort.
+  if (PANEL_SCOPE == "wide") "midwife_panel_wide.csv" else "midwife_panel.csv")
+cat(sprintf("output: %s\n", out_path))
 RESUME <- !identical(Sys.getenv("PANEL_REBUILD"), "1")
 lock <- paste0(out_path, ".lock")
 # The lock must record WHO holds it, or a killed build leaves a stale file that
@@ -200,7 +257,7 @@ for (k in seq_along(files)) {
 
   if (kind[k] == "reshaped") {
     t0 <- Sys.time()
-    rows <- tryCatch(process_reshaped_year(con, f, snap_year[k], snap_date[k], PANEL_TAX, MIDWIFE_TAX),
+    rows <- tryCatch(process_reshaped_year(con, f, snap_year[k], snap_date[k], MIDWIFE_TAX),
                      error = function(e) {cat("  ERR:", substr(conditionMessage(e), 1, 90),
                                               "\n"); NULL})
     if (is.null(rows) || !nrow(rows)) next
@@ -280,7 +337,7 @@ for (k in seq_along(files)) {
   # but the taxonomy columns feeding this WHERE clause were compared raw. A
   # taxonomy code stored lowercase (or with incidental whitespace) failed the
   # exact IN(...) match and the row silently vanished -- no error, no count.
-  where_tax <- paste(sprintf("UPPER(TRIM(%s)) IN ('%s')", tax, paste(PANEL_TAX, collapse = "','")),
+  where_tax <- paste(vapply(tax, panel_tax_predicate, character(1)),
                      collapse = " OR ")
   # Which slot matched decides the evidence tier downstream.
   mid_expr <- paste(sprintf("UPPER(TRIM(%s)) IN ('%s')", tax, paste(MIDWIFE_TAX, collapse = "','")),
@@ -290,6 +347,7 @@ for (k in seq_along(files)) {
 
   sql <- sprintf("SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                          CASE WHEN (%s) THEN 'midwife' ELSE 'nursing' END AS tax_class,
+                         '%s' AS tax_scope,
                          %d AS snapshot_year, '%s' AS snapshot_date
                   FROM %s WHERE (%s)%s",
                  sprintf("%s AS npi", col$npi),
@@ -301,7 +359,7 @@ for (k in seq_along(files)) {
                  else sprintf("SUBSTR(TRIM(%s), 1, 5) AS practice_zip", col$zip),
                  if (is.na(col$deact)) "NULL AS deactivation_date"
                  else sprintf("TRIM(%s) AS deactivation_date", col$deact),
-                 mid_expr, snap_year[k], snap_date[k], src, where_tax,
+                 mid_expr, PANEL_SCOPE, snap_year[k], snap_date[k], src, where_tax,
                  # BUG FIX: every other field is UPPER(TRIM(...))'d before
                  # comparison; this one compared the raw value, so incidental
                  # whitespace (" 1") silently failed the match and dropped

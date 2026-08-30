@@ -9,6 +9,292 @@
 # itself. See tests/test_amcb_gates.R.
 # =============================================================================
 
+#' Award a contested NPI to a claimant whose evidence STRICTLY dominates.
+#'
+#' WHY THIS IS BACK, AND WHY IT IS NOT WHAT IT WAS (2026-08-30).
+#'
+#' Until 2026-08-08 the canonical resolver consumed NPIs greedily: where two
+#' certificants claimed one NPI, whoever sorted first took it. That was removed
+#' upstream for a stated reason -- "a score gap is not by itself evidence that
+#' the higher scorer is the right person" -- and removing it doubled this
+#' pipeline's contested stratum from 95 to 188, which is 93 people withdrawn
+#' from the cohort by a change in another repository.
+#'
+#' Measured over those 93 contested NPIs:
+#'
+#'   56  one claimant holds STRICTLY stronger name evidence than every rival
+#'   37  the claimants tie at the same evidence class (10 at class 1, 19 at
+#'       class 2, 8 at class 3) -- nothing separates them but sort order
+#'
+#' So the two rules are not "recover 93" against "recover 0". They are:
+#'
+#'   quarantine_all     recover  0, decide 0 identities on sort order
+#'   strict_dominance   recover 56, decide 0 identities on sort order
+#'   greedy             recover 93, decide 37 identities on SORT ORDER
+#'
+#' Those are the counts on the CONTROL run's contested set. In the shipped
+#' pipeline the middle-name fix runs first and shrinks that set, so the rule
+#' awards 53 NPIs and 123 rows remain contested. Both numbers are real; they
+#' are measured on different candidate sets and neither supersedes the other.
+#'
+#' strict_dominance is the default because it takes every record the evidence
+#' can actually justify and none that it cannot. The 37 are a real tie: two
+#' people, one provider record, identical name evidence. Handing that NPI to
+#' the lexically smaller certification number is not a linkage result.
+#'
+#' greedy remains reachable (CONTESTED_RULE=greedy) because reproducing the
+#' frozen 16,892 cohort requires it, and a number nobody can regenerate is
+#' worse than one whose weakness is written down. It is not the default.
+#'
+#' @param quarantine the `quarantine` attribute of rank_one_to_one()'s result.
+#' @param rule "strict_dominance", "quarantine_all", or "greedy".
+#' @return the rows to ADD back to the matched set; zero rows if none qualify.
+amcb_award_contested <- function(quarantine, rule = "strict_dominance",
+                                 id_col = "enthealth_id") {
+  if (!rule %in% c("strict_dominance", "quarantine_all", "greedy")) {
+    stop(sprintf("CONTESTED_RULE must be strict_dominance, quarantine_all or greedy; got '%s'",
+                 rule), call. = FALSE)
+  }
+  empty <- quarantine[0, , drop = FALSE]
+  if (rule == "quarantine_all" || is.null(quarantine) || !nrow(quarantine)) {
+    return(empty)
+  }
+  require_cols(quarantine, c(id_col, "npi", "resolution_status",
+                             "method_priority", "score_total_adj",
+                             "confidence_score"), "quarantine")
+  cc <- quarantine[quarantine$resolution_status == "ambiguous_contested_npi", ,
+                   drop = FALSE]
+  if (!nrow(cc)) return(empty)
+  # Lexicographic, matching the resolver's own key: priority ascending, then
+  # score, then confidence. Ties on ALL THREE are what "not separable" means.
+  ord <- order(cc$npi, cc$method_priority, -cc$score_total_adj,
+               -cc$confidence_score, cc[[id_col]])
+  cc <- cc[ord, , drop = FALSE]
+  key <- paste(cc$method_priority, cc$score_total_adj, cc$confidence_score)
+  keep <- vapply(split(seq_len(nrow(cc)), cc$npi), function(ix) {
+    if (length(ix) < 2L) return(NA_integer_)
+    # greedy takes the first row regardless; strict_dominance only when the
+    # leader's evidence tuple differs from the runner-up's.
+    if (rule == "greedy" || key[ix[1]] != key[ix[2]]) ix[1] else NA_integer_
+  }, integer(1))
+  keep <- keep[!is.na(keep)]
+  if (!length(keep)) return(empty)
+  won <- cc[keep, , drop = FALSE]
+  # A person cannot win two NPIs, and an NPI cannot go to two people.
+  won <- won[!duplicated(won[[id_col]]) & !duplicated(won$npi), , drop = FALSE]
+  won
+}
+
+#' Assert the BEHAVIOUR of rank_one_to_one(), which is imported from isochrones.
+#'
+#' THE DEFECT THIS EXISTS TO PREVENT (2026-08-30, cost two dead runs).
+#' This pipeline imports five functions from another repository and checked them
+#' with `exists(fn)`. Existence is not a contract. Between the frozen linkage and
+#' today, isochrones consolidated four copies of rank_one_to_one() and, in doing
+#' so, changed two things this script depended on:
+#'
+#'   1. the default `id_col` moved from "enthealth_id" to "abog_id"
+#'   2. it began REQUIRING method_priority, or build_method_priority_lut() in
+#'      scope -- a helper the ENT script does not export
+#'
+#' `exists("rank_one_to_one")` was TRUE throughout. The run died 15 minutes in,
+#' twice, on a pipeline whose own header advertises a nine-minute cost.
+#'
+#' AND THE LOUD FAILURE WAS THE LUCKY ONE. A caller whose data happens to carry a
+#' column named by the NEW default gets no error at all: the bijection is then
+#' enforced over the wrong identifier and the run looks clean. That is the case
+#' this function is really here for, because nothing else in this repository
+#' would notice it.
+#'
+#' So the contract is asserted by BEHAVIOUR on a fixture, not by signature: the
+#' resolver must return one row per identifier, must keep the highest
+#' score_total within an identifier, and must not award one NPI to two people.
+#' Those three properties are what this pipeline actually relies on; a future
+#' change that preserves them is not a break, and one that does not is.
+#'
+#' @param fn the imported function. Injected rather than looked up so the gate
+#'   can also be run against a deliberately-wrong stand-in -- see G7.
+#' @param id_col the identifier column this pipeline passes explicitly.
+#' @return TRUE invisibly, or stop() naming the property that failed.
+amcb_assert_rank_one_to_one <- function(fn = NULL, id_col = "enthealth_id") {
+  if (is.null(fn)) fn <- get0("rank_one_to_one", mode = "function")
+  if (is.null(fn)) {
+    stop("rank_one_to_one() is not available; the isochrones import failed",
+         call. = FALSE)
+  }
+  # NO DOMINANCE RULE. The first version of this fixture asserted that the
+  # higher-scoring claimant WINS a contested NPI. That was the behaviour until
+  # 2026-08-08, when the canonical resolver deliberately removed it: "A score
+  # gap is not by itself evidence that the higher scorer is the right person."
+  # Asserting the old rule would have pinned this pipeline to semantics that no
+  # longer exist and called the current, more conservative resolver a break.
+  #
+  # Four people covering the three outcomes the pipeline depends on:
+  #   A  two candidates, one strictly better   -> resolves to the better one
+  #   B  two candidates, identical evidence    -> not identified
+  #   C,D  both claim one NPI as their best    -> NEITHER resolves
+  fx <- data.frame(
+    id  = c("A", "A", "B", "B", "C", "D"),
+    npi = c("1000000004", "1000000012", "1000000020", "1000000038",
+            "1000000046", "1000000046"),
+    match_method = "exact_last_first",
+    score_total      = c(4L, 3L, 3L, 3L, 4L, 2L),
+    confidence_score = c(0.9, 0.7, 0.7, 0.7, 0.9, 0.5),
+    method_priority = 99L,
+    stringsAsFactors = FALSE)
+  names(fx)[1] <- id_col
+  got <- tryCatch(fn(fx, id_col = id_col), error = function(e)
+    stop(sprintf("rank_one_to_one() contract: it errored on the fixture: %s",
+                 conditionMessage(e)), call. = FALSE))
+  ids <- got[[id_col]]
+  if (is.null(ids)) {
+    stop(sprintf("rank_one_to_one() contract: no '%s' column in the result",
+                 id_col), call. = FALSE)
+  }
+  if (anyDuplicated(ids)) {
+    stop("rank_one_to_one() contract: returned more than one row per identifier",
+         call. = FALSE)
+  }
+  if (anyDuplicated(got$npi)) {
+    stop("rank_one_to_one() contract: awarded one NPI to two identifiers",
+         call. = FALSE)
+  }
+  keep <- got$npi[ids == "A"]
+  if (length(keep) != 1L || keep != "1000000004") {
+    stop(paste("rank_one_to_one() contract: did not keep the strictly better",
+               "candidate within one identifier"), call. = FALSE)
+  }
+  if ("B" %in% ids) {
+    stop(paste("rank_one_to_one() contract: resolved a person whose two",
+               "candidates carry identical evidence"), call. = FALSE)
+  }
+  if (any(c("C", "D") %in% ids)) {
+    stop(paste("rank_one_to_one() contract: awarded a contested NPI to one",
+               "claimant. Greedy consumption was removed on 2026-08-08; a",
+               "resolver that does this again silently changes who owns every",
+               "contested NPI in the crosswalk"), call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+#' Compare two middle names as TOKEN SETS, not as position-1 initials.
+#'
+#' THE DEFECT THIS FIXES (2026-08-30, audited over the frozen linkage).
+#' The middle-name axis compared substr(middle, 1, 1) on each side. AMCB and
+#' NPPES routinely record a woman's middle slot from different conventions --
+#' AMCB carries the maiden surname, NPPES the legal middle name, or the two
+#' agree on a token that is simply not in the same position:
+#'
+#'   AMCB "Katherine A. Reinhard" / NPPES "KATHERINE REINHARD RYE"   A vs R
+#'   AMCB "Pamela Beth Harvey"    / NPPES "PAMELA H. CAPISTA"        B vs H
+#'   AMCB "Alyssa Diane Bantz"    / NPPES "ALYSSA BANTZ HINDMON"     D vs B
+#'
+#' Every one of those was scored a CONFLICT and vetoed, though the two strings
+#' share a token outright. Measured: 82 roster rows had their ONLY exact
+#' first-and-last-name candidate deleted this way, 57 of the 88 deleted pairs
+#' carrying a CNM credential in NPPES, and the row was then published as "no
+#' candidate" -- indistinguishable from a person absent from the registry.
+#'
+#' WHAT THIS DOES NOT DO. It does not loosen the conflict. Two full middle
+#' names sharing no token still conflict (JANE against DENISE), and an initial
+#' still conflicts with a token it cannot abbreviate (F against MARILYN). Only
+#' POSITION is stopped from manufacturing disagreement. Token-set comparison is
+#' already the rule this repository applies to author names in
+#' amcb_person_matches(); this makes the middle-name axis consistent with it.
+#'
+#' @param a_tokens,b_tokens lists of character vectors from
+#'   amcb_middle_tokens(), same length.
+#' @return character: "corroborates", "conflicts", or "uninformative" -- the
+#'   third when either side records no middle name, which is absence of
+#'   evidence and must never be read as evidence of difference.
+amcb_middle_agreement <- function(a_tokens, b_tokens) {
+  if (length(a_tokens) != length(b_tokens)) {
+    stop("a_tokens and b_tokens must be the same length", call. = FALSE)
+  }
+  vapply(seq_along(a_tokens), function(i) {
+    a <- a_tokens[[i]]; b <- b_tokens[[i]]
+    if (!length(a) || !length(b)) return("uninformative")
+    # A whole token shared anywhere in either string is the strongest middle
+    # evidence available, wherever each side happens to keep it.
+    if (length(intersect(a[nchar(a) >= 2L], b[nchar(b) >= 2L]))) {
+      return("corroborates")
+    }
+    # CONCATENATED INITIALS ARE INITIALS, NOT A NAME (2026-08-30, found by
+    # auditing the 27 identity flips this function caused). "VL" against
+    # "VELMA LAURITZEN" is the same person written two ways, but nchar("VL")
+    # is 2, so the first test above scored it as a full NAME token, found no
+    # match, and -- because neither side then held a single-letter token --
+    # never ran the initial test at all. Verdict: conflict. The candidate was
+    # deleted and a nursing-taxonomy record took the match from a midwifery
+    # one. Same for "MJ" against "MARY JANE".
+    if (initials_string_matches(a, b) || initials_string_matches(b, a)) {
+      return("corroborates")
+    }
+    # An initial abbreviates a token; it cannot be compared to a whole name as
+    # a whole name. So an initial on EITHER side is matched against the first
+    # letter of every token on the other -- which is the old rule, minus the
+    # assumption that the abbreviated token is the first one.
+    if (any(nchar(a) == 1L) || any(nchar(b) == 1L)) {
+      if (length(intersect(substr(a, 1L, 1L), substr(b, 1L, 1L)))) {
+        return("corroborates")
+      }
+    }
+    # A NEAR SPELLING IS NOT A DISAGREEMENT -- BUT IT IS NOT CORROBORATION.
+    # "JULIA" against "JULIE", "LYN" against "LYNN", "KRISTINA" against
+    # "KRISHNA": one edit apart, almost certainly one person, and scored as a
+    # CONFLICT here until the flip audit. Calling them corroborating would
+    # manufacture class-1 confidence (1.00) from a spelling difference, so
+    # they return "uninformative" instead: the candidate is not vetoed, and it
+    # resolves at class 2 on the strength of the whole given name and surname.
+    # The surname axis has used edit distance since class 4 existed; this
+    # brings the middle axis to the same standard without inventing certainty.
+    if (near_spelling(a[nchar(a) >= 2L], b[nchar(b) >= 2L])) {
+      return("uninformative")
+    }
+    "conflicts"
+  }, character(1))
+}
+
+#' Does a single 2-4 character token spell out the initials of the other side?
+#'
+#' Order-preserving: "VL" matches VELMA LAURITZEN, not LAURITZEN VELMA. A
+#' classification test ("does this look like initials?") was tried first and
+#' abandoned -- LYN, BRY and SKY are vowel-less and are names, while CJ and MJ
+#' are initials, so no property of the token alone separates them. This asks
+#' the only question that is decidable: do these characters MAP, in order, onto
+#' distinct tokens on the other side.
+#' @keywords internal
+#' @noRd
+initials_string_matches <- function(short, toks) {
+  if (length(short) != 1L) return(FALSE)
+  ch <- strsplit(short, "")[[1]]
+  if (length(ch) < 2L || length(ch) > 4L || length(toks) < length(ch)) return(FALSE)
+  j <- 1L
+  for (k in seq_along(ch)) {
+    hit <- FALSE
+    while (j <= length(toks)) {
+      if (substr(toks[j], 1L, 1L) == ch[k]) { hit <- TRUE; j <- j + 1L; break }
+      j <- j + 1L
+    }
+    if (!hit) return(FALSE)
+  }
+  TRUE
+}
+
+#' Is any cross pair of full tokens within one edit (two for long tokens)?
+#'
+#' Two edits are allowed only from six characters up, where the proportion of
+#' the name that has to agree is high enough that the tolerance does not start
+#' joining unrelated short names -- JANE and JOAN stay a conflict.
+#' @keywords internal
+#' @noRd
+near_spelling <- function(a, b) {
+  if (!length(a) || !length(b)) return(FALSE)
+  d <- utils::adist(a, b)
+  lim <- outer(nchar(a), nchar(b), function(x, y) ifelse(pmin(x, y) >= 6L, 2L, 1L))
+  any(d <= lim)
+}
+
 #' Count RIVAL NPIs: alternative candidates that are a different PERSON.
 #'
 #' THE DEFECT THIS EXISTS TO PREVENT (2026-08-10, cost two false demotions).

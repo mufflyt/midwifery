@@ -75,10 +75,55 @@ if (!requireNamespace("stringi", quietly = TRUE)) {
 #' see amcb_blank_na() -- so that absence is never converted to a value by
 #' accident. Internal whitespace is collapsed here because normalize_string()
 #' only trims the ends, and the AMCB roster contains doubled internal spaces.
+#' PARENTHESISED NICKNAMES ARE NOT NAME EVIDENCE (2026-08-30).
+#'
+#' The roster publishes preferred names inline: "Cynthia (Cindi)", "Patty
+#' (Pepita)", "Anna (Katie)". normalize_string() transliterates and upper-cases
+#' but does not remove punctuation, so the bracket survived into the key and
+#' amcb_split_first() handed the middle-name slot a literal "(":
+#'
+#'   "Cynthia (Cindi)"  ->  given "CYNTHIA", middle "(CINDI)",  initial "("
+#'
+#' "(" is not equal to any NPPES middle initial, so every such row registered a
+#' middle-initial CONFLICT against every candidate carrying a middle name, and
+#' the veto below deleted the candidate set. All 9 affected roster rows failed:
+#' 7 unmatched and 2 tied, none resolved, against a 9.4% unmatched baseline.
+#' The nickname is real information about the person and no information at all
+#' about which NPI is hers, so it is dropped from the key rather than compared.
+#'
+#' Stripping happens HERE, in the AMCB key layer, not in normalize_string():
+#' other callers of the canonical normaliser are not parsing a roster that uses
+#' this convention, and a punctuation rule added there would reach them all.
+#' WORD-INTERNAL BRACKETS ARE SPELLING, NOT A NICKNAME. The roster carries both
+#' conventions and they mean opposite things:
+#'
+#'   "Cynthia (Cindi) A."   a separate token  -> an alternate name, drop it
+#'   "C(arolyn) Diane"      inside one token  -> optional letters, KEEP them
+#'
+#' Deleting the group in the second case leaves a given name of "C", which is
+#' not a name -- it is a blocking key that joins to every NPPES first name
+#' recorded as a bare initial. So the two cases are separated by whether the
+#' bracket abuts a letter, and only the standalone form is dropped.
+amcb_strip_parenthetical <- function(x) {
+  # 1. Word-internal: unwrap, keep the letters.  C(AROLYN) -> CAROLYN
+  out <- gsub("([A-Z'])\\(([^)]*)\\)", "\\1\\2", x)
+  # 2. Standalone group: the published nickname form.
+  out <- gsub("\\([^)]*\\)", " ", out)
+  # 3. An UNCLOSED bracket opens a nickname that runs to the end of the field.
+  #    Dropping it can only lose an alternate name; keeping it would promote
+  #    that alternate into the middle-name slot, which is the defect itself.
+  out <- gsub("\\([^)]*$", " ", out)
+  # "]" FIRST inside the class: the portable way to mean a literal bracket.
+  # Written as [()\\[\\]] the escapes are ambiguous in TRE and the class
+  # terminated early, leaving the stray untouched.
+  gsub("[][()]", " ", out)
+}
+
 amcb_name_key <- function(x) {
   if (is.null(x) || length(x) == 0L) return(character(0))
   out <- normalize_string(as.character(x))
-  out <- gsub("\\s+", " ", out)
+  out <- amcb_strip_parenthetical(out)
+  out <- gsub("\\s+", " ", trimws(out))
   out[is.na(x)] <- NA_character_
   out
 }
@@ -167,6 +212,21 @@ amcb_split_first <- function(first_name) {
   given <- sub("\\s.*$", "", k)
   trailing <- trimws(sub("^[^ ]*", "", k))
   list(given = given, middle_from_first = trailing)
+}
+
+#' Middle-name TOKENS, initials included.
+#'
+#' Unlike amcb_given_tokens(), single-letter tokens are KEPT. A recorded middle
+#' initial is the only middle-name evidence most NPPES rows carry; dropping it
+#' would make every initial-only row uninformative rather than comparable, and
+#' comparability is the whole point of the middle-name axis.
+#'
+#' Returns a LIST of character vectors, one per input, so callers compare sets
+#' rather than positions. amcb_middle_agreement() in R/amcb_match_rules.R is
+#' the only rule that interprets them.
+amcb_middle_tokens <- function(x) {
+  k <- amcb_blank_na(x)
+  lapply(strsplit(k, "[^A-Z']+"), function(t) unique(t[nzchar(t)]))
 }
 
 # =============================================================================
