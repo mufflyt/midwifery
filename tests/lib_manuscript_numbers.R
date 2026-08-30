@@ -83,7 +83,12 @@ mn_render <- function(value, fmt) {
 #' @keywords internal
 #' @noRd
 mn_find_literal <- function(prose, literal) {
-  pat <- sprintf("(?<![0-9.,])%s(?![0-9])",
+  # NOT INSIDE A HYPHENATED TOKEN. cohort.unknown_n became 256 after the county
+  # recovery, and the scan then found it in "SHA-256" in three files. Widening
+  # the allowlist would have been the wrong fix: it would have switched off
+  # detection of a genuinely typed 256 everywhere it could occur. A digit run
+  # preceded by letter-hyphen is part of an identifier, not a reported result.
+  pat <- sprintf("(?<![0-9.,])(?<![A-Za-z]-)%s(?![0-9])",
                  gsub("([.\\\\])", "\\\\\\1", literal))
   hits <- grep(pat, prose, perl = TRUE)
   hits[nzchar(trimws(prose[hits]))]

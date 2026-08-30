@@ -188,3 +188,65 @@ apportion_ct_legacy <- function(d, geoid_col = "GEOID", value_cols) {
   }
   out
 }
+
+#' Connecticut ZIP -> 2022 planning region, by dominant land area
+#'
+#' @description
+#' The ZIP-to-county relationship file is 2020 vintage and reports Connecticut
+#' under its EIGHT LEGACY COUNTIES (09001-09015). `data/county_base.csv` is 2023
+#' vintage and reports the NINE PLANNING REGIONS (09110-09190). The two describe
+#' the same ground and do not join, so every Connecticut ZIP resolves to a
+#' county that carries no RUCC and the provider is recorded as having no
+#' assignable county. 249 cohort members were lost this way -- not for want of
+#' an address, but for want of a matching vintage.
+#'
+#' @section Why not apportion through the legacy county:
+#' `apportion_ct_legacy()` above splits a legacy-county COUNT across regions by
+#' population weight, which is the right tool for a birth count and the wrong
+#' one for a person: seven of the eight legacy counties straddle two or three
+#' planning regions, and the regions do not share a rurality band -- Capitol and
+#' Lower Connecticut River Valley are RUCC 1, five are RUCC 2, and Northeastern
+#' Connecticut and Northwest Hills are RUCC 4. Assigning by county-level weight
+#' would push every rural Connecticut midwife into a metropolitan region.
+#'
+#' So this does not route through the legacy county at all. It goes ZIP -> tract
+#' -> planning region, which is exact because tracts NEST within regions, and
+#' resolves a ZIP spanning several regions by the same dominant-land-area rule
+#' the national crosswalk uses for counties. Same rule, finer geography.
+#'
+#' @param tract_path [character(1)]: ZCTA-to-tract relationship file.
+#' @param cw_path [character(1)]: Connecticut 2020-tract to 2022-region crosswalk.
+#' @return [data.frame] `zip5`, `GEOID` (planning region), one row per ZIP.
+#' @family geography
+#' @export
+ct_zip_to_region <- function(tract_path = file.path("data", "zcta_tract_2020.txt"),
+                             cw_path = file.path("data", "ct_tract_crosswalk_2022.csv")) {
+  if (!file.exists(tract_path) || !file.exists(cw_path)) return(NULL)
+
+  zt <- readr::read_delim(tract_path, delim = "|", show_col_types = FALSE,
+                          progress = FALSE, col_types = readr::cols(.default = "c"))
+  cw <- readr::read_csv(cw_path, show_col_types = FALSE, progress = FALSE,
+                        col_types = readr::cols(.default = "c"))
+
+  # Connecticut tracts only. The national file is 171k rows and every other
+  # state already joins correctly; touching them would be a change with no
+  # defect behind it.
+  zt <- zt[substr(zt$GEOID_TRACT_20, 1, 2) == "09", , drop = FALSE]
+  if (!nrow(zt)) return(NULL)
+
+  zt$zip5 <- pad5(zt$GEOID_ZCTA5_20)
+  zt$land <- suppressWarnings(as.numeric(zt$AREALAND_PART))
+  zt <- zt[!is.na(zt$zip5) & nzchar(zt$zip5) & !is.na(zt$land), , drop = FALSE]
+
+  m <- merge(zt[, c("zip5", "GEOID_TRACT_20", "land")],
+             unique(cw[, c("tract_fips_2020", "ce_fips_2022")]),
+             by.x = "GEOID_TRACT_20", by.y = "tract_fips_2020", all.x = FALSE)
+  if (!nrow(m)) return(NULL)
+
+  agg <- stats::aggregate(land ~ zip5 + ce_fips_2022, data = m, FUN = sum)
+  agg <- agg[order(agg$zip5, -agg$land), , drop = FALSE]
+  out <- agg[!duplicated(agg$zip5), c("zip5", "ce_fips_2022"), drop = FALSE]
+  names(out) <- c("zip5", "GEOID")
+  rownames(out) <- NULL
+  out
+}

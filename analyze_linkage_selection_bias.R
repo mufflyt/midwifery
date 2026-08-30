@@ -82,6 +82,7 @@ suppressPackageStartupMessages({
 source(file.path("R", "lib", "table1_bands.R"))
 source(file.path("R", "lib", "common_helpers.R"))
 source(file.path("R", "lib", "zip_county_crosswalk.R"))
+source(file.path("R", "lib", "ct_county_crosswalk.R"))
 source(file.path("R", "lib", "artifact_provenance.R"))
 
 ART <- "artifacts"; DATA <- "data"
@@ -90,6 +91,7 @@ STAGE2 <- file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")
 COHORT <- file.path(ART, "frozen_cohort", "analytic_cohort.csv")
 ZCTA   <- file.path(DATA, "zcta_county_2020.txt")
 CBASE  <- file.path(DATA, "county_base.csv")
+GEO_GUARD <- file.path(ART, "frozen_cohort", "midwives_geography_guarded.csv")
 OUT    <- file.path(ART, "linkage_selection_bounds.csv")
 
 for (f in c(LINK, STAGE2, COHORT, ZCTA, CBASE)) if (!file.exists(f))
@@ -114,12 +116,42 @@ cb <- read_csv(CBASE, show_col_types = FALSE, col_types = cols(GEOID = col_chara
 # LEFT JOIN FROM THE ROSTER, never an inner join. The certificants outside the
 # cohort are the subject of this analysis; an inner join would silently delete
 # them and reproduce the very bias being measured.
+# THE SAME TWO BACKFILLS R/07-cohort-composition.R APPLIES, for the same reason
+# the reconciliation below exists: two scripts deriving one quantity by parallel
+# routes will drift, and this file's whole purpose is to bracket the number that
+# script publishes. When the backfills landed there and not here, the invariant
+# refused to write -- which is the check working, and the reason it is a hard
+# stop rather than a warning.
+has_zip <- function(x) !is.na(x) & nzchar(trimws(x))
+geo_zip <- if (file.exists(GEO_GUARD)) {
+  chr(GEO_GUARD) |>
+    distinct(certification_number, .keep_all = TRUE) |>
+    transmute(certification_number,
+              geo_zip = ifelse(has_zip(practice_zip), practice_zip, NA_character_))
+} else NULL
+
 d <- link |>
   select(certification_number, status) |>
   left_join(s2 |> select(certification_number, practice_zip, s2_npi = npi),
-            by = "certification_number") |>
+            by = "certification_number")
+if (!is.null(geo_zip))
+  d <- d |>
+    left_join(geo_zip, by = "certification_number", relationship = "many-to-one") |>
+    mutate(practice_zip = if_else(has_zip(practice_zip), practice_zip, geo_zip)) |>
+    select(-geo_zip)
+
+ct <- ct_zip_to_region()
+d <- d |>
   mutate(zip5 = zip5_key(practice_zip)) |>
-  left_join(zc, by = "zip5", relationship = "many-to-one") |>
+  left_join(zc, by = "zip5", relationship = "many-to-one")
+if (!is.null(ct))
+  d <- d |>
+    left_join(rename(ct, ct_geoid = GEOID), by = "zip5", relationship = "many-to-one") |>
+    mutate(GEOID = if_else(!is.na(ct_geoid) & (is.na(GEOID) | substr(GEOID, 1, 2) == "09"),
+                           ct_geoid, GEOID)) |>
+    select(-ct_geoid)
+
+d <- d |>
   left_join(select(cb, GEOID, rucc_2023), by = "GEOID", relationship = "many-to-one") |>
   mutate(rurality  = band_rurality(rucc_2023, RURALITY_LABELS_COHORT),
          in_cohort = .data$certification_number %in% coh$certification_number,
