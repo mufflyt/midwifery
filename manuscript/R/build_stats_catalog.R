@@ -96,6 +96,12 @@ mw_build_catalog <- function(root = ".") {
     disp_cols <- setdiff(names(lc), c("status", "n", "pct_matched"))
     tot <- sum(lc$n)
     sums <- vapply(disp_cols, function(cn) sum(lc[[cn]]), numeric(1))
+    # A DISPOSITION THAT IS NOT THERE IS NA, NOT A CRASH. sums[["absent"]]
+    # raises "subscript out of bounds", which names neither the column nor the
+    # artifact, and it takes the whole catalog down -- and with it L12, which
+    # builds the catalog. mw_stat() already fails loudly and by name on a
+    # missing key, so the right behaviour is to produce the missing key.
+    disp <- function(nm) if (nm %in% names(sums)) unname(sums[[nm]]) else NA_real_
     cat_$linkage <- list(
       total          = tot,
       matched        = unname(sums[["matched"]]),
@@ -104,6 +110,14 @@ mw_build_catalog <- function(root = ".") {
       nursing_pct    = 100 * unname(sums[["matched_nursing_taxonomy"]]) / tot,
       any_tier_pct   = 100 * (unname(sums[["matched"]]) +
                               unname(sums[["matched_nursing_taxonomy"]])) / tot,
+      # The ambiguous total is three different failures with one name, and a
+      # Methods section that reports only the total cannot say which. Tied
+      # names are people the evidence could not separate; a contested NPI is
+      # one registry record two certificants both resolve to; an unruled-out
+      # component is a connected group the bijection could not decompose.
+      tied           = disp("ambiguous_tied_names"),
+      contested      = disp("ambiguous_contested_npi"),
+      component      = disp("ambiguous_unruled_out_component"),
       ambiguous      = sum(sums[grepl("^ambiguous", names(sums))]),
       ambiguous_pct  = 100 * sum(sums[grepl("^ambiguous", names(sums))]) / tot,
       unmatched      = unname(sums[["unmatched"]]),
