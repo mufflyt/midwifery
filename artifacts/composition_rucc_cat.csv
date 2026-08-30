@@ -1,10 +1,13 @@
 group,level,n,N,pct
-1_retained,Metro (RUCC 1-3),13277,15347,86.51202189352968
-1_retained,"Nonmetro, adjacent (4-6)",1075,15347,7.004626311331204
+1_retained,Metro (RUCC 1-3),13522,15347,88.10842509936795
+1_retained,"Nonmetro, adjacent (4-6)",1081,15347,7.043721900045612
 1_retained,"Nonmetro, remote (7-9)",509,15347,3.3166091092721706
-1_retained,Unknown,486,15347,3.1667426858669447
-2_newly_npi_resolved,Unknown,1545,1545,100
-4_removed,Metro (RUCC 1-3),1191,1396,85.31518624641834
+1_retained,Unknown,235,15347,1.5312438913142634
+2_newly_npi_resolved,Metro (RUCC 1-3),1352,1545,87.50809061488673
+2_newly_npi_resolved,"Nonmetro, adjacent (4-6)",113,1545,7.313915857605178
+2_newly_npi_resolved,"Nonmetro, remote (7-9)",59,1545,3.8187702265372168
+2_newly_npi_resolved,Unknown,21,1545,1.3592233009708738
+4_removed,Metro (RUCC 1-3),1209,1396,86.60458452722062
 4_removed,"Nonmetro, adjacent (4-6)",109,1396,7.808022922636103
 4_removed,"Nonmetro, remote (7-9)",58,1396,4.154727793696275
-4_removed,Unknown,38,1396,2.7220630372492836
+4_removed,Unknown,20,1396,1.4326647564469914

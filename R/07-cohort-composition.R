@@ -66,6 +66,7 @@ source(file.path("R", "lib", "artifact_provenance.R"))
 # decided which definition won.
 source(file.path("R", "lib", "common_helpers.R"))
 source(file.path("R", "lib", "zip_county_crosswalk.R"))
+source(file.path("R", "lib", "ct_county_crosswalk.R"))
 
 ART <- "artifacts"; DATA <- "data"
 STAGE2 <- file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")
@@ -160,12 +161,84 @@ build_composition <- function() {
   cb <- read_csv(file.path(DATA, "county_base.csv"), show_col_types = FALSE,
                  col_types = cols(GEOID = col_character()))
 
+  # BACKFILL 1 -- an address that was never fetched is not a missing address.
+  # Stage-2 addresses were pulled from NPPES keyed on the STAGE-2 NPI, and the
+  # newly-NPI-resolved group is defined by not having had one. Every member of
+  # that group therefore arrived here with no practice ZIP and no state, and all
+  # 1,545 of them were published as "Unknown" rurality -- 100% of the group,
+  # which is the shape of a join that did not happen rather than of data that
+  # does not exist. They carry a FINAL NPI, and the frozen geography artifact
+  # holds a practice ZIP for every one.
+  #
+  # Still a ZIP, so the rule at the top of this file is intact: rurality is
+  # derived from the practice ZIP for every group, not from a geocoded county,
+  # and remains observable regardless of geocoding success. The `4_removed`
+  # group is unaffected -- it holds a stage-2 NPI by definition and already had
+  # an address -- so this makes the four-way comparison more balanced, not less.
+  geo_zip <- if (file.exists(FROZEN_GEO)) {
+    chr(FROZEN_GEO) %>%
+      distinct(certification_number, .keep_all = TRUE) %>%
+      transmute(certification_number,
+                geo_zip = ifelse(is.na(practice_zip) | !nzchar(trimws(practice_zip)),
+                                 NA_character_, practice_zip),
+                geo_state = ifelse(is.na(practice_state) | !nzchar(trimws(practice_state)),
+                                   NA_character_, practice_state))
+  } else NULL
+
   d <- membership %>%
     left_join(chars, by = "certification_number", relationship = "many-to-one") %>%
-    left_join(link_cols, by = "certification_number", relationship = "many-to-one") %>%
+    left_join(link_cols, by = "certification_number", relationship = "many-to-one")
+
+  if (!is.null(geo_zip)) {
+    has_zip <- function(x) !is.na(x) & nzchar(trimws(x))
+    before <- sum(!has_zip(d$practice_zip))
+    d <- d %>%
+      left_join(geo_zip, by = "certification_number", relationship = "many-to-one") %>%
+      mutate(zip_backfilled = !has_zip(practice_zip) & !is.na(geo_zip),
+             practice_zip = if_else(has_zip(practice_zip), practice_zip, geo_zip),
+             # STATE TOO. The same 1,545 records lacked a state, and the effect
+             # there was worse than a visible "Unknown": compose() filters NA
+             # before it computes N, so the entire group was dropped from
+             # composition_practice_state.csv rather than shown as missing. A
+             # reader comparing the retained and removed groups would not see
+             # that a third group had gone.
+             state_backfilled = !has_zip(practice_state) & !is.na(geo_state),
+             practice_state = if_else(has_zip(practice_state), practice_state, geo_state)) %>%
+      select(-geo_zip, -geo_state)
+    cli::cli_alert_info(
+      "backfilled from the frozen geography: {sum(d$zip_backfilled)} practice ZIP(s) of {before} missing, {sum(d$state_backfilled)} practice state(s)")
+  } else {
+    d$zip_backfilled <- FALSE; d$state_backfilled <- FALSE
+  }
+
+  d <- d %>%
     mutate(zip5 = zip5_key(practice_zip),
            cert_decade = band_cert_decade(certification_date)) %>%
-    left_join(zc, by = "zip5", relationship = "many-to-one") %>%
+    left_join(zc, by = "zip5", relationship = "many-to-one")
+
+  # BACKFILL 2 -- Connecticut, where the failure is a vintage boundary and not a
+  # missing address. The relationship file is 2020 and reports CT under its
+  # legacy counties; county_base.csv is 2023 and reports planning regions. They
+  # describe the same ground and do not join, so every Connecticut ZIP produced
+  # a county with no RUCC. ct_zip_to_region() goes ZIP -> tract -> region, which
+  # is exact because tracts nest, and resolves a spanning ZIP by the same
+  # dominant-land-area rule used for counties above.
+  ct <- ct_zip_to_region()
+  if (!is.null(ct)) {
+    d <- d %>%
+      left_join(rename(ct, ct_geoid = GEOID), by = "zip5",
+                relationship = "many-to-one") %>%
+      mutate(ct_rescued = !is.na(ct_geoid) & (is.na(GEOID) | substr(GEOID, 1, 2) == "09"),
+             GEOID = if_else(ct_rescued, ct_geoid, GEOID)) %>%
+      select(-ct_geoid)
+    cli::cli_alert_info(
+      "Connecticut ZIPs mapped to a 2022 planning region: {sum(d$ct_rescued)} record(s)")
+  } else {
+    d$ct_rescued <- FALSE
+    cli::cli_alert_warning("Connecticut crosswalk absent; CT records will carry no RUCC.")
+  }
+
+  d <- d %>%
     left_join(select(cb, GEOID, rucc_2023), by = "GEOID", relationship = "many-to-one") %>%
     mutate(rucc_cat = coalesce(
       band_rurality(rucc_2023, RURALITY_LABELS_COHORT), "Unknown"))
@@ -198,6 +271,49 @@ build_composition <- function() {
     select(group, rucc_cat, n_over_N) %>%
     pivot_wider(names_from = group, values_from = n_over_N)
   print(as.data.frame(rn), row.names = FALSE)
+
+  # --- Missingness ledger --------------------------------------------------
+  # WHY THIS EXISTS. compose() drops NA before it computes N, so a variable that
+  # is missing for a whole group does not appear as missing -- the group simply
+  # is not in the artifact. That is how composition_practice_state.csv came to be
+  # published without its second group at all, and nobody noticed, because
+  # nothing in the file said a group was expected.
+  #
+  # rucc_cat escaped only because it coalesces to "Unknown", which made the
+  # missingness visible as a 100% row. That row is what a reader eventually
+  # asked about. This ledger says the same thing for every variable, whether or
+  # not it happens to have an Unknown level.
+  LEDGER_VARS <- c("rucc_cat", "status", "certification", "cert_decade",
+                   "practice_state")
+  grp_sizes <- count(d, group, name = "group_n")
+  ledger <- lapply(LEDGER_VARS, function(v) {
+    d %>%
+      group_by(group) %>%
+      summarise(variable = v,
+                n_observed = sum(!is.na(.data[[v]]) & nzchar(as.character(.data[[v]]))),
+                .groups = "drop") %>%
+      left_join(grp_sizes, by = "group") %>%
+      mutate(n_missing = group_n - n_observed,
+             pct_missing = 100 * n_missing / group_n,
+             # A group that is ~entirely one level is a join, not a finding.
+             top_level_pct = vapply(group, function(g) {
+               x <- d[[v]][d$group == g]
+               x <- x[!is.na(x) & nzchar(as.character(x))]
+               if (!length(x)) 100 else 100 * max(table(x)) / length(x)
+             }, numeric(1))) %>%
+      select(variable, group, group_n, n_observed, n_missing, pct_missing,
+             top_level_pct)
+  }) %>% bind_rows() %>% arrange(variable, group)
+
+  cli::cli_h2("Missingness ledger")
+  print(as.data.frame(ledger %>%
+    mutate(across(where(is.numeric), ~ round(.x, 1)))), row.names = FALSE)
+  write_with_provenance(ledger, file.path(ART, "composition_missingness_ledger.csv"),
+                        inputs = prov_inputs("county_base.csv", "zcta_county_2020.txt",
+                          file.path(ART, "frozen_cohort", "analytic_cohort.csv"),
+                          file.path(ART, "frozen_cohort", "midwives_geography_guarded.csv"),
+                          file.path(ART, "amcb_npi_linkage_FROZEN.csv"),
+                          file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))
 
   st <- compose(d, "practice_state")
   write_with_provenance(st$long, file.path(ART, "composition_practice_state.csv"), inputs = prov_inputs("county_base.csv", "zcta_county_2020.txt", file.path(ART, "frozen_cohort", "analytic_cohort.csv"), file.path(ART, "frozen_cohort", "midwives_geography_guarded.csv"), file.path(ART, "amcb_npi_linkage_FROZEN.csv"), file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))

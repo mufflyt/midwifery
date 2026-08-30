@@ -1,0 +1,16 @@
+variable,group,group_n,n_observed,n_missing,pct_missing,top_level_pct
+cert_decade,1_retained,15347,15347,0,0,30.018896201211962
+cert_decade,2_newly_npi_resolved,1545,1545,0,0,19.741100323624597
+cert_decade,4_removed,1396,1396,0,0,38.18051575931232
+certification,1_retained,15347,15347,0,0,99.12686518537825
+certification,2_newly_npi_resolved,1545,1545,0,0,98.83495145631068
+certification,4_removed,1396,1396,0,0,99.49856733524355
+practice_state,1_retained,15347,15347,0,0,8.83560304945592
+practice_state,2_newly_npi_resolved,1545,1545,0,0,8.54368932038835
+practice_state,4_removed,1396,1396,0,0,8.3810888252149
+rucc_cat,1_retained,15347,15347,0,0,88.10842509936795
+rucc_cat,2_newly_npi_resolved,1545,1545,0,0,87.50809061488673
+rucc_cat,4_removed,1396,1396,0,0,86.60458452722062
+status,1_retained,15347,15347,0,0,79.32494950153125
+status,2_newly_npi_resolved,1545,1545,0,0,48.996763754045304
+status,4_removed,1396,1396,0,0,65.7593123209169

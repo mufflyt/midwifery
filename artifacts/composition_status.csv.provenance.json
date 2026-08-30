@@ -1,6 +1,6 @@
 {
   "artifact": "composition_status.csv",
-  "written_utc": "2026-08-24 11:50:03 UTC",
+  "written_utc": "2026-08-30 08:08:52 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",
