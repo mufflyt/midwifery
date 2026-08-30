@@ -198,29 +198,103 @@ denominator, analysis, or interpretation.
 
 Because neither source carries a shared identifier, linkage was by name over
 the `r mw_safe_stat("panel.year_min")`--`r mw_safe_stat("panel.year_max")`
-provider panel. Candidate pairs were ranked into ordered name-evidence classes
-rather than scored on a blended similarity metric. A certification record
-resolved to a provider only when exactly one candidate occupied its strongest
-available evidence class. Where two or more candidates were indistinguishable
-at that class -- most commonly identical surname and given name with no middle
-name available on either side -- the record was left unresolved and retained as
-a reported stratum rather than assigned to the most probable candidate.
+provider panel rather than against the current registry. Using the historical
+panel is consequential: a midwife who has since left the registry remains
+matchable under the name she held while enumerated, and every name spelling an
+NPI has ever carried is available for blocking, not only its present one.
+
+Candidate pairs were ranked into **ordered name-evidence classes** rather than
+scored on a blended similarity metric. The classes are, from strongest to
+weakest: exact surname and given name with a corroborating middle name; exact
+surname and given name; exact surname with given-name equivalence through a
+nickname dictionary; surname within edit distance two of the roster spelling;
+and a partial-surname class ranked *below* whole-surname agreement, on the
+reasoning that a fragment of a surname is weaker identity evidence than the
+whole of one within a small edit distance.
+
+A certification record resolved to a provider only when **exactly one candidate
+occupied its strongest available evidence class**. Where two or more candidates
+were indistinguishable at that class -- most commonly identical surname and
+given name with no middle name available on either side -- the record was left
+unresolved and retained as a reported stratum rather than assigned to the most
+probable candidate. A one-to-one constraint was then imposed, so that a single
+provider record cannot satisfy two certificants.
 
 This fail-closed rule trades coverage for correctness deliberately. Two
 certificants with identical names, no middle name, and no date of birth are
 genuinely indistinguishable in these data, and a similarity score would
 manufacture certainty rather than establish it. Provider taxonomy assigned the
-evidence tier but was never permitted to break an identity tie; a match
-supported only by nursing taxonomy was reported as a separate stratum and never
-promoted into the primary cohort.
+evidence tier but was **never permitted to break an identity tie**: taxonomy
+states what a provider record does for a living, not which person a name refers
+to. A match supported only by nursing taxonomy was reported as a separate
+stratum and never promoted into the primary cohort, because a certified
+nurse-midwife must hold registered-nurse licensure and may have enumerated
+under either taxonomy.
+
+Of `r mw_n("linkage.total")` certification records, `r mw_n("linkage.matched")`
+(`r mw_safe_stat("linkage.matched_pct", "%.1f")`%) resolved to a provider record
+carrying midwifery taxonomy and `r mw_n("linkage.nursing")` to one carrying only
+nursing taxonomy. `r mw_n("linkage.tied")` were tied on name evidence,
+`r mw_n("linkage.unmatched")` produced no candidate at all,
+`r mw_n("linkage.heldout")` rested on partial-surname evidence and were held
+out, `r mw_n("linkage.contested")` were contested between two certificants, and
+`r mw_n("linkage.component")` lay in a group the one-to-one constraint could not
+decompose. These dispositions are mutually exclusive and sum to the roster
+(Appendix 1, eResults 1).
+
+**Two selection rates follow from this design and are not interchangeable.**
+*Cohort resolution* is the share resolving to a midwifery-taxonomy record --
+what admits a person to the analytic cohort. *Ascertainment* is the share found
+in the registry at all, including nursing-only matches. Among ACTIVE
+certificants these are `r mw_safe_stat("linkage.active_pct", "%.1f")`% and
+`r mw_safe_stat("linkage.active_ascertained_pct", "%.1f")`%; among DECEASED
+certificants, `r mw_safe_stat("linkage.dead_pct", "%.1f")`% and
+`r mw_safe_stat("linkage.dead_ascertained_pct", "%.1f")`%. Questions about
+registry coverage take the second; questions about who this analysis describes
+take the first.
 
 ## Cohort and follow-up
 
-The analytic cohort was the set of providers resolved by the frozen linkage.
-Each was followed across the `r mw_safe_stat("panel.snapshots")` annual
-snapshots. A provider-year was one snapshot in which a provider appeared with a
-usable practice address. Providers were not required to appear in every year;
-entry and exit are themselves observed quantities.
+The analytic cohort was the set of `r mw_n("panel.cohort_n")` providers resolved
+by the frozen linkage. Each was followed across the
+`r mw_safe_stat("panel.snapshots")` annual snapshots. A provider-year was one
+snapshot in which a provider appeared with a usable practice address. Providers
+were not required to appear in every year; entry and exit are themselves
+observed quantities.
+
+The linkage was **frozen before any analysis was run** and is addressed by
+checksum thereafter. Every downstream product declares the frozen file as an
+input, and a rebuild that would leave any consumer holding a previous cohort is
+refused rather than performed. This is the mechanism that makes the cohort a
+fixed object rather than whatever the matcher last produced.
+
+## Selection analysis
+
+Because linkage is selected on certification status, and status is associated
+with practice location, the located cohort is not a random sample of the
+roster. Three analyses bound the consequence, in increasing order of assumption.
+
+**Worst-case bounds.** Certificants with no assignable county were placed
+entirely inside, then entirely outside, each rurality category. The truth lies
+within these bounds whatever the missingness mechanism. They are wide by
+construction; the width is an identity, equal to the unobserved fraction, and a
+narrower interval would be an assumption rather than a tighter analysis.
+
+**Bounds that retain observable non-cohort geography.** Rurality is missing
+because a practice ZIP failed to resolve, not because a certificant failed to
+enter the cohort; these are different events.
+`r mw_n("bounds.outside_n")` certificants outside the cohort nonetheless carry a
+resolving ZIP, and discarding them would widen the interval by ignoring
+evidence. The reported bound retains them; the bound that discards them is given
+in Appendix 1.
+
+**Inverse-probability weighting.** Each located certificant was weighted by the
+inverse of the linkage probability in its certification-status stratum. This is
+reported as a sensitivity and never as a correction: it is valid only if status
+explains the missingness, and it plainly does not explain all of it.
+
+A **tipping-point** calculation reports how far the unobserved would have to
+depart from the observed for the qualitative conclusion to change.
 
 ## Geographic assignment
 
@@ -264,9 +338,23 @@ metropolitan mobility.
 ## Statistical analysis
 
 Proportions carry 95% Wilson score intervals, chosen over the normal
-approximation because the remote stratum is small. Trend across the three
-ordered rurality strata was tested with the Cochran-Armitage test; the
+approximation because the remote stratum is small and the normal interval
+misbehaves near the boundary at those counts. Trend across the three ordered
+rurality strata was tested with the Cochran-Armitage test, which uses the
+ordering of the strata rather than treating them as unordered categories; the
 difference between extreme strata carries a normal-approximation interval.
+
+No multiplicity adjustment was applied. The analysis reports a small number of
+prespecified quantities rather than screening many, and an adjustment would
+imply a search that was not performed.
+
+Denominators are stated wherever a proportion appears, because several
+plausible denominators exist in this study -- the roster, the analytic cohort,
+the cohort with an assignable county, and the retained subgroup -- and a
+percentage without its denominator is not interpretable here. Percentages of
+subgroups whose rurality could not be determined are never folded into a
+rurality denominator; the count of such members is reported alongside instead.
+
 Analyses were performed in R version `r K$meta$r_version`[@rlang]. Analysis code
 and every published artifact are archived[@midwifery_repo].
 
@@ -278,16 +366,32 @@ required. Every published figure is written with a provenance record listing
 the SHA-256 checksum of each input file. Person-level intermediate files are
 not redistributed.
 
-Ten properties of the analysis -- among them that population is conserved, that
-absent geography is never imputed, that degrading an input cannot improve the
-answer, and that identical inputs produce identical outputs -- are declared in a
-machine-readable registry and evaluated automatically. Each carries a
-deliberately planted defect that it is required to detect, so that a check
-reporting no violations has also demonstrated that it is capable of reporting
-one. Supplementary Material S2 documents what is verified, one defect these
-checks identified before it reached any reported figure, and -- at greater
-length -- what such verification cannot establish, including that it cannot
-detect the differential linkage described above.
+Twelve properties of the analysis are declared in a machine-readable registry
+and evaluated automatically. Among them: that population is conserved and no
+share exceeds its denominator; that absent geography is never imputed; that
+degrading an input cannot improve the answer; that contradictory identity
+evidence cannot increase certainty; that identical inputs produce identical
+outputs; that every mutable input declares a vintage; that an estimate from the
+located subset is not reported as a property of the roster without bounds; and
+that one scientific quantity has one value in every representation.
+
+Each law carries a deliberately planted defect that it is required to detect, so
+that a check reporting no violations has also demonstrated that it is capable of
+reporting one. The registry is data rather than prose, because a property that
+is written but not registered is not enforced, and neither fact can be inferred
+from a filename.
+
+Every quantitative result in this manuscript is generated from a committed
+artifact at render time rather than typed into the text. A registry of protected
+results is checked automatically, and a build in which any of them appears as a
+literal in prose fails. This exists because three values for one linkage
+proportion were once in simultaneous circulation in this project, each correct
+over a different denominator and none of them wrong in isolation.
+
+Supplementary Material S2 documents what is verified, one defect these checks
+identified before it reached any reported figure, and -- at greater length --
+what such verification cannot establish, including that it cannot detect the
+differential linkage described above.
 
 # Results
 
