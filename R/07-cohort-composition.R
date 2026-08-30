@@ -180,7 +180,9 @@ build_composition <- function() {
       distinct(certification_number, .keep_all = TRUE) %>%
       transmute(certification_number,
                 geo_zip = ifelse(is.na(practice_zip) | !nzchar(trimws(practice_zip)),
-                                 NA_character_, practice_zip))
+                                 NA_character_, practice_zip),
+                geo_state = ifelse(is.na(practice_state) | !nzchar(trimws(practice_state)),
+                                   NA_character_, practice_state))
   } else NULL
 
   d <- membership %>%
@@ -193,12 +195,20 @@ build_composition <- function() {
     d <- d %>%
       left_join(geo_zip, by = "certification_number", relationship = "many-to-one") %>%
       mutate(zip_backfilled = !has_zip(practice_zip) & !is.na(geo_zip),
-             practice_zip = if_else(has_zip(practice_zip), practice_zip, geo_zip)) %>%
-      select(-geo_zip)
+             practice_zip = if_else(has_zip(practice_zip), practice_zip, geo_zip),
+             # STATE TOO. The same 1,545 records lacked a state, and the effect
+             # there was worse than a visible "Unknown": compose() filters NA
+             # before it computes N, so the entire group was dropped from
+             # composition_practice_state.csv rather than shown as missing. A
+             # reader comparing the retained and removed groups would not see
+             # that a third group had gone.
+             state_backfilled = !has_zip(practice_state) & !is.na(geo_state),
+             practice_state = if_else(has_zip(practice_state), practice_state, geo_state)) %>%
+      select(-geo_zip, -geo_state)
     cli::cli_alert_info(
-      "practice ZIP backfilled from the frozen geography for {sum(d$zip_backfilled)} of {before} record(s) that had none")
+      "backfilled from the frozen geography: {sum(d$zip_backfilled)} practice ZIP(s) of {before} missing, {sum(d$state_backfilled)} practice state(s)")
   } else {
-    d$zip_backfilled <- FALSE
+    d$zip_backfilled <- FALSE; d$state_backfilled <- FALSE
   }
 
   d <- d %>%
@@ -261,6 +271,49 @@ build_composition <- function() {
     select(group, rucc_cat, n_over_N) %>%
     pivot_wider(names_from = group, values_from = n_over_N)
   print(as.data.frame(rn), row.names = FALSE)
+
+  # --- Missingness ledger --------------------------------------------------
+  # WHY THIS EXISTS. compose() drops NA before it computes N, so a variable that
+  # is missing for a whole group does not appear as missing -- the group simply
+  # is not in the artifact. That is how composition_practice_state.csv came to be
+  # published without its second group at all, and nobody noticed, because
+  # nothing in the file said a group was expected.
+  #
+  # rucc_cat escaped only because it coalesces to "Unknown", which made the
+  # missingness visible as a 100% row. That row is what a reader eventually
+  # asked about. This ledger says the same thing for every variable, whether or
+  # not it happens to have an Unknown level.
+  LEDGER_VARS <- c("rucc_cat", "status", "certification", "cert_decade",
+                   "practice_state")
+  grp_sizes <- count(d, group, name = "group_n")
+  ledger <- lapply(LEDGER_VARS, function(v) {
+    d %>%
+      group_by(group) %>%
+      summarise(variable = v,
+                n_observed = sum(!is.na(.data[[v]]) & nzchar(as.character(.data[[v]]))),
+                .groups = "drop") %>%
+      left_join(grp_sizes, by = "group") %>%
+      mutate(n_missing = group_n - n_observed,
+             pct_missing = 100 * n_missing / group_n,
+             # A group that is ~entirely one level is a join, not a finding.
+             top_level_pct = vapply(group, function(g) {
+               x <- d[[v]][d$group == g]
+               x <- x[!is.na(x) & nzchar(as.character(x))]
+               if (!length(x)) 100 else 100 * max(table(x)) / length(x)
+             }, numeric(1))) %>%
+      select(variable, group, group_n, n_observed, n_missing, pct_missing,
+             top_level_pct)
+  }) %>% bind_rows() %>% arrange(variable, group)
+
+  cli::cli_h2("Missingness ledger")
+  print(as.data.frame(ledger %>%
+    mutate(across(where(is.numeric), ~ round(.x, 1)))), row.names = FALSE)
+  write_with_provenance(ledger, file.path(ART, "composition_missingness_ledger.csv"),
+                        inputs = prov_inputs("county_base.csv", "zcta_county_2020.txt",
+                          file.path(ART, "frozen_cohort", "analytic_cohort.csv"),
+                          file.path(ART, "frozen_cohort", "midwives_geography_guarded.csv"),
+                          file.path(ART, "amcb_npi_linkage_FROZEN.csv"),
+                          file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))
 
   st <- compose(d, "practice_state")
   write_with_provenance(st$long, file.path(ART, "composition_practice_state.csv"), inputs = prov_inputs("county_base.csv", "zcta_county_2020.txt", file.path(ART, "frozen_cohort", "analytic_cohort.csv"), file.path(ART, "frozen_cohort", "midwives_geography_guarded.csv"), file.path(ART, "amcb_npi_linkage_FROZEN.csv"), file.path(ART, "frozen_stage2", "midwives_with_nppes.csv")))

@@ -48,3 +48,9 @@ L11	an estimate from the linked subset is not a property of the roster	tests/ci_
 # and 89.8% for one quantity, each locally defensible. It is `public` because
 # every input it reads is tracked.
 L12	one scientific quantity has one value in every representation	tests/ci_science_laws.R	tests/test_science_laws_detect.R	public
+# L13 is the law L3 was written to permit. L3 forbids a group being placed
+# entirely in a single REAL geography, and its detect suite carries a near miss
+# named "a group legitimately entirely Unknown" that must stay green -- so a
+# group that was 100% Unknown because a join never happened passed twelve laws
+# for months. `public`: the ledger is tracked.
+L13	missingness is reported, and is not concentrated in one group	tests/ci_science_laws.R	tests/test_science_laws_detect.R	public

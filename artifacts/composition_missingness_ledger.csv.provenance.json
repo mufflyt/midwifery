@@ -1,6 +1,6 @@
 {
-  "artifact": "composition_certification.csv",
-  "written_utc": "2026-08-30 08:08:52 UTC",
+  "artifact": "composition_missingness_ledger.csv",
+  "written_utc": "2026-08-30 08:08:53 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",

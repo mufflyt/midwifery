@@ -104,6 +104,18 @@ law_scaffold <- function(dir) {
                "Rural,15,90,150,16.666666666666668,10,50,8,40"),
              file.path(dir, "artifacts", "linkage_selection_bounds.csv"))
 
+  # L13: a clean ledger -- every variable covers every group, and missingness is
+  # even rather than concentrated. Two variables and six cells clears the
+  # non-vacuity floor.
+  writeLines(c("variable,group,group_n,n_observed,n_missing,pct_missing,top_level_pct",
+               "rucc_cat,1_retained,100,98,2,2.0,80",
+               "rucc_cat,2_newly_npi_resolved,50,49,1,2.0,80",
+               "rucc_cat,4_removed,40,39,1,2.5,80",
+               "certification,1_retained,100,100,0,0.0,99.1",
+               "certification,2_newly_npi_resolved,50,50,0,0.0,98.8",
+               "certification,4_removed,40,40,0,0.0,99.5"),
+             file.path(dir, "artifacts", "composition_missingness_ledger.csv"))
+
   # L5: routed count, and surfaces that cover it
   writeLines(c("check,expected,observed,gates,pass,status",
                "locations successfully retrieved,900,900,yes,TRUE,PASS"),
@@ -356,6 +368,28 @@ kills("a group whose cells no longer sum to the N printed on its rows", "L12",
     "1_retained,Unknown,20,110,18.181818181818183",
     "2_newly_npi_resolved,Unknown,40,50,80")))
 
+# L13. THE TWO SHAPES THAT ACTUALLY SHIPPED.
+kills("a variable missing for a whole group and present for the rest", "L13",
+  list("artifacts/composition_missingness_ledger.csv" = c(
+    "variable,group,group_n,n_observed,n_missing,pct_missing,top_level_pct",
+    # rurality as it really was: 100% missing for the newly-resolved group,
+    # 3.2% for the retained one. Twelve laws ran green over this.
+    "rucc_cat,1_retained,100,97,3,3.2,80",
+    "rucc_cat,2_newly_npi_resolved,50,0,50,100.0,100",
+    "rucc_cat,4_removed,40,39,1,2.5,80",
+    "certification,1_retained,100,100,0,0.0,99.1",
+    "certification,2_newly_npi_resolved,50,50,0,0.0,98.8",
+    "certification,4_removed,40,40,0,0.0,99.5")))
+kills("a group that vanished from a variable rather than being reported missing", "L13",
+  list("artifacts/composition_missingness_ledger.csv" = c(
+    "variable,group,group_n,n_observed,n_missing,pct_missing,top_level_pct",
+    # practice_state as it really was: the group is simply not there.
+    "practice_state,1_retained,100,100,0,0.0,8.8",
+    "practice_state,4_removed,40,40,0,0.0,8.4",
+    "certification,1_retained,100,100,0,0.0,99.1",
+    "certification,2_newly_npi_resolved,50,50,0,0.0,98.8",
+    "certification,4_removed,40,40,0,0.0,99.5")))
+
 cat("\n-- near misses that must stay green --\n")
 
 survives("a union holding MORE origins than were routed (canonical + recovered)",
@@ -368,6 +402,15 @@ survives("equal access at two bands (a saturated stratum)",
     "rurality,band_minutes,women_with_access,women_total,pct_women_with_access",
     "Metro (RUCC 1-3),30,100,100,100.0",
     "Metro (RUCC 1-3),60,100,100,100.0")))
+survives("a level that is legitimately dominant in every group (99% CNM)",
+  list("artifacts/composition_missingness_ledger.csv" = c(
+    "variable,group,group_n,n_observed,n_missing,pct_missing,top_level_pct",
+    "certification,1_retained,100,100,0,0.0,99.1",
+    "certification,2_newly_npi_resolved,50,50,0,0.0,98.8",
+    "certification,4_removed,40,40,0,0.0,99.5",
+    "rucc_cat,1_retained,100,98,2,2.0,80",
+    "rucc_cat,2_newly_npi_resolved,50,49,1,2.0,80",
+    "rucc_cat,4_removed,40,39,1,2.5,80")))
 survives("a group legitimately entirely Unknown",
   list("artifacts/composition_rucc_cat.csv" = c(
     "group,level,n,N,pct",

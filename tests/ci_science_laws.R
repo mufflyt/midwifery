@@ -699,4 +699,88 @@ if (is.null(LSB) || is.null(CRC)) {
   }
 }
 
+ci_section("L13 a denominator must declare what it dropped")
+
+# =============================================================================
+# L13 missingness is reported, and is not concentrated in one group
+# =============================================================================
+# WHAT WENT WRONG. compose() filters NA before it computes N, so a variable
+# missing for an entire group does not appear as missing -- the group is simply
+# absent from the artifact. composition_practice_state.csv was published without
+# its second group at all, and nothing in the file said a group was expected.
+#
+# rucc_cat escaped that only because it coalesces to "Unknown", which turned the
+# same defect into a visible 100% row. A reader eventually asked about that row;
+# 1,545 people had no address because a join keyed on a stage-2 NPI they never
+# had, and 249 more were lost to a Connecticut geography-vintage mismatch.
+#
+# L3 could not catch it. L3 forbids a group being placed entirely in a single
+# REAL geography, and its own detect suite carries a near miss named "a group
+# legitimately entirely Unknown" that must stay green -- the law was written to
+# permit exactly this pattern.
+#
+# Two clauses, and neither fires on a level that is legitimately dominant:
+# `certification` is 99.1% CNM in every group and must stay green.
+#
+#   C1  every group appears for every variable. A group that vanished is not
+#       reported as missing; it is not reported at all.
+#   C2  missingness is not CONCENTRATED. A variable missing for 100% of one
+#       group and 3% of another is a join that did not happen, not a property
+#       of the world.
+LED <- suppressWarnings(ci_read_head("artifacts/composition_missingness_ledger.csv", -1L, root = root))
+
+if (is.null(LED)) {
+  ci_fail("L13: artifacts/composition_missingness_ledger.csv is absent. It is tracked,\n       so this is a missing artifact rather than a permitted skip. Regenerate it\n       with R/07-cohort-composition.R.")
+} else {
+  need <- c("variable", "group", "group_n", "n_observed", "n_missing", "pct_missing")
+  miss <- setdiff(need, names(LED))
+  if (length(miss)) {
+    ci_fail("L13: the ledger is missing column(s): %s.", paste(miss, collapse = ", "))
+  } else {
+    off <- character(0)
+    vars <- unique(LED$variable)
+    groups <- unique(LED$group)
+    SPREAD_PP <- 50
+
+    # C1 -- every variable covers every group.
+    for (v in vars) {
+      have <- LED$group[LED$variable == v]
+      gone <- setdiff(groups, have)
+      if (length(gone))
+        off <- c(off, sprintf("%s reports no row for group(s) %s -- absent, not missing",
+                              v, paste(gone, collapse = ", ")))
+    }
+
+    # C2 -- missingness is not concentrated in one group.
+    for (v in vars) {
+      p <- law_num(LED$pct_missing[LED$variable == v])
+      p <- p[is.finite(p)]
+      if (length(p) >= 2 && (max(p) - min(p)) > SPREAD_PP)
+        off <- c(off, sprintf("%s is %.0f%% missing in one group and %.0f%% in another; a %.0f-point spread is a join, not a property",
+                              v, max(p), min(p), max(p) - min(p)))
+    }
+
+    n_cells <- nrow(LED)
+    if (length(vars) < 2 || n_cells < 4)
+      ci_fail("L13: the ledger covers %d variable(s) in %d cell(s). It has stopped\n       describing the composition, which is a failure rather than a pass.",
+              length(vars), n_cells)
+
+    if (length(off)) {
+      ci_fail("L13: %d missingness violation(s):\n%s\n       A denominator that drops rows must say how many and why. Backfill the\n       join, or record the loss -- do not let a group disappear from a table.",
+              length(off), paste(sprintf("       %s", off), collapse = "\n"))
+    } else {
+      # POSITIVE CONTROL: the spread rule must reject the pattern that actually
+      # shipped -- rurality missing for 100% of the newly-resolved group and
+      # 3.2% of the retained one.
+      ci_law_positive("L13", (100 - 3.2) > 50)
+      ci_law_exercised("L13", n_cells)
+      ci_ok("%d variable(s) x %d group(s) declared; worst missingness %.1f%%, widest spread %.1f points",
+            length(vars), length(groups), max(law_num(LED$pct_missing), na.rm = TRUE),
+            max(vapply(vars, function(v) {
+              p <- law_num(LED$pct_missing[LED$variable == v]); p <- p[is.finite(p)]
+              if (length(p) < 2) 0 else max(p) - min(p) }, numeric(1))))
+    }
+  }
+}
+
 ci_finish()
