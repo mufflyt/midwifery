@@ -22,6 +22,43 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-08-30 — A credential comma was reversing first and last names
+
+### Fixed — `amcb_parse_person()`: **366 of 35,038 harvested authors (1.0%) had the wrong surname**
+
+The parser tested the **raw** string for a comma to detect `"Last, First"`, so the
+comma in `", CNM, MSN"` was read as a name reversal:
+
+| input | before | after |
+|---|---|---|
+| `Jane Doe, CNM, MSN` | **DOE** / JANE | JANE / **DOE** |
+| `Ann M. Barbaccia (Pollack), M.D.` | **M** / BARBACCIA / **ANN** | ANN / M / **BARBACCIA** |
+| `St. Marie, P` | last = **ST** | last = **ST MARIE** |
+| `Averill Caddeo, MSN, RN, …` | last = **AVERILL** | last = **CADDEO** |
+| `Samuel (NMN) Anaya, M.D.` | first = *empty* | SAMUEL / **ANAYA** |
+
+Three defects, and the middle one is the interesting part:
+
+- **the comma test.** Moving it after `amcb_strip_name_noise()` — the obvious
+  fix — never fires at all, because that function splits on `[[:space:],]+` and
+  deletes every comma before it can be seen. Every genuine `Mróz, Jan` would
+  then parse as given name `MROZ`. The decidable question is whether a comma
+  separates two stretches that **both still hold a name** once credentials are
+  gone. Both wrong answers are pinned by T24.
+- **parenthesised alternates reached the parser.** humaniformat assigns whatever
+  it is given to a slot, so a maiden name became the *surname* —
+  `"Ann M. Barbaccia (Pollack)"` → `last = "(Pollack)"` — which
+  `amcb_name_key()` then normalised to `""`, silently emptying the field the
+  match depends on. They are now removed *before* parsing.
+- **an empty string aborted the vector.** humaniformat throws a C++
+  `range_error`; blanks are held out and put back.
+
+Scope: `link_theses_to_amcb.R` only, feeding
+`artifacts/amcb_training_institution.csv`. The AMCB→NPPES linkage does not use
+this parser, so **no cohort number changes**.
+
+---
+
 ## [Unreleased] — 2026-08-30 — The middle-name edit-distance tolerance is gone
 
 ### Removed — one-edit tolerance on middle names: **−19 cohort members, accepted**

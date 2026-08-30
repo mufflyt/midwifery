@@ -357,5 +357,34 @@ cat("\n-- surname components --\n")
       "T23h NA in, NA out is unchanged")
 }
 
+# T24. amcb_parse_person(): the comma is not always a name reversal.
+# Until 2026-08-30 this tested the RAW string, so the comma in ", M.D." was read
+# as "Last, First" and the fields came back scrambled. Testing the CLEANED
+# string instead never fires, because amcb_strip_name_noise() splits on
+# "[[:space:],]+" and deletes every comma first. Both wrong answers are pinned
+# below by asserting what the right one produces.
+if (requireNamespace("humaniformat", quietly = TRUE)) {
+  p <- amcb_parse_person(c(
+    "Jane Doe, CNM, MSN",                # credential comma only
+    "Mroz, Jan",                         # genuine Last, First
+    "Ann M. Barbaccia (Pollack), M.D.",  # both, plus a maiden name
+    "St. Marie, P",                      # compound surname
+    "Samuel (NMN) Anaya, M.D."))         # (NMN) means NO middle name
+  chk(identical(p$first, c("JANE", "JAN", "ANN", "P", "SAMUEL")),
+      sprintf("T24a a credential comma is not a reversal [%s]",
+              paste(p$first, collapse = "|")))
+  chk(identical(p$last, c("DOE", "MROZ", "BARBACCIA", "ST MARIE", "ANAYA")),
+      sprintf("T24b surnames survive credentials, maiden names and particles [%s]",
+              paste(p$last, collapse = "|")))
+  chk(!any(grepl("[()]", unlist(p))),
+      "T24c no parsed field ever contains a bracket")
+  chk(identical(amcb_parse_person(NA_character_)$last, NA_character_),
+      "T24d NA in, NA out -- and an empty string does not abort the vector")
+  chk(nrow(amcb_parse_person(c("Cher", "", NA))) == 3L,
+      "T24e blanks are held out of the parser and put back")
+} else {
+  cat("  --   SKIP T24 amcb_parse_person: humaniformat not installed\n")
+}
+
 cat(sprintf("\n%s (%d failures)\n", if (fails == 0L) "PASS" else "FAIL", fails))
 quit(status = if (fails == 0L) 0L else 1L)
