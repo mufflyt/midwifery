@@ -53,6 +53,19 @@ mw_dev_mode <- function() nzchar(Sys.getenv("MANUSCRIPT_DEV_MODE"))
 mw_stat <- function(path, fmt = NULL, catalog = .mw_catalog) {
   v <- .mw_get(path, catalog)
   if (is.null(v) || (is.atomic(v) && length(v) == 1L && is.na(v))) return(NA)
+  # A catalog entry is documented as ONE dot-path -> ONE value. A vector here
+  # means the catalog itself is malformed (an upstream builder returned
+  # several values under one key), and sprintf() would silently VECTORIZE --
+  # `` `r mw_stat(...)` `` inline in the manuscript prose would render as
+  # "12.0 13.0" pasted into a sentence, with no error anywhere to catch it
+  # before it ships.
+  if (is.atomic(v) && length(v) > 1L)
+    stop(sprintf(paste0(
+      "\nMALFORMED STATISTIC: '%s' resolves to %d values, not one.\n",
+      "mw_stat() renders exactly one number into manuscript prose; a vector\n",
+      "here means the catalog builder produced several values under one key.\n",
+      "Fix manuscript/R/build_stats_catalog.R so this key is scalar."),
+      path, length(v)), call. = FALSE)
   if (is.null(fmt)) return(v)
   sprintf(fmt, v)
 }
@@ -88,6 +101,16 @@ mw_n <- function(path, catalog = .mw_catalog) {
 #' function rather than a sprintf at each call site.
 mw_pval <- function(p) {
   if (is.null(p) || is.na(p)) return("**[PENDING: P]**")
+  # A p-value outside [0, 1] is not a small or large p-value -- it is not a
+  # p-value at all, and signals a broken upstream computation (a flipped
+  # sign, a mis-specified test). p < .001 below would otherwise silently
+  # print a negative p as "*P*<.001" -- a scientifically impossible number
+  # rendered as if it were merely a tiny, ordinary one, with nothing to catch
+  # it before it reaches a reviewer or reader.
+  if (p < 0 || p > 1)
+    stop(sprintf(
+      "mw_pval(): p = %s is outside [0, 1] and cannot be a real p-value. Fix the upstream calculation, do not format it.",
+      p), call. = FALSE)
   if (p < .001) return("*P*<.001")
   sub("0\\.", ".", sprintf("*P*=%.3f", p))
 }
