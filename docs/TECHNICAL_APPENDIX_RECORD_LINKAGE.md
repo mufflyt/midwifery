@@ -37,12 +37,12 @@ flowchart TD
     M --> A["<b>Analytic cohort — 16,892</b><br/>14,761 midwifery + 2,131 nursing"]
     N --> A
 
-    A --> G["County assignable<br/>ZIP → ZCTA → county → RUCC<br/><b>14,861</b>"]
-    A --> X["No assignable county<br/><b>2,031</b>"]
+    A --> G["County assignable<br/>ZIP → ZCTA → county → RUCC<br/><b>16,636</b>"]
+    A --> X["No assignable county<br/><b>256</b>"]
 
-    G --> MET["Metropolitan<br/>RUCC 1–3<br/><b>13,277 (89.3%)</b>"]
-    G --> ADJ["Nonmetro adjacent<br/>RUCC 4–6<br/><b>1,075 (7.2%)</b>"]
-    G --> REM["Nonmetro remote<br/>RUCC 7–9<br/><b>509 (3.4%)</b>"]
+    G --> MET["Metropolitan<br/>RUCC 1–3<br/><b>14,874 (89.4%)</b>"]
+    G --> ADJ["Nonmetro adjacent<br/>RUCC 4–6<br/><b>1,194 (7.2%)</b>"]
+    G --> REM["Nonmetro remote<br/>RUCC 7–9<br/><b>568 (3.4%)</b>"]
 
     style R fill:#1f3a5f,color:#fff,stroke:#0d1f33
     style A fill:#1f3a5f,color:#fff,stroke:#0d1f33
@@ -56,6 +56,13 @@ flowchart TD
     style C fill:#f7f0e8,stroke:#8a6d3b
     style K fill:#f7f0e8,stroke:#8a6d3b
 ```
+
+A drawn version of this figure, generated from the stats catalog rather than
+hand-written, is at [`figures/cohort_flow.pdf`](figures/cohort_flow.pdf) —
+produced by [`make_cohort_flow_figure.R`](../make_cohort_flow_figure.R), which
+refuses to write if the parts do not sum to the roster. The mermaid block above
+is kept because it renders inline on GitHub; the drawn one is what a manuscript
+can use.
 
 **Six records do not carry through.** 14,764 resolve to midwifery taxonomy but
 14,761 appear in the frozen analytic cohort; 2,134 resolve to nursing taxonomy
@@ -186,3 +193,21 @@ Rscript tests/test_science_laws_detect.R     # 19 planted defects, all must be c
 The frozen linkage is person-level and gitignored; these run where the pipeline
 has been run. Published artifacts are aggregate and carry provenance sidecars
 naming their inputs with SHA-256 checksums.
+
+## 9. What the 2,031 with no assignable county turned out to be
+
+An earlier version of this appendix reported **2,031** cohort members without an
+assignable county. Two of the three reasons were joins that never happened
+rather than absent data:
+
+| | n | |
+|---|---|---|
+| address never fetched | 1,545 | stage-2 addresses were keyed on the stage-2 NPI; the newly-NPI-resolved group is defined by not having had one |
+| Connecticut vintage mismatch | 249 | 2020 legacy counties against 2023 planning regions |
+| genuinely unassignable | 256 | PO box, unique, non-geographic ZIP |
+
+Recovered to **256**. The metropolitan share moved 89.34% → 89.41%; the reported
+bound tightened from 64.9–92.2% to 72.1–91.4%. See
+[`TECHNICAL_APPENDIX_LINKAGE_SELECTION.md`](TECHNICAL_APPENDIX_LINKAGE_SELECTION.md)
+§9 for the full accounting and for why the Connecticut assignment does not route
+through the legacy county.

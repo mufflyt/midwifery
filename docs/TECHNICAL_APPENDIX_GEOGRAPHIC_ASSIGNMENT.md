@@ -74,7 +74,38 @@ variant loses **22.1%** of addresses and flattens the rurality gradient, which
 is itself informative: the flattening is a coverage artifact of the stricter
 geocoder, not a finding.
 
-## 5. Fifty-five numbers are pinned, and nothing checks them
+## 5. Connecticut crosses a vintage boundary mid-join
+
+The ZIP-to-county relationship file is **2020 vintage** and reports Connecticut
+under its eight **legacy counties** (`09001`–`09015`). `county_base.csv` is
+**2023 vintage** and reports the nine **planning regions** (`09110`–`09190`),
+which replaced them. The two describe the same ground and do not join, so every
+Connecticut ZIP resolved to a county carrying no RUCC and **249 midwives were
+recorded as having no assignable county** — not for want of an address, but for
+want of a matching vintage.
+
+`apportion_ct_legacy()` was the wrong tool. It splits a legacy-county *count*
+across regions by population weight, which is right for a birth count and wrong
+for a person: seven of the eight legacy counties straddle two or three regions,
+and the regions do not share a rurality band.
+
+| region | RUCC |
+|---|---|
+| Capitol, Lower Connecticut River Valley | 1 |
+| Greater Bridgeport, Naugatuck Valley, South Central, Southeastern, Western | 2 |
+| **Northeastern Connecticut, Northwest Hills** | **4** |
+
+A county-weighted assignment would have pushed every rural Connecticut midwife
+into a metropolitan region — the one direction a paper about rurality cannot
+afford to be careless about.
+
+`ct_zip_to_region()` does not route through the legacy county at all. It goes
+**ZIP → tract → planning region**, exact because tracts nest within regions, and
+resolves a ZIP spanning several regions by the same dominant-land-area rule §2
+uses for counties. Same rule, finer geography. 288 Connecticut ZIPs map across
+all nine regions, **60 of them into the two RUCC-4 regions**.
+
+## 6. Fifty-five numbers are pinned, and nothing checks them
 
 This is the exposure, stated plainly.
 
@@ -126,11 +157,11 @@ regeneration instructions in the catalog comment are followed, which is a
 process guarantee rather than a mechanical one, and this appendix records that
 distinction rather than leaving a reader to infer it.
 
-## 6. Reproducing this
+## 7. Reproducing this
 
 ```
-Rscript R/07-cohort-composition.R            # ZIP-based rurality -> composition_rucc_cat.csv
-Rscript tests/ci_science_laws.R              # L3: absent geography stays absent
+Rscript R/07-cohort-composition.R            # ZIP-based rurality + both backfills
+Rscript tests/ci_science_laws.R              # L3 absent stays absent; L13 missingness declared
 Rscript tests/test_geography_masking_metamorphic.R   # L6: masking cannot invent geography
 ```
 
