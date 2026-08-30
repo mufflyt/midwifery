@@ -61,9 +61,21 @@ fd_edge <- function(from, to, label = NA_character_, kind = "plain") {
 #' first hand-placed version of this figure did.
 #' @keywords internal
 fd_layout <- function(nodes, canvas_w = 1000, tier_gap = 78, pad_top = 14) {
+  # An unrecognized kind must fail here, not fall through to fd_render()'s
+  # switch() default. It used to fall through via a "multi" special case that
+  # set h to NA -- max(nodes$h[i]) then propagated that NA into every
+  # SUBSEQUENT tier's y position (max() does not drop NA by default), silently
+  # corrupting the entire rest of the diagram below the offending node with no
+  # error anywhere in the pipeline. "multi" was never a documented kind (see
+  # fd_node()'s own @param kind list) and had no live caller.
+  valid_kinds <- c("lead", "keep", "band", "drop", "plain")
+  bad_kind <- setdiff(unique(nodes$kind), valid_kinds)
+  if (length(bad_kind))
+    stop(sprintf("fd_layout(): unrecognized node kind(s): %s. Valid kinds: %s.",
+                 paste(bad_kind, collapse = ", "), paste(valid_kinds, collapse = ", ")),
+         call. = FALSE)
   nodes$lines <- 1L + (!is.na(nodes$value)) + (!is.na(nodes$sub))
   nodes$h <- 26 + 22 * (nodes$lines - 1L)
-  nodes$h[nodes$kind == "multi"] <- NA_real_
   y <- pad_top
   for (t in sort(unique(nodes$tier))) {
     i <- nodes$tier == t
@@ -94,6 +106,15 @@ fd_layout <- function(nodes, canvas_w = 1000, tier_gap = 78, pad_top = 14) {
 #' only one this needs.
 #' @keywords internal
 fd_render <- function(nodes, edges, canvas_w = 1000, canvas_h = NULL) {
+  # An edge naming a node id that does not exist (a typo) previously rendered
+  # with no error: nodes[nodes$id == bad_id, ] returns a 0-row frame, so a$cx/
+  # a$bottom become numeric(0) and the c()'d coordinate vector for that edge
+  # silently drops elements rather than signalling anything. A missing arrow
+  # in a cohort flow diagram is a missing TRANSITION, not a cosmetic gap.
+  missing_ids <- setdiff(c(edges$from, edges$to), nodes$id)
+  if (length(missing_ids))
+    stop(sprintf("fd_render(): edge(s) reference undefined node id(s): %s.",
+                 paste(unique(missing_ids), collapse = ", ")), call. = FALSE)
   if (is.null(canvas_h)) canvas_h <- max(nodes$bottom) + 40
   ty <- function(v) canvas_h - v
   grid.newpage()
