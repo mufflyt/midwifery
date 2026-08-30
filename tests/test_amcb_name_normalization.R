@@ -313,5 +313,49 @@ cat("\n-- surname components --\n")
               AMCB_MIN_SURNAME_TOKEN))
 }
 
+# T23. Parenthesised preferred names. The roster publishes "Cynthia (Cindi)".
+# The bracket survived normalisation, amcb_split_first() put "(CINDI)" in the
+# middle slot, and its initial "(" conflicted with every recorded NPPES middle
+# initial -- so the middle-name veto deleted the candidate set. All 9 affected
+# roster rows failed to resolve. Asserted by VALUE: a test that only checked
+# for the absence of "(" would pass against a rule that deleted the name too.
+{
+  chk(amcb_name_key("Cynthia (Cindi)") == "CYNTHIA",
+      sprintf("T23a the nickname is dropped, the given name kept [%s]",
+              amcb_name_key("Cynthia (Cindi)")))
+  chk(amcb_split_first("Cynthia (Cindi)")$given == "CYNTHIA",
+      "T23b the given name survives the split")
+  chk(amcb_split_first("Cynthia (Cindi)")$middle_from_first == "",
+      sprintf("T23c no middle name is FABRICATED from a nickname [%s]",
+              amcb_split_first("Cynthia (Cindi)")$middle_from_first))
+  chk(substr(amcb_split_first("Cynthia (Cindi)")$middle_from_first, 1, 1) != "(",
+      "T23d the middle initial is never a bracket")
+
+  # A real middle name alongside a nickname keeps the middle name. Asserted on
+  # the INITIAL, which is what the veto compares: the key does not strip the
+  # period, and substr(.., 1, 1) never sees it.
+  chk(substr(amcb_split_first("Patty (Pepita) B.")$middle_from_first, 1, 1) == "B",
+      sprintf("T23e a genuine middle initial outlives the nickname [%s]",
+              amcb_split_first("Patty (Pepita) B.")$middle_from_first))
+  # Word-internal brackets are OPTIONAL LETTERS, not a nickname. Real roster
+  # row. Dropping the group here would leave a given name of "C", which blocks
+  # against every NPPES first name recorded as a bare initial.
+  chk(amcb_name_key("C(arolyn) Diane") == "CAROLYN DIANE",
+      sprintf("T23f word-internal brackets are unwrapped, not deleted [%s]",
+              amcb_name_key("C(arolyn) Diane")))
+  chk(amcb_split_first("C(arolyn) Diane")$given == "CAROLYN",
+      "T23f the given name is a name, not an initial")
+  # Unbalanced brackets leave no residue and fabricate no middle name.
+  chk(amcb_name_key("Anna (Katie") == "ANNA",
+      sprintf("T23i an unclosed bracket leaves no residue [%s]",
+              amcb_name_key("Anna (Katie")))
+  # Transliteration still happens: this must not become a punctuation-only pass.
+  chk(amcb_name_key("Renée (Ren)") == "RENEE",
+      sprintf("T23g accents are still transliterated alongside the strip [%s]",
+              amcb_name_key("Renée (Ren)")))
+  chk(is.na(amcb_name_key(NA_character_)),
+      "T23h NA in, NA out is unchanged")
+}
+
 cat(sprintf("\n%s (%d failures)\n", if (fails == 0L) "PASS" else "FAIL", fails))
 quit(status = if (fails == 0L) 0L else 1L)

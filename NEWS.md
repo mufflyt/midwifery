@@ -22,6 +22,111 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-08-30 — One middle-initial rule was deleting matches and manufacturing them at the same time
+
+### Retracted — the frozen cohort is not regenerable by the current pipeline
+
+Re-running `match_amcb_to_npi.R` unmodified, on the same roster and panel, does
+not reproduce `amcb_npi_linkage_FROZEN.csv`. 249 of 22,309 rows differ, zero of
+them a different NPI, and the difference decomposes exactly:
+
+| status | frozen | re-run |
+|---|---|---|
+| `ambiguous_contested_npi` | 95 | **188** |
+| `candidate_class5_held_out_of_cohort` | 156 | **0** |
+
+Neither cause is a change to this repository. `rank_one_to_one()` is imported
+from `~/isochrones` and stopped consuming NPIs greedily on 2026-08-08, so a
+contested NPI now quarantines both claimants instead of one; and the frozen
+artifact's manifest names `amcb_npi_crosswalk_c5guard_…` as its source, meaning
+**FROZEN is the base linkage plus a c5guard step this script does not perform**.
+`16,892` is reproducible only as base-linkage-at-freeze + c5guard +
+pre-2026-08-08 bijection, two of which live outside this repo.
+See [`TECHNICAL_APPENDIX_REPRODUCIBILITY.md`](docs/TECHNICAL_APPENDIX_REPRODUCIBILITY.md).
+
+### Fixed — middle names compare as token sets: **+153 cohort members**
+
+The middle-name axis compared `substr(middle, 1, 1)` on each side, so a maiden
+surname held in a different slot scored as a disagreement and vetoed the
+candidate. Against a like-for-like control run: matched 14,813 → **14,998**,
+tied 3,044 → 2,949, contested 188 → 123, cohort 16,805 → **16,958**.
+
+Three separate defects, each found by auditing the identity flips the previous
+one caused:
+
+- **position** — `A REINHARD` against `REINHARD` shares a token outright;
+  `BETH HARVEY` against `H` is an initial abbreviating a non-first token. 82
+  roster rows had their *only* exact first-and-last-name candidate deleted this
+  way, 57 of the 88 deleted pairs carrying a CNM credential in NPPES.
+- **concatenated initials** — `VL` against `VELMA LAURITZEN` is two characters,
+  so the fix's first version scored it as a full *name* token and conflicted.
+  Classification ("does this look like initials?") is undecidable — `LYN`,
+  `BRY`, `SKY` are vowel-less names — so the rule asks whether the characters
+  map, in order, onto distinct tokens on the other side.
+- **near spellings** — `JULIA`/`JULIE`, `LYN`/`LYNN`, `KRISTINA`/`KRISHNA` were
+  conflicts. Now `uninformative`, deliberately not `corroborates`: corroboration
+  would manufacture class-1 confidence of 1.00 out of a spelling difference.
+
+Identity flips were audited case by case: **18 moved onto a midwifery-taxonomy
+record, 1 moved off** (`LEIGH` against `LYNN`, which are different names and
+which the old rule matched on nothing but a shared L).
+
+### Fixed — contested NPIs are awarded on evidence again, not withdrawn wholesale
+
+The upstream change withdrew 93 people from the cohort. Only 37 of those 93 are
+genuinely inseparable; for 56 one claimant holds strictly stronger name
+evidence. `amcb_award_contested()` awards those and refuses the ties —
+**53 awarded in the shipped configuration, contested 188 → 123, zero identities
+decided by sort order**. `CONTESTED_RULE=greedy` reproduces the pre-2026-08-08
+behaviour and is *not* the default, because 37 of its awards are decided by
+certification number.
+
+### Added — both tails of the middle-name veto are now countable
+
+`n_mid_vetoed_c2`, `resolved_by_absence_c2` (**218** rows) and
+`unmatched_after_middle_veto` (**73** rows). The class-5 guard already asked
+"ruled in, or merely not ruled out?"; class 2 is where the veto is strongest and
+it had never been asked there. `match_reason` no longer claims "no NPPES
+candidate shared this name" over rows that had one.
+
+### Added — taxonomy scope is a declared dimension, and the ceiling is measured
+
+`PANEL_TAX_SCOPE=wide` builds every specialty in the `363L*`, `163W*` and
+`364S*` families — 845,255 NPIs against 443,623. Measured after the veto and
+resolver: **163 of the 2,108 "no candidate" rows recovered, 15 of them
+midwifery, against 528 resolved rows becoming ties.** The wide pool stays a
+**sensitivity artifact**; the hypothesis that taxonomy truncation hid a large
+reservoir is refuted — 1,282 of the 2,108 already have their surname in the
+narrow pool.
+
+`panel_definition()` was blind to this: both panels returned
+`midwifery-plus-nursing`, so the auto-generated artifact name was identical and
+a wide run would have silently overwritten the narrow artifact. That is the
+third recurrence of the naming defect this scheme exists to prevent (year
+window, then taxonomy A/B, now scope). The panel carries a `tax_scope` column,
+written by both readers.
+
+### Changed — appendix classes 3 and 4 described rules the code does not implement
+
+The record-linkage appendix said class 3 was "given name equivalent via nickname
+dictionary". It is `exact_last & first_init_ok` — surname plus **first
+initial**, given names differing. The nickname dictionary exists but belongs to
+`match_nppes.R` and is unreachable from the code that produced the frozen
+linkage. Class 4 omitted its exact-given-name requirement. This survived
+PR #130's appendix refresh verbatim.
+
+Class 3 generates 150,805 of 198,922 candidate pairs — 76% of the universe — and
+1,487 of the 3,044 ties, including a 348-way tie on one `SMITH`.
+
+### Added — imported functions are pinned by behaviour (G7), contested awards gated (G8)
+
+`exists(fn)` was the entire import check for five functions from another
+repository. `amcb_assert_rank_one_to_one()` asserts the properties this pipeline
+relies on against a fixture, and G7 proves the assertion can fail by running it
+against greedy, first-row, passthrough and erroring stand-ins.
+
+---
+
 ## [Unreleased] — 2026-08-29 — The metropolitan share had three values, and CI had two meanings of green
 
 ### Changed — headline rurality estimate: 86.5% → **89.3% metropolitan**

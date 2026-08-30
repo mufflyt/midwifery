@@ -128,7 +128,26 @@ OUT <- Sys.getenv("MATCH_OUT", "")   # resolved after the panel is read,
 
 panel_definition <- function(panel_df) {
   classes <- unique(panel_df$tax_class)
-  if (all(classes == "midwife")) "midwifery" else "midwifery-plus-nursing"
+  base <- if (all(classes == "midwife")) "midwifery" else "midwifery-plus-nursing"
+  # THE THIRD DIMENSION (2026-08-30). tax_class is midwife/nursing in BOTH the
+  # narrow and the wide panel, so this returned the same string for a pool of
+  # 443,623 NPIs and a pool of 845,255 -- and the auto-generated artifact name
+  # was therefore identical for both. That is the defect this naming scheme
+  # exists to prevent, recurring on a dimension it did not know about: the year
+  # window was first, the taxonomy A/B second, taxonomy SCOPE is third.
+  #
+  # A panel built before tax_scope existed carries no such column, and its name
+  # must not change -- the narrow artifact has to stay byte-reproducible. So an
+  # absent column, and the value "narrow", both yield the historical name.
+  if (!"tax_scope" %in% names(panel_df)) return(base)
+  scope <- unique(panel_df$tax_scope[!is.na(panel_df$tax_scope) &
+                                       nzchar(panel_df$tax_scope)])
+  if (!length(scope)) return(base)
+  if (length(scope) > 1L) {
+    stop(sprintf("panel mixes taxonomy scopes (%s); one panel, one scope",
+                 paste(sort(scope), collapse = ", ")), call. = FALSE)
+  }
+  if (identical(scope, "narrow")) base else paste0(base, "-", scope)
 }
 year_window <- function(panel_df) {
   if (!is.na(YEAR_FLOOR)) sprintf("through-%d", YEAR_FLOOR)
@@ -206,6 +225,10 @@ panel <- panel_raw %>%
          nppes_first_clean = blank_na(first_name),
          nppes_first_init  = coalesce(amcb_first_initial(nppes_first_clean), ""),
          nppes_mid_init    = substr(blank_na(middle_name), 1, 1),
+         # The WHOLE middle name, not just its first letter. The middle-name
+         # axis compares token sets (amcb_middle_agreement); an initial cannot
+         # represent "ANN MARIE" or "REINHARD" for that comparison.
+         nppes_middle_clean = blank_na(middle_name),
          # Retained verbatim for the crosswalk's evidence columns.
          nppes_last_raw   = last_name,
          nppes_first_raw  = first_name,
@@ -225,7 +248,8 @@ npi_class <- panel %>%
             .groups = "drop")
 
 identities <- panel %>%
-  distinct(npi, nppes_last_clean, nppes_first_clean, nppes_first_init, nppes_mid_init) %>%
+  distinct(npi, nppes_last_clean, nppes_first_clean, nppes_first_init,
+           nppes_mid_init, nppes_middle_clean) %>%
   left_join(npi_class, by = "npi")
 cat("candidate NPIs by taxonomy class:\n"); print(table(npi_class$npi_tax_class))
 
@@ -423,10 +447,16 @@ cat(sprintf("strategy 5 candidate pairs: %s\n", format(nrow(s5), big.mark = ",")
 candidates_prefilter <- bind_rows(s1, s2, s3, s5) %>%
   mutate(
     component_last = coalesce(component_last, 0L),
-    mid_both   = has_name_information(mid_init) &
-                 has_name_information(nppes_mid_init),
-    mid_match  = as.integer(mid_both & mid_init == nppes_mid_init),
-    mid_conflict = as.integer(mid_both & mid_init != nppes_mid_init),
+    # TOKEN SETS, NOT POSITION 1. See amcb_middle_agreement() in
+    # R/amcb_match_rules.R for the defect this replaces and for what it
+    # deliberately still treats as a conflict. mid_both is retained because
+    # downstream code and the gates read it as "both sides recorded a middle
+    # name", which is exactly the uninformative/other split below.
+    mid_agreement = amcb_middle_agreement(amcb_middle_tokens(middle_clean),
+                                          amcb_middle_tokens(nppes_middle_clean)),
+    mid_both   = mid_agreement != "uninformative",
+    mid_match  = as.integer(mid_agreement == "corroborates"),
+    mid_conflict = as.integer(mid_agreement == "conflicts"),
     name_evidence_class = case_when(
       exact_last == 1L & exact_first == 1L & mid_match == 1L ~ 1L,
       exact_last == 1L & exact_first == 1L                   ~ 2L,
@@ -458,6 +488,33 @@ candidates <- candidates_prefilter %>%
 vetoed_c5_pairs <- candidates_prefilter %>%
   filter(name_evidence_class == 5L, mid_conflict == 1L) %>%
   distinct(amcb_id, vetoed_npi = npi)
+
+# THE SAME QUESTION AT THE TOP OF THE SCALE (2026-08-30).
+#
+# "Ruled in, or merely not ruled out?" was asked of class 5 and answered by
+# quarantining. It was never asked of class 2, where the veto is strongest --
+# it removes a candidate agreeing on BOTH whole names -- and where it runs in
+# two directions at once. Audited over the frozen linkage, of 2,240 roster rows
+# with at least one exact-name candidate vetoed:
+#
+#   1,454  ruled IN by a middle name that agrees on another candidate; the
+#          veto changes nothing for them
+#     218  resolve at class 2 ONLY because every rival was vetoed -- the class-5
+#          pattern exactly, unflagged, 120 of them cohort members
+#     568  unresolved either way, including 82 whose ONLY exact-name candidate
+#          was deleted and who are then published as "no candidate"
+#
+# Both tails are now counted. Nothing is demoted: unlike class 5, the surviving
+# claim here rests on agreement of the whole given name AND the whole surname,
+# which is not thin evidence, and moving cohort membership on a rule this
+# script has never reported would be a change made blind. The columns make the
+# stratum reportable; whether it should move is a separate, evidenced decision.
+vetoed_exact_pairs <- candidates_prefilter %>%
+  filter(exact_last == 1L, exact_first == 1L, mid_conflict == 1L) %>%
+  distinct(amcb_id, vetoed_npi = npi)
+cat(sprintf("middle-veto footprint: %s class-5 pairs, %s exact-name pairs\n",
+            format(nrow(vetoed_c5_pairs), big.mark = ","),
+            format(nrow(vetoed_exact_pairs), big.mark = ",")))
 
 cat("\ncandidates by name_evidence_class x taxonomy:\n")
 print(as.data.frame(count(candidates, name_evidence_class, taxonomy_axis)))
@@ -501,14 +558,52 @@ write_csv(diag_pools, file.path(OUT_DIR, "linkage_pool_diagnostics.csv"), na = "
 # them, since that count is itself a data-quality signal.
 contested <- resolved %>% count(npi) %>% filter(n > 1)
 
-matched <- resolved %>%
+CONTESTED_RULE <- Sys.getenv("CONTESTED_RULE", "strict_dominance")
+ranked <- resolved %>%
   # rank_one_to_one() ranks on method_priority, score_total then
   # confidence_score. Feed it the evidence class as the score so the bijection
   # prefers the strongest identity evidence, not an arbitrary row order.
   mutate(enthealth_id = amcb_id,
          score_total = 5L - name_evidence_class,
-         match_strategy = name_evidence_class) %>%
-  rank_one_to_one() %>%
+         match_strategy = name_evidence_class,
+         # method_priority SUPPLIED, NOT LOOKED UP (2026-08-30). rank_one_to_one()
+         # otherwise joins build_method_priority_lut(), which is keyed on the ABOG
+         # pipeline's strategy names ("strategy1_exact_npi", ...) and contains NONE
+         # of this pipeline's four methods. Every midwifery row therefore missed
+         # the lookup and was coalesced to the same value, 99 -- so the bijection
+         # has ALWAYS ranked on score_total, exactly as the note below says. The
+         # constant is reproduced here rather than re-derived, so this run ranks
+         # identically to the frozen one; what changes is that the pipeline no
+         # longer depends on a table that never applied to it, and the LUT now
+         # lives where it is used instead of being loaded by side effect.
+         method_priority = 99L) %>%
+  # id_col PASSED, NOT DEFAULTED (2026-08-30). rank_one_to_one() is canonical
+  # and lives in another repository; consolidating its four copies moved the
+  # default from "enthealth_id" to "abog_id", and this script -- which had
+  # relied on the default -- stopped running entirely:
+  #
+  #   Error: rank_one_to_one: id column 'abog_id' not found in candidates.
+  #
+  # Loud, and therefore survivable. The dangerous version of this is a repo
+  # that HAS a column by the new default name: the bijection would then be
+  # enforced over the wrong identifier and the run would look clean. Naming the
+  # column here makes this pipeline's contract independent of that default.
+  rank_one_to_one(id_col = "enthealth_id")
+
+# CONTESTED NPIs ARE NOT ALL THE SAME KIND OF CONTESTED (2026-08-30).
+# rank_one_to_one() now quarantines BOTH claimants of a contested NPI. That
+# withdrew 93 people from this cohort, but only 37 of those 93 are genuinely
+# inseparable; for the other 56 one claimant holds strictly stronger name
+# evidence. amcb_award_contested() returns those and leaves the coin-flips
+# quarantined. Measured on THIS pipeline, where the middle-name fix has already
+# shrunk the contested set: 53 awarded, 123 rows still contested. See
+# R/amcb_match_rules.R for the three rules and their measured costs, and
+# docs/TECHNICAL_APPENDIX_CONTESTED_NPI.md.
+awarded <- amcb_award_contested(attr(ranked, "quarantine"),
+                                rule = CONTESTED_RULE)
+cat(sprintf("contested rule: %s -- %s NPI(s) awarded on strictly stronger evidence\n",
+            CONTESTED_RULE, format(nrow(awarded), big.mark = ",")))
+matched <- dplyr::bind_rows(ranked, awarded) %>%
   transmute(amcb_id, npi, npi_match_method = match_method,
             nppes_matched_last, nppes_matched_first, nppes_mid_init,
             npi_tax_class = taxonomy_axis, name_evidence_class,
@@ -532,10 +627,18 @@ matched <- resolved %>%
 # tested by a nine-minute full run plus an artifact diff. See G3 in
 # tests/test_amcb_gates.R, which pins BOTH directions -- a self-variant is not
 # a rival, a different NPI is.
+matched_one_row <- as.data.frame(matched %>% select(amcb_id, npi))
 mid_veto_stats <- count_rival_npis(
-  as.data.frame(vetoed_c5_pairs),
-  as.data.frame(matched %>% select(amcb_id, npi))) %>%
+  as.data.frame(vetoed_c5_pairs), matched_one_row) %>%
   rename(n_mid_vetoed_c5 = n_rival_npis)
+
+# Same rival rule, same self-variant guard, applied to the exact-name tier. A
+# row that matched nothing has no NPI to exclude, so every deleted candidate
+# counts -- which is precisely the count that was missing from the "unmatched"
+# stratum.
+mid_veto_stats_c2 <- count_rival_npis(
+  as.data.frame(vetoed_exact_pairs), matched_one_row) %>%
+  rename(n_mid_vetoed_c2 = n_rival_npis)
 
 # Rows identifiable on name but which lost the bijection to a stronger claim.
 lost_bijection <- setdiff(unique(resolved$amcb_id), matched$amcb_id)
@@ -555,12 +658,22 @@ out <- amcb %>%
   # pool_stats joined exactly ONCE: it is the single source of candidate counts.
   left_join(pool_stats, by = "amcb_id") %>%
   left_join(mid_veto_stats, by = "amcb_id") %>%
+  left_join(mid_veto_stats_c2, by = "amcb_id") %>%
   mutate(n_mid_vetoed_c5 = coalesce(n_mid_vetoed_c5, 0L),
+         n_mid_vetoed_c2 = coalesce(n_mid_vetoed_c2, 0L),
          # Ruled in, or merely not ruled out. TRUE when a class-5 match
          # survived ONLY because it carried no middle initial to conflict,
          # while recorded alternatives were vetoed by theirs.
          resolved_by_absence_c5 = !is.na(npi) & name_evidence_class == 5L &
-           n_mid_vetoed_c5 > 0L & !has_name_information(nppes_mid_init)) %>%
+           n_mid_vetoed_c5 > 0L & !has_name_information(nppes_mid_init),
+         # The class-2 twin. TRUE when a match on the whole given name and the
+         # whole surname is UNIQUE only because every rival carrying those same
+         # two names was removed on its middle name. The claim is stronger than
+         # the class-5 case -- two whole names, not a surname fragment -- but it
+         # is the same kind of claim, and it was previously unreportable.
+         # Deliberately NOT demoted: see vetoed_exact_pairs above.
+         resolved_by_absence_c2 = !is.na(npi) & name_evidence_class == 2L &
+           n_mid_vetoed_c2 > 0L & !has_name_information(nppes_mid_init)) %>%
   # Demotion runs AFTER the flag exists and BEFORE status is derived. Both
   # halves matter: an earlier placement reads a column that does not exist yet,
   # and a later one leaves the row holding an NPI while calling itself
@@ -598,6 +711,15 @@ out <- amcb %>%
   # "no plausible NPI exists" and "plausible NPIs exist but identity is
   # ambiguous" are different kinds of missingness and must stay separable.
   mutate(has_candidate = n_candidates_pre_rank > 0,
+         # THE OTHER TAIL. has_candidate is computed AFTER the middle veto, so
+         # a row whose only exact-name candidate was deleted reads FALSE --
+         # identical to a person who is genuinely not in the registry. These
+         # are different failures and the difference was not recorded anywhere.
+         # This does not restore the candidate or change the status; it makes
+         # the stratum countable, which is what "no candidate at all" was
+         # asserting without evidence.
+         unmatched_after_middle_veto = npi_match_status == "unmatched" &
+           n_mid_vetoed_c2 > 0L,
          linkage_tier = amcb_linkage_tier(
            npi, name_evidence_class, npi_tax_class,
            demoted_absence_c5 = npi_demoted_absence_c5,
@@ -624,9 +746,17 @@ out <- amcb %>%
              "class5_survived_only_by_carrying_no_middle_initial",
            !is.na(npi) & n_at_best_class > 1L            ~ "resolved_but_pool_not_unique",
            is.na(npi) & has_candidate                    ~ "candidates_existed_none_resolved",
+           unmatched_after_middle_veto ~ "exact_name_candidates_removed_on_middle_name",
            TRUE                                          ~ "none"),
          # A sentence a human can check, built from the evidence actually used.
          match_reason = case_when(
+           # Said "no candidate shared this name" over rows that HAD one and
+           # lost it to the middle-name veto. The sentence is the artifact's
+           # human-readable evidence column; it has to be true.
+           is.na(npi) & !has_candidate & unmatched_after_middle_veto ~
+             sprintf(paste("%d NPPES candidate(s) shared the whole given name",
+                           "and surname; all removed on middle-name conflict"),
+                     n_mid_vetoed_c2),
            is.na(npi) & !has_candidate ~ "no NPPES midwifery/nursing candidate shared this name",
            is.na(npi) ~ sprintf("%d candidate(s), %d tied at best evidence class %s; not resolvable on name alone",
                                 candidate_count, n_at_best_class, best_evidence_class),

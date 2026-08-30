@@ -31,6 +31,10 @@ DAC_NationalDownloadableFile*.csv
 *.lock
 midwife_panel.csv
 midwife_panel.csv.lock
+# The taxonomy-scope sensitivity panels (PANEL_TAX_SCOPE=wide). Person-level
+# NPPES, 750-869 MB, and NOT covered by the line above -- they were staged once.
+midwife_panel_wide*.csv
+midwife_panel_wide*.csv.lock
 
 # Scoring-loop checkpoint (match_nppes.R); resumable state, not a result
 artifacts/match_progress.rds
@@ -546,3 +550,6 @@ artifacts/embedded_org_name_candidates.csv.provenance.json
 # symlink promoted atomically on success (R/lib/validation_run.R). Machine-local
 # provenance, regenerable from verify_osmde_full_cohort_coverage.R.
 artifacts/validation/
+
+# Person-level outputs of the ad-hoc audits in analysis/ are never committable.
+analysis/*.csv

@@ -11,6 +11,8 @@
 #   G2  no new hand-rolled name normaliser        (the defect appeared 6 times)
 #   G3  "rival candidate" counts must exclude self (the NPI x variant unit, 3x)
 #   G4  a selector matching nothing must FAIL      (bit me twice in one session)
+#   G6  middle names compare as token SETS, and absence is never a conflict
+#                                                  (position-1 cost 82 rows)
 #
 # Run: Rscript tests/test_amcb_gates.R
 # =============================================================================
@@ -241,6 +243,169 @@ cat("\n-- G3: a rival candidate must be a different PERSON --\n")
         data.frame(amcb_id = c("A1", "A1"), npi = c("1", "2"),
                    stringsAsFactors = FALSE)), silent = TRUE), "try-error"),
       "G3 refuses a matched table with duplicate amcb_id")
+}
+
+# =============================================================================
+cat("\n-- G8: a contested NPI is awarded on evidence, never on sort order --\n")
+# =============================================================================
+# Restoring any award rule reopens the defect the upstream resolver removed:
+# whoever sorts first takes the NPI. The whole point of strict_dominance is
+# that it MUST refuse the tie. If it ever awards the class-2/class-2 pair
+# below, 37 real certificants get an identity decided by their certification
+# number, and nothing downstream would show it.
+{
+  q <- data.frame(
+    enthealth_id     = c("A", "B", "C", "D", "E", "F"),
+    npi              = c("1000000004", "1000000004",   # separable
+                         "1000000012", "1000000012",   # exact tie
+                         "1000000020", "1000000038"),  # not contested
+    resolution_status = c(rep("ambiguous_contested_npi", 4),
+                          "ambiguous_tied_evidence", "ambiguous_tied_evidence"),
+    method_priority  = 99L,
+    score_total_adj  = c(4L, 3L, 3L, 3L, 4L, 4L),
+    confidence_score = c(1.0, 0.9, 0.9, 0.9, 1.0, 1.0),
+    stringsAsFactors = FALSE)
+
+  sd <- amcb_award_contested(q, "strict_dominance")
+  chk(nrow(sd) == 1L && sd$enthealth_id == "A",
+      sprintf("G8 strict_dominance awards only the separable NPI [%d row(s)]",
+              nrow(sd)))
+  chk(!"1000000012" %in% sd$npi,
+      "G8 strict_dominance REFUSES the exact tie -- no identity on sort order")
+  chk(nrow(amcb_award_contested(q, "quarantine_all")) == 0L,
+      "G8 quarantine_all awards nothing")
+  gd <- amcb_award_contested(q, "greedy")
+  chk(nrow(gd) == 2L,
+      sprintf("G8 greedy awards the tie too -- the behaviour being priced [%d]",
+              nrow(gd)))
+  chk(!any(duplicated(sd$enthealth_id)) && !any(duplicated(sd$npi)),
+      "G8 no person wins two NPIs and no NPI goes to two people")
+  chk(nrow(amcb_award_contested(q[q$resolution_status == "ambiguous_tied_evidence", ],
+                                "strict_dominance")) == 0L,
+      "G8 tied-evidence rows are not contested rows and are never awarded")
+  chk(inherits(try(amcb_award_contested(q, "whatever"), silent = TRUE), "try-error"),
+      "G8 an unknown rule name errors rather than silently quarantining")
+}
+
+# =============================================================================
+cat("\n-- G7: an imported function is pinned by BEHAVIOUR, not by exists() --\n")
+# =============================================================================
+# match_amcb_to_npi.R imported five functions from isochrones and checked them
+# with exists(). Between the frozen linkage and 2026-08-30 the canonical
+# rank_one_to_one() changed its default id_col AND began requiring a lookup
+# table the ENT script does not export. exists() was TRUE throughout and two
+# fifteen-minute runs died. Worse than the loud failure: a caller carrying a
+# column named by the NEW default gets no error and silently enforces the
+# bijection over the wrong identifier.
+#
+# The stand-ins below are the point of the gate. An assertion that only the real
+# function can pass is indistinguishable from one that always passes.
+{
+  ok <- function(f) tryCatch({amcb_assert_rank_one_to_one(f); TRUE},
+                             error = function(e) FALSE)
+
+  greedy <- function(candidates, id_col = "enthealth_id") {
+    d <- candidates[order(-candidates$score_total), ]
+    d <- d[!duplicated(d$npi), ]
+    d[!duplicated(d[[id_col]]), ]
+  }
+  first_row  <- function(candidates, id_col = "enthealth_id")
+    candidates[!duplicated(candidates[[id_col]]), ]
+  passthrough <- function(candidates, id_col = "enthealth_id") candidates
+
+  chk(!ok(greedy),
+      "G7 rejects a resolver that awards a contested NPI to the top scorer")
+  chk(!ok(first_row),
+      "G7 rejects a resolver that ignores evidence within one person")
+  chk(!ok(passthrough),
+      "G7 rejects a resolver returning more than one row per identifier")
+  chk(inherits(try(amcb_assert_rank_one_to_one(function(...) stop("boom")),
+                   silent = TRUE), "try-error"),
+      "G7 an erroring resolver fails the contract rather than passing silently")
+
+  if (exists("rank_one_to_one", mode = "function")) {
+    chk(ok(NULL), "G7 the imported rank_one_to_one() satisfies the contract")
+  } else {
+    skip("G7 live contract: rank_one_to_one() not sourced (isochrones absent)")
+  }
+}
+
+# =============================================================================
+cat("\n-- G6: middle names compare as TOKEN SETS, never by position --\n")
+# =============================================================================
+# The veto on a middle-name conflict is the strongest single rule in the
+# linkage: it deletes candidates agreeing on BOTH whole names. Comparing
+# position 1 only, it scored a maiden surname held in a different slot as a
+# disagreement and deleted 82 rows' only exact-name candidate. Both halves are
+# pinned here -- what must now corroborate, and what must STILL conflict, since
+# a fix that stops vetoing anything is not a fix.
+{
+  source(file.path(root, "R", "amcb_name_keys.R"))
+  agree <- function(a, b) amcb_middle_agreement(amcb_middle_tokens(a),
+                                                amcb_middle_tokens(b))
+
+  # -- must corroborate: the same evidence, recorded in a different slot ------
+  chk(agree("A REINHARD", "REINHARD") == "corroborates",
+      "G6 whole token shared out of position corroborates (Reinhard/Rye)")
+  chk(agree("BETH HARVEY", "H") == "corroborates",
+      "G6 initial abbreviating a NON-FIRST token corroborates (Harvey/Capista)")
+  chk(agree("M", "ANN MARIE") == "corroborates",
+      "G6 initial matches the second of two middle names")
+  chk(agree("JANE", "J") == "corroborates",
+      "G6 the old position-1 behaviour is preserved where it was right")
+
+  # -- must STILL conflict: the veto has to keep doing its job ----------------
+  chk(agree("JANE", "DENISE") == "conflicts",
+      "G6 two full middle names sharing no token still conflict")
+  chk(agree("MARILYN", "F") == "conflicts",
+      "G6 an initial that abbreviates no token still conflicts")
+  chk(agree("WORKMAN", "G") == "conflicts",
+      "G6 maiden surname against an unrelated initial still conflicts")
+  chk(agree("JANE", "JOAN") == "conflicts",
+      "G6 a shared first LETTER is not a shared token when neither is initial")
+
+  # -- concatenated initials are initials, not a name ------------------------
+  # Found by auditing the 27 identity flips the first version of this rule
+  # caused. "VL" is two characters, so it was scored as a full NAME token,
+  # matched nothing in {VELMA, LAURITZEN}, and -- neither side then holding a
+  # single letter -- never reached the initial test. The candidate was vetoed
+  # and a nursing record took the match from a midwifery one.
+  chk(agree("VL", "VELMA LAURITZEN") == "corroborates",
+      "G6 a concatenated-initials token matches the names it abbreviates")
+  chk(agree("MJ", "MARY JANE") == "corroborates", "G6 two initials, two names")
+  chk(agree("CJ", "CAROL JEAN") == "corroborates", "G6 and again, unordered input")
+  chk(agree("VL", "LAURITZEN VELMA") == "conflicts",
+      "G6 the mapping is ORDER-PRESERVING, not a bag of letters")
+
+  # -- a near spelling is not a disagreement, and not corroboration either ----
+  # These were conflicts, and each one deleted a real match. They must not
+  # become "corroborates" either: that would manufacture class-1 confidence
+  # (1.00) out of a spelling difference.
+  chk(agree("JULIA", "JULIE") == "uninformative",
+      "G6 one edit apart is uninformative, not a conflict")
+  chk(agree("LYN", "LYNN") == "uninformative", "G6 LYN/LYNN survives")
+  chk(agree("KRISTINA", "KRISHNA") == "uninformative",
+      "G6 two edits on a long token is uninformative")
+  chk(agree("JANE", "JOAN") == "conflicts",
+      "G6 two edits on a SHORT token is still a conflict")
+  chk(agree("LEIGH", "LYNN") == "conflicts",
+      "G6 genuinely different middle names still conflict")
+
+  # -- absence is never evidence of difference (the 2026-08-08 defect) --------
+  chk(agree("", "MARIE") == "uninformative" &&
+        agree("MARIE", "") == "uninformative" &&
+        agree(NA_character_, "MARIE") == "uninformative",
+      "G6 a missing middle name is uninformative, never a conflict")
+  chk(agree("", "") == "uninformative",
+      "G6 two absences do not agree with each other")
+
+  # -- vectorised, and order-preserving --------------------------------------
+  v <- agree(c("A REINHARD", "JANE", ""), c("REINHARD", "DENISE", "MARIE"))
+  chk(identical(v, c("corroborates", "conflicts", "uninformative")),
+      "G6 vectorises elementwise without reordering")
+  chk(inherits(try(amcb_middle_agreement(list("A"), list("A", "B")),
+                   silent = TRUE), "try-error"),
+      "G6 refuses mismatched input lengths rather than recycling")
 }
 
 # =============================================================================
