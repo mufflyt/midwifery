@@ -4088,6 +4088,10 @@ by construction (no observed activity anywhere means no row in
 dropped by `na.rm`. Added `n_unascertained_roster` to `county_effective_supply`,
 same shape as `ct_partial`. `tests/test_cycle25_birth_activity_fte.R`, 10
 tests. Estimand changed: no (additive diagnostic column).
+**Status note:** PR #115 (still open). `R/15-build-birth-activity.R` --
+an unascertained provider is invisible to county-level `effective_birth_fte`
+by construction. Added `n_unascertained_roster` (same shape as `ct_partial`).
+`tests/test_cycle25_birth_activity_fte.R`, 10 tests. Estimand changed: no.
 
 ---
 
@@ -4206,6 +4210,11 @@ of which were wrong in early drafts (a regex `.` crossing newlines; a wrong
 assumption about the retired rule's lower-bound behavior) and corrected in
 place. Estimand changed: yes, a correction (an implausible imputed age no
 longer receives a confident Table 1 category).
+**Status note:** PR #118 (still open). `calibrate_amcb_certification_ages.R`'s
+unbounded OLS extrapolation fed a private, unguarded duplicate of the age-band
+rule. Fixed by routing through the shared `band_hg_age()`.
+`tests/test_cycle26_age_calibration_bands.R`, 10 tests. Estimand changed: yes
+(a correction).
 
 ---
 
@@ -4289,3 +4298,79 @@ unchanged, passes. Production file re-parses clean. Wired into `ci.yml`.
 **Estimand changed: no.** The review sample is a validation artifact, not a
 published estimate -- fixing its reproducibility changes which specific rows
 a human reviewer sees, not any reported number.
+**Status note:** PR #119 (still open). `resolve_org_ambiguity.R`'s review
+sample: a single seed shared across sequential `slice_sample()` calls, and
+sampling by row position rather than identity, both meant "reproducible with
+a fixed seed" did not actually hold. Fixed by re-seeding and sorting by
+`npi` immediately before each of the two call sites.
+`tests/test_cycle27_review_sample_reproducibility.R`, 10 tests. Estimand
+changed: no (validation artifact, not a published estimate).
+
+---
+
+## Cycle 28 (session-cycle 5 of 24) — 2026-08-29 — 3 BVA / 4 semantic / 3 adversarial
+
+**Target.** `check_npi_deactivation.R` -- cross-checks AMCB certification
+status against NPPES NPI deactivations, the closest signal in this repo to
+an "exit" event for a certificant leaving the workforce ("entrant and exit
+calculations" is explicitly prioritized). Zero prior tests.
+
+**Tests added** — `tests/test_cycle28_npi_deactivation.R` (T28-1 .. T28-10)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T28-1 | BVA | the year regex agrees across ISO, US-slash, compact YYYYMMDD |
+| T28-2 | BVA | a 2-digit-year format yields NA, not a misparse |
+| T28-3 | BVA | empty/NA deactivation_date yields NA, not an error |
+| T28-4 | semantic | npi_deactivated corresponds exactly to a non-NA joined date |
+| T28-5 | semantic | pct_matched is arithmetically consistent with matched/n |
+| T28-6 | semantic | a genuinely conflicting duplicate NPI stops the run, doesn't guess |
+| T28-7 | semantic | a year-parse failure does not erase the underlying date string |
+| T28-8 | anti-ceremony | the RETIRED distinct() DOES silently resolve the same conflict |
+| T28-9 | adversarial | NPI is coerced to character on BOTH sides of the join |
+| T28-10 | adversarial | no bare distinct(npi, .keep_all) survives in this file |
+
+### The finding: one more `.keep_all` site, not one of the 14 already tracked
+
+`distinct(npi, .keep_all = TRUE)` deduplicating the NPPES Deactivated NPI
+Report -- **live-plausible, not manufactured**: an NPI deactivated,
+reactivated, and deactivated again would appear twice in this report with
+different dates, and the old code picked whichever row sorted first. Same
+class as cycles 2 and 5's `.keep_all` sweep, but a genuinely new site not on
+that sweep's tracked list of 14 (`01-build-county-base.R`,
+`03-geography-hierarchy.R`, `04-diagnose-cross-state.R`,
+`05-stage-progression.R`, `06-cohort-flow.R`, `07-cohort-composition.R`,
+`join_safety.R`, `ab_middle_name_common.R`) -- this file sits at the repo
+root, outside `R/`, which is presumably why the earlier sweeps missed it.
+
+**Fix.** Routed through `assert_unique_keys(dedupe = TRUE)`
+(`R/join_safety.R`), already exhaustively tested elsewhere (cycles 2, 5, 9)
+and not re-tested here -- these tests check the INTEGRATION (this file calls
+it, and the source contract that no bare `distinct(npi, .keep_all)` survives),
+not the helper's own internals. Identical duplicates still collapse; a real
+conflict now stops the script and names the disagreement instead of guessing.
+
+### Also verified, not defects (BVA pins)
+
+The year-extraction regex (`[12][0-9]{3}`) already handles every realistic
+date format correctly and fails safely (NA) on a 2-digit year -- confirmed
+rather than assumed. NPI type coercion (`as.character(npi)`) is already
+present on both sides of the join, guarding against the character/double
+join-mismatch the file's own comment warns about. Both pinned as tests so a
+future edit cannot silently regress either.
+
+### Full suite
+
+`tests/test_cycle28_npi_deactivation.R`: 10/10 pass.
+`tests/test_cycle2_dates_keys.R`, `tests/test_cycle9_joins.R` (pre-existing,
+exercise `assert_unique_keys()` itself): unchanged, pass. Production file
+re-parses clean. Wired into `ci.yml`.
+
+### Unresolved / carried forward
+
+- All items from cycles 1-27 unchanged.
+
+**Estimand changed: no.** No published number currently depends on this
+file's output (`midwives_status_check.csv` is a diagnostic cross-check, not
+a Table 1 or manuscript figure input) -- the fix prevents a future silent
+wrong answer rather than correcting a current one.

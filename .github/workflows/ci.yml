@@ -350,6 +350,12 @@ jobs:
       - name: Cross-taxonomy hierarchy
         run: Rscript tests/test_cross_taxonomy_hierarchy.R
 
+      # The exit signal for a certificant leaving the workforce: NPI
+      # deactivation cross-checked against AMCB status. Year-extraction
+      # boundaries and conflict-safe deduplication of the deactivation report.
+      - name: NPI deactivation cross-check
+        run: Rscript tests/test_cycle28_npi_deactivation.R
+
       # Pass 2 of the Healthgrades sweep checkpoints incrementally; a merge that
       # drops or duplicates rows silently corrupts a seven-hour run.
       - name: Checkpoint merge contract
