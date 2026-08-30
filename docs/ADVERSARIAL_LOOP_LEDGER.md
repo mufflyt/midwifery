@@ -4063,3 +4063,130 @@ here is visible rather than silent.
 
 **Estimand changed: no.** `n_unascertained_roster` is a new, additive
 diagnostic column; no existing published number moves.
+**Status note:** this cycle ran and merged as PR #115, from a branch cut
+directly off `main` rather than the (by-then-merged) cycles-24-47 branch. See
+PR #115 / commit history for the full record; summarized here so cycle 26
+does not repeat it.
+
+**Target.** `R/15-build-birth-activity.R` -- an unascertained provider (no
+observed activity anywhere, ascertainment not established) is invisible to
+the county-level `effective_birth_fte` aggregate by construction, not merely
+dropped by `na.rm`, because she generates no row in
+`provider_location_activity` at all. Her practice county IS known from the
+roster. **Fix:** added `n_unascertained_roster` to `county_effective_supply`
+(same shape as the `ct_partial` flag), computed from `provider_activity`
+(which retains every active cohort member) by `roster_county_fips`.
+`tests/test_cycle25_birth_activity_fte.R`, 10 tests. Also documented (not
+fixed): duplicate raw delivery rows within one source are summed, not
+deduplicated, since no encounter-level key exists to tell a real duplicate
+encounter from a duplicated extract row. Estimand changed: no (additive
+diagnostic column only).
+
+---
+
+## Cycle 26 (session-cycle 3 of 24) — 2026-08-29 — 3 BVA / 3 semantic / 4 adversarial
+
+**Note on repo state.** By this cycle, 13+ unrelated PRs (#101-114) had merged
+to `main` concurrently with this loop -- a separate effort ("science laws",
+"skip budget", "aggregate gate"). Branched fresh off current `origin/main`
+rather than reusing the stale cycles-24-47 branch, per the lesson from
+cycle 25.
+
+**Target.** `calibrate_amcb_certification_ages.R` -- the OLS regression that
+imputes age for certificants without a direct ground-truth age, feeding
+Table 1's "Calibrated Age (100% Cohort Coverage)" block. Explicitly
+prioritized ("calibration", "uncertainty propagation"); had **zero** tests of
+its own logic (only mentioned, never exercised, by `ci_science_contracts.R`).
+
+**Tests added** — `tests/test_cycle26_age_calibration_bands.R` (T26-1 .. T26-10)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T26-1 | semantic | the file sources the shared banding library |
+| T26-2 | semantic | age_band is assigned via band_hg_age(), not an inline rule |
+| T26-7 | semantic | a plausible-slope OLS extrapolation to the oldest possible certificant is rejected, not published |
+| T26-5 | BVA | DEFAULT_ENTRY_AGE is readable from source, not duplicated elsewhere |
+| T26-6 | BVA | the fallback model does not over-reject the ordinary case at the structural years_certified ceiling |
+| T26-9 | BVA | the RETIRED rule's first branch has no LOWER bound either |
+| T26-3 | adversarial | no inline comparison-based age-band rule survives in this file |
+| T26-4 | adversarial | no OTHER file carries the same inline rule (repo-wide sweep) |
+| T26-8 | anti-ceremony | the RETIRED rule bands T26-7's implausible age as real, confirming T26-7 discriminates |
+| T26-10 | adversarial | the RETIRED rule bands an outright impossible age (200) as real |
+
+### The finding: an unbounded OLS extrapolation feeding an unguarded duplicate band rule
+
+Two compounding problems in one `mutate()`:
+
+1. **`fitted_age = alpha + beta * years_certified`** has no plausibility
+   bound. The calibration sample (ground-truth ages from WA/Healthgrades/IL)
+   may cover a narrower `years_certified` range than the full roster it gets
+   applied to, and nothing stops the fitted line from being evaluated far
+   outside that support. A steeper-than-1.0 slope (entirely plausible for a
+   small or unusual calibration sample) extrapolated to the oldest
+   structurally-possible certificant (`years_certified = 76`, from this
+   file's own `cert_year >= 1950` filter and `REF_YEAR = 2026`) crosses 120
+   years -- an impossible age.
+2. **`age_band` was computed with a private, inline `case_when()`** carrying
+   the same five bands as the shared, exhaustively-tested `band_hg_age()`
+   (`R/lib/table1_bands.R`) -- but with **no plausibility guard at all**.
+   `band_hg_age()` rejects ages under 18 or over 120 as NA; the inline copy
+   would confidently label *any* value, including the impossible
+   extrapolation above or a literal age of 200, as `">=65 years"`. Same
+   shape as cycle 1's RUCC-code finding: an out-of-range value labelled, not
+   rejected.
+
+**Fix.** Sourced `R/lib/table1_bands.R` and replaced the inline `case_when`
+with `band_hg_age(final_age)`. This does not touch the OLS fit itself (fixing
+the extrapolation's *validity* would be a modeling decision -- a
+prediction-interval bound, a training-range restriction -- not a code
+defect), but it closes the path from an unbounded extrapolation to a
+published Table 1 category: an implausible `fitted_age` is now `NA`, not a
+confidently labelled age band.
+
+### Wrong tests, corrected (3)
+
+- **T26-3/T26-4 (regex bug, not a defect).** First version matched the bare
+  co-occurrence of the label strings `"<35 years"` / `"35-44 years"` anywhere
+  in a file, which flagged `build_table1_midwives.R`'s and this file's own
+  **ordering vectors** (`arrange(match(age_band, c("<35 years", ...)))`) as
+  if they were duplicate banding rules -- they are not; they sort an
+  already-computed column. Worse, the check ran `grepl()` against comment-
+  stripped source **collapsed into one multi-line string with `.*`**, and
+  base R's regex engine lets `.` match newlines, so the pattern matched from
+  an unrelated `~` (this file's own `lm(known_age ~ years_certified, ...)`
+  model formula) all the way to an unrelated `35` elsewhere in the file.
+  Corrected to match a comparison and a `~` on the **same line** -- the shape
+  an actual `case_when` branch has and an ordering vector does not.
+- **T26-9.** Assumed the retired rule's `case_when` fell through to `NA` for
+  a negative age. It does not: the first branch (`final_age < 35`) matches
+  any value below 35, including impossible negative ones, and labels it
+  `"<35 years"` confidently. Corrected to assert the true (worse) behavior --
+  the retired rule has no lower bound either, not just no upper one.
+
+### Full suite
+
+`tests/test_cycle26_age_calibration_bands.R`: 10/10 pass.
+`tests/test_table1_bands.R` (pre-existing, re-run since `band_hg_age()` gained
+a new caller): unchanged, all pass. `tests/ci_science_contracts.R`
+(pre-existing reference to this file): unchanged, passes. Production file
+re-parsed clean (`parse()`) since it cannot be executed end-to-end here (its
+ground-truth inputs are person-level and gitignored). Wired into `ci.yml`.
+
+### Unresolved / carried forward
+
+- **NEW, low priority:** the OLS extrapolation itself has no prediction-
+  interval or training-range bound -- only its output's plausibility is now
+  guarded. Whether to restrict imputation to the calibration sample's
+  `years_certified` range, or report a widening uncertainty band with
+  distance from that range, is a modeling decision, not a code fix.
+- All items carried from cycles 1-25 (DECISION NEEDED list, GFR, `ct_partial`,
+  Healthgrades coverage threshold, duplicate raw delivery rows) unchanged.
+
+**Estimand changed: yes, and it is a correction, not a choice between
+defensible readings.** An implausible imputed age (e.g. from an unbounded
+OLS extrapolation) previously received a confident Table 1 age category; it
+is now `NA` and excluded from that category's count instead. No legitimate
+age in this cohort's actual `years_certified` range is affected -- the
+structural ceiling (`years_certified <= 76`) stays well within `band_hg_age`'s
+plausible range under the literature-prior fallback (T26-6); only a
+steeper-than-typical fitted slope can reach the guard at all.
