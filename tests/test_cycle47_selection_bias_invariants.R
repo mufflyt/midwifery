@@ -41,25 +41,12 @@ chk(grepl("COMP,", real_src, fixed = TRUE) && grepl('COMP   <- file.path(ART, "c
     "T47-0 (setup, not counted): the real file requires COMP up front, matching what this test assumes")
 
 # ---------------------------------------------------------------------------
-# Literal replicas of the functions under test (the real file needs
-# gitignored person-level artifacts to run end-to-end).
+# The SHIPPED bounds_for() and tipping(), not replicas of them. They were
+# extracted to R/lib/selection_bounds.R precisely so this test can reach
+# them: analyze_linkage_selection_bias.R itself reads gitignored
+# person-level artifacts at top level and cannot be sourced on a runner.
 # ---------------------------------------------------------------------------
-
-bounds_for <- function(df, flag = "linked", CATS) {
-  n <- nrow(df); obs <- sum(df[[flag]]); unobs <- n - obs
-  vapply(CATS, function(cc) {
-    k <- sum(df$rurality == cc & df[[flag]], na.rm = TRUE)
-    c(observed_pct = if (obs > 0) 100 * k / obs else NA_real_,
-      lower_pct = 100 * k / n,
-      upper_pct = 100 * (k + unobs) / n)
-  }, numeric(3))
-}
-
-tipping <- function(k, n_linked, n_roster, threshold_pct) {
-  unobs <- n_roster - n_linked
-  u <- (threshold_pct / 100 * n_roster - k) / unobs
-  c(required_unobserved_pct = 100 * u, departure_pp = 100 * u - 100 * k / n_linked)
-}
+source(file.path(if (dir.exists("R")) "." else "..", "R", "lib", "selection_bounds.R"))
 
 reconcile_retired <- function(comp_path, comp_data, mine) {
   if (file.exists(comp_path)) {

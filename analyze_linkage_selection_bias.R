@@ -210,17 +210,11 @@ CATS <- sort(unique(stats::na.omit(d$rurality)))
 # The bound is arithmetic, not a model: of N certificants, k are observed in
 # category c and (N - n_obs) are unobserved. The true count is at least k and at
 # most k + unobserved.
-bounds_for <- function(df, flag = "linked") {
-  n <- nrow(df); obs <- sum(df[[flag]]); unobs <- n - obs
-  vapply(CATS, function(cc) {
-    k <- sum(df$rurality == cc & df[[flag]], na.rm = TRUE)
-    c(observed_pct = if (obs > 0) 100 * k / obs else NA_real_,
-      lower_pct = 100 * k / n,
-      upper_pct = 100 * (k + unobs) / n)
-  }, numeric(3))
-}
+# bounds_for() lives in R/lib/selection_bounds.R, sourced here so the cycle-47
+# test exercises this exact implementation rather than a replica of it.
+source(file.path(if (dir.exists("R")) "." else "..", "R", "lib", "selection_bounds.R"))
 
-overall <- bounds_for(d)
+overall <- bounds_for(d, CATS = CATS)
 
 # ACTIVE ONLY, which is a different question and a tighter answer. Standardizing
 # the worst case by status returns the overall worst case exactly -- the extreme
@@ -228,7 +222,7 @@ overall <- bounds_for(d)
 # the same sizes changes nothing. That is arithmetic, not a modelling choice,
 # and the first version of this file reported it as a separate column that was
 # identical to the first by construction.
-act <- bounds_for(d |> filter(.data$status == "ACTIVE"))
+act <- bounds_for(d |> filter(.data$status == "ACTIVE"), CATS = CATS)
 
 # --- 2. the same bound, not discarding what is observed outside the cohort ----
 # Rurality is missing because a ZIP did not resolve, NOT because a certificant
@@ -238,7 +232,7 @@ act <- bounds_for(d |> filter(.data$status == "ACTIVE"))
 # assumption-free and is strictly narrower, so reporting only the cohort-anchored
 # pair would be overstating the ignorance.
 d <- d |> mutate(zip_observed = !is.na(.data$rurality))
-zipb <- bounds_for(d, "zip_observed")
+zipb <- bounds_for(d, "zip_observed", CATS = CATS)
 n_zip <- sum(d$zip_observed)
 
 # --- 4. IPW under MAR given status -------------------------------------------
@@ -258,16 +252,15 @@ ipw <- d |>
 # threshold t:  (k + u * unobs) / N = t/100.  Reported as the departure from the
 # observed cohort share, in percentage points, because "how different would they
 # have to be" is the question a reader actually has.
-tipping <- function(cc, threshold_pct) {
-  k <- sum(d$rurality == cc & d$linked, na.rm = TRUE)
-  unobs <- n_roster - n_linked
-  u <- (threshold_pct / 100 * n_roster - k) / unobs
-  c(required_unobserved_pct = 100 * u, departure_pp = 100 * u - 100 * k / n_linked)
-}
+# tipping() lives in R/lib/selection_bounds.R (sourced above); k is computed
+# at the call site now that the function no longer closes over `d`.
 
 METRO <- grep("^Metro", CATS, value = TRUE)[1]
 TIP_THRESHOLD <- 75
-tip <- if (!is.na(METRO)) tipping(METRO, TIP_THRESHOLD) else c(NA_real_, NA_real_)
+tip <- if (!is.na(METRO))
+  tipping(k = sum(d$rurality == METRO & d$linked, na.rm = TRUE),
+          n_linked = n_linked, n_roster = n_roster,
+          threshold_pct = TIP_THRESHOLD) else c(NA_real_, NA_real_)
 
 # --- what the unobserved look like, for the quarter of them that is visible ---
 # WHETHER THE UNOBSERVED RESEMBLE THE COHORT is the question the bounds cannot

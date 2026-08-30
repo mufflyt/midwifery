@@ -3757,6 +3757,18 @@ confirm that coverage is as thorough as its "21/21 mutations detected" claim
 suggests, rather than assuming it fully closes the file).
 ## Cycle 47 (session-cycle 24 of 24, FINAL numbered cycle) — 2026-08-30 — 3 BVA / 3 semantic / 4 adversarial
 
+**Correction, 2026-08-30.** As first written this test carried "literal
+replicas" of `bounds_for()` and `tipping()` -- reimplementations with the
+analysis script's globals lifted to parameters -- and so asserted against code
+no published number passes through. H4 caught it as a duplicate definition.
+Both now live in `R/lib/selection_bounds.R`, sourced by the script and by this
+test. The extraction is behaviour-preserving: `linkage_selection_bounds.csv`
+is byte-identical before and after, so 89.41% metro, the 72.1-91.4% ZIP bounds
+and the 56.7 pp tipping departure are unchanged. Verified by regressing the
+library on reachable paths -- an upper bound taken over `obs` instead of `n`
+fails T47-2, and a tipping solve dividing by `n_roster` instead of `unobs`
+fails T47-3 -- where against the replicas neither failed anything.
+
 **Target:** `analyze_linkage_selection_bias.R` — the uncertainty-propagation
 analysis for the study's binding limitation (23% of the roster has no
 assignable county): Manski worst-case bounds, IPW under MAR, and a
