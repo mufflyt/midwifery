@@ -23,7 +23,12 @@ source(file.path("manuscript", "R", "inline_stats.R"))
 mw_init_stats(".")
 
 INK <- "#111820"; MUT <- "#5b6875"; RULE <- "#c8d0d9"; ACC <- "#1f6360"; SOFT <- "#e9f1f0"
-NUM <- function(k) suppressWarnings(as.numeric(mw_stat(k, "%f")))
+# fig_num rather than NUM: ci_hygiene H4 forbids a top-level function defined in
+# two tracked files, and make_cohort_flow_figure.R already defines NUM. Two
+# figure scripts needing the same one-line accessor is a hint it belongs in the
+# catalog's own API, not in each caller -- noted rather than done here, because
+# moving it touches a file the manuscript renders from.
+fig_num <- function(k) suppressWarnings(as.numeric(mw_stat(k, "%f")))
 
 base_theme <- theme_minimal(base_size = 10) +
   theme(panel.grid.minor = element_blank(),
@@ -88,19 +93,19 @@ save3(p1, file.path("docs", "figures", "linkage_by_status"), 7.2, 3.4)
 # ORDERED BY ASSUMPTION, weakest at the top, because that is the axis the reader
 # is actually choosing along. The observed point is drawn on every row so the
 # widening is visible as distance from one fixed mark.
-obs <- NUM("bounds.metro_pct")
+obs <- fig_num("bounds.metro_pct")
 bd <- tibble::tribble(
   ~label,                                              ~lo,                              ~hi,
-  "Bounds, no assumptions",                            NUM("bounds.lower_pct"),          NUM("bounds.upper_pct"),
-  "Bounds, discarding locatable non-cohort records",   NUM("bounds.manski_lower_pct"),   NUM("bounds.manski_upper_pct"),
-  "Bounds, ACTIVE certificants only",                  NUM("bounds.active_lower_pct"),   NUM("bounds.active_upper_pct")
+  "Bounds, no assumptions",                            fig_num("bounds.lower_pct"),          fig_num("bounds.upper_pct"),
+  "Bounds, discarding locatable non-cohort records",   fig_num("bounds.manski_lower_pct"),   fig_num("bounds.manski_upper_pct"),
+  "Bounds, ACTIVE certificants only",                  fig_num("bounds.active_lower_pct"),   fig_num("bounds.active_upper_pct")
 ) |> mutate(label = factor(label, levels = rev(label)))
 
 pts <- tibble::tribble(
   ~label,                                   ~x,                          ~what,
   "Observed in the cohort",                 obs,                         "Observed",
-  "Inverse-probability weighted",           NUM("bounds.ipw_pct"),       "Sensitivity",
-  "Non-cohort records that could be placed", NUM("bounds.outside_pct"),  "Sensitivity"
+  "Inverse-probability weighted",           fig_num("bounds.ipw_pct"),       "Sensitivity",
+  "Non-cohort records that could be placed", fig_num("bounds.outside_pct"),  "Sensitivity"
 ) |> mutate(label = factor(label, levels = rev(label)))
 
 p2 <- ggplot() +
@@ -125,7 +130,7 @@ p2 <- ggplot() +
                           mw_n("cohort.known_n")),
        x = "Metropolitan share of the roster", y = NULL,
        caption = sprintf("Discarding the %s non-cohort certificants whose ZIP does resolve widens the interval without adding\ncaution; they are %.1f%% metropolitan, below the cohort rather than above it. For the roster-wide share to\nreach 75%%, the unobserved would have to be %.1f%% metropolitan -- a %.1f-point departure.",
-                         mw_n("bounds.outside_n"), NUM("bounds.outside_pct"),
-                         NUM("bounds.tip_required"), NUM("bounds.tip_departure"))) +
+                         mw_n("bounds.outside_n"), fig_num("bounds.outside_pct"),
+                         fig_num("bounds.tip_required"), fig_num("bounds.tip_departure"))) +
   base_theme
 save3(p2, file.path("docs", "figures", "selection_bounds"), 7.6, 3.8)
