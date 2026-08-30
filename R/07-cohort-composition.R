@@ -295,11 +295,20 @@ build_composition <- function() {
       left_join(grp_sizes, by = "group") %>%
       mutate(n_missing = group_n - n_observed,
              pct_missing = 100 * n_missing / group_n,
-             # A group that is ~entirely one level is a join, not a finding.
+             # A group that is ~entirely one level is a join, not a finding --
+             # but a group with ZERO observed values is a different fact and
+             # must not report the same number a genuine 100%-concentrated
+             # group would. NA says "no observed values to characterize";
+             # a hardcoded 100 here would sit next to n_observed = 0 and read
+             # as "100% of this group is one level" when there is no level at
+             # all -- the exact group|variable combination this ledger exists
+             # to flag (see the WHY THIS EXISTS note above) would report its
+             # OWN most misleading column with the same confident-looking
+             # value a real concentration would.
              top_level_pct = vapply(group, function(g) {
                x <- d[[v]][d$group == g]
                x <- x[!is.na(x) & nzchar(as.character(x))]
-               if (!length(x)) 100 else 100 * max(table(x)) / length(x)
+               if (!length(x)) NA_real_ else 100 * max(table(x)) / length(x)
              }, numeric(1))) %>%
       select(variable, group, group_n, n_observed, n_missing, pct_missing,
              top_level_pct)
