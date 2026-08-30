@@ -62,3 +62,6 @@ tests/test_cycle6_field_quality.R	cycle	pr	2	2	two person-level inputs are gitig
 tests/test_cycle15_ob_capacity.R	cycle	pr	0	1	the obstetric-capacity artifact is pipeline-derived and absent from a bare checkout
 tests/test_cycle19_address_provenance.R	cycle	pr	0	4	the address-provenance evidence file is gitignored; T199 now asks its provenance sidecar rather than an mtime, and skips cleanly when the file is absent rather than pretending to have checked
 tests/test_cycle22_idempotence.R	cycle	pr	0	3	idempotence is asserted against pipeline outputs that a bare checkout does not carry
+tests/test_cycle11_spatial.R	cycle	pr	0	1	needs sf, which the pure-function job installs no system geo libraries for by design; the whole file declares one skip rather than failing the discovery step
+tests/test_cycle14_coverage_surfaces.R	cycle	pr	0	1	needs sf, same reason as cycle11
+tests/test_cycle12_names_territories.R	cycle	pr	0	1	sources R/string_normalization.R, a shim whose implementation lives in ~/isochrones and which no runner carries; test_cycle4 already guards the same shim this way
