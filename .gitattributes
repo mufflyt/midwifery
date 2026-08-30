@@ -1,0 +1,17 @@
+# The adversarial-loop ledger is an append-only log: every cycle adds an entry
+# at the end, and no two cycles touch each other's text. Git's default merge
+# still treats two appends at the same location as a conflict, so with
+# branch protection set to strict (a branch must be current with main before
+# it merges), EVERY merged cycle PR forced a rebase and a full CI round on
+# every other open one -- a dozen of them in a single afternoon, on changes
+# that never overlapped in code.
+#
+# `merge=union` keeps both sides instead of conflicting. For an append-only
+# log that is exactly right: each entry is self-labelled with its cycle
+# number, so ordering within the tail does not carry meaning.
+#
+# The one thing to know: union keeps BOTH versions of any line that two
+# branches EDIT differently, rather than choosing. Editing existing entries
+# from a branch can therefore leave a duplicated line. Edit the ledger on
+# main, and let branches only append.
+docs/ADVERSARIAL_LOOP_LEDGER.md merge=union
