@@ -177,6 +177,13 @@ build_composition <- function() {
   # an address -- so this makes the four-way comparison more balanced, not less.
   geo_zip <- if (file.exists(FROZEN_GEO)) {
     chr(FROZEN_GEO) %>%
+      # STATED TIE-BREAK, not arrival order. The artifact holds one row per
+      # certificant today so this arrange() is a no-op, but a bare
+      # distinct(.keep_all) resolves any future duplicate by whichever row the
+      # reader happened to return first -- a scientific choice made by a file.
+      # The rule is: prefer the row that actually carries an address.
+      arrange(certification_number,
+              dplyr::desc(!is.na(practice_zip) & nzchar(trimws(practice_zip)))) %>%
       distinct(certification_number, .keep_all = TRUE) %>%
       transmute(certification_number,
                 geo_zip = ifelse(is.na(practice_zip) | !nzchar(trimws(practice_zip)),
@@ -292,7 +299,9 @@ build_composition <- function() {
       summarise(variable = v,
                 n_observed = sum(!is.na(.data[[v]]) & nzchar(as.character(.data[[v]]))),
                 .groups = "drop") %>%
-      left_join(grp_sizes, by = "group") %>%
+      # One row per group by construction, declared so the join fails loudly if
+      # that ever stops being true rather than silently multiplying the ledger.
+      left_join(grp_sizes, by = "group", relationship = "many-to-one") %>%
       mutate(n_missing = group_n - n_observed,
              pct_missing = 100 * n_missing / group_n,
              # A group that is ~entirely one level is a join, not a finding --
