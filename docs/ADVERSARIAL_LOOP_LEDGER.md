@@ -5137,3 +5137,76 @@ flagged, or a different one in the same function — not yet re-checked;
 label question (cycle 35); uncertainty propagation beyond the OLS
 extrapolation (cycle 26), the derangement fallback (cycle 30), and the
 tipping-point sensitivity (cycle 38).
+## Cycle 42 (session-cycle 19 of 24) — 2026-08-30 — 4 BVA / 3 semantic / 3 adversarial
+
+**Quick follow-up (lead #1, resolved, no action needed).** Re-read
+`R/07-cohort-composition.R` to check whether PR #135's `relationship =
+"many-to-one"` fix covered the specific join cycle 37's T37-8 left
+open. It did not — and did not need to: PR #135 targeted the missingness-
+ledger's own `left_join(grp_sizes, by = "group")` (a different join, in a
+different function), while cycle 37's actual documented decision was about
+`compose()` itself having no internal duplicate-row guard on its input `d`,
+relying entirely on the joins that *build* `d` (all of which already
+declared `relationship = "many-to-one"` before PR #135 landed). Cycle 37's
+decision stands exactly as written: a documented, caller-provided
+assumption, not a defect. No action taken.
+
+**Target.** Two more of `build_table1_midwives.R`'s bare `distinct(key,
+.keep_all = TRUE)` sites from cycle 40's widened inventory (lines 341 and
+380, using the pre-cycle-41-merge line numbers on this fresh branch), both
+reading `artifacts/dac_cnm_education.csv` keyed on `npi`. DAC (CMS's Doctors
+and Clinicians file) is built from PECOS Medicare enrollment, which can span
+more than one organization/location per NPI — `num_org_mem`/`n_locations`
+exist as columns precisely because that shape is real and expected, per this
+file's own header comment.
+
+**Finding.** Two enrollment rows for one NPI disagreeing on `num_org_mem`/
+`n_locations` is a genuine multi-enrollment fact, not a duplicate; picking
+one by row order would silently choose which real enrollment a provider's
+Table 1 row describes. Fixed both sites with `assert_unique_keys(dedupe =
+TRUE)`.
+
+**A real subtlety found while applying the fix, not before.** The first
+draft applied `assert_unique_keys()` to the full raw CSV row before
+narrowing columns. Verified empirically that this makes **every**
+multi-enrollment NPI look like a conflict at the medical-school extraction
+site too — even when `med_sch_clean` genuinely agrees across enrollments —
+because the unrelated `num_org_mem`/`n_locations` columns legitimately vary
+per enrollment for reasons that have nothing to do with education. Corrected
+by `select()`-ing to only the columns each extraction actually uses *before*
+the uniqueness check, so an unrelated column's legitimate variation cannot
+block an extraction that never reads it. This is a general, reusable lesson
+for any future `assert_unique_keys()` application on a row-wide source with
+more columns than a given consumer needs — recorded as such (T42-6/T42-7
+pin the distinction directly, including an anti-ceremony reproduction of the
+false-positive the unnarrowed version produces).
+
+**Tests.** `tests/test_cycle42_dac_education_dedup.R`, 10 tests (T42-1..10)
+against literal replicas of both fixed sites (the host file is a flat
+script needing a real linkage CSV, so it cannot be sourced end-to-end) plus
+the real, directly-sourced `assert_unique_keys()`.
+
+**Full suite.** New file: 10/10 pass. `build_table1_midwives.R` parses
+cleanly. Re-ran `tests/test_cycle6_field_quality.R`, `tests/test_table1_
+blk_hg.R`, and `tests/test_healthgrades_integrity.R` (the only existing
+tests referencing this file or `dac_cnm_education.csv`): 0 regressions.
+`tests/ci_hygiene.R`: 0 failures. Verified `git status` before committing
+showed only the intended files changed (no stray artifact-timestamp
+modifications this cycle, unlike cycle 41).
+
+**Unresolved / carried forward.** `build_table1_midwives.R` still has 5
+more `.keep_all` sites (the Healthgrades `certification_number` dedup at
+one of the DAC-adjacent lines, the NPPES sex/enumeration site judged
+low-conflict-plausibility during triage and not pursued, the HPSA consumer
+site, and the two Medicare-participation sites) — a future cycle could
+triage more. Standing items from cycles 26, 30, 33, 34, 38 untouched.
+
+**Estimand changed:** no — both fixes only change behavior for input shapes
+(genuinely conflicting duplicate keys) a clean DAC extract never contains.
+
+**Next candidate leads (not yet investigated):** `build_organization_
+affiliation_resolver.R`'s "multi_source_confirmed" label question (cycle
+35, still not investigated); uncertainty propagation beyond the OLS
+extrapolation (cycle 26), the derangement fallback (cycle 30), and the
+tipping-point sensitivity (cycle 38); the remaining `build_table1_
+midwives.R` `.keep_all` sites noted above.
