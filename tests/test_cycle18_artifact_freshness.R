@@ -108,11 +108,15 @@ cat("\n-- BVA --\n")
   chk(nrow(check_provenance(tmp)) == 0L,
       "T182a an artifact with no sidecar reports zero rows, not an error")
   write_with_provenance(data.frame(a = 1), tmp, inputs = character(0))
-  chk(nrow(check_provenance(tmp)) == 0L,
-      "T182b an artifact with no recorded inputs reports zero rows")
+  # check_provenance() reports code rows as well as input rows since the
+  # producing code became part of provenance, so these count inputs
+  # explicitly rather than counting the frame.
+  chk(sum(check_provenance(tmp)$kind == "input") == 0L,
+      "T182b an artifact with no recorded inputs reports zero INPUT rows")
   src <- file.path(tempdir(), "t182_in.csv"); readr::write_csv(data.frame(b = 1), src)
   write_with_provenance(data.frame(a = 1), tmp, inputs = src)
-  chk(nrow(check_provenance(tmp)) == 1L && !check_provenance(tmp)$stale,
+  r182 <- check_provenance(tmp)
+  chk(sum(r182$kind == "input") == 1L && !any(r182$stale[r182$kind == "input"]),
       "T182c a matching input hash is not stale")
 }
 
@@ -123,7 +127,8 @@ cat("\n-- BVA --\n")
   write_with_provenance(data.frame(a = 1), tmp, inputs = src)
   readr::write_csv(data.frame(b = 2), src)          # one value changes
   r <- check_provenance(tmp)
-  chk(nrow(r) == 1L && r$stale, "T183 changing an input by one value marks the artifact stale")
+  ri <- r[r$kind == "input", ]
+  chk(nrow(ri) == 1L && ri$stale, "T183 changing an input by one value marks the artifact stale")
 }
 
 cat("\n-- SEMANTIC --\n")
@@ -137,7 +142,8 @@ cat("\n-- SEMANTIC --\n")
   Sys.setFileTime(src, Sys.time() + 3600)           # newer clock, same bytes
   readr::write_csv(data.frame(b = 1), src)          # rewritten, same content
   r <- check_provenance(tmp)
-  chk(nrow(r) == 1L && !r$stale,
+  ri <- r[r$kind == "input", ]
+  chk(nrow(ri) == 1L && !ri$stale,
       "T184 an input that is newer but unchanged does not make an artifact stale")
 }
 
@@ -149,7 +155,8 @@ cat("\n-- SEMANTIC --\n")
   write_with_provenance(data.frame(a = 1), tmp, inputs = src)
   unlink(src)
   r <- check_provenance(tmp)
-  chk(nrow(r) == 1L && is.na(r$current) && r$stale,
+  ri <- r[r$kind == "input", ]
+  chk(nrow(ri) == 1L && is.na(ri$current) && ri$stale,
       "T185 a vanished input is reported as stale, not as unchanged")
 }
 
@@ -161,6 +168,29 @@ cat("\n-- SEMANTIC --\n")
   chk(grepl('source\\(file\\.path\\("R", "lib", "provenance\\.R"\\)\\)', src) &&
         !grepl("sha256_of <- function", src),
       "T186 provenance reuses the canonical sha256_of rather than redefining it")
+}
+
+# T191/T192 (semantic). Provenance recorded input hashes and nothing else, so a
+# change to the CODE left every sidecar unchanged and every artifact
+# validating. Removing the middle-name edit-distance tolerance moved the
+# linkage cohort by 19 records while touching only R/amcb_match_rules.R, and
+# nothing in this repository could say so.
+{
+  d <- tempdir()
+  lib   <- file.path(d, "t191_lib.R")
+  entry <- file.path(d, "t191_entry.R")
+  writeLines("g191 <- function() 1", lib)
+  writeLines(sprintf('source("%s")', lib), entry)
+
+  closure <- .code_closure(entry)
+  chk(basename(lib) %in% basename(closure),
+      "T191 the recorded code closure follows source() into a transitively sourced file, not just the entry script")
+
+  fp_before <- .code_fingerprint(closure)
+  writeLines("g191 <- function() 2   # behaviour changed, inputs untouched", lib)
+  fp_after <- .code_fingerprint(closure)
+  chk(!identical(fp_before, fp_after),
+      "T192 a code-only change -- no input touched -- moves the code fingerprint, which is the drift that was previously undetectable")
 }
 
 cat("\n-- ADVERSARIAL --\n")
@@ -301,7 +331,8 @@ cat("\n-- ADVERSARIAL --\n")
   s <- file.path(d, "t190_src.csv"); readr::write_csv(data.frame(z = 1), s)
   write_with_provenance(data.frame(a = 1), a, inputs = s)
   readr::write_csv(data.frame(a = 1), b)            # written WITHOUT provenance
-  chk(nrow(check_provenance(a)) == 1L && nrow(check_provenance(b)) == 0L,
+  chk(sum(check_provenance(a)$kind == "input") == 1L &&
+        nrow(check_provenance(b)) == 0L,
       "T190 an artifact without its own sidecar does not inherit a neighbour's")
 }
 
