@@ -4869,3 +4869,87 @@ flagged in nearly every cycle's resuming note — this is now overdue);
 `match_open_payments_to_facility.R`; uncertainty propagation beyond the OLS
 extrapolation (cycle 26), the derangement fallback (cycle 30), and this
 cycle's tipping-point sensitivity (now guarded).
+## Cycle 39 (session-cycle 16 of 24) — 2026-08-30 — 4 BVA / 3 semantic / 3 adversarial
+
+**PRs #129 (cycle 36) and #132 (cycle 37) were MERGED into main this cycle**
+— the first of this session's own loop PRs to land. `origin/main` moved to
+include them (no new external code beyond that); verified via `git log
+72d7fe9..origin/main` before branching.
+
+**Target.** `match_open_payments_to_facility.R` — flagged unexplored across
+8+ prior cycles' resuming notes, zero prior test coverage. "Scenario
+parameters" (also repeatedly flagged) was investigated first: the
+microsimulation's own parameter set (`ANNUAL_NEW_GRADUATES`, `ANNUAL_
+RETIRE_RATE`, etc.) already has thorough sensitivity coverage via the
+pre-existing 18-case library (`tests/microsimulation_case_library.tsv`), and
+the ONLY production call site uses exclusively default values — nothing left
+to newly test there, so redirected to the higher-value, genuinely uncovered
+lead.
+
+**Finding — the same order-dependent "silent conflict resolution" defect at
+two locations in one file.** Both instances use `distinct(x, .keep_all =
+TRUE)`, which keeps whichever row happens to sort first among rows sharing a
+key — including rows that genuinely CONFLICT (disagree on a column that
+matters) rather than merely repeat.
+
+1. The OB hospital master deduplicates on `(addr_norm, zip)`. Two hospitals
+   *can* legitimately share one physical address — a rename or re-licensing
+   keeps the building, changes the CCN and name. Verified empirically: two
+   orderings of the identical two-hospital-one-address fixture produced two
+   DIFFERENT survivors. Which CCN/name every midwife at that address gets
+   attributed to depended on this CSV's row order, silently, and would flip
+   on a re-export with no code change.
+2. The cohort's own dedup on `certification_number` (from `artifacts/amcb_
+   npi_linkage_FROZEN.csv`) uses the identical pattern. A certification_
+   number appearing twice with two DIFFERENT `npi` values is a genuine
+   identity conflict, not a harmless repeat — silently picking one NPI by
+   row order decides who a midwife's entire downstream Open Payments /
+   facility match is attributed to. Found by asking, per this loop's own
+   mandate, whether the first defect recurs elsewhere in the same file — it
+   did, at the very next `distinct()` call.
+
+**Fix.** Both replaced with `assert_unique_keys(dedupe = TRUE)`
+(`R/join_safety.R`, already used elsewhere in this repo for exactly this
+purpose): identical duplicate rows still collapse for free, but a genuine
+conflict now stops the run and names the disagreeing column(s) instead of
+silently choosing. Verified both fixes: a conflicting fixture now errors
+identically regardless of row order, naming the offending column
+(`hospital_name`/`cms_ccn` for finding 1, `npi` for finding 2); an identical
+fixture still collapses to one row.
+
+**Tests.** `tests/test_cycle39_open_payments_facility.R`, 10 tests
+(T39-1..10) against a literal replica of the recency-resolution pipeline
+(the file is a flat, unguarded script needing gitignored artifacts and a
+live DuckDB connection, so it cannot be sourced end-to-end) plus the real,
+directly-sourced `assert_unique_keys()`. T39-5 carries an anti-ceremony
+sub-check (T39-5b) reproducing the retired `distinct()`'s order-dependent
+output directly. T39-7 pins a separate, fragile-but-currently-correct
+invariant discovered while designing these tests: `count()` called on data
+already grouped by `npi` preserves that grouping (minus the counted
+variables), so the pipeline's final `slice(1)` operates PER `npi` rather
+than globally — a dplyr behavior change or a careless edit dropping the
+upstream `group_by(npi)` would silently collapse the entire output to one
+row across the whole dataset, with no error.
+
+**Full suite.** New file: 10/10 pass. `match_open_payments_to_facility.R`
+still parses cleanly. No existing test referenced this file, so nothing to
+regress. `tests/ci_hygiene.R`: 0 failures.
+
+**Unresolved / carried forward.** None new. Standing items from cycles 26,
+30, 33, 34, 38 untouched.
+
+**Estimand changed:** no — both fixes only change behavior for input shapes
+(genuinely conflicting duplicate keys) that a clean, correctly-deduplicated
+real snapshot never contains; a clean snapshot dedupes identically to before.
+
+**Next candidate leads (not yet investigated):** uncertainty propagation
+beyond the OLS extrapolation (cycle 26), the derangement fallback (cycle
+30), and the tipping-point sensitivity (cycle 38); the rest of the Open
+Payments pipeline is now largely covered (cycles 31, 32, 39) — remaining:
+`build_organization_affiliation_resolver.R`'s "multi_source_confirmed" label
+question flagged at the end of cycle 35 (not yet asserted as a defect, may
+be by design); any other file still using bare `distinct(x, .keep_all =
+TRUE)` on a key that could plausibly carry a real conflict, repo-wide — a
+sweep in this style could be a productive future cycle given this defect
+class has now been found in 3+ distinct files this session (cycles 28, 32,
+39).

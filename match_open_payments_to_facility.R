@@ -44,6 +44,7 @@ suppressPackageStartupMessages({
 })
 source("R/lib/address_keys.R")   # norm_addr/zip5/zip9/phone10: one definition
 source("R/lib/common_helpers.R")
+source("R/join_safety.R")        # assert_unique_keys(): conflict-safe dedup
 
 DB <- Sys.getenv("MEDICARE_DUCKDB",
                  "/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb")
@@ -63,10 +64,16 @@ for (f in c(DB, HOSP))
 #' source does not record.
 
 # --- cohort ------------------------------------------------------------------
+# assert_unique_keys(dedupe=TRUE), not distinct(.keep_all=TRUE): a
+# certification_number appearing twice with two DIFFERENT npi values is an
+# identity conflict, not a harmless repeat, and deciding which NPI represents
+# that person by row order would silently pick who this midwife's entire
+# Open Payments / facility match is attributed to.
 coh <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv",
                 show_col_types = FALSE, progress = FALSE) %>%
   filter(status == "ACTIVE", linkage_tier == "primary_midwifery") %>%
-  distinct(certification_number, .keep_all = TRUE) %>%
+  assert_unique_keys("certification_number",
+                     label = "AMCB-NPI linkage (ACTIVE primary_midwifery)", dedupe = TRUE) %>%
   mutate(npi = as.character(npi)) %>%
   filter(!is.na(npi), nzchar(npi)) %>%
   select(certification_number, npi)
@@ -122,7 +129,16 @@ hosp <- chr(HOSP) %>%
   filter(!is.na(addr_norm), !is.na(cms_ccn)) %>%
   select(cms_ccn, hospital_name = fac_name, addr_norm, zip,
          hospital_city = geocode_city, hospital_state = geocode_state) %>%
-  distinct(addr_norm, zip, .keep_all = TRUE)
+  # Two hospitals CAN legitimately share one (addr_norm, zip) -- a rename or
+  # re-licensing at the same building keeps the address but changes the CCN
+  # and name. distinct(.keep_all = TRUE) used to keep whichever row happened
+  # to sort first, so which CCN/name every midwife at that address was
+  # attributed to depended on this CSV's row order -- silently, and would
+  # flip on a re-export with no code change. assert_unique_keys(dedupe=TRUE)
+  # still collapses IDENTICAL duplicate rows for free, but stops and names
+  # the disagreement when two rows share a key and genuinely conflict.
+  assert_unique_keys(c("addr_norm", "zip"),
+                     label = "OB hospital master (addr_norm + zip)", dedupe = TRUE)
 cat(sprintf("\nOB hospital master: %s facilities with a usable address\n",
             format(nrow(hosp), big.mark = ",")))
 
