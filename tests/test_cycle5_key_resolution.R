@@ -88,8 +88,25 @@ cat("\n-- SEMANTIC --\n")
 # A bare distinct(key, .keep_all = TRUE) resolves a data conflict by whatever
 # order the rows arrived in, which is a scientific decision made by a file.
 {
-  files <- list.files(file.path(root, "R"), pattern = "\\.R$",
-                      recursive = TRUE, full.names = TRUE)
+  # WIDENED 2026-08-30 (adversarial loop cycle 40). This scanned only R/,
+  # never the repo root -- where most of the standalone pipeline scripts
+  # actually live (match_open_payments_to_facility.R, check_npi_
+  # deactivation.R, resolve_org_ambiguity.R, build_table1_midwives.R, and
+  # ~45 others). Two real order-dependent conflicts were found and fixed at
+  # the root level this session (cycle 28's NPI deactivation report, cycle
+  # 39's two sites in match_open_payments_to_facility.R) without this sweep
+  # ever having seen either site -- it was auditing less than a third of the
+  # codebase's actual .keep_all usage. Adding the repo root (non-recursive:
+  # its own subdirectories other than R/ -- tests/, manuscript/, @archive/ --
+  # are each a different concern with their own conventions) turned 46 sites
+  # in R/ into 155 total, and the offender count (after the arrange()
+  # exemption) from 11 into 109. That is discovered debt, not newly created
+  # debt: every one of these sites already existed and already had the same
+  # property T44 already polices, just outside where anyone was looking.
+  files <- c(
+    list.files(file.path(root, "R"), pattern = "\\.R$",
+              recursive = TRUE, full.names = TRUE),
+    list.files(root, pattern = "\\.R$", recursive = FALSE, full.names = TRUE))
   offenders <- character(0)
   for (f in files) {
     src <- readLines(f, warn = FALSE)
@@ -118,7 +135,14 @@ cat("\n-- SEMANTIC --\n")
   # address witness in 04-diagnose-cross-state.R. Each arrange() states a real
   # precedence (prefer the geocoded row, prefer the row naming a school) rather
   # than sorting to satisfy the grep. Baseline lowered 14 -> 11 to lock that in.
-  BASELINE <- 11L
+  # 2026-08-30: baseline raised 11 -> 110 when the scan itself was widened to
+  # cover the repo root (see the comment on `files` above) -- not new debt,
+  # debt this sweep could not see before. Two of these 110 sites (in
+  # match_open_payments_to_facility.R and check_npi_deactivation.R) are
+  # already fixed by adversarial-loop cycles 28 and 39; once those PRs merge
+  # this number should drop and the baseline should follow it DOWN, the same
+  # way it did on 2026-08-15.
+  BASELINE <- 110L
   chk(length(offenders) <= BASELINE,
       sprintf("T44 bare .keep_all count does not grow beyond the recorded debt [%d of %d allowed]",
               length(offenders), BASELINE))
