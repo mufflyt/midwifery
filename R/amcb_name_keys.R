@@ -296,21 +296,51 @@ amcb_parse_person <- function(x) {
   if (!requireNamespace("humaniformat", quietly = TRUE)) {
     stop("humaniformat is required for author-name parsing", call. = FALSE)
   }
-  # Preserve the "Last, First" signal: stripping removes commas, so record
-  # whether one was present BEFORE cleaning and restore it for format_reverse().
-  had_comma <- grepl(",", as.character(x))
-  cleaned <- amcb_strip_name_noise(x)
-  raw <- ifelse(had_comma & !is.na(cleaned),
-                sub("^([^ ]+)[[:space:]]+", "\\1, ", cleaned), cleaned)
-  # format_reverse() turns "Last, First" into "First Last"; it is a no-op on
-  # strings without a comma, so it is safe to apply to the whole vector.
-  rev <- humaniformat::format_reverse(raw)
-  p <- humaniformat::parse_names(rev)
-  data.frame(
-    first  = amcb_name_key(p$first_name),
-    middle = amcb_name_key(p$middle_name),
-    last   = amcb_name_key(p$last_name),
-    stringsAsFactors = FALSE)
+  x <- as.character(x)
+  # IS THIS A "Last, First" REVERSAL, OR JUST A CREDENTIAL COMMA? (2026-08-30)
+  #
+  # Two wrong answers were shipped before this one. Testing the RAW string --
+  # what this function did until now -- reads the comma in ", M.D." as a name
+  # reversal:
+  #
+  #   "Ann M. Barbaccia (Pollack), M.D."
+  #        -> first "M", middle "BARBACCIA", surname "ANN"
+  #
+  # Testing the CLEANED string instead never fires at all, because
+  # amcb_strip_name_noise() splits on "[[:space:],]+" and so deletes every
+  # comma before it can be seen -- every genuine "Mróz, Jan" would parse as
+  # given name MROZ.
+  #
+  # The decidable question is whether a comma separates two stretches that BOTH
+  # still hold a name once credentials are gone. ", M.D." leaves nothing on its
+  # right; ", Jan" leaves a name.
+  raw <- vapply(x, function(one) {
+    if (is.na(one)) return(NA_character_)
+    seg <- trimws(amcb_strip_name_noise(strsplit(one, ",")[[1]]))
+    seg <- seg[!is.na(seg) & nzchar(seg)]
+    if (!length(seg)) return("")
+    if (length(seg) >= 2L) paste(c(seg[-1], seg[1]), collapse = " ")
+    else seg[1]
+  }, character(1), USE.NAMES = FALSE)
+  # PARENTHESISED ALTERNATES GO BEFORE THE PARSER, not after it. humaniformat
+  # assigns whatever it is given to a slot, so a maiden name becomes the
+  # SURNAME -- "Ann M. Barbaccia (Pollack)" -> last = "(Pollack)" -- and
+  # amcb_name_key() then normalises that to "", silently emptying the field the
+  # match depends on.
+  raw <- gsub("\\s+", " ", trimws(amcb_strip_parenthetical(toupper(raw))))
+  # humaniformat throws a C++ range_error on an empty string, which would abort
+  # the whole vector; hold the blanks out and put them back.
+  out <- data.frame(first = rep(NA_character_, length(raw)),
+                    middle = NA_character_, last = NA_character_,
+                    stringsAsFactors = FALSE)
+  ok <- !is.na(raw) & nzchar(raw)
+  if (any(ok)) {
+    p <- humaniformat::parse_names(raw[ok])   # already in First-Last order
+    out$first[ok]  <- amcb_name_key(p$first_name)
+    out$middle[ok] <- amcb_name_key(p$middle_name)
+    out$last[ok]   <- amcb_name_key(p$last_name)
+  }
+  out
 }
 
 #' Given-name tokens of length >= 2 (initials excluded).
