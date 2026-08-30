@@ -55,3 +55,13 @@ rural.diff	%.1f		the metropolitan-minus-remote gradient
 rural.diff_lo	%.1f		the gradient interval
 rural.diff_hi	%.1f		the gradient interval
 table1.female_pct	%.1f		a Table 1 composition figure reported in prose
+floor.pre_pct	%.1f		linkage among pre-NPPES certificants; the number that looks like an era effect and is not
+floor.era_pct	%.1f		linkage among NPPES-era certificants
+floor.active_pre_pct	%.1f		the load-bearing comparison: a practising midwife certified before the registry existed
+floor.active_era_pct	%.1f		its counterpart, and the two must be reported together or the argument disappears
+floor.active_pre_n	n		denominator of the pre-NPPES ACTIVE stratum
+floor.active_era_n	n		denominator of the NPPES-era ACTIVE stratum
+floor.dead_pre_pct	%.1f		where the shortfall actually concentrates
+floor.lapsed_pre_pct	%.1f		where the shortfall actually concentrates
+floor.lapsed_pre_n	n		the largest stratum carrying the shortfall
+floor.never_pre	n		records with no candidate at all, certified pre-NPPES
