@@ -4655,3 +4655,69 @@ pipeline (`crossref_open_payments_to_type2_npi.py`, `match_open_payments_
 to_facility.R`, `build_organization_affiliation_resolver.R`); uncertainty
 propagation beyond the OLS extrapolation (cycle 26) and the derangement
 fallback (cycle 30).
+## Cycle 34 (session-cycle 11 of 24) — 2026-08-30 — 3 BVA / 4 semantic / 3 adversarial
+
+**Target.** `validate_address_recency_pipeline.R` — carried forward directly
+from cycle 33's investigation of the same file (cycle 33 fixed a different
+line in this file, the `refined_clinical_setting` regex; this cycle fixes
+two other, independent defects flagged but not yet addressed).
+
+**Finding 1 — a coverage count was printed as a relocation count.**
+`state_shifts <- v4 %>% filter(!is.na(nppes_state))` is a plain
+non-missingness filter, but was printed as *"Identified %d midwives with
+cross-state practice moves"* and, downstream, *"%d of %d relocated
+midwives... are active CPT delivery attenders"*. No prior/legacy state field
+exists anywhere in this data model (confirmed by grep across the whole repo)
+to compare `nppes_state` against, so an actual cross-state MOVE cannot be
+computed here — only whether a current state is known at all. Fixed by
+correcting the printed English to describe the filter actually applied;
+the computed VALUE and denominator are unchanged (no estimand change).
+
+**Finding 2 — an unconditional hardcoded verdict, independent of the
+evidence it claims to summarize.** The Deanna DiUlio case study printed
+`"Validation Result  : CONFIRMED ACTIVE IN MONTANA (NEMHS Trinity Hospital
+Staff Roster)"` as a bare literal, regardless of what `has_cpt_delivery_
+claim`/`active_attending_status` actually held for the matched record — the
+line directly above it prints the real `active_attending_status` value, so a
+FALSE/lapsed claim would have printed a verdict directly contradicting the
+evidence shown one line earlier. Fixed by deriving the verdict from `has_cpt_
+delivery_claim`, the same canonical boolean the rest of the script already
+treats as authoritative (used in `cpt_relocated` above), and from the
+already-loaded `nppes_state`/`attributed_hospital_name` fields rather than a
+separately hardcoded state/hospital name.
+
+**Not fixed this cycle (flagged, not silently resolved).** The same case
+study also prints a hardcoded `"Legacy NPPES City: SEATTLE, WA"` with no
+corresponding "legacy"/prior-city field loaded anywhere in this script (or
+found anywhere else in the repo) to derive it from — inventing a computation
+for it would be fabricating methodology, not fixing a bug. `val_summary`'s
+hardcoded, non-computed "PPV"/precision literals remain carried forward from
+cycle 33, unchanged.
+
+**Tests.** `tests/test_cycle34_address_recency_validation.R`, 10 tests
+(T34-1..10) against literal replicas of the corrected logic (the script
+cannot run end-to-end without gitignored artifacts). T34-4 and T34-5 carry
+anti-ceremony companions reproducing the retired message text and the
+retired unconditional verdict directly. One self-caught test-authoring bug
+during writing: T34-7's first draft extracted the message's LEADING digit
+(`^\\d+`, which matched the sentence's own "1." section number) instead of
+the actual count — corrected to match on the specific "Coverage: (\\d+)
+midwives" substring before re-running.
+
+**Full suite.** New file: 10/10 pass. `Rscript tests/ci_hygiene.R`: all
+tracked R files still parse, no new duplicate definitions. No existing test
+referenced this file before this cycle, so nothing to regress.
+
+**Unresolved / carried forward.** The "Legacy NPPES City" hardcoded literal
+(new, this cycle) and the hardcoded PPV/precision literals (cycle 33) both
+need a human-defined ground-truth methodology before they can be honestly
+computed rather than typed in. Standing items from cycles 1-30 untouched.
+
+**Estimand changed:** no — both fixes correct English/logic to match already-
+computed values; no computed quantity was redefined.
+
+**Next candidate leads (not yet investigated):** scenario parameters more
+broadly; the rest of the Open Payments pipeline (`crossref_open_payments_
+to_type2_npi.py`, `match_open_payments_to_facility.R`, `build_organization_
+affiliation_resolver.R`); uncertainty propagation beyond the OLS
+extrapolation (cycle 26) and the derangement fallback (cycle 30).

@@ -491,6 +491,12 @@ jobs:
       - name: Facility/clinical setting category detection
         run: Rscript tests/test_cycle33_facility_setting_category.R
 
+      # Address-recency validation report: a coverage count previously
+      # printed as a relocation count, and a case-study verdict that was an
+      # unconditional literal independent of its own evidence.
+      - name: Address recency validation report logic
+        run: Rscript tests/test_cycle34_address_recency_validation.R
+
       # -----------------------------------------------------------------------
       # Ported verbatim from mufflyt/isochrones @ 1907a5c40 -- 416 assertions,
       # zero new code. Each file tests a helper that exists in BOTH repos, so

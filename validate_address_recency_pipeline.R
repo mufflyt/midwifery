@@ -20,17 +20,23 @@ geo_path <- "artifacts/amcb_npi_geography.csv"
 v4 <- read_csv(v4_path, show_col_types = FALSE) %>% mutate(npi = as.character(npi))
 geo <- read_csv(geo_path, show_col_types = FALSE) %>% mutate(npi = as.character(npi))
 
-# 1. State License & State Transition Audit
+# 1. NPPES Current-State Coverage Audit
+# NOTE: this is a count of midwives with a KNOWN CURRENT NPPES practice
+# state, not a count of cross-state MOVES. No prior/legacy state field exists
+# anywhere in this data model to compare nppes_state against, so an actual
+# relocation count cannot be computed here; the earlier "cross-state practice
+# moves" / "relocated midwives" wording claimed a quantity this filter does
+# not compute.
 state_shifts <- v4 %>%
   filter(!is.na(nppes_state))
 
-cat(sprintf("1. State Transition Audit: Identified %d midwives with cross-state practice moves.\n", nrow(state_shifts)))
+cat(sprintf("1. NPPES State Coverage: %d midwives have a known current NPPES practice state (not a cross-state MOVE count -- no prior-state field exists to compare against).\n", nrow(state_shifts)))
 
-# 2. CPT Delivery Claims Validation for Relocated Midwives
+# 2. CPT Delivery Claims Validation, restricted to midwives with a known state
 cpt_relocated <- v4 %>%
   filter(npi %in% state_shifts$npi, has_cpt_delivery_claim == TRUE)
 
-cat(sprintf("2. Delivery Claims Validation: %d of %d relocated midwives (%.1f%%) are active CPT delivery attenders.\n",
+cat(sprintf("2. Delivery Claims Validation: %d of %d midwives with a known NPPES state (%.1f%%) are active CPT delivery attenders.\n",
             nrow(cpt_relocated), nrow(state_shifts), nrow(cpt_relocated)/max(1, nrow(state_shifts))*100))
 
 # 3. Specific Validation Case Study: Deanna DiUlio, CNM
@@ -45,7 +51,21 @@ if (nrow(deanna) > 0) {
   cat(sprintf("  Updated NEMHS Address: %s, %s %s\n", deanna$nppes_practice_address[1], deanna$nppes_city[1], deanna$nppes_state[1]))
   cat(sprintf("  Attributed Hospital: %s (CCN: %s)\n", deanna$attributed_hospital_name[1], deanna$cms_ccn[1]))
   cat(sprintf("  CPT Delivery Claims: %s\n", deanna$active_attending_status[1]))
-  cat("  Validation Result  : CONFIRMED ACTIVE IN MONTANA (NEMHS Trinity Hospital Staff Roster)\n")
+  # The verdict was previously an unconditional literal ("CONFIRMED ACTIVE IN
+  # MONTANA...") printed regardless of what active_attending_status/
+  # has_cpt_delivery_claim actually held -- if the underlying data changed
+  # (a real relocation, a lapsed claim), the script would still confidently
+  # print a verdict contradicting the CPT Delivery Claims line directly
+  # above it. Derived from has_cpt_delivery_claim, the same canonical boolean
+  # the rest of this script already treats as authoritative (see cpt_relocated
+  # above), and from the fields already computed for this record rather than
+  # a separately hardcoded state/hospital name.
+  verdict <- if (isTRUE(deanna$has_cpt_delivery_claim[1]))
+    sprintf("CONFIRMED ACTIVE IN %s (%s)", deanna$nppes_state[1], deanna$attributed_hospital_name[1])
+  else
+    sprintf("NOT CONFIRMED by CPT delivery claims -- has_cpt_delivery_claim = %s",
+            deanna$has_cpt_delivery_claim[1])
+  cat(sprintf("  Validation Result  : %s\n", verdict))
 }
 
 # 4. Generate Validation Summary Matrix
