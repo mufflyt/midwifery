@@ -507,6 +507,11 @@ jobs:
           Rscript tests/test_organization_affiliation_resolver.R
           Rscript tests/test_cycle35_organization_affiliation_pipeline.R
 
+      # Linkage selection-bias tipping point and the selection-bounds figure's
+      # status-level data transformation.
+      - name: Linkage selection bounds figures
+        run: Rscript tests/test_cycle38_linkage_figures.R
+
       # -----------------------------------------------------------------------
       # Ported verbatim from mufflyt/isochrones @ 1907a5c40 -- 416 assertions,
       # zero new code. Each file tests a helper that exists in BOTH repos, so
