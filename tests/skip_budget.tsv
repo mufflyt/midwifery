@@ -24,6 +24,11 @@
 #
 # gate    path to the gate script
 # kind    ci_skip   a gate that prints `  --   ` through ci_skip()
+#         cycle     an adversarial-cycle test discovered by the glob step in
+#                   ci.yml. It reports through have_inputs(), which prints the
+#                   same `  --   SKIP` line ci_skip() does, so the same count
+#                   works -- but nothing was watching them until the glob wired
+#                   all 25 in and made their skips visible.
 #         testthat  a file CI runs via testthat::test_file(), whose skips are
 #                   reported as `[ FAIL n | WARN n | SKIP n | PASS n ]` and were
 #                   invisible to this budget until 2026-08-29. A suite could
@@ -53,3 +58,7 @@ tests/test-step2-npi-dedup-bug.R	testthat	pr	0	0	hermetic fixture of a real dedu
 tests/test-step8-tract-vintage-routing.R	testthat	pr	0	0	hermetic vintage routing
 tests/test-tract-vintage-boundary-bva-2019-2020-2021.R	testthat	pr	0	0	hermetic boundary analysis
 tests/test_invariants_midwifery.R	testthat	pr	0	3	three assertions read person-level artifacts that are gitignored, so they skip on a runner and run only where the data is. The file itself says a skip is reported as a skip, never as a pass -- and until now nothing counted them
+tests/test_cycle6_field_quality.R	cycle	pr	2	2	two person-level inputs are gitignored, so the field-quality checks that read them skip on a runner
+tests/test_cycle15_ob_capacity.R	cycle	pr	0	1	the obstetric-capacity artifact is pipeline-derived and absent from a bare checkout
+tests/test_cycle19_address_provenance.R	cycle	pr	0	4	the address-provenance evidence file is gitignored; T199 now asks its provenance sidecar rather than an mtime, and skips cleanly when the file is absent rather than pretending to have checked
+tests/test_cycle22_idempotence.R	cycle	pr	0	3	idempotence is asserted against pipeline outputs that a bare checkout does not carry

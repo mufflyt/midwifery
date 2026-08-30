@@ -107,6 +107,11 @@ for (i in seq_len(nrow(rows))) {
   expect <- suppressWarnings(as.integer(rows[[col]][i]))
   if (is.na(expect)) next
   kind <- if ("kind" %in% names(rows)) rows$kind[i] else "ci_skip"
+  # `cycle` reports through have_inputs(), which prints the same `  --   SKIP`
+  # line ci_skip() does, so it is counted the same way -- the distinction is
+  # kept in the budget because the two mechanisms fail differently and a reader
+  # deserves to know which one a row describes.
+  if (identical(kind, "cycle")) kind <- "ci_skip"
   if (identical(kind, "testthat")) {
     out <- suppressWarnings(system2("Rscript",
       c("-e", shQuote(sprintf('testthat::test_file("%s", stop_on_failure = FALSE)', g))),
