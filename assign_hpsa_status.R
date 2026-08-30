@@ -34,6 +34,7 @@
 suppressPackageStartupMessages({
   library(sf); library(dplyr); library(readr)
 })
+source("R/join_safety.R")   # assert_unique_keys(): conflict-safe dedup
 
 HPSA <- Sys.getenv("HPSA_SHP",
   "/Volumes/MufflySamsung/HRSA_HPSA_data/HPSA_CMPPC_SHP_DET_CUR_VX.shp")
@@ -51,9 +52,17 @@ lon <- intersect(c("longitude", "lon"), names(geo))[1]
 if (is.na(lat) || is.na(lon))
   stop("geography artifact carries no coordinate columns", call. = FALSE)
 
+# assert_unique_keys(), not distinct(.keep_all=TRUE): a midwife with TWO
+# geocoded practice locations (a real, plausible shape for this file -- other
+# geography artifacts in this repo carry more than one address per person)
+# would have one location silently picked by row order, deciding by accident
+# which of two real addresses gets tested against the HPSA layer. A genuine
+# lat/lon conflict is a question for a human (which location is current?),
+# not a row-order tie-break.
 pts <- geo %>%
   filter(!is.na(.data[[lat]]), !is.na(.data[[lon]])) %>%
-  distinct(certification_number, .keep_all = TRUE)
+  assert_unique_keys("certification_number",
+                     label = "geocoded midwife locations (HPSA input)", dedupe = TRUE)
 cat(sprintf("midwives with coordinates: %s of %s\n",
             format(nrow(pts), big.mark = ","), format(nrow(geo), big.mark = ",")))
 

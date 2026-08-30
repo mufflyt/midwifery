@@ -5039,3 +5039,101 @@ organization_affiliation_resolver.R`'s "multi_source_confirmed" label
 question (cycle 35, still not investigated); uncertainty propagation beyond
 the OLS extrapolation (cycle 26), the derangement fallback (cycle 30), and
 the tipping-point sensitivity (cycle 38).
+## Cycle 41 (session-cycle 18 of 24) — 2026-08-30 — 3 BVA / 3 semantic / 4 adversarial
+
+**Procedural correction applied.** Following cycle 40's branch-mixup
+incident, this cycle ran `git fetch origin main` immediately followed by
+`git checkout -b adversarial-loop-cycle41 origin/main`, verified with `git
+branch --show-current` before any investigation began.
+
+**Note on branch base.** `origin/main` moved via PR #137 ("Discover the
+cycle tests instead of listing them") — a significant CI restructuring:
+every `tests/test_cycle*.R` file is now auto-discovered and run by a single
+glob-based step (`shopt -s nullglob; files=(tests/test_cycle*.R)`), with a
+non-vacuity guard refusing to pass if fewer than 20 files match. **This
+means future cycles no longer need to manually edit `ci.yml` to wire in a
+new `tests/test_cycleNN_*.R` file** — it is picked up automatically, which
+also removes the recurring merge-conflict surface every prior cycle's PR
+created by touching the same file. Verified the shared package install list
+(dplyr, checkmate, cli, etc.) survived the restructuring intact.
+
+Also observed: `tests/ci_skip_budget.R` (added by the same PR) currently
+**fails on this checkout** — 3 stale skip-budget entries (`test_cycle11_
+spatial.R`, `test_cycle12_names_territories.R`, `test_cycle14_coverage_
+surfaces.R`, each expecting 1 skip but observing 0). Verified via `git log`
+that this file and all three flagged test files were touched only by PR
+#137 itself, not by any of this session's 40 prior cycles — a pre-existing,
+environment-dependent failure introduced by that external commit, not
+something this cycle caused or should silently fix (per this loop's own
+failure-handling rule for pre-existing unrelated failures). Recorded, not
+touched.
+
+**Target.** Triaged 2 of the 110 `.keep_all` sites cataloged by cycle 40's
+widened T44 sweep for actual fixes, per that cycle's own explicit
+recommendation to pick a handful rather than converting all 110 at once.
+
+**Fix 1 — `build_table1_midwives.R:55`, the cohort-defining line for the
+entire published Table 1.** `coh <- link %>% filter(...) %>% distinct(
+certification_number, .keep_all = TRUE)` — `N <- nrow(coh)` immediately
+after is the denominator every single percentage in the manuscript's
+Table 1 is computed against. A `certification_number` appearing twice with
+two disagreeing `npi` values (a genuine identity conflict) would have
+silently decided who counts as a member of the published cohort by row
+order. Highest-consequence site in the entire inventory.
+
+**Fix 2 — `assign_hpsa_status.R:56`, the geocoded-location input to the
+HRSA shortage-area determination.** A midwife with two genuinely different
+geocoded practice locations — a plausible real shape for this artifact,
+several sibling geography files in this repo carry more than one address
+per person — would have had one location silently chosen by row order,
+deciding by accident which of two real addresses gets tested against the
+HPSA layer, with the other (possibly shortage-area) address never checked.
+
+Both replaced with `assert_unique_keys(dedupe = TRUE)`, matching cycles 28
+and 39's established pattern. Verified empirically: each conflicting
+fixture now errors identically regardless of row order, naming the exact
+disagreeing column (`npi` for Fix 1, `latitude`/`longitude` for Fix 2); each
+identical-duplicate fixture still collapses to one row.
+
+**Verified impact.** Re-ran cycle 40's widened sweep logic standalone after
+these fixes: the true offender count dropped from 110 to 108.
+`assign_hpsa_status.R` is now fully clean (it had only the one site);
+`build_table1_midwives.R` still appears in the inventory (7 of its 8 sites
+remain, deliberately not touched this cycle — matching cycle 40's own
+explicit "pick a handful, not all of them" guidance).
+
+**Tests.** `tests/test_cycle41_table1_hpsa_dedup.R`, 10 tests (T41-1..10)
+against literal replicas of both fixed sites (both host files are flat,
+unguarded scripts — one needs a real linkage CSV, the other needs `sf` and
+an external HRSA shapefile — so neither can be sourced end-to-end) plus the
+real, directly-sourced `assert_unique_keys()`. T41-6 is a combined
+anti-ceremony check reproducing the retired `distinct()`'s order-dependent
+output for the Table 1 site directly.
+
+**Full suite.** New file: 10/10 pass. Both fixed files parse cleanly.
+Re-ran `tests/test_cycle6_field_quality.R`, `tests/test_table1_blk_hg.R`,
+and `tests/test_healthgrades_integrity.R` (the only existing test files
+referencing either production file by name): 0 regressions, expected skips
+unchanged. `tests/ci_hygiene.R`: 0 failures.
+
+**Unresolved / carried forward.** The remaining 108 `.keep_all` offenders
+(7 still in `build_table1_midwives.R`) are explicitly not this cycle's job
+to clear — matching cycle 40's own stated rationale against converting the
+whole inventory mechanically. The pre-existing `ci_skip_budget.R` failure
+(above) is recorded, not fixed. Standing items from cycles 26, 30, 33, 34,
+38 untouched.
+
+**Estimand changed:** no — both fixes only change behavior for input shapes
+(genuinely conflicting duplicate keys) a clean, correctly-linked real
+snapshot never contains.
+
+**Next candidate leads (not yet investigated):** the remaining 7 `.keep_all`
+sites in `build_table1_midwives.R` (a future cycle could triage 1-2 more);
+whether PR #135's `relationship = "many-to-one"` fix to `compose()`'s
+`grp_sizes` join (R/07-cohort-composition.R, cited as responding to this
+session's own cycle-37 write-up) covered the join site cycle 37 actually
+flagged, or a different one in the same function — not yet re-checked;
+`build_organization_affiliation_resolver.R`'s "multi_source_confirmed"
+label question (cycle 35); uncertainty propagation beyond the OLS
+extrapolation (cycle 26), the derangement fallback (cycle 30), and the
+tipping-point sensitivity (cycle 38).
