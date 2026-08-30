@@ -44,6 +44,13 @@ MW_ART <- "artifacts"
 #' @param z [numeric]: normal deviate; 1.96 reproduces every committed interval.
 #' @return [numeric] length-2, lower and upper bound in percent.
 mw_wilson <- function(x, n, z = 1.96) {
+  # z enters `half` linearly, not squared -- a non-positive z silently swaps
+  # the lower and upper bound (half <= 0) instead of raising an error. Every
+  # call site today passes the 1.96 default, but a future call with, say, a
+  # 90% interval's 1.645 typed as -1.645 would ship an inverted CI with no
+  # error anywhere between here and the manuscript.
+  if (z <= 0)
+    stop(sprintf("mw_wilson(): z = %s must be positive (it is a normal deviate, not a signed offset).", z), call. = FALSE)
   p <- x / n
   d <- 1 + z^2 / n
   centre <- (p + z^2 / (2 * n)) / d
@@ -66,6 +73,10 @@ mw_trend <- function(x, n) {
 
 #' Difference of two proportions with a normal-approximation interval
 mw_diff <- function(x1, n1, x2, n2, z = 1.96) {
+  # Same latent defect as mw_wilson(): z enters linearly, so a non-positive z
+  # silently swaps (d - z*se) above (d + z*se), inverting the CI with no error.
+  if (z <= 0)
+    stop(sprintf("mw_diff(): z = %s must be positive (it is a normal deviate, not a signed offset).", z), call. = FALSE)
   p1 <- x1 / n1; p2 <- x2 / n2
   d <- 100 * (p1 - p2)
   se <- 100 * sqrt(p1 * (1 - p1) / n1 + p2 * (1 - p2) / n2)
