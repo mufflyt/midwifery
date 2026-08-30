@@ -276,6 +276,14 @@ jobs:
                     # (R/build_amcb_state_licenses.R). Both resolve today only
                     # by luck.
                     "fs", "rlang", "readxl",
+                    # cli: R/07-cohort-composition.R's own top-level
+                    # library(cli) call fires at source() time, not just when
+                    # build_composition() runs -- present today only because
+                    # dplyr/readr pull it in transitively. Listed explicitly
+                    # so that stops being luck, per this job's own header
+                    # warning about packages reached only through a
+                    # source() chain a grep misses.
+                    "cli",
                     # G2 in test_science_invariants.R reaches
                     # name_matches_roster() by sourcing
                     # scrape_healthgrades_midwives.R, which attaches rvest at
@@ -499,6 +507,11 @@ jobs:
           Rscript tests/test_open_payments_type2_bulk.R
           Rscript tests/test_table1_blk_hg.R
           Rscript tests/test_pip_materialization.R
+
+      # Cohort-composition ledger: compose() and the missingness-ledger
+      # builder behind composition_missingness_ledger.csv (L13).
+      - name: Cohort composition ledger
+        run: Rscript tests/test_cycle37_composition_ledger.R
 
       # -----------------------------------------------------------------------
       # Ported verbatim from mufflyt/isochrones @ 1907a5c40 -- 416 assertions,

@@ -3326,3 +3326,95 @@ cadence:
    an oversight.
 
    Wired into `ci.yml` alongside the rest of this cycle's tests.
+
+## Cycle 37 (session-cycle 14 of 24) — 2026-08-30 — 3 BVA / 4 semantic / 3 adversarial
+
+**Note on branch base.** `origin/main` moved again this cycle (PR #130,
+"Refresh the three technical appendices for the county recovery" — a
+documentation-and-figure-regeneration-only commit, no code changes; verified
+via `git show --stat` before ruling it out as a target).
+
+**Target.** `compose()` and the missingness-ledger builder in
+`R/07-cohort-composition.R`, both added/expanded in the previous cycle's PR
+#128 alongside `tests/ci_science_laws.R`'s L13 gate, which claims "21/21
+mutations detected, 5/5 near misses allowed." That claim was verified true
+(re-ran `tests/test_science_laws_detect.R`: still 21/21, unaffected by this
+cycle's fix) — but the mutation suite operates on the ARTIFACT
+(`composition_missingness_ledger.csv`) end-to-end, via static hand-written
+CSV fixtures. It never unit-tests `compose()` or the ledger-building code
+directly against synthetic edge cases, so a defect that has not yet
+manifested in the real committed data — but could, on the very next
+join-failure this whole file's history is about — would slip through
+undetected. This cycle found one.
+
+**Finding — `top_level_pct` reported the same confident value for "no data"
+as for "unanimous data."** The ledger-building code hardcoded
+`top_level_pct = 100` whenever a group had **zero observed values** for a
+variable — exactly the group|variable combination this ledger exists to
+flag (the file's own header describes the real incident: rurality 100%
+missing for one group). A reader would see `top_level_pct = 100` sitting
+next to `n_observed = 0` and could reasonably misread it as "100% of this
+group's data is one level," when there is no level to characterize at all —
+the same "distinct concepts conflated" failure this session has now found
+several times (cycles 31, 32, 33), here inside the very column meant to help
+a human spot exactly this kind of join failure. Verified this branch is
+live, not hypothetical: it is the CENTRAL scenario `tests/test_science_
+laws_detect.R`'s own L13 fixtures plant (`n_observed=0, top_level_pct=100`
+is literally one of its two "shapes that actually shipped" test cases).
+Fixed by returning `NA_real_` when there are zero observed values, leaving
+the 100%-concentration branch (a group genuinely unanimous in one level)
+unchanged.
+
+**Verified no regression:** the real, currently-committed `artifacts/
+composition_missingness_ledger.csv` has zero missing values across every
+group and variable in the present snapshot (`n_missing = 0` on all 15
+rows), so this fix changes nothing about the current artifact's content —
+it is a forward-looking robustness fix for the next time a join fails,
+which is precisely the scenario the ledger is built to survive.
+`tests/ci_science_laws.R` re-run against the real repository state: still
+passes, L13 reports "worst missingness 0.0%."
+
+**Tests.** `tests/test_cycle37_composition_ledger.R`, 10 tests (T37-1..10)
+against the real `compose()` (loaded via `sys.source()`, no side effects)
+and a literal replica of the inline ledger-building code (which, unlike
+`compose()`, is not a standalone function and cannot be sourced directly —
+matching this session's established pattern for such cases). T37-4 carries
+an anti-ceremony sub-check (T37-4c) reproducing the retired hardcoded-100
+rule directly. One self-caught test-authoring bug: T37-4a's first draft
+compared `a$top_level_pct == (2/3) * 100` and separately
+`all.equal(a$top_level_pct, 100 * 2 / 3)`, both of which failed — not from a
+production defect, but because `vapply()`'s result carried names inherited
+from its input that `all.equal()`'s structural comparison flagged
+("names for target but not for current"); fixed with `unname()`.
+
+**Full suite.** New file: 10/10 pass. Re-ran `tests/test_science_laws_
+detect.R` (21/21 mutations, 5/5 near misses, unaffected) and `tests/ci_
+science_laws.R` against the real repository (all three laws L11/L12/L13
+still pass) and `tests/ci_hygiene.R` (0 failures). No regressions.
+
+**Investigated, not fixed this cycle (documented, not silently resolved).**
+`compose()` itself has no internal duplicate-row guard — a row duplicated by
+an upstream join fan-out silently inflates N and shifts every percentage in
+that group. In the real pipeline this is mitigated by explicit `relationship
+= "many-to-one"` declarations on the joins that build `d` before `compose()`
+ever sees it (dplyr errors at join time on a real fan-out) — but `compose()`
+itself provides no protection of its own, relying entirely on its caller's
+guarantee. Adding a person-level duplicate check to this small, reusable,
+group+level helper would require inventing which column identifies a
+person, which `compose()` is not given — left as a documented assumption
+(T37-8), not a defect fixed this cycle.
+
+**Unresolved / carried forward.** None new. Standing items from cycles 26,
+30, 33, 34 untouched.
+
+**Estimand changed:** no — the fix only changes what is reported for an
+input shape (zero observed values in a group) that the current, correct
+data never produces.
+
+**Next candidate leads (not yet investigated):** scenario parameters more
+broadly (still not directly targeted by any cycle 24-37 despite repeated
+flagging); `match_open_payments_to_facility.R`; uncertainty propagation
+beyond the OLS extrapolation (cycle 26) and the derangement fallback (cycle
+30); `analyze_linkage_selection_bias.R` (the other file substantially
+changed in PR #128, not yet directly targeted -- this cycle focused on
+R/07-cohort-composition.R instead).
