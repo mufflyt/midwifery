@@ -3325,8 +3325,137 @@ cadence:
    baseline case only, so this is a deliberate, documented divergence, not
    an oversight.
 
-   Wired into `ci.yml` alongside the rest of this cycle's tests.
+   Discovered by the `tests/test_cycle*.R` glob in `ci.yml` alongside the rest of this cycle's tests.
 
+## Cycles 25-30 (session-cycles 2-7 of 24) — status notes
+
+This branch is cut from `origin/main` at the same commit as Cycle 24's merge
+point; Cycles 25-30 exist only as still-open PRs, so their entries are not yet
+part of `main`'s copy of this file. Recorded here for continuity so this
+branch's ledger stays internally readable; each PR carries its own full entry.
+
+- **Cycle 25** (PR #115, open): birth-activity FTE — added
+  `n_unascertained_roster` to `county_effective_supply` in
+  `R/15-build-birth-activity.R` so a county with only NA-`birth_activity_state`
+  providers is distinguishable from a county with none.
+- **Cycle 26** (PR #118, open): age calibration — replaced an inline
+  `case_when()` age-banding rule in `calibrate_amcb_certification_ages.R` with
+  the shared, tested `band_hg_age()`; found and corrected two test-authoring
+  bugs along the way (a cross-line regex false positive from `.` matching
+  newlines, and a wrong assumption about the retired rule's behavior on
+  negative ages).
+- **Cycle 27** (PR #119, open): RNG reproducibility — `resolve_org_ambiguity.R`
+  called `set.seed()` once before a loop of multiple `slice_sample()` calls
+  sharing one RNG stream; fixed by re-seeding immediately before each call and
+  `arrange()`-ing by a stable key first (sampling is by row position, not
+  identity).
+- **Cycle 28** (PR #120, open): NPI deactivation report deduplicated via
+  `distinct(npi, .keep_all = TRUE)` (silently resolves real conflicts by row
+  order); replaced with `assert_unique_keys()` from `R/join_safety.R`, which
+  errors on a genuine conflict instead of picking one arbitrarily.
+- **Cycle 29** (PR #121, open): the same RNG-reproducibility defect class as
+  Cycle 27, found in two more files (`calibrate_osmde_vs_ec2.R`,
+  `build_osmde_route_queue_all_midwives.R`) via a deliberate sweep for the
+  same pattern elsewhere in the repository, per this loop's own mandate to
+  check whether a found defect recurs before considering it resolved.
+- **Cycle 30** (PR #122, open): `link_theses_to_amcb.R`'s negative control used
+  `sample(given_tokens)` as a "shuffle everything" control, but a random
+  permutation has ~62-63% odds of leaving at least one name in its original
+  (correctly-matching) position — not a clean null. Replaced with a
+  rejection-sampled `derange()` helper (capped at 1000 tries, best-effort
+  fallback with a warning, since a true zero-fixed-point derangement can be
+  mathematically impossible for a multiset with repeated values).
+
+RNG-reproducibility sweep (cycles 27, 29, 30) is DONE: 5 files fixed, 2 files
+(`match_nppes.R`, `R/09-bc-resolver-interaction.R`) inspected and confirmed
+correctly designed already (documented, not silently skipped).
+
+## Cycle 31 (session-cycle 8 of 24) — 2026-08-29 — 3 BVA / 4 semantic / 3 adversarial
+
+**Target.** `parse_insurance()` and `extract_json_array()` in
+`scrape_healthgrades_midwives.R` — the Medicaid/Medicare/payor-count parser
+behind `hg_medicaid_named`, `hg_medicare`, `hg_payor_n`, `hg_plan_n`,
+`hg_payors`, `hg_plans`. Cycle 6 tested `field_variability()` /
+`cohort_coverage()` / `assert_not_constant()` against the already-parsed
+attributes snapshot, but never exercised the parsing logic itself. Insurance
+fields are on this session's own priority list (insurance/access logic), and
+the fields are exported to a public artifact column even though nothing in
+Table 1 consumes them yet.
+
+**Finding — hg_payor_n counted listings, not payors.** `hg_payor_n` was
+computed as `length(payors)` — the raw count of `"payor":"..."` regex matches
+— while the sibling field `hg_payors` (the string actually shown alongside
+it) was already deduped via `paste(unique(payors), collapse = "; ")`. A
+provider with two plans from the same payor (e.g. an Aetna PPO and an Aetna
+HMO, a completely ordinary real-world case) got `hg_payor_n = 2` next to
+`hg_payors = "Aetna"` — the count contradicted the very list it was supposed
+to summarize, and "number of payors accepted" silently degenerated into a
+duplicate of `hg_plan_n` whenever any payor offered more than one plan.
+Verified empirically before touching anything (`length(payors)` = 2,
+`unique(payors)` = 1, for a synthetic two-plan-one-payor payload). Fixed with
+the minimal change: `hg_payor_n = length(unique(payors))`. `hg_plan_n` was
+deliberately left untouched — two different payors coincidentally naming a
+plan the same thing (e.g. both offering a plan literally called "PPO") are
+two distinct real-world plans, so raw-counting plans (no dedup) is the
+correct behavior there, not a parallel bug.
+
+Also verified, empirically, that the following related suspicions were
+**not** defects (recorded so a future cycle does not re-investigate them):
+- `\bchip\b` and `\bmedi-cal\b` word-boundary regexes correctly reject
+  "Microchip Insurance Co" / "Chippewa Health Plan" / "Medical Mutual" while
+  matching "CHIP" / "Medi-Cal" — confirmed with a standalone script after an
+  `Rscript -e '...'` shell-quoting artifact briefly made `\b` look broken
+  (backslash-escaping through bash `-e` single-quotes collapses under R's own
+  string-escape parsing; a `.R` file avoids the double-escaping layer).
+- `extract_json_array()`'s bracket-depth counter correctly handles the real
+  nested shape (`plans` array inside each payor object) across 3+ payors.
+- A payor name containing a *balanced* bracket pair (e.g. "Doe & Co [East
+  Region]") does not desynchronize the depth counter, because the embedded
+  open/close brackets cancel before the counter reaches the real end. A payor
+  name with a lone *unbalanced* bracket would still truncate the block early,
+  but no real Healthgrades payload has ever been observed to contain one —
+  recorded as a known, deliberately-unfixed limitation, not a live defect.
+- A Medicaid mention appearing only in `planType` (not the payor or plan
+  name) still sets `hg_medicaid_named`, matching the function's own
+  docstring claim that it "matches across all three."
+- The shared "medi" prefix between the Medicaid and Medicare patterns does
+  not cross-contaminate: a Medicare-only payor name sets `hg_medicare` without
+  tripping the Medicaid regex.
+
+**Tests.** `tests/test_cycle31_healthgrades_insurance_parsing.R`, 10 tests
+(T31-1..10) loading the real `parse_insurance()`/`extract_json_array()` via
+`sys.source(..., envir = new.env())` (verified this does not trigger the
+file's own `if (sys.nframe() == 0) main(...)` guard — sourcing runs inside
+`eval()`, so `sys.nframe() > 0` there). T31-3 carries an anti-ceremony
+companion (T31-3b) and was confirmed to actually discriminate: reverting the
+fix via `git stash` reproduced 3 real failures (T31-3, T31-4, T31-9) against
+the pre-fix code, all passing again after `git stash pop`.
+
+**Full suite.** New file: 10/10 pass. Re-ran `tests/test_cycle6_field_
+quality.R` (0 failures, 2 skipped — same skips as before, gated on an
+optional local snapshot), `tests/test_science_invariants.R` (0 failures),
+`tests/test_recovery_resume_equivalence.R` (0 failures) — the three other
+files referencing this script or these fields. No regressions.
+
+**Unresolved / carried forward.** None from this cycle. Still open from
+earlier cycles (untouched, not silently resolved): the numerous pre-existing
+"DECISION NEEDED" items from cycles 1-23 (GFR reliability method,
+`women_15_44` denominator, Table 1 panel-window censoring, `ct_partial`
+reporting, Healthgrades minimum-coverage threshold); whether `derange()`'s
+best-effort fallback should drop the affected institution's estimate entirely
+rather than report a residually-contaminated permutation (cycle 30); the OLS
+extrapolation bound question (cycle 26).
+
+**Estimand changed:** no.
+
+**Next candidate leads (not yet investigated):** scenario parameters more
+broadly; validation/backtesting beyond the permutation-control angle already
+covered; uncertainty propagation in places other than the OLS extrapolation
+(cycle 26) and the derangement fallback (cycle 30) — e.g. whether any
+geocoding-confidence or match-score field is silently dropped rather than
+carried downstream; Open Payments fields (`data/CMS_Open_Payments_Profile_
+Supplement.csv`, present in the working tree but not yet audited by any
+cycle).
 ---
 
 ## Cycles 25-29 (session-cycles 2-6 of 24) — 2026-08-29 — status notes
@@ -3406,6 +3535,18 @@ returning contaminated output (T30-3, T30-9).
 `tests/test_cycle30_permutation_derangement.R`: 10/10 pass. Production file
 re-parses clean (cannot run end-to-end here -- needs the real, gitignored
 thesis-harvest artifacts). Discovered by the `tests/test_cycle*.R` glob in `ci.yml`, so no per-test
+
+**Correction, 2026-08-30.** This test `sys.source()`s
+`scrape_healthgrades_midwives.R` to reach the payor parser. That file's own
+body is `sys.nframe()`-guarded, but `load_isochrones_name_tools()` runs at top
+level *before* the guard and `stop()`s without the `~/isochrones` checkout,
+which no runner carries -- so the test failed CI while passing on any
+developer machine that has it. Now guarded on the five files the loader
+actually requires, emitting a counted skip; budgeted at full=0, lean=1.
+Verified in both directions, which needs `R_ENVIRON_USER=/dev/null`: a bare
+`ISOCHRONES_R=...` shell override is silently clobbered by `~/.Renviron`,
+which R reads afterwards, so the first negative control run here was
+vacuous.
 step is added.
 
 

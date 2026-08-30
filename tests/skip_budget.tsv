@@ -65,3 +65,4 @@ tests/test_cycle22_idempotence.R	cycle	pr	0	3	idempotence is asserted against pi
 tests/test_cycle11_spatial.R	cycle	pr	0	1	needs sf, which the pure-function job installs no system geo libraries for by design; the whole file declares one skip rather than failing the discovery step
 tests/test_cycle14_coverage_surfaces.R	cycle	pr	0	1	needs sf, same reason as cycle11
 tests/test_cycle12_names_territories.R	cycle	pr	0	1	sources R/string_normalization.R, a shim whose implementation lives in ~/isochrones and which no runner carries; test_cycle4 already guards the same shim this way
+tests/test_cycle31_healthgrades_insurance_parsing.R	cycle	pr	0	1	sys.source()s scrape_healthgrades_midwives.R, which calls load_isochrones_name_tools() at top level before its own sys.nframe() guard; that loader stop()s without the ~/isochrones checkout, which no runner carries

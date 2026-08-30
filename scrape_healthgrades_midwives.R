@@ -479,7 +479,12 @@ parse_insurance <- function(x) {
   hay <- c(payors, plans, types)
 
   tibble(
-    hg_payor_n  = length(payors),
+    # Distinct payors, not raw listing count: a payor with two plans (e.g. an
+    # Aetna PPO and an Aetna HMO) is one payor, not two. Raw length() would
+    # silently make hg_payor_n a duplicate of hg_plan_n whenever a provider has
+    # multiple plans from the same payor, and would disagree with hg_payors
+    # below, which is already deduped via unique().
+    hg_payor_n  = length(unique(payors)),
     hg_plan_n   = length(plans),
     # Hyphen REQUIRED in medi-cal: an optional hyphen makes the pattern match
     # the word "Medical", which flagged the payor "Medical Mutual" (an Ohio
