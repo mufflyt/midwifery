@@ -239,18 +239,24 @@ amcb_middle_agreement <- function(a_tokens, b_tokens) {
         return("corroborates")
       }
     }
-    # A NEAR SPELLING IS NOT A DISAGREEMENT -- BUT IT IS NOT CORROBORATION.
-    # "JULIA" against "JULIE", "LYN" against "LYNN", "KRISTINA" against
-    # "KRISHNA": one edit apart, almost certainly one person, and scored as a
-    # CONFLICT here until the flip audit. Calling them corroborating would
-    # manufacture class-1 confidence (1.00) from a spelling difference, so
-    # they return "uninformative" instead: the candidate is not vetoed, and it
-    # resolves at class 2 on the strength of the whole given name and surname.
-    # The surname axis has used edit distance since class 4 existed; this
-    # brings the middle axis to the same standard without inventing certainty.
-    if (near_spelling(a[nchar(a) >= 2L], b[nchar(b) >= 2L])) {
-      return("uninformative")
-    }
+    # NO EDIT-DISTANCE TOLERANCE ON THE MIDDLE NAME (2026-08-30, removed the
+    # same day it was added). A previous cut returned "uninformative" when two
+    # full middle tokens were within one edit -- JULIA/JULIE, LOUSE/LOUISE,
+    # ELISABETH/ELIZABETH -- so the candidate survived instead of being vetoed.
+    #
+    # Measured before removing it: 64 of 30,740 exact-name candidate pairs
+    # (0.2%) depended on it, and it was worth 22 roster records net. Against
+    # that, it admitted pairs that are genuinely DIFFERENT given names --
+    # JULIA/JULIE, LEE/LEA, EDA/EDNA, ANN/ANNE -- and defended them only by
+    # inference from the surrounding name agreement. Deleted deliberately: 22
+    # records is a cheaper price than an edit-distance test anywhere in the
+    # identity path, and "we tolerated one character in the middle name" is a
+    # harder sentence to defend than "we did not".
+    #
+    # This is NOT symmetric with the surname axis. Class 4 uses edit distance
+    # to GENERATE a candidate that is then ranked below exact evidence; this
+    # would have used it to SUPPRESS a veto, with no tier recording that it
+    # happened.
     "conflicts"
   }, character(1))
 }
@@ -281,19 +287,6 @@ initials_string_matches <- function(short, toks) {
   TRUE
 }
 
-#' Is any cross pair of full tokens within one edit (two for long tokens)?
-#'
-#' Two edits are allowed only from six characters up, where the proportion of
-#' the name that has to agree is high enough that the tolerance does not start
-#' joining unrelated short names -- JANE and JOAN stay a conflict.
-#' @keywords internal
-#' @noRd
-near_spelling <- function(a, b) {
-  if (!length(a) || !length(b)) return(FALSE)
-  d <- utils::adist(a, b)
-  lim <- outer(nchar(a), nchar(b), function(x, y) ifelse(pmin(x, y) >= 6L, 2L, 1L))
-  any(d <= lim)
-}
 
 #' Count RIVAL NPIs: alternative candidates that are a different PERSON.
 #'

@@ -22,6 +22,41 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-08-30 — The middle-name edit-distance tolerance is gone
+
+### Removed — one-edit tolerance on middle names: **−19 cohort members, accepted**
+
+A rule added earlier the same day returned `uninformative` when two full middle
+tokens were within one edit (two from six characters up), so the candidate
+survived instead of being vetoed. It is deleted, not merely unreferenced —
+`tests/test_amcb_gates.R` asserts `!exists("near_spelling")`.
+
+Measured before removing it: **64 of 30,740** exact-name candidate pairs (0.2%)
+depended on it, touching 63 roster records. Measured after: cohort 16,958 →
+**16,939**; 25 rows lost an NPI, 2 changed NPI, and 7 previously-tied rows
+*resolved* — because a conflict now vetoes a rival and leaves one candidate
+standing.
+
+The reason is not that it mismatched often. It is what it admitted:
+
+| pair | edits | |
+|---|---|---|
+| `LOUSE`/`LOUISE`, `ANGELA`/`ANGLEA` | 1–2 | typos — the case for the rule |
+| `ELISABETH`/`ELIZABETH`, `FRANCES`/`FRANCIS` | 1 | spelling variants |
+| `JULIA`/`JULIE`, `LEE`/`LEA`, `EDA`/`EDNA`, `ANN`/`ANNE` | 1 | **different given names** |
+| `KRISTINA`/`KRISHNA` | 2 | arguable either way |
+
+It is also **not symmetric with fuzzy surname blocking**. Class 4 uses edit
+distance to *generate* a candidate that is then ranked below exact evidence and
+labelled `sensitivity_fuzzy`. This used it to *suppress a veto*, with no tier
+recording that it had happened. 19 records is a cheaper price than an
+edit-distance test anywhere in the identity path.
+
+G6 now pins `JULIA`/`JULIE`, `LYN`/`LYNN`, `ELISABETH`/`ELIZABETH` and
+`KRISTINA`/`KRISHNA` as **conflicts**, so it cannot return by accident.
+
+---
+
 ## [Unreleased] — 2026-08-30 — One middle-initial rule was deleting matches and manufacturing them at the same time
 
 ### Retracted — the frozen cohort is not regenerable by the current pipeline
@@ -64,8 +99,8 @@ one caused:
   `BRY`, `SKY` are vowel-less names — so the rule asks whether the characters
   map, in order, onto distinct tokens on the other side.
 - **near spellings** — `JULIA`/`JULIE`, `LYN`/`LYNN`, `KRISTINA`/`KRISHNA` were
-  conflicts. Now `uninformative`, deliberately not `corroborates`: corroboration
-  would manufacture class-1 confidence of 1.00 out of a spelling difference.
+  conflicts. A one-edit tolerance was added here and **removed the same day**;
+  see the entry above.
 
 Identity flips were audited case by case: **18 moved onto a midwifery-taxonomy
 record, 1 moved off** (`LEIGH` against `LYNN`, which are different names and

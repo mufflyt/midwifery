@@ -377,19 +377,23 @@ cat("\n-- G6: middle names compare as TOKEN SETS, never by position --\n")
   chk(agree("VL", "LAURITZEN VELMA") == "conflicts",
       "G6 the mapping is ORDER-PRESERVING, not a bag of letters")
 
-  # -- a near spelling is not a disagreement, and not corroboration either ----
-  # These were conflicts, and each one deleted a real match. They must not
-  # become "corroborates" either: that would manufacture class-1 confidence
-  # (1.00) out of a spelling difference.
-  chk(agree("JULIA", "JULIE") == "uninformative",
-      "G6 one edit apart is uninformative, not a conflict")
-  chk(agree("LYN", "LYNN") == "uninformative", "G6 LYN/LYNN survives")
-  chk(agree("KRISTINA", "KRISHNA") == "uninformative",
-      "G6 two edits on a long token is uninformative")
-  chk(agree("JANE", "JOAN") == "conflicts",
-      "G6 two edits on a SHORT token is still a conflict")
+  # -- NO edit-distance tolerance anywhere on this axis -------------------
+  # A one-edit tolerance was added and removed the same day. It was worth 22
+  # roster records and it admitted pairs that are genuinely different given
+  # names. These assertions exist so it cannot come back by accident: every
+  # one of them was "uninformative" under that rule.
+  chk(agree("JULIA", "JULIE") == "conflicts",
+      "G6 one edit apart is a CONFLICT -- no fuzzy middle matching")
+  chk(agree("LYN", "LYNN") == "conflicts", "G6 LYN/LYNN conflicts")
+  chk(agree("ELISABETH", "ELIZABETH") == "conflicts",
+      "G6 a spelling variant is still a conflict, however plausible")
+  chk(agree("KRISTINA", "KRISHNA") == "conflicts",
+      "G6 two edits on a long token conflicts")
+  chk(agree("JANE", "JOAN") == "conflicts", "G6 and short tokens too")
   chk(agree("LEIGH", "LYNN") == "conflicts",
       "G6 genuinely different middle names still conflict")
+  chk(!exists("near_spelling"),
+      "G6 the edit-distance helper is gone, not merely unreferenced")
 
   # -- absence is never evidence of difference (the 2026-08-08 defect) --------
   chk(agree("", "MARIE") == "uninformative" &&
