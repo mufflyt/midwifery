@@ -6,6 +6,7 @@ suppressPackageStartupMessages({
   library(sf); library(dplyr); library(readr); library(stringr)
   library(leaflet); library(htmlwidgets); library(htmltools)
 })
+source(file.path("R", "lib", "clinical_setting.R"))
 
 cat("=== Building Complete R Leaflet Midwifery Access Map ===\n")
 
@@ -100,7 +101,7 @@ mws_geo <- mws_geo %>%
     cpt_label = ifelse(has_cpt, "Active Attending Delivery Provider (CPT 59400/59409/59410)", "Outpatient / Clinic Practice"),
     badge_class = ifelse(has_cpt, "badge-active", "badge-clinic"),
     fac_name = coalesce(attributed_hospital_name, matched_cabc_birth_center, op_profile_match, "Outpatient Clinic Practice"),
-    fac_url = ifelse(str_detect(refined_clinical_setting, "3\\."), 
+    fac_url = ifelse(is_facility_setting_category(refined_clinical_setting, 3),
                      "https://birthcenteraccreditation.org/find-accredited-birth-center/",
                      "https://data.cms.gov/provider-characteristics/hospitals-and-other-facilities/provider-of-services-file-hospital-non-hospital-facilities"),
     npi_url = sprintf("https://npiregistry.cms.hhs.gov/provider-view/%s", npi),
@@ -133,9 +134,9 @@ mws_geo <- mws_geo %>%
 # Color pal for points
 mws_geo <- mws_geo %>%
   mutate(marker_color = case_when(
-    str_detect(refined_clinical_setting, "1\\.") ~ "#3B82F6", # Blue
-    str_detect(refined_clinical_setting, "3\\.") ~ "#10B981", # Emerald Green
-    str_detect(refined_clinical_setting, "2\\.|4\\.|5\\.") ~ "#8B5CF6", # Purple
+    is_facility_setting_category(refined_clinical_setting, 1) ~ "#3B82F6", # Blue
+    is_facility_setting_category(refined_clinical_setting, 3) ~ "#10B981", # Emerald Green
+    facility_setting_category(refined_clinical_setting) %in% c(2, 4, 5) ~ "#8B5CF6", # Purple
     TRUE ~ "#F59E0B" # Amber Gold
   ))
 

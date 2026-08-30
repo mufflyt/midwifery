@@ -486,6 +486,11 @@ jobs:
       - name: Review-sample reproducibility (seed and row-order independence)
         run: Rscript tests/test_cycle27_review_sample_reproducibility.R
 
+      # facility_setting_category(): the shared category detector that
+      # replaced 7 files' independent, format-dependent str_detect() calls.
+      - name: Facility/clinical setting category detection
+        run: Rscript tests/test_cycle33_facility_setting_category.R
+
       # -----------------------------------------------------------------------
       # Ported verbatim from mufflyt/isochrones @ 1907a5c40 -- 416 assertions,
       # zero new code. Each file tests a helper that exists in BOTH repos, so
