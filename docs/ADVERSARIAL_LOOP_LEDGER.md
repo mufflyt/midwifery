@@ -3755,3 +3755,97 @@ changed in the same newly-merged PR #128, already carrying the PR's own new
 `tests/ci_science_laws.R` mutation-testing coverage — worth a closer read to
 confirm that coverage is as thorough as its "21/21 mutations detected" claim
 suggests, rather than assuming it fully closes the file).
+## Cycle 47 (session-cycle 24 of 24, FINAL numbered cycle) — 2026-08-30 — 3 BVA / 3 semantic / 4 adversarial
+
+**Target:** `analyze_linkage_selection_bias.R` — the uncertainty-propagation
+analysis for the study's binding limitation (23% of the roster has no
+assignable county): Manski worst-case bounds, IPW under MAR, and a
+tipping-point statistic on the rurality distribution. Chosen after
+confirming "scenario parameters" (flagged repeatedly across cycles 44-46 as
+a priority lead) is not a distinct subsystem in this codebase — `grep -rli
+"scenario" --include="*.R" .` matches only the generic English word inside
+test-file comments, never a scenario-config/forecast-parameter module. This
+file was the most consequential genuinely-untested alternative: mentioned
+only incidentally, by name, in `tests/ci_science_laws.R` (as the producer
+of `artifacts/linkage_selection_bounds.csv`), never tested against its own
+logic directly.
+
+**Finding, confirmed empirically before any fix.** The file's own header
+comment states an unconditional guarantee: *"an invariant below refuses to
+write anything unless it reproduces composition_rucc_cat.csv exactly."*
+The reconciliation block that is supposed to enforce this ran only
+`if (file.exists(comp_path))`. When that file is simply **absent** — a
+fresh checkout, or running this script before `R/07-cohort-composition.R`
+has produced it — the entire block was silently skipped: no message, no
+error, and the script proceeded to write `linkage_selection_bounds.csv`
+anyway, completely unreconciled against the published composition. This
+directly contradicts the file's own stated safety guarantee. A stated
+invariant that fails open under a plausible, easy-to-hit condition is a
+defect, not a leniency — and it is exactly the class of silent-drift defect
+this file's entire docstring says it exists to prevent (three disagreeing
+linkage figures once circulated in this repository's prose for the same
+underlying reason: a check whose absence wasn't itself checked).
+
+**Fix.** Added `composition_rucc_cat.csv` (`COMP`) to the same top-of-file
+required-input list the other five inputs (`LINK`, `STAGE2`, `COHORT`,
+`ZCTA`, `CBASE`) already use — a loud `stop()` naming the file if it is
+missing, before any work begins. Removed the `if (file.exists(comp_path))`
+guard around the reconciliation block so it always runs once `COMP`'s
+existence is guaranteed. This is the file's own established convention,
+applied to the one input it had exempted from it.
+
+**Investigated, not fixed — two genuine ambiguities, documented rather than
+silently decided:**
+- `tipping()`'s `required_unobserved_pct` is unclamped: when the observed
+  share already exceeds the threshold, or when the threshold is
+  unreachable even if 100% of the unobserved were in the category, the
+  function returns a value outside [0, 100] (e.g. -25% or 7,475%) rather
+  than clamping or flagging the threshold as already-met/unreachable.
+  Neither condition is triggered by the real data (the real metro share,
+  74.6%, sits just under the real 75% threshold), so this is latent.
+- `bounds_for()`'s division by `n` (and `tipping()`'s division by `unobs`)
+  is unguarded against a zero denominator — never triggered by real data
+  (the roster and its ACTIVE subset are always nonempty, and the roster
+  always has some non-cohort members), same treatment as prior cycles'
+  zero-denominator findings (Cycle 46's `mw_wilson`/`mw_diff`, Cycle 45's
+  `mw_n`).
+
+**Tests.** `tests/test_cycle47_selection_bias_invariants.R`, 10 tests
+(T47-1..10, plus an uncounted T47-0 setup check that the real file still
+requires `COMP` up front): 3 BVA (`bounds_for()` collapses to a point at
+zero missingness, degenerates to full [0,100] uncertainty at zero
+observations, `tipping()`'s departure is exactly 0 at the fixed point where
+the observed share already equals the threshold), 3 semantic (Manski
+bounds are internally ordered lower <= observed <= upper, the derived
+bound width is never negative, `tipping()`'s unclamped output is an
+explicit documented ambiguity rather than a silent assumption), 4
+adversarial (T47-7/T47-8 are the anti-ceremony pair proving the silent
+no-op and its fix; T47-9/T47-10 prove the `full_join`+`replace_na`
+reconciliation catches an asymmetric category gap in BOTH directions — a
+category this analysis found that the composition never reported, and the
+reverse, a category the composition reported that this analysis found
+none of — since a check that only works in one direction of a `full_join`
+is a common, easy-to-miss half-coverage bug).
+
+**Full suite.** New file: 10/10 pass. `tests/ci_science_laws.R`: PASS, 21/21
+mutations detected, 5/5 near misses allowed, 0 failures (the existing check
+runs against the already-generated `linkage_selection_bounds.csv` artifact,
+not a live re-execution of this script, so it does not itself exercise the
+gitignored-input path this cycle's fix changes — confirmed no regression at
+the level this repository's CI can check without the person-level roster).
+`tests/test_science_laws_detect.R`: PASS, unchanged.
+
+**Unresolved / carried forward.** `tipping()`'s unclamped out-of-[0,100]
+output and `bounds_for()`/`tipping()`'s zero-denominator behavior (both new
+this cycle, deliberately left undecided). All standing items from cycles
+1-23 and this session's carried-forward ambiguities (26, 30, 33, 34, 38,
+45, 46) remain open, unresolved, into the final audit.
+
+**Estimand changed:** no — the fix makes a previously-optional safety check
+mandatory; it does not change any arithmetic. Every real run of this script
+(which always has `composition_rucc_cat.csv` available, since the full
+pipeline is run in order) is byte-for-byte unaffected — the fix only
+removes a silent-failure path that a fresh or partial checkout could hit.
+
+**This is the final numbered cycle (24 of 24, ledger Cycle 47).** The final
+audit follows immediately, in this same document, below.

@@ -92,9 +92,10 @@ COHORT <- file.path(ART, "frozen_cohort", "analytic_cohort.csv")
 ZCTA   <- file.path(DATA, "zcta_county_2020.txt")
 CBASE  <- file.path(DATA, "county_base.csv")
 GEO_GUARD <- file.path(ART, "frozen_cohort", "midwives_geography_guarded.csv")
+COMP   <- file.path(ART, "composition_rucc_cat.csv")
 OUT    <- file.path(ART, "linkage_selection_bounds.csv")
 
-for (f in c(LINK, STAGE2, COHORT, ZCTA, CBASE)) if (!file.exists(f))
+for (f in c(LINK, STAGE2, COHORT, ZCTA, CBASE, COMP)) if (!file.exists(f))
   stop(sprintf(paste0("%s is absent. This analysis needs the person-level roster ",
                       "and the frozen cohort, which are gitignored by design; it ",
                       "runs where the pipeline has been run, not on a bare checkout."), f),
@@ -170,26 +171,32 @@ if (nrow(d) != nrow(distinct(link, certification_number)))
 # group is reconstructed here and compared cell by cell. If a single count
 # disagrees, the bounds would be arithmetic on a population the paper does not
 # report, which is the exact defect this rewrite exists to remove.
-comp_path <- file.path(ART, "composition_rucc_cat.csv")
 retained <- intersect(s2$certification_number[!is.na(s2$npi)], coh$certification_number)
-if (file.exists(comp_path)) {
-  comp <- read_csv(comp_path, show_col_types = FALSE, progress = FALSE) |>
-    filter(.data$group == "1_retained") |>
-    select(level, published_n = n)
-  mine <- d |>
-    filter(.data$certification_number %in% retained) |>
-    count(level = coalesce(.data$rurality, "Unknown"), name = "mine")
-  cmp <- full_join(comp, mine, by = "level") |>
-    mutate(across(c(published_n, mine), ~ tidyr::replace_na(.x, 0L)),
-           gap = .data$mine - .data$published_n)
-  if (any(cmp$gap != 0)) {
-    print(as.data.frame(cmp), row.names = FALSE)
-    stop("INVARIANT: the rurality counts here disagree with composition_rucc_cat.csv. The two are describing different populations, and the bounds would not bracket the published estimate.",
-         call. = FALSE)
-  }
-  message("Reconciled with composition_rucc_cat.csv on all ", nrow(cmp),
-          " rurality cells of the retained group.")
+# UNCONDITIONAL. COMP is now required at the top of the file (with LINK,
+# STAGE2, etc.) precisely so this reconciliation cannot be silently skipped.
+# It used to run only `if (file.exists(comp_path))`, which meant the
+# invariant this section's own comment promises -- "refuses to write
+# anything unless it reproduces composition_rucc_cat.csv exactly" -- did not
+# hold when the file was simply absent: the block was skipped, no error was
+# raised, and OUT was written anyway, unreconciled. A stated safety invariant
+# that fails open under a plausible condition (a fresh checkout, or running
+# this script before R/07-cohort-composition.R) is a defect, not a leniency.
+comp <- read_csv(COMP, show_col_types = FALSE, progress = FALSE) |>
+  filter(.data$group == "1_retained") |>
+  select(level, published_n = n)
+mine <- d |>
+  filter(.data$certification_number %in% retained) |>
+  count(level = coalesce(.data$rurality, "Unknown"), name = "mine")
+cmp <- full_join(comp, mine, by = "level") |>
+  mutate(across(c(published_n, mine), ~ tidyr::replace_na(.x, 0L)),
+         gap = .data$mine - .data$published_n)
+if (any(cmp$gap != 0)) {
+  print(as.data.frame(cmp), row.names = FALSE)
+  stop("INVARIANT: the rurality counts here disagree with composition_rucc_cat.csv. The two are describing different populations, and the bounds would not bracket the published estimate.",
+       call. = FALSE)
 }
+message("Reconciled with composition_rucc_cat.csv on all ", nrow(cmp),
+        " rurality cells of the retained group.")
 
 n_roster <- nrow(d)
 n_linked <- sum(d$linked)
