@@ -65,3 +65,5 @@ floor.dead_pre_pct	%.1f		where the shortfall actually concentrates
 floor.lapsed_pre_pct	%.1f		where the shortfall actually concentrates
 floor.lapsed_pre_n	n		the largest stratum carrying the shortfall
 floor.never_pre	n		records with no candidate at all, certified pre-NPPES
+linkage.active_ascertained_pct	%.1f		ascertainment among ACTIVE; the number a reader confuses with cohort resolution
+linkage.dead_ascertained_pct	%.1f		ascertainment among DECEASED; reported so the contrast with 18.8% is explicit
