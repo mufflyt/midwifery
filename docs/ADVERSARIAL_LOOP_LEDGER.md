@@ -5280,3 +5280,76 @@ HPSA consumer site, two Medicare-participation sites — remember cycle 42's
 select-before-check lesson for each); uncertainty propagation beyond the OLS
 extrapolation (cycle 26), the derangement fallback (cycle 30), and the
 tipping-point sensitivity (cycle 38).
+## Cycle 44 (session-cycle 21 of 24) — 2026-08-30 — 3 BVA / 3 semantic / 4 adversarial
+
+**Target.** Diversified away from the `.keep_all` defect-class sweep (per
+this cycle's own resuming note, with 4 cycles remaining before the final
+audit) to the long-flagged "uncertainty propagation more broadly" lead. Found
+a genuine, previously-unexamined statistical uncertainty computation in
+`R/02-geocoding-completeness.R`: a two-proportion difference (highest vs.
+lowest geocoding-completeness rurality stratum) with its own 95% CI via a
+proper standard-error formula, printed as a headline finding about whether
+missingness is "differential by rurality."
+
+**Finding 1 — a genuine tie silently vectorized a scalar comparison.**
+`hi <- known %>% filter(pct == max(pct))` (and the symmetric `lo`) becomes a
+**multi-row** result whenever two rurality strata share the identical
+completeness rate. Verified empirically: that length-2 result fed directly
+into `cli`'s glue-interpolated message and the SE arithmetic, silently
+producing a length-2 SE vector and a garbled/duplicated comparison naming
+*two* "highest" strata instead of one clear finding — with no error or
+warning anywhere in the pipeline.
+
+**Finding 2 — fewer than 2 known strata silently produced -Inf.** `known <-
+by_rucc %>% filter(rucc_cat != "Unknown")` could plausibly have 0 or 1 rows
+(e.g. a filtered or sparse subset where every rurality value is "Unknown").
+`max()`/`min()` on an empty vector silently return `-Inf`/`Inf`, producing a
+nonsensical "spread" and confidence interval dressed up as a real finding
+rather than a clean skip or loud failure.
+
+**Fix.** (1) `hi`/`lo` now `arrange(rucc_cat) %>% slice(1)` after the
+filter, so a tie breaks on a deterministic, stated rule (matching this
+repo's own established "a tie-break must be stated" convention, cf. T44's
+own header in `tests/test_cycle5_key_resolution.R`) rather than silently
+vectorizing. (2) an explicit `nrow(known) < 2L` guard skips the whole
+comparison with an informative message instead of computing on
+empty/degenerate input. Verified: the tie case now resolves to a scalar,
+identically regardless of input row order; the 0- and 1-row cases both skip
+cleanly; a normal 2-stratum case is unaffected; a genuine zero-spread case
+(all strata truly equal) is still correctly reported as a real finding, not
+skipped.
+
+**Tests.** `tests/test_cycle44_geocoding_gap_statistic.R`, 10 tests
+(T44a-1..10) against a literal replica of the fixed block (the host file
+needs gitignored geocoding artifacts and cannot be sourced end-to-end).
+T44a-5 is the anti-ceremony companion, reproducing the retired logic's
+length-2 output directly on the same tied fixture. T44a-9 documents (does
+not invent a fix for) a zero-`n` stratum producing `NaN`/`Inf` in the SE —
+no real instance of this shape exists in this file's actual data, so
+guessing a denominator guard would be inventing methodology for a scenario
+the data has never needed.
+
+**Full suite.** New file: 10/10 pass. `R/02-geocoding-completeness.R` parses
+cleanly. Re-ran `tests/test_cycle22_idempotence.R` (the only existing test
+referencing this file): 0 regressions, same 2 skips as before. `tests/ci_
+hygiene.R`: 0 failures. Discarded two stray timestamp-only modifications to
+tracked artifact provenance files from an unrelated background process on
+this machine (same files affected in cycle 41) before committing.
+
+**Unresolved / carried forward.** The zero-`n`-stratum SE behavior (T44a-9,
+documented not fixed). Standing items from cycles 26, 30, 33, 34, 38
+untouched.
+
+**Estimand changed:** no — both fixes only change behavior for input shapes
+(a genuine tie, or fewer than 2 known strata) the current real geocoding
+data does not produce; the reported comparison for the actual data is
+unaffected.
+
+**Next candidate leads (not yet investigated):** remaining `build_table1_
+midwives.R` `.keep_all` sites (Healthgrades dedup, HPSA consumer site, two
+Medicare-participation sites — remember cycle 42's select-before-check
+lesson); the derangement fallback's best-effort reporting (cycle 30) and the
+OLS extrapolation bound (cycle 26) remain open scientific-ambiguity items,
+not revisited; with 3 cycles remaining before the final audit (45-47),
+continue favoring genuinely new files/functions over repeating an already-
+mined defect class.
