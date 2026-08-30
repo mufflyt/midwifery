@@ -4081,6 +4081,13 @@ fixed): duplicate raw delivery rows within one source are summed, not
 deduplicated, since no encounter-level key exists to tell a real duplicate
 encounter from a duplicated extract row. Estimand changed: no (additive
 diagnostic column only).
+**Status note:** PR #115 (still open as of cycle 27). `R/15-build-birth-activity.R`
+-- an unascertained provider is invisible to county-level `effective_birth_fte`
+by construction (no observed activity anywhere means no row in
+`provider_location_activity` to assign her practice county to), not merely
+dropped by `na.rm`. Added `n_unascertained_roster` to `county_effective_supply`,
+same shape as `ct_partial`. `tests/test_cycle25_birth_activity_fte.R`, 10
+tests. Estimand changed: no (additive diagnostic column).
 
 ---
 
@@ -4190,3 +4197,95 @@ age in this cohort's actual `years_certified` range is affected -- the
 structural ceiling (`years_certified <= 76`) stays well within `band_hg_age`'s
 plausible range under the literature-prior fallback (T26-6); only a
 steeper-than-typical fitted slope can reach the guard at all.
+**Status note:** PR #118 (still open as of cycle 27). `calibrate_amcb_
+certification_ages.R`'s unbounded OLS age extrapolation could feed an
+unguarded, private duplicate of the age-banding rule -- same shape as cycle
+1's RUCC finding. Fixed by routing through the shared, plausibility-guarded
+`band_hg_age()`. `tests/test_cycle26_age_calibration_bands.R`, 10 tests, two
+of which were wrong in early drafts (a regex `.` crossing newlines; a wrong
+assumption about the retired rule's lower-bound behavior) and corrected in
+place. Estimand changed: yes, a correction (an implausible imputed age no
+longer receives a confident Table 1 category).
+
+---
+
+## Cycle 27 (session-cycle 4 of 24) — 2026-08-29 — 4 BVA / 3 semantic / 3 adversarial
+
+**Target.** `resolve_org_ambiguity.R`'s stratified review-sample generator --
+the `set.seed(SEED)` / `slice_sample()` block that produces the human-review
+sample validating organization-affiliation resolution. "RNG reproducibility"
+is explicitly prioritized; this block had zero tests of its own sampling
+mechanics (only the fallback-tier policy around it is checked elsewhere).
+
+**Tests added** — `tests/test_cycle27_review_sample_reproducibility.R`
+(T27-1 .. T27-10)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T27-1 | BVA | a stratum smaller than the 25-row cap returns exactly its own count |
+| T27-2 | BVA | a stratum with exactly 25 rows returns all 25 (cap boundary) |
+| T27-3 | BVA | a zero-row stratum is dropped, not errored or empty-grouped |
+| T27-4 | BVA | identical, already-sorted input reproduces byte-identically |
+| T27-5 | semantic | a stratum's sample is unaffected by an UNRELATED stratum's size changing |
+| T27-6 | semantic | identical content in a different row order selects the same NPIs |
+| T27-7 | semantic | the second call site (LEFT_AMBIGUOUS) is independent of prior strata |
+| T27-8 | anti-ceremony | the RETIRED pattern fails both T27-5 and T27-6 |
+| T27-9 | adversarial | both call sites are guarded by set.seed(SEED) + arrange(npi) (sweep) |
+| T27-10 | adversarial | the second call site is also row-order invariant |
+
+### Two compounding reproducibility defects, both live
+
+1. **A single global `set.seed(SEED)` shared across six sequential
+   `slice_sample()` calls** (one per stratum). Empirically verified: growing
+   the `telephone` stratum from 100 to 150 rows -- with the `zip9` stratum's
+   own 200 rows completely unchanged -- changed which `zip9` rows got
+   sampled, because `zip9`'s draw consumes whatever RNG state `telephone`'s
+   draw left behind. A data refresh touching only one stratum silently
+   changes a reviewer's sample for a DIFFERENT stratum they had no reason to
+   expect had moved, while the `set.seed(SEED)` comment claims
+   reproducibility that does not actually hold across strata.
+2. **`slice_sample()` draws by row position, not by identity.** Empirically
+   verified: identical rows in a different order (exactly what an upstream
+   join with unguaranteed output order could produce) select *different
+   actual NPIs* under the same seed and the same content. "Reproducible with
+   a fixed seed" was only true as long as row order also happened to be
+   stable, which nothing asserted.
+
+Both are live, not latent -- both call sites in the real file exhibit them,
+and there is no reason upstream data sizes or join output order are
+guaranteed stable between runs.
+
+**Fix.** `set.seed(SEED)` moved from once-before-the-loop to immediately
+before each `slice_sample()` call (both call sites), and `arrange(npi)`
+added immediately before each as well. Each stratum -- and the second,
+LEFT_AMBIGUOUS sample -- now reproduces from its own content alone,
+independent of every other stratum's size, its position in the list, and
+its own row order.
+
+### Anti-ceremony and one test correction
+
+T27-8 reproduces the retired pattern verbatim and confirms it actually fails
+both T27-5 and T27-6. **T27-9 was wrong on its first draft**: its source grep
+for `slice_sample(` counted the explanatory comment directly above the fix
+(which mentions `slice_sample()` three times in prose) as call sites,
+finding 5 instead of the real 2 -- corrected to strip comment lines first,
+the same class of mistake cycle 26 made and fixed. Its lookback window (3
+lines) was also too narrow for the second call site's multi-line pipe chain
+(`set.seed(SEED)` sits 4 lines before that `slice_sample()`) and was widened
+to 5.
+
+### Full suite
+
+`tests/test_cycle27_review_sample_reproducibility.R`: 10/10 pass.
+`tests/test_open_payments_type2_bulk.R` (pre-existing, checks unrelated
+policy in the same file): unchanged, passes. `tests/ci_science_contracts.R`:
+unchanged, passes. Production file re-parses clean. Wired into `ci.yml`.
+
+### Unresolved / carried forward
+
+- All items from cycles 1-26 unchanged (see prior entries for the full
+  DECISION NEEDED list and low-priority items).
+
+**Estimand changed: no.** The review sample is a validation artifact, not a
+published estimate -- fixing its reproducibility changes which specific rows
+a human reviewer sees, not any reported number.

@@ -379,7 +379,17 @@ if (!is.null(old)) {
 }
 
 # --- validation: stratified review sample ------------------------------------
-set.seed(SEED)
+# set.seed(SEED) is called INSIDE the lapply, immediately before each
+# slice_sample() -- not once before the loop. A single seed shared across
+# several sequential slice_sample() calls makes every stratum's sample depend
+# on how many random draws every EARLIER stratum consumed, which depends on
+# that earlier stratum's row count. A later data refresh that only changes
+# the `telephone` stratum's size silently changes the `zip9` stratum's
+# sampled rows too, even though zip9's own data and code never changed --
+# reviewers would see churn in a review sample they had no reason to expect,
+# with the "fixed seed" comment giving false confidence that nothing could
+# move. Re-seeding per stratum makes each one reproducible on its own data
+# alone, independent of every other stratum's size or position in the list.
 strata <- list(
   telephone        = long %>% filter(evidence_key == "telephone",
                                      resolution_method == "unique_strong_key"),
@@ -392,10 +402,19 @@ strata <- list(
 samp <- bind_rows(lapply(names(strata), function(s) {
   d <- strata[[s]]
   if (!nrow(d)) return(NULL)
-  d %>% slice_sample(n = min(25L, nrow(d))) %>% mutate(review_stratum = s)
+  set.seed(SEED)
+  # arrange(npi) FIRST: slice_sample() draws by ROW POSITION, not by any
+  # stable identifier, so identical rows in a different order -- entirely
+  # possible from an upstream join whose output order is not itself
+  # guaranteed -- would select different actual people even under the same
+  # seed. Sorting by the one column guaranteed present and stable (npi)
+  # fixes the position a given NPI occupies regardless of how it arrived.
+  d %>% arrange(npi) %>% slice_sample(n = min(25L, nrow(d))) %>% mutate(review_stratum = s)
 }))
+set.seed(SEED)
 amb_samp <- cands %>% semi_join(still_amb, by = "npi") %>%
   group_by(npi) %>% slice(1) %>% ungroup() %>%
+  arrange(npi) %>%
   slice_sample(n = min(25L, nrow(still_amb))) %>%
   transmute(npi, type2_npi, organization_name, organization_taxonomy,
             evidence_key, evidence_strength,
