@@ -72,16 +72,124 @@ source(file.path("R", "lib", "provenance.R"))
 #' is represented in files this project has spent six cycles proving treat
 #' missing and zero as different things. The wrapper now changes provenance
 #' only, never content.
+#' The code that produced an artifact, not just the data
+#'
+#' Provenance recorded input SHAs and nothing else, so a change to the CODE
+#' left every sidecar unchanged and every artifact validating. That is not
+#' hypothetical: removing the middle-name edit-distance tolerance moved the
+#' linkage cohort by 19 records while touching only R/amcb_match_rules.R, and
+#' no artifact, no sidecar and no gate in this repository could say so. An
+#' artifact whose inputs are unchanged but whose producing code has changed is
+#' exactly as stale as one whose inputs moved, and until now only the second
+#' kind was detectable.
+#'
+#' The set is derived by following `source()` calls from the entry script,
+#' transitively. Call sites here write `source(file.path(root_dir, "R",
+#' "amcb_name_keys.R"))`, so the string literals inside the call are joined as
+#' a path and resolved the same way `prov_inputs()` resolves a bare name. A
+#' file that cannot be resolved is reported, never silently dropped -- the
+#' lesson prov_inputs() already paid for.
+#'
+#' @param entry [character(1)]: the script to start from; defaults to the
+#'   running script, from `commandArgs()`.
+#' @param max_depth [integer(1)]: recursion cap, so a source() cycle cannot hang.
+#' @return [character] repo-relative paths, sorted and deduplicated.
+#' @keywords internal
+#' @noRd
+.code_closure <- function(entry = NULL, max_depth = 8L) {
+  if (is.null(entry)) {
+    a <- grep("^--file=", commandArgs(), value = TRUE)
+    entry <- if (length(a)) sub("^--file=", "", a[[1L]]) else NA_character_
+  }
+  if (is.na(entry) || !file.exists(entry)) return(character(0))
+
+  seen <- character(0)
+  visit <- function(f, depth) {
+    f <- .repo_relative(f)
+    if (f %in% seen || depth > max_depth || !file.exists(f)) return(invisible(NULL))
+    seen <<- c(seen, f)
+    ex <- tryCatch(parse(f), error = function(e) NULL)
+    if (is.null(ex)) return(invisible(NULL))
+    # Walk the parse tree for source()/sys.source() and rebuild the path from
+    # the string literals in the call, which is how this repo writes them.
+    walk <- function(node) {
+      if (is.call(node)) {
+        fn <- node[[1L]]
+        if (is.name(fn) && as.character(fn) %in% c("source", "sys.source")) {
+          lits <- unlist(lapply(as.list(node)[-1L], function(a)
+            if (is.character(a)) a
+            else if (is.call(a)) Filter(is.character, as.list(a)[-1L])
+            else NULL), use.names = FALSE)
+          lits <- unlist(lits, use.names = FALSE)
+          if (length(lits)) {
+            cand <- do.call(file.path, as.list(lits))
+            hit <- .resolve_code_path(cand)
+            if (!is.na(hit)) visit(hit, depth + 1L)
+          }
+        }
+        # The gap in `x[, 1]` parses to the empty symbol. Binding it to a loop
+        # variable makes ANY later use of that variable raise "argument is
+        # missing", so it cannot be tested after binding -- compare the
+        # one-element sublist instead, which never evaluates it.
+        args <- as.list(node)[-1L]
+        for (i in seq_along(args)) {
+          if (identical(args[i], list(quote(expr = )))) next
+          walk(args[[i]])
+        }
+      } else if (is.pairlist(node) || is.expression(node) || is.list(node)) {
+        args <- as.list(node)
+        for (i in seq_along(args)) {
+          if (identical(args[i], list(quote(expr = )))) next
+          walk(args[[i]])
+        }
+      }
+      invisible(NULL)
+    }
+    for (e in as.list(ex)) walk(e)
+    invisible(NULL)
+  }
+  visit(entry, 0L)
+  sort(unique(seen))
+}
+
+#' @keywords internal
+#' @noRd
+.resolve_code_path <- function(x) {
+  if (file.exists(x)) return(x)
+  cand <- file.path(c(".", "R", "R/lib"), x)
+  hit <- cand[file.exists(cand)]
+  if (length(hit)) return(hit[[1L]])
+  NA_character_
+}
+
+#' A single fingerprint over the producing code
+#'
+#' One value the reader can compare at a glance, alongside the per-file list.
+#' @keywords internal
+#' @noRd
+.code_fingerprint <- function(paths) {
+  if (!length(paths)) return(NA_character_)
+  h <- vapply(paths, sha256_of, character(1), USE.NAMES = FALSE)
+  digest::digest(paste(sort(paste(paths, h)), collapse = "\n"),
+                 algo = "sha256", serialize = FALSE)
+}
+
 write_with_provenance <- function(x, path, inputs = character(0), ...) {
   readr::write_csv(x, path, ...)
   inputs <- inputs[file.exists(inputs)]
   side <- paste0(path, ".provenance.json")
+  code <- tryCatch(.code_closure(), error = function(e) character(0))
   jsonlite::write_json(
     list(artifact = basename(path),
          written_utc = format(Sys.time(), tz = "UTC", usetz = TRUE),
          inputs = if (length(inputs))
            lapply(inputs, function(p) list(path = .repo_relative(p),
                                            sha256 = sha256_of(p)))
+         else list(),
+         # The producing code, by content. See .code_closure().
+         code_sha256 = .code_fingerprint(code),
+         code = if (length(code))
+           lapply(code, function(p) list(path = p, sha256 = sha256_of(p)))
          else list()),
     side, auto_unbox = TRUE, pretty = TRUE)
   invisible(path)
@@ -96,15 +204,27 @@ write_with_provenance <- function(x, path, inputs = character(0), ...) {
 check_provenance <- function(path) {
   side <- paste0(path, ".provenance.json")
   empty <- data.frame(path = character(0), recorded = character(0),
-                      current = character(0), stale = logical(0))
+                      current = character(0), stale = logical(0),
+                      kind = character(0))
   if (!file.exists(side)) return(empty)
   m <- jsonlite::read_json(side, simplifyVector = FALSE)
-  if (!length(m$inputs)) return(empty)
-  do.call(rbind, lapply(m$inputs, function(i) {
-    cur <- if (file.exists(i$path)) sha256_of(i$path) else NA_character_
-    data.frame(path = i$path, recorded = i$sha256, current = cur,
-               stale = !identical(cur, i$sha256), stringsAsFactors = FALSE)
-  }))
+  rows <- function(entries, kind) {
+    if (!length(entries)) return(NULL)
+    do.call(rbind, lapply(entries, function(i) {
+      cur <- if (file.exists(i$path)) sha256_of(i$path) else NA_character_
+      data.frame(path = i$path, recorded = i$sha256, current = cur,
+                 stale = !identical(cur, i$sha256), kind = kind,
+                 stringsAsFactors = FALSE)
+    }))
+  }
+  # `code` is reported exactly like `inputs`. An artifact whose data is
+  # untouched but whose producing code has changed is stale in the only sense
+  # that matters -- rerunning would not reproduce it -- and reporting only the
+  # first kind is how a matcher change moved the cohort by 19 records with
+  # every sidecar still validating.
+  out <- rbind(rows(m$inputs, "input"), rows(m$code, "code"))
+  if (is.null(out)) return(empty)
+  out
 }
 
 #' Collect the input paths that exist
