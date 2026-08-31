@@ -39,7 +39,7 @@ if (!dir.exists(file.path(root, ".git")) && dir.exists("../.git")) root <- ".."
 
 source(file.path(root, "tests", "ci_report.R"))
 
-p <- function(...) file.path(root, ...)
+drg_path <- function(...) file.path(root, ...)
 
 read_json <- function(path) {
   tryCatch(jsonlite::fromJSON(path, simplifyVector = TRUE),
@@ -54,7 +54,7 @@ ci_section("D1 linkage_manifest.json: dispositions sum to the frozen roster tota
 # correct here -- a mismatch means the manifest itself was hand-edited or
 # regenerated without updating total_rows, either of which is worth knowing
 # about immediately rather than at publication time.
-lm_path <- p("artifacts", "linkage_manifest.json")
+lm_path <- drg_path("artifacts", "linkage_manifest.json")
 if (!file.exists(lm_path)) {
   ci_fail("D1: %s is committed and absent -- PUBLIC artifact went missing", lm_path)
 } else {
@@ -85,7 +85,7 @@ ci_section("D2 two independently-generated artifacts agree on the same dispositi
 # the exact class of silent divergence three disagreeing linkage figures
 # once caused in this repo's own prose (see docs/ADVERSARIAL_LOOP_LEDGER.md,
 # manuscript/R/build_stats_catalog.R's header).
-lc_path <- p("artifacts", "linkage_completeness_by_status.csv")
+lc_path <- drg_path("artifacts", "linkage_completeness_by_status.csv")
 if (!file.exists(lm_path) || !file.exists(lc_path)) {
   ci_fail("D2: linkage_manifest.json and/or linkage_completeness_by_status.csv is committed and absent")
 } else {
@@ -125,7 +125,7 @@ ci_section("D3 the FROZEN crosswalk's own manifest agrees with the linkage manif
 # of a specific, named disposition and must match the linkage manifest's
 # own count of the same thing exactly -- these are not two different
 # numbers that happen to be close, they are the same fact recorded twice.
-frozen_manifest_path <- p("artifacts", "amcb_npi_linkage_FROZEN.csv.manifest.json")
+frozen_manifest_path <- drg_path("artifacts", "amcb_npi_linkage_FROZEN.csv.manifest.json")
 if (!file.exists(frozen_manifest_path)) {
   ci_fail("D3: %s is committed and absent -- PUBLIC artifact went missing", frozen_manifest_path)
 } else if (!file.exists(lm_path)) {
@@ -204,7 +204,7 @@ ci_section("D5 selection-bias bounds are internally ordered")
 # inverted bound that no schema check would catch. This is a genuine
 # data-quality invariant, not a fixed value, so it survives legitimate
 # regeneration drift the way an exact pin would not.
-bounds_path <- p("artifacts", "linkage_selection_bounds.csv")
+bounds_path <- drg_path("artifacts", "linkage_selection_bounds.csv")
 if (!file.exists(bounds_path)) {
   ci_fail("D5: %s is committed and absent -- PUBLIC artifact went missing", bounds_path)
 } else {
@@ -239,7 +239,7 @@ ci_section("D6 README's headline roster count matches the linkage manifest")
 # claims are actually about. A regeneration that moves the real count
 # without anyone updating the prose is exactly the kind of drift a reader
 # has no way to detect by eye.
-readme_path <- p("README.md")
+readme_path <- drg_path("README.md")
 if (!file.exists(readme_path) || !file.exists(lm_path)) {
   ci_fail("D6: README.md and/or linkage_manifest.json is committed and absent")
 } else {
@@ -269,7 +269,7 @@ ci_section("D7 retired cohort count stays pinned and distinct from the current o
 # other, or a future edit silently making them equal (which would mean one
 # of the two frozen records was overwritten rather than superseded in
 # place, per docs/TECHNICAL_APPENDIX_REPRODUCIBILITY.md).
-fingerprint_path <- p("artifacts", "frozen_cohort", "INPUT_FINGERPRINT.json")
+fingerprint_path <- drg_path("artifacts", "frozen_cohort", "INPUT_FINGERPRINT.json")
 if (!file.exists(fingerprint_path)) {
   ci_fail("D7: %s is committed and absent -- PUBLIC artifact went missing", fingerprint_path)
 } else if (!file.exists(frozen_manifest_path)) {
@@ -298,7 +298,7 @@ ci_section("D8 FROZEN linkage crosswalk (PRIVATE-OK): certification numbers uniq
 # genuinely absent on CI and on a fresh checkout, present only on a machine
 # that has run the real linkage pipeline. A skip here is expected, not a
 # failure -- unlike every PUBLIC section above.
-frozen_xwalk_path <- p("artifacts", "amcb_npi_linkage_FROZEN.csv")
+frozen_xwalk_path <- drg_path("artifacts", "amcb_npi_linkage_FROZEN.csv")
 if (!file.exists(frozen_xwalk_path)) {
   ci_skip("amcb_npi_linkage_FROZEN.csv absent (PRIVATE-OK: person-level, gitignored; expected on CI and a fresh checkout)")
 } else {
@@ -326,7 +326,7 @@ ci_section("D9 analytic cohort (PRIVATE-OK): row count plausible, no duplicate c
 # PRIVATE-OK, same reasoning as D8: gitignored (.gitignore's
 # /artifacts/frozen_cohort/analytic_cohort.csv line), genuinely absent
 # unless the real pipeline has run here.
-cohort_path <- p("artifacts", "frozen_cohort", "analytic_cohort.csv")
+cohort_path <- drg_path("artifacts", "frozen_cohort", "analytic_cohort.csv")
 if (!file.exists(cohort_path)) {
   ci_skip("frozen_cohort/analytic_cohort.csv absent (PRIVATE-OK: person-level, gitignored; expected on CI and a fresh checkout)")
 } else {
@@ -363,7 +363,7 @@ if (length(sidecars) == 0) {
   sample_files <- sidecars[seq_len(sample_n)]
   bad <- character(0)
   for (f in sample_files) {
-    m <- read_json(p(f))
+    m <- read_json(drg_path(f))
     if (is.null(m)) {
       bad <- c(bad, sprintf("%s: not valid JSON", f))
       next
