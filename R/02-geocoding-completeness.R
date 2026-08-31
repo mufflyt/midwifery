@@ -244,20 +244,38 @@ build_completeness <- function() {
                         mutate(across(pct:ci_high, ~ round(.x, 1)))))
 
   known <- by_rucc %>% filter(rucc_cat != "Unknown")
-  spread <- max(known$pct) - min(known$pct)
-  # Report the absolute difference with its CI. Deliberately NOT "the intervals
-  # do not overlap" -- CI overlap is not a valid inferential test, and the
-  # gradient plus the multivariable missingness model carry the argument.
-  hi <- known %>% filter(pct == max(pct)); lo <- known %>% filter(pct == min(pct))
-  se <- sqrt(hi$pct/100 * (1 - hi$pct/100) / hi$n +
-               lo$pct/100 * (1 - lo$pct/100) / lo$n) * 100
-  cli::cli_alert_info(
-    "Absolute difference {hi$rucc_cat} vs {lo$rucc_cat}: {round(spread,1)} pp (95% CI {round(spread - 1.96*se,1)} to {round(spread + 1.96*se,1)})")
-  cli::cli_alert(if (spread >= 10) {
-    "Missingness is DIFFERENTIAL by rurality -- treat geographic ascertainment as a first-order design problem, not a supplemental sensitivity."
+  if (nrow(known) < 2L) {
+    # Fewer than 2 known strata: "highest vs lowest" is not a question this
+    # data can answer. max()/min() on a 0- or 1-row frame would otherwise
+    # silently emit -Inf (0 rows) or a trivial, uninformative 0pp spread
+    # (1 row) dressed up as a real finding.
+    cli::cli_alert_info(
+      "Rurality gap not reported: {nrow(known)} known stratum/strata (need >= 2).")
   } else {
-    "Missingness is close to uniform across rurality strata."
-  })
+    spread <- max(known$pct) - min(known$pct)
+    # Report the absolute difference with its CI. Deliberately NOT "the
+    # intervals do not overlap" -- CI overlap is not a valid inferential
+    # test, and the gradient plus the multivariable missingness model carry
+    # the argument.
+    #
+    # arrange() + slice(1), not a bare filter(pct == max(pct)): a genuine
+    # TIE between two strata at the same completeness rate made hi/lo
+    # multi-row, which fed a length-2 vector into cli's glue interpolation
+    # and the SE arithmetic -- silently recycling into a garbled, doubled
+    # message rather than one clear comparison. Ties break on rucc_cat for a
+    # deterministic, stated rule rather than an accidental one.
+    hi <- known %>% filter(pct == max(pct)) %>% arrange(rucc_cat) %>% slice(1)
+    lo <- known %>% filter(pct == min(pct)) %>% arrange(rucc_cat) %>% slice(1)
+    se <- sqrt(hi$pct/100 * (1 - hi$pct/100) / hi$n +
+                 lo$pct/100 * (1 - lo$pct/100) / lo$n) * 100
+    cli::cli_alert_info(
+      "Absolute difference {hi$rucc_cat} vs {lo$rucc_cat}: {round(spread,1)} pp (95% CI {round(spread - 1.96*se,1)} to {round(spread + 1.96*se,1)})")
+    cli::cli_alert(if (spread >= 10) {
+      "Missingness is DIFFERENTIAL by rurality -- treat geographic ascertainment as a first-order design problem, not a supplemental sensitivity."
+    } else {
+      "Missingness is close to uniform across rurality strata."
+    })
+  }
 
   # Stage-specific ascertainment: appended, never overwritten, so the methods
   # can show empirically whether each enrichment source improves GEOGRAPHIC
