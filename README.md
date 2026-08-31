@@ -104,9 +104,33 @@ linked practice location in that county**, which is not the same as no midwife:
 34% of the roster never linked, so this is the distribution of located practice
 locations rather than of access. Patients cross county lines.*
 
-Linkage certainty and geographic completeness are separate properties: **65.8% primary linkage is
+### 10. How wrong could the roster-wide metropolitan share be?
+![Metropolitan share of the roster: observed, sensitivity estimates, and worst-case bounds](docs/figures/selection_bounds.png)
+*Figure 10: The **89.4%** metropolitan share observed in the located cohort is
+not a property of the 22,309-certificant roster, because linkage is selected on
+certification status. Making no assumption about the missingness mechanism at
+all, the roster-wide share is bounded between **66.7% and 92.1%** — wide by
+construction, since the width is an identity equal to the unobserved fraction.
+Certificants outside the cohort whose practice ZIP nonetheless resolves are
+themselves *less* metropolitan than the cohort, not more, which is evidence
+about the direction of the missingness rather than an assumption about it. See
+[docs/TECHNICAL_APPENDIX_LINKAGE_SELECTION.md](docs/TECHNICAL_APPENDIX_LINKAGE_SELECTION.md).*
+
+### 11. Two rates, and they are not the same number
+![Cohort resolution and ascertainment by certification status](docs/figures/linkage_by_status.png)
+*Figure 11: **Cohort resolution** (resolves to a midwifery-taxonomy record) and
+**ascertainment** (found in the registry at all, including nursing-only
+matches) diverge most where a certificant is least likely to still be
+practicing: among ACTIVE certificants they are 78.4% and 84.6%; among DECEASED
+certificants, 18.8% and 35.5% — a 16.7-point gap versus a 6.2-point one.
+Reporting either alone, unlabeled, is how
+a reader ends up unable to reconcile two correct numbers for what looks like
+the same quantity. See
+[docs/TECHNICAL_APPENDIX_RECORD_LINKAGE.md](docs/TECHNICAL_APPENDIX_RECORD_LINKAGE.md).*
+
+Linkage certainty and geographic completeness are separate properties: **66.2% primary linkage is
 the inferential limitation; the geography is essentially complete for anything linked.** Linkage
-also varies sharply by certification status (78.0% ACTIVE vs 18.6% DECEASED), so the linked subset
+also varies sharply by certification status (78.4% ACTIVE vs 18.8% DECEASED), so the linked subset
 is not a random sample of the roster.
 
 Scraper for the [AMCB certification directory](https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800)
@@ -167,7 +191,7 @@ is the scientific work.
 
 **A.3. Identity resolution, not geocoding, is the binding constraint.** Turning
 a name into a location requires first turning a name into a person. Against
-NPPES, **65.8%** of the roster resolves to an NPI with midwifery taxonomy
+NPPES, **66.2%** of the roster resolves to an NPI with midwifery taxonomy
 confirmed (**75.7%** including nursing and fuzzy sensitivity tiers); **14.1%**
 is quarantined because plausible candidates exist but cannot identify one
 person, and **10.1%** has no plausible candidate at all. Once identity is
@@ -1856,7 +1880,7 @@ date.
 **Cite the limitation with the number.** Two properties of this dataset are
 easy to conflate and should travel with any figure taken from it:
 
-- **65.8%** of the roster links to an NPI with confirmed midwifery taxonomy
+- **66.2%** of the roster links to an NPI with confirmed midwifery taxonomy
   (75.7% including the nursing and fuzzy sensitivity tiers). That is the
   inferential ceiling.
 - Geography is essentially complete — **~99%** — for anything that links. That
