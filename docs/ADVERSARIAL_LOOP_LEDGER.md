@@ -3755,6 +3755,101 @@ changed in the same newly-merged PR #128, already carrying the PR's own new
 `tests/ci_science_laws.R` mutation-testing coverage — worth a closer read to
 confirm that coverage is as thorough as its "21/21 mutations detected" claim
 suggests, rather than assuming it fully closes the file).
+## Cycle 45 (session-cycle 22 of 24) — 2026-08-30 — 4 BVA / 3 semantic / 3 adversarial
+
+**Target:** `manuscript/R/inline_stats.R` — the layer between the stats
+catalog and manuscript prose (`mw_stat`, `mw_safe_stat`, `mw_n`, `mw_pval`,
+`.mw_get`). Deliberately diversified away from the `.keep_all`/`distinct()`
+sweep (cycles 28, 32, 39, 41, 42) per the prior resuming-note's guidance,
+with only 3 cycles left before the final audit. Confirmed fresh territory:
+`grep` across `tests/*.R` found these functions used only incidentally (3
+lines total, inside larger integration checks in `ci_manuscript_numbers.R`
+and `test_manuscript_numbers_detect.R`) — never tested against their own
+contracts directly.
+
+**Findings, both confirmed by direct empirical reproduction before fixing:**
+
+1. `mw_stat(path, fmt)` calls `sprintf(fmt, v)` on whatever `.mw_get()`
+   resolves. The contract (stated in the file's own header) is one dot-path
+   -> one value, but nothing enforced it. If a catalog builder ever produced
+   a length-2+ value under one key (an upstream bug, not something the
+   current `build_stats_catalog.R` does today), `sprintf()` silently
+   *vectorizes*: `` `r mw_stat("x", "%.1f")` `` inline in manuscript prose
+   would render as `"12.0 13.0"` pasted into a sentence, no error anywhere.
+   Reproduced directly: `mw_stat_retired(c(12,13), "%.1f")` returns
+   `c("12.0","13.0")` with no complaint.
+
+2. `mw_pval(p)` had no bounds check. A p-value outside [0,1] is not a valid
+   p-value at all — it signals a broken upstream computation (flipped sign,
+   mis-specified test) — but the old code would run `p < .001` on it anyway.
+   Reproduced: `mw_pval_retired(-0.5)` returns `"*P*<.001"`, rendering an
+   impossible negative number as if it were merely a tiny ordinary p-value,
+   with nothing to catch it before it reaches a reviewer.
+
+**Fix.** Added a loud, named `stop()` to each: `mw_stat()` now checks
+`is.atomic(v) && length(v) > 1L` and stops naming the path and the count
+before ever reaching `sprintf()`; `mw_pval()` now checks `p < 0 || p > 1`
+and stops naming the offending value, directing the fix to the upstream
+calculation rather than the formatter. Neither guard changes output for any
+value the file's contract already allows (scalar, in-range).
+
+**Verified safe against every real call site before finalizing** (this
+cycle's discipline: trace real usage, don't just trust the guard is
+additive):
+- `grep -rn "mw_pval(" manuscript/` -> the only live call site is
+  `mw_pval(K$rural$trend_p)` (×3, `midwife_persistence.qmd` lines 106, 488,
+  717). Traced `trend_p`'s computation to `mw_trend()` in
+  `build_stats_catalog.R`: `p = 2 * stats::pnorm(-abs(z))`. Since
+  `pnorm(-abs(z)) ∈ [0, 0.5]` for any real `z` by construction, `p` is
+  *always* in [0,1] (or `NA` if `z` is `NaN`, already handled by the
+  existing `is.na(p)` branch) — the new guard can never fire on real
+  output, and is pure insurance against a future upstream bug.
+- `grep -rn "mw_stat(" manuscript/*.qmd` -> the only live call sites pass
+  `"persist.annual_county"`, `"_lo"`, `"_hi"` — traced to
+  `build_stats_catalog.R`: a hardcoded scalar (`95.9`) and `ci[1]`/`ci[2]`
+  from `mw_wilson()`, both single numbers. The new guard is likewise inert
+  on real output today.
+- Ran `tests/ci_manuscript_numbers.R` and `tests/test_manuscript_numbers_
+  detect.R` (the only pre-existing tests referencing this file, even
+  incidentally) after applying both fixes: both still PASS with 0 failures.
+
+**Investigated, not fixed — flagged as a genuine ambiguity, per this loop's
+own rule against silently deciding scientific-ambiguity items:** `mw_n()`
+uses `formatC(as.numeric(v), format = "d", big.mark = ",")`, which silently
+*truncates* a non-integer count (`42.7` -> `"42"`) and silently formats a
+negative count with a minus sign. Whether either indicates an upstream
+catalog bug (a count should never be non-integer or negative) or is an
+acceptable, never-triggered display convention is not decidable from this
+file alone — no fix applied. Carried forward.
+
+**Tests.** `tests/test_cycle45_inline_stats_contracts.R`, 10 tests
+(T45-1..10): 4 BVA (`mw_pval` at p=0/p=1 boundaries inside range, p just
+below 0 rejected, `mw_n` at exactly 0), 3 semantic (`.mw_get()` dot-path
+traversal: missing intermediate key, indexing into a non-list leaf, a valid
+nested path), 3 adversarial (T45-8/T45-9 pair and T45-10 are anti-ceremony
+companions, reproducing the retired `mw_stat`/`mw_pval` bodies inline and
+confirming they actually misbehave — silently vectorize / silently accept
+an impossible p — before confirming the fixed logic stops instead).
+
+**Full suite.** New file: 10/10 pass.
+`tests/ci_manuscript_numbers.R`: PASS, 0 failures (unchanged).
+`tests/test_manuscript_numbers_detect.R`: PASS, 7/7 (unchanged).
+
+**Unresolved / carried forward.** `mw_n()`'s non-integer/negative-count
+behavior (new this cycle, deliberately left as an open ambiguity, not a
+fix). All standing items from cycles 1-23 and this session's own carried-
+forward ambiguities (cycles 26, 30, 33, 34, 38) untouched.
+
+**Estimand changed:** no — both fixes are purely additive guards on inputs
+the real catalog never currently produces; every real call site's rendered
+output is byte-for-byte unchanged.
+
+**Next candidate leads (not yet investigated):** `mw_wilson()` and
+`mw_diff()` in `build_stats_catalog.R` (the CI/difference helpers `mw_stat`
+call sites depend on, not yet directly tested); `mw_wordcount()`'s `.docx`
+XML parsing (untested, has several silent-`NA`-on-missing-section branches);
+scenario parameters (still not directly targeted by any cycle 24-45);
+`match_open_payments_to_facility.R`; `analyze_linkage_selection_bias.R`.
 ## Cycle 46 (session-cycle 23 of 24) — 2026-08-30 — 3 BVA / 4 semantic / 3 adversarial
 
 **Correction, 2026-08-30.** As first written this test carried "literal
