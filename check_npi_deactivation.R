@@ -18,6 +18,7 @@
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(readxl); library(stringr)
 })
+source(file.path("R", "join_safety.R"))
 
 report <- Sys.getenv("NPI_DEACTIVATION_REPORT",
                      path.expand("~/Documents/NPPES Deactivated NPI Report 20240408.xlsx"))
@@ -35,7 +36,14 @@ deactivated <- read_excel(report, skip = 1) %>%
          deactivation_date = as.character(deactivation_date),
          deactivation_year = as.integer(
            stringr::str_extract(deactivation_date, "[12][0-9]{3}"))) %>%
-  distinct(npi, .keep_all = TRUE)
+  # An NPI deactivated, later reactivated, and deactivated again is a real
+  # scenario, not a data-entry error, and would appear twice in this report
+  # with DIFFERENT dates. distinct(.keep_all = TRUE) would have picked
+  # whichever row sorted first -- the same class of defect the ledger's
+  # cycle 2/5 .keep_all sweep already fixed elsewhere. assert_unique_keys()
+  # collapses genuine (identical) duplicates silently and stops on a real
+  # conflict instead of guessing.
+  assert_unique_keys("npi", label = "NPPES Deactivated NPI Report", dedupe = TRUE)
 
 cat(sprintf("Deactivated NPIs in report: %s\n",
             format(nrow(deactivated), big.mark = ",")))
