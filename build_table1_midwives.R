@@ -41,6 +41,7 @@ REF_YEAR <- 2026   # "years since" are measured to this study year, not Sys.Date
 # Banding and date parsing live in one tested place. Inline, each rule held
 # only because the current artifacts satisfy an assumption it never enforced.
 source("R/lib/table1_bands.R")
+source("R/join_safety.R")   # assert_unique_keys(): conflict-safe dedup
 
 link_paths <- c(
   "artifacts/amcb_npi_linkage_FROZEN.csv",
@@ -50,9 +51,16 @@ link_path <- link_paths[file.exists(link_paths)][1]
 if (is.na(link_path)) stop("Cohort linkage file not found.", call. = FALSE)
 
 link <- read_csv(link_path, show_col_types = FALSE, progress = FALSE)
+# assert_unique_keys(), not distinct(.keep_all=TRUE): this is the cohort
+# DEFINITION for the entire Table 1 -- N below is the published denominator
+# every percentage in the table is taken against. A certification_number
+# appearing twice with disagreeing values (e.g. two different linked NPIs)
+# is an identity conflict, and picking one by row order would silently
+# decide who is IN the published cohort, not just which name represents them.
 coh <- link %>%
   filter(status == "ACTIVE", linkage_tier == "primary_midwifery") %>%
-  distinct(certification_number, .keep_all = TRUE)
+  assert_unique_keys("certification_number",
+                     label = "Table 1 cohort linkage (ACTIVE primary_midwifery)", dedupe = TRUE)
 N <- nrow(coh)
 cat(sprintf("cohort: %s ACTIVE primary-linked midwives\n", format(N, big.mark = ",")))
 

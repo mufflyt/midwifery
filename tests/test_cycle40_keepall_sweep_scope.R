@@ -112,21 +112,22 @@ cat("\n-- SEMANTIC --\n")
 # T40-5. The BASELINE constant in tests/test_cycle5_key_resolution.R must
 # match the TRUE current offender count under the widened scan -- a live
 # drift check. This cycle's own inventory found 110; by the time this PR
-# merges, cycles 28, 32, 39, 41 and 42's own .keep_all fixes (independently
-# authored in parallel, merged out of authoring order) have already landed
-# and correctly REDUCED the true count to 107. A mismatch here means either
-# new debt was introduced since the last recount (the ratchet should have
-# caught that on its own) or the codebase changed in a way this test's own
-# copy of the baseline has not been told about -- either direction is worth
-# recounting fresh rather than trusting either number.
+# merges, other .keep_all-fixing cycles (independently authored in parallel,
+# merged out of authoring order -- so far 28, 32, 39, and now 41) have
+# already landed and correctly REDUCED the true count, currently to 105. A
+# mismatch here means either new debt was introduced since the last recount
+# (the ratchet should have caught that on its own) or the codebase changed
+# in a way this test's own copy of the baseline has not been told about --
+# either direction is worth recounting fresh rather than trusting either
+# number.
 {
   root <- "."
   files <- c(
     list.files(file.path(root, "R"), pattern = "\\.R$", recursive = TRUE, full.names = TRUE),
     list.files(root, pattern = "\\.R$", recursive = FALSE, full.names = TRUE))
   n <- length(detect_offenders(files))
-  chk(n == 107L,
-      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 107)", n))
+  chk(n == 105L,
+      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 105)", n))
 }
 
 # T40-6. DOCUMENTED LIMITATION, not fixed this cycle: the detection regex
