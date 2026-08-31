@@ -463,6 +463,14 @@ jobs:
           Rscript tests/test_open_payments_type2_bulk.R
           Rscript tests/test_table1_blk_hg.R
           Rscript tests/test_pip_materialization.R
+
+      # The stratified review-sample generator in resolve_org_ambiguity.R: a
+      # fixed seed alone does not make sequential slice_sample() calls
+      # independently reproducible, and slice_sample() draws by row position,
+      # not identity.
+      - name: Review-sample reproducibility (seed and row-order independence)
+        run: Rscript tests/test_cycle27_review_sample_reproducibility.R
+
       # -----------------------------------------------------------------------
       # Ported verbatim from mufflyt/isochrones @ 1907a5c40 -- 416 assertions,
       # zero new code. Each file tests a helper that exists in BOTH repos, so
