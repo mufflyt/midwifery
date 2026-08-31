@@ -21,7 +21,7 @@ chk <- function(cond, m) {
 N_PER <- 5L
 
 # Mirrors the FIXED calibrate_osmde_vs_ec2.R sampling exactly.
-sample_strata_fixed <- function(origins) {
+c29_sample_strata_fixed <- function(origins) {
   origins %>%
     filter(!is.na(rurality)) %>%
     {split(., .$rurality)} %>%
@@ -33,7 +33,7 @@ sample_strata_fixed <- function(origins) {
 }
 
 # The RETIRED pattern: one set.seed(), then a single grouped slice_sample().
-sample_strata_retired <- function(origins) {
+c29_sample_strata_retired <- function(origins) {
   set.seed(20260808)
   origins %>% group_by(rurality) %>% slice_sample(n = min(N_PER, min(table(origins$rurality)))) %>% ungroup()
 }
@@ -50,12 +50,12 @@ mk_origins <- function(n_rural, n_urban, shuffle = FALSE) {
 cat("\n-- BVA --\n")
 
 small <- mk_origins(3, 200)
-r_small <- sample_strata_fixed(small)
+r_small <- c29_sample_strata_fixed(small)
 chk(sum(r_small$rurality == "rural") == 3L,
     "T29-1: a stratum smaller than N_PER returns exactly its own count, not N_PER")
 
 exact <- mk_origins(N_PER, 200)
-r_exact <- sample_strata_fixed(exact)
+r_exact <- c29_sample_strata_fixed(exact)
 chk(sum(r_exact$rurality == "rural") == N_PER,
     "T29-2: a stratum with exactly N_PER rows returns all of them (cap boundary)")
 
@@ -68,16 +68,16 @@ chk(identical(s1$location_key, s2$location_key),
 
 cat("\n-- semantic --\n")
 
-set.seed(1); r1 <- sample_strata_fixed(mk_origins(50, 200))
-set.seed(1); r2 <- sample_strata_fixed(mk_origins(80, 200))
+set.seed(1); r1 <- c29_sample_strata_fixed(mk_origins(50, 200))
+set.seed(1); r2 <- c29_sample_strata_fixed(mk_origins(80, 200))
 chk(identical(sort(r1$location_key[r1$rurality == "urban"]),
               sort(r2$location_key[r2$rurality == "urban"])),
     "T29-4: the urban stratum's sample is unaffected by the UNRELATED rural stratum growing from 50 to 80 rows")
 
 ordered_o  <- mk_origins(50, 60)
 shuffled_o <- mk_origins(50, 60, shuffle = TRUE)
-ru1 <- sample_strata_fixed(ordered_o)
-ru2 <- sample_strata_fixed(shuffled_o)
+ru1 <- c29_sample_strata_fixed(ordered_o)
+ru2 <- c29_sample_strata_fixed(shuffled_o)
 chk(setequal(ru1$location_key[ru1$rurality == "urban"], ru2$location_key[ru2$rurality == "urban"]),
     "T29-5: identical stratum content in a different row order selects the same actual locations")
 
@@ -94,14 +94,14 @@ chk(identical(build_queue(geo_ordered)$location_key, build_queue(geo_shuffled)$l
 
 cat("\n-- adversarial --\n")
 
-set.seed(1); rr1 <- sample_strata_retired(mk_origins(50, 200))
-set.seed(1); rr2 <- sample_strata_retired(mk_origins(80, 200))
+set.seed(1); rr1 <- c29_sample_strata_retired(mk_origins(50, 200))
+set.seed(1); rr2 <- c29_sample_strata_retired(mk_origins(80, 200))
 chk(!identical(sort(rr1$location_key[rr1$rurality == "urban"]),
                sort(rr2$location_key[rr2$rurality == "urban"])),
     "T29-7 (anti-ceremony): the RETIRED single grouped slice_sample() DOES let urban's sample change when rural's size changes -- confirms T29-4 discriminates")
 
-ru1r <- sample_strata_retired(ordered_o)
-ru2r <- sample_strata_retired(shuffled_o)
+ru1r <- c29_sample_strata_retired(ordered_o)
+ru2r <- c29_sample_strata_retired(shuffled_o)
 chk(!setequal(ru1r$location_key[ru1r$rurality == "urban"], ru2r$location_key[ru2r$rurality == "urban"]),
     "T29-8 (anti-ceremony): the RETIRED pattern is also row-order dependent -- confirms T29-5 discriminates")
 
