@@ -120,6 +120,26 @@ jobs:
       - name: Artifact contracts
         run: Rscript tests/ci_artifact_contracts.R
 
+      # jsonlite only, for the JSON-manifest checks below. This job otherwise
+      # stays at "stringr only" by design (see the header); jsonlite is the
+      # one exception the next step needs and carries no compiled/system
+      # dependency, so it does not compromise the "cheap tier" this job is
+      # supposed to be.
+      - name: Install jsonlite
+        run: install.packages("jsonlite")
+        shell: Rscript {0}
+
+      # PUBLIC vs PRIVATE-OK data regression guard (pattern from
+      # mufflyt/isochrones, 2026-08-27/28): pins concrete numbers and
+      # cross-artifact agreements on the data actually committed to the
+      # repo, so a code change that quietly shifts what the pipeline
+      # produces fails here the same day, not whenever someone happens to
+      # eyeball a downstream table. A missing PUBLIC (committed) input is
+      # itself the regression and fails the build; PRIVATE-OK (gitignored,
+      # person-level) inputs skip when absent, which is expected on CI.
+      - name: Data regression guard (PUBLIC/PRIVATE-OK)
+        run: Rscript tests/ci_data_regression_guard.R
+
       # Invariants about MEANING across artifacts: no numbered stage writes
       # without provenance, no fourth rurality dialect, no percent column on a
       # surprise scale, no geographic id that lost a digit or gained a forged
