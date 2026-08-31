@@ -33,6 +33,18 @@ bounds_for <- function(df, flag = "linked", CATS) {
 # would they have to be" is the question a reader actually has.
 tipping <- function(k, n_linked, n_roster, threshold_pct) {
   unobs <- n_roster - n_linked
+  # A degenerate roster (everyone linked, so there is no "unobserved" to
+  # reason about; or nobody linked, so there is no observed share to depart
+  # from) divides by zero here silently: unobs=0 gives Inf/Inf with no
+  # warning, n_linked=0 gives NaN for departure_pp. Both would flow straight
+  # into the manuscript caption's own sentence ("the unobserved would have to
+  # be Inf% metropolitan"). Not reachable by the current roster -- this
+  # analysis exists because linkage is incomplete, so 0%/100%-linked never
+  # actually happens -- but a sensitivity re-run on a filtered subgroup could
+  # hit either edge, and NA is the honest answer for a question the data
+  # cannot pose.
+  if (unobs <= 0 || n_linked <= 0)
+    return(c(required_unobserved_pct = NA_real_, departure_pp = NA_real_))
   u <- (threshold_pct / 100 * n_roster - k) / unobs
   c(required_unobserved_pct = 100 * u, departure_pp = 100 * u - 100 * k / n_linked)
 }

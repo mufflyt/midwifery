@@ -253,7 +253,9 @@ ipw <- d |>
 # observed cohort share, in percentage points, because "how different would they
 # have to be" is the question a reader actually has.
 # tipping() lives in R/lib/selection_bounds.R (sourced above); k is computed
-# at the call site now that the function no longer closes over `d`.
+# at the call site now that the function no longer closes over `d`. Guarded
+# there against a degenerate roster (everyone linked, or nobody linked)
+# dividing by zero -- see that file's own comment.
 
 METRO <- grep("^Metro", CATS, value = TRUE)[1]
 TIP_THRESHOLD <- 75

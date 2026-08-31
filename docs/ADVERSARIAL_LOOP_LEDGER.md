@@ -4790,3 +4790,82 @@ arms agree" -- noted while reading this file's case_when ordering, but the
 docstring explicitly frames affiliation_class as "which sources", not "how
 strong", so this may be by design rather than a gap; worth a closer look in
 a future cycle rather than being asserted as a defect here.
+## Cycle 38 (session-cycle 15 of 24) — 2026-08-30 — 3 BVA / 3 semantic / 4 adversarial
+
+**Note on branch base.** `origin/main` moved twice more this cycle: PR #131
+("The binding limitation had no figure") added a brand-new, zero-coverage
+`make_linkage_figures.R` (two new manuscript figures, `linkage_by_status`
+and `selection_bounds`); PR #133 ("Put the cohort flow and the selection
+bounds in the paper") is manuscript-prose/figure-reference renumbering only,
+no code — verified via `git show --stat`, correctly ruled out. This
+session's own candidate lead #1 (`analyze_linkage_selection_bias.R`, flagged
+after cycle 37) turned out to be exactly the file that computes the
+`bounds.tip_required`/`bounds.tip_departure` values the new figure's own
+caption sentence quotes — the two leads converged on one target.
+
+**Target.** `tipping()` in `analyze_linkage_selection_bias.R` (a pure
+function, previously untested) and the inline status-level data
+transformation in the brand-new `make_linkage_figures.R` (also untested).
+
+**Finding — a degenerate roster split divided by zero with no error.**
+`tipping()` solves for what share of the *unobserved* roster would need to
+be metro to move the roster-wide share to a threshold, then reports the
+departure (in points) from the observed share. Two boundary inputs divide
+by zero silently: a fully-linked roster (`unobs = n_roster - n_linked = 0`)
+produces `Inf`/`Inf` with **no warning at all**; a fully-unlinked roster
+(`n_linked = 0`) produces `NaN` for the departure. Both values flow directly
+into `make_linkage_figures.R`'s manuscript caption via `fig_num("bounds.
+tip_required")`/`fig_num("bounds.tip_departure")` — a caption reading "the
+unobserved would have to be Inf% metropolitan" is exactly the kind of
+silently-nonsensical published number this whole session has been hunting.
+Not reachable by the current roster (this entire analysis exists *because*
+linkage is incomplete, so 0%/100%-linked never happens today) — but a
+sensitivity re-run on a filtered subgroup could hit either edge. Fixed with
+an explicit guard returning `NA` for both outputs when the roster split is
+degenerate.
+
+**Investigated, documented as scientific ambiguity (not silently fixed).**
+A status row with an `NA` `matched_nursing_taxonomy` count produces an `NA`
+`ascertainment` value, which a `ggplot` geom mapped to that aesthetic would
+silently drop from the rendered dumbbell chart — a certification status
+could vanish from a published figure with only a console warning, never a
+hard failure. Whether a missing nursing-taxonomy count should be treated as
+0 (include the status, ascertainment = resolution) or as a reason to
+visibly exclude the status is a scientific decision, not a code bug; not
+resolved this cycle.
+
+**Investigated, already safe (pinned, not fixed).** A duplicate status
+label in the input CSV (an upstream aggregation defect producing e.g.
+"ACTIVE" twice) already fails loudly: `factor(status, levels = status)`
+errors outright on a duplicated level. Also pinned: `METRO <- grep("^Metro",
+CATS, value = TRUE)[1]` silently resolves to whichever matching category
+sorts first if more than one label starts with "Metro" — low-probability
+given `CATS` is a small, controlled label set, not fixed, but documented so
+a future labeling change cannot silently pick the wrong category.
+
+**Tests.** `tests/test_cycle38_linkage_figures.R`, 10 tests (T38-1..10)
+against literal replicas of `tipping()` and the status-transformation logic
+(neither `analyze_linkage_selection_bias.R`, a flat unguarded script, nor
+`make_linkage_figures.R`, which needs the gitignored stats catalog, can be
+sourced end-to-end). T38-7 is the anti-ceremony companion for the T38-2/
+T38-3 fix, reproducing the retired Inf/Inf and NaN directly.
+
+**Full suite.** New file: 10/10 pass. `analyze_linkage_selection_bias.R`
+still parses cleanly. `tests/ci_science_laws.R` re-run against the real
+repository: L11/L12/L13 all still pass (this file's only other reference to
+`analyze_linkage_selection_bias.R` is a regeneration pointer in an error
+message, not a call site). `tests/ci_hygiene.R`: 0 failures.
+
+**Unresolved / carried forward.** The NA-ascertainment silent-drop question
+(above), the ambiguous-multiple-"^Metro"-match risk (above, low priority).
+Standing items from cycles 26, 30, 33, 34 untouched.
+
+**Estimand changed:** no — the fix only changes what is reported for a
+roster-split shape (0% or 100% linked) the real data never produces.
+
+**Next candidate leads (not yet investigated):** scenario parameters more
+broadly (still not directly targeted by any cycle 24-38 despite being
+flagged in nearly every cycle's resuming note — this is now overdue);
+`match_open_payments_to_facility.R`; uncertainty propagation beyond the OLS
+extrapolation (cycle 26), the derangement fallback (cycle 30), and this
+cycle's tipping-point sensitivity (now guarded).
