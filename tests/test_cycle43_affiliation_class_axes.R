@@ -58,7 +58,7 @@ chk <- function(cond, m) {
 
 # Literal replica of the resolver's wiring (build_organization_affiliation_
 # resolver.R, ~lines 233-251).
-classify <- function(p_pecos, p_cc, p_nppes, p_fac, p_bc, p_op, affiliation_evidence_count) {
+c43_classify <- function(p_pecos, p_cc, p_nppes, p_fac, p_bc, p_op, affiliation_evidence_count) {
   affiliation_class <- case_when(
     affiliation_evidence_count >= 2L ~ "multi_source_confirmed",
     p_cc                             ~ "carecompare_current_group",
@@ -85,8 +85,8 @@ cat("\n-- BVA --\n")
 # boundary into "multi_source_confirmed", even though Care Compare's own
 # arm-specific branch would otherwise have matched.
 {
-  one <- classify(FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, 1L)
-  two <- classify(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, 2L)
+  one <- c43_classify(FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, 1L)
+  two <- c43_classify(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, 2L)
   chk(identical(one$affiliation_class, "carecompare_current_group"),
       "T43-1a exactly 1 arm (Care Compare) gets its own specific label")
   chk(identical(two$affiliation_class, "multi_source_confirmed"),
@@ -97,7 +97,7 @@ cat("\n-- BVA --\n")
 # the same "multi_source_confirmed" label, not a distinct "super-confirmed"
 # tier -- the count threshold is a floor (>=2), not a specific match.
 {
-  three <- classify(TRUE, FALSE, FALSE, FALSE, TRUE, TRUE, 3L)
+  three <- c43_classify(TRUE, FALSE, FALSE, FALSE, TRUE, TRUE, 3L)
   chk(identical(three$affiliation_class, "multi_source_confirmed"),
       "T43-2 3 agreeing arms resolve to the same label as 2, not a separate tier")
 }
@@ -107,7 +107,7 @@ cat("\n-- BVA --\n")
 # otherwise match its own more-specific branch two lines later. This is the
 # exact ordering the whole "conflation" question depends on.
 {
-  chk(identical(classify(FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, 2L)$affiliation_class,
+  chk(identical(c43_classify(FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, 2L)$affiliation_class,
                 "multi_source_confirmed"),
       "T43-3 the >=2L branch's priority over p_cc's own branch is exactly as documented")
 }
@@ -120,8 +120,8 @@ cat("\n-- SEMANTIC --\n")
 # the IDENTICAL affiliation_class -- confirming the conflation is real at
 # this one column.
 {
-  weak <- classify(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, 2L)
-  strong <- classify(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, 2L)
+  weak <- c43_classify(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, 2L)
+  strong <- c43_classify(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, 2L)
   chk(identical(weak$affiliation_class, strong$affiliation_class) &&
         identical(weak$affiliation_class, "multi_source_confirmed"),
       "T43-4 two weak arms and two strong arms both read 'multi_source_confirmed'")
@@ -134,8 +134,8 @@ cat("\n-- SEMANTIC --\n")
 # "high_confidence_current". A reader checking currentness_class alongside
 # affiliation_class always recovers the distinction T43-4 showed was lost.
 {
-  weak <- classify(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, 2L)
-  strong <- classify(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, 2L)
+  weak <- c43_classify(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, 2L)
+  strong <- c43_classify(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, 2L)
   chk(identical(weak$currentness_class, "unknown") &&
         identical(strong$currentness_class, "high_confidence_current"),
       sprintf("T43-5 currentness_class recovers the distinction: weak='%s', strong='%s'",
@@ -148,8 +148,8 @@ cat("\n-- SEMANTIC --\n")
 # relative rigor (Medicare arms undergo federal enrollment verification)
 # from this column too, without ever needing a fourth "strength" column.
 {
-  weak <- classify(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, 2L)
-  strong <- classify(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, 2L)
+  weak <- c43_classify(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, 2L)
+  strong <- c43_classify(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, 2L)
   chk(identical(weak$evidence_layer, "non_medicare_only") &&
         identical(strong$evidence_layer, "medicare_only"),
       sprintf("T43-6 evidence_layer also distinguishes: weak='%s', strong='%s'",
@@ -163,7 +163,7 @@ cat("\n-- SEMANTIC --\n")
 # status()'s own NA-is-absent-not-contrary contract requires: the weak arm
 # contributes nothing, for better or worse, to currentness).
 {
-  mixed <- classify(TRUE, FALSE, FALSE, FALSE, FALSE, TRUE, 2L)
+  mixed <- c43_classify(TRUE, FALSE, FALSE, FALSE, FALSE, TRUE, 2L)
   chk(identical(mixed$affiliation_class, "multi_source_confirmed") &&
         identical(mixed$currentness_class, "medicare_reassignment_only"),
       sprintf("T43-7 a mixed weak+strong pair still confirms, but currentness tracks only the strong arm present (got %s / %s)",
@@ -178,7 +178,7 @@ cat("\n-- ADVERSARIAL --\n")
 # require a MAJORITY of arms to be Medicare-sourced before crediting both
 # layers.
 {
-  three <- classify(TRUE, FALSE, FALSE, FALSE, TRUE, TRUE, 3L)
+  three <- c43_classify(TRUE, FALSE, FALSE, FALSE, TRUE, TRUE, 3L)
   chk(identical(three$evidence_layer, "both_layers"),
       sprintf("T43-8 1 Medicare arm out of 3 total is enough for 'both_layers', not requiring a majority (got %s)",
               three$evidence_layer))
@@ -190,7 +190,7 @@ cat("\n-- ADVERSARIAL --\n")
 # T35-4 checked affiliation_class and currentness_class for this exact
 # single-arm case, but not evidence_layer).
 {
-  single <- classify(FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, 1L)
+  single <- c43_classify(FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, 1L)
   chk(identical(single$affiliation_class, "open_payments_only") &&
         identical(single$evidence_layer, "non_medicare_only") &&
         identical(single$currentness_class, "unknown"),
@@ -205,7 +205,7 @@ cat("\n-- ADVERSARIAL --\n")
 # >=2L branch and resolves on the arm flags alone, since 0 is not >= 2. This
 # guards against assuming the count and the flags can never disagree.
 {
-  inconsistent <- classify(FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, 0L)
+  inconsistent <- c43_classify(FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, 0L)
   chk(identical(inconsistent$affiliation_class, "open_payments_only"),
       sprintf("T43-10 affiliation_evidence_count=0 with p_op=TRUE falls through to the arm-specific branch, not multi_source_confirmed (got %s)",
               inconsistent$affiliation_class))
