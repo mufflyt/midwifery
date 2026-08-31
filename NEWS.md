@@ -22,6 +22,83 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-08-31 — 24-cycle adversarial testing loop; a data-regression guard; a STROBE checklist; two README corrections
+
+### Added — `tests/ci_data_regression_guard.R`: PUBLIC vs PRIVATE-OK data regression guard
+
+Ported from `mufflyt/isochrones`'s `test-data-regression-daily-guard.R`
+(2026-08-27/28). Pins concrete numbers and cross-artifact agreements from the
+data actually committed to the repo — `linkage_manifest.json`'s dispositions
+sum to its own `total_rows`; those same seven dispositions agree **exactly**
+against the independently-written `linkage_completeness_by_status.csv`; the
+FROZEN crosswalk's own manifest agrees with `linkage_manifest.json`; every
+`composition_*.csv` group sums to its own N; every Manski bound in
+`linkage_selection_bounds.csv` is ordered lower ≤ observed ≤ upper; README's
+cited roster count matches the data; the frozen 16,892 (geography-guard
+freeze) stays pinned and distinct from the later 16,898 refreeze; a sample of
+provenance sidecars stays schema-valid. Classifies every input explicitly as
+**PUBLIC** (committed — a skip on it is itself a regression, not a pass) or
+**PRIVATE-OK** (gitignored person-level data — a skip is expected). See
+[docs/TECHNICAL_APPENDIX_DATA_REGRESSION_GUARD.md](docs/TECHNICAL_APPENDIX_DATA_REGRESSION_GUARD.md).
+
+### Added — `manuscript/STROBE_checklist.md`
+
+No STROBE checklist previously existed for the geographic-persistence
+manuscript. Maps all 22 items (cohort-study wording) to their location in
+`manuscript/midwife_persistence.qmd` and its appendices. Building it found and
+fixed two real issues: Methods lacked an explicit "no sample-size calculation
+was performed" statement (item 10 — the fact existed only in Discussion, the
+wrong section for a Methods item), and `references.bib`'s R Core Team citation
+was dated 2024 while the manuscript actually renders under R 4.6.1, a 2026
+release. The title page's Funding, Financial Disclosure, and Presented-at
+fields remain unfilled placeholders — those need the authors, not a
+mechanical fix.
+
+### Added — `R/lib/artifact_provenance.R`: code provenance, not just input provenance
+
+`write_with_provenance()` now also records the *code* that produced an
+artifact, by content: `.code_closure()` follows `source()`/`sys.source()`
+calls transitively from the entry script. Previously, a change to the CODE
+left every sidecar unchanged and every artifact validating — not hypothetical,
+since a middle-name-parsing fix earlier this file moved the linkage cohort by
+19 records while touching only `R/amcb_match_rules.R`, and no sidecar could
+have said so. `check_provenance()` now reports `kind = "code"` rows alongside
+`kind = "input"` rows.
+
+### Fixed — README.md: three stale linkage percentages
+
+`README.md` cited **65.8%** of the roster resolving to a midwifery-taxonomy
+NPI in three places; the currently-committed `linkage_manifest.json` (22,309
+total, 14,764 matched) gives **66.2%**. The nearby ACTIVE-vs-DECEASED
+cohort-resolution comparison was similarly stale (**78.0%/18.6%** →
+**78.4%/18.8%**). Corrected at the top-level summary points; a larger block of
+detailed worked-example counts further down the README (the `11,920`-primary-
+tier passage and its dependents) was **not** re-verified in this pass and may
+carry the same staleness — flagged for a dedicated follow-up rather than
+risking a rushed, partial rewrite of interdependent numbers.
+
+### Added — two README gallery figures
+
+`docs/figures/selection_bounds.png` (roster-wide metropolitan share: observed,
+sensitivity estimates, worst-case bounds) and `docs/figures/linkage_by_status.png`
+(cohort resolution vs. ascertainment by certification status) existed on disk
+but were not yet in the README's Key Visualizations gallery.
+
+### Also this session — 24-cycle adversarial testing loop (cycles 24–47)
+
+Twenty-four cycles of boundary-value, semantic, and adversarial testing found
+and fixed real defects across the pipeline: order-dependent conflict
+resolution in `distinct(.keep_all = TRUE)` (8+ sites — NPI deactivation, Open
+Payments facility matching, Table 1/HPSA cohort linkage, DAC education), a
+tie-vectorization bug in the geocoding rurality gap statistic and
+independently in the manuscript's own CI-interval functions, an RNG-
+reproducibility gap in `resolve_org_ambiguity.R`'s sampling, and a fail-open
+gap in `analyze_linkage_selection_bias.R`'s reconciliation invariant. Full
+per-cycle detail in
+[docs/ADVERSARIAL_LOOP_LEDGER.md](docs/ADVERSARIAL_LOOP_LEDGER.md).
+
+---
+
 ## [Unreleased] — 2026-08-30 — A credential comma was reversing first and last names
 
 ### Fixed — `amcb_parse_person()`: **366 of 35,038 harvested authors (1.0%) had the wrong surname**
