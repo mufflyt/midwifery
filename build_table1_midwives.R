@@ -343,11 +343,23 @@ if (file.exists(calib_age_file)) {
 # practitioners in a row that means "we do not know".
 dacx <- NULL
 if (file.exists("artifacts/dac_cnm_education.csv")) {
+  # assert_unique_keys(), not distinct(.keep_all=TRUE): DAC is built from
+  # PECOS Medicare ENROLLMENT (see above), and an enrollment can span more
+  # than one organization or location per NPI -- num_org_mem/n_locations
+  # exist as columns precisely because that is a real, expected shape. Two
+  # rows for one NPI disagreeing on those counts is a genuine multi-
+  # enrollment fact, not a duplicate, and picking one by row order would
+  # silently choose which real enrollment a provider's Table 1 row describes.
+  # select() BEFORE the uniqueness check, not after: DAC carries other
+  # columns (e.g. per-enrollment address fields) that vary across
+  # enrollments for reasons unrelated to THESE three fields -- checking the
+  # full raw row width would refuse every multi-enrollment NPI even when
+  # num_org_mem/n_locations/accepts_assignment themselves agree.
   dacx <- read_csv("artifacts/dac_cnm_education.csv", show_col_types = FALSE,
                    progress = FALSE) %>%
     mutate(npi = as.character(NPI)) %>%
-    distinct(npi, .keep_all = TRUE) %>%
-    select(npi, num_org_mem, n_locations, accepts_assignment)
+    select(npi, num_org_mem, n_locations, accepts_assignment) %>%
+    assert_unique_keys("npi", label = "DAC CNM education (num_org_mem/n_locations)", dedupe = TRUE)
   coh <- coh %>%
     mutate(npi = as.character(npi)) %>%
     left_join(dacx, by = "npi", relationship = "one-to-one") %>%
@@ -383,9 +395,18 @@ if (file.exists("artifacts/dac_cnm_education.csv")) {
     y <- str_squish(str_replace(y, "^THE ", ""))
     ifelse(is.na(x) | !nzchar(y), NA_character_, y)
   }
+  # Same file, same multi-enrollment risk as dacx above: a school named
+  # differently (or NA) across two enrollment rows for one NPI is a real
+  # disagreement, not a duplicate to collapse by row order. select() to just
+  # the two columns this extraction uses BEFORE the check, for the same
+  # reason as dacx above -- other DAC columns (num_org_mem etc.) legitimately
+  # vary per enrollment and must not make this unrelated extraction refuse
+  # every multi-enrollment NPI.
   .dac_sch <- read_csv("artifacts/dac_cnm_education.csv", show_col_types = FALSE,
                        progress = FALSE) %>%
-    mutate(npi = as.character(NPI)) %>% distinct(npi, .keep_all = TRUE) %>%
+    mutate(npi = as.character(NPI)) %>%
+    select(npi, med_sch_clean) %>%
+    assert_unique_keys("npi", label = "DAC CNM education (medical school)", dedupe = TRUE) %>%
     transmute(npi, dac_school = ifelse(!is.na(med_sch_clean) & med_sch_clean != "OTHER",
                                        med_sch_clean, NA_character_))
   .hg_sch <- if (!is.null(hg_link) && "hg_education_name" %in% names(hg_link))
