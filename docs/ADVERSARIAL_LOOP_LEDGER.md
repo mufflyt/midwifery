@@ -4721,3 +4721,72 @@ broadly; the rest of the Open Payments pipeline (`crossref_open_payments_
 to_type2_npi.py`, `match_open_payments_to_facility.R`, `build_organization_
 affiliation_resolver.R`); uncertainty propagation beyond the OLS
 extrapolation (cycle 26) and the derangement fallback (cycle 30).
+## Cycle 35 (session-cycle 12 of 24) — 2026-08-30 — 3 BVA / 3 semantic / 4 adversarial
+
+**Target.** `build_organization_affiliation_resolver.R`'s `pair` aggregation
+pipeline (the `group_by(npi, org_key) %>% summarise(...)` step that merges
+evidence across arms) and its wiring into `R/lib/organization_affiliation_
+status.R`. The existing `tests/test_organization_affiliation_status.R`
+exhaustively tests `classify_affiliation_status()` in isolation; `tests/
+test_organization_affiliation_resolver.R` tests `norm_org()` in isolation
+and does source-inspection checks. Neither exercises the actual merge
+pipeline or the specific wiring decision that excludes one arm from the
+currentness ladder. Both are replicated literally here (the resolver script
+needs a real crosswalk + arm artifacts to run end-to-end).
+
+**Investigated, turned out NOT to be a defect (documented so a future cycle
+does not re-investigate).** The candidate lead going in was: does
+`build_organization_affiliation_resolver.R` treat the `open_payments_org`
+arm (fed by `crossref_open_payments_to_type2_npi.py`, which shares the exact
+`limit=10`/8-char-substring defect already measured by the pre-existing
+`audit_python_org_selection.R` diagnostic at ~51% exact-match-rate for its
+"_full" sibling) with any less trust than a reliable arm? Reading the actual
+`affiliation_class`/`currentness_class` wiring (lines ~230-249) showed the
+developer had already handled this correctly: `open_payments_org` evidence
+is recorded in `affiliation_class` at the lowest non-"unresolved" tier
+(`"open_payments_only"`), but is explicitly **excluded** from `currentness_
+class`'s `nppes =` argument (`p_nppes | p_fac`, deliberately omitting `p_op`)
+— so open-payments-only evidence can never claim any currentness on its own.
+Verified empirically with a literal replica of the wiring. T35-4 pins this
+correct, previously-untested design decision rather than proposing a new fix.
+
+**Tests.** `tests/test_cycle35_organization_affiliation_pipeline.R`, 10
+tests (T35-1..10), all confirming CORRECT, previously-uncovered behavior
+(no new defect found this cycle — a legitimate outcome per this loop's own
+rules, since exercising genuinely untested logic has value independent of
+whether it turns up a bug). Two self-caught test-authoring bugs during
+writing, both corrected before finalizing:
+  - T35-2's first draft used two names of equal `nchar()` ("ZEBRA CLINIC" /
+    "ALPHA CLINIC") that are also two DIFFERENT organizations, so
+    `group_by(org_key)` never put them in the same group and the tie-break
+    line was never exercised at all. Corrected to two SPELLINGS of the SAME
+    organization ("MERCY-CLINIC" / "MERCY CLINIC", a hyphen vs. a space,
+    both normalizing to "MERCY CLINIC") with an equal raw length, which
+    genuinely collide into one group and exercise the tie-break.
+  - T35-7's first draft passed both an `error=` and a `warning=` handler to
+    `tryCatch()`; since a base-R recycling WARNING fires before `case_when()`
+    itself errors, the warning handler intercepted execution first and the
+    test never observed the actual error. Corrected by wrapping the call in
+    `suppressWarnings()` and dropping the warning handler, letting execution
+    continue to the real error.
+
+**Full suite.** New file: 10/10 pass. Re-ran `tests/test_organization_
+affiliation_status.R` and `tests/test_organization_affiliation_resolver.R`
+(0 failures each) and `tests/ci_hygiene.R` (0 failures, no new duplicate
+definitions). No regressions.
+
+**Unresolved / carried forward.** None new this cycle. Standing items from
+cycles 26, 30, 33, 34 remain untouched.
+
+**Estimand changed:** no — no production code was modified this cycle.
+
+**Next candidate leads (not yet investigated):** scenario parameters more
+broadly; `match_open_payments_to_facility.R` (the one remaining unexplored
+file from the "rest of the Open Payments pipeline" lead); uncertainty
+propagation beyond the OLS extrapolation (cycle 26) and the derangement
+fallback (cycle 30); the "multi_source_confirmed" affiliation_class label
+does not itself distinguish "2 strong arms agree" from "2 weak/address-only
+arms agree" -- noted while reading this file's case_when ordering, but the
+docstring explicitly frames affiliation_class as "which sources", not "how
+strong", so this may be by design rather than a gap; worth a closer look in
+a future cycle rather than being asserted as a defect here.

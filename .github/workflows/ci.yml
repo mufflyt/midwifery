@@ -497,6 +497,16 @@ jobs:
       - name: Address recency validation report logic
         run: Rscript tests/test_cycle34_address_recency_validation.R
 
+      # Organization affiliation: the currentness ladder, norm_org() key
+      # merging, and the aggregation pipeline that merges evidence across
+      # arms. The first two files are hermetic and pre-existed this cycle but
+      # were not wired into CI until now (found while wiring the third).
+      - name: Organization affiliation classification and merge pipeline
+        run: |
+          Rscript tests/test_organization_affiliation_status.R
+          Rscript tests/test_organization_affiliation_resolver.R
+          Rscript tests/test_cycle35_organization_affiliation_pipeline.R
+
       # -----------------------------------------------------------------------
       # Ported verbatim from mufflyt/isochrones @ 1907a5c40 -- 416 assertions,
       # zero new code. Each file tests a helper that exists in BOTH repos, so
