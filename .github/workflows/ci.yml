@@ -512,6 +512,16 @@ jobs:
       - name: Linkage selection bounds figures
         run: Rscript tests/test_cycle38_linkage_figures.R
 
+      # Flow-diagram layout engine (grid, base R -- no extra package): the
+      # pure layout math behind the published cohort-flow figure.
+      - name: Flow diagram layout engine
+        run: Rscript tests/test_cycle36_flow_diagram.R
+
+      # Open Payments -> OB facility matching: recency resolution and the
+      # conflict-safe dedup fix for both the hospital master and the cohort
+      # linkage (assert_unique_keys, not distinct(.keep_all=TRUE)).
+      - name: Open Payments facility matching
+        run: Rscript tests/test_cycle39_open_payments_facility.R
       # -----------------------------------------------------------------------
       # Ported verbatim from mufflyt/isochrones @ 1907a5c40 -- 416 assertions,
       # zero new code. Each file tests a helper that exists in BOTH repos, so
