@@ -41,9 +41,18 @@ source(file.path(root, "tests", "ci_report.R"))
 
 drg_path <- function(...) file.path(root, ...)
 
+# simplifyVector = FALSE: a plain nested list, deterministic regardless of
+# jsonlite version or of whether a sibling field happens to look array-like
+# enough to trigger auto-simplification into a data.frame. Every access
+# below reads a named scalar or a named list of scalars, both of which are
+# unambiguous either way -- there is nothing here worth the version-
+# dependent convenience simplifyVector = TRUE buys elsewhere in this repo.
 read_json <- function(path) {
-  tryCatch(jsonlite::fromJSON(path, simplifyVector = TRUE),
-           error = function(e) NULL)
+  tryCatch(jsonlite::fromJSON(path, simplifyVector = FALSE),
+           error = function(e) {
+             ci_fail("could not parse %s as JSON: %s", path, conditionMessage(e))
+             NULL
+           })
 }
 
 # -----------------------------------------------------------------------------
@@ -59,8 +68,9 @@ if (!file.exists(lm_path)) {
   ci_fail("D1: %s is committed and absent -- PUBLIC artifact went missing", lm_path)
 } else {
   lm <- read_json(lm_path)
-  if (is.null(lm) || is.null(lm$linkage$dispositions) || is.null(lm$linkage$total_rows)) {
-    ci_fail("D1: linkage_manifest.json parsed but is missing linkage$dispositions or linkage$total_rows")
+  if (is.null(lm) || is.null(lm$linkage) || is.null(lm$linkage$dispositions) || is.null(lm$linkage$total_rows)) {
+    ci_fail("D1: linkage_manifest.json parsed but is missing linkage$dispositions or linkage$total_rows (top-level keys present: %s; linkage keys present: %s)",
+            paste(names(lm), collapse = ", "), paste(names(lm$linkage), collapse = ", "))
   } else {
     disp <- unlist(lm$linkage$dispositions)
     s <- sum(disp)
@@ -96,14 +106,20 @@ if (!file.exists(lm_path) || !file.exists(lc_path)) {
                  "candidate_class5_held_out_of_cohort",
                  "matched", "matched_nursing_taxonomy", "unmatched")
   missing_cols <- setdiff(disp_cols, names(lc))
-  if (is.null(lc) || length(missing_cols)) {
-    ci_fail("D2: linkage_completeness_by_status.csv missing column(s): %s",
+  # NULL-safe on purpose: lm$linkage$dispositions - lm_disp arithmetic
+  # against an unexpectedly NULL/missing lm silently produces numeric(0)
+  # rather than an error (R's NULL-arithmetic permissiveness), which then
+  # makes `off` empty and this section report ok on data it never actually
+  # compared. Guard explicitly rather than trusting the arithmetic to fail
+  # loudly on its own.
+  if (is.null(lc) || length(missing_cols) || is.null(lm) || is.null(lm$linkage$dispositions)) {
+    ci_fail("D2: linkage_completeness_by_status.csv missing column(s) [%s] and/or linkage_manifest.json's dispositions could not be read",
             paste(missing_cols, collapse = ", "))
   } else {
     lc_sums <- vapply(disp_cols, function(cc) sum(as.numeric(lc[[cc]])), numeric(1))
     lm_disp <- unlist(lm$linkage$dispositions)[disp_cols]
     diffs <- lc_sums - lm_disp
-    off <- disp_cols[diffs != 0]
+    off <- disp_cols[is.na(diffs) | diffs != 0]
     if (length(off)) {
       ci_fail("D2: %d disposition(s) disagree between the two artifacts: %s",
               length(off), paste(sprintf("%s (status-file %s vs manifest %s)",
@@ -133,9 +149,10 @@ if (!file.exists(frozen_manifest_path)) {
 } else {
   fm <- read_json(frozen_manifest_path)
   lm <- read_json(lm_path)
-  if (is.null(fm$class5_candidates_held_out) ||
-        is.null(lm$linkage$dispositions$candidate_class5_held_out_of_cohort)) {
-    ci_fail("D3: expected key missing from one of the two manifests")
+  if (is.null(fm) || is.null(fm$class5_candidates_held_out) ||
+        is.null(lm) || is.null(lm$linkage$dispositions$candidate_class5_held_out_of_cohort)) {
+    ci_fail("D3: expected key missing from one of the two manifests (FROZEN manifest keys: %s; linkage_manifest.json linkage keys: %s)",
+            paste(names(fm), collapse = ", "), paste(names(lm$linkage), collapse = ", "))
   } else if (fm$class5_candidates_held_out != lm$linkage$dispositions$candidate_class5_held_out_of_cohort) {
     ci_fail("D3: class5_candidates_held_out is %s in the FROZEN manifest but %s in linkage_manifest.json",
             fm$class5_candidates_held_out, lm$linkage$dispositions$candidate_class5_held_out_of_cohort)
@@ -248,6 +265,9 @@ if (!file.exists(readme_path) || !file.exists(lm_path)) {
   lm <- read_json(lm_path)
   if (length(cited) == 0L) {
     ci_fail("D6: README.md no longer cites the roster count at all -- expected \"22,309\" to appear")
+  } else if (is.null(lm) || is.null(lm$linkage$total_rows)) {
+    ci_fail("D6: linkage_manifest.json parsed but linkage$total_rows is missing (top-level keys: %s)",
+            paste(names(lm), collapse = ", "))
   } else if (as.numeric(gsub(",", "", cited[[1]])) != lm$linkage$total_rows) {
     ci_fail("D6: README.md cites %s but linkage_manifest.json's total_rows is %s",
             cited[[1]], format(lm$linkage$total_rows, big.mark = ","))

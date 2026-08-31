@@ -120,6 +120,15 @@ jobs:
       - name: Artifact contracts
         run: Rscript tests/ci_artifact_contracts.R
 
+      # jsonlite only, for the JSON-manifest checks below. This job otherwise
+      # stays at "stringr only" by design (see the header); jsonlite is the
+      # one exception the next step needs and carries no compiled/system
+      # dependency, so it does not compromise the "cheap tier" this job is
+      # supposed to be.
+      - name: Install jsonlite
+        run: install.packages("jsonlite")
+        shell: Rscript {0}
+
       # PUBLIC vs PRIVATE-OK data regression guard (pattern from
       # mufflyt/isochrones, 2026-08-27/28): pins concrete numbers and
       # cross-artifact agreements on the data actually committed to the
