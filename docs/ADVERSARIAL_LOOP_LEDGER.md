@@ -5210,3 +5210,73 @@ affiliation_resolver.R`'s "multi_source_confirmed" label question (cycle
 extrapolation (cycle 26), the derangement fallback (cycle 30), and the
 tipping-point sensitivity (cycle 38); the remaining `build_table1_
 midwives.R` `.keep_all` sites noted above.
+## Cycle 43 (session-cycle 20 of 24) — 2026-08-30 — 3 BVA / 4 semantic / 3 adversarial
+
+**Target.** `build_organization_affiliation_resolver.R`'s `affiliation_class`
+labeling — flagged at the end of cycle 35 as an open question and carried
+forward, unaddressed, through 7 subsequent cycles' resuming notes: does
+`multi_source_confirmed` conflate "2 strong arms agree" (e.g. PECOS + Care
+Compare, two independently-verified CMS products) with "2 weak arms agree"
+(e.g. `open_payments_org` + `birth_center_registry`, both address/directory-
+derived with no identity verification)? This cycle finally reads the wiring
+closely enough to answer definitively rather than deferring an 8th time.
+
+**Verdict: yes, at the `affiliation_class` column alone — and this is NOT a
+defect.** Verified empirically: `affiliation_evidence_count >= 2L ~
+"multi_source_confirmed"` is the FIRST branch in the `case_when`, matching
+regardless of *which* two arms contributed, so a two-weak-arm pair and a
+two-strong-arm pair produce the byte-identical label. But the file
+deliberately splits evidence into **three separate, orthogonal columns**
+(its own header: "a class describing which evidence supports it, and a
+SEPARATE class describing how current it is") rather than one collapsed
+verdict, and the other two columns fully recover the distinction
+`affiliation_class` loses:
+
+  - `currentness_class` — the weak pair stays `"unknown"` (`open_payments_
+    org`/`birth_center_registry` are never passed into `classify_
+    affiliation_status()` at all, confirmed in cycle 35); the strong pair
+    reaches `"high_confidence_current"`.
+  - `evidence_layer` — `"non_medicare_only"` vs. `"medicare_only"`, letting
+    a reader infer relative rigor (Medicare arms undergo federal enrollment
+    verification; non-Medicare arms generally do not) without a fourth
+    column.
+  - `arms` (verified already in cycle 35) — the literal, un-collapsed list
+    of which sources actually agreed, always available for full detail.
+
+A reader relying on `affiliation_class` in isolation cannot tell the two
+cases apart, but no information is actually lost — it lives in the other
+already-existing columns. This resolves the 7-cycle-old open question
+definitively: intentional multi-axis design, not a gap, matching this
+session's own precedent (cycles 35, 38) that confirming genuinely correct,
+previously-uninvestigated behavior is itself a valuable outcome.
+
+**Tests.** `tests/test_cycle43_affiliation_class_axes.R`, 10 tests
+(T43-1..10) against a literal replica of the resolver's wiring (cannot be
+sourced end-to-end; matches cycle 35's approach for this same file) plus the
+real, directly-sourced `classify_affiliation_status()`. Directly proves the
+resolution claim rather than merely asserting it: T43-4 shows the shared
+label, T43-5/T43-6 show the other two columns recovering the distinction,
+T43-7 covers the genuinely mixed (one weak + one strong arm) case, T43-8/
+T43-9 pin `evidence_layer` boundaries cycle 35 did not test, T43-1..3 pin
+the exact `case_when` priority the whole question depends on, T43-10 checks
+a hypothetical count/flag inconsistency.
+
+**Full suite.** New file: 10/10 pass. Re-ran `tests/test_organization_
+affiliation_status.R` and `tests/test_organization_affiliation_resolver.R`
+(0 failures each) and `tests/ci_hygiene.R` (0 failures). `git status`
+verified clean of stray changes before committing.
+
+**Unresolved / carried forward.** None new — this cycle's whole purpose was
+closing a carried-forward item. Standing items from cycles 26, 30, 33, 34,
+38 untouched.
+
+**Estimand changed:** no — no production code was modified this cycle; this
+was a pure investigation-and-test cycle, closing an open question with tests
+rather than a fix.
+
+**Next candidate leads (not yet investigated):** remaining `build_table1_
+midwives.R` `.keep_all` sites (Healthgrades `certification_number` dedup,
+HPSA consumer site, two Medicare-participation sites — remember cycle 42's
+select-before-check lesson for each); uncertainty propagation beyond the OLS
+extrapolation (cycle 26), the derangement fallback (cycle 30), and the
+tipping-point sensitivity (cycle 38).
