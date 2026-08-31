@@ -269,6 +269,12 @@ input, and a rebuild that would leave any consumer holding a previous cohort is
 refused rather than performed. This is the mechanism that makes the cohort a
 fixed object rather than whatever the matcher last produced.
 
+No sample-size calculation was performed. The study is a complete enumeration
+of `r mw_n("linkage.total")` certification records issued by the sole
+certifying body for this workforce, not a survey sample drawn from a larger
+population, so the analytic cohort's size was arrived at by resolution against
+the provider registry rather than by a target power or precision.
+
 ## Selection analysis
 
 Because linkage is selected on certification status, and status is associated
