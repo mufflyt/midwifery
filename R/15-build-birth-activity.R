@@ -355,8 +355,8 @@ build_midwife_birth_activity <- function(
   # established, zero means unobserved. Downstream maps must restrict to
   # adequately ascertained states before reading these as real zeros.
   county_effective_supply <- county_base |>
-    dplyr::left_join(county_observed_supply, by = "GEOID") |>
-    dplyr::left_join(unascertained_by_county, by = "GEOID") |>
+    dplyr::left_join(county_observed_supply, by = "GEOID", relationship = "many-to-one") |>
+    dplyr::left_join(unascertained_by_county, by = "GEOID", relationship = "many-to-one") |>
     dplyr::mutate(
       observed_birth_attendants =
         tidyr::replace_na(.data$observed_birth_attendants, 0L),
