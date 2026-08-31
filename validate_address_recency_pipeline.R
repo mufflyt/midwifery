@@ -10,6 +10,7 @@
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr)
 })
+source(file.path("R", "lib", "clinical_setting.R"))
 
 cat("=== Executing Address Recency Validation Benchmark Suite ===\n")
 
@@ -54,7 +55,7 @@ val_summary <- tibble::tribble(
   "NPPES Address Geocoded", "Geocoded (N)", as.character(sum(!is.na(v4$nppes_state))),
   "Cross-Source Updated", "Flagged Updates (N)", "400",
   "Active Delivery Attenders", "CPT Attenders (N)", as.character(sum(v4$has_cpt_delivery_claim == TRUE, na.rm = TRUE)),
-  "Hospital Privilege Match", "Verified Privileges (N)", as.character(sum(str_detect(v4$refined_clinical_setting, "1\\."), na.rm = TRUE)),
+  "Hospital Privilege Match", "Verified Privileges (N)", as.character(sum(is_facility_setting_category(v4$refined_clinical_setting, 1), na.rm = TRUE)),
   "PPV Concordance Score", "Positive Predictive Value", "98.5%"
 )
 

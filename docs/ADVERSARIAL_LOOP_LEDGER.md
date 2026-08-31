@@ -4553,3 +4553,105 @@ type2.py` and its documented 51.0%-exact-match/83.2%-alphabetical-first-ten
 baseline this cycle's target file replaced — worth checking whether the
 comparison/migration path between old and new candidate sets is itself
 tested anywhere).
+## Cycle 33 (session-cycle 10 of 24) — 2026-08-30 — 4 BVA / 3 semantic / 3 adversarial
+
+**Target.** Investigating cycle-32's carried-forward "validation/backtesting"
+lead led to `validate_address_recency_pipeline.R`, which led to a much larger
+systemic defect spanning **7 files**: `build_tier1_tier2_bon_summary_
+report.R`, `analyze_tier1_complete_results.R`, `analyze_tier2_complete_
+results.R`, `analyze_20_state_bon_scrape.R`, `validate_scraped_20_state_bon_
+results.R`, `validate_address_recency_pipeline.R`, `build_complete_leaflet_
+map.R`. (Cycle-32's other candidate lead — the known, pre-existing
+`crossref_all_open_payments_type2.py` truncation/substring defect — turned
+out to already be thoroughly documented and audited by the pre-existing
+`audit_python_org_selection.R` diagnostic; not re-investigated, no new
+finding there.)
+
+**Finding — a category-detection regex written for one field silently never
+matches its sibling field.** Two fields encode the same 1-6 practice-setting
+taxonomy at different pipeline stages: `final_facility_setting` ("1. Hospital
+Privileges (CMS Medicare Direct)") and, produced from it one step later by
+`integrate_cpt_claims_into_facility_classification.R`, `refined_clinical_
+setting` ("1a. Active Attending Hospital Staff...", "1b. Inactive/
+Consulting..." — every category 1-5 gains a lettered sub-category; only
+category 6 stays bare). All 7 files above independently reimplemented
+`str_detect(refined_clinical_setting, "1\\.")` (or "2\\.", "3\\.") to detect a
+category. That pattern is correct against the BARE format but can **never**
+match the LETTERED format: "1a." contains no "1." substring, because the
+digit is followed by a letter, not a period, before the first period
+appears. Verified empirically with a 6-row synthetic case: the retired
+pattern reported **0 hospital-privilege and 0 birth-center matches** where
+the true answer was 2 and 2. In production this meant:
+  - `verified_hospitals` in 4 nearly-identical BON summary/analysis files
+    silently reported 0 regardless of true coverage;
+  - `validate_scraped_20_state_bon_results.R`'s and `validate_address_
+    recency_pipeline.R`'s "Hospital Staff Privileges"/"Hospital Privilege
+    Match" validation-report rows were always 0, sitting next to a
+    HARDCODED, unrelated "32.1%"/"98.5%"-style precision-score literal that
+    never actually reflected the (always-zero) computed value next to it —
+    that hardcoded-precision-score issue itself is flagged below as a
+    separate, NOT-fixed-this-cycle finding;
+  - `build_complete_leaflet_map.R`'s marker color-coding (`case_when` over
+    categories 1/3/{2,4,5}) permanently fell through to its amber "TRUE ~"
+    fallback branch for every single midwife, and its popup URL selection
+    (`fac_url`, category 3 -> birth-center-accreditation link) always chose
+    the generic CMS hospital-directory URL instead — a defect visible on the
+    actual published map (`docs/cnm_national_leaflet_map.html`).
+
+**Fix.** One new shared, tested helper, `R/lib/clinical_setting.R`
+(`facility_setting_category()`, `is_facility_setting_category()`), matching
+`^([1-6])[a-z]?\.` — format-agnostic across both the bare and lettered
+encodings — replacing all 11 inline `str_detect(...)` call sites across the
+7 files with calls to the shared helper. This follows the same "one tested
+library function, not N inline reimplementations" pattern this repo already
+uses for `band_hg_age()`, `assert_unique_keys()`, and (this session) `op_
+zip5()`/`op_norm_addr()`.
+
+**Not fixed this cycle (flagged, not silently resolved).**
+`validate_scraped_20_state_bon_results.R` and `validate_address_recency_
+pipeline.R` both pair real (now-correct) computed counts against literal,
+hardcoded "precision"/"PPV" percentage strings ("100.0%", "38.8%", "32.1%",
+"1.8%", "98.5%") that are not derived from any data in the script. Computing
+a genuine positive-predictive-value or concordance score requires a defined
+ground-truth reference this script does not have access to — inventing one
+would be silently choosing a scientific estimand, which this loop's own
+rules forbid. Also not fixed: `validate_address_recency_pipeline.R` labels
+`filter(!is.na(nppes_state))` as "midwives with cross-state practice moves"
+(it is simply the count with a known current state -- there is no
+prior-state field anywhere in this data model to compute an actual move),
+and its Deanna DiUlio case study prints an unconditional "CONFIRMED ACTIVE IN
+MONTANA" verdict regardless of what `active_attending_status` actually
+contains. Both are real, fixable label/logic defects but were deprioritized
+this cycle in favor of the much larger, already-verified 7-file regex defect;
+carried forward as a lead for a future cycle.
+
+**Tests.** `tests/test_cycle33_facility_setting_category.R`, 10 tests
+(T33-1..10) against the new shared helper. T33-8 is a repo-wide sweep
+(comment-stripped, matching this session's own established convention) that
+asserts no file still applies the retired pattern; confirmed to discriminate
+by `git stash`-ing the 7 call-site fixes (the new library file is untracked
+and unaffected by stash) and observing the sweep correctly name all 7
+offending files, 0 after `git stash pop`.
+
+**Full suite.** New file: 10/10 pass. `Rscript tests/ci_hygiene.R`: all 302
+tracked R files still parse (confirms the 8 edited/added files introduced no
+syntax errors and no new duplicate top-level function definitions). No
+existing test file referenced `refined_clinical_setting` or `final_facility_
+setting` before this cycle, so there was no prior coverage to regress.
+
+**Unresolved / carried forward.** The hardcoded precision/PPV literals and
+the cross-state-move mislabeling in `validate_address_recency_pipeline.R`
+and `validate_scraped_20_state_bon_results.R` (above). Standing carried-
+forward items from cycles 1-30 remain untouched.
+
+**Estimand changed:** no -- the fix only makes an already-intended category
+count actually computable from data that was silently always reporting a
+false zero; no new scientific definition was introduced.
+
+**Next candidate leads (not yet investigated):** the hardcoded precision/PPV
+values just flagged (needs a human decision on methodology, not a silent
+fix); scenario parameters more broadly; the rest of the Open Payments
+pipeline (`crossref_open_payments_to_type2_npi.py`, `match_open_payments_
+to_facility.R`, `build_organization_affiliation_resolver.R`); uncertainty
+propagation beyond the OLS extrapolation (cycle 26) and the derangement
+fallback (cycle 30).

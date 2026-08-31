@@ -5,6 +5,7 @@
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr)
 })
+source(file.path("R", "lib", "clinical_setting.R"))
 
 cat("=== Executing Empirical Validation & QA Audit for Scraped 20-State BON Results ===\n")
 
@@ -40,8 +41,8 @@ val_matrix <- tibble::tribble(
   "Valid NPI Identity", "CMS NPPES Registry", as.character(npi_valid), "100.0%",
   "Valid AMCB Certificate", "AMCB Certification Roster", as.character(amcb_valid), "100.0%",
   "Active Delivery Attenders", "CMS Part B / Medicaid Claims", as.character(nrow(cpt_active)), "38.8%",
-  "Hospital Staff Privileges", "CMS Medicare Direct Link", as.character(sum(str_detect(df$refined_clinical_setting, "1\\."))), "32.1%",
-  "Freestanding Birth Centers", "CABC Accredited Directory", as.character(sum(str_detect(df$refined_clinical_setting, "3\\."))), "1.8%"
+  "Hospital Staff Privileges", "CMS Medicare Direct Link", as.character(sum(is_facility_setting_category(df$refined_clinical_setting, 1), na.rm = TRUE)), "32.1%",
+  "Freestanding Birth Centers", "CABC Accredited Directory", as.character(sum(is_facility_setting_category(df$refined_clinical_setting, 3), na.rm = TRUE)), "1.8%"
 )
 
 write_csv(val_matrix, "artifacts/scraped_20_state_bon_validation_report.csv")

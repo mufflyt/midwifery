@@ -5,6 +5,7 @@
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr)
 })
+source(file.path("R", "lib", "clinical_setting.R"))
 
 cat("=== Generating Tier 1 and Tier 2 BON Ingestion Report ===\n")
 
@@ -17,7 +18,7 @@ tier_summary <- df %>%
     n_midwives = n(),
     pct_cohort = round(n() / nrow(df) * 100, 1),
     cpt_attenders = sum(has_cpt_delivery_claim == TRUE, na.rm = TRUE),
-    verified_hospitals = sum(str_detect(refined_clinical_setting, "1\\."), na.rm = TRUE),
+    verified_hospitals = sum(is_facility_setting_category(refined_clinical_setting, 1), na.rm = TRUE),
     .groups = "drop"
   )
 
