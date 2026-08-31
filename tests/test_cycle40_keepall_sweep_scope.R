@@ -109,20 +109,24 @@ cat("\n-- SEMANTIC --\n")
               length(files)))
 }
 
-# T40-5. The BASELINE constant in tests/test_cycle5_key_resolution.R (110)
-# must match the TRUE current offender count under the widened scan -- a
-# live drift check. A mismatch here means either new debt was introduced
-# since this cycle's inventory (the ratchet should have caught that on its
-# own) or the codebase changed in a way this test's own copy of the baseline
-# has not been told about.
+# T40-5. The BASELINE constant in tests/test_cycle5_key_resolution.R must
+# match the TRUE current offender count under the widened scan -- a live
+# drift check. This cycle's own inventory found 110; by the time this PR
+# merges, cycles 28, 32, 39, 41 and 42's own .keep_all fixes (independently
+# authored in parallel, merged out of authoring order) have already landed
+# and correctly REDUCED the true count to 107. A mismatch here means either
+# new debt was introduced since the last recount (the ratchet should have
+# caught that on its own) or the codebase changed in a way this test's own
+# copy of the baseline has not been told about -- either direction is worth
+# recounting fresh rather than trusting either number.
 {
   root <- "."
   files <- c(
     list.files(file.path(root, "R"), pattern = "\\.R$", recursive = TRUE, full.names = TRUE),
     list.files(root, pattern = "\\.R$", recursive = FALSE, full.names = TRUE))
   n <- length(detect_offenders(files))
-  chk(n == 110L,
-      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 110)", n))
+  chk(n == 107L,
+      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 107)", n))
 }
 
 # T40-6. DOCUMENTED LIMITATION, not fixed this cycle: the detection regex
@@ -155,20 +159,28 @@ cat("\n-- SEMANTIC --\n")
 
 cat("\n-- ADVERSARIAL --\n")
 
-# T40-8. Two ALREADY-KNOWN real offenders from this session's own prior
-# cycles -- check_npi_deactivation.R (cycle 28's fix, PR #120, unmerged) and
-# match_open_payments_to_facility.R (cycle 39's fix, PR #136, unmerged) --
-# must be visible to the widened sweep on the current (pre-merge) snapshot,
-# cross-checking the sweep's file coverage against fixes independently
-# discovered by manual inspection rather than by this sweep.
+# T40-8. Two real offenders independently found and fixed earlier THIS
+# SESSION -- check_npi_deactivation.R (cycle 28) and
+# match_open_payments_to_facility.R (cycle 39) -- were bare .keep_all sites
+# the (then-unwidened) sweep never saw. By the time this PR merges, both
+# fixes have already landed on main (merged ahead of this branch in the
+# queue), so the widened sweep's job now is to correctly report them as
+# CLEAN, not to still find them as offenders -- confirming the widened file
+# list actually reaches both files (the earlier, narrower R/-only glob would
+# have silently never scanned either one, fixed or not) and that the fixes
+# hold up under the sweep's own detection logic.
 {
   root <- "."
   files <- c(
     list.files(file.path(root, "R"), pattern = "\\.R$", recursive = TRUE, full.names = TRUE),
     list.files(root, pattern = "\\.R$", recursive = FALSE, full.names = TRUE))
   offenders <- detect_offenders(files)
-  chk(any(grepl("^check_npi_deactivation\\.R:", offenders)),
-      "T40-8 check_npi_deactivation.R (cycle 28's still-unmerged fix target) is visible to the widened sweep")
+  reached_both <- any(grepl("\\./check_npi_deactivation\\.R$", files)) &&
+    any(grepl("\\./match_open_payments_to_facility\\.R$", files))
+  chk(reached_both &&
+        !any(grepl("^check_npi_deactivation\\.R:", offenders)) &&
+        !any(grepl("^match_open_payments_to_facility\\.R:", offenders)),
+      "T40-8 the widened sweep reaches both cycle 28's and cycle 39's fix targets, and correctly reports both clean now that those fixes have merged")
 }
 
 # T40-9. Adversarial malformed input to the sweep itself: a file that does
