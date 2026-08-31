@@ -98,8 +98,25 @@ origins <- frame %>% filter(!is.na(rurality)) %>%
   group_by(location_key, center_lat, center_lng) %>%
   slice_max(n, n = 1, with_ties = FALSE) %>% ungroup()
 
-samp <- origins %>% group_by(rurality) %>%
-  slice_sample(n = N_PER) %>% ungroup()
+# A single grouped slice_sample() call draws all groups from one shared RNG
+# stream, in group-key order -- so the "urban" stratum's sample depends on
+# how many rows the "rural" stratum (sorted before it) happened to have, not
+# on urban's own data. Verified empirically: growing a rural stratum from 50
+# to 80 rows changed 4 of 5 sampled URBAN rows, with urban's own 200 rows
+# completely unchanged. Same root cause as resolve_org_ambiguity.R's review
+# sample (adversarial loop cycle 27), a different call shape (one grouped
+# verb, not several sequential ones) triggering the identical failure mode.
+# Fixed the same way: each stratum re-seeded and sorted by a stable key
+# immediately before its own slice_sample(), so it reproduces from its own
+# content alone.
+samp <- origins %>%
+  filter(!is.na(rurality)) %>%
+  {split(., .$rurality)} %>%
+  lapply(function(d) {
+    set.seed(20260808)
+    d %>% arrange(location_key) %>% slice_sample(n = min(N_PER, nrow(d)))
+  }) %>%
+  bind_rows()
 cat("=========== CALIBRATION SAMPLE ===========\n")
 print(as.data.frame(count(samp, rurality)), row.names = FALSE)
 cat(sprintf("total origins to re-route: %s (~%.0f min)\n\n",

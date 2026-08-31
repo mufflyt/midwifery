@@ -333,6 +333,14 @@ jobs:
       - name: Former-name external ingest
         run: Rscript tests/test_load_former_last_names.R
 
+      # OSM.de routing calibration/queue sampling: a single grouped
+      # slice_sample() call shares one RNG stream across strata just like
+      # sequential calls do (cycle 27's finding, a different mechanism), and
+      # a full-table shuffle's row-order safety was an incidental property
+      # of summarise(), not a guaranteed one.
+      - name: OSM.de sampling reproducibility
+        run: Rscript tests/test_cycle29_osmde_sampling_reproducibility.R
+
       # Age is imputed against a calibrated model (R2 = 0.550), so the validator
       # that bounds it is load-bearing for every age-banded row in Table 1.
       - name: Age-at-certification validation

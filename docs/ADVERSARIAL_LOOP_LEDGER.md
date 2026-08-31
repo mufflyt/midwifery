@@ -4374,3 +4374,102 @@ re-parses clean. Wired into `ci.yml`.
 file's output (`midwives_status_check.csv` is a diagnostic cross-check, not
 a Table 1 or manuscript figure input) -- the fix prevents a future silent
 wrong answer rather than correcting a current one.
+## Cycles 25-28 (session-cycles 2-5 of 24) — 2026-08-29 — status notes
+
+All four still open as separate PRs as of cycle 29 (#115, #118, #119, #120).
+One-line summaries so cycle 29 does not repeat any of them; see each PR /
+the cycle 29 branch history for full writeups.
+
+- **25** (3/4/3): `R/15-build-birth-activity.R` -- an unascertained provider
+  invisible to county `effective_birth_fte`. Added `n_unascertained_roster`.
+- **26** (3/3/4): `calibrate_amcb_certification_ages.R` -- unbounded OLS
+  extrapolation fed a private, unguarded age-band rule. Routed through the
+  shared `band_hg_age()`.
+- **27** (4/3/3): `resolve_org_ambiguity.R` -- a single seed shared across
+  sequential `slice_sample()` calls, and sampling by row position, both
+  broke the "fixed seed for reproducibility" claim. Re-seeded + sorted by
+  `npi` immediately before each call site.
+- **28** (3/4/3): `check_npi_deactivation.R` -- one more `.keep_all` site
+  (NPPES Deactivated NPI Report), not on the tracked list of 14. Routed
+  through `assert_unique_keys(dedupe = TRUE)`.
+
+---
+
+## Cycle 29 (session-cycle 6 of 24) — 2026-08-29 — 3 BVA / 3 semantic / 4 adversarial
+
+**Target.** `calibrate_osmde_vs_ec2.R` and `build_osmde_route_queue_all_
+midwives.R` -- following up cycle 27's own audit instruction ("investigate
+whether the same underlying defect can occur elsewhere before considering
+it resolved"), checked every other `set.seed()` site in the repo for the
+same class. Found the same root cause manifesting through two DIFFERENT
+mechanisms, neither a copy of cycle 27's exact shape. Neither file had any
+prior tests.
+
+**Tests added** — `tests/test_cycle29_osmde_sampling_reproducibility.R`
+(T29-1 .. T29-10)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T29-1 | BVA | a stratum smaller than N_PER returns exactly its own count |
+| T29-2 | BVA | a stratum with exactly N_PER rows returns all of them |
+| T29-3 | BVA | group_by()+summarise() sorts by key regardless of input order |
+| T29-4 | semantic | one stratum's sample is unaffected by an unrelated stratum's size |
+| T29-5 | semantic | identical content in a different row order selects the same rows |
+| T29-6 | semantic | the queue shuffle's final order is input-row-order invariant |
+| T29-7 | anti-ceremony | the RETIRED grouped call DOES let strata contaminate each other |
+| T29-8 | anti-ceremony | the RETIRED pattern is also row-order dependent |
+| T29-9 | adversarial | the fixed call site is guarded by set.seed + arrange (sweep) |
+| T29-10 | adversarial | plain distinct() (unlike summarise()) does NOT sort, and IS order-dependent |
+
+### Finding 1 — the same defect, through a different mechanism: a single GROUPED `slice_sample()`
+
+`calibrate_osmde_vs_ec2.R`'s calibration sample (feeds "the paper" per its
+own comment) used `origins %>% group_by(rurality) %>% slice_sample(n =
+N_PER)` -- ONE call, not several sequential ones like cycle 27's finding.
+Verified empirically that this still shares one RNG stream across groups,
+processed in group-key order: growing the `rural` stratum from 50 to 80 rows
+changed 4 of 5 sampled URBAN rows, with urban's own 200 rows unchanged. Cycle
+27's fix (reseed before each `slice_sample()` call) does not directly apply
+to a single grouped verb -- **fixed by converting to an explicit per-group
+loop** (`split()` + `lapply()`, reseed + `arrange(location_key)` inside),
+the same effective remedy in a shape that actually fits a single-call site.
+
+### Finding 2 — a safety property that was incidental, not guaranteed
+
+`build_osmde_route_queue_all_midwives.R`'s full-queue shuffle
+(`slice_sample(prop = 1)`) turned out to already be safe against upstream
+row-order changes -- but only because `group_by() %>% summarise()` happens
+to sort its output by the grouping key (verified, T29-3), not because
+anything said so. Verified the alternative it could plausibly have used
+instead (`distinct(location_key, .keep_all = TRUE)`) does **not** sort and
+**is** order-dependent (T29-10) -- so this file's correctness currently rests
+on which of two similar-looking dplyr verbs happened to be chosen. **Made
+the sort explicit** with `arrange(location_key)` immediately before the
+shuffle: not a behavior change today, insurance against a future refactor
+(e.g. swapping to `distinct()`) silently reintroducing the dependency this
+file's own header already claims does not exist.
+
+### Full suite
+
+`tests/test_cycle29_osmde_sampling_reproducibility.R`: 10/10 pass. Both
+production files re-parse clean (neither can run end-to-end here -- both
+need `~/isochrones`, a live osm.de routing server, and gitignored geocoded
+panels). Wired into `ci.yml`.
+
+### Unresolved / carried forward
+
+- All items from cycles 1-28 unchanged.
+- **NEW, low priority:** the remaining audited `set.seed()` sites
+  (`match_nppes.R`, `link_theses_to_amcb.R`, `R/09-bc-resolver-interaction.R`,
+  `R/08-middle-name-ab-leading-indicator.R`) were inventoried but not tested
+  this cycle -- `match_nppes.R`'s single ungrouped `sample()` call does not
+  fit this class; the two permutation-based negative controls
+  (`link_theses_to_amcb.R`, `R/09-bc-resolver-interaction.R`) are a
+  genuinely different question (does the permutation validly break the
+  tested association?) deserving their own cycle rather than a rushed
+  add-on to this one.
+
+**Estimand changed: no.** Both are calibration/queue-construction utilities,
+not published estimates -- the fix changes which specific locations get
+re-routed for calibration or the order a work queue is processed in, not any
+reported number.

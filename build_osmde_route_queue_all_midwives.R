@@ -105,6 +105,16 @@ q <- geo %>%
   summarise(latitude = first(latitude), longitude = first(longitude),
             n_midwives = n(),
             coordinate_class = first(coordinate_class), .groups = "drop") %>%
+  # arrange() is explicit insurance, not currently a fix: group_by()+
+  # summarise() already returns rows sorted by the grouping key, which is why
+  # this shuffle has been reproducible regardless of geo's own row order.
+  # That is an INCIDENTAL property of summarise(), not a documented contract
+  # -- verified that a plain distinct(location_key, .keep_all = TRUE) does
+  # NOT sort and IS order-dependent (adversarial loop cycle 29). Stating the
+  # sort explicitly means a future refactor away from summarise() cannot
+  # silently reintroduce the dependency this file's own header already
+  # promises does not exist.
+  arrange(location_key) %>%
   slice_sample(prop = 1)          # fixed-seed shuffle; see header
 q$queue_position <- seq_len(nrow(q))
 
