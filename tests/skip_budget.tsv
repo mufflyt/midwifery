@@ -46,6 +46,7 @@ tests/ci_artifact_contracts.R	ci_skip	pr	0	1	A4 reads the person-level frozen li
 tests/ci_semantic_contracts.R	ci_skip	pr	0	0	declares no skips in either environment; listed so that gaining one is a failure rather than a surprise
 tests/ci_science_contracts.R	ci_skip	pr	1	2	SCI2 has known tie-break sites awaiting a policy decision, and the affiliation coverage matrix is not built on a bare checkout
 tests/ci_science_laws.R	ci_skip	pr	1	1	L1 carries one off-vintage declaration awaiting a rebuild; the same in both environments because its inputs are tracked
+tests/ci_data_regression_guard.R	ci_skip	pr	0	2	D8 and D9 read the person-level FROZEN linkage and analytic cohort, both gitignored; on a bare checkout both skip as PRIVATE-OK
 tests/ci_science_nightly.R	ci_skip	nightly	-	-	nightly tier only; declared so the completeness check does not report it as an undeclared skipping gate
 tests/test-consort-audit-rounds-61-thru-65-2026-05-21.R	testthat	pr	0	0	hermetic arithmetic; declared so that gaining a skip is a failure
 tests/test-den-032-safe-pct-manu-na-semantics.R	testthat	pr	0	0	hermetic arithmetic
