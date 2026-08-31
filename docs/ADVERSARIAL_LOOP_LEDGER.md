@@ -3963,3 +3963,103 @@ removes a silent-failure path that a fresh or partial checkout could hit.
 
 **This is the final numbered cycle (24 of 24, ledger Cycle 47).** The final
 audit follows immediately, in this same document, below.
+   Wired into `ci.yml` alongside the rest of this cycle's tests.
+
+---
+
+## Cycle 25 (session-cycle 2 of 24) — 2026-08-29 — 3 BVA / 4 semantic / 3 adversarial
+
+**Target.** `R/15-build-birth-activity.R` -- `birth_fte_weight` and the
+county-level `effective_birth_fte` aggregation. Explicitly prioritized
+("workforce counts and FTE"), has existing coverage
+(`tests/test_birth_activity.R`) but that suite never exercises a county
+holding both an ascertained and a genuinely unascertained provider at once,
+nor the FTE-weight formula's own numeric boundaries.
+
+**Tests added** — `tests/test_cycle25_birth_activity_fte.R` (T25-1 .. T25-10)
+
+| # | Category | Assumption challenged |
+|---|---|---|
+| T25-1 | BVA | observed_births == 0 gives weight exactly 0 |
+| T25-2 | BVA | observed_births == reference_births gives weight exactly 1.0 |
+| T25-3 | BVA | 1000x reference_births still caps at exactly 1.0 |
+| T25-4 | semantic | a county with a mixed ascertained/unascertained provider reports the unascertained one, not just the known 0.5 FTE |
+| T25-5 | semantic | birth_fte_weight is monotonic non-decreasing in observed_births |
+| T25-6 | semantic | birth_active corresponds exhaustively to the three documented activity states (a/b/c) |
+| T25-7 | semantic | birth_location_share partitions a multi-county provider's activity to exactly 1.0 |
+| T25-8 | adversarial | duplicate raw rows within one source are summed, not deduplicated (documented hazard) |
+| T25-9 | adversarial | reference_births = 0 does not produce NaN (guard order protects it) |
+| T25-10 | adversarial | an all-zero provider's location share is NA, not NaN/Inf |
+
+### The finding: an unascertained provider is invisible to the county aggregate, not merely dropped by na.rm
+
+A midwife with no observed activity anywhere and unestablished ascertainment
+correctly gets `birth_fte_weight = NA` at the PROVIDER level (the file's own
+documented "absence is not zero" discipline). But she never generates a row
+in `provider_location_activity` at all -- there is no observed delivery
+location to assign her to -- so she is invisible to `county_observed_supply`
+by construction, not because `sum(..., na.rm = TRUE)` dropped her. Her
+PRACTICE county is still known from the roster (`roster_county_fips`), so
+this is not absent information; it is information the aggregation never
+looks at. A county reporting `effective_birth_fte = 0.5` from one ascertained
+provider looks complete, with no indication that an unascertained provider
+also practices there and might contribute more.
+
+Same shape as `ct_partial` (cycle 4): an aggregate that is correct as far as
+it goes must say when it does not go all the way, or a reader cannot tell a
+complete count from a partial one.
+
+**Fix.** Added `n_unascertained_roster` to `county_effective_supply` --
+counted from `provider_activity` (which retains every active cohort member,
+ascertained or not) by `roster_county_fips`, for rows where
+`birth_activity_state` is NA. `effective_birth_fte` itself is unchanged
+(still the correct sum of KNOWN supply); the new column makes visible how
+many roster members in that county contributed nothing to it because they
+were never looked at, rather than that count staying invisible. Verified:
+existing `tests/test_birth_activity.R` (17 assertions) still passes
+unchanged.
+
+### One hypothesis this cycle tested and refuted
+
+Expected `reference_births = 0` combined with `observed_births = 0` to
+produce `0/0 = NaN` in the FTE ratio. It does not: `case_when()`'s
+`observed_births <= 0 ~ 0` branch fires before the division branch is ever
+reached, so the guard order already protects this boundary. T25-9 pins the
+correct behavior rather than a defect -- worth keeping precisely because the
+hypothesis was plausible and wrong, the same discipline as the ledger's own
+"wrong test, corrected" sections elsewhere.
+
+### Documented hazard, not fixed
+
+T25-8: two raw delivery-source rows for the same npi/year/source/county with
+different birth counts (20, 999) are **summed** (1,019), not deduplicated or
+resolved by `max()` -- unlike cross-source combination, which the existing
+suite already confirms uses `max()` specifically because two sources
+observing the same birth should not be added together. Within one source,
+there is no encounter-level identifier to distinguish "two real encounters"
+from "one encounter duplicated in the extract," so summing may well be
+correct for genuine claims data. Not fixed: choosing a deduplication key
+without one being available in the source is a data-engineering decision,
+not a code defect. Pinned as current, documented behavior so a future change
+here is visible rather than silent.
+
+### Full suite
+
+`tests/test_cycle25_birth_activity_fte.R`: 10/10 pass.
+`tests/test_birth_activity.R`: unchanged, 17/17 pass. Wired into `ci.yml`.
+
+### Unresolved / carried forward (cycles 1-24, unchanged)
+
+- **DECISION NEEDED:** GFR reliability method (c8); `women_15_44` partial vs
+  NA (c7); Table 1 censoring (c1); `ct_partial` reporting (c4); minimum
+  Healthgrades field coverage (c6); GFR numerator universe 15-50 vs 15-44 (c8).
+- **DATA QUESTION:** 1,163 address disagreements blocking R/03 (c19).
+- **NEW, low priority (c23):** 2,784 geocoded hospitals with no consumer.
+- **NEW, low priority (c25):** whether raw same-source duplicate delivery
+  rows should be deduplicated before summing -- needs an encounter-level key
+  this source does not currently provide.
+- **UPSTREAM (isochrones):** `extract_first_initial()` accent bug (c12).
+- 18 undeclared joins (c10); 4 duplicate helpers (c9); 14 `.keep_all` (c5).
+
+**Estimand changed: no.** `n_unascertained_roster` is a new, additive
+diagnostic column; no existing published number moves.
