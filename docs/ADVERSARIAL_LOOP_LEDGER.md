@@ -4953,3 +4953,89 @@ TRUE)` on a key that could plausibly carry a real conflict, repo-wide — a
 sweep in this style could be a productive future cycle given this defect
 class has now been found in 3+ distinct files this session (cycles 28, 32,
 39).
+
+## Cycle 40 (session-cycle 17 of 24) — 2026-08-30 — 3 BVA / 4 semantic / 3 adversarial
+
+**Note on branch base.** `origin/main` moved again this cycle: PR #135
+("Three of the four orphan failures were two lines I wrote today") — an
+externally-authored commit that, notably, directly cites this session's own
+cycle-37 ledger write-up ("#132's own write-up had already flagged the shape
+of it") as the reason for adding `relationship = "many-to-one"` to `compose()`'s
+grp_sizes join in `R/07-cohort-composition.R`. Confirms the ledger is being
+read and acted on by the maintainer.
+
+**Target.** This commit's own description mentioned an existing repo-wide
+ratchet test tracking "bare `.keep_all`" sites (T44 in `tests/test_cycle5_
+key_resolution.R`) whose baseline had just moved 11 → 12 → back to 11 via a
+targeted fix. Given cycle 39's finding — the same order-dependent `distinct(x,
+.keep_all = TRUE)` defect class found and fixed twice in one file this
+session, on top of cycle 28's earlier instance — this ratchet was the
+obvious next thing to actually read, not just cite.
+
+**Finding — the ratchet only audits a third of the codebase.** T44's glob,
+`list.files(file.path(root, "R"), recursive = TRUE)`, scans only the `R/`
+subdirectory (57 files, 46 raw sites) and has **never once scanned the repo
+root** (127 additional `.R` files) — where the large majority of this
+project's standalone pipeline scripts actually live, including both files
+this session already found and fixed real order-dependent conflicts in:
+`check_npi_deactivation.R` (cycle 28) and `match_open_payments_to_facility.R`
+(cycle 39, two sites). Neither fix was ever visible to this sweep. Widening
+the glob to also scan repo-root `.R` files (non-recursive — `tests/`,
+`manuscript/`, `@archive/` are each a different concern with their own
+conventions) raised the scanned-file count from 57 to 184 and the true
+offender count (after the existing `arrange()` exemption) from 11 to **110**
+— exactly reproducible, verified via the sweep's own literal logic run
+standalone before touching the test file.
+
+**Fix.** Widened `tests/test_cycle5_key_resolution.R`'s T44 file glob to
+include the repo root, and raised `BASELINE` from 11 to 110 with an inline
+comment explaining this is discovered debt, not newly created debt — the
+same framing this exact test already used for its 2026-08-15 "14 → 11"
+adjustment, just in the other direction. Noted in the comment that two of
+the 110 sites are already fixed on this session's own still-unmerged PRs
+(#120, #136) and the baseline should follow the count back down once those
+merge, matching the established precedent.
+
+**Tests.** `tests/test_cycle40_keepall_sweep_scope.R`, 10 tests (T40-1..10)
+against a literal replica of T44's own detection logic, using small
+synthetic fixture files rather than production code — the sweep mechanism
+itself is this cycle's target. Confirmed: the exact 4-line `arrange()`
+lookback boundary (in-window vs. one line outside), the widened file list
+genuinely spans both `R/` and the repo root, the recorded baseline (110)
+matches a fresh live recount, and no filename collides between the two
+scanned locations. Two genuine, pre-existing limitations of the detection
+heuristic itself were found and documented (not fixed, out of scope for a
+regex-based line sweep): a `distinct(...)` call spanning multiple lines with
+`.keep_all = TRUE` on its own line is structurally invisible to the
+per-line regex (T40-6); an `arrange()` call on a wholly unrelated pipeline,
+merely present somewhere in the 4-line lookback window, is enough to exempt
+an unrelated `distinct()` from being flagged — the heuristic checks for the
+literal string, not that the `arrange()` actually applies to the same
+pipeline (T40-10).
+
+**Full suite.** New file: 10/10 pass. `tests/test_cycle5_key_resolution.R`
+re-run in full: still passes (0 failures) with the widened scope and new
+baseline. `tests/ci_hygiene.R`: 0 failures.
+
+**Unresolved / carried forward.** The 110-item debt inventory itself is
+explicitly NOT this cycle's job to clear (matching this test's own long-
+standing philosophy: "converting all of them at once would be a large
+mechanical edit with real regression risk and no observable benefit" —
+stated for the original 17-site R/-only inventory, applies with even more
+force at 10x the scale). The two documented heuristic limitations (T40-6,
+T40-10) are pinned, not fixed. Standing items from cycles 26, 30, 33, 34, 38
+untouched.
+
+**Estimand changed:** no — no production pipeline code was touched; this
+cycle only widened a test's own audit scope and recorded the debt it revealed.
+
+**Next candidate leads (not yet investigated):** of the 110 discovered
+offenders, several sit in files this session has already read closely for
+other reasons (`resolve_org_ambiguity.R`, 8 sites; `build_table1_midwives.R`,
+8 sites; `analyze_linkage_selection_bias.R`, 3 sites) — a future cycle could
+triage a handful of the highest-consequence ones (public Table 1 output,
+active affiliation resolution) rather than the full 110; `build_
+organization_affiliation_resolver.R`'s "multi_source_confirmed" label
+question (cycle 35, still not investigated); uncertainty propagation beyond
+the OLS extrapolation (cycle 26), the derangement fallback (cycle 30), and
+the tipping-point sensitivity (cycle 38).

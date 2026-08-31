@@ -522,6 +522,15 @@ jobs:
       # linkage (assert_unique_keys, not distinct(.keep_all=TRUE)).
       - name: Open Payments facility matching
         run: Rscript tests/test_cycle39_open_payments_facility.R
+
+      # Key-resolution audit: assert_unique_keys() at its cardinality edges,
+      # FIPS padding, the CT tract crosswalk, and the repo-wide bare
+      # distinct(.keep_all=TRUE) ratchet (T44) -- pre-existing, was not wired
+      # into CI at all. Its own sweep-mechanism tests ride alongside it.
+      - name: Key resolution and bare .keep_all ratchet
+        run: |
+          Rscript tests/test_cycle5_key_resolution.R
+          Rscript tests/test_cycle40_keepall_sweep_scope.R
       # -----------------------------------------------------------------------
       # Ported verbatim from mufflyt/isochrones @ 1907a5c40 -- 416 assertions,
       # zero new code. Each file tests a helper that exists in BOTH repos, so
