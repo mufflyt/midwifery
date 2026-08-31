@@ -30,6 +30,15 @@ suppressPackageStartupMessages({
   library(tibble)
 })
 
+# band_hg_age() is the canonical Table 1 age-banding rule (R/lib/table1_bands.R),
+# and the only one exhaustively tested (tests/test_table1_bands.R) -- it rejects
+# ages under 18 or over 120 as implausible rather than banding them. This file
+# used to carry its own inline copy of the same five bands with NO plausibility
+# guard at all, so an implausible fitted_age (see the OLS extrapolation below,
+# which has no bound on years_certified) would silently publish a Table 1 age
+# category instead of being rejected. Cycle 26 of the adversarial loop.
+source(file.path(if (dir.exists("R")) "." else "..", "R", "lib", "table1_bands.R"))
+
 REF_YEAR <- 2026L
 DEFAULT_ENTRY_AGE <- 29.5
 
@@ -272,14 +281,7 @@ df <- df %>%
     fitted_age  = alpha + beta * years_certified,
     final_age   = if_else(!is.na(known_age), known_age, fitted_age),
     is_imputed  = is.na(known_age),
-    age_band    = case_when(
-      final_age < 35 ~ "<35 years",
-      final_age < 45 ~ "35-44 years",
-      final_age < 55 ~ "45-54 years",
-      final_age < 65 ~ "55-64 years",
-      final_age >= 65 ~ ">=65 years",
-      TRUE ~ NA_character_
-    )
+    age_band    = band_hg_age(final_age)
   )
 
 # --- 5. Summary Results & Reporting ------------------------------------------

@@ -338,6 +338,13 @@ jobs:
       - name: Age-at-certification validation
         run: Rscript tests/test_validate_age_at_certification.R
 
+      # calibrate_amcb_certification_ages.R's own OLS age-imputation model,
+      # separate from the validator above: does it delegate age-banding to
+      # the shared, plausibility-guarded band_hg_age() rather than a private
+      # copy with no bound on OLS extrapolation.
+      - name: Age calibration banding contract
+        run: Rscript tests/test_cycle26_age_calibration_bands.R
+
       # A nursing-only match must never be promoted into the primary midwifery
       # cohort. This is that rule, as a test.
       - name: Cross-taxonomy hierarchy
