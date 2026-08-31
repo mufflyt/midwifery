@@ -69,6 +69,23 @@ op_norm_addr <- function(x) {
 #' @return [character] first five digits, NA when absent.
 op_zip5 <- function(x) str_extract(as.character(x), "[0-9]{5}")
 
+#' Collapse to the sorted distinct values, or NA when none are non-missing
+#'
+#' `paste(sort(unique(x)), collapse = sep)` silently returns "" -- not NA --
+#' when every element of `x` is NA, because `sort()` drops NAs by default.
+#' An empty STRING is indistinguishable from "we know the name and it is
+#' blank"; NA correctly says "we do not know it". This matters because that
+#' string sits next to `status == "unique_exact"`, which promises a resolved
+#' organization -- "" there reads as a resolved-but-blank name, not a gap.
+#' @param x [character]: values to collapse.
+#' @param sep [character(1)]: separator between distinct values.
+#' @return [character(1)] NA if `x` has no non-missing values, else the
+#'   sorted distinct values joined by `sep`.
+paste_sorted_unique <- function(x, sep) {
+  u <- sort(unique(x))
+  if (length(u) == 0L) NA_character_ else paste(u, collapse = sep)
+}
+
 #' Resolve addresses to Type-2 organizations over a COMPLETE candidate universe
 #'
 #' @param addr_df [data.frame]: needs `id`, `addr`, `zip`.
@@ -79,6 +96,27 @@ op_zip5 <- function(x) str_extract(as.character(x), "[0-9]{5}")
 resolve_type2_bulk <- function(addr_df, org_df) {
   stopifnot(all(c("id", "addr", "zip") %in% names(addr_df)))
   stopifnot(all(c("type2_npi", "organization_name", "addr", "zip") %in% names(org_df)))
+
+  # TYPE CONTRACT: zip and addr must already be character. A numeric zip
+  # (e.g. a data.frame column that lost its leading zero, turning "02138"
+  # into 2138) silently fails op_zip5()'s 5-digit regex and every affected
+  # id resolves to "no_match" -- identical, on the page, to a real
+  # non-match. That is worse than an error: it is a New-England-and-PR-wide
+  # silent match-rate drop with no signal that anything went wrong. Fail
+  # loudly instead, matching the duplicate-id contract below.
+  for (nm in c("addr_df", "org_df")) {
+    df <- get(nm)
+    bad <- c("addr", "zip")[!vapply(df[c("addr", "zip")], is.character, logical(1))]
+    if (length(bad))
+      stop(sprintf(paste0("resolve_type2_bulk(): %s$%s must be character, not %s. ",
+                          "A numeric zip silently drops leading zeros (2138 vs ",
+                          "\"02138\") and would misresolve as no_match rather ",
+                          "than erroring; coerce explicitly before calling."),
+                   nm, paste(bad, collapse = "/"),
+                   paste(vapply(df[bad], function(x) class(x)[1], character(1)),
+                         collapse = "/")),
+           call. = FALSE)
+  }
 
   # INPUT CONTRACT: one address per id. The function groups by `id`, so two
   # addresses for one id would be silently pooled into a single candidate set
@@ -108,8 +146,7 @@ resolve_type2_bulk <- function(addr_df, org_df) {
     mutate(addr_norm = op_norm_addr(addr), z5 = op_zip5(zip)) %>%
     filter(!is.na(addr_norm), !is.na(z5)) %>%
     group_by(type2_npi, addr_norm, z5) %>%
-    summarise(organization_name = paste(sort(unique(organization_name)),
-                                        collapse = " / "),
+    summarise(organization_name = paste_sorted_unique(organization_name, " / "),
               .groups = "drop")
 
   # Complete candidate set: every organization at the same normalized street
@@ -122,8 +159,8 @@ resolve_type2_bulk <- function(addr_df, org_df) {
               # Sorted purely so the CANDIDATE LIST STRING is stable for
               # diffing. Sorting never chooses a winner: an organization is
               # emitted below only when n_candidates == 1.
-              candidate_npis  = paste(sort(unique(type2_npi)), collapse = ";"),
-              candidate_names = paste(sort(unique(organization_name)), collapse = " | "),
+              candidate_npis  = paste_sorted_unique(type2_npi, ";"),
+              candidate_names = paste_sorted_unique(organization_name, " | "),
               .groups = "drop")
 
   addr_df %>%
@@ -149,7 +186,8 @@ if (sys.nframe() == 0) {
   on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
   org <- dbGetQuery(con, "
     SELECT CAST(npi AS VARCHAR) AS type2_npi, organization_name,
-           practice_address_street AS addr, practice_address_zip AS zip
+           CAST(practice_address_street AS VARCHAR) AS addr,
+           CAST(practice_address_zip AS VARCHAR) AS zip
       FROM npi_org_all
      WHERE NULLIF(TRIM(organization_name), '') IS NOT NULL")
 

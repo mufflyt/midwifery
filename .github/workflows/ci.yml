@@ -475,6 +475,7 @@ jobs:
       - name: Open Payments type-2 bulk, Table 1 banding, PIP materialisation
         run: |
           Rscript tests/test_open_payments_type2_bulk.R
+          Rscript tests/test_cycle32_open_payments_type2_bulk.R
           Rscript tests/test_table1_blk_hg.R
           Rscript tests/test_pip_materialization.R
 
