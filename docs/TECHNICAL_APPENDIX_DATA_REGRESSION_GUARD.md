@@ -59,7 +59,7 @@ every other gate in the repository.
 | D4 | Every `composition_*.csv` group's `n` sums to its own `N`; `pct` closes to 100 | A code change drops a level, double-counts a row, or divides by the wrong denominator, generalized across all 5 composition files |
 | D5 | Every Manski bound triple in `linkage_selection_bounds.csv` is ordered lower ≤ observed ≤ upper | A swapped min/max, a flipped filter, or a wrong-direction denominator produces a numerically valid but logically inverted bound |
 | D6 | README.md's cited "22,309" roster count matches `linkage_manifest.json` | Doc-vs-data drift: the data moved and the prose did not |
-| D7 | The frozen 16,892 (`INPUT_FINGERPRINT.json`, geography-guard freeze) stays pinned and distinct from the FROZEN manifest's 16,898 (a later refreeze) | Either point-in-time record moved, or the two were silently collapsed into one number — the isochrones "retired cells" pattern, applied here to two of this repository's own frozen counts |
+| D7 | `INPUT_FINGERPRINT.json` and `amcb_npi_linkage_FROZEN.csv.manifest.json` each still declare their own vintage marker (`rows`/`frozen_at`, `cohort_members`/`run_id`) | Either file drops the field `tests/test_cohort_vintage.R` needs to compare them — see §5, this is deliberately **not** a check that the two counts agree or disagree |
 | D8 | *PRIVATE-OK.* `amcb_npi_linkage_FROZEN.csv`, if present: `certification_number` unique, `npi` values 10-digit | Only checked on a machine with the real person-level crosswalk |
 | D9 | *PRIVATE-OK.* `frozen_cohort/analytic_cohort.csv`, if present: plausible row count, no duplicate certificants | Same as D8 |
 | D10 | A 20-file sample of the 97 tracked `.provenance.json` sidecars is valid JSON with the `write_with_provenance()` schema and 64-hex-char sha256 hashes | A change to `write_with_provenance()` drops a field or writes a malformed hash |
@@ -83,7 +83,36 @@ is a larger, separate task than this guard's own scope — flagged here rather
 than fixed under time pressure with a real risk of introducing a new,
 harder-to-spot error.
 
-## 5. What this does not establish
+## 5. D7 was wrong for its first day, and here is why
+
+D7 originally asserted that `INPUT_FINGERPRINT.json`'s pinned 16,892 and
+`amcb_npi_linkage_FROZEN.csv.manifest.json`'s `cohort_members` (16,898, a
+later same-day refreeze) must stay **different** — reasoning by analogy from
+the isochrones "retired cells" pattern (a genuinely retired, deliberately
+never-recomputed historical methodology, distinct from and marked as
+superseded by a current canonical value).
+
+That analogy does not hold here. `repin_frozen_cohort.R`'s own header states
+plainly what this actually is: "the snapshot was pinned at 05:31 and
+`refreeze_option2_20260810T192207` landed at 19:22, moving membership 16,892
+-> 16,898. It went unnoticed for three weeks." That is a bug report, not a
+design invariant. `tests/test_cohort_vintage.R` (its own V3/V4 checks) was
+already built to catch exactly this — asserting the two numbers **should**
+agree, and correctly failing while they do not — so D7's original wording put
+this guard in direct, opposite disagreement with that authoritative check:
+one green only when the other is red, and vice versa.
+
+**Corrected 2026-09-01.** D7 no longer takes a position on whether the two
+counts agree. It checks only that both artifacts still carry the fields
+`test_cohort_vintage.R` needs to make that comparison itself — the
+narrower, genuinely-this-guard's-job question of "did the vintage marker
+silently disappear," not "do the vintages currently match." Reconciling the
+underlying 16,892/16,898 drift is `test_cohort_vintage.R` and
+`repin_frozen_cohort.R`'s job, on a machine holding the person-level files;
+this guard defers to it rather than re-deciding the question with a
+different, contradictory answer.
+
+## 6. What this does not establish
 
 Same limitation as `ci_artifact_contracts.R`'s own A3 (provenance coverage):
 this guard reads whatever is currently committed and cross-checks it against
