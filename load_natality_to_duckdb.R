@@ -28,8 +28,9 @@ suppressPackageStartupMessages({
   library(DBI); library(duckdb); library(dplyr); library(readr); library(stringr)
 })
 
-DB <- Sys.getenv("NATALITY_DB",
-                 "/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+DB <- Sys.getenv("NATALITY_DB", "")
+if (!nzchar(DB)) DB <- resolve_midwifery_duckdb()
 
 SRC <- list(
   natality_cnm_by_county_2016_2024 = "data/wonder/natality_2016_2024_cnm_by_county.csv",

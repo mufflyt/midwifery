@@ -47,8 +47,8 @@ suppressPackageStartupMessages({
 source("R/lib/common_helpers.R")
 source("link_open_payments_type2_bulk.R")   # op_norm_addr(), op_zip5()
 
-DB <- Sys.getenv("MEDICARE_DUCKDB",
-                 "/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+DB <- resolve_midwifery_duckdb()
 
 # norm_org() moved to R/lib/org_names.R when the affiliation resolver became a
 # second caller. Defined once, so the two callers cannot drift apart on what

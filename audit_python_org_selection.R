@@ -41,8 +41,8 @@ source("R/lib/address_keys.R")   # norm_addr/zip5_first_run: one definition
 source("R/lib/common_helpers.R")
 dir.create("artifacts/audit", showWarnings = FALSE, recursive = TRUE)
 
-DB <- Sys.getenv("MEDICARE_DUCKDB",
-                 "/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+DB <- resolve_midwifery_duckdb()
 API_LIMIT <- 10L   # the value the Python matcher used; audited, not changed
 
 

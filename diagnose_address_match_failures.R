@@ -83,8 +83,13 @@ source(file.path("R", "lib", "artifact_provenance.R"))
 source(file.path("R", "lib", "address_keys.R"))
 source(file.path("R", "lib", "duckdb_guards.R"))
 
-NPPES <- Sys.getenv("NPPES_2025",
-  "/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2025/npidata_pfile_20050523-20251109.csv")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+
+NPPES <- Sys.getenv("NPPES_2025", "")
+if (!nzchar(NPPES))
+  NPPES <- samsung_volume_path(file.path("nppes_historical_downloads",
+                                         "extracted_2025",
+                                         "npidata_pfile_20050523-20251109.csv"))
 if (!file.exists(NPPES)) stop("NPPES 2025 not found: ", NPPES, call. = FALSE)
 
 OUT_T <- "artifacts/address_match_failure_taxonomy.csv"

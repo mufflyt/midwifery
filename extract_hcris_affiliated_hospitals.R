@@ -38,8 +38,10 @@ suppressPackageStartupMessages({
 })
 
 FY  <- Sys.getenv("HCRIS_FY", "2023")
-DIR <- Sys.getenv("HCRIS_DIR",
-                  file.path("/Volumes/MufflySamsung/HCRIS/hosp10", paste0("fy", FY)))
+source(file.path("R", "lib", "medicare_duckdb.R"))
+DIR <- Sys.getenv("HCRIS_DIR", "")
+if (!nzchar(DIR))
+  DIR <- samsung_volume_path(file.path("HCRIS", "hosp10", paste0("fy", FY)))
 rpt_f  <- file.path(DIR, sprintf("HOSP10_%s_rpt.csv",  FY))
 nmrc_f <- file.path(DIR, sprintf("HOSP10_%s_nmrc.csv", FY))
 for (f in c(rpt_f, nmrc_f)) {

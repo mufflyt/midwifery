@@ -62,8 +62,13 @@ source(file.path("R", "lib", "artifact_provenance.R"))
 
 source(file.path("R", "lib", "duckdb_guards.R"))
 
-NPPES <- Sys.getenv("NPPES_2025",
-  "/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2025/npidata_pfile_20050523-20251109.csv")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+
+NPPES <- Sys.getenv("NPPES_2025", "")
+if (!nzchar(NPPES))
+  NPPES <- samsung_volume_path(file.path("nppes_historical_downloads",
+                                         "extracted_2025",
+                                         "npidata_pfile_20050523-20251109.csv"))
 OUT_C <- "artifacts/unresolved_disambiguation_candidates.csv"
 OUT_Y <- "artifacts/unresolved_disambiguation_yield.csv"
 OUT_N <- "artifacts/unresolved_no_org_character.csv"

@@ -58,7 +58,9 @@ root_dir <- {
 setwd(root_dir)
 source(file.path("R", "lib", "artifact_provenance.R"))
 
-PECOS <- Sys.getenv("PECOS_DIR", "/Volumes/MufflySamsung 1/pecos_data")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+PECOS <- Sys.getenv("PECOS_DIR", "")
+if (!nzchar(PECOS)) PECOS <- samsung_volume_path("pecos_data")
 ENROL   <- file.path(PECOS, "ppefenrol.csv")
 REASSIGN<- file.path(PECOS, "ppefreassign.csv")
 ADDR    <- file.path(PECOS, "ppefaddr.csv")

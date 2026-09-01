@@ -61,8 +61,13 @@ setwd(root_dir)
 source(file.path("R", "lib", "artifact_provenance.R"))
 source(file.path("R", "lib", "duckdb_guards.R"))
 
-NPPES <- Sys.getenv("NPPES_2026",
-  "/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2026/npidata_pfile_20050523-20260809.csv")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+
+NPPES <- Sys.getenv("NPPES_2026", "")
+if (!nzchar(NPPES))
+  NPPES <- samsung_volume_path(file.path("nppes_historical_downloads",
+                                         "extracted_2026",
+                                         "npidata_pfile_20050523-20260809.csv"))
 if (!file.exists(NPPES)) stop("NPPES 2026 not found: ", NPPES, call. = FALSE)
 
 reasons <- read_csv("artifacts/unresolved_affiliation_reasons.csv",

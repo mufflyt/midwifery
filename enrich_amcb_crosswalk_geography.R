@@ -56,8 +56,9 @@ CROSSWALK <- Sys.getenv(
   "CROSSWALK_IN",
   "artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv")
 GEO_OUT   <- Sys.getenv("GEO_OUT", "artifacts/amcb_npi_geography.csv")
-ROOT      <- Sys.getenv("NPPES_HISTORY",
-                        "/Volumes/MufflySamsung/nppes_historical_downloads")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+ROOT      <- Sys.getenv("NPPES_HISTORY", "")
+if (!nzchar(ROOT)) ROOT <- samsung_volume_path("nppes_historical_downloads")
 stopifnot(file.exists(CROSSWALK), dir.exists(ROOT))
 
 # Refuse to silently enrich a superseded linkage. If a newer crosswalk exists

@@ -31,8 +31,8 @@ suppressPackageStartupMessages({
   library(DBI); library(duckdb); library(dplyr); library(readr)
 })
 
-DB <- Sys.getenv("MEDICARE_DUCKDB",
-                 "/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+DB <- resolve_midwifery_duckdb()
 if (!file.exists(DB)) {
   stop(sprintf(paste0("Medicare warehouse not found at %s. It lives on an ",
                       "external volume; mount it or set MEDICARE_DUCKDB. ",
