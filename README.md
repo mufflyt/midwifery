@@ -143,6 +143,23 @@ only by the one-to-one constraint, so they sit above tied names. Built by
 [`make_linkage_upset_figure.R`](make_linkage_upset_figure.R), ported from the
 registry-overlap figure in `mufflyt/grace-ent`.*
 
+### Three more you build yourself
+
+These read the frozen crosswalk, which is person-level and gitignored, so they
+are not rendered here — a clean checkout cannot produce them and this README
+does not pretend otherwise. On a machine holding the data:
+
+| | what it answers |
+|---|---|
+| [`make_evidence_class_figure.R`](make_evidence_class_figure.R) | What do the accepted matches *rest on*? Every accepted link by the evidence class that carried it, split by taxonomy, because a nursing accept at class 3 or below is two sensitivity decisions stacked. Writes `docs/figures/evidence_class_accepted.png` and a publishable aggregate CSV. |
+| [`build_linkage_case_gallery.R`](build_linkage_case_gallery.R) | Is the matching *right*? A stratified, seeded sample of real decisions — the AMCB side, the NPPES side, the rule that fired, the candidate arithmetic — with a verdict box per case. Twelve strata; three flagged as needing close reading. Person-level: writes only to `qa/`, `--redact` for a shareable copy. |
+| [`analyze_temporal_plausibility.R`](analyze_temporal_plausibility.R) | Would a *date* separate what a name cannot? Measures the one axis the matcher never uses. See [D17](docs/DECISIONS_CONTRACT.md) and [the appendix](docs/TECHNICAL_APPENDIX_TEMPORAL_SIGNAL.md); the rule is implemented and switched off. |
+
+All three are exercised in CI against regenerated fixtures
+([`tests/test_linkage_scripts_smoke.R`](tests/test_linkage_scripts_smoke.R)),
+including that they refuse what they document refusing.
+
+
 Linkage certainty and geographic completeness are separate properties: **66.2% primary linkage is
 the inferential limitation; the geography is essentially complete for anything linked.** Linkage
 also varies sharply by certification status (78.4% ACTIVE vs 18.8% DECEASED), so the linked subset
@@ -1469,6 +1486,11 @@ midwifery/
 ├── docs/
 │   ├── figures/                    README figures, rebuilt from artifacts
 │   ├── maps/                       static and leaflet map output
+│   ├── TECHNICAL_APPENDIX_COHORT_VINTAGE.md   why two artifacts described
+│   │                               different freezes, and the assertion that
+│   │                               could not fail
+│   ├── TECHNICAL_APPENDIX_TEMPORAL_SIGNAL.md  the one axis the matcher never
+│   │                               uses, measured and switched off
 │   └── HALL_OF_SHAME.md            defects written here, and what each cost
 ├── tests/                      contract tests
 │   ├── test_address_key_matching.py     exact address keys, adversarial
@@ -1489,7 +1511,12 @@ midwifery/
     ├── link_open_payments_type2_bulk.R   bulk-table candidate universe
     ├── audit_python_org_selection.R      diagnostic: selection-defect audit
     ├── address_keys.py                   canonical address-key helpers
-    └── build_table1_midwives.R           Table 1
+    ├── build_table1_midwives.R           Table 1
+    ├── make_linkage_upset_figure.R       linkage strata as nested properties
+    ├── make_evidence_class_figure.R      accepted matches by evidence class
+    ├── build_linkage_case_gallery.R      by-eye review sheet (person-level)
+    ├── analyze_temporal_plausibility.R   the unused temporal signal (D17)
+    └── repin_frozen_cohort.R             re-pin the cohort snapshot (D10)
 ```
 
 This is a **pipeline repository, not an R package** — deliberately. There is no
