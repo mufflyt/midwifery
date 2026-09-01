@@ -50,7 +50,23 @@ REBUILD_ORDER <- list(
        # amcb_npi_matched.csv. Running it inside a rebuild regenerates FROZEN
        # from stale inputs and destroys the promotion the rebuild exists to
        # propagate -- which is exactly what happened on 2026-08-10.
-       scripts = c("audit_amcb_crosswalk.R", "verify_linkage_arms.R")),
+       scripts = c("audit_amcb_crosswalk.R", "verify_linkage_arms.R",
+                   # Added 2026-08-31, by the same completeness gate (T5), which
+                   # caught it in the pull request that introduced it. It reads
+                   # amcb_npi_linkage_FROZEN to sample the matching decisions a
+                   # reviewer adjudicates by eye, so a gallery left holding the
+                   # previous cohort would show a co-author cases the crosswalk
+                   # no longer contains -- and the strata counts printed beside
+                   # them would be wrong in a way nothing else reports.
+                   #
+                   # Belongs in this layer because it audits the crosswalk
+                   # itself and consumes nothing downstream. Last within it: it
+                   # writes only into qa/, which is gitignored, and no other
+                   # script reads its output. Note that a rebuild therefore
+                   # writes person-level review sheets to qa/ -- correct on the
+                   # machine holding the crosswalk, which is the only machine
+                   # where a rebuild can run at all.
+                   "build_linkage_case_gallery.R")),
   list(layer = "2-cohort-structure", why = "cohort flow/composition/progression read FROZEN directly",
        scripts = c("R/05-stage-progression.R", "R/06-cohort-flow.R",
                    "R/07-cohort-composition.R")),
