@@ -81,6 +81,10 @@ artifacts/geocode_final_results.csv
 # the pipeline diagrams are documentation, not scraped HTML
 !docs/pipeline.html
 docs/maps/leaflet_*_files/
+# htmlwidgets/Leaflet dependency bundles for the other map renders -- same
+# reasoning, different naming (not "leaflet_*" like the rule above).
+docs/cnm_national_leaflet_map_files/
+docs/maps/midwifery_access_map_v2_files/
 !docs/maps/*.png
 !docs/figures/*.png
 !artifacts/plots/*.png
@@ -478,6 +482,22 @@ artifacts/bc_resolver/contested_evidence.csv
 # 126 MB CMS download, refreshed on demand by
 # R/lib/match_npi_to_hospitals.R via resolve_facility_affiliation_url().
 data/CMS_Facility_Affiliation.csv
+
+# 839 MB CMS Doctors & Clinicians National Downloadable File, fetched by
+# match_dac_group_practice_names.py. Not covered by the DAC_NationalDownloadableFile*
+# rules above -- those match the vintage-tagged form, this one is CMS_-prefixed.
+data/CMS_DAC_NationalDownloadableFile.csv
+
+# 405 MB CMS Open Payments profile supplement, fetched by harvest_open_payments_profile.py.
+data/CMS_Open_Payments_Profile_Supplement.csv
+
+# CMS Hospital Compare general info, read by R/lib/match_npi_to_hospitals.R,
+# calculate_exact_postmastr_match_yield.py and build_cnm_national_leaflet_map.py.
+data/CMS_Hospital_General_Information.csv
+
+# US ZIP code centroids, read by build_cnm_national_leaflet_map.py and
+# build_complete_leaflet_map.R. Reference geo data, not a project source.
+data/us_zip_centroids.csv
 
 # PECOS organization affiliations: person-level (amcb_id, midwife NPI,
 # organization NPI). Reproducible from build_pecos_organization_affiliations.R.

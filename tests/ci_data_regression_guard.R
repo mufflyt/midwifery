@@ -277,18 +277,29 @@ if (!file.exists(readme_path) || !file.exists(lm_path)) {
 }
 
 # -----------------------------------------------------------------------------
-ci_section("D7 retired cohort count stays pinned and distinct from the current one")
+ci_section("D7 the geography-guard snapshot and the linkage freeze both name their own vintage")
 
-# PUBLIC, the isochrones "retired cells" pattern. INPUT_FINGERPRINT.json
-# freezes the cohort size (16,892) at the geography-guard step on
-# 2026-08-08; amcb_npi_linkage_FROZEN.csv.manifest.json records a LATER
-# refreeze the same week that added six members (16,898, see that file's
-# own net_membership_change). Both numbers are real and both are correctly
-# committed -- the failure this guards against is someone years from now
-# reading one out of context and treating it as interchangeable with the
-# other, or a future edit silently making them equal (which would mean one
-# of the two frozen records was overwritten rather than superseded in
-# place, per docs/TECHNICAL_APPENDIX_REPRODUCIBILITY.md).
+# CORRECTED 2026-09-01. This check originally asserted that
+# INPUT_FINGERPRINT.json's pinned 16,892 and amcb_npi_linkage_FROZEN.csv.
+# manifest.json's cohort_members (16,898, a later same-day refreeze) must
+# stay DIFFERENT -- misapplying the isochrones "retired cells" pattern
+# (a genuinely retired, never-recomputed historical methodology) to what is
+# actually plain vintage skew: the geography snapshot was pinned before that
+# day's refreeze and was never re-pinned. repin_frozen_cohort.R's own header
+# says so directly: "It went unnoticed for three weeks." That is a bug
+# report, not a design invariant, and asserting the two numbers must stay
+# unequal would have made this guard actively fight
+# tests/test_cohort_vintage.R (V3/V4), which correctly asserts they SHOULD
+# agree and is already red for exactly this drift.
+#
+# The two guards would otherwise duplicate the same check with opposite
+# verdicts. test_cohort_vintage.R is the authoritative one -- it is dedicated
+# to this question and ships with a remediation path
+# (repin_frozen_cohort.R) -- so this section defers to it rather than
+# re-deciding agree-vs-disagree here. What THIS guard still owns: that both
+# files individually declare a legible vintage marker at all, so a future
+# refreeze that drops one of these fields silently loses the information
+# test_cohort_vintage.R depends on to compare them.
 fingerprint_path <- drg_path("artifacts", "frozen_cohort", "INPUT_FINGERPRINT.json")
 if (!file.exists(fingerprint_path)) {
   ci_fail("D7: %s is committed and absent -- PUBLIC artifact went missing", fingerprint_path)
@@ -297,17 +308,14 @@ if (!file.exists(fingerprint_path)) {
 } else {
   fp <- read_json(fingerprint_path)
   fm <- read_json(frozen_manifest_path)
-  if (is.null(fp$rows) || is.null(fm$cohort_members)) {
-    ci_fail("D7: expected 'rows' or 'cohort_members' key missing")
-  } else if (fp$rows != 16892L) {
-    ci_fail("D7: INPUT_FINGERPRINT.json's frozen rows moved from 16,892 to %s -- if this is a deliberate new freeze, update this pin and say so in the commit message",
-            format(fp$rows, big.mark = ","))
-  } else if (isTRUE(all.equal(fp$rows, fm$cohort_members))) {
-    ci_fail("D7: the two frozen cohort counts (%s) have become identical -- one point-in-time record may have overwritten the other instead of coexisting",
-            format(fp$rows, big.mark = ","))
+  if (is.null(fp$rows) || is.null(fp$frozen_at)) {
+    ci_fail("D7: INPUT_FINGERPRINT.json is missing 'rows' or 'frozen_at' -- tests/test_cohort_vintage.R cannot compare vintages without both")
+  } else if (is.null(fm$cohort_members) || is.null(fm$run_id)) {
+    ci_fail("D7: amcb_npi_linkage_FROZEN.csv.manifest.json is missing 'cohort_members' or 'run_id' -- tests/test_cohort_vintage.R cannot compare vintages without both")
   } else {
-    ci_ok("retired count 16,892 (geography-guard freeze) stays pinned and distinct from %s (later refreeze)",
-          format(fm$cohort_members, big.mark = ","))
+    ci_ok("both vintage markers present: geography snapshot %s rows (frozen %s); linkage freeze %s members (%s). Whether they currently agree is tests/test_cohort_vintage.R's call, not this guard's",
+          format(fp$rows, big.mark = ","), fp$frozen_at,
+          format(fm$cohort_members, big.mark = ","), fm$run_id)
   }
 }
 
