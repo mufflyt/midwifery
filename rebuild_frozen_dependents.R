@@ -80,8 +80,18 @@ REBUILD_ORDER <- list(
                    # the panel will compare a current crosswalk against a stale
                    # first-seen year -- the same vintage skew as D10, one layer
                    # down. It reports the panel floor it used for that reason.
+                   #
+                   # make_temporal_plausibility_figure.R draws what that
+                   # analysis measured and carries the same two inputs, so it
+                   # inherits the same skew: a stale panel would put a current
+                   # crosswalk's certification years against old first-seen
+                   # years and the censored share -- the figure's whole Panel A
+                   # -- would be quietly wrong. Added 2026-08-31, caught by this
+                   # gate in the pull request that introduced it, which is the
+                   # third time that has now happened and the reason T5 exists.
                    "make_evidence_class_figure.R",
-                   "analyze_temporal_plausibility.R")),
+                   "analyze_temporal_plausibility.R",
+                   "make_temporal_plausibility_figure.R")),
   list(layer = "2-cohort-structure", why = "cohort flow/composition/progression read FROZEN directly",
        scripts = c("R/05-stage-progression.R", "R/06-cohort-flow.R",
                    "R/07-cohort-composition.R")),
