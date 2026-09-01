@@ -1,0 +1,9 @@
+evidence_class,verdict,n
+1,consistent,5566
+1,left-censored (bound only),3845
+2,consistent,4613
+2,left-censored (bound only),1870
+3,consistent,514
+3,left-censored (bound only),167
+4,consistent,185
+4,left-censored (bound only),138

@@ -207,6 +207,33 @@ amcb_linkage_tier <- function(npi, name_evidence_class, npi_tax_class,
 # have enumerated before the panel begins, so a lead computed against it is a
 # bound and cannot rule anything out.
 
+#' The certification YEAR, from however the roster spelled the date
+#'
+#' Defined once because getting it wrong is silent. `certification_date` in the
+#' frozen crosswalk is `MM/YYYY` ("06/2015"), and the first version of this in
+#' analyze_temporal_plausibility.R took `substr(v, 1, 4)` -- which is "06/2" --
+#' under `suppressWarnings()`. Every one of 22,309 rows parsed to NA, every
+#' accepted match was reported "not assessable", and the run exited 0 having
+#' measured nothing. A second copy of this logic is how that comes back.
+#'
+#' Takes the four-digit year wherever it sits, so an ISO-dated vintage
+#' ("2015-06-01") parses too, and preserves length so a downstream join cannot
+#' silently shift.
+#'
+#' @param v `character` (or coercible): the roster's certification date.
+#' @return `integer` of the same length; `NA` where no 19xx/20xx year appears.
+amcb_certification_year <- function(v) {
+  s <- as.character(v)
+  # regexpr() returns NA for an NA element, and `out[NA] <- x` is an error, so
+  # the mask has to exclude NA explicitly rather than relying on `pos > 0`.
+  # A roster with one missing date would otherwise abort the whole run.
+  pos <- regexpr("(19|20)[0-9]{2}", s)
+  hit <- !is.na(pos) & pos > 0L
+  out <- rep(NA_integer_, length(s))
+  out[hit] <- as.integer(regmatches(s[hit], regexpr("(19|20)[0-9]{2}", s[hit])))
+  out
+}
+
 #' Which tied pools would a temporal rule separate?
 #'
 #' @param cand `data.frame`: candidate-level rows for TIED certificants, with

@@ -512,12 +512,47 @@ certification year and the panel carries the year each NPI was first seen. May
 that comparison be used to separate candidates tied at the strongest evidence
 class, and if so at what grace period?
 
-**Evidence.** Not yet measured — deliberately. The mechanism
-(`amcb_temporal_separation()` in `R/amcb_resolver.R`) and the measurement
-(`analyze_temporal_plausibility.R`) exist and are off; the candidate audit's
-`first_year` column, declared and left `NA` since the beginning, is now
+**Evidence.** The **validation** half is now measured (2026-08-31, on the
+machine holding the panel). The **separation** half — the half this ruling
+actually turns on — is still not computable. Full write-up:
+[docs/TECHNICAL_APPENDIX_TEMPORAL_PLAUSIBILITY.md](TECHNICAL_APPENDIX_TEMPORAL_PLAUSIBILITY.md).
+
+Of 16,898 accepted matches, **6,020 (35.6%) are left-censored** — the panel
+opens in 2007 and NPPES began enumerating in 2006, so those are a bound and no
+grace period can make them informative. That leaves **10,878 assessable**, and
+every claim below has that as its denominator, not 16,898.
+
+Among the assessable, `lead_years` (certification year minus NPI first-seen
+year; positive is the suspicious direction) runs −54 to **+17**, median −1.
+**The shipped default is `grace = 25`, which is above every value in the data**,
+so at its own default the measurement flags nothing — a property of the
+parameter, not a finding about midwives. Tightening it:
+
+| grace | 25 (default) | 15 | 10 | 5 | 0 |
+|---|---:|---:|---:|---:|---:|
+| flagged | 0 | 3 | 57 | 204 | 615 |
+| % of 10,878 | 0.00% | 0.03% | 0.52% | 1.88% | 5.65% |
+
+A flagged record is a *candidate* false positive the name rules had no way to
+see — not a confirmed error, and none has been adjudicated.
+
+**The separation half is still open.** `analyze_temporal_plausibility.R`
+computes it only from `artifacts/linkage_candidate_audit.csv`, and the committed
+audit carries 198,922 rows with `first_year` **100% `NA`** — it predates the
+column being populated. (An earlier draft of this entry said the column "is now
 populated so the question can be asked from a committed artifact for the first
-time. Run the analysis on the machine holding the panel to fill this section in.
+time"; that is true of the code, not of the committed audit.) The script detects
+this and refuses to estimate, which is correct. Rerun `match_amcb_to_npi.R`,
+then rerun the analysis, to get separations, censoring-blocked pools, and —
+decisively — **emptied** pools.
+
+> Two caveats carried from the measurement. A defect in
+> `analyze_temporal_plausibility.R` made its first run report 100% "not
+> assessable" while exiting 0 (`certification_date` is `MM/YYYY`; the parser
+> assumed ISO). Any reading of `artifacts/temporal_plausibility_summary.csv`
+> from before 2026-08-31 is void. And the validation half cannot settle D17
+> either way: it bounds how much *existing* evidence the signal contradicts, and
+> says nothing about how many tied pools it would empty.
 
 **Why it needs a human.** The resolver's stated rule is that candidates tied at
 the strongest class are indistinguishable *on the evidence held*, and are

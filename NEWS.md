@@ -22,6 +22,81 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-08-31 — Two runs that reported success having measured nothing
+
+Both entries below are the same defect wearing different clothes: a pipeline
+step that produced no information, returned exit 0, and wrote an artifact that
+read as a clean result. Neither was caught by a crash, because neither crashed.
+
+The first of them corrects the entry immediately below this one: the temporal
+signal was reported there as "measurable for the first time", and the script
+that measures it could not parse a single date.
+
+### Fixed — `analyze_temporal_plausibility.R`: **the D17 measurement was reporting 100% "not assessable"**
+
+The script's date parser assumed ISO:
+
+```r
+cert_year <- function(v) suppressWarnings(as.integer(substr(as.character(v), 1, 4)))
+```
+
+`certification_date` in the frozen crosswalk is **`MM/YYYY`** (`"06/2015"`), so
+`substr(v, 1, 4)` returned `"06/2"` and `as.integer()` returned `NA` — for all
+**22,309** rows, silently, under `suppressWarnings`. Every accepted match fell
+through to the `"not assessable"` branch, the summary artifact was written, and
+the run exited 0. The parser now takes the four-digit year wherever it sits and
+preserves vector length: **0 → 22,309 rows parsed**, range 1971–2026.
+
+**Any reading of `artifacts/temporal_plausibility_summary.csv` taken before this
+fix is void** — it reported 100% "not assessable" regardless of the data.
+
+### Added — the D17 validation half is measured, and it does not settle D17
+
+With the parser fixed, over 16,898 accepted matches:
+
+- **6,020 (35.6%) are left-censored** and can never be assessed. The panel opens
+  in 2007, NPPES began enumerating in 2006, so first-seen is a *bound*. Every
+  percentage below has 10,878 as its denominator, not 16,898.
+- Among the 10,878 assessable, `lead_years` runs −54 to **+17**, median −1.
+- **The shipped default `grace = 25` sits above every value in the data**, so at
+  its own default the measurement flags nothing. That is a property of the
+  parameter, not a finding about midwives. At grace 15/10/5/0 it flags
+  3 / 57 / 204 / 615.
+
+The **separation** half — the half D17 actually turns on — remains
+**not computable**: `artifacts/linkage_candidate_audit.csv` carries 198,922 rows
+with `first_year` **100% `NA`**, predating the populated column. The script
+detects this and declines to estimate rather than guessing. D17's **RULING
+stays `none`.**
+
+New: [docs/TECHNICAL_APPENDIX_TEMPORAL_PLAUSIBILITY.md](docs/TECHNICAL_APPENDIX_TEMPORAL_PLAUSIBILITY.md),
+`make_temporal_plausibility_figure.R`,
+`docs/figures/temporal_plausibility.{pdf,png,svg}`,
+`artifacts/temporal_plausibility_grace_sweep.csv`.
+
+### Fixed — `R/lib/medicare_duckdb.R`: a remounted volume produced an empty warehouse, not an error (#157)
+
+macOS remounts the same drive as `<name> 1` after an unclean unmount, and 28
+scripts hardcoded one spelling. `dbConnect()` **creates** a database at a path
+that does not exist, so the failure was not an error — it was a 12 KB empty
+warehouse, zero rows from every query, and a run reporting success. Both files
+were on the volume:
+
+```
+/Volumes/MufflySamsung 1/DuckDB/nber_my_duckdb.duckdb   84.3 GB, 454 tables
+/Volumes/MufflySamsung 1/nber_my_duckdb.duckdb           12 KB,   0 tables
+```
+
+Discovery is now a glob over `MufflySamsung*` requiring a candidate ≥ 1 GB, and
+stops loudly on absence or ambiguity. All **58 hardcoded references across 28
+scripts** now resolve through `resolve_midwifery_duckdb()` or
+`samsung_volume_path()`, each keeping its environment-variable override. Four
+sites resolve with `must_exist = FALSE` because a hard stop would delete a
+working escape hatch (the isochrone water masks, the legacy PPEF cut,
+`CARE_COMPARE_DIR`, and the revalidation archive, which is *created* on a first
+run). `tests/test_duckdb_volume_resolution.R` is hermetic and its section H
+holds the migration repo-wide.
+
 ## [Unreleased] — 2026-08-31 — a cohort-vintage skew, a restored co-author, and two ways to read the linkage evidence
 
 ### Retracted — the cohort flow figure's merge, 16,892 → 16,898

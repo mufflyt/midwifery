@@ -1,0 +1,33 @@
+{
+  "artifact": "temporal_plausibility_summary.csv",
+  "written_utc": "2026-09-01 04:19:59 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
+    },
+    {
+      "path": "midwife_panel.csv",
+      "sha256": "4ba33447f281109a4ca0475e69501213c430121c30bcf8aa007e386adb03715a"
+    }
+  ],
+  "code_sha256": "da9641832bdf3d168747de3a6a6404bddde8874a8fcf39027d4daf2467f5c7f6",
+  "code": [
+    {
+      "path": "analyze_temporal_plausibility.R",
+      "sha256": "b2f44eaab4e15e1cfe6b9adecf8c87655b070f211151d56afb784b08efa49d7c"
+    },
+    {
+      "path": "R/amcb_resolver.R",
+      "sha256": "f8e65fe726226a0a29825dd067b65c770f3af29be6bac6ae954d6d62474435ab"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}
