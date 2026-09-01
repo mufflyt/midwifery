@@ -3,7 +3,7 @@ title: "Geographic Persistence of the Certified Nurse-Midwife and Certified Midw
 running-head: "Geographic Persistence of US Midwives"
 author:
   - name: Tyler Muffly, MD
-  - name: Bree Thumm, "[degrees]"
+  - name: Elisabeth B. Thumm, PhD, CNM
 date: today
 format:
   docx:

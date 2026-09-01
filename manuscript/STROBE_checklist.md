@@ -2,7 +2,7 @@
 
 **Manuscript:** *Geographic Persistence of the Certified Nurse-Midwife and Certified Midwife Workforce in the United States, 2007–2025*
 
-**Authors:** Tyler Muffly, MD; Bree Thumm
+**Authors:** Tyler Muffly, MD; Elisabeth B. Thumm, PhD, CNM
 
 **Target journal:** Midwifery (Elsevier, ISSN 0266-6138)
 

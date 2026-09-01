@@ -128,6 +128,21 @@ a reader ends up unable to reconcile two correct numbers for what looks like
 the same quantity. See
 [docs/TECHNICAL_APPENDIX_RECORD_LINKAGE.md](docs/TECHNICAL_APPENDIX_RECORD_LINKAGE.md).*
 
+### 12. What each stratum has, and what it lacks
+![Linkage strata as a ladder of properties](docs/figures/linkage_strata_upset.png)
+*Figure 12: The seven linkage strata partition all 22,309 certificants exactly,
+and each loses one more of the five properties a record must accumulate to
+reach the analytic cohort. The sets are strictly nested — 20,201 with a
+candidate, 17,149 single at the best class, 17,054 surviving the one-to-one
+constraint, 16,898 in the cohort, 14,764 with midwifery taxonomy confirmed — so
+the dot matrix is a staircase rather than a lattice. **Tied names and
+unruled-out component share a pattern**: they are indistinguishable on these
+five properties, which is why reporting the 5,411 unresolved as one number
+hides four different causes. Contested NPIs resolve uniquely and are pruned
+only by the one-to-one constraint, so they sit above tied names. Built by
+[`make_linkage_upset_figure.R`](make_linkage_upset_figure.R), ported from the
+registry-overlap figure in `mufflyt/grace-ent`.*
+
 Linkage certainty and geographic completeness are separate properties: **66.2% primary linkage is
 the inferential limitation; the geography is essentially complete for anything linked.** Linkage
 also varies sharply by certification status (78.4% ACTIVE vs 18.8% DECEASED), so the linked subset
@@ -152,7 +167,7 @@ Scraper for the [AMCB certification directory](https://ams.amcbmidwife.org/amcbs
 
 ## Objective, rationale and aims
 
-*Structured after the format Bree Thumm used in her K01 research strategy:
+*Structured after the format Elisabeth B. Thumm used in her K01 research strategy:
 claim-headed subsections under Significance, then numbered aims each carrying a
 stated deliverable. Every figure below is produced by this repository and is
 reproducible from the artifacts named beside it.*
