@@ -47,7 +47,7 @@ linkage.matched_pct	%.1f		the linkage rate, which had three values in circulatio
 linkage.ambiguous	n		records deliberately left unresolved
 linkage.active_pct	%.1f		the selection rate by status, cited in the Discussion
 linkage.dead_pct	%.1f		the selection rate by status, cited in the Discussion
-panel.cohort_n	n		the analytic cohort
+panel.cohort_n_at_panel_build	n		the cohort as it stood when the provider panel was built
 panel.provider_years	n		the observation base for every persistence estimate
 persist.annual_county	%.1f		the annual persistence estimate
 persist.career_county	%.1f		the career persistence estimate

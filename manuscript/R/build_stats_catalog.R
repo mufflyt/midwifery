@@ -133,6 +133,10 @@ mw_build_catalog <- function(root = ".") {
       ambiguous_pct  = 100 * sum(sums[grepl("^ambiguous", names(sums))]) / tot,
       unmatched      = unname(sums[["unmatched"]]),
       unmatched_pct  = 100 * unname(sums[["unmatched"]]) / tot,
+      # The live analytic cohort: primary midwifery plus the nursing sensitivity
+      # tier, which IS in the cohort and is only held out of the primary tier.
+      cohort_n       = unname(sums[["matched"]]) +
+                       unname(sums[["matched_nursing_taxonomy"]]),
       heldout        = unname(sums[["candidate_class5_held_out_of_cohort"]]),
       heldout_pct    = 100 * unname(sums[["candidate_class5_held_out_of_cohort"]]) / tot,
       # TWO RATES, NAMED. `active_pct` is resolution into the PRIMARY cohort --
@@ -179,7 +183,7 @@ mw_build_catalog <- function(root = ".") {
     #
     # DENOMINATOR POPULATION. 15,347 is the RETAINED subgroup, not the analytic
     # cohort. The prose around this number says "the analytic cohort", which is
-    # 16,892 (panel.cohort_n) -- the retained subgroup plus 1,545 newly
+    # 16,892 (panel.cohort_n_at_panel_build) -- the retained subgroup plus 1,545 newly
     # NPI-resolved members, every one of whom is Unknown rurality because none
     # carries a practice ZIP. Reporting a subgroup's composition under the
     # cohort's name is how a reader ends up unable to reconcile any two
@@ -312,9 +316,20 @@ mw_build_catalog <- function(root = ".") {
   # scattered through the prose, which is the failure this catalog exists to
   # prevent. Regenerating them is R/05-stage-progression.R plus the persistence
   # analysis in docs/RESULTS_geographic_persistence.md.
+  #
+  # cohort_n_at_panel_build IS NOT "the analytic cohort". It is the cohort as it
+  # stood when the provider panel was built, and it is the correct denominator
+  # for `observed`, `provider_years` and `median_years`, which were all computed
+  # against exactly those members. The live cohort is linkage.cohort_n, derived
+  # below from the linkage table. The two disagreed by 6 from the 2026-08-10
+  # re-freeze until 2026-08-31 while this key was called `cohort_n` and read as
+  # the live figure by the cohort flow figure. Do NOT resolve that by editing
+  # the number here: bumping it to the live value would leave `observed` at
+  # 16,891 of a cohort those 16,891 were never counted against. It is corrected
+  # by rebuilding the panel, which is repin_frozen_cohort.R plus a panel run.
   cat_$panel <- list(
     snapshots = 19L, year_min = 2007L, year_max = 2025L,
-    cohort_n = 16892L, observed = 16891L, provider_years = 200873L,
+    cohort_n_at_panel_build = 16892L, observed = 16891L, provider_years = 200873L,
     median_years = 12L, pairs_total = 183949L,
     pairs_used = 180436L, providers_used = 15605L, median_span = 13L,
     .source = "midwife_panel.csv x artifacts/amcb_npi_linkage_FROZEN.csv"
