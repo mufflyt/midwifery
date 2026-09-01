@@ -48,7 +48,7 @@ Midwife Workforce in the United States, `r mw_safe_stat("panel.year_min")`--`r m
 
 Tyler Muffly, MD^1,2^
 
-Bree Thumm, [degrees]^[affiliation]^
+Elisabeth B. Thumm, PhD, CNM^1^
 
 **Affiliations:**
 
@@ -68,10 +68,11 @@ Email: tyler.muffly@dhha.org
 
 ---
 
-**Financial Disclosure:** [To be completed. The authors did not report any
-potential conflicts of interest.]
+**Financial Disclosure:** The authors did not report any potential conflicts
+of interest.
 
-**Funding:** [To be completed.]
+**Funding:** This research received no specific grant from any funding agency
+in the public, commercial, or not-for-profit sectors.
 
 **Institutional Review Board:** This analysis used only publicly available
 records -- a professional certification directory, the national provider

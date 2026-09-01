@@ -152,7 +152,7 @@ Scraper for the [AMCB certification directory](https://ams.amcbmidwife.org/amcbs
 
 ## Objective, rationale and aims
 
-*Structured after the format Bree Thumm used in her K01 research strategy:
+*Structured after the format Elisabeth B. Thumm used in her K01 research strategy:
 claim-headed subsections under Significance, then numbered aims each carrying a
 stated deliverable. Every figure below is produced by this repository and is
 reproducible from the artifacts named beside it.*
