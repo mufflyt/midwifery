@@ -255,7 +255,7 @@ take the first.
 
 ## Cohort and follow-up
 
-The analytic cohort was the set of `r mw_n("panel.cohort_n")` providers resolved
+The analytic cohort was the set of `r mw_n("panel.cohort_n_at_panel_build")` providers resolved
 by the frozen linkage; the disposition of every certification record, and the
 denominators each subsequent proportion is taken against, are given in Figure 1. Each was followed across the
 `r mw_safe_stat("panel.snapshots")` annual snapshots. A provider-year was one
@@ -415,7 +415,7 @@ below describes the *located* workforce rather than all certificants. The full
 disposition of every record, the evidence classes behind it, and an analysis of
 the resulting selection appear in Supplementary Material S1.
 
-The analytic cohort comprised `r mw_n("panel.cohort_n")` linked providers, of
+The analytic cohort comprised `r mw_n("panel.cohort_n_at_panel_build")` linked providers, of
 whom `r mw_n("panel.observed")` were observed at least once. They contributed
 `r mw_n("panel.provider_years")` provider-years, with a median of
 `r mw_safe_stat("panel.median_years")` years observed per provider. The cohort

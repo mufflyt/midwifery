@@ -3,7 +3,7 @@
 [![CI](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml)
 [![Nightly](https://github.com/mufflyt/midwifery/actions/workflows/nightly.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/nightly.yml)
 [![Scientific laws](https://img.shields.io/badge/scientific%20laws-10%20declared%2C%2030%20planted%20defects-blueviolet.svg)](tests/science_law_registry.tsv)
-[![Known debt](https://img.shields.io/badge/known%20debt-1%20open%2C%209%20closed-informational.svg)](DEBT.md)
+[![Known debt](https://img.shields.io/badge/known%20debt-2%20open%2C%209%20closed-informational.svg)](DEBT.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Cite this repository](https://img.shields.io/badge/cite-CITATION.cff-brightgreen.svg)](CITATION.cff)
 [![Dataset Metadata](https://img.shields.io/badge/metadata-metadata.json-orange.svg)](metadata.json)

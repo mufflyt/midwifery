@@ -292,6 +292,49 @@ from the file alone.
 
 ---
 
+## D10 — The pinned cohort snapshot is 6 members behind the freeze
+
+- **status:** open
+- **owner:** tyler
+- **raised:** 2026-08-31
+- **source:** `tests/test_cohort_vintage.R`, `artifacts/frozen_cohort/INPUT_FINGERPRINT.json`
+
+`artifacts/frozen_cohort/` was pinned on 2026-08-10 at 05:31 with **16,892**
+rows. `refreeze_option2_20260810T192207` landed the same day at 19:22 and moved
+membership to **16,898**, adding six members under the Option 2 class-5
+decision. The snapshot was never re-pinned.
+
+Everything descending from it still describes the previous cohort:
+`analytic_cohort.csv`, `composition_rucc_cat.csv` (rebuilt 2026-08-30 and
+*still* carrying the old count, because it inherits it), and the pinned
+`panel.cohort_n_at_panel_build`. Meanwhile
+`linkage_completeness_by_status.csv` describes the current one. Each half is
+internally consistent, which is why nothing reported it for three weeks.
+
+The visible symptom was the cohort flow figure: 14,764 + 2,134 merging into a
+box labelled 16,892. Its only assertion could not fail — it derived the
+residual and then checked that the residual closed, which substitutes to
+`total == total` for every input — and the edge that was actually wrong had no
+check at all.
+
+**Numerically this is 0.035% and no conclusion moves.** It matters because that
+figure is README Figure 3 and the manuscript's STROBE item 13 flow diagram,
+whose entire job is that the numbers reconcile.
+
+Fixed here: `make_cohort_flow_figure.R` now derives the merge node and refuses
+to draw when it does not reconcile; `tests/test_cohort_vintage.R` detects the
+skew from tracked metadata alone; the pin is renamed so it cannot be read as
+the live cohort.
+
+**Decision needed:** run `repin_frozen_cohort.R` on the machine holding the
+person-level files, rebuild the composition table and the provider panel, then
+wire `tests/test_cohort_vintage.R` into `.github/workflows/ci.yml`. It is
+deliberately NOT wired in yet because it fails today, and a gate that is red on
+arrival teaches people to ignore gates. **Do not** fix this by editing
+`panel.cohort_n_at_panel_build` to 16,898: `panel.observed` (16,891) and
+`panel.provider_years` were computed against the 16,892, and moving one without
+the others makes a count against a denominator it was never taken from.
+
 ## Closed
 
 ## D0 — Provenance determinism of the recorded name variant

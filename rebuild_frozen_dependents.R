@@ -66,7 +66,22 @@ REBUILD_ORDER <- list(
                    # writes person-level review sheets to qa/ -- correct on the
                    # machine holding the crosswalk, which is the only machine
                    # where a rebuild can run at all.
-                   "build_linkage_case_gallery.R")),
+                   "build_linkage_case_gallery.R",
+                   # Added 2026-08-31, both caught by the completeness gate in
+                   # the pull request that introduced them. Both describe the
+                   # crosswalk rather than feeding anything downstream, so they
+                   # belong here and their order within the layer is free.
+                   #
+                   # make_evidence_class_figure.R states what the accepted
+                   # matches rest on; left holding the previous cohort it would
+                   # publish an evidence profile for links that no longer exist.
+                   # analyze_temporal_plausibility.R additionally reads
+                   # midwife_panel.csv, so a rebuild that has not also refreshed
+                   # the panel will compare a current crosswalk against a stale
+                   # first-seen year -- the same vintage skew as D10, one layer
+                   # down. It reports the panel floor it used for that reason.
+                   "make_evidence_class_figure.R",
+                   "analyze_temporal_plausibility.R")),
   list(layer = "2-cohort-structure", why = "cohort flow/composition/progression read FROZEN directly",
        scripts = c("R/05-stage-progression.R", "R/06-cohort-flow.R",
                    "R/07-cohort-composition.R")),

@@ -37,6 +37,7 @@ fmt <- function(x) formatC(x, format = "d", big.mark = ",")
 # Derived, never typed: if a disposition moves, the residual moves with it.
 unresolved <- NUM("linkage.total") - NUM("linkage.matched") - NUM("linkage.nursing")
 known <- NUM("cohort.known_n")
+cohort_derived <- NUM("linkage.matched") + NUM("linkage.nursing")
 
 nodes <- rbind(
   fd_node("roster", 1, "AMCB certification roster", fmt(NUM("linkage.total")),
@@ -52,7 +53,11 @@ nodes <- rbind(
                   fmt(NUM("linkage.heldout") + NUM("linkage.contested") + NUM("linkage.component"))),
           at = .78, kind = "drop", w = 330),
 
-  fd_node("cohort", 3, "Analytic cohort", fmt(NUM("panel.cohort_n")),
+  # Derived from the two boxes that feed it, NOT read from panel.cohort_n. The
+  # panel constant is pinned to the cohort as it stood when the provider panel
+  # was built, and it disagreed with the live linkage table by 6 for three weeks
+  # without anything noticing, because this node used to take it on trust.
+  fd_node("cohort", 3, "Analytic cohort", fmt(cohort_derived),
           at = .28, kind = "lead", w = 260),
 
   fd_node("geo",  4, "County assignable", fmt(known), at = .20, kind = "keep", w = 226),
@@ -83,15 +88,46 @@ edges <- rbind(
   fd_edge("geo",    "rem",   NA, "accent")
 )
 
-lay <- fd_write(nodes, edges, file.path("docs", "figures", "cohort_flow"))
-
 # The counts must still add up after the catalog moved them, or the figure is a
 # tidy picture of a roster that does not exist.
-stopifnot(NUM("linkage.matched") + NUM("linkage.nursing") + unresolved ==
-            NUM("linkage.total"))
+#
+# THE CHECK THAT USED TO BE HERE COULD NOT FAIL. It read
+#
+#   unresolved <- total - matched - nursing
+#   stopifnot(matched + nursing + unresolved == total)
+#
+# which substitutes to total == total for every possible input. It was the only
+# assertion in this script, and the edge it did not cover -- "both enter the
+# cohort" -- was wrong by 6 from 2026-08-10 until it was found on 2026-08-31.
+# Both real identities are asserted below.
+stopifnot(identical(unresolved, NUM("linkage.total") - cohort_derived))
+
+if (!isTRUE(all.equal(cohort_derived, NUM("cohort.known_n") + NUM("cohort.unknown_n")))) {
+  stop(sprintf(paste0(
+    "MERGE DOES NOT RECONCILE, refusing to draw the flow.\n",
+    "  midwifery %s + nursing %s = %s   (linkage_completeness_by_status.csv)\n",
+    "  county assignable %s + none %s = %s   (composition_rucc_cat.csv)\n",
+    "  difference: %+d\n\n",
+    "These come from opposite sides of a re-freeze. The geography artifacts\n",
+    "descend from artifacts/frozen_cohort/, which is pinned to an earlier\n",
+    "cohort than the crosswalk. Re-pin it with repin_frozen_cohort.R on the\n",
+    "machine holding the person-level files, then rebuild the composition\n",
+    "table. tests/test_cohort_vintage.R reports which artifacts disagree."),
+    fmt(NUM("linkage.matched")), fmt(NUM("linkage.nursing")), fmt(cohort_derived),
+    fmt(NUM("cohort.known_n")), fmt(NUM("cohort.unknown_n")),
+    fmt(NUM("cohort.known_n") + NUM("cohort.unknown_n")),
+    cohort_derived - (NUM("cohort.known_n") + NUM("cohort.unknown_n"))),
+    call. = FALSE)
+}
+
+lay <- fd_write(nodes, edges, file.path("docs", "figures", "cohort_flow"))
+
 message(sprintf("roster reconciles: %s = %s + %s + %s",
                 fmt(NUM("linkage.total")), fmt(NUM("linkage.matched")),
                 fmt(NUM("linkage.nursing")), fmt(unresolved)))
+message(sprintf("merge reconciles:  %s = %s + %s",
+                fmt(cohort_derived), fmt(NUM("cohort.known_n")),
+                fmt(NUM("cohort.unknown_n"))))
 for (f in c("pdf", "png", "svg"))
   message(sprintf("written: docs/figures/cohort_flow.%-4s %s bytes", f,
                   format(file.size(file.path("docs", "figures", paste0("cohort_flow.", f))), big.mark = ",")))

@@ -33,8 +33,15 @@ frozen_scan_files <- function(root = ".") {
   # it as a network-dependent consumer of the cohort. A tool that appears in
   # its own inventory inflates the rebuild set and, worse, makes the
   # completeness check fail for a reason that has nothing to do with the data.
+  #
+  # repin_frozen_cohort.R joins them for the same reason reconcile_linkage.R is
+  # excluded as a producer: it WRITES the pinned cohort snapshot. Declared as a
+  # rebuildable dependent it would re-pin the snapshot partway through a
+  # rebuild, which is the 2026-08-10 failure in a different costume -- a runner
+  # regenerating the thing it exists to hold fixed.
   f <- f[!basename(f) %in% c("frozen_dependency_graph.R",
-                             "rebuild_frozen_dependents.R")]
+                             "rebuild_frozen_dependents.R",
+                             "repin_frozen_cohort.R")]
   # Normalise "./x.R" and "x.R" to one form, or the declared set and the
   # discovered set compare unequal on identical scripts.
   f <- sub("^\\./", "", f)

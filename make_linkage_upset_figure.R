@@ -20,10 +20,10 @@
 #'     The analogue here is ACTIVE certificants, the subset every workforce claim
 #'     is really about.
 #'
-#' Two strata share a dot pattern -- tied names and unruled-out component are
-#' indistinguishable on these five properties. That is not a defect in the
-#' figure. It is the README's point that the 5,411 unresolved are several
-#' different things wearing one label, made visible.
+#' Two strata share a dot pattern, and the reason is worth the figure on its
+#' own: the 156 class-5 hold-outs and the 8 "unruled-out component" rows are the
+#' same situation booked under two different status strings, which is visible
+#' here and stated nowhere else.
 #'
 #' Output: docs/figures/linkage_strata_upset.{pdf,png,svg}
 #'
@@ -46,25 +46,52 @@ raw <- read_csv(SRC, show_col_types = FALSE)
 # Property assignments follow docs/TECHNICAL_APPENDIX_RECORD_LINKAGE.md:
 # contested records ARE uniquely resolved individually and are pruned only by
 # the one-to-one constraint (sec. 5), which is why they sit above tied names.
+# Labels say what happened to the person, not what the column is called. The
+# column names are the artifact's vocabulary, not a reader's, and "Class 5 held
+# out" or "Unruled-out component" tells a co-author nothing about what the
+# matcher did. Column names are kept in `col` and mapped in the caption so the
+# figure is still traceable to the CSV.
 STRATA <- tibble::tribble(
-  ~col,                                  ~label,                    ~outcome,
-  "matched",                             "Matched",                 "In analytic cohort",
-  "matched_nursing_taxonomy",            "Nursing taxonomy only",   "In analytic cohort",
-  "candidate_class5_held_out_of_cohort", "Class 5 held out",        "Quarantined",
-  "ambiguous_contested_npi",             "Contested NPI",           "Quarantined",
-  "ambiguous_tied_names",                "Tied names",              "Quarantined",
-  "ambiguous_unruled_out_component",     "Unruled-out component",   "Quarantined",
-  "unmatched",                           "No candidate",            "No candidate"
+  ~col,                                  ~label,                            ~outcome,
+  "matched",
+  "Midwifery taxonomy\non the NPI record",                                            "In analytic cohort",
+  "matched_nursing_taxonomy",
+  "Nursing taxonomy\non the NPI record",                           "In analytic cohort",
+  "candidate_class5_held_out_of_cohort",
+  "Only part of the\nsurname matched",                                      "Quarantined",
+  "ambiguous_unruled_out_component",
+  "Same, recorded a\nsecond way",                                           "Quarantined",
+  "ambiguous_contested_npi",
+  "Two certificants\nclaim one NPI",                                        "Quarantined",
+  "ambiguous_tied_names",
+  "Several people\nshare the name",                                         "Quarantined",
+  "unmatched",
+  "No name match in\nthe search pool",                                           "No candidate"
 ) |>
   mutate(
-    `Candidate in NPPES`     = col != "unmatched",
-    `Single at best class`   = col %in% c("matched", "matched_nursing_taxonomy",
+    `A name rule found at least\none candidate in the pool` = col != "unmatched",
+    # ambiguous_unruled_out_component sits with the class-5 hold-outs, not with
+    # the tied names. match_amcb_to_npi.R:700 assigns it from
+    # npi_demoted_absence_c5, and its ambiguity_flag (line 745) reads
+    # "class5_survived_only_by_carrying_no_middle_initial" -- a class-5
+    # candidate that was the sole survivor because it carried no middle initial
+    # for the veto to act on. The comment at line 690 says these 8 are "the same
+    # situation" as the 156, "recorded two different ways".
+    #
+    # An earlier version of this figure grouped it with the tied names, on the
+    # strength of the gloss in manuscript/R/build_stats_catalog.R:127 -- "a
+    # connected group the bijection could not decompose". That gloss describes a
+    # different thing entirely and contradicts the code that assigns the value.
+    # The assigning code wins.
+    `Exactly one candidate at\nthe best evidence class` = col %in% c("matched", "matched_nursing_taxonomy",
                                           "candidate_class5_held_out_of_cohort",
+                                          "ambiguous_unruled_out_component",
                                           "ambiguous_contested_npi"),
-    `Survives one-to-one`    = col %in% c("matched", "matched_nursing_taxonomy",
-                                          "candidate_class5_held_out_of_cohort"),
-    `Midwifery taxonomy`     = col == "matched",
-    `In analytic cohort`     = col %in% c("matched", "matched_nursing_taxonomy"))
+    `No rival certificant\nclaims that same NPI` = col %in% c("matched", "matched_nursing_taxonomy",
+                                          "candidate_class5_held_out_of_cohort",
+                                          "ambiguous_unruled_out_component"),
+    `That NPI carries a\nmidwifery taxonomy code` = col == "matched",
+    `Counted in the\nanalytic cohort` = col %in% c("matched", "matched_nursing_taxonomy"))
 
 # Order matters and is not cosmetic: the sets are nested, each strictly
 # contained in the one above (candidate 20,201 > single 17,149 > one-to-one
@@ -72,8 +99,11 @@ STRATA <- tibble::tribble(
 # cohort membership would break that, because the cohort deliberately admits
 # nursing-taxonomy matches -- and the matrix would then show a connecting line
 # passing through an empty dot, asserting a containment that does not hold.
-SETS <- c("Candidate in NPPES", "Single at best class", "Survives one-to-one",
-          "In analytic cohort", "Midwifery taxonomy")
+SETS <- c("A name rule found at least\none candidate in the pool",
+          "Exactly one candidate at\nthe best evidence class",
+          "No rival certificant\nclaims that same NPI",
+          "Counted in the\nanalytic cohort",
+          "That NPI carries a\nmidwifery taxonomy code")
 
 counts <- raw |>
   select(status, all_of(STRATA$col)) |>
@@ -108,7 +138,8 @@ ups_theme <- function() {
           plot.title = element_text(face = "bold", size = 12, colour = INK),
           plot.subtitle = element_text(colour = MUT, size = 9, lineheight = 1.15),
           plot.caption = element_text(colour = MUT, size = 7.5, hjust = 0,
-                                      lineheight = 1.2),
+                                      lineheight = 1.35,
+                                      margin = margin(t = 22)),
           plot.title.position = "plot", plot.caption.position = "plot",
           legend.position = "top", legend.title = element_blank(),
           legend.text = element_text(colour = INK, size = 8.5))
@@ -129,7 +160,9 @@ bars <- ggplot(counts, aes(label, total_n, fill = outcome)) +
        subtitle = paste0("All ", scales::comma(roster), " AMCB certificants. The strata ",
                          "partition the roster exactly; each loses one more property\n",
                          "than the one to its left. Bar labels are totals; boxed labels ",
-                         "are the actively certified subset."),
+                         "are the actively certified subset.\n",
+                         "Every certificant here is a midwife: columns 1 and 2 differ by ",
+                         "how the NPI was registered, not by profession."),
        y = "Certificants") +
   ups_theme() +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
@@ -157,24 +190,32 @@ dots <- ggplot(matrix_long, aes(label, set)) +
   scale_colour_manual(values = c(`TRUE` = INK, `FALSE` = RULE)) +
   labs(caption = paste0(
     "Properties are tested in order; a stratum holds a strict prefix of them, so the ",
-    "matrix is a staircase rather than a lattice.\n",
-    "Tied names and unruled-out component share a pattern: they are indistinguishable ",
-    "on these five properties, which is why\n",
-    "reporting the 5,411 unresolved as one number hides four different causes. ",
-    "Contested NPIs resolve uniquely and are pruned\n",
-    "by the one-to-one constraint, so they sit above tied names. ",
+    "matrix is a staircase rather than a lattice. Candidates come from name rules\n",
+    "alone -- the roster carries no address and no date of birth -- searching a panel restricted to midwifery and nursing\ntaxonomies, so a certificant enumerated outside that panel is indistinguishable here from one who is absent.\n",
+    "Columns 3 and 4 carry an IDENTICAL pattern because they are the same thing ",
+    "recorded twice: both are class-5 candidates\n",
+    "held out of the cohort, 156 booked as held-out and 8 as ambiguous. ",
+    "The 8 differ only in having carried no middle initial\n",
+    "for the veto to act on. Reporting the 5,411 unresolved as one number hides ",
+    "causes as different as these.\n\n",
+    "Columns, left to right, as named in the source: matched \u00b7 ",
+    "matched_nursing_taxonomy \u00b7 candidate_class5_held_out_of_cohort \u00b7\n",
+    "ambiguous_unruled_out_component \u00b7 ambiguous_contested_npi \u00b7 ",
+    "ambiguous_tied_names \u00b7 unmatched. ",
     "Source: artifacts/linkage_completeness_by_status.csv")) +
   ups_theme() +
   theme(axis.title = element_blank(),
-        axis.text.x = element_text(angle = 22, hjust = 1, size = 8.5),
+        axis.text.x = element_text(angle = 0, hjust = .5, size = 8,
+                                   lineheight = 1.25, colour = INK,
+                                   margin = margin(t = 7, b = 4)),
         panel.grid.major.y = element_line(colour = RULE, linewidth = .2),
-        plot.margin = margin(0, 5.5, 5.5, 5.5))
+        plot.margin = margin(0, 5.5, 10, 5.5))
 
 fig <- bars / dots + plot_layout(heights = c(2.1, 1))
 
 dir.create(dirname(OUT), showWarnings = FALSE, recursive = TRUE)
-ggsave(paste0(OUT, ".pdf"), fig, width = 9, height = 7.6, device = cairo_pdf)
-ggsave(paste0(OUT, ".png"), fig, width = 9, height = 7.6, dpi = 300, bg = "white")
-ok <- tryCatch({ ggsave(paste0(OUT, ".svg"), fig, width = 9, height = 7.6); TRUE },
+ggsave(paste0(OUT, ".pdf"), fig, width = 10, height = 8.6, device = cairo_pdf)
+ggsave(paste0(OUT, ".png"), fig, width = 10, height = 8.6, dpi = 300, bg = "white")
+ok <- tryCatch({ ggsave(paste0(OUT, ".svg"), fig, width = 10, height = 8.6); TRUE },
                error = function(e) FALSE)
 message("Wrote ", OUT, ".{pdf,png", if (ok) ",svg" else "", "}")

@@ -93,6 +93,12 @@ jobs:
       - name: Join-key unit tests
         run: Rscript tests/test_lib_keys.R
 
+      # Off-by-default mechanism, but the test is the whole point: it pins the
+      # direction of the rule's uncertainty, that absence never rules a
+      # candidate out. See DECISIONS_CONTRACT.md D17.
+      - name: Temporal tiebreak semantics
+        run: Rscript tests/test_temporal_separation.R
+
       # safe_divide() refuses a non-numeric argument instead of coercing it to
       # NA, which was indistinguishable from a zero denominator. Base R only,
       # so it belongs in the cheap tier: it costs nothing and it guards the
