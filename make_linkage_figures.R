@@ -45,7 +45,7 @@ base_theme <- theme_minimal(base_size = 10) +
 
 save3 <- function(p, base, w, h) {
   dir.create(dirname(base), showWarnings = FALSE, recursive = TRUE)
-  ggsave(paste0(base, ".pdf"), p, width = w, height = h, device = cairo_pdf)
+  ggsave(paste0(base, ".pdf"), p, width = w, height = h, device = if (capabilities("cairo")) cairo_pdf else pdf)
   ggsave(paste0(base, ".png"), p, width = w, height = h, dpi = 300, bg = "white")
   if (requireNamespace("svglite", quietly = TRUE))
     ggsave(paste0(base, ".svg"), p, width = w, height = h)

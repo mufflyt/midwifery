@@ -318,7 +318,12 @@ jobs:
                     # WILLIAMS/WILLIAMSON, MARTIN/MARTINEZ and the rest, each
                     # of which wrote a wrong certificant row in production --
                     # stop being checked on every push.
-                    "rvest", "humaniformat")
+                    "rvest", "humaniformat",
+                    # ggplot2/patchwork/forcats: the linkage smoke test renders
+                    # make_evidence_class_figure.R for real rather than asserting
+                    # around it. Binary from RSPM, no system libraries, which is
+                    # this job's standing condition for anything added here.
+                    "ggplot2", "patchwork", "forcats")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
         shell: Rscript {0}
@@ -627,6 +632,14 @@ jobs:
       # merge. This is that same check, gating the PR instead.
       - name: FROZEN dependency completeness (T5)
         run: Rscript tests/test_frozen_dependency.R
+
+      # The three person-level linkage scripts, against regenerated fixtures.
+      # They read the gitignored crosswalk, so without this they have no
+      # coverage at all -- including the refusals, which are the half that
+      # matters: a person-level writer that stops guarding its destination
+      # is a different kind of bug from one that draws a wrong bar.
+      - name: Linkage scripts smoke test
+        run: Rscript tests/test_linkage_scripts_smoke.R
 
   # ---------------------------------------------------------------------------
   # Path-filtered: the science-law suite (tests/ci_law_coverage.R) is Nightly's

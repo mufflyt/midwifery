@@ -22,6 +22,150 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-08-31 — a cohort-vintage skew, a restored co-author, and two ways to read the linkage evidence
+
+### Retracted — the cohort flow figure's merge, 16,892 → 16,898
+
+The flow figure drew 14,764 midwifery-taxonomy + 2,134 nursing-taxonomy merging
+into an analytic cohort of **16,892**. Those add to **16,898**. The two halves
+of the figure came from opposite sides of a re-freeze: the geography snapshot in
+`artifacts/frozen_cohort/` was pinned at 05:31 on 2026-08-10 and
+`refreeze_option2_20260810T192207` landed at 19:22 the same day, adding six
+members under the Option 2 class-5 decision. It was never re-pinned.
+
+Six certificants of 16,898 is **0.035%** and no conclusion moves. It is filed
+here because the affected figure is README Figure 3 and the manuscript's STROBE
+item 13 flow diagram, whose whole job is that the numbers reconcile.
+
+Recency was no defence: `composition_rucc_cat.csv` was rebuilt on 2026-08-30,
+three weeks *after* the re-freeze, and still carries the old count because it
+inherits it through `analytic_cohort.csv`.
+
+Full account in
+[`docs/TECHNICAL_APPENDIX_COHORT_VINTAGE.md`](docs/TECHNICAL_APPENDIX_COHORT_VINTAGE.md);
+registered as [DEBT.md](DEBT.md) D10 with the re-pin as the decision needed.
+
+### Fixed — the one assertion in the flow figure could not fail
+
+It read `unresolved <- total - matched - nursing`, then
+`stopifnot(matched + nursing + unresolved == total)`. Substituting the
+definition gives `total == total`, for every possible input. The residual was
+computed by subtraction and then validated against the identity subtraction
+guarantees. The edge that was actually wrong — the merge — had no check at all.
+
+Both real identities are now asserted, and the merge check runs **before**
+`fd_write()`. The first version of the fix ran it after, and shipped a figure
+whose halves disagreed by more than the original before raising the error.
+
+### Added — `tests/test_cohort_vintage.R`: four artifacts, one freeze
+
+Compares the freeze manifest, the linkage table, the pinned geography
+fingerprint and the composition table, reading only tracked metadata so it runs
+on a clean checkout. V3 and V4 fail today, correctly. **Deliberately not wired
+into CI** until the re-pin lands: a gate that is red on arrival teaches people
+to ignore gates.
+
+### Added — `repin_frozen_cohort.R`
+
+Re-pins the cohort snapshot, dry run by default, refusing to pin a source whose
+row count does not match the freeze — which would swap one vintage mismatch for
+another. Excluded from the FROZEN rebuild scanner for the same reason
+`reconcile_linkage.R` is: it writes the pinned snapshot, and a runner that
+re-pins partway through a rebuild regenerates what the rebuild exists to hold
+fixed.
+
+### Changed — `panel.cohort_n` → `panel.cohort_n_at_panel_build`
+
+Its `protected_results.tsv` label was **"the analytic cohort"**, which is what
+let the flow figure read a pinned constant as the live figure. It now says what
+it is. **Its value is deliberately unchanged**: `panel.observed` (16,891) and
+`panel.provider_years` were computed against those 16,892 members, so bumping
+the denominator alone would make `observed` a count against a population it was
+never taken from. The three move together or not at all. The live cohort is now
+`linkage.cohort_n`, derived where the other linkage figures are.
+
+### Added — the temporal signal, measurable for the first time, and switched off
+
+`certification_date` appears **zero times** in `match_amcb_to_npi.R`; blocking
+is names and taxonomy and nothing else. `linkage_candidate_audit.csv` has always
+declared `first_year` and `last_year` and left them `NA` — reserved for exactly
+this and never filled — so the question *"would a temporal rule separate any of
+the 3,044 tied records?"* could not be asked from any committed artifact. They
+are populated from the panel now, with a censoring flag beside them.
+
+`amcb_temporal_separation()` implements the rule and is **off**, called by
+nothing during a linkage run. `analyze_temporal_plausibility.R` measures what it
+would buy, reporting emptied pools *above* separations: ruling out every
+candidate in a pool moves a record from "tied" to "no candidate", which a reader
+cannot distinguish from absence from the registry, so net recovery is
+separations minus emptied pools.
+
+**Its first implementation committed the middle-name veto's defect and its own
+tests caught it** — reporting a pool as separated when the lone survivor
+survived only because its year was censored, promoting the candidate nothing was
+known about over the one that was assessed. See
+[`docs/TECHNICAL_APPENDIX_TEMPORAL_SIGNAL.md`](docs/TECHNICAL_APPENDIX_TEMPORAL_SIGNAL.md).
+Recorded as [`DECISIONS_CONTRACT.md`](docs/DECISIONS_CONTRACT.md) D17,
+`RULING: none`.
+
+### Added — two figures for what the linkage did and what it rests on
+
+`make_linkage_upset_figure.R` (README Figure 12), ported from
+`create_registry_upset_figure()` in `mufflyt/grace-ent`: the seven linkage
+strata as a ladder of five nested properties. Two strata share a dot pattern
+because they are the same thing recorded twice — 156 class-5 hold-outs booked as
+held-out and 8 booked as ambiguous.
+
+`make_evidence_class_figure.R` (README Figure 13): every accepted match by the
+evidence class that carried it, split by taxonomy, because a nursing accept at
+class 3 or below is two sensitivity decisions stacked.
+
+### Fixed — two figure labels that overclaimed
+
+"Matched to a midwife's NPI" was wrong twice: it is a taxonomy code on a
+registry record, not a profession, and **every certificant in this roster is a
+midwife by construction** — the 2,134 with nursing-taxonomy NPIs included. "At
+least one candidate exists in NPPES" overclaimed the same way; candidates come
+from name rules alone, searching a taxonomy-restricted panel, so a certificant
+enumerated outside it is indistinguishable from one who is absent.
+
+### Added — `build_linkage_case_gallery.R` and its coverage
+
+A stratified, seeded sample of real matching decisions, so the linkage can be
+checked by eye rather than agreed with as a percentage. Twelve strata, three
+flagged as needing close reading. Person-level: writes only into `qa/`, refuses
+other destinations, `--redact` for a shareable copy.
+
+`tests/fixtures/make_linkage_fixtures.R` regenerates deterministic fixtures from
+the crosswalk's tracked manifest, and `tests/test_linkage_scripts_smoke.R` gives
+all three person-level scripts their first automated coverage — including that
+they **refuse** what they document refusing. A generator rather than committed
+CSVs: invented names sitting in a repository whose discipline is that
+person-level rows stay out of git would eventually be read as data.
+
+### Fixed — the co-author and the source citations dropped by `9a61be9`
+
+That commit rewrote `CITATION.cff`, removing 147 lines and adding 16, and took
+three things with it unmentioned. Thumm was removed as an author; she is
+restored in agreed order with her Denver Health affiliation and named as she
+publishes, **Elisabeth B. Thumm, PhD, CNM**, consistently across the manuscript,
+title page, STROBE checklist and README. The twelve database references are
+back, with `type` and `license`.
+
+The ORCID that commit recorded for Muffly, `0000-0002-1825-0097`, was copied
+from the `e.g.` in a `TODO` comment in the file it replaced — it is the ORCID
+**demonstration identifier**, and it pointed anyone checking authorship at a
+sandbox record. Removed. Both ORCIDs are TODO comments rather than guesses.
+
+Funding (none) and financial disclosure (none) are filled on the title page,
+closing STROBE item 22.
+
+**Still unverified:** the DOI `10.5281/zenodo.1054200`, which replaced a
+`10.5281/zenodo.XXXXXXX` placeholder in the same commit that invented the demo
+ORCID, and which also appears in the manuscript's data-availability statement.
+
+---
+
 ## [Unreleased] — 2026-08-31 — 24-cycle adversarial testing loop; a data-regression guard; a STROBE checklist; two README corrections
 
 ### Added — `tests/ci_data_regression_guard.R`: PUBLIC vs PRIVATE-OK data regression guard

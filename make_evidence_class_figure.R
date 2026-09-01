@@ -24,7 +24,7 @@
 #' @author Tyler Muffly, MD + Claude Code
 
 suppressPackageStartupMessages({
-  library(ggplot2); library(dplyr); library(readr); library(tidyr); library(patchwork)
+  library(ggplot2); library(dplyr); library(readr); library(tidyr)
 })
 source(file.path("R", "lib", "artifact_provenance.R"))
 
@@ -128,7 +128,7 @@ p <- ggplot(by_tax, aes(n, cls, fill = tax)) +
   theme(axis.title.y = element_blank())
 
 dir.create(dirname(OUT), showWarnings = FALSE, recursive = TRUE)
-ggsave(paste0(OUT, ".pdf"), p, width = 9.6, height = 6.2, device = cairo_pdf)
+ggsave(paste0(OUT, ".pdf"), p, width = 9.6, height = 6.2, device = if (capabilities("cairo")) cairo_pdf else pdf)
 ggsave(paste0(OUT, ".png"), p, width = 9.6, height = 6.2, dpi = 300, bg = "white")
 tryCatch(ggsave(paste0(OUT, ".svg"), p, width = 9.6, height = 6.2),
          error = function(e) NULL)
