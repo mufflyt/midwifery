@@ -185,3 +185,82 @@ amcb_linkage_tier <- function(npi, name_evidence_class, npi_tax_class,
     grepl("^ambiguous", match_status)      ~ "quarantined",
     TRUE                                   ~ "unmatched")
 }
+
+# --- Temporal separation of tied pools ---------------------------------------
+# OFF BY DEFAULT AND NOT WIRED INTO THE PIPELINE. This exists so the question
+# "would a temporal rule separate any of the tied records?" can be answered with
+# a number instead of an opinion. Nothing calls it during a linkage run.
+#
+# WHY IT IS NOT ON. The resolver's stated rule is that candidates tied at the
+# strongest class are indistinguishable ON THE EVIDENCE HELD, and are
+# quarantined rather than separated by something that does not speak to
+# identity. That rule is why taxonomy may not break a tie. A first-seen year is
+# closer to identity evidence than taxonomy is -- an NPI that did not exist
+# until long after a certificant qualified is weak evidence against that
+# pairing -- but "closer" is not "settled", and switching it on silently would
+# convert 3,044 reported quarantines into matches with no ruling behind them.
+# See DECISIONS_CONTRACT.md D17.
+#
+# WHAT IT DOES NOT DO. It never promotes; it returns the separation a rule WOULD
+# produce, leaving the caller to report or discard it. And it refuses to
+# separate on a censored year: an NPI first seen in the earliest snapshot may
+# have enumerated before the panel begins, so a lead computed against it is a
+# bound and cannot rule anything out.
+
+#' Which tied pools would a temporal rule separate?
+#'
+#' @param cand `data.frame`: candidate-level rows for TIED certificants, with
+#'   `amcb_id`, `npi`, `name_evidence_class`, `first_year` and
+#'   `first_year_censored` (as written to linkage_candidate_audit.csv).
+#' @param cert_year `data.frame`: `amcb_id` and `cert_year`.
+#' @param grace `numeric`: years an NPI may precede certification before the
+#'   pairing is called implausible. NOT zero -- an RN enumerates years before
+#'   she certifies as a midwife, which is the normal career order, so only a
+#'   long lead is informative.
+#' @return one row per tied `amcb_id`: `n_candidates`, `n_surviving`,
+#'   `n_censored_unusable`, `separated` (exactly one survivor), and
+#'   `surviving_npi` where separated.
+amcb_temporal_separation <- function(cand, cert_year, grace = 25) {
+  stopifnot(is.data.frame(cand), is.data.frame(cert_year),
+            all(c("amcb_id", "npi", "first_year") %in% names(cand)),
+            all(c("amcb_id", "cert_year") %in% names(cert_year)))
+  if (!"first_year_censored" %in% names(cand)) cand$first_year_censored <- NA
+  d <- merge(cand, cert_year, by = "amcb_id", all.x = TRUE)
+  d$lead <- d$cert_year - d$first_year
+  # A candidate survives unless the evidence positively rules it out. Unknown
+  # and censored years survive: absence of a usable year is not evidence.
+  d$ruled_out <- !is.na(d$lead) & !isTRUE_vec(d$first_year_censored) &
+    d$lead > grace
+  # A year that cannot be used is not evidence FOR a candidate either.
+  d$unusable <- isTRUE_vec(d$first_year_censored) | is.na(d$lead)
+  sp <- lapply(split(d, d$amcb_id), function(g) {
+    surv <- g[!g$ruled_out, , drop = FALSE]
+    # SEPARATION REQUIRES A SURVIVOR THAT WAS ACTUALLY ASSESSED. A pool whose
+    # sole survivor survived because its year was censored or missing has not
+    # been separated -- it has been decided by ignorance, promoting the one
+    # candidate nothing is known about over the ones that were ruled out. That
+    # is the middle-name veto's manufactured uniqueness in a new costume, and
+    # tests T3/T5 exist because the first version of this function did it.
+    sep <- nrow(surv) == 1L && nrow(g) > 1L && !surv$unusable[1]
+    data.frame(
+      amcb_id = g$amcb_id[1],
+      n_candidates = nrow(g),
+      n_surviving = nrow(surv),
+      n_censored_unusable = sum(g$unusable),
+      separated = sep,
+      separation_blocked_by_censoring =
+        nrow(surv) == 1L && nrow(g) > 1L && surv$unusable[1],
+      surviving_npi = if (sep) as.character(surv$npi[1]) else NA_character_,
+      stringsAsFactors = FALSE)
+  })
+  out <- do.call(rbind, sp)
+  rownames(out) <- NULL
+  out
+}
+
+#' Vectorised isTRUE: NA and non-logical are FALSE, never NA.
+#'
+#' Written out because `isTRUE()` is scalar-only and a bare `x %in% TRUE` reads
+#' as a membership test rather than a truth test at the call site above, where
+#' the difference decides whether a censored row silently rules a candidate out.
+isTRUE_vec <- function(x) !is.na(x) & (x %in% TRUE)

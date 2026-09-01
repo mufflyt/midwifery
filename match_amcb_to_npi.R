@@ -521,10 +521,27 @@ print(as.data.frame(count(candidates, name_evidence_class, taxonomy_axis)))
 
 # Full candidate audit table: every plausible pair survives here even when it
 # loses, so adding a candidate source can never make a known candidate vanish.
+# first_year / last_year were declared here and left NA from the beginning. They
+# are the only axis in this data that name rules cannot see, and leaving them
+# empty is why no one could say whether a temporal comparison would separate any
+# of the 3,044 tied records -- the question could not even be asked from a
+# committed artifact. They are populated from the panel now.
+#
+# THEY ARE BOUNDS, NOT DATES. The panel begins at PANEL_FLOOR and NPPES began
+# enumerating in 2006, so an NPI first seen in the earliest snapshot may have
+# enumerated before it. first_year_censored says so per row rather than leaving
+# a reader to infer it, following the convention in build_reassignment_panel.R.
+npi_years <- panel %>%
+  filter(!is.na(snapshot_year)) %>%
+  group_by(npi) %>%
+  summarise(first_year = min(snapshot_year), last_year = max(snapshot_year),
+            .groups = "drop") %>%
+  mutate(first_year_censored = first_year == min(first_year, na.rm = TRUE))
+
 cand_audit <- candidates %>%
   transmute(amcb_id, npi, name_evidence_class, taxonomy_axis, match_method,
-            exact_last, exact_first, first_init_ok, mid_match, lv_last,
-            first_year = NA_integer_, last_year = NA_integer_)
+            exact_last, exact_first, first_init_ok, mid_match, lv_last) %>%
+  left_join(npi_years, by = "npi")
 write_csv(cand_audit, file.path(OUT_DIR, "linkage_candidate_audit.csv"), na = "")
 
 # --- Resolution: identity first, taxonomy second -----------------------------

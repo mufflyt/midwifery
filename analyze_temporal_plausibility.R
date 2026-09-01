@@ -131,16 +131,45 @@ if (nrow(flagged)) {
 # rows the honest answer is "not computable here", not an estimate.
 message("\n-- SEPARATION: could the signal break the quarantined ties? --")
 tied_n <- sum(x$npi_match_status == "ambiguous_tied_names", na.rm = TRUE)
-# The crosswalk is one row per CERTIFICANT by construction -- the losing
-# candidates are not in it -- so separation can never be computed from this file
-# alone, whatever columns it happens to carry. Saying so beats an estimate.
-message(sprintf("  %s records are quarantined as tied. This crosswalk holds one row",
-                format(tied_n, big.mark = ",")))
-message("  per certificant, so the rival candidates are not present to test and no")
-message("  separation rate is computable here.")
-message("  To compute it: in match_amcb_to_npi.R the ranked candidate table exists")
-message("  before the resolver collapses it. Join first_seen to that table, then")
-message("  count tied pools in which exactly one candidate survives the grace rule.")
+tied_ids <- x$amcb_id[x$npi_match_status == "ambiguous_tied_names" &
+                        !is.na(x$npi_match_status)]
+AUDIT <- tp_arg("audit", file.path("artifacts", "linkage_candidate_audit.csv"))
+
+if (!file.exists(AUDIT)) {
+  message(sprintf("  %s records are quarantined as tied, but %s is absent, so the",
+                  format(tied_n, big.mark = ","), AUDIT))
+  message("  rival candidates are not available and no separation rate is computable.")
+  message("  Rerun match_amcb_to_npi.R to write it; its first_year column is now")
+  message("  populated from the panel, where it used to be left NA.")
+} else {
+  source(file.path("R", "amcb_resolver.R"))
+  ca <- read_csv(AUDIT, show_col_types = FALSE, guess_max = 50000)
+  if (!"first_year" %in% names(ca) || all(is.na(ca$first_year))) {
+    message("  The candidate audit predates the populated first_year column and")
+    message("  carries no usable years. Rerun match_amcb_to_npi.R.")
+  } else {
+    pool <- ca %>% filter(.data$amcb_id %in% tied_ids)
+    cy <- x %>% transmute(.data$amcb_id, cert_year = cert_year(.data$certification_date))
+    sep <- amcb_temporal_separation(pool, cy, grace = GRACE)
+    n_sep <- sum(sep$separated, na.rm = TRUE)
+    n_blk <- sum(sep$separation_blocked_by_censoring, na.rm = TRUE)
+    n_emp <- sum(sep$n_surviving == 0L, na.rm = TRUE)
+    message(sprintf("  tied pools tested            %s", format(nrow(sep), big.mark = ",")))
+    message(sprintf("  WOULD separate               %s  (%.1f%% of tied)",
+                    format(n_sep, big.mark = ","), 100 * n_sep / max(1, nrow(sep))))
+    message(sprintf("  blocked by censoring         %s", format(n_blk, big.mark = ",")))
+    message(sprintf("  every candidate ruled out    %s  <- would LOSE these, not gain them",
+                    format(n_emp, big.mark = ",")))
+    message("\n  Read the last two rows before the second. A rule that separates")
+    message("  some pools and empties others is not free: an emptied pool moves a")
+    message("  record from `tied` to `no candidate`, which reads to a user as")
+    message("  absence from the registry. Net recovery is separations MINUS")
+    message("  emptied pools, and the sign of that is the whole decision.")
+    write_with_provenance(sep, file.path("artifacts", "temporal_separation_by_pool.csv"),
+                          inputs = c(CROSSWALK, AUDIT))
+    message("  per-pool detail -> artifacts/temporal_separation_by_pool.csv")
+  }
+}
 
 write_with_provenance(summ, file.path("artifacts", "temporal_plausibility_summary.csv"),
                       inputs = c(CROSSWALK, PANEL))

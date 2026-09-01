@@ -504,6 +504,50 @@ names for district profiles.
 
 ---
 
+## D17 🟡 May a temporal rule separate tied candidates? (raised 2026-08-31)
+
+**Question.** `certification_date` appears zero times in `match_amcb_to_npi.R`.
+Blocking is names and taxonomy and nothing else, yet the roster carries a
+certification year and the panel carries the year each NPI was first seen. May
+that comparison be used to separate candidates tied at the strongest evidence
+class, and if so at what grace period?
+
+**Evidence.** Not yet measured — deliberately. The mechanism
+(`amcb_temporal_separation()` in `R/amcb_resolver.R`) and the measurement
+(`analyze_temporal_plausibility.R`) exist and are off; the candidate audit's
+`first_year` column, declared and left `NA` since the beginning, is now
+populated so the question can be asked from a committed artifact for the first
+time. Run the analysis on the machine holding the panel to fill this section in.
+
+**Why it needs a human.** The resolver's stated rule is that candidates tied at
+the strongest class are indistinguishable *on the evidence held*, and are
+quarantined rather than separated by something that does not speak to identity.
+That rule is why taxonomy may not break a tie. A first-seen year is closer to
+identity evidence than taxonomy is — an NPI that did not exist until long after
+a certificant qualified is weak evidence against that pairing — but "closer" is
+not "settled".
+
+Two things make this sharper than it looks. First, **a rule that separates some
+pools empties others**: ruling out every candidate moves a record from `tied` to
+`no candidate`, which a reader cannot distinguish from absence from the
+registry. Net recovery is separations minus emptied pools and the sign is not
+known in advance. Second, **first-seen is a bound, not a date** — the panel
+opens in 2007 and NPPES began enumerating in 2006 — so a censored year can
+never rule anything out. The implementation refuses to call a pool separated
+when its lone survivor survived only because its year was unusable; the first
+version of that function did exactly that, which is the middle-name veto's
+manufactured uniqueness in a new costume, and
+`tests/test_temporal_separation.R` T3 and T5 exist to keep it out.
+
+**Options.** (A) Apply with a stated grace period, reporting separations and
+emptied pools separately. (B) Apply only as validation of accepted matches,
+never to separate ties. (C) Report as a sensitivity analysis. (D) Do not use it;
+record that the axis exists and was declined.
+
+**RULING: none.**
+
+---
+
 ## PECOS reassignment: temporal interpretation
 
 **Question.** What does a PPEF reassignment record mean about time, and may a
