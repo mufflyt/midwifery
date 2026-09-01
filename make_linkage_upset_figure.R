@@ -214,7 +214,7 @@ dots <- ggplot(matrix_long, aes(label, set)) +
 fig <- bars / dots + plot_layout(heights = c(2.1, 1))
 
 dir.create(dirname(OUT), showWarnings = FALSE, recursive = TRUE)
-ggsave(paste0(OUT, ".pdf"), fig, width = 10, height = 8.6, device = cairo_pdf)
+ggsave(paste0(OUT, ".pdf"), fig, width = 10, height = 8.6, device = if (capabilities("cairo")) cairo_pdf else pdf)
 ggsave(paste0(OUT, ".png"), fig, width = 10, height = 8.6, dpi = 300, bg = "white")
 ok <- tryCatch({ ggsave(paste0(OUT, ".svg"), fig, width = 10, height = 8.6); TRUE },
                error = function(e) FALSE)

@@ -318,7 +318,12 @@ jobs:
                     # WILLIAMS/WILLIAMSON, MARTIN/MARTINEZ and the rest, each
                     # of which wrote a wrong certificant row in production --
                     # stop being checked on every push.
-                    "rvest", "humaniformat")
+                    "rvest", "humaniformat",
+                    # ggplot2/patchwork/forcats: the linkage smoke test renders
+                    # make_evidence_class_figure.R for real rather than asserting
+                    # around it. Binary from RSPM, no system libraries, which is
+                    # this job's standing condition for anything added here.
+                    "ggplot2", "patchwork", "forcats")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
         shell: Rscript {0}
