@@ -24,7 +24,7 @@
 #' @author Tyler Muffly, MD + Claude Code
 
 suppressPackageStartupMessages({
-  library(ggplot2); library(dplyr); library(readr); library(tidyr); library(patchwork)
+  library(ggplot2); library(dplyr); library(readr); library(tidyr)
 })
 source(file.path("R", "lib", "artifact_provenance.R"))
 

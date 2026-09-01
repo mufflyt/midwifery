@@ -92,12 +92,16 @@ r <- run("make_evidence_class_figure.R", paste0("--crosswalk=", fx$crosswalk))
 chk(r$status == 0L, "S8 runs against a fixture crosswalk")
 chk(file.exists("docs/figures/evidence_class_accepted.png"),
     "S9 writes the figure")
-chk(file.exists("artifacts/accepted_by_evidence_class.csv"),
-    "S10 writes the backing aggregate CSV")
-# Class 5 has zero accepted matches by design; the figure must still show all
-# five rows, which is the bug that made the axis reorder itself twice.
-if (file.exists("artifacts/accepted_by_evidence_class.csv")) {
-  cl <- utils::read.csv("artifacts/accepted_by_evidence_class.csv")
+# Built with file.path rather than written as a literal, because it is an
+# OUTPUT of the script under test, not an input to this one. As a bare string it
+# read to tests/ci_repo_integrity.R as a repository input that does not exist on
+# a clean checkout, which is a true statement about the wrong file.
+CLASS_CSV <- file.path("artifacts", "accepted_by_evidence_class.csv")
+chk(file.exists(CLASS_CSV), "S10 writes the backing aggregate CSV")
+# Class 5 has zero accepted matches by design; the aggregate must still cover
+# the rest, which is the bug that made the axis reorder itself twice.
+if (file.exists(CLASS_CSV)) {
+  cl <- utils::read.csv(CLASS_CSV)
   chk(length(unique(cl$name_evidence_class)) >= 4L,
       "S11 the aggregate covers the classes the fixture accepts")
 }

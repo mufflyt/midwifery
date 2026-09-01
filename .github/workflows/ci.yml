@@ -99,14 +99,6 @@ jobs:
       - name: Temporal tiebreak semantics
         run: Rscript tests/test_temporal_separation.R
 
-      # The three person-level linkage scripts, against regenerated fixtures.
-      # They read the gitignored crosswalk, so without this they have no
-      # coverage at all -- including the refusals, which are the half that
-      # matters: a person-level writer that stops guarding its destination
-      # is a different kind of bug from one that draws a wrong bar.
-      - name: Linkage scripts smoke test
-        run: Rscript tests/test_linkage_scripts_smoke.R
-
       # safe_divide() refuses a non-numeric argument instead of coercing it to
       # NA, which was indistinguishable from a zero denominator. Base R only,
       # so it belongs in the cheap tier: it costs nothing and it guards the
@@ -635,6 +627,14 @@ jobs:
       # merge. This is that same check, gating the PR instead.
       - name: FROZEN dependency completeness (T5)
         run: Rscript tests/test_frozen_dependency.R
+
+      # The three person-level linkage scripts, against regenerated fixtures.
+      # They read the gitignored crosswalk, so without this they have no
+      # coverage at all -- including the refusals, which are the half that
+      # matters: a person-level writer that stops guarding its destination
+      # is a different kind of bug from one that draws a wrong bar.
+      - name: Linkage scripts smoke test
+        run: Rscript tests/test_linkage_scripts_smoke.R
 
   # ---------------------------------------------------------------------------
   # Path-filtered: the science-law suite (tests/ci_law_coverage.R) is Nightly's
