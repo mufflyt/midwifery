@@ -24,7 +24,9 @@ chk <- function(cond, m) {
   else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
 }
 
-cand <- function(id, npi, fy, cens = FALSE)
+# tsep_-prefixed: ci_hygiene H4 forbids one top-level function name in two
+# tracked files, and tests/test_cross_taxonomy_hierarchy.R already has a `cand`.
+tsep_cand <- function(id, npi, fy, cens = FALSE)
   data.frame(amcb_id = id, npi = npi, name_evidence_class = 2L,
              first_year = fy, first_year_censored = cens,
              stringsAsFactors = FALSE)
@@ -32,14 +34,14 @@ cand <- function(id, npi, fy, cens = FALSE)
 cat("\n-- separation --\n")
 
 # One rival enumerated 40 years before certification; the other is contemporary.
-d <- rbind(cand("A", "1", 1975), cand("A", "2", 2010))
+d <- rbind(tsep_cand("A", "1", 1975), tsep_cand("A", "2", 2010))
 cy <- data.frame(amcb_id = "A", cert_year = 2012)
 r <- amcb_temporal_separation(d, cy, grace = 25)
 chk(isTRUE(r$separated) && identical(r$surviving_npi, "2"),
     "T1 a long lead rules one candidate out and separates the pool")
 
 # Both plausible: nothing is separated, and the tie stands.
-d <- rbind(cand("B", "1", 2008), cand("B", "2", 2010))
+d <- rbind(tsep_cand("B", "1", 2008), tsep_cand("B", "2", 2010))
 r <- amcb_temporal_separation(d, data.frame(amcb_id = "B", cert_year = 2012),
                               grace = 25)
 chk(!isTRUE(r$separated) && r$n_surviving == 2L,
@@ -49,7 +51,7 @@ cat("\n-- absence is not evidence --\n")
 
 # THE ONE THAT MATTERS. A censored first year is a bound: the NPI may have
 # enumerated before the panel opens, so a long computed lead rules out nothing.
-d <- rbind(cand("C", "1", 2007, cens = TRUE), cand("C", "2", 2010))
+d <- rbind(tsep_cand("C", "1", 2007, cens = TRUE), tsep_cand("C", "2", 2010))
 r <- amcb_temporal_separation(d, data.frame(amcb_id = "C", cert_year = 2050),
                               grace = 25)
 # Candidate 2 IS ruled out here, on its own uncensored evidence. What must not
@@ -60,14 +62,14 @@ chk(!isTRUE(r$separated) && isTRUE(r$separation_blocked_by_censoring),
 chk(r$n_censored_unusable == 1L, "T4 the censored candidate is counted as such")
 
 # A missing year is likewise not evidence against.
-d <- rbind(cand("D", "1", NA_integer_), cand("D", "2", 2010))
+d <- rbind(tsep_cand("D", "1", NA_integer_), tsep_cand("D", "2", 2010))
 r <- amcb_temporal_separation(d, data.frame(amcb_id = "D", cert_year = 2050),
                               grace = 25)
 chk(!isTRUE(r$separated) && isTRUE(r$separation_blocked_by_censoring),
     "T5 a lone survivor that survived only by a MISSING year is not a separation")
 
 # A missing certification year disables the rule entirely for that record.
-d <- rbind(cand("E", "1", 1975), cand("E", "2", 2010))
+d <- rbind(tsep_cand("E", "1", 1975), tsep_cand("E", "2", 2010))
 r <- amcb_temporal_separation(d, data.frame(amcb_id = "E",
                                             cert_year = NA_integer_), grace = 25)
 chk(!isTRUE(r$separated), "T6 no certification year means no separation")
@@ -76,20 +78,20 @@ cat("\n-- it never promotes and never empties a pool --\n")
 
 # Every candidate ruled out would be a pool with no survivor. That is not a
 # separation and must not be reported as one.
-d <- rbind(cand("F", "1", 1970), cand("F", "2", 1975))
+d <- rbind(tsep_cand("F", "1", 1970), tsep_cand("F", "2", 1975))
 r <- amcb_temporal_separation(d, data.frame(amcb_id = "F", cert_year = 2012),
                               grace = 25)
 chk(!isTRUE(r$separated) && r$n_surviving == 0L,
     "T7 ruling out EVERY candidate is not a separation")
 
 # A pool of one was never tied, so there is nothing to separate.
-r <- amcb_temporal_separation(cand("G", "1", 2010),
+r <- amcb_temporal_separation(tsep_cand("G", "1", 2010),
                               data.frame(amcb_id = "G", cert_year = 2012),
                               grace = 25)
 chk(!isTRUE(r$separated), "T8 a single-candidate pool is not a separation")
 
 # grace is doing real work, in the right direction.
-d <- rbind(cand("H", "1", 1995), cand("H", "2", 2010))
+d <- rbind(tsep_cand("H", "1", 1995), tsep_cand("H", "2", 2010))
 cy <- data.frame(amcb_id = "H", cert_year = 2012)
 chk(isTRUE(amcb_temporal_separation(d, cy, grace = 10)$separated) &&
       !isTRUE(amcb_temporal_separation(d, cy, grace = 25)$separated),
