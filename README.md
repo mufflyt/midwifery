@@ -143,6 +143,29 @@ only by the one-to-one constraint, so they sit above tied names. Built by
 [`make_linkage_upset_figure.R`](make_linkage_upset_figure.R), ported from the
 registry-overlap figure in `mufflyt/grace-ent`.*
 
+### 13. An evidence axis the matcher has never used
+![What the unused temporal signal would buy](docs/figures/temporal_plausibility.png)
+*Figure 13: `certification_date` appears **zero** times in
+`match_amcb_to_npi.R` — the matcher blocks on names and taxonomy only — yet the
+roster carries a certification year and the panel carries the year each NPI was
+first seen. This measures what that comparison would buy, over matches already
+accepted, and changes nothing in the published linkage. **Panel A is the
+constraint**: 6,020 of 16,898 accepted matches (35.6%) are left-censored,
+because the panel opens in 2007 and NPPES began enumerating in 2006, so
+first-seen is a bound and no grace period makes those rows informative. Every
+percentage here has 10,878 as its denominator. **Panel B is the surprise**:
+`lead_years` tops out at **+17**, while the shipped default is `grace = 25` — so
+at its own default the measurement cannot flag a single record, a property of
+the parameter rather than a finding about midwives. **Panel C** sweeps it: 3
+flagged at 15, 57 at 10, 615 at 0. These are candidate false positives the name
+rules had no way to see, not confirmed errors. The half that would actually
+settle [D17](docs/DECISIONS_CONTRACT.md) — how many quarantined ties the signal
+would separate, minus how many pools it would **empty** — is still not
+computable. Built by
+[`make_temporal_plausibility_figure.R`](make_temporal_plausibility_figure.R);
+full write-up in
+[docs/TECHNICAL_APPENDIX_TEMPORAL_PLAUSIBILITY.md](docs/TECHNICAL_APPENDIX_TEMPORAL_PLAUSIBILITY.md).*
+
 ### Three more you build yourself
 
 These read the frozen crosswalk, which is person-level and gitignored, so they
@@ -153,7 +176,7 @@ does not pretend otherwise. On a machine holding the data:
 |---|---|
 | [`make_evidence_class_figure.R`](make_evidence_class_figure.R) | What do the accepted matches *rest on*? Every accepted link by the evidence class that carried it, split by taxonomy, because a nursing accept at class 3 or below is two sensitivity decisions stacked. Writes `docs/figures/evidence_class_accepted.png` and a publishable aggregate CSV. |
 | [`build_linkage_case_gallery.R`](build_linkage_case_gallery.R) | Is the matching *right*? A stratified, seeded sample of real decisions — the AMCB side, the NPPES side, the rule that fired, the candidate arithmetic — with a verdict box per case. Twelve strata; three flagged as needing close reading. Person-level: writes only to `qa/`, `--redact` for a shareable copy. |
-| [`analyze_temporal_plausibility.R`](analyze_temporal_plausibility.R) | Would a *date* separate what a name cannot? Measures the one axis the matcher never uses. See [D17](docs/DECISIONS_CONTRACT.md) and [the appendix](docs/TECHNICAL_APPENDIX_TEMPORAL_SIGNAL.md); the rule is implemented and switched off. |
+| [`analyze_temporal_plausibility.R`](analyze_temporal_plausibility.R) | Would a *date* separate what a name cannot? Its **aggregate** result is rendered above as Figure 13 — counts only, so it is publishable — but the person-level list of flagged pairings needs the crosswalk and is written to gitignored `qa/`. See [D17](docs/DECISIONS_CONTRACT.md), [the signal appendix](docs/TECHNICAL_APPENDIX_TEMPORAL_SIGNAL.md) and [the measurement appendix](docs/TECHNICAL_APPENDIX_TEMPORAL_PLAUSIBILITY.md); the rule is implemented and switched off. |
 
 All three are exercised in CI against regenerated fixtures
 ([`tests/test_linkage_scripts_smoke.R`](tests/test_linkage_scripts_smoke.R)),
@@ -941,7 +964,7 @@ are irrelevant to whether a polygon is centred near a midwife.
 |---|---|
 | S3 (`tyler-valhalla-tiles`) | `isochrone_archive/` ×2 releases, `staging/`, `supplemental_isochrones/`, `production_run/`. No `isochrone-releases/` prefix exists. |
 | EC2 | **no instances and no volumes exist in the account** — nothing to search |
-| External drive | `/Volumes/MufflySamsung/isochrone_archives/isochrones_archive/`, 16 artifacts |
+| External drive | `/Volumes/MufflySamsung*/isochrone_archives/isochrones_archive/`, 16 artifacts |
 | Dropbox | `isochrones_shared/` holds only a geocoding cache and state-board scrapes — **no isochrones** |
 
 Two corrections to the inventory that motivated this search: the record counts are origin×band rows,
@@ -1126,7 +1149,7 @@ repaired later.
 | Source | Vintage used | Exact file / endpoint | Supplies | Consumed by |
 |---|---|---|---|---|
 | **AMCB Instant Verification** | **accessed 2026-08-06**; 22,309 certificants (183 CM, 22,126 CNM), reconciling to the directory's own totals | [`ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800`](https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800) → `midwives.csv` | the roster: name, certification, certification number, status, certification and expiration dates. **No location at any level** | [`scrape.py`](scrape.py) → [`match_amcb_to_npi.R`](match_amcb_to_npi.R) → [`reconcile_linkage.R`](reconcile_linkage.R) |
-| **NPPES historical dissemination** | **annual snapshots 2007–2025** (the panel; missing years are enumerated in `linkage_manifest.json`) | `/Volumes/MufflySamsung/nppes_historical_downloads/` → `midwife_panel.csv` | 443,623 NPIs; taxonomy history, name history, practice address *with its observation year* | [`build_midwife_panel.R`](build_midwife_panel.R) → [`extract_nppes_midwives.R`](extract_nppes_midwives.R) |
+| **NPPES historical dissemination** | **annual snapshots 2007–2025** (the panel; missing years are enumerated in `linkage_manifest.json`) | `/Volumes/MufflySamsung*/nppes_historical_downloads/` → `midwife_panel.csv` | 443,623 NPIs; taxonomy history, name history, practice address *with its observation year* | [`build_midwife_panel.R`](build_midwife_panel.R) → [`extract_nppes_midwives.R`](extract_nppes_midwives.R) |
 | **NPPES full dissemination file** | **July 2026** — `npidata_pfile_20050523-20260713`. A local **March 2024** copy (`npidata_pfile_20050523-20240310`) exists and is *deliberately not used*: two years stale, missing recently certified midwives | [download.cms.gov/nppes](https://download.cms.gov/nppes/NPI_Files.html) | primary practice location, sex code, enumeration date | [`build_midwife_panel.R`](build_midwife_panel.R), [`link_practice_locations_to_org_npi.R`](link_practice_locations_to_org_npi.R) |
 | **NPPES secondary practice locations** (`pl_pfile`) | **August 2026** — `pl_pfile_20050523-20260809`, 1,241,922 secondary locations. The December 2022 file has 681,081; switching lifted cohort secondary locations 2,687 → 5,303 | same download page, `PL` file | the second and subsequent practice addresses that turn one NPI into several candidate organizations | [`link_practice_locations_to_org_npi.R`](link_practice_locations_to_org_npi.R), [`resolve_org_ambiguity.R`](resolve_org_ambiguity.R) |
 | **NPI Registry API** (live, v2.1) | **queried live** — no snapshot, so results drift; a rerun will not reproduce byte-identically | [`npiregistry.cms.hhs.gov/api/`](https://npiregistry.cms.hhs.gov/api/) | surname-blocked candidate NPIs including former/maiden names, and NPIs enumerated under non-midwifery taxonomies | [`fetch_npi_candidates.py`](fetch_npi_candidates.py) → [`match_nppes.R`](match_nppes.R) |
@@ -1208,7 +1231,7 @@ measured — see [Absence is not zero](#absence-is-not-zero-in-four-different-so
 |---|---|---|---|---|
 | **CMS Doctors & Clinicians (DAC)** | **June 2026** | `DAC_NationalDownloadableFile_2026-06.csv` | practice-address corroboration, group practice, medical/midwifery school (14.3% coverage), graduation year, CCN facility affiliations | [`extract_dac_midwives.R`](extract_dac_midwives.R), [`extract_dac_cnm_education.R`](extract_dac_cnm_education.R), [`extract_dac_facility_affiliations.R`](extract_dac_facility_affiliations.R) |
 | **Medicare Physician & Other Practitioners (Part B)** and **Part D Prescribers** | **2013–2023**, one row per provider-year | `nber_my_duckdb.duckdb` (external volume). Part D 2022–2023 exist twice — the `_standardized` series is used and the raw duplicates ignored | Part B 19.5% / Part D 47.1% participation | [`match_medicare_partb_partd.R`](match_medicare_partb_partd.R) |
-| **HCRIS hospital cost reports** | **FY2023** (`HCRIS_FY`, overridable) | `/Volumes/MufflySamsung/HCRIS/hosp10/fy2023/` | newborn/nursery volume at affiliated hospitals — **reported by only 37.7% of hospitals** | [`extract_hcris_affiliated_hospitals.R`](extract_hcris_affiliated_hospitals.R) |
+| **HCRIS hospital cost reports** | **FY2023** (`HCRIS_FY`, overridable) | `/Volumes/MufflySamsung*/HCRIS/hosp10/fy2023/` | newborn/nursery volume at affiliated hospitals — **reported by only 37.7% of hospitals** | [`extract_hcris_affiliated_hospitals.R`](extract_hcris_affiliated_hospitals.R) |
 | **HRSA HPSA — primary care** | the file is named `..._CUR_...` (**current at download**); **the download date is not recorded anywhere in the repo** — a reproducibility gap | `HPSA_CMPPC_SHP_DET_CUR_VX.shp` | shortage-area status by point-in-polygon, 98.4% of geocoded | [`assign_hpsa_status.R`](assign_hpsa_status.R) |
 | **Open Payments — general payments** | **program year 2024**, published extract `P06302026_06032026` | `OP_DTL_GNRL_PGYR2024_P06302026_06032026.csv` | recent practice addresses and Type-2 organization candidates. **Never used for any payment-behaviour claim** | [`harvest_open_payments_profile.py`](harvest_open_payments_profile.py), [`link_open_payments_type2_bulk.R`](link_open_payments_type2_bulk.R) |
 | **Open Payments — covered recipient profile supplement** | same extract | `OP_CVRD_RCPNT_PRFL_SPLMTL_P06302026_06032026.csv` | the recipient profile keyed to NPI | same, plus [`resolve_org_ambiguity.R`](resolve_org_ambiguity.R) |
@@ -1319,7 +1342,7 @@ why geography was rejected as a corroborator.
 | CDC WONDER county natality | none, but **manual web-UI export** under WONDER's data-use agreement; the API refuses sub-national natality |
 | NPPES snapshots and `pl_pfile` | none, but ~1 GB compressed each; kept outside the repo |
 | NPI Registry API | none — live, unauthenticated, 200-row response cap |
-| Medicare Part B / Part D, HCRIS, HPSA, DAC affiliations | external drive at `/Volumes/MufflySamsung`, or the corresponding env var |
+| Medicare Part B / Part D, HCRIS, HPSA, DAC affiliations | external drive at `/Volumes/MufflySamsung*`, or the corresponding env var |
 | ABOG roster, isochrone library, name normalization | a checkout of `mufflyt/isochrones` (**private**) at `ISOCHRONES_HOME` |
 | Map base | a checkout of `mufflyt/mysterymaps` at `MYSTERYMAPS_HOME` |
 | Archive isochrone recovery | S3 `tyler-valhalla-tiles` plus the external drive |
@@ -1340,10 +1363,10 @@ that no tracked R file hardcodes a path into another user's home.
 | `ISOCHRONES_HOME` / `ISOCHRONES_R` / `ISOCHRONES_DIR` | `~/isochrones` | name normalization, ABOG roster, the isochrone library |
 | `MYSTERYMAPS_HOME` | `~/mysterymaps` | map base |
 | `GEOCODING_CACHE_PATH` | project-local | the geocode cascade — **the thing that makes geocoding reproducible** |
-| `MEDICARE_DUCKDB` | `/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb` | `match_medicare_partb_partd.R` |
-| `HCRIS_DIR` / `HCRIS_FY` | `/Volumes/MufflySamsung/HCRIS/hosp10`, `2023` | `extract_hcris_affiliated_hospitals.R` |
-| `HPSA_SHP` | `/Volumes/MufflySamsung/HRSA_HPSA_data/HPSA_CMPPC_SHP_DET_CUR_VX.shp` | `assign_hpsa_status.R` |
-| `NPPES_HISTORY` / `PL_FILE` / `NPPES_VINTAGE_DATE` | external volume | `build_midwife_panel.R`, `link_practice_locations_to_org_npi.R` |
+| `MEDICARE_DUCKDB` | **resolved by glob** — see below | `match_medicare_partb_partd.R` and 8 others |
+| `HCRIS_DIR` / `HCRIS_FY` | resolved by glob, `2023` | `extract_hcris_affiliated_hospitals.R` |
+| `HPSA_SHP` | resolved by glob | `assign_hpsa_status.R` |
+| `NPPES_HISTORY` / `PL_FILE` / `NPPES_VINTAGE_DATE` | resolved by glob | `build_midwife_panel.R`, `link_practice_locations_to_org_npi.R` |
 | `DAC_FILE` | `DAC_NationalDownloadableFile_2026-06.csv` | the DAC extractors |
 | `MIDWIFE_PANEL` / `GEOGRAPHY_FILE` / `STAGE2_FROZEN` | `artifacts/` defaults | stage chaining |
 | `JOIN_MIN_COVERAGE` / `JOIN_MAX_DUPLICATION` / `JOIN_REPORT_DIR` | pipeline defaults | the `join_safety` gate on every join |
@@ -1352,6 +1375,37 @@ that no tracked R file hardcodes a path into another user's home.
 Scripts that need an absent external volume **refuse to run** rather than
 emitting a partial artifact. That is deliberate: a silently degraded number is
 indistinguishable from a good one.
+
+#### The external volume is found by glob, never by name
+
+macOS leaves a stale mount point in `/Volumes` after an unclean unmount and then
+remounts the *same* drive as `<name> 1`. Nothing in the repo controls which
+spelling you get, and 28 scripts once hardcoded the first one. That would be a
+trivial bug except for what DuckDB does with a path that does not exist:
+**`dbConnect()` creates the database.** So the failure was not an error — it was
+a 12 KB empty warehouse, zero rows from every query, and a run that reported
+success having measured nothing. Both files were on the drive at once:
+
+```
+/Volumes/MufflySamsung 1/DuckDB/nber_my_duckdb.duckdb   84.3 GB, 454 tables
+/Volumes/MufflySamsung 1/nber_my_duckdb.duckdb           12 KB,   0 tables
+```
+
+[`R/lib/medicare_duckdb.R`](R/lib/medicare_duckdb.R) resolves it instead:
+
+- `resolve_midwifery_duckdb()` globs `/Volumes/MufflySamsung*`, requires a
+  candidate to **look** like the warehouse (≥ 1 GB) before accepting it, and
+  **stops** on absence or ambiguity rather than falling back to a literal path.
+- `samsung_volume_path(relative)` does the same for everything else on the drive
+  — NPPES, HPSA, HCRIS, PECOS, PPEF, the revalidation archive, the water masks.
+- Discovery never opens a database. It touches the filesystem only through
+  `Sys.glob()` and `file.info()`.
+
+Setting any variable in the table above still wins, and an explicit override is
+**not** exempt from existing — pointing one at a missing file is the original
+bug, so it is refused. `tests/test_duckdb_volume_resolution.R` is hermetic and
+its section H forbids the literal in any tracked `.R`/`.py`/`.sh`/`.yml`/`.Rmd`
+file outside the library and the test itself.
 
 ### Rebuilding from scratch, in order
 
@@ -1415,7 +1469,7 @@ numbers. Five things stand between the two:
 3. **A private repository and an external drive.** The ABOG roster and the
    canonical isochrone library live in `mufflyt/isochrones`, which is private.
    Medicare, HCRIS, HPSA and the NPPES history live on
-   `/Volumes/MufflySamsung`. Everything in Tier D and the comparator layer is
+   `/Volumes/MufflySamsung*`. Everything in Tier D and the comparator layer is
    gated on access most readers will not have.
 4. **Undated scrapes.** Healthgrades, Doximity, the state Boards of Nursing, the
    voter files and the birth-centre directories were captured without a recorded

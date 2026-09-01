@@ -45,6 +45,9 @@
 
 suppressPackageStartupMessages({library(dplyr); library(readr); library(tidyr)})
 source(file.path("R", "lib", "artifact_provenance.R"))
+# amcb_certification_year(): defined ONCE beside amcb_temporal_separation(),
+# which consumes the year it produces.
+source(file.path("R", "amcb_resolver.R"))
 
 tp_arg <- function(k, d) {
   h <- grep(paste0("^--", k, "="), commandArgs(TRUE), value = TRUE)
@@ -78,7 +81,7 @@ first_seen <- p %>%
   summarise(first_seen_year = min(.data$snapshot_year), .groups = "drop") %>%
   mutate(left_censored = .data$first_seen_year == PANEL_MIN)
 
-cert_year <- function(v) suppressWarnings(as.integer(substr(as.character(v), 1, 4)))
+cert_year <- amcb_certification_year
 
 acc <- x %>%
   filter(!is.na(.data$npi), nzchar(as.character(.data$npi))) %>%
@@ -142,7 +145,6 @@ if (!file.exists(AUDIT)) {
   message("  Rerun match_amcb_to_npi.R to write it; its first_year column is now")
   message("  populated from the panel, where it used to be left NA.")
 } else {
-  source(file.path("R", "amcb_resolver.R"))
   ca <- read_csv(AUDIT, show_col_types = FALSE, guess_max = 50000)
   if (!"first_year" %in% names(ca) || all(is.na(ca$first_year))) {
     message("  The candidate audit predates the populated first_year column and")
