@@ -39,12 +39,13 @@ suppressPackageStartupMessages({
 source("R/lib/common_helpers.R")
 
 DAC_VINTAGE <- Sys.getenv("DAC_VINTAGE", "2026-06")
-FA <- Sys.getenv("FACILITY_AFFILIATION_FILE",
-  file.path("/Volumes/MufflySamsung/facility_affiliation",
-            "doctors_and_clinicians_2026_06",
-            "Facility_Affiliation_2026-06.csv"))
-DB <- Sys.getenv("MEDICARE_DUCKDB",
-                 "/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+FA <- Sys.getenv("FACILITY_AFFILIATION_FILE", "")
+if (!nzchar(FA))
+  FA <- samsung_volume_path(file.path("facility_affiliation",
+                                      "doctors_and_clinicians_2026_06",
+                                      "Facility_Affiliation_2026-06.csv"))
+DB <- resolve_midwifery_duckdb()
 
 for (f in c(FA, DB)) {
   if (!file.exists(f))

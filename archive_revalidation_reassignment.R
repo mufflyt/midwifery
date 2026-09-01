@@ -56,10 +56,15 @@ root_dir <- {
 }
 setwd(root_dir)
 
-RAW_DIR <- Sys.getenv("REVAL_RAW_DIR",
-                      "/Volumes/MufflySamsung 1/cms_revalidation_raw")
-DB_PATH <- Sys.getenv("REVAL_DB",
-                      "/Volumes/MufflySamsung 1/cms_revalidation.duckdb")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+RAW_DIR <- Sys.getenv("REVAL_RAW_DIR", "")
+if (!nzchar(RAW_DIR)) RAW_DIR <- samsung_volume_path("cms_revalidation_raw")
+# The archive is CREATED here on a first run, so it must NOT be required to
+# exist. What must exist is the volume, which RAW_DIR has just located; the
+# archive is written beside it rather than at a second guessed spelling.
+DB_PATH <- Sys.getenv("REVAL_DB", "")
+if (!nzchar(DB_PATH))
+  DB_PATH <- file.path(dirname(RAW_DIR), "cms_revalidation.duckdb")
 TBL     <- "revalidation_reassignment"
 LIMIT   <- suppressWarnings(as.integer(Sys.getenv("REVAL_LIMIT", NA)))
 

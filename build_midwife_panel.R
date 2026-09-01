@@ -26,8 +26,13 @@
 
 suppressPackageStartupMessages({library(DBI); library(duckdb)})
 
-ROOT <- Sys.getenv("NPPES_HISTORY",
-                   "/Volumes/MufflySamsung/nppes_historical_downloads")
+ROOT <- Sys.getenv("NPPES_HISTORY", "")
+if (!nzchar(ROOT)) {
+  # Sourced only on this branch: NPPES_HISTORY is always set by the test
+  # harness, and nothing else in this file assumes the repo root as cwd.
+  source(file.path("R", "lib", "medicare_duckdb.R"))
+  ROOT <- samsung_volume_path("nppes_historical_downloads")
+}
 stopifnot(dir.exists(ROOT))
 
 # A CNM must hold RN licensure, so enumerating under a nursing or women's

@@ -177,8 +177,8 @@ resolve_type2_bulk <- function(addr_df, org_df) {
 
 # --- CLI ---------------------------------------------------------------------
 if (sys.nframe() == 0) {
-  DB <- Sys.getenv("MEDICARE_DUCKDB",
-                   "/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb")
+  source(file.path("R", "lib", "medicare_duckdb.R"))
+  DB <- resolve_midwifery_duckdb()
   SRC <- Sys.getenv("OP_ADDRESS_FILE", "artifacts/open_payments_recent_address.csv")
   dir.create("artifacts/audit", showWarnings = FALSE, recursive = TRUE)
 

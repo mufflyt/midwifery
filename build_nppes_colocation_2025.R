@@ -56,8 +56,13 @@ setwd(root_dir)
 source(file.path("R", "lib", "artifact_provenance.R"))
 source(file.path("R", "lib", "address_keys.R"))
 
-NPPES <- Sys.getenv("NPPES_2025",
-  "/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2025/npidata_pfile_20050523-20251109.csv")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+
+NPPES <- Sys.getenv("NPPES_2025", "")
+if (!nzchar(NPPES))
+  NPPES <- samsung_volume_path(file.path("nppes_historical_downloads",
+                                         "extracted_2025",
+                                         "npidata_pfile_20050523-20251109.csv"))
 OUT     <- "artifacts/nppes_colocation_2025.csv"
 OUT_SUM <- "artifacts/nppes_colocation_2025_summary.csv"
 NPPES_VINTAGE <- "2025-11"

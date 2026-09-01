@@ -55,8 +55,12 @@ source(file.path("R", "lib", "artifact_provenance.R"))
 
 OUT     <- "artifacts/midwife_organization_panel.csv"
 OUT_SUM <- "artifacts/midwife_organization_panel_summary.csv"
-EXTRA   <- Sys.getenv("CARE_COMPARE_DIR",
-                      "/Volumes/MufflySamsung 1/nppes_historical_downloads")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+# A SUPPLEMENTARY location only: find_vintages() globs the working directory
+# first and can succeed with the drive unmounted, so absence is not fatal.
+EXTRA   <- Sys.getenv("CARE_COMPARE_DIR", "")
+if (!nzchar(EXTRA))
+  EXTRA <- samsung_volume_path("nppes_historical_downloads", must_exist = FALSE)
 
 # --- discover vintages -------------------------------------------------------
 # PREFER THE MORE RECENT VINTAGE. Where two files would resolve to the same
@@ -66,7 +70,8 @@ EXTRA   <- Sys.getenv("CARE_COMPARE_DIR",
 find_vintages <- function() {
   cands <- unique(c(
     Sys.glob("DAC_NationalDownloadableFile*.csv"),
-    Sys.glob(file.path(EXTRA, "DAC_NationalDownloadableFile*.csv"))))
+    if (is.na(EXTRA)) character(0)
+    else Sys.glob(file.path(EXTRA, "DAC_NationalDownloadableFile*.csv"))))
   cands <- cands[file.exists(cands)]
   if (!length(cands)) return(tibble::tibble())
 

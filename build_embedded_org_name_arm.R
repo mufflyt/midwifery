@@ -80,8 +80,13 @@ source(file.path("R", "lib", "duckdb_guards.R"))
 
 # The SAME vintage as diagnose_unresolved_affiliations.R. A newer file would
 # make this arm's yield incomparable with the decomposition it feeds.
-NPPES <- Sys.getenv("NPPES_2025",
-  "/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2025/npidata_pfile_20050523-20251109.csv")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+
+NPPES <- Sys.getenv("NPPES_2025", "")
+if (!nzchar(NPPES))
+  NPPES <- samsung_volume_path(file.path("nppes_historical_downloads",
+                                         "extracted_2025",
+                                         "npidata_pfile_20050523-20251109.csv"))
 if (!file.exists(NPPES)) stop("NPPES 2025 not found: ", NPPES, call. = FALSE)
 
 OUT_Y <- "artifacts/embedded_org_name_yield.csv"

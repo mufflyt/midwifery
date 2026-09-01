@@ -53,11 +53,13 @@ source("R/lib/address_keys.R")   # norm_addr/zip5/zip9/phone10: one definition
 source("R/lib/common_helpers.R")
 source("link_open_payments_type2_bulk.R") # resolve_type2_bulk(): exact OP fallback
 
-DB <- Sys.getenv("MEDICARE_DUCKDB",
-                 "/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb")
-PL <- Sys.getenv("PL_FILE", file.path(
-  "/Volumes/MufflySamsung/nppes_historical_downloads/august_2026",
-  "pl_pfile_20050523-20260809.csv"))
+source(file.path("R", "lib", "medicare_duckdb.R"))
+DB <- resolve_midwifery_duckdb()
+PL <- Sys.getenv("PL_FILE", "")
+if (!nzchar(PL))
+  PL <- samsung_volume_path(file.path("nppes_historical_downloads",
+                                      "august_2026",
+                                      "pl_pfile_20050523-20260809.csv"))
 PL_VINTAGE <- "NPPES pl_pfile 2026-08-09"
 SEED <- 20260811L   # fixed so the review sample is reproducible
 

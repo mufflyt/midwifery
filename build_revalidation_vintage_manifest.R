@@ -39,8 +39,9 @@ root_dir <- {
 setwd(root_dir)
 source(file.path("R", "lib", "artifact_provenance.R"))
 
-RAW_DIR <- Sys.getenv("REVAL_RAW_DIR",
-                      "/Volumes/MufflySamsung 1/cms_revalidation_raw")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+RAW_DIR <- Sys.getenv("REVAL_RAW_DIR", "")
+if (!nzchar(RAW_DIR)) RAW_DIR <- samsung_volume_path("cms_revalidation_raw")
 OUT <- "artifacts/revalidation_vintage_manifest.csv"
 
 files <- Sys.glob(file.path(RAW_DIR, "revalidation_reassignment_*.csv"))

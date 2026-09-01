@@ -86,8 +86,16 @@ root_dir <- {
 setwd(root_dir)
 source(file.path("R", "lib", "artifact_provenance.R"))
 
-RAW <- Sys.getenv("PPEF_RAW_DIR", "/Volumes/MufflySamsung 1/ppef_raw")
-LEGACY <- Sys.getenv("PPEF_ENROL", "/Volumes/MufflySamsung 1/pecos_data/ppefenrol.csv")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+RAW <- Sys.getenv("PPEF_RAW_DIR", "")
+if (!nzchar(RAW)) RAW <- samsung_volume_path("ppef_raw")
+# The legacy cut is OPTIONAL: it is excluded unless PPEF_INCLUDE_LEGACY is
+# set, so its absence must not stop the run.
+LEGACY <- Sys.getenv("PPEF_ENROL", "")
+if (!nzchar(LEGACY))
+  LEGACY <- samsung_volume_path(file.path("pecos_data", "ppefenrol.csv"),
+                                must_exist = FALSE)
+if (is.na(LEGACY)) LEGACY <- ""
 OUT_SNAP <- "artifacts/pac_npi_snapshot.csv"
 OUT_EVER <- "artifacts/pac_npi_ever.csv"
 OUT_SUM  <- "artifacts/pac_npi_crosswalk_summary.csv"

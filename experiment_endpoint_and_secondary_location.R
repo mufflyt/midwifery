@@ -57,7 +57,8 @@ source(file.path("R", "lib", "org_names.R"))
 
 source(file.path("R", "lib", "duckdb_guards.R"))
 
-BASE  <- "/Volumes/MufflySamsung 1/nppes_historical_downloads"
+source(file.path("R", "lib", "medicare_duckdb.R"))
+BASE  <- samsung_volume_path("nppes_historical_downloads")
 # ALL THREE FROM ONE DISSEMINATION (2026-08-09). The first draft of this
 # experiment paired 2024-12 reference files with a 2025-11 provider file, which
 # would have made every count an upper bound: a midwife who moved between the

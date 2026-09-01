@@ -273,7 +273,13 @@ if (length(nesting_report)) {
 # fuller canonical path but requires a coastline layer we do not have here, and
 # clip_isochrone_to_land() is per-state while these surfaces are national and
 # already dissolved.
-water_dir <- "/Volumes/MufflySamsung/nhdplus_hr/water_masks"
+source(file.path("R", "lib", "medicare_duckdb.R"))
+water_dir <- samsung_volume_path(file.path("nhdplus_hr", "water_masks"),
+                                 must_exist = FALSE)
+# Resolution must NOT stop here: water_clip_provenance() below is what
+# decides, and MIDWIFERY_ALLOW_UNCLIPPED exists to permit an unclipped run.
+# The sentinel keeps that refusal message readable.
+if (is.na(water_dir)) water_dir <- "(no MufflySamsung volume mounted)"
 # CYCLE 14. This was `if (dir.exists(water_dir))`, so an unmounted external
 # drive skipped the clip in silence and the surfaces once again counted the
 # Great Lakes as drivable ground -- 10.3% and 12.9% open water in the published

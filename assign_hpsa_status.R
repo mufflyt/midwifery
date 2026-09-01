@@ -36,8 +36,11 @@ suppressPackageStartupMessages({
 })
 source("R/join_safety.R")   # assert_unique_keys(): conflict-safe dedup
 
-HPSA <- Sys.getenv("HPSA_SHP",
-  "/Volumes/MufflySamsung/HRSA_HPSA_data/HPSA_CMPPC_SHP_DET_CUR_VX.shp")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+HPSA <- Sys.getenv("HPSA_SHP", "")
+if (!nzchar(HPSA))
+  HPSA <- samsung_volume_path(file.path("HRSA_HPSA_data",
+                                        "HPSA_CMPPC_SHP_DET_CUR_VX.shp"))
 if (!file.exists(HPSA)) {
   stop(sprintf(paste0("HPSA layer not found at %s. It lives on an external ",
                       "volume; mount it or set HPSA_SHP. Refusing to emit a ",

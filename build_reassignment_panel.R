@@ -53,7 +53,9 @@ root_dir <- {
 setwd(root_dir)
 source(file.path("R", "lib", "artifact_provenance.R"))
 
-DB   <- Sys.getenv("REVAL_DB", "/Volumes/MufflySamsung 1/cms_revalidation.duckdb")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+DB   <- Sys.getenv("REVAL_DB", "")
+if (!nzchar(DB)) DB <- samsung_volume_path("cms_revalidation.duckdb")
 TBL  <- "revalidation_reassignment"
 OUT  <- "artifacts/midwife_reassignment_panel.csv"
 OUT_SP <- "artifacts/midwife_reassignment_spells.csv"

@@ -46,16 +46,18 @@ suppressPackageStartupMessages({
 source("R/lib/address_keys.R")   # norm_addr/zip5/zip9/phone10: one definition
 source("R/lib/common_helpers.R")
 
-DB <- Sys.getenv("MEDICARE_DUCKDB",
-                 "/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+DB <- resolve_midwifery_duckdb()
 # Default to the CURRENT dissemination. The December 2022 file that was on
 # disk carried 681,081 secondary locations; the August 2026 file carries
 # 1,241,922 -- 82% more -- and lifts cohort secondary locations from 2,687 to
 # 5,303. A stale practice-location file understates exactly the multi-site
 # midwives this linkage exists to find.
-PL <- Sys.getenv("PL_FILE", file.path(
-  "/Volumes/MufflySamsung/nppes_historical_downloads/august_2026",
-  "pl_pfile_20050523-20260809.csv"))
+PL <- Sys.getenv("PL_FILE", "")
+if (!nzchar(PL))
+  PL <- samsung_volume_path(file.path("nppes_historical_downloads",
+                                      "august_2026",
+                                      "pl_pfile_20050523-20260809.csv"))
 for (f in c(DB, PL))
   if (!file.exists(f)) stop(sprintf("Required input not found: %s", f), call. = FALSE)
 

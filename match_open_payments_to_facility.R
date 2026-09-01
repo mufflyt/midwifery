@@ -46,8 +46,8 @@ source("R/lib/address_keys.R")   # norm_addr/zip5/zip9/phone10: one definition
 source("R/lib/common_helpers.R")
 source("R/join_safety.R")        # assert_unique_keys(): conflict-safe dedup
 
-DB <- Sys.getenv("MEDICARE_DUCKDB",
-                 "/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+DB <- resolve_midwifery_duckdb()
 HOSP <- Sys.getenv("OB_HOSPITALS", "artifacts/ob_hospitals_geocoded.csv")
 YEARS <- 2021:2024
 

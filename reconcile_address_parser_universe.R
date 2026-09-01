@@ -78,8 +78,13 @@ source(file.path("R", "lib", "duckdb_guards.R"))
 # The SAME default as diagnose_unresolved_affiliations.R:58. Deliberately not
 # the 2026 file: a newer vintage would reintroduce the very mismatch this
 # script exists to remove.
-NPPES <- Sys.getenv("NPPES_2025",
-  "/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2025/npidata_pfile_20050523-20251109.csv")
+source(file.path("R", "lib", "medicare_duckdb.R"))
+
+NPPES <- Sys.getenv("NPPES_2025", "")
+if (!nzchar(NPPES))
+  NPPES <- samsung_volume_path(file.path("nppes_historical_downloads",
+                                         "extracted_2025",
+                                         "npidata_pfile_20050523-20251109.csv"))
 if (!file.exists(NPPES)) stop("NPPES 2025 not found: ", NPPES, call. = FALSE)
 
 OUT <- "artifacts/address_parser_reconciliation.csv"
