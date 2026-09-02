@@ -259,9 +259,16 @@ html_content = f"""<!DOCTYPE html>
 
         // Initialize Leaflet Map with Dark Tiles
         const map = L.map('map', {{ center: [39.8283, -98.5795], zoom: 4 }});
-        L.tileLayer('https://{{s}}.basemaps.cartocdn.com/dark_all/{{z}}/{{x}}/{{y}}{{r}}.png', {{
-            attribution: '&copy; OpenStreetMap &copy; CARTO',
-            maxZoom: 18
+        // CARTO's basemaps.cartocdn.com now requires an API key (returns a
+        // watermarked "API KEY REQUIRED" placeholder tile without one). Esri's
+        // dark gray canvas is a free, no-key alternative; base + reference
+        // layers together reproduce the tiles-with-labels look dark_all had.
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{{z}}/{{y}}/{{x}}', {{
+            attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+            maxZoom: 16
+        }}).addTo(map);
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{{z}}/{{y}}/{{x}}', {{
+            maxZoom: 16
         }}).addTo(map);
 
         let markerCluster = L.markerClusterGroup({{ disableClusteringAtZoom: 12 }});
