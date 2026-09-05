@@ -25,14 +25,12 @@
 # -----------------------------------------------------------------------------
 # Requires the mysterynpi package (2026-09 migration: the canonical name keys
 # moved from a source()-ed mufflyt/isochrones checkout into the mysterynpi
-# package). mufflyt/mysterynpi is PRIVATE and mufflyt/midwifery is PUBLIC, so
-# a runner has no credentials to install it.
-#
-# To make these blocking: either make mufflyt/mysterynpi public, or add a
-# read-only PAT as a repository secret and
-#   Rscript -e 'remotes::install_github("mufflyt/mysterynpi@v0.2.0")'
-# in the `external-deps` job. Until then the package contract is verified
-# locally (tests/test_mysterynpi_contracts.R), not nightly.
+# package). mufflyt/mysterynpi went PUBLIC on 2026-09-05, so the
+# external-deps job now installs it and RUNS three of these informationally;
+# the normalization suite additionally needs the gitignored person-level
+# roster (T12 fails loudly without it, by design) and so stays runner-blocked
+# either way. To promote the other three to blocking, install mysterynpi in
+# the r-suite job and delete their entries here.
 # -----------------------------------------------------------------------------
 tests/test_amcb_name_normalization.R    external-private  # canonical name keys (mysterynpi)
 tests/test_cycle12_names_territories.R  external-private  # canonical name keys (mysterynpi)

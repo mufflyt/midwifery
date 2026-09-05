@@ -819,21 +819,46 @@ jobs:
           r-version: release
           use-public-rspm: true
 
-      # These need ~/isochrones/R/string_normalization.R. mufflyt/isochrones is
-      # PRIVATE and this repository is PUBLIC, so a runner has no credentials
-      # for it. Reported so the gap stays visible instead of being forgotten.
-      - name: Report tests blocked on a private sibling repository
+      # mysterynpi went PUBLIC on 2026-09-05, so the name-key tests it
+      # unblocks now RUN here -- still informationally (this job cannot
+      # redden the nightly) until a maintainer promotes them into r-suite by
+      # installing mysterynpi there. Two entries stay blocked for other
+      # reasons: the normalization suite hard-fails without the gitignored
+      # person-level roster (T12, by design), and Stage 2 still needs the
+      # private isochrones checkout for rank_one_to_one().
+      - name: Install mysterynpi (public) and its test dependencies
         run: |
-          sed -e 's/#.*$//' tests/ci_nightly_exceptions.txt \
-            | awk '$2 == "external-private" {print $1}' > /tmp/priv.txt
-          n=$(wc -l < /tmp/priv.txt | tr -d ' ')
+          Rscript -e 'install.packages(c("remotes","stringi","humaniformat","jsonlite","readr","dplyr","stringr"), repos = "https://cloud.r-project.org")'
+          Rscript -e 'remotes::install_github("mufflyt/mysterynpi@v0.2.0")'
+          Rscript -e 'cat("mysterynpi", as.character(packageVersion("mysterynpi")), "\n")'
+
+      - name: Run the tests mysterynpi unblocks (informational)
+        run: |
+          status=0
           {
-            echo "## Blocked on a private dependency ($n)"
-            echo "mufflyt/isochrones is private; this public runner cannot clone it."
-            echo "Add a read-only deploy key as a secret to make these blocking."
-            sed 's/^/- `/; s/$/`/' /tmp/priv.txt
+            echo "## Package-dependency tests (informational)"
           } >> "$GITHUB_STEP_SUMMARY"
-          cat /tmp/priv.txt
+          for t in tests/test_mysterynpi_contracts.R \
+                   tests/test_cycle4_ct_apportionment.R \
+                   tests/test_cycle12_names_territories.R; do
+            if Rscript "$t" > /tmp/t.log 2>&1; then
+              echo "- PASS \`$t\`" >> "$GITHUB_STEP_SUMMARY"
+            else
+              status=1
+              echo "- FAIL \`$t\`" >> "$GITHUB_STEP_SUMMARY"
+              tail -20 /tmp/t.log
+            fi
+          done
+          exit $status
+
+      - name: Report tests still blocked, and why
+        if: always()
+        run: |
+          {
+            echo "## Still blocked"
+            echo "- \`tests/test_amcb_name_normalization.R\` -- needs the gitignored person-level roster (T12 fails loudly without it, by design)"
+            echo "- \`tests/test_isochrones_stage2_rank_one_to_one.R\` -- needs the PRIVATE mufflyt/isochrones checkout (rank_one_to_one() did not move to mysterynpi)"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # ===========================================================================
   summary:

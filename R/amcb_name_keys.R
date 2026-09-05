@@ -39,8 +39,7 @@ if (!requireNamespace("mysterynpi", quietly = TRUE)) {
     "AMCB name keys are provided by the mysterynpi package, which is not ",
     "installed.\n",
     "  Fix: remotes::install_github(\"mufflyt/mysterynpi@v0.2.0\")\n",
-    "       (private repo: authenticate gh first, or install from a local ",
-    "checkout with R CMD INSTALL)\n",
+    "       (public repository; no credentials needed)\n",
     "  Do NOT vendor a local copy -- name handling must have exactly one ",
     "definition across the pipelines that compare names."), call. = FALSE)
 }
