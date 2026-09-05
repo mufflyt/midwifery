@@ -167,17 +167,20 @@ cat("\n-- ADVERSARIAL --\n")
       sprintf("T39b no district-profile guard is blinded by na.rm=TRUE [found %d]", n_blind))
 }
 
-# T40 (adversarial). R/string_normalization.R is a shim that sources the
-# canonical implementation from ~/isochrones. If that repo is absent the shim
-# must fail LOUDLY with instructions -- the standing rule for this project is
-# no silent fallback to a local reimplementation.
+# T40 (adversarial). R/string_normalization.R is a shim that forwards to the
+# canonical implementation, which since 2026-09 is the mysterynpi PACKAGE. If
+# the package is absent or too old the shim must fail LOUDLY with install
+# instructions -- the standing rule is unchanged: no silent fallback to a
+# local reimplementation, ever.
 {
   shim <- file.path(root, "R", "string_normalization.R")
   src <- paste(readLines(shim, warn = FALSE), collapse = "\n")
   informative <- grepl("stop\\(", src) &&
-    grepl("ISOCHRONES_R", src) && grepl("file\\.exists", src)
+    grepl("requireNamespace\\(\"mysterynpi\"", src) &&
+    grepl("install_github", src) &&
+    grepl("packageVersion", src)
   chk(informative,
-      "T40 the isochrones shim checks for its target and fails with instructions")
+      "T40 the mysterynpi shim checks package + version and fails with instructions")
 }
 
 cat(sprintf("\n%s (%d failures)\n", if (fails == 0L) "PASS" else "FAIL", fails))

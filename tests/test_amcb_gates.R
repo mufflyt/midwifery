@@ -339,7 +339,14 @@ cat("\n-- G6: middle names compare as TOKEN SETS, never by position --\n")
 # disagreement and deleted 82 rows' only exact-name candidate. Both halves are
 # pinned here -- what must now corroborate, and what must STILL conflict, since
 # a fix that stops vetoing anything is not a fix.
-{
+if (!requireNamespace("mysterynpi", quietly = TRUE)) {
+  # Same shape as G7's guard: the dependency is unreachable on a public
+  # runner, so say so loudly and let the remaining gates still report,
+  # instead of aborting the whole file at the source() below. The rule
+  # itself is additionally pinned upstream by mysterynpi's own tests and by
+  # tests/test_mysterynpi_contracts.R (external-private).
+  skip("G6 middle-name gates: mysterynpi not installed (see ci_nightly_exceptions.txt)")
+} else {
   source(file.path(root, "R", "amcb_name_keys.R"))
   agree <- function(a, b) amcb_middle_agreement(amcb_middle_tokens(a),
                                                 amcb_middle_tokens(b))
@@ -411,6 +418,7 @@ cat("\n-- G6: middle names compare as TOKEN SETS, never by position --\n")
                    silent = TRUE), "try-error"),
       "G6 refuses mismatched input lengths rather than recycling")
 }
+
 
 # =============================================================================
 cat("\n-- G4: absent keys and empty selections must fail, not pass --\n")

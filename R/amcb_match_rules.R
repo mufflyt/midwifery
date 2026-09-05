@@ -208,84 +208,17 @@ amcb_assert_rank_one_to_one <- function(fn = NULL, id_col = "enthealth_id") {
 #'   third when either side records no middle name, which is absence of
 #'   evidence and must never be read as evidence of difference.
 amcb_middle_agreement <- function(a_tokens, b_tokens) {
-  if (length(a_tokens) != length(b_tokens)) {
-    stop("a_tokens and b_tokens must be the same length", call. = FALSE)
-  }
-  vapply(seq_along(a_tokens), function(i) {
-    a <- a_tokens[[i]]; b <- b_tokens[[i]]
-    if (!length(a) || !length(b)) return("uninformative")
-    # A whole token shared anywhere in either string is the strongest middle
-    # evidence available, wherever each side happens to keep it.
-    if (length(intersect(a[nchar(a) >= 2L], b[nchar(b) >= 2L]))) {
-      return("corroborates")
-    }
-    # CONCATENATED INITIALS ARE INITIALS, NOT A NAME (2026-08-30, found by
-    # auditing the 27 identity flips this function caused). "VL" against
-    # "VELMA LAURITZEN" is the same person written two ways, but nchar("VL")
-    # is 2, so the first test above scored it as a full NAME token, found no
-    # match, and -- because neither side then held a single-letter token --
-    # never ran the initial test at all. Verdict: conflict. The candidate was
-    # deleted and a nursing-taxonomy record took the match from a midwifery
-    # one. Same for "MJ" against "MARY JANE".
-    if (initials_string_matches(a, b) || initials_string_matches(b, a)) {
-      return("corroborates")
-    }
-    # An initial abbreviates a token; it cannot be compared to a whole name as
-    # a whole name. So an initial on EITHER side is matched against the first
-    # letter of every token on the other -- which is the old rule, minus the
-    # assumption that the abbreviated token is the first one.
-    if (any(nchar(a) == 1L) || any(nchar(b) == 1L)) {
-      if (length(intersect(substr(a, 1L, 1L), substr(b, 1L, 1L)))) {
-        return("corroborates")
-      }
-    }
-    # NO EDIT-DISTANCE TOLERANCE ON THE MIDDLE NAME (2026-08-30, removed the
-    # same day it was added). A previous cut returned "uninformative" when two
-    # full middle tokens were within one edit -- JULIA/JULIE, LOUSE/LOUISE,
-    # ELISABETH/ELIZABETH -- so the candidate survived instead of being vetoed.
-    #
-    # Measured before removing it: 64 of 30,740 exact-name candidate pairs
-    # (0.2%) depended on it, and it was worth 22 roster records net. Against
-    # that, it admitted pairs that are genuinely DIFFERENT given names --
-    # JULIA/JULIE, LEE/LEA, EDA/EDNA, ANN/ANNE -- and defended them only by
-    # inference from the surrounding name agreement. Deleted deliberately: 22
-    # records is a cheaper price than an edit-distance test anywhere in the
-    # identity path, and "we tolerated one character in the middle name" is a
-    # harder sentence to defend than "we did not".
-    #
-    # This is NOT symmetric with the surname axis. Class 4 uses edit distance
-    # to GENERATE a candidate that is then ranked below exact evidence; this
-    # would have used it to SUPPRESS a veto, with no tier recording that it
-    # happened.
-    "conflicts"
-  }, character(1))
+  # Delegated to the mysterynpi package (2026-09-05), which carries this exact
+  # rule -- token sets, concatenated initials, no edit distance, absence
+  # uninformative -- together with its full rationale, its regression tests,
+  # its caller-assertable contract (run by tests/test_mysterynpi_contracts.R),
+  # and a per-push mutation campaign that proves the tests can fail. Verified
+  # identical to the implementation this replaces over the 23,543 distinct
+  # name values in this cohort's roster.
+  mysterynpi::middle_agreement(a_tokens, b_tokens)
 }
 
-#' Does a single 2-4 character token spell out the initials of the other side?
-#'
-#' Order-preserving: "VL" matches VELMA LAURITZEN, not LAURITZEN VELMA. A
-#' classification test ("does this look like initials?") was tried first and
-#' abandoned -- LYN, BRY and SKY are vowel-less and are names, while CJ and MJ
-#' are initials, so no property of the token alone separates them. This asks
-#' the only question that is decidable: do these characters MAP, in order, onto
-#' distinct tokens on the other side.
-#' @keywords internal
-#' @noRd
-initials_string_matches <- function(short, toks) {
-  if (length(short) != 1L) return(FALSE)
-  ch <- strsplit(short, "")[[1]]
-  if (length(ch) < 2L || length(ch) > 4L || length(toks) < length(ch)) return(FALSE)
-  j <- 1L
-  for (k in seq_along(ch)) {
-    hit <- FALSE
-    while (j <= length(toks)) {
-      if (substr(toks[j], 1L, 1L) == ch[k]) { hit <- TRUE; j <- j + 1L; break }
-      j <- j + 1L
-    }
-    if (!hit) return(FALSE)
-  }
-  TRUE
-}
+# initials_string_matches() moved to mysterynpi with the rule that uses it.
 
 
 #' Count RIVAL NPIs: alternative candidates that are a different PERSON.

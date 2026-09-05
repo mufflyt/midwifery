@@ -55,35 +55,21 @@ MUTATIONS <- list(
   ),
 
   # ---- name matching -------------------------------------------------------
-  list(
-    id = "surname-token-min-length",
-    file = "R/amcb_name_keys.R",
-    find = "AMCB_MIN_SURNAME_TOKEN <- 4L",
-    repl = "AMCB_MIN_SURNAME_TOKEN <- 2L",
-    why = paste("Drops the minimum surname-component length from 4 to 2, so",
-                "two-letter fragments become blocking keys and unrelated people",
-                "collide on things like 'DE' or 'LA'."),
-    # test_lib_keys.R was the original guess and it was WRONG -- it covers join
-    # keys, not name keys. The mutation "survived" against it, which looked like
-    # a hole in the suite and was actually a hole in this catalogue. Corrected
-    # after checking directly which test detects it.
-    killers = c("tests/test_amcb_name_normalization.R"),
-    ci_reachable = FALSE   # needs the private isochrones normalizer
-  ),
-
-  list(
-    id = "person-match-and-to-or",
-    file = "R/amcb_name_keys.R",
-    find = "  same_last & shared\n}",
-    repl = "  same_last | shared\n}",
-    why = paste("A person match needs the surname AND a shared given-name",
-                "token. Loosened to OR, everyone sharing only a first name",
-                "matches everyone else."),
-    # Nothing detected this at all until T21 was written for it: the token-set
-    # conjunction at the centre of this repository's identity logic had no test.
-    killers = c("tests/test_amcb_name_normalization.R"),
-    ci_reachable = FALSE   # needs the private isochrones normalizer
-  ),
+  # RETIRED HERE, NOT RETIRED (2026-09-05). Two mutants used to live in this
+  # section, aimed at R/amcb_name_keys.R:
+  #
+  #   surname-token-min-length   AMCB_MIN_SURNAME_TOKEN 4 -> 2
+  #   person-match-and-to-or     same_last & shared -> |
+  #
+  # That file is now a shim over the mysterynpi package, and the mutable code
+  # moved with it. Both mutants run THERE, on every push, as
+  # `surname-token-floor` and `person-match-and-to-or` in the package's
+  # matching-gate campaign (tools/ci/mutation_campaign.R in mufflyt/mysterynpi)
+  # -- same corruption, same kill requirement, no longer gated on a private
+  # checkout being present. The behaviour this repository relies on is pinned
+  # from the consumer side by tests/test_mysterynpi_contracts.R. A mutant kept
+  # here would anchor on text the shim no longer contains and rot into
+  # "testing nothing", which this catalogue treats as failure by design.
 
   # ---- arithmetic ----------------------------------------------------------
   list(
