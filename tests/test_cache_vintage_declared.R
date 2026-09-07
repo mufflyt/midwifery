@@ -58,7 +58,7 @@ n_pos <- 0L; n_neg <- 0L
 
 # --- a synthetic cache we control completely --------------------------------
 mk_cache <- function(rows, file = tempfile(fileext = ".duckdb")) {
-  con <- DBI::dbConnect(duckdb::duckdb(), dbdir = file)
+  con <- DBI::dbConnect(duckdb::duckdb(), dbdir = file)  # duckdb-exception: synthetic-fixture
   on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
   DBI::dbWriteTable(con, "geocoding_cache", rows, overwrite = TRUE)
   file

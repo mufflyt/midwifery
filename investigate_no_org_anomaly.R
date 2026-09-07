@@ -75,7 +75,7 @@ reasons <- read_csv("artifacts/unresolved_affiliation_reasons.csv",
 noorg <- reasons$npi[reasons$reason == "key_matched_no_org"]
 cli::cli_alert_info("no-organization group: {format(length(noorg), big.mark = ',')}")
 
-con <- dbConnect(duckdb::duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 duckdb::duckdb_register(con, "noorg", data.frame(npi = noorg, stringsAsFactors = FALSE))
 

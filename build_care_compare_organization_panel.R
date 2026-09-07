@@ -110,7 +110,7 @@ cohort <- read_csv(cw, col_types = cols(.default = "c"), progress = FALSE) %>%
   filter(!is.na(npi), nzchar(npi)) %>% distinct(amcb_id, npi)
 cli::cli_alert_info("resolved midwives: {format(nrow(cohort), big.mark = ',')}")
 
-con <- dbConnect(duckdb::duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 duckdb::duckdb_register(con, "cohort", cohort)
 

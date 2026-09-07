@@ -86,7 +86,7 @@ unres <- spine %>% left_join(status, by = "certification_number") %>%
 cli::cli_alert_info("ACTIVE and unresolved: {format(nrow(unres), big.mark = ',')}")
 if (!nrow(unres)) stop("nothing unresolved; nothing to diagnose", call. = FALSE)
 
-con <- dbConnect(duckdb::duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 duckdb::duckdb_register(con, "target", unres %>% select(npi))
 

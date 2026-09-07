@@ -1,5 +1,6 @@
 suppressMessages({library(data.table); library(duckdb); library(DBI)})
 source(file.path("R", "analysis_args.R"))   # arg_or()
+source(file.path("R", "lib", "medicare_duckdb.R"))
 
 setwd(arg_or(3, "REPO_ROOT", "."))
 source("R/amcb_name_keys.R"); source("R/amcb_match_rules.R")
@@ -17,7 +18,7 @@ fl <- m[nzchar(npi.c) & nzchar(npi.t) & npi.c != npi.t]
 cat("identity flips:", nrow(fl), "\n\n")
 
 # pull both NPIs' recorded names from the narrow panel
-dc <- dbConnect(duckdb()); invisible(dbExecute(dc,"SET threads=3"))
+dc <- duckdb_connect(); invisible(dbExecute(dc,"SET threads=3"))
 ids <- unique(c(fl$npi.c, fl$npi.t))
 duckdb_register(dc, "want", data.frame(npi=ids))
 PANEL <- arg_or(4, "MIDWIFE_PANEL", "midwife_panel.csv")

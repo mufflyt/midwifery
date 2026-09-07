@@ -80,7 +80,7 @@ grp <- reasons %>% select(npi, reason)
 cli::cli_alert_info("unresolved cohort: {format(nrow(grp), big.mark = ',')}")
 print(as.data.frame(count(grp, reason, sort = TRUE)), row.names = FALSE)
 
-con <- dbConnect(duckdb::duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 duckdb::duckdb_register(con, "tgt", grp)
 

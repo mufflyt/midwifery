@@ -111,7 +111,7 @@ f <- files[which.max(snap)]
 snap_date <- max(snap)
 cat(sprintf("NPPES bulk file: %s (vintage %s)\n", basename(f), snap_date))
 
-con <- dbConnect(duckdb::duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
 # normalize_names = TRUE gives snake_case; resolve against the real header

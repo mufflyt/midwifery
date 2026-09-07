@@ -37,6 +37,7 @@ root_dir <- {
 }
 setwd(root_dir)
 source(file.path(root_dir, "R", "amcb_name_keys.R"))
+source(file.path("R", "lib", "medicare_duckdb.R"))
 
 XW <- Sys.getenv(
   "CROSSWALK_IN",
@@ -54,7 +55,7 @@ stopifnot(nrow(c5) > 0)
 # --- Token frequency across the candidate pool -------------------------------
 # Only npi and last_name are needed, so pull those two columns rather than
 # reading the 493MB panel into R.
-con <- dbConnect(duckdb::duckdb()); on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
+con <- duckdb_connect(); on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 surnames <- dbGetQuery(con, sprintf(
   "SELECT DISTINCT npi, last_name FROM read_csv_auto('%s', all_varchar = TRUE,
      sample_size = 1000, normalize_names = TRUE)

@@ -43,7 +43,7 @@ if (length(missing))
                paste(unlist(missing), collapse = ", ")), call. = FALSE)
 
 con <- tryCatch(
-  dbConnect(duckdb::duckdb(), DB, read_only = FALSE),
+  duckdb_connect(DB, read_only = FALSE),
   error = function(e)
     stop(sprintf(paste0("Could not open %s for writing: %s\nDuckDB allows one ",
                         "writer at a time and this warehouse is shared. Close ",

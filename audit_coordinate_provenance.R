@@ -9,6 +9,7 @@
 # =============================================================================
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(DBI); library(duckdb)
+source(file.path("R", "lib", "medicare_duckdb.R"))
 })
 
 fro <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv", show_col_types=FALSE) %>%
@@ -22,7 +23,7 @@ key_of <- function(street, city, state, zip)
 
 cache_path <- Sys.getenv("GEOCODING_CACHE_PATH",
                          path.expand("~/isochrones/data/geocoding_cache.duckdb"))
-con <- dbConnect(duckdb::duckdb(), cache_path, read_only=TRUE)
+con <- duckdb_connect(cache_path, read_only=TRUE)
 on.exit(dbDisconnect(con, shutdown=TRUE), add=TRUE)
 cache <- dbGetQuery(con, "SELECT address_hash, latitude, longitude, geocoder_provenance
                           FROM geocoding_cache WHERE latitude IS NOT NULL") %>%

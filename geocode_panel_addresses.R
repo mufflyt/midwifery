@@ -23,6 +23,8 @@
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(DBI); library(duckdb); library(stringr)
 })
+source(file.path("R", "lib", "medicare_duckdb.R"))
+source(file.path("R", "lib", "geocode_cache_columns.R"))
 
 FROZEN <- Sys.getenv("STAGE2_FROZEN", "artifacts/amcb_npi_linkage_FROZEN.csv")
 cache_path <- Sys.getenv("GEOCODING_CACHE_PATH",
@@ -67,21 +69,31 @@ roster <- roster %>%
 run_results <- c("artifacts/panel_geocode_results.csv",
                  "artifacts/geocode_rerun_results.csv",
                  "artifacts/geocode_final_results.csv")
+empty_fresh <- tibble(nppes_practice_address = character(), nppes_city = character(),
+                      nppes_state = character(), nppes_zip = character(),
+                      f_lat = double(), f_lon = double(), f_prov = character())
 fresh <- lapply(run_results[file.exists(run_results)], function(p)
   read_csv(p, show_col_types = FALSE) %>%
     transmute(nppes_practice_address = geocode_address_1, nppes_city = geocode_city,
               nppes_state = geocode_state, nppes_zip = geocode_zip,
               f_lat = lat, f_lon = lon, f_prov = geocode_source)) %>%
-  bind_rows() %>%
+  {if (length(.) == 0) empty_fresh else bind_rows(.)} %>%
   filter(!is.na(f_lat)) %>%
   distinct(nppes_practice_address, nppes_city, nppes_state, nppes_zip, .keep_all = TRUE)
 cat(sprintf("fresh geocodes available: %s\n", format(nrow(fresh), big.mark = ",")))
 
-con <- dbConnect(duckdb::duckdb(), cache_path, read_only = TRUE)
+con <- duckdb_connect(cache_path, read_only = TRUE)
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
-cache <- dbGetQuery(con, "
-  SELECT address_hash, latitude, longitude, quality_score, census_tract, county_fips
-  FROM geocoding_cache WHERE latitude IS NOT NULL") %>%
+# The cache's coordinate columns have been renamed at least once already
+# (latitude/longitude -> lat/lon) without every reader being updated, which is
+# exactly what broke this query. Detect the actual column names instead of
+# assuming either, so a future rename degrades to a clear error here rather
+# than a silent 0% hit rate or another binder error.
+cache_cols <- dbListFields(con, "geocoding_cache")
+cols <- resolve_lat_lon_columns(cache_cols)
+cache <- dbGetQuery(con, sprintf("
+  SELECT address_hash, %s AS latitude, %s AS longitude, quality_score, census_tract, county_fips
+  FROM geocoding_cache WHERE %s IS NOT NULL", cols$lat_col, cols$lon_col, cols$lat_col)) %>%
   distinct(address_hash, .keep_all = TRUE)
 
 # Exact key first; then street+city+state ignoring zip, stripped identically on

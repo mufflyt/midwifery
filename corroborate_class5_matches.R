@@ -31,6 +31,7 @@ root_dir <- {
 }
 setwd(root_dir)
 source(file.path(root_dir, "R", "amcb_name_keys.R"))
+source(file.path("R", "lib", "medicare_duckdb.R"))
 
 CENSUS <- Sys.getenv("CLASS5_CENSUS", "artifacts/amcb_class5_review_census.csv")
 PANEL  <- Sys.getenv("MIDWIFE_PANEL", "midwife_panel.csv")
@@ -41,7 +42,7 @@ cen <- read_csv(CENSUS, col_types = cols(.default = "c"))
 cat(sprintf("class-5 rows: %s\n", format(nrow(cen), big.mark = ",")))
 
 # --- Every recorded name string for each matched NPI --------------------------
-con <- dbConnect(duckdb::duckdb()); on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
+con <- duckdb_connect(); on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 npis <- unique(cen$npi)
 vars <- dbGetQuery(con, sprintf(
   "SELECT DISTINCT npi, last_name, middle_name, first_name

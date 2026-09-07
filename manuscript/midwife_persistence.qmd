@@ -134,7 +134,7 @@ are prevalent among certified midwives in the United States[@Thumm2022burnout],
 and retaining midwives already in the workforce is repeatedly framed as more
 tractable than training new ones. That argument carries an unstated geographic
 assumption: that a midwife retained in the profession is a midwife retained
-*in the same community*. If mobility is high, retention preserves the national
+in the same community. If mobility is high, retention preserves the national
 workforce while redistributing it, and a county-level access gain cannot be
 assumed from a national retention effect. If mobility is low, retention is
 geographically sticky and the benefit of a retention effect falls
@@ -203,17 +203,17 @@ panel is consequential: a midwife who has since left the registry remains
 matchable under the name she held while enumerated, and every name spelling an
 NPI has ever carried is available for blocking, not only its present one.
 
-Candidate pairs were ranked into **ordered name-evidence classes** rather than
+Candidate pairs were ranked into ordered name-evidence classes rather than
 scored on a blended similarity metric. The classes are, from strongest to
 weakest: exact surname and given name with a corroborating middle name; exact
 surname and given name; exact surname with given-name equivalence through a
 nickname dictionary; surname within edit distance two of the roster spelling;
-and a partial-surname class ranked *below* whole-surname agreement, on the
+and a partial-surname class ranked below whole-surname agreement, on the
 reasoning that a fragment of a surname is weaker identity evidence than the
 whole of one within a small edit distance.
 
-A certification record resolved to a provider only when **exactly one candidate
-occupied its strongest available evidence class**. Where two or more candidates
+A certification record resolved to a provider only when exactly one candidate
+occupied its strongest available evidence class. Where two or more candidates
 were indistinguishable at that class -- most commonly identical surname and
 given name with no middle name available on either side -- the record was left
 unresolved and retained as a reported stratum rather than assigned to the most
@@ -224,7 +224,7 @@ This fail-closed rule trades coverage for correctness deliberately. Two
 certificants with identical names, no middle name, and no date of birth are
 genuinely indistinguishable in these data, and a similarity score would
 manufacture certainty rather than establish it. Provider taxonomy assigned the
-evidence tier but was **never permitted to break an identity tie**: taxonomy
+evidence tier but was never permitted to break an identity tie: taxonomy
 states what a provider record does for a living, not which person a name refers
 to. A match supported only by nursing taxonomy was reported as a separate
 stratum and never promoted into the primary cohort, because a certified
@@ -242,9 +242,9 @@ out, `r mw_n("linkage.contested")` were contested between two certificants, and
 decompose. These dispositions are mutually exclusive and sum to the roster
 (Appendix 1, eResults 1).
 
-**Two selection rates follow from this design and are not interchangeable.**
-*Cohort resolution* is the share resolving to a midwifery-taxonomy record --
-what admits a person to the analytic cohort. *Ascertainment* is the share found
+Two selection rates follow from this design and are not interchangeable.
+Cohort resolution is the share resolving to a midwifery-taxonomy record --
+what admits a person to the analytic cohort. Ascertainment is the share found
 in the registry at all, including nursing-only matches. Among ACTIVE
 certificants these are `r mw_safe_stat("linkage.active_pct", "%.1f")`% and
 `r mw_safe_stat("linkage.active_ascertained_pct", "%.1f")`%; among DECEASED
@@ -263,7 +263,7 @@ snapshot in which a provider appeared with a usable practice address. Providers
 were not required to appear in every year; entry and exit are themselves
 observed quantities.
 
-The linkage was **frozen before any analysis was run** and is addressed by
+The linkage was frozen before any analysis was run and is addressed by
 checksum thereafter. Every downstream product declares the frozen file as an
 input, and a rebuild that would leave any consumer holding a previous cohort is
 refused rather than performed. This is the mechanism that makes the cohort a
@@ -281,13 +281,13 @@ Because linkage is selected on certification status, and status is associated
 with practice location, the located cohort is not a random sample of the
 roster. Three analyses bound the consequence, in increasing order of assumption.
 
-**Worst-case bounds.** Certificants with no assignable county were placed
+Worst-case bounds. Certificants with no assignable county were placed
 entirely inside, then entirely outside, each rurality category. The truth lies
 within these bounds whatever the missingness mechanism. They are wide by
 construction; the width is an identity, equal to the unobserved fraction, and a
 narrower interval would be an assumption rather than a tighter analysis.
 
-**Bounds that retain observable non-cohort geography.** Rurality is missing
+Bounds that retain observable non-cohort geography. Rurality is missing
 because a practice ZIP failed to resolve, not because a certificant failed to
 enter the cohort; these are different events.
 `r mw_n("bounds.outside_n")` certificants outside the cohort nonetheless carry a
@@ -295,12 +295,12 @@ resolving ZIP, and discarding them would widen the interval by ignoring
 evidence. The reported bound retains them; the bound that discards them is given
 in Appendix 1.
 
-**Inverse-probability weighting.** Each located certificant was weighted by the
+Inverse-probability weighting. Each located certificant was weighted by the
 inverse of the linkage probability in its certification-status stratum. This is
 reported as a sensitivity and never as a correction: it is valid only if status
 explains the missingness, and it plainly does not explain all of it.
 
-A **tipping-point** calculation reports how far the unobserved would have to
+A tipping-point calculation reports how far the unobserved would have to
 depart from the observed for the qualitative conclusion to change.
 
 ## Geographic assignment
@@ -335,7 +335,7 @@ to ZIP code and to state, which bound the county estimate from below and above
 and serve as an internal consistency check.
 
 Origin rurality was the Rural-Urban Continuum Code stratum of the county of a
-provider's *first* observed snapshot, banded as metropolitan (codes 1--3),
+provider's first observed snapshot, banded as metropolitan (codes 1--3),
 nonmetropolitan adjacent to a metropolitan area (4--6), and nonmetropolitan
 remote (7--9). Classification by origin rather than by current county is
 essential: classifying by current county counts a midwife who left a remote
@@ -411,7 +411,7 @@ strongly related to certification status --
 `r mw_safe_stat("linkage.active_pct", "%.1f")`% of ACTIVE against
 `r mw_safe_stat("linkage.dead_pct", "%.1f")`% of DECEASED certificants -- so
 providers who have left the workforce are under-represented, and every estimate
-below describes the *located* workforce rather than all certificants. The full
+below describes the located workforce rather than all certificants. The full
 disposition of every record, the evidence classes behind it, and an analysis of
 the resulting selection appear in Supplementary Material S1.
 
@@ -574,7 +574,7 @@ is geographically untargeted will tend to consolidate the workforce where it is
 already dense.
 
 This analysis also illustrates a methodological hazard worth reporting. An
-earlier version of this work, stratifying by each provider's *current* county
+earlier version of this work, stratifying by each provider's current county
 rather than county of origin, found no rural mobility penalty. That
 specification counts a midwife who left a remote county as metropolitan and
 attributes her move to metropolitan mobility; correcting it did not merely
@@ -594,7 +594,7 @@ agree.
 The principal limitation is that linkage is selected on an outcome correlated
 with the exposure. Only `r mw_safe_stat("linkage.active_pct", "%.1f")`% of
 ACTIVE certificants and `r mw_safe_stat("linkage.dead_pct", "%.1f")`% of
-DECEASED certificants resolve *into the analytic cohort* -- that is, to a
+DECEASED certificants resolve into the analytic cohort -- that is, to a
 provider record carrying midwifery taxonomy -- so providers who exited the
 workforce are under-represented, and persistence among those we observe is not
 persistence among all certificants. The direction of this bias is toward
@@ -619,7 +619,7 @@ to `r mw_safe_stat("bounds.upper_pct", "%.1f")`% roster-wide with no assumption
 about the missingness mechanism (Appendix 1). More usefully, the missingness is
 not entirely opaque: the `r mw_n("bounds.outside_n")` certificants outside the
 cohort who could nonetheless be placed were
-`r mw_safe_stat("bounds.outside_pct", "%.1f")`% metropolitan, marginally *less*
+`r mw_safe_stat("bounds.outside_pct", "%.1f")`% metropolitan, marginally less
 metropolitan than the cohort rather than more. If the certificants who could
 not be placed resemble those who could, the cohort slightly overstates how
 metropolitan the workforce is -- a bias in the same direction as the

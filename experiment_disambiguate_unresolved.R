@@ -79,7 +79,7 @@ amb   <- reasons$npi[reasons$reason == "ambiguous_many_orgs"]
 noorg <- reasons$npi[reasons$reason == "key_matched_no_org"]
 cli::cli_alert_info("ambiguous: {format(length(amb), big.mark = ',')}; no-organization: {format(length(noorg), big.mark = ',')}")
 
-con <- dbConnect(duckdb::duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 duckdb::duckdb_register(con, "amb",   data.frame(npi = amb,   stringsAsFactors = FALSE))
 duckdb::duckdb_register(con, "noorg", data.frame(npi = noorg, stringsAsFactors = FALSE))

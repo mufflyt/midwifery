@@ -2048,3 +2048,23 @@ Tests verify:
 2. 10-digit numeric NPI formatting & Luhn checksums.
 3. Master CSV structure & state coverage bounds.
 4. State Board of Nursing verification link integrity.
+
+### The DuckDB connection chokepoint
+
+Every DuckDB connection in this repository — the shared 87 GB warehouse, a
+geocoding cache, or a bare in-memory database for CSV ingestion — goes
+through one function, `duckdb_connect()`. That is an architectural
+invariant, not a convention someone remembered to follow: a CMS PECOS
+extract once silently lost 10 real enrollment records because a raw
+connection somewhere skipped the encoding bootstrap, and the fix for the
+repository (not just that one script) is what this diagram shows.
+
+![DuckDB connection chokepoint: production code and the domain-specific warehouse opener both route through duckdb_connect() before ever reaching DBI::dbConnect()](docs/figures/duckdb_bootstrap_architecture.svg)
+
+An AST-based scanner (not a regex ratchet — it survives multi-line calls,
+named arguments, and a driver constructor aliased through a bare symbol)
+runs against every tracked `.R` file and fails CI if any raw connection
+exists outside a structured, per-site exception registry. Current state:
+**355 files scanned, 0 raw connections outside the registry, 17/17 planted
+mutations killed.** Full contract, registry, and verification results in
+[`docs/TECHNICAL_APPENDIX_DUCKDB_BOOTSTRAP_ARCHITECTURE.md`](docs/TECHNICAL_APPENDIX_DUCKDB_BOOTSTRAP_ARCHITECTURE.md).

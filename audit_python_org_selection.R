@@ -63,7 +63,7 @@ cat(sprintf("  parsed a usable ZIP for: %s\n",
             format(sum(!is.na(th$op_zip)), big.mark = ",")))
 
 # --- complete Type-2 candidate universe, from the pinned bulk file -----------
-con <- dbConnect(duckdb::duckdb(), DB, read_only = TRUE)
+con <- duckdb_connect(DB, read_only = TRUE)
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 org <- dbGetQuery(con, "
   SELECT CAST(npi AS VARCHAR) AS type2_npi, organization_name,
