@@ -41,35 +41,60 @@ if (is.null(ledger)) {
 }
 
 ci_section("Live-verification status is honest, not aspirational")
+VALID_LIVE_STATUS <- c("PASS", "FAIL", "NOT_RUN_INPUT_UNAVAILABLE")
+REQUIRED_COLS <- c("workflow", "live_status", "reason", "required_inputs", "inputs_available",
+                   "architecture_migration", "generic_contract_status", "live_equivalence_status",
+                   "last_attempt", "evidence_artifact")
 if (!is.null(ledger)) {
-  live_row <- ledger[ledger$workflow == "resolve_org_ambiguity.R", ]
-  if (nrow(live_row) == 1L && identical(live_row$live_equivalence, "LIVE_VERIFIED")) {
-    ci_ok("resolve_org_ambiguity.R is marked LIVE_VERIFIED -- the one workflow actually re-run against real production data this session")
+  missing_cols <- setdiff(REQUIRED_COLS, names(ledger))
+  if (length(missing_cols)) {
+    ci_fail("ledger is missing required column(s): %s", paste(missing_cols, collapse = ", "))
   } else {
-    ci_fail("resolve_org_ambiguity.R is not marked LIVE_VERIFIED in the ledger (got: %s)",
-            if (nrow(live_row) == 1L) live_row$live_equivalence else "<row missing>")
+    ci_ok("ledger has all required columns: %s", paste(REQUIRED_COLS, collapse = ", "))
   }
 
-  not_run_expected <- setdiff(EXPECTED_WORKFLOWS, "resolve_org_ambiguity.R")
-  for (wf in not_run_expected) {
+  bad_status <- ledger$live_status[!ledger$live_status %in% VALID_LIVE_STATUS]
+  if (length(bad_status)) {
+    ci_fail("live_status has non-declarative value(s): %s (only PASS, FAIL, NOT_RUN_INPUT_UNAVAILABLE are allowed -- DEFERRED, LIVE_VERIFIED, NOT_RUN etc. are not)",
+            paste(unique(bad_status), collapse = ", "))
+  } else {
+    ci_ok("every live_status value is one of PASS, FAIL, NOT_RUN_INPUT_UNAVAILABLE")
+  }
+
+  live_row <- ledger[ledger$workflow == "resolve_org_ambiguity.R", ]
+  if (nrow(live_row) == 1L && identical(live_row$live_status, "PASS")) {
+    ci_ok("resolve_org_ambiguity.R is marked live_status=PASS -- the one workflow actually re-run against real production data this session")
+  } else {
+    ci_fail("resolve_org_ambiguity.R is not marked live_status=PASS in the ledger (got: %s)",
+            if (nrow(live_row) == 1L) live_row$live_status else "<row missing>")
+  }
+
+  deferred_expected <- setdiff(EXPECTED_WORKFLOWS, "resolve_org_ambiguity.R")
+  n_deferred_as_pass <- 0L
+  for (wf in deferred_expected) {
     row <- ledger[ledger$workflow == wf, ]
     if (nrow(row) != 1L) {
       ci_fail("%s has no ledger row", wf)
       next
     }
-    if (identical(row$live_equivalence, "PASS") || identical(row$live_equivalence, "LIVE_VERIFIED")) {
-      ci_fail("%s is marked %s, but no live rerun was performed for it this session -- this is exactly the overclaim this ledger exists to prevent. Mark it NOT_RUN until an actual live rerun produces evidence.",
-              wf, row$live_equivalence)
-    } else if (identical(row$live_equivalence, "NOT_RUN")) {
-      if (!nzchar(row$reason_live_not_run)) {
-        ci_fail("%s is marked NOT_RUN but has no reason_live_not_run -- an unexplained NOT_RUN is as uninformative as a false PASS", wf)
+    if (identical(row$live_status, "PASS")) {
+      ci_fail("%s is marked live_status=PASS, but no live rerun was performed for it this session -- this is exactly the overclaim this ledger exists to prevent ('deferred workflows represented as PASS' must be 0). Mark it NOT_RUN_INPUT_UNAVAILABLE until an actual live rerun produces evidence.",
+              wf)
+      n_deferred_as_pass <- n_deferred_as_pass + 1L
+    } else if (identical(row$live_status, "NOT_RUN_INPUT_UNAVAILABLE")) {
+      if (!nzchar(row$reason)) {
+        ci_fail("%s is marked NOT_RUN_INPUT_UNAVAILABLE but has no reason -- an unexplained NOT_RUN is as uninformative as a false PASS", wf)
+      } else if (!row$inputs_available %in% c("YES", "NO")) {
+        ci_fail("%s has an invalid inputs_available value: %s (expected YES or NO)", wf, row$inputs_available)
       } else {
-        ci_ok("%s is honestly marked NOT_RUN with a stated reason: %s", wf, row$reason_live_not_run)
+        ci_ok("%s is honestly marked NOT_RUN_INPUT_UNAVAILABLE (inputs_available=%s) with a stated reason: %s",
+              wf, row$inputs_available, row$reason)
       }
     } else {
-      ci_fail("%s has an unrecognized live_equivalence value: %s (expected NOT_RUN or LIVE_VERIFIED)", wf, row$live_equivalence)
+      ci_fail("%s has an unrecognized live_status value: %s (expected NOT_RUN_INPUT_UNAVAILABLE for a deferred workflow)", wf, row$live_status)
     }
   }
+  cat(sprintf("\ndeferred workflows represented as PASS: %d\n", n_deferred_as_pass))
 }
 
 ci_section("Order-semantics declarations exist before comparison, not after a test fails")

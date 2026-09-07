@@ -18,6 +18,13 @@ if (!dir.exists(file.path(root, ".git")) && dir.exists("../.git")) root <- ".."
 source(file.path(root, "tests", "ci_report.R"))
 source(file.path(root, "R", "lib", "medicare_duckdb.R"))
 
+# Every artifact this gate produces is stamped with the exact SHA it ran
+# against -- a result from an earlier commit is not acceptance evidence for
+# this one, and a stale cached "PASS" from a prior tree state must never be
+# mistaken for a fresh one.
+CURRENT_SHA <- ci_evidence_commit()
+cat(sprintf("aggregate architecture gate running against commit: %s\n\n", CURRENT_SHA))
+
 run_gate <- function(rel_path, timeout_s = 300) {
   full <- file.path(root, rel_path)
   out <- tryCatch(
@@ -47,7 +54,11 @@ registry_keys <- vapply(DUCKDB_RAW_CONNECTION_EXCEPTIONS, function(e) paste(e$fi
 scan_keys <- paste(scan$file_rel, scan$tag, sep = "\x1f")
 covered <- !is.na(scan$tag) & scan_keys %in% registry_keys
 n_offenders <- length(unique(scan_keys[!covered]))
+exception_files <- length(unique(vapply(DUCKDB_RAW_CONNECTION_EXCEPTIONS, function(e) e$file, character(1))))
+exception_sites <- length(DUCKDB_RAW_CONNECTION_EXCEPTIONS)
 cat(sprintf("raw production connections outside registry: %d\n", n_offenders))
+cat(sprintf("exception_files: %d\n", exception_files))
+cat(sprintf("exception_sites: %d\n", exception_sites))
 record("raw production connections outside registry (0 expected)", n_offenders == 0L,
        if (n_offenders > 0L) sprintf("%d unregistered site(s)", n_offenders) else NULL)
 
@@ -58,6 +69,13 @@ record("exception registry self-consistent", registry_consistent,
        if (!registry_consistent) "see tests/ci_duckdb_ingestion_bootstrap.R output" else NULL)
 record("encoding regression suite", ingestion$ok && any(grepl("Encoding regression fixtures", ingestion$out)),
        if (!ingestion$ok) "tests/ci_duckdb_ingestion_bootstrap.R did not report PASS" else NULL)
+
+provenance <- run_gate("tests/ci_duckdb_exception_provenance.R")
+n_unjustified_match <- regmatches(paste(provenance$out, collapse = "\n"),
+                                  regexpr("new unjustified exceptions introduced: \\d+", paste(provenance$out, collapse = "\n")))
+cat(sprintf("%s\n", if (length(n_unjustified_match) && nzchar(n_unjustified_match)) n_unjustified_match else "new unjustified exceptions introduced: <not found>"))
+record("exception-registry provenance (4->7 explained, 0 new unjustified)", provenance$ok,
+       if (!provenance$ok) "tests/ci_duckdb_exception_provenance.R did not report PASS" else NULL)
 
 # -----------------------------------------------------------------------------
 # 3 & 4: connection contract, independence
@@ -124,13 +142,22 @@ record("geocode bug-fix tests (lat/lon + checkpoint safety)", latlon$ok && check
        if (!(latlon$ok && checkpoint$ok)) sprintf("lat/lon=%s checkpoint=%s", latlon$ok, checkpoint$ok) else NULL)
 
 # -----------------------------------------------------------------------------
+# 10: live-verification ledger honesty (no deferred workflow represented as PASS)
+# -----------------------------------------------------------------------------
+ci_section("Live-verification ledger")
+ledger_check <- run_gate("tests/ci_duckdb_verification_ledger.R")
+record("live-verification ledger (deferred workflows never shown as PASS)", ledger_check$ok,
+       if (!ledger_check$ok) "tests/ci_duckdb_verification_ledger.R did not report PASS" else NULL)
+
+# -----------------------------------------------------------------------------
 # Consolidated summary
 # -----------------------------------------------------------------------------
 ci_section("Aggregate architectural gate summary")
+cat(sprintf("commit: %s\n\n", CURRENT_SHA))
 for (nm in names(sub_results)) {
-  cat(sprintf("  %-55s %s\n", nm, if (sub_results[[nm]]$ok) "PASS" else "FAIL"))
+  cat(sprintf("  %-65s %s\n", nm, if (sub_results[[nm]]$ok) "PASS" else "FAIL"))
 }
 all_pass <- all(vapply(sub_results, function(r) r$ok, logical(1)))
-cat(sprintf("\nOVERALL: %s\n", if (all_pass) "PASS" else "FAIL"))
+cat(sprintf("\nOVERALL (commit %s): %s\n", CURRENT_SHA, if (all_pass) "PASS" else "FAIL"))
 
 ci_finish()

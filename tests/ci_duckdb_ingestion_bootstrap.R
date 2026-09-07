@@ -80,6 +80,17 @@ if (length(DUCKDB_RAW_CONNECTION_EXCEPTIONS) > DUCKDB_RAW_CONNECTION_EXCEPTIONS_
         length(DUCKDB_RAW_CONNECTION_EXCEPTIONS), DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX)
 }
 
+# NEVER use "entries" for one measure and silently switch granularity later
+# -- that ambiguity is exactly what made an earlier report of "4" read as
+# the total raw-connection footprint when it was actually a FILE count that
+# undercounted a multi-site file. These two numbers are reported by name,
+# every run, so a future reader never has to reconstruct which one a past
+# report meant.
+exception_files <- length(unique(vapply(DUCKDB_RAW_CONNECTION_EXCEPTIONS, function(e) e$file, character(1))))
+exception_sites <- length(DUCKDB_RAW_CONNECTION_EXCEPTIONS)
+cat(sprintf("exception_files: %d\n", exception_files))
+cat(sprintf("exception_sites: %d\n", exception_sites))
+
 # The registry itself may only shrink: an entry naming a (file, tag) that no
 # longer exists, or whose file no longer exists at all, is stale cover and
 # must be removed, not left in place. (This is exactly what happened to the
