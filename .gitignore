@@ -585,3 +585,5 @@ artifacts/truth/adjudication_evidence_v1.csv
 artifacts/truth/adjudication_evidence_links_v1.csv
 artifacts/truth/truth_set_v1_final.csv
 artifacts/truth/truth_set_v1_final.manifest.json
+artifacts/truth/adjudication_batches_v1.csv
+artifacts/truth/batches/
