@@ -22,6 +22,114 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-09-07 — DuckDB initialization becomes an enforceable subsystem, not a helper convention
+
+A CMS PECOS extract silently lost 10 real enrollment records — two of them
+accented/apostrophe'd names ("COURTNEY ÉLAN MCCALL", "CARNELL D'ANDRE
+JOHNSON") — because the file was Windows-1252, not UTF-8 or Latin-1, and
+DuckDB's built-in CSV reader only knows utf-8/utf-16/latin-1;
+`ignore_errors = TRUE` swallowed the bad rows instead of erroring. The fix
+for that one script was two lines. The fix for the *repository* is this
+entry: every DuckDB connection in the codebase now goes through one
+chokepoint with a machine-checked contract, a fail-closed encoding
+bootstrap, and a mutation-tested enforcement mechanism — not a convention
+anyone could quietly bypass six months from now.
+
+### Added — `duckdb_connect()`: the single canonical connection factory
+
+`R/lib/medicare_duckdb.R` now separates three responsibilities that used to
+be reimplemented ad hoc at each of 40 call sites: `ensure_duckdb_encodings()`
+(bootstrap), `duckdb_connect()` (connection creation with canonical
+defaults — the chokepoint), and `open_medicare_duckdb()` (the warehouse-
+specific opener, which calls the chokepoint and never initializes DuckDB
+independently). Every connection `duckdb_connect()` returns carries
+`attr(., "duckdb_bootstrap_version")` for provenance.
+
+### Added — structural (AST) enforcement, not a regex ratchet
+
+`duckdb_scan_for_raw_connections()` parses each file's real parse tree and
+flags a raw `dbConnect(duckdb::duckdb())` call anywhere — inline, behind a
+variable, inside a wrapper function's body, or aliased through a bare
+symbol (`x <- duckdb::duckdb; x()`). Run against **355 tracked `.R` files**,
+it found **two real, unmigrated call sites live** during this work
+(`analysis/audit_identity_flips.R`, `analysis/measure_taxonomy_scope_ceiling.R`)
+— added to the repo after the original migration pass, and exactly the
+regression class this scanner exists to catch. **Raw production connection
+sites outside the registry: 0**, of **7** total sites at **5** files, each
+requiring a `# duckdb-exception: <tag>` comment naming file, tag, class,
+owner, and removal condition — no anonymous allowlist, and no more
+file-level exemptions (a file-level version of this registry undercounted
+by 3, since it silently exempted every connection in a file once any one
+was registered).
+
+### Added — fail-closed bootstrap, proven from a genuinely fresh machine
+
+`DUCKDB_BOOTSTRAP_ALLOW_INSTALL=0` refuses to install the `encodings`
+extension and errors naming the missing capability, instead of silently
+continuing or attempting a network call — letting CI distinguish a code
+defect from a missing dependency from a network-restricted environment.
+Proven on a machine that has never installed the extension at all: a
+separate `Rscript` subprocess with a genuinely empty `extension_directory`
+(not just an unloaded extension already on disk, which DuckDB autoloads
+regardless of any bootstrap).
+
+### Added — 17 mutations, each with a named kill
+
+`tests/ci_duckdb_mutation_tests.R` and `tests/ci_duckdb_clean_environment.R`
+apply 17 distinct mutations to isolated copies of the bootstrap — a raw
+connection substituted back in, the driver aliased through a symbol, the
+bootstrap sourced after first use, the encoding bootstrap disabled (split
+into a structural check immune to extension autoload, and a dynamic
+clean-environment check that is the actual authority on whether this
+mutation is killed), two connections silently sharing state, `read_only`
+dropped, provenance stripped, a stale or unregistered exception-registry
+entry, and five mutations against a new unordered-table-equivalence
+comparator (`R/lib/table_equivalence.R`) and the geocode fixes below.
+**17/17 killed.**
+
+### Fixed — `geocode_panel_addresses.R`: a coordinate-column rename broke silently
+
+`geocoding_cache`'s coordinate columns were renamed at least once
+(`latitude`/`longitude` → `lat`/`lon`) without every reader being updated;
+this script assumed the old names unconditionally, which degrades to a
+silent 0% cache-hit rate rather than an error. `resolve_lat_lon_columns()`
+(`R/lib/geocode_cache_columns.R`) detects the actual column names and
+errors clearly if neither naming scheme is present.
+
+### Fixed — `geocode_queue_cascade.R`: an hours-long geocoding run could lose its own checkpoint
+
+The raw cascade result — hours of irreplaceable Census/ArcGIS network calls
+— was checkpointed via a direct `saveRDS()` to its final path, which is not
+atomic: a process dying mid-write could leave a truncated file that a later
+resume would load as current. `save_checkpoint_atomic()`/`load_checkpoint()`
+(`R/lib/checkpoint_utils.R`) write to a sibling temp file and promote via
+`file.rename()`, so a reader only ever sees the prior good checkpoint or
+the new complete one, never something in between. Also drops a stale
+`on_missing` argument `enrich_with_census_tracts()` no longer accepts
+upstream, which was erroring before ever reaching this script's own
+empty-geography-column protection.
+
+### Verified — one of six high-risk migrated workflows, against real production data
+
+`resolve_org_ambiguity.R`'s pre- and post-migration connection code was run
+side-by-side against the real, read-only 87 GB production warehouse and
+real NPPES/AMCB inputs (outputs redirected to scratch; no production
+artifact touched): stdout identical, 3 of 4 output files byte-identical,
+the 4th identical in content and row count with only DuckDB's unordered
+row sequencing differing. The other five (`build_pecos_organization_affiliations.R`,
+`extract_nppes_midwives.R`, `build_midwife_panel.R`,
+`build_care_compare_organization_panel.R`, `extract_dac_facility_affiliations.R`)
+are tracked as open verification debt in
+[issue #164](https://github.com/mufflyt/midwifery/issues/164) and
+`tests/fixtures/duckdb_migration_verification_ledger.csv`
+(`live_status = NOT_RUN_INPUT_UNAVAILABLE`, never `PASS`) — two are
+genuinely blocked by discontinued/unavailable source data, three simply
+were not run this session. See
+[`docs/TECHNICAL_APPENDIX_DUCKDB_BOOTSTRAP_ARCHITECTURE.md`](docs/TECHNICAL_APPENDIX_DUCKDB_BOOTSTRAP_ARCHITECTURE.md)
+for the full contract, registry, and mutation results.
+
+---
+
 ## [Unreleased] — 2026-08-31 — Two runs that reported success having measured nothing
 
 Both entries below are the same defect wearing different clothes: a pipeline
