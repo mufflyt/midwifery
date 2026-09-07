@@ -46,6 +46,18 @@ cv_run <- function(lib_lines = NULL) {
   file.copy(GATE, file.path(dir, "tests", "test_cache_vintage_declared.R"))
   if (is.null(lib_lines)) file.copy(LIB, file.path(dir, "R", "lib", "cache_vintage.R"))
   else writeLines(lib_lines, file.path(dir, "R", "lib", "cache_vintage.R"))
+  # The real cache_vintage.R now routes its connection through
+  # duckdb_connect() (R/lib/medicare_duckdb.R) rather than a raw
+  # dbConnect(duckdb::duckdb()) -- the "clean scaffold" case copies the
+  # REAL file (lib_lines is NULL there), so the sandbox needs this
+  # dependency too, or that copy's own source() call cannot resolve inside
+  # an isolated temp directory that otherwise only knows about
+  # cache_vintage.R and the gate. The mutated-library cases (lib_lines
+  # non-NULL, built from PRELUDE/read_rows below) construct a
+  # self-contained mini-library with a raw connection and never source
+  # this, so copying it unconditionally here is harmless for them.
+  file.copy(file.path(root, "R", "lib", "medicare_duckdb.R"),
+            file.path(dir, "R", "lib", "medicare_duckdb.R"))
   # enough sidecars that the corpus assertion holds; content is irrelevant here
   for (i in 1:60) writeLines('{"artifact":"x","inputs":[{"path":"a.csv","sha256":"z"}]}',
                              file.path(dir, "artifacts", sprintf("a%02d.csv.provenance.json", i)))
