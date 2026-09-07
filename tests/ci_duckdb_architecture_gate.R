@@ -25,7 +25,7 @@ source(file.path(root, "R", "lib", "medicare_duckdb.R"))
 CURRENT_SHA <- ci_evidence_commit()
 cat(sprintf("aggregate architecture gate running against commit: %s\n\n", CURRENT_SHA))
 
-run_gate <- function(rel_path, timeout_s = 300) {
+run_duckdb_gate <- function(rel_path, timeout_s = 300) {
   full <- file.path(root, rel_path)
   out <- tryCatch(
     system2("Rscript", shQuote(full), stdout = TRUE, stderr = TRUE, timeout = timeout_s),
@@ -62,7 +62,7 @@ cat(sprintf("exception_sites: %d\n", exception_sites))
 record("raw production connections outside registry (0 expected)", n_offenders == 0L,
        if (n_offenders > 0L) sprintf("%d unregistered site(s)", n_offenders) else NULL)
 
-ingestion <- run_gate("tests/ci_duckdb_ingestion_bootstrap.R")
+ingestion <- run_duckdb_gate("tests/ci_duckdb_ingestion_bootstrap.R")
 registry_consistent <- ingestion$ok && any(grepl("registered, tagged exception site", ingestion$out)) &&
   !any(grepl("^FAIL ", ingestion$out))
 record("exception registry self-consistent", registry_consistent,
@@ -70,7 +70,7 @@ record("exception registry self-consistent", registry_consistent,
 record("encoding regression suite", ingestion$ok && any(grepl("Encoding regression fixtures", ingestion$out)),
        if (!ingestion$ok) "tests/ci_duckdb_ingestion_bootstrap.R did not report PASS" else NULL)
 
-provenance <- run_gate("tests/ci_duckdb_exception_provenance.R")
+provenance <- run_duckdb_gate("tests/ci_duckdb_exception_provenance.R")
 n_unjustified_match <- regmatches(paste(provenance$out, collapse = "\n"),
                                   regexpr("new unjustified exceptions introduced: \\d+", paste(provenance$out, collapse = "\n")))
 cat(sprintf("%s\n", if (length(n_unjustified_match) && nzchar(n_unjustified_match)) n_unjustified_match else "new unjustified exceptions introduced: <not found>"))
@@ -81,7 +81,7 @@ record("exception-registry provenance (4->7 explained, 0 new unjustified)", prov
 # 3 & 4: connection contract, independence
 # -----------------------------------------------------------------------------
 ci_section("Connection contract and independence")
-contract <- run_gate("tests/ci_duckdb_connection_contract.R")
+contract <- run_duckdb_gate("tests/ci_duckdb_connection_contract.R")
 record("canonical connection contract", contract$ok && any(grepl("Connection contract", contract$out)))
 record("independent connection semantics", contract$ok && any(grepl("Independence between separate", contract$out)))
 
@@ -89,14 +89,14 @@ record("independent connection semantics", contract$ok && any(grepl("Independenc
 # 5: clean-environment bootstrap (M4b)
 # -----------------------------------------------------------------------------
 ci_section("Clean-environment bootstrap")
-clean_env <- run_gate("tests/ci_duckdb_clean_environment.R", timeout_s = 600)
+clean_env <- run_duckdb_gate("tests/ci_duckdb_clean_environment.R", timeout_s = 600)
 record("clean-environment bootstrap", clean_env$ok, if (!clean_env$ok) "tests/ci_duckdb_clean_environment.R did not report PASS -- a SKIPPED or errored run here is a FAIL, not green" else NULL)
 
 # -----------------------------------------------------------------------------
 # 6: AST / structural / dynamic mutation suite (M1-M17)
 # -----------------------------------------------------------------------------
 ci_section("Mutation suite (M1-M17)")
-mutations <- run_gate("tests/ci_duckdb_mutation_tests.R")
+mutations <- run_duckdb_gate("tests/ci_duckdb_mutation_tests.R")
 all_killed <- mutations$ok && !any(grepl("SURVIVED", mutations$out))
 record("AST mutation suite (M1-M17)", all_killed,
        if (!all_killed) "at least one mutation SURVIVED or the suite errored" else NULL)
@@ -105,7 +105,7 @@ record("AST mutation suite (M1-M17)", all_killed,
 # 7: unordered-output equivalence helper
 # -----------------------------------------------------------------------------
 ci_section("Unordered-output equivalence helper")
-table_eq <- run_gate("tests/test_table_equivalence.R")
+table_eq <- run_duckdb_gate("tests/test_table_equivalence.R")
 record("unordered-output equivalence helper", table_eq$ok)
 
 # -----------------------------------------------------------------------------
@@ -136,8 +136,8 @@ record("geocode migration-only diff (commit pinned)", pure_diff,
 # 9: geocode bug-fix tests
 # -----------------------------------------------------------------------------
 ci_section("Geocode bug-fix tests")
-latlon <- run_gate("tests/test_geocode_latlon_rename.R")
-checkpoint <- run_gate("tests/test_geocode_checkpoint_safety.R")
+latlon <- run_duckdb_gate("tests/test_geocode_latlon_rename.R")
+checkpoint <- run_duckdb_gate("tests/test_geocode_checkpoint_safety.R")
 record("geocode bug-fix tests (lat/lon + checkpoint safety)", latlon$ok && checkpoint$ok,
        if (!(latlon$ok && checkpoint$ok)) sprintf("lat/lon=%s checkpoint=%s", latlon$ok, checkpoint$ok) else NULL)
 
@@ -145,7 +145,7 @@ record("geocode bug-fix tests (lat/lon + checkpoint safety)", latlon$ok && check
 # 10: live-verification ledger honesty (no deferred workflow represented as PASS)
 # -----------------------------------------------------------------------------
 ci_section("Live-verification ledger")
-ledger_check <- run_gate("tests/ci_duckdb_verification_ledger.R")
+ledger_check <- run_duckdb_gate("tests/ci_duckdb_verification_ledger.R")
 record("live-verification ledger (deferred workflows never shown as PASS)", ledger_check$ok,
        if (!ledger_check$ok) "tests/ci_duckdb_verification_ledger.R did not report PASS" else NULL)
 
