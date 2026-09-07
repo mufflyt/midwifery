@@ -415,67 +415,122 @@ are covered. Every artifact in the current declaration is `unordered`: none
 of the six workflows' outputs have an identified downstream consumer that
 reads them positionally.
 
-## Verification ledger
+## Exception-registry provenance (4 → 7 is a measurement correction)
+
+The registry grew from 4 file-level entries to 7 site-level entries during
+closure. Read without context, that looks exactly like new raw connections
+being introduced — it is not. `tests/fixtures/duckdb_exception_registry_provenance.csv`
+classifies all 7 entries as `PREEXISTING_AND_PREVIOUSLY_UNDERCOUNTED` (the
+only other allowed value, `INTENTIONALLY_ADDED_BY_THIS_CHANGE`, applies to
+none of them), and `tests/ci_duckdb_exception_provenance.R` **re-derives**
+that claim from git history on every run rather than trusting a comment: for
+each registered file, it checks out the base commit's own content
+(`db44c3bd9d30d54c587ee8258901e61677d01ef7`) and confirms the (unmodified)
+scanner already finds the corresponding raw-connection site(s) there. The
+three sites that account for the 4→7 delta —
+`tests/ci_duckdb_mutation_tests.R`'s M6/M7/M8 mutation-harness
+re-implementations — are proven present in the base commit's own tree this
+way, not merely asserted: `git show db44c3b:tests/ci_duckdb_mutation_tests.R`
+scanned by the unmodified scanner finds 3 sites, and that file was never
+listed in the base commit's own (file-level) registry at all. That is the
+actual defect being corrected: an omission at commit time, not a new raw
+connection introduced afterward. Result: **new unjustified exceptions
+introduced: 0.**
+
+The report never conflates two different measures under the word "entries"
+again: `exception_files` (5 — the number of distinct files containing a
+registered exception) and `exception_sites` (7 — the number of distinct
+registered call sites) are printed as two separately labeled numbers by
+both `tests/ci_duckdb_ingestion_bootstrap.R` and the aggregate gate.
+
+## Live-verification ledger
 
 `tests/fixtures/duckdb_migration_verification_ledger.csv` is a
-machine-readable record, one row per high-risk migrated workflow, of
-`migration_type`, `diff_equivalence`, `integration_harness`,
-`live_equivalence`, `reason_live_not_run`, and `source_requirements`. Its
-purpose is narrow: make it impossible for "5 of 6 workflows were never
-re-run against real production data" to quietly become "all 6 are verified"
-just because the generic contract/AST/integration-harness coverage is green
-for all six (which it genuinely is). `resolve_org_ambiguity.R` is the only
-row marked `LIVE_VERIFIED`; the other five are marked `NOT_RUN` with a
-specific reason each — and those reasons are not uniform. Two are genuinely
-blocked (`build_pecos_organization_affiliations.R`'s PECOS raw
-reassignment-file distribution was discontinued by CMS after 2019;
-`extract_nppes_midwives.R` is hardcoded to one specific NPPES snapshot not
-present on this machine). Three (`build_midwife_panel.R`,
-`build_care_compare_organization_panel.R`, `extract_dac_facility_affiliations.R`)
-have their declared source inputs already present on this machine and were
-simply not run this session — a scope/time boundary, not a data blocker,
-and recorded as such rather than lumped in with the genuinely-blocked two.
-`tests/ci_duckdb_verification_ledger.R` fails CI if any `NOT_RUN` row is
-ever silently upgraded to a PASS-shaped status without an actual live run
-producing evidence for it, or if a row's reason is dropped.
+machine-readable record, one row per high-risk migrated workflow, with
+`live_status` restricted to exactly `PASS`, `FAIL`, or
+`NOT_RUN_INPUT_UNAVAILABLE` — no `DEFERRED`, no `LIVE_VERIFIED`, no status
+that could be misread as passing. Its purpose is narrow: make it impossible
+for "5 of 6 workflows were never re-run against real production data" to
+quietly become "all 6 are verified" just because the generic
+contract/AST/integration-harness coverage is green for all six (which it
+genuinely is — see `generic_contract_status` on every row). Only
+`resolve_org_ambiguity.R` has `live_status = PASS`. The other five are
+`NOT_RUN_INPUT_UNAVAILABLE` with a specific `reason` each — and those
+reasons are not uniform. Two are genuinely blocked
+(`build_pecos_organization_affiliations.R`'s PECOS raw reassignment-file
+distribution was discontinued by CMS after 2019; `extract_nppes_midwives.R`
+is hardcoded to one specific NPPES snapshot not present on this machine).
+Three (`build_midwife_panel.R`, `build_care_compare_organization_panel.R`,
+`extract_dac_facility_affiliations.R`) have `inputs_available = YES` and
+were simply not run this session — a scope/time boundary, not a data
+blocker, recorded as such rather than lumped in with the genuinely-blocked
+two. `tests/ci_duckdb_verification_ledger.R` fails CI if any
+`NOT_RUN_INPUT_UNAVAILABLE` row is ever shown as `PASS` without an actual
+live run producing evidence for it ("deferred workflows represented as
+PASS" is asserted `== 0` on every run), or if a row's reason is dropped.
+
+**Post-merge tracking**: [GitHub issue #164](https://github.com/mufflyt/midwifery/issues/164)
+carries the five deferred workflows forward — required inputs, expected
+invocation, output artifacts, order semantics, equivalence comparator, and
+success criterion for each — so they are discoverable and runnable without
+redesigning this test suite when their source inputs next become available.
+Closing an item there does not reopen this architecture PR; it updates the
+ledger row and closes that one item.
 
 ## Aggregate CI gate
 
-`tests/ci_duckdb_architecture_gate.R` runs every sub-check above as its own
-subprocess (never assuming a result — a sub-check that errors, times out, or
-produces no recognizable `PASS (0 failures)` line is reported FAILED, not
-skipped into a green aggregate) and reports one consolidated result with
-named sub-results: raw connections outside the registry (exact count),
-registry self-consistency, canonical connection contract, independent
-connection semantics, encoding regression suite, clean-environment
+`tests/ci_duckdb_architecture_gate.R` stamps the exact commit SHA it ran
+against on every invocation (`ci_evidence_commit()`), and runs every
+sub-check above as its own subprocess (never assuming a result — a
+sub-check that errors, times out, or produces no recognizable
+`PASS (0 failures)` line is reported FAILED, not skipped into a green
+aggregate). Named sub-results: raw connections outside the registry (exact
+count, plus `exception_files`/`exception_sites` printed separately),
+registry self-consistency, encoding regression suite,
+exception-registry provenance (4→7 explained, 0 new unjustified), canonical
+connection contract, independent connection semantics, clean-environment
 bootstrap, the full AST/structural/dynamic mutation suite (M1–M17), the
 unordered-output equivalence helper, the geocode migration-only diff (a
 fact about a pinned commit, re-verified from git history rather than the
-mutable working tree, so it stays checkable indefinitely), and the geocode
-bug-fix tests. A skipped clean-environment run is never collapsed into
-green — it is scored as a failed sub-result exactly like an actual defect
-would be.
+mutable working tree, so it stays checkable indefinitely), the geocode
+bug-fix tests, and the live-verification ledger's honesty check. A skipped
+clean-environment run is never collapsed into green — it is scored as a
+failed sub-result exactly like an actual defect would be. Results from an
+earlier SHA are never used as acceptance evidence for a later one; the
+gate must be re-run on the exact SHA being merged.
 
 ## Definition of done
 
 | Item | Status |
 |---|---|
-| Raw production DuckDB connection sites (outside registry) | **0** (7 distinct sites, all registered) |
-| Exception registry entries | **7** (site-level; upper bound `DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX = 7`), **0 stale** |
-| Canonical connection contract | **PASS** (`tests/ci_duckdb_connection_contract.R` §1) |
-| Independent-connection semantics | **PASS** (§2) |
-| Encoding regression fixtures | **PASS** (`tests/ci_duckdb_ingestion_bootstrap.R` §2) |
+| Base architecture commit | `db44c3bd9d30d54c587ee8258901e61677d01ef7` |
+| Architecture frozen at | `da29a07e22bed5c934cdd9d18d519787b935f338` |
+| Closure/provenance commit | `ae5d2490792c014e3285b7adaf6272bf82b7fd96` |
+| Raw production DuckDB connection sites (outside registry) | **0** |
+| Exception files | **5** |
+| Exception sites | **7** |
+| New unjustified exceptions introduced | **0** (all 7 sites' raw connections proven present at the base commit — see provenance section above) |
+| Stale exceptions | **0** |
+| Canonical connection contract | **PASS**, **9/9** (`tests/ci_duckdb_connection_contract.R` §1) |
+| Independent-connection semantics | **PASS**, **5/5** (§2) |
+| Encoding regression fixtures | **PASS**, **6/6** (`tests/ci_duckdb_ingestion_bootstrap.R` §2) |
 | Bootstrap fail-closed mode | **PASS** (`tests/ci_duckdb_clean_environment.R`, install-forbidden scenario) |
-| M4 clean-environment kill (M4b) | **PASS/KILLED** |
-| M4 structural invocation (M4a) | **PASS** |
+| M4b clean-environment kill | **PASS** |
+| M4a structural invocation | **PASS** |
 | AST/static mutations killed (M1, M2, M9, M10, M11, M12) | **6/6** |
-| Total mutations killed (M1–M17) | **17/17** |
+| Total mutations killed (M1–M17) | **17/17**, zero `NOT_RUN` |
 | Unordered-equivalence regression tests | **12/12** (`tests/test_table_equivalence.R`) |
 | Representative integration harness | **PASS** (§3) |
-| Geocode connection migrations isolated | **YES** (commit `9ed95ab`, pure substitution; 4 unrelated fixes split into their own commits) |
+| Geocode connection migrations isolated | **YES** (commit `9ed95ab`, pure substitution, re-verified from git history by the aggregate gate; 4 unrelated fixes split into their own commits) |
 | Lat/lon regression tests | **PASS** (`tests/test_geocode_latlon_rename.R`) |
 | Checkpoint interruption tests | **13/13** (`tests/test_geocode_checkpoint_safety.R`) |
-| High-risk migrated workflows: live verified | **1/6** (`resolve_org_ambiguity.R`) |
-| High-risk migrated workflows: live verification deferred | **5/6** (2 genuinely blocked on missing/discontinued source data; 3 available but not run this session — see the verification ledger) |
+| Live-verification ledger: workflows tracked | **6** |
+| Live-verification ledger: PASS | **1** (`resolve_org_ambiguity.R`) |
+| Live-verification ledger: FAIL | **0** |
+| Live-verification ledger: NOT_RUN_INPUT_UNAVAILABLE | **5** |
+| Deferred workflows represented as PASS | **0** |
+| Post-merge live-verification issue | [#164](https://github.com/mufflyt/midwifery/issues/164) |
 | Production data modified | **NO** |
+| Arbitrary ORDER BY introduced for equivalence | **NO** |
+| Aggregate architecture CI gate | **PASS** (re-run on exact final SHA) |
 | Architecture merge recommendation | **YES** |
