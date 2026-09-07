@@ -47,38 +47,63 @@ scan <- duckdb_scan_for_raw_connections(tracked_full)
 # prefix strip is sufficient -- no need for a generic path-escaping utility.
 scan$file_rel <- if (root == "..") sub("^\\.\\./", "", scan$file) else sub("^\\./", "", scan$file)
 
-registry_files <- vapply(DUCKDB_RAW_CONNECTION_EXCEPTIONS, `[[`, character(1), "file")
+# SITE-LEVEL matching: a hit is covered only if its (file, tag) pair matches
+# a registry entry exactly -- not merely if its FILE appears anywhere in the
+# registry. A hit with no tag at all (NA) can never match, by construction:
+# an untagged raw connection in an otherwise-registered file is exactly the
+# "new, unrelated raw connection silently exempted" gap this design closes.
+registry_key <- function(entries) vapply(entries, function(e) paste(e$file, e$tag, sep = "\x1f"),
+                                         character(1))
+registry_keys <- registry_key(DUCKDB_RAW_CONNECTION_EXCEPTIONS)
+scan_keys <- paste(scan$file_rel, scan$tag, sep = "\x1f")
 
-offenders <- unique(scan$file_rel[!scan$file_rel %in% registry_files])
-if (length(offenders)) {
-  for (f in offenders) {
-    lns <- scan$line[scan$file_rel == f]
-    syms <- scan$symbol[scan$file_rel == f]
-    for (i in seq_along(lns))
-      ci_fail("raw DuckDB connection outside the exception registry -- file: %s, line: %s, symbol: %s -- route through duckdb_connect() (R/lib/medicare_duckdb.R) or add a justified DUCKDB_RAW_CONNECTION_EXCEPTIONS entry",
-              f, lns[i], syms[i])
-  }
+covered <- !is.na(scan$tag) & scan_keys %in% registry_keys
+offenders <- scan[!covered, , drop = FALSE]
+if (nrow(offenders)) {
+  for (i in seq_len(nrow(offenders)))
+    ci_fail("raw DuckDB connection outside the exception registry -- file: %s, line: %s, tag: %s, symbol: %s -- route through duckdb_connect() (R/lib/medicare_duckdb.R) or add a justified, tagged DUCKDB_RAW_CONNECTION_EXCEPTIONS entry",
+            offenders$file_rel[i], offenders$line[i],
+            ifelse(is.na(offenders$tag[i]), "<none>", offenders$tag[i]), offenders$symbol[i])
 } else {
-  ci_ok("every tracked .R file's DuckDB connection is either duckdb_connect() or a registered exception (%d files scanned, %d files with any raw dbConnect() at all)",
-        length(tracked_full), length(unique(scan$file_rel)))
+  ci_ok("every tracked .R file's DuckDB connection is either duckdb_connect() or a registered, tagged exception site (%d files scanned, %d distinct raw-connection sites, %d files with any raw dbConnect() at all)",
+        length(tracked_full), length(unique(scan_keys)), length(unique(scan$file_rel)))
 }
 
-# The registry itself may only shrink: an entry naming a file that no longer
-# exists, or that the AST scanner no longer finds a raw connection in
-# (exactly what happened to the old tests/test_cache_vintage_detect.R entry,
-# removed when the regex-only false-positive it covered stopped applying),
-# is stale cover and must be removed, not left in place.
+# Explicit upper bound: the registry may not grow past
+# DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX without a conscious edit to that
+# constant, right next to the registry it bounds -- see its docstring.
+if (length(DUCKDB_RAW_CONNECTION_EXCEPTIONS) > DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX) {
+  ci_fail("DUCKDB_RAW_CONNECTION_EXCEPTIONS has grown to %d entries, past its declared upper bound of %d -- if this growth is genuinely justified, raise DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX in R/lib/medicare_duckdb.R deliberately, in the same change, with a reason",
+          length(DUCKDB_RAW_CONNECTION_EXCEPTIONS), DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX)
+} else {
+  ci_ok("exception registry size (%d) is within its declared upper bound (%d)",
+        length(DUCKDB_RAW_CONNECTION_EXCEPTIONS), DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX)
+}
+
+# The registry itself may only shrink: an entry naming a (file, tag) that no
+# longer exists, or whose file no longer exists at all, is stale cover and
+# must be removed, not left in place. (This is exactly what happened to the
+# old tests/test_cache_vintage_detect.R entry, removed when the regex-only
+# false-positive it covered stopped applying under the AST scanner.)
+seen_keys <- character(0)
 for (entry in DUCKDB_RAW_CONNECTION_EXCEPTIONS) {
   f <- entry$file
   full <- file.path(root, f)
+  key <- paste(entry$file, entry$tag, sep = "\x1f")
+  if (key %in% seen_keys) {
+    ci_fail("DUCKDB_RAW_CONNECTION_EXCEPTIONS has a duplicate entry for %s / tag %s -- one real site should have exactly one registry entry", f, entry$tag)
+  }
+  seen_keys <- c(seen_keys, key)
   if (!file.exists(full)) {
-    ci_fail("DUCKDB_RAW_CONNECTION_EXCEPTIONS entry '%s' no longer exists -- remove it (owner: %s)", f, entry$owner)
+    ci_fail("DUCKDB_RAW_CONNECTION_EXCEPTIONS entry '%s' (tag %s) no longer exists -- remove it (owner: %s)", f, entry$tag, entry$owner)
     next
   }
-  if (!f %in% scan$file_rel) {
-    ci_fail("DUCKDB_RAW_CONNECTION_EXCEPTIONS entry '%s' no longer contains a raw connection -- remove it, don't leave stale cover (owner: %s)", f, entry$owner)
+  if (!key %in% scan_keys) {
+    ci_fail("DUCKDB_RAW_CONNECTION_EXCEPTIONS entry '%s' (tag %s, %s) no longer corresponds to an actual tagged raw-connection site -- remove it, don't leave stale cover (owner: %s)",
+            f, entry$tag, entry$locator, entry$owner)
   } else {
-    ci_ok("registry entry %s still applies (owner: %s; expires: %s)", f, entry$owner, entry$expiry_condition)
+    ci_ok("registry entry %s / %s (%s) still applies (class: %s; owner: %s; added: %s; removal condition: %s)",
+          f, entry$tag, entry$locator, entry$exception_class, entry$owner, entry$added_date, entry$removal_condition)
   }
 }
 
@@ -170,7 +195,7 @@ if (identical(malformed_result, "failed")) {
 # tests/ci_duckdb_clean_environment.R, §"install-forbidden"), which controls
 # DuckDB's extension_directory directly rather than relying on this
 # machine's already-populated one.
-legacy_con <- DBI::dbConnect(duckdb::duckdb())  # deliberately bypassing duckdb_connect()
+legacy_con <- DBI::dbConnect(duckdb::duckdb())  # deliberately bypassing duckdb_connect() -- duckdb-exception: legacy-defect-control
 legacy_fx <- make_fixture(as.raw(0x92))
 legacy_dropped <- tryCatch({
   r <- DBI::dbGetQuery(legacy_con, sprintf(

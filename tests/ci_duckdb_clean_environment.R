@@ -85,9 +85,17 @@ if (grepl("error: ", full_b, fixed = TRUE) && grepl("fail-closed", full_b, fixed
 }
 
 # -----------------------------------------------------------------------------
-# M4's real, unconfounded kill-proof
+# M4b: clean-environment bootstrap necessity
 # -----------------------------------------------------------------------------
-ci_section("M4 (disabled bootstrap), re-tested without the autoload confound")
+# M4 has two independent halves (see tests/ci_duckdb_mutation_tests.R's M4a
+# for the structural half). This is M4b, the dynamic half: with a genuinely
+# empty extension_directory in a fresh subprocess -- so no already-installed
+# copy on this machine can autoload and mask the result -- does disabling
+# the bootstrap actually make CP1252 decoding fail? CI considers M4 killed
+# only when THIS test kills it; an in-process dynamic test on a warm
+# developer machine cannot, by construction, tell "the bootstrap ran" apart
+# from "the extension happened to already be on disk."
+ci_section("M4b: clean-environment bootstrap necessity (disabled bootstrap, no autoload possible)")
 ext_dir_m4 <- tempfile(); dir.create(ext_dir_m4)
 m4_script <- tempfile(fileext = ".R")
 writeLines(c(
@@ -107,9 +115,9 @@ writeLines(c(
 m4_out <- suppressWarnings(system2("Rscript", shQuote(m4_script), stdout = TRUE, stderr = TRUE))
 unlink(m4_script); unlink(ext_dir_m4, recursive = TRUE)
 if (identical(tail(m4_out, 1), "error")) {
-  ci_ok("M4 KILLED (unconfounded): with the bootstrap skipped AND a genuinely empty extension_directory (no autoload possible), CP1252 decoding fails exactly as it did in the real incident -- this is the definitive version of M4 that tests/ci_duckdb_mutation_tests.R's in-process attempt could only show conditionally")
+  ci_ok("M4b KILLED: with the bootstrap skipped AND a genuinely empty extension_directory (no autoload possible), CP1252 decoding fails exactly as it did in the real incident -- this is the authoritative result for M4's overall kill status; M4a (tests/ci_duckdb_mutation_tests.R) covers the structural half")
 } else {
-  ci_fail("M4 unexpectedly succeeded even in a genuinely empty extension_directory with the bootstrap skipped -- this would mean DuckDB ships CP1252 support built in, which contradicts the original incident entirely and needs investigation, not a passing test")
+  ci_fail("M4b SURVIVED: CP1252 decoding unexpectedly succeeded even in a genuinely empty extension_directory with the bootstrap skipped -- this would mean DuckDB ships CP1252 support built in, which contradicts the original incident entirely and needs investigation, not a passing test")
 }
 
 ci_finish()

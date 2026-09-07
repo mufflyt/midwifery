@@ -133,10 +133,27 @@ structural (not textual) scanner. It parses each file's real AST via
    `d <- duckdb::duckdb(); con <- dbConnect(d)`).
 
 This survives what a regex ratchet does not: multi-line calls, named
-arguments, and reformatting. It does **not** attempt full symbolic resolution
-(aliasing `dbConnect` to another name, dynamic dispatch) — documented as
-"where practical," not "provably exhaustive," consistent with this repo's
-actual risk profile and its convention of never rebinding `dbConnect`.
+arguments, and reformatting.
+
+**Limited alias resolution.** A single, static, unconditional assignment of
+a bare driver reference to a name — `con_fun <- duckdb::duckdb` (no parens:
+a reference, not a call) anywhere in the file — is tracked, and any later
+call through that name (`con_fun()`, alone or as `dbConnect()`'s driver
+argument) is flagged exactly as if the literal `duckdb::duckdb()` text were
+there. This closes the specific evasion where the driver constructor is
+referenced, not invoked, at the point of aliasing (mutation M9). A raw
+connection hidden inside a wrapper function's body (`local_connect <-
+function(...) { DBI::dbConnect(duckdb::duckdb(), ...) }`, mutation M10) was
+already caught before this change — the recursive walk descends into
+function bodies the same as any other call argument. What is **not**
+resolved: conditional or reassigned bindings, `assign()`/`get()`
+indirection, aliasing `dbConnect` itself combined with a driver built by
+some other non-literal mechanism, cross-file aliasing, or dynamic dispatch.
+Full symbolic/points-to analysis across a whole codebase is a much larger
+undertaking than this repo's actual risk profile justifies, and the
+project's own convention (call `dbConnect`/`DBI::dbConnect` directly, never
+rebind it) makes that residual gap low-cost. This is "closes the obvious
+evasions," not "provably exhaustive."
 
 Every recursive descent step is wrapped in `tryCatch` because R's "empty
 argument" placeholder (the blank in `df[, "col"]`) is not safely
@@ -144,8 +161,8 @@ indexable/iterable and would otherwise crash the scanner on ordinary,
 unrelated code.
 
 Run against every tracked `.R` file by `tests/ci_duckdb_ingestion_bootstrap.R`
-(§1). Currently: **353 files scanned, 4 files with any raw connection at all,
-0 offenders outside the registry.**
+(§1). Currently: **355 files scanned, 7 distinct raw-connection sites across
+5 files, 0 offenders outside the registry.**
 
 This scanner found two real, previously-unmigrated call sites live during
 this work — `analysis/audit_identity_flips.R` and
@@ -157,23 +174,43 @@ caught in the act rather than in a postmortem.
 ## Exception registry
 
 `DUCKDB_RAW_CONNECTION_EXCEPTIONS` in `R/lib/medicare_duckdb.R` is a
-structured list — not an anonymous inline allowlist — of
-`list(file, reason, owner, expiry_condition)` records. Current entries:
+structured list — not an anonymous inline allowlist — and **site-level, not
+file-level.** An earlier version matched by file alone: any raw connection
+anywhere in a registered file was silently exempt. That had a real, live
+gap, found while implementing this follow-up spec — `tests/ci_duckdb_mutation_tests.R`
+was never listed at all, and its three raw connections (M6/M7/M8's mutated
+re-implementations of `duckdb_connect()`, which must construct a raw
+connection to simulate a broken one) went undetected until the registry was
+rebuilt to check every tracked file's actual scan output against it
+directly. A file-level entry would also have silently exempted any *new*,
+unrelated raw connection added later to an already-registered file
+(mutation M12). Both gaps close the same way: an entry now names one exact
+site via a `# duckdb-exception: <tag>` comment at that call site, and only a
+site actually carrying the matching tag is exempt — not its whole file.
 
-| File | Reason | Expires |
-|---|---|---|
-| `R/lib/medicare_duckdb.R` | Is the chokepoint's own definition; necessarily contains the one real `DBI::dbConnect(duckdb::duckdb())` call in the repo. | Never — definitional. |
-| `tests/test_cache_vintage_declared.R` | Writes a synthetic fixture via `dbWriteTable()` on an in-memory data frame; no CSV read, no encoding hazard. | If ever changed to read an external CSV. |
-| `tests/ci_duckdb_ingestion_bootstrap.R` | Deliberately constructs a raw, unbootstrapped connection as the negative control reproducing the original PECOS defect. | If the legacy-reproduction control is removed. |
-| `tests/ci_duckdb_connection_contract.R` | Deliberately constructs a raw connection as the baseline for the "threads/memory are UNSPECIFIED and match DuckDB's own default" assertion. | If that comparison assertion is removed. |
+Each entry is `list(file, tag, locator, reason, exception_class, owner,
+added_date, removal_condition)` — no free-text-only whitelist. Current
+entries (7, at the declared upper bound `DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX`):
 
-The registry is self-checking in both directions: an offender outside the
-registry fails CI, and a registry entry whose file no longer exists, or no
-longer actually contains a raw connection under the AST scanner, also fails
-CI as **stale cover** — it may not be left in place once it stops protecting
-anything. (`tests/test_cache_vintage_detect.R` was removed from an earlier,
-regex-based version of this registry for exactly this reason: the AST
-scanner correctly never flagged it, because it never executes a real
+| File | Tag | Class | Reason |
+|---|---|---|---|
+| `R/lib/medicare_duckdb.R` | `bootstrap-definition` | definitional | Is the chokepoint's own definition; necessarily contains the one real `DBI::dbConnect(duckdb::duckdb())` call in the repo. |
+| `tests/test_cache_vintage_declared.R` | `synthetic-fixture` | synthetic-fixture | Writes a synthetic fixture via `dbWriteTable()` on an in-memory data frame; no CSV read, no encoding hazard. |
+| `tests/ci_duckdb_ingestion_bootstrap.R` | `legacy-defect-control` | negative-control | Deliberately constructs a raw, unbootstrapped connection as the negative control reproducing the original PECOS defect. |
+| `tests/ci_duckdb_connection_contract.R` | `raw-baseline-defaults` | test-baseline | Deliberately constructs a raw connection as the baseline for the "threads/memory are UNSPECIFIED and match DuckDB's own default" assertion. |
+| `tests/ci_duckdb_mutation_tests.R` | `mutation-m6` | mutation-harness | M6's mutated `duckdb_connect()` re-implementation (cached/shared connection) — the mutation IS a raw-connection stand-in by construction. |
+| `tests/ci_duckdb_mutation_tests.R` | `mutation-m7` | mutation-harness | M7's mutated `duckdb_connect()` re-implementation (dropped `read_only` forwarding). |
+| `tests/ci_duckdb_mutation_tests.R` | `mutation-m8` | mutation-harness | M8's mutated `duckdb_connect()` re-implementation (dropped provenance attrs). |
+
+The registry is self-checking in both directions: a hit whose `(file, tag)`
+pair is not in the registry fails CI (an untagged hit can never match, by
+construction), and a registry entry whose `(file, tag)` the scanner no
+longer finds is **stale cover** and fails too. An explicit upper bound
+(`DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX`, currently 7) fails CI if the
+registry grows past it without a deliberate edit to that constant.
+(`tests/test_cache_vintage_detect.R` was removed from an earlier,
+regex-based version of this registry for the same "stale cover" reason: the
+AST scanner correctly never flagged it, because it never executes a real
 connection — the string it matched under the old regex was inside a test
 fixture literal.)
 
@@ -234,19 +271,41 @@ should catch it:
 | M1 | Raw `DBI::dbConnect(duckdb::duckdb())` in place of `duckdb_connect()` | AST scanner | KILLED |
 | M2 | `duckdb::duckdb()` constructed via variable indirection, passed to `dbConnect()` | AST scanner (standalone rule) | KILLED |
 | M3 | Bootstrap sourced after `duckdb_connect()`'s first use | Runtime `Rscript` failure ("could not find function") | KILLED |
-| M4 | `ensure_duckdb_encodings()` replaced with a no-op | CP1252 fixture must fail | **In-process: SURVIVES** (confounded — this machine already has `encodings` installed from earlier work, and DuckDB autoloads it regardless of the bootstrap). **Unconfounded (empty `extension_directory`, separate subprocess): KILLED** — see `tests/ci_duckdb_clean_environment.R`. |
+| M4a | `ensure_duckdb_encodings()` call structurally removed from `duckdb_connect()`'s body | Structural check: `grepl("ensure_duckdb_encodings", deparse(body(duckdb_connect)))` | KILLED |
+| M4b | Bootstrap disabled, in a genuinely empty `extension_directory`, fresh subprocess | CP1252 fixture must fail closed | KILLED — see `tests/ci_duckdb_clean_environment.R` |
 | M5 | Fail-closed error replaced with silent continuation | Absence of an error where one is required | KILLED-by-absence |
 | M6 | `duckdb_connect()` returns a cached, shared connection | Independence assertion (temp-table leak between callers) | KILLED |
 | M7 | `read_only` forwarding dropped | Read-only write-rejection assertion | KILLED |
 | M8 | Provenance attributes omitted | `duckdb_connection_provenance()` returns non-`NA` despite the mutation | KILLED |
+| M9 | Driver constructor aliased through a bare symbol (`con_fun <- duckdb::duckdb; con_fun()`) | AST scanner (alias tracking) | KILLED |
+| M10 | Raw connection hidden inside a wrapper function's body | AST scanner (recursive descent into function bodies) | KILLED |
+| M11 | Stale exception-registry entry (tag no longer matches any scanned site) | Registry stale-cover check | KILLED |
+| M12 | New, untagged raw connection added to an already-registered file | Site-level `(file, tag)` matching | KILLED |
+| M13 | One row silently missing from an unordered relational output | `tables_equivalent()` → `missing_rows` | KILLED |
+| M14 | Same distinct rows, different duplicate counts | `tables_equivalent()` → `duplicate_multiplicity_mismatch` (not missed as a `setdiff()` blind spot) | KILLED |
+| M15 | Column type changes but every rendered value looks the same (`42L` vs `"42"`) | `tables_equivalent()` → `type_mismatch` | KILLED |
+| M16 | Checkpoint saved directly to its final path, no atomic staging | `save_checkpoint_atomic()`'s promotion invariant — a mutated non-atomic save loses the last-known-good checkpoint to a simulated mid-write interruption | KILLED |
+| M17 | Latitude/longitude columns swapped in the cache-column resolver | `resolve_lat_lon_columns()`'s exact-value regression (wrong coordinate values on real distinguishable data) | KILLED |
 
-M4's in-process "survival" is not a hidden gap — it is the exact reason
-`tests/ci_duckdb_clean_environment.R` exists: DuckDB's extension autoload
-means an in-process test on a machine that has ever installed `encodings`
-cannot distinguish "the bootstrap ran" from "the extension happened to
-already be on disk." The clean-environment test removes that confound by
-launching a separate `Rscript` subprocess and pointing `extension_directory`
-at a genuinely empty temp directory, so no autoload is possible.
+**M4's two-layer semantics.** An in-process dynamic test (construct a
+connection with the bootstrap disabled, see if CP1252 decoding still works)
+is confounded on any machine that has ever installed the `encodings`
+extension — DuckDB autoloads an already-installed extension regardless of
+whether the bootstrap ran, so that test can report "survived" on a warm
+developer machine while the actual invariant is perfectly intact. An
+earlier version of this suite reported exactly that confounded result as
+plain "M4 SURVIVED," with no structural counterpart — a real gap, not a
+documented limitation. M4 is split into two independent, always-reported
+results: **M4a** (`tests/ci_duckdb_mutation_tests.R`, structural, immune to
+autoload by construction since no connection is ever opened) and **M4b**
+(`tests/ci_duckdb_clean_environment.R`, dynamic, immune to autoload by using
+a genuinely empty `extension_directory` in a fresh subprocess). CI considers
+M4 killed only when M4b kills it — M4a is a real, independent contract in
+its own right (catching a refactor that silently drops the call while
+leaving everything else intact) but proves only that the call *site*
+exists, not that the function it calls still does anything. An
+already-installed extension on a developer machine can satisfy neither M4a
+nor M4b, by construction.
 
 ## Clean-environment proof
 
@@ -260,9 +319,9 @@ per scenario, each with a fresh empty `extension_directory`:
 - **Install-forbidden** (`DUCKDB_BOOTSTRAP_ALLOW_INSTALL=0`): fails closed
   with the specific, documented error — no network attempt, no silent
   continuation.
-- **M4, unconfounded**: bootstrap skipped entirely, in a genuinely empty
+- **M4b**: bootstrap skipped entirely, in a genuinely empty
   `extension_directory` — CP1252 decoding fails exactly as in the real
-  incident, giving mutation M4 its definitive kill-proof.
+  incident, giving mutation M4 its definitive (authoritative) kill-proof.
 
 All three PASS. (An earlier run of this file reported 3 failures that were
 traced to two bugs in the test harness itself, not the bootstrap: `cat(x, "\n")`
@@ -312,18 +371,111 @@ rests on the diff-level proof above plus the generic connection-contract and
 integration-harness coverage, not an independent live rerun — stated
 explicitly here rather than implied.
 
+## Unordered-output equivalence
+
+DuckDB (and SQL generally) makes no row-order guarantee absent an explicit
+`ORDER BY`. `resolve_org_ambiguity.R`'s live verification found exactly this:
+one of its four outputs was content-identical but not byte-identical, purely
+because of row sequencing. Rather than adding an `ORDER BY` solely to make a
+byte comparison pass — which would impose a false ordering contract on a
+consumer that never needed one — `R/lib/table_equivalence.R`'s
+`tables_equivalent(a, b)` compares two data.frames as unordered relational
+tables: identical schema (column name set and, per shared column, type),
+identical row count, identical multiset of rows respecting duplicate
+multiplicity. Row order is insignificant; everything else is significant.
+Two traps a naive implementation falls into, and how this one avoids them:
+
+- **Duplicate multiplicity vs. `setdiff()`-blindness**: two tables sharing
+  the same *distinct* rows but differing in how many times one repeats look
+  identical to a `setdiff()`-based comparison. Rows are hashed into a
+  canonical per-row token (fixed alphabetical column order) and compared via
+  `table()` counts on both sides, not `setdiff()` on distinct values.
+- **Real `NA` vs. the literal string `"NA"`**: `paste0(NA)` renders as the
+  string `"NA"`, which could collide with an actual `"NA"` value in a text
+  column. Each cell is tokenized with an `is.na()`-status prefix that no
+  real string value can produce, so the two cases can never collide.
+
+Verified by `tests/test_table_equivalence.R`: pure permutation passes;
+column-order differences don't cause a false mismatch; added/missing rows,
+changed values, changed duplicate counts, type mismatches masked by
+identical rendered text, and schema mismatches are all detected; both-empty
+tables are equivalent. Mutations M13–M15 exercise the same helper from
+`tests/ci_duckdb_mutation_tests.R`.
+
+## Order-semantics declarations
+
+`tests/fixtures/duckdb_artifact_order_semantics.csv` declares, for every
+output artifact touched by the six migrated high-risk workflows, whether it
+is `ordered` (a downstream consumer relies on row sequence, so the producer
+must impose it explicitly) or `unordered` (compare relational content, not
+serialized bytes). Declared up front, not inferred after a test fails —
+`tests/ci_duckdb_verification_ledger.R` asserts every row has one of exactly
+these two values and that all four of `resolve_org_ambiguity.R`'s outputs
+are covered. Every artifact in the current declaration is `unordered`: none
+of the six workflows' outputs have an identified downstream consumer that
+reads them positionally.
+
+## Verification ledger
+
+`tests/fixtures/duckdb_migration_verification_ledger.csv` is a
+machine-readable record, one row per high-risk migrated workflow, of
+`migration_type`, `diff_equivalence`, `integration_harness`,
+`live_equivalence`, `reason_live_not_run`, and `source_requirements`. Its
+purpose is narrow: make it impossible for "5 of 6 workflows were never
+re-run against real production data" to quietly become "all 6 are verified"
+just because the generic contract/AST/integration-harness coverage is green
+for all six (which it genuinely is). `resolve_org_ambiguity.R` is the only
+row marked `LIVE_VERIFIED`; the other five are marked `NOT_RUN` with a
+specific reason each — and those reasons are not uniform. Two are genuinely
+blocked (`build_pecos_organization_affiliations.R`'s PECOS raw
+reassignment-file distribution was discontinued by CMS after 2019;
+`extract_nppes_midwives.R` is hardcoded to one specific NPPES snapshot not
+present on this machine). Three (`build_midwife_panel.R`,
+`build_care_compare_organization_panel.R`, `extract_dac_facility_affiliations.R`)
+have their declared source inputs already present on this machine and were
+simply not run this session — a scope/time boundary, not a data blocker,
+and recorded as such rather than lumped in with the genuinely-blocked two.
+`tests/ci_duckdb_verification_ledger.R` fails CI if any `NOT_RUN` row is
+ever silently upgraded to a PASS-shaped status without an actual live run
+producing evidence for it, or if a row's reason is dropped.
+
+## Aggregate CI gate
+
+`tests/ci_duckdb_architecture_gate.R` runs every sub-check above as its own
+subprocess (never assuming a result — a sub-check that errors, times out, or
+produces no recognizable `PASS (0 failures)` line is reported FAILED, not
+skipped into a green aggregate) and reports one consolidated result with
+named sub-results: raw connections outside the registry (exact count),
+registry self-consistency, canonical connection contract, independent
+connection semantics, encoding regression suite, clean-environment
+bootstrap, the full AST/structural/dynamic mutation suite (M1–M17), the
+unordered-output equivalence helper, the geocode migration-only diff (a
+fact about a pinned commit, re-verified from git history rather than the
+mutable working tree, so it stays checkable indefinitely), and the geocode
+bug-fix tests. A skipped clean-environment run is never collapsed into
+green — it is scored as a failed sub-result exactly like an actual defect
+would be.
+
 ## Definition of done
 
 | Item | Status |
 |---|---|
-| Raw production DuckDB connection sites (outside registry) | **0** |
+| Raw production DuckDB connection sites (outside registry) | **0** (7 distinct sites, all registered) |
+| Exception registry entries | **7** (site-level; upper bound `DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX = 7`), **0 stale** |
 | Canonical connection contract | **PASS** (`tests/ci_duckdb_connection_contract.R` §1) |
 | Independent-connection semantics | **PASS** (§2) |
 | Encoding regression fixtures | **PASS** (`tests/ci_duckdb_ingestion_bootstrap.R` §2) |
 | Bootstrap fail-closed mode | **PASS** (`tests/ci_duckdb_clean_environment.R`, install-forbidden scenario) |
-| Source-order mutation (M3) | **KILLED** |
-| Raw-connection mutation (M1, M2) | **KILLED** |
-| Connection-sharing mutation (M6) | **KILLED** |
+| M4 clean-environment kill (M4b) | **PASS/KILLED** |
+| M4 structural invocation (M4a) | **PASS** |
+| AST/static mutations killed (M1, M2, M9, M10, M11, M12) | **6/6** |
+| Total mutations killed (M1–M17) | **17/17** |
+| Unordered-equivalence regression tests | **12/12** (`tests/test_table_equivalence.R`) |
 | Representative integration harness | **PASS** (§3) |
-| High-risk migrated workflows equivalent | **PASS**, diff-reviewed for all six flagged files; live-verified for one (see above) |
-| CI from clean environment | **PASS** (`tests/ci_duckdb_clean_environment.R`, both install-allowed and install-forbidden) |
+| Geocode connection migrations isolated | **YES** (commit `9ed95ab`, pure substitution; 4 unrelated fixes split into their own commits) |
+| Lat/lon regression tests | **PASS** (`tests/test_geocode_latlon_rename.R`) |
+| Checkpoint interruption tests | **13/13** (`tests/test_geocode_checkpoint_safety.R`) |
+| High-risk migrated workflows: live verified | **1/6** (`resolve_org_ambiguity.R`) |
+| High-risk migrated workflows: live verification deferred | **5/6** (2 genuinely blocked on missing/discontinued source data; 3 available but not run this session — see the verification ledger) |
+| Production data modified | **NO** |
+| Architecture merge recommendation | **YES** |

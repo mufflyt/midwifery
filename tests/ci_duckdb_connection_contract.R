@@ -94,7 +94,7 @@ ci_ok_or_fail(cap$required_encoding_support_available, "the encodings extension 
 # does not silently diverge from a raw connection's own defaults, i.e. that
 # "unspecified" really means "DuckDB's default", not "some other value this
 # function happens to produce".
-raw_con <- DBI::dbConnect(duckdb::duckdb())
+raw_con <- DBI::dbConnect(duckdb::duckdb())  # duckdb-exception: raw-baseline-defaults
 raw_threads <- DBI::dbGetQuery(raw_con, "SELECT current_setting('threads') AS v")$v
 DBI::dbDisconnect(raw_con, shutdown = TRUE)
 boot_con <- duckdb_connect()
