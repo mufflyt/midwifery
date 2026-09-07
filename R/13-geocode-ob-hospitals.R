@@ -70,6 +70,7 @@ POS   <- file.path("data", "cms_pos_hospital.csv")
 OUT   <- file.path("artifacts", "ob_hospitals_geocoded.csv")
 
 source(file.path("R", "lib", "provenance.R"))  # canonical sha256_of()
+source(file.path("R", "lib", "medicare_duckdb.R"))
 
 #' Evaluate an expression with the working directory set to the isochrones repo
 #'
@@ -170,7 +171,7 @@ run_geocode <- function() {
 
   # READ-ONLY. This analysis consumes the isochrones cache; it does not own it,
   # and must not hold a write lock a concurrent isochrones run would block on.
-  con <- dbConnect(duckdb::duckdb(), CACHE, read_only = TRUE)
+  con <- duckdb_connect(CACHE, read_only = TRUE)
   on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
   cached <- dbGetQuery(con, "
     SELECT address_hash, latitude, longitude, county_fips AS cache_county_fips,

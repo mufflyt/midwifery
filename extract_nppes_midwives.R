@@ -14,6 +14,7 @@
 suppressPackageStartupMessages({
   library(DBI)
   library(duckdb)
+source(file.path("R", "lib", "medicare_duckdb.R"))
 })
 
 nppes_csv <- "~/Documents/NPPES_Data_Dissemination_March_2024/npidata_pfile_20050523-20240310.csv"
@@ -22,7 +23,7 @@ out       <- "nppes_midwives.parquet"
 
 stopifnot(file.exists(nppes_csv))
 
-con <- dbConnect(duckdb::duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
 tax_filter <- paste(sprintf(

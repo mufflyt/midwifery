@@ -75,7 +75,7 @@ mine <- chr("artifacts/midwife_org_affiliations_candidate.csv")
 opa  <- chr("artifacts/open_payments_recent_address.csv")
 locs <- chr("artifacts/midwife_practice_locations.csv")
 
-con <- dbConnect(duckdb::duckdb(), DB, read_only = TRUE)
+con <- duckdb_connect(DB, read_only = TRUE)
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 org <- dbGetQuery(con, "
   SELECT CAST(npi AS VARCHAR) AS npi, organization_name,

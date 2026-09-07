@@ -213,7 +213,7 @@ process_reshaped_year <- function(con, dir, year, snap_date_str, midwife_tax) {
   dbGetQuery(con, sql)
 }
 
-con <- dbConnect(duckdb::duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
 out_path <- Sys.getenv(

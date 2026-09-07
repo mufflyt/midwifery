@@ -152,7 +152,7 @@ rd <- function(p) read_csv(p, col_types = cols(.default = "c"), progress = FALSE
 reasons <- rd("artifacts/unresolved_affiliation_reasons.csv")
 cli::cli_alert_info("unresolved cohort: {format(nrow(reasons), big.mark = ',')}")
 
-con <- dbConnect(duckdb::duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 duckdb::duckdb_register(con, "target", reasons %>% select(npi))
 

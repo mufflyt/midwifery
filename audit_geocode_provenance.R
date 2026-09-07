@@ -16,6 +16,7 @@
 
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(DBI); library(duckdb)
+source(file.path("R", "lib", "medicare_duckdb.R"))
 })
 
 QUEUE  <- "artifacts/panel_geocode_queue.csv"
@@ -33,7 +34,7 @@ key_of <- function(street, city, state, zip)
 q <- q %>% mutate(address_hash = key_of(nppes_practice_address, nppes_city,
                                         nppes_state, nppes_zip))
 
-con <- dbConnect(duckdb::duckdb(), CACHE, read_only = TRUE)
+con <- duckdb_connect(CACHE, read_only = TRUE)
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
 cache <- dbGetQuery(con, "SELECT address_hash, latitude, longitude,
