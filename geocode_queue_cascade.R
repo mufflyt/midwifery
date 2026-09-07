@@ -60,7 +60,8 @@ local({
                          path.expand("~/isochrones/data/geocoding_cache.duckdb"))
   if (!file.exists(cache_db)) return(invisible(NULL))
   suppressPackageStartupMessages({library(DBI); library(duckdb)})
-  con <- dbConnect(duckdb::duckdb(), cache_db, read_only = TRUE)
+source(file.path("R", "lib", "medicare_duckdb.R"))
+  con <- duckdb_connect(cache_db, read_only = TRUE)
   on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
   tbls <- dbGetQuery(con, "SHOW TABLES")$name
   if (!"geocoding_attempt_log" %in% tbls) return(invisible(NULL))

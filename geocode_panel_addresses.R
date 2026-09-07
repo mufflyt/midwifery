@@ -23,6 +23,7 @@
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(DBI); library(duckdb); library(stringr)
 })
+source(file.path("R", "lib", "medicare_duckdb.R"))
 
 FROZEN <- Sys.getenv("STAGE2_FROZEN", "artifacts/amcb_npi_linkage_FROZEN.csv")
 cache_path <- Sys.getenv("GEOCODING_CACHE_PATH",
@@ -77,7 +78,7 @@ fresh <- lapply(run_results[file.exists(run_results)], function(p)
   distinct(nppes_practice_address, nppes_city, nppes_state, nppes_zip, .keep_all = TRUE)
 cat(sprintf("fresh geocodes available: %s\n", format(nrow(fresh), big.mark = ",")))
 
-con <- dbConnect(duckdb::duckdb(), cache_path, read_only = TRUE)
+con <- duckdb_connect(cache_path, read_only = TRUE)
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 cache <- dbGetQuery(con, "
   SELECT address_hash, latitude, longitude, quality_score, census_tract, county_fips
