@@ -23,7 +23,7 @@ chk <- function(cond, m) {
   if (isTRUE(cond)) cat("  ok:", m, "\n")
   else { fails <<- fails + 1L; cat("  FAIL:", m, "\n") }
 }
-errs <- function(expr) inherits(try(expr, silent = TRUE), "try-error")
+guard_trips <- function(expr) inherits(try(expr, silent = TRUE), "try-error")
 err_msg <- function(expr) {
   e <- try(expr, silent = TRUE)
   if (inherits(e, "try-error")) attr(e, "condition")$message else ""
@@ -79,58 +79,58 @@ eligibility <- utils::read.csv(text = paste(
   stringsAsFactors = FALSE)
 
 cat("\n-- clean world passes every guard --\n")
-chk(!errs(check_population(inst, manifest)), "population clean")
-chk(!errs(check_provenance_roundtrip(prov, inst, EXP)), "provenance clean")
-chk(!errs(check_reviewer_export_blinded(inst)), "blinding clean")
-chk(!errs(check_board_contamination(reviews, resolution, evidence)),
+chk(!guard_trips(check_population(inst, manifest)), "population clean")
+chk(!guard_trips(check_provenance_roundtrip(prov, inst, EXP)), "provenance clean")
+chk(!guard_trips(check_reviewer_export_blinded(inst)), "blinding clean")
+chk(!guard_trips(check_board_contamination(reviews, resolution, evidence)),
     "contamination clean")
-chk(!errs(check_evidence(evidence, links, inst, eligibility)),
+chk(!guard_trips(check_evidence(evidence, links, inst, eligibility)),
     "evidence clean")
-chk(!errs(check_completeness(inst, reviews, resolution)),
+chk(!guard_trips(check_completeness(inst, reviews, resolution)),
     "completeness clean")
 
 cat("\n-- T1/T2: population corruption fails closed --\n")
-chk(errs(check_population(inst[-1, ], manifest)), "T1: dropped row caught")
+chk(guard_trips(check_population(inst[-1, ], manifest)), "T1: dropped row caught")
 dup <- rbind(inst, inst[1, ])
 mdup <- list(rows_instrument = 4L,
              population_hash = population_hash(dup$adjudication_id))
-chk(errs(check_population(dup, mdup)), "T2: duplicate adj_id caught")
+chk(guard_trips(check_population(dup, mdup)), "T2: duplicate adj_id caught")
 renamed <- inst; renamed$adjudication_id[1] <- "ADJ-A9-9999999999"
-chk(errs(check_population(renamed, manifest)),
+chk(guard_trips(check_population(renamed, manifest)),
     "population hash catches silent id swap")
 # a drop RE-FROZEN by an attacker: hash matches the shrunken set, so only
 # the count check can catch it -- and vice versa for the id swap above.
 refrozen <- list(rows_instrument = 3L,
                  population_hash = population_hash(inst$adjudication_id[-1]))
-chk(errs(check_population(inst[-1, ], refrozen)),
+chk(guard_trips(check_population(inst[-1, ], refrozen)),
     "T1: dropped row caught even when the hash was re-frozen")
 
 cat("\n-- T3: provenance loss fails the round-trip --\n")
-chk(errs(check_provenance_roundtrip(prov[-2, ], inst, EXP)),
+chk(guard_trips(check_provenance_roundtrip(prov[-2, ], inst, EXP)),
     "T3: one of the original rows lost")
 orph <- prov; orph$adjudication_id[1] <- "ADJ-ZZ-0000000000"
-chk(errs(check_provenance_roundtrip(orph, inst, EXP)),
+chk(guard_trips(check_provenance_roundtrip(orph, inst, EXP)),
     "orphan provenance caught")
 
 cat("\n-- T4 + leakage: blinding is schema AND value --\n")
 leaky <- inst; leaky$npi_match_confidence <- "0.35"
-chk(errs(check_reviewer_export_blinded(leaky)), "T4: banned column caught")
+chk(guard_trips(check_reviewer_export_blinded(leaky)), "T4: banned column caught")
 leakv <- inst; leakv$notes <- c("", "matched by exact_last_first", "")
-chk(errs(check_reviewer_export_blinded(leakv)),
+chk(guard_trips(check_reviewer_export_blinded(leakv)),
     "matcher vocabulary in free text caught")
 
 cat("\n-- T9: board contamination canaries (all four) --\n")
 c1 <- reviews; c1$reason[1] <- "clean CV, also Texas Medical Board says active"
-chk(errs(check_board_contamination(c1, resolution, evidence)),
+chk(guard_trips(check_board_contamination(c1, resolution, evidence)),
     "canary 1: clean URL + board mention in notes")
 c2 <- evidence; c2$notes[1] <- "secondary link goes to the state board"
-chk(errs(check_board_contamination(reviews, resolution, c2)),
+chk(guard_trips(check_board_contamination(reviews, resolution, c2)),
     "canary 2: primary source + board-linked secondary evidence")
 c3 <- reviews; c3$locator[2] <- "board profile p3"
-chk(errs(check_board_contamination(c3, resolution, evidence)),
+chk(guard_trips(check_board_contamination(c3, resolution, evidence)),
     "canary 3: board mention hidden in locator")
 c4 <- resolution; c4$resolution_reason <- "BON record settles it"
-chk(errs(check_board_contamination(reviews, c4, evidence)),
+chk(guard_trips(check_board_contamination(reviews, c4, evidence)),
     "canary 4: board mention in resolution reason")
 
 cat("\n-- T8/T11: evidence orphans and governed eligibility --\n")
@@ -141,46 +141,46 @@ orphE <- rbind(evidence,
                           locator = "p1", notes = "n",
                           retrieved_at = "2026-09-10",
                           evidence_sha256 = "cc", stringsAsFactors = FALSE))
-chk(errs(check_evidence(orphE, links, inst, eligibility)),
+chk(guard_trips(check_evidence(orphE, links, inst, eligibility)),
     "T8: unlinked evidence row caught")
 badL <- rbind(links, data.frame(adjudication_id = "ADJ-A1-1111111111",
                                 evidence_id = "EVMISSING",
                                 stringsAsFactors = FALSE))
-chk(errs(check_evidence(evidence, badL, inst, eligibility)),
+chk(guard_trips(check_evidence(evidence, badL, inst, eligibility)),
     "link to missing evidence caught")
 # T11 both directions: eligibility comes from the DECLARED class, never
 # the URL. A board_source with a clean university URL must FAIL...
 boardclean <- evidence
 boardclean$source_class[2] <- "board_source"
-chk(errs(check_evidence(boardclean, links, inst, eligibility)),
+chk(guard_trips(check_evidence(boardclean, links, inst, eligibility)),
     "T11: board_source with clean-looking URL still ineligible")
 # ...and an eligible class whose URL merely CONTAINS an odd string passes
 # the eligibility check (contamination is a separate guard).
 oddurl <- evidence
 oddurl$source_url[1] <- "https://example.org/aboardwalk-clinic-cv"
-chk(!errs(check_evidence(oddurl, links, inst, eligibility)),
+chk(!guard_trips(check_evidence(oddurl, links, inst, eligibility)),
     "T11 inverse: eligibility never inferred from URL text")
 undecl <- evidence; undecl$source_class[1] <- "faculty_page"
-chk(errs(check_evidence(undecl, links, inst, eligibility)),
+chk(guard_trips(check_evidence(undecl, links, inst, eligibility)),
     "undeclared source class fails closed")
 
 cat("\n-- T6/T7/T10: completeness, disagreement, immutability --\n")
 partial <- inst; partial$workflow_state[2] <- "in_review"
-chk(errs(check_completeness(partial, reviews, resolution)),
+chk(guard_trips(check_completeness(partial, reviews, resolution)),
     "T6: partial truth cannot unblind")
-chk(errs(check_completeness(inst, reviews, resolution[0, ])),
+chk(guard_trips(check_completeness(inst, reviews, resolution[0, ])),
     "T7: unresolved disagreement caught (A3 split verdicts)")
 ow <- reviews; ow$final_verdict <- "match"
-chk(errs(check_completeness(inst, ow, resolution)),
+chk(guard_trips(check_completeness(inst, ow, resolution)),
     "T10: final_verdict column on reviews = overwrite, refused")
 noreason <- resolution; noreason$resolution_reason <- ""
-chk(errs(check_completeness(inst, reviews, noreason)),
+chk(guard_trips(check_completeness(inst, reviews, noreason)),
     "resolution without reasoning refused")
 anon <- reviews; anon$reviewer_id[3] <- ""
-chk(errs(check_completeness(inst, anon, resolution)),
+chk(guard_trips(check_completeness(inst, anon, resolution)),
     "missing reviewer identity refused")
 badv <- reviews; badv$verdict[1] <- "probably"
-chk(errs(check_completeness(inst, badv, resolution)),
+chk(guard_trips(check_completeness(inst, badv, resolution)),
     "off-vocabulary verdict refused")
 
 cat("\n-- T5/T12: custody --\n")
@@ -189,9 +189,9 @@ writeLines("hello", file.path(tdir, "f1.csv"))
 man <- list(files = list(f1 = list(file = file.path(tdir, "f1.csv"),
                                    sha256 = sha256_file(
                                      file.path(tdir, "f1.csv")))))
-chk(!errs(check_custody(man)), "custody clean")
+chk(!guard_trips(check_custody(man)), "custody clean")
 writeLines("tampered", file.path(tdir, "f1.csv"))
-chk(errs(check_custody(man)), "T5/T12: hash mismatch refused")
+chk(guard_trips(check_custody(man)), "T5/T12: hash mismatch refused")
 chk(grepl("CUSTODY", err_msg(check_custody(man))), "custody names itself")
 
 cat("\n-- the unblinding gate has no escape hatch --\n")
