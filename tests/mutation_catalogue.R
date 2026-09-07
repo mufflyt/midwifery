@@ -287,5 +287,120 @@ MUTATIONS <- list(
                 "there is."),
     killers = c("tests/test_cycle23_geocode_precision.R",
                 "tests/test_cycle11_spatial.R")
+  ),
+
+  # ---- truth-set infrastructure (T1-T12, spec of 2026-09-08) ---------------
+  # The adjudication instrument becomes a benchmark only if these guards are
+  # real. Each mutant hollows one; the killer file's matching negative
+  # control must then fail.
+  list(
+    id = "truth-T1-population-row-drop-unnoticed",
+    file = "R/truth_set_checks.R",
+    find = "  if (nrow(instrument) != manifest$rows_instrument) {",
+    repl = "  if (FALSE) {",
+    why = paste("A silently shrunken adjudication population scores as if",
+                "complete; front truncation of truth is not random."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T1b-population-hash-ignored",
+    file = "R/truth_set_checks.R",
+    find = "  if (!identical(got, manifest$population_hash)) {",
+    repl = "  if (FALSE) {",
+    why = paste("Only the hash catches a same-size id swap; without it a",
+                "substituted person scores as the frozen population."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T2-duplicate-adjid-admitted",
+    file = "R/truth_set_checks.R",
+    find = "  if (anyDuplicated(instrument$adjudication_id)) {",
+    repl = "  if (FALSE) {",
+    why = paste("Duplicate immutable ids double-count one person's verdict",
+                "and break every downstream join on adj_id."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T3-provenance-roundtrip-vacuous",
+    file = "R/truth_set_checks.R",
+    find = "                                                    class5 = 156L)) {",
+    repl = "                                                    class5 = 156L)) {\n  return(invisible(TRUE))",
+    why = paste("The 456-row reconstruction guarantee silently becomes a",
+                "no-op; lost review rows are unrecoverable and unnoticed."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T4-banned-column-reaches-reviewer",
+    file = "R/truth_set_checks.R",
+    find = "  leaked <- intersect(BANNED_REVIEWER_COLUMNS, names(export))",
+    repl = "  leaked <- character(0); intersect(BANNED_REVIEWER_COLUMNS, names(export))",
+    why = paste("Matcher confidence lands on the reviewer sheet; the human",
+                "grades the matcher's homework with the answer key open."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T5-T12-custody-mismatch-ignored",
+    file = "R/truth_set_checks.R",
+    find = "    if (!identical(got, manifest$files[[nm]]$sha256)) {",
+    repl = "    if (FALSE) {",
+    why = paste("A tampered or stale artifact scores as frozen truth; the",
+                "scorer must verify custody before reading anything."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T6-partial-unblinding-allowed",
+    file = "R/truth_set_checks.R",
+    find = "  nonterminal <- which(!instrument$workflow_state %in% TERMINAL_STATES)",
+    repl = "  nonterminal <- integer(0)",
+    why = paste("Half-adjudicated truth unblinds; the matcher internals",
+                "contaminate the remaining reviews."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T7-unresolved-disagreement-passes",
+    file = "R/truth_set_checks.R",
+    find = "    unresolved <- setdiff(disputed, resolution$adjudication_id)",
+    repl = "    unresolved <- character(0)",
+    why = paste("Split reviewer verdicts reach the scorer with no",
+                "resolution; whichever opinion sorts first becomes truth."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T8-orphan-evidence-ignored",
+    file = "R/truth_set_checks.R",
+    find = "  unlinked <- setdiff(evidence$evidence_id, links$evidence_id)",
+    repl = "  unlinked <- character(0)",
+    why = paste("Evidence supporting no judgment accumulates unaudited;",
+                "provenance rot starts as orphans."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T9-board-canary-defanged",
+    file = "R/truth_set_checks.R",
+    find = "  \"\\\\bboards?\\\\b\", \"medical board\", \"nursing board\", \"state board\",",
+    repl = "  \"ZZZNEVERMATCHZZZ\", \"medical board\", \"nursing board\", \"state board\",",
+    why = paste("The generic board pattern is gone; 'board profile p3' in a",
+                "locator sails through and board knowledge contaminates",
+                "truth."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T10-final-verdict-overwrites-reviews",
+    file = "R/truth_set_checks.R",
+    find = "  if (\"final_verdict\" %in% c(names(reviews), names(instrument))) {",
+    repl = "  if (FALSE) {",
+    why = paste("Reviewer opinions are overwritten in place instead of",
+                "resolved; the disagreement history is destroyed."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T11-eligibility-by-url-string",
+    file = "R/truth_set_checks.R",
+    find = "  ineligible <- which(!eligibility$eligible[i])",
+    repl = "  ineligible <- which(grepl(\"board\", evidence$source_url, ignore.case = TRUE))",
+    why = paste("Eligibility inferred from URL text: a board source with a",
+                "clean-looking URL is admitted, and an eligible source with",
+                "'boardwalk' in its URL is refused."),
+    killers = c("tests/test_truth_set_infrastructure.R")
   )
 )
