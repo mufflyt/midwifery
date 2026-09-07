@@ -125,8 +125,12 @@ if (identical(Sys.getenv("GEOCODE_RESUME_RAW"), "1")) {
 # silently fell back to the few cached rows that did carry a county and produced
 # 98.8% annual persistence on a third of the data. Plausible, and wrong.
 #
-# So enrichment is now part of this script, it uses on_missing = "error", and it
-# refuses to write an artifact whose geography columns are empty.
+# So enrichment is now part of this script, and it refuses to write an
+# artifact whose geography columns are empty (checked explicitly below --
+# enrich_with_census_tracts() itself has no on_missing argument; that was
+# removed from its signature in ~/isochrones/R/enrich_geocode_tracts.R without
+# this caller being updated, and the call site errored on the stale argument
+# rather than ever reaching this protection).
 res <- local({
   tract_rds <- Sys.getenv("TRACT_BOUNDARY_RDS", "")
   if (!nzchar(tract_rds)) {
@@ -175,7 +179,7 @@ res <- local({
   # back the input unchanged, and every one of them produces the empty-column
   # artifact described above.
   enrich_with_census_tracts(d, lat_col = "latitude", lon_col = "longitude",
-                            tract_rds = tract_rds, on_missing = "error")
+                            tract_rds = tract_rds)
 })
 
 # The enrichment can succeed and still populate nothing if the join misses.
