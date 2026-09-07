@@ -573,3 +573,8 @@ artifacts/validation/
 
 # Person-level outputs of the ad-hoc audits in analysis/ are never committable.
 analysis/*.csv
+
+# Person-level adjudication artifacts (same policy as the review templates)
+artifacts/truth/adjudication_instrument_v1.csv
+artifacts/truth/adjudication_key_v1_SEALED.csv
+artifacts/truth/adjudication_instrument_v1.manifest.json
