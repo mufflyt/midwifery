@@ -1,0 +1,7 @@
+source_class,eligible,policy_note
+primary_person_source,TRUE,person's own site/CV/announcement
+institutional_profile,TRUE,employer or university profile
+professional_directory,TRUE,professional directory listing
+board_source,FALSE,PROHIBITED: board-derived knowledge contaminates truth
+secondary_source,TRUE,supporting only; must accompany a primary class
+other,FALSE,ineligible until classified
