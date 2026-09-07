@@ -119,7 +119,7 @@ ci_section("Geocode migration-only diff")
 # diff header/context line, a removed raw dbConnect(duckdb::duckdb(), ...)
 # line, an added duckdb_connect(...) line, or an added source(medicare_duckdb.R)
 # line; anything else in the diff means the split was not actually clean.
-MIGRATION_COMMIT <- "9ed95ab"
+MIGRATION_COMMIT <- "c13bce1"
 diff_out <- tryCatch(
   system2("git", c("show", MIGRATION_COMMIT, "--", "geocode_panel_addresses.R", "geocode_queue_cascade.R"),
           stdout = TRUE, stderr = TRUE),

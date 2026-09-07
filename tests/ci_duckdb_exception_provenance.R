@@ -3,7 +3,7 @@
 # =============================================================================
 # A registry that grows from 4 entries to 7 looks, out of context, exactly
 # like new raw connections being introduced. It isn't: the base architecture
-# commit (db44c3b) already contained all seven sites' underlying raw
+# commit (BASE_COMMIT below) already contained all seven sites' underlying raw
 # DBI::dbConnect(duckdb::duckdb()) calls -- three of them (the M6/M7/M8
 # mutation-harness re-implementations in tests/ci_duckdb_mutation_tests.R)
 # were simply never registered, because that file's own registration was
@@ -17,7 +17,7 @@ if (!dir.exists(file.path(root, ".git")) && dir.exists("../.git")) root <- ".."
 source(file.path(root, "tests", "ci_report.R"))
 source(file.path(root, "R", "lib", "medicare_duckdb.R"))
 
-BASE_COMMIT <- "db44c3bd9d30d54c587ee8258901e61677d01ef7"
+BASE_COMMIT <- "15051d939905048e5d4c380448eb6e9b4e5b5325"
 provenance <- ci_read_head(file.path("tests", "fixtures", "duckdb_exception_registry_provenance.csv"), root = root)
 
 ci_section("Provenance table shape")

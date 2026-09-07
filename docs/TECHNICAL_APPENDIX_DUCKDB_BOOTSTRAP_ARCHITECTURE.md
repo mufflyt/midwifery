@@ -425,12 +425,12 @@ only other allowed value, `INTENTIONALLY_ADDED_BY_THIS_CHANGE`, applies to
 none of them), and `tests/ci_duckdb_exception_provenance.R` **re-derives**
 that claim from git history on every run rather than trusting a comment: for
 each registered file, it checks out the base commit's own content
-(`db44c3bd9d30d54c587ee8258901e61677d01ef7`) and confirms the (unmodified)
+(`15051d939905048e5d4c380448eb6e9b4e5b5325`) and confirms the (unmodified)
 scanner already finds the corresponding raw-connection site(s) there. The
 three sites that account for the 4→7 delta —
 `tests/ci_duckdb_mutation_tests.R`'s M6/M7/M8 mutation-harness
 re-implementations — are proven present in the base commit's own tree this
-way, not merely asserted: `git show db44c3b:tests/ci_duckdb_mutation_tests.R`
+way, not merely asserted: `git show 15051d9:tests/ci_duckdb_mutation_tests.R`
 scanned by the unmodified scanner finds 3 sites, and that file was never
 listed in the base commit's own (file-level) registry at all. That is the
 actual defect being corrected: an omission at commit time, not a new raw
@@ -503,9 +503,9 @@ gate must be re-run on the exact SHA being merged.
 
 | Item | Status |
 |---|---|
-| Base architecture commit | `db44c3bd9d30d54c587ee8258901e61677d01ef7` |
-| Architecture frozen at | `da29a07e22bed5c934cdd9d18d519787b935f338` |
-| Closure/provenance commit | `ae5d2490792c014e3285b7adaf6272bf82b7fd96` |
+| Base architecture commit | `15051d939905048e5d4c380448eb6e9b4e5b5325` |
+| Architecture frozen at | `144f8b5b74d07043792c0f08ea9b2a04336b47b6` |
+| Closure/provenance commit | `95d5218c1b45feeba3e1d9a165ee7bfdfc40af4a` |
 | Raw production DuckDB connection sites (outside registry) | **0** |
 | Exception files | **5** |
 | Exception sites | **7** |
@@ -521,7 +521,7 @@ gate must be re-run on the exact SHA being merged.
 | Total mutations killed (M1–M17) | **17/17**, zero `NOT_RUN` |
 | Unordered-equivalence regression tests | **12/12** (`tests/test_table_equivalence.R`) |
 | Representative integration harness | **PASS** (§3) |
-| Geocode connection migrations isolated | **YES** (commit `9ed95ab`, pure substitution, re-verified from git history by the aggregate gate; 4 unrelated fixes split into their own commits) |
+| Geocode connection migrations isolated | **YES** (commit `c13bce1`, pure substitution, re-verified from git history by the aggregate gate; 4 unrelated fixes split into their own commits) |
 | Lat/lon regression tests | **PASS** (`tests/test_geocode_latlon_rename.R`) |
 | Checkpoint interruption tests | **13/13** (`tests/test_geocode_checkpoint_safety.R`) |
 | Live-verification ledger: workflows tracked | **6** |
