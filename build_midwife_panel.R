@@ -25,12 +25,21 @@
 # =============================================================================
 
 suppressPackageStartupMessages({library(DBI); library(duckdb)})
+# tests/test_build_midwife_panel.R invokes this script via `Rscript
+# <absolute-path>` from a temp working directory (real for the concurrency
+# cases, which need a genuine lock file and a genuine holding process), so a
+# source() path relative to the CURRENT WORKING DIRECTORY does not resolve --
+# there is no R/lib/ under that temp directory. Resolve relative to THIS
+# script's own location instead, via Rscript's --file= argument, which is
+# stable regardless of cwd.
+.this_script_dir <- local({
+  file_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+  if (length(file_arg)) dirname(normalizePath(sub("^--file=", "", file_arg[1]))) else getwd()
+})
+source(file.path(.this_script_dir, "R", "lib", "medicare_duckdb.R"))
 
 ROOT <- Sys.getenv("NPPES_HISTORY", "")
 if (!nzchar(ROOT)) {
-  # Sourced only on this branch: NPPES_HISTORY is always set by the test
-  # harness, and nothing else in this file assumes the repo root as cwd.
-  source(file.path("R", "lib", "medicare_duckdb.R"))
   ROOT <- samsung_volume_path("nppes_historical_downloads")
 }
 stopifnot(dir.exists(ROOT))
