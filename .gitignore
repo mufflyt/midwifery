@@ -587,3 +587,6 @@ artifacts/truth/truth_set_v1_final.csv
 artifacts/truth/truth_set_v1_final.manifest.json
 artifacts/truth/adjudication_batches_v1.csv
 artifacts/truth/batches/
+# Adjudication queue machinery outputs (derived, person-level / run-state)
+artifacts/adjudication/adjudication_queue.csv
+artifacts/adjudication/adjudication_status.json
