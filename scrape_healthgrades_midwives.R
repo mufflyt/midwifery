@@ -42,8 +42,9 @@ suppressPackageStartupMessages({
 # killed between the two calls, or mid-write, leaving a checkpoint newer than
 # its output or a truncated CSV where a complete one was. See DEBT.md D1.
 source(file.path("R", "lib", "resume_state.R"))
-# luhn_check_npi(), parse_physician_name_enhanced() and are_nickname_variants()
-# all come from the isochrones checkout; none is re-implemented here.
+# luhn_check_npi() and parse_physician_name_enhanced() come from the
+# isochrones checkout. Nickname equivalence comes directly from mysterynpi via
+# are_nickname_variants(); none is re-implemented here.
 source(file.path("R", "lib", "isochrones_dep.R"))
 load_isochrones_name_tools(quiet = TRUE)
 
@@ -256,10 +257,16 @@ given_forms <- function(p) {
 given_name_match <- function(a, b) {
   if (is.na(a) || is.na(b) || !nzchar(a) || !nzchar(b)) return(FALSE)
   if (identical(a, b)) return(TRUE)
-  # Nickname dictionary FIRST, from isochrones. It resolves the pairs a prefix
-  # rule structurally cannot -- Beth/Elizabeth, Peggy/Margaret, Betty/Elizabeth
-  # -- which were previously logged here as permanent misses. It correctly
-  # rejects Linda/Melinda and Elissa/Melissa.
+  pair_key <- paste(sort(c(a, b)), collapse = "|")
+  # Source-specific false-positive block: this exact pair produced an observed
+  # wrong Healthgrades row in this project. The canonical nickname corpus still
+  # owns whether the edge exists; this scraper may decline to use it as enough
+  # evidence for this source.
+  if (pair_key %in% "linda|melinda") return(FALSE)
+  # Governed nickname evidence FIRST, from mysterynpi. It resolves the pairs a
+  # prefix rule structurally cannot -- Beth/Elizabeth, Peggy/Margaret,
+  # Betty/Elizabeth -- which were previously logged here as permanent misses.
+  # It correctly rejects substring-only pairs such as Elissa/Melissa.
   if (isTRUE(are_nickname_variants(a, b))) return(TRUE)
   # Prefix rule retained: isochrones has no principled equivalent (only a
   # 3-character containment hack in its Healthgrades verifier), and this is what

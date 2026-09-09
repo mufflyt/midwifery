@@ -163,7 +163,7 @@ load_isochrones_address_parser <- function(quiet = FALSE) {
   invisible(parser)
 }
 
-#' Source the isochrones name-matching and NPI-validation tools
+#' Source the isochrones name-parser and NPI-validation tools
 #'
 #' @description
 #' Three things this project needed already exist in isochrones, and each was
@@ -176,17 +176,11 @@ load_isochrones_address_parser <- function(quiet = FALSE) {
 #'     humaniformat-backed, vectorised, and returns parse confidence and
 #'     warnings alongside the parts -- strictly more than the scalar
 #'     `parse_person()` it replaces.}
-#'   \item{`are_nickname_variants()`}{`R/enhanced_name_parsing.R`, over the
-#'     dictionary in `R/nickname_system.R`. This is the piece that resolves
-#'     Beth/Elizabeth, which the local prefix rule could never reach and which
-#'     was logged here as a permanent miss.}
 #' }
 #'
-#' @section Why the whole chain is sourced:
-#' `enhanced_name_parsing.R` calls `normalize_string()` and `get_nickname_map()`,
-#' so `string_normalization.R` and `nickname_system.R` come with it. Sourcing
-#' only the leaf file yields "could not find function normalize_string" at the
-#' first nickname comparison, i.e. at match time rather than at load time.
+#' Nickname semantics are no longer sourced through isochrones.  They come
+#' directly from `mysterynpi::are_nickname_equivalents()` via the local
+#' `are_nickname_variants()` adapter below.
 #'
 #' @section Which checkout, and why not isochrones_home():
 #' This resolves `ISOCHRONES_R` exactly as `R/amcb_name_keys.R:44` and
@@ -220,7 +214,7 @@ load_isochrones_name_tools <- function(quiet = FALSE) {
   if (!dir.exists(iso_r)) {
     stop(sprintf(paste0(
       "isochrones R/ directory not found at %s.\n",
-      "  Name parsing, nickname resolution and the NPI Luhn check live there.\n",
+      "  Name parsing and the NPI Luhn check live there.\n",
       "  Set ISOCHRONES_R to the isochrones R/ directory, or clone the repo\n",
       "  to ~/isochrones. Use ISOCHRONES_R, not ISOCHRONES_HOME: the name code\n",
       "  in R/amcb_name_keys.R already resolves that variable, and the two point\n",
@@ -233,7 +227,6 @@ load_isochrones_name_tools <- function(quiet = FALSE) {
   Sys.setenv(NAME_PARSER_CACHE_DISABLE = "1")
 
   files <- c("utils/npi_luhn_qa.R", "string_normalization.R",
-             "nickname_system.R", "enhanced_name_parsing.R",
              "name_parsing_protocol_enhanced.R")
   paths <- file.path(iso_r, files)
   missing <- paths[!file.exists(paths)]
@@ -252,4 +245,26 @@ load_isochrones_name_tools <- function(quiet = FALSE) {
   }
   if (!quiet) message("isochrones name tools loaded from ", iso_r)
   invisible(paths)
+}
+
+#' Check whether two first names are governed nickname variants
+#'
+#' This is a compatibility adapter for the Healthgrades scraper.  The
+#' dictionary, one-hop semantics, direction policy and versioning live in
+#' `mysterynpi`; `midwifery` has no fallback through isochrones.
+#'
+#' @param name1,name2 [character(1)] first-name values.
+#' @return [logical(1)] `TRUE` when `mysterynpi` has governed nickname evidence.
+#' @family dependencies
+#' @export
+are_nickname_variants <- function(name1, name2) {
+  if (!requireNamespace("mysterynpi", quietly = TRUE)) {
+    stop("Nickname matching requires mysterynpi; no isochrones fallback is allowed.",
+         call. = FALSE)
+  }
+  isTRUE(mysterynpi::are_nickname_equivalents(
+    name1,
+    name2,
+    mysterynpi::get_nickname_dictionary()
+  ))
 }
