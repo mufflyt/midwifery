@@ -22,6 +22,7 @@
 # =============================================================================
 
 suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr)})
+source(file.path("R", "lib", "artifact_provenance.R"))
 
 FROZEN <- Sys.getenv("STAGE2_FROZEN", "artifacts/amcb_npi_linkage_FROZEN.csv")
 d <- read_csv(FROZEN, show_col_types = FALSE) %>% filter(cohort_member)
@@ -52,7 +53,8 @@ out <- d %>%
     TRUE              ~ "unclassified"
   ))
 
-write_csv(out, "artifacts/msn_dnp_credential_classification.csv", na = "")
+write_with_provenance(out, "artifacts/msn_dnp_credential_classification.csv",
+                      inputs = FROZEN, na = "")
 
 cat(sprintf("cohort members                : %s\n", format(nrow(out), big.mark = ",")))
 cat(sprintf("credential field non-missing  : %s (%.1f%%)\n",
