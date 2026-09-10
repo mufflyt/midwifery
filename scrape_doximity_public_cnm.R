@@ -250,6 +250,32 @@ parse_profile <- function(url) {
   if (!is.na(aff_match[,2]))
     affiliation <- str_trim(aff_match[,2])
 
+  # --- gender (Open Graph meta tag; not rendered as visible page text) --------
+  gender_meta <- html %>%
+    html_element('meta[property="profile:gender"]') %>%
+    html_attr("content")
+
+  # --- education & training (visible, but not previously captured) -----------
+  # <li itemprop="alumniOf" itemtype=".../EducationalOrganization">
+  #   <span itemprop="name">University of Pennsylvania</span>
+  #   <span class="br">Masters, 2010</span>
+  # </li>
+  # Present on some profiles, absent on others -- self-reported, not exhaustive.
+  # html_element() on a nodeset returns NA for a node with no match, so a
+  # profile listing several institutions where only some carry the target
+  # span would paste the literal string "NA" into the joined output unless
+  # those entries are dropped before collapsing.
+  edu_nodes <- html %>% html_elements('li[itemprop="alumniOf"]')
+  .collapse_present <- function(x) paste(x[!is.na(x) & nzchar(x)], collapse = " | ")
+  education_institution <- edu_nodes %>%
+    html_element('span[itemprop="name"]') %>% html_text(trim = TRUE) %>%
+    .collapse_present()
+  education_degree_year <- edu_nodes %>%
+    html_element('span.br') %>% html_text(trim = TRUE) %>%
+    .collapse_present()
+  if (!nzchar(education_institution)) education_institution <- NA_character_
+  if (!nzchar(education_degree_year)) education_degree_year <- NA_character_
+
   tibble(
     profile_url   = url,
     parse_status  = "ok",
@@ -267,7 +293,10 @@ parse_profile <- function(url) {
     city_zip      = city_zip,
     phone         = phone,
     affiliation   = affiliation,
-    bio_text      = str_trunc(bio_text, 300)
+    bio_text      = str_trunc(bio_text, 300),
+    gender_meta   = gender_meta,
+    education_institution  = education_institution,
+    education_degree_year  = education_degree_year
   )
 }
 
@@ -302,7 +331,8 @@ PROFILE_COLS <- c("profile_url", "parse_status", "uuid", "date_created",
                   "date_modified", "full_name", "name_clean", "maiden_name",
                   "name_no_maiden", "specialty", "city", "state",
                   "address_line", "city_zip", "phone", "affiliation",
-                  "bio_text")
+                  "bio_text", "gender_meta", "education_institution",
+                  "education_degree_year")
 
 conform <- function(x) {
   for (cc in setdiff(PROFILE_COLS, names(x))) x[[cc]] <- NA_character_
@@ -370,6 +400,7 @@ if (file.exists(ROSTER_FILE)) {
     dox_ok %>% select(profile_url, uuid, specialty, city, state,
                       address_line, city_zip, phone, affiliation,
                       full_name, maiden_name, date_created, date_modified,
+                      gender_meta, education_institution, education_degree_year,
                       last_upper, first_upper),
     by = c("last_upper", "first_upper")
   ) %>%

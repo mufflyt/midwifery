@@ -38,6 +38,13 @@ midwife_panel_wide*.csv.lock
 
 # Scoring-loop checkpoint (match_nppes.R); resumable state, not a result
 artifacts/match_progress.rds
+# geocode_queue_cascade.R checkpoint, reloadable via GEOCODE_RESUME_RAW=1;
+# same class as match_progress.rds above.
+artifacts/geocode_cascade_raw_result.rds
+
+# R's default plot-device dump when a script renders without an explicit
+# output path. Never an intentional deliverable.
+/Rplots.pdf
 artifacts/amcb_npi_matched*.csv
 artifacts/amcb_npi_linkage_FROZEN.csv
 artifacts/identity_flip_audit.csv
