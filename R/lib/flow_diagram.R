@@ -50,7 +50,10 @@ FD_LINE_GAP <- 26
 #' @noRd
 .fd_nlines <- function(x) {
   if (is.na(x)) return(0L)
-  lengths(gregexpr("\n", x, fixed = TRUE)) + 1L
+  # gregexpr() returns the sentinel -1 (a length-1 vector) for "no match",
+  # not an empty vector -- lengths() alone would count that as one match and
+  # report every single-line field as 2 lines.
+  sum(gregexpr("\n", x, fixed = TRUE)[[1]] > 0) + 1L
 }
 
 #' One node
