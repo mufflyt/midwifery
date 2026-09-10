@@ -29,11 +29,21 @@ derange <- function(x, max_tries = 1000L) {
   # first-name data, where repeated names are the norm, not the exception.
   # Capped, with a best-effort fallback (fewest residual matches found) so
   # this can never hang and a residual match is never silently invisible.
-  best <- sample(x); best_n <- sum(best == x)
+  # `x` is a character vector for a single given-name column, but
+  # link_theses_to_amcb.R also calls this on a LIST-column (each element the
+  # full set of given-name tokens for one person), where `==` is not
+  # implemented at all -- it throws rather than comparing element-wise. Fall
+  # back to per-element identical() only for a list; atomic vectors keep using
+  # `==` exactly as before, so the existing BVA/semantic tests are unaffected.
+  n_fixed_points <- function(a, b) {
+    if (is.list(a) || is.list(b)) sum(mapply(identical, a, b))
+    else sum(a == b)
+  }
+  best <- sample(x); best_n <- n_fixed_points(best, x)
   for (i in seq_len(max_tries)) {
     if (best_n == 0L) return(best)
     perm <- sample(x)
-    n <- sum(perm == x)
+    n <- n_fixed_points(perm, x)
     if (n < best_n) { best <- perm; best_n <- n }
   }
   if (best_n > 0L) warning(sprintf(

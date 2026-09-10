@@ -1,10 +1,29 @@
 {
   "artifact": "county_cnm_births.csv",
-  "written_utc": "2026-08-24 11:51:44 UTC",
+  "written_utc": "2026-09-07 21:22:56.409 UTC",
   "inputs": [
     {
       "path": "artifacts/county_profiles/county_birth_profiles.csv",
       "sha256": "ba00bfeab9876e15ae399225140b7903f4f06a68169d9554315e991d1409f2f1"
+    }
+  ],
+  "code_sha256": "bb2fd8b6d36d3df9315aabafd7b80d7003607ddefdc6488d8dd0188f8cf2554a",
+  "code": [
+    {
+      "path": "R/11-wonder-county-ingest.R",
+      "sha256": "73c0019fd26e8b67983a10787224ee6cd6d9eac68b66b8a1065097eb2f8d9495"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/ct_county_crosswalk.R",
+      "sha256": "3242ed96fa0d870693718bfed2b79472a035aca0daba25b19725f1680964334d"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
     }
   ]
 }
