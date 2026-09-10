@@ -1,0 +1,33 @@
+{
+  "artifact": "geography_by_amcb_status.csv",
+  "written_utc": "2026-09-10 19:56:55.303 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "e0e0a804b5c1f0942831b7c6a9d4ae830672ad04d28e451df00fca8397d7d88d"
+    },
+    {
+      "path": "artifacts/midwives_geography_FROZEN.csv",
+      "sha256": "1b578f32351375eb4d7b589425a457738559cb1fc4cdf534b333ef9defea3d93"
+    }
+  ],
+  "code_sha256": "d57c8fe590a346203cbf9d3fb4cdd7a0ce00826bf5b8364d0747f94dcd7fe45f",
+  "code": [
+    {
+      "path": "build_geography_by_amcb_status.R",
+      "sha256": "1e09a98b51ed750afc830453e9b8fb7f151359b559c00957845019bfacd9aba4"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/common_helpers.R",
+      "sha256": "55c6b894798e2740f538b1262391e58e8fe9bea84f072b80708e59aea3197067"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}

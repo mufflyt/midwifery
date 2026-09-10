@@ -1,0 +1,17 @@
+status,match_status,n,n_geocoded
+ACTIVE,matched,13176,13117
+ACTIVE,not_matched,2152,0
+DEACTIVATED,matched,2,2
+DEACTIVATED,not_matched,20,0
+DECEASED,matched,174,174
+DECEASED,not_matched,325,0
+EMERITUS,matched,30,30
+EMERITUS,not_matched,1,0
+LAPSED,matched,2994,2983
+LAPSED,not_matched,2181,0
+RETIRED,matched,787,783
+RETIRED,not_matched,492,0
+REVOKED,matched,11,10
+REVOKED,not_matched,5,0
+SURRENDERED,matched,6,6
+SUSPENDED,matched,1,1
