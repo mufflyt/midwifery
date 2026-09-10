@@ -28,13 +28,18 @@
 
 suppressPackageStartupMessages({library(dplyr); library(readr); library(tidyr)})
 
+# guess_max = Inf: class5_candidate_npi is NA for most rows and a real 10-digit
+# NPI for a handful late in the file. readr's default 1000-row type guess saw
+# only NAs, inferred logical, and silently coerced every real NPI value in
+# that column to NA on read -- corrupting the column in the rewritten FROZEN
+# output even though nothing in this script's own logic depends on it.
 full <- read_csv(Sys.getenv("RECONCILE_FULL", "artifacts/amcb_npi_matched.csv"),
-                 show_col_types = FALSE)
+                 show_col_types = FALSE, guess_max = Inf)
 if (!"npi_tax_class" %in% names(full)) full$npi_tax_class <- NA_character_
 old  <- read_csv(Sys.getenv("RECONCILE_BASE",
                             "artifacts/amcb_npi_matched_through2017.csv"),
-                 show_col_types = FALSE)
-stopifnot(nrow(full) == 22309, nrow(old) == 22309)
+                 show_col_types = FALSE, guess_max = Inf)
+stopifnot(nrow(full) == nrow(old), nrow(full) == 22357)
 
 # --- 1. Transition matrix -----------------------------------------------------
 state_of <- function(d) case_when(
@@ -59,8 +64,8 @@ cmp <- tibble(amcb_id = full$certification_number,
 cat("=== A/B transition matrix (through-2017 -> 2007-2025) ===\n")
 tm <- count(cmp, transition, sort = TRUE)
 print(as.data.frame(tm))
-cat(sprintf("\ntotal rows                : %s (must equal 22,309)\n",
-            format(sum(tm$n), big.mark = ",")))
+cat(sprintf("\ntotal rows                : %s (must equal %s)\n",
+            format(sum(tm$n), big.mark = ","), format(nrow(full), big.mark = ",")))
 gained <- sum(cmp$after == "matched") - sum(cmp$before == "matched")
 newly  <- sum(cmp$before != "matched" & cmp$after == "matched")
 lost   <- sum(cmp$before == "matched" & cmp$after != "matched")
@@ -71,7 +76,7 @@ cat(sprintf("net gain                  : %s  (%s newly - %s lost)\n",
             format(gained, big.mark = ","), format(newly, big.mark = ","),
             format(lost, big.mark = ",")))
 cat(sprintf("matched but NPI changed   : %s (net-neutral)\n", format(changed, big.mark = ",")))
-stopifnot(sum(tm$n) == 22309, gained == newly - lost)
+stopifnot(sum(tm$n) == nrow(full), gained == newly - lost)
 
 reclass <- cmp %>% filter(transition %in% c("matched -> different NPI",
                                             "matched -> quarantined",
