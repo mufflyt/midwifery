@@ -298,7 +298,7 @@ cat(sprintf("[land clip] applied=%s masks=%d/%d final=%s\n", clip_prov$clip_appl
             clip_prov$masks_found, clip_prov$masks_expected, clip_prov$final))
 if (clip_prov$clip_applied) {
   local({
-    owd <- setwd(path.expand("~/isochrones-main")); on.exit(setwd(owd), add = TRUE)
+    owd <- setwd(path.expand("~/isochrones")); on.exit(setwd(owd), add = TRUE)
     suppressWarnings(suppressMessages(
       sys.source(file.path("R", "canonical_water_mask_loader.R"), envir = globalenv())))
   })

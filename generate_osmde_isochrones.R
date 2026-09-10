@@ -47,9 +47,14 @@ suppressPackageStartupMessages({
 source(file.path("R", "lib", "resume_state.R"))   # atomic_saveRDS
 source(file.path("R", "lib", "osmde_cache.R"))
 
-SERVER    <- "https://valhalla1.openstreetmap.de"
+# SERVER/SLEEP_S are overridable so this script can also target the project's
+# own dedicated EC2 Valhalla instance (localhost:8002 over an SSH tunnel) when
+# the public osm.de server is down for an extended period -- see the note at
+# osmde_cache_put()'s routing_engine argument for why the actual server used
+# is recorded per-request rather than assumed to be osm.de.
+SERVER    <- Sys.getenv("OSMDE_SERVER", "https://valhalla1.openstreetmap.de")
 BANDS     <- c(30, 60)
-SLEEP_S   <- 3.0     # 2x the documented 1.5s minimum for this host
+SLEEP_S   <- as.numeric(Sys.getenv("OSMDE_SLEEP_S", "3.0"))  # 2x the documented 1.5s minimum for the public host; 0 is fine for a dedicated instance
 MAX_RETRY <- 3
 LOG_EVERY <- 25
 # A public server that has stopped answering must not be hammered for eight
@@ -162,7 +167,8 @@ if (!assemble_only) {
     res <- fetch_one(row$latitude, row$longitude)
     if (res$ok) {
       osmde_cache_put(CACHE_DIR, row$location_key, res$sf,
-                      format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"))
+                      format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+                      routing_engine = SERVER)
       n_ok <- n_ok + 1L; consec <- 0L
     } else {
       n_fail <- n_fail + 1L; consec <- consec + 1L
@@ -195,6 +201,17 @@ if (!assemble_only) {
 }
 
 # --- assemble ----------------------------------------------------------------
+# A run that aborted early on consecutive failures (server unreachable) can
+# legitimately retrieve zero locations. That is not this step's error to
+# raise -- osmde_assemble() stops hard on an empty cache, which turned a
+# clean, resumable "server was down" outcome into a crash. Skip assembly
+# rather than overwrite OUTRDS with nothing; re-running once the server
+# recovers will assemble whatever the cache holds by then.
+if (!length(osmde_cache_keys(CACHE_DIR))) {
+  cat("\ncache is empty -- nothing retrieved this run, skipping assembly.\n")
+  cat("re-run once the server is reachable; nothing already cached is re-requested.\n")
+  quit(status = 0L)
+}
 cat("\nassembling cache into one sf ...\n")
 out <- osmde_assemble(CACHE_DIR)
 atomic_saveRDS(out, OUTRDS)
@@ -210,6 +227,9 @@ if (file.exists(FAILCSV)) {
   cat(sprintf("still unrouted        : %s (see %s)\n",
               dplyr::n_distinct(f$location_key), FAILCSV))
 }
-cat("\nCanonical library untouched. These polygons are a SEPARATE artifact\n")
-cat("generated on the public osm.de graph, and are NOT interchangeable with\n")
-cat("the EC2-generated canonical set.\n")
+engines_used <- sort(unique(out$routing_engine))
+cat("\nCanonical library untouched. These polygons are a SEPARATE artifact,\n")
+cat(sprintf("generated on: %s.\n", paste(engines_used, collapse = ", ")))
+cat("NOT interchangeable with the EC2-generated CANONICAL set (3,909 origins,\n")
+cat("a different graph/build) -- see each polygon's own routing_engine and\n")
+cat("routing_scope columns, which are authoritative over this message.\n")
