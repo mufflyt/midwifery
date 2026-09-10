@@ -50,3 +50,11 @@ artifacts/scraped_50_states_and_dc_midwives_master.csv
 # gitignored, person-level, and not practically regenerable -- see that
 # script's own header for what rebuilding it would actually require.
 artifacts/live_washington_bon_ingested_midwives_from_tracked_roster.csv
+
+# MSN/DNP credential classification: certification_number, npi, last_name,
+# first_name and the raw NPPES self-reported credential string, for every
+# cohort member. Reviewed and accepted by Tyler Muffly, 2026-09-10: the
+# underlying identity pairing is the same AMCB roster / NPPES source already
+# covered by this project's other tracked person-level artifacts, and the
+# data is public. Produced by classify_msn_dnp_credentials.R.
+artifacts/msn_dnp_credential_classification.csv
