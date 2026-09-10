@@ -10,7 +10,8 @@ rows <- function(p) if (file.exists(p)) nrow(read_csv(p, show_col_types = FALSE,
 
 panel <- read_csv("midwife_panel.csv", col_types = cols(.default = "c")) %>%
   mutate(snapshot_year = as.integer(snapshot_year))
-frozen <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv", show_col_types = FALSE)
+frozen <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv", show_col_types = FALSE,
+                   guess_max = Inf)
 
 manifest <- list(
   generated_utc = format(Sys.time(), tz = "UTC", usetz = TRUE),
