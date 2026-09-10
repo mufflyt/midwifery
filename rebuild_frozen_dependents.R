@@ -166,7 +166,12 @@ REBUILD_ORDER <- list(
                    # REFUSED to rebuild until it was placed. That is the gate
                    # doing its job -- undeclared, it would have been left
                    # holding the old cohort with the rebuild reporting success.
-                   "match_medicare_partb_partd.R")),
+                   "match_medicare_partb_partd.R",
+                   # Added 2026-09-10, by the same completeness gate (T5).
+                   # Classifies each cohort member's self-reported degree
+                   # level from the NPPES credential field; reads FROZEN
+                   # directly and recomputes from that cached input alone.
+                   "classify_msn_dnp_credentials.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        # export_amcb_npi_geography.R writes the tracked state aggregate and
        # the gitignored person-level export, both of which read the crosswalk
