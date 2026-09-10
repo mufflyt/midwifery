@@ -137,8 +137,8 @@ mw_build_catalog <- function(root = ".") {
       # tier, which IS in the cohort and is only held out of the primary tier.
       cohort_n       = unname(sums[["matched"]]) +
                        unname(sums[["matched_nursing_taxonomy"]]),
-      heldout        = unname(sums[["candidate_class5_held_out_of_cohort"]]),
-      heldout_pct    = 100 * unname(sums[["candidate_class5_held_out_of_cohort"]]) / tot,
+      heldout        = disp("candidate_class5_held_out_of_cohort"),
+      heldout_pct    = 100 * disp("candidate_class5_held_out_of_cohort") / tot,
       # TWO RATES, NAMED. `active_pct` is resolution into the PRIMARY cohort --
       # an NPI carrying midwifery taxonomy. `active_ascertained_pct` is whether
       # the certificant was found in NPPES AT ALL, including the nursing-only
@@ -163,6 +163,90 @@ mw_build_catalog <- function(root = ".") {
     # The dispositions must reconstruct the total, or the table in the paper
     # does not add up in front of a reviewer.
     stopifnot(sum(sums) == tot)
+
+    # --- Exclusion flow: AMCB roster -> active -> NPI-matched -> geocodable --
+    # For make_cohort_exclusion_flow_figure.R. "Active" is defined by AMCB's
+    # own certification status field ONLY: status == "ACTIVE". Every other
+    # status (LAPSED, RETIRED, DECEASED, EMERITUS, DEACTIVATED, REVOKED,
+    # SURRENDERED, SUSPENDED) is folded into "deceased or inactive" -- ACTIVE
+    # is the only status meaning "currently certified." That folds EMERITUS in
+    # with the excluded, which is a judgement call worth a reviewer's eye; the
+    # itemised per-status counts below are kept so it can be revisited without
+    # re-deriving them.
+    inactive_statuses <- setdiff(lc$status, "ACTIVE")
+    inactive_n_by_status <- setNames(lc$n[match(inactive_statuses, lc$status)],
+                                     tolower(inactive_statuses))
+    active_row <- lc[lc$status == "ACTIVE", ]
+    active_matched_n <- active_row$matched + active_row$matched_nursing_taxonomy
+    active_unmatched_n <- active_row$n - active_matched_n
+
+    # A disposition absent from active_row is zero people currently in that
+    # bucket, not missing data -- disp_cols above is exhaustive over whatever
+    # values npi_match_status actually holds, so a category that has been
+    # fully resolved away (e.g. class-5 hold-outs reclassified in a refresh)
+    # legitimately drops out of the table entirely. `active_row$missing_col`
+    # on a data.frame returns NULL and c() silently drops NULL elements,
+    # which would desync this vector's names from its values -- so pick0()
+    # names the zero explicitly instead of letting c() erase the slot.
+    pick0 <- function(cn) if (cn %in% names(active_row)) active_row[[cn]] else 0
+
+    # "No NPI match" is three structurally different failure modes plus one
+    # deliberate hold-out, not one undifferentiated bucket -- see the
+    # `cat_$linkage` comment above (tied/contested/component) for what each
+    # one means. Itemised the same way inactive_by_status is, so a reviewer
+    # asking "what does ambiguous mean here" has an answer on the figure
+    # rather than needing to read this file.
+    active_unmatched_by_reason <- c(
+      unmatched  = pick0("unmatched"),
+      tied       = pick0("ambiguous_tied_names"),
+      contested  = pick0("ambiguous_contested_npi"),
+      component  = pick0("ambiguous_unruled_out_component"),
+      held_out   = pick0("candidate_class5_held_out_of_cohort")
+    )
+
+    cat_$exclusion <- list(
+      roster_n           = tot,
+      active_n           = active_row$n,
+      active_pct         = 100 * active_row$n / tot,
+      inactive_n         = tot - active_row$n,
+      inactive_pct       = 100 * (tot - active_row$n) / tot,
+      inactive_by_status = inactive_n_by_status,
+      active_matched_n   = active_matched_n,
+      active_matched_pct = 100 * active_matched_n / active_row$n,
+      active_unmatched_n = active_unmatched_n,
+      active_unmatched_by_reason = active_unmatched_by_reason
+    )
+    # Roster reconciles into active + inactive, and active reconciles into
+    # matched + unmatched, by construction from one row of `lc` -- but the
+    # arithmetic is asserted anyway, in this file's own style, rather than
+    # trusted because it looks right.
+    stopifnot(
+      cat_$exclusion$active_n + cat_$exclusion$inactive_n == cat_$exclusion$roster_n,
+      cat_$exclusion$active_matched_n + cat_$exclusion$active_unmatched_n ==
+        cat_$exclusion$active_n,
+      sum(active_unmatched_by_reason) == active_unmatched_n
+    )
+
+    # Stage 4 (geocodable address) needs a per-person join between AMCB status
+    # and geocoding outcome that isn't a committed artifact yet -- see
+    # build_geography_by_amcb_status.R. Gitignored/absent is a SKIP here, same
+    # as the frozen linkage above, not an error: the figure script itself
+    # requires this key (via mw_safe_stat) and fails loudly if it's missing,
+    # since a silently-incomplete exclusion chart misrepresents who was
+    # dropped and why.
+    gs <- rd(file.path(MW_ART, "geography_by_amcb_status.csv"))
+    if (!is.null(gs)) {
+      g_active <- gs[gs$status == "ACTIVE" & gs$match_status == "matched", ]
+      if (nrow(g_active) == 1L) {
+        cat_$exclusion$geocoded_n <- g_active$n_geocoded
+        cat_$exclusion$not_geocoded_n <- g_active$n - g_active$n_geocoded
+        cat_$exclusion$final_cohort_n <- g_active$n_geocoded
+        stopifnot(
+          cat_$exclusion$geocoded_n + cat_$exclusion$not_geocoded_n ==
+            cat_$exclusion$active_matched_n
+        )
+      }
+    }
   }
 
   # --- Cohort composition, from the committed aggregate ----------------------
@@ -399,9 +483,26 @@ mw_build_catalog <- function(root = ".") {
       r <- t1[grepl(rx, t1$characteristic, ignore.case = TRUE), ]
       if (nrow(r)) r$percent[1] else NA_real_
     }
+    # This row's own percent is NA by design (build_table1_midwives.R writes
+    # it that way): these people ARE included in the cohort and DO have a
+    # geocodable address, they just have no ACOG district to be a percentage
+    # OF, so the row carries a raw n, not a share. pick() reads $percent and
+    # would silently return NA for this one; read $n directly instead.
+    pickn <- function(rx) {
+      r <- t1[grepl(rx, t1$characteristic, ignore.case = TRUE), ]
+      if (nrow(r)) r$n[1] else NA_real_
+    }
+    acog_excluded_n <- pickn("Overseas-military or US-territory address")
     cat_$table1 <- list(
       n = t1$n[1], cnm_pct = pick("^Certified Nurse-Midwife$"),
-      cm_pct = pick("^Certified Midwife$"), female_pct = pick("^Female$")
+      cm_pct = pick("^Certified Midwife$"), female_pct = pick("^Female$"),
+      # NOTE: this n's denominator is t1$n[1] ("ACTIVE, primary-linked
+      # midwives" -- ACTIVE status AND primary midwifery-taxonomy match
+      # only), NOT exclusion.active_matched_n (which also includes the
+      # nursing-taxonomy sensitivity tier). Don't divide this by the wrong
+      # cohort size; the two are close but not the same population.
+      acog_excluded_n   = acog_excluded_n,
+      acog_excluded_pct = if (!is.na(acog_excluded_n)) 100 * acog_excluded_n / t1$n[1] else NA_real_
     )
   }
 

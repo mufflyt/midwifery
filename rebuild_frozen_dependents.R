@@ -101,6 +101,13 @@ REBUILD_ORDER <- list(
   list(layer = "4-derived-products", why = "products that consume cohort + geography",
        scripts = c("load_obstetric_providers.R", "match_midwives_to_isochrones.R",
                    "characterize_isochrone_representation.R",
+                   # Added 2026-09-10, by the same completeness gate (T5), which
+                   # caught it in the pull request that introduced it. Reads
+                   # amcb_npi_linkage_FROZEN and the geography artifact directly
+                   # to build a status x match_status geocoding-completeness
+                   # table; a rebuild that skipped it would leave that table
+                   # describing the previous cohort while reporting success.
+                   "build_geography_by_amcb_status.R",
                    # Added 2026-08-28, by the same completeness gate (T5) and for
                    # the same reason as the 2026-08-15/2026-08-10 additions below:
                    # this script appeared (PR #76, 2026-08-23) reading both
