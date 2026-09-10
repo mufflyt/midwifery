@@ -54,31 +54,47 @@ osmde_cache_keys <- function(cache_dir) {
 #' @param key [character(1)] location key.
 #' @param geom `sf`: the Valhalla response, one feature per contour.
 #' @param fetched_utc [character(1)]: ISO-8601 UTC fetch time.
+#' @param routing_engine [character(1)]: which server actually answered this
+#'   request. Recorded per-entry rather than assumed, because this cache has
+#'   since been fed by more than one Valhalla instance and a hardcoded label
+#'   at assembly time would silently misattribute polygons to the wrong one --
+#'   the exact hazard the routing_engine column exists to prevent.
 #' @return `key`, invisibly.
-osmde_cache_put <- function(cache_dir, key, geom, fetched_utc) {
-  atomic_saveRDS(list(sf = geom, fetched_utc = fetched_utc),
+osmde_cache_put <- function(cache_dir, key, geom, fetched_utc,
+                            routing_engine = "valhalla1.openstreetmap.de") {
+  atomic_saveRDS(list(sf = geom, fetched_utc = fetched_utc,
+                      routing_engine = routing_engine),
                  osmde_cache_path(cache_dir, key))
   invisible(key)
 }
 
 #' Read one cached location
 #'
-#' Tolerates both the current `list(sf=, fetched_utc=)` layout and a bare `sf`
-#' object, which is what entries migrated from the old monolithic checkpoint
-#' look like before they are rewritten.
+#' Tolerates both the current `list(sf=, fetched_utc=, routing_engine=)`
+#' layout and older layouts: a bare `sf` (migrated from the monolithic
+#' checkpoint) or a `list(sf=, fetched_utc=)` written before routing_engine
+#' was recorded per-entry. Both older shapes predate this cache ever being fed
+#' by anything but the public osm.de server, so that is the correct fallback
+#' label for them -- not a guess, a fact about when they were written.
 #'
 #' @param cache_dir [character(1)].
 #' @param key [character(1)].
-#' @return `list(sf, fetched_utc)`, or NULL when the file is unreadable.
+#' @return `list(sf, fetched_utc, routing_engine)`, or NULL when the file is
+#'   unreadable.
 osmde_cache_get <- function(cache_dir, key) {
   p <- osmde_cache_path(cache_dir, key)
   if (!file.exists(p)) return(NULL)
   x <- tryCatch(readRDS(p), error = function(e) NULL)
   if (is.null(x)) return(NULL)
-  if (inherits(x, "sf")) return(list(sf = x, fetched_utc = NA_character_))
-  if (is.list(x) && inherits(x$sf, "sf")) return(x)
+  legacy_engine <- "valhalla1.openstreetmap.de"
+  if (inherits(x, "sf"))
+    return(list(sf = x, fetched_utc = NA_character_, routing_engine = legacy_engine))
+  if (is.list(x) && inherits(x$sf, "sf"))
+    return(list(sf = x$sf, fetched_utc = x$fetched_utc,
+               routing_engine = x$routing_engine %||% legacy_engine))
   NULL
 }
+`%||%` <- function(a, b) if (is.null(a) || (length(a) == 1 && is.na(a))) b else a
 
 #' Migrate a monolithic `_checkpoint.rds` into the per-location cache
 #'
@@ -145,10 +161,13 @@ osmde_assemble <- function(cache_dir, chunk = 500L, verbose = TRUE) {
       drive_time_minutes = as.numeric(g[[bcol]]),
       # Provenance travels WITH the geometry. A downstream join that dropped
       # these columns would make the two routing engines indistinguishable,
-      # which is the entire hazard this artifact carries.
-      routing_engine     = "valhalla1.openstreetmap.de",
-      routing_scope      = "public_demo_server",
-      osm_vintage        = NA_character_,   # not pinnable on the public server
+      # which is the entire hazard this artifact carries. routing_engine comes
+      # from the cache entry itself (recorded at fetch time), not a constant
+      # here, since this cache is no longer fed by only one server.
+      routing_engine     = e$routing_engine,
+      routing_scope      = if (grepl("openstreetmap\\.de", e$routing_engine))
+                             "public_demo_server" else "ec2_dedicated",
+      osm_vintage        = NA_character_,   # not pinnable on either server
       costing            = "auto",
       generated_utc      = e$fetched_utc,
       geometry           = sf::st_geometry(g))
