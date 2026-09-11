@@ -81,7 +81,14 @@ LAW_COHORTS <- c(
   # vintage. 16892 above is the SAME analytic-cohort definition at the
   # previous freeze and stays registered -- it describes what was true then,
   # not a stale artifact awaiting a rebuild.
-  "17028" = "analytic cohort (frozen_cohort/analytic_cohort.csv), 2026-09-11 repin vintage"
+  "17028" = "analytic cohort (frozen_cohort/analytic_cohort.csv), 2026-09-11 repin vintage",
+  # Added 2026-09-11, artifacts/table1_provenance.csv (built 18:39, PR #184):
+  # same ACTIVE, primary-linked definition as 11920/12129 above, against the
+  # SAME current amcb_npi_linkage_FROZEN.csv this session's other fixes use --
+  # verified independently by recomputing status=="ACTIVE" &
+  # linkage_tier=="primary_midwifery" directly against that file (12,171).
+  # 12129 stays registered as the vintage before this rebuild.
+  "12171" = "ACTIVE, primary-linked (Table 1), table1_provenance.csv 2026-09-11 vintage"
 )
 
 # KNOWN, AWAITING A DECISION -- not forgiven.
