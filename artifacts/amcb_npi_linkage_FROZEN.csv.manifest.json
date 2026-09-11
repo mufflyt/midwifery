@@ -1,13 +1,13 @@
 {
   "run_id": "reconcile_ab_20260910T193000_issue172",
-  "decision": "A/B reconciled per issue #172, closing out the 2026-09-02 ad hoc rebuild. reconcile_linkage.R run against the through-2017 arm (artifacts/amcb_npi_linkage_panel-midwifery-plus-nursing_years-through-2017.csv, freshly generated via PANEL_YEAR_MAX=2017) and the full 2007-2026 arm (unchanged from the ad hoc rebuild). Transition matrix reconciled cleanly to 22,357 rows: 5,960 newly matched by 2018-2026 candidates, 198 lost their match, net +5,762 (see /tmp/reconcile2.log for the full matrix). cohort_member assigned via R/amcb_cohort_membership.R::is_cohort_member() (COHORT_MEMBERSHIP_TIERS allowlist) and reproduces the ad hoc rebuild's exact count (17,027), confirming the ad hoc numbers were correct -- what was missing was this reconciliation's audit trail, not a data error. Also fixed a latent bug in reconcile_linkage.R: readr's default 1000-row type guess inferred class5_candidate_npi as logical from an all-NA sample and silently coerced 8 real NPI values to NA on read; both read_csv() calls now use guess_max = Inf.",
+  "decision": "A/B reconciled per issue #172, closing out the 2026-09-02 ad hoc rebuild. reconcile_linkage.R run against the through-2017 arm (artifacts/amcb_npi_linkage_panel-midwifery-plus-nursing_years-through-2017.csv, freshly generated via PANEL_YEAR_MAX=2017) and the full 2007-2026 arm (unchanged from the ad hoc rebuild). Transition matrix reconciled cleanly to 22,357 rows: 5,960 newly matched by 2018-2026 candidates, 198 lost their match, net +5,762 (see /tmp/reconcile2.log for the full matrix). cohort_member assigned via R/amcb_cohort_membership.R::is_cohort_member() (COHORT_MEMBERSHIP_TIERS allowlist) and reproduces the ad hoc rebuild's exact count (17,027), confirming the ad hoc numbers were correct -- what was missing was this reconciliation's audit trail, not a data error. Also fixed a latent bug in reconcile_linkage.R: readr's default 1000-row type guess inferred class5_candidate_npi as logical from an all-NA sample and silently coerced 8 real NPI values to NA on read; both read_csv() calls now use guess_max = Inf. UPDATE 2026-09-11: cohort_member was found missing from the live file (a later reconcile_linkage.R re-run, without the manual follow-up step this reconciliation used, silently dropped it) while building the fix for issue #176. Restored by adding cohort_member computation directly into reconcile_linkage.R itself rather than as a manual step. Recomputing on the unchanged underlying 59 columns gives 17,028, not 17,027 as originally reported here -- the 59 shared columns are verified byte-identical to the prior version, so this is a correction to the earlier report, not a data change.",
   "source_crosswalk": "artifacts/amcb_npi_linkage_panel-midwifery-plus-nursing_years-2007-2026.csv",
   "source_crosswalk_sha256": "c272e3b4f191185ec748b95a2138a3aa51b109fdf85e7255f8847803db684035",
   "ab_base_arm": "artifacts/amcb_npi_linkage_panel-midwifery-plus-nursing_years-through-2017.csv",
   "ab_base_arm_sha256": "99269dff988e5f189926c01e49565f96c411f2d59a73eb36e4fcd812efb731b5",
-  "artifact_sha256": "e0e0a804b5c1f0942831b7c6a9d4ae830672ad04d28e451df00fca8397d7d88d",
+  "artifact_sha256": "1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2",
   "artifact_rows": 22357,
-  "cohort_members": 17027,
+  "cohort_members": 17028,
   "membership_rule": [
     "primary_midwifery",
     "sensitivity_nursing",
@@ -77,5 +77,5 @@
     "match_status",
     "cohort_member"
   ],
-  "class5_candidates_held_out": 154
+  "class5_candidates_held_out": 153
 }

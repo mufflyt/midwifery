@@ -36,7 +36,13 @@ suppressPackageStartupMessages({library(jsonlite); library(readr); library(dplyr
 APPLY <- nzchar(Sys.getenv("REPIN_APPLY"))
 MANIFEST <- "artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json"
 FINGER   <- "artifacts/frozen_cohort/INPUT_FINGERPRINT.json"
-SOURCE   <- "artifacts/midwives_geography_guarded.csv"
+SOURCE   <- "midwives_geography_guarded.csv"  # repo root, not artifacts/ -- see
+# build_midwives_geography_guarded.R, which is this file's only producer and
+# writes to the root path every OTHER reader (R/05-stage-progression.R,
+# R/02-geocoding-completeness.R, audit_coordinate_provenance.R,
+# verify_linkage_arms.R) already hardcodes. This constant carried a stale
+# artifacts/ prefix that none of those five readers agreed with, and no
+# producer script existed for either path until now.
 PINNED   <- "artifacts/frozen_cohort/midwives_geography_guarded.csv"
 
 cat("================ RE-PIN FROZEN COHORT ================\n")
