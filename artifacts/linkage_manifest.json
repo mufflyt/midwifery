@@ -1,19 +1,19 @@
 {
-  "generated_utc": "2026-08-23 23:11:54 UTC",
-  "git_commit": "a170eb239e38b5f355a55966369cfa19b0ce47fb",
+  "generated_utc": "2026-09-10 23:43:53.484 UTC",
+  "git_commit": "abd325b1cb7f0f0b64131b4175d4487e275c8e47",
   "inputs": {
     "amcb_roster": {
       "path": "midwives.csv",
-      "rows": 22309,
-      "sha256": "fe035788018f076db16f8dbe9c1b484f062d5ee3af8f6106547ed1886e127d11",
+      "rows": 22357,
+      "sha256": "f3d582b217dd2d62e9d8b0540048262ef01b1c966139c698789edbfcda6a6f1e",
       "source": "ams.amcbmidwife.org APEX directory, scrape.py"
     },
     "nppes_panel": {
       "path": "midwife_panel.csv",
-      "rows": 4291397,
-      "sha256": "4ba33447f281109a4ca0475e69501213c430121c30bcf8aa007e386adb03715a",
-      "distinct_npi": 443623,
-      "snapshot_years": [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+      "rows": 4748145,
+      "sha256": "b122ec0989d799b8f071095d4fc234d6ddc66bc3b3c5452302db1de13def311e",
+      "distinct_npi": 451793,
+      "snapshot_years": [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026],
       "snapshot_years_missing": [],
       "source": "NPPES historical dissemination files, build_midwife_panel.R"
     }
@@ -21,35 +21,35 @@
   "outputs": {
     "frozen_linkage": {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
-      "rows": 22309,
-      "cols": 54,
-      "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
+      "rows": 22357,
+      "cols": 61,
+      "sha256": "e0e0a804b5c1f0942831b7c6a9d4ae830672ad04d28e451df00fca8397d7d88d"
     },
     "ab_through2017": {
       "path": "artifacts/amcb_npi_matched_through2017.csv",
-      "rows": 22309,
-      "sha256": "e4d2d36d1e56ef9ca63596ea5382f7495050e81af8921652c9671c6102f13d86"
+      "rows": "NA",
+      "sha256": null
     },
     "identity_audit": {
       "path": "artifacts/identity_flip_audit.csv",
-      "rows": 81,
-      "sha256": "23ce4318ccc0bcf52d943d02af562d8b21776f7613f9f9e8b722dbdcc41d0cb2"
+      "rows": "NA",
+      "sha256": null
     }
   },
   "linkage": {
-    "total_rows": 22309,
+    "total_rows": 22357,
     "dispositions": {
-      "ambiguous_contested_npi": 95,
-      "ambiguous_tied_names": 3044,
+      "ambiguous_contested_npi": 122,
+      "ambiguous_tied_names": 2959,
       "ambiguous_unruled_out_component": 8,
-      "candidate_class5_held_out_of_cohort": 156,
-      "matched": 14764,
-      "matched_nursing_taxonomy": 2134,
-      "unmatched": 2108
+      "candidate_class5_held_out_of_cohort": 154,
+      "matched": 14988,
+      "matched_nursing_taxonomy": 2039,
+      "unmatched": 2087
     },
     "resolution": {
-      "unique_best_class": 7651,
-      "unique_best_class_with_middle": 9411
+      "unique_best_class": 7640,
+      "unique_best_class_with_middle": 9549
     },
     "ab_gain_records": 6041,
     "ab_gain_pp": 27.1,

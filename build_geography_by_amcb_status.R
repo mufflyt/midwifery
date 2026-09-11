@@ -89,7 +89,9 @@ geocode_col <- .resolve_col(geo, c("county_best", "county_exact", "geo_class"),
 
 linkage_std <- linkage %>%
   transmute(.id = .data[[id_link]], status = .data[[status_col]],
-           match_status = .data[[match_col]])
+           match_status = .data[[match_col]],
+           linkage_tier = if ("linkage_tier" %in% names(linkage))
+             linkage_tier else NA_character_)
 geo_std <- geo %>%
   transmute(.id = .data[[id_geo]],
            geocoded = !is.na(.data[[geocode_col]]) & nzchar(trimws(.data[[geocode_col]])))
@@ -103,8 +105,20 @@ joined <- tryCatch(
 # match_status values vary by producing script (npi_match_status uses
 # "matched"/"ambiguous_*"/"unmatched"; collapse to the two states this figure
 # cares about, matched vs not, rather than assume a specific vocabulary.
+#
+# class-5 (surname-component) candidates are excluded here too, not just from
+# npi_match_status's raw text: is_cohort_member() already treats
+# linkage_tier == "sensitivity_name_component" as cohort-ineligible
+# regardless of what npi_match_status says, and
+# linkage_completeness_by_status.csv (provenance_manifest.R) carves the same
+# rows into their own candidate_class5_held_out_of_cohort disposition. A
+# grepl("^matched", ...) test alone still counted them as matched here,
+# disagreeing with both -- caught by manuscript/R/build_stats_catalog.R's own
+# stopifnot cross-check against linkage_completeness_by_status.csv.
 joined <- joined %>%
-  mutate(match_bucket = if_else(grepl("^matched", match_status), "matched", "not_matched"),
+  mutate(match_bucket = if_else(grepl("^matched", match_status) &
+                                  coalesce(linkage_tier != "sensitivity_name_component", TRUE),
+                                "matched", "not_matched"),
          geocoded = coalesce(geocoded, FALSE))
 
 out <- joined %>%

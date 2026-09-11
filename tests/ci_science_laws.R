@@ -63,7 +63,16 @@ ci_section("L1 an artifact may not declare an unregistered cohort")
 # accepted the 11,913 that motivated this law.
 LAW_COHORTS <- c(
   "16892" = "analytic cohort (frozen_cohort/analytic_cohort.csv)",
-  "11920" = "ACTIVE, primary-linked (Table 1)"
+  "11920" = "ACTIVE, primary-linked (Table 1), 2026-08-10 freeze vintage",
+  # Added 2026-09-10, issue #172's A/B reconciliation: the same ACTIVE,
+  # primary-linked definition (status == "ACTIVE", linkage_tier ==
+  # "primary_midwifery") against the reconciled 22,357-row roster, which
+  # grew from 22,309 and picked up 2018-2026 NPI candidates the ad hoc
+  # rebuild's source panel already had. The 11920-declaring artifacts above
+  # are the older freeze's own vintage and are not stale -- they describe
+  # what was true then -- so 11920 stays registered rather than being
+  # replaced.
+  "12129" = "ACTIVE, primary-linked (Table 1), 2026-09-10 reconciled vintage"
 )
 
 # KNOWN, AWAITING A DECISION -- not forgiven.
