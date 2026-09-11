@@ -1,14 +1,14 @@
 {
   "artifact": "geography_by_amcb_status.csv",
-  "written_utc": "2026-09-11 01:50:38.978 UTC",
+  "written_utc": "2026-09-11 18:00:20.630 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
-      "sha256": "e0e0a804b5c1f0942831b7c6a9d4ae830672ad04d28e451df00fca8397d7d88d"
+      "sha256": "1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2"
     },
     {
       "path": "artifacts/midwives_geography_FROZEN.csv",
-      "sha256": "1b578f32351375eb4d7b589425a457738559cb1fc4cdf534b333ef9defea3d93"
+      "sha256": "f1a6ec177bc08ce99c0d5d309294ffb535a7f8b6773780ce6a68eb4e417d0ef2"
     }
   ],
   "code_sha256": "3682262066106b4cb18df3e8f712587dd8ad14f5c50ee75ec856bcd4d524adc9",

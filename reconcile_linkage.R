@@ -27,6 +27,7 @@
 # =============================================================================
 
 suppressPackageStartupMessages({library(dplyr); library(readr); library(tidyr)})
+source(file.path("R", "amcb_cohort_membership.R"))
 
 # guess_max = Inf: class5_candidate_npi is NA for most rows and a real 10-digit
 # NPI for a handful late in the file. readr's default 1000-row type guess saw
@@ -156,6 +157,22 @@ cat(sprintf("\nrange: %.1f%% (%s) to %.1f%% (%s) -- linkage is strongly\n",
 cat("associated with certification status, so the linked subset is NOT a\n")
 cat("representative sample of the roster. Any geographic analysis must report\n")
 cat("completeness by status rather than treating the linked rows as a random 70%.\n")
+
+# cohort_member: NOT a diagnostic byproduct of this script's own resolution
+# logic (match_resolution/match_status above) -- it is the actual analytic
+# cohort membership decision, and several downstream scripts (classify_msn_
+# dnp_credentials.R, build_geography_by_amcb_status.R and others) read it
+# directly by name. This used to be added by a manual, uncommitted step after
+# running this script, which is exactly the kind of thing that silently stops
+# happening: a later, unrelated re-run of this script (no manual follow-up)
+# regenerated artifacts/amcb_npi_linkage_FROZEN.csv without it, discovered
+# while building the fix for issue #176's stale midwives_geography_guarded.csv
+# reference, which needs cohort_member to filter the geography snapshot.
+frozen$cohort_member <- is_cohort_member(frozen$npi, frozen$linkage_tier)
+cat(sprintf("\ncohort_member             : %s of %s (%.1f%%)\n",
+            format(sum(frozen$cohort_member), big.mark = ","),
+            format(nrow(frozen), big.mark = ","),
+            100 * mean(frozen$cohort_member)))
 
 FROZEN_OUT <- Sys.getenv("FROZEN_OUT", "artifacts/amcb_npi_linkage_FROZEN.csv")
 write_csv(frozen, FROZEN_OUT, na = "")

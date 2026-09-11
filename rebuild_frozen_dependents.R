@@ -96,7 +96,14 @@ REBUILD_ORDER <- list(
        scripts = c("R/05-stage-progression.R", "R/06-cohort-flow.R",
                    "R/07-cohort-composition.R")),
   list(layer = "3-geography", why = "geography hierarchy depends on the cohort membership above",
-       scripts = c("R/03-geography-hierarchy.R", "geocode_panel_addresses.R",
+       scripts = c("R/03-geography-hierarchy.R",
+                   # Added 2026-09-11, by the same completeness gate (T5).
+                   # Filters R/03's geography output to cohort-eligible rows
+                   # via FROZEN's own cohort_member column -- must follow
+                   # R/03-geography-hierarchy.R within the layer, since its
+                   # output is this script's own input.
+                   "build_midwives_geography_guarded.R",
+                   "geocode_panel_addresses.R",
                    "audit_coordinate_provenance.R", "compare_geography_versions.R")),
   list(layer = "4-derived-products", why = "products that consume cohort + geography",
        scripts = c("load_obstetric_providers.R", "match_midwives_to_isochrones.R",

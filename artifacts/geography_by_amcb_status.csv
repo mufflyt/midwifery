@@ -1,6 +1,6 @@
 status,match_status,n,n_geocoded
-ACTIVE,matched,13080,13022
-ACTIVE,not_matched,2248,95
+ACTIVE,matched,13081,13022
+ACTIVE,not_matched,2247,94
 DEACTIVATED,matched,2,2
 DEACTIVATED,not_matched,20,0
 DECEASED,matched,169,169
