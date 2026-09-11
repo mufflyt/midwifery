@@ -40,6 +40,22 @@ source(file.path(root_dir, "R", "amcb_match_rules.R"))   # assert_nonempty_selec
 APPLY       <- identical(Sys.getenv("REBUILD_APPLY", "0"), "1")
 VERIFY_ONLY <- identical(Sys.getenv("REBUILD_VERIFY_ONLY", "0"), "1")
 
+# CI/fresh-checkout PRIVATE-OK skip, VERIFY_ONLY specifically. FROZEN_PATH is
+# gitignored, person-level, and legitimately absent on CI and a fresh
+# checkout -- same convention as D8/D9 in tests/ci_data_regression_guard.R.
+# Every other line below (digest::digest(file = FROZEN_PATH, ...) first)
+# would crash rather than report on its absence, so this must come before
+# any of them run. DRY RUN and APPLY are unchanged: a human running this by
+# hand on a machine that should have the file gets the real error, not a
+# silent skip.
+if (VERIFY_ONLY && !file.exists(FROZEN_PATH)) {
+  cat(sprintf(paste0(
+    "%s absent (PRIVATE-OK: person-level, gitignored; expected on CI and a\n",
+    "fresh checkout). Freshness cannot be verified without it -- skipping,\n",
+    "not failing.\nVERIFY: SKIP\n"), FROZEN_PATH))
+  quit(status = 0L)
+}
+
 # --- The declared order ------------------------------------------------------
 # Grouped by dependency layer. Within a layer order does not matter; between
 # layers it does. Derived from the read/write graph plus the chain established

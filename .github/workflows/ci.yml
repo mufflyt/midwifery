@@ -633,6 +633,27 @@ jobs:
       - name: FROZEN dependency completeness (T5)
         run: Rscript tests/test_frozen_dependency.R
 
+      # table1_midwives.csv went stale for a month (built 2026-08-14 against a
+      # roster of 11,920) while the linkage was regenerated multiple times,
+      # and nothing detected it -- a plain write_csv() carries no record of
+      # which linkage snapshot produced it. rebuild_frozen_dependents.R's own
+      # REBUILD_VERIFY_ONLY mode reads every artifact's .provenance.json
+      # sidecar and fails if its recorded input SHA-256 no longer matches the
+      # current upstream file, but nothing ran it in CI, so it caught nothing
+      # in practice. This wires it in.
+      #
+      # ubuntu-latest (this whole workflow) never has access to the
+      # gitignored, person-level amcb_npi_linkage_FROZEN.csv -- there is no
+      # self-hosted runner or secrets-based fetch for it anywhere in this
+      # repo's workflows. So this step reports SKIP on every CI run, the same
+      # as D8/D9 in ci_data_regression_guard.R (PRIVATE-OK). It is still
+      # worth running here: it documents the check as a standard part of the
+      # pipeline rather than a script someone has to remember exists, and the
+      # exit code is real (non-zero, gating) on any machine that DOES have
+      # the private data -- which is where the actual enforcement happens.
+      - name: FROZEN artifact freshness (provenance sidecars)
+        run: REBUILD_VERIFY_ONLY=1 Rscript rebuild_frozen_dependents.R
+
       # The three person-level linkage scripts, against regenerated fixtures.
       # They read the gitignored crosswalk, so without this they have no
       # coverage at all -- including the refusals, which are the half that
