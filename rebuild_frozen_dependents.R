@@ -108,6 +108,16 @@ REBUILD_ORDER <- list(
                    # table; a rebuild that skipped it would leave that table
                    # describing the previous cohort while reporting success.
                    "build_geography_by_amcb_status.R",
+                   # Added 2026-09-11, by the same completeness gate (T5), which
+                   # caught both in the pull request that introduced them. Both
+                   # read amcb_npi_linkage_FROZEN directly (the figure script also
+                   # reads geography_by_amcb_status.csv), so a rebuild that
+                   # skipped them would leave the exclusion-flow figure and its
+                   # person-level CSVs describing the previous cohort while
+                   # reporting success. Placed after build_geography_by_amcb_
+                   # status.R, which both depend on.
+                   "make_cohort_exclusion_flow_figure.R",
+                   "build_exclusion_flow_person_level.R",
                    # Added 2026-08-28, by the same completeness gate (T5) and for
                    # the same reason as the 2026-08-15/2026-08-10 additions below:
                    # this script appeared (PR #76, 2026-08-23) reading both
