@@ -78,5 +78,23 @@ if (!file.exists(iso_path)) {
       "T15 both classification columns are present in the joined artifact")
 }
 
+cat("\n-- population-weighted access join --\n")
+acc_path <- "artifacts/full_cohort_access_by_scope_of_practice.csv"
+if (!file.exists(acc_path)) {
+  cat(sprintf("  --   SKIP access-join checks: %s absent\n", acc_path))
+} else {
+  acc <- read_csv(acc_path, show_col_types = FALSE)
+  acc_src <- read_csv("artifacts/full_cohort_access_by_band_state.csv", show_col_types = FALSE)
+  us_in_acc_src <- unique(acc_src$state[acc_src$state %in% SOP$state])
+  chk(setequal(us_in_acc_src, unique(acc$state)),
+      "T16 every US jurisdiction present in full_cohort_access_by_band_state.csv survives the join")
+  chk(all(acc$state %in% SOP$state),
+      "T17 no non-US-jurisdiction row leaked into the access join")
+  chk(all(c("women_with_access", "women_total", "practice_authority_2016") %in% names(acc)),
+      "T18 access join carries both the population-weighted figures and the classification")
+  chk(all(acc$women_with_access <= acc$women_total),
+      "T19 women_with_access never exceeds women_total in any row")
+}
+
 if (fails) { cat(sprintf("\nFAILED (%d)\n", fails)); quit(status = 1L) }
 cat("\nPASS (0 failures)\n")

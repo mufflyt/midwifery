@@ -155,6 +155,12 @@ data/cd119/
 # Machine-specific env (paths, API keys) - never commit
 .Renviron
 
+# Census API pulls from patch_missing_state_census_data.R: reproducible via
+# the Census API (CENSUS_API_KEY in .Renviron), same treatment as every other
+# regenerable download in this file.
+data/census_patch_wy_female_population.csv
+data/census_patch_ct_tracts_2023.rds
+
 # rendered maps and dissolved unions: 14-20 MB binaries, rebuildable from
 # build_midwifery_isochrone_map.R + render_midwifery_map.R
 artifacts/maps/

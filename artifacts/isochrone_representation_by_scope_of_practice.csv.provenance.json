@@ -1,6 +1,6 @@
 {
   "artifact": "isochrone_representation_by_scope_of_practice.csv",
-  "written_utc": "2026-09-11 13:28:27.604 UTC",
+  "written_utc": "2026-09-11 13:52:18.084 UTC",
   "inputs": [
     {
       "path": "artifacts/state_scope_of_practice.csv",
@@ -11,11 +11,11 @@
       "sha256": "64bea51f883349570f60513a6afeef8b323a420345d91ae38cbef5c70bfb4a9a"
     }
   ],
-  "code_sha256": "61377710cc51e98ee3b597e9697c8c6593cbbcb19d8c4a3c044af822f8d0a548",
+  "code_sha256": "b5466eb3dfb1df9f7e865dc8334bdaad9c87a0ea3c18d8cb1d87212b56a32136",
   "code": [
     {
       "path": "join_scope_of_practice_to_geography.R",
-      "sha256": "68593c0b8cf3ac3dfbe0515ab8b523bbd65d4b524ca5b01491625a561407b200"
+      "sha256": "25448edb86318cf76c8a0bd4d366f938d88a47d78e8f7a06612bfce9bf9bf979"
     },
     {
       "path": "R/lib/artifact_provenance.R",
