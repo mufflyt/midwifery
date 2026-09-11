@@ -335,6 +335,32 @@ arrival teaches people to ignore gates. **Do not** fix this by editing
 `panel.provider_years` were computed against the 16,892, and moving one without
 the others makes a count against a denominator it was never taken from.
 
+**Update 2026-09-11 (issue #176):** `repin_frozen_cohort.R` step done. The
+crosswalk had drifted further in the meantime (`cohort_member` grew to
+**17,028** via `reconcile_ab_20260910T193000_issue172`, see PR #182), and the
+snapshot is now re-pinned to that, not to the 16,898 this entry originally
+targeted. Re-running `tests/test_cohort_vintage.R` shows three of the four
+layers now agree at 17,028: `V1` (manifest), `V2` (linkage table's cohort),
+`V3` (pinned geography snapshot). Only `V4` (composition table, i.e.
+`analytic_cohort.csv` / `composition_rucc_cat.csv`) still reads 16,892 —
+off by -136, not the -6 this entry was raised over.
+
+`V4` cannot be closed by re-running `R/07-cohort-composition.R` on this
+machine: it requires `artifacts/frozen_stage2/midwives_with_nppes.csv`, a
+pinned person-level snapshot that is absent here (only its `SHA256SUMS`
+sidecar remains, dated 2026-08-14) and was not found on any machine checked
+that night. **The same missing file also blocks a real fix for L11**
+(`analyze_linkage_selection_bias.R` needs it to regenerate
+`artifacts/linkage_selection_bounds.csv`, which is why L11 still fails on the
+pre-rescrape 22,309-vs-22,357 count — see `tests/ci_data_regression_guard.R`
+D6/D7) **and README Figures 3, 10 and 12**, all three of which read from the
+same composition rebuild. One missing input, three stated gaps; the fix for
+any one of L11 / D10-V4 / the README figures is the same fix for all three:
+locate or regenerate `frozen_stage2/midwives_with_nppes.csv` on a machine that
+still has it, then re-run `R/07-cohort-composition.R`,
+`analyze_linkage_selection_bias.R`, and the three figure scripts in that
+order.
+
 ## Closed
 
 ## D0 — Provenance determinism of the recorded name variant
