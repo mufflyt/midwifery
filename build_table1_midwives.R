@@ -42,6 +42,7 @@ REF_YEAR <- 2026   # "years since" are measured to this study year, not Sys.Date
 # only because the current artifacts satisfy an assumption it never enforced.
 source("R/lib/table1_bands.R")
 source("R/join_safety.R")   # assert_unique_keys(): conflict-safe dedup
+source("R/lib/artifact_provenance.R")   # write_with_provenance(): see below
 
 link_paths <- c(
   "artifacts/amcb_npi_linkage_FROZEN.csv",
@@ -887,7 +888,19 @@ t1 <- bind_rows(
   NULL
 )
 
-write_csv(t1, "artifacts/table1_midwives.csv", na = "")
+# THE DEFECT THIS PREVENTS (2026-09-11). This table went stale for a month
+# (built 2026-08-14, against a roster of 11,920) while the underlying
+# linkage was regenerated multiple times -- once when the roster itself
+# grew (22,309 -> 22,357), and again the same week the linkage's own
+# match definition was corrected. Nothing detected it: a plain write_csv()
+# carries no record of which linkage snapshot produced it, so a reader (or
+# a CI check) has no way to know this table describes a cohort that no
+# longer exists. write_with_provenance() records link_path's own SHA-256
+# alongside the output; rebuild_frozen_dependents.R's freshness check
+# (REBUILD_VERIFY_ONLY=1) reads that sidecar to catch exactly this drift
+# going forward, the same way it already does for every other declared
+# FROZEN consumer.
+write_with_provenance(t1, "artifacts/table1_midwives.csv", inputs = link_path, na = "")
 
 # Vintage stamp. The Healthgrades crawl is still running, so the ambiguity
 # count is a function of WHEN this was built. Recording the scrape vintage
