@@ -13,6 +13,20 @@ panel <- read_csv("midwife_panel.csv", col_types = cols(.default = "c")) %>%
 frozen <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv", show_col_types = FALSE,
                    guess_max = Inf)
 
+# npi_match_status no longer carries a distinct value for class-5 (surname-
+# component) matches -- match_amcb_to_npi.R now leaves them as ordinary
+# "matched"/"matched_nursing_taxonomy" and records the distinction only in
+# linkage_tier ("sensitivity_name_component"), which is also what
+# is_cohort_member() uses to exclude them from the cohort. Carving them out
+# here into their own disposition, rather than tabulating raw
+# npi_match_status, keeps the disposition breakdown matching what the cohort
+# computation actually does, and preserves the pre-existing
+# candidate_class5_held_out_of_cohort category other artifacts/tests expect.
+frozen <- frozen %>%
+  mutate(disposition = if_else(linkage_tier == "sensitivity_name_component",
+                               "candidate_class5_held_out_of_cohort",
+                               npi_match_status))
+
 manifest <- list(
   generated_utc = format(Sys.time(), tz = "UTC", usetz = TRUE),
   git_commit = tryCatch(system("git rev-parse HEAD", intern = TRUE), error = function(e) NA),
@@ -48,7 +62,7 @@ manifest <- list(
   # shows up as a new key rather than as a silent shortfall.
   linkage = list(
     total_rows = nrow(frozen),
-    dispositions = as.list(table(frozen$npi_match_status)),
+    dispositions = as.list(table(frozen$disposition)),
     resolution = as.list(table(frozen$npi_match_resolution)),
     ab_gain_records = 6041L, ab_gain_pp = 27.1,
     identity_flips = 81L, guard_quarantined_by_new_data = 79L))
@@ -75,8 +89,8 @@ cat(sprintf("  snapshot years : %s (missing: %s)\n",
 # quantity under the renamed vocabulary -- 78.4% of ACTIVE against the 78.0%
 # the README reports for primary, the difference being the frozen vintage.
 disp <- frozen %>%
-  count(status, npi_match_status, name = "n_disp") %>%
-  tidyr::pivot_wider(names_from = npi_match_status, values_from = n_disp,
+  count(status, disposition, name = "n_disp") %>%
+  tidyr::pivot_wider(names_from = disposition, values_from = n_disp,
                      values_fill = 0)
 
 stopifnot(sum(dplyr::select(disp, -status)) == nrow(frozen))
