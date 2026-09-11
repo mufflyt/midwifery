@@ -72,7 +72,16 @@ LAW_COHORTS <- c(
   # are the older freeze's own vintage and are not stale -- they describe
   # what was true then -- so 11920 stays registered rather than being
   # replaced.
-  "12129" = "ACTIVE, primary-linked (Table 1), 2026-09-10 reconciled vintage"
+  "12129" = "ACTIVE, primary-linked (Table 1), 2026-09-10 reconciled vintage",
+  # Added 2026-09-11, issue #176: the analytic cohort (is_cohort_member() in
+  # reconcile_linkage.R) against the reconciled 22,357-row roster, once BOTH
+  # artifacts/frozen_cohort/ (PR #182, repin_frozen_cohort.R) and
+  # artifacts/frozen_stage2/ (this session, repin_frozen_stage2.R -- see
+  # DEBT.md D10) were re-pinned to the reconcile_ab_20260910T193000_issue172
+  # vintage. 16892 above is the SAME analytic-cohort definition at the
+  # previous freeze and stays registered -- it describes what was true then,
+  # not a stale artifact awaiting a rebuild.
+  "17028" = "analytic cohort (frozen_cohort/analytic_cohort.csv), 2026-09-11 repin vintage"
 )
 
 # KNOWN, AWAITING A DECISION -- not forgiven.

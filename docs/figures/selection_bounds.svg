@@ -43,28 +43,28 @@
 <polyline points='443.77,212.37 443.77,46.34 ' style='stroke-width: 0.64; stroke: #C8D0D9; stroke-linecap: butt;' />
 <polyline points='484.79,212.37 484.79,46.34 ' style='stroke-width: 0.64; stroke: #C8D0D9; stroke-linecap: butt;' />
 <polyline points='525.81,212.37 525.81,46.34 ' style='stroke-width: 0.64; stroke: #C8D0D9; stroke-linecap: butt;' />
-<line x1='438.92' y1='212.37' x2='438.92' y2='46.34' style='stroke-width: 0.85; stroke: #1F6360; stroke-dasharray: 2.28,2.28; stroke-linecap: butt;' />
-<line x1='296.86' y1='142.74' x2='454.87' y2='142.74' style='stroke-width: 10.67; stroke: #1F6360; stroke-opacity: 0.28;' />
-<line x1='252.40' y1='169.52' x2='461.01' y2='169.52' style='stroke-width: 10.67; stroke: #1F6360; stroke-opacity: 0.28;' />
-<line x1='321.69' y1='196.30' x2='457.32' y2='196.30' style='stroke-width: 10.67; stroke: #1F6360; stroke-opacity: 0.28;' />
-<circle cx='296.86' cy='142.74' r='2.67' style='stroke-width: 0.64; stroke: #1F6360; fill: #1F6360;' />
-<circle cx='252.40' cy='169.52' r='2.67' style='stroke-width: 0.64; stroke: #1F6360; fill: #1F6360;' />
-<circle cx='321.69' cy='196.30' r='2.67' style='stroke-width: 0.64; stroke: #1F6360; fill: #1F6360;' />
-<circle cx='454.87' cy='142.74' r='2.67' style='stroke-width: 0.64; stroke: #1F6360; fill: #1F6360;' />
-<circle cx='461.01' cy='169.52' r='2.67' style='stroke-width: 0.64; stroke: #1F6360; fill: #1F6360;' />
-<circle cx='457.32' cy='196.30' r='2.67' style='stroke-width: 0.64; stroke: #1F6360; fill: #1F6360;' />
-<text x='292.21' y='145.59' text-anchor='end' style='font-size: 7.97px;fill: #1F6360; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>72.1</text>
-<text x='247.75' y='172.37' text-anchor='end' style='font-size: 7.97px;fill: #1F6360; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>66.7</text>
-<text x='317.05' y='199.15' text-anchor='end' style='font-size: 7.97px;fill: #1F6360; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>75.1</text>
-<text x='459.51' y='145.59' style='font-size: 7.97px;fill: #1F6360; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>91.4</text>
-<text x='465.66' y='172.37' style='font-size: 7.97px;fill: #1F6360; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>92.1</text>
-<text x='461.96' y='199.15' style='font-size: 7.97px;fill: #1F6360; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>91.7</text>
-<circle cx='438.92' cy='62.40' r='3.42' style='stroke-width: 0.64; stroke: #111820; fill: #111820;' />
-<circle cx='437.39' cy='89.18' r='3.42' style='stroke-width: 0.64; stroke: #111820; fill: #111820;' />
-<circle cx='426.24' cy='115.96' r='3.42' style='stroke-width: 0.64; stroke: #111820; fill: #111820;' />
-<text x='433.50' y='65.25' text-anchor='end' style='font-size: 7.97px;fill: #111820; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>89.4</text>
-<text x='431.98' y='92.03' text-anchor='end' style='font-size: 7.97px;fill: #111820; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>89.2</text>
-<text x='420.83' y='118.81' text-anchor='end' style='font-size: 7.97px;fill: #111820; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>87.9</text>
+<line x1='437.38' y1='212.37' x2='437.38' y2='46.34' style='stroke-width: 0.85; stroke: #1F6360; stroke-dasharray: 2.28,2.28; stroke-linecap: butt;' />
+<line x1='300.03' y1='142.74' x2='452.64' y2='142.74' style='stroke-width: 10.67; stroke: #1F6360; stroke-opacity: 0.28;' />
+<line x1='245.42' y1='169.52' x2='460.57' y2='169.52' style='stroke-width: 10.67; stroke: #1F6360; stroke-opacity: 0.28;' />
+<line x1='315.90' y1='196.30' x2='456.66' y2='196.30' style='stroke-width: 10.67; stroke: #1F6360; stroke-opacity: 0.28;' />
+<circle cx='300.03' cy='142.74' r='2.67' style='stroke-width: 0.64; stroke: #1F6360; fill: #1F6360;' />
+<circle cx='245.42' cy='169.52' r='2.67' style='stroke-width: 0.64; stroke: #1F6360; fill: #1F6360;' />
+<circle cx='315.90' cy='196.30' r='2.67' style='stroke-width: 0.64; stroke: #1F6360; fill: #1F6360;' />
+<circle cx='452.64' cy='142.74' r='2.67' style='stroke-width: 0.64; stroke: #1F6360; fill: #1F6360;' />
+<circle cx='460.57' cy='169.52' r='2.67' style='stroke-width: 0.64; stroke: #1F6360; fill: #1F6360;' />
+<circle cx='456.66' cy='196.30' r='2.67' style='stroke-width: 0.64; stroke: #1F6360; fill: #1F6360;' />
+<text x='295.39' y='145.59' text-anchor='end' style='font-size: 7.97px;fill: #1F6360; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>72.5</text>
+<text x='240.78' y='172.37' text-anchor='end' style='font-size: 7.97px;fill: #1F6360; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>65.8</text>
+<text x='311.25' y='199.15' text-anchor='end' style='font-size: 7.97px;fill: #1F6360; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>74.4</text>
+<text x='457.28' y='145.59' style='font-size: 7.97px;fill: #1F6360; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>91.1</text>
+<text x='465.21' y='172.37' style='font-size: 7.97px;fill: #1F6360; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>92.0</text>
+<text x='461.30' y='199.15' style='font-size: 7.97px;fill: #1F6360; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>91.6</text>
+<circle cx='437.38' cy='62.40' r='3.42' style='stroke-width: 0.64; stroke: #111820; fill: #111820;' />
+<circle cx='435.99' cy='89.18' r='3.42' style='stroke-width: 0.64; stroke: #111820; fill: #111820;' />
+<circle cx='421.82' cy='115.96' r='3.42' style='stroke-width: 0.64; stroke: #111820; fill: #111820;' />
+<text x='431.96' y='65.25' text-anchor='end' style='font-size: 7.97px;fill: #111820; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>89.2</text>
+<text x='430.58' y='92.03' text-anchor='end' style='font-size: 7.97px;fill: #111820; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>89.1</text>
+<text x='416.40' y='118.81' text-anchor='end' style='font-size: 7.97px;fill: #111820; font-family: "Arial";' textLength='15.47px' lengthAdjust='spacingAndGlyphs'>87.3</text>
 </g>
 <g clip-path='url(#cpMC4wMHw1NDcuMjB8MC4wMHwyNzMuNjA=)'>
 <text x='176.76' y='199.17' text-anchor='end' style='font-size: 8.00px;fill: #111820; font-family: "Arial";' textLength='117.45px' lengthAdjust='spacingAndGlyphs'>Bounds, ACTIVE certificants only</text>
@@ -83,12 +83,12 @@
 <text x='484.79' y='222.58' text-anchor='middle' style='font-size: 8.00px;fill: #111820; font-family: "Arial";' textLength='16.02px' lengthAdjust='spacingAndGlyphs'>95%</text>
 <text x='525.81' y='222.58' text-anchor='middle' style='font-size: 8.00px;fill: #111820; font-family: "Arial";' textLength='20.47px' lengthAdjust='spacingAndGlyphs'>100%</text>
 <text x='361.73' y='233.20' text-anchor='middle' style='font-size: 9.00px;fill: #5B6875; font-family: "Arial";' textLength='125.00px' lengthAdjust='spacingAndGlyphs'>Metropolitan share of the roster</text>
-<text x='4.98' y='27.05' style='font-size: 9.00px;fill: #5B6875; font-family: "Arial";' textLength='385.83px' lengthAdjust='spacingAndGlyphs'>Dashed line is the share observed among the 16,636 cohort members with an assignable county.</text>
+<text x='4.98' y='27.05' style='font-size: 9.00px;fill: #5B6875; font-family: "Arial";' textLength='385.83px' lengthAdjust='spacingAndGlyphs'>Dashed line is the share observed among the 16,494 cohort members with an assignable county.</text>
 <text x='4.98' y='39.47' style='font-size: 9.00px;fill: #5B6875; font-family: "Arial";' textLength='332.50px' lengthAdjust='spacingAndGlyphs'>Intervals are roster-wide and make no assumption about why geography is missing.</text>
 <text x='4.98' y='13.21' style='font-size: 11.50px; font-weight: bold;fill: #111820; font-family: "Arial";' textLength='378.14px' lengthAdjust='spacingAndGlyphs'>Metropolitan share: what the located cohort licenses about the roster</text>
-<text x='4.98' y='245.44' style='font-size: 7.50px;fill: #5B6875; font-family: "Arial";' textLength='341.28px' lengthAdjust='spacingAndGlyphs'>Discarding the 1,376 non-cohort certificants whose ZIP does resolve widens the interval without adding</text>
-<text x='4.98' y='256.24' style='font-size: 7.50px;fill: #5B6875; font-family: "Arial";' textLength='344.28px' lengthAdjust='spacingAndGlyphs'>caution; they are 87.9% metropolitan, below the cohort rather than above it. For the roster-wide share to</text>
-<text x='4.98' y='267.04' style='font-size: 7.50px;fill: #5B6875; font-family: "Arial";' textLength='302.23px' lengthAdjust='spacingAndGlyphs'>reach 75%, the unobserved would have to be 32.7% metropolitan -- a 56.7-point departure.</text>
+<text x='4.98' y='245.44' style='font-size: 7.50px;fill: #5B6875; font-family: "Arial";' textLength='341.28px' lengthAdjust='spacingAndGlyphs'>Discarding the 1,704 non-cohort certificants whose ZIP does resolve widens the interval without adding</text>
+<text x='4.98' y='256.24' style='font-size: 7.50px;fill: #5B6875; font-family: "Arial";' textLength='344.28px' lengthAdjust='spacingAndGlyphs'>caution; they are 87.3% metropolitan, below the cohort rather than above it. For the roster-wide share to</text>
+<text x='4.98' y='267.04' style='font-size: 7.50px;fill: #5B6875; font-family: "Arial";' textLength='302.23px' lengthAdjust='spacingAndGlyphs'>reach 75%, the unobserved would have to be 35.0% metropolitan -- a 54.2-point departure.</text>
 </g>
 </g>
 </svg>

@@ -379,6 +379,52 @@ downloads to design and test the drift check against, and this machine has
 neither. Whoever next has both should write it rather than hand-copy the file
 again.
 
+**Update 2026-09-11, later the same night: closed for the parts this repo
+tests.** The live `midwives.csv` roster (dated to the same 2026-09-02 rescrape
+as the crosswalk) was already on this machine; `fetch_npi_candidates.py` +
+`Rscript match_nppes.R` regenerated `midwives_with_nppes.csv` for real (17,224
+of 22,357 accepted, match rate 77.0%, `validate_pipeline_output: PASS`).
+`repin_frozen_stage2.R` was written and tested against this real data (not
+hypothetical) and used to pin it. In order: `R/05-stage-progression.R`
+rebuilt `analytic_cohort.csv` (17,028, cohort flow `17,224 -> 17,028` reconciles
+exactly); `R/07-cohort-composition.R` rebuilt `composition_rucc_cat.csv`;
+`tests/test_cohort_vintage.R` now reports **V1-V4 all agree at 17,028**;
+`analyze_linkage_selection_bias.R` rebuilt `linkage_selection_bounds.csv`
+against the current roster/cohort; `tests/ci_science_laws.R` is
+**PASS (0 failures)**, L11 included. `tests/ci_data_regression_guard.R` is
+also **PASS (0 failures)**, including `D9` (analytic cohort row count),
+which had never had data to check before tonight.
+
+One more thing this surfaced: `L1`'s `LAW_COHORTS` registry did not yet
+recognize 17,028 as a valid cohort size (`stage_progression_like_for_like.csv`
+declaring it read as an unregistered cohort, correctly -- see that law's own
+"decision, not a heuristic" reasoning). Added deliberately, with 16,892 kept
+registered rather than replaced, same precedent as 11,920/12,129 above.
+
+README Figures 3, 10 and 12 (and the "Where the X go" table, and the
+Layer-1-identity ASCII diagram) were regenerated and their prose citations
+updated to the new real numbers, cross-checked against the regenerated CSVs
+rather than hand-derived. One number was deliberately NOT reproduced: Figure
+3's caption used to cite "519 certified in 2025-2026" as a specific count
+within the unresolved group. No script or artifact in this repo computes that
+number -- it was apparently a one-off manual count -- so rather than fabricate
+a new one, the caption now states the fact qualitatively and drops the stale
+figure. Whoever wants it back should compute it properly (roster certification
+date vs. NPPES panel coverage window) and give it a script, not another manual
+count.
+
+**Still open, deliberately not done here:** the provider panel
+(`panel.cohort_n_at_panel_build`, `panel.observed`, `panel.provider_years` in
+`manuscript/R/build_stats_catalog.R`) is a separate, heavier rebuild against
+`midwife_panel.csv` (493 MB) plus the persistence analysis in
+`docs/RESULTS_geographic_persistence.md`, and is not required by anything
+`tests/test_cohort_vintage.R` checks. Not touched -- moving one of
+`cohort_n_at_panel_build`/`observed`/`provider_years` without the others makes
+a count against a denominator it was never taken from (see the warning above,
+still correct). `tests/test_cohort_vintage.R` remains deliberately unwired
+from `.github/workflows/ci.yml` for the same reason it always was: it now
+passes here, but CI has no person-level data to run it against at all.
+
 ## Closed
 
 ## D0 — Provenance determinism of the recorded name variant

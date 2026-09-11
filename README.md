@@ -58,12 +58,12 @@ and the [cohort flow](docs/figures/cohort_flow.png).*
 
 ### 3. Cohort flow, roster to rurality
 ![AMCB roster to analytic cohort to RUCC stratum](docs/figures/cohort_flow.png)
-*Figure 3: 22,309 certificants to the analytic cohort and its rurality strata.
-The **5,411 unresolved** are four different things wearing one label: records
+*Figure 3: 22,357 certificants to the analytic cohort and its rurality strata.
+The **5,329 unresolved** are four different things wearing one label: records
 tied on name evidence, records with no candidate at all, records held out by the
-class-5 guard — and **519 certified in 2025–2026**, outside the 2007–2025 NPPES
-panel window entirely, which are not linkage failures and cannot be recovered by
-any matching rule.*
+class-5 guard, and a further group certified in 2025–2026, outside the
+2007–2025 NPPES panel window entirely, which are not linkage failures and
+cannot be recovered by any matching rule.*
 
 ### 4. Board verification, retracted: 11,355 claimed, 374 observed
 ![Board verification claimed against board verification observed](docs/figures/bon_verification_retraction.png)
@@ -106,10 +106,10 @@ locations rather than of access. Patients cross county lines.*
 
 ### 10. How wrong could the roster-wide metropolitan share be?
 ![Metropolitan share of the roster: observed, sensitivity estimates, and worst-case bounds](docs/figures/selection_bounds.png)
-*Figure 10: The **89.4%** metropolitan share observed in the located cohort is
-not a property of the 22,309-certificant roster, because linkage is selected on
+*Figure 10: The **89.2%** metropolitan share observed in the located cohort is
+not a property of the 22,357-certificant roster, because linkage is selected on
 certification status. Making no assumption about the missingness mechanism at
-all, the roster-wide share is bounded between **66.7% and 92.1%** — wide by
+all, the roster-wide share is bounded between **65.8% and 92.0%** — wide by
 construction, since the width is an identity equal to the unobserved fraction.
 Certificants outside the cohort whose practice ZIP nonetheless resolves are
 themselves *less* metropolitan than the cohort, not more, which is evidence
@@ -130,14 +130,14 @@ the same quantity. See
 
 ### 12. What each stratum has, and what it lacks
 ![Linkage strata as a ladder of properties](docs/figures/linkage_strata_upset.png)
-*Figure 12: The seven linkage strata partition all 22,309 certificants exactly,
+*Figure 12: The seven linkage strata partition all 22,357 certificants exactly,
 and each loses one more of the five properties a record must accumulate to
-reach the analytic cohort. The sets are strictly nested — 20,201 with a
-candidate, 17,149 single at the best class, 17,054 surviving the one-to-one
-constraint, 16,898 in the cohort, 14,764 with midwifery taxonomy confirmed — so
+reach the analytic cohort. The sets are strictly nested — 20,270 with a
+candidate, 17,310 single at the best class, 17,189 surviving the one-to-one
+constraint, 17,028 in the cohort, 14,990 with midwifery taxonomy confirmed — so
 the dot matrix is a staircase rather than a lattice. **Tied names and
 unruled-out component share a pattern**: they are indistinguishable on these
-five properties, which is why reporting the 5,411 unresolved as one number
+five properties, which is why reporting the 5,329 unresolved as one number
 hides four different causes. Contested NPIs resolve uniquely and are pruned
 only by the one-to-one constraint, so they sit above tied names. Built by
 [`make_linkage_upset_figure.R`](make_linkage_upset_figure.R), ported from the
@@ -442,13 +442,13 @@ evidence tier, never promoted into the primary cohort.
 ```mermaid
 flowchart LR
   S["Resolved candidate"] --> T1{"Fuzzy surname?"}
-  T1 -->|yes| F["sensitivity_fuzzy - 328"]
+  T1 -->|yes| F["sensitivity_fuzzy - 249"]
   T1 -->|no| T2{"Midwifery taxonomy ever recorded?"}
-  T2 -->|yes| P["primary_midwifery - 14,677"]
-  T2 -->|no| N["sensitivity_nursing - 1,898"]
+  T2 -->|yes| P["primary_midwifery - 14,959"]
+  T2 -->|no| N["sensitivity_nursing - 1,820"]
 ```
 
-### Where the 22,309 go
+### Where the 22,357 go
 
 Linkage, not geocoding, is the binding constraint. Every record that fails is
 classified by *why*, and the two kinds of missingness are kept apart: no
@@ -456,15 +456,15 @@ plausible NPI exists, versus plausible NPIs exist but identity is ambiguous.
 
 | Stage | n | % of roster |
 |---|---:|---:|
-| AMCB roster | 22,309 | 100.0 |
-| **Primary linkage** | **14,677** | **65.7** |
-| + nursing tier | 16,575 | 74.2 |
-| + fuzzy tier | 16,898 | 75.7 |
-| Quarantined | 3,147 | 13.9 |
-| No candidate at all | 2,108 | 10.4 |
-| **Primary + county** | **14,615** | **65.6** |
+| AMCB roster | 22,357 | 100.0 |
+| **Primary linkage** | **14,959** | **66.9** |
+| + nursing tier | 16,779 | 75.1 |
+| + fuzzy tier | 17,028 | 76.2 |
+| Quarantined | 3,089 | 13.8 |
+| No candidate at all | 2,087 | 9.3 |
+| **Primary + county** | **14,891** | **66.6** |
 
-All 3,147 quarantined records have candidates; all 2,108 unmatched records have
+All 3,089 quarantined records have candidates; all 2,087 unmatched records have
 none. That distinction is preserved in the artifact as `has_candidate`.
 
 ### Geography, once identity is settled
@@ -1589,7 +1589,7 @@ number.
         ┌─────────────────────────────────────────────────────────────┐
         │  LAYER 1 — IDENTITY          who is this person?            │
         └─────────────────────────────────────────────────────────────┘
-   AMCB roster 22,309                NPPES 2007-2025  443,623 NPIs
+   AMCB roster 22,357                NPPES 2007-2025  443,623 NPIs
           │                                    │
           └──────────────┬─────────────────────┘
                          ▼
