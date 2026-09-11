@@ -1,6 +1,6 @@
 {
-  "artifact": "stage_progression_like_for_like.csv",
-  "written_utc": "2026-09-11 21:57:41.835 UTC",
+  "artifact": "cohort_flow_17224_to_17028.csv",
+  "written_utc": "2026-09-11 21:57:40.078 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",

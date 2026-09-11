@@ -1,6 +1,6 @@
 {
   "artifact": "analytic_cohort.csv",
-  "written_utc": "2026-08-24 11:49:46 UTC",
+  "written_utc": "2026-09-11 21:57:39.658 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",
@@ -12,7 +12,34 @@
     },
     {
       "path": "artifacts/frozen_stage2/midwives_with_nppes.csv",
-      "sha256": "93dc2e8bc2a2a066f255b84a351050a3594a253e4258575e0fde3e344ec5ff08"
+      "sha256": "5336b5f51917d8392e854f593233abde8732f866b9a9f8d743a460506f712adf"
+    }
+  ],
+  "code_sha256": "57d639c4af2038e55fa7bfb938980f737d12f7a836241f309b5cccf96be4aa9e",
+  "code": [
+    {
+      "path": "R/05-stage-progression.R",
+      "sha256": "e2880af2805372d618c9ce87d452ef7fd85f6a34a598cb11a3ae2d4513eebb24"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/common_helpers.R",
+      "sha256": "55c6b894798e2740f538b1262391e58e8fe9bea84f072b80708e59aea3197067"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/lib/table1_bands.R",
+      "sha256": "71ec6199151cd15ffc4454fe5973375f90324204d7015139dcea047ab65a9c62"
+    },
+    {
+      "path": "R/lib/zip_county_crosswalk.R",
+      "sha256": "8b0fb8f7c9145c81ceda865e3ef0820ca3e832d460cf967ff40eb4c189899264"
     }
   ]
 }
