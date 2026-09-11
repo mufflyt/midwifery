@@ -1,0 +1,16 @@
+certification_number,last_name,first_name,middle_name,status,match_status,name_evidence_class,nppes_state,geocoded,acog_mapped,exclusion_stage
+CNM05920,Anciano,Christina,Joy,ACTIVE,primary,1,GU,TRUE,FALSE,no_acog_district
+12100,Bannis,Amie,F.,ACTIVE,primary,1,VI,TRUE,FALSE,no_acog_district
+CNM04626,Cody,Jin,Han,ACTIVE,primary,1,MP,TRUE,FALSE,no_acog_district
+CNM07126,Cooper,Kathryn,May,ACTIVE,primary,1,GU,TRUE,FALSE,no_acog_district
+CNM3030,Crawford,Adrienne,Alicia,ACTIVE,primary,2,VI,TRUE,FALSE,no_acog_district
+CNM06264,Dawson,Brittany,Grace Victoria,ACTIVE,primary,1,VI,TRUE,FALSE,no_acog_district
+7176,Distor,Cathleen Ann,NA,ACTIVE,primary,1,GU,TRUE,FALSE,no_acog_district
+CNM2876,Hemphill,Annette,Marie,ACTIVE,primary,2,GU,TRUE,FALSE,no_acog_district
+CNM05825,Losinio,Lean Carlo,Mendoza,ACTIVE,primary,3,GU,TRUE,FALSE,no_acog_district
+CNM3245,Martinez,Jeanelle,Marie Flores,ACTIVE,primary,2,GU,TRUE,FALSE,no_acog_district
+CNM06326,McNealey,Erica,NA,ACTIVE,primary,2,VI,TRUE,FALSE,no_acog_district
+3796,O'Brien,Veronica M,NA,ACTIVE,primary,1,VI,TRUE,FALSE,no_acog_district
+CNM07637,Quitugua,Peachy,Josifynn,ACTIVE,primary,1,MP,TRUE,FALSE,no_acog_district
+CNM0237,Tackett,Sheri,L.,ACTIVE,primary,1,GU,TRUE,FALSE,no_acog_district
+12034,Thomas,Jeanine,Petronia,ACTIVE,primary,2,VI,TRUE,FALSE,no_acog_district

@@ -1,0 +1,54 @@
+certification_number,last_name,first_name,middle_name,status,match_status,name_evidence_class,nppes_state,geocoded,acog_mapped,exclusion_stage
+CNM04181,Amundson,Courtney,Michelle,ACTIVE,primary,1,AK,FALSE,FALSE,no_geocodable_address
+CNM1517,Andry,Shandra,NA,ACTIVE,primary,2,KY,FALSE,FALSE,no_geocodable_address
+CNM2615,Atkinson,Stacey,NA,ACTIVE,primary,2,KY,FALSE,FALSE,no_geocodable_address
+CNM1113,Balcazar de Martinez,Leslie,Lyn,ACTIVE,primary,5,AP,FALSE,FALSE,no_geocodable_address
+11509,Bennett,Laura,Ann,ACTIVE,primary,1,AP,FALSE,FALSE,no_geocodable_address
+7118,Bush,Shirley A. Mattis,NA,ACTIVE,primary,1,NY,FALSE,FALSE,no_geocodable_address
+CNM1115,Centuolo,Rhonda,NA,ACTIVE,primary,2,KY,FALSE,FALSE,no_geocodable_address
+9896,Chew,Tracy,Ann,ACTIVE,primary,1,KY,FALSE,FALSE,no_geocodable_address
+CNM05529,Christensen,Clarissa,Lynn,ACTIVE,primary,1,AK,FALSE,FALSE,no_geocodable_address
+5907,Crossett,Leigh,NA,ACTIVE,primary,2,KY,FALSE,FALSE,no_geocodable_address
+CNM04510,Cushing,Amanda,NA,ACTIVE,primary,2,AK,FALSE,FALSE,no_geocodable_address
+CNM05263,Del Valle,Julia,Elizabeth,ACTIVE,primary,1,AE,FALSE,FALSE,no_geocodable_address
+12372,Dixon,Kerry,A.,ACTIVE,primary,1,AE,FALSE,FALSE,no_geocodable_address
+9957,Dynes,Michelle Marie,NA,ACTIVE,primary,1,AE,FALSE,FALSE,no_geocodable_address
+CNM2378,Evans,Iris,K.,ACTIVE,primary,1,KY,FALSE,FALSE,no_geocodable_address
+CNM1065,Fark,Mariann,Richards,ACTIVE,primary,1,KY,FALSE,FALSE,no_geocodable_address
+12126,Forristal,Amanda,R.,ACTIVE,primary,1,KY,FALSE,FALSE,no_geocodable_address
+CNM0766,Foura,Candace,Renee,ACTIVE,primary,2,AP,FALSE,FALSE,no_geocodable_address
+CNM04410,Hale,Alyssa,Jeanette,ACTIVE,primary,1,AP,FALSE,FALSE,no_geocodable_address
+CNM1402,Hannigan,Brittany,Jessica,ACTIVE,primary,2,AE,FALSE,FALSE,no_geocodable_address
+CNM04295,Hardy,Huyen,Thi,ACTIVE,primary,2,AE,FALSE,FALSE,no_geocodable_address
+CNM0975,Hatter,Melissa,NA,ACTIVE,primary,2,AP,FALSE,FALSE,no_geocodable_address
+10240,Hernandez,Heidi S.,NA,ACTIVE,primary,1,PR,FALSE,FALSE,no_geocodable_address
+CNM10126,Horner,Allison,Margaret,ACTIVE,primary,1,AK,FALSE,FALSE,no_geocodable_address
+CNM10032,Huner,Rebecca,NA,ACTIVE,primary,2,MONTSERRADO,FALSE,FALSE,no_geocodable_address
+CNM2257,Keiper,Erin,NA,ACTIVE,primary,2,AK,FALSE,FALSE,no_geocodable_address
+10722,Kimble-Haas,Sheila Lynne,NA,ACTIVE,primary,1,AK,FALSE,FALSE,no_geocodable_address
+CNM04325,King,Megan,Lynn,ACTIVE,primary,1,AP,FALSE,FALSE,no_geocodable_address
+7329,Kouadio,Theresa Marie,NA,ACTIVE,primary,2,AK,FALSE,FALSE,no_geocodable_address
+7840,Kwak,Eunju Lee,NA,ACTIVE,primary,1,AP,FALSE,FALSE,no_geocodable_address
+7755,Longnecker,Ann Renee,NA,ACTIVE,primary,1,AS,FALSE,FALSE,no_geocodable_address
+CNM04403,May,Heidi,Anna,ACTIVE,primary,1,AK,FALSE,FALSE,no_geocodable_address
+CNM07191,McAdams,Chaia,Elyse,ACTIVE,primary,2,AP,FALSE,FALSE,no_geocodable_address
+CNM06227,McMahon,Christine,K,ACTIVE,primary,2,AE,FALSE,FALSE,no_geocodable_address
+CNM3361,Miller,Maggie,Louise,ACTIVE,primary,1,AE,FALSE,FALSE,no_geocodable_address
+CNM06373,Monteiro-Walker,Virginia,NA,ACTIVE,primary,2,AE,FALSE,FALSE,no_geocodable_address
+CNM07541,Montgomery,Dionne,LaShawn,ACTIVE,primary,1,AK,FALSE,FALSE,no_geocodable_address
+CNM1708,Moon,Julie,Ann,ACTIVE,primary,2,AK,FALSE,FALSE,no_geocodable_address
+7636,Owen,Brenda Leilani,NA,ACTIVE,primary,1,AE,FALSE,FALSE,no_geocodable_address
+10940,Papszycki,Amy Michelle,NA,ACTIVE,primary,1,KY,FALSE,FALSE,no_geocodable_address
+CNM05879,Peterson,Amanda,Mae,ACTIVE,primary,1,KY,FALSE,FALSE,no_geocodable_address
+CNM07151,Radcliffe,Lorraine,NA,ACTIVE,primary,2,AE,FALSE,FALSE,no_geocodable_address
+12310,Rader,Margaret,R.,ACTIVE,primary,2,AK,FALSE,FALSE,no_geocodable_address
+11065,Rivera,Camille,NA,ACTIVE,primary,2,PR,FALSE,FALSE,no_geocodable_address
+CNM06479,Ryals,Teri,Renee,ACTIVE,primary,1,AP,FALSE,FALSE,no_geocodable_address
+CNM1355,Sabin,Christina,Sue,ACTIVE,primary,1,KY,FALSE,FALSE,no_geocodable_address
+CNM09465,Severs,Caitlin,NA,ACTIVE,primary,2,AE,FALSE,FALSE,no_geocodable_address
+CNM05426,Steimel-Langley,Elizabeth,NA,ACTIVE,primary,2,AK,FALSE,FALSE,no_geocodable_address
+CNM1107,Sublett,Kristen,McClure,ACTIVE,primary,1,AK,FALSE,FALSE,no_geocodable_address
+CNM1466,Tyson,Laurey,Katherine,ACTIVE,primary,1,KY,FALSE,FALSE,no_geocodable_address
+CNM06429,Uno,Keriann,Akemi,ACTIVE,primary,2,AK,FALSE,FALSE,no_geocodable_address
+CNM03932,Wagner,Michaela,Joy McCulloch,ACTIVE,primary,2,AE,FALSE,FALSE,no_geocodable_address
+10351,Williams,Tammy Marie,NA,ACTIVE,primary,1,KY,FALSE,FALSE,no_geocodable_address

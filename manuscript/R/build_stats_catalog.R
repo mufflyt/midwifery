@@ -165,86 +165,132 @@ mw_build_catalog <- function(root = ".") {
     stopifnot(sum(sums) == tot)
 
     # --- Exclusion flow: AMCB roster -> active -> NPI-matched -> geocodable --
-    # For make_cohort_exclusion_flow_figure.R. "Active" is defined by AMCB's
-    # own certification status field ONLY: status == "ACTIVE". Every other
-    # status (LAPSED, RETIRED, DECEASED, EMERITUS, DEACTIVATED, REVOKED,
-    # SURRENDERED, SUSPENDED) is folded into "deceased or inactive" -- ACTIVE
-    # is the only status meaning "currently certified." That folds EMERITUS in
-    # with the excluded, which is a judgement call worth a reviewer's eye; the
-    # itemised per-status counts below are kept so it can be revisited without
-    # re-deriving them.
-    inactive_statuses <- setdiff(lc$status, "ACTIVE")
-    inactive_n_by_status <- setNames(lc$n[match(inactive_statuses, lc$status)],
-                                     tolower(inactive_statuses))
-    active_row <- lc[lc$status == "ACTIVE", ]
-    active_matched_n <- active_row$matched + active_row$matched_nursing_taxonomy
-    active_unmatched_n <- active_row$n - active_matched_n
+    # For make_cohort_exclusion_flow_figure.R. Computed entirely from `frozen`
+    # (the person-level linkage), NOT from `lc` above: `lc` is pivoted on
+    # npi_match_status, which cannot distinguish a clean exact-name match from
+    # a fuzzy-surname match or a nursing-taxonomy-only match -- exactly the
+    # distinction this section needs. `frozen$match_status` (added by
+    # reconcile_linkage.R) makes that distinction, so this whole block
+    # requires `frozen`, not `lc`, and is SKIPped (not silently wrong) when
+    # `frozen` is absent.
+    #
+    # "Active" is defined by AMCB's own certification status field ONLY:
+    # status == "ACTIVE". Every other status (LAPSED, RETIRED, DECEASED,
+    # EMERITUS, DEACTIVATED, REVOKED, SURRENDERED, SUSPENDED) is folded into
+    # "deceased or inactive" -- ACTIVE is the only status meaning "currently
+    # certified." That folds EMERITUS in with the excluded, which is a
+    # judgement call worth a reviewer's eye; the itemised per-status counts
+    # below are kept so it can be revisited without re-deriving them.
+    #
+    # "Matched" means match_status == "primary" -- the reconciliation's own
+    # clean definition (see reconcile_linkage.R's header comment), which
+    # deliberately excludes fuzzy-surname matches (weak name-identity
+    # evidence: a Levenshtein surname match with no city/state/phone/DOB to
+    # corroborate it) and nursing-taxonomy-only matches (the NPI's taxonomy
+    # code suggests nursing, not confirmed midwifery) from the "matched"
+    # count. Both are real candidate NPIs, just weaker claims than an exact
+    # name match -- they're itemised into "No NPI match" below rather than
+    # silently counted as confirmed identity.
+    if (!is.null(frozen)) {
+      tot_f <- nrow(frozen)
+      status_n <- table(frozen$status)
+      inactive_statuses <- setdiff(names(status_n), "ACTIVE")
+      inactive_n_by_status <- setNames(as.integer(status_n[inactive_statuses]),
+                                       tolower(inactive_statuses))
+      active_rows <- frozen[frozen$status == "ACTIVE", ]
+      active_n_f <- nrow(active_rows)
+      active_matched_n <- sum(active_rows$match_status == "primary", na.rm = TRUE)
+      active_unmatched_n <- active_n_f - active_matched_n
 
-    # A disposition absent from active_row is zero people currently in that
-    # bucket, not missing data -- disp_cols above is exhaustive over whatever
-    # values npi_match_status actually holds, so a category that has been
-    # fully resolved away (e.g. class-5 hold-outs reclassified in a refresh)
-    # legitimately drops out of the table entirely. `active_row$missing_col`
-    # on a data.frame returns NULL and c() silently drops NULL elements,
-    # which would desync this vector's names from its values -- so pick0()
-    # names the zero explicitly instead of letting c() erase the slot.
-    pick0 <- function(cn) if (cn %in% names(active_row)) active_row[[cn]] else 0
+      # Every non-"primary" match_status value among ACTIVE, itemised --
+      # exhaustive over table(), so a disposition with zero current members
+      # legitimately reports 0 rather than being silently absent.
+      reason_labels <- c(
+        unmatched                       = "Unmatched, no candidate found",
+        ambiguous_tied_names            = "Tied names, evidence could not separate",
+        ambiguous_contested_npi         = "Contested NPI, claimed by 2+ certificants",
+        ambiguous_unruled_out_component = "Unruled-out component",
+        sensitivity_fuzzy               = "Fuzzy surname match (weak identity evidence)",
+        sensitivity_nursing_taxonomy    = "Nursing-only taxonomy (not confirmed midwifery)"
+      )
+      reason_tab <- table(factor(
+        active_rows$match_status[active_rows$match_status != "primary"],
+        levels = names(reason_labels)))
+      active_unmatched_by_reason <- setNames(as.integer(reason_tab), names(reason_labels))
 
-    # "No NPI match" is three structurally different failure modes plus one
-    # deliberate hold-out, not one undifferentiated bucket -- see the
-    # `cat_$linkage` comment above (tied/contested/component) for what each
-    # one means. Itemised the same way inactive_by_status is, so a reviewer
-    # asking "what does ambiguous mean here" has an answer on the figure
-    # rather than needing to read this file.
-    active_unmatched_by_reason <- c(
-      unmatched  = pick0("unmatched"),
-      tied       = pick0("ambiguous_tied_names"),
-      contested  = pick0("ambiguous_contested_npi"),
-      component  = pick0("ambiguous_unruled_out_component"),
-      held_out   = pick0("candidate_class5_held_out_of_cohort")
-    )
+      cat_$exclusion <- list(
+        roster_n           = tot_f,
+        active_n           = active_n_f,
+        active_pct         = 100 * active_n_f / tot_f,
+        inactive_n         = tot_f - active_n_f,
+        inactive_pct       = 100 * (tot_f - active_n_f) / tot_f,
+        inactive_by_status = inactive_n_by_status,
+        active_matched_n   = active_matched_n,
+        active_matched_pct = 100 * active_matched_n / active_n_f,
+        active_unmatched_n = active_unmatched_n,
+        active_unmatched_by_reason = active_unmatched_by_reason
+      )
+      stopifnot(
+        cat_$exclusion$active_n + cat_$exclusion$inactive_n == cat_$exclusion$roster_n,
+        cat_$exclusion$active_matched_n + cat_$exclusion$active_unmatched_n ==
+          cat_$exclusion$active_n,
+        sum(active_unmatched_by_reason) == active_unmatched_n
+      )
 
-    cat_$exclusion <- list(
-      roster_n           = tot,
-      active_n           = active_row$n,
-      active_pct         = 100 * active_row$n / tot,
-      inactive_n         = tot - active_row$n,
-      inactive_pct       = 100 * (tot - active_row$n) / tot,
-      inactive_by_status = inactive_n_by_status,
-      active_matched_n   = active_matched_n,
-      active_matched_pct = 100 * active_matched_n / active_row$n,
-      active_unmatched_n = active_unmatched_n,
-      active_unmatched_by_reason = active_unmatched_by_reason
-    )
-    # Roster reconciles into active + inactive, and active reconciles into
-    # matched + unmatched, by construction from one row of `lc` -- but the
-    # arithmetic is asserted anyway, in this file's own style, rather than
-    # trusted because it looks right.
-    stopifnot(
-      cat_$exclusion$active_n + cat_$exclusion$inactive_n == cat_$exclusion$roster_n,
-      cat_$exclusion$active_matched_n + cat_$exclusion$active_unmatched_n ==
-        cat_$exclusion$active_n,
-      sum(active_unmatched_by_reason) == active_unmatched_n
-    )
+      # Match evidence tiers among ACTIVE, PRIMARY-matched midwives only, from
+      # the frozen linkage's ordered name_evidence_class (1-5; see the tier
+      # comment above s5 in match_amcb_to_npi.R for the exact definitions).
+      # Restricting to match_status == "primary" here (not the looser
+      # npi_match_status-based bucket) keeps this consistent with
+      # active_matched_n above -- otherwise the tier counts would sum to a
+      # different total than the box they're itemising.
+      primary_rows <- active_rows[active_rows$match_status == "primary", ]
+      tier_n <- table(factor(primary_rows$name_evidence_class, levels = 1:5))
+      active_matched_by_tier <- setNames(
+        as.integer(tier_n),
+        c("exact_name_plus_middle", "exact_name_no_middle_info",
+          "exact_last_first_initial", "fuzzy_last_exact_first",
+          "surname_component_exact_first"))
+      cat_$exclusion$active_matched_by_tier <- active_matched_by_tier
+      stopifnot(sum(active_matched_by_tier) == active_matched_n)
 
-    # Stage 4 (geocodable address) needs a per-person join between AMCB status
-    # and geocoding outcome that isn't a committed artifact yet -- see
-    # build_geography_by_amcb_status.R. Gitignored/absent is a SKIP here, same
-    # as the frozen linkage above, not an error: the figure script itself
-    # requires this key (via mw_safe_stat) and fails loudly if it's missing,
-    # since a silently-incomplete exclusion chart misrepresents who was
-    # dropped and why.
-    gs <- rd(file.path(MW_ART, "geography_by_amcb_status.csv"))
-    if (!is.null(gs)) {
-      g_active <- gs[gs$status == "ACTIVE" & gs$match_status == "matched", ]
-      if (nrow(g_active) == 1L) {
-        cat_$exclusion$geocoded_n <- g_active$n_geocoded
-        cat_$exclusion$not_geocoded_n <- g_active$n - g_active$n_geocoded
-        cat_$exclusion$final_cohort_n <- g_active$n_geocoded
-        stopifnot(
-          cat_$exclusion$geocoded_n + cat_$exclusion$not_geocoded_n ==
-            cat_$exclusion$active_matched_n
-        )
+      # Stage 4 (geocodable address) and stage 5 (ACOG-district assignable)
+      # need a per-person join between AMCB status/match outcome and
+      # geocoding outcome that isn't itself a committed artifact -- see
+      # build_geography_by_amcb_status.R. Gitignored/absent is a SKIP here,
+      # not an error: the figure script itself requires these keys (via
+      # mw_safe_stat) and fails loudly if missing, since a silently-
+      # incomplete exclusion chart misrepresents who was dropped and why.
+      gs <- rd(file.path(MW_ART, "geography_by_amcb_status.csv"))
+      if (!is.null(gs)) {
+        g_active <- gs[gs$status == "ACTIVE" & gs$match_status == "matched", ]
+        if (nrow(g_active) == 1L) {
+          cat_$exclusion$geocoded_n <- g_active$n_geocoded
+          cat_$exclusion$not_geocoded_n <- g_active$n - g_active$n_geocoded
+          stopifnot(
+            cat_$exclusion$geocoded_n + cat_$exclusion$not_geocoded_n ==
+              cat_$exclusion$active_matched_n
+          )
+          # Overseas-military / US-territory addresses (no ACOG district) --
+          # a real, geocodable location that ACOG's district system has no
+          # bucket for. Computed against THIS box's own population
+          # (geocoded_n), not table1.n's narrower primary-linked-only
+          # population -- see table1.acog_excluded_n's own comment for why
+          # those two must never share a denominator.
+          if ("n_acog_unmapped" %in% names(g_active)) {
+            cat_$exclusion$acog_excluded_n <- g_active$n_acog_unmapped
+            cat_$exclusion$acog_excluded_pct <-
+              100 * g_active$n_acog_unmapped / cat_$exclusion$geocoded_n
+            cat_$exclusion$final_cohort_n <-
+              cat_$exclusion$geocoded_n - g_active$n_acog_unmapped
+            stopifnot(
+              cat_$exclusion$final_cohort_n + cat_$exclusion$acog_excluded_n ==
+                cat_$exclusion$geocoded_n
+            )
+          } else {
+            cat_$exclusion$final_cohort_n <- cat_$exclusion$geocoded_n
+          }
+        }
       }
     }
   }
