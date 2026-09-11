@@ -1,6 +1,6 @@
 tier,label,n,pct_of_matched
-exact_name_plus_middle,"Exact name, middle corroborates",7169,58.7
-exact_name_no_middle_info,"Exact name, no middle to compare",4882,40
-exact_last_first_initial,Exact last name + first initial,78,0.6
+exact_name_plus_middle,"Exact name, middle corroborates",7190,58.7
+exact_name_no_middle_info,"Exact name, no middle to compare",4902,40
+exact_last_first_initial,Exact last name + first initial,79,0.6
 fuzzy_last_exact_first,"Fuzzy last name, exact first",0,0
-surname_component_exact_first,"Surname component, exact first",84,0.7
+surname_component_exact_first,"Surname component, exact first",83,0.7

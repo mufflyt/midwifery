@@ -48,6 +48,26 @@ out <- joined %>%
   transmute(
     certification_number, last_name, first_name, middle_name, status,
     match_status, name_evidence_class, nppes_state, geocoded, acog_mapped,
+    # For sensitivity_fuzzy / sensitivity_nursing_taxonomy the matcher DID
+    # find and keep a candidate NPI -- it's just held out of the "primary"
+    # definition, not demoted to NA the way a lost class-5 candidate is. So
+    # these five columns show exactly what the accepted match would be if
+    # that sensitivity tier were promoted to primary.
+    would_be_npi = npi,
+    would_be_matched_last = nppes_matched_last,
+    would_be_matched_first = nppes_matched_first,
+    would_be_city = nppes_city,
+    would_be_state = nppes_state,
+    npi_tax_class,
+    # For ambiguous_tied_names / ambiguous_contested_npi, npi is genuinely NA
+    # in this artifact -- the matcher's candidate pool (which NPIs/names were
+    # actually tied or contested) lives in linkage_candidate_audit.csv /
+    # linkage_pool_diagnostics.csv, produced by match_amcb_to_npi.R but not
+    # retained as a committed artifact on this machine. match_reason and
+    # ambiguity_flag are the most specific record that DOES survive into the
+    # frozen linkage: they state how many candidates existed, how many tied,
+    # and at what evidence class -- but not those candidates' own names/NPIs.
+    candidate_count, match_reason, ambiguity_flag,
     exclusion_stage = case_when(
       status != "ACTIVE"              ~ "deceased_or_inactive",
       match_status != "primary"       ~ "no_npi_match",

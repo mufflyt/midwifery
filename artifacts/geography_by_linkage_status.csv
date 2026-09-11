@@ -1,4 +1,4 @@
 match_status,n,pct_best,pct_exact,n_county_best,n_county_exact
-primary,15025,99.6,98.4,14958,14786
-sensitivity_nursing_taxonomy,2069,99.7,97.8,2062,2024
-sensitivity_fuzzy,87,98.9,95.4,86,83
+primary,15082,99.5,98.4,15013,14839
+sensitivity_nursing_taxonomy,2068,99.7,97.8,2061,2023
+sensitivity_fuzzy,31,100,96.8,31,30

@@ -1,6 +1,6 @@
 {
   "artifact": "midwives_geography_FROZEN.csv",
-  "written_utc": "2026-09-10 19:56:52.346 UTC",
+  "written_utc": "2026-09-11 13:53:37.263 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",
@@ -8,7 +8,7 @@
     },
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
-      "sha256": "e0e0a804b5c1f0942831b7c6a9d4ae830672ad04d28e451df00fca8397d7d88d"
+      "sha256": "b84e07ec3dbdb95f0007644cdcc75b89e35f487283c682c2f86997d0c6823696"
     },
     {
       "path": "midwives_panel_geocoded_enhanced.csv",

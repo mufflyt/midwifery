@@ -1,6 +1,6 @@
 {
   "artifact": "zip_fallback_validation.csv",
-  "written_utc": "2026-09-10 19:56:52.035 UTC",
+  "written_utc": "2026-09-11 13:53:36.920 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",

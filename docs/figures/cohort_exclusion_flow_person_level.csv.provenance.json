@@ -1,21 +1,21 @@
 {
   "artifact": "cohort_exclusion_flow_person_level.csv",
-  "written_utc": "2026-09-10 23:45:25.928 UTC",
+  "written_utc": "2026-09-11 13:54:10.142 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
-      "sha256": "e0e0a804b5c1f0942831b7c6a9d4ae830672ad04d28e451df00fca8397d7d88d"
+      "sha256": "b84e07ec3dbdb95f0007644cdcc75b89e35f487283c682c2f86997d0c6823696"
     },
     {
       "path": "artifacts/midwives_geography_FROZEN.csv",
-      "sha256": "1b578f32351375eb4d7b589425a457738559cb1fc4cdf534b333ef9defea3d93"
+      "sha256": "f1a6ec177bc08ce99c0d5d309294ffb535a7f8b6773780ce6a68eb4e417d0ef2"
     }
   ],
-  "code_sha256": "bb6007d3872d9334a03e456dfd8f9684d4dcc4d8e31d26b583589a10596fd368",
+  "code_sha256": "2ef875b75a28fc1c971fbfccd759b39f41dc273b1e29fca1bf7fd912878122c7",
   "code": [
     {
       "path": "build_exclusion_flow_person_level.R",
-      "sha256": "788d632e60eeb67d5e9562e2f04b7cfa3b39729f0a9f709a6ae6e29420ac7772"
+      "sha256": "df451cb17b0a833dc89ab393c15a5aee9b8fa306dd6ec7e7830e94c616e0545c"
     },
     {
       "path": "R/lib/artifact_provenance.R",
