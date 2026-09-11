@@ -238,7 +238,7 @@ midwives as a population rather than as a distribution, because the
 locations have not been available to characterize.
 
 **A.2. The authoritative roster of US midwives contains no locations at all.**
-The AMCB Instant Verification directory publishes **22,309 certificants** with
+The AMCB Instant Verification directory publishes **22,357 certificants** with
 certification number, credential, status and dates. It publishes **no address
 at any geographic level** — not state, not ZIP, not county. Every geographic
 statement about this workforce must therefore be *derived*, and the derivation
@@ -376,7 +376,7 @@ its results.
 
 ## From a midwife's name to a county on a map
 
-The American Midwifery Certification Board publishes **22,309 certified midwives
+The American Midwifery Certification Board publishes **22,357 certified midwives
 and no addresses at all**. Everything geographic in this project rests on turning
 each name into an NPI, and each NPI into a practice location.
 
@@ -394,7 +394,7 @@ doing any work. Identity is decided first; taxonomy and geography follow.
 
 ```mermaid
 flowchart TD
-  A["AMCB directory - 22,309 names, no location"] --> B["Candidate generation - 197,081 pairs"]
+  A["AMCB directory - 22,357 names, no location"] --> B["Candidate generation - 197,081 pairs"]
   P["NPPES 2007-2025 - 443,623 NPIs"] --> B
   B --> C["Rank by name-evidence class"]
   C --> D{"One candidate at the strongest class?"}
@@ -1417,7 +1417,7 @@ or skipped.
 ```sh
 # 0. Prerequisites: CENSUS_API_KEY set; mufflyt/isochrones checked out.
 
-# 1. Cohort — the AMCB roster (writes midwives.csv, 22,309 rows)
+# 1. Cohort — the AMCB roster (writes midwives.csv, 22,357 rows)
 python3 scrape.py
 
 # 2. Identity — candidates, then ranked-class resolution
@@ -1476,7 +1476,7 @@ numbers. Five things stand between the two:
    access date, and all are live sites that change. The Healthgrades checkpoints
    carry file timestamps (2026-08-09) and that is the best available evidence.
    Nothing in Tier F is byte-reproducible.
-5. **Person-level artifacts are gitignored by design.** The 22,309-row FROZEN
+5. **Person-level artifacts are gitignored by design.** The 22,357-row FROZEN
    crosswalk is not distributed, which is also why CI can only run the hermetic
    subset of the test suite — see [Continuous
    integration](#continuous-integration).
@@ -1917,7 +1917,7 @@ checking. Each exists because the failure already happened here:
 **Read the green tick correctly.** Almost every test in `tests/` loads a
 multi-megabyte artifact, and several reach outside the repository entirely —
 the name-normalisation tests need `~/isochrones`, the linkage tests need the
-22,309-row FROZEN crosswalk that is gitignored because it is person-level.
+22,357-row FROZEN crosswalk that is gitignored because it is person-level.
 None of that exists on a runner. CI runs the subset that is genuinely hermetic
 and says nothing about the rest: green means **the keys and the syntax are
 sound**, not that the pipeline is correct. The real correctness surface is

@@ -1,6 +1,6 @@
 {
   "artifact": "full_cohort_access_by_band.csv",
-  "written_utc": "2026-08-24 11:34:48 UTC",
+  "written_utc": "2026-09-11 13:51:34.745 UTC",
   "inputs": [
     {
       "path": "data/rucc_2023.xlsx",
@@ -8,11 +8,30 @@
     },
     {
       "path": "artifacts/maps/midwifery_isochrone_union_30min.rds",
-      "sha256": "b7c0731e4718d0d7071914fb48a7e9e35432fb10902f32da775e0aca010eeb0c"
+      "sha256": "e6eb337d6c3e97af219e9be75efb25b5342278073030fba58859b27ede43bf3c"
     },
     {
       "path": "artifacts/maps/midwifery_isochrone_union_60min.rds",
-      "sha256": "7da490d840e309d6ffcc11fab5628b4a6df1c2a4d73fcc0f4db172aa4f8ba25e"
+      "sha256": "61e2299ae7fb45769ac6c6e8675b3bae8cad516b131e30ebff6a2cb75eb6988a"
+    }
+  ],
+  "code_sha256": "edb9fa7b87ef68856a0a391adf3ec80725783ecd2e8d9f7f5748277295c05b47",
+  "code": [
+    {
+      "path": "access_full_cohort.R",
+      "sha256": "4149fefd7427ba94d037505a4eef262ee1636a36661f7859338934e88b7a00b2"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/lib/table1_bands.R",
+      "sha256": "71ec6199151cd15ffc4454fe5973375f90324204d7015139dcea047ab65a9c62"
     }
   ]
 }

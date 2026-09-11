@@ -1,10 +1,10 @@
 {
   "artifact": "cohort_exclusion_flow_person_level.csv",
-  "written_utc": "2026-09-11 13:54:10.142 UTC",
+  "written_utc": "2026-09-11 18:00:47.204 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
-      "sha256": "b84e07ec3dbdb95f0007644cdcc75b89e35f487283c682c2f86997d0c6823696"
+      "sha256": "1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2"
     },
     {
       "path": "artifacts/midwives_geography_FROZEN.csv",
