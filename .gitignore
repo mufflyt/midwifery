@@ -48,6 +48,20 @@ artifacts/geocode_cascade_raw_result.rds
 artifacts/amcb_npi_matched*.csv
 artifacts/amcb_npi_linkage_FROZEN.csv
 artifacts/identity_flip_audit.csv
+
+# THE DEFECT THIS PREVENTS (2026-09-11). These carry certification_number,
+# last_name, first_name, middle_name and (for the candidate-detail file) NPI
+# -- the same person-level class as amcb_npi_linkage_FROZEN.csv above -- and
+# were committed to this PUBLIC repo in commit 3c6af61, caught by
+# ci_leak_guard.R (L1/L2) failing on main. Every other person-level derived
+# artifact in this repo is gitignored; these were missed because they were
+# written as NEW output paths under docs/figures/, a directory whose other
+# contents (the figure PNG/PDF, aggregate counts) are legitimately public,
+# and the person-level ones were never distinguished from those siblings.
+docs/figures/cohort_exclusion_flow_person_level.csv
+docs/figures/cohort_exclusion_flow_person_level.csv.provenance.json
+docs/figures/exclusion_by_stage/*.csv
+docs/figures/exclusion_by_stage/*.csv.provenance.json
 midwives_panel_geocoded.csv
 midwives_geography_guarded.csv
 artifacts/panel_geocode_queue.csv
