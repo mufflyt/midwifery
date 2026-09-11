@@ -1,10 +1,10 @@
 {
   "artifact": "cohort_exclusion_flow_counts.csv",
-  "written_utc": "2026-09-11 18:00:46.175 UTC",
+  "written_utc": "2026-09-11 18:48:02.610 UTC",
   "inputs": [
     {
       "path": "artifacts/linkage_completeness_by_status.csv",
-      "sha256": "38c5b71c415269447fa6f57d507acd702d3db53f534c0043ddfdce3d62e8d964"
+      "sha256": "60e5abc672a2b2987042b21a7bb88583f38427633f0ac461434ba7d010a6f824"
     },
     {
       "path": "artifacts/geography_by_amcb_status.csv",

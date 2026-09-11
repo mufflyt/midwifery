@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-09-10 23:43:53.484 UTC",
-  "git_commit": "abd325b1cb7f0f0b64131b4175d4487e275c8e47",
+  "generated_utc": "2026-09-11 17:57:32.789 UTC",
+  "git_commit": "2519d1167970fc525a422e59d3aae05fc68c8f21",
   "inputs": {
     "amcb_roster": {
       "path": "midwives.csv",
@@ -23,7 +23,7 @@
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
       "rows": 22357,
       "cols": 61,
-      "sha256": "e0e0a804b5c1f0942831b7c6a9d4ae830672ad04d28e451df00fca8397d7d88d"
+      "sha256": "1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2"
     },
     "ab_through2017": {
       "path": "artifacts/amcb_npi_matched_through2017.csv",
@@ -39,17 +39,17 @@
   "linkage": {
     "total_rows": 22357,
     "dispositions": {
-      "ambiguous_contested_npi": 122,
-      "ambiguous_tied_names": 2959,
+      "ambiguous_contested_npi": 121,
+      "ambiguous_tied_names": 2960,
       "ambiguous_unruled_out_component": 8,
-      "candidate_class5_held_out_of_cohort": 154,
-      "matched": 14988,
-      "matched_nursing_taxonomy": 2039,
+      "candidate_class5_held_out_of_cohort": 153,
+      "matched": 14990,
+      "matched_nursing_taxonomy": 2038,
       "unmatched": 2087
     },
     "resolution": {
-      "unique_best_class": 7640,
-      "unique_best_class_with_middle": 9549
+      "unique_best_class": 7610,
+      "unique_best_class_with_middle": 9579
     },
     "ab_gain_records": 6041,
     "ab_gain_pp": 27.1,
