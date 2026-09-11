@@ -1,6 +1,6 @@
 {
-  "artifact": "full_cohort_access_by_band_rucc.csv",
-  "written_utc": "2026-09-11 13:51:34.968 UTC",
+  "artifact": "full_cohort_access_by_band_state.csv",
+  "written_utc": "2026-09-11 13:51:35.194 UTC",
   "inputs": [
     {
       "path": "data/rucc_2023.xlsx",

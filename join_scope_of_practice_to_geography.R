@@ -93,11 +93,42 @@ write_with_provenance(geo_j, "artifacts/geocoding_completeness_by_scope_of_pract
                                 "artifacts/geocoding_completeness_state.csv"))
 cat("\nwrote artifacts/geocoding_completeness_by_scope_of_practice.csv\n")
 
-cat("\nNOTE: this compares REPRESENTATION IN THE ISOCHRONE LIBRARY and\n")
-cat("GEOCODING COMPLETENESS by scope-of-practice status -- both are data-\n")
-cat("quality/coverage measures, not the population-weighted drive-time ACCESS\n")
-cat("measure access_full_cohort.R computes (blocked on this machine; see\n")
-cat("issue #176). A state with lower isochrone representation is a state\n")
-cat("this project has measured less completely, not necessarily one with\n")
-cat("worse actual access -- do not conflate the two without running the\n")
-cat("population-weighted comparison once the blocking files are available.\n")
+# --- population-weighted drive-time access (the actual comparison) ----------
+# access_full_cohort.R was blocked when this script was first written (see
+# issue #176); now unblocked (S3-cached ACS extract + a small patch for two
+# states -- see patch_missing_state_census_data.R) and its by-state output is
+# joined here too. This is the REAL comparison the literature review flagged
+# as the novel contribution opportunity -- Ranchoff & Declercq found
+# autonomous states have 2.2x the per-capita midwife density of
+# collaborative/supervisory ones, but never measured travel time.
+acc_path <- "artifacts/full_cohort_access_by_band_state.csv"
+if (!file.exists(acc_path)) {
+  cat(sprintf("\nSKIPPED: %s absent -- run access_full_cohort.R first.\n", acc_path))
+} else {
+  acc <- read_csv(acc_path, show_col_types = FALSE)
+  acc_j <- join_report(acc, "state", "full_cohort_access_by_band_state.csv")
+
+  acc_summary <- acc_j %>%
+    group_by(practice_authority_2016, band_minutes) %>%
+    summarise(n_states = n_distinct(state),
+              women_with_access = sum(women_with_access),
+              women_total = sum(women_total),
+              pct_women_with_access = round(100 * sum(women_with_access) / sum(women_total), 1),
+              .groups = "drop") %>%
+    arrange(band_minutes, practice_authority_2016)
+
+  cat("\n=== POPULATION-WEIGHTED DRIVE-TIME ACCESS by 2016 scope-of-practice status ===\n")
+  print(as.data.frame(acc_summary))
+
+  write_with_provenance(acc_j, "artifacts/full_cohort_access_by_scope_of_practice.csv",
+                        inputs = c("artifacts/state_scope_of_practice.csv", acc_path))
+  cat("\nwrote artifacts/full_cohort_access_by_scope_of_practice.csv\n")
+}
+
+cat("\nNOTE: isochrone representation and geocoding completeness (above) are\n")
+cat("data-quality/coverage measures, not access -- a state with lower\n")
+cat("representation is one this project measured less completely, not\n")
+cat("necessarily one with worse actual access. The population-weighted\n")
+cat("access comparison (this section) is the one that actually answers the\n")
+cat("literature-review question; the other two remain useful as a check on\n")
+cat("whether measurement completeness itself varies by regulatory regime.\n")

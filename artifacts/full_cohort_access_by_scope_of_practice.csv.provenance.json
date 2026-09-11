@@ -1,14 +1,14 @@
 {
-  "artifact": "geocoding_completeness_by_scope_of_practice.csv",
-  "written_utc": "2026-09-11 13:52:18.193 UTC",
+  "artifact": "full_cohort_access_by_scope_of_practice.csv",
+  "written_utc": "2026-09-11 13:52:18.304 UTC",
   "inputs": [
     {
       "path": "artifacts/state_scope_of_practice.csv",
       "sha256": "e276a0549924cbe7b9fb59e6e796c56ed569a87e0443f2457e3dfb54223b3851"
     },
     {
-      "path": "artifacts/geocoding_completeness_state.csv",
-      "sha256": "f4d4403363cacb95c7e5f28472c5c6eb288858de2c488c75cd6416ffff855ba0"
+      "path": "artifacts/full_cohort_access_by_band_state.csv",
+      "sha256": "daf469f286589a039a33a0129e3a95b8e0f0fbdb0b81cf0766aca0c71598edd1"
     }
   ],
   "code_sha256": "b5466eb3dfb1df9f7e865dc8334bdaad9c87a0ea3c18d8cb1d87212b56a32136",
