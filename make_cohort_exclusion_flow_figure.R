@@ -58,6 +58,8 @@ matched_n   <- stat_num("exclusion.active_matched_n")
 unmatched_n <- stat_num("exclusion.active_unmatched_n")
 geocoded_n     <- stat_num("exclusion.geocoded_n")
 not_geocoded_n <- stat_num("exclusion.not_geocoded_n")
+acog_excluded_n <- stat_num("exclusion.acog_excluded_n")
+final_cohort_n  <- stat_num("exclusion.final_cohort_n")
 
 if (is.na(geocoded_n) || is.na(not_geocoded_n)) {
   stop(paste0(
@@ -70,6 +72,14 @@ if (is.na(geocoded_n) || is.na(not_geocoded_n)) {
     "why -- so this stops rather than drawing three of the four stages."),
     call. = FALSE)
 }
+if (is.na(acog_excluded_n) || is.na(final_cohort_n)) {
+  stop(paste0(
+    "exclusion.acog_excluded_n / exclusion.final_cohort_n are not in the\n",
+    "catalog. build_geography_by_amcb_status.R needs to be re-run (it now\n",
+    "writes n_acog_unmapped) before this figure can draw the ACOG-district\n",
+    "exclusion stage -- see its own header for why nppes_state is required."),
+    call. = FALSE)
+}
 
 # Roster reconciles all the way down, asserted again here (not just in the
 # catalog builder) because this is the figure a reviewer will check by eye
@@ -77,7 +87,8 @@ if (is.na(geocoded_n) || is.na(not_geocoded_n)) {
 stopifnot(
   active_n + inactive_n == roster_n,
   matched_n + unmatched_n == active_n,
-  geocoded_n + not_geocoded_n == matched_n
+  geocoded_n + not_geocoded_n == matched_n,
+  final_cohort_n + acog_excluded_n == geocoded_n
 )
 
 inactive_by_status <- .mw_get("exclusion.inactive_by_status", .mw_catalog)
@@ -93,38 +104,53 @@ exc_inactive_lines <- paste(
 )
 exc_inactive_lines <- paste0(exc_inactive_lines, sprintf("\nOther, N = %s", fmt(other_n)))
 
-# "No NPI match" is three structurally different failure modes plus one
-# deliberate hold-out (exclusion.active_unmatched_by_reason), not one
-# undifferentiated bucket -- itemised the same way inactive_by_status is
-# above, each stated as its own "N = ####" line.
+# A disposition currently at zero is not published as its own line -- an
+# itemised "N = 0" reads as if that failure mode is being watched for and
+# simply didn't occur this run, when in this codebase's dispositions it
+# usually means the category has been superseded/renamed (see "Held out of
+# cohort" below) rather than that zero people hit it. The itemisation stays
+# exhaustive in the underlying stat (nothing is dropped from the catalog),
+# only the zero-count line is suppressed on the figure.
+nonzero_lines <- function(counts, labels) {
+  keep <- counts > 0
+  if (!any(keep)) return("")
+  paste(sprintf("%s, N = %s", labels[names(counts)][keep], fmt(counts[keep])),
+        collapse = "\n")
+}
+
+# "No NPI match" here means match_status != "primary" -- six structurally
+# different failure modes, not one undifferentiated bucket: three are
+# genuine non-matches (unmatched, tied names, contested NPI, unruled-out
+# component) and two are candidate NPIs that WERE found but held to a
+# stricter identity-confidence bar (fuzzy surname, nursing-only taxonomy) --
+# see reconcile_linkage.R's header comment for why those two are excluded
+# from "matched" rather than counted as confirmed identity.
 unmatched_by_reason <- .mw_get("exclusion.active_unmatched_by_reason", .mw_catalog)
 unmatched_reason_labels <- c(
-  unmatched = "Unmatched, no candidate found",
-  tied      = "Tied names, evidence could not separate",
-  contested = "Contested NPI, claimed by 2+ certificants",
-  component = "Unruled-out component",
-  held_out  = "Held out of cohort"
+  unmatched                       = "Unmatched, no candidate found",
+  ambiguous_tied_names            = "Tied names, evidence could not separate",
+  ambiguous_contested_npi         = "Contested NPI, claimed by 2+ certificants",
+  ambiguous_unruled_out_component = "Unruled-out component",
+  sensitivity_fuzzy               = "Fuzzy surname match (weak identity evidence)",
+  sensitivity_nursing_taxonomy    = "Nursing-only taxonomy (not confirmed midwifery)"
 )
-exc_unmatched_lines <- paste(
-  sprintf("%s, N = %s",
-          unmatched_reason_labels[names(unmatched_by_reason)],
-          fmt(unmatched_by_reason)),
-  collapse = "\n"
-)
+exc_unmatched_lines <- nonzero_lines(unmatched_by_reason, unmatched_reason_labels)
 
-# Overseas-military / US-territory addresses ARE geocodable and ARE in the
-# cohort -- they just have no ACOG district, so they're a note on the KEPT
-# side, not an exclusion. Denominator is deliberately stated alongside the
-# count: table1.n (11,920, ACTIVE + PRIMARY-linked only) is a narrower
-# population than this box's own N (geocoded_n, ACTIVE + primary-OR-nursing
-# match), so the two must not be presented as sharing one percentage base.
-acog_excluded_n   <- stat_num("table1.acog_excluded_n")
-acog_excluded_pct <- stat_num("table1.acog_excluded_pct")
-acog_note <- if (!is.na(acog_excluded_n)) {
-  sprintf("\nIncludes %s (%s%%) with an overseas-military or\nUS-territory address (no ACOG district),\nof %s ACTIVE, primary-linked midwives",
-          fmt(acog_excluded_n), formatC(acog_excluded_pct, digits = 1, format = "f"),
-          fmt(stat_num("table1.n")))
-} else ""
+# Match evidence tiers among the PRIMARY-matched only (exclusion.
+# active_matched_by_tier): "matched" is not one undifferentiated confidence
+# level even after excluding the sensitivity tiers above. Tiers are the
+# ordered name-evidence classes from match_amcb_to_npi.R (1 strongest, 5
+# weakest) -- see that script's own comment block above strategy 5 for the
+# exact definitions.
+matched_by_tier <- .mw_get("exclusion.active_matched_by_tier", .mw_catalog)
+tier_labels <- c(
+  exact_name_plus_middle        = "Exact name, middle corroborates",
+  exact_name_no_middle_info     = "Exact name, no middle to compare",
+  exact_last_first_initial      = "Exact last name + first initial",
+  fuzzy_last_exact_first        = "Fuzzy last name, exact first",
+  surname_component_exact_first = "Surname component, exact first"
+)
+matched_tier_lines <- nonzero_lines(matched_by_tier, tier_labels)
 
 fc <- as_fc(
     N = roster_n, label = "AMCB certification roster",
@@ -143,27 +169,38 @@ fc <- as_fc(
     text_pattern_exc = paste0("{label}\nN = {n} ({perc}%)\n", exc_unmatched_lines)
   ) %>%
   fc_filter(
-    N = geocoded_n, label = "Final analytic cohort",
-    text_pattern = paste0("{label}\nN = {n} ({perc}%)\nGeocodable address", acog_note),
+    N = geocoded_n, label = "Geocodable address",
+    text_pattern = "{label}\nN = {n} ({perc}%)",
     show_exc = TRUE, label_exc = "No geocodable address",
     text_pattern_exc = "{label}\nN = {n} ({perc}%)"
+  ) %>%
+  fc_filter(
+    N = final_cohort_n, label = "Final analytic cohort",
+    text_pattern = "{label}\nN = {n} ({perc}%)",
+    show_exc = TRUE, label_exc = "No ACOG district",
+    text_pattern_exc = "{label}\nN = {n} ({perc}%)\nOverseas-military or\nUS-territory address"
   )
 
 fc_plot <- fc %>%
-  fc_draw(big.mark = ",", box_corners = "sharp",
-          title = "Cohort Selection Flowchart", title_fs = 14, title_fface = 1)
+  fc_draw(big.mark = ",", box_corners = "sharp")
 
 out_dir <- file.path("docs", "figures")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+# Taller than the box content alone would suggest: flowchart lays rows out
+# at even FRACTIONS of total canvas height regardless of how many lines a
+# box's text_pattern carries, so adding stages/itemised lines (which this
+# figure has both of) shrinks the room between rows unless the canvas grows
+# to compensate. A canvas too short for its content overlaps neighbouring
+# boxes rather than erroring -- verified visually, not assumed.
 for (f in c("cohort_exclusion_flow.png", "cohort_exclusion_flow.pdf")) {
-  fc_export(fc_plot, f, path = out_dir, width = 10, height = 9, units = "in", res = 300)
+  fc_export(fc_plot, f, path = out_dir, width = 11, height = 16, units = "in", res = 300)
 }
 
 counts <- data.frame(
   stage = c("roster", "active", "inactive", "matched", "unmatched",
-           "geocoded", "not_geocoded"),
+           "geocoded", "not_geocoded", "final_cohort", "acog_excluded"),
   n = c(roster_n, active_n, inactive_n, matched_n, unmatched_n,
-       geocoded_n, not_geocoded_n)
+       geocoded_n, not_geocoded_n, final_cohort_n, acog_excluded_n)
 )
 counts_path <- file.path("docs", "figures", "cohort_exclusion_flow_counts.csv")
 write_with_provenance(
@@ -172,9 +209,27 @@ write_with_provenance(
             file.path("artifacts", "geography_by_amcb_status.csv"))
 )
 
+# Match evidence tiers, as a companion table rather than crammed into the
+# "Matched to an NPI" box: the flowchart package lays boxes out on a fixed
+# grid, and the 5-line tier breakdown made that box overflow into its
+# neighbours (clipped/overlapping text) -- a tabular breakdown is also just a
+# better fit for this than a flowchart node.
+tiers <- data.frame(
+  tier = names(matched_by_tier),
+  label = unname(tier_labels[names(matched_by_tier)]),
+  n = as.integer(matched_by_tier),
+  pct_of_matched = round(100 * as.integer(matched_by_tier) / matched_n, 1)
+)
+tiers_path <- file.path("docs", "figures", "cohort_exclusion_flow_evidence_tiers.csv")
+write_with_provenance(
+  tiers, tiers_path,
+  inputs = c(file.path("artifacts", "amcb_npi_linkage_FROZEN.csv"))
+)
+
 message(sprintf("roster reconciles:   %s = %s + %s", fmt(roster_n), fmt(active_n), fmt(inactive_n)))
 message(sprintf("active reconciles:   %s = %s + %s", fmt(active_n), fmt(matched_n), fmt(unmatched_n)))
 message(sprintf("matched reconciles:  %s = %s + %s", fmt(matched_n), fmt(geocoded_n), fmt(not_geocoded_n)))
+message(sprintf("geocoded reconciles: %s = %s + %s", fmt(geocoded_n), fmt(final_cohort_n), fmt(acog_excluded_n)))
 for (f in c("cohort_exclusion_flow.png", "cohort_exclusion_flow.pdf")) {
   p <- file.path(out_dir, f)
   if (file.exists(p))

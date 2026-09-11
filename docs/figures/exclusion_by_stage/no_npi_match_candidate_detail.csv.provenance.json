@@ -1,0 +1,33 @@
+{
+  "artifact": "no_npi_match_candidate_detail.csv",
+  "written_utc": "2026-09-11 18:48:13.299 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/linkage_candidate_audit.csv",
+      "sha256": "c94b4cce5b1579ac1c3e65d630ec030bcb86780ce24a60f4584d39d9f3b048d5"
+    },
+    {
+      "path": "midwife_panel.csv",
+      "sha256": "b122ec0989d799b8f071095d4fc234d6ddc66bc3b3c5452302db1de13def311e"
+    },
+    {
+      "path": "docs/figures/exclusion_by_stage/no_npi_match.csv",
+      "sha256": "3ccaada9387591c60feabb8a732bec17dd38982db5e0507475ea3151f0ea232f"
+    }
+  ],
+  "code_sha256": "9df4bb88cfdab6065026654619d089464fd079dfc8a29339af40ae2747d12066",
+  "code": [
+    {
+      "path": "build_no_npi_match_candidate_detail.R",
+      "sha256": "73b97b78d3ade63c01f6de2a09026fc9f62f741cdc5e8838ddea3f456152afaf"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}

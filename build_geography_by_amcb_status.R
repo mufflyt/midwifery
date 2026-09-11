@@ -82,16 +82,28 @@ id_link <- .resolve_col(linkage, c("amcb_id", "certification_number"), "the froz
 id_geo  <- .resolve_col(geo,     c("amcb_id", "certification_number"), "the geography artifact")
 status_col <- .resolve_col(linkage, c("status", "amcb_status", "certification_status"),
                            "the frozen linkage")
-match_col  <- .resolve_col(linkage, c("npi_match_status", "match_status"),
-                           "the frozen linkage")
+# "matched" means match_status == "primary" -- the reconciliation's own clean
+# definition (reconcile_linkage.R), which deliberately excludes fuzzy-surname
+# matches (weak name-identity evidence) and nursing-taxonomy-only matches
+# (taxonomy ambiguity) from the confirmed-identity count. npi_match_status
+# alone cannot make this distinction -- it folds all three together under
+# "matched"/"matched_nursing_taxonomy" -- so match_status is required, not a
+# fallback candidate.
+match_col  <- .resolve_col(linkage, c("match_status"), "the frozen linkage")
+state_col  <- .resolve_col(linkage, c("nppes_state"), "the frozen linkage")
 geocode_col <- .resolve_col(geo, c("county_best", "county_exact", "geo_class"),
                             "the geography artifact")
 
+# States/territories ACOG assigns no district to (overseas military APO/FPO
+# codes and US territories). MUST match build_table1_midwives.R's
+# ACOG_EXPECTED_UNMAPPED exactly -- duplicated here (no shared config exists
+# yet) rather than sourced, so if that list changes there this one needs the
+# same edit.
+ACOG_UNMAPPED <- c("AA", "AE", "AP", "GU", "PR", "VI", "AS", "MP", "FM", "PW", "MH")
+
 linkage_std <- linkage %>%
   transmute(.id = .data[[id_link]], status = .data[[status_col]],
-           match_status = .data[[match_col]],
-           linkage_tier = if ("linkage_tier" %in% names(linkage))
-             linkage_tier else NA_character_)
+           match_status = .data[[match_col]], nppes_state = .data[[state_col]])
 geo_std <- geo %>%
   transmute(.id = .data[[id_geo]],
            geocoded = !is.na(.data[[geocode_col]]) & nzchar(trimws(.data[[geocode_col]])))
@@ -102,28 +114,15 @@ joined <- tryCatch(
                                    id_link, id_geo, conditionMessage(e)), call. = FALSE)
 )
 
-# match_status values vary by producing script (npi_match_status uses
-# "matched"/"ambiguous_*"/"unmatched"; collapse to the two states this figure
-# cares about, matched vs not, rather than assume a specific vocabulary.
-#
-# class-5 (surname-component) candidates are excluded here too, not just from
-# npi_match_status's raw text: is_cohort_member() already treats
-# linkage_tier == "sensitivity_name_component" as cohort-ineligible
-# regardless of what npi_match_status says, and
-# linkage_completeness_by_status.csv (provenance_manifest.R) carves the same
-# rows into their own candidate_class5_held_out_of_cohort disposition. A
-# grepl("^matched", ...) test alone still counted them as matched here,
-# disagreeing with both -- caught by manuscript/R/build_stats_catalog.R's own
-# stopifnot cross-check against linkage_completeness_by_status.csv.
 joined <- joined %>%
-  mutate(match_bucket = if_else(grepl("^matched", match_status) &
-                                  coalesce(linkage_tier != "sensitivity_name_component", TRUE),
-                                "matched", "not_matched"),
-         geocoded = coalesce(geocoded, FALSE))
+  mutate(match_bucket = if_else(match_status == "primary", "matched", "not_matched"),
+         geocoded = coalesce(geocoded, FALSE),
+         acog_unmapped = geocoded & nppes_state %in% ACOG_UNMAPPED)
 
 out <- joined %>%
   group_by(status, match_status = match_bucket) %>%
-  summarise(n = n(), n_geocoded = sum(geocoded), .groups = "drop") %>%
+  summarise(n = n(), n_geocoded = sum(geocoded),
+           n_acog_unmapped = sum(acog_unmapped), .groups = "drop") %>%
   arrange(status, match_status)
 
 stopifnot(sum(out$n) == nrow(linkage))

@@ -1,6 +1,6 @@
 {
-  "artifact": "geography_by_amcb_status.csv",
-  "written_utc": "2026-09-11 18:47:59.595 UTC",
+  "artifact": "cohort_exclusion_flow_person_level.csv",
+  "written_utc": "2026-09-11 18:48:03.735 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
@@ -11,19 +11,15 @@
       "sha256": "f1a6ec177bc08ce99c0d5d309294ffb535a7f8b6773780ce6a68eb4e417d0ef2"
     }
   ],
-  "code_sha256": "4a24fef98255242ecbf1cc559a3a81393c8f93ca42a61bf15558cc5efdf76c18",
+  "code_sha256": "2ef875b75a28fc1c971fbfccd759b39f41dc273b1e29fca1bf7fd912878122c7",
   "code": [
     {
-      "path": "build_geography_by_amcb_status.R",
-      "sha256": "516af12f3a00720058bc0c51595a9ebc4dbd6f51ebcefb616faa8a037d795eb4"
+      "path": "build_exclusion_flow_person_level.R",
+      "sha256": "df451cb17b0a833dc89ab393c15a5aee9b8fa306dd6ec7e7830e94c616e0545c"
     },
     {
       "path": "R/lib/artifact_provenance.R",
       "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
-    },
-    {
-      "path": "R/lib/common_helpers.R",
-      "sha256": "55c6b894798e2740f538b1262391e58e8fe9bea84f072b80708e59aea3197067"
     },
     {
       "path": "R/lib/provenance.R",

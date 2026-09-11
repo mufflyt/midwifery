@@ -1,6 +1,6 @@
 {
   "artifact": "zip_fallback_discordant.csv",
-  "written_utc": "2026-09-10 19:56:51.887 UTC",
+  "written_utc": "2026-09-11 13:53:36.770 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",
