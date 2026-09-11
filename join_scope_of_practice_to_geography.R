@@ -123,6 +123,40 @@ if (!file.exists(acc_path)) {
   write_with_provenance(acc_j, "artifacts/full_cohort_access_by_scope_of_practice.csv",
                         inputs = c("artifacts/state_scope_of_practice.csv", acc_path))
   cat("\nwrote artifacts/full_cohort_access_by_scope_of_practice.csv\n")
+
+  # --- significance test, STATE as the unit of analysis ---------------------
+  # NOT a proportions test on the raw women_with_access/women_total counts.
+  # Those counts sum to hundreds of millions, and a two-proportion test
+  # (e.g. this repo's own mw_diff()) treats every individual woman as an
+  # independent trial -- with n in the hundreds of millions, that inflates
+  # significance enormously and would call almost any nonzero difference
+  # "significant" regardless of whether it reflects a real regulatory effect
+  # or noise between two arbitrary state groupings. Ranchoff & Declercq's own
+  # comparison avoids exactly this by testing across STATES (chi-square on
+  # county presence/absence, n=20 vs n=24), not across individuals. This
+  # follows the same logic: each state's own pct_women_with_access is one
+  # observation, and the test is Welch's two-sample t-test across the two
+  # state groups (unequal variance, since group sizes and spread differ).
+  sig <- lapply(unique(acc_summary$band_minutes), function(b) {
+    aut <- acc_j$pct_women_with_access[acc_j$practice_authority_2016 == "Autonomous" &
+                                         acc_j$band_minutes == b]
+    col <- acc_j$pct_women_with_access[acc_j$practice_authority_2016 == "Collaborative_supervisory" &
+                                         acc_j$band_minutes == b]
+    t <- t.test(aut, col)
+    tibble(band_minutes = b, n_autonomous = length(aut), n_collaborative = length(col),
+          mean_autonomous_pct = round(mean(aut), 1), mean_collaborative_pct = round(mean(col), 1),
+          diff_pp = round(mean(aut) - mean(col), 2),
+          ci_lo = round(t$conf.int[1], 2), ci_hi = round(t$conf.int[2], 2),
+          t_statistic = round(unname(t$statistic), 2), df = round(unname(t$parameter), 1),
+          p_value = round(t$p.value, 4))
+  }) %>% bind_rows()
+
+  cat("\n=== SIGNIFICANCE (state as unit of analysis, Welch two-sample t-test) ===\n")
+  print(as.data.frame(sig))
+
+  write_with_provenance(sig, "artifacts/access_by_scope_of_practice_significance.csv",
+                        inputs = "artifacts/full_cohort_access_by_scope_of_practice.csv")
+  cat("\nwrote artifacts/access_by_scope_of_practice_significance.csv\n")
 }
 
 cat("\nNOTE: isochrone representation and geocoding completeness (above) are\n")
