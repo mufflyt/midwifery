@@ -1,6 +1,6 @@
 {
   "artifact": "geography_by_amcb_status.csv",
-  "written_utc": "2026-09-10 19:56:55.303 UTC",
+  "written_utc": "2026-09-11 01:50:38.978 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
@@ -11,11 +11,11 @@
       "sha256": "1b578f32351375eb4d7b589425a457738559cb1fc4cdf534b333ef9defea3d93"
     }
   ],
-  "code_sha256": "d57c8fe590a346203cbf9d3fb4cdd7a0ce00826bf5b8364d0747f94dcd7fe45f",
+  "code_sha256": "3682262066106b4cb18df3e8f712587dd8ad14f5c50ee75ec856bcd4d524adc9",
   "code": [
     {
       "path": "build_geography_by_amcb_status.R",
-      "sha256": "1e09a98b51ed750afc830453e9b8fb7f151359b559c00957845019bfacd9aba4"
+      "sha256": "0c0ce30799a44ff06ac4ba5237f696d0ea1b7395baa063392e0708c95ca1bc85"
     },
     {
       "path": "R/lib/artifact_provenance.R",
