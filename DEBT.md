@@ -361,6 +361,24 @@ still has it, then re-run `R/07-cohort-composition.R`,
 `analyze_linkage_selection_bias.R`, and the three figure scripts in that
 order.
 
+**Why this keeps happening.** `artifacts/frozen_cohort/` has
+`repin_frozen_cohort.R`: a script that detects drift against a declared
+manifest count and re-pins deliberately, on request (`REPIN_APPLY=1`), the
+same tool that closed the `repin_frozen_cohort.R` step above.
+`artifacts/frozen_stage2/` has no equivalent. `R/05-stage-progression.R` only
+*reads* `frozen_stage2/midwives_with_nppes.csv`; nothing in this repo ever
+*writes* it. Whoever produced it copied the live `midwives_with_nppes.csv`
+(written by `match_nppes.R`) there by hand, once, and — same shape as the
+`cohort_member` regression this session found in `reconcile_linkage.R` — a
+manual step with no script behind it is a step that silently stops happening.
+A `repin_frozen_stage2.R` mirroring `repin_frozen_cohort.R`'s pattern (dry-run
+default, compare live `midwives_with_nppes.csv` row count against the current
+roster total in `linkage_manifest.json`, require `REPIN_APPLY=1` to write) is
+NOT written here: it needs the live `midwives_with_nppes.csv` and NPPES
+downloads to design and test the drift check against, and this machine has
+neither. Whoever next has both should write it rather than hand-copy the file
+again.
+
 ## Closed
 
 ## D0 — Provenance determinism of the recorded name variant
