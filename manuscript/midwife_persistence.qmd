@@ -342,6 +342,23 @@ essential: classifying by current county counts a midwife who left a remote
 county for a metropolitan one as metropolitan, and attributes her move to
 metropolitan mobility.
 
+## Scope-of-practice access analysis
+
+As a secondary analysis, the cohort's practice locations were used to build
+population-weighted drive-time access surfaces (30- and 60-minute isochrones
+from every practice address, dissolved to a union, overlaid on
+census-tract-level counts of reproductive-age women) and each state was
+classified as autonomous or collaborative/supervisory practice authority
+using the continuous 2012--2016 classification in [@Ranchoff2020scope]
+(Table 1), which excludes six states whose framework changed within that
+window. Access by regime was compared with a Welch two-sample *t*-test across
+states, each state's own population-weighted access percentage serving as one
+observation; a proportions test on the underlying women-with-access counts
+was not used; it would treat every individual woman as an independent trial
+and inflate significance with a denominator in the hundreds of millions,
+answering a different and less meaningful question than whether the two
+groups of *states* differ.
+
 ## Statistical analysis
 
 Proportions carry 95% Wilson score intervals, chosen over the normal
@@ -496,6 +513,35 @@ difference between the extreme strata was
 `r mw_safe_stat("rural.diff", "%.1f")` percentage points (95% CI
 `r mw_safe_stat("rural.diff_lo", "%.1f")`--`r mw_safe_stat("rural.diff_hi", "%.1f")`).
 
+## Access by state scope-of-practice regime
+
+The same drive-time access surfaces support a further comparison: whether
+measured access differs between the `r mw_n("scope.n_autonomous")`
+states with autonomous midwifery practice authority and the
+`r mw_n("scope.n_collaborative")` states with a collaborative or
+supervisory framework, using the classification in [@Ranchoff2020scope]
+(Table 1, 2012--2016; six states that changed framework mid-window are
+excluded from this comparison). At 30 minutes, population-weighted access did
+not differ meaningfully by regime:
+`r mw_safe_stat("scope.band30_autonomous_pct", "%.1f")`% of reproductive-age
+women in autonomous-practice states were within a 30-minute drive of a
+midwife, against `r mw_safe_stat("scope.band30_collaborative_pct", "%.1f")`%
+in collaborative/supervisory states -- a difference of
+`r mw_safe_stat("scope.band30_diff_pp", "%.1f")` percentage points (95% CI
+`r mw_safe_stat("scope.band30_ci_lo", "%.1f")`--`r mw_safe_stat("scope.band30_ci_hi", "%.1f")`,
+`r mw_pval(K$scope$band30_p)`, Welch two-sample *t*-test across states).
+
+At 60 minutes the difference reached significance, in the opposite direction:
+`r mw_safe_stat("scope.band60_autonomous_pct", "%.1f")`% access in
+autonomous-practice states against
+`r mw_safe_stat("scope.band60_collaborative_pct", "%.1f")`% in
+collaborative/supervisory states
+(`r mw_safe_stat("scope.band60_diff_pp", "%.1f")` percentage points, 95% CI
+`r mw_safe_stat("scope.band60_ci_lo", "%.1f")`--`r mw_safe_stat("scope.band60_ci_hi", "%.1f")`,
+`r mw_pval(K$scope$band60_p)`).
+Collaborative/supervisory states were, if anything, marginally better covered
+at the wider band, not worse.
+
 ## Where movers go
 
 Among providers who changed county over their career, destination was strongly
@@ -572,6 +618,23 @@ access where local access is scarcest. Because rural-origin movers
 overwhelmingly relocate to metropolitan counties, a retention intervention that
 is geographically untargeted will tend to consolidate the workforce where it is
 already dense.
+
+Regulatory scope of practice is often treated as a proxy for access:
+autonomous-practice states have 2.2 times the per-capita CNM/CM density of
+collaborative/supervisory states [@Ranchoff2020scope], and a state with more
+midwives per capita is assumed to be one where midwifery care is easier to
+reach. Density and reachability are not the same measure. Using this cohort's
+own drive-time surfaces, population-weighted access did not differ between the
+two regulatory groups at 30 minutes and was measurably lower in
+autonomous-practice states at 60 minutes. Ranchoff and Declercq's own
+county-level measure shows the same tension in miniature: 59.7% of counties in
+autonomous-practice states had no midwife at all, against 74.1% in
+collaborative-practice states [@Ranchoff2020scope] -- a real difference, but a
+coarser one than a population-weighted drive-time surface can show, and one
+that a binary "has a midwife" measure cannot distinguish from a difference in
+*where within a state* that density falls. A regulatory framework that
+concentrates midwives more densely does not by itself guarantee that the
+resulting workforce is reachable by more of the women it serves.
 
 This analysis also illustrates a methodological hazard worth reporting. An
 earlier version of this work, stratifying by each provider's current county

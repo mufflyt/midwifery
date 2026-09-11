@@ -438,6 +438,44 @@ mw_build_catalog <- function(root = ".") {
     }
   }
 
+  # --- Access by state scope-of-practice regime -------------------------------
+  # THE QUESTION THIS ANSWERS. Ranchoff & Declercq (2020) found autonomous-
+  # practice states have 2.2x the per-capita CNM/CM density of collaborative/
+  # supervisory states, using county presence/absence as their access measure.
+  # Higher density need not mean better access if it clusters where coverage
+  # was already good -- this is the first test of that against actual
+  # population-weighted drive-time coverage rather than a binary county flag.
+  # join_scope_of_practice_to_geography.R joins Ranchoff & Declercq's own
+  # Table 1 classification onto this project's drive-time access surfaces
+  # (access_full_cohort.R). The significance test is Welch's two-sample
+  # t-test across states -- each state's own access percentage is one
+  # observation -- not a proportions test on the underlying
+  # women_with_access/women_total counts, which would treat every individual
+  # woman as an independent trial and inflate significance with n in the
+  # hundreds of millions; see join_scope_of_practice_to_geography.R's header.
+  sig <- rd(file.path(MW_ART, "access_by_scope_of_practice_significance.csv"))
+  if (!is.null(sig)) {
+    row <- function(b) sig[sig$band_minutes == b, ]
+    r30 <- row(30); r60 <- row(60)
+    g <- function(r, col) if (nrow(r)) r[[col]][1] else NA_real_
+    cat_$scope <- list(
+      n_autonomous             = g(r30, "n_autonomous"),
+      n_collaborative          = g(r30, "n_collaborative"),
+      band30_autonomous_pct    = g(r30, "mean_autonomous_pct"),
+      band30_collaborative_pct = g(r30, "mean_collaborative_pct"),
+      band30_diff_pp           = g(r30, "diff_pp"),
+      band30_ci_lo             = g(r30, "ci_lo"),
+      band30_ci_hi             = g(r30, "ci_hi"),
+      band30_p                 = g(r30, "p_value"),
+      band60_autonomous_pct    = g(r60, "mean_autonomous_pct"),
+      band60_collaborative_pct = g(r60, "mean_collaborative_pct"),
+      band60_diff_pp           = g(r60, "diff_pp"),
+      band60_ci_lo             = g(r60, "ci_lo"),
+      band60_ci_hi             = g(r60, "ci_hi"),
+      band60_p                 = g(r60, "p_value")
+    )
+  }
+
   # --- Persistence -----------------------------------------------------------
   # PINNED, and flagged as such. These come from the 2007-2025 provider panel
   # (midwife_panel.csv, ~493 MB, gitignored and person-level) and from the
