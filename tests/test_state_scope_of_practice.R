@@ -96,5 +96,26 @@ if (!file.exists(acc_path)) {
       "T19 women_with_access never exceeds women_total in any row")
 }
 
+cat("\n-- significance test: state as unit of analysis --\n")
+sig_path <- "artifacts/access_by_scope_of_practice_significance.csv"
+if (!file.exists(sig_path)) {
+  cat(sprintf("  --   SKIP significance checks: %s absent\n", sig_path))
+} else {
+  sig <- read_csv(sig_path, show_col_types = FALSE)
+  chk(nrow(sig) == 2L, "T20 one row per band (30, 60)")
+  chk(setequal(sig$band_minutes, c(30L, 60L)), "T21 both bands present")
+  chk(all(sig$n_autonomous > 0 & sig$n_collaborative > 0),
+      "T22 both groups have a nonzero state count in every row")
+  chk(all(abs((sig$mean_autonomous_pct - sig$mean_collaborative_pct) - sig$diff_pp) < 0.15),
+      "T23 diff_pp matches the reported group means (within rounding)")
+  chk(all(sig$ci_lo <= sig$diff_pp & sig$diff_pp <= sig$ci_hi),
+      "T24 the point estimate falls inside its own confidence interval")
+  # NOT asserting p < 0.05 for either band -- that would pin a result to
+  # whatever the input data currently says, exactly what a science-law-style
+  # regression guard exists to catch elsewhere. This only checks the TEST
+  # ran and reported internally consistent numbers, not what it concluded.
+  chk(all(sig$p_value >= 0 & sig$p_value <= 1), "T25 p-values are valid probabilities")
+}
+
 if (fails) { cat(sprintf("\nFAILED (%d)\n", fails)); quit(status = 1L) }
 cat("\nPASS (0 failures)\n")

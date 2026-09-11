@@ -1,14 +1,10 @@
 {
-  "artifact": "full_cohort_access_by_scope_of_practice.csv",
-  "written_utc": "2026-09-11 16:23:43.886 UTC",
+  "artifact": "access_by_scope_of_practice_significance.csv",
+  "written_utc": "2026-09-11 16:23:43.974 UTC",
   "inputs": [
     {
-      "path": "artifacts/state_scope_of_practice.csv",
-      "sha256": "e276a0549924cbe7b9fb59e6e796c56ed569a87e0443f2457e3dfb54223b3851"
-    },
-    {
-      "path": "artifacts/full_cohort_access_by_band_state.csv",
-      "sha256": "daf469f286589a039a33a0129e3a95b8e0f0fbdb0b81cf0766aca0c71598edd1"
+      "path": "artifacts/full_cohort_access_by_scope_of_practice.csv",
+      "sha256": "524df5e582d0164738de7db4a3fe2302a7193b4f9f39a6f6298a4558eee0e5fe"
     }
   ],
   "code_sha256": "a85b80280b5ce339a52f01b5fa7a7cbd0462515ff27fec58b87ddba268c9f49b",
