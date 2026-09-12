@@ -1,7 +1,7 @@
 {
-  "title": "National Certified Nurse-Midwife (CNM) 50-State & DC Workforce & Board of Nursing Registry",
+  "title": "National Certified Nurse-Midwife (CNM) 50-State & DC Workforce Registry",
   "version": "4.0.0",
-  "description": "Comprehensive, multi-source national registry of 12,211 active Certified Nurse-Midwives (CNMs) across all 50 U.S. States and the District of Columbia, linked across AMCB, CMS NPPES, Open Payments, and 50-State Boards of Nursing (BONs).",
+  "description": "Comprehensive, multi-source national registry of 12,211 active Certified Nurse-Midwives (CNMs) across all 50 U.S. States and the District of Columbia, linked across AMCB, CMS NPPES, and Open Payments. State Board of Nursing (BON) licensure is genuinely observed for Washington only (374 records); see docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md.",
   "author": {
     "name": "Dr. Tyler Muffly, MD",
     "affiliation": "University of Colorado School of Medicine / Health Services Research",
@@ -18,7 +18,8 @@
     "total_active_amcb_cnms": 12211,
     "nppes_npi_matched": 12211,
     "npi_match_rate_pct": 100.0,
-    "bon_verified_state_licenses": 11355,
+    "bon_verified_state_licenses": 374,
+    "bon_verified_state_licenses_note": "Washington only; see docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md. 11355 was a synthesized re-encoding of certification_number, not observed licensure data, and is retracted.",
     "active_cpt_delivery_attenders": 5024,
     "attending_rate_pct": 41.1
   },

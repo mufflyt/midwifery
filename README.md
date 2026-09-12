@@ -9,7 +9,7 @@
 [![Dataset Metadata](https://img.shields.io/badge/metadata-metadata.json-orange.svg)](metadata.json)
 [![Changelog](https://img.shields.io/badge/changelog-NEWS.md-lightgrey.svg)](NEWS.md)
 
-*Linking all 12,211 active Certified Nurse-Midwives (CNMs) across all 50 U.S. States and the District of Columbia (51 jurisdictions) to NPI identity, 50-State Board of Nursing (BON) licensure, prescriptive authority (RXN), collaborative practice agreements (CPA), and practice geography.*
+*Linking all 12,211 active Certified Nurse-Midwives (CNMs) across all 50 U.S. States and the District of Columbia (51 jurisdictions) to NPI identity and practice geography. State Board of Nursing (BON) licensure is genuinely observed for Washington only (374 records, 3.3%) — see the retraction in item 4 below; prescriptive authority (RXN) and collaborative practice agreement (CPA) fields inherited the same defect and are under the same retraction.*
 
 **[→ Interactive National CNM Workforce Map](docs/cnm_national_leaflet_map.html)**
 &nbsp;·&nbsp; [Pipeline Architecture](ARCHITECTURE.md) &nbsp;·&nbsp; [Dataset Metadata](metadata.json)
@@ -27,7 +27,7 @@ flowchart LR
 |---|---|
 | Active AMCB Master Cohort | 12,211 Certified Nurse-Midwives (100.0% National Ascertainment) |
 | CMS NPPES NPI Registry Matched | 12,211 Midwives (100.0% Deterministic Match, 99.8% PPV) |
-| State Boards of Nursing Scraped | 50 States + District of Columbia (51 Jurisdictions Complete) |
+| State Boards of Nursing genuinely queried | 1 (Washington, via WA DOH's public Socrata API) — see the retraction below |
 | Direct State BON Permalinks | 100.0% 1-Click Lookup URLs Embedded in Interactive Map (a link to a board, not a check against one) |
 | **Board-verified against a state board** | **374 records, Washington only (3.3%)** — see the retraction below |
 | Active CPT Delivery Attenders | 5,024 Midwives (41.1% Verified Delivery Attenders) |

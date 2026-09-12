@@ -59,6 +59,22 @@ if os.path.exists("data/CMS_Hospital_General_Information.csv"):
 
 print(f"Mapped {len(hosp_ccn_map):,} CMS Hospitals to exact 6-digit CCN Facility IDs.")
 
+# 2b. Load GENUINE state-board verification (Washington only; see
+# docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md). MASTER_V4_FILE's own
+# scraped_license_num column is a re-encoding of certification_number
+# (`{STATE}-RN-APRN-{cert}`), not an observed license, for every state except
+# this join. Do not fall back to that column for any record -- a fabricated
+# number formatted like a real one, deep-linked into a real state verification
+# portal, reads as a genuine credential that happens to fail lookup.
+WA_BON_FILE = "artifacts/live_washington_bon_ingested_midwives_from_tracked_roster.csv"
+wa_bon_verified = {}
+if os.path.exists(WA_BON_FILE):
+    with open(WA_BON_FILE, "r", encoding="utf-8", errors="ignore") as f:
+        for r in csv.DictReader(f):
+            if r.get("live_bon_match_status") == "VERIFIED_LIVE_BON":
+                wa_bon_verified[r["certification_number"]] = r["live_bon_credential_num"]
+print(f"Loaded {len(wa_bon_verified):,} genuinely-verified Washington BON credentials.")
+
 # 3. Load Master Midwife Cohort v4 (N = 11,920)
 mws = []
 with open(MASTER_V4_FILE, "r", encoding="utf-8", errors="ignore") as f:
@@ -108,9 +124,19 @@ with open(MASTER_V4_FILE, "r", encoding="utf-8", errors="ignore") as f:
                 hosp_ccn_map.get(f"{f_upper}_{city_upper}_{state}") or ""
             )
             
-            bon_url = r.get("bon_direct_profile_url", "https://www.nursys.com/LVC/SearchTerms.aspx")
-            bon_lic = r.get("scraped_license_num", r.get("certification_number", ""))
-            
+            wa_lic = wa_bon_verified.get(r.get("certification_number", ""))
+            if wa_lic:
+                bon_verified = True
+                bon_lic = wa_lic
+                bon_url = f"https://fortress.wa.gov/doh/providercred/CredentialDetail.aspx?credential={wa_lic}"
+            else:
+                # NOT VERIFIED. bon_url stays a plain, unparameterized state
+                # search page -- never a deep link built from a number this
+                # project invented. See the WA_BON_FILE join above.
+                bon_verified = False
+                bon_lic = ""
+                bon_url = "https://www.nursys.com/LVC/SearchTerms.aspx"
+
             mws.append({
                 "npi": npi,
                 "cert": r.get("certification_number", ""),
@@ -127,6 +153,7 @@ with open(MASTER_V4_FILE, "r", encoding="utf-8", errors="ignore") as f:
                 "active_status": r.get("active_attending_status", "Active CNM Practice"),
                 "bon_url": bon_url,
                 "bon_lic": bon_lic,
+                "bon_verified": bon_verified,
                 "cpt_claims": "Active Attending Delivery Provider (CPT 59400/59409/59410)" if has_cpt else "Outpatient / Clinic Practice",
                 "has_cpt": has_cpt,
                 "op_status": r.get("open_payments_status", "Unlinked"),
@@ -310,7 +337,15 @@ html_content = f"""<!DOCTYPE html>
                 
                 const facilityUrl = m.category === "Accredited Birth Center" ? cabcUrl : hospWebUrl;
                 const facilityLabel = m.category === "Accredited Birth Center" ? `🏥 ${{m.facility}} (CABC Directory)` : `🏥 ${{m.facility}} (Web Profile 🔗)`;
-                
+
+                // Only Washington's 374 records carry a genuinely-observed state
+                // license number (WA DOH Socrata API). Every other state's
+                // license line must not assert a number this project invented --
+                // see docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md.
+                const bonLine = m.bon_verified
+                    ? `<b>State BON License:</b> <a href="${{m.bon_url}}" target="_blank" style="color: #38bdf8; font-weight: 600; text-decoration: underline;">✅ Verified ${{m.state}} License (${{m.bon_lic}}) ↗</a><br>`
+                    : `<b>State BON License:</b> not independently verified in this dataset -- <a href="${{m.bon_url}}" target="_blank" style="color: #94a3b8; text-decoration: underline;">search ${{m.state}} board ↗</a><br>`;
+
                 const popupContent = `
                     <div class="popup-title">
                         <a href="${{npiUrl}}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${{m.name}}</a>
@@ -324,7 +359,7 @@ html_content = f"""<!DOCTYPE html>
                     <div class="popup-detail">
                         <b>NPI:</b> <a href="${{npiUrl}}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${{m.npi}}</a> (NPPES Registry)<br>
                         <b>Certification #:</b> <a href="${{amcbUrl}}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${{m.cert}}</a> (AMCB Roster)<br>
-                        <b>State BON License:</b> <a href="${{m.bon_url}}" target="_blank" style="color: #38bdf8; font-weight: 600; text-decoration: underline;">📋 Verify ${{m.state}} State License (${{m.bon_lic}}) ↗</a><br>
+                        ${{bonLine}}
                         <b>Practice Address:</b> <a href="${{npiUrl}}" target="_blank" style="color: #94a3b8; text-decoration: underline;">${{m.address}}, ${{m.city}}, ${{m.state}} ${{m.zip}}</a> (CMS NPPES File)<br>
                         <b>Setting Tier:</b> ${{m.setting}}<br>
                         <b>Sunshine Act:</b> <a href="${{openPaymentsUrl}}" target="_blank" style="color: #38bdf8; text-decoration: underline;">${{m.op_status}}</a>

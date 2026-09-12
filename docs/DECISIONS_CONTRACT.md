@@ -407,6 +407,22 @@ corroboration only, never as a denominator.
 with the state list and a non-random coverage statement. Do not describe it as
 a designed or nationally representative denominator.
 
+**SUPERSEDED (2026-08-17, and re-confirmed 2026-09-11): the 11,355/40-state
+premise this ruling answered is itself false.** Multi-state BON license
+identifiers were synthesized from `certification_number`
+(`{STATE}-RN-CNM-{cert}`), not observed from state boards -- see
+`docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md`. Genuine observed BON
+evidence is **374 records, Washington only (3.3%)**, not an availability
+sample across 40 states. The 2026-09-11 pass also found the same fabrication
+pattern in six additional fields (`rxn_prescriptive_authority_status`,
+`supervising_physician_cpa_name`, `bon_attributed_hospital_privileges`,
+`midwifery_graduate_school`, `ce_compliance_audit_date`,
+`secondary_clinic_practice_addresses`, from
+`extract_detailed_bon_heterogeneity_fields.py`) that the 2026-08-17 audit did
+not catch, because that audit scoped only the license-number fields. None of
+this D12 ruling's options (A/B/C) apply to a number this small and this
+narrowly sourced; do not report a multi-state BON coverage percentage at all.
+
 ---
 
 ## D13 🟡 Does a lower-bound Language row belong in Table 1?

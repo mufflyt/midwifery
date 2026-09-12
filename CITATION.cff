@@ -15,7 +15,15 @@ authors:
     given-names: "Elisabeth B."
     affiliation: "Denver Health and Hospital Authority, Denver, Colorado, USA"
     # TODO: orcid: "https://orcid.org/XXXX-XXXX-XXXX-XXXX"
-title: "National Certified Nurse-Midwife (CNM) 50-State & DC Workforce & Board of Nursing Registry Dataset"
+title: "National Certified Nurse-Midwife (CNM) 50-State & DC Workforce Registry Dataset"
+# "Board of Nursing Registry" dropped from the title 2026-09-11: only Washington
+# state's licensure data is genuinely observed (374 records). Purported BON
+# license identifiers for the other 49 states + DC were synthesized from
+# certification_number, not scraped -- see
+# docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md and
+# manuscript/appendix3_board_verification.qmd. The Zenodo DOI below was minted
+# under the old title (date-released 2026-08-14, before this was found) and
+# will not update retroactively; a corrected version needs a new Zenodo release.
 version: "4.0.0"
 doi: "10.5281/zenodo.1054200"
 date-released: 2026-08-14
