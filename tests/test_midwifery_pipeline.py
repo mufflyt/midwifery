@@ -17,15 +17,23 @@ import unittest
 # repository where it must NOT be committed. The rule is in the ci.yml header --
 # an absent-input branch skips loudly, or the suite does not belong in CI.
 #
-# The skip names the producing script, so a local run tells you how to get the
-# data rather than just that you lack it.
+# UPDATE 2026-09-12: MASTER_CSV's only producer, demonstrate_la_bon_access_
+# pipeline.py, was deleted along with the rest of the fabricated BON-scraping
+# scripts (docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md) -- it read
+# artifacts/cohort_midwives_tier1_tier2_bon_validated.csv, which the
+# contamination inventory flags RELABEL: 5,120 claimed, only 374 genuine.
+# There is currently no real producer for this file. This suite still SKIPs
+# correctly (the file is, and will remain, absent), but the skip reason no
+# longer names a script that exists. Whoever builds a genuine multi-state BON
+# master file (following harvest_live_wa/co_bon_from_tracked_roster.py's
+# proven real-data pattern) should point MASTER_PRODUCER at it.
 MASTER_CSV = "artifacts/cohort_midwives_tier1_tier2_bon_validated.csv"
-MASTER_PRODUCER = "demonstrate_la_bon_access_pipeline.py"
+MASTER_PRODUCER = None  # no real producer exists; see the note above
 
 SKIP_REASON = (
-    f"{MASTER_CSV} is absent. It is person-level and gitignored by design, so "
-    f"it is never present in a checkout; rebuild it locally with "
-    f"`python3 {MASTER_PRODUCER}` to run this test."
+    f"{MASTER_CSV} is absent, and has no real producer script currently -- "
+    f"its only prior producer wrote fabricated data and was deleted. See "
+    f"docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md."
 )
 
 
