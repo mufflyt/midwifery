@@ -12,11 +12,18 @@
 #
 # This script asks the same real question -- which midwives in this project's
 # cohort hold a genuine, live-verified Washington DOH credential -- against a
-# DIFFERENT cohort source: artifacts/scraped_50_states_and_dc_midwives_master.csv
-# (already tracked). It is NOT expected to reproduce the original's 374-match
-# figure exactly: a different cohort, matched the same way (last+first name),
-# can plausibly find a different number of matches. Treat this output's count
-# as its own result, not a confirmation or contradiction of the original.
+# DIFFERENT cohort source: artifacts/tracked_roster_active_primary_linked.csv
+# (tracked; built by build_tracked_roster.R). It is NOT expected to reproduce
+# the original's 374-match figure exactly: a different cohort, matched the
+# same way (last+first name), can plausibly find a different number of
+# matches. Treat this output's count as its own result, not a confirmation or
+# contradiction of the original.
+#
+# Until 2026-09-13 the roster was artifacts/scraped_50_states_and_dc_midwives_
+# master.csv, which repeated 262 of its rows -- so the 449 WA rows and 374
+# matches this script first reported were 442 and 368 people -- and carried
+# one record whose NPPES address had been overwritten with a Montana one, which
+# kept that Washington-enumerated midwife out of this query entirely.
 # =============================================================================
 import csv
 import json
@@ -47,7 +54,7 @@ for r in live_wa_records:
         wa_lookup[f"{ln}_{fn}"] = r
 
 # 2. Cross-reference against the TRACKED roster, filtered to WA
-roster_file = "artifacts/scraped_50_states_and_dc_midwives_master.csv"
+roster_file = "artifacts/tracked_roster_active_primary_linked.csv"
 matched_wa = []
 unmatched_wa = []
 

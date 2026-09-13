@@ -31,12 +31,27 @@
 # she could not already see. This is a narrower justification than "AMCB data
 # is fine to publish" -- it applies to this file, reviewed on this date, not
 # as a standing exemption for future person-level artifacts.
-artifacts/scraped_50_states_and_dc_midwives_master.csv
+# RENAMED AND REBUILT 2026-09-13, pending re-confirmation by the owner. The
+# file reviewed above was artifacts/scraped_50_states_and_dc_midwives_master.
+# csv. Its description -- a "State Board of Nursing licensure scrape" -- was
+# false: its license and verification fields were synthesized from
+# certification_number (docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md).
+# build_tracked_roster.R replaces it with the same people and nothing not
+# already tracked: the 52 AMCB/NPPES linkage columns, taken from the
+# 2026-08-10 freeze (which also undid one hand-overwritten address and 262
+# duplicate rows), plus board licensure joined from the WA, CO and TX files
+# below, which are already reviewed here. No person was added. Both reasons given above still
+# apply; the name changed because the old one described a scrape that never
+# happened.
+artifacts/tracked_roster_active_primary_linked.csv
 
 # Live Washington DOH Board of Nursing credential cross-reference: 449 WA-state
 # midwives from the roster above, matched against data.wa.gov's public Socrata
 # API (dataset qxh8-f4bd) by name, with 374 confirmed VERIFIED_LIVE_BON and a
 # real, current credential number, status and expiration date per match.
+# (Re-harvested 2026-09-13 against the rebuilt roster: 443 WA-state midwives,
+# 369 VERIFIED_LIVE_BON. The 449/374 were rows of a roster that repeated some
+# midwives: 442 and 368 people.)
 # Reviewed and accepted by Tyler Muffly, 2026-08-28, for the same reasons as
 # the roster CSV above, plus one specific to this file: the WA DOH credential
 # fields are sourced live from Washington's own public open-data API, not
