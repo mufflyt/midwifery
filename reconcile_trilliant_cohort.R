@@ -24,15 +24,22 @@
 #
 # Inputs : LEGACY_FROZEN_CSV  the 2026-08-10 freeze, refused unless its sha256
 #                             is dbcc76f4... (person-level, gitignored)
+#          CURRENT_FROZEN_CSV optional: the current freeze, refused unless it is
+#                             the one the manifest describes. When given, the
+#                             reconciliation becomes three-way and explains every
+#                             difference between 11,920 and the current count.
 #          artifacts/tracked_roster_active_primary_linked.csv   (tracked)
 #          artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json  (tracked)
 # Outputs: artifacts/trilliant_cohort_reconciliation.csv   person-level, gitignored:
 #            one row per certificant in either list, with the reason
+#          artifacts/trilliant_cohort_transitions.csv   person-level, gitignored
+#            (three-way only): 11,920 -> current, one reason per certificant
 #          artifacts/trilliant_cohort_reconciliation_reasons.csv   aggregate, tracked
 # =============================================================================
 suppressPackageStartupMessages({ library(dplyr); library(readr) })
 source(file.path("R", "lib", "common_helpers.R"))       # chr()
 source(file.path("R", "lib", "artifact_provenance.R"))  # write_with_provenance(), sha256_of()
+source(file.path("R", "lib", "cohort_definitions.R"))   # canonical_active_primary(), cohort_transition_reasons()
 
 LEGACY_SHA256 <- "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
 LEGACY        <- Sys.getenv("LEGACY_FROZEN_CSV", "")
@@ -46,13 +53,8 @@ if (sha256_of(LEGACY) != LEGACY_SHA256)
   stop(LEGACY, " is not the 2026-08-10 freeze; refusing to reconcile against another roster.",
        call. = FALSE)
 
-active_primary <- function(x) {
-  x |>
-    filter(status == "ACTIVE", linkage_tier == "primary_midwifery", !is.na(npi), npi != "") |>
-    distinct(certification_number, .keep_all = TRUE)
-}
-
-legacy <- chr(LEGACY) |> active_primary() |>
+legacy_linkage <- chr(LEGACY)
+legacy <- legacy_linkage |> canonical_active_primary() |>
   transmute(certification_number, legacy_npi = npi, legacy_state = nppes_state)
 roster <- chr(ROSTER) |>
   transmute(certification_number, roster_npi = npi, roster_state = nppes_state)
@@ -95,5 +97,20 @@ cat(sprintf("legacy 11,920 list: %s   tracked roster: %s\n",
 print(count(recon, reason, name = "n"), n = Inf)
 cat("\nlegacy-only, by practice state:\n")
 print(recon |> filter(in_legacy_11920, !in_roster_11093) |> count(state, sort = TRUE), n = Inf)
-cat(sprintf("\ncurrent freeze: %s rows, sha256 %s... -- not on this machine; the canonical\nACTIVE, primary-linked cohort is the registered 12,171 against it.\n",
+CURRENT <- Sys.getenv("CURRENT_FROZEN_CSV", "")
+if (nzchar(CURRENT)) {
+  verify_linkage_freeze(CURRENT, MANIFEST, allow_sha256 = "")
+  tr <- cohort_transition_reasons(legacy_linkage, chr(CURRENT)) |>
+    mutate(in_roster_11093 = certification_number %in% roster$certification_number)
+  write_with_provenance(tr, "artifacts/trilliant_cohort_transitions.csv",
+                        inputs = c(LEGACY, CURRENT, ROSTER), na = "")
+  trans <- tr |> count(reason, in_roster_11093, name = "n_certificants") |>
+    mutate(legacy_freeze_sha256 = LEGACY_SHA256, current_freeze_sha256 = man$artifact_sha256)
+  write_with_provenance(trans, "artifacts/trilliant_cohort_transition_reasons.csv",
+                        inputs = c(ROSTER, MANIFEST), na = "")
+  cat(sprintf("\nthree-way: legacy %s -> current %s (change %+d)\n",
+              format(sum(tr$in_old), big.mark = ","), format(sum(tr$in_new), big.mark = ","),
+              sum(tr$in_new) - sum(tr$in_old)))
+  print(count(tr, reason, name = "n"), n = Inf)
+} else cat(sprintf("\ncurrent freeze: %s rows, sha256 %s... -- not on this machine; the canonical\nACTIVE, primary-linked cohort is the registered 12,171 against it.\n",
             format(man$artifact_rows, big.mark = ","), substr(man$artifact_sha256, 1, 8)))

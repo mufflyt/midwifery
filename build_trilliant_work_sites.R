@@ -50,6 +50,7 @@ suppressPackageStartupMessages({
 source(file.path("R", "lib", "common_helpers.R"))       # chr(), pad_ccn()
 source(file.path("R", "lib", "medicare_duckdb.R"))      # samsung_volume_path()
 source(file.path("R", "lib", "artifact_provenance.R"))  # write_with_provenance()
+source(file.path("R", "lib", "cohort_definitions.R"))   # verify_linkage_freeze(), canonical_active_primary()
 
 # ---- paths -------------------------------------------------------------------
 # The drive mounts as "MufflySamsung" or "MufflySamsung 1" depending on the day;
@@ -115,27 +116,20 @@ read_latin1 <- function(path) read_csv(path, col_types = cols(.default = col_cha
 # 1. Cohort: ACTIVE certificants with a primary-tier NPI link
 # =============================================================================
 # WHICH FREEZE. The cohort is only the canonical one if the linkage file is
-# the freeze the tracked manifest describes. The first run of this script used
-# the 2026-08-10 freeze (11,920) because it was the one on that machine; the
-# current freeze is the 22,357-row reconcile_ab_20260910T193000_issue172
-# roster, whose ACTIVE, primary-linked count is the registered 12,171. Any
-# other file stops the build unless ALLOW_FREEZE_SHA256 names it on purpose,
-# and the summary records which freeze it came from.
+# the freeze the tracked manifest describes (current: 22,357 rows, registered
+# ACTIVE, primary-linked count 12,171). Anything else stops unless
+# ALLOW_FREEZE_SHA256 names it on purpose, and the summary records which
+# freeze it came from. The first run of this script used the 2026-08-10
+# freeze (11,920) because it was the only one on that machine.
+#
+# WHO. The canonical cohort, whole. No board-coverage restriction: Trilliant
+# and CMS observe midwives in every state, whether or not a state board was
+# ever queried (R/lib/cohort_definitions.R).
 FROZEN <- file.path(ART, "amcb_npi_linkage_FROZEN.csv")
-FROZEN_MANIFEST <- jsonlite::read_json("artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json")
-FROZEN_SHA256 <- sha256_of(FROZEN)
-if (!identical(FROZEN_SHA256, FROZEN_MANIFEST$artifact_sha256) &&
-    !identical(FROZEN_SHA256, Sys.getenv("ALLOW_FREEZE_SHA256", ""))) {
-  stop(sprintf(paste0("%s has sha256 %s..., but the tracked manifest describes %s... (%s rows).
-",
-                      "  Use the current freeze, or set ALLOW_FREEZE_SHA256 to build against this one deliberately."),
-               FROZEN, substr(FROZEN_SHA256, 1, 8), substr(FROZEN_MANIFEST$artifact_sha256, 1, 8),
-               format(FROZEN_MANIFEST$artifact_rows, big.mark = ",")), call. = FALSE)
-}
+FROZEN_SHA256 <- verify_linkage_freeze(FROZEN)
 
 cohort <- chr(FROZEN) |>
-  filter(status == "ACTIVE", linkage_tier == "primary_midwifery", !is.na(npi), npi != "") |>
-  distinct(certification_number, .keep_all = TRUE) |>
+  canonical_active_primary() |>
   transmute(certification_number, npi = as.numeric(npi), first_name, last_name, nppes_state)
 cat("cohort:", nrow(cohort), "midwives\n")
 
@@ -234,6 +228,7 @@ building_hospital <- candidates |>
 
 building_birth_center <- candidates |>
   filter(org_class == "birth_center") |>
+  arrange(site_id, org_name) |>
   distinct(site_id, .keep_all = TRUE) |>
   select(site_id, addr_birth_center_name = org_name)
 
