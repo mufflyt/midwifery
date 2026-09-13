@@ -31,7 +31,8 @@
 # she could not already see. This is a narrower justification than "AMCB data
 # is fine to publish" -- it applies to this file, reviewed on this date, not
 # as a standing exemption for future person-level artifacts.
-# RENAMED AND REBUILT 2026-09-13, pending re-confirmation by the owner. The
+# RENAMED AND REBUILT 2026-09-13; re-confirmed by Tyler Muffly the same day,
+# after the rebuild below was described to him (PR #195 follow-up). The
 # file reviewed above was artifacts/scraped_50_states_and_dc_midwives_master.
 # csv. Its description -- a "State Board of Nursing licensure scrape" -- was
 # false: its license and verification fields were synthesized from
