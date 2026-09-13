@@ -51,6 +51,10 @@ source(file.path("R", "lib", "common_helpers.R"))       # chr(), pad_ccn()
 source(file.path("R", "lib", "medicare_duckdb.R"))      # samsung_volume_path()
 source(file.path("R", "lib", "artifact_provenance.R"))  # write_with_provenance()
 source(file.path("R", "lib", "cohort_definitions.R"))   # verify_linkage_freeze(), canonical_active_primary()
+source(file.path("R", "lib", "work_site_topology.R"))   # match_county(), assign_site_ids(), blended_practice(), topology_by_midwife()
+source(file.path("R", "lib", "table1_bands.R"))         # band_rurality(), RURALITY_LABELS_COHORT
+source(file.path("R", "lib", "zip_county_crosswalk.R")) # zip_county_dominant()
+source(file.path("R", "lib", "ct_county_crosswalk.R"))  # ct_zip_to_region()
 
 # ---- paths -------------------------------------------------------------------
 # The drive mounts as "MufflySamsung" or "MufflySamsung 1" depending on the day;
@@ -156,6 +160,7 @@ top_sites <- trilliant |>
     zip5       = str_sub(provider_affiliated_practice_1_zip_code, 1, 5),
     lat        = provider_affiliated_practice_1_latitude,
     lon        = provider_affiliated_practice_1_longitude,
+    county_name = provider_affiliated_practice_1_county,
     visit_share = provider_affiliated_practice_1_visits_percent_total,
     evidence_date = TRILLIANT_SNAPSHOT)
 
@@ -166,7 +171,8 @@ nppes_sites <- chr(file.path(ART, "midwife_practice_locations.csv")) |>
     source = paste0("nppes_", loc_type, "_location"),
     source_rank = if_else(loc_type == "primary", 2L, 3L),
     site_name = NA_character_, street = addr, city, state = st, zip5 = z5,
-    lat = NA_real_, lon = NA_real_, visit_share = NA_real_, evidence_date = NPPES_VINTAGE)
+    lat = NA_real_, lon = NA_real_, county_name = NA_character_, visit_share = NA_real_,
+    evidence_date = NPPES_VINTAGE)
 
 addr_sites <- bind_rows(top_sites, nppes_sites) |>
   mutate(site_id = row_number(), ns = norm_street(street))
@@ -176,31 +182,39 @@ addr_sites <- bind_rows(top_sites, nppes_sites) |>
 # =============================================================================
 site_zips <- addr_sites |> distinct(oz = zip5) |> filter(!is.na(oz))
 
-orgs <- read_parquet_duckdb(file.path(LAKE, "directory_organization", "*.parquet")) |>
-  filter(!is.na(organization_zip_code), !is.na(organization_street_line_1)) |>
-  # 1L / 5L, not 1 / 5: DuckDB's substr() wants whole numbers
-  mutate(oz = substr(organization_zip_code, 1L, 5L)) |>
-  semi_join(as_duckdb_tibble(site_zips), by = "oz") |>
-  select(org_npi = organization_npi, org_name = organization_name, org_type = organization_type,
-         tax = organization_primary_taxonomy_code, tax_desc = organization_primary_taxonomy_description,
-         oz, street1 = organization_street_line_1) |>
-  collect() |>
-  mutate(
-    ns = norm_street(street1),
-    org_class = case_when(
-      org_type == "Independent Laboratory" | tax == "291U00000X" | str_starts(coalesce(tax, ""), "207ZP") |
-        is_lab(org_name) ~ "lab_pathology",
-      tax == "261QB0400X" | is_birth_center(org_name) ~ "birth_center",
-      str_detect(coalesce(org_type, ""), "(?i)hospital") | str_starts(coalesce(tax, ""), "28") |
-        str_starts(coalesce(tax, ""), "27") ~ "hospital",
-      tax %in% c("261QF0400X", "261QR1300X", "261QC1500X", "261QC1800X") | is_chc(org_name) ~ "fqhc_community_health",
-      org_type %in% c("Pharmacy", "Supplier", "Imaging Center", "Transportation Service",
-                      "Home Health and Hospice", "Nursing Facility") ~ "non_care_other",
-      org_type %in% c("Urgent Care", "Surgery Center", "Free-Standing Emergency Department") ~ "other_facility",
-      TRUE ~ "clinic_practice"),
-    # higher = more like the hospital itself (acute / critical access), for picking a name
-    hospital_rank = if_else(org_class == "hospital",
-      1L + 10L * str_detect(coalesce(org_type, ""), "(?i)acute|critical"), 0L))
+# Read once for the addresses above, and again (below) only for ZIPs that CMS
+# hospital affiliations and CABC birth centers add. Each org carries Trilliant's
+# geocode and county, which is where every non-Trilliant site gets its place.
+read_orgs <- function(zips) {
+  read_parquet_duckdb(file.path(LAKE, "directory_organization", "*.parquet")) |>
+    filter(!is.na(organization_zip_code), !is.na(organization_street_line_1)) |>
+    # 1L / 5L, not 1 / 5: DuckDB's substr() wants whole numbers
+    mutate(oz = substr(organization_zip_code, 1L, 5L)) |>
+    semi_join(as_duckdb_tibble(tibble(oz = unique(zips))), by = "oz") |>
+    select(org_npi = organization_npi, org_name = organization_name, org_type = organization_type,
+           tax = organization_primary_taxonomy_code, tax_desc = organization_primary_taxonomy_description,
+           oz, street1 = organization_street_line_1,
+           org_lat = organization_latitude, org_lon = organization_longitude,
+           org_county = organization_county, org_state = organization_state) |>
+    collect() |>
+    mutate(
+      ns = norm_street(street1),
+      org_class = case_when(
+        org_type == "Independent Laboratory" | tax == "291U00000X" | str_starts(coalesce(tax, ""), "207ZP") |
+          is_lab(org_name) ~ "lab_pathology",
+        tax == "261QB0400X" | is_birth_center(org_name) ~ "birth_center",
+        str_detect(coalesce(org_type, ""), "(?i)hospital") | str_starts(coalesce(tax, ""), "28") |
+          str_starts(coalesce(tax, ""), "27") ~ "hospital",
+        tax %in% c("261QF0400X", "261QR1300X", "261QC1500X", "261QC1800X") | is_chc(org_name) ~ "fqhc_community_health",
+        org_type %in% c("Pharmacy", "Supplier", "Imaging Center", "Transportation Service",
+                        "Home Health and Hospice", "Nursing Facility") ~ "non_care_other",
+        org_type %in% c("Urgent Care", "Surgery Center", "Free-Standing Emergency Department") ~ "other_facility",
+        TRUE ~ "clinic_practice"),
+      # higher = more like the hospital itself (acute / critical access), for picking a name
+      hospital_rank = if_else(org_class == "hospital",
+        1L + 10L * str_detect(coalesce(org_type, ""), "(?i)acute|critical"), 0L))
+}
+orgs <- read_orgs(site_zips$oz)
 
 # =============================================================================
 # 5. Match each address to the organizations in the same building
@@ -432,7 +446,7 @@ ccn_best <- ccn_candidates |>
 addr_rows <- addr_classified |>
   left_join(ccn_best, by = "site_id") |>
   select(certification_number, npi, source, source_rank, site_name, street, city, state, zip5, lat, lon,
-         visit_share, evidence_date, facility_type, facility_type_basis,
+         county_name, visit_share, evidence_date, facility_type, facility_type_basis,
          matched_org_name, matched_org_npi, matched_org_type, matched_org_taxonomy, n_orgs_at_address,
          name_similarity, addr_has_hospital, addr_hospital_name, addr_has_birth_center, addr_birth_center_name,
          hospital_org_npi, ccn, ccn_basis)
@@ -443,11 +457,95 @@ sites_all <- bind_rows(addr_rows, dac_sites, cabc_sites, trilliant_org_sites, re
   left_join(price_files, by = "ccn")
 
 # =============================================================================
+# 8b. Where each site is: coordinates, county, rurality, and which rows are one place
+# =============================================================================
+# Only the Trilliant claims site came with coordinates. Every other address
+# takes the geocode Trilliant's organization directory gives the organizations
+# at that street address; a CMS hospital affiliation is placed at the
+# hospital's CMS address first, a CABC center at its listed address. County:
+# Trilliant's county name where it matches one Census county
+# (match_county()), else the ZIP's dominant county (the repository's
+# crosswalk), with Connecticut ZIPs rescued to their 2022 planning region when
+# that crosswalk is present. Rurality: RUCC 2023 from data/county_base.csv,
+# banded exactly as the cohort papers band it.
+NON_WORKPLACE <- c("lab_pathology", "non_care_other")
+EMPLOYER_SOURCES <- c("trilliant_primary_org", "resolved_employer_org")
+
+dac_addr <- hospital_ref |>
+  filter(!is.na(hns), hns != "", !is.na(hz)) |>
+  arrange(ccn, hz, hns) |>
+  group_by(ccn) |> slice_head(n = 1) |> ungroup() |>
+  select(ccn, dac_ns = hns, dac_zip = hz)
+sites_all <- sites_all |>
+  left_join(dac_addr, by = "ccn", relationship = "many-to-one") |>
+  mutate(
+    ns_geo = case_when(
+      source == "cms_dac_facility_affiliation" ~ dac_ns,
+      source == "cabc_birth_center" ~ norm_street(str_remove(street, ",.*$")),
+      TRUE ~ norm_street(street)),
+    ns_geo = if_else(ns_geo == "", NA_character_, ns_geo),
+    zip_geo = if_else(source == "cms_dac_facility_affiliation", dac_zip, zip5)) |>
+  select(-dac_ns, -dac_zip)
+
+extra_zips <- setdiff(unique(stats::na.omit(sites_all$zip_geo)), unique(orgs$oz))
+orgs_geo <- if (length(extra_zips)) bind_rows(orgs, read_orgs(extra_zips)) else orgs
+modal <- function(x) { t <- table(x); if (length(t)) names(t)[which.max(t)] else NA_character_ }
+geo_at_address <- orgs_geo |>
+  filter(!is.na(org_lat), !is.na(org_lon), ns != "") |>
+  group_by(oz, ns) |>
+  summarise(g_lat = stats::median(org_lat), g_lon = stats::median(org_lon),
+            g_county = modal(org_county), g_state = modal(org_state), .groups = "drop")
+
+county_base <- chr(file.path("data", "county_base.csv"))
+county_keys <- county_match_keys(county_base)
+zip_county <- zip_county_dominant(file.path("data", "zcta_county_2020.txt"))
+ct_regions <- ct_zip_to_region()
+
+sites_all <- sites_all |>
+  left_join(geo_at_address, by = c("zip_geo" = "oz", "ns_geo" = "ns"), relationship = "many-to-one") |>
+  mutate(coordinate_basis = case_when(!is.na(lat) ~ "trilliant_claims_site",
+                                      !is.na(g_lat) ~ "trilliant_organizations_at_address"),
+         lat = coalesce(lat, g_lat), lon = coalesce(lon, g_lon),
+         county_name = coalesce(county_name, g_county),
+         state_geo = coalesce(state, g_state)) |>
+  select(-g_lat, -g_lon, -g_county, -g_state)
+
+name_pairs <- sites_all |>
+  distinct(county_name, state_geo) |>
+  filter(!is.na(county_name), !is.na(state_geo))
+name_pairs$geoid_from_name <- match_county(name_pairs$county_name, name_pairs$state_geo, county_keys)
+sites_all <- sites_all |>
+  left_join(name_pairs, by = c("county_name", "state_geo"), relationship = "many-to-one") |>
+  left_join(rename(zip_county, geoid_from_zip = GEOID), by = c("zip_geo" = "zip5"), relationship = "many-to-one") |>
+  mutate(county_geoid = coalesce(geoid_from_name, geoid_from_zip),
+         geography_basis = case_when(!is.na(geoid_from_name) ~ "trilliant_county_name",
+                                     !is.na(geoid_from_zip) ~ "zip_dominant_county"))
+if (!is.null(ct_regions)) {
+  sites_all <- sites_all |>
+    left_join(rename(ct_regions, geoid_ct = GEOID), by = c("zip_geo" = "zip5"), relationship = "many-to-one") |>
+    mutate(ct_legacy = !is.na(county_geoid) & substr(county_geoid, 1, 2) == "09" & !county_geoid %in% county_base$GEOID,
+           geography_basis = if_else(ct_legacy & !is.na(geoid_ct), "ct_zip_to_planning_region", geography_basis),
+           county_geoid = if_else(ct_legacy & !is.na(geoid_ct), geoid_ct, county_geoid)) |>
+    select(-geoid_ct, -ct_legacy)
+}
+sites_all <- sites_all |>
+  left_join(county_base |> select(county_geoid = GEOID, rucc_2023), by = "county_geoid",
+            relationship = "many-to-one") |>
+  mutate(rucc_cat = coalesce(band_rurality(rucc_2023, RURALITY_LABELS_COHORT), "Unknown")) |>
+  select(-geoid_from_name, -geoid_from_zip, -state_geo)
+
+# Which rows are one physical place: same coordinates to ~11 m, or same street + ZIP.
+work_rows <- !sites_all$facility_type %in% NON_WORKPLACE & !sites_all$source %in% EMPLOYER_SOURCES
+sites_all$site_id <- NA_character_
+sites_all$site_id[work_rows] <- assign_site_ids(
+  sites_all$certification_number[work_rows], sites_all$lat[work_rows], sites_all$lon[work_rows],
+  sites_all$ns_geo[work_rows], sites_all$zip_geo[work_rows])
+
+# =============================================================================
 # 9. Keep workplaces; set the rest aside where they can be audited
 # =============================================================================
 # Labs, pathology practices, pharmacies, DME suppliers, ambulance and imaging are
 # where a midwife's ORDERS were filled, not where the midwife works.
-NON_WORKPLACE <- c("lab_pathology", "non_care_other")
 sites_long <- sites_all |> filter(!facility_type %in% NON_WORKPLACE)
 excluded   <- sites_all |> filter(facility_type %in% NON_WORKPLACE)
 
@@ -461,6 +559,22 @@ write_with_provenance(arrange(sites_long, certification_number, source_rank),
 write_with_provenance(arrange(excluded, certification_number, source_rank),
                       file.path(OUT, "midwife_work_sites_excluded_non_workplace.csv"),
                       inputs = INPUTS, na = "")
+
+# One row per midwife x physical place. The name, coordinates and county come
+# from the best-ranked source at that place (Trilliant claims site first).
+first_known <- function(x) { x <- x[!is.na(x)]; if (length(x)) x[1] else x[NA_integer_] }
+distinct_sites <- sites_long |>
+  filter(!is.na(site_id)) |>
+  arrange(certification_number, site_id, source_rank, site_name) |>
+  group_by(certification_number, site_id) |>
+  summarise(site_name = first_known(site_name), facility_types = paste(sort(unique(facility_type)), collapse = " + "),
+            sources = paste(sort(unique(source)), collapse = "; "), n_source_rows = n(),
+            street = first_known(street), zip5 = first_known(zip_geo), lat = first_known(lat), lon = first_known(lon),
+            coordinate_basis = first_known(coordinate_basis), county_geoid = first_known(county_geoid),
+            geography_basis = first_known(geography_basis), rucc_2023 = first_known(rucc_2023),
+            rucc_cat = first_known(rucc_cat), visit_share = first_known(visit_share), ccn = first_known(ccn),
+            .groups = "drop")
+write_with_provenance(distinct_sites, file.path(OUT, "midwife_distinct_work_sites.csv"), inputs = INPUTS, na = "")
 
 # =============================================================================
 # 10. One row per midwife
@@ -505,6 +619,34 @@ summary_tbl <- cohort |>
   left_join(flags, by = "certification_number") |>
   mutate(across(c(any_hospital, any_birth_center, any_fqhc, any_clinic), \(x) coalesce(x, FALSE)))
 
+# Topology, blended practice and rurality (R/lib/work_site_topology.R).
+topology <- topology_by_midwife(sites_long |>
+  transmute(certification_number, site_id, source, facility_type, lat, lon, GEOID = county_geoid, rucc_cat))
+blended <- blended_practice(sites_long)
+top_geo <- top |> transmute(certification_number, top_site_county_geoid = county_geoid,
+                            top_site_geography_basis = geography_basis, top_site_rucc_cat = rucc_cat)
+nppes_geo <- sites_long |>
+  filter(source == "nppes_primary_location") |>
+  arrange(certification_number, site_id) |>
+  group_by(certification_number) |> slice_head(n = 1) |> ungroup() |>
+  transmute(certification_number, nppes_primary_rucc_cat = rucc_cat)
+summary_tbl <- summary_tbl |>
+  left_join(top_geo, by = "certification_number", relationship = "one-to-one") |>
+  left_join(nppes_geo, by = "certification_number", relationship = "one-to-one") |>
+  left_join(topology, by = "certification_number", relationship = "one-to-one") |>
+  left_join(blended, by = "certification_number", relationship = "one-to-one") |>
+  mutate(
+    n_distinct_sites = coalesce(n_distinct_sites, 0L),
+    across(c(hospital_strict, birth_center_strict, hospital_broad, birth_center_broad,
+             blended_strict, blended_broad), \(x) coalesce(x, FALSE)),
+    # Does the NPPES address put a midwife in the same rurality band as where
+    # her claims say she works? NPPES addresses drive the persistence analysis.
+    rurality_nppes_vs_claims = case_when(
+      is.na(top_site_rucc_cat) | top_site_rucc_cat == "Unknown" |
+        is.na(nppes_primary_rucc_cat) | nppes_primary_rucc_cat == "Unknown" ~ "not comparable",
+      top_site_rucc_cat == nppes_primary_rucc_cat ~ "same band",
+      TRUE ~ paste0("NPPES ", nppes_primary_rucc_cat, " / claims ", top_site_rucc_cat)))
+
 write_with_provenance(arrange(summary_tbl, certification_number),
                       file.path(OUT, "midwife_work_sites_summary.csv"), inputs = INPUTS, na = "")
 
@@ -515,11 +657,29 @@ settings <- summary_tbl |>
     which(c(any_hospital, any_birth_center, any_fqhc, any_clinic))], collapse = " + "),
     .by = certification_number) |>
   mutate(pattern = if_else(pattern == "", "no classified site", pattern))
+# Every dimension partitions the cohort: its levels sum to cohort_n.
 setting_summary <- bind_rows(
   summary_tbl |>
     count(level = coalesce(top_site_facility_type, "no Trilliant site"), name = "n_midwives") |>
     mutate(dimension = "trilliant_main_site_type"),
-  settings |> count(level = pattern, name = "n_midwives") |> mutate(dimension = "work_setting_combination")) |>
+  settings |> count(level = pattern, name = "n_midwives") |> mutate(dimension = "work_setting_combination"),
+  summary_tbl |>
+    count(level = if_else(n_distinct_sites >= 5L, "5+", as.character(n_distinct_sites)), name = "n_midwives") |>
+    mutate(dimension = "n_distinct_work_sites"),
+  summary_tbl |>
+    count(level = case_when(blended_strict ~ "hospital + birth center, strict evidence",
+                            blended_broad ~ "hospital + birth center, broad evidence only",
+                            TRUE ~ "not both"), name = "n_midwives") |>
+    mutate(dimension = "blended_hospital_birth_center"),
+  summary_tbl |>
+    count(level = coalesce(top_site_rucc_cat, "no Trilliant site"), name = "n_midwives") |>
+    mutate(dimension = "main_site_rurality"),
+  summary_tbl |>
+    count(level = coalesce(rurality_mix, "no site"), name = "n_midwives") |>
+    mutate(dimension = "rurality_mix_across_sites"),
+  summary_tbl |>
+    count(level = rurality_nppes_vs_claims, name = "n_midwives") |>
+    mutate(dimension = "rurality_nppes_address_vs_claims_site")) |>
   mutate(cohort_n = nrow(summary_tbl), frozen_sha256 = FROZEN_SHA256,
          trilliant_snapshot = TRILLIANT_SNAPSHOT) |>
   select(dimension, level, n_midwives, cohort_n, frozen_sha256, trilliant_snapshot) |>
@@ -543,3 +703,10 @@ print(summary_tbl |>
           which(c(any_hospital, any_birth_center, any_fqhc, any_clinic))], collapse = " + "),
           .by = certification_number) |>
         count(pattern, sort = TRUE), n = Inf)
+
+cat("\ndistinct work sites per midwife\n"); print(count(summary_tbl, n_distinct_sites), n = Inf)
+cat("\nblended hospital + birth center\n")
+print(summary_tbl |> summarise(strict = sum(blended_strict), broad = sum(blended_broad)))
+cat("\nmain-site rurality\n"); print(count(summary_tbl, top_site_rucc_cat), n = Inf)
+cat("\nNPPES address vs claims site rurality\n"); print(count(summary_tbl, rurality_nppes_vs_claims, sort = TRUE), n = Inf)
+cat("\nhow each site got its county\n"); print(count(sites_long |> filter(!is.na(site_id)), geography_basis), n = Inf)
