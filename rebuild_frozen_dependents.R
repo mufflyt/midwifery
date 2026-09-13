@@ -107,7 +107,16 @@ REBUILD_ORDER <- list(
                    # third time that has now happened and the reason T5 exists.
                    "make_evidence_class_figure.R",
                    "analyze_temporal_plausibility.R",
-                   "make_temporal_plausibility_figure.R")),
+                   "make_temporal_plausibility_figure.R",
+                   # Added 2026-09-13, by T5 in the pull request that introduced
+                   # it. It audits the cohort rather than feeding anything: it
+                   # reconciles the 2026-08-10 freeze's ACTIVE, primary-linked
+                   # list against the tracked roster and, given the current
+                   # freeze, gives every certificant one transition reason. It
+                   # needs LEGACY_FROZEN_CSV (hash-pinned) and stops without it,
+                   # which is right: a rebuild that cannot explain how the
+                   # cohort changed should say so, not skip the question.
+                   "reconcile_trilliant_cohort.R")),
   list(layer = "2-cohort-structure", why = "cohort flow/composition/progression read FROZEN directly",
        scripts = c("R/05-stage-progression.R", "R/06-cohort-flow.R",
                    "R/07-cohort-composition.R")),
@@ -198,7 +207,14 @@ REBUILD_ORDER <- list(
                    # roster would publish a coverage floor for a cohort that no
                    # longer exists -- the same failure the bounds script above
                    # was added to prevent.
-                   "analyze_linkage_coverage_floor.R")),
+                   "analyze_linkage_coverage_floor.R",
+                   # Added 2026-09-13, by T5 in the pull request that introduced
+                   # it. Takes its cohort from canonical_active_primary() over
+                   # amcb_npi_linkage_FROZEN and refuses any freeze but the
+                   # manifest's, so left un-rebuilt it would not go stale
+                   # quietly -- it would stop. Needs the Trilliant lake and the
+                   # hpt_prices references on the external volume.
+                   "build_trilliant_work_sites.R")),
   list(layer = "5-enrichment-recompute", why = "age/enrichment recomputes from cached inputs (no network)",
        scripts = c("calibrate_amcb_certification_ages.R", "enrich_doximity_cnm_ages.R",
                    "match_florida_voter_ages.R", "sweep_healthgrades_enrichment.R",
