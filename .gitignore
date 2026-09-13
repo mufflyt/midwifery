@@ -628,3 +628,5 @@ artifacts/midwife_work_sites_excluded_non_workplace.csv*
 # reason counts, artifacts/trilliant_cohort_reconciliation_reasons.csv, are tracked.
 artifacts/trilliant_cohort_reconciliation.csv*
 artifacts/trilliant_cohort_transitions.csv*
+# build_trilliant_work_sites.R: one row per midwife x physical site (person-level).
+artifacts/midwife_distinct_work_sites.csv*
