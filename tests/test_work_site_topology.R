@@ -96,12 +96,12 @@ s <- data.frame(
   ccn = c("060011", NA, "060011", NA, NA, NA, NA, NA), stringsAsFactors = FALSE)
 b <- blended_practice(s)
 blend_flag <- function(id, col) b[[col]][b$certification_number == id]
-chk(g("A", "blended_strict"), "T22 DAC hospital + CABC birth center is strict")
-chk(!g("B", "blended_strict") && g("B", "blended_broad"),
+chk(blend_flag("A", "blended_strict"), "T22 DAC hospital + CABC birth center is strict")
+chk(!blend_flag("B", "blended_strict") && blend_flag("B", "blended_broad"),
     "T23 a birth center known only by its name is broad, not strict")
-chk(g("B", "hospital_strict"), "T24 the Trilliant claims site with a hospital CCN is a strict hospital")
-chk(!g("C", "birth_center_broad"), "T25 an employer's name never counts as a work site")
-chk(!g("D", "hospital_strict") && g("D", "birth_center_strict") && g("D", "blended_broad"),
+chk(blend_flag("B", "hospital_strict"), "T24 the Trilliant claims site with a hospital CCN is a strict hospital")
+chk(!blend_flag("C", "birth_center_broad"), "T25 an employer's name never counts as a work site")
+chk(!blend_flag("D", "hospital_strict") && blend_flag("D", "birth_center_strict") && blend_flag("D", "blended_broad"),
     "T26 an NPPES address in a hospital building is broad hospital evidence only")
 
 cat("\n-- ONE ROW PER MIDWIFE --\n")
