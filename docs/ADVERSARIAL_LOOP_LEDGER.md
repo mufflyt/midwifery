@@ -4799,6 +4799,17 @@ during writing: T34-7's first draft extracted the message's LEADING digit
 the actual count — corrected to match on the specific "Coverage: (\\d+)
 midwives" substring before re-running.
 
+**Superseded 2026-09-13.** Finding 2's fix made the verdict conditional on
+`has_cpt_delivery_claim`, but that field was not evidence: it was "DAC primary
+specialty is CNM" relabelled as delivery attendance (public Part B has no
+delivery-code rows for any provider, `artifacts/medicare_delivery_code_
+observability.csv`), and the case-study record's `nppes_*` address had been
+overwritten by hand. The case study, the CPT section and the typed-in "400" /
+"98.5%" literals flagged above as "not fixed" were all removed, the tracked
+`address_recency_validation_report.csv` built from them was deleted, and the
+test file was revised: T34-4 and T34-7 stand; the case-study and CPT tests are
+replaced by static checks (T34-12..14) that fail on the retired version.
+
 **Full suite.** New file: 10/10 pass. `Rscript tests/ci_hygiene.R`: all
 tracked R files still parse, no new duplicate definitions. No existing test
 referenced this file before this cycle, so nothing to regress.

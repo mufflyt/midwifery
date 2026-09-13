@@ -29,7 +29,6 @@ artifacts/ab_middle_name/transitions_exposed.csv
 artifacts/acme_dnp_authors.csv
 artifacts/acme_institution_audit.csv
 artifacts/acme_repository_registry.csv
-artifacts/address_recency_validation_report.csv
 artifacts/amcb_age_calibration_provenance.csv
 artifacts/bc_resolver/bc_transitions.csv
 artifacts/bc_resolver/contested_evidence.csv
