@@ -26,6 +26,15 @@
 # by hand with an address from a different CMS file (a one-off script, deleted
 # in f5c2256). Rows also repeated: 11,355 rows held 11,093 certificants.
 #
+# WHO IS IN IT. Every ACTIVE, primary-linked certificant of the 2026-08-10
+# freeze whose NPPES practice state is one of 40 states -- 11,093 of that
+# freeze's 11,920. The other 827 (NJ 284, AK 91, RI 72, VT 61, DC 56, WV 53,
+# DE 48, HI 48, SD 34, ND 25, WY 15, and 40 at military, territorial or
+# foreign addresses) were never in the original file: its state list was the
+# fabricated "Wave 1/Wave 2 scrape" list, not a sampling decision. This
+# rebuild keeps the population as it was rather than add people to a tracked
+# person-level file; making it national is the owner's call.
+#
 # This rebuild keeps the 52 roster columns, takes their values from the
 # freeze itself -- which restores the overwritten record and removes the
 # duplicates in one step -- and adds board licensure only where a state board

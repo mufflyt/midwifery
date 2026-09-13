@@ -1,6 +1,6 @@
 {
   "artifact": "tracked_roster_active_primary_linked.csv",
-  "written_utc": "2026-09-13 17:23:58 UTC",
+  "written_utc": "2026-09-13 17:35:40 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN_2026-08-10.csv",
@@ -19,11 +19,11 @@
       "sha256": "71c39960d3ce06a36fbe6fa71d27e3f927a52c292586dad82e2918d0a82cb8f1"
     }
   ],
-  "code_sha256": "4af99b125f7743a727b7da4288efbaf3a2381594adcfc33ef7f5309cd880c045",
+  "code_sha256": "c74c1859c656c525d2dd991ee0d3d61efc02658cadb4fe218bd2ea3d2111d9c9",
   "code": [
     {
       "path": "build_tracked_roster.R",
-      "sha256": "3faad175a7dcabdaf2953a84db63997c11469ac8ccb5cdffe037a955f2066500"
+      "sha256": "388d97414775d11c13b9276787e83ab73f2332a0832257374726f98705194381"
     },
     {
       "path": "R/lib/artifact_provenance.R",

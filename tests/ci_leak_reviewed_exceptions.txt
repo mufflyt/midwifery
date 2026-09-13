@@ -40,9 +40,11 @@
 # already tracked: the 52 AMCB/NPPES linkage columns, taken from the
 # 2026-08-10 freeze (which also undid one hand-overwritten address and 262
 # duplicate rows), plus board licensure joined from the WA, CO and TX files
-# below, which are already reviewed here. No person was added. Both reasons given above still
-# apply; the name changed because the old one described a scrape that never
-# happened.
+# below, which are already reviewed here. No person was added: it covers
+# the 40 states the original file covered (11,093 of the freeze's 11,920
+# ACTIVE primary-linked certificants; see build_tracked_roster.R). Both
+# reasons given above still apply; the name changed because the old one
+# described a scrape that never happened.
 artifacts/tracked_roster_active_primary_linked.csv
 
 # Live Washington DOH Board of Nursing credential cross-reference: 449 WA-state
