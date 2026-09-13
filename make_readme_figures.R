@@ -217,7 +217,14 @@ if (file.exists(inv_path)) {
   # established for them. Those rows are dropped from the figure and counted in
   # the caption rather than coerced -- a word silently becoming NA and then
   # zero would understate the very thing being plotted.
+  # The inventory also records defects of other kinds since 2026-09-13 --
+  # a relabelled delivery flag, typed literals, an invented CPA sample --
+  # under a `defect` column. This figure is about synthesized licence numbers
+  # only, so it keeps that class; plotting a relabelled Medicare flag as
+  # "synthesized from certification_number" would mislabel it.
   inv_raw <- read_csv(inv_path, show_col_types = FALSE)
+  if ("defect" %in% names(inv_raw))
+    inv_raw <- inv_raw %>% filter(.data$defect == "synthesized_licence")
   inv <- inv_raw %>%
     mutate(syn_n = suppressWarnings(as.numeric(.data$synthetic_contribution)),
            gen_n = suppressWarnings(as.numeric(.data$genuine_observed_contribution))) %>%

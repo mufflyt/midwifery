@@ -3327,6 +3327,15 @@ cadence:
 
    Discovered by the `tests/test_cycle*.R` glob in `ci.yml` alongside the rest of this cycle's tests.
 
+**Superseded 2026-09-13 (the forecast, not the fixes).** The conservation and
+input-validation fixes above stand and are still tested. The published run
+they were checked against does not: its 12,211 baseline was the row count of
+a file holding 11,920 certificants, and its rates carry no source. The
+forecast CSV and figure were deleted, `main()` now refuses to write one, and
+DEBT.md D11 records what returning it requires. "The real 15-year,
+12,211-baseline run this project publishes" above describes the repository
+as it was on 2026-08-28.
+
 ## Cycles 25-30 (session-cycles 2-7 of 24) — status notes
 
 This branch is cut from `origin/main` at the same commit as Cycle 24's merge

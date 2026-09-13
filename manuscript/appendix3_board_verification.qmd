@@ -81,6 +81,8 @@ produced by a different script, which reports the same
 
 ```{r inventory, results='asis'}
 if (!is.null(inv)) {
+  # Licence-number rows only; the inventory also records other defect classes.
+  if ("defect" %in% names(inv)) inv <- inv[inv$defect == "synthesized_licence", ]
   keep <- inv[grepl("master|complete", inv$path), c("path", "synthetic_contribution",
                                                     "genuine_observed_contribution")]
   if (nrow(keep)) {

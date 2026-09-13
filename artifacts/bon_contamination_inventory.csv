@@ -1,14 +1,26 @@
-path,producer,original_claim,original_numerator,original_denominator,synthetic_contribution,genuine_observed_contribution,action
-artifacts/amcb_vs_bon_confirmation_report.csv,verify_amcb_vs_bon_cross_confirmation.py,Direct State BON License Confirmed / 100% Verified Dual-Source National Cohort,11355,11355,11355,374,RETRACT
-artifacts/scraped_20_state_bon_validation_report.csv,validate_scraped_20_state_bon_results.R,Total Scraped Cohort 20 State BON Scrapers,9037,9037,9037,0,RETRACT
-artifacts/scraped_20_state_bon_summary_matrix.csv,analyze_20_state_bon_scrape.R,Per-state midwives across 20 boards,9037,9037,9037,0,RETRACT
-artifacts/scraped_40_state_bon_summary_matrix.csv,analyze_40_state_bon_scrape.R,Per-state midwives across 40 boards,11355,11355,11355,0,RETRACT
-artifacts/tier1_complete_state_breakdown.csv,analyze_tier1_complete_results.R,Tier-1 board evidence across 11 states,5120,5120,4746,374,RECOMPUTE
-artifacts/cohort_midwives_tier1_tier2_bon_validated.csv,execute_tier1_tier2_bon_ingestion.py,Filename asserts BON validation,5120,5120,4746,374,RELABEL
-artifacts/tier1_tier2_combined_bon_validated_master.csv,execute_tier1_tier2_bon_ingestion.py,Filename asserts BON validation,5120,5120,4746,374,RELABEL
-artifacts/specialized_bon_fields_summary.csv,analyze_specialized_bon_fields.R,BON field heterogeneity across states,NA,NA,all non-WA,WA only,RECOMPUTE
-artifacts/bon_state_data_heterogeneity_matrix.csv,extract_detailed_bon_heterogeneity_fields.py,Cross-state BON field heterogeneity,NA,NA,all non-WA,WA only,RECOMPUTE
-docs/DECISIONS_CONTRACT.md D12,manual,74% state-board coverage; 11355 verified across 40-state sample,11355,15400,11355,374,RETRACT
-docs/COAUTHOR_BRIEF_2026-08-14.md D12,manual,9037 midwives verified across first 20 state boards,9037,NA,9037,0,RETRACT
-README.md:17;28;1634,manual,50-State + DC BON Verification / Live State BON Verification feeds,NA,NA,all non-WA,WA only,RETRACT
-artifacts/live_wa_bon_summary_matrix.csv,WA DOH Socrata ingestion,VERIFIED_LIVE_BON Washington,374,449,0,374,RETAIN
+path,producer,original_claim,original_numerator,original_denominator,synthetic_contribution,genuine_observed_contribution,action,defect
+artifacts/amcb_vs_bon_confirmation_report.csv,verify_amcb_vs_bon_cross_confirmation.py,Direct State BON License Confirmed / 100% Verified Dual-Source National Cohort,11355,11355,11355,374,RETRACT,synthesized_licence
+artifacts/scraped_20_state_bon_validation_report.csv,validate_scraped_20_state_bon_results.R,Total Scraped Cohort 20 State BON Scrapers,9037,9037,9037,0,RETRACT,synthesized_licence
+artifacts/scraped_20_state_bon_summary_matrix.csv,analyze_20_state_bon_scrape.R,Per-state midwives across 20 boards,9037,9037,9037,0,RETRACT,synthesized_licence
+artifacts/scraped_40_state_bon_summary_matrix.csv,analyze_40_state_bon_scrape.R,Per-state midwives across 40 boards,11355,11355,11355,0,RETRACT,synthesized_licence
+artifacts/tier1_complete_state_breakdown.csv,analyze_tier1_complete_results.R,Tier-1 board evidence across 11 states,5120,5120,4746,374,RECOMPUTE,synthesized_licence
+artifacts/cohort_midwives_tier1_tier2_bon_validated.csv,execute_tier1_tier2_bon_ingestion.py,Filename asserts BON validation,5120,5120,4746,374,RELABEL,synthesized_licence
+artifacts/tier1_tier2_combined_bon_validated_master.csv,execute_tier1_tier2_bon_ingestion.py,Filename asserts BON validation,5120,5120,4746,374,RELABEL,synthesized_licence
+artifacts/specialized_bon_fields_summary.csv,analyze_specialized_bon_fields.R,BON field heterogeneity across states,NA,NA,all non-WA,WA only,RECOMPUTE,synthesized_licence
+artifacts/bon_state_data_heterogeneity_matrix.csv,extract_detailed_bon_heterogeneity_fields.py,Cross-state BON field heterogeneity,NA,NA,all non-WA,WA only,RECOMPUTE,synthesized_licence
+docs/DECISIONS_CONTRACT.md D12,manual,74% state-board coverage; 11355 verified across 40-state sample,11355,15400,11355,374,RETRACT,synthesized_licence
+docs/COAUTHOR_BRIEF_2026-08-14.md D12,manual,9037 midwives verified across first 20 state boards,9037,NA,9037,0,RETRACT,synthesized_licence
+README.md:17;28;1634,manual,50-State + DC BON Verification / Live State BON Verification feeds,NA,NA,all non-WA,WA only,RETRACT,synthesized_licence
+artifacts/live_wa_bon_summary_matrix.csv,WA DOH Socrata ingestion,VERIFIED_LIVE_BON Washington,374,449,0,374,RETAIN,synthesized_licence
+artifacts/scraped_50_states_and_dc_midwives_master.csv,unrecorded; tracked 2026-08-28,"State BON licensure scrape of 50 states + DC; ""Active Verified (Wave N BON Scrape)""",11355,11355,11355,0,REBUILT as artifacts/tracked_roster_active_primary_linked.csv (build_tracked_roster.R),synthesized_licence
+artifacts/tier2_complete_state_breakdown.csv,analyze_tier2_complete_results.R,Tier 2 Nursys compact states: Verified Active Multi-State Privilege,2972,2972,2972,0,DELETED 2026-09-13,simulated_verification
+artifacts/state_nursing_board_licensure_summary.csv,harvest_state_nursing_board_addresses.py -> analyze_state_nursing_board_recency.R,"100% ACTIVE_LICENSED in every jurisdiction (""Simulate BON mandatory renewal verification"")",12211,12211,12211,0,DELETED 2026-09-13,simulated_verification
+artifacts/remaining_unscraped_states_inventory.csv,unscraped_states_inventory.py,"the remaining 10 states ""scheduled for Wave 3 scraper"" (premise: 40 states scraped)",NA,NA,hand-typed list,none,DELETED 2026-09-13,invented_premise
+artifacts/cohort_midwives_cpt_delivery_attenders.csv,filter_midwife_cpt_delivery_claims.py,CPT 59400/59409/59410 delivery attenders (7470 rows = 4806 NPIs whose DAC primary specialty is CNM),7470,11920,7470,0,"PRODUCER DELETED 2026-09-13; replaced by measure_medicare_delivery_code_observability.R (0 Part B delivery-code rows, any provider, 2013-2023)",relabelled_enrollment_as_claims
+docs/table1_midwives_facility_attributions.md,integrate_cpt_claims_into_facility_classification.R,7470 (62.67%) confirmed delivery attenders; 1a..5b setting split,7470,11920,7470,0,DELETED 2026-09-13,relabelled_enrollment_as_claims
+docs/cnm_national_leaflet_map.html,build_cnm_national_leaflet_map.py,"header 11,920 / 7,470 / 2,611 / 221 typed; 3465 CPT delivery badges; one hand-edited address",8952,8952,3465,0,"REBUILT 2026-09-13 from tracked inputs, every count computed",typed_literal
+artifacts/address_recency_validation_report.csv,validate_address_recency_pipeline.R,400 cross-source address updates; 98.5% PPV (typed literals),400,12211,400,0,DELETED 2026-09-13; literals removed from producer,typed_literal
+artifacts/midwifery_microsimulation_projections_2026_2040.csv,run_midwifery_microsimulation.R,2026-2040 forecast from a 12211 baseline (11920 certificants) and unsourced rates,12211,11920,12211,0,DELETED 2026-09-13; DEBT.md D11,unsourced_parameters
+artifacts/obgyn_cpa_filings_schema_and_sample.csv,generate_cpa_filing_sample.py,three collaborative practice agreement filings (real CNM and real MD NPIs on invented filings; 4 of 6 NPIs fail the check digit),3,3,3,0,DELETED 2026-09-13,invented_records
+artifacts/scraped_50_states_and_dc_midwives_master.csv (one row),one-off script deleted in f5c2256,nppes_* practice address overwritten by hand with a DAC address,1,1,1,0,RESTORED from the 2026-08-10 freeze; agrees with NPPES,hand_edited_record
+README.md; CITATION.cff; manuscript/references.bib; manuscript/title_page.qmd; docs/index.html,manual,doi 10.5281/zenodo.1054200 (resolves to an unrelated 2016 record); version 4.0.0 (never tagged),NA,NA,all,none,REMOVED 2026-09-13,invented_identifier
