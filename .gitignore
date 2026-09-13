@@ -617,3 +617,10 @@ artifacts/truth/batches/
 # Adjudication queue machinery outputs (derived, person-level / run-state)
 artifacts/adjudication/adjudication_queue.csv
 artifacts/adjudication/adjudication_status.json
+
+# Trilliant work-site build (build_trilliant_work_sites.R): person-level, and
+# Trilliant's data are licensed. Only the aggregate
+# artifacts/midwife_work_setting_summary.csv is tracked.
+artifacts/midwife_work_sites_long.csv*
+artifacts/midwife_work_sites_summary.csv*
+artifacts/midwife_work_sites_excluded_non_workplace.csv*
