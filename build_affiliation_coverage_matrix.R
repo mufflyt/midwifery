@@ -15,8 +15,7 @@
 #'
 #'   2. A MISSINGNESS COMPARISON. PECOS-visible vs PECOS-invisible on
 #'      covariates measured INDEPENDENTLY of PECOS -- state, rurality,
-#'      certification decade, age, taxonomy, delivery-claim evidence, and every
-#'      other arm's coverage. Reported as standardized mean differences, not
+#'      certification decade, age, taxonomy, and every other arm's coverage. Reported as standardized mean differences, not
 #'      p-values: at n = 17,054 everything is significant and nothing is
 #'      thereby important.
 #'
@@ -177,18 +176,19 @@ ages <- if (file.exists("artifacts/amcb_calibrated_ages.csv")) {
               age_is_imputed = is_imputed %in% c("TRUE", "true", "1"))
 } else NULL
 
-deliv <- if (file.exists("artifacts/cohort_midwives_cpt_delivery_attenders.csv")) {
-  rd("artifacts/cohort_midwives_cpt_delivery_attenders.csv") %>%
-    filter(!is.na(npi), nzchar(npi)) %>%
-    distinct(npi) %>% mutate(delivery_claim_evidence = TRUE)
-} else NULL
-
-for (d in list(geo, ages, fourway, deliv)) {
+# No delivery covariate. One was here, "delivery_claim_evidence", read from
+# artifacts/cohort_midwives_cpt_delivery_attenders.csv -- but that file never
+# held a claim: it was every NPI whose DAC primary specialty is CNM, and the
+# DAC is built from PECOS enrollment, so it could not be a covariate measured
+# independently of PECOS. Its SMD of 1.17 measured the overlap of two views of
+# the same enrollment. Public Part B has no delivery-code rows for anyone
+# (artifacts/medicare_delivery_code_observability.csv), so there is no
+# delivery measure to put back.
+for (d in list(geo, ages, fourway)) {
   if (is.null(d)) next
   by <- intersect(names(d), c("npi", "certification_number"))[1]
   cov <- left_join(cov, d, by = by, relationship = "many-to-one")
 }
-cov <- cov %>% mutate(delivery_claim_evidence = coalesce(delivery_claim_evidence, FALSE))
 
 # --- standardized differences ------------------------------------------------
 # Cohen's d for continuous, and for a binary/categorical level the SMD on the
@@ -218,7 +218,7 @@ add <- function(variable, level, v1, v0, smd, type) {
 }
 
 # binary / logical covariates, including every other arm's coverage
-bin_vars <- c(arm_cols, "delivery_claim_evidence", "age_is_imputed")
+bin_vars <- c(arm_cols, "age_is_imputed")
 bin_vars <- setdiff(intersect(bin_vars, names(cov)), "pecos_reassignment")
 for (v in bin_vars) {
   x <- cov[[v]] %in% TRUE

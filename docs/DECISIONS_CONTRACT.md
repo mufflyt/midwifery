@@ -423,6 +423,14 @@ not catch, because that audit scoped only the license-number fields. None of
 this D12 ruling's options (A/B/C) apply to a number this small and this
 narrowly sourced; do not report a multi-state BON coverage percentage at all.
 
+**Update (2026-09-13).** Colorado DORA and the Texas BON have since been
+queried from their own open data, and Washington re-queried against a
+de-duplicated roster (its 374 were 368 people). Board licensure is now
+observed in three states, matched by name, each over a different roster; see
+README Figure 1 and `docs/figures/board_licensure_observed_counts.csv`. The
+instruction above stands: three self-selected states are not a coverage
+percentage.
+
 ---
 
 ## D13 🟡 Does a lower-bound Language row belong in Table 1?
@@ -473,10 +481,15 @@ pinned shortfall.
 in Table 1. Should one?
 
 **Evidence.** CABC birth centers (221 midwives across 111 centers),
-freestanding birth center identification, a building taxonomy (MOB / hospital
-campus / birth center / outpatient clinic), and CPT delivery claims (7,470
-midwives, 62.67%, confirmed attending deliveries). Table 1's 23 blocks include
-hospital affiliation but no practice setting.
+freestanding birth center identification, and a building taxonomy (MOB /
+hospital campus / birth center / outpatient clinic). Table 1's 23 blocks include
+hospital affiliation but no practice setting. ~~CPT delivery claims (7,470
+midwives, 62.67%, confirmed attending deliveries)~~ — *Retracted 2026-09-13: the
+"claims" were Doctors & Clinicians rows with primary specialty CNM (4,806
+midwives, one row per practice location), not procedure codes; public Part B has
+no delivery-code rows for any provider, 2013–2023. See
+`artifacts/medicare_delivery_code_observability.csv` and
+docs/SCOPE_AND_LIMITATIONS.md.*
 
 **Why it needs a human.** Coverage is thin and hospital affiliation carries
 part of the signal, so omission may be right. But for a midwifery workforce
@@ -484,8 +497,9 @@ paper, where a midwife practises is close to the central descriptive variable,
 and a reader cannot currently tell whether it was considered and rejected or
 never assembled.
 
-**Options.** (A) Add a practice-setting block with coverage stated. (B) Add
-only the CPT-confirmed delivery-attendance row, which has the best coverage.
+**Options.** (A) Add a practice-setting block with coverage stated. ~~(B) Add
+only the CPT-confirmed delivery-attendance row, which has the best coverage.~~
+*Withdrawn 2026-09-13: there is no delivery-attendance measure (see Evidence).*
 (C) Keep out of Table 1, report in a supplement. (D) Keep out and say why in
 the limitations.
 

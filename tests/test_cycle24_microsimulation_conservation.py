@@ -118,8 +118,11 @@ class TestSemantic(unittest.TestCase):
 
     def test_population_conservation_contract_over_full_15_year_run(self):
         """T24-5 (semantic): the central contract this cycle exists to pin.
-        Rural + Urban must equal Total for every year of the real 15-year,
-        12,211-baseline run this repository actually publishes."""
+        Rural + Urban must equal Total for every year of a 15-year run from
+        the 12,211 baseline this repository used to publish. That forecast was
+        withdrawn on 2026-09-13 (12,211 was a duplicate-inflated row count and
+        the rates are unsourced; DEBT.md D11). The number stays here only as a
+        test input."""
         rows = sim.project_workforce(12211)
         self.assertEqual(len(rows), 15)
         for row in rows:
@@ -210,7 +213,7 @@ class TestAdversarial(unittest.TestCase):
 
     def test_no_hardcoded_reliance_on_the_current_cohort_size(self):
         """T24-10 (adversarial): assumptions that hold in the current fixture
-        (initial_workforce == 12,211 today) but are not guaranteed by the
+        (initial_workforce was 12,211 when written) but are not guaranteed by the
         contract. The function must scale with whatever count the input file
         actually contains next year, not with today's number baked in."""
         source = SIM_FILE.read_text()

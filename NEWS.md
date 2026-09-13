@@ -22,6 +22,69 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-09-13 — Fabricated data removed, and what the sources actually say put in its place
+
+An AI coding tool wrote invented values into this repository in August 2026
+and labelled them as observed evidence. The 2026-08-29 entry below retracted
+the first layer of it (synthesized state-board licence numbers); PR #193
+deleted the scripts that wrote them.
+This entry covers what was left. Every replacement value below comes from a
+command run against a real source, named in the commit that made it. Where no
+source exists the claim is removed, not estimated.
+
+### Retracted
+- **"Active CPT delivery attenders": 7,470 (62.67%), later 5,024 (41.1%).**
+  The filter never read a procedure code; it kept every Doctors & Clinicians
+  row whose primary specialty is CNM (7,470 rows, 4,806 people). Public
+  Medicare Part B has **zero** rows for the global and delivery-only codes,
+  for any provider, in every year 2013–2023, because CMS suppresses cells
+  under 11 beneficiaries. Delivery attendance is not observable in this data.
+  The Table 1 split built on it (1a/1b … 5a/5b), the map badge and filter,
+  Figure 5, and a PECOS-missingness covariate are gone.
+- **"12,211 active CNMs, 100% matched to NPPES, 99.8% PPV."** 12,211 was the
+  row count of a file holding 11,920 certificants; the percentages were typed.
+  The headline is now 22,357 certificants, 15,328 ACTIVE, 12,192 of them
+  matched (79.5%), each read from a tracked artifact.
+- **"2,170 midwives (24.0%) with collaborative practice filings"** and the
+  sample file behind it: invented filings on a real CNM's and a real
+  physician's NPIs. No CPA data exists here.
+- **100% active licensure in every state** (a "simulated" renewal check),
+  **2,972 "Nursys compact" verifications** (no Nursys query was made), and a
+  list of "remaining unscraped states" whose premise was the fabrication.
+- **"400 addresses more current than NPPES", "98.5% PPV"**: typed literals.
+- **The 2026–2040 workforce forecast** (Figure 8): a 12,211 baseline and
+  unsourced rates. Withdrawn; DEBT.md D11 says what it needs to return.
+- **DOI 10.5281/zenodo.1054200 and "Version 4.0.0"**: the DOI belongs to an
+  unrelated 2016 Zenodo record and 4.0.0 was never tagged. CITATION.cff now
+  gives v0.7.0, the only tag, and no DOI.
+
+### Replaced with observed data
+- `measure_medicare_delivery_code_observability.R` records what Medicare
+  shows: 4,806 of the 2026-08-10 freeze's 11,920 ACTIVE primary-linked
+  certificants have a CNM primary specialty in the DAC, and there are no
+  delivery-code rows to link.
+- The tracked roster is rebuilt from its freeze as
+  `artifacts/tracked_roster_active_primary_linked.csv`: 262 repeated rows
+  removed, one hand-overwritten NPPES address restored (the Wolf Point case in
+  0.6.0), 31 columns dropped (the synthetic board and delivery fields, and
+  enrichment carried through the same chain), and board licence columns filled only
+  where Washington DOH, Colorado DORA or the Texas BON returned one.
+  Washington was re-queried against it: 369 of 443 midwives returned a
+  licence (the restored record among them, status Expired).
+- README Figure 1 now shows the three boards' results
+  (`make_board_licensure_figure.R`); the live map is rebuilt from tracked
+  inputs with every count computed and its missing states named.
+- `metadata.json` counts are checked against their source files by
+  `tests/test_midwifery_pipeline.py`.
+- The Elisabeth Thumm spotlight was rebuilt from observed sources the same
+  day (29be743), and its delivery-claim field is now removed with the rest.
+
+Each item is in `artifacts/bon_contamination_inventory.csv` (new `defect`
+column) and docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md §7. None of it
+entered the identity linkage.
+
+---
+
 ## [Unreleased] — 2026-09-07 — DuckDB initialization becomes an enforceable subsystem, not a helper convention
 
 A CMS PECOS extract silently lost 10 real enrollment records — two of them
@@ -346,6 +409,8 @@ closing STROBE item 22.
 **Still unverified:** the DOI `10.5281/zenodo.1054200`, which replaced a
 `10.5281/zenodo.XXXXXXX` placeholder in the same commit that invented the demo
 ORCID, and which also appears in the manuscript's data-availability statement.
+*Checked 2026-09-13 and removed: it resolves to an unrelated 2016 Zenodo
+record. See the 2026-09-13 entry.*
 
 ---
 
@@ -681,6 +746,7 @@ other nine were `None`.
 
 Genuine observed board evidence is **374 Washington DOH `credentialnumber`
 records**, corroborated independently by `live_wa_bon_summary_matrix.csv`.
+*(Corrected 2026-09-13: 374 rows, 368 people; the roster repeated rows.)*
 
 **Identity linkage is not affected and requires no recomputation.** Traced
 read-only across the repository: no R code reads `tier1_license_number`,
@@ -1002,12 +1068,16 @@ release to carry a license, citation metadata and a changelog.
   `provider_license_number` field is an identifier-to-identifier join: it
   cannot fail the way token comparison fails on hyphenated, transliterated or
   post-marital surnames, which is the failure mode cycle 12 documented.
-- **State Board of Nursing ingestion across all 50 states**, in tiers by how
+- ~~**State Board of Nursing ingestion across all 50 states**, in tiers by how
   the state publishes: Tier 1 (11 bulk open-data states) → 5,120 midwives
   verified; Tier 2 (25 Nursys compact states) → 2,972; combined 8,092, then
-  9,037 across 20 boards at 74% national coverage. Washington was harvested
+  9,037 across 20 boards at 74% national coverage.~~ Washington was harvested
   through a live streaming API (374 CNMs, 83.3% match rate, 341 active
   licenses confirmed).
+  *Retracted 2026-09-13: every non-Washington licence in the tiers was
+  synthesized from the certification number and no Nursys query was made; the
+  374 Washington records were 368 people (the roster repeated rows). See
+  docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md §7.*
 - A state-by-state acquisition matrix classifying every state BON dataset by
   ingestion method, plus a dynamic acquisition manifest.
 - Former- and maiden-surname candidate expansion, with tests.
@@ -1057,17 +1127,29 @@ release to carry a license, citation metadata and a changelog.
 - National CNM interactive Leaflet map: clustering, practice-setting filters,
   state scope-of-practice autonomy borders, a drive-time tool, and popups that
   hyperlink each claim to the source that supports it — NPI Registry, AMCB
-  verification, CMS Care Compare by 6-digit CCN, CPT claims, Open Payments.
+  verification, CMS Care Compare by 6-digit CCN, ~~CPT claims~~, Open Payments.
+  *Retracted 2026-09-13: the "CPT claims" were a relabelled Doctors & Clinicians
+  specialty field, and the header counts were typed in; the map is rebuilt from
+  tracked inputs. See the 2026-09-13 entry.*
   Certification year, age band and training school appear in the popup.
-- Three-way federal address-recency audit (NPPES × Open Payments × DAC PECOS),
+- ~~Three-way federal address-recency audit (NPPES × Open Payments × DAC PECOS),
   which identified **400 practice addresses more current than the one NPPES
-  carried**, with a benchmark suite over the updates.
+  carried**, with a benchmark suite over the updates.~~
+  *Retracted 2026-09-13: no code computes 400 (it appears only as a string
+  literal and a commit subject), the audit compares states, not dates, and its
+  DAC arm read columns the DAC does not have. See validate_address_recency_pipeline.R.*
 
 ### Fixed
-- One case study worth naming because it is the general problem in miniature: a
+- ~~One case study worth naming because it is the general problem in miniature: a
   CNM carried a Seattle, WA address in NPPES while practising at Trinity
   Hospital in Wolf Point, MT — a 1,000-mile error that would have placed her in
-  the wrong state, county, RUCC stratum and access band.
+  the wrong state, county, RUCC stratum and access band.~~
+  *Retracted 2026-09-13: this was not a pipeline fix. A one-off script
+  overwrote the record's `nppes_*` address fields by hand. CMS Doctors &
+  Clinicians (2026-06) does list a Wolf Point address and a Wolf Point hospital
+  affiliation for this NPI, but NPPES does not, so the columns asserted a
+  source that said otherwise. Restored from the freeze; see the 2026-09-13
+  entry.*
 
 ---
 
@@ -1088,9 +1170,13 @@ point on a map", and every layer reports **absence separately from zero**.
   multi-hospital cities (Cleveland was the reproducer).
 - **Freestanding birth centers**: 221 midwives matched across 111 CABC-accredited
   centers.
-- **CPT delivery claims**: Part B claims filtered to 59400/59409/59410 confirm
+- ~~**CPT delivery claims**: Part B claims filtered to 59400/59409/59410 confirm
   7,470 midwives (62.67%) actively attending deliveries — an *observed
-  behaviour* layer, not a credential layer.
+  behaviour* layer, not a credential layer.~~
+  *Retracted 2026-09-13: the filter never read a procedure code. It kept every
+  Doctors & Clinicians row with primary specialty CNM (7,470 rows, 4,806
+  people). Public Part B has no delivery-code rows for any provider, 2013–2023.
+  See artifacts/medicare_delivery_code_observability.csv.*
 - **Open Payments**: 3,996 midwives linked; 819 resolved directly to Type 2
   organization NPIs and legal employer names.
 - **Training institution** recovered structurally, from which university

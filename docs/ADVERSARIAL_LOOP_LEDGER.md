@@ -3327,6 +3327,15 @@ cadence:
 
    Discovered by the `tests/test_cycle*.R` glob in `ci.yml` alongside the rest of this cycle's tests.
 
+**Superseded 2026-09-13 (the forecast, not the fixes).** The conservation and
+input-validation fixes above stand and are still tested. The published run
+they were checked against does not: its 12,211 baseline was the row count of
+a file holding 11,920 certificants, and its rates carry no source. The
+forecast CSV and figure were deleted, `main()` now refuses to write one, and
+DEBT.md D11 records what returning it requires. "The real 15-year,
+12,211-baseline run this project publishes" above describes the repository
+as it was on 2026-08-28.
+
 ## Cycles 25-30 (session-cycles 2-7 of 24) — status notes
 
 This branch is cut from `origin/main` at the same commit as Cycle 24's merge
@@ -4798,6 +4807,17 @@ during writing: T34-7's first draft extracted the message's LEADING digit
 (`^\\d+`, which matched the sentence's own "1." section number) instead of
 the actual count — corrected to match on the specific "Coverage: (\\d+)
 midwives" substring before re-running.
+
+**Superseded 2026-09-13.** Finding 2's fix made the verdict conditional on
+`has_cpt_delivery_claim`, but that field was not evidence: it was "DAC primary
+specialty is CNM" relabelled as delivery attendance (public Part B has no
+delivery-code rows for any provider, `artifacts/medicare_delivery_code_
+observability.csv`), and the case-study record's `nppes_*` address had been
+overwritten by hand. The case study, the CPT section and the typed-in "400" /
+"98.5%" literals flagged above as "not fixed" were all removed, the tracked
+`address_recency_validation_report.csv` built from them was deleted, and the
+test file was revised: T34-4 and T34-7 stand; the case-study and CPT tests are
+replaced by static checks (T34-12..14) that fail on the retired version.
 
 **Full suite.** New file: 10/10 pass. `Rscript tests/ci_hygiene.R`: all
 tracked R files still parse, no new duplicate definitions. No existing test

@@ -3,43 +3,57 @@
 [![CI](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml)
 [![Nightly](https://github.com/mufflyt/midwifery/actions/workflows/nightly.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/nightly.yml)
 [![Scientific laws](https://img.shields.io/badge/scientific%20laws-10%20declared%2C%2030%20planted%20defects-blueviolet.svg)](tests/science_law_registry.tsv)
-[![Known debt](https://img.shields.io/badge/known%20debt-2%20open%2C%209%20closed-informational.svg)](DEBT.md)
+[![Known debt](https://img.shields.io/badge/known%20debt-3%20open%2C%209%20closed-informational.svg)](DEBT.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Cite this repository](https://img.shields.io/badge/cite-CITATION.cff-brightgreen.svg)](CITATION.cff)
 [![Dataset Metadata](https://img.shields.io/badge/metadata-metadata.json-orange.svg)](metadata.json)
 [![Changelog](https://img.shields.io/badge/changelog-NEWS.md-lightgrey.svg)](NEWS.md)
 
-*Linking all 12,211 active Certified Nurse-Midwives (CNMs) across all 50 U.S. States and the District of Columbia (51 jurisdictions) to NPI identity and practice geography. State Board of Nursing (BON) licensure is genuinely observed for Washington only (374 records, 3.3%) — see the retraction in item 4 below; prescriptive authority (RXN) and collaborative practice agreement (CPA) fields inherited the same defect and are under the same retraction.*
+*Linking the American Midwifery Certification Board roster — **22,357**
+certificants, **15,328** of them ACTIVE — to NPI identity and practice
+geography. State Board of Nursing licensure is observed only where a board
+publishes it as open data and this project queried it: **Washington, Colorado
+and Texas** (Figure 1). Every other state-board figure this repository once
+reported was synthesized and is retracted (Figure 4); so were a Medicare
+"delivery claims" layer and a collaborative-practice (CPA) layer, which had no
+source at all.*
 
-**[→ Interactive National CNM Workforce Map](docs/cnm_national_leaflet_map.html)**
+**[→ Interactive CNM Workforce Map](docs/cnm_national_leaflet_map.html)**
 &nbsp;·&nbsp; [Pipeline Architecture](ARCHITECTURE.md) &nbsp;·&nbsp; [Dataset Metadata](metadata.json)
 
 ```mermaid
 flowchart LR
-  A["AMCB Roster - 12,211 Active CNMs"] --> B["NPPES NPI Matching - 100%"]
-  B --> C["50-State + DC BON Verification"]
-  C --> D["State Licensure & RXN Authority"]
-  C --> E["Collaborative Practice (CPA) Filings"]
-  D --> F["Interactive Leaflet Map - 51 Jurisdictions"]
+  A["AMCB roster: 22,357 certificants"] --> B["NPPES linkage: 12,192 of 15,328 ACTIVE matched"]
+  B --> C["Practice geography: county, tract, district"]
+  B --> D["State board licensure: WA, CO, TX open data"]
+  C --> F["Interactive map: tracked roster, 40 states"]
 ```
 
-| Stage / Dimension | Result & Coverage |
-|---|---|
-| Active AMCB Master Cohort | 12,211 Certified Nurse-Midwives (100.0% National Ascertainment) |
-| CMS NPPES NPI Registry Matched | 12,211 Midwives (100.0% Deterministic Match, 99.8% PPV) |
-| State Boards of Nursing genuinely queried | 1 (Washington, via WA DOH's public Socrata API) — see the retraction below |
-| Direct State BON Permalinks | 100.0% 1-Click Lookup URLs Embedded in Interactive Map (a link to a board, not a check against one) |
-| **Board-verified against a state board** | **374 records, Washington only (3.3%)** — see the retraction below |
-| Active CPT Delivery Attenders | 5,024 Midwives (41.1% Verified Delivery Attenders) |
-| Collaborative Practice (CPA) Filings | 2,170 Midwives (24.0% Ingested CPA OB/GYN Supervision) |
+| Stage / Dimension | Result & Coverage | Source |
+|---|---|---|
+| AMCB roster (live directory scrape, 2026-09-02) | 22,357 certificants; 15,328 ACTIVE | `artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json` (`artifact_rows`); `artifacts/linkage_completeness_by_status.csv` |
+| ACTIVE certificants matched to an NPPES midwifery record | 12,192 of 15,328 (79.5%) | `artifacts/linkage_completeness_by_status.csv`, disposition `matched` |
+| Analytic cohort (all AMCB statuses) | 17,028 | FROZEN manifest, `cohort_members` |
+| Table 1 cohort (ACTIVE, primary-linked) | 12,171 | `artifacts/table1_provenance.csv` |
+| State boards queried for licensure | 3: WA DOH, Colorado DORA, Texas BON (open data, matched by name). Illinois IDFPR open data was also queried, for licence issue dates in age calibration only. | `harvest_live_{wa,co,tx}_bon_from_tracked_roster.py`; `artifacts/state_nursing_license_ages_provenance.csv` (`states_queried`) |
+| Licences a board returned | 1,353: WA 369, CO 486, TX 498 (any status the board reported) | `docs/figures/board_licensure_observed_counts.csv` |
+| Delivery attendance | not observable: public Medicare Part B has no delivery-code rows for any provider, 2013–2023 | `artifacts/medicare_delivery_code_observability.csv` |
 
 ## Key Visualizations & Data Gallery
 
-### 1. State Board of Nursing (BON) Scraped Midwife Volumes by State
-![State Board of Nursing Scraped CNM Volumes](artifacts/plots/plot1_scraped_bon_state_volumes.png)
-*Figure 1: Volume of records **scraped** from each state Board of Nursing. These
-are roster volumes, not board verifications — the word "verified" previously
-used in this caption has been retracted. See Figure 2 and
+### 1. State board licensure, where a board was actually queried
+![State board licensure observed in WA, CO and TX](docs/figures/board_licensure_observed.png)
+*Figure 1: The three states whose Board of Nursing publishes licensure as open
+data that this project queried — Washington DOH, Colorado DORA and the Texas
+BON — and, for the midwives each query covered, what the board returned:
+**369 of 443** in Washington, **486 of 557** in Colorado, **498 of 736** in
+Texas, each with the status the board reported (Expired included). Matched by
+name; the three bars cover different rosters, as the subtitle says. No other
+board was queried, so no other state appears. Counts:
+[`docs/figures/board_licensure_observed_counts.csv`](docs/figures/board_licensure_observed_counts.csv),
+built by [`make_board_licensure_figure.R`](make_board_licensure_figure.R). This
+replaces a chart of per-state row counts from a synthetic "20-state scrape"; see
+Figure 4 and
 [docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md](docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md).*
 
 ### 2. One middle-initial rule was deleting matches and manufacturing them at once
@@ -72,41 +86,36 @@ cannot be recovered by any matching rule.*
 `{STATE}-RN-CNM-{cert}` — a re-encoding of the AMCB identifier, not licensure
 evidence. Only 374 Washington DOH `credentialnumber` records are genuine
 observed board evidence. The bars are per artifact and **overlap**, so they must
-not be added.*
+not be added. (Drawn 2026-08-17. The 374 were rows of a roster that repeated
+some midwives — 368 people — and Colorado and Texas have since been queried
+directly; current observed evidence is Figure 1.)*
 
 > **What this does and does not affect.** Identity linkage is **clean**: no R
 > code reads these fields, and every accepted NPI match in the FROZEN crosswalk
 > is name-derived, so no identity, geography or organization assignment needs
 > recomputation. What is affected is *reported board-verification coverage* —
 > the claim "11,355 midwives board-verified across 40 states" becomes **374, in
-> one state**.
+> one state** as of 2026-08-17, and **1,353 licences returned across three
+> states** once Colorado and Texas were queried (Figure 1).
 
-### 5. Active CPT Delivery Attenders by State BON
-![Active CPT Delivery Attenders by State](artifacts/plots/plot2_bon_delivery_attenders_by_state.png)
-*Figure 5: Active CPT delivery attending midwives (CPT 59400 / 59409 / 59410) by state jurisdiction.*
-
-### 6. Active Midwifery Supply per 100,000 Women of Reproductive Age (15–44)
+### 5. Active Midwifery Supply per 100,000 Women of Reproductive Age (15–44)
 ![Active State Rate Map](docs/maps/active_state_rate.png)
-*Figure 6: Spatial distribution of active CNMs per 100,000 women aged 15–44 across US states.*
+*Figure 5: Spatial distribution of active CNMs per 100,000 women aged 15–44 across US states.*
 
-### 7. County-Level Midwifery Supply Distribution
+### 6. County-Level Midwifery Supply Distribution
 ![County Midwifery Supply](docs/figures/county_supply.png)
-*Figure 7: County-level midwifery supply map highlighting maternity care deserts and active midwife practice sites.*
+*Figure 6: County-level midwifery supply map highlighting maternity care deserts and active midwife practice sites.*
 
-### 8. 15-Year National Midwifery Workforce Microsimulation (2026–2040)
-![Workforce Microsimulation Projections](artifacts/plots/plot3_microsimulation_workforce_projections.png)
-*Figure 8: Projected 15-year career state transitions, new graduate inflows, and rural-to-urban supply drift (2026–2040).*
-
-### 9. Where Active Midwives Actually Practice, by County
+### 7. Where Active Midwives Actually Practice, by County
 ![Active certified midwives by last-observed practice county](docs/maps/active_county_counts.png)
-*Figure 9: Active certificants by last-observed practice county. Grey is **no
+*Figure 7: Active certificants by last-observed practice county. Grey is **no
 linked practice location in that county**, which is not the same as no midwife:
 34% of the roster never linked, so this is the distribution of located practice
 locations rather than of access. Patients cross county lines.*
 
-### 10. How wrong could the roster-wide metropolitan share be?
+### 8. How wrong could the roster-wide metropolitan share be?
 ![Metropolitan share of the roster: observed, sensitivity estimates, and worst-case bounds](docs/figures/selection_bounds.png)
-*Figure 10: The **89.2%** metropolitan share observed in the located cohort is
+*Figure 8: The **89.2%** metropolitan share observed in the located cohort is
 not a property of the 22,357-certificant roster, because linkage is selected on
 certification status. Making no assumption about the missingness mechanism at
 all, the roster-wide share is bounded between **65.8% and 92.0%** — wide by
@@ -116,9 +125,9 @@ themselves *less* metropolitan than the cohort, not more, which is evidence
 about the direction of the missingness rather than an assumption about it. See
 [docs/TECHNICAL_APPENDIX_LINKAGE_SELECTION.md](docs/TECHNICAL_APPENDIX_LINKAGE_SELECTION.md).*
 
-### 11. Two rates, and they are not the same number
+### 9. Two rates, and they are not the same number
 ![Cohort resolution and ascertainment by certification status](docs/figures/linkage_by_status.png)
-*Figure 11: **Cohort resolution** (resolves to a midwifery-taxonomy record) and
+*Figure 9: **Cohort resolution** (resolves to a midwifery-taxonomy record) and
 **ascertainment** (found in the registry at all, including nursing-only
 matches) diverge most where a certificant is least likely to still be
 practicing: among ACTIVE certificants they are 78.4% and 84.6%; among DECEASED
@@ -128,9 +137,9 @@ a reader ends up unable to reconcile two correct numbers for what looks like
 the same quantity. See
 [docs/TECHNICAL_APPENDIX_RECORD_LINKAGE.md](docs/TECHNICAL_APPENDIX_RECORD_LINKAGE.md).*
 
-### 12. What each stratum has, and what it lacks
+### 10. What each stratum has, and what it lacks
 ![Linkage strata as a ladder of properties](docs/figures/linkage_strata_upset.png)
-*Figure 12: The seven linkage strata partition all 22,357 certificants exactly,
+*Figure 10: The seven linkage strata partition all 22,357 certificants exactly,
 and each loses one more of the five properties a record must accumulate to
 reach the analytic cohort. The sets are strictly nested — 20,270 with a
 candidate, 17,310 single at the best class, 17,189 surviving the one-to-one
@@ -143,9 +152,9 @@ only by the one-to-one constraint, so they sit above tied names. Built by
 [`make_linkage_upset_figure.R`](make_linkage_upset_figure.R), ported from the
 registry-overlap figure in `mufflyt/grace-ent`.*
 
-### 13. An evidence axis the matcher has never used
+### 11. An evidence axis the matcher has never used
 ![What the unused temporal signal would buy](docs/figures/temporal_plausibility.png)
-*Figure 13: `certification_date` appears **zero** times in
+*Figure 11: `certification_date` appears **zero** times in
 `match_amcb_to_npi.R` — the matcher blocks on names and taxonomy only — yet the
 roster carries a certification year and the panel carries the year each NPI was
 first seen. This measures what that comparison would buy, over matches already
@@ -176,7 +185,7 @@ does not pretend otherwise. On a machine holding the data:
 |---|---|
 | [`make_evidence_class_figure.R`](make_evidence_class_figure.R) | What do the accepted matches *rest on*? Every accepted link by the evidence class that carried it, split by taxonomy, because a nursing accept at class 3 or below is two sensitivity decisions stacked. Writes `docs/figures/evidence_class_accepted.png` and a publishable aggregate CSV. |
 | [`build_linkage_case_gallery.R`](build_linkage_case_gallery.R) | Is the matching *right*? A stratified, seeded sample of real decisions — the AMCB side, the NPPES side, the rule that fired, the candidate arithmetic — with a verdict box per case. Twelve strata; three flagged as needing close reading. Person-level: writes only to `qa/`, `--redact` for a shareable copy. |
-| [`analyze_temporal_plausibility.R`](analyze_temporal_plausibility.R) | Would a *date* separate what a name cannot? Its **aggregate** result is rendered above as Figure 13 — counts only, so it is publishable — but the person-level list of flagged pairings needs the crosswalk and is written to gitignored `qa/`. See [D17](docs/DECISIONS_CONTRACT.md), [the signal appendix](docs/TECHNICAL_APPENDIX_TEMPORAL_SIGNAL.md) and [the measurement appendix](docs/TECHNICAL_APPENDIX_TEMPORAL_PLAUSIBILITY.md); the rule is implemented and switched off. |
+| [`analyze_temporal_plausibility.R`](analyze_temporal_plausibility.R) | Would a *date* separate what a name cannot? Its **aggregate** result is rendered above as Figure 11 — counts only, so it is publishable — but the person-level list of flagged pairings needs the crosswalk and is written to gitignored `qa/`. See [D17](docs/DECISIONS_CONTRACT.md), [the signal appendix](docs/TECHNICAL_APPENDIX_TEMPORAL_SIGNAL.md) and [the measurement appendix](docs/TECHNICAL_APPENDIX_TEMPORAL_PLAUSIBILITY.md); the rule is implemented and switched off. |
 
 All three are exercised in CI against regenerated fixtures
 ([`tests/test_linkage_scripts_smoke.R`](tests/test_linkage_scripts_smoke.R)),
@@ -323,7 +332,9 @@ its figures rest on.
 midwives practise.** Employment and organization affiliation via NPPES Type 2
 resolution; hospital privileges via CMS facility affiliation keyed on CCN;
 practice setting via CABC birth-center accreditation and address building
-taxonomy; and observed birth attendance via CPT delivery claims. Each layer is
+taxonomy. Birth attendance is not among them: public Medicare Part B carries no
+delivery-code rows for any provider in 2013–2023
+(`artifacts/medicare_delivery_code_observability.csv`). Each layer is
 reported with its coverage and, where a linkage rule is involved, its positive
 predictive value. *Deliverable:* the attribute artifacts and
 `artifacts/org_resolution_ppv.csv`. **Two decisions this aim depends on are
@@ -1256,15 +1267,16 @@ below for the evidence tiers and why that split is load-bearing.
 ### Tier F — supplementary and corroborating sources
 
 **Lower evidence, and treated as such.** These fill gaps and corroborate; none
-of them establishes identity or geography on its own, and no README figure rests
-on one alone. Most were scraped without a recorded access date, which is a
+of them establishes identity or geography on its own. The one README figure
+built on one is Figure 1, which reports what three state boards returned and
+nothing more. Most were scraped without a recorded access date, which is a
 reproducibility gap stated rather than hidden.
 
 | Source | What it supplies | Access date | Consumed by |
 |---|---|---|---|
 | **Healthgrades** profiles | practice addresses for AMCB certificants with *no NPI at all*, via schema.org JSON-LD blocks; profile attributes | not recorded; checkpoints timestamped **2026-08-09** | [`scrape_healthgrades_midwives.R`](scrape_healthgrades_midwives.R), [`enrich_healthgrades_profiles.R`](enrich_healthgrades_profiles.R), [`sweep_healthgrades_enrichment.R`](sweep_healthgrades_enrichment.R) |
 | **Doximity** public CNM directory | maiden names and a specialty label; **no NPI** — the UUID is Doximity-internal | not recorded | [`scrape_doximity_public_cnm.R`](scrape_doximity_public_cnm.R), [`enrich_doximity_cnm_ages.R`](enrich_doximity_cnm_ages.R) |
-| **State Boards of Nursing** (~40 portals; Socrata APIs for WA/FL/NY/TX/IL, HTML elsewhere) | licence numbers and issue dates → age-at-certification calibration | live scrapes, per-state, not recorded | [`harvest_live_state_bon_apis.py`](harvest_live_state_bon_apis.py), [`harvest_all_tier1_live_bon_datasets.py`](harvest_all_tier1_live_bon_datasets.py), [`enrich_state_nursing_license_ages.R`](enrich_state_nursing_license_ages.R) |
+| **State Boards of Nursing** — open data only: WA DOH (`qxh8-f4bd`), Illinois IDFPR (`pzzh-kp68`), Colorado DORA (`7s5z-vewr`), Texas BON (`jnzg-cr4w`). The "~40 portals" once listed here were never queried; their licence numbers were synthesized (see [the defect note](docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md)). | WA/IL: licence issue dates → age-at-certification calibration. WA/CO/TX: licence number and status (Figure 1) | WA/IL 2026-08-10 (`artifacts/state_nursing_license_ages_provenance.csv`); CO 2026-09-11; TX 2026-09-12; WA re-queried 2026-09-13 | [`enrich_state_nursing_license_ages.R`](enrich_state_nursing_license_ages.R), [`harvest_live_wa_bon_from_tracked_roster.py`](harvest_live_wa_bon_from_tracked_roster.py), [`harvest_live_co_bon_from_tracked_roster.py`](harvest_live_co_bon_from_tracked_roster.py), [`harvest_live_tx_bon_from_tracked_roster.py`](harvest_live_tx_bon_from_tracked_roster.py) |
 | **Florida and Ohio voter files** | date of birth for age validation, under a three-tier disambiguation that **excludes ambiguous collisions rather than guessing** | not recorded | [`match_florida_voter_ages.R`](match_florida_voter_ages.R), [`match_ohio_voter_ages.R`](match_ohio_voter_ages.R), [`parse_ohio_voter_file.py`](parse_ohio_voter_file.py) |
 | **AABC / CABC birth centres** | accredited birth-centre addresses → birth-centre midwife identification | not recorded | [`harvest_aabc_accredited_centers.py`](harvest_aabc_accredited_centers.py), [`extract_all_cabc_birth_centers.py`](extract_all_cabc_birth_centers.py), [`identify_birth_center_midwives.R`](identify_birth_center_midwives.R) |
 | **WebMD, Vitals** | explored as address sources | exploratory only | [`explore_webmd_midwives.py`](explore_webmd_midwives.py), [`explore_vitals_midwives.py`](explore_vitals_midwives.py) |
@@ -1471,9 +1483,9 @@ numbers. Five things stand between the two:
    Medicare, HCRIS, HPSA and the NPPES history live on
    `/Volumes/MufflySamsung*`. Everything in Tier D and the comparator layer is
    gated on access most readers will not have.
-4. **Undated scrapes.** Healthgrades, Doximity, the state Boards of Nursing, the
-   voter files and the birth-centre directories were captured without a recorded
-   access date, and all are live sites that change. The Healthgrades checkpoints
+4. **Undated scrapes.** Healthgrades, Doximity, the voter files and the
+   birth-centre directories were captured without a recorded access date
+   (the state board open-data pulls are dated: see the sources table), and all are live sites that change. The Healthgrades checkpoints
    carry file timestamps (2026-08-09) and that is the best available evidence.
    Nothing in Tier F is byte-reproducible.
 5. **Person-level artifacts are gitignored by design.** The 22,357-row FROZEN
@@ -2008,20 +2020,23 @@ with the access described under [Access requirements](#access-requirements).
 
 ## Citation
 
-If you use this dataset, pipeline architecture, or state board of nursing scraping methodology in academic research, health policy analysis, or clinical workforce modeling, please cite:
+If you use this dataset or pipeline, cite it as [`CITATION.cff`](CITATION.cff)
+does. There is no DOI: the one printed here until 2026-09-13,
+10.5281/zenodo.1054200, belongs to an unrelated 2016 Zenodo record, and the
+"Version 4.0.0" beside it was never tagged. The repository's only tag is
+`v0.7.0` (2026-08-13); for anything later, cite the commit SHA.
 
 ### APA Format
-> Muffly, T. (2026). *National Certified Nurse-Midwife (CNM) 50-State & DC Workforce & Board of Nursing Registry Dataset* (Version 4.0.0) [Data set & Software]. GitHub. https://github.com/mufflyt/midwifery
+> Muffly, T., & Thumm, E. B. (2026). *National Certified Nurse-Midwife (CNM) 50-State & DC Workforce Registry Dataset* (Version 0.7.0) [Data set & Software]. GitHub. https://github.com/mufflyt/midwifery
 
 ### BibTeX Format
 ```bibtex
-@dataset{muffly2026midwifery,
-  author       = {Tyler Muffly},
-  title        = {National Certified Nurse-Midwife (CNM) 50-State \& DC Workforce \& Board of Nursing Registry Dataset},
+@misc{muffly2026midwifery,
+  author       = {Tyler Muffly and Elisabeth B. Thumm},
+  title        = {National Certified Nurse-Midwife (CNM) 50-State \& DC Workforce Registry Dataset},
   year         = {2026},
-  version      = {4.0.0},
+  version      = {0.7.0},
   publisher    = {GitHub},
-  doi          = {10.5281/zenodo.1054200},
   url          = {https://github.com/mufflyt/midwifery}
 }
 ```
@@ -2030,24 +2045,24 @@ If you use this dataset, pipeline architecture, or state board of nursing scrapi
 
 Full machine-readable specification is available in [`metadata.json`](metadata.json).
 
-* **Temporal Coverage**: 2007–2026 (NPPES Snapshots + Live State BON Verification feeds).
+* **Temporal Coverage**: NPPES snapshots 2007–2026; state board open data for Washington, Colorado and Texas, queried 2026-09-11 to 2026-09-13.
 * **Spatial Resolution**: Exact Point Coordinates, 5-Digit ZIP, County FIPS, Census Tract.
-* **Jurisdictional Scope**: 50 U.S. States + District of Columbia (51 Jurisdictions Complete).
-* **Identity Linkage**: AMCB Certificate Number $\leftrightarrow$ 10-Digit NPI $\leftrightarrow$ State BON License Number.
+* **Jurisdictional Scope**: The AMCB roster is national, and linked practice addresses fall in all 50 states and DC (`artifacts/amcb_npi_geography_by_state.csv`). State board licensure covers WA, CO and TX only.
+* **Identity Linkage**: AMCB certification number $\leftrightarrow$ NPI, by evidence-tiered name matching. A state licence number is attached by name for WA, CO and TX only; no licence number enters the identity linkage.
 
 ## Automated CI Testing Suite
 
-Automated integration and unit tests are configured via GitHub Actions in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). To execute tests locally:
+The checks CI runs are listed, with what each one can and cannot show, in
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml). The Python dataset check
+alone runs as
 
 ```bash
-python3 -m unittest discover tests
+python3 tests/test_midwifery_pipeline.py -v
 ```
 
-Tests verify:
-1. `metadata.json` schema & cohort totals.
-2. 10-digit numeric NPI formatting & Luhn checksums.
-3. Master CSV structure & state coverage bounds.
-4. State Board of Nursing verification link integrity.
+It verifies that every headline count in `metadata.json` equals the tracked
+artifact it names. Its three person-level master-file tests skip: the master
+file they were written for had only a fabricated producer, which was deleted.
 
 ### The DuckDB connection chokepoint
 
