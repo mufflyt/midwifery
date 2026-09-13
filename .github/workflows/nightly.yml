@@ -118,7 +118,12 @@ jobs:
                     "checkmate", "DBI", "digest", "duckdb", "geosphere",
                     "here", "httr", "openssl", "xml2",
                     "assertthat", "withr", "fs", "rlang", "readxl",
-                    "stringdist", "humaniformat", "sf")
+                    "stringdist", "humaniformat", "sf",
+                    # test_linkage_scripts_smoke.R renders make_evidence_class_figure.R
+                    # for real; ci.yml's unit-test job installs these for the same
+                    # reason (f380881). The nightly never did, so S8-S10 failed with
+                    # "there is no package called 'ggplot2'".
+                    "ggplot2", "patchwork", "forcats")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
           for (p in pkgs) if (!requireNamespace(p, quietly = TRUE))
@@ -216,7 +221,7 @@ jobs:
         run: |
           pkgs <- c("dplyr", "readr", "stringr", "jsonlite", "digest", "fs",
                     "rlang", "tibble", "tidyr", "purrr", "checkmate", "scales",
-                    "stringi", "withr", "assertthat", "here")
+                    "stringi", "withr", "assertthat", "here", "DBI", "duckdb")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
           for (p in pkgs) if (!requireNamespace(p, quietly = TRUE))
@@ -253,6 +258,24 @@ jobs:
       - name: Semantic contracts
         if: always()
         run: Rscript tests/ci_semantic_contracts.R
+
+      # The DuckDB architecture gates were written and never wired into any job,
+      # which suite-coverage's "every ci_*.R gate is named by some job" check
+      # caught. All seven are hermetic: they build throwaway databases and need
+      # no warehouse, so they run here rather than being excused.
+      - name: DuckDB architecture gates
+        if: always()
+        run: |
+          rc=0
+          for g in ci_duckdb_architecture_gate.R ci_duckdb_clean_environment.R \
+                   ci_duckdb_connection_contract.R ci_duckdb_exception_provenance.R \
+                   ci_duckdb_ingestion_bootstrap.R ci_duckdb_mutation_tests.R \
+                   ci_duckdb_verification_ledger.R; do
+            echo "::group::$g"
+            Rscript "tests/$g" || { echo "FAIL $g"; rc=1; }
+            echo "::endgroup::"
+          done
+          exit $rc
 
   # ---------------------------------------------------------------------------
   # The published numbers, recomputed.
@@ -676,7 +699,12 @@ jobs:
           for f in tests/ci_*.R; do
             b=$(basename "$f")
             [ "$b" = "ci_report.R" ] && continue
-            grep -q "$b" .github/workflows/nightly.yml || orphans="$orphans $b"
+            # "Some job" includes the per-push workflow: ci_workflow_contracts.R,
+            # ci_data_regression_guard.R, ci_manuscript_numbers.R and
+            # ci_skip_budget.R run on every push from ci.yml, and a check that
+            # only read this file reported them as orphans.
+            grep -q "$b" .github/workflows/nightly.yml .github/workflows/ci.yml \
+              || orphans="$orphans $b"
           done
           [ -z "$orphans" ] || { echo "gates no job runs:$orphans"; exit 1; }
           echo "every ci_*.R gate is named by a job"
@@ -737,8 +765,12 @@ jobs:
           # rather than the guard's column list alone. It reads the SAME
           # baseline: a checker with its own private allowlist is how one file
           # ends up red in one job and green in another.
+          # ci_leak_guard.R accepts a file listed in EITHER list (false
+          # positives, or genuinely person-level files the owner reviewed).
+          # Reading only the first made every reviewed exception fail here.
           sed -e 's/[[:space:]]*#.*$//' -e '/^[[:space:]]*$/d' \
-              tests/ci_leak_baseline.txt | sed '/^#/d' > /tmp/leak_baseline.txt
+              tests/ci_leak_baseline.txt tests/ci_leak_reviewed_exceptions.txt \
+            | sed '/^#/d' > /tmp/leak_baseline.txt
           bad=0
           for f in $(git ls-files '*.csv'); do
             grep -qxF "$f" /tmp/leak_baseline.txt && continue
@@ -827,6 +859,10 @@ jobs:
       # person-level roster (T12, by design), and Stage 2 still needs the
       # private isochrones checkout for rank_one_to_one().
       - name: Install mysterynpi (public) and its test dependencies
+        # Without a token remotes falls back to its bundled PAT, which GitHub's
+        # API refused ("cannot open URL .../contents/DESCRIPTION?ref=v0.2.0").
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
         run: |
           Rscript -e 'install.packages(c("remotes","stringi","humaniformat","jsonlite","readr","dplyr","stringr"), repos = "https://cloud.r-project.org")'
           Rscript -e 'remotes::install_github("mufflyt/mysterynpi@v0.2.0")'
