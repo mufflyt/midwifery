@@ -95,7 +95,7 @@ s <- data.frame(
                           "building_at_address", "building_at_address"),
   ccn = c("060011", NA, "060011", NA, NA, NA, NA, NA), stringsAsFactors = FALSE)
 b <- blended_practice(s)
-g <- function(id, col) b[[col]][b$certification_number == id]
+blend_flag <- function(id, col) b[[col]][b$certification_number == id]
 chk(g("A", "blended_strict"), "T22 DAC hospital + CABC birth center is strict")
 chk(!g("B", "blended_strict") && g("B", "blended_broad"),
     "T23 a birth center known only by its name is broad, not strict")
