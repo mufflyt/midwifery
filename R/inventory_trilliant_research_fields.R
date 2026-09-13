@@ -89,7 +89,7 @@ inv_profile_table <- function(t) {
   examples <- map_chr(cols, function(cn) {
     if (inv_is_identifier(cn) || distinct[[cn]] > 50) return("")
     top <- dbGetQuery(con, sprintf('SELECT CAST("%s" AS VARCHAR) AS v, count(*) AS n FROM %s
-                                    WHERE "%s" IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 3', cn, src, cn))
+                                    WHERE "%s" IS NOT NULL GROUP BY 1 ORDER BY 2 DESC, 1 LIMIT 3', cn, src, cn))
     paste(str_trunc(top$v, 40), collapse = " | ")
   })
   tibble(table_name = t, table_rows = n_rows, column_name = cols,
@@ -105,8 +105,9 @@ prof <- map_dfr(tables, function(t) { cat("  ", t, "\n"); inv_profile_table(t) }
 inv_has <- function(col, pat) str_detect(col, regex(pat, TRUE))
 inventory <- columns |>
   select(table_name, column_name, data_type) |>
-  left_join(prof, by = c("table_name", "column_name")) |>
-  left_join(footer |> select(table_name, column_name, n_values, n_null), by = c("table_name", "column_name")) |>
+  left_join(prof, by = c("table_name", "column_name"), relationship = "one-to-one") |>
+  left_join(footer |> select(table_name, column_name, n_values, n_null),
+            by = c("table_name", "column_name"), relationship = "one-to-one") |>
   mutate(
     database = "trilliant_ducklake_20260721", schema = "main",
     # Exact from footers where the table is parquet-backed; otherwise the scan

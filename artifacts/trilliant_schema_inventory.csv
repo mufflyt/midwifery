@@ -6,7 +6,7 @@ trilliant_ducklake_20260721,main,current_hospital_versions,7916,updated_at,TIMES
 trilliant_ducklake_20260721,main,directory_meta,2,table_name,VARCHAR,2,full scan,2,HyperLogLog over all rows,[identifier: not shown],FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
 trilliant_ducklake_20260721,main,directory_meta,2,snapshot_label,VARCHAR,2,full scan,1,HyperLogLog over all rows,20260625,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
 trilliant_ducklake_20260721,main,directory_meta,2,row_count,BIGINT,2,full scan,2,HyperLogLog over all rows,3263428 | 7518635,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,
-trilliant_ducklake_20260721,main,directory_meta,2,field_count,INTEGER,2,full scan,2,HyperLogLog over all rows,35 | 15,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,
+trilliant_ducklake_20260721,main,directory_meta,2,field_count,INTEGER,2,full scan,2,HyperLogLog over all rows,15 | 35,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,
 trilliant_ducklake_20260721,main,directory_meta,2,registered_at,TIMESTAMP,2,full scan,2,HyperLogLog over all rows,2026-07-20 13:17:45.933074 | 2026-07-20 13:17:46.537734,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,
 trilliant_ducklake_20260721,main,directory_organization,3263428,organization_id,VARCHAR,3263428,parquet footer (exact),2760903,HyperLogLog over all rows,[identifier: not shown],FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
 trilliant_ducklake_20260721,main,directory_organization,3263428,organization_name,VARCHAR,3263428,parquet footer (exact),2777221,HyperLogLog over all rows,[identifier: not shown],FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
