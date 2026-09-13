@@ -1,7 +1,8 @@
 {
   "title": "National Certified Nurse-Midwife (CNM) 50-State & DC Workforce Registry",
-  "version": "4.0.0",
-  "description": "Comprehensive, multi-source national registry of 12,211 active Certified Nurse-Midwives (CNMs) across all 50 U.S. States and the District of Columbia, linked across AMCB, CMS NPPES, and Open Payments. State Board of Nursing (BON) licensure is genuinely observed for Washington only (374 records); see docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md.",
+  "version": "0.7.0",
+  "version_note": "The latest git tag (v0.7.0, 2026-08-13). This file said 4.0.0 until 2026-09-13; no such version was ever tagged. Cite a commit SHA for later work.",
+  "description": "The American Midwifery Certification Board roster linked to CMS NPPES for NPI identity and practice geography, with Doctors & Clinicians, Open Payments and Census geography layers. State Board of Nursing licensure is observed only for Washington, Colorado and Texas, from each board's open data. Every count below is read from the tracked artifact named in cohort_statistics_sources; tests/test_midwifery_pipeline.py fails if they disagree.",
   "author": {
     "name": "Dr. Tyler Muffly, MD",
     "affiliation": "University of Colorado School of Medicine / Health Services Research",
@@ -11,16 +12,45 @@
   "spatial_coverage": {
     "country": "United States",
     "jurisdictions_count": 51,
-    "jurisdictions": ["50 U.S. States", "District of Columbia"],
-    "granularity": ["Point Coordinates", "5-Digit ZIP", "County FIPS", "Census Tract"]
+    "jurisdictions": [
+      "50 U.S. States",
+      "District of Columbia"
+    ],
+    "granularity": [
+      "Point Coordinates",
+      "5-Digit ZIP",
+      "County FIPS",
+      "Census Tract"
+    ]
   },
   "cohort_statistics": {
-    "total_active_amcb_cnms": 12211,
-    "nppes_npi_matched": 12211,
-    "npi_match_rate_pct": 100.0,
-    "bon_verified_state_licenses": 374,
-    "bon_verified_state_licenses_note": "Washington only; see docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md. 11355 was a synthesized re-encoding of certification_number, not observed licensure data, and is retracted."
+    "amcb_roster_certificants": 22357,
+    "amcb_active_certificants": 15328,
+    "active_matched_to_nppes_midwifery": 12192,
+    "active_match_rate_pct": 79.5,
+    "analytic_cohort_members": 17028,
+    "table1_active_primary_linked": 12171,
+    "state_boards_queried_for_licensure": [
+      "CO",
+      "TX",
+      "WA"
+    ],
+    "board_licences_returned": {
+      "CO": 486,
+      "TX": 498,
+      "WA": 369
+    }
   },
+  "cohort_statistics_sources": {
+    "amcb_roster_certificants": "artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json: artifact_rows",
+    "amcb_active_certificants": "artifacts/linkage_completeness_by_status.csv: status ACTIVE, n",
+    "active_matched_to_nppes_midwifery": "artifacts/linkage_completeness_by_status.csv: status ACTIVE, matched",
+    "active_match_rate_pct": "artifacts/linkage_completeness_by_status.csv: status ACTIVE, pct_matched",
+    "analytic_cohort_members": "artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json: cohort_members",
+    "table1_active_primary_linked": "artifacts/table1_provenance.csv: cohort_n",
+    "board_licences_returned": "docs/figures/board_licensure_observed_counts.csv: sum of n where outcome starts \"Licence returned\", by state"
+  },
+  "retracted": "Until 2026-09-13 this file reported total_active_amcb_cnms and nppes_npi_matched = 12211 with npi_match_rate_pct 100.0 (12,211 was the row count of a file holding 11,920 certificants; the 100% was typed), 374 board-verified licences (Washington only, 368 people), and 5,024 CPT delivery attenders (a relabelled DAC specialty flag; public Part B has no delivery-code rows). See NEWS.md and docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md.",
   "licensing": "MIT License",
-  "last_updated": "2026-08-14T14:43:00-06:00"
+  "last_updated": "2026-09-13"
 }

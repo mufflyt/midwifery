@@ -28,7 +28,21 @@ K <- mw_init_stats(root)
 inv_path <- file.path(root, "artifacts", "bon_contamination_inventory.csv")
 inv <- if (file.exists(inv_path))
   utils::read.csv(inv_path, stringsAsFactors = FALSE, colClasses = "character") else NULL
-n_genuine <- 374L
+# The 2026-08-17 count of genuine records, read from the inventory's RETAIN
+# row rather than typed. It was 374 rows -- 368 people, because the roster the
+# Washington query ran over repeated some midwives (see section 6).
+n_genuine <- if (!is.null(inv))
+  as.integer(inv$genuine_observed_contribution[inv$action == "RETAIN"][1]) else NA_integer_
+
+# Section 6: what the boards that were queried returned, as of 2026-09-13.
+bl_path <- file.path(root, "docs", "figures", "board_licensure_observed_counts.csv")
+bl <- if (file.exists(bl_path))
+  utils::read.csv(bl_path, stringsAsFactors = FALSE) else NULL
+bl_ret <- if (!is.null(bl))
+  tapply(bl$n[grepl("^Licence returned", bl$outcome)],
+         bl$state[grepl("^Licence returned", bl$outcome)], sum) else NULL
+bl_cov <- if (!is.null(bl)) tapply(bl$n, bl$state, sum) else NULL
+fmt_n <- function(x) format(x, big.mark = ",")
 ```
 
 # eMethods 3. What "board-verified" meant, and what it did not
@@ -148,3 +162,27 @@ synthetic and observed contribution to that claim is committed alongside the
 data, and the figure in the project README is generated from that inventory
 rather than from prose, so the illustration cannot drift from the correction it
 illustrates.
+
+## 6. Update, 2026-09-13
+
+Two things have changed since this appendix was first written, and neither
+reverses it.
+
+First, two more states have been queried directly, from their boards' own open
+data, by the same pattern as Washington: Colorado's Division of Professions and
+Occupations and the Texas Board of Nursing. Matched by name against the linked
+roster, the three boards returned a licence for
+`r fmt_n(bl_ret[["WA"]])` of `r fmt_n(bl_cov[["WA"]])` midwives covered in
+Washington, `r fmt_n(bl_ret[["CO"]])` of `r fmt_n(bl_cov[["CO"]])` in Colorado,
+and `r fmt_n(bl_ret[["TX"]])` of `r fmt_n(bl_cov[["TX"]])` in Texas, each with
+the status the board itself reported, including expired licences. No other
+board has been queried, and no other state's licensure is reported anywhere in
+this work.
+
+Second, further synthesized material was found: additional licence-number
+templates, a simulated licence-renewal check that marked every record active,
+a claimed layer of Medicare delivery claims that never read a procedure code,
+and an invented sample of collaborative-practice filings. All were removed; the
+project's changelog and provenance note list each one. None entered the
+identity linkage, for the reason given in section 2.
+
