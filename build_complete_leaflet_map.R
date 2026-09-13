@@ -2,6 +2,18 @@
 # =============================================================================
 # Complete R Leaflet Midwifery Access & Scope of Practice (SOP) Map Engine
 # =============================================================================
+# Revised 2026-09-13. This script used to write docs/cnm_national_leaflet_map.
+# html as well, the page GitHub Pages serves, which build_cnm_national_leaflet_
+# map.py also writes -- whichever ran last won. It now writes only
+# docs/maps/midwifery_access_map_v2.html. Also removed: typed-in headline
+# counts (11,920 / 7,470 / 2,611 / 221), a delivery badge and a "nearest
+# delivery midwife" tool driven by has_cpt_delivery_claim (which was "DAC
+# primary specialty is CNM", not a claim; see measure_medicare_delivery_code_
+# observability.R), a drive-time described as "exact road routing" when it is
+# a straight line times 1.25 at 45 mph, and a hand-typed three-level state
+# scope-of-practice table with no source. Scope of practice now comes from
+# artifacts/state_scope_of_practice.csv (Ranchoff & Declercq 2020, see
+# build_state_scope_of_practice.R).
 suppressPackageStartupMessages({
   library(sf); library(dplyr); library(readr); library(stringr)
   library(leaflet); library(htmlwidgets); library(htmltools)
@@ -10,11 +22,10 @@ source(file.path("R", "lib", "clinical_setting.R"))
 
 cat("=== Building Complete R Leaflet Midwifery Access Map ===\n")
 
-OUT_HTML <- "docs/cnm_national_leaflet_map.html"
 OUT_HTML_R <- "docs/maps/midwifery_access_map_v2.html"
 dir.create("docs/maps", showWarnings = FALSE, recursive = TRUE)
 
-# 1. Load Master Midwife Cohort v4 (N = 11,920)
+# 1. Load Master Midwife Cohort v4
 mws_df <- read_csv("artifacts/cohort_midwife_facility_attributions_final_v4.csv", show_col_types = FALSE) %>%
   mutate(npi = as.character(npi))
 
@@ -53,37 +64,14 @@ mws_geo <- mws_df %>%
 
 cat(sprintf("Geocoded %s midwives with lat/lon coordinates.\n", format(nrow(mws_geo), big.mark = ",")))
 
-# 2. State Scope of Practice (SOP) Regulatory Autonomy Classification
-sop_table <- tibble::tribble(
-  ~state, ~sop_category, ~sop_color,
-  "AK", "Full Autonomy", "#10B981", "AZ", "Full Autonomy", "#10B981",
-  "CO", "Full Autonomy", "#10B981", "CT", "Full Autonomy", "#10B981",
-  "DC", "Full Autonomy", "#10B981", "HI", "Full Autonomy", "#10B981",
-  "IA", "Full Autonomy", "#10B981", "ID", "Full Autonomy", "#10B981",
-  "ME", "Full Autonomy", "#10B981", "MN", "Full Autonomy", "#10B981",
-  "MT", "Full Autonomy", "#10B981", "ND", "Full Autonomy", "#10B981",
-  "NE", "Full Autonomy", "#10B981", "NH", "Full Autonomy", "#10B981",
-  "NM", "Full Autonomy", "#10B981", "NV", "Full Autonomy", "#10B981",
-  "OR", "Full Autonomy", "#10B981", "RI", "Full Autonomy", "#10B981",
-  "UT", "Full Autonomy", "#10B981", "VT", "Full Autonomy", "#10B981",
-  "WA", "Full Autonomy", "#10B981", "WY", "Full Autonomy", "#10B981",
-  
-  "CA", "Reduced Practice", "#F59E0B", "DE", "Reduced Practice", "#F59E0B",
-  "IL", "Reduced Practice", "#F59E0B", "IN", "Reduced Practice", "#F59E0B",
-  "KS", "Reduced Practice", "#F59E0B", "KY", "Reduced Practice", "#F59E0B",
-  "MA", "Reduced Practice", "#F59E0B", "MD", "Reduced Practice", "#F59E0B",
-  "MI", "Reduced Practice", "#F59E0B", "MO", "Reduced Practice", "#F59E0B",
-  "NJ", "Reduced Practice", "#F59E0B", "NY", "Reduced Practice", "#F59E0B",
-  "OH", "Reduced Practice", "#F59E0B", "PA", "Reduced Practice", "#F59E0B",
-  "WI", "Reduced Practice", "#F59E0B", "WV", "Reduced Practice", "#F59E0B",
-  
-  "AL", "Restricted Practice", "#EF4444", "AR", "Restricted Practice", "#EF4444",
-  "FL", "Restricted Practice", "#EF4444", "GA", "Restricted Practice", "#EF4444",
-  "LA", "Restricted Practice", "#EF4444", "MS", "Restricted Practice", "#EF4444",
-  "NC", "Restricted Practice", "#EF4444", "OK", "Restricted Practice", "#EF4444",
-  "SC", "Restricted Practice", "#EF4444", "TN", "Restricted Practice", "#EF4444",
-  "TX", "Restricted Practice", "#EF4444", "VA", "Restricted Practice", "#EF4444"
-)
+# 2. State scope of practice: Ranchoff & Declercq (2020), 2016 status, as
+# built by build_state_scope_of_practice.R. Two categories, because that is
+# what the source classifies.
+SOP_COLOR <- c(Autonomous = "#10B981", Collaborative_supervisory = "#F59E0B")
+sop_table <- read_csv("artifacts/state_scope_of_practice.csv", show_col_types = FALSE) %>%
+  transmute(state, sop_category = practice_authority_2016,
+            sop_color = unname(SOP_COLOR[practice_authority_2016]))
+stopifnot(!anyNA(sop_table$sop_color))
 
 # Load US State Polygon Boundaries via tigris
 cat("Downloading US State polygons via tigris...\n")
@@ -91,28 +79,23 @@ states_sf <- suppressMessages(tigris::states(cb = TRUE, year = 2023, progress_ba
   sf::st_transform(4326) %>%
   filter(!STUSPS %in% c("AS", "GU", "MP", "PR", "VI")) %>%
   left_join(sop_table, by = c("STUSPS" = "state")) %>%
-  mutate(sop_category = coalesce(sop_category, "Reduced Practice"),
-         sop_color = coalesce(sop_color, "#F59E0B"))
+  mutate(sop_category = coalesce(sop_category, "not classified by the source"),
+         sop_color = coalesce(sop_color, "#64748B"))
 
 # 3. Format Hyperlinked Popups
 mws_geo <- mws_geo %>%
   mutate(
-    has_cpt = (has_cpt_delivery_claim == TRUE),
-    cpt_label = ifelse(has_cpt, "Active Attending Delivery Provider (CPT 59400/59409/59410)", "Outpatient / Clinic Practice"),
-    badge_class = ifelse(has_cpt, "badge-active", "badge-clinic"),
     fac_name = coalesce(attributed_hospital_name, matched_cabc_birth_center, op_profile_match, "Outpatient Clinic Practice"),
-    fac_url = ifelse(is_facility_setting_category(refined_clinical_setting, 3),
+    fac_url = ifelse(is_facility_setting_category(final_facility_setting, 3),
                      "https://birthcenteraccreditation.org/find-accredited-birth-center/",
                      "https://data.cms.gov/provider-characteristics/hospitals-and-other-facilities/provider-of-services-file-hospital-non-hospital-facilities"),
     npi_url = sprintf("https://npiregistry.cms.hhs.gov/provider-view/%s", npi),
     op_url = "https://openpaymentsdata.cms.gov/search",
-    cpt_url = "https://data.cms.gov/provider-summary-by-type-of-service/medicare-physician-other-practitioners",
     amcb_url = "https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800",
     
     popup_html = sprintf(
       "<div class='popup-title'><a href='%s' target='_blank' style='color:#38bdf8;text-decoration:underline;'>CNM %s %s</a></div>
        <div class='popup-sub'><a href='%s' target='_blank' style='color:#cbd5e1;text-decoration:underline;'>🏥 %s</a> (Raw Source)</div>
-       <a href='%s' target='_blank' style='text-decoration:none;'><div class='popup-badge %s'>%s 🔗</div></a>
        <div class='popup-detail'>
          <b>NPI:</b> <a href='%s' target='_blank' style='color:#38bdf8;text-decoration:underline;'>%s</a> (NPPES Registry)<br>
          <b>Certification #:</b> <a href='%s' target='_blank' style='color:#38bdf8;text-decoration:underline;'>%s</a> (AMCB Roster)<br>
@@ -122,11 +105,10 @@ mws_geo <- mws_geo %>%
        </div>",
       npi_url, first_name, last_name,
       fac_url, fac_name,
-      cpt_url, badge_class, cpt_label,
       npi_url, npi,
       amcb_url, certification_number,
       npi_url, addr_clean, str_to_title(practice_city), st, zip5,
-      refined_clinical_setting,
+      final_facility_setting,
       op_url, open_payments_status
     )
   )
@@ -134,14 +116,20 @@ mws_geo <- mws_geo %>%
 # Color pal for points
 mws_geo <- mws_geo %>%
   mutate(marker_color = case_when(
-    is_facility_setting_category(refined_clinical_setting, 1) ~ "#3B82F6", # Blue
-    is_facility_setting_category(refined_clinical_setting, 3) ~ "#10B981", # Emerald Green
-    facility_setting_category(refined_clinical_setting) %in% c(2, 4, 5) ~ "#8B5CF6", # Purple
+    is_facility_setting_category(final_facility_setting, 1) ~ "#3B82F6", # Blue
+    is_facility_setting_category(final_facility_setting, 3) ~ "#10B981", # Emerald Green
+    facility_setting_category(final_facility_setting) %in% c(2, 4, 5) ~ "#8B5CF6", # Purple
     TRUE ~ "#F59E0B" # Amber Gold
   ))
 
 # 4. Prepare JSON Payload for JS Drive-Time Routing Tool & Map Rendering
-pts_json <- jsonlite::toJSON(mws_geo %>% select(npi, first_name, last_name, fac_name, latitude, longitude, has_cpt), auto_unbox = TRUE)
+pts_json <- jsonlite::toJSON(mws_geo %>% select(npi, first_name, last_name, fac_name, latitude, longitude), auto_unbox = TRUE)
+
+# Header counts, computed from the markers actually drawn. v4 has one row per
+# midwife per attributed facility, so every count is of distinct NPIs.
+n_mapped   <- n_distinct(mws_geo$npi)
+n_hospital <- n_distinct(mws_geo$npi[is_facility_setting_category(mws_geo$final_facility_setting, 1)])
+n_birthctr <- n_distinct(mws_geo$npi[is_facility_setting_category(mws_geo$final_facility_setting, 3)])
 
 cat("Assembling Leaflet map in R with Scope of Practice, Drive-Time Routing, and Hyperlinked Popups...\n")
 
@@ -234,8 +222,8 @@ map_widget <- leaflet(options = leafletOptions(minZoom = 3)) %>%
   # Legend
   addLegend(
     position = "bottomleft",
-    colors = c("#10B981", "#F59E0B", "#EF4444", "#3B82F6", "#8B5CF6"),
-    labels = c("Full Autonomy State", "Reduced Practice State", "Restricted Practice State", "Hospital Main Campus / Privileges", "Metro Health / Birth Center"),
+    colors = c("#10B981", "#F59E0B", "#64748B", "#3B82F6", "#8B5CF6"),
+    labels = c("Autonomous practice (Ranchoff & Declercq 2016)", "Collaborative / supervisory (same source)", "Not classified by the source", "Medicare hospital affiliation", "Hospital campus / health system area"),
     title = "Regulatory & Practice Legend",
     opacity = 0.85
   ) %>%
@@ -246,18 +234,17 @@ map_widget <- leaflet(options = leafletOptions(minZoom = 3)) %>%
 routing_js <- sprintf('
 <div class="header-card">
   <h1>National CNM Workforce Map</h1>
-  <p>Spatial distribution & drive-time accessibility of 11,920 Certified Nurse-Midwives.</p>
+  <p>Practice locations of %s certified midwives, with approximate drive time to the nearest one.</p>
   <div class="stats-grid">
-    <div class="stat-box"><div class="stat-val">11,920</div><div class="stat-lbl">Active Cohort</div></div>
-    <div class="stat-box"><div class="stat-val" style="color:#34d399;">7,470</div><div class="stat-lbl">Delivery Attenders</div></div>
-    <div class="stat-box"><div class="stat-val" style="color:#60a5fa;">2,611</div><div class="stat-lbl">Hospital Attenders</div></div>
-    <div class="stat-box"><div class="stat-val" style="color:#a78bfa;">221</div><div class="stat-lbl">Birth Centers</div></div>
+    <div class="stat-box"><div class="stat-val">%s</div><div class="stat-lbl">Midwives mapped</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:#60a5fa;">%s</div><div class="stat-lbl">Medicare hospital affiliation</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:#a78bfa;">%s</div><div class="stat-lbl">CABC birth center</div></div>
   </div>
 </div>
 
 <div class="routing-card">
   <div class="routing-title">🚗 Drive-Time Distance Tool</div>
-  <div class="routing-desc">Click anywhere on the map to calculate the exact road routing drive-time distance to the nearest active delivery midwife.</div>
+  <div class="routing-desc">Click anywhere on the map for an approximate drive time to the nearest mapped midwife: straight-line distance times 1.25, at 45 mph. Not road routing.</div>
   <div id="routingResult" class="routing-result">Click on the map to calculate road drive-time.</div>
 </div>
 
@@ -283,12 +270,12 @@ routing_js <- sprintf('
       var clickLat = e.latlng.lat;
       var clickLng = e.latlng.lng;
       
-      // Find closest active delivery midwife via road routing approximation
+      // Nearest mapped midwife by straight-line distance, inflated by a fixed
+      // circuity factor. An approximation, and labelled as one.
       var closest = null;
       var minDistance = Infinity;
       
       pts.forEach(function(p) {
-        if (!p.has_cpt) return;
         var dLat = (p.latitude - clickLat) * 69.0;
         var dLng = (p.longitude - clickLng) * 54.6;
         var distMiles = Math.sqrt(dLat * dLat + dLng * dLng) * 1.25; // 1.25 road circuity factor
@@ -306,23 +293,22 @@ routing_js <- sprintf('
           color: "#34d399", weight: 3, dashArray: "6, 8"
         }).addTo(leafletMap);
         
-        var resultHtml = "<b>Nearest Delivery Midwife:</b> CNM " + closest.first_name + " " + closest.last_name + "<br/>" +
+        var resultHtml = "<b>Nearest mapped midwife:</b> " + closest.first_name + " " + closest.last_name + "<br/>" +
                          "<b>Facility:</b> " + closest.fac_name + "<br/>" +
-                         "<b>🚗 Road Drive-Time:</b> ~" + driveTimeMinutes + " mins (" + minDistance.toFixed(1) + " miles)";
+                         "<b>Approximate drive time:</b> ~" + driveTimeMinutes + " mins (" + minDistance.toFixed(1) + " miles, straight line x 1.25)";
                          
         document.getElementById("routingResult").innerHTML = resultHtml;
       }
     });
   });
 </script>
-', pts_json)
+', format(n_mapped, big.mark = ","), format(n_mapped, big.mark = ","),
+   format(n_hospital, big.mark = ","), format(n_birthctr, big.mark = ","), pts_json)
 
 # Attach Header, Head, and JS
 map_widget <- prependContent(map_widget, custom_head)
 map_widget <- prependContent(map_widget, HTML(routing_js))
 
-# Save both html map files
-saveWidget(map_widget, OUT_HTML, selfcontained = TRUE, title = "National CNM Workforce & Scope of Practice Map")
 saveWidget(map_widget, OUT_HTML_R, selfcontained = TRUE, title = "National CNM Workforce & Scope of Practice Map")
 
-cat(sprintf("Successfully generated R Leaflet map at:\n  - %s\n  - %s\n", OUT_HTML, OUT_HTML_R))
+cat(sprintf("Successfully generated R Leaflet map at: %s\n", OUT_HTML_R))
