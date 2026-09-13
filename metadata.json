@@ -19,9 +19,7 @@
     "nppes_npi_matched": 12211,
     "npi_match_rate_pct": 100.0,
     "bon_verified_state_licenses": 374,
-    "bon_verified_state_licenses_note": "Washington only; see docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md. 11355 was a synthesized re-encoding of certification_number, not observed licensure data, and is retracted.",
-    "active_cpt_delivery_attenders": 5024,
-    "attending_rate_pct": 41.1
+    "bon_verified_state_licenses_note": "Washington only; see docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md. 11355 was a synthesized re-encoding of certification_number, not observed licensure data, and is retracted."
   },
   "licensing": "MIT License",
   "last_updated": "2026-08-14T14:43:00-06:00"

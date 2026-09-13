@@ -30,7 +30,6 @@ flowchart LR
 | State Boards of Nursing genuinely queried | 1 (Washington, via WA DOH's public Socrata API) — see the retraction below |
 | Direct State BON Permalinks | 100.0% 1-Click Lookup URLs Embedded in Interactive Map (a link to a board, not a check against one) |
 | **Board-verified against a state board** | **374 records, Washington only (3.3%)** — see the retraction below |
-| Active CPT Delivery Attenders | 5,024 Midwives (41.1% Verified Delivery Attenders) |
 | Collaborative Practice (CPA) Filings | 2,170 Midwives (24.0% Ingested CPA OB/GYN Supervision) |
 
 ## Key Visualizations & Data Gallery
@@ -80,10 +79,6 @@ not be added.*
 > recomputation. What is affected is *reported board-verification coverage* —
 > the claim "11,355 midwives board-verified across 40 states" becomes **374, in
 > one state**.
-
-### 5. Active CPT Delivery Attenders by State BON
-![Active CPT Delivery Attenders by State](artifacts/plots/plot2_bon_delivery_attenders_by_state.png)
-*Figure 5: Active CPT delivery attending midwives (CPT 59400 / 59409 / 59410) by state jurisdiction.*
 
 ### 6. Active Midwifery Supply per 100,000 Women of Reproductive Age (15–44)
 ![Active State Rate Map](docs/maps/active_state_rate.png)
@@ -323,7 +318,9 @@ its figures rest on.
 midwives practise.** Employment and organization affiliation via NPPES Type 2
 resolution; hospital privileges via CMS facility affiliation keyed on CCN;
 practice setting via CABC birth-center accreditation and address building
-taxonomy; and observed birth attendance via CPT delivery claims. Each layer is
+taxonomy. Birth attendance is not among them: public Medicare Part B carries no
+delivery-code rows for any provider in 2013–2023
+(`artifacts/medicare_delivery_code_observability.csv`). Each layer is
 reported with its coverage and, where a linkage rule is involved, its positive
 predictive value. *Deliverable:* the attribute artifacts and
 `artifacts/org_resolution_ppv.csv`. **Two decisions this aim depends on are

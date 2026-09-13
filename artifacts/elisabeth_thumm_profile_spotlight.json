@@ -58,7 +58,6 @@
   "co_bon_license_expiration": "2027-09-30",
   "co_bon_match_status": "VERIFIED_LIVE_BON",
   "co_bon_source": "data.colorado.gov/resource/7s5z-vewr (Colorado DORA, licensetype=APN, subcategory=CNM)",
-  "has_cpt_delivery_claim": false,
   "attribution_tier": "Tier 2: Exact Campus Address Match (Hospital Street Address)",
   "attributed_hospital_name": "DENVER HEALTH MEDICAL CENTER",
   "cms_ccn": "NA"

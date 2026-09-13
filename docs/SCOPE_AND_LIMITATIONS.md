@@ -73,14 +73,26 @@ with the data.
 
 ## Practice setting: built, but not in Table 1
 
-Four layers describe *where* a midwife practises, and none appears in Table 1:
+Three layers describe *where* a midwife practises, and none appears in Table 1:
 
 | layer | coverage |
 |---|---|
 | CABC-accredited birth centers | 221 midwives across 111 centers |
 | Freestanding birth center identification | built |
 | Building taxonomy (MOB / hospital campus / birth center / outpatient clinic) | built |
-| CPT delivery claims (59400 / 59409 / 59410) | 7,470 midwives, 62.67%, confirmed attending deliveries |
+
+**Delivery attendance is not observable in public Medicare data.** The Medicare
+Physician & Other Practitioners by-provider-and-service file has **zero** rows
+for the global and delivery-only obstetric codes (59400, 59409, 59410, 59510,
+59514, 59515, 59610, 59612, 59614, 59618, 59620, 59622) for any provider in any
+year 2013–2023, because CMS suppresses every provider-code cell under 11
+beneficiaries and Medicare pays for few births
+(`artifacts/medicare_delivery_code_observability.csv`). A row that used to sit in
+this table — "CPT delivery claims: 7,470 midwives, 62.67%, confirmed attending
+deliveries" — never read a procedure code. It counted Doctors & Clinicians rows
+whose primary specialty is CNM: one row per practice location, 4,806 distinct
+midwives, and an enrollment attribute rather than a behaviour. Retracted
+2026-09-13.
 
 Table 1's 23 blocks cover certification, demographics, geography, hospital
 affiliation, Medicare participation and Healthgrades attributes. Practice

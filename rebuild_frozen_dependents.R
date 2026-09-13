@@ -163,6 +163,14 @@ REBUILD_ORDER <- list(
                    # link_practice_locations writes midwife_org_person.csv,
                    # and resolve_org_ambiguity reads BOTH, so it must follow.
                    "extract_dac_facility_affiliations.R",
+                   # Added 2026-09-13 with the script itself, which replaced
+                   # the fabricated CPT delivery-claims filter. Reads FROZEN for
+                   # the ACTIVE primary-linked cohort and reports how many are
+                   # Medicare-enrolled with a CNM primary specialty, and how
+                   # many public Part B delivery-code rows exist (none). Left
+                   # holding the previous cohort, its cohort_n would describe a
+                   # roster that no longer exists.
+                   "measure_medicare_delivery_code_observability.R",
                    "link_practice_locations_to_org_npi.R",
                    "resolve_org_ambiguity.R",
                    "match_open_payments_to_facility.R",

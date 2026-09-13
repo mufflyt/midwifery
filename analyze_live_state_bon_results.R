@@ -16,11 +16,14 @@ summary_stat <- df %>%
   summarise(
     n_midwives = n(),
     pct_total = round(n() / nrow(df) * 100, 1),
-    cpt_attenders = sum(has_cpt_delivery_claim == TRUE, na.rm = TRUE),
     .groups = "drop"
   )
+# No cpt_attenders column. It summed has_cpt_delivery_claim, which was "DAC
+# primary specialty is CNM" relabelled as delivery attendance; public Part B
+# has no delivery-code rows for anyone (measure_medicare_delivery_code_
+# observability.R).
 
-cat("Live Washington State BON Match Rate & Clinical Depth:\n")
+cat("Live Washington State BON Match Rate:\n")
 print(summary_stat)
 
 license_status_dist <- df %>%

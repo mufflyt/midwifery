@@ -15,7 +15,6 @@
 #   artifacts/amcb_npi_linkage_FROZEN.csv                           AMCB roster + NPPES link
 #   artifacts/live_colorado_bon_ingested_midwives_from_tracked_roster.csv
 #       Colorado DORA open data, data.colorado.gov/resource/7s5z-vewr (APN, subcategory CNM)
-#   artifacts/cohort_midwives_cpt_delivery_attenders.csv            CPT 59400/59409/59410 attenders
 #   artifacts/cohort_midwife_hospital_rigorous_attributions.csv     hospital attribution
 # Output:
 #   artifacts/elisabeth_thumm_profile_spotlight.json
@@ -31,7 +30,6 @@ ART = "artifacts"
 SRC = {
     "linkage": os.path.join(ART, "amcb_npi_linkage_FROZEN.csv"),
     "co_bon": os.path.join(ART, "live_colorado_bon_ingested_midwives_from_tracked_roster.csv"),
-    "cpt": os.path.join(ART, "cohort_midwives_cpt_delivery_attenders.csv"),
     "hospital": os.path.join(ART, "cohort_midwife_hospital_rigorous_attributions.csv"),
 }
 OUT = os.path.join(ART, "elisabeth_thumm_profile_spotlight.json")
@@ -68,8 +66,11 @@ profile.update({
     "co_bon_source": "data.colorado.gov/resource/7s5z-vewr (Colorado DORA, licensetype=APN, subcategory=CNM)",
 })
 
-# Absence from the attender file means no observed delivery claim, not a verified zero.
-profile["has_cpt_delivery_claim"] = one(SRC["cpt"], "npi", NPI) is not None
+# No delivery-claim field. The file this read,
+# artifacts/cohort_midwives_cpt_delivery_attenders.csv, listed NPIs whose DAC
+# primary specialty is CNM and called them delivery attenders; public Part B
+# has no delivery-code rows for any provider
+# (artifacts/medicare_delivery_code_observability.csv).
 
 hosp = one(SRC["hospital"], "npi", NPI) or {}
 for k in ("attribution_tier", "attributed_hospital_name", "cms_ccn"):
