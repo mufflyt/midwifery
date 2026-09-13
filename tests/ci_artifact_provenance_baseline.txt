@@ -86,7 +86,6 @@ artifacts/npi_state_license_crosswalk_report.csv
 artifacts/oai_source_concentration.csv
 artifacts/ob_hospitals_fallback_log.csv
 artifacts/ob_hospitals_geocoded.csv
-artifacts/obgyn_cpa_filings_schema_and_sample.csv
 artifacts/ohio_voter_license_ages_provenance.csv
 artifacts/org_resolution_distribution_shift.csv
 artifacts/org_resolution_ppv.csv

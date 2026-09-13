@@ -19,7 +19,6 @@ flowchart LR
   A["AMCB Roster - 12,211 Active CNMs"] --> B["NPPES NPI Matching - 100%"]
   B --> C["50-State + DC BON Verification"]
   C --> D["State Licensure & RXN Authority"]
-  C --> E["Collaborative Practice (CPA) Filings"]
   D --> F["Interactive Leaflet Map - 51 Jurisdictions"]
 ```
 
@@ -30,7 +29,6 @@ flowchart LR
 | State Boards of Nursing genuinely queried | 1 (Washington, via WA DOH's public Socrata API) — see the retraction below |
 | Direct State BON Permalinks | 100.0% 1-Click Lookup URLs Embedded in Interactive Map (a link to a board, not a check against one) |
 | **Board-verified against a state board** | **374 records, Washington only (3.3%)** — see the retraction below |
-| Collaborative Practice (CPA) Filings | 2,170 Midwives (24.0% Ingested CPA OB/GYN Supervision) |
 
 ## Key Visualizations & Data Gallery
 
