@@ -26,7 +26,7 @@ chk <- function(ok, label) {
   cat(sprintf("  %-4s %s\n", if (isTRUE(ok)) "ok" else "FAIL", label))
   if (!isTRUE(ok)) fails <<- fails + 1L
 }
-refuses <- function(expr) inherits(try(expr, silent = TRUE), "try-error")
+cohort_refuses <- function(expr) inherits(try(expr, silent = TRUE), "try-error")
 
 linkage <- data.frame(
   certification_number = c("A1", "A2", "A3", "A4", "A5", "A6", "A7", "A7"),
@@ -52,9 +52,9 @@ chk("A7" %in% coh$certification_number,
 conflict <- rbind(linkage, data.frame(certification_number = "A1", status = "ACTIVE",
                                       linkage_tier = "primary_midwifery", npi = "1999999999",
                                       nppes_state = "WA"))
-chk(refuses(canonical_active_primary(conflict)),
+chk(cohort_refuses(canonical_active_primary(conflict)),
     "T7 one certificant with two different NPIs stops instead of keeping a row by file order")
-chk(refuses(canonical_active_primary(linkage[, -5])), "T8 a missing nppes_state column stops")
+chk(cohort_refuses(canonical_active_primary(linkage[, -5])), "T8 a missing nppes_state column stops")
 
 cat("\n-- BOARD-VALIDATION SUBSET --\n")
 bv <- board_validation_eligible(coh)
@@ -84,10 +84,10 @@ tmp <- tempfile(fileext = ".csv"); writeLines("a,b\n1,2", tmp)
 man <- tempfile(fileext = ".json")
 jsonlite::write_json(list(artifact_sha256 = digest::digest(file = tmp, algo = "sha256"),
                           artifact_rows = 1L), man, auto_unbox = TRUE)
-chk(!refuses(verify_linkage_freeze(tmp, man, allow_sha256 = "")), "T18 the manifest's own file passes")
+chk(!cohort_refuses(verify_linkage_freeze(tmp, man, allow_sha256 = "")), "T18 the manifest's own file passes")
 writeLines("a,b\n1,3", tmp)
-chk(refuses(verify_linkage_freeze(tmp, man, allow_sha256 = "")), "T19 any other file stops")
-chk(!refuses(verify_linkage_freeze(tmp, man, allow_sha256 = digest::digest(file = tmp, algo = "sha256"))),
+chk(cohort_refuses(verify_linkage_freeze(tmp, man, allow_sha256 = "")), "T19 any other file stops")
+chk(!cohort_refuses(verify_linkage_freeze(tmp, man, allow_sha256 = digest::digest(file = tmp, algo = "sha256"))),
     "T20 ...unless it is named on purpose")
 
 cat("\n-- TRANSITIONS BETWEEN FREEZES --\n")
