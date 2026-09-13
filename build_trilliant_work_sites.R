@@ -114,7 +114,26 @@ read_latin1 <- function(path) read_csv(path, col_types = cols(.default = col_cha
 # =============================================================================
 # 1. Cohort: ACTIVE certificants with a primary-tier NPI link
 # =============================================================================
-cohort <- chr(file.path(ART, "amcb_npi_linkage_FROZEN.csv")) |>
+# WHICH FREEZE. The cohort is only the canonical one if the linkage file is
+# the freeze the tracked manifest describes. The first run of this script used
+# the 2026-08-10 freeze (11,920) because it was the one on that machine; the
+# current freeze is the 22,357-row reconcile_ab_20260910T193000_issue172
+# roster, whose ACTIVE, primary-linked count is the registered 12,171. Any
+# other file stops the build unless ALLOW_FREEZE_SHA256 names it on purpose,
+# and the summary records which freeze it came from.
+FROZEN <- file.path(ART, "amcb_npi_linkage_FROZEN.csv")
+FROZEN_MANIFEST <- jsonlite::read_json("artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json")
+FROZEN_SHA256 <- sha256_of(FROZEN)
+if (!identical(FROZEN_SHA256, FROZEN_MANIFEST$artifact_sha256) &&
+    !identical(FROZEN_SHA256, Sys.getenv("ALLOW_FREEZE_SHA256", ""))) {
+  stop(sprintf(paste0("%s has sha256 %s..., but the tracked manifest describes %s... (%s rows).
+",
+                      "  Use the current freeze, or set ALLOW_FREEZE_SHA256 to build against this one deliberately."),
+               FROZEN, substr(FROZEN_SHA256, 1, 8), substr(FROZEN_MANIFEST$artifact_sha256, 1, 8),
+               format(FROZEN_MANIFEST$artifact_rows, big.mark = ",")), call. = FALSE)
+}
+
+cohort <- chr(FROZEN) |>
   filter(status == "ACTIVE", linkage_tier == "primary_midwifery", !is.na(npi), npi != "") |>
   distinct(certification_number, .keep_all = TRUE) |>
   transmute(certification_number, npi = as.numeric(npi), first_name, last_name, nppes_state)
@@ -506,8 +525,9 @@ setting_summary <- bind_rows(
     count(level = coalesce(top_site_facility_type, "no Trilliant site"), name = "n_midwives") |>
     mutate(dimension = "trilliant_main_site_type"),
   settings |> count(level = pattern, name = "n_midwives") |> mutate(dimension = "work_setting_combination")) |>
-  mutate(cohort_n = nrow(summary_tbl), trilliant_snapshot = TRILLIANT_SNAPSHOT) |>
-  select(dimension, level, n_midwives, cohort_n, trilliant_snapshot) |>
+  mutate(cohort_n = nrow(summary_tbl), frozen_sha256 = FROZEN_SHA256,
+         trilliant_snapshot = TRILLIANT_SNAPSHOT) |>
+  select(dimension, level, n_midwives, cohort_n, frozen_sha256, trilliant_snapshot) |>
   arrange(dimension, desc(n_midwives))
 write_with_provenance(setting_summary, file.path(OUT, "midwife_work_setting_summary.csv"),
                       inputs = c(INPUTS, file.path(OUT, "midwife_work_sites_summary.csv")))
