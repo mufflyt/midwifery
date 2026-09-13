@@ -1,0 +1,33 @@
+{
+  "artifact": "board_licensure_observed_counts.csv",
+  "written_utc": "2026-09-13 17:37:23 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/live_washington_bon_ingested_midwives_from_tracked_roster.csv",
+      "sha256": "b6754ad5da54263624e823bc1e1ae2d1d4cb2ffd715cdd192ae2094fba2d7d82"
+    },
+    {
+      "path": "artifacts/live_colorado_bon_ingested_midwives_from_tracked_roster.csv",
+      "sha256": "78a5970885abbb1921642fa029c6f4a03a4c74f9d52173093046f53da9481b1e"
+    },
+    {
+      "path": "artifacts/live_texas_bon_ingested_midwives_from_tracked_roster.csv",
+      "sha256": "71c39960d3ce06a36fbe6fa71d27e3f927a52c292586dad82e2918d0a82cb8f1"
+    }
+  ],
+  "code_sha256": "b1c1bc97a185b4fac045d2540f0a5f805999e1cbc24d8901fce9208ba765f733",
+  "code": [
+    {
+      "path": "make_board_licensure_figure.R",
+      "sha256": "c141793758bb229a126c2a6642d586176622deea5e440247689f69c08186e128"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+state,outcome,n,queried,board,cohort
+CO,"Licence returned, in force",373,557,Colorado DORA,"current FROZEN linkage, NPPES state CO, any AMCB status"
+CO,"Licence returned, other status",113,557,Colorado DORA,"current FROZEN linkage, NPPES state CO, any AMCB status"
+CO,No name match,68,557,Colorado DORA,"current FROZEN linkage, NPPES state CO, any AMCB status"
+CO,"Ambiguous name, not assigned",3,557,Colorado DORA,"current FROZEN linkage, NPPES state CO, any AMCB status"
+TX,"Licence returned, in force",497,736,Texas BON,"current FROZEN linkage, NPPES state TX, any AMCB status"
+TX,"Licence returned, other status",1,736,Texas BON,"current FROZEN linkage, NPPES state TX, any AMCB status"
+TX,No name match,238,736,Texas BON,"current FROZEN linkage, NPPES state TX, any AMCB status"
+WA,"Licence returned, in force",337,443,WA DOH,"tracked roster (ACTIVE, primary-linked, 2026-08-10 freeze), NPPES state WA"
+WA,"Licence returned, other status",32,443,WA DOH,"tracked roster (ACTIVE, primary-linked, 2026-08-10 freeze), NPPES state WA"
+WA,No name match,74,443,WA DOH,"tracked roster (ACTIVE, primary-linked, 2026-08-10 freeze), NPPES state WA"

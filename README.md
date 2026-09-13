@@ -3,7 +3,7 @@
 [![CI](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml)
 [![Nightly](https://github.com/mufflyt/midwifery/actions/workflows/nightly.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/nightly.yml)
 [![Scientific laws](https://img.shields.io/badge/scientific%20laws-10%20declared%2C%2030%20planted%20defects-blueviolet.svg)](tests/science_law_registry.tsv)
-[![Known debt](https://img.shields.io/badge/known%20debt-2%20open%2C%209%20closed-informational.svg)](DEBT.md)
+[![Known debt](https://img.shields.io/badge/known%20debt-3%20open%2C%209%20closed-informational.svg)](DEBT.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Cite this repository](https://img.shields.io/badge/cite-CITATION.cff-brightgreen.svg)](CITATION.cff)
 [![Dataset Metadata](https://img.shields.io/badge/metadata-metadata.json-orange.svg)](metadata.json)
@@ -32,11 +32,19 @@ flowchart LR
 
 ## Key Visualizations & Data Gallery
 
-### 1. State Board of Nursing (BON) Scraped Midwife Volumes by State
-![State Board of Nursing Scraped CNM Volumes](artifacts/plots/plot1_scraped_bon_state_volumes.png)
-*Figure 1: Volume of records **scraped** from each state Board of Nursing. These
-are roster volumes, not board verifications — the word "verified" previously
-used in this caption has been retracted. See Figure 2 and
+### 1. State board licensure, where a board was actually queried
+![State board licensure observed in WA, CO and TX](docs/figures/board_licensure_observed.png)
+*Figure 1: The three states whose Board of Nursing publishes licensure as open
+data that this project queried — Washington DOH, Colorado DORA and the Texas
+BON — and, for the midwives each query covered, what the board returned:
+**369 of 443** in Washington, **486 of 557** in Colorado, **498 of 736** in
+Texas, each with the status the board reported (Expired included). Matched by
+name; the three bars cover different rosters, as the subtitle says. No other
+board was queried, so no other state appears. Counts:
+[`docs/figures/board_licensure_observed_counts.csv`](docs/figures/board_licensure_observed_counts.csv),
+built by [`make_board_licensure_figure.R`](make_board_licensure_figure.R). This
+replaces a chart of per-state row counts from a synthetic "20-state scrape"; see
+Figure 4 and
 [docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md](docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md).*
 
 ### 2. One middle-initial rule was deleting matches and manufacturing them at once
@@ -69,37 +77,36 @@ cannot be recovered by any matching rule.*
 `{STATE}-RN-CNM-{cert}` — a re-encoding of the AMCB identifier, not licensure
 evidence. Only 374 Washington DOH `credentialnumber` records are genuine
 observed board evidence. The bars are per artifact and **overlap**, so they must
-not be added.*
+not be added. (Drawn 2026-08-17. The 374 were rows of a roster that repeated
+some midwives — 368 people — and Colorado and Texas have since been queried
+directly; current observed evidence is Figure 1.)*
 
 > **What this does and does not affect.** Identity linkage is **clean**: no R
 > code reads these fields, and every accepted NPI match in the FROZEN crosswalk
 > is name-derived, so no identity, geography or organization assignment needs
 > recomputation. What is affected is *reported board-verification coverage* —
 > the claim "11,355 midwives board-verified across 40 states" becomes **374, in
-> one state**.
+> one state** as of 2026-08-17, and **1,353 licences returned across three
+> states** once Colorado and Texas were queried (Figure 1).
 
-### 6. Active Midwifery Supply per 100,000 Women of Reproductive Age (15–44)
+### 5. Active Midwifery Supply per 100,000 Women of Reproductive Age (15–44)
 ![Active State Rate Map](docs/maps/active_state_rate.png)
-*Figure 6: Spatial distribution of active CNMs per 100,000 women aged 15–44 across US states.*
+*Figure 5: Spatial distribution of active CNMs per 100,000 women aged 15–44 across US states.*
 
-### 7. County-Level Midwifery Supply Distribution
+### 6. County-Level Midwifery Supply Distribution
 ![County Midwifery Supply](docs/figures/county_supply.png)
-*Figure 7: County-level midwifery supply map highlighting maternity care deserts and active midwife practice sites.*
+*Figure 6: County-level midwifery supply map highlighting maternity care deserts and active midwife practice sites.*
 
-### 8. 15-Year National Midwifery Workforce Microsimulation (2026–2040)
-![Workforce Microsimulation Projections](artifacts/plots/plot3_microsimulation_workforce_projections.png)
-*Figure 8: Projected 15-year career state transitions, new graduate inflows, and rural-to-urban supply drift (2026–2040).*
-
-### 9. Where Active Midwives Actually Practice, by County
+### 7. Where Active Midwives Actually Practice, by County
 ![Active certified midwives by last-observed practice county](docs/maps/active_county_counts.png)
-*Figure 9: Active certificants by last-observed practice county. Grey is **no
+*Figure 7: Active certificants by last-observed practice county. Grey is **no
 linked practice location in that county**, which is not the same as no midwife:
 34% of the roster never linked, so this is the distribution of located practice
 locations rather than of access. Patients cross county lines.*
 
-### 10. How wrong could the roster-wide metropolitan share be?
+### 8. How wrong could the roster-wide metropolitan share be?
 ![Metropolitan share of the roster: observed, sensitivity estimates, and worst-case bounds](docs/figures/selection_bounds.png)
-*Figure 10: The **89.2%** metropolitan share observed in the located cohort is
+*Figure 8: The **89.2%** metropolitan share observed in the located cohort is
 not a property of the 22,357-certificant roster, because linkage is selected on
 certification status. Making no assumption about the missingness mechanism at
 all, the roster-wide share is bounded between **65.8% and 92.0%** — wide by
@@ -109,9 +116,9 @@ themselves *less* metropolitan than the cohort, not more, which is evidence
 about the direction of the missingness rather than an assumption about it. See
 [docs/TECHNICAL_APPENDIX_LINKAGE_SELECTION.md](docs/TECHNICAL_APPENDIX_LINKAGE_SELECTION.md).*
 
-### 11. Two rates, and they are not the same number
+### 9. Two rates, and they are not the same number
 ![Cohort resolution and ascertainment by certification status](docs/figures/linkage_by_status.png)
-*Figure 11: **Cohort resolution** (resolves to a midwifery-taxonomy record) and
+*Figure 9: **Cohort resolution** (resolves to a midwifery-taxonomy record) and
 **ascertainment** (found in the registry at all, including nursing-only
 matches) diverge most where a certificant is least likely to still be
 practicing: among ACTIVE certificants they are 78.4% and 84.6%; among DECEASED
@@ -121,9 +128,9 @@ a reader ends up unable to reconcile two correct numbers for what looks like
 the same quantity. See
 [docs/TECHNICAL_APPENDIX_RECORD_LINKAGE.md](docs/TECHNICAL_APPENDIX_RECORD_LINKAGE.md).*
 
-### 12. What each stratum has, and what it lacks
+### 10. What each stratum has, and what it lacks
 ![Linkage strata as a ladder of properties](docs/figures/linkage_strata_upset.png)
-*Figure 12: The seven linkage strata partition all 22,357 certificants exactly,
+*Figure 10: The seven linkage strata partition all 22,357 certificants exactly,
 and each loses one more of the five properties a record must accumulate to
 reach the analytic cohort. The sets are strictly nested — 20,270 with a
 candidate, 17,310 single at the best class, 17,189 surviving the one-to-one
@@ -136,9 +143,9 @@ only by the one-to-one constraint, so they sit above tied names. Built by
 [`make_linkage_upset_figure.R`](make_linkage_upset_figure.R), ported from the
 registry-overlap figure in `mufflyt/grace-ent`.*
 
-### 13. An evidence axis the matcher has never used
+### 11. An evidence axis the matcher has never used
 ![What the unused temporal signal would buy](docs/figures/temporal_plausibility.png)
-*Figure 13: `certification_date` appears **zero** times in
+*Figure 11: `certification_date` appears **zero** times in
 `match_amcb_to_npi.R` — the matcher blocks on names and taxonomy only — yet the
 roster carries a certification year and the panel carries the year each NPI was
 first seen. This measures what that comparison would buy, over matches already
@@ -169,7 +176,7 @@ does not pretend otherwise. On a machine holding the data:
 |---|---|
 | [`make_evidence_class_figure.R`](make_evidence_class_figure.R) | What do the accepted matches *rest on*? Every accepted link by the evidence class that carried it, split by taxonomy, because a nursing accept at class 3 or below is two sensitivity decisions stacked. Writes `docs/figures/evidence_class_accepted.png` and a publishable aggregate CSV. |
 | [`build_linkage_case_gallery.R`](build_linkage_case_gallery.R) | Is the matching *right*? A stratified, seeded sample of real decisions — the AMCB side, the NPPES side, the rule that fired, the candidate arithmetic — with a verdict box per case. Twelve strata; three flagged as needing close reading. Person-level: writes only to `qa/`, `--redact` for a shareable copy. |
-| [`analyze_temporal_plausibility.R`](analyze_temporal_plausibility.R) | Would a *date* separate what a name cannot? Its **aggregate** result is rendered above as Figure 13 — counts only, so it is publishable — but the person-level list of flagged pairings needs the crosswalk and is written to gitignored `qa/`. See [D17](docs/DECISIONS_CONTRACT.md), [the signal appendix](docs/TECHNICAL_APPENDIX_TEMPORAL_SIGNAL.md) and [the measurement appendix](docs/TECHNICAL_APPENDIX_TEMPORAL_PLAUSIBILITY.md); the rule is implemented and switched off. |
+| [`analyze_temporal_plausibility.R`](analyze_temporal_plausibility.R) | Would a *date* separate what a name cannot? Its **aggregate** result is rendered above as Figure 11 — counts only, so it is publishable — but the person-level list of flagged pairings needs the crosswalk and is written to gitignored `qa/`. See [D17](docs/DECISIONS_CONTRACT.md), [the signal appendix](docs/TECHNICAL_APPENDIX_TEMPORAL_SIGNAL.md) and [the measurement appendix](docs/TECHNICAL_APPENDIX_TEMPORAL_PLAUSIBILITY.md); the rule is implemented and switched off. |
 
 All three are exercised in CI against regenerated fixtures
 ([`tests/test_linkage_scripts_smoke.R`](tests/test_linkage_scripts_smoke.R)),

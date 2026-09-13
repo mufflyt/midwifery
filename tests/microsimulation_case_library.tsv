@@ -43,7 +43,7 @@
 #   notes                   what a human should take away from this case
 # =============================================================================
 case_id	category	description	initial_workforce	years_spec	annual_new_graduates	annual_retire_rate	annual_rural_drift	rural_baseline_pct	rural_grad_share	expect_error	error_pattern	expected_nrow	require_conservation	require_nonnegative	require_integer_counts	notes
-MC01	bva	Control case: the real published 15-year baseline	12211	2026:2040						FALSE		15	TRUE	TRUE	TRUE	Anchor case. If this ever fails, something broke the actual published forecast, not just an edge case.
+MC01	bva	Control case: the formerly published 15-year baseline (forecast withdrawn 2026-09-13, DEBT.md D11; kept as a test input)	12211	2026:2040						FALSE		15	TRUE	TRUE	TRUE	Anchor case. If this ever fails, something broke the projection logic itself, not just an edge case.
 MC02	bva	Zero baseline workforce	0	2026:2040						FALSE			TRUE	TRUE	TRUE	A brand-new specialty or a cohort filter matching nobody is a valid, if unusual, input.
 MC03	bva	rural_baseline_pct at its valid upper edge (100% rural)	1000	2026:2028				1		FALSE			TRUE	TRUE	TRUE	1.0 is a VALID boundary value, distinct from MC05's 1.5 (invalid, out of range).
 MC04	bva	rural_baseline_pct at its valid lower edge (0% rural)	1000	2026:2028				0		FALSE			TRUE	TRUE	TRUE	0.0 is a VALID boundary value, distinct from MC06's -0.2 (invalid).
