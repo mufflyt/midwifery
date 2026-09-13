@@ -31,7 +31,6 @@ artifacts/acme_institution_audit.csv
 artifacts/acme_repository_registry.csv
 artifacts/address_recency_validation_report.csv
 artifacts/amcb_age_calibration_provenance.csv
-artifacts/amcb_vs_bon_confirmation_report.csv
 artifacts/bc_resolver/bc_transitions.csv
 artifacts/bc_resolver/contested_evidence.csv
 artifacts/bc_resolver/crosstab_counts.csv
@@ -39,7 +38,6 @@ artifacts/bc_resolver/crosstab_row_pct.csv
 artifacts/bc_resolver/targeted_questions.csv
 artifacts/bon_contamination_inventory.csv
 artifacts/bon_extracted_fields_inventory.csv
-artifacts/bon_state_data_heterogeneity_matrix.csv
 artifacts/cabc_accredited_birth_centers_master.csv
 artifacts/cabc_birth_centers_master_clean.csv
 artifacts/cabc_birth_centers_master_perfect.csv
@@ -79,17 +77,12 @@ artifacts/linkage_identity_changes.csv
 artifacts/live_colorado_bon_ingested_midwives_from_tracked_roster.csv
 artifacts/live_texas_bon_ingested_midwives_from_tracked_roster.csv
 artifacts/live_washington_bon_ingested_midwives_from_tracked_roster.csv
-artifacts/louisiana_amcb_concordance_matrix.csv
-artifacts/louisiana_workforce_epidemiology_report.csv
-artifacts/lsbn_direct_agency_report.csv
-artifacts/lsbn_live_portal_audit_report.csv
 artifacts/medicare_participation_summary.csv
 artifacts/midwifery_microsimulation_projections_2026_2040.csv
 artifacts/midwifery_theses_oai.csv
 artifacts/national_cnm_ascertainment_yield_report.csv
 artifacts/newly_resolved_by_prior_status.csv
 artifacts/npi_state_license_crosswalk_report.csv
-artifacts/npi_vs_state_license_mapping_sample.csv
 artifacts/oai_source_concentration.csv
 artifacts/ob_hospitals_fallback_log.csv
 artifacts/ob_hospitals_geocoded.csv
@@ -98,7 +91,6 @@ artifacts/ohio_voter_license_ages_provenance.csv
 artifacts/org_resolution_distribution_shift.csv
 artifacts/org_resolution_ppv.csv
 artifacts/scraped_50_states_and_dc_midwives_master.csv
-artifacts/state_by_state_bon_strategy.csv
 artifacts/state_nursing_license_ages_provenance.csv
 artifacts/step00_summary/join_left_20260809_234744.978.csv
 artifacts/step00_summary/join_left_20260809_234745.092.csv
