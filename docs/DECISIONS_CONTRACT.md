@@ -423,6 +423,14 @@ not catch, because that audit scoped only the license-number fields. None of
 this D12 ruling's options (A/B/C) apply to a number this small and this
 narrowly sourced; do not report a multi-state BON coverage percentage at all.
 
+**Update (2026-09-13).** Colorado DORA and the Texas BON have since been
+queried from their own open data, and Washington re-queried against a
+de-duplicated roster (its 374 were 368 people). Board licensure is now
+observed in three states, matched by name, each over a different roster; see
+README Figure 1 and `docs/figures/board_licensure_observed_counts.csv`. The
+instruction above stands: three self-selected states are not a coverage
+percentage.
+
 ---
 
 ## D13 🟡 Does a lower-bound Language row belong in Table 1?
