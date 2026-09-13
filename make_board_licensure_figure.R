@@ -47,9 +47,13 @@ LEVELS <- c("Licence returned, in force", "Licence returned, other status",
             "No name match", "Ambiguous name, not assigned")
 
 counts <- bind_rows(lapply(names(FILES), function(st) {
-  read_csv(FILES[[st]], col_types = cols(.default = col_character()),
-           na = character(), progress = FALSE) %>%
-    distinct(certification_number, .keep_all = TRUE) %>%
+  x <- read_csv(FILES[[st]], col_types = cols(.default = col_character()),
+                na = character(), progress = FALSE)
+  # One row per certificant is the file's contract. Stop on a repeat rather
+  # than keep whichever copy happens to come first.
+  dups <- sum(duplicated(x$certification_number))
+  if (dups > 0) stop(sprintf("%s: %d repeated certification_number rows", FILES[[st]], dups), call. = FALSE)
+  x %>%
     mutate(state = st,
            outcome = case_when(
              live_bon_match_status == "VERIFIED_LIVE_BON" & live_bon_status %in% IN_FORCE ~ LEVELS[1],

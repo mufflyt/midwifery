@@ -1,6 +1,6 @@
 {
   "artifact": "board_licensure_observed_counts.csv",
-  "written_utc": "2026-09-13 17:37:23 UTC",
+  "written_utc": "2026-09-13 17:56:32 UTC",
   "inputs": [
     {
       "path": "artifacts/live_washington_bon_ingested_midwives_from_tracked_roster.csv",
@@ -15,11 +15,11 @@
       "sha256": "71c39960d3ce06a36fbe6fa71d27e3f927a52c292586dad82e2918d0a82cb8f1"
     }
   ],
-  "code_sha256": "b1c1bc97a185b4fac045d2540f0a5f805999e1cbc24d8901fce9208ba765f733",
+  "code_sha256": "36ed298a9fb939de7171c2de76b618451f1fd70e0b4eb48292de6f03e0b2f655",
   "code": [
     {
       "path": "make_board_licensure_figure.R",
-      "sha256": "c141793758bb229a126c2a6642d586176622deea5e440247689f69c08186e128"
+      "sha256": "d78511865863724562f57426bcb340aa3bd6a0f529206562399d0d918216d9e7"
     },
     {
       "path": "R/lib/artifact_provenance.R",
