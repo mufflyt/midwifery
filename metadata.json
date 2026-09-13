@@ -5,7 +5,7 @@
   "description": "The American Midwifery Certification Board roster linked to CMS NPPES for NPI identity and practice geography, with Doctors & Clinicians, Open Payments and Census geography layers. State Board of Nursing licensure is observed only for Washington, Colorado and Texas, from each board's open data. Every count below is read from the tracked artifact named in cohort_statistics_sources; tests/test_midwifery_pipeline.py fails if they disagree.",
   "author": {
     "name": "Dr. Tyler Muffly, MD",
-    "affiliation": "University of Colorado School of Medicine / Health Services Research",
+    "affiliation": "Department of Obstetrics and Gynecology, Denver Health and Hospital Authority, Denver, Colorado, USA",
     "github": "https://github.com/mufflyt/midwifery"
   },
   "temporal_coverage": "2007-2026",
