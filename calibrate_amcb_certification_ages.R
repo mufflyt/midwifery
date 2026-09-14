@@ -284,6 +284,43 @@ df <- df %>%
     age_band    = band_hg_age(final_age)
   )
 
+# --- 4b. Trilliant's directory: a backup age, only if it earns the slot -------
+# After every direct source and in place of the calibration, never before it.
+# trl_age_admission() compares it with the calibration on the people whose age
+# is measured, and admits it only if it is not computed from graduation year
+# AND is closer to the truth. On the 2026-08-10 freeze it was both computed
+# (age + graduation year = 2052 for every midwife who had it) and worse (about
+# eight years young), so it filled nothing. The test reruns on every build.
+# An admitted value is still an estimate: known_age stays NA and is_imputed
+# stays TRUE; only age_source says where the number came from.
+trl_path <- "artifacts/trilliant_demographics.csv"
+trl_adm <- NULL
+if (file.exists(trl_path)) {
+  source(file.path(if (dir.exists("R")) "." else "..", "R", "lib", "trilliant_demographics.R"))
+  trl_age <- read_csv(trl_path, col_types = cols(certification_number = "c", trl_estimated_age = "d",
+                                                 trl_grad_year = "i", .default = "c"),
+                      progress = FALSE) %>%
+    select(certification_number, trl_estimated_age, trl_grad_year)
+  if (anyDuplicated(trl_age$certification_number))
+    stop(trl_path, " repeats a certification number; rebuild it.", call. = FALSE)
+  df <- df %>% left_join(trl_age, by = "certification_number", relationship = "many-to-one")
+  trl_adm <- trl_age_admission(df$trl_estimated_age, df$trl_grad_year, df$known_age,
+                               df$fitted_age, df$is_direct_ground_truth)
+  cat(sprintf(paste0("\nTrilliant age on %d measured ages: bias %+.2f, MAE %.2f (calibration MAE %.2f); ",
+                     "derived from graduation year: %s -> %s\n"),
+              trl_adm$n_compared, trl_adm$trl_bias, trl_adm$trl_mae, trl_adm$ols_mae,
+              trl_adm$derived, if (trl_adm$admitted) "ADMITTED as a backup" else "not used"))
+  if (trl_adm$admitted) {
+    df <- df %>%
+      mutate(.use = is_imputed & !is.na(trl_estimated_age) & !is.na(band_hg_age(trl_estimated_age)),
+             final_age  = if_else(.use, trl_estimated_age, final_age),
+             age_source = if_else(.use, "Trilliant_Estimated", age_source),
+             age_band   = band_hg_age(final_age)) %>%
+      select(-.use)
+  }
+  df <- df %>% select(-trl_estimated_age, -trl_grad_year)
+}
+
 # --- 5. Summary Results & Reporting ------------------------------------------
 cat("\n--- Cohort Imputed Age Summary ---\n")
 cat(sprintf("Total Certificants Processed: %s\n", format(nrow(df), big.mark = ",")))
@@ -336,7 +373,14 @@ prov <- tibble(
   comb_alpha          = alpha_comb,
   comb_beta           = beta_comb,
   comb_r2             = r2_comb,
-  comb_rse            = rse_comb
+  comb_rse            = rse_comb,
+  # The Trilliant backup's admission test (section 4b); NA when its file is absent.
+  trilliant_age_n_compared = if (is.null(trl_adm)) NA_integer_ else trl_adm$n_compared,
+  trilliant_age_mae        = if (is.null(trl_adm)) NA_real_ else trl_adm$trl_mae,
+  trilliant_age_bias       = if (is.null(trl_adm)) NA_real_ else trl_adm$trl_bias,
+  calibration_mae_same_n   = if (is.null(trl_adm)) NA_real_ else trl_adm$ols_mae,
+  trilliant_age_derived    = if (is.null(trl_adm)) NA else trl_adm$derived,
+  trilliant_age_admitted   = if (is.null(trl_adm)) NA else trl_adm$admitted
 )
 write_csv(prov, prov_file, na = "")
 cat(sprintf("Written: %s\n", prov_file))
