@@ -67,17 +67,16 @@ cat(sprintf("directory_provider: %s rows, one per NPI\n", format(n_rows, big.mar
 # ---- one lookup per raw field, computed on distinct values ----------------------
 # select(all_of()) rather than distinct(.data[[col]]): duckplyr translates the first, not the second.
 distinct_values <- function(col) dp |> select(all_of(col)) |> distinct() |> collect() |> pull(1)
-blank <- function(x) { x[is.na(x)] <- ""; x }
 
 last_lk <- tibble(provider_last_name = distinct_values("provider_last_name")) |>
-  mutate(last_key = blank(mysterynpi::blank_na(provider_last_name, fold_hyphens = TRUE)))
+  mutate(last_key = trl_blank(mysterynpi::blank_na(provider_last_name, fold_hyphens = TRUE)))
 first_lk <- tibble(provider_first_name = distinct_values("provider_first_name"))
 sg <- mysterynpi::split_given(first_lk$provider_first_name)
 first_lk <- first_lk |>
-  mutate(given_key = blank(sg$given), middle_from_given = blank(sg$middle_from_given),
+  mutate(given_key = trl_blank(sg$given), middle_from_given = trl_blank(sg$middle_from_given),
          first_init = substr(given_key, 1, 1))
 middle_lk <- tibble(provider_middle_name = distinct_values("provider_middle_name")) |>
-  mutate(middle_key = blank(mysterynpi::blank_na(provider_middle_name)))
+  mutate(middle_key = trl_blank(mysterynpi::blank_na(provider_middle_name)))
 cred_lk <- tibble(provider_credential = distinct_values("provider_credential")) |>
   mutate(credential_class = trl_credential_class(provider_credential))
 spec_lk <- tibble(provider_primary_specialty_code = distinct_values("provider_primary_specialty_code")) |>

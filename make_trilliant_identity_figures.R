@@ -26,7 +26,7 @@ theme_id <- function(base = 11) {
           plot.caption = element_text(colour = "grey50", hjust = 0),
           panel.grid.minor = element_blank())
 }
-save <- function(p, name, w, h) {
+save_identity_figure <- function(p, name, w, h) {
   ggsave(file.path(FIG, name), p, width = w, height = h, dpi = 200, bg = "white")
   cat("wrote", file.path(FIG, name), "\n")
 }
@@ -57,7 +57,7 @@ p1 <- ggplot(fields, aes(pct_present, field, fill = population)) +
        x = "records with the field", y = NULL, fill = NULL,
        caption = "Source: artifacts/trilliant_provider_identity_coverage.csv (directory snapshot 2026-06-25)") +
   theme_id() + theme(legend.position = "top")
-save(p1, "trilliant_identity_fields.png", 8.5, 5)
+save_identity_figure(p1, "trilliant_identity_fields.png", 8.5, 5)
 
 # ---- 2. Outcomes by stratum, both variants -----------------------------------------
 f <- sort(Sys.glob("artifacts/trilliant_identity_outcomes_*.csv"), decreasing = TRUE)[1]
@@ -95,4 +95,4 @@ p2 <- ggplot(out, aes(pct, stratum, fill = outcome)) +
        caption = sprintf("Source: %s (freeze %s..., directory 2026-06-25, NPPES 2025-11). Proposals only; nothing is applied.",
                          basename(f), sha8)) +
   theme_id() + theme(legend.position = "bottom") + guides(fill = guide_legend(ncol = 2))
-save(p2, "trilliant_identity_outcomes.png", 9.5, 7.5)
+save_identity_figure(p2, "trilliant_identity_outcomes.png", 9.5, 7.5)

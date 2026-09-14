@@ -82,8 +82,7 @@ if (!nzchar(NPPES)) NPPES <- samsung_volume_path(file.path("nppes_historical_dow
                                                            "npidata_pfile_20050523-20251109.csv"))
 TRILLIANT_SNAPSHOT <- "2026-06-25"
 out_path <- function(stem, ext = "csv") file.path("artifacts", sprintf("trilliant_identity_%s_%s.%s", stem, SHA8, ext))
-blank <- function(x) { x <- as.character(x); x[is.na(x)] <- ""; x }
-say <- function(...) cat(sprintf(...), "\n", sep = "")
+log_line <- function(...) cat(sprintf(...), "\n", sep = "")
 
 # ---- the certificants, keyed exactly as match_amcb_to_npi.R keys them ------------
 linkage <- chr(FROZEN)
@@ -97,12 +96,12 @@ amcb <- linkage |>
             incumbent_npi = if_else(!is.na(npi) & nzchar(npi), npi, NA_character_),
             class5_npi = if_else(!is.na(class5_candidate_npi) & nzchar(class5_candidate_npi),
                                  class5_candidate_npi, NA_character_),
-            amcb_last = blank(amcb_blank_na(last_name, fold_hyphens = TRUE)),
-            amcb_given = blank(sp$given),
-            amcb_middle = str_squish(paste(blank(amcb_blank_na(middle_name)), blank(sp$middle_from_first))),
+            amcb_last = trl_blank(amcb_blank_na(last_name, fold_hyphens = TRUE)),
+            amcb_given = trl_blank(sp$given),
+            amcb_middle = str_squish(paste(trl_blank(amcb_blank_na(middle_name)), trl_blank(sp$middle_from_first))),
             amcb_init = substr(amcb_given, 1, 1)) |>
   mutate(stratum = trl_stratum(linkage_tier, name_evidence_class, incumbent_npi))
-say("freeze %s...: %s certificants", SHA8, format(nrow(amcb), big.mark = ","))
+log_line("freeze %s...: %s certificants", SHA8, format(nrow(amcb), big.mark = ","))
 print(count(amcb, stratum))
 
 # Who already holds each NPI in the freeze: a proposal may not quietly take one.
@@ -119,7 +118,7 @@ ix_cols <- c("provider_npi", "last_key", "given_key", "middle_key", "middle_from
 ix <- read_parquet_duckdb(INDEX) |> select(all_of(ix_cols))
 as_trl <- function(d) d |> collect() |>
   mutate(npi = sprintf("%.0f", provider_npi),
-         trl_middle = str_squish(paste(blank(middle_key), blank(middle_from_given)))) |>
+         trl_middle = str_squish(paste(trl_blank(middle_key), trl_blank(middle_from_given)))) |>
   select(-provider_npi)
 
 keys_exact <- amcb |> filter(nzchar(amcb_last), nzchar(amcb_given)) |> distinct(last_key = amcb_last, given_key = amcb_given)
@@ -127,14 +126,17 @@ t_exact <- ix |> semi_join(as_duckdb_tibble(keys_exact), by = c("last_key", "giv
 keys_init <- amcb |> filter(nzchar(amcb_last), nzchar(amcb_init)) |> distinct(last_key = amcb_last, first_init = amcb_init)
 t_init <- ix |> filter(nursing_pool) |> semi_join(as_duckdb_tibble(keys_init), by = c("last_key", "first_init")) |> as_trl()
 t_pool <- ix |> filter(midwife_pool) |> as_trl()
-say("directory rows: %s share a surname and given name with a certificant, %s a surname and initial (nursing/midwifery), %s in the midwifery pool",
+log_line("directory rows: %s share a surname and given name with a certificant, %s a surname and initial (nursing/midwifery), %s in the midwifery pool",
     format(nrow(t_exact), big.mark = ","), format(nrow(t_init), big.mark = ","), format(nrow(t_pool), big.mark = ","))
 
+# Each rule yields (certificant, NPI) keys only; the full rows are joined once,
+# below, from one directory row per NPI.
 pairs_exact <- amcb |> inner_join(t_exact, by = c(amcb_last = "last_key", amcb_given = "given_key"),
-                                  keep = TRUE, relationship = "many-to-many") |> mutate(rule = "exact_name")
+                                  relationship = "many-to-many") |>
+  transmute(amcb_id, npi, rule = "exact_name")
 pairs_init <- amcb |> inner_join(t_init, by = c(amcb_last = "last_key", amcb_init = "first_init"),
                                  keep = TRUE, relationship = "many-to-many") |>
-  filter(given_key != amcb_given) |> mutate(rule = "surname_initial")
+  filter(given_key != amcb_given) |> transmute(amcb_id, npi, rule = "surname_initial")
 # The given-name block is ~2 million pairs on the 2026-08-10 freeze, so it is
 # formed on key columns only, filtered with vectorised tests, and joined back
 # to the full rows afterwards. mysterynpi's per-row surname comparator runs only
@@ -162,29 +164,33 @@ full_middle <- !is.na(m_a) & !is.na(m_t) & nchar(m_a) >= 2L & m_a == m_t
 grad_close <- trl_grad_year_band(blk$gy, blk$cert_year) == "within_1"
 blk$rule <- ifelse(blk$edit <= 2L | comp, "pool_surname_drift",
             ifelse(full_middle & grad_close, "pool_surname_change", NA_character_))
-say("midwifery-pool block: %s pairs share a given name; %s kept (%s surname drift, %s surname change)",
+log_line("midwifery-pool block: %s pairs share a given name; %s kept (%s surname drift, %s surname change)",
     format(nrow(blk), big.mark = ","), format(sum(!is.na(blk$rule)), big.mark = ","),
     format(sum(blk$rule %in% "pool_surname_drift"), big.mark = ","),
     format(sum(blk$rule %in% "pool_surname_change"), big.mark = ","))
-pairs_pool <- blk |> filter(!is.na(rule)) |> select(amcb_id, npi, rule) |>
-  inner_join(amcb, by = "amcb_id", relationship = "many-to-one") |>
-  inner_join(t_pool, by = "npi", relationship = "many-to-one")
+pairs_pool <- blk |> filter(!is.na(rule)) |> select(amcb_id, npi, rule)
 rm(blk, comp, maybe, m_a, m_t, full_middle, grad_close)
 
 anchor <- bind_rows(amcb |> filter(!is.na(incumbent_npi)) |> transmute(amcb_id, npi = incumbent_npi, rule = "incumbent"),
                     amcb |> filter(!is.na(class5_npi)) |> transmute(amcb_id, npi = class5_npi, rule = "freeze_class5"))
 t_anchor <- ix |> semi_join(as_duckdb_tibble(tibble(provider_npi = as.numeric(unique(anchor$npi)))),
                             by = "provider_npi") |> as_trl()
-pairs_anchor <- anchor |> inner_join(amcb, by = "amcb_id", relationship = "many-to-one") |>
-  inner_join(t_anchor, by = "npi", relationship = "many-to-one")
+pairs_anchor <- anchor |> semi_join(t_anchor, by = "npi")
 
-all_pairs <- bind_rows(pairs_exact, pairs_init, pairs_pool, pairs_anchor)
-rules <- all_pairs |> distinct(amcb_id, npi, rule) |> group_by(amcb_id, npi) |>
-  summarise(rules = paste(sort(rule), collapse = "|"), .groups = "drop")
-pairs <- all_pairs |> distinct(amcb_id, npi, .keep_all = TRUE) |> select(-rule) |>
-  left_join(rules, by = c("amcb_id", "npi"), relationship = "one-to-one")
-rm(all_pairs, pairs_exact, pairs_init, pairs_pool, pairs_anchor)
-say("candidate pairs: %s over %s certificants and %s NPIs", format(nrow(pairs), big.mark = ","),
+# One directory row per NPI. Every source reads the same index row through the
+# same transform, so duplicates are identical; if two ever differ, stop rather
+# than let row order pick one.
+trl_rows <- bind_rows(t_exact, t_init, t_pool, t_anchor) |> distinct()
+if (anyDuplicated(trl_rows$npi))
+  stop("an NPI carries two different directory rows; the index is not one row per NPI", call. = FALSE)
+pairs <- bind_rows(pairs_exact, pairs_init, pairs_pool, pairs_anchor) |>
+  distinct(amcb_id, npi, rule) |>
+  group_by(amcb_id, npi) |>
+  summarise(rules = paste(sort(rule), collapse = "|"), .groups = "drop") |>
+  inner_join(amcb, by = "amcb_id", relationship = "many-to-one") |>
+  inner_join(trl_rows, by = "npi", relationship = "many-to-one")
+rm(pairs_exact, pairs_init, pairs_pool, pairs_anchor, trl_rows)
+log_line("candidate pairs: %s over %s certificants and %s NPIs", format(nrow(pairs), big.mark = ","),
     format(n_distinct(pairs$amcb_id), big.mark = ","), format(n_distinct(pairs$npi), big.mark = ","))
 
 # ---- NPPES for every candidate NPI, and for incumbents the directory lacks --------
@@ -195,11 +201,11 @@ nppes_extract <- function(npis) {
   if (file.exists(cache)) {
     cached <- read_parquet_duckdb(cache) |> collect()
     if (all(npis %in% cached$npi) && identical(unique(cached$nppes_source), basename(NPPES))) {
-      say("NPPES: reusing cached extract (%s NPIs)", format(nrow(cached), big.mark = ","))
+      log_line("NPPES: reusing cached extract (%s NPIs)", format(nrow(cached), big.mark = ","))
       return(cached)
     }
   }
-  say("NPPES: scanning %s for %s NPIs (several minutes)", basename(NPPES), format(length(npis), big.mark = ","))
+  log_line("NPPES: scanning %s for %s NPIs (several minutes)", basename(NPPES), format(length(npis), big.mark = ","))
   tax <- sprintf("Healthcare Provider Taxonomy Code_%d", 1:15)
   lic <- sprintf("Provider License Number State Code_%d", 1:15)
   cols <- c(npi = "NPI", nppes_last = "Provider Last Name (Legal Name)", nppes_first = "Provider First Name",
@@ -237,7 +243,7 @@ nppes <- nppes_extract(sort(unique(c(pairs$npi, anchor$npi))))
 
 pairs <- pairs |>
   left_join(nppes, by = "npi", relationship = "many-to-one") |>
-  mutate(nppes_other_last = blank(amcb_blank_na(nppes_other_last_raw, fold_hyphens = TRUE)),
+  mutate(nppes_other_last = trl_blank(amcb_blank_na(nppes_other_last_raw, fold_hyphens = TRUE)),
          trl_last = last_key, trl_given = given_key,
          last_edit_distance = stringdist::stringdist(amcb_last, last_key, method = "lv"))
 
@@ -432,7 +438,7 @@ write_with_provenance(proposals, out_path("proposals"), na = "")
 write_with_provenance(outcomes, out_path("outcomes"), na = "")
 write_with_provenance(coverage, out_path("field_coverage"), na = "")
 write_with_provenance(grad, out_path("grad_year_agreement"), na = "")
-say("wrote %s, %s, %s (aggregate) and the person-level candidates, decisions, proposals",
+log_line("wrote %s, %s, %s (aggregate) and the person-level candidates, decisions, proposals",
     out_path("outcomes"), out_path("field_coverage"), out_path("grad_year_agreement"))
 
 show <- per_person |> count(variant, stratum, outcome) |> group_by(variant, stratum) |>

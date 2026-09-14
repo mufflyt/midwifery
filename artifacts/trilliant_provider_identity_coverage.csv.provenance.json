@@ -1,12 +1,12 @@
 {
   "artifact": "trilliant_provider_identity_coverage.csv",
-  "written_utc": "2026-09-14 16:15:49 UTC",
+  "written_utc": "2026-09-14 16:32:00 UTC",
   "inputs": [],
-  "code_sha256": "d07149ab2c8136b00628d569c3164043df2ade53a7712068da07b0a36be576fd",
+  "code_sha256": "ad422b68390142e32769e17e050d7f9872d7f08d3cde9b25962d7505522cfa00",
   "code": [
     {
       "path": "build_trilliant_provider_identity_index.R",
-      "sha256": "456c7f4f56fade8c36f47ea20671ad75a3bcb726ffb90ce98ea9aec3cc65d597"
+      "sha256": "6288953f51431be96468fc3f0d663d260334644b5bcc96a48b2bf66e82aeeee2"
     },
     {
       "path": "credential_compatibility.R",
@@ -34,7 +34,7 @@
     },
     {
       "path": "R/lib/trilliant_identity.R",
-      "sha256": "58383b44ad84e6968b1424a60533904b1e4eb263ea8eda91203dc236166dd00c"
+      "sha256": "eb0dd69166db154bce20b3b265ef8f5e715ebca461aac947e7d90a62c6775cf8"
     }
   ]
 }

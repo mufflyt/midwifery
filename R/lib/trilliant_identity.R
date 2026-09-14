@@ -91,6 +91,11 @@ TRL_DECISION_RULES <- list(
   full          = list(plausible = 9, accept = 12, margin = 4),
   identity_only = list(plausible = 7, accept = 10, margin = 3))
 
+#' NA to "", as character: the form every key and comparison here expects.
+#' @param x vector
+#' @return character, no NA.
+trl_blank <- function(x) { x <- as.character(x); x[is.na(x)] <- ""; x }
+
 #' Classify a NUCC taxonomy code
 #' @param code [character]
 #' @return "midwife", "nursing", "physician", "other", or NA when absent.
@@ -209,7 +214,8 @@ trl_name_evidence <- function(pairs) {
   u$surname_rule <- ifelse(u$amcb_last == u$trl_last & nzchar(u$amcb_last), "exact",
                     ifelse(direct == "corroborates", "component",
                     ifelse(alias == "corroborates" & nzchar(u$nppes_other_last), "alias_nppes", "none")))
-  p <- dplyr::left_join(p, u, by = c("amcb_last", "trl_last", "amcb_middle", "trl_middle", "nppes_other_last"))
+  p <- dplyr::left_join(p, u, by = c("amcb_last", "trl_last", "amcb_middle", "trl_middle", "nppes_other_last"),
+                        relationship = "many-to-one")
   p$surname_evidence <- ifelse(p$surname_rule != "none", p$surname_rule,
                         ifelse(!is.na(p$last_edit_distance) & p$last_edit_distance <= 2L, "edit_1_2", "different"))
   p$surname_rule <- NULL
@@ -236,7 +242,8 @@ trl_name_evidence <- function(pairs) {
     lv1 ~ "spelling_variant",
     in_mid ~ "given_in_middle",
     TRUE ~ "conflict")
-  p <- dplyr::left_join(p, g, by = c("amcb_given", "trl_given", "amcb_middle", "trl_middle"))
+  p <- dplyr::left_join(p, g, by = c("amcb_given", "trl_given", "amcb_middle", "trl_middle"),
+                        relationship = "many-to-one")
 
   m <- dplyr::distinct(p, amcb_middle, trl_middle)
   ag <- mysterynpi::middle_agreement(mysterynpi::middle_tokens(m$amcb_middle),
@@ -244,7 +251,7 @@ trl_name_evidence <- function(pairs) {
   same_initial <- nzchar(m$amcb_middle) & nzchar(m$trl_middle) &
     substr(m$amcb_middle, 1, 1) == substr(m$trl_middle, 1, 1)
   m$middle_evidence <- ifelse(ag == "conflicts" & same_initial, "initial_only", ag)
-  dplyr::left_join(p, m, by = c("amcb_middle", "trl_middle"))
+  dplyr::left_join(p, m, by = c("amcb_middle", "trl_middle"), relationship = "many-to-one")
 }
 
 #' Score pairs under both variants and count contradictions

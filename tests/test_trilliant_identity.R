@@ -97,21 +97,21 @@ chk(inherits(try(trl_score_pairs(base_ev(grad_year_band = "close")), silent = TR
     "T12 an unknown evidence level stops; it never scores zero")
 
 cat("\n-- DECISIONS --\n")
-cand <- function(amcb_id, npi, ..., held = FALSE) {
+candidate_row <- function(amcb_id, npi, ..., held = FALSE) {
   d <- base_ev(...)
   d$amcb_id <- amcb_id; d$npi <- npi; d$npi_held_by_other_certificant <- held
   d
 }
 pool <- dplyr::bind_rows(
-  cand("A", "1000000001", grad_year_band = "within_1"),                         # A: clear winner
-  cand("A", "1000000002", profession_class = "nursing"),
-  cand("B", "1000000003"), cand("B", "1000000004"),                             # B: two CNMs, nothing else
-  cand("C", "1000000005", profession_class = "physician"),                      # C: only contradicted
-  cand("C", "1000000006", profession_class = "other"),
-  cand("D", "1000000007", surname_evidence = "different", middle_evidence = "corroborates",
+  candidate_row("A", "1000000001", grad_year_band = "within_1"),                         # A: clear winner
+  candidate_row("A", "1000000002", profession_class = "nursing"),
+  candidate_row("B", "1000000003"), candidate_row("B", "1000000004"),                             # B: two CNMs, nothing else
+  candidate_row("C", "1000000005", profession_class = "physician"),                      # C: only contradicted
+  candidate_row("C", "1000000006", profession_class = "other"),
+  candidate_row("D", "1000000007", surname_evidence = "different", middle_evidence = "corroborates",
        grad_year_band = "within_1"),                                            # D: surname changed, no alias
-  cand("E", "1000000008", grad_year_band = "within_1", held = TRUE),            # E: NPI held by another
-  cand("F", "1000000009"), cand("F", "1000000010", profession_class = "nursing")) # F: taxonomy separates
+  candidate_row("E", "1000000008", grad_year_band = "within_1", held = TRUE),            # E: NPI held by another
+  candidate_row("F", "1000000009"), candidate_row("F", "1000000010", profession_class = "nursing")) # F: taxonomy separates
 sc <- trl_score_pairs(pool)
 dec <- function(v) {
   d <- trl_decide(trl_rank_candidates(sc, v), v)
