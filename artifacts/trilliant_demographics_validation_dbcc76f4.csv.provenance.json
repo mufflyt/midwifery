@@ -1,0 +1,40 @@
+{
+  "artifact": "trilliant_demographics_validation_dbcc76f4.csv",
+  "written_utc": "2026-09-14 02:35:52 UTC",
+  "inputs": [],
+  "code_sha256": "1702cff7bc688b44fd1f76a8340b96bce2cf06487bfbd10e48f93a37ad4592f0",
+  "code": [
+    {
+      "path": "enrich_trilliant_demographics.R",
+      "sha256": "7496ddc3b46c3e45160ac48614335c1da87533a58333f9dafe1932bb4577be8e"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/cohort_definitions.R",
+      "sha256": "faa0edf2049f09d42edb3681956f29e39cb0c7dc6cdbe58d7ee5812714bffc49"
+    },
+    {
+      "path": "R/lib/common_helpers.R",
+      "sha256": "55c6b894798e2740f538b1262391e58e8fe9bea84f072b80708e59aea3197067"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/lib/training_institution.R",
+      "sha256": "1d1477100f34812409e9724a052149c21efe6f1ecf1336b7e4d9a79e9251ca34"
+    },
+    {
+      "path": "R/lib/trilliant_demographics.R",
+      "sha256": "8c1bff2900a059cc967bad3a2217e047c7c9311295a834ebeeb8a84a5ed94423"
+    }
+  ]
+}
