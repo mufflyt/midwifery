@@ -310,7 +310,39 @@ it. The build refuses any other freeze unless one is named on purpose with
 `ALLOW_FREEZE_SHA256`; development runs against the 2026-08-10 freeze were
 never committed.
 
-## 7. Running it
+## 7. A backup source for demographics
+
+The directory also carries a gender, a "medical school" with a graduation year,
+an estimated age, and a claims-derived patient-panel mix.
+`enrich_trilliant_demographics.R` pulls these for every primary-linked
+certificant. A value is used only where the repository's own sources have
+nothing, and only after a check against the source it would back up. The
+checks run on every build and are written to
+`artifacts/trilliant_demographics_validation_<freeze sha8>.csv`. The committed
+file is from the 2026-08-10 freeze (11,920 midwives, every one of them in the
+directory).
+
+| Field | Check against | Result | Use |
+|---|---|---|---|
+| Sex | NPPES sex code | 100% agreement across the 11,897 midwives where both give F or M | Fills a blank NPPES code in Table 1 (10 midwives). "UNSPECIFIED/OTHER" is not used, because NPPES distinguishes X from U. |
+| School | CMS DAC `med_sch_clean` | 100% agreement across the 678 midwives both name, once cleaned by the same rule. The strings are DAC's, character for character. | Last source in `training_attach()` and in Table 1, after DAC, Healthgrades and the university repository. Names a school for 400 midwives DAC does not. |
+| Graduation year | CMS DAC `grad_year` | 99.9% the same year (4,780 midwives) | Kept for analysis; nothing downstream reads it yet. |
+| Age | measured ages (Healthgrades, WA, OH voter) and the calibration | Estimated age plus graduation year is the constant 2052 for all 7,638 midwives who have an age, so the directory assumes everyone graduated at 26. Against 2,475 measured ages it averages 7.9 years young (mean absolute error 8.2); the calibration it would replace has a mean absolute error of 5.6 on the same people. | **Not used.** `calibrate_amcb_certification_ages.R` has a slot for it, after every direct source and in place of the calibration. `trl_age_admission()` fills the slot only if the age is not derived from graduation year and beats the calibration on measured ages. The decision is written to `artifacts/amcb_age_calibration_provenance.csv`. |
+| Patient panel | none (no other source) | A coherent panel (the age bands sum to one) for 10,706 midwives, the ones the directory flags active. Median of each midwife's median patient age: 32 (interquartile range 30–35). Median share of patients female: 99.7%. On average, 82.7% of a midwife's patients are aged 20–44. | Carried in `artifacts/trilliant_demographics.csv` for analysis and summarised in the validation file. It is not a Table 1 row, because banding it would need cut points no source defines. |
+
+Two cautions follow from the table.
+
+- **The school field has DAC's blind spot.** The directory, like DAC, can only
+  name a university that has a medical school, so it never names Frontier
+  Nursing University.
+- **A panel describes the patients the directory could see, not the whole
+  practice.** It exists only for providers flagged active.
+
+The tracked Table 1 and calibrated ages pick these backups up the next time
+they are rebuilt on a machine holding all their inputs. That includes the
+Healthgrades files, which this one does not have.
+
+## 8. Running it
 
 Everything reads person-level inputs from `artifacts/` or from the data vault
 ([docs/DATA_VAULT.md](DATA_VAULT.md)), and the Trilliant lake and `hpt_prices`
@@ -330,14 +362,19 @@ LEGACY_FROZEN_CSV=<2026-08-10 freeze> CURRENT_FROZEN_CSV=<current freeze> Rscrip
 Rscript analyze_trilliant_activity_flag.R
 Rscript build_trilliant_work_sites.R
 
+# 4b. backup demographics (then rebuild the age calibration and Table 1)
+Rscript enrich_trilliant_demographics.R
+
 # 5. figures
 Rscript make_trilliant_figures.R
 ```
 
-`reconcile_trilliant_cohort.R` and `build_trilliant_work_sites.R` are both
-declared in `rebuild_frozen_dependents.R`, so a re-freeze re-runs them.
+`reconcile_trilliant_cohort.R`, `build_trilliant_work_sites.R`,
+`analyze_trilliant_activity_flag.R` and `enrich_trilliant_demographics.R` are
+declared in `rebuild_frozen_dependents.R`, so a re-freeze re-runs them. The
+demographics enricher runs before the age calibration, which reads it.
 
-## 8. Limitations
+## 9. Limitations
 
 - **One snapshot.** The directory has no history, so it cannot show where a
   midwife started or when they stopped.
