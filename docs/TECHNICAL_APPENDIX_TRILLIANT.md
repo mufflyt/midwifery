@@ -16,13 +16,15 @@ Scripts, in the order they run:
 | [`reconcile_trilliant_cohort.R`](../reconcile_trilliant_cohort.R) | `artifacts/trilliant_cohort_reconciliation_reasons.csv`; person-level `trilliant_cohort_reconciliation.csv`, `trilliant_cohort_transitions.csv` | reasons only |
 | [`analyze_trilliant_activity_flag.R`](../analyze_trilliant_activity_flag.R) | `artifacts/trilliant_activity_validation_<freeze sha8>.csv` | yes (aggregate) |
 | [`build_trilliant_work_sites.R`](../build_trilliant_work_sites.R) | `artifacts/midwife_work_setting_summary.csv`; person-level `midwife_work_sites_long.csv`, `midwife_distinct_work_sites.csv`, `midwife_work_sites_summary.csv`, `midwife_work_sites_excluded_non_workplace.csv` | summary only |
+| [`enrich_trilliant_demographics.R`](../enrich_trilliant_demographics.R) | `artifacts/trilliant_demographics_validation_<freeze sha8>.csv`; person-level `trilliant_demographics.csv` | checks only |
 | [`make_trilliant_figures.R`](../make_trilliant_figures.R) | `docs/figures/trilliant_*.png` | yes |
 
 Libraries: [`R/lib/cohort_definitions.R`](../R/lib/cohort_definitions.R),
 [`R/lib/work_site_topology.R`](../R/lib/work_site_topology.R),
-[`R/lib/data_vault.R`](../R/lib/data_vault.R). Their tests:
+[`R/lib/data_vault.R`](../R/lib/data_vault.R),
+[`R/lib/trilliant_demographics.R`](../R/lib/trilliant_demographics.R). Their tests:
 `tests/test_cohort_definitions.R`, `tests/test_work_site_topology.R`,
-`tests/test_data_vault.R`.
+`tests/test_data_vault.R`, `tests/test_trilliant_demographics.R`.
 
 ---
 
