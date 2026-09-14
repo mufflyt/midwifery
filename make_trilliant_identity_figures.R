@@ -11,6 +11,8 @@
 #       <- artifacts/trilliant_provider_identity_coverage.csv
 #   docs/figures/trilliant_identity_outcomes.png  what the directory says, by stratum and variant
 #       <- artifacts/trilliant_identity_outcomes_<freeze sha8>.csv (newest)
+#   docs/figures/trilliant_identity_grad_year.png graduation year against certification, by link tier
+#       <- artifacts/trilliant_identity_grad_year_agreement_<freeze sha8>.csv (newest)
 # =============================================================================
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(ggplot2); library(stringr); library(scales)
@@ -96,3 +98,35 @@ p2 <- ggplot(out, aes(pct, stratum, fill = outcome)) +
                          basename(f), sha8)) +
   theme_id() + theme(legend.position = "bottom") + guides(fill = guide_legend(ncol = 2))
 save_identity_figure(p2, "trilliant_identity_outcomes.png", 9.5, 7.5)
+
+# ---- 3. Graduation year against AMCB certification, by link tier ------------------
+g <- sort(Sys.glob("artifacts/trilliant_identity_grad_year_agreement_*.csv"), decreasing = TRUE)[1]
+if (is.na(g)) stop("no trilliant_identity_grad_year_agreement_*.csv", call. = FALSE)
+band_labels <- c(within_1 = "within 1 year", within_3 = "2-3 years", within_10 = "4-10 years",
+                 beyond_10 = "more than 10 years")
+gy <- rd(g) |>
+  filter(grad_year_band != "unknown") |>
+  group_by(population) |> mutate(known = sum(n), share = n / known) |> ungroup() |>
+  mutate(population = recode(population,
+                             "incumbent, tier primary_midwifery" = "current link, primary midwifery tier",
+                             "incumbent, tier sensitivity_nursing" = "current link, nursing tier",
+                             "incumbent, tier sensitivity_fuzzy" = "current link, fuzzy-surname tier",
+                             "other candidates of certificants who have an incumbent" = "every other candidate (namesakes)"),
+         population = paste0(population, "\n(", comma(known), " with a graduation year)"),
+         band = factor(unname(band_labels[grad_year_band]), levels = rev(unname(band_labels))))
+share_of <- function(tier, b) gy$share[startsWith(gy$population, tier) & gy$band == band_labels[[b]]]
+p3 <- ggplot(gy, aes(share, population, fill = band)) +
+  geom_col(width = 0.7) +
+  scale_x_continuous(labels = label_percent(), guide = guide_axis(check.overlap = TRUE)) +
+  scale_y_discrete(limits = rev(unique(gy$population))) +
+  scale_fill_manual(values = c("more than 10 years" = "#b2182b", "4-10 years" = "#ef8a62",
+                               "2-3 years" = "#d1e5f0", "within 1 year" = "#2d5f3a"),
+                    breaks = unname(band_labels)) +
+  labs(title = "Trilliant's graduation year against the AMCB certification year",
+       subtitle = sprintf("Within a year for %s of primary-tier links; more than ten years off for %s of nursing-tier links",
+                          percent(share_of("current link, primary", "within_1"), accuracy = 0.1),
+                          percent(share_of("current link, nursing", "beyond_10"), accuracy = 0.1)),
+       x = "share of pairs with a known graduation year", y = NULL, fill = "graduation minus certification",
+       caption = sprintf("Source: %s. Graduation year is CMS DAC's, carried by the directory.", basename(g))) +
+  theme_id() + theme(legend.position = "bottom")
+save_identity_figure(p3, "trilliant_identity_grad_year.png", 9.5, 4.8)

@@ -365,6 +365,19 @@ The tracked Table 1 and calibrated ages pick these backups up the next time
 they are rebuilt on a machine holding all their inputs. That includes the
 Healthgrades files, which this one does not have.
 
+## 7b. The directory as a second identity source
+
+The directory's identity fields (name, credential, specialty, graduation
+year) are tested as evidence for the AMCB → NPI linkage itself in a separate
+experiment. It measures:
+
+- which existing links the directory confirms or contradicts;
+- which ties it separates;
+- which unmatched certificants it finds.
+
+Nothing is applied. Its methods, results and limitations are in
+[`TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md`](TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md).
+
 ## 8. Running it
 
 Everything reads person-level inputs from `artifacts/` or from the data vault

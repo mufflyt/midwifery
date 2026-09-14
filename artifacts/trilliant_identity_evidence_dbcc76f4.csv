@@ -1,0 +1,78 @@
+section,population,level,n,denominator,pct,value,frozen_sha8
+A_grad_year_likelihood,likely matches (primary-tier incumbents),within_1,7064,7883,89.61,,dbcc76f4
+A_grad_year_likelihood,likely non-matches (other candidates),within_1,15243,159624,9.55,,dbcc76f4
+A_grad_year_likelihood,likelihood ratio,within_1,,,,9.384,dbcc76f4
+A_grad_year_likelihood,likely matches (primary-tier incumbents),within_3,270,7883,3.43,,dbcc76f4
+A_grad_year_likelihood,likely non-matches (other candidates),within_3,17939,159624,11.24,,dbcc76f4
+A_grad_year_likelihood,likelihood ratio,within_3,,,,0.305,dbcc76f4
+A_grad_year_likelihood,likely matches (primary-tier incumbents),within_10,348,7883,4.41,,dbcc76f4
+A_grad_year_likelihood,likely non-matches (other candidates),within_10,46685,159624,29.25,,dbcc76f4
+A_grad_year_likelihood,likelihood ratio,within_10,,,,0.151,dbcc76f4
+A_grad_year_likelihood,likely matches (primary-tier incumbents),beyond_10,201,7883,2.55,,dbcc76f4
+A_grad_year_likelihood,likely non-matches (other candidates),beyond_10,79757,159624,49.97,,dbcc76f4
+A_grad_year_likelihood,likelihood ratio,beyond_10,,,,0.051,dbcc76f4
+B_grad_year_direction,1a high-confidence incumbents,graduated >10 years before certifying,88,198,44.44,,dbcc76f4
+B_grad_year_direction,1a high-confidence incumbents,graduated >10 years after certifying,110,198,55.56,,dbcc76f4
+B_grad_year_direction,1a high-confidence incumbents,graduated >20 years after certifying,29,198,14.65,,dbcc76f4
+B_grad_year_direction,1a high-confidence incumbents,graduated >30 years after certifying,2,198,1.01,,dbcc76f4
+B_grad_year_direction,nursing-tier incumbents,graduated >10 years before certifying,61,351,17.38,,dbcc76f4
+B_grad_year_direction,nursing-tier incumbents,graduated >10 years after certifying,290,351,82.62,,dbcc76f4
+B_grad_year_direction,nursing-tier incumbents,graduated >20 years after certifying,205,351,58.4,,dbcc76f4
+B_grad_year_direction,nursing-tier incumbents,graduated >30 years after certifying,113,351,32.19,,dbcc76f4
+B_grad_year_direction,fuzzy-tier incumbents,graduated >10 years before certifying,12,64,18.75,,dbcc76f4
+B_grad_year_direction,fuzzy-tier incumbents,graduated >10 years after certifying,52,64,81.25,,dbcc76f4
+B_grad_year_direction,fuzzy-tier incumbents,graduated >20 years after certifying,34,64,53.12,,dbcc76f4
+B_grad_year_direction,fuzzy-tier incumbents,graduated >30 years after certifying,17,64,26.56,,dbcc76f4
+C_incumbent_absent_by_status,1a_existing_high_confidence,DECEASED,38,14569,0.26,,dbcc76f4
+C_incumbent_absent_by_status,1a_existing_high_confidence,LAPSED,22,14569,0.15,,dbcc76f4
+C_incumbent_absent_by_status,1a_existing_high_confidence,RETIRED,7,14569,0.05,,dbcc76f4
+C_incumbent_absent_by_status,1a_existing_high_confidence,REVOKED,1,14569,0.01,,dbcc76f4
+C_incumbent_absent_by_status,1b_existing_other,ACTIVE,1,2329,0.04,,dbcc76f4
+C_incumbent_absent_by_status,1b_existing_other,DECEASED,5,2329,0.21,,dbcc76f4
+C_incumbent_absent_by_status,1b_existing_other,LAPSED,6,2329,0.26,,dbcc76f4
+D_contradiction_source,1a_existing_high_confidence / primary_midwifery / class 1,directory_fields,142,163,87.12,,dbcc76f4
+D_contradiction_source,1a_existing_high_confidence / primary_midwifery / class 1,name_rule,21,163,12.88,,dbcc76f4
+D_contradiction_source,1a_existing_high_confidence / primary_midwifery / class 2,directory_fields,63,81,77.78,,dbcc76f4
+D_contradiction_source,1a_existing_high_confidence / primary_midwifery / class 2,name_rule,18,81,22.22,,dbcc76f4
+D_contradiction_source,1b_existing_other / primary_midwifery / class 3,directory_fields,3,16,18.75,,dbcc76f4
+D_contradiction_source,1b_existing_other / primary_midwifery / class 3,name_rule,13,16,81.25,,dbcc76f4
+D_contradiction_source,1b_existing_other / sensitivity_fuzzy / class 4,directory_fields,64,72,88.89,,dbcc76f4
+D_contradiction_source,1b_existing_other / sensitivity_fuzzy / class 4,name_rule,8,72,11.11,,dbcc76f4
+D_contradiction_source,1b_existing_other / sensitivity_nursing / class 1,directory_fields,47,51,92.16,,dbcc76f4
+D_contradiction_source,1b_existing_other / sensitivity_nursing / class 1,name_rule,4,51,7.84,,dbcc76f4
+D_contradiction_source,1b_existing_other / sensitivity_nursing / class 2,directory_fields,92,112,82.14,,dbcc76f4
+D_contradiction_source,1b_existing_other / sensitivity_nursing / class 2,name_rule,20,112,17.86,,dbcc76f4
+D_contradiction_source,1b_existing_other / sensitivity_nursing / class 3,directory_fields,212,546,38.83,,dbcc76f4
+D_contradiction_source,1b_existing_other / sensitivity_nursing / class 3,directory_name,12,546,2.2,,dbcc76f4
+D_contradiction_source,1b_existing_other / sensitivity_nursing / class 3,name_rule,322,546,58.97,,dbcc76f4
+D_contradiction_source,class-3 incumbents with a given-name conflict,directory carries the same name as NPPES,532,545,97.61,,dbcc76f4
+E_accept_composition,2_ambiguous,ACCEPT total,945,945,100,,dbcc76f4
+E_accept_composition,2_ambiguous,surname and given name exact,815,945,86.24,,dbcc76f4
+E_accept_composition,2_ambiguous,graduation within 1 year of certification,565,945,59.79,,dbcc76f4
+E_accept_composition,2_ambiguous,NPI not in the NPPES bulk file,71,945,7.51,,dbcc76f4
+E_accept_composition,2_ambiguous,NPI enumerated 2025 or later,29,945,3.07,,dbcc76f4
+E_accept_composition,2_ambiguous,certified 2024 or later,159,945,16.83,,dbcc76f4
+E_accept_composition,2_ambiguous,profession mixed (midwifery plus a physician or other source),75,945,7.94,,dbcc76f4
+E_accept_composition,2_ambiguous,recent NPI or mixed profession (union),172,945,18.2,,dbcc76f4
+E_accept_composition,2_ambiguous,"neither: older NPI, midwifery specialty",671,945,71.01,,dbcc76f4
+E_accept_composition,2_ambiguous,"neither: older NPI, nursing specialty",102,945,10.79,,dbcc76f4
+E_accept_composition,2_ambiguous,"neither: older NPI, other or no specialty",0,945,0,,dbcc76f4
+E_accept_composition,3_unmatched,ACCEPT total,244,244,100,,dbcc76f4
+E_accept_composition,3_unmatched,surname and given name exact,234,244,95.9,,dbcc76f4
+E_accept_composition,3_unmatched,graduation within 1 year of certification,80,244,32.79,,dbcc76f4
+E_accept_composition,3_unmatched,NPI not in the NPPES bulk file,85,244,34.84,,dbcc76f4
+E_accept_composition,3_unmatched,NPI enumerated 2025 or later,9,244,3.69,,dbcc76f4
+E_accept_composition,3_unmatched,certified 2024 or later,103,244,42.21,,dbcc76f4
+E_accept_composition,3_unmatched,profession mixed (midwifery plus a physician or other source),61,244,25,,dbcc76f4
+E_accept_composition,3_unmatched,recent NPI or mixed profession (union),147,244,60.25,,dbcc76f4
+E_accept_composition,3_unmatched,"neither: older NPI, midwifery specialty",50,244,20.49,,dbcc76f4
+E_accept_composition,3_unmatched,"neither: older NPI, nursing specialty",47,244,19.26,,dbcc76f4
+E_accept_composition,3_unmatched,"neither: older NPI, other or no specialty",0,244,0,,dbcc76f4
+F_ambiguous_full_vs_identity_only,2_ambiguous,full ACCEPT / identity_only ACCEPT,329,3303,9.96,,dbcc76f4
+F_ambiguous_full_vs_identity_only,2_ambiguous,full ACCEPT / identity_only REVIEW,469,3303,14.2,,dbcc76f4
+F_ambiguous_full_vs_identity_only,2_ambiguous,full ACCEPT / identity_only UNRESOLVED,147,3303,4.45,,dbcc76f4
+F_ambiguous_full_vs_identity_only,2_ambiguous,full REVIEW / identity_only ACCEPT,37,3303,1.12,,dbcc76f4
+F_ambiguous_full_vs_identity_only,2_ambiguous,full REVIEW / identity_only REVIEW,476,3303,14.41,,dbcc76f4
+F_ambiguous_full_vs_identity_only,2_ambiguous,full REVIEW / identity_only UNRESOLVED,440,3303,13.32,,dbcc76f4
+F_ambiguous_full_vs_identity_only,2_ambiguous,full UNRESOLVED / identity_only REVIEW,113,3303,3.42,,dbcc76f4
+F_ambiguous_full_vs_identity_only,2_ambiguous,full UNRESOLVED / identity_only UNRESOLVED,1292,3303,39.12,,dbcc76f4

@@ -144,10 +144,15 @@ Neither is applied.
 
 **Where a contradiction comes from** (`trl_contradiction_source()`). The first
 run counted 578 given-name conflicts on class-3 links as Trilliant
-contradicting them. In every one, the directory carried exactly the name NPPES
-carries: the conflict was the matcher's own first-initial rule (same surname
-and initial, different given name), not new evidence. A contradiction is now
-credited to the directory only when:
+contradicting them. In every one, the directory's given name was the one in the
+freeze's own NPPES record: the conflict was the matcher's first-initial rule
+(same surname and initial, different given name), not new evidence.
+
+In the final run, after the given-name fixes, 545 class-3 incumbents still
+carry a given-name conflict. For 532 of them the directory's name equals the
+NPI's current NPPES name; the 13 that differ are credited to the directory
+(`artifacts/trilliant_identity_evidence_dbcc76f4.csv`, section D). A
+contradiction is now credited to the directory only when:
 
 - the directory supplied the fact: graduation year or current profession
   (`directory_fields`); or
@@ -160,8 +165,10 @@ reported separately and never counted as the directory contradicting a link.
 
 ![](figures/trilliant_identity_outcomes.png)
 
-From `artifacts/trilliant_identity_outcomes_dbcc76f4.csv`. The strata follow
-`trl_stratum()`:
+From `artifacts/trilliant_identity_outcomes_dbcc76f4.csv`. Every breakdown
+quoted below it comes from `artifacts/trilliant_identity_evidence_dbcc76f4.csv`,
+written by `summarise_trilliant_identity_evidence.R`; its section letter is
+given where a number is used. The strata follow `trl_stratum()`:
 
 - **1a:** primary tier, evidence class 1–2
 - **1b:** every other existing link
@@ -197,12 +204,13 @@ year. Where one exists, it is within a year of certification for 7,023 of
 
 - **Graduation year discordant:** 198 links (2.5% of those with a year) are more
   than ten years off. Of these, 88 graduated long before certifying and 110 long
-  after. Either direction has a same-person explanation (the year of an earlier
+  after (section B). Either direction has a same-person explanation (the year of an earlier
   nursing degree, or of a later doctorate), so these are flags, not verdicts.
 - **Profession:** 10 links carry a physician or other profession and no nursing
   or midwifery source at all.
 - **Absent from the directory:** 68 incumbents: 38 deceased, 22 lapsed, 7
-  retired, 1 revoked. The directory is a current register, and absence is not
+  retired, 1 revoked (section C). In stratum 1b, 12 more are absent, one of
+  them ACTIVE. The directory is a current register, and absence is not
   evidence either way.
 
 ### 5.2 The nursing tier: the directory's clearest contribution
@@ -211,22 +219,30 @@ The nursing tier (`sensitivity_nursing`) holds certificants resolved to a
 record carrying only a nursing taxonomy. The graduation year separates these
 links sharply from the primary tier:
 
+![](figures/trilliant_identity_grad_year.png)
+
 | incumbent tier | year known | within 1 year | beyond 10 years |
 |---|---:|---:|---:|
 | primary midwifery | 7,883 | 89.6% | 2.5% |
 | sensitivity nursing | 738 | 27.1% | **47.6%** |
 | sensitivity fuzzy | 137 | 27.0% | **46.7%** |
 
-Of the 351 nursing-tier links more than ten years off, 205 belong to someone
-who graduated more than 20 years *after* the certificant certified, and 113
-more than 30 years after. That is a younger nurse with the same name, not the
-certificant. These are the directory's strongest false-link detections, and
-they sit in exactly the tier the linkage already treats as a sensitivity
-analysis.
+Of the 351 nursing-tier links more than ten years off (section B):
 
-**Graduation year as evidence, measured.** Take primary-tier incumbents as
-likely matches and every other candidate as likely non-matches, among pairs
-with a known year:
+- 290 belong to someone who graduated more than ten years *after* the
+  certificant certified;
+- 205 more than 20 years after;
+- 113 more than 30 years after.
+
+Someone who graduated decades after the certificant certified is a younger
+nurse with the same name, not the certificant. The other 61 graduated more than
+ten years *before* certifying, which an earlier nursing degree can explain.
+These are the directory's strongest false-link detections, and they sit in
+exactly the tier the linkage already treats as a sensitivity analysis.
+
+**Graduation year as evidence, measured** (section A). Take primary-tier
+incumbents as likely matches and every other candidate as likely non-matches,
+among pairs with a known year (7,883 and 159,624):
 
 | graduation − certification | likely matches | likely non-matches | likelihood ratio |
 |---|---:|---:|---:|
@@ -247,17 +263,34 @@ Two readings follow:
 ### 5.3 Ambiguous certificants: most separations need taxonomy
 
 In the `full` variant, 945 of the 3,303 quarantined certificants get a unique,
-uncontradicted, corroborated best candidate. Of those:
+uncontradicted, corroborated best candidate. Of those (section E):
 
 - 815 agree on surname and given name exactly;
 - 565 have a graduation year within one of certification;
 - 159 certified in 2024 or later;
 - 71 have an NPI that is not in the November 2025 NPPES file.
 
-**`identity_only` accepts 366.** The remainder need profession points to
-separate, which is precisely the taxonomy tie-break D17 leaves unruled. A
-typical case is two same-name records, one CNM and one nurse practitioner, with
-no graduation year on either.
+**`identity_only` accepts 366** (section F):
+
+| | accepted with profession | not accepted with profession |
+|---|---:|---:|
+| accepted without profession | 329 | 37 |
+| not accepted without profession | 616 (469 to REVIEW, 147 to UNRESOLVED) | 2,321 |
+
+The 616 need profession points to separate. That is precisely the taxonomy
+tie-break D17 leaves unruled. A typical case is two same-name records, one CNM
+and one nurse practitioner, with no graduation year on either.
+
+The 37 run the other way: graduation year separates them, but `full` does not
+accept them. Their `full` reasons (in `trilliant_identity_decisions_<sha8>.csv`)
+are:
+
+- **Margin (35).** The lead falls below 4 once a runner-up's profession
+  counts.
+- **Score (8).** The candidate stays under `full`'s higher accept score of 12.
+  An exact name and a matching graduation year on a nursing record score 11.
+
+Some fail on both, which is why the two counts sum to more than 37.
 
 **Emptied pools** (DECISIONS_CONTRACT D17 requires them to be reported apart):
 
@@ -270,7 +303,7 @@ no graduation year on either.
 
 The `full` variant accepts 244 of the 2,108 certificants with no candidate, and
 another 104 are REVIEW. The freeze says no midwifery or nursing record shared
-their name. The accepted 244 are:
+their name. The accepted 244 are (section E):
 
 - **Exact name matches:** 234 agree on surname and given name exactly. So
   the freeze's candidate universe did not hold these NPIs, rather than the
@@ -283,6 +316,11 @@ their name. The accepted 244 are:
 - **Hidden taxonomy:** 61 carry a midwifery credential under a non-midwifery
   taxonomy, some of it a physician code. A taxonomy-restricted panel can never
   see these.
+- **Unexplained:** the two groups overlap by 8 and together cover 147 of the
+  244. **The other 97 are older NPIs** (enumerated 2005–2024; 50 under a
+  midwifery specialty, 47 under nursing) that the freeze's 2007–2025 name panel
+  should have held. This experiment does not establish why the matcher missed
+  them. It is the most useful thing to check against the current freeze.
 
 ### 5.5 Proposals
 
@@ -308,10 +346,14 @@ the margin and a machine-readable reason.
    Recalibrate its bands first (§5.2).
 2. **Profession mostly restates what the candidate pool already selected on.**
    Its separations among ties need a D17 ruling before any of them could count.
-3. **The directory widens the candidate universe.** Recent enumerations and
-   midwives filed under a non-midwifery taxonomy account for most of the
-   unmatched recoveries. A current NPPES window captures the first; only a
-   taxonomy-free search captures the second.
+3. **The directory widens the candidate universe.** The accepted unmatched
+   recoveries (244) fall into three groups:
+   - recent enumerations (94), which a current NPPES window captures;
+   - midwives filed under a non-midwifery taxonomy (61), which only a
+     taxonomy-free search captures;
+   - 97 older NPIs with neither explanation, which point at the matcher itself.
+
+   The first two overlap by 8.
 4. **School, state, organisation, activity and panel are not identity evidence
    for this cohort,** for the reasons in §2.
 
@@ -329,6 +371,8 @@ the scoring phase that protocol defines.
 Rscript build_trilliant_provider_identity_index.R        # ~2 min; 454 MB index
 FROZEN_CSV=<freeze> [ALLOW_FREEZE_SHA256=<sha>] \
   Rscript experiment_trilliant_identity_linkage.R        # ~20 min cold (11 GB NPPES scan), ~15 warm
+Rscript summarise_trilliant_identity_evidence.R          # seconds; the breakdowns in section 5
+Rscript make_trilliant_identity_figures.R                # the three figures, from tracked aggregates
 Rscript tests/test_trilliant_identity.R                  # hermetic; in CI
 ```
 

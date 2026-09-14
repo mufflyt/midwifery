@@ -235,6 +235,26 @@ through it. Source: `artifacts/trilliant_identity_outcomes_dbcc76f4.csv`
 ([`experiment_trilliant_identity_linkage.R`](experiment_trilliant_identity_linkage.R)).
 Full write-up: [docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md](docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md).*
 
+### 17. Which identity fields the directory carries
+![Which identity fields Trilliant's directory carries](docs/figures/trilliant_identity_fields.png)
+*Figure 17: Field coverage over all 7,518,635 individual NPIs and over the
+25,540 with a midwifery specialty or credential. Name, sex and credential are
+nearly complete. Graduation year exists for 41% of midwifery records. A named
+school exists for under 6%: the field is CMS's *medical* school, "Other" or
+blank for nearly every midwife, so it cannot serve as identity evidence. Source:
+`artifacts/trilliant_provider_identity_coverage.csv`
+([`build_trilliant_provider_identity_index.R`](build_trilliant_provider_identity_index.R)).*
+
+### 18. Graduation year separates true links from namesakes
+![Trilliant's graduation year against the AMCB certification year](docs/figures/trilliant_identity_grad_year.png)
+*Figure 18: For each current link, the directory's graduation year minus the
+AMCB certification year, among pairs where the directory has one. Primary-tier
+links sit almost entirely within a year. Nursing- and fuzzy-tier links look like
+the namesakes every other candidate represents. The likelihood ratios behind
+this (9.4 within a year, 0.05 beyond ten) are in
+`artifacts/trilliant_identity_evidence_dbcc76f4.csv`. Source:
+`artifacts/trilliant_identity_grad_year_agreement_dbcc76f4.csv`.*
+
 ### Three more you build yourself
 
 These read the frozen crosswalk, which is person-level and gitignored, so they

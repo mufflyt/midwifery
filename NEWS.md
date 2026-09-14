@@ -47,6 +47,24 @@ directory would add before anything is changed.
     stratum.
   - It writes every proposed change with both sides' evidence. Nothing is
     applied.
+- **`summarise_trilliant_identity_evidence.R`: every breakdown the appendix
+  quotes, from committed code.** It writes one aggregate table,
+  `artifacts/trilliant_identity_evidence_<sha8>.csv`, covering:
+  - likelihood ratios for graduation year;
+  - which way a discordant graduation year points;
+  - absent incumbents by AMCB status;
+  - where each contradiction came from;
+  - what the accepted recoveries are made of;
+  - the full × identity_only crosstab.
+
+  These were first computed in throwaway scripts.
+- **`make_trilliant_identity_figures.R`: three figures**, drawn only from
+  tracked aggregates:
+  - field coverage;
+  - outcomes by stratum;
+  - graduation year against certification year by link tier.
+
+  They are README figures 16–18.
 - **`tests/test_trilliant_identity.R`** (22 checks, in CI). It checks that:
   - taxonomy cannot break a tie in the identity-only variant;
   - a changed surname, or an NPI another certificant holds, is never proposed;
@@ -66,17 +84,25 @@ directory would add before anything is changed.
   - 205 of them graduated more than 20 years *after* the certificant certified.
   - These are the directory's clearest false-link detections.
 - **Tied, contested or held-out certificants (3,303):**
-  - 945 get a unique best candidate with profession scored.
-  - Only 366 without profession, so most separations need a D17 ruling.
+  - 945 get a unique best candidate with profession scored, and 366 without it.
+  - 329 are accepted either way.
+  - 616 are accepted only with profession, so they need a D17 ruling.
+  - 37 are accepted only without it.
 - **No-candidate certificants (2,108):**
   - 244 ACCEPT and 104 REVIEW.
-  - Mostly NPIs enumerated after the freeze's 2025 panel, or midwives filed
-    under a non-midwifery taxonomy.
+  - Of the 244 accepted, 147 are NPIs enumerated after the freeze's 2025 panel
+    (94) or midwives filed under a non-midwifery taxonomy (61); 8 are both.
+  - **The other 97 are older NPIs the freeze's name panel should have held.**
+    Why the matcher missed them is not yet known.
 - **Two corrections made after looking at the first run, both recorded:**
   - Fused or one-edit given names (ROSEANNE / Rose Anne, KATHRYN / KATHRIN)
     had been counted as contradictions.
-  - 578 given-name conflicts on class-3 links were the matcher's own
-    first-initial rule, not the directory's evidence.
+  - Class-3 given-name conflicts were the matcher's own first-initial rule,
+    not the directory's evidence:
+    - in the first run, 578, each on the name in the freeze's NPPES record;
+    - in the final run, 545, of which 532 are on the NPI's current NPPES name.
+
+    Only the other 13 are credited to the directory.
 - **A pre-specified weight found wrong, left as it is.** A graduation year two
   or three years off scores +1.5 but measures as evidence *against* a link
   (likelihood ratio 0.30).
