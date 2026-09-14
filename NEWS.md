@@ -59,6 +59,11 @@ Technical Appendix: [docs/TECHNICAL_APPENDIX_HOSPITAL_LINKAGE.md](docs/TECHNICAL
   cannot move a result here without a pull request that moves the pin. The
   repo-integrity gate now lists mysterynpi as a CI package and the four
   Trilliant tests as CI entrypoints.
+- **DAC's school is cleaned at read time.** `training_source_dac()` and Table 1
+  now clean `med_sch_raw` themselves instead of reading `med_sch_clean`, which
+  keeps whatever rule was current when the DAC extract last ran. A stale clean
+  ("BRODY") next to the Trilliant backup's current one ("EAST CAROLINA
+  UNIVERSITY") would have split one school across two Table 1 rows.
 
 ## [Unreleased] — 2026-09-13 — Table 1 gets the patient panel's age; school names stop losing their university
 
