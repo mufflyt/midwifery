@@ -68,14 +68,14 @@ linked <- linked |>
          # Not in the directory counts as not active: absent is not evidence of practice.
          flagged_active = coalesce(active_provider, FALSE))
 
-tally <- function(d, analysis, level) {
+activity_tally <- function(d, analysis, level) {
   d |> group_by(level = {{ level }}) |>
     summarise(n = n(), n_in_trilliant = sum(in_trilliant), n_flagged_active = sum(flagged_active),
               .groups = "drop") |>
     mutate(analysis = analysis, level = as.character(level))
 }
 
-by_status <- tally(linked, "1_by_amcb_status", status)
+by_status <- activity_tally(linked, "1_by_amcb_status", status)
 
 left_practice <- linked |> filter(status %in% c("RETIRED", "LAPSED", "DECEASED"))
 by_exit <- left_practice |>
@@ -85,7 +85,7 @@ by_exit <- left_practice |>
                           expiration_year <= 2022 ~ "expired 2020-2022",
                           TRUE ~ "expired 2023 or later")) |>
   group_split(status) |>
-  map_dfr(\(d) tally(d, paste0("2_", tolower(d$status[1]), "_by_certification_expiry"), band))
+  map_dfr(\(d) activity_tally(d, paste0("2_", tolower(d$status[1]), "_by_certification_expiry"), band))
 
 # ---- last Medicare billing year, ACTIVE certificants ------------------------------
 con <- dbConnect(duckdb::duckdb(), resolve_midwifery_duckdb(), read_only = TRUE)
@@ -110,7 +110,7 @@ by_medicare <- active |>
   left_join(years_billed, by = "npi", relationship = "one-to-one") |>
   mutate(band = if_else(is.na(last_medicare_year), "never (or under 11 beneficiaries every year)",
                         as.character(last_medicare_year))) |>
-  tally("3_active_by_last_medicare_year", band)
+  activity_tally("3_active_by_last_medicare_year", band)
 
 out <- bind_rows(by_status, by_exit, by_medicare) |>
   mutate(pct_flagged_active = 100 * n_flagged_active / n,

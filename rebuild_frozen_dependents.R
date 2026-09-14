@@ -214,7 +214,14 @@ REBUILD_ORDER <- list(
                    # manifest's, so left un-rebuilt it would not go stale
                    # quietly -- it would stop. Needs the Trilliant lake and the
                    # hpt_prices references on the external volume.
-                   "build_trilliant_work_sites.R")),
+                   "build_trilliant_work_sites.R",
+                   # Added 2026-09-13, by T5 in the pull request that introduced
+                   # it. Reads amcb_npi_linkage_FROZEN for every primary-linked
+                   # certificant and tests Trilliant's active_provider flag
+                   # against their status and Medicare billing. Its output name
+                   # carries the freeze's hash, so a rebuild writes a new file
+                   # beside the old one instead of overwriting it.
+                   "analyze_trilliant_activity_flag.R")),
   list(layer = "5-enrichment-recompute", why = "age/enrichment recomputes from cached inputs (no network)",
        scripts = c("calibrate_amcb_certification_ages.R", "enrich_doximity_cnm_ages.R",
                    "match_florida_voter_ages.R", "sweep_healthgrades_enrichment.R",
