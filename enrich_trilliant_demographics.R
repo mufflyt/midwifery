@@ -95,14 +95,17 @@ cat("wrote", OUT, "(person-level, gitignored):", nrow(demo), "certificants\n")
 
 # ---- checks, on the canonical ACTIVE cohort ------------------------------------
 coh <- demo |> filter(certification_number %in% active)
-row <- function(field, check, n, value, note = "") tibble(field, check, n = as.integer(n), value = as.numeric(value), note)
-absent <- function(field, file) row(field, "not checked", NA, NA, paste(file, "not found"))
-checks <- list(row("all", "cohort (ACTIVE, primary-linked)", nrow(coh), nrow(coh)),
-               row("all", "in the Trilliant directory", nrow(coh), sum(coh$trl_in_directory)))
+# Rounded to 4 decimals so that a rebuild is byte-identical: the last binary
+# digit of a mean is not a result.
+check_row <- function(field, check, n, value, note = "")
+  tibble(field, check, n = as.integer(n), value = round(as.numeric(value), 4), note)
+check_absent <- function(field, file) check_row(field, "not checked", NA, NA, paste(file, "not found"))
+checks <- list(check_row("all", "cohort (ACTIVE, primary-linked)", nrow(coh), nrow(coh)),
+               check_row("all", "in the Trilliant directory", nrow(coh), sum(coh$trl_in_directory)))
 
 # Sex, against NPPES.
 f <- file.path(ART, "nppes_sex_enumeration.csv")
-checks <- c(checks, list(row("sex", "Trilliant gives F or M", nrow(coh), sum(!is.na(coh$trl_sex_code)))))
+checks <- c(checks, list(check_row("sex", "Trilliant gives F or M", nrow(coh), sum(!is.na(coh$trl_sex_code)))))
 if (file.exists(f)) {
   nppes <- read_csv(f, col_types = cols(.default = "c"), progress = FALSE) |>
     filter(npi %in% coh$npi) |>
@@ -113,13 +116,13 @@ if (file.exists(f)) {
   s <- coh |> left_join(nppes, by = "npi", relationship = "one-to-one")
   both <- s |> filter(!is.na(sex_code), sex_code %in% c("F", "M"), !is.na(trl_sex_code))
   checks <- c(checks, list(
-    row("sex", "agrees with NPPES where both give F or M (%)", nrow(both), 100 * mean(both$sex_code == both$trl_sex_code)),
-    row("sex", "NPPES blank, Trilliant fills", sum(is.na(s$sex_code)), sum(is.na(s$sex_code) & !is.na(s$trl_sex_code)))))
-} else checks <- c(checks, list(absent("sex", "nppes_sex_enumeration.csv")))
+    check_row("sex", "agrees with NPPES where both give F or M (%)", nrow(both), 100 * mean(both$sex_code == both$trl_sex_code)),
+    check_row("sex", "NPPES blank, Trilliant fills", sum(is.na(s$sex_code)), sum(is.na(s$sex_code) & !is.na(s$trl_sex_code)))))
+} else checks <- c(checks, list(check_absent("sex", "nppes_sex_enumeration.csv")))
 
 # School and graduation year, against CMS DAC.
 f <- file.path(ART, "dac_cnm_education.csv")
-checks <- c(checks, list(row("school", "Trilliant names a school", nrow(coh), sum(!is.na(coh$trl_school_clean)))))
+checks <- c(checks, list(check_row("school", "Trilliant names a school", nrow(coh), sum(!is.na(coh$trl_school_clean)))))
 if (file.exists(f)) {
   dac <- training_source_dac(f)
   s <- coh |> left_join(dac, by = "npi", relationship = "one-to-one")
@@ -131,17 +134,17 @@ if (file.exists(f)) {
     summarise(dac_grad_year = first(grad_year), .groups = "drop")
   y <- coh |> inner_join(dac_year, by = "npi", relationship = "one-to-one") |> filter(!is.na(trl_grad_year))
   checks <- c(checks, list(
-    row("school", "agrees with CMS DAC where both name one (%)", nrow(both), 100 * mean(both$dac_school == both$trl_school_clean)),
-    row("school", "CMS DAC names none, Trilliant names one", sum(is.na(s$dac_school)), sum(is.na(s$dac_school) & !is.na(s$trl_school_clean)),
+    check_row("school", "agrees with CMS DAC where both name one (%)", nrow(both), 100 * mean(both$dac_school == both$trl_school_clean)),
+    check_row("school", "CMS DAC names none, Trilliant names one", sum(is.na(s$dac_school)), sum(is.na(s$dac_school) & !is.na(s$trl_school_clean)),
         "before Healthgrades and the repository, which the consumers try first"),
-    row("grad_year", "same year as CMS DAC (%)", nrow(y), 100 * mean(y$dac_grad_year == y$trl_grad_year))))
-} else checks <- c(checks, list(absent("school", "dac_cnm_education.csv")))
+    check_row("grad_year", "same year as CMS DAC (%)", nrow(y), 100 * mean(y$dac_grad_year == y$trl_grad_year))))
+} else checks <- c(checks, list(check_absent("school", "dac_cnm_education.csv")))
 
 # Age: derived from graduation year? Better than the calibration?
 der <- trl_age_derivation(coh$trl_estimated_age, coh$trl_grad_year)
 checks <- c(checks, list(
-  row("age", "Trilliant gives an age", nrow(coh), sum(!is.na(coh$trl_estimated_age))),
-  row("age", "share with the modal age + graduation year", der$n_both, der$share_at_modal,
+  check_row("age", "Trilliant gives an age", nrow(coh), sum(!is.na(coh$trl_estimated_age))),
+  check_row("age", "share with the modal age + graduation year", der$n_both, der$share_at_modal,
       sprintf("modal sum %s; derived from graduation year: %s", der$modal_sum, der$derived))))
 f <- file.path(ART, "amcb_calibrated_ages.csv")
 if (file.exists(f)) {
@@ -153,25 +156,25 @@ if (file.exists(f)) {
   a <- coh |> left_join(cal, by = "certification_number", relationship = "one-to-one")
   adm <- trl_age_admission(a$trl_estimated_age, a$trl_grad_year, a$known_age, a$fitted_age, a$is_direct_ground_truth)
   checks <- c(checks, list(
-    row("age", "Trilliant minus measured age, mean (years)", adm$n_compared, adm$trl_bias),
-    row("age", "Trilliant vs measured age, mean absolute error (years)", adm$n_compared, adm$trl_mae),
-    row("age", "calibration vs measured age, mean absolute error (years)", adm$n_compared, adm$ols_mae,
+    check_row("age", "Trilliant minus measured age, mean (years)", adm$n_compared, adm$trl_bias),
+    check_row("age", "Trilliant vs measured age, mean absolute error (years)", adm$n_compared, adm$trl_mae),
+    check_row("age", "calibration vs measured age, mean absolute error (years)", adm$n_compared, adm$ols_mae,
         "same people; the calibration is what a Trilliant age would replace"),
-    row("age", "imputed ages Trilliant could fill", sum(a$is_imputed %in% TRUE), sum(a$is_imputed %in% TRUE & !is.na(a$trl_estimated_age))),
-    row("age", "admitted as a backup (1 = yes)", adm$n_compared, as.numeric(adm$admitted),
+    check_row("age", "imputed ages Trilliant could fill", sum(a$is_imputed %in% TRUE), sum(a$is_imputed %in% TRUE & !is.na(a$trl_estimated_age))),
+    check_row("age", "admitted as a backup (1 = yes)", adm$n_compared, as.numeric(adm$admitted),
         "trl_age_admission(): not derived AND closer to measured age than the calibration")))
-} else checks <- c(checks, list(absent("age", "amcb_calibrated_ages.csv")))
+} else checks <- c(checks, list(check_absent("age", "amcb_calibrated_ages.csv")))
 
 # Patient panel: no primary source, so describe it.
 p <- coh |> filter(!is.na(trl_panel_median_age))
 q <- function(v, pr) unname(quantile(v, pr, na.rm = TRUE))
 checks <- c(checks, list(
-  row("panel", "coherent patient panel", nrow(coh), nrow(p)),
-  row("panel", "panel median patient age, median", nrow(p), q(p$trl_panel_median_age, 0.5)),
-  row("panel", "panel median patient age, 25th percentile", nrow(p), q(p$trl_panel_median_age, 0.25)),
-  row("panel", "panel median patient age, 75th percentile", nrow(p), q(p$trl_panel_median_age, 0.75)),
-  row("panel", "share of patients female (%), median across midwives", nrow(p), 100 * q(p$trl_panel_percent_female, 0.5))),
-  lapply(TRL_PANEL_AGE_BANDS, \(b) row("panel", sprintf("share of patients aged %s (%%), mean across midwives",
+  check_row("panel", "coherent patient panel", nrow(coh), nrow(p)),
+  check_row("panel", "panel median patient age, median", nrow(p), q(p$trl_panel_median_age, 0.5)),
+  check_row("panel", "panel median patient age, 25th percentile", nrow(p), q(p$trl_panel_median_age, 0.25)),
+  check_row("panel", "panel median patient age, 75th percentile", nrow(p), q(p$trl_panel_median_age, 0.75)),
+  check_row("panel", "share of patients female (%), median across midwives", nrow(p), 100 * q(p$trl_panel_percent_female, 0.5))),
+  lapply(TRL_PANEL_AGE_BANDS, \(b) check_row("panel", sprintf("share of patients aged %s (%%), mean across midwives",
                                                       str_replace_all(str_remove(b, "panel_percent_age_"), "_", "-")),
                                       nrow(p), 100 * mean(p[[paste0("trl_", b)]]))))
 
