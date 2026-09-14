@@ -447,9 +447,15 @@ if (file.exists("artifacts/dac_cnm_education.csv")) {
   .dac_sch <- read_csv("artifacts/dac_cnm_education.csv", show_col_types = FALSE,
                        progress = FALSE) %>%
     mutate(npi = as.character(NPI)) %>%
-    select(npi, med_sch_clean) %>%
+    select(npi, med_sch_raw) %>%
     assert_unique_keys("npi", label = "DAC CNM education (medical school)", dedupe = TRUE) %>%
-    transmute(npi, dac_school = ifelse(!is.na(med_sch_clean) & med_sch_clean != "OTHER",
+    # Cleaned HERE, from the raw string, by the rule every other source uses
+    # (mysterynpi::strip_med_suffix()) -- not read from med_sch_clean, which
+    # keeps whatever rule was current when the DAC extract last ran. A stale
+    # clean named "BRODY" where the Trilliant backup names "EAST CAROLINA
+    # UNIVERSITY", and one school became two rows.
+    mutate(med_sch_clean = strip_med_suffix(med_sch_raw)) %>%
+    transmute(npi, dac_school = ifelse(!is.na(med_sch_clean) & toupper(med_sch_clean) != "OTHER",
                                        med_sch_clean, NA_character_))
   .hg_sch <- if (!is.null(hg_link) && "hg_education_name" %in% names(hg_link))
     hg_link %>% distinct(certification_number, .keep_all = TRUE) %>%

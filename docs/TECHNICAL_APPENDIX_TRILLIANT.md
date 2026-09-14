@@ -333,7 +333,9 @@ directory).
 | Patient panel | none (no other source) | A coherent panel (the age bands sum to one) for 10,706 midwives, the ones the directory flags active. Median of each midwife's median patient age: 32 (interquartile range 30–35). Median share of patients female: 99.7%. On average, 82.7% of a midwife's patients are aged 20–44. | A Table 1 block: the median (IQR) of each midwife's median patient age, then <20, 20–29, 30–39, 40–49, 50–59, 60–69 and ≥70 years (`band_panel_median_age()`), with a row for midwives who have no panel. The median (IQR) row carries no count, so the block still sums to the cohort. The full panel is in `artifacts/trilliant_demographics.csv`. |
 
 **School names are cleaned by one rule for DAC and the directory**
-(`strip_med_suffix()` in `R/lib/training_institution.R`). CMS files a nursing
+(`strip_med_suffix()`, which lives in the
+[mysterynpi](https://github.com/mufflyt/mysterynpi) package and is called
+through `R/lib/training_institution.R`). CMS files a nursing
 programme under its university's medical school, so the unit is stripped and
 the university kept. Two cases used to come out wrong:
 
@@ -348,7 +350,8 @@ the university kept. Two cases used to come out wrong:
 
 Of the 88 distinct DAC and directory strings, 19 changed and none of the rest
 did. The DAC extract (`dac_cnm_education.csv`) picks this up the next time
-`extract_dac_cnm_education.R` runs.
+`extract_dac_cnm_education.R` runs. mysterynpi pins all 88 strings and their
+expected institutions as a test fixture.
 
 Two cautions follow from the table.
 

@@ -41,6 +41,30 @@ Technical Appendix: [docs/TECHNICAL_APPENDIX_HOSPITAL_LINKAGE.md](docs/TECHNICAL
 
 ---
 
+## [Unreleased] — 2026-09-13 — strip_med_suffix() moves to mysterynpi
+
+### Changed
+
+- **`strip_med_suffix()` now lives in the mysterynpi package**
+  (mufflyt/mysterynpi#23). It is exported and documented there, and pinned by
+  a fixture of the 88 distinct CMS school strings this repository's DAC and
+  Trilliant fields carry. `R/lib/training_institution.R` keeps the name and
+  calls `mysterynpi::strip_med_suffix()`. If the installed mysterynpi lacks
+  the function, it stops and says which commit to install.
+- **Output is unchanged.** The package version returns exactly what this
+  repository's did, on those 88 strings and on 182 variants of them (lower
+  case, title case, NA, blank).
+- **CI installs mysterynpi.** The `R unit tests` job installs it from GitHub,
+  pinned to the commit that added the function, so a later change there
+  cannot move a result here without a pull request that moves the pin. The
+  repo-integrity gate now lists mysterynpi as a CI package and the four
+  Trilliant tests as CI entrypoints.
+- **DAC's school is cleaned at read time.** `training_source_dac()` and Table 1
+  now clean `med_sch_raw` themselves instead of reading `med_sch_clean`, which
+  keeps whatever rule was current when the DAC extract last ran. A stale clean
+  ("BRODY") next to the Trilliant backup's current one ("EAST CAROLINA
+  UNIVERSITY") would have split one school across two Table 1 rows.
+
 ## [Unreleased] — 2026-09-13 — Table 1 gets the patient panel's age; school names stop losing their university
 
 ### Added

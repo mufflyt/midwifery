@@ -44,77 +44,22 @@ training_norm_school <- function(x) {
   ifelse(is.na(x) | !nzchar(y), NA_character_, y)
 }
 
-#' Strip a trailing medical-school unit from a CMS school name
+#' The institution in a CMS medical-school name: mysterynpi::strip_med_suffix()
 #'
 #' CMS maps every clinician through a MEDICAL-school code list, so a CNM's
-#' nursing programme arrives as "<University> SCHOOL OF MEDICINE". Verbatim it
-#' reads as a midwife with an MD. This keeps the institution and drops the unit.
-#' Used by extract_dac_cnm_education.R (DAC) and enrich_trilliant_demographics.R
-#' (the Trilliant directory, whose school strings are DAC's, character for
-#' character), so both sources clean to the same value.
+#' nursing programme arrives as "<University> SCHOOL OF MEDICINE". The rule
+#' that keeps the institution and drops the unit lives in the mysterynpi
+#' package (mufflyt/mysterynpi#23), so every pipeline reading a CMS school field
+#' cleans it the same way. It is documented and tested there, including the 88
+#' distinct strings this repository's DAC and Trilliant fields carry.
+#' Used by extract_dac_cnm_education.R and enrich_trilliant_demographics.R.
 strip_med_suffix <- function(x) {
-  # Ordered longest-first so a shorter pattern cannot truncate a longer one --
-  # "COLLEGE OF MEDICINE" must be consumed before "COLLEGE OF MED" can leave a
-  # trailing "INE". Every pattern anchors to end-of-string, so only a TRAILING
-  # academic unit is removed and a leading one (Medical University of South
-  # Carolina, Medical College of Wisconsin) is left intact by the guard below.
-  #
-  # Derived from the 72 distinct strings CMS actually uses for CNMs, not from
-  # imagination: they include five DENTAL schools and a college of physicians
-  # and surgeons, which is CMS taxonomy noise rather than midwifery training.
-  pats <- c(
-    "SCHOOL OF MEDICINE AND DENTISTRY", "COLLEGE OF PHYSICIANS AND SURGEONS",
-    "SCHOOL OF OSTEOPATHIC MEDICINE",   "COLLEGE OF OSTEOPATHIC MEDICINE",
-    "COLLEGE OF MEDICINE AND SURGERY",  "SCHOOL OF DENTAL MEDICINE",
-    "SCHOOL OF DENTAL MED",             "COLLEGE OF DENTISTRY",
-    "SCHOOL OF MEDICINE",               "COLLEGE OF MEDICINE",
-    "MEDICAL DEPARTMENT",               "MEDICAL BRANCH",
-    "MEDICAL SCHOOL",                   "MEDICAL COLLEGE",
-    "MEDICAL CENTER",                   "MEDICAL UNIVERSITY",
-    "COLLEGE OF MED", "SCHOOL OF MED", "SCH OF MED", "MED CTR", "MED SCH")
-  # `^(.+?)` requires at least one character BEFORE the pattern, so a phrase
-  # that opens the institution's name is never treated as a suffix. Without it,
-  # "MEDICAL UNIVERSITY OF SOUTH CAROLINA COLLEGE OF MEDICINE" matched
-  # "MEDICAL UNIVERSITY" at position 0, consumed the whole string, and the
-  # empty-guard handed back the original -- the one name in 72 that came out
-  # uncleaned. With it, only "COLLEGE OF MEDICINE" is stripped and the
-  # institution survives.
-  # "UN OF" is CMS's abbreviation in "STATE UN OF NY".
-  inst <- regex("\\b(UNIVERSITY|UNIV|UN OF|COLLEGE|INSTITUTE)\\b", ignore_case = TRUE)
-  y <- x
-  # A NAMED SCHOOL OF A UNIVERSITY. When the medical unit is followed by "at",
-  # "of" or a comma and then a university, the university is the institution and
-  # the words before the unit are the school's own name: "BRODY SCHOOL OF
-  # MEDICINE AT EAST CAROLINA UNIVERSITY", "PERELMAN SCHOOL OF MED AT THE
-  # UNIVERSITY OF PENNSYLVANIA", "JEFFERSON MEDICAL COLLEGE OF THOMAS JEFFERSON
-  # UNIVERSITY". Keeping the head, as the strip below does, reported BRODY,
-  # PERELMAN and JEFFERSON as if they were universities.
-  for (p in pats) {
-    tail <- str_match(y, regex(paste0("^.+?\\s*[,-]?\\s*", p,
-                                      "(?:\\s*,\\s*|\\s+(?:AT|OF)\\s+(?:THE\\s+)?)(.+)$"),
-                               ignore_case = TRUE))[, 2]
-    use <- !is.na(tail) & str_detect(tail, inst)
-    y[use] <- tail[use]
-  }
-  # THE UNIT ITSELF. Each strip is accepted only if what is left still names an
-  # institution. A strip that leaves no institution word means the medical
-  # phrase WAS the institution's name, so that step is refused and the name
-  # before it kept: OHIO MEDICAL UNIVERSITY, BAYLOR COLLEGE OF MEDICINE, ALBANY
-  # MEDICAL COLLEGE and PHILADELPHIA COLLEGE OF OSTEOPATHIC MEDICINE are
-  # institutions, not "OHIO", "BAYLOR", "ALBANY" and "PHILADELPHIA" -- which is
-  # what the previous version returned, despite a comment saying it did not.
-  # Refusing one step does not refuse the rest: MEHARRY MEDICAL COLLEGE SCHOOL
-  # OF MEDICINE loses "SCHOOL OF MEDICINE" and keeps "MEHARRY MEDICAL COLLEGE".
-  trim <- function(v)
-    # Trailing connective left behind by a strip ("... AT THE", "... SYSTEM,").
-    str_squish(str_replace(v, regex("[ ,\\-]+(AT|OF|THE|AND|SYSTEM|HSC)?[ ,\\-]*$", ignore_case = TRUE), ""))
-  for (p in pats) {
-    cand <- trim(str_replace(y, regex(paste0("^(.+?)\\s*[,-]?\\s*", p, "\\b.*$"),
-                                      ignore_case = TRUE), "\\1"))
-    ok <- !is.na(cand) & cand != y & nzchar(cand) & str_detect(cand, inst)
-    y[ok] <- cand[ok]
-  }
-  ifelse(is.na(x), NA_character_, y)
+  if (!requireNamespace("mysterynpi", quietly = TRUE) ||
+      !"strip_med_suffix" %in% getNamespaceExports("mysterynpi"))
+    stop("strip_med_suffix() now lives in mysterynpi, and the installed copy ",
+         "does not have it. Install the version CI pins: ",
+         "remotes::install_github(\"mufflyt/mysterynpi@ac42561b46d400a7e62649ee0161313628d914e8\")", call. = FALSE)
+  mysterynpi::strip_med_suffix(x)
 }
 
 #' Read the institution sources, keyed for joining
@@ -126,16 +71,18 @@ strip_med_suffix <- function(x) {
 training_source_dac <- function(path = "artifacts/dac_cnm_education.csv") {
   if (!file.exists(path)) return(NULL)
   read_csv(path, show_col_types = FALSE, progress = FALSE) %>%
-    mutate(npi = as.character(NPI)) %>%
+    # Cleaned here from the raw string, by the current rule, rather than read
+    # from med_sch_clean, which keeps the rule of the extract's last run.
+    mutate(npi = as.character(NPI), med_sch_clean = strip_med_suffix(med_sch_raw)) %>%
     # Which duplicate row wins is a scientific choice, so state it: prefer a
     # row that names a real school over one DAC could not code, then sort by
     # the school string so the survivor does not depend on file order.
-    arrange(npi, is.na(med_sch_clean) | med_sch_clean == "OTHER", med_sch_clean) %>%
+    arrange(npi, is.na(med_sch_clean) | toupper(med_sch_clean) == "OTHER", med_sch_clean) %>%
     distinct(npi, .keep_all = TRUE) %>%
     # "OTHER" is DAC's placeholder for a school it could not code -- 4,171
     # values. It is not an institution and is dropped, not counted.
     transmute(npi, dac_school = ifelse(!is.na(med_sch_clean) &
-                                         med_sch_clean != "OTHER",
+                                         toupper(med_sch_clean) != "OTHER",
                                        med_sch_clean, NA_character_))
 }
 
