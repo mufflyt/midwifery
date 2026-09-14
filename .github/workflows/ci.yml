@@ -493,6 +493,20 @@ jobs:
           done
           exit $rc
 
+      # mysterynpi holds strip_med_suffix(), which R/lib/training_institution.R
+      # delegates to and the Trilliant tests below exercise. Pinned to the
+      # commit that added it, so a later change there cannot move a result
+      # here without a pull request that moves the pin. Installed from GitHub
+      # with the job's token: without one, remotes falls back to its bundled
+      # PAT, which GitHub's API refuses (see nightly.yml).
+      - name: Install mysterynpi (pinned)
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Rscript -e 'if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")'
+          Rscript -e 'remotes::install_github("mufflyt/mysterynpi@PIN_SHA", upgrade = "never")'
+          Rscript -e 'stopifnot("strip_med_suffix" %in% getNamespaceExports("mysterynpi")); cat("mysterynpi", as.character(packageVersion("mysterynpi")), "\n")'
+
       # The Trilliant layer's pure functions: which freeze and cohort a build may
       # use, how work sites are counted and placed, how person-level files move
       # between machines, and when the directory may stand in for a missing
