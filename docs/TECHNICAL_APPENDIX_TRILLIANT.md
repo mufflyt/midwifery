@@ -330,7 +330,25 @@ directory).
 | School | CMS DAC `med_sch_clean` | 100% agreement across the 678 midwives both name, once cleaned by the same rule. The strings are DAC's, character for character. | Last source in `training_attach()` and in Table 1, after DAC, Healthgrades and the university repository. Names a school for 400 midwives DAC does not. |
 | Graduation year | CMS DAC `grad_year` | 99.9% the same year (4,780 midwives) | Kept for analysis; nothing downstream reads it yet. |
 | Age | measured ages (Healthgrades, WA, OH voter) and the calibration | Estimated age plus graduation year is the constant 2052 for all 7,638 midwives who have an age, so the directory assumes everyone graduated at 26. Against 2,475 measured ages it averages 7.9 years young (mean absolute error 8.2); the calibration it would replace has a mean absolute error of 5.6 on the same people. | **Not used.** `calibrate_amcb_certification_ages.R` has a slot for it, after every direct source and in place of the calibration. `trl_age_admission()` fills the slot only if the age is not derived from graduation year and beats the calibration on measured ages. The decision is written to `artifacts/amcb_age_calibration_provenance.csv`. |
-| Patient panel | none (no other source) | A coherent panel (the age bands sum to one) for 10,706 midwives, the ones the directory flags active. Median of each midwife's median patient age: 32 (interquartile range 30–35). Median share of patients female: 99.7%. On average, 82.7% of a midwife's patients are aged 20–44. | Carried in `artifacts/trilliant_demographics.csv` for analysis and summarised in the validation file. It is not a Table 1 row, because banding it would need cut points no source defines. |
+| Patient panel | none (no other source) | A coherent panel (the age bands sum to one) for 10,706 midwives, the ones the directory flags active. Median of each midwife's median patient age: 32 (interquartile range 30–35). Median share of patients female: 99.7%. On average, 82.7% of a midwife's patients are aged 20–44. | A Table 1 block: the median (IQR) of each midwife's median patient age, then <20, 20–29, 30–39, 40–49, 50–59, 60–69 and ≥70 years (`band_panel_median_age()`), with a row for midwives who have no panel. The median (IQR) row carries no count, so the block still sums to the cohort. The full panel is in `artifacts/trilliant_demographics.csv`. |
+
+**School names are cleaned by one rule for DAC and the directory**
+(`strip_med_suffix()` in `R/lib/training_institution.R`). CMS files a nursing
+programme under its university's medical school, so the unit is stripped and
+the university kept. Two cases used to come out wrong:
+
+- **A named school of a university.** "Brody School of Medicine at East
+  Carolina University" gave "BRODY"; the same happened to Perelman, Jefferson,
+  Sanford, Netter and Edwards. The university after "at", "of" or a comma is
+  now kept.
+- **An institution whose name is the medical phrase.** Baylor College of
+  Medicine, Ohio Medical University and Philadelphia College of Osteopathic
+  Medicine gave "BAYLOR", "OHIO" and "PHILADELPHIA". A strip that leaves no
+  institution word is now refused.
+
+Of the 88 distinct DAC and directory strings, 19 changed and none of the rest
+did. The DAC extract (`dac_cnm_education.csv`) picks this up the next time
+`extract_dac_cnm_education.R` runs.
 
 Two cautions follow from the table.
 

@@ -41,6 +41,41 @@ Technical Appendix: [docs/TECHNICAL_APPENDIX_HOSPITAL_LINKAGE.md](docs/TECHNICAL
 
 ---
 
+## [Unreleased] — 2026-09-13 — Table 1 gets the patient panel's age; school names stop losing their university
+
+### Added
+
+- **Table 1 block "Median age of the midwife's patients (Trilliant claims
+  panel)".**
+  - It starts with a median (IQR) row, followed by <20, 20–29, 30–39, 40–49,
+    50–59, 60–69 and ≥70 years, and a row for midwives with no panel.
+  - Each midwife contributes one number: the median age of her patients.
+  - The median (IQR) row carries no count, so the block still sums to the
+    cohort.
+  - Checked in a sandbox build of Table 1 on the 2026-08-10 freeze. The median
+    (IQR) was 32 (30–35) years. The bands held 35, 1,948, 7,572, 701, 264, 119
+    and 67 midwives, and 1,214 had no panel. The block reconciles to 11,920.
+    The tracked Table 1 changes when it is next rebuilt with all its inputs.
+- **`band_panel_median_age()` and `table1_median_iqr()`** in
+  `R/lib/table1_bands.R`, tested in `tests/test_table1_bands.R`.
+
+### Fixed
+
+- **`strip_med_suffix()` reported a named school as though it were the
+  university.**
+  - "Brody School of Medicine at East Carolina University" became "BRODY"; the
+    same happened to Perelman (Penn), Jefferson (Thomas Jefferson), Sanford
+    (South Dakota), Netter (Quinnipiac), Edwards (Marshall) and Cleveland
+    Clinic Lerner (Case Western).
+  - It also cut institutions whose names are the medical phrase down to a
+    place: "BAYLOR", "OHIO" (Ohio Medical University), "PHILADELPHIA"
+    (Philadelphia College of Osteopathic Medicine), "LAKE ERIE" and
+    "MEHARRY".
+  - Now the university after "at", "of" or a comma is kept, and a strip that
+    leaves no institution word is refused.
+  - 19 of the 88 distinct DAC and Trilliant strings changed; the rest did not.
+    DAC's extract picks this up at its next run.
+
 ## [Unreleased] — 2026-09-13 — Trilliant as a backup source for sex, school and age, and a patient-panel mix
 
 Nothing published changes until Table 1 and the age calibration are rebuilt on
