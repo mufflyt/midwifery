@@ -22,6 +22,100 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-09-13 — Where midwives work: the Trilliant claims directory, three cohort definitions, and a shared data vault
+
+PRs #196–#201. Nothing here changes cohort membership or any previously
+published number. It adds a new data asset, and says what that asset can and
+cannot show before any analysis is built on it. Full write-up:
+[docs/TECHNICAL_APPENDIX_TRILLIANT.md](docs/TECHNICAL_APPENDIX_TRILLIANT.md).
+
+### Added
+- **The Trilliant asset, inventoried** (#199).
+  `R/inventory_trilliant_research_fields.R` profiles all 12 tables (224
+  columns) of the Trilliant DuckLake read-only, and computes a feasibility
+  matrix for twelve research questions:
+  - Only `directory_provider` carries a clinician NPI, and it holds one
+    snapshot (2026-06-25).
+  - No table holds a clinician NPI, a service date and procedure codes
+    together, so **birth attendance and delivery volume are not identifiable**
+    from this asset.
+  - Current work setting, multi-site practice and current rurality are fully
+    identifiable.
+- **Where each midwife works** (#198, #200). `build_trilliant_work_sites.R`,
+  written in R/duckplyr with no SQL, builds each midwife's work sites from four
+  sources:
+  - the Trilliant claims-derived main site, with its visit share
+  - NPPES addresses
+  - CMS DAC facility affiliations
+  - CABC birth centers
+
+  Each site is typed as hospital, birth center, FQHC/CHC or clinic, placed at
+  a geocode, and given a county and a RUCC 2023 rurality band. Source rows
+  collapse into distinct physical sites. Blended hospital + birth-center
+  practice is defined twice, **strict** (evidence beyond a name) and
+  **broad**. Labs, pathology, pharmacy, ambulance and imaging are set aside as
+  places orders were filled, not workplaces.
+- **Three populations, defined once** (#198). `R/lib/cohort_definitions.R`
+  separates:
+  - the canonical ACTIVE, primary-linked cohort, from the manifest's freeze
+    only
+  - the board-validation subset: WA, CO and TX, the only boards genuinely
+    queried
+  - the CMS-observed subset, taken from the cohort, never from a board subset
+
+  30 tests pin it, including that a CMS-observed New Jersey midwife stays in
+  the CMS analysis.
+- **`active_provider` validated against the roster** (#201).
+  `analyze_trilliant_activity_flag.R`, run on the 2026-08-10 freeze. Flagged
+  active:
+  - ACTIVE 89.7%, RETIRED 31.5%, LAPSED 29.2%, DECEASED 3.2%
+  - retired certificants, by certification expiry: 8.9% (2016 or earlier) up
+    to 51.0% (2023 or later), so the flag lags a stop in practice by years
+  - ACTIVE certificants, by last Medicare billing year: 76.1% (2013) up to
+    99.1% (2023)
+
+  Inactive is strong evidence of not practising; active overstates practice
+  among recent leavers.
+- **A data vault** (#197). `R/lib/data_vault.R`, `publish_to_data_vault.R` and
+  [docs/DATA_VAULT.md](docs/DATA_VAULT.md) keep person-level inputs in one
+  Dropbox folder. Files are named by hash, never overwritten, and re-verified
+  on every lookup. The current freeze (sha256 `1a7bd6a8…`) was published there
+  on 2026-09-13.
+- **Figures 12–15** in the README, drawn by `make_trilliant_figures.R` from
+  committed aggregates only (#201).
+
+### Fixed
+- **CCN leading zeros.** The CMS hospital enrollment file publishes 934 of
+  9,161 CCNs without their leading zero (Denver Health `060011` as `60011`).
+  `pad_ccn()` restores them before any join.
+- **Hospital NPIs filed at the wrong address.** Trilliant's organization
+  directory files some hospital NPIs at a same-named hospital's address in
+  another state. A CCN whose hospital is in another state from the site is
+  rejected, and a main hospital's CCN is preferred over a psych or swing-bed
+  unit.
+- **The Nightly** (#196). Its four red jobs had been reporting the checks'
+  own defects:
+  - missing plotting packages
+  - an orphan-gate check that read only one workflow
+  - an exposure audit that ignored owner-reviewed exceptions
+  - an unauthenticated GitHub install
+
+  The seven DuckDB gates, which no job ran, now run nightly.
+
+### Clarified
+- **11,093 is not a cohort.** The tracked roster is the 2026-08-10 freeze's
+  11,920 ACTIVE, primary-linked certificants restricted to the 40 states of
+  the fabricated board "scrape":
+  - 787 are in 11 other jurisdictions
+  - 40 have military, territorial or foreign addresses
+  - none is unexplained
+
+  The canonical ACTIVE, primary-linked count against the current freeze is
+  **12,171**. `build_trilliant_work_sites.R` refuses any other freeze unless
+  named on purpose, so its results wait for that file.
+
+---
+
 ## [Unreleased] — 2026-09-13 — Fabricated data removed, and what the sources actually say put in its place
 
 An AI coding tool wrote invented values into this repository in August 2026

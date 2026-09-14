@@ -175,6 +175,49 @@ computable. Built by
 full write-up in
 [docs/TECHNICAL_APPENDIX_TEMPORAL_PLAUSIBILITY.md](docs/TECHNICAL_APPENDIX_TEMPORAL_PLAUSIBILITY.md).*
 
+### 12. What the Trilliant claims directory holds
+![What the Trilliant lake holds](docs/figures/trilliant_lake_tables.png)
+*Figure 12: The Trilliant download is a DuckLake of hospital price files
+bundled with a provider directory. Only `directory_provider` carries a
+clinician NPI, and it is one snapshot (2026-06-25). The price tables carry
+procedure codes but no clinician. **No table holds a clinician NPI, a service
+date and procedure codes together**, so delivery volume cannot be measured
+from this asset. Source: `artifacts/trilliant_schema_inventory.csv`
+([`R/inventory_trilliant_research_fields.R`](R/inventory_trilliant_research_fields.R)).*
+
+### 13. Which workforce studies it can support
+![Which studies the Trilliant asset can support](docs/figures/trilliant_feasibility.png)
+*Figure 13: Identifiability computed from the schema inventory and from checks
+that the other sources exist, not asserted. Current work setting, multi-site
+practice and current rurality are fully identifiable. Birth attendance and
+delivery volume are not. Rural retention is already the subject of the
+persistence manuscript. Source:
+`artifacts/trilliant_research_question_feasibility.csv`.*
+
+### 14. The 11,093-row roster is not a cohort
+![Why the tracked roster has 11,093 of the 11,920](docs/figures/trilliant_cohort_reconciliation.png)
+*Figure 14: Every ACTIVE, primary-linked certificant of the 2026-08-10 freeze
+who is absent from the tracked roster, by practice state. Each has a named
+reason; none is unexplained. The roster's 40 states were the fabricated board
+"scrape" list, so board coverage must never restrict a CMS analysis. The
+canonical cohort against the current freeze is the registered 12,171.
+[`R/lib/cohort_definitions.R`](R/lib/cohort_definitions.R) keeps the canonical
+cohort, the board-validation subset (WA, CO, TX) and the CMS-observed subset
+apart. Source: `artifacts/trilliant_cohort_reconciliation_reasons.csv`.*
+
+### 15. Does Trilliant's `active_provider` flag mean a midwife is practising?
+![active_provider against AMCB status and Medicare billing](docs/figures/trilliant_activity_validation.png)
+*Figure 15: Tested against the AMCB roster and Medicare billing. **A:**
+deceased and retired certificants are rarely flagged active. **B:** among
+retirees the flag decays with years since the certification expired, so it lags
+a stop in practice. **C:** among ACTIVE certificants it tracks how recently
+they billed Medicare. Inactive is strong evidence of not practising; active
+overstates practice among recent leavers. Run on the 2026-08-10 freeze; the file
+name carries the freeze hash. Source:
+`artifacts/trilliant_activity_validation_dbcc76f4.csv`
+([`analyze_trilliant_activity_flag.R`](analyze_trilliant_activity_flag.R)). Full
+write-up: [docs/TECHNICAL_APPENDIX_TRILLIANT.md](docs/TECHNICAL_APPENDIX_TRILLIANT.md).*
+
 ### Three more you build yourself
 
 These read the frozen crosswalk, which is person-level and gitignored, so they
@@ -730,6 +773,33 @@ The general lesson is recorded because it will recur: **apparent uniqueness is
 conditional on how much of the universe you loaded.** Incomplete coverage makes
 a common name look *more* unique, not less.
 
+## Where midwives work: the Trilliant claims directory
+
+The attribute layers above say whom a midwife bills through and which
+hospitals CMS lists. Trilliant's provider directory adds where their claims
+place them: a main practice site, the share of visits there and the number of
+sites. Its organization directory geocodes every organization NPI, which lets
+every other site be located too.
+[`build_trilliant_work_sites.R`](build_trilliant_work_sites.R) (R/duckplyr)
+turns these into:
+
+| Output | What it is |
+|---|---|
+| main work setting | hospital, birth center, FQHC/CHC, clinic — typed by the site's own name, then the Trilliant organization it matches, then the building |
+| distinct work sites | NPPES, DAC, CABC and Trilliant rows at the same place (≈11 m, or same street + ZIP) counted once |
+| rurality of every site | county from Trilliant's county name or the ZIP crosswalk, then RUCC 2023 in the cohort papers' bands |
+| blended hospital + birth-center practice | **strict** (DAC/CCN hospital + CABC or taxonomy birth center) and **broad** |
+| NPPES vs claims rurality | whether the NPPES address and the claims site fall in the same rurality band — a check on the persistence paper's geography |
+
+Labs, pathology, pharmacy, ambulance and imaging are set aside as where orders
+were filled, not workplaces. Every person-level output is gitignored, because
+Trilliant's data are licensed. Only counts are tracked. The build refuses any
+cohort freeze but the one the manifest describes, so its results wait for the
+current freeze (12,171) to be run through it; the freeze is shared between
+machines through the [data vault](docs/DATA_VAULT.md). Methods, the
+`active_provider` validation and limitations are in
+[docs/TECHNICAL_APPENDIX_TRILLIANT.md](docs/TECHNICAL_APPENDIX_TRILLIANT.md).
+
 ## Maps
 
 Built with [mufflyt/mysterymaps](https://github.com/mufflyt/mysterymaps) (`mysterymaps_map_base()`
@@ -1246,6 +1316,7 @@ measured — see [Absence is not zero](#absence-is-not-zero-in-four-different-so
 | **HRSA HPSA — primary care** | the file is named `..._CUR_...` (**current at download**); **the download date is not recorded anywhere in the repo** — a reproducibility gap | `HPSA_CMPPC_SHP_DET_CUR_VX.shp` | shortage-area status by point-in-polygon, 98.4% of geocoded | [`assign_hpsa_status.R`](assign_hpsa_status.R) |
 | **Open Payments — general payments** | **program year 2024**, published extract `P06302026_06032026` | `OP_DTL_GNRL_PGYR2024_P06302026_06032026.csv` | recent practice addresses and Type-2 organization candidates. **Never used for any payment-behaviour claim** | [`harvest_open_payments_profile.py`](harvest_open_payments_profile.py), [`link_open_payments_type2_bulk.R`](link_open_payments_type2_bulk.R) |
 | **Open Payments — covered recipient profile supplement** | same extract | `OP_CVRD_RCPNT_PRFL_SPLMTL_P06302026_06032026.csv` | the recipient profile keyed to NPI | same, plus [`resolve_org_ambiguity.R`](resolve_org_ambiguity.R) |
+| **Trilliant provider & organization directory** (licensed) | directory snapshot **2026-06-25**, DuckLake `20260721` | `hpt_prices/trilliant/20260721/lake` (external volume) | claims-derived main practice site, visit share, number of sites, `active_provider`, patient-panel composition; organization geocodes, types and taxonomies. **No clinician-level claims** | [`build_trilliant_work_sites.R`](build_trilliant_work_sites.R), [`analyze_trilliant_activity_flag.R`](analyze_trilliant_activity_flag.R), [`R/inventory_trilliant_research_fields.R`](R/inventory_trilliant_research_fields.R) |
 
 ### Tier E — training institution
 
