@@ -512,12 +512,17 @@ jobs:
       # between machines, and when the directory may stand in for a missing
       # sex, school or age. The first three shipped in #196-#200 without a CI
       # step, so they only ever ran on the machine that wrote them.
-      - name: Trilliant layer (cohort, work sites, data vault, demographics)
+      # test_trilliant_identity.R is the identity experiment's scoring: its
+      # identity_only variant may not let taxonomy break a tie, a changed
+      # surname or an NPI another certificant holds is never proposed, and an
+      # emptied pool is reported as emptied.
+      - name: Trilliant layer (cohort, work sites, data vault, demographics, identity)
         run: |
           Rscript tests/test_cohort_definitions.R
           Rscript tests/test_work_site_topology.R
           Rscript tests/test_data_vault.R
           Rscript tests/test_trilliant_demographics.R
+          Rscript tests/test_trilliant_identity.R
 
       # Birth activity decides who counts as a practising midwife; license
       # resolution decides which of several licenses is the one. Both are pure.

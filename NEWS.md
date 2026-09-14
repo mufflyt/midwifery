@@ -20,6 +20,110 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-09-14 — Trilliant's directory as a second identity source (experiment)
+
+Technical appendix: [docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md](docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md).
+**No linkage, matcher or mysterynpi number changes.** This measures what the
+directory would add before anything is changed.
+
+### Added
+
+- **`build_trilliant_provider_identity_index.R`: an identity index over the
+  whole directory.**
+  - It covers all 7,518,635 individual NPIs, one row each (checked), not only
+    the linked cohort.
+  - Raw fields sit beside the keys `match_amcb_to_npi.R` compares on, made by
+    the same mysterynpi functions.
+  - The index is person-level and licensed, so it is gitignored. Its coverage
+    table is tracked.
+- **`experiment_trilliant_identity_linkage.R`, with `R/lib/trilliant_identity.R`.**
+  - Every certificant in the freeze is run through the full directory, using
+    exact-key blocking only.
+  - Each certificant's candidates are scored twice:
+    - with profession, as asked;
+    - without it, because DECISIONS_CONTRACT D17 has no ruling on taxonomy
+      breaking a tie.
+  - It reports confirm / contradict / choose / new / no-evidence outcomes by
+    stratum.
+  - It writes every proposed change with both sides' evidence. Nothing is
+    applied.
+- **`summarise_trilliant_identity_evidence.R`: every breakdown the appendix
+  quotes, from committed code.** It writes one aggregate table,
+  `artifacts/trilliant_identity_evidence_<sha8>.csv`, covering:
+  - likelihood ratios for graduation year;
+  - which way a discordant graduation year points;
+  - absent incumbents by AMCB status;
+  - where each contradiction came from;
+  - what the accepted recoveries are made of;
+  - the full × identity_only crosstab.
+
+  These were first computed in throwaway scripts.
+- **`make_trilliant_identity_figures.R`: three figures**, drawn only from
+  tracked aggregates:
+  - field coverage;
+  - outcomes by stratum;
+  - graduation year against certification year by link tier.
+
+  They are README figures 16–18.
+- **`tests/test_trilliant_identity.R`** (22 checks, in CI). It checks that:
+  - taxonomy cannot break a tie in the identity-only variant;
+  - a changed surname, or an NPI another certificant holds, is never proposed;
+  - an emptied pool is reported as emptied;
+  - a name-rule conflict is never credited to the directory.
+
+### Measured (2026-08-10 freeze `dbcc76f4`, not the current `1a7bd6a8`)
+
+- **High-confidence links (14,569):**
+  - 96.9% "confirmed" with profession scored, which is largely circular: the
+    tier was selected on the same NPPES taxonomy.
+  - **49.2% confirmed on graduation year alone,** the independent test. Where
+    a graduation year exists (54.0%), it is within one year of AMCB
+    certification for 89.7%.
+- **Nursing-tier links:**
+  - 47.6% of those with a known graduation year are more than ten years off.
+  - 205 of them graduated more than 20 years *after* the certificant certified.
+  - These are the directory's clearest false-link detections.
+- **Tied, contested or held-out certificants (3,303):**
+  - 945 get a unique best candidate with profession scored, and 366 without it.
+  - 329 are accepted either way.
+  - 616 are accepted only with profession, so they need a D17 ruling.
+  - 37 are accepted only without it.
+- **No-candidate certificants (2,108):**
+  - 244 ACCEPT and 104 REVIEW.
+  - Of the 244 accepted, 147 are NPIs enumerated after the freeze's 2025 panel
+    (94) or midwives filed under a non-midwifery taxonomy (61); 8 are both.
+  - **The other 97 are older NPIs the freeze's name panel should have held.**
+    Why the matcher missed them is not yet known.
+- **Two corrections made after looking at the first run, both recorded:**
+  - Fused or one-edit given names (ROSEANNE / Rose Anne, KATHRYN / KATHRIN)
+    had been counted as contradictions.
+  - Class-3 given-name conflicts were the matcher's own first-initial rule,
+    not the directory's evidence:
+    - in the first run, 578, each on the name in the freeze's NPPES record;
+    - in the final run, 545, of which 532 are on the NPI's current NPPES name.
+
+    Only the other 13 are credited to the directory.
+- **A pre-specified weight found wrong, left as it is.** A graduation year two
+  or three years off scores +1.5 but measures as evidence *against* a link
+  (likelihood ratio 0.30).
+- **School is the CMS medical-school field.** It names an institution for 7.6%
+  of linked midwives, so it is not identity evidence.
+
+### Fixed before release
+
+- **duckplyr reorders ordinary data frames.** Attaching duckplyr routes dplyr
+  joins on plain tibbles through DuckDB, which does not keep row order.
+  - The first runs attached profession by position after a join, so 22 of
+    655,646 candidates carried another row's profession.
+  - Two runs on identical inputs disagreed by one certificant in five cells;
+    that is how it was found.
+  - Both new scripts now call `duckplyr::methods_restore()`, and the experiment
+    fails closed if a row's profession is not its own.
+  - Two consecutive runs are now byte-identical.
+  - `analyze_trilliant_activity_flag.R`, `build_trilliant_work_sites.R` and
+    `enrich_trilliant_demographics.R` attach duckplyr the same way and have
+    not yet been checked.
+
 ## [Unreleased] — 2026-09-13 — 3-Tier Hospital Linkage Architecture & Empirical Validation Framework
 
 Added 3-tier hospital linkage architecture and empirical validation framework in R referencing [github.com/mysterynpi](https://github.com/mysterynpi).

@@ -609,6 +609,24 @@ emptied pools separately. (B) Apply only as validation of accepted matches,
 never to separate ties. (C) Report as a sensitivity analysis. (D) Do not use it;
 record that the axis exists and was declined.
 
+**Evidence added 2026-09-14 (not a ruling).** The Trilliant identity experiment
+([`TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md`](TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md))
+measured a second temporal axis that is closer to identity than first-seen
+year: the directory's CMS graduation year against the AMCB certification year.
+For primary-tier links it is within a year 89.6% of the time; for other
+candidates, 9.5% (likelihood ratio 9.4). On the 2026-08-10 freeze, among
+3,303 quarantined certificants:
+
+- **Graduation year and name alone** (taxonomy barred) separate 366.
+- **With profession scored,** 945 are separated; 616 of those need profession
+  points, so they are exactly this ruling's question.
+- **Emptied pools.** Every candidate is contradicted for 908 (847 on directory
+  evidence, 61 on name rules alone), so both halves of "separations minus
+  emptied pools" are now measured for this axis.
+
+Source: `artifacts/trilliant_identity_evidence_dbcc76f4.csv`, sections A and F,
+and `artifacts/trilliant_identity_outcomes_dbcc76f4.csv`. Nothing was applied.
+
 **RULING: none.**
 
 ---

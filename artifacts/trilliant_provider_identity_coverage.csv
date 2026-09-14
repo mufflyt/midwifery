@@ -1,0 +1,33 @@
+population,field,n,n_present,pct_present,trilliant_snapshot
+all individual NPIs,provider_first_name,7518635,7518635,100,2026-06-25
+all individual NPIs,provider_middle_name,7518635,4309913,57.32,2026-06-25
+all individual NPIs,provider_last_name,7518635,7518635,100,2026-06-25
+all individual NPIs,provider_credential,7518635,4821191,64.12,2026-06-25
+all individual NPIs,provider_primary_specialty_code,7518635,7448821,99.07,2026-06-25
+all individual NPIs,sex_code,7518635,7476826,99.44,2026-06-25
+all individual NPIs,provider_medical_school_name,7518635,1947987,25.91,2026-06-25
+all individual NPIs,school_clean,7518635,693960,9.23,2026-06-25
+all individual NPIs,provider_medical_school_graduation_year,7518635,1946539,25.89,2026-06-25
+all individual NPIs,provider_affiliated_practice_1_state,7518635,2973393,39.55,2026-06-25
+all individual NPIs,primary_organization_name,7518635,2785996,37.05,2026-06-25
+all individual NPIs,provider_affiliated_practice_1_name,7518635,2251424,29.94,2026-06-25
+all individual NPIs,panel_median_age,7518635,3137876,41.73,2026-06-25
+midwifery specialty or credential,provider_first_name,25540,25540,100,2026-06-25
+midwifery specialty or credential,provider_middle_name,25540,18299,71.65,2026-06-25
+midwifery specialty or credential,provider_last_name,25540,25540,100,2026-06-25
+midwifery specialty or credential,provider_credential,25540,22972,89.95,2026-06-25
+midwifery specialty or credential,provider_primary_specialty_code,25540,25482,99.77,2026-06-25
+midwifery specialty or credential,sex_code,25540,25507,99.87,2026-06-25
+midwifery specialty or credential,provider_medical_school_name,25540,10459,40.95,2026-06-25
+midwifery specialty or credential,school_clean,25540,1470,5.76,2026-06-25
+midwifery specialty or credential,provider_medical_school_graduation_year,25540,10453,40.93,2026-06-25
+midwifery specialty or credential,provider_affiliated_practice_1_state,25540,15125,59.22,2026-06-25
+midwifery specialty or credential,primary_organization_name,25540,13985,54.76,2026-06-25
+midwifery specialty or credential,provider_affiliated_practice_1_name,25540,12435,48.69,2026-06-25
+midwifery specialty or credential,panel_median_age,25540,17385,68.07,2026-06-25
+all individual NPIs,provider_medical_school_name: absent,7518635,5570648,74.09,2026-06-25
+all individual NPIs,provider_medical_school_name: named institution,7518635,693960,9.23,2026-06-25
+all individual NPIs,provider_medical_school_name: placeholder 'Other',7518635,1254027,16.68,2026-06-25
+midwifery specialty or credential,provider_medical_school_name: absent,25540,15081,59.05,2026-06-25
+midwifery specialty or credential,provider_medical_school_name: named institution,25540,1470,5.76,2026-06-25
+midwifery specialty or credential,provider_medical_school_name: placeholder 'Other',25540,8989,35.2,2026-06-25

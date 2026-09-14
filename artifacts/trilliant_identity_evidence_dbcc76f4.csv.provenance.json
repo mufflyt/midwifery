@@ -1,0 +1,20 @@
+{
+  "artifact": "trilliant_identity_evidence_dbcc76f4.csv",
+  "written_utc": "2026-09-14 23:48:38 UTC",
+  "inputs": [],
+  "code_sha256": "afcb407bbceb13c1d67d7e6c3214a21990327476afb1de5c653ea50633d4febd",
+  "code": [
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "summarise_trilliant_identity_evidence.R",
+      "sha256": "5d0cb12bb489422e03d43ea7f9d7b57cb1abd90765aac3fe8b634f38182db71e"
+    }
+  ]
+}
