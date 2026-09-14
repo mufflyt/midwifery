@@ -2,6 +2,7 @@
 *.html
 cj.txt
 *.parquet
+audit_legacy_hospital_linkage_*/
 
 # Test / Python tooling artifacts
 __pycache__/

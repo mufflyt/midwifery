@@ -194,9 +194,13 @@ delivery volume are not. Rural retention is already the subject of the
 persistence manuscript. Source:
 `artifacts/trilliant_research_question_feasibility.csv`.*
 
-### 14. The 11,093-row roster is not a cohort
+### 14. 3-Tier Hospital Linkage Architecture & Empirical Validation Framework
+![3-Tier Hospital Linkage Architecture & Empirical Validation Framework Diagram](docs/figures/deterministic_ccn_linkage_flowchart.jpg)
+*Figure 14: Programmatically generated in pure R using `ggplot2` and `ggsave()` (300 DPI JPEG), referencing [github.com/mysterynpi](https://github.com/mysterynpi). Tier 1 connects individual midwife NPIs directly to CMS DAC facility CCNs (Primary Analysis: high specificity). Tier 2 evaluates geographic candidate hospital co-location (Sensitivity Analysis: spatial candidate pool). Direct NPI equality serves as a structural negative control confirming Type 1 Individual vs Type 2 Organization NPI separation. Evaluated empirically against the high-specificity reference standard. Full write-up in [docs/TECHNICAL_APPENDIX_HOSPITAL_LINKAGE.md](docs/TECHNICAL_APPENDIX_HOSPITAL_LINKAGE.md).*
+
+### 15. The 11,093-row roster is not a cohort
 ![Why the tracked roster has 11,093 of the 11,920](docs/figures/trilliant_cohort_reconciliation.png)
-*Figure 14: Every ACTIVE, primary-linked certificant of the 2026-08-10 freeze
+*Figure 15: Every ACTIVE, primary-linked certificant of the 2026-08-10 freeze
 who is absent from the tracked roster, by practice state. Each has a named
 reason; none is unexplained. The roster's 40 states were the fabricated board
 "scrape" list, so board coverage must never restrict a CMS analysis. The

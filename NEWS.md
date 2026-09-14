@@ -20,6 +20,25 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-09-13 — 3-Tier Hospital Linkage Architecture & Empirical Validation Framework
+
+Added 3-tier hospital linkage architecture and empirical validation framework in R referencing [github.com/mysterynpi](https://github.com/mysterynpi).
+Technical Appendix: [docs/TECHNICAL_APPENDIX_HOSPITAL_LINKAGE.md](docs/TECHNICAL_APPENDIX_HOSPITAL_LINKAGE.md).
+
+### Added
+
+- **3-Tier Hospital Linkage Engine.** Links certified midwives to hospital CMS Certification Numbers (CCNs) via a 3-tier hierarchy:
+  - *Tier 1 (Primary Analysis)*: CMS Doctors & Clinicians (DAC) clinician-facility affiliations (`Facility_Affiliation_2026-06.csv`). High specificity.
+  - *Tier 2 (Sensitivity Analysis)*: Municipal co-location candidate pairing (`ob_hospitals_geocoded.csv`). High coverage spatial candidate pool.
+  - *Negative Control*: Structural identity check between Type 1 Individual CNM NPIs and Type 2 Hospital Organization NPIs (0 matches confirmed).
+- **Decoupled Data Architecture.** Decouples clinician-hospital relationship definition from hospital price transparency (HPT) availability. HPT availability is represented as a secondary attribute (`has_hpt_crosswalk = TRUE/FALSE`).
+- **Empirical Validation Metrics.** Evaluated Tier 2 geographic candidate performance against Tier 1 CMS-observed reference standard:
+  - Geographic Candidate Recall / Sensitivity: **50.59%** (903 of 1,785 affiliations recovered).
+  - CMS-Observed Candidate Fraction: **32.39%** (903 confirmed pairs / 2,788 candidate pairs).
+  - Cross-City Affiliations: **20.56%** (367 of 1,785 affiliations occur in hospitals outside the practice city).
+  - Single-Hospital Town Recall: **59.11%** (46.72% of Tier 1 affiliations occur in single-hospital municipalities).
+- **Historical Audit Snapshot.** Preserved historical 11,093 40-state audit snapshot files in `audit_legacy_hospital_linkage_11093_20260913/` with `manifest.json`.
+
 ---
 
 ## [Unreleased] — 2026-09-13 — Trilliant as a backup source for sex, school and age, and a patient-panel mix
