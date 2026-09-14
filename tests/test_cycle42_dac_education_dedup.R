@@ -58,11 +58,15 @@ build_dacx <- function(raw) {
     assert_unique_keys("npi", label = "DAC CNM education (num_org_mem/n_locations)", dedupe = TRUE)
 }
 build_dac_sch <- function(raw) {
+  # The school is cleaned from med_sch_raw at read time (strip_med_suffix());
+  # the replica uses identity for the clean so this test stays about the
+  # duplicate-key guard, not the cleaning rule.
   raw %>%
     mutate(npi = as.character(NPI)) %>%
-    select(npi, med_sch_clean) %>%
+    select(npi, med_sch_raw) %>%
     assert_unique_keys("npi", label = "DAC CNM education (medical school)", dedupe = TRUE) %>%
-    transmute(npi, dac_school = ifelse(!is.na(med_sch_clean) & med_sch_clean != "OTHER",
+    mutate(med_sch_clean = med_sch_raw) %>%
+    transmute(npi, dac_school = ifelse(!is.na(med_sch_clean) & toupper(med_sch_clean) != "OTHER",
                                        med_sch_clean, NA_character_))
 }
 
@@ -72,7 +76,7 @@ cat("\n-- BVA --\n")
 # through both builders unchanged.
 {
   raw <- tibble(NPI = "1111111111", num_org_mem = 2L, n_locations = 2L,
-               accepts_assignment = TRUE, med_sch_clean = "HARVARD")
+               accepts_assignment = TRUE, med_sch_raw = "HARVARD")
   chk(nrow(build_dacx(raw)) == 1L && nrow(build_dac_sch(raw)) == 1L,
       "T42-1 a single enrollment row for one NPI passes through both builders unchanged")
 }
@@ -82,7 +86,7 @@ cat("\n-- BVA --\n")
 {
   raw0 <- tibble(NPI = character(0), num_org_mem = integer(0),
                 n_locations = integer(0), accepts_assignment = logical(0),
-                med_sch_clean = character(0))
+                med_sch_raw = character(0))
   chk(nrow(build_dacx(raw0)) == 0L && nrow(build_dac_sch(raw0)) == 0L,
       "T42-2 an empty DAC extract passes through as 0 rows for both builders")
 }
@@ -92,7 +96,7 @@ cat("\n-- BVA --\n")
 {
   raw_dup <- tibble(NPI = c("1111111111", "1111111111"),
                     num_org_mem = c(2L, 2L), n_locations = c(2L, 2L),
-                    accepts_assignment = c(TRUE, TRUE), med_sch_clean = c("HARVARD", "HARVARD"))
+                    accepts_assignment = c(TRUE, TRUE), med_sch_raw = c("HARVARD", "HARVARD"))
   chk(nrow(build_dacx(raw_dup)) == 1L && nrow(build_dac_sch(raw_dup)) == 1L,
       "T42-3 two fully identical enrollment rows collapse to 1 for both builders")
 }
@@ -103,7 +107,7 @@ cat("\n-- BVA --\n")
 {
   raw_many <- tibble(NPI = rep("1111111111", 5), num_org_mem = rep(5L, 5),
                      n_locations = rep(5L, 5), accepts_assignment = rep(TRUE, 5),
-                     med_sch_clean = rep("HARVARD", 5))
+                     med_sch_raw = rep("HARVARD", 5))
   chk(nrow(build_dacx(raw_many)) == 1L,
       sprintf("T42-4 five identical enrollment rows for one NPI still collapse to exactly 1 (got %d)",
               nrow(build_dacx(raw_many))))
@@ -128,14 +132,14 @@ cat("\n-- SEMANTIC --\n")
 
 # T42-6. THE SUBTLETY THIS CYCLE FOUND. Two enrollment rows that genuinely
 # disagree on num_org_mem (a real, expected difference) but agree on
-# med_sch_clean must NOT cause the medical-school extraction to error --
+# med_sch_raw must NOT cause the medical-school extraction to error --
 # select()-ing to just the relevant columns before the uniqueness check
 # means an unrelated column's legitimate variation cannot block an
 # extraction that never looks at it.
 {
   raw <- tibble(NPI = c("1111111111", "1111111111"),
                num_org_mem = c(2L, 5L), n_locations = c(2L, 5L),
-               med_sch_clean = c("HARVARD", "HARVARD"))
+               med_sch_raw = c("HARVARD", "HARVARD"))
   out <- build_dac_sch(raw)
   chk(nrow(out) == 1L && out$dac_school == "HARVARD",
       sprintf("T42-6 a legitimate num_org_mem difference does not block the unrelated school extraction (got nrow=%d, school=%s)",
@@ -149,7 +153,7 @@ cat("\n-- SEMANTIC --\n")
 {
   raw <- tibble(NPI = c("1111111111", "1111111111"),
                num_org_mem = c(2L, 5L), n_locations = c(2L, 5L),
-               med_sch_clean = c("HARVARD", "HARVARD"))
+               med_sch_raw = c("HARVARD", "HARVARD"))
   err <- tryCatch({
     raw %>% mutate(npi = as.character(NPI)) %>%
       assert_unique_keys("npi", label = "test", dedupe = TRUE)
@@ -175,16 +179,16 @@ cat("\n-- ADVERSARIAL --\n")
               if (is.na(err)) "no error" else err))
 }
 
-# T42-9. NA vs. a real value for med_sch_clean across two enrollment rows is
+# T42-9. NA vs. a real value for med_sch_raw across two enrollment rows is
 # still a genuine disagreement (one enrollment record has education data,
 # the other does not) -- not treated as "compatible" just because one side
 # is missing rather than actively contradicting.
 {
   raw <- tibble(NPI = c("1111111111", "1111111111"),
-               med_sch_clean = c("HARVARD", NA_character_))
+               med_sch_raw = c("HARVARD", NA_character_))
   err <- tryCatch({ build_dac_sch(raw); NA_character_ },
                   error = function(e) conditionMessage(e))
-  chk(!is.na(err) && grepl("med_sch_clean", err),
+  chk(!is.na(err) && grepl("med_sch_raw", err),
       sprintf("T42-9 NA vs. a real school value for one NPI is treated as a genuine disagreement, not silently resolved toward the non-missing value (got: %s)",
               if (is.na(err)) "no error" else err))
 }
@@ -197,7 +201,7 @@ cat("\n-- ADVERSARIAL --\n")
   raw_conflict <- tibble(NPI = c("1111111111", "1111111111"),
                          num_org_mem = c(2L, 5L), n_locations = c(2L, 5L),
                          accepts_assignment = c(TRUE, TRUE))
-  raw_clean_school <- tibble(NPI = "2222222222", med_sch_clean = "YALE")
+  raw_clean_school <- tibble(NPI = "2222222222", med_sch_raw = "YALE")
   err1 <- tryCatch({ build_dacx(raw_conflict); NA_character_ },
                    error = function(e) conditionMessage(e))
   school_result <- build_dac_sch(raw_clean_school)

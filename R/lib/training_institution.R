@@ -58,7 +58,7 @@ strip_med_suffix <- function(x) {
       !"strip_med_suffix" %in% getNamespaceExports("mysterynpi"))
     stop("strip_med_suffix() now lives in mysterynpi, and the installed copy ",
          "does not have it. Install the version CI pins: ",
-         "remotes::install_github(\"mufflyt/mysterynpi@PIN_SHA\")", call. = FALSE)
+         "remotes::install_github(\"mufflyt/mysterynpi@ac42561b46d400a7e62649ee0161313628d914e8\")", call. = FALSE)
   mysterynpi::strip_med_suffix(x)
 }
 
@@ -71,16 +71,18 @@ strip_med_suffix <- function(x) {
 training_source_dac <- function(path = "artifacts/dac_cnm_education.csv") {
   if (!file.exists(path)) return(NULL)
   read_csv(path, show_col_types = FALSE, progress = FALSE) %>%
-    mutate(npi = as.character(NPI)) %>%
+    # Cleaned here from the raw string, by the current rule, rather than read
+    # from med_sch_clean, which keeps the rule of the extract's last run.
+    mutate(npi = as.character(NPI), med_sch_clean = strip_med_suffix(med_sch_raw)) %>%
     # Which duplicate row wins is a scientific choice, so state it: prefer a
     # row that names a real school over one DAC could not code, then sort by
     # the school string so the survivor does not depend on file order.
-    arrange(npi, is.na(med_sch_clean) | med_sch_clean == "OTHER", med_sch_clean) %>%
+    arrange(npi, is.na(med_sch_clean) | toupper(med_sch_clean) == "OTHER", med_sch_clean) %>%
     distinct(npi, .keep_all = TRUE) %>%
     # "OTHER" is DAC's placeholder for a school it could not code -- 4,171
     # values. It is not an institution and is dropped, not counted.
     transmute(npi, dac_school = ifelse(!is.na(med_sch_clean) &
-                                         med_sch_clean != "OTHER",
+                                         toupper(med_sch_clean) != "OTHER",
                                        med_sch_clean, NA_character_))
 }
 
