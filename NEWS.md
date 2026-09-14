@@ -22,6 +22,25 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-09-13 — The science laws run on every push to main
+
+### Fixed
+
+- **`main` was red after every docs merge, although nothing was broken.** The
+  science-law job still had a path filter for push events. It skipped the laws
+  when a merge touched no registered law file, and reported `executed=false`.
+  The required `Scientific gate` then failed, correctly, because the laws had
+  not run. #197 through #201 were all docs or new scripts, so all five left
+  `main` red, even though each pull request had run the laws and passed.
+  - The filter is removed for every event, so the laws now run on each merge
+    as they already did on each pull request. This costs about six and a half
+    minutes per merge.
+  - `tests/test_aggregate_gate.R` now fails if the relevance step can write
+    `run=false` on any event. It was checked against the old workflow and
+    fails there.
+  - The job is renamed from "Science-law coverage (path-filtered)" to
+    "Science-law coverage". Only `Scientific gate` is a required check.
+
 ## [Unreleased] — 2026-09-13 — Where midwives work: the Trilliant claims directory, three cohort definitions, and a shared data vault
 
 PRs #196–#201. Nothing here changes cohort membership or any previously

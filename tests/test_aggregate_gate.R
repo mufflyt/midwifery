@@ -164,25 +164,34 @@ if (!length(gate_at)) {
 }
 
 # --- and the laws are not filtered out from under it ---------------------------
-# THE GATE AND THE FILTER CANNOT BOTH BE RIGHT. `Scientific gate` refuses a pull
-# request whose coverage job reported executed=false, and the path filter
-# produces exactly that on any change it judges irrelevant. So the filter is
-# switched off for pull_request, and this asserts it stays off. Reintroducing
-# the fast path there would not fail visibly -- it would turn every
-# docs-only pull request red and invite someone to make the gate non-required
-# again, which is the bypass this whole mechanism exists to close.
-ci_section("the science laws are unconditional on pull_request")
-# Both tokens on one line, rather than a shape. The first version of this
-# pinned the exact spacing of `${{ github.event_name }}" = "pull_request"` and
-# failed on the line it was written to match.
-rel <- grep("github[.]event_name", ln, value = TRUE)
-rel <- grep("pull_request", rel, value = TRUE)
-if (!length(rel)) {
-  ci_fail("the relevance step has no unconditional pull_request branch. Coverage can
-       report executed=false on a pull request, which makes the required
-       Scientific gate red on any change the filter judges irrelevant.")
+# THE GATE AND THE FILTER CANNOT BOTH BE RIGHT. `Scientific gate` refuses a run
+# whose coverage job reported executed=false, and a path filter produces
+# exactly that on any change it judges irrelevant. The filter was first switched
+# off for pull_request only; on push it went on turning main red after every
+# docs merge (#197-#201). So it is gone for every event, and this asserts that
+# the relevance step can only ever say run=true. Reintroducing a fast path on
+# any event would not fail visibly on the pull request that did it -- it would
+# turn main red later and invite someone to make the gate non-required, which
+# is the bypass this whole mechanism exists to close.
+ci_section("the science laws are unconditional on every event")
+job_at <- grep("^  science-law-coverage:[[:space:]]*$", ln)
+next_job <- grep("^  [A-Za-z0-9_-]+:[[:space:]]*$", ln)
+if (!length(job_at)) {
+  ci_fail("the science-law-coverage job is not in ci.yml at all.")
 } else {
-  ci_ok("the relevance step short-circuits to run=true on pull_request")
+  job_end <- c(next_job[next_job > job_at[1]], length(ln) + 1L)[1] - 1L
+  job <- ln[job_at[1]:job_end]
+  says_true <- any(grepl("run=true", job, fixed = TRUE))
+  says_false <- grep("run=false", job, fixed = TRUE, value = TRUE)
+  says_false <- says_false[!grepl("^[[:space:]]*#", says_false)]
+  if (!says_true) {
+    ci_fail("the relevance step never writes run=true, so the laws never run.")
+  } else if (length(says_false)) {
+    ci_fail("the relevance step can write run=false:\n       %s\n       On any event that reaches it, coverage reports executed=false and the\n       required Scientific gate goes red on a change nobody broke.",
+            trimws(says_false[1]))
+  } else {
+    ci_ok("the relevance step can only say run=true, on pull_request and push alike")
+  }
 }
 
 ci_finish()
