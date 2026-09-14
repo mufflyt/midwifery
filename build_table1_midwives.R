@@ -274,6 +274,22 @@ if (!is.null(trl_demo)) {
   cat(sprintf("Sex: Trilliant directory filled %d blank NPPES code(s).\n",
               sum(coh$sex_source %in% "Trilliant provider directory")))
 }
+
+# --- Patient panel: the median age of each midwife's patients -----------------
+# From Trilliant's claims-derived panel (enrich_trilliant_demographics.R), which
+# exists only for providers the directory flags active and only where its age
+# bands sum to one. No other source describes a midwife's patients, so this is
+# the only one. One number per midwife -- the median age of HER patients -- so
+# the block describes midwives by the patients they see, not the patients.
+PANEL_CATEGORY <- "Median age of the midwife's patients (Trilliant claims panel)"
+if (!is.null(trl_demo)) {
+  coh <- coh %>%
+    left_join(select(trl_demo, certification_number, trl_panel_median_age),
+              by = "certification_number", relationship = "many-to-one") %>%
+    mutate(panel_median_age = suppressWarnings(as.numeric(trl_panel_median_age)),
+           panel_age_band = band_panel_median_age(panel_median_age)) %>%
+    select(-trl_panel_median_age)
+}
 coh <- coh %>%
   mutate(
     # NPPES calls this "Provider Sex Code" (2025 layout) and "Provider Gender
@@ -789,6 +805,16 @@ t1 <- bind_rows(
   if ("cert_year_band" %in% names(coh))
     blk(coh, "cert_year_band", "Years Since AMCB Initial Certification",
         lvls = c("<5 years", "5-9 years", "10-19 years", "20-29 years", ">=30 years")),
+  # The summary row has no count, so the block still sums to the cohort: the
+  # bands plus the no-panel row are the partition, and the median (IQR) is over
+  # the midwives in the bands.
+  if ("panel_age_band" %in% names(coh))
+    bind_rows(
+      tibble(characteristic = sprintf("Median (IQR), years: %s",
+                                      table1_median_iqr(coh$panel_median_age[!is.na(coh$panel_age_band)])),
+             n = NA_integer_, percent = NA_real_, category = PANEL_CATEGORY),
+      blk(coh, "panel_age_band", PANEL_CATEGORY, lvls = PANEL_AGE_LEVELS,
+          unknown_label = "No claims panel in the Trilliant directory")),
   # District percentages are computed on midwives who HAVE a district. Military
   # and territory addresses are excluded by decision (no District X), so they
   # are reported on their own line rather than inside "Unknown", which would

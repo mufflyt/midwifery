@@ -79,17 +79,42 @@ strip_med_suffix <- function(x) {
   # empty-guard handed back the original -- the one name in 72 that came out
   # uncleaned. With it, only "COLLEGE OF MEDICINE" is stripped and the
   # institution survives.
+  # "UN OF" is CMS's abbreviation in "STATE UN OF NY".
+  inst <- regex("\\b(UNIVERSITY|UNIV|UN OF|COLLEGE|INSTITUTE)\\b", ignore_case = TRUE)
   y <- x
-  for (p in pats)
-    y <- str_replace(y, regex(paste0("^(.+?)\\s*[,-]?\\s*", p, "\\b.*$"),
-                              ignore_case = TRUE), "\\1")
-  # Trailing connective left behind by a strip ("... AT THE", "... SYSTEM,").
-  y <- str_replace(y, regex("[ ,\\-]+(AT|OF|THE|AND|SYSTEM|HSC)?[ ,\\-]*$", ignore_case = TRUE), "")
-  y <- str_squish(y)
-  # A pattern that consumed the whole string means the medical phrase WAS the
-  # institution's name -- Medical University of South Carolina, Ohio Medical
-  # University -- so the original is kept rather than returning nothing.
-  ifelse(is.na(x), NA_character_, ifelse(nzchar(y), y, x))
+  # A NAMED SCHOOL OF A UNIVERSITY. When the medical unit is followed by "at",
+  # "of" or a comma and then a university, the university is the institution and
+  # the words before the unit are the school's own name: "BRODY SCHOOL OF
+  # MEDICINE AT EAST CAROLINA UNIVERSITY", "PERELMAN SCHOOL OF MED AT THE
+  # UNIVERSITY OF PENNSYLVANIA", "JEFFERSON MEDICAL COLLEGE OF THOMAS JEFFERSON
+  # UNIVERSITY". Keeping the head, as the strip below does, reported BRODY,
+  # PERELMAN and JEFFERSON as if they were universities.
+  for (p in pats) {
+    tail <- str_match(y, regex(paste0("^.+?\\s*[,-]?\\s*", p,
+                                      "(?:\\s*,\\s*|\\s+(?:AT|OF)\\s+(?:THE\\s+)?)(.+)$"),
+                               ignore_case = TRUE))[, 2]
+    use <- !is.na(tail) & str_detect(tail, inst)
+    y[use] <- tail[use]
+  }
+  # THE UNIT ITSELF. Each strip is accepted only if what is left still names an
+  # institution. A strip that leaves no institution word means the medical
+  # phrase WAS the institution's name, so that step is refused and the name
+  # before it kept: OHIO MEDICAL UNIVERSITY, BAYLOR COLLEGE OF MEDICINE, ALBANY
+  # MEDICAL COLLEGE and PHILADELPHIA COLLEGE OF OSTEOPATHIC MEDICINE are
+  # institutions, not "OHIO", "BAYLOR", "ALBANY" and "PHILADELPHIA" -- which is
+  # what the previous version returned, despite a comment saying it did not.
+  # Refusing one step does not refuse the rest: MEHARRY MEDICAL COLLEGE SCHOOL
+  # OF MEDICINE loses "SCHOOL OF MEDICINE" and keeps "MEHARRY MEDICAL COLLEGE".
+  trim <- function(v)
+    # Trailing connective left behind by a strip ("... AT THE", "... SYSTEM,").
+    str_squish(str_replace(v, regex("[ ,\\-]+(AT|OF|THE|AND|SYSTEM|HSC)?[ ,\\-]*$", ignore_case = TRUE), ""))
+  for (p in pats) {
+    cand <- trim(str_replace(y, regex(paste0("^(.+?)\\s*[,-]?\\s*", p, "\\b.*$"),
+                                      ignore_case = TRUE), "\\1"))
+    ok <- !is.na(cand) & cand != y & nzchar(cand) & str_detect(cand, inst)
+    y[ok] <- cand[ok]
+  }
+  ifelse(is.na(x), NA_character_, y)
 }
 
 #' Read the institution sources, keyed for joining
