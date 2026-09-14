@@ -1,0 +1,21 @@
+population,grad_year_band,n,pct,frozen_sha256,trilliant_snapshot
+"incumbent, tier primary_midwifery",beyond_10,201,1.38,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+"incumbent, tier primary_midwifery",unknown,6726,46.04,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+"incumbent, tier primary_midwifery",within_1,7064,48.35,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+"incumbent, tier primary_midwifery",within_10,348,2.38,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+"incumbent, tier primary_midwifery",within_3,270,1.85,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+"incumbent, tier sensitivity_fuzzy",beyond_10,64,20,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+"incumbent, tier sensitivity_fuzzy",unknown,183,57.19,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+"incumbent, tier sensitivity_fuzzy",within_1,37,11.56,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+"incumbent, tier sensitivity_fuzzy",within_10,29,9.06,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+"incumbent, tier sensitivity_fuzzy",within_3,7,2.19,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+"incumbent, tier sensitivity_nursing",beyond_10,351,18.58,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+"incumbent, tier sensitivity_nursing",unknown,1151,60.93,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+"incumbent, tier sensitivity_nursing",within_1,200,10.59,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+"incumbent, tier sensitivity_nursing",within_10,151,7.99,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+"incumbent, tier sensitivity_nursing",within_3,36,1.91,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+other candidates of certificants who have an incumbent,beyond_10,79757,21.66,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+other candidates of certificants who have an incumbent,unknown,208646,56.66,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+other candidates of certificants who have an incumbent,within_1,15243,4.14,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+other candidates of certificants who have an incumbent,within_10,46685,12.68,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+other candidates of certificants who have an incumbent,within_3,17939,4.87,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25

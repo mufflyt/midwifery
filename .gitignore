@@ -634,3 +634,13 @@ artifacts/midwife_distinct_work_sites.csv*
 # enrich_trilliant_demographics.R: sex, school, age and patient panel per
 # certificant (person-level). The checks, trilliant_demographics_validation_*.csv, are tracked.
 artifacts/trilliant_demographics.csv*
+# build_trilliant_provider_identity_index.R: the index itself is *.parquet
+# (ignored above); its manifest names licensed source files. The coverage
+# table, trilliant_provider_identity_coverage.csv, is tracked.
+artifacts/trilliant_provider_identity_index.manifest.json
+# experiment_trilliant_identity_linkage.R: one row per certificant, and every
+# proposed change with the names behind it (person-level). The outcome,
+# coverage and graduation-year tables (trilliant_identity_{outcomes,
+# field_coverage,grad_year_agreement}_*.csv) are tracked.
+artifacts/trilliant_identity_decisions_*.csv*
+artifacts/trilliant_identity_proposals_*.csv*

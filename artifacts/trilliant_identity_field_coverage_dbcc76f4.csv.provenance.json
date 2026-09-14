@@ -1,0 +1,44 @@
+{
+  "artifact": "trilliant_identity_field_coverage_dbcc76f4.csv",
+  "written_utc": "2026-09-14 16:24:41 UTC",
+  "inputs": [],
+  "code_sha256": "8fbde1fa81dd03e95e439d19773866dcd911c254eed087f48d067fafb218f414",
+  "code": [
+    {
+      "path": "credential_compatibility.R",
+      "sha256": "f1594711aa60882fee035ec0691e6705a88246a0f3a120351b7f902d2d7d2f4c"
+    },
+    {
+      "path": "experiment_trilliant_identity_linkage.R",
+      "sha256": "270dfb851b0922d26f9b98a360cc85fb089bf4c6d84d3e27aaeffd757733ee5c"
+    },
+    {
+      "path": "R/amcb_name_keys.R",
+      "sha256": "ec9130e232d880a58cb096218244c464234dde1c9860fb4c98190f44e86142ba"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/cohort_definitions.R",
+      "sha256": "faa0edf2049f09d42edb3681956f29e39cb0c7dc6cdbe58d7ee5812714bffc49"
+    },
+    {
+      "path": "R/lib/common_helpers.R",
+      "sha256": "55c6b894798e2740f538b1262391e58e8fe9bea84f072b80708e59aea3197067"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/lib/trilliant_identity.R",
+      "sha256": "58383b44ad84e6968b1424a60533904b1e4eb263ea8eda91203dc236166dd00c"
+    }
+  ]
+}

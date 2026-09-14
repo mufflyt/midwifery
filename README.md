@@ -222,6 +222,19 @@ name carries the freeze hash. Source:
 ([`analyze_trilliant_activity_flag.R`](analyze_trilliant_activity_flag.R)). Full
 write-up: [docs/TECHNICAL_APPENDIX_TRILLIANT.md](docs/TECHNICAL_APPENDIX_TRILLIANT.md).*
 
+### 16. Can Trilliant's directory resolve who is who? (experiment)
+![What Trilliant's directory says about each certificant's NPI](docs/figures/trilliant_identity_outcomes.png)
+*Figure 16: Every certificant in the 2026-08-10 freeze searched against all
+7.5 million directory NPIs by exact keys, and scored twice: with profession,
+and without it (taxonomy may not break a tie, D17). With profession, 96.9% of
+high-confidence links are "confirmed", but that is largely circular, because
+the tier was chosen on the same taxonomy. **Graduation year alone confirms
+49.2%.** It contradicts nearly half the nursing-tier links that carry one.
+Proposals only; nothing is applied, and the current freeze has yet to be run
+through it. Source: `artifacts/trilliant_identity_outcomes_dbcc76f4.csv`
+([`experiment_trilliant_identity_linkage.R`](experiment_trilliant_identity_linkage.R)).
+Full write-up: [docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md](docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md).*
+
 ### Three more you build yourself
 
 These read the frozen crosswalk, which is person-level and gitignored, so they
