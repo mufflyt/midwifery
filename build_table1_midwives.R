@@ -43,6 +43,7 @@ REF_YEAR <- 2026   # "years since" are measured to this study year, not Sys.Date
 source("R/lib/table1_bands.R")
 source("R/join_safety.R")   # assert_unique_keys(): conflict-safe dedup
 source("R/lib/artifact_provenance.R")   # write_with_provenance(): see below
+source("R/lib/training_institution.R")  # training_source_trilliant(): the school backup
 
 link_paths <- c(
   "artifacts/amcb_npi_linkage_FROZEN.csv",
@@ -250,6 +251,29 @@ if (file.exists(sx)) {
           call. = FALSE)
   coh$sex_code <- NA_character_; coh$enumeration_date <- NA_character_
 }
+# Trilliant's provider directory (enrich_trilliant_demographics.R) is a BACKUP:
+# it fills a blank NPPES code and never replaces one. Where both give F or M
+# they agreed for every midwife on the 2026-08-10 freeze
+# (artifacts/trilliant_demographics_validation_<sha8>.csv). Its
+# "UNSPECIFIED/OTHER" is not mapped, because NPPES distinguishes X from U and
+# the directory does not say which it means.
+trl_demo_file <- "artifacts/trilliant_demographics.csv"
+trl_demo <- if (file.exists(trl_demo_file))
+  read_csv(trl_demo_file, col_types = cols(.default = "c"), progress = FALSE) else NULL
+if (!is.null(trl_demo) && anyDuplicated(trl_demo$certification_number))
+  stop(trl_demo_file, " repeats a certification number; rebuild it.", call. = FALSE)
+coh$sex_source <- ifelse(is.na(coh$sex_code), NA_character_, "NPPES")
+if (!is.null(trl_demo)) {
+  coh <- coh %>%
+    left_join(select(trl_demo, certification_number, trl_sex_code),
+              by = "certification_number", relationship = "many-to-one") %>%
+    mutate(sex_source = if_else(is.na(sex_code) & !is.na(trl_sex_code),
+                                "Trilliant provider directory", sex_source),
+           sex_code = coalesce(sex_code, trl_sex_code)) %>%
+    select(-trl_sex_code)
+  cat(sprintf("Sex: Trilliant directory filled %d blank NPPES code(s).\n",
+              sum(coh$sex_source %in% "Trilliant provider directory")))
+}
 coh <- coh %>%
   mutate(
     # NPPES calls this "Provider Sex Code" (2025 layout) and "Provider Gender
@@ -322,6 +346,7 @@ if (file.exists(calib_age_file)) {
       age_provenance = case_when(
         age_source %in% c("OH_Voter_Direct_DOB", "WA_Direct_BirthYear", "Healthgrades_Direct", "FL_Voter_Direct_DOB") ~ "Direct Verified DOB (OH/WA/FL/HG)",
         age_source == "IL_Derived_IssueYear" ~ "Derived State License Issue Date",
+        age_source == "Trilliant_Estimated" ~ "Trilliant Directory Estimate",
         TRUE ~ "OLS Calibrated Imputation"
       )
     )
@@ -420,10 +445,17 @@ if (file.exists("artifacts/dac_cnm_education.csv")) {
     coh <- coh %>% left_join(.hg_sch, by = "certification_number",
                              relationship = "one-to-one")
   if (!"hg_school" %in% names(coh)) coh$hg_school <- NA_character_
+  # Trilliant's directory last: DAC's own school strings for people the current
+  # DAC file no longer holds (training_source_trilliant()).
+  .trl_sch <- training_source_trilliant(trl_demo_file)
+  coh <- if (!is.null(.trl_sch))
+    left_join(coh, .trl_sch, by = "certification_number", relationship = "many-to-one")
+  else mutate(coh, trl_school = NA_character_)
 
   coh <- coh %>%
     mutate(training_institution = dplyr::coalesce(.norm_school(dac_school),
-                                                  .norm_school(hg_school)))
+                                                  .norm_school(hg_school),
+                                                  .norm_school(trl_school)))
   # A Table 1 row per institution would run to hundreds of levels, so the block
   # names the ten most common and pools the rest. The pooled row is labelled as
   # a pool, not as a school.
@@ -747,7 +779,8 @@ t1 <- bind_rows(
   # 5,876 of 5,878 (99.97%), with 2 disagreements. A merged variable is
   # therefore identical to the NPPES variable; publishing both blocks implied a
   # second, independent measurement of the same 11,913 people.
-  blk(coh, "sex", "Sex", unknown_label = "Sex not recorded in NPPES"),
+  # Trilliant's directory fills a blank NPPES code (sex_source says which).
+  blk(coh, "sex", "Sex", unknown_label = "Sex not recorded in NPPES or the Trilliant directory"),
   if ("state_concordance" %in% names(coh))
     blk(coh, "state_concordance", "Practice vs. Mailing State Concordance"),
   if ("age_band" %in% names(coh))
@@ -779,9 +812,9 @@ t1 <- bind_rows(
 
   if ("training_institution_top" %in% names(coh))
     blk(coh, "training_institution_top",
-        "Training institution (CMS DAC + Healthgrades)",
+        "Training institution (CMS DAC + Healthgrades + Trilliant directory)",
         lvls = c(school_src, "Other named institution"),
-        unknown_label = "No school named by CMS DAC or Healthgrades"),
+        unknown_label = "No school named by CMS DAC, Healthgrades or the Trilliant directory"),
 
   if ("dac_practice_size" %in% names(coh))
     blk(coh, "dac_practice_size",

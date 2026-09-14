@@ -1,0 +1,27 @@
+field,check,n,value,note,frozen_sha256,trilliant_snapshot
+all,"cohort (ACTIVE, primary-linked)",11920,11920,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+all,in the Trilliant directory,11920,11920,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+sex,Trilliant gives F or M,11920,11907,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+sex,agrees with NPPES where both give F or M (%),11897,100,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+sex,"NPPES blank, Trilliant fills",10,10,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+school,Trilliant names a school,11920,1078,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+school,agrees with CMS DAC where both name one (%),678,100,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+school,"CMS DAC names none, Trilliant names one",11221,400,"before Healthgrades and the repository, which the consumers try first",dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+grad_year,same year as CMS DAC (%),4780,99.8536,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+age,Trilliant gives an age,11920,7638,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+age,share with the modal age + graduation year,7638,1,modal sum 2052; derived from graduation year: TRUE,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+age,"Trilliant minus measured age, mean (years)",2475,-7.8917,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+age,"Trilliant vs measured age, mean absolute error (years)",2475,8.2182,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+age,"calibration vs measured age, mean absolute error (years)",2475,5.5578,same people; the calibration is what a Trilliant age would replace,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+age,imputed ages Trilliant could fill,8057,5162,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+age,admitted as a backup (1 = yes),2475,0,trl_age_admission(): not derived AND closer to measured age than the calibration,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+panel,coherent patient panel,11920,10706,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+panel,"panel median patient age, median",10706,32,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+panel,"panel median patient age, 25th percentile",10706,30,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+panel,"panel median patient age, 75th percentile",10706,35,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+panel,"share of patients female (%), median across midwives",10706,99.6761,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+panel,"share of patients aged 0-19 (%), mean across midwives",10706,2.433,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+panel,"share of patients aged 20-44 (%), mean across midwives",10706,82.6994,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+panel,"share of patients aged 45-64 (%), mean across midwives",10706,10.857,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+panel,"share of patients aged 65-84 (%), mean across midwives",10706,3.7505,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25
+panel,"share of patients aged 85-plus (%), mean across midwives",10706,0.2601,,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,2026-06-25

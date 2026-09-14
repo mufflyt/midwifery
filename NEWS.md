@@ -20,7 +20,66 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-09-13 — 3-Tier Hospital Linkage Architecture & Empirical Validation Framework
+
+Added 3-tier hospital linkage architecture and empirical validation framework in R referencing [github.com/mysterynpi](https://github.com/mysterynpi).
+Technical Appendix: [docs/TECHNICAL_APPENDIX_HOSPITAL_LINKAGE.md](docs/TECHNICAL_APPENDIX_HOSPITAL_LINKAGE.md).
+
+### Added
+
+- **3-Tier Hospital Linkage Engine.** Links certified midwives to hospital CMS Certification Numbers (CCNs) via a 3-tier hierarchy:
+  - *Tier 1 (Primary Analysis)*: CMS Doctors & Clinicians (DAC) clinician-facility affiliations (`Facility_Affiliation_2026-06.csv`). High specificity.
+  - *Tier 2 (Sensitivity Analysis)*: Municipal co-location candidate pairing (`ob_hospitals_geocoded.csv`). High coverage spatial candidate pool.
+  - *Negative Control*: Structural identity check between Type 1 Individual CNM NPIs and Type 2 Hospital Organization NPIs (0 matches confirmed).
+- **Decoupled Data Architecture.** Decouples clinician-hospital relationship definition from hospital price transparency (HPT) availability. HPT availability is represented as a secondary attribute (`has_hpt_crosswalk = TRUE/FALSE`).
+- **Empirical Validation Metrics.** Evaluated Tier 2 geographic candidate performance against Tier 1 CMS-observed reference standard:
+  - Geographic Candidate Recall / Sensitivity: **50.59%** (903 of 1,785 affiliations recovered).
+  - CMS-Observed Candidate Fraction: **32.39%** (903 confirmed pairs / 2,788 candidate pairs).
+  - Cross-City Affiliations: **20.56%** (367 of 1,785 affiliations occur in hospitals outside the practice city).
+  - Single-Hospital Town Recall: **59.11%** (46.72% of Tier 1 affiliations occur in single-hospital municipalities).
+- **Historical Audit Snapshot.** Preserved historical 11,093 40-state audit snapshot files in `audit_legacy_hospital_linkage_11093_20260913/` with `manifest.json`.
+
 ---
+
+## [Unreleased] — 2026-09-13 — Trilliant as a backup source for sex, school and age, and a patient-panel mix
+
+Nothing published changes until Table 1 and the age calibration are rebuilt on
+a machine with all their inputs. Checks:
+`artifacts/trilliant_demographics_validation_dbcc76f4.csv`. Method:
+[docs/TECHNICAL_APPENDIX_TRILLIANT.md](docs/TECHNICAL_APPENDIX_TRILLIANT.md), section 7.
+
+### Added
+
+- **`enrich_trilliant_demographics.R`.** Pulls sex, school, graduation year,
+  estimated age and patient-panel mix from Trilliant's provider directory for
+  every primary-linked certificant, and checks each against the source it
+  would back up.
+- **Sex.** Fills a blank NPPES code in Table 1, and a new `sex_source` column
+  records which source gave it. It agreed with NPPES for all 11,897 midwives
+  where both give F or M, and fills the 10 NPPES blanks.
+- **School.** The last source in `training_attach()` and in Table 1. It agreed
+  with CMS DAC for all 678 midwives both name: it is DAC's own string, which
+  reaches 400 midwives the current DAC file does not name.
+- **Patient panel.** Median patient age, share female and age bands, for the
+  10,706 midwives the directory flags active. No other source has this. It is
+  carried for analysis and not banded into Table 1.
+- **`R/lib/trilliant_demographics.R`**, tested by
+  `tests/test_trilliant_demographics.R` (20 checks).
+
+### Not used
+
+- **Trilliant's estimated age.** It is not a measurement: age plus graduation
+  year is 2052 for every midwife who has one. Against measured ages it runs
+  7.9 years young (mean absolute error 8.2, against 5.6 for the calibration it
+  would replace). `calibrate_amcb_certification_ages.R` has a slot for it that
+  `trl_age_admission()` fills only if a future snapshot's age is independent
+  and more accurate. The decision is recorded in the calibration provenance.
+
+### Changed
+
+- **`strip_med_suffix()` moved** from `extract_dac_cnm_education.R` to
+  `R/lib/training_institution.R`, so DAC and Trilliant school names clean by
+  one rule.
 
 ## [Unreleased] — 2026-09-13 — The science laws run on every push to main
 

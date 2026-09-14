@@ -223,7 +223,13 @@ REBUILD_ORDER <- list(
                    # beside the old one instead of overwriting it.
                    "analyze_trilliant_activity_flag.R")),
   list(layer = "5-enrichment-recompute", why = "age/enrichment recomputes from cached inputs (no network)",
-       scripts = c("calibrate_amcb_certification_ages.R", "enrich_doximity_cnm_ages.R",
+       scripts = c(# Added 2026-09-13, by T5 in the pull request that introduced
+                   # it. Reads amcb_npi_linkage_FROZEN and writes the Trilliant
+                   # backup demographics that the age calibration and Table 1
+                   # read, so it runs before both. Needs the Trilliant lake on
+                   # the external volume.
+                   "enrich_trilliant_demographics.R",
+                   "calibrate_amcb_certification_ages.R", "enrich_doximity_cnm_ages.R",
                    "match_florida_voter_ages.R", "sweep_healthgrades_enrichment.R",
                    # Added 2026-08-10: the completeness gate discovered this
                    # consumer had appeared since the order was declared, and

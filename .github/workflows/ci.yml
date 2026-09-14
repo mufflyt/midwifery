@@ -493,6 +493,18 @@ jobs:
           done
           exit $rc
 
+      # The Trilliant layer's pure functions: which freeze and cohort a build may
+      # use, how work sites are counted and placed, how person-level files move
+      # between machines, and when the directory may stand in for a missing
+      # sex, school or age. The first three shipped in #196-#200 without a CI
+      # step, so they only ever ran on the machine that wrote them.
+      - name: Trilliant layer (cohort, work sites, data vault, demographics)
+        run: |
+          Rscript tests/test_cohort_definitions.R
+          Rscript tests/test_work_site_topology.R
+          Rscript tests/test_data_vault.R
+          Rscript tests/test_trilliant_demographics.R
+
       # Birth activity decides who counts as a practising midwife; license
       # resolution decides which of several licenses is the one. Both are pure.
       - name: Birth activity and license resolution

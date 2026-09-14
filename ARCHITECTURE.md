@@ -69,6 +69,7 @@ Keyed on the frozen linkage; none of it changes cohort membership. Methods in
 | `R/lib/work_site_topology.R` | Pure helpers for the above: `match_county()`, `assign_site_ids()`, `blended_practice()`, `topology_by_midwife()`. |
 | `R/lib/data_vault.R`, `publish_to_data_vault.R` | Share person-level inputs across machines by hash ([docs/DATA_VAULT.md](docs/DATA_VAULT.md)). |
 | `make_trilliant_figures.R` | README figures 12–15 from committed aggregates. |
+| `enrich_trilliant_demographics.R`, `R/lib/trilliant_demographics.R` | Trilliant as a backup for sex (after NPPES), school (after DAC, Healthgrades, repository) and age (only if `trl_age_admission()` says it beats the calibration; today it does not); carries the patient-panel mix. Checks against each primary source: `artifacts/trilliant_demographics_validation_<sha8>.csv`. |
 
 ### Linkage-improvement components (built, awaiting input data)
 

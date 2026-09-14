@@ -2,6 +2,7 @@
 *.html
 cj.txt
 *.parquet
+audit_legacy_hospital_linkage_*/
 
 # Test / Python tooling artifacts
 __pycache__/
@@ -630,3 +631,6 @@ artifacts/trilliant_cohort_reconciliation.csv*
 artifacts/trilliant_cohort_transitions.csv*
 # build_trilliant_work_sites.R: one row per midwife x physical site (person-level).
 artifacts/midwife_distinct_work_sites.csv*
+# enrich_trilliant_demographics.R: sex, school, age and patient panel per
+# certificant (person-level). The checks, trilliant_demographics_validation_*.csv, are tracked.
+artifacts/trilliant_demographics.csv*
