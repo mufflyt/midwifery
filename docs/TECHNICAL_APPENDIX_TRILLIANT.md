@@ -304,13 +304,46 @@ compared with that of the Trilliant claims site. The persistence manuscript
 assigns rurality from NPPES addresses, so this measures how often that
 assignment disagrees with where claims place the same midwife.
 
-**Results for sections 5 and 6 are pending.** They will come from
-`artifacts/midwife_work_setting_summary.csv` once
-`build_trilliant_work_sites.R` has run against the current freeze. Every
-dimension there partitions the cohort, so the published-numbers gate can check
-it. The build refuses any other freeze unless one is named on purpose with
-`ALLOW_FREEZE_SHA256`; development runs against the 2026-08-10 freeze were
-never committed.
+A "same band" row names its band, so each band's disagreement rate can be
+read off the summary. A second dimension, `nppes_address_to_claims_site_distance`,
+gives the great-circle distance between the two addresses.
+
+**Result** (`artifacts/midwife_work_setting_summary.csv`, current freeze
+`1a7bd6a8`, 12,171 midwives). 9,320 midwives have a band from both sources, and
+92.4% of them are in the same band. That figure is carried by Metro:
+
+| NPPES address band | Midwives | Claims site in a different band |
+|---|---|---|
+| Metro (RUCC 1–3) | 8,397 | 316 (3.8%) |
+| Nonmetro, adjacent (4–6) | 635 | 283 (44.6%), 255 of them Metro by claims |
+| Nonmetro, remote (7–9) | 288 | 108 (37.5%), 81 of them Metro by claims |
+
+- **Rural headcounts hold up; rural assignments do not.** NPPES puts 923
+  midwives in nonmetro counties and claims put 903 there, but only 587 are
+  nonmetro by both.
+- **The disagreements are different places, not a county line.** Of the 420
+  disagreeing midwives with coordinates for both addresses, none are within
+  10 km. 371 (88%) are 40 km or more apart and 142 are 250 km or more apart.
+- **Distance does not need a band change.** 617 midwives in the same band are
+  250 km or more from their claims site, which points to NPPES addresses that
+  were never updated.
+- **Not comparable: 2,851.** 2,026 have no Trilliant site. The rest have no
+  NPPES primary location, or one that has no county.
+
+Two cautions.
+- **Neither source is ground truth.** The NPPES practice-location file runs to
+  2026-08-09 and the directory snapshot is 2026-06-25; Trilliant does not
+  document the claims window behind a site.
+- **This checks the persistence paper's end point, not its origin.** That
+  paper takes origin rurality from a midwife's first NPPES address. The
+  disagreement bears on where the midwife is last observed.
+
+Inputs: the practice locations were rebuilt from the current freeze by
+`link_practice_locations_to_org_npi.R`. The DAC, CABC and resolved-employer
+inputs are the 2026-08-10 extracts; they affect site type and the setting
+flags, not the rurality comparison. Every dimension partitions the cohort,
+so the published-numbers gate can check it. The build refuses any other
+freeze unless one is named on purpose with `ALLOW_FREEZE_SHA256`.
 
 ## 7. A backup source for demographics
 
