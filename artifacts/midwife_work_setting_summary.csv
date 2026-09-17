@@ -1,0 +1,66 @@
+dimension,level,n_midwives,cohort_n,frozen_sha256,trilliant_snapshot
+blended_hospital_birth_center,not both,11896,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+blended_hospital_birth_center,"hospital + birth center, strict evidence",241,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+blended_hospital_birth_center,"hospital + birth center, broad evidence only",34,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+main_site_rurality,Metro (RUCC 1-3),9169,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+main_site_rurality,no Trilliant site,2026,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+main_site_rurality,"Nonmetro, adjacent (4-6)",665,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+main_site_rurality,"Nonmetro, remote (7-9)",311,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+n_distinct_work_sites,2,6057,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+n_distinct_work_sites,1,3014,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+n_distinct_work_sites,3,1940,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+n_distinct_work_sites,4,583,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+n_distinct_work_sites,5+,378,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+n_distinct_work_sites,0,199,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+nppes_address_to_claims_site_distance,"not comparable, no coordinates for both",2851,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+nppes_address_to_claims_site_distance,"same band, no coordinates for both",2681,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+nppes_address_to_claims_site_distance,"same band, <1 km",2175,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+nppes_address_to_claims_site_distance,"same band, 10-40 km",1250,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+nppes_address_to_claims_site_distance,"same band, 1-10 km",1103,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+nppes_address_to_claims_site_distance,"same band, 250+ km",617,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+nppes_address_to_claims_site_distance,"same band, 40-80 km",433,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+nppes_address_to_claims_site_distance,"same band, 80-250 km",354,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+nppes_address_to_claims_site_distance,"different band, no coordinates for both",287,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+nppes_address_to_claims_site_distance,"different band, 250+ km",142,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+nppes_address_to_claims_site_distance,"different band, 80-250 km",131,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+nppes_address_to_claims_site_distance,"different band, 40-80 km",98,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+nppes_address_to_claims_site_distance,"different band, 10-40 km",49,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+rurality_mix_across_sites,Metro (RUCC 1-3),10225,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+rurality_mix_across_sites,mixed,1041,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+rurality_mix_across_sites,"Nonmetro, adjacent (4-6)",447,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+rurality_mix_across_sites,"Nonmetro, remote (7-9)",210,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+rurality_mix_across_sites,no site,199,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+rurality_mix_across_sites,unknown,49,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+rurality_nppes_address_vs_claims_site,same band: Metro (RUCC 1-3),8081,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+rurality_nppes_address_vs_claims_site,not comparable,2851,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+rurality_nppes_address_vs_claims_site,"same band: Nonmetro, adjacent (4-6)",352,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+rurality_nppes_address_vs_claims_site,"NPPES Nonmetro, adjacent (4-6) / claims Metro (RUCC 1-3)",255,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+rurality_nppes_address_vs_claims_site,"NPPES Metro (RUCC 1-3) / claims Nonmetro, adjacent (4-6)",231,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+rurality_nppes_address_vs_claims_site,"same band: Nonmetro, remote (7-9)",180,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+rurality_nppes_address_vs_claims_site,"NPPES Metro (RUCC 1-3) / claims Nonmetro, remote (7-9)",85,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+rurality_nppes_address_vs_claims_site,"NPPES Nonmetro, remote (7-9) / claims Metro (RUCC 1-3)",81,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+rurality_nppes_address_vs_claims_site,"NPPES Nonmetro, adjacent (4-6) / claims Nonmetro, remote (7-9)",28,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+rurality_nppes_address_vs_claims_site,"NPPES Nonmetro, remote (7-9) / claims Nonmetro, adjacent (4-6)",27,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+trilliant_main_site_type,hospital,6527,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+trilliant_main_site_type,clinic_practice,2605,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+trilliant_main_site_type,no Trilliant site,2026,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+trilliant_main_site_type,fqhc_community_health,651,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+trilliant_main_site_type,birth_center,169,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+trilliant_main_site_type,other_facility,151,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+trilliant_main_site_type,unclassified,42,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+work_setting_combination,hospital,3652,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+work_setting_combination,hospital + clinic/practice,3058,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+work_setting_combination,clinic/practice,2324,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+work_setting_combination,no classified site,996,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+work_setting_combination,hospital + FQHC/CHC,506,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+work_setting_combination,FQHC/CHC,486,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+work_setting_combination,FQHC/CHC + clinic/practice,265,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+work_setting_combination,birth center,229,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+work_setting_combination,hospital + FQHC/CHC + clinic/practice,199,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+work_setting_combination,hospital + birth center,185,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+work_setting_combination,birth center + clinic/practice,139,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+work_setting_combination,hospital + birth center + clinic/practice,77,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+work_setting_combination,birth center + FQHC/CHC,32,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+work_setting_combination,birth center + FQHC/CHC + clinic/practice,10,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+work_setting_combination,hospital + birth center + FQHC/CHC,9,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+work_setting_combination,hospital + birth center + FQHC/CHC + clinic/practice,4,12171,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25

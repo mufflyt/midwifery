@@ -629,7 +629,8 @@ nppes_geo <- sites_long |>
   filter(source == "nppes_primary_location") |>
   arrange(certification_number, site_id) |>
   group_by(certification_number) |> slice_head(n = 1) |> ungroup() |>
-  transmute(certification_number, nppes_primary_rucc_cat = rucc_cat)
+  transmute(certification_number, nppes_primary_rucc_cat = rucc_cat,
+            nppes_primary_lat = lat, nppes_primary_lon = lon)
 summary_tbl <- summary_tbl |>
   left_join(top_geo, by = "certification_number", relationship = "one-to-one") |>
   left_join(nppes_geo, by = "certification_number", relationship = "one-to-one") |>
@@ -641,11 +642,17 @@ summary_tbl <- summary_tbl |>
              blended_strict, blended_broad), \(x) coalesce(x, FALSE)),
     # Does the NPPES address put a midwife in the same rurality band as where
     # her claims say she works? NPPES addresses drive the persistence analysis.
+    # "same band" names its band, so each NPPES band's disagreement rate can be
+    # read off the tracked summary: the rural bands disagree far more than Metro.
     rurality_nppes_vs_claims = case_when(
       is.na(top_site_rucc_cat) | top_site_rucc_cat == "Unknown" |
         is.na(nppes_primary_rucc_cat) | nppes_primary_rucc_cat == "Unknown" ~ "not comparable",
-      top_site_rucc_cat == nppes_primary_rucc_cat ~ "same band",
-      TRUE ~ paste0("NPPES ", nppes_primary_rucc_cat, " / claims ", top_site_rucc_cat)))
+      top_site_rucc_cat == nppes_primary_rucc_cat ~ paste0("same band: ", nppes_primary_rucc_cat),
+      TRUE ~ paste0("NPPES ", nppes_primary_rucc_cat, " / claims ", top_site_rucc_cat)),
+    # How far the self-reported NPPES address is from the site where claims place the midwife.
+    # A disagreement tens of km away is a different place, not a county line.
+    nppes_to_claims_km = round(haversine_km(as.numeric(nppes_primary_lat), as.numeric(nppes_primary_lon),
+                                            as.numeric(top_site_lat), as.numeric(top_site_lon)), 1))
 
 write_with_provenance(arrange(summary_tbl, certification_number),
                       file.path(OUT, "midwife_work_sites_summary.csv"), inputs = INPUTS, na = "")
@@ -679,7 +686,17 @@ setting_summary <- bind_rows(
     mutate(dimension = "rurality_mix_across_sites"),
   summary_tbl |>
     count(level = rurality_nppes_vs_claims, name = "n_midwives") |>
-    mutate(dimension = "rurality_nppes_address_vs_claims_site")) |>
+    mutate(dimension = "rurality_nppes_address_vs_claims_site"),
+  summary_tbl |>
+    count(level = paste0(
+      case_when(rurality_nppes_vs_claims == "not comparable" ~ "not comparable",
+                str_starts(rurality_nppes_vs_claims, "same band") ~ "same band",
+                TRUE ~ "different band"), ", ",
+      case_when(is.na(nppes_to_claims_km) ~ "no coordinates for both",
+                nppes_to_claims_km < 1 ~ "<1 km", nppes_to_claims_km < 10 ~ "1-10 km",
+                nppes_to_claims_km < 40 ~ "10-40 km", nppes_to_claims_km < 80 ~ "40-80 km",
+                nppes_to_claims_km < 250 ~ "80-250 km", TRUE ~ "250+ km")), name = "n_midwives") |>
+    mutate(dimension = "nppes_address_to_claims_site_distance")) |>
   mutate(cohort_n = nrow(summary_tbl), frozen_sha256 = FROZEN_SHA256,
          trilliant_snapshot = TRILLIANT_SNAPSHOT) |>
   select(dimension, level, n_midwives, cohort_n, frozen_sha256, trilliant_snapshot) |>
