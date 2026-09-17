@@ -130,6 +130,23 @@ jobs:
             stop("package still unavailable after install: ", p)
         shell: Rscript {0}
 
+      # mysterynpi holds strip_med_suffix(), which R/lib/training_institution.R
+      # delegates to and tests/test_trilliant_{demographics,identity}.R exercise.
+      # ci.yml installs it (#205); this job did not, so those two tests failed
+      # every night from 2026-09-14 with "there is no package called
+      # 'mysterynpi'" and with training_institution.R's own guard naming the
+      # pin. Same pin as ci.yml, so the two jobs cannot answer differently, and
+      # installed with the job's token: without one, remotes falls back to its
+      # bundled PAT, which GitHub's API refuses (see the external-deps job).
+      # This is the promotion the external-deps job's header asks for.
+      - name: Install mysterynpi (pinned, same pin as ci.yml)
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Rscript -e 'if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")'
+          Rscript -e 'remotes::install_github("mufflyt/mysterynpi@ac42561b46d400a7e62649ee0161313628d914e8", upgrade = "never")'
+          Rscript -e 'stopifnot("strip_med_suffix" %in% getNamespaceExports("mysterynpi")); cat("mysterynpi", as.character(packageVersion("mysterynpi")), "\n")'
+
       # Two harnesses live in tests/. 13 files use testthat and must go through
       # test_file(); the other 44 are standalone scripts with their own harness
       # and exit code. Dispatch on CONTENT, not filename: test-*.R is testthat
@@ -852,10 +869,11 @@ jobs:
           use-public-rspm: true
 
       # mysterynpi went PUBLIC on 2026-09-05, so the name-key tests it
-      # unblocks now RUN here -- still informationally (this job cannot
-      # redden the nightly) until a maintainer promotes them into r-suite by
-      # installing mysterynpi there. Two entries stay blocked for other
-      # reasons: the normalization suite hard-fails without the gitignored
+      # unblocks RUN here, informationally (this job cannot redden the
+      # nightly). r-suite installs mysterynpi as of 2026-09-17, at ci.yml's
+      # pin, so the tests it discovers by glob are now blocking there; these
+      # three stay here because tests/ci_nightly_exceptions.txt still routes
+      # them to this job. Two entries stay blocked for other reasons: the normalization suite hard-fails without the gitignored
       # person-level roster (T12, by design), and Stage 2 still needs the
       # private isochrones checkout for rank_one_to_one().
       - name: Install mysterynpi (public) and its test dependencies
