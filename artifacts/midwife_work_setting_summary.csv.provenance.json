@@ -1,0 +1,73 @@
+{
+  "artifact": "midwife_work_setting_summary.csv",
+  "written_utc": "2026-09-15 02:20:10 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2"
+    },
+    {
+      "path": "artifacts/midwife_practice_locations.csv",
+      "sha256": "593881767cb626a33637bfc6b26cc50c3bf1a8ad6c5649531ce225837a7fa618"
+    },
+    {
+      "path": "artifacts/dac_facility_affiliations.csv",
+      "sha256": "26f39b3aef12e647a66f7c4f3987324f275a3ec575780cdccdff4ce6f526fedb"
+    },
+    {
+      "path": "artifacts/cabc_matched_midwives_final.csv",
+      "sha256": "0fa4dc22c36ae4a1d806e6fbc2f2cd6493a4f7fe5e59a5eee0ed5e60506b151e"
+    },
+    {
+      "path": "artifacts/organization_affiliation_resolved.csv",
+      "sha256": "052144d447bb98e594787511b5ec3c3076a4c76e57e2964bfc154ea3c633cf2c"
+    },
+    {
+      "path": "artifacts/midwife_work_sites_summary.csv",
+      "sha256": "48f073ce0a2442f36e6edf5ee2106b49823e1ed7844b809f178c452fd6bedd03"
+    }
+  ],
+  "code_sha256": "d0c8e1c64e1c16cdeced4a877eae14e39312fa0c859326c3e21f1b23807b71c8",
+  "code": [
+    {
+      "path": "build_trilliant_work_sites.R",
+      "sha256": "12be247edbd8c9914a018fa5f8b55a4dc96747d0fa63d1e5fe2be4e6366ef5ae"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/cohort_definitions.R",
+      "sha256": "faa0edf2049f09d42edb3681956f29e39cb0c7dc6cdbe58d7ee5812714bffc49"
+    },
+    {
+      "path": "R/lib/common_helpers.R",
+      "sha256": "55c6b894798e2740f538b1262391e58e8fe9bea84f072b80708e59aea3197067"
+    },
+    {
+      "path": "R/lib/ct_county_crosswalk.R",
+      "sha256": "3242ed96fa0d870693718bfed2b79472a035aca0daba25b19725f1680964334d"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/lib/table1_bands.R",
+      "sha256": "312b7504d0fed8ae986eadae6c55b0efd6f1099a613e4589f772387a2db115e1"
+    },
+    {
+      "path": "R/lib/work_site_topology.R",
+      "sha256": "45f1c85cfe7bfce47eddc2a7998758e3fdf3e30a1630ff0add270fdbc7bcb848"
+    },
+    {
+      "path": "R/lib/zip_county_crosswalk.R",
+      "sha256": "8b0fb8f7c9145c81ceda865e3ef0820ca3e832d460cf967ff40eb4c189899264"
+    }
+  ]
+}
