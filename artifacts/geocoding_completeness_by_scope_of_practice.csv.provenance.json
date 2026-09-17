@@ -1,0 +1,29 @@
+{
+  "artifact": "geocoding_completeness_by_scope_of_practice.csv",
+  "written_utc": "2026-09-11 13:52:18.193 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/state_scope_of_practice.csv",
+      "sha256": "e276a0549924cbe7b9fb59e6e796c56ed569a87e0443f2457e3dfb54223b3851"
+    },
+    {
+      "path": "artifacts/geocoding_completeness_state.csv",
+      "sha256": "f4d4403363cacb95c7e5f28472c5c6eb288858de2c488c75cd6416ffff855ba0"
+    }
+  ],
+  "code_sha256": "b5466eb3dfb1df9f7e865dc8334bdaad9c87a0ea3c18d8cb1d87212b56a32136",
+  "code": [
+    {
+      "path": "join_scope_of_practice_to_geography.R",
+      "sha256": "25448edb86318cf76c8a0bd4d366f938d88a47d78e8f7a06612bfce9bf9bf979"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}

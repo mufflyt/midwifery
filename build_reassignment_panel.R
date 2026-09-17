@@ -77,7 +77,7 @@ cohort <- read_csv(cw, col_types = cols(.default = "c"), progress = FALSE) %>%
   filter(!is.na(npi), nzchar(npi)) %>% distinct(amcb_id, npi)
 cli::cli_alert_info("cohort: {format(nrow(cohort), big.mark = ',')} resolved midwives")
 
-con <- dbConnect(duckdb::duckdb(), DB, read_only = TRUE)
+con <- duckdb_connect(DB, read_only = TRUE)
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 duckdb::duckdb_register(con, "cohort", cohort)
 

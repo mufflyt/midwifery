@@ -55,8 +55,10 @@ with open(V4_FILE, "r", encoding="utf-8", errors="ignore") as f:
             "matched_facility_or_employer": pm.get("matched_facility_name", r.get("op_profile_match", "")),
             "matched_facility_id": pm.get("matched_facility_id", ""),
             "facility_linkage_type": pm.get("facility_linkage_type", ""),
-            "has_cpt_delivery_claims": r.get("has_cpt_delivery_claim", ""),
-            "refined_clinical_practice_setting": r.get("refined_clinical_setting", "")
+            # No delivery-claim column: the v4 field it copied was "DAC primary
+            # specialty is CNM", not a claim. See
+            # measure_medicare_delivery_code_observability.R.
+            "facility_practice_setting": r.get("final_facility_setting", "")
         })
 
 print(f"Total Cohort Midwives: {len(rows):,}")

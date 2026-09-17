@@ -137,8 +137,8 @@ mw_build_catalog <- function(root = ".") {
       # tier, which IS in the cohort and is only held out of the primary tier.
       cohort_n       = unname(sums[["matched"]]) +
                        unname(sums[["matched_nursing_taxonomy"]]),
-      heldout        = unname(sums[["candidate_class5_held_out_of_cohort"]]),
-      heldout_pct    = 100 * unname(sums[["candidate_class5_held_out_of_cohort"]]) / tot,
+      heldout        = disp("candidate_class5_held_out_of_cohort"),
+      heldout_pct    = 100 * disp("candidate_class5_held_out_of_cohort") / tot,
       # TWO RATES, NAMED. `active_pct` is resolution into the PRIMARY cohort --
       # an NPI carrying midwifery taxonomy. `active_ascertained_pct` is whether
       # the certificant was found in NPPES AT ALL, including the nursing-only
@@ -163,6 +163,136 @@ mw_build_catalog <- function(root = ".") {
     # The dispositions must reconstruct the total, or the table in the paper
     # does not add up in front of a reviewer.
     stopifnot(sum(sums) == tot)
+
+    # --- Exclusion flow: AMCB roster -> active -> NPI-matched -> geocodable --
+    # For make_cohort_exclusion_flow_figure.R. Computed entirely from `frozen`
+    # (the person-level linkage), NOT from `lc` above: `lc` is pivoted on
+    # npi_match_status, which cannot distinguish a clean exact-name match from
+    # a fuzzy-surname match or a nursing-taxonomy-only match -- exactly the
+    # distinction this section needs. `frozen$match_status` (added by
+    # reconcile_linkage.R) makes that distinction, so this whole block
+    # requires `frozen`, not `lc`, and is SKIPped (not silently wrong) when
+    # `frozen` is absent.
+    #
+    # "Active" is defined by AMCB's own certification status field ONLY:
+    # status == "ACTIVE". Every other status (LAPSED, RETIRED, DECEASED,
+    # EMERITUS, DEACTIVATED, REVOKED, SURRENDERED, SUSPENDED) is folded into
+    # "deceased or inactive" -- ACTIVE is the only status meaning "currently
+    # certified." That folds EMERITUS in with the excluded, which is a
+    # judgement call worth a reviewer's eye; the itemised per-status counts
+    # below are kept so it can be revisited without re-deriving them.
+    #
+    # "Matched" means match_status == "primary" -- the reconciliation's own
+    # clean definition (see reconcile_linkage.R's header comment), which
+    # deliberately excludes fuzzy-surname matches (weak name-identity
+    # evidence: a Levenshtein surname match with no city/state/phone/DOB to
+    # corroborate it) and nursing-taxonomy-only matches (the NPI's taxonomy
+    # code suggests nursing, not confirmed midwifery) from the "matched"
+    # count. Both are real candidate NPIs, just weaker claims than an exact
+    # name match -- they're itemised into "No NPI match" below rather than
+    # silently counted as confirmed identity.
+    if (!is.null(frozen)) {
+      tot_f <- nrow(frozen)
+      status_n <- table(frozen$status)
+      inactive_statuses <- setdiff(names(status_n), "ACTIVE")
+      inactive_n_by_status <- setNames(as.integer(status_n[inactive_statuses]),
+                                       tolower(inactive_statuses))
+      active_rows <- frozen[frozen$status == "ACTIVE", ]
+      active_n_f <- nrow(active_rows)
+      active_matched_n <- sum(active_rows$match_status == "primary", na.rm = TRUE)
+      active_unmatched_n <- active_n_f - active_matched_n
+
+      # Every non-"primary" match_status value among ACTIVE, itemised --
+      # exhaustive over table(), so a disposition with zero current members
+      # legitimately reports 0 rather than being silently absent.
+      reason_labels <- c(
+        unmatched                       = "Unmatched, no candidate found",
+        ambiguous_tied_names            = "Tied names, evidence could not separate",
+        ambiguous_contested_npi         = "Contested NPI, claimed by 2+ certificants",
+        ambiguous_unruled_out_component = "Unruled-out component",
+        sensitivity_fuzzy               = "Fuzzy surname match (weak identity evidence)",
+        sensitivity_nursing_taxonomy    = "Nursing-only taxonomy (not confirmed midwifery)"
+      )
+      reason_tab <- table(factor(
+        active_rows$match_status[active_rows$match_status != "primary"],
+        levels = names(reason_labels)))
+      active_unmatched_by_reason <- setNames(as.integer(reason_tab), names(reason_labels))
+
+      cat_$exclusion <- list(
+        roster_n           = tot_f,
+        active_n           = active_n_f,
+        active_pct         = 100 * active_n_f / tot_f,
+        inactive_n         = tot_f - active_n_f,
+        inactive_pct       = 100 * (tot_f - active_n_f) / tot_f,
+        inactive_by_status = inactive_n_by_status,
+        active_matched_n   = active_matched_n,
+        active_matched_pct = 100 * active_matched_n / active_n_f,
+        active_unmatched_n = active_unmatched_n,
+        active_unmatched_by_reason = active_unmatched_by_reason
+      )
+      stopifnot(
+        cat_$exclusion$active_n + cat_$exclusion$inactive_n == cat_$exclusion$roster_n,
+        cat_$exclusion$active_matched_n + cat_$exclusion$active_unmatched_n ==
+          cat_$exclusion$active_n,
+        sum(active_unmatched_by_reason) == active_unmatched_n
+      )
+
+      # Match evidence tiers among ACTIVE, PRIMARY-matched midwives only, from
+      # the frozen linkage's ordered name_evidence_class (1-5; see the tier
+      # comment above s5 in match_amcb_to_npi.R for the exact definitions).
+      # Restricting to match_status == "primary" here (not the looser
+      # npi_match_status-based bucket) keeps this consistent with
+      # active_matched_n above -- otherwise the tier counts would sum to a
+      # different total than the box they're itemising.
+      primary_rows <- active_rows[active_rows$match_status == "primary", ]
+      tier_n <- table(factor(primary_rows$name_evidence_class, levels = 1:5))
+      active_matched_by_tier <- setNames(
+        as.integer(tier_n),
+        c("exact_name_plus_middle", "exact_name_no_middle_info",
+          "exact_last_first_initial", "fuzzy_last_exact_first",
+          "surname_component_exact_first"))
+      cat_$exclusion$active_matched_by_tier <- active_matched_by_tier
+      stopifnot(sum(active_matched_by_tier) == active_matched_n)
+
+      # Stage 4 (geocodable address) and stage 5 (ACOG-district assignable)
+      # need a per-person join between AMCB status/match outcome and
+      # geocoding outcome that isn't itself a committed artifact -- see
+      # build_geography_by_amcb_status.R. Gitignored/absent is a SKIP here,
+      # not an error: the figure script itself requires these keys (via
+      # mw_safe_stat) and fails loudly if missing, since a silently-
+      # incomplete exclusion chart misrepresents who was dropped and why.
+      gs <- rd(file.path(MW_ART, "geography_by_amcb_status.csv"))
+      if (!is.null(gs)) {
+        g_active <- gs[gs$status == "ACTIVE" & gs$match_status == "matched", ]
+        if (nrow(g_active) == 1L) {
+          cat_$exclusion$geocoded_n <- g_active$n_geocoded
+          cat_$exclusion$not_geocoded_n <- g_active$n - g_active$n_geocoded
+          stopifnot(
+            cat_$exclusion$geocoded_n + cat_$exclusion$not_geocoded_n ==
+              cat_$exclusion$active_matched_n
+          )
+          # Overseas-military / US-territory addresses (no ACOG district) --
+          # a real, geocodable location that ACOG's district system has no
+          # bucket for. Computed against THIS box's own population
+          # (geocoded_n), not table1.n's narrower primary-linked-only
+          # population -- see table1.acog_excluded_n's own comment for why
+          # those two must never share a denominator.
+          if ("n_acog_unmapped" %in% names(g_active)) {
+            cat_$exclusion$acog_excluded_n <- g_active$n_acog_unmapped
+            cat_$exclusion$acog_excluded_pct <-
+              100 * g_active$n_acog_unmapped / cat_$exclusion$geocoded_n
+            cat_$exclusion$final_cohort_n <-
+              cat_$exclusion$geocoded_n - g_active$n_acog_unmapped
+            stopifnot(
+              cat_$exclusion$final_cohort_n + cat_$exclusion$acog_excluded_n ==
+                cat_$exclusion$geocoded_n
+            )
+          } else {
+            cat_$exclusion$final_cohort_n <- cat_$exclusion$geocoded_n
+          }
+        }
+      }
+    }
   }
 
   # --- Cohort composition, from the committed aggregate ----------------------
@@ -308,6 +438,44 @@ mw_build_catalog <- function(root = ".") {
     }
   }
 
+  # --- Access by state scope-of-practice regime -------------------------------
+  # THE QUESTION THIS ANSWERS. Ranchoff & Declercq (2020) found autonomous-
+  # practice states have 2.2x the per-capita CNM/CM density of collaborative/
+  # supervisory states, using county presence/absence as their access measure.
+  # Higher density need not mean better access if it clusters where coverage
+  # was already good -- this is the first test of that against actual
+  # population-weighted drive-time coverage rather than a binary county flag.
+  # join_scope_of_practice_to_geography.R joins Ranchoff & Declercq's own
+  # Table 1 classification onto this project's drive-time access surfaces
+  # (access_full_cohort.R). The significance test is Welch's two-sample
+  # t-test across states -- each state's own access percentage is one
+  # observation -- not a proportions test on the underlying
+  # women_with_access/women_total counts, which would treat every individual
+  # woman as an independent trial and inflate significance with n in the
+  # hundreds of millions; see join_scope_of_practice_to_geography.R's header.
+  sig <- rd(file.path(MW_ART, "access_by_scope_of_practice_significance.csv"))
+  if (!is.null(sig)) {
+    row <- function(b) sig[sig$band_minutes == b, ]
+    r30 <- row(30); r60 <- row(60)
+    g <- function(r, col) if (nrow(r)) r[[col]][1] else NA_real_
+    cat_$scope <- list(
+      n_autonomous             = g(r30, "n_autonomous"),
+      n_collaborative          = g(r30, "n_collaborative"),
+      band30_autonomous_pct    = g(r30, "mean_autonomous_pct"),
+      band30_collaborative_pct = g(r30, "mean_collaborative_pct"),
+      band30_diff_pp           = g(r30, "diff_pp"),
+      band30_ci_lo             = g(r30, "ci_lo"),
+      band30_ci_hi             = g(r30, "ci_hi"),
+      band30_p                 = g(r30, "p_value"),
+      band60_autonomous_pct    = g(r60, "mean_autonomous_pct"),
+      band60_collaborative_pct = g(r60, "mean_collaborative_pct"),
+      band60_diff_pp           = g(r60, "diff_pp"),
+      band60_ci_lo             = g(r60, "ci_lo"),
+      band60_ci_hi             = g(r60, "ci_hi"),
+      band60_p                 = g(r60, "p_value")
+    )
+  }
+
   # --- Persistence -----------------------------------------------------------
   # PINNED, and flagged as such. These come from the 2007-2025 provider panel
   # (midwife_panel.csv, ~493 MB, gitignored and person-level) and from the
@@ -399,9 +567,26 @@ mw_build_catalog <- function(root = ".") {
       r <- t1[grepl(rx, t1$characteristic, ignore.case = TRUE), ]
       if (nrow(r)) r$percent[1] else NA_real_
     }
+    # This row's own percent is NA by design (build_table1_midwives.R writes
+    # it that way): these people ARE included in the cohort and DO have a
+    # geocodable address, they just have no ACOG district to be a percentage
+    # OF, so the row carries a raw n, not a share. pick() reads $percent and
+    # would silently return NA for this one; read $n directly instead.
+    pickn <- function(rx) {
+      r <- t1[grepl(rx, t1$characteristic, ignore.case = TRUE), ]
+      if (nrow(r)) r$n[1] else NA_real_
+    }
+    acog_excluded_n <- pickn("Overseas-military or US-territory address")
     cat_$table1 <- list(
       n = t1$n[1], cnm_pct = pick("^Certified Nurse-Midwife$"),
-      cm_pct = pick("^Certified Midwife$"), female_pct = pick("^Female$")
+      cm_pct = pick("^Certified Midwife$"), female_pct = pick("^Female$"),
+      # NOTE: this n's denominator is t1$n[1] ("ACTIVE, primary-linked
+      # midwives" -- ACTIVE status AND primary midwifery-taxonomy match
+      # only), NOT exclusion.active_matched_n (which also includes the
+      # nursing-taxonomy sensitivity tier). Don't divide this by the wrong
+      # cohort size; the two are close but not the same population.
+      acog_excluded_n   = acog_excluded_n,
+      acog_excluded_pct = if (!is.na(acog_excluded_n)) 100 * acog_excluded_n / t1$n[1] else NA_real_
     )
   }
 

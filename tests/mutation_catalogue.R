@@ -55,35 +55,21 @@ MUTATIONS <- list(
   ),
 
   # ---- name matching -------------------------------------------------------
-  list(
-    id = "surname-token-min-length",
-    file = "R/amcb_name_keys.R",
-    find = "AMCB_MIN_SURNAME_TOKEN <- 4L",
-    repl = "AMCB_MIN_SURNAME_TOKEN <- 2L",
-    why = paste("Drops the minimum surname-component length from 4 to 2, so",
-                "two-letter fragments become blocking keys and unrelated people",
-                "collide on things like 'DE' or 'LA'."),
-    # test_lib_keys.R was the original guess and it was WRONG -- it covers join
-    # keys, not name keys. The mutation "survived" against it, which looked like
-    # a hole in the suite and was actually a hole in this catalogue. Corrected
-    # after checking directly which test detects it.
-    killers = c("tests/test_amcb_name_normalization.R"),
-    ci_reachable = FALSE   # needs the private isochrones normalizer
-  ),
-
-  list(
-    id = "person-match-and-to-or",
-    file = "R/amcb_name_keys.R",
-    find = "  same_last & shared\n}",
-    repl = "  same_last | shared\n}",
-    why = paste("A person match needs the surname AND a shared given-name",
-                "token. Loosened to OR, everyone sharing only a first name",
-                "matches everyone else."),
-    # Nothing detected this at all until T21 was written for it: the token-set
-    # conjunction at the centre of this repository's identity logic had no test.
-    killers = c("tests/test_amcb_name_normalization.R"),
-    ci_reachable = FALSE   # needs the private isochrones normalizer
-  ),
+  # RETIRED HERE, NOT RETIRED (2026-09-05). Two mutants used to live in this
+  # section, aimed at R/amcb_name_keys.R:
+  #
+  #   surname-token-min-length   AMCB_MIN_SURNAME_TOKEN 4 -> 2
+  #   person-match-and-to-or     same_last & shared -> |
+  #
+  # That file is now a shim over the mysterynpi package, and the mutable code
+  # moved with it. Both mutants run THERE, on every push, as
+  # `surname-token-floor` and `person-match-and-to-or` in the package's
+  # matching-gate campaign (tools/ci/mutation_campaign.R in mufflyt/mysterynpi)
+  # -- same corruption, same kill requirement, no longer gated on a private
+  # checkout being present. The behaviour this repository relies on is pinned
+  # from the consumer side by tests/test_mysterynpi_contracts.R. A mutant kept
+  # here would anchor on text the shim no longer contains and rot into
+  # "testing nothing", which this catalogue treats as failure by design.
 
   # ---- arithmetic ----------------------------------------------------------
   list(
@@ -301,5 +287,120 @@ MUTATIONS <- list(
                 "there is."),
     killers = c("tests/test_cycle23_geocode_precision.R",
                 "tests/test_cycle11_spatial.R")
+  ),
+
+  # ---- truth-set infrastructure (T1-T12, spec of 2026-09-08) ---------------
+  # The adjudication instrument becomes a benchmark only if these guards are
+  # real. Each mutant hollows one; the killer file's matching negative
+  # control must then fail.
+  list(
+    id = "truth-T1-population-row-drop-unnoticed",
+    file = "R/truth_set_checks.R",
+    find = "  if (nrow(instrument) != manifest$rows_instrument) {",
+    repl = "  if (FALSE) {",
+    why = paste("A silently shrunken adjudication population scores as if",
+                "complete; front truncation of truth is not random."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T1b-population-hash-ignored",
+    file = "R/truth_set_checks.R",
+    find = "  if (!identical(got, manifest$population_hash)) {",
+    repl = "  if (FALSE) {",
+    why = paste("Only the hash catches a same-size id swap; without it a",
+                "substituted person scores as the frozen population."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T2-duplicate-adjid-admitted",
+    file = "R/truth_set_checks.R",
+    find = "  if (anyDuplicated(instrument$adjudication_id)) {",
+    repl = "  if (FALSE) {",
+    why = paste("Duplicate immutable ids double-count one person's verdict",
+                "and break every downstream join on adj_id."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T3-provenance-roundtrip-vacuous",
+    file = "R/truth_set_checks.R",
+    find = "                                                    class5 = 156L)) {",
+    repl = "                                                    class5 = 156L)) {\n  return(invisible(TRUE))",
+    why = paste("The 456-row reconstruction guarantee silently becomes a",
+                "no-op; lost review rows are unrecoverable and unnoticed."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T4-banned-column-reaches-reviewer",
+    file = "R/truth_set_checks.R",
+    find = "  leaked <- intersect(BANNED_REVIEWER_COLUMNS, names(export))",
+    repl = "  leaked <- character(0); intersect(BANNED_REVIEWER_COLUMNS, names(export))",
+    why = paste("Matcher confidence lands on the reviewer sheet; the human",
+                "grades the matcher's homework with the answer key open."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T5-T12-custody-mismatch-ignored",
+    file = "R/truth_set_checks.R",
+    find = "    if (!identical(got, manifest$files[[nm]]$sha256)) {",
+    repl = "    if (FALSE) {",
+    why = paste("A tampered or stale artifact scores as frozen truth; the",
+                "scorer must verify custody before reading anything."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T6-partial-unblinding-allowed",
+    file = "R/truth_set_checks.R",
+    find = "  nonterminal <- which(!instrument$workflow_state %in% TERMINAL_STATES)",
+    repl = "  nonterminal <- integer(0)",
+    why = paste("Half-adjudicated truth unblinds; the matcher internals",
+                "contaminate the remaining reviews."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T7-unresolved-disagreement-passes",
+    file = "R/truth_set_checks.R",
+    find = "    unresolved <- setdiff(disputed, resolution$adjudication_id)",
+    repl = "    unresolved <- character(0)",
+    why = paste("Split reviewer verdicts reach the scorer with no",
+                "resolution; whichever opinion sorts first becomes truth."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T8-orphan-evidence-ignored",
+    file = "R/truth_set_checks.R",
+    find = "  unlinked <- setdiff(evidence$evidence_id, links$evidence_id)",
+    repl = "  unlinked <- character(0)",
+    why = paste("Evidence supporting no judgment accumulates unaudited;",
+                "provenance rot starts as orphans."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T9-board-canary-defanged",
+    file = "R/truth_set_checks.R",
+    find = "  \"\\\\bboards?\\\\b\", \"medical board\", \"nursing board\", \"state board\",",
+    repl = "  \"ZZZNEVERMATCHZZZ\", \"medical board\", \"nursing board\", \"state board\",",
+    why = paste("The generic board pattern is gone; 'board profile p3' in a",
+                "locator sails through and board knowledge contaminates",
+                "truth."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T10-final-verdict-overwrites-reviews",
+    file = "R/truth_set_checks.R",
+    find = "  if (\"final_verdict\" %in% c(names(reviews), names(instrument))) {",
+    repl = "  if (FALSE) {",
+    why = paste("Reviewer opinions are overwritten in place instead of",
+                "resolved; the disagreement history is destroyed."),
+    killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+  list(
+    id = "truth-T11-eligibility-by-url-string",
+    file = "R/truth_set_checks.R",
+    find = "  ineligible <- which(!eligibility$eligible[i])",
+    repl = "  ineligible <- which(grepl(\"board\", evidence$source_url, ignore.case = TRUE))",
+    why = paste("Eligibility inferred from URL text: a board source with a",
+                "clean-looking URL is admitted, and an eligible source with",
+                "'boardwalk' in its URL is refused."),
+    killers = c("tests/test_truth_set_infrastructure.R")
   )
 )

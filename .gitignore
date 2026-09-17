@@ -2,6 +2,7 @@
 *.html
 cj.txt
 *.parquet
+audit_legacy_hospital_linkage_*/
 
 # Test / Python tooling artifacts
 __pycache__/
@@ -38,9 +39,30 @@ midwife_panel_wide*.csv.lock
 
 # Scoring-loop checkpoint (match_nppes.R); resumable state, not a result
 artifacts/match_progress.rds
+# geocode_queue_cascade.R checkpoint, reloadable via GEOCODE_RESUME_RAW=1;
+# same class as match_progress.rds above.
+artifacts/geocode_cascade_raw_result.rds
+
+# R's default plot-device dump when a script renders without an explicit
+# output path. Never an intentional deliverable.
+/Rplots.pdf
 artifacts/amcb_npi_matched*.csv
 artifacts/amcb_npi_linkage_FROZEN.csv
 artifacts/identity_flip_audit.csv
+
+# THE DEFECT THIS PREVENTS (2026-09-11). These carry certification_number,
+# last_name, first_name, middle_name and (for the candidate-detail file) NPI
+# -- the same person-level class as amcb_npi_linkage_FROZEN.csv above -- and
+# were committed to this PUBLIC repo in commit 3c6af61, caught by
+# ci_leak_guard.R (L1/L2) failing on main. Every other person-level derived
+# artifact in this repo is gitignored; these were missed because they were
+# written as NEW output paths under docs/figures/, a directory whose other
+# contents (the figure PNG/PDF, aggregate counts) are legitimately public,
+# and the person-level ones were never distinguished from those siblings.
+docs/figures/cohort_exclusion_flow_person_level.csv
+docs/figures/cohort_exclusion_flow_person_level.csv.provenance.json
+docs/figures/exclusion_by_stage/*.csv
+docs/figures/exclusion_by_stage/*.csv.provenance.json
 midwives_panel_geocoded.csv
 midwives_geography_guarded.csv
 artifacts/panel_geocode_queue.csv
@@ -147,6 +169,12 @@ data/cd119/
 
 # Machine-specific env (paths, API keys) - never commit
 .Renviron
+
+# Census API pulls from patch_missing_state_census_data.R: reproducible via
+# the Census API (CENSUS_API_KEY in .Renviron), same treatment as every other
+# regenerable download in this file.
+data/census_patch_wy_female_population.csv
+data/census_patch_ct_tracts_2023.rds
 
 # rendered maps and dissolved unions: 14-20 MB binaries, rebuildable from
 # build_midwifery_isochrone_map.R + render_midwifery_map.R
@@ -402,11 +430,11 @@ artifacts/amcb_npi_crosswalk_*panel-midwifery-plus-nursing*.csv
 /artifacts/cohort_midwife_facility_attributions_complete.csv
 /artifacts/cohort_midwife_building_taxonomy.csv
 /artifacts/scraped_20_state_bons_midwives_master.csv
-!/artifacts/scraped_50_states_and_dc_midwives_master.csv
 !/artifacts/scraped_40_state_bons_midwives_master.csv
 /artifacts/midwife_group_practice_names.csv
 /artifacts/tier1_tier2_combined_bon_validated_master.csv
 /artifacts/cohort_midwives_cpt_delivery_attenders.csv
+/artifacts/cohort_midwives_dac_primary_specialty_cnm.csv
 /artifacts/cohort_midwives_open_payments_employers.csv
 /midwives_unmatched.csv
 /artifacts/frozen_stage2/midwives_unmatched.csv
@@ -573,3 +601,46 @@ artifacts/validation/
 
 # Person-level outputs of the ad-hoc audits in analysis/ are never committable.
 analysis/*.csv
+
+# Person-level adjudication artifacts (same policy as the review templates)
+artifacts/truth/adjudication_instrument_v1.csv
+artifacts/truth/adjudication_key_v1_SEALED.csv
+artifacts/truth/adjudication_instrument_v1.manifest.json
+artifacts/truth/adjudication_provenance_v1.csv
+artifacts/truth/adjudication_reviews_v1.csv
+artifacts/truth/adjudication_resolution_v1.csv
+artifacts/truth/adjudication_evidence_v1.csv
+artifacts/truth/adjudication_evidence_links_v1.csv
+artifacts/truth/truth_set_v1_final.csv
+artifacts/truth/truth_set_v1_final.manifest.json
+artifacts/truth/adjudication_batches_v1.csv
+artifacts/truth/batches/
+# Adjudication queue machinery outputs (derived, person-level / run-state)
+artifacts/adjudication/adjudication_queue.csv
+artifacts/adjudication/adjudication_status.json
+
+# Trilliant work-site build (build_trilliant_work_sites.R): person-level, and
+# Trilliant's data are licensed. Only the aggregate
+# artifacts/midwife_work_setting_summary.csv is tracked.
+artifacts/midwife_work_sites_long.csv*
+artifacts/midwife_work_sites_summary.csv*
+artifacts/midwife_work_sites_excluded_non_workplace.csv*
+# reconcile_trilliant_cohort.R: one row per certificant (person-level). The
+# reason counts, artifacts/trilliant_cohort_reconciliation_reasons.csv, are tracked.
+artifacts/trilliant_cohort_reconciliation.csv*
+artifacts/trilliant_cohort_transitions.csv*
+# build_trilliant_work_sites.R: one row per midwife x physical site (person-level).
+artifacts/midwife_distinct_work_sites.csv*
+# enrich_trilliant_demographics.R: sex, school, age and patient panel per
+# certificant (person-level). The checks, trilliant_demographics_validation_*.csv, are tracked.
+artifacts/trilliant_demographics.csv*
+# build_trilliant_provider_identity_index.R: the index itself is *.parquet
+# (ignored above); its manifest names licensed source files. The coverage
+# table, trilliant_provider_identity_coverage.csv, is tracked.
+artifacts/trilliant_provider_identity_index.manifest.json
+# experiment_trilliant_identity_linkage.R: one row per certificant, and every
+# proposed change with the names behind it (person-level). The outcome,
+# coverage and graduation-year tables (trilliant_identity_{outcomes,
+# field_coverage,grad_year_agreement}_*.csv) are tracked.
+artifacts/trilliant_identity_decisions_*.csv*
+artifacts/trilliant_identity_proposals_*.csv*

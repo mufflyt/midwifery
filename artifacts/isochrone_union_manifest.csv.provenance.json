@@ -1,14 +1,33 @@
 {
   "artifact": "isochrone_union_manifest.csv",
-  "written_utc": "2026-08-29 18:25:53 UTC",
+  "written_utc": "2026-09-03 19:21:48.166 UTC",
   "inputs": [
     {
       "path": "artifacts/maps/midwifery_isochrone_union_30min.rds",
-      "sha256": "ae7abec94de14f08da5cbaae1e9c109bfdd2ae5d659324048a7b40b1fed14da0"
+      "sha256": "e6eb337d6c3e97af219e9be75efb25b5342278073030fba58859b27ede43bf3c"
     },
     {
       "path": "artifacts/maps/midwifery_isochrone_union_60min.rds",
-      "sha256": "af12a75154c202bddb744ca881ad32f5971779ae394ded3229af269560c608da"
+      "sha256": "61e2299ae7fb45769ac6c6e8675b3bae8cad516b131e30ebff6a2cb75eb6988a"
+    }
+  ],
+  "code_sha256": "1728ce22246f4ddd0da14f343fb21e85c6b21c692f9f51562d8e1b3dd191398c",
+  "code": [
+    {
+      "path": "build_midwifery_isochrone_map.R",
+      "sha256": "245b46197f92c29cc9bab8b8e8ecf98ba28a7990afe37f5e6e3b9eff9b7750ba"
+    },
+    {
+      "path": "R/lib/coverage_surface_contracts.R",
+      "sha256": "88181213ae9699aa56fbdaefef9c91b5ae0ee329cd56b946d3b40f3f2d305c97"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "3c57d2c8782dfd90164b89d4cd313639988f2237fc8dce3cdfe2b287305d88f7"
+    },
+    {
+      "path": "R/spatial_crs_contract.R",
+      "sha256": "0513c6bd0d056f57458494373caf69042706b7e9e55e3598ef79330ef15ad360"
     }
   ]
 }

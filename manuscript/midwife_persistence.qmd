@@ -134,7 +134,7 @@ are prevalent among certified midwives in the United States[@Thumm2022burnout],
 and retaining midwives already in the workforce is repeatedly framed as more
 tractable than training new ones. That argument carries an unstated geographic
 assumption: that a midwife retained in the profession is a midwife retained
-*in the same community*. If mobility is high, retention preserves the national
+in the same community. If mobility is high, retention preserves the national
 workforce while redistributing it, and a county-level access gain cannot be
 assumed from a national retention effect. If mobility is low, retention is
 geographically sticky and the benefit of a retention effect falls
@@ -203,17 +203,17 @@ panel is consequential: a midwife who has since left the registry remains
 matchable under the name she held while enumerated, and every name spelling an
 NPI has ever carried is available for blocking, not only its present one.
 
-Candidate pairs were ranked into **ordered name-evidence classes** rather than
+Candidate pairs were ranked into ordered name-evidence classes rather than
 scored on a blended similarity metric. The classes are, from strongest to
 weakest: exact surname and given name with a corroborating middle name; exact
 surname and given name; exact surname with given-name equivalence through a
 nickname dictionary; surname within edit distance two of the roster spelling;
-and a partial-surname class ranked *below* whole-surname agreement, on the
+and a partial-surname class ranked below whole-surname agreement, on the
 reasoning that a fragment of a surname is weaker identity evidence than the
 whole of one within a small edit distance.
 
-A certification record resolved to a provider only when **exactly one candidate
-occupied its strongest available evidence class**. Where two or more candidates
+A certification record resolved to a provider only when exactly one candidate
+occupied its strongest available evidence class. Where two or more candidates
 were indistinguishable at that class -- most commonly identical surname and
 given name with no middle name available on either side -- the record was left
 unresolved and retained as a reported stratum rather than assigned to the most
@@ -224,7 +224,7 @@ This fail-closed rule trades coverage for correctness deliberately. Two
 certificants with identical names, no middle name, and no date of birth are
 genuinely indistinguishable in these data, and a similarity score would
 manufacture certainty rather than establish it. Provider taxonomy assigned the
-evidence tier but was **never permitted to break an identity tie**: taxonomy
+evidence tier but was never permitted to break an identity tie: taxonomy
 states what a provider record does for a living, not which person a name refers
 to. A match supported only by nursing taxonomy was reported as a separate
 stratum and never promoted into the primary cohort, because a certified
@@ -242,9 +242,9 @@ out, `r mw_n("linkage.contested")` were contested between two certificants, and
 decompose. These dispositions are mutually exclusive and sum to the roster
 (Appendix 1, eResults 1).
 
-**Two selection rates follow from this design and are not interchangeable.**
-*Cohort resolution* is the share resolving to a midwifery-taxonomy record --
-what admits a person to the analytic cohort. *Ascertainment* is the share found
+Two selection rates follow from this design and are not interchangeable.
+Cohort resolution is the share resolving to a midwifery-taxonomy record --
+what admits a person to the analytic cohort. Ascertainment is the share found
 in the registry at all, including nursing-only matches. Among ACTIVE
 certificants these are `r mw_safe_stat("linkage.active_pct", "%.1f")`% and
 `r mw_safe_stat("linkage.active_ascertained_pct", "%.1f")`%; among DECEASED
@@ -257,13 +257,13 @@ take the first.
 
 The analytic cohort was the set of `r mw_n("panel.cohort_n_at_panel_build")` providers resolved
 by the frozen linkage; the disposition of every certification record, and the
-denominators each subsequent proportion is taken against, are given in Figure 1. Each was followed across the
+denominators each subsequent proportion is taken against, are given in Figure 1. Rurality-strata composition of the resulting cohort is given in Figure 2. Each was followed across the
 `r mw_safe_stat("panel.snapshots")` annual snapshots. A provider-year was one
 snapshot in which a provider appeared with a usable practice address. Providers
 were not required to appear in every year; entry and exit are themselves
 observed quantities.
 
-The linkage was **frozen before any analysis was run** and is addressed by
+The linkage was frozen before any analysis was run and is addressed by
 checksum thereafter. Every downstream product declares the frozen file as an
 input, and a rebuild that would leave any consumer holding a previous cohort is
 refused rather than performed. This is the mechanism that makes the cohort a
@@ -281,13 +281,13 @@ Because linkage is selected on certification status, and status is associated
 with practice location, the located cohort is not a random sample of the
 roster. Three analyses bound the consequence, in increasing order of assumption.
 
-**Worst-case bounds.** Certificants with no assignable county were placed
+Worst-case bounds. Certificants with no assignable county were placed
 entirely inside, then entirely outside, each rurality category. The truth lies
 within these bounds whatever the missingness mechanism. They are wide by
 construction; the width is an identity, equal to the unobserved fraction, and a
 narrower interval would be an assumption rather than a tighter analysis.
 
-**Bounds that retain observable non-cohort geography.** Rurality is missing
+Bounds that retain observable non-cohort geography. Rurality is missing
 because a practice ZIP failed to resolve, not because a certificant failed to
 enter the cohort; these are different events.
 `r mw_n("bounds.outside_n")` certificants outside the cohort nonetheless carry a
@@ -295,12 +295,12 @@ resolving ZIP, and discarding them would widen the interval by ignoring
 evidence. The reported bound retains them; the bound that discards them is given
 in Appendix 1.
 
-**Inverse-probability weighting.** Each located certificant was weighted by the
+Inverse-probability weighting. Each located certificant was weighted by the
 inverse of the linkage probability in its certification-status stratum. This is
 reported as a sensitivity and never as a correction: it is valid only if status
 explains the missingness, and it plainly does not explain all of it.
 
-A **tipping-point** calculation reports how far the unobserved would have to
+A tipping-point calculation reports how far the unobserved would have to
 depart from the observed for the qualitative conclusion to change.
 
 ## Geographic assignment
@@ -335,12 +335,29 @@ to ZIP code and to state, which bound the county estimate from below and above
 and serve as an internal consistency check.
 
 Origin rurality was the Rural-Urban Continuum Code stratum of the county of a
-provider's *first* observed snapshot, banded as metropolitan (codes 1--3),
+provider's first observed snapshot, banded as metropolitan (codes 1--3),
 nonmetropolitan adjacent to a metropolitan area (4--6), and nonmetropolitan
 remote (7--9). Classification by origin rather than by current county is
 essential: classifying by current county counts a midwife who left a remote
 county for a metropolitan one as metropolitan, and attributes her move to
 metropolitan mobility.
+
+## Scope-of-practice access analysis
+
+As a secondary analysis, the cohort's practice locations were used to build
+population-weighted drive-time access surfaces (30- and 60-minute isochrones
+from every practice address, dissolved to a union, overlaid on
+census-tract-level counts of reproductive-age women) and each state was
+classified as autonomous or collaborative/supervisory practice authority
+using the continuous 2012--2016 classification in [@Ranchoff2020scope]
+(Table 1), which excludes six states whose framework changed within that
+window. Access by regime was compared with a Welch two-sample *t*-test across
+states, each state's own population-weighted access percentage serving as one
+observation; a proportions test on the underlying women-with-access counts
+was not used; it would treat every individual woman as an independent trial
+and inflate significance with a denominator in the hundreds of millions,
+answering a different and less meaningful question than whether the two
+groups of *states* differ.
 
 ## Statistical analysis
 
@@ -411,7 +428,7 @@ strongly related to certification status --
 `r mw_safe_stat("linkage.active_pct", "%.1f")`% of ACTIVE against
 `r mw_safe_stat("linkage.dead_pct", "%.1f")`% of DECEASED certificants -- so
 providers who have left the workforce are under-represented, and every estimate
-below describes the *located* workforce rather than all certificants. The full
+below describes the located workforce rather than all certificants. The full
 disposition of every record, the evidence classes behind it, and an analysis of
 the resulting selection appear in Supplementary Material S1.
 
@@ -436,7 +453,7 @@ substantially by certification status, so it need not describe the roster of
 Making no assumption about the missingness mechanism, the roster-wide
 metropolitan share was bounded between
 `r mw_safe_stat("bounds.lower_pct", "%.1f")`% and
-`r mw_safe_stat("bounds.upper_pct", "%.1f")`% (Figure 2). The direction of the selection
+`r mw_safe_stat("bounds.upper_pct", "%.1f")`% (Figure 3). The direction of the selection
 is not, however, purely a matter of assumption: among the
 `r mw_n("bounds.outside_n")` certificants outside the cohort whose practice ZIP
 code nonetheless permitted a county assignment,
@@ -484,7 +501,7 @@ midwife changed county in about
 `r mw_safe_stat("rural.annual_remote_move", "%.1f")`% of years against
 `r mw_safe_stat("rural.annual_metro_move", "%.1f")`% for a metropolitan-origin
 midwife. Over a career the gradient was larger and monotone (Table 3,
-Figure 3). Career
+Figure 4). Career
 same-county persistence was
 `r mw_pct_ci(K$rural$table$pct[1], K$rural$table$lo[1], K$rural$table$hi[1])`
 for metropolitan origin,
@@ -496,10 +513,39 @@ difference between the extreme strata was
 `r mw_safe_stat("rural.diff", "%.1f")` percentage points (95% CI
 `r mw_safe_stat("rural.diff_lo", "%.1f")`--`r mw_safe_stat("rural.diff_hi", "%.1f")`).
 
+## Access by state scope-of-practice regime
+
+The same drive-time access surfaces support a further comparison: whether
+measured access differs between the `r mw_n("scope.n_autonomous")`
+states with autonomous midwifery practice authority and the
+`r mw_n("scope.n_collaborative")` states with a collaborative or
+supervisory framework, using the classification in [@Ranchoff2020scope]
+(Table 1, 2012--2016; six states that changed framework mid-window are
+excluded from this comparison). At 30 minutes, population-weighted access did
+not differ meaningfully by regime:
+`r mw_safe_stat("scope.band30_autonomous_pct", "%.1f")`% of reproductive-age
+women in autonomous-practice states were within a 30-minute drive of a
+midwife, against `r mw_safe_stat("scope.band30_collaborative_pct", "%.1f")`%
+in collaborative/supervisory states -- a difference of
+`r mw_safe_stat("scope.band30_diff_pp", "%.1f")` percentage points (95% CI
+`r mw_safe_stat("scope.band30_ci_lo", "%.1f")`--`r mw_safe_stat("scope.band30_ci_hi", "%.1f")`,
+`r mw_pval(K$scope$band30_p)`, Welch two-sample *t*-test across states).
+
+At 60 minutes the difference reached significance, in the opposite direction:
+`r mw_safe_stat("scope.band60_autonomous_pct", "%.1f")`% access in
+autonomous-practice states against
+`r mw_safe_stat("scope.band60_collaborative_pct", "%.1f")`% in
+collaborative/supervisory states
+(`r mw_safe_stat("scope.band60_diff_pp", "%.1f")` percentage points, 95% CI
+`r mw_safe_stat("scope.band60_ci_lo", "%.1f")`--`r mw_safe_stat("scope.band60_ci_hi", "%.1f")`,
+`r mw_pval(K$scope$band60_p)`).
+Collaborative/supervisory states were, if anything, marginally better covered
+at the wider band, not worse.
+
 ## Where movers go
 
 Among providers who changed county over their career, destination was strongly
-asymmetric (Table 4, Figure 4). Of nonmetropolitan-adjacent-origin movers,
+asymmetric (Table 4, Figure 5). Of nonmetropolitan-adjacent-origin movers,
 `r mw_safe_stat("movers.adj_to_metro_pct", "%.0f")`% ended in a metropolitan
 county, as did `r mw_safe_stat("movers.remote_to_metro_pct", "%.0f")`% of
 remote-origin movers; `r mw_safe_stat("movers.metro_stay_pct", "%.0f")`% of
@@ -573,8 +619,25 @@ overwhelmingly relocate to metropolitan counties, a retention intervention that
 is geographically untargeted will tend to consolidate the workforce where it is
 already dense.
 
+Regulatory scope of practice is often treated as a proxy for access:
+autonomous-practice states have 2.2 times the per-capita CNM/CM density of
+collaborative/supervisory states [@Ranchoff2020scope], and a state with more
+midwives per capita is assumed to be one where midwifery care is easier to
+reach. Density and reachability are not the same measure. Using this cohort's
+own drive-time surfaces, population-weighted access did not differ between the
+two regulatory groups at 30 minutes and was measurably lower in
+autonomous-practice states at 60 minutes. Ranchoff and Declercq's own
+county-level measure shows the same tension in miniature: 59.7% of counties in
+autonomous-practice states had no midwife at all, against 74.1% in
+collaborative-practice states [@Ranchoff2020scope] -- a real difference, but a
+coarser one than a population-weighted drive-time surface can show, and one
+that a binary "has a midwife" measure cannot distinguish from a difference in
+*where within a state* that density falls. A regulatory framework that
+concentrates midwives more densely does not by itself guarantee that the
+resulting workforce is reachable by more of the women it serves.
+
 This analysis also illustrates a methodological hazard worth reporting. An
-earlier version of this work, stratifying by each provider's *current* county
+earlier version of this work, stratifying by each provider's current county
 rather than county of origin, found no rural mobility penalty. That
 specification counts a midwife who left a remote county as metropolitan and
 attributes her move to metropolitan mobility; correcting it did not merely
@@ -594,7 +657,7 @@ agree.
 The principal limitation is that linkage is selected on an outcome correlated
 with the exposure. Only `r mw_safe_stat("linkage.active_pct", "%.1f")`% of
 ACTIVE certificants and `r mw_safe_stat("linkage.dead_pct", "%.1f")`% of
-DECEASED certificants resolve *into the analytic cohort* -- that is, to a
+DECEASED certificants resolve into the analytic cohort -- that is, to a
 provider record carrying midwifery taxonomy -- so providers who exited the
 workforce are under-represented, and persistence among those we observe is not
 persistence among all certificants. The direction of this bias is toward
@@ -619,7 +682,7 @@ to `r mw_safe_stat("bounds.upper_pct", "%.1f")`% roster-wide with no assumption
 about the missingness mechanism (Appendix 1). More usefully, the missingness is
 not entirely opaque: the `r mw_n("bounds.outside_n")` certificants outside the
 cohort who could nonetheless be placed were
-`r mw_safe_stat("bounds.outside_pct", "%.1f")`% metropolitan, marginally *less*
+`r mw_safe_stat("bounds.outside_pct", "%.1f")`% metropolitan, marginally less
 metropolitan than the cohort rather than more. If the certificants who could
 not be placed resemble those who could, the cohort slightly overstates how
 metropolitan the workforce is -- a bias in the same direction as the
@@ -739,7 +802,15 @@ knitr::kable(t4, row.names = FALSE, align = "lrrr",
 
 # Figures
 
-```{r fig1, fig.cap="Figure 1. Flow of certification records from the American Midwifery Certification Board roster to the rurality strata. Dispositions are mutually exclusive and sum to the roster. Both resolved strata enter the analytic cohort; a match carrying only nursing taxonomy is found but is not promoted into the primary midwifery stratum. The metropolitan share is taken among cohort members with an assignable practice county, not among the cohort and not among the roster."}
+```{r fig1, fig.cap="Figure 1. Exclusion flow from the American Midwifery Certification Board roster to the final analytic cohort. Every stage is a subset of the one before it: not currently certified, no NPI match (itemised by reason, including two identity-confidence sensitivity tiers held out of the primary match definition), no geocodable address, and no assignable ACOG district (overseas-military or US-territory addresses, which are geocodable but outside ACOG's district system). Counts are drawn from the stats catalog and reconcile at every stage by construction."}
+# STATIC, and generated rather than drawn by hand: make_cohort_exclusion_flow_figure.R
+# reads every count from the stats catalog (via the frozen person-level
+# linkage's match_status, not the looser npi_match_status) and refuses to draw
+# a stage whose parts do not sum to the one before it.
+knitr::include_graphics(file.path(root, "docs", "figures", "cohort_exclusion_flow.png"))
+```
+
+```{r fig2, fig.cap="Figure 2. Flow of certification records from the American Midwifery Certification Board roster to the rurality strata. Dispositions are mutually exclusive and sum to the roster. Both resolved strata enter the analytic cohort; a match carrying only nursing taxonomy is found but is not promoted into the primary midwifery stratum. The metropolitan share is taken among cohort members with an assignable practice county, not among the cohort and not among the roster."}
 # STATIC, and generated rather than drawn by hand: make_cohort_flow_figure.R
 # reads every count from the stats catalog and refuses to write a figure whose
 # parts do not sum to the roster. A flow diagram is the one place in this paper
@@ -748,13 +819,13 @@ knitr::kable(t4, row.names = FALSE, align = "lrrr",
 knitr::include_graphics(file.path(root, "docs", "figures", "cohort_flow.png"))
 ```
 
-```{r fig2, fig.cap="Figure 2. Metropolitan share of the certification roster: the estimate observed in the located cohort, two sensitivity estimates, and three bounds ordered by the assumption each requires. The dashed line marks the share observed among cohort members with an assignable county. The interval that discards locatable non-cohort records is wider than the one reported, and is shown so that the cost of ignoring that evidence is visible rather than asserted."}
+```{r fig3, fig.cap="Figure 3. Metropolitan share of the certification roster: the estimate observed in the located cohort, two sensitivity estimates, and three bounds ordered by the assumption each requires. The dashed line marks the share observed among cohort members with an assignable county. The interval that discards locatable non-cohort records is wider than the one reported, and is shown so that the cost of ignoring that evidence is visible rather than asserted."}
 # The figure the binding limitation did not have. Ordered by assumption rather
 # than by width, because assumption is the axis a reader chooses along.
 knitr::include_graphics(file.path(root, "docs", "figures", "selection_bounds.png"))
 ```
 
-```{r fig3, fig.width=6.5, fig.height=3.4, fig.cap="Figure 3. Career same-county persistence by rurality of the county of first observed practice. Points are proportions; bars are 95% Wilson score intervals. The axis is restricted to the range of the data and does not begin at zero, so distances between points are comparable but the marks must not be read as areas."}
+```{r fig4, fig.width=6.5, fig.height=3.4, fig.cap="Figure 4. Career same-county persistence by rurality of the county of first observed practice. Points are proportions; bars are 95% Wilson score intervals. The axis is restricted to the range of the data and does not begin at zero, so distances between points are comparable but the marks must not be read as areas."}
 suppressPackageStartupMessages(library(ggplot2))
 
 # FORM. Three ordered strata, one measure, uncertainty that matters -- the
@@ -787,7 +858,7 @@ ggplot(r, aes(x = pct, y = origin)) +
         plot.margin = margin(6, 14, 6, 6))
 ```
 
-```{r fig4, fig.width=6.5, fig.height=3.2, fig.cap="Figure 4. Destination of providers who changed county over their career, as a percentage of movers from each origin stratum. Counts are given in Table 4. Rural-origin movers relocate predominantly to metropolitan counties; metropolitan-origin movers overwhelmingly remain metropolitan."}
+```{r fig5, fig.width=6.5, fig.height=3.2, fig.cap="Figure 5. Destination of providers who changed county over their career, as a percentage of movers from each origin stratum. Counts are given in Table 4. Rural-origin movers relocate predominantly to metropolitan counties; metropolitan-origin movers overwhelmingly remain metropolitan."}
 # FORM. The counts in Table 4 span 36 to 3,868, so a heatmap or a count bar
 # would show one dark cell and eight pale ones -- the magnitude swamps the
 # pattern. The FINDING is compositional: where movers from each origin end up.
@@ -829,7 +900,7 @@ ggplot(d, aes(x = pct, y = origin, fill = dest)) +
         plot.margin = margin(6, 14, 6, 6))
 ```
 
-```{r fig5, fig.width=7.2, fig.height=4.6, fig.cap="Figure 5. Certified nurse-midwives and certified midwives per 1,000 births, by state. Alaska, Hawaii and the territories are omitted from the projection. Territories are also excluded from the color scale: Guam records two midwives against zero births, a rate of 2,000 per 1,000, which would compress all 51 mapped jurisdictions into a single class."}
+```{r fig6, fig.width=7.2, fig.height=4.6, fig.cap="Figure 6. Certified nurse-midwives and certified midwives per 1,000 births, by state. Alaska, Hawaii and the territories are omitted from the projection. Territories are also excluded from the color scale: Guam records two midwives against zero births, a rate of 2,000 per 1,000, which would compress all 51 mapped jurisdictions into a single class."}
 # Built with {mysterymaps} (github.com/mufflyt/mysterymaps), the canonical map
 # library for this group. R/lib/mysterymaps_dep.R records why nothing here
 # re-implements a scale or a legend locally.
@@ -855,7 +926,7 @@ print(mysterymaps::mysterymaps_geographic_map(
   labels      = function(x) sprintf("%.0f", x)))
 ```
 
-```{r fig6, fig.width=7.2, fig.height=4.6, fig.cap="Figure 6. Midwife share of the identified birth-attendant workforce, by state. The denominator is midwives plus generalist obstetrician-gynecologists plus maternal-fetal medicine subspecialists; it excludes family physicians and certified professional midwives, both of which attend births, so the share is an upper bound on midwives' share of that larger workforce."}
+```{r fig7, fig.width=7.2, fig.height=4.6, fig.cap="Figure 7. Midwife share of the identified birth-attendant workforce, by state. The denominator is midwives plus generalist obstetrician-gynecologists plus maternal-fetal medicine subspecialists; it excludes family physicians and certified professional midwives, both of which attend births, so the share is an upper bound on midwives' share of that larger workforce."}
 print(mysterymaps::mysterymaps_geographic_map(
   data        = as.data.frame(dplyr::mutate(sw,
                   share_pct = 100 * .data$midwife_share_of_attendants)),

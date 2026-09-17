@@ -23,18 +23,22 @@
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# Requires a private mufflyt/isochrones checkout. Some entries source canonical
-# name-key helpers; the Stage 2 entry runs the canonical rank_one_to_one()
-# ordering contract. mufflyt/isochrones is PRIVATE and mufflyt/midwifery is
-# PUBLIC, so a runner has no credentials to fetch it.
-#
-# To make these blocking, add a deploy key or read-only PAT for mufflyt/isochrones
-# as a repository secret and clone it in the `external-deps` job. Until then the
-# canonical-normalizer contract is verified locally, not nightly.
+# Requires the mysterynpi package (2026-09 migration: the canonical name keys
+# moved from a source()-ed mufflyt/isochrones checkout into the mysterynpi
+# package). mufflyt/mysterynpi went PUBLIC on 2026-09-05, so the
+# external-deps job now installs it and RUNS three of these informationally;
+# the normalization suite additionally needs the gitignored person-level
+# roster (T12 fails loudly without it, by design) and so stays runner-blocked
+# either way. To promote the other three to blocking, install mysterynpi in
+# the r-suite job and delete their entries here.
 # -----------------------------------------------------------------------------
-tests/test_amcb_name_normalization.R    external-private  # canonical normalize_string()
-tests/test_cycle12_names_territories.R  external-private  # canonical name keys
-tests/test_cycle4_ct_apportionment.R    external-private  # canonical name keys
+tests/test_amcb_name_normalization.R    external-private  # canonical name keys (mysterynpi)
+tests/test_cycle12_names_territories.R  external-private  # canonical name keys (mysterynpi)
+tests/test_cycle4_ct_apportionment.R    external-private  # canonical name keys (mysterynpi)
+tests/test_mysterynpi_contracts.R       external-private  # the consumer-side contract suite
+
+# Stage 2 still needs the private mufflyt/isochrones checkout for the
+# canonical rank_one_to_one() -- that function did NOT move to mysterynpi.
 tests/test_isochrones_stage2_rank_one_to_one.R  external-private  # canonical rank_one_to_one()
 
 # -----------------------------------------------------------------------------

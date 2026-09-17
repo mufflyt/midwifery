@@ -1,0 +1,37 @@
+{
+  "artifact": "cohort_exclusion_flow_counts.csv",
+  "written_utc": "2026-09-11 18:48:02.610 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/linkage_completeness_by_status.csv",
+      "sha256": "60e5abc672a2b2987042b21a7bb88583f38427633f0ac461434ba7d010a6f824"
+    },
+    {
+      "path": "artifacts/geography_by_amcb_status.csv",
+      "sha256": "8933b2f2ca27d6a96a47a5b2dc421fb9700de1a8787efd7371beddfdb21a2392"
+    }
+  ],
+  "code_sha256": "bb00361a128b1f7b75a78a7e8fd7089906852029066e72d9dae6ef3d661cb6ab",
+  "code": [
+    {
+      "path": "make_cohort_exclusion_flow_figure.R",
+      "sha256": "e22e0f282da0d3c9529630a062b7fc1b5bf9648b69f324565c28248235476dd6"
+    },
+    {
+      "path": "manuscript/R/build_stats_catalog.R",
+      "sha256": "a09f304f7e85a3287e39cfc6883dd10d87ac94892478db6949a3da3a472855b3"
+    },
+    {
+      "path": "manuscript/R/inline_stats.R",
+      "sha256": "b89732c65eedbb979564b10540439101d8f20b5195de4ae34a3bbdf523b5d770"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}

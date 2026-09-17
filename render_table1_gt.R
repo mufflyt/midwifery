@@ -105,7 +105,8 @@ gt_tab <- tab %>%
     "calibrated age block covers the whole cohort."))) %>%
   tab_source_note(md(paste0(
     "Source: AMCB roster linked to NPPES; RUCC 2023; ACOG district crosswalk; ",
-    "Healthgrades profile scrape.")))
+    "Healthgrades profile scrape; Trilliant provider directory (patient panel, ",
+    "and sex and school where the other sources are silent).")))
 
 dir.create(file.path(root, "docs"), showWarnings = FALSE)
 gtsave(gt_tab, file.path(root, "docs", "table1_midwives_gt.html"))

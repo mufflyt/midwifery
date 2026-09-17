@@ -181,6 +181,17 @@ npi_luhn_ok <- function(npi) {
 # name: all 18,397 candidate pairs reported middle agreement, and evidence
 # class 2 (exact name, no middle info) was empty. norm_name() and toupper() are
 # NOT at fault -- they propagate NA correctly.
+# mysterynpi::blank_na()/name_key() (0.3.1+) can fold a hyphen to a space via
+# fold_hyphens = TRUE, added after discovering that 57 of 87 roster-wide
+# sensitivity_fuzzy matches (66%) were PURELY a hyphen-vs-space SURNAME
+# mismatch ("Abbas Rodriguez" vs "ABBAS-RODRIGUEZ"), not a genuine spelling
+# difference. It defaults to FALSE and must be passed explicitly per call --
+# a first attempt at defaulting it TRUE package-wide broke split_given(),
+# turning a genuinely compound GIVEN name ("Samantha-Rose") into a given name
+# plus a droppable middle token, producing cross-state false identity
+# matches. last_clean/nppes_last_clean below pass it explicitly; nothing
+# touching a given or middle name may. See mysterynpi's own name_key() and
+# split_given() docstrings for the full defect writeup.
 blank_na <- amcb_blank_na                      # transliterating; see above
 
 # Never use a naked nzchar() to ask whether identity information exists.
@@ -195,7 +206,11 @@ amcb <- read_csv(ROSTER, show_col_types = FALSE) %>%
            coalesce(first_name, ""), coalesce(middle_name, ""),
            coalesce(last_name, ""))),
          amcb_customer_id = customer_id,
-         last_clean  = blank_na(last_name),
+         # fold_hyphens = TRUE ONLY here (a SURNAME comparison). Never on a
+         # given-name field -- see mysterynpi::split_given()'s own warning
+         # and regression test for the cross-state false-match defect that
+         # produced when this was briefly the package-wide default.
+         last_clean  = blank_na(last_name, fold_hyphens = TRUE),
          # AMCB fuses middle names into first_name ("Julie Ann"): the first
          # token is the given name, the rest is middle.
          first_raw   = blank_na(first_name),
@@ -221,7 +236,7 @@ panel <- panel_raw %>%
   # transliterated -- and the 2007-2017 dissemination files are latin-1, so
   # accented NPPES spellings are genuinely present on this side too. Both sides
   # must pass through the same key builder or the fix is only half applied.
-  mutate(nppes_last_clean  = blank_na(last_name),
+  mutate(nppes_last_clean  = blank_na(last_name, fold_hyphens = TRUE),
          nppes_first_clean = blank_na(first_name),
          nppes_first_init  = coalesce(amcb_first_initial(nppes_first_clean), ""),
          nppes_mid_init    = substr(blank_na(middle_name), 1, 1),
@@ -749,10 +764,13 @@ out <- amcb %>%
          # NPPES currently reports for that NPI. Without this a reviewer reads
          # a legitimate name change as a false match; with it, the row explains
          # itself. Compared on the normalised key, not the raw string, so an
-         # accent alone can never raise the flag.
+         # accent alone can never raise the flag. Both sides are surnames, so
+         # fold_hyphens = TRUE here too -- a punctuation-only change
+         # ("SMITH-JONES" -> "SMITH JONES") is not a real name change.
          nppes_name_changed_since_match = !is.na(npi) &
            !is.na(nppes_matched_last) & !is.na(nppes_last_name) &
-           blank_na(nppes_matched_last) != blank_na(nppes_last_name),
+           blank_na(nppes_matched_last, fold_hyphens = TRUE) !=
+             blank_na(nppes_last_name, fold_hyphens = TRUE),
          # ambiguity_flag separates "we could not tell which person" from "we
          # found nobody". Those are different failures and are routinely
          # conflated into a single unmatched rate.

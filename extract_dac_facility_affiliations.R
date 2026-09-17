@@ -99,7 +99,7 @@ cat("facility types:\n")
 print(sort(table(mine$facility_type), decreasing = TRUE))
 
 # --- hospital attributes -----------------------------------------------------
-con <- dbConnect(duckdb::duckdb(), DB, read_only = TRUE)
+con <- duckdb_connect(DB, read_only = TRUE)
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 hosp <- dbGetQuery(con, "
   SELECT facility_id, facility_name, state, hospital_type, hospital_ownership,

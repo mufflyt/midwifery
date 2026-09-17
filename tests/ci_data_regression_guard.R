@@ -251,20 +251,29 @@ if (!file.exists(bounds_path)) {
 # -----------------------------------------------------------------------------
 ci_section("D6 README's headline roster count matches the linkage manifest")
 
-# PUBLIC, doc-vs-data drift. README.md states "22,309 certificants" in prose
+# PUBLIC, doc-vs-data drift. README.md states "22,357 certificants" in prose
 # at several points; linkage_manifest.json's total_rows is the number those
 # claims are actually about. A regeneration that moves the real count
 # without anyone updating the prose is exactly the kind of drift a reader
 # has no way to detect by eye.
+#
+# THE LITERAL IS A DECISION, NOT A HEURISTIC (same reasoning as L1's
+# LAW_COHORTS registry). This was "22,309" until the live AMCB rescrape on
+# 2026-09-02 grew the roster to 22,357 (see reconcile_linkage.R's own
+# hardcoded-count fix, commit cc5a301, for the identical situation). Parsing
+# "any comma-formatted number near the word roster" instead would make this
+# check pass on any number at all, which is not a check. When the roster next
+# changes, this literal is bumped again, deliberately, by whoever verifies
+# the new true count -- not inferred.
 readme_path <- drg_path("README.md")
 if (!file.exists(readme_path) || !file.exists(lm_path)) {
   ci_fail("D6: README.md and/or linkage_manifest.json is committed and absent")
 } else {
   readme <- readLines(readme_path, warn = FALSE)
-  cited <- unique(regmatches(readme, regexpr("22,309", readme, fixed = TRUE)))
+  cited <- unique(regmatches(readme, regexpr("22,357", readme, fixed = TRUE)))
   lm <- read_json(lm_path)
   if (length(cited) == 0L) {
-    ci_fail("D6: README.md no longer cites the roster count at all -- expected \"22,309\" to appear")
+    ci_fail("D6: README.md no longer cites the roster count at all -- expected \"22,357\" to appear")
   } else if (is.null(lm) || is.null(lm$linkage$total_rows)) {
     ci_fail("D6: linkage_manifest.json parsed but linkage$total_rows is missing (top-level keys: %s)",
             paste(names(lm), collapse = ", "))

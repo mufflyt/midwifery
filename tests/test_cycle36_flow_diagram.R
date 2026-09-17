@@ -77,14 +77,15 @@ cat("\n-- BVA --\n")
 
 # T36-3. The node-height formula at its two boundaries: a bare label (lines=1,
 # the minimum) versus a label with both a value and a sub-label (lines=3, the
-# maximum any node currently supports) -- h = 26 + 22*(lines-1) must compute
-# 26 and 70 respectively, not drift at either extreme.
+# maximum any node currently supports) -- h = 14 + FD_LINE_GAP*lines, with
+# FD_LINE_GAP=26 for the uniform 12pt text all three fields now render at,
+# must compute 40 and 92 respectively, not drift at either extreme.
 {
   n <- rbind(fd_node("bare", 1, "Bare", kind = "plain"),
             fd_node("full", 1, "Full", value = "V", sub = "S", kind = "plain"))
   lay <- fd_layout(n)
-  chk(lay$h[lay$id == "bare"] == 26 && lay$h[lay$id == "full"] == 70,
-      sprintf("T36-3 height is 26 at lines=1 and 70 at lines=3 (got %s, %s)",
+  chk(lay$h[lay$id == "bare"] == 40 && lay$h[lay$id == "full"] == 92,
+      sprintf("T36-3 height is 40 at lines=1 and 92 at lines=3 (got %s, %s)",
               lay$h[lay$id == "bare"], lay$h[lay$id == "full"]))
 }
 

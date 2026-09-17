@@ -63,7 +63,32 @@ ci_section("L1 an artifact may not declare an unregistered cohort")
 # accepted the 11,913 that motivated this law.
 LAW_COHORTS <- c(
   "16892" = "analytic cohort (frozen_cohort/analytic_cohort.csv)",
-  "11920" = "ACTIVE, primary-linked (Table 1)"
+  "11920" = "ACTIVE, primary-linked (Table 1), 2026-08-10 freeze vintage",
+  # Added 2026-09-10, issue #172's A/B reconciliation: the same ACTIVE,
+  # primary-linked definition (status == "ACTIVE", linkage_tier ==
+  # "primary_midwifery") against the reconciled 22,357-row roster, which
+  # grew from 22,309 and picked up 2018-2026 NPI candidates the ad hoc
+  # rebuild's source panel already had. The 11920-declaring artifacts above
+  # are the older freeze's own vintage and are not stale -- they describe
+  # what was true then -- so 11920 stays registered rather than being
+  # replaced.
+  "12129" = "ACTIVE, primary-linked (Table 1), 2026-09-10 reconciled vintage",
+  # Added 2026-09-11, issue #176: the analytic cohort (is_cohort_member() in
+  # reconcile_linkage.R) against the reconciled 22,357-row roster, once BOTH
+  # artifacts/frozen_cohort/ (PR #182, repin_frozen_cohort.R) and
+  # artifacts/frozen_stage2/ (this session, repin_frozen_stage2.R -- see
+  # DEBT.md D10) were re-pinned to the reconcile_ab_20260910T193000_issue172
+  # vintage. 16892 above is the SAME analytic-cohort definition at the
+  # previous freeze and stays registered -- it describes what was true then,
+  # not a stale artifact awaiting a rebuild.
+  "17028" = "analytic cohort (frozen_cohort/analytic_cohort.csv), 2026-09-11 repin vintage",
+  # Added 2026-09-11, artifacts/table1_provenance.csv (built 18:39, PR #184):
+  # same ACTIVE, primary-linked definition as 11920/12129 above, against the
+  # SAME current amcb_npi_linkage_FROZEN.csv this session's other fixes use --
+  # verified independently by recomputing status=="ACTIVE" &
+  # linkage_tier=="primary_midwifery" directly against that file (12,171).
+  # 12129 stays registered as the vintage before this rebuild.
+  "12171" = "ACTIVE, primary-linked (Table 1), table1_provenance.csv 2026-09-11 vintage"
 )
 
 # KNOWN, AWAITING A DECISION -- not forgiven.

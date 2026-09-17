@@ -15,10 +15,26 @@ authors:
     given-names: "Elisabeth B."
     affiliation: "Denver Health and Hospital Authority, Denver, Colorado, USA"
     # TODO: orcid: "https://orcid.org/XXXX-XXXX-XXXX-XXXX"
-title: "National Certified Nurse-Midwife (CNM) 50-State & DC Workforce & Board of Nursing Registry Dataset"
-version: "4.0.0"
-doi: "10.5281/zenodo.1054200"
-date-released: 2026-08-14
+title: "National Certified Nurse-Midwife (CNM) 50-State & DC Workforce Registry Dataset"
+# "Board of Nursing Registry" dropped from the title 2026-09-11: only Washington
+# state's licensure data is genuinely observed (374 records). Purported BON
+# license identifiers for the other 49 states + DC were synthesized from
+# certification_number, not scraped -- see
+# docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md and
+# manuscript/appendix3_board_verification.qmd. Colorado and Texas have since
+# been queried from their boards' own open data (README Figure 1); no other
+# state has.
+#
+# NO DOI, and version is the latest real tag. Until 2026-09-13 this file gave
+# doi 10.5281/zenodo.1054200 and version 4.0.0. Neither was real: that DOI
+# resolves to an unrelated 2016 Zenodo record (a figure from a spider
+# taxonomy paper; `curl -sL https://zenodo.org/api/records/1054200` redirects
+# to record 1054201), a Zenodo search finds no record for this repository,
+# and the repository's only tag is v0.7.0 (`git tag`, 2026-08-13, commit
+# 335d245). Work after that tag is untagged: cite a commit SHA for it. Mint a
+# DOI through a real Zenodo release before adding one here.
+version: "0.7.0"
+date-released: 2026-08-13
 license: MIT
 url: "https://github.com/mufflyt/midwifery"
 repository-code: "https://github.com/mufflyt/midwifery"
@@ -118,3 +134,24 @@ references:
     url: "https://theacme.org/accredited-midwifery-education-programs/"
     year: 2026
     notes: "The 50-program sampling frame behind the institutional-repository harvest for training institution."
+  - type: database
+    title: "Health Care Provider Credential Data"
+    authors:
+      - name: "Washington State Department of Health"
+    url: "https://data.wa.gov/d/qxh8-f4bd"
+    year: 2026
+    notes: "Queried 2026-09-13, credential types containing Midwife; the only Washington licensure evidence in this repository."
+  - type: database
+    title: "Professional and Occupational Licenses in Colorado"
+    authors:
+      - name: "Colorado Department of Regulatory Agencies, Division of Professions and Occupations"
+    url: "https://data.colorado.gov/d/7s5z-vewr"
+    year: 2026
+    notes: "Queried 2026-09-11, licence type APN, subcategory CNM."
+  - type: database
+    title: "APRN-Active"
+    authors:
+      - name: "Texas Board of Nursing"
+    url: "https://data.texas.gov/d/jnzg-cr4w"
+    year: 2026
+    notes: "Queried 2026-09-12, APRN category NURSE MIDWIFE, including prescriptive authority status."

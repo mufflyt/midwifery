@@ -247,7 +247,12 @@ ci_section("A4 geography never appears without an identity behind it")
 #
 # The crosswalk is person-level and gitignored, so this SKIPS on a runner and
 # asserts locally, where the file exists.
-KNOWN_ORPHANS <- 8L
+# Lowered 2026-09-11 from 8: this check only ever runs locally (person-level
+# input), and nobody had re-run it since reconcile_linkage.R's guess_max = Inf
+# fix (cc5a301, PR #182) regenerated amcb_npi_linkage_FROZEN.csv without the
+# earlier type-guess corruption. The 8 orphans this was tracking did not
+# reappear against that corrected file.
+KNOWN_ORPHANS <- 0L
 
 FROZEN_XWALK <- file.path(root, "artifacts", "amcb_npi_linkage_FROZEN.csv")
 

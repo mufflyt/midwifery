@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="420" viewBox="0 0 820 420" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="820" height="420" fill="#ffffff"/>
+
+  <!-- production code -->
+  <rect x="30" y="40" width="200" height="60" rx="6" fill="#ffffff" stroke="#333333" stroke-width="1.5"/>
+  <text x="130" y="66" text-anchor="middle" font-size="14" fill="#111111">production code</text>
+  <text x="130" y="84" text-anchor="middle" font-size="11" fill="#666666">40+ call sites</text>
+
+  <!-- arrow 1 -->
+  <line x1="230" y1="70" x2="288" y2="70" stroke="#333333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- duckdb_connect() : the chokepoint -->
+  <rect x="290" y="30" width="230" height="80" rx="6" fill="#eaf2fb" stroke="#2b6cb0" stroke-width="2"/>
+  <text x="405" y="58" text-anchor="middle" font-size="15" font-weight="bold" fill="#1a4971">duckdb_connect()</text>
+  <text x="405" y="76" text-anchor="middle" font-size="11" fill="#1a4971">the single choke point</text>
+  <text x="405" y="92" text-anchor="middle" font-size="10" fill="#4a6fa1">stamps bootstrap provenance</text>
+
+  <!-- arrow 2 -->
+  <line x1="520" y1="70" x2="578" y2="70" stroke="#333333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- canonical bootstrap -->
+  <rect x="580" y="30" width="210" height="80" rx="6" fill="#ffffff" stroke="#333333" stroke-width="1.5"/>
+  <text x="685" y="52" text-anchor="middle" font-size="13" fill="#111111">ensure_duckdb_encodings()</text>
+  <text x="685" y="70" text-anchor="middle" font-size="10" fill="#666666">probe -&gt; install -&gt; LOAD</text>
+  <text x="685" y="86" text-anchor="middle" font-size="10" fill="#666666">fail-closed if forbidden</text>
+
+  <!-- down arrow from duckdb_connect to duckdb::duckdb() -->
+  <line x1="405" y1="110" x2="405" y2="150" stroke="#333333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- duckdb::duckdb() -->
+  <rect x="290" y="152" width="230" height="50" rx="6" fill="#ffffff" stroke="#333333" stroke-width="1.5"/>
+  <text x="405" y="182" text-anchor="middle" font-size="13" fill="#111111">duckdb::duckdb()</text>
+
+  <line x1="405" y1="202" x2="405" y2="238" stroke="#333333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- DBI::dbConnect() -->
+  <rect x="290" y="240" width="230" height="50" rx="6" fill="#ffffff" stroke="#333333" stroke-width="1.5"/>
+  <text x="405" y="270" text-anchor="middle" font-size="13" fill="#111111">DBI::dbConnect()</text>
+
+  <!-- branch down to open_medicare_duckdb -->
+  <line x1="130" y1="100" x2="130" y2="330" stroke="#888888" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <line x1="130" y1="330" x2="288" y2="330" stroke="#888888" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arrow-gray)"/>
+
+  <rect x="290" y="300" width="380" height="70" rx="6" fill="#fdf3e7" stroke="#c07a1e" stroke-width="1.5"/>
+  <text x="480" y="326" text-anchor="middle" font-size="13" font-weight="bold" fill="#8a5314">open_medicare_duckdb()</text>
+  <text x="480" y="344" text-anchor="middle" font-size="10.5" fill="#8a5314">domain-specific: warehouse path resolution +</text>
+  <text x="480" y="358" text-anchor="middle" font-size="10.5" fill="#8a5314">required-table / non-empty-table assertions</text>
+
+  <line x1="405" y1="360" x2="405" y2="381" stroke="#c07a1e" stroke-width="1.2" stroke-dasharray="3,3"/>
+  <text x="405" y="398" text-anchor="middle" font-size="10" fill="#8a5314">calls duckdb_connect() -- never initializes DuckDB independently</text>
+  <line x1="405" y1="381" x2="405" y2="112" stroke="#c07a1e" stroke-width="1.2" stroke-dasharray="3,3" marker-end="url(#arrow-orange)"/>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#333333"/>
+    </marker>
+    <marker id="arrow-gray" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#888888"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#c07a1e"/>
+    </marker>
+  </defs>
+
+  <text x="10" y="415" font-size="9.5" fill="#999999">R/lib/medicare_duckdb.R -- 0 raw production connection sites outside the exception registry (355 files scanned)</text>
+</svg>

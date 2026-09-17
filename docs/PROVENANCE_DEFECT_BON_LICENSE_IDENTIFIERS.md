@@ -115,3 +115,48 @@ as independently observed evidence, and it did.
   a validation that holds for 374 of 5,120 rows.
 - **Recompute** the Tier-1 breakdown restricted to genuine WA evidence.
 - Do not regenerate historical figures as part of this note.
+
+---
+
+## 7. Further findings, 2026-09-13
+
+The two templates in §1 were not the only ones. Each row below was found by
+`git grep` over the tree as it stood before the fabricated scripts were deleted
+(`f5c2256^`), so the file and line are the evidence:
+
+| template or value | where it was written | what it re-encodes |
+|---|---|---|
+| `{st}-APRN-CNM-{cert}` | `harvest_all_tier2_live_bon_datasets.py:67` | certification number, for the 25 "Tier 2 Nursys compact" states; no Nursys query was made |
+| `LA-APRN-CNM-{cert}` | `demonstrate_la_bon_access_pipeline.py:42`, `scrape_live_lsbn_state_portal.py:35` | certification number, presented as a Louisiana board record |
+| `CO-APRN-CNM-{npi}` | `add_elisabeth_thumm_to_cohort.py:38` | an **NPI**, presented as a Colorado licence |
+| `CNM-CO-{npi}` | `add_elisabeth_thumm_to_cohort.py:12` | an **NPI**, presented as an AMCB certification number (the real one was already in the linkage) |
+| `APRN.00{cert}-CNM` | `demonstrate_dora_identification.py:15` | certification number, formatted to look like a Colorado DORA licence |
+| literal licence numbers for named people (`MT-RN-APRN-48192`, `LA-APRN-CNM-CNM2918`, ...) | `demonstrate_npi_vs_license_formatting.py`, `generate_cpa_filing_sample.py` | nothing: typed |
+| `bon_status = "ACTIVE_LICENSED"`, `bon_recency_year = "2026"` under `# Simulate BON mandatory renewal verification` | `harvest_state_nursing_board_addresses.py:33-35` | nothing: every row marked active |
+
+All of those scripts are deleted (f5c2256, 29be743). The same pass found
+defects of other kinds, now recorded in `artifacts/bon_contamination_inventory.csv`
+under a new `defect` column:
+
+- **A delivery-claims layer that read no claims.** `filter_midwife_cpt_delivery_claims.py`
+  flagged every cohort NPI whose Doctors & Clinicians primary specialty is CNM
+  as an "Active Attending Delivery Provider (CPT 59400/59409/59410)": 7,470 rows,
+  4,806 people. Public Medicare Part B has **zero** rows for the delivery codes,
+  for any provider, 2013–2023 (`artifacts/medicare_delivery_code_observability.csv`).
+- **An invented collaborative-practice sample**, pairing a real CNM's NPI and a
+  real physician's NPI with invented filings and invented names.
+- **Typed literals** presented as results: 400 address updates and a 98.5% PPV;
+  a map header of 11,920 / 7,470 / 2,611 / 221; a DOI that belongs to a 2016
+  record about spiders; a version 4.0.0 that was never tagged.
+- **Duplicate-inflated counts.** 12,211 was the row count of a file holding
+  11,920 certificants, and the 374 Washington records were 368 people, because
+  the roster the query ran over repeated some rows.
+- **One hand-edited record**: a midwife's `nppes_*` practice address overwritten
+  with an address from a different CMS file. Restored from the freeze.
+
+**Observed board evidence now.** Washington DOH (re-queried 2026-09-13 against
+the rebuilt, de-duplicated roster), Colorado DORA and the Texas BON, each from
+the board's own open data, matched by name. What each returned is in
+`docs/figures/board_licensure_observed_counts.csv` and README Figure 1. No
+other state has been queried. §3 still holds: none of this entered the
+identity linkage.

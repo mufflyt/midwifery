@@ -36,6 +36,7 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr)
   library(DBI); library(duckdb); library(checkmate); library(here)
 })
+source(file.path("R", "lib", "medicare_duckdb.R"))
 
 ISO <- Sys.getenv("ISOCHRONES_R", path.expand("~/isochrones/R"))
 cache_path <- Sys.getenv("GEOCODING_CACHE_PATH",
@@ -63,7 +64,7 @@ located <- midwives %>%
                                            practice_state, practice_zip))
 
 # --- Cache side ------------------------------------------------------------
-con <- dbConnect(duckdb::duckdb(), cache_path, read_only = TRUE)
+con <- duckdb_connect(cache_path, read_only = TRUE)
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
 cache_raw <- dbGetQuery(con, "

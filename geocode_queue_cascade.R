@@ -60,7 +60,8 @@ local({
                          path.expand("~/isochrones/data/geocoding_cache.duckdb"))
   if (!file.exists(cache_db)) return(invisible(NULL))
   suppressPackageStartupMessages({library(DBI); library(duckdb)})
-  con <- dbConnect(duckdb::duckdb(), cache_db, read_only = TRUE)
+source(file.path("R", "lib", "medicare_duckdb.R"))
+  con <- duckdb_connect(cache_db, read_only = TRUE)
   on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
   tbls <- dbGetQuery(con, "SHOW TABLES")$name
   if (!"geocoding_attempt_log" %in% tbls) return(invisible(NULL))
@@ -75,19 +76,41 @@ local({
 })
 cat(sprintf("run_id: %s\n", RUN_ID))
 
-res <- local({
-  owd <- setwd(ISO)
-  on.exit(setwd(owd), add = TRUE)
-  # The cascade calls is_test_mode() at the end of a run but does not source
-  # its definition; it lives in R/test_mode_contracts.R.
-  suppressWarnings(suppressMessages(source(file.path("R", "test_mode_contracts.R"))))
-  suppressWarnings(suppressMessages(source(file.path("R", "geocode_with_3tier_cascade.R"))))
-  stopifnot(exists("geocode_batch_with_3tier_cascade"), exists("is_test_mode"))
-  geocode_batch_with_3tier_cascade(
-    q, run_id = RUN_ID,
-    deduplicate = TRUE, show_progress = TRUE,
-    checkpoint_dir = file.path(owd, CKPT))
-})
+# SAFETY CHECKPOINT. geocode_batch_with_3tier_cascade() deletes its own
+# per-address checkpoint files once it believes its job is done -- reasonably,
+# from its perspective, since ITS job is just "return coordinates". But this
+# script then hands the result into a separate, riskier enrichment step below,
+# and a crash there previously took the entire raw cascade result down with
+# it: a live run against Census/ArcGIS is hours of irreplaceable network
+# calls, and nothing downstream should be able to lose it. So the raw result
+# is persisted immediately below, before enrichment runs -- and if enrichment
+# is what needs re-running (its own bug, not the geocoding), GEOCODE_RESUME_RAW=1
+# skips the live cascade entirely and reloads that checkpoint instead.
+source(file.path("R", "lib", "checkpoint_utils.R"))
+RAW_CKPT <- "artifacts/geocode_cascade_raw_result.rds"
+if (identical(Sys.getenv("GEOCODE_RESUME_RAW"), "1")) {
+  stopifnot(file.exists(RAW_CKPT))
+  res <- load_checkpoint(RAW_CKPT)
+  cat(sprintf("resumed raw cascade result from checkpoint: %s (%s rows)\n",
+              RAW_CKPT, format(nrow(res), big.mark = ",")))
+} else {
+  res <- local({
+    owd <- setwd(ISO)
+    on.exit(setwd(owd), add = TRUE)
+    # The cascade calls is_test_mode() at the end of a run but does not source
+    # its definition; it lives in R/test_mode_contracts.R.
+    suppressWarnings(suppressMessages(source(file.path("R", "test_mode_contracts.R"))))
+    suppressWarnings(suppressMessages(source(file.path("R", "geocode_with_3tier_cascade.R"))))
+    stopifnot(exists("geocode_batch_with_3tier_cascade"), exists("is_test_mode"))
+    geocode_batch_with_3tier_cascade(
+      q, run_id = RUN_ID,
+      deduplicate = TRUE, show_progress = TRUE,
+      checkpoint_dir = file.path(owd, CKPT))
+  })
+  save_checkpoint_atomic(res, RAW_CKPT)
+  cat(sprintf("raw cascade result checkpointed: %s (%s rows)\n",
+              RAW_CKPT, format(nrow(res), big.mark = ",")))
+}
 
 # =============================================================================
 # Tract and county enrichment
@@ -102,8 +125,12 @@ res <- local({
 # silently fell back to the few cached rows that did carry a county and produced
 # 98.8% annual persistence on a third of the data. Plausible, and wrong.
 #
-# So enrichment is now part of this script, it uses on_missing = "error", and it
-# refuses to write an artifact whose geography columns are empty.
+# So enrichment is now part of this script, and it refuses to write an
+# artifact whose geography columns are empty (checked explicitly below --
+# enrich_with_census_tracts() itself has no on_missing argument; that was
+# removed from its signature in ~/isochrones/R/enrich_geocode_tracts.R without
+# this caller being updated, and the call site errored on the stale argument
+# rather than ever reaching this protection).
 res <- local({
   tract_rds <- Sys.getenv("TRACT_BOUNDARY_RDS", "")
   if (!nzchar(tract_rds)) {
@@ -152,7 +179,7 @@ res <- local({
   # back the input unchanged, and every one of them produces the empty-column
   # artifact described above.
   enrich_with_census_tracts(d, lat_col = "latitude", lon_col = "longitude",
-                            tract_rds = tract_rds, on_missing = "error")
+                            tract_rds = tract_rds)
 })
 
 # The enrichment can succeed and still populate nothing if the join misses.

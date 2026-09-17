@@ -105,7 +105,7 @@ unres <- spine %>% left_join(status, by = "certification_number") %>%
   filter(status == "ACTIVE", !npi %in% res$npi)
 cli::cli_alert_info("ACTIVE and unresolved: {format(nrow(unres), big.mark = ',')}")
 
-con <- dbConnect(duckdb::duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 duckdb::duckdb_register(con, "target", unres %>% select(npi))
 

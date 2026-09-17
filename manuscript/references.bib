@@ -63,13 +63,46 @@
   url          = {https://www.ers.usda.gov/data-products/rural-urban-continuum-codes/}
 }
 
-@misc{midwifery_repo,
-  author       = {Muffly, Tyler},
-  title        = {National Certified Nurse-Midwife Workforce and Board of Nursing Registry Dataset},
+@misc{open_payments2024,
+  author       = {{Centers for Medicare and Medicaid Services}},
+  title        = {Open Payments: General Payments and Covered Recipient Profile Supplement, Program Year 2024},
   year         = {2026},
-  version      = {4.0.0},
-  publisher    = {Zenodo},
-  doi          = {10.5281/zenodo.1054200},
+  howpublished = {Baltimore (MD): CMS},
+  note         = {Extract P06302026\_06032026},
+  url          = {https://openpaymentsdata.cms.gov/}
+}
+
+@misc{medicare_partb_partd,
+  author       = {{Centers for Medicare and Medicaid Services}},
+  title        = {Medicare Physician \& Other Practitioners by Provider (Part B) and Medicare Part D Prescribers Public Use Files, 2013--2023},
+  year         = {2023},
+  howpublished = {Baltimore (MD): CMS},
+  url          = {https://data.cms.gov/provider-summary-by-type-of-service/medicare-physician-other-practitioners}
+}
+
+@misc{state_bon,
+  author       = {{State Boards of Nursing}},
+  title        = {State Board of Nursing Public Licensure Verification and Open-Data Portals},
+  year         = {2026},
+  howpublished = {Various state licensing agencies; Socrata open-data APIs (e.g.\ Washington, Florida, New York, Texas, Illinois) and public HTML verification portals elsewhere},
+  note         = {Accessed 2026; per-portal access dates not recorded}
+}
+
+@misc{healthgrades,
+  author       = {{Healthgrades Operating Company}},
+  title        = {Healthgrades Provider Directory},
+  year         = {2026},
+  howpublished = {Public provider profile pages},
+  note         = {Checkpoints timestamped August 2026},
+  url          = {https://www.healthgrades.com}
+}
+
+@misc{midwifery_repo,
+  author       = {Muffly, Tyler and Thumm, Elisabeth B.},
+  title        = {National Certified Nurse-Midwife (CNM) 50-State \& DC Workforce Registry Dataset},
+  year         = {2026},
+  version      = {0.7.0},
+  publisher    = {GitHub},
   url          = {https://github.com/mufflyt/midwifery}
 }
 
@@ -198,4 +231,19 @@
   volume  = {4},
   pages   = {CD004667},
   doi     = {10.1002/14651858.CD004667.pub6}
+}
+
+% --- 4. Added for the scope-of-practice access analysis (2026-09-11) ---------
+% PDF verified directly (~/Downloads), not taken from the literature-review
+% synthesis's paraphrase: title, volume/pages and the P<.0001 density and
+% county-level figures were read off the article itself.
+@article{Ranchoff2020scope,
+  author  = {Ranchoff, Brittany L and Declercq, Eugene R},
+  title   = {The Scope of Midwifery Practice Regulations and the Availability of the Certified Nurse-Midwifery and Certified Midwifery Workforce, 2012-2016},
+  journal = {J Midwifery Womens Health},
+  year    = {2020},
+  volume  = {65},
+  number  = {1},
+  pages   = {119--130},
+  doi     = {10.1111/jmwh.13007}
 }

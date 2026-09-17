@@ -31,12 +31,30 @@
 # she could not already see. This is a narrower justification than "AMCB data
 # is fine to publish" -- it applies to this file, reviewed on this date, not
 # as a standing exemption for future person-level artifacts.
-artifacts/scraped_50_states_and_dc_midwives_master.csv
+# RENAMED AND REBUILT 2026-09-13; re-confirmed by Tyler Muffly the same day,
+# after the rebuild below was described to him (PR #195 follow-up). The
+# file reviewed above was artifacts/scraped_50_states_and_dc_midwives_master.
+# csv. Its description -- a "State Board of Nursing licensure scrape" -- was
+# false: its license and verification fields were synthesized from
+# certification_number (docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md).
+# build_tracked_roster.R replaces it with the same people and nothing not
+# already tracked: the 52 AMCB/NPPES linkage columns, taken from the
+# 2026-08-10 freeze (which also undid one hand-overwritten address and 262
+# duplicate rows), plus board licensure joined from the WA, CO and TX files
+# below, which are already reviewed here. No person was added: it covers
+# the 40 states the original file covered (11,093 of the freeze's 11,920
+# ACTIVE primary-linked certificants; see build_tracked_roster.R). Both
+# reasons given above still apply; the name changed because the old one
+# described a scrape that never happened.
+artifacts/tracked_roster_active_primary_linked.csv
 
 # Live Washington DOH Board of Nursing credential cross-reference: 449 WA-state
 # midwives from the roster above, matched against data.wa.gov's public Socrata
 # API (dataset qxh8-f4bd) by name, with 374 confirmed VERIFIED_LIVE_BON and a
 # real, current credential number, status and expiration date per match.
+# (Re-harvested 2026-09-13 against the rebuilt roster: 443 WA-state midwives,
+# 369 VERIFIED_LIVE_BON. The 449/374 were rows of a roster that repeated some
+# midwives: 442 and 368 people.)
 # Reviewed and accepted by Tyler Muffly, 2026-08-28, for the same reasons as
 # the roster CSV above, plus one specific to this file: the WA DOH credential
 # fields are sourced live from Washington's own public open-data API, not
@@ -50,3 +68,49 @@ artifacts/scraped_50_states_and_dc_midwives_master.csv
 # gitignored, person-level, and not practically regenerable -- see that
 # script's own header for what rebuilding it would actually require.
 artifacts/live_washington_bon_ingested_midwives_from_tracked_roster.csv
+
+# Live Colorado DORA Board of Nursing credential cross-reference: 557 CO-state
+# midwives from the tracked FROZEN linkage, matched against
+# data.colorado.gov's public Socrata API (dataset 7s5z-vewr, licensetype=APN
+# subcategory=CNM) by name, with 486 confirmed VERIFIED_LIVE_BON and a real,
+# current credential number, status and expiration date per match; 3 flagged
+# AMBIGUOUS_BON on a name collision rather than guessed.
+# Reviewed and accepted by Tyler Muffly, 2026-09-11, same reasoning as the WA
+# entry above: the DORA credential fields are sourced live from Colorado's
+# own public open-data API, not scraped or synthesized, and every underlying
+# field (AMCB name/certification number, NPI, DORA license record) is
+# independently public. This is the first state added after
+# docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md's findings and PR #189's
+# removal of the fabricated 49-state data. Produced by
+# harvest_live_co_bon_from_tracked_roster.py against
+# artifacts/amcb_npi_linkage_FROZEN.csv, which is itself gitignored,
+# person-level, and not practically regenerable on a machine without the
+# private linkage inputs.
+artifacts/live_colorado_bon_ingested_midwives_from_tracked_roster.csv
+
+# MSN/DNP credential classification: certification_number, npi, last_name,
+# first_name and the raw NPPES self-reported credential string, for every
+# cohort member. Reviewed and accepted by Tyler Muffly, 2026-09-10: the
+# underlying identity pairing is the same AMCB roster / NPPES source already
+# covered by this project's other tracked person-level artifacts, and the
+# data is public. Produced by classify_msn_dnp_credentials.R.
+artifacts/msn_dnp_credential_classification.csv
+
+# Live Texas Board of Nursing APRN cross-reference: 736 TX-state midwives from
+# the tracked FROZEN linkage, matched against data.texas.gov's public Socrata
+# API (dataset jnzg-cr4w, apn_category=NURSE MIDWIFE) by name, with 498
+# confirmed VERIFIED_LIVE_BON and a real, current license number, status, and
+# prescriptive-authority (RXN) status/number/expiration per match -- 483 of
+# those 498 (97.0%) show Active prescriptive authority, tracked on the same
+# row as the license itself (no cross-agency join needed, unlike Colorado's
+# separate APN/RXN datasets).
+# Reviewed and accepted by Tyler Muffly, 2026-09-12, same reasoning as the
+# WA/CO entries above: the Texas Board of Nursing's APRN-Active fields are
+# sourced live from Texas's own public open-data API, not scraped or
+# synthesized, and every underlying field (AMCB name/certification number,
+# NPI) is independently public. Produced by
+# harvest_live_tx_bon_from_tracked_roster.py against
+# artifacts/amcb_npi_linkage_FROZEN.csv, which is itself gitignored,
+# person-level, and not practically regenerable on a machine without the
+# private linkage inputs.
+artifacts/live_texas_bon_ingested_midwives_from_tracked_roster.csv

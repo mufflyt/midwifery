@@ -47,10 +47,12 @@ if os.path.exists(dac_file):
         reader = csv.DictReader(f)
         for r in reader:
             npi = r.get("NPI", "").strip()
+            # The DAC's own header names, not cty/st/zip. Under those names
+            # every lookup returned "" and this arm could never flag anyone.
             addr = r.get("adr_ln_1", "").upper().strip()
-            city = r.get("cty", "").upper().strip()
-            st = r.get("st", "").upper().strip()
-            zip5 = r.get("zip", "")[:5].zfill(5)
+            city = r.get("City/Town", "").upper().strip()
+            st = r.get("State", "").upper().strip()
+            zip5 = r.get("ZIP Code", "")[:5].zfill(5)
             if npi and addr:
                 dac_addrs[npi] = {
                     "dac_addr": addr,
@@ -90,5 +92,10 @@ with open(v4_file, "r", encoding="utf-8", errors="ignore") as f:
 
 print(f"\n=========================================================================")
 print(f"  TRIPLE-CHECK AUDIT COMPLETE: Audited {len(mws_audited):,} midwives.")
-print(f"  Identified {mismatches_found:,} clinicians with newer cross-source address updates.")
+# A state that differs between sources, not a newer address: nothing here
+# compares dates. The commit that added this script (046641b) announced "400
+# address updates identified"; no run of it is recorded, both of its federal
+# inputs are absent from data/, and its DAC arm could not fire (see above), so
+# that figure is retracted rather than reproduced.
+print(f"  {mismatches_found:,} clinicians have a DAC or Open Payments state that differs from NPPES (not a recency measure).")
 print(f"=========================================================================")

@@ -76,7 +76,7 @@ coh <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv",
 N <- nrow(coh)
 cat(sprintf("cohort: %s\n", format(N, big.mark = ",")))
 
-con <- dbConnect(duckdb::duckdb(), DB, read_only = TRUE)
+con <- duckdb_connect(DB, read_only = TRUE)
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 dbWriteTable(con, "c_npi", coh %>% select(npi), temporary = TRUE, overwrite = TRUE)
 

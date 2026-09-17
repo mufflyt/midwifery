@@ -56,7 +56,7 @@ if (!file.exists(AFF))
   stop("Run extract_dac_facility_affiliations.R first: this needs its CCNs.",
        call. = FALSE)
 
-con <- dbConnect(duckdb::duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
 dbExecute(con, sprintf("

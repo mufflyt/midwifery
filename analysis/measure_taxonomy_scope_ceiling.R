@@ -1,5 +1,6 @@
 suppressMessages({library(data.table); library(duckdb); library(DBI)})
 source(file.path("R", "analysis_args.R"))   # arg_or()
+source(file.path("R", "lib", "medicare_duckdb.R"))
 
 setwd(arg_or(3, "REPO_ROOT", "."))
 source("R/amcb_name_keys.R"); source("R/amcb_match_rules.R")
@@ -11,7 +12,7 @@ amcb[, `:=`(amcb_id=certification_number, last=amcb_blank_na(last_name), first=s
 amcb[, mid := trimws(paste(amcb_blank_na(middle_name), sp$middle_from_first))]
 A <- amcb[hi(last) & hi(first), .(amcb_id, last, first, mid)]
 
-con <- dbConnect(duckdb()); invisible(dbExecute(con,"SET threads=3"))
+con <- duckdb_connect(); invisible(dbExecute(con,"SET threads=3"))
 duckdb_register(con, "a", A[, .(last, first)])
 # only identity rows whose name a certificant actually carries -- keeps this in RAM
 read_identity_rows <- function(f) as.data.table(dbGetQuery(con, sprintf("

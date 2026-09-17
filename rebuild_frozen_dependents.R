@@ -40,6 +40,22 @@ source(file.path(root_dir, "R", "amcb_match_rules.R"))   # assert_nonempty_selec
 APPLY       <- identical(Sys.getenv("REBUILD_APPLY", "0"), "1")
 VERIFY_ONLY <- identical(Sys.getenv("REBUILD_VERIFY_ONLY", "0"), "1")
 
+# CI/fresh-checkout PRIVATE-OK skip, VERIFY_ONLY specifically. FROZEN_PATH is
+# gitignored, person-level, and legitimately absent on CI and a fresh
+# checkout -- same convention as D8/D9 in tests/ci_data_regression_guard.R.
+# Every other line below (digest::digest(file = FROZEN_PATH, ...) first)
+# would crash rather than report on its absence, so this must come before
+# any of them run. DRY RUN and APPLY are unchanged: a human running this by
+# hand on a machine that should have the file gets the real error, not a
+# silent skip.
+if (VERIFY_ONLY && !file.exists(FROZEN_PATH)) {
+  cat(sprintf(paste0(
+    "%s absent (PRIVATE-OK: person-level, gitignored; expected on CI and a\n",
+    "fresh checkout). Freshness cannot be verified without it -- skipping,\n",
+    "not failing.\nVERIFY: SKIP\n"), FROZEN_PATH))
+  quit(status = 0L)
+}
+
 # --- The declared order ------------------------------------------------------
 # Grouped by dependency layer. Within a layer order does not matter; between
 # layers it does. Derived from the read/write graph plus the chain established
@@ -91,16 +107,49 @@ REBUILD_ORDER <- list(
                    # third time that has now happened and the reason T5 exists.
                    "make_evidence_class_figure.R",
                    "analyze_temporal_plausibility.R",
-                   "make_temporal_plausibility_figure.R")),
+                   "make_temporal_plausibility_figure.R",
+                   # Added 2026-09-13, by T5 in the pull request that introduced
+                   # it. It audits the cohort rather than feeding anything: it
+                   # reconciles the 2026-08-10 freeze's ACTIVE, primary-linked
+                   # list against the tracked roster and, given the current
+                   # freeze, gives every certificant one transition reason. It
+                   # needs LEGACY_FROZEN_CSV (hash-pinned) and stops without it,
+                   # which is right: a rebuild that cannot explain how the
+                   # cohort changed should say so, not skip the question.
+                   "reconcile_trilliant_cohort.R")),
   list(layer = "2-cohort-structure", why = "cohort flow/composition/progression read FROZEN directly",
        scripts = c("R/05-stage-progression.R", "R/06-cohort-flow.R",
                    "R/07-cohort-composition.R")),
   list(layer = "3-geography", why = "geography hierarchy depends on the cohort membership above",
-       scripts = c("R/03-geography-hierarchy.R", "geocode_panel_addresses.R",
+       scripts = c("R/03-geography-hierarchy.R",
+                   # Added 2026-09-11, by the same completeness gate (T5).
+                   # Filters R/03's geography output to cohort-eligible rows
+                   # via FROZEN's own cohort_member column -- must follow
+                   # R/03-geography-hierarchy.R within the layer, since its
+                   # output is this script's own input.
+                   "build_midwives_geography_guarded.R",
+                   "geocode_panel_addresses.R",
                    "audit_coordinate_provenance.R", "compare_geography_versions.R")),
   list(layer = "4-derived-products", why = "products that consume cohort + geography",
        scripts = c("load_obstetric_providers.R", "match_midwives_to_isochrones.R",
                    "characterize_isochrone_representation.R",
+                   # Added 2026-09-10, by the same completeness gate (T5), which
+                   # caught it in the pull request that introduced it. Reads
+                   # amcb_npi_linkage_FROZEN and the geography artifact directly
+                   # to build a status x match_status geocoding-completeness
+                   # table; a rebuild that skipped it would leave that table
+                   # describing the previous cohort while reporting success.
+                   "build_geography_by_amcb_status.R",
+                   # Added 2026-09-11, by the same completeness gate (T5), which
+                   # caught both in the pull request that introduced them. Both
+                   # read amcb_npi_linkage_FROZEN directly (the figure script also
+                   # reads geography_by_amcb_status.csv), so a rebuild that
+                   # skipped them would leave the exclusion-flow figure and its
+                   # person-level CSVs describing the previous cohort while
+                   # reporting success. Placed after build_geography_by_amcb_
+                   # status.R, which both depend on.
+                   "make_cohort_exclusion_flow_figure.R",
+                   "build_exclusion_flow_person_level.R",
                    # Added 2026-08-28, by the same completeness gate (T5) and for
                    # the same reason as the 2026-08-15/2026-08-10 additions below:
                    # this script appeared (PR #76, 2026-08-23) reading both
@@ -123,6 +172,14 @@ REBUILD_ORDER <- list(
                    # link_practice_locations writes midwife_org_person.csv,
                    # and resolve_org_ambiguity reads BOTH, so it must follow.
                    "extract_dac_facility_affiliations.R",
+                   # Added 2026-09-13 with the script itself, which replaced
+                   # the fabricated CPT delivery-claims filter. Reads FROZEN for
+                   # the ACTIVE primary-linked cohort and reports how many are
+                   # Medicare-enrolled with a CNM primary specialty, and how
+                   # many public Part B delivery-code rows exist (none). Left
+                   # holding the previous cohort, its cohort_n would describe a
+                   # roster that no longer exists.
+                   "measure_medicare_delivery_code_observability.R",
                    "link_practice_locations_to_org_npi.R",
                    "resolve_org_ambiguity.R",
                    "match_open_payments_to_facility.R",
@@ -150,16 +207,50 @@ REBUILD_ORDER <- list(
                    # roster would publish a coverage floor for a cohort that no
                    # longer exists -- the same failure the bounds script above
                    # was added to prevent.
-                   "analyze_linkage_coverage_floor.R")),
+                   "analyze_linkage_coverage_floor.R",
+                   # Added 2026-09-13, by T5 in the pull request that introduced
+                   # it. Takes its cohort from canonical_active_primary() over
+                   # amcb_npi_linkage_FROZEN and refuses any freeze but the
+                   # manifest's, so left un-rebuilt it would not go stale
+                   # quietly -- it would stop. Needs the Trilliant lake and the
+                   # hpt_prices references on the external volume.
+                   "build_trilliant_work_sites.R",
+                   # Added 2026-09-13, by T5 in the pull request that introduced
+                   # it. Reads amcb_npi_linkage_FROZEN for every primary-linked
+                   # certificant and tests Trilliant's active_provider flag
+                   # against their status and Medicare billing. Its output name
+                   # carries the freeze's hash, so a rebuild writes a new file
+                   # beside the old one instead of overwriting it.
+                   "analyze_trilliant_activity_flag.R",
+                   # Added 2026-09-14, by T5 in the pull request that introduced
+                   # it. Reads amcb_npi_linkage_FROZEN for every certificant and
+                   # scores their candidates against Trilliant's directory; it
+                   # proposes, and writes nothing any other script reads. Needs
+                   # artifacts/trilliant_provider_identity_index.parquet (built
+                   # by build_trilliant_provider_identity_index.R, which does not
+                   # read the freeze) and the NPPES bulk file. Outputs carry the
+                   # freeze's hash, so a rebuild writes beside the old ones.
+                   "experiment_trilliant_identity_linkage.R")),
   list(layer = "5-enrichment-recompute", why = "age/enrichment recomputes from cached inputs (no network)",
-       scripts = c("calibrate_amcb_certification_ages.R", "enrich_doximity_cnm_ages.R",
+       scripts = c(# Added 2026-09-13, by T5 in the pull request that introduced
+                   # it. Reads amcb_npi_linkage_FROZEN and writes the Trilliant
+                   # backup demographics that the age calibration and Table 1
+                   # read, so it runs before both. Needs the Trilliant lake on
+                   # the external volume.
+                   "enrich_trilliant_demographics.R",
+                   "calibrate_amcb_certification_ages.R", "enrich_doximity_cnm_ages.R",
                    "match_florida_voter_ages.R", "sweep_healthgrades_enrichment.R",
                    # Added 2026-08-10: the completeness gate discovered this
                    # consumer had appeared since the order was declared, and
                    # REFUSED to rebuild until it was placed. That is the gate
                    # doing its job -- undeclared, it would have been left
                    # holding the old cohort with the rebuild reporting success.
-                   "match_medicare_partb_partd.R")),
+                   "match_medicare_partb_partd.R",
+                   # Added 2026-09-10, by the same completeness gate (T5).
+                   # Classifies each cohort member's self-reported degree
+                   # level from the NPPES credential field; reads FROZEN
+                   # directly and recomputes from that cached input alone.
+                   "classify_msn_dnp_credentials.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        # export_amcb_npi_geography.R writes the tracked state aggregate and
        # the gitignored person-level export, both of which read the crosswalk

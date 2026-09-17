@@ -168,7 +168,7 @@ if (any(man$is_republication))
 write_with_provenance(man %>% select(-path), OUT_MAN, na = "",
                       inputs = prov_inputs(man$path))
 
-con <- dbConnect(duckdb::duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
 # --- read each snapshot ------------------------------------------------------

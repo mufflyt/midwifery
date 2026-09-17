@@ -67,3 +67,11 @@ floor.lapsed_pre_n	n		the largest stratum carrying the shortfall
 floor.never_pre	n		records with no candidate at all, certified pre-NPPES
 linkage.active_ascertained_pct	%.1f		ascertainment among ACTIVE; the number a reader confuses with cohort resolution
 linkage.dead_ascertained_pct	%.1f		ascertainment among DECEASED; reported so the contrast with 18.8% is explicit
+scope.n_autonomous	n		the state count behind the significance test; a typo here changes the denominator of the whole comparison
+scope.n_collaborative	n		the state count behind the significance test; a typo here changes the denominator of the whole comparison
+scope.band30_autonomous_pct	%.1f		30-minute population-weighted access, autonomous-practice states
+scope.band30_collaborative_pct	%.1f		30-minute population-weighted access, collaborative/supervisory states
+scope.band30_diff_pp	%.1f		the 30-minute access gap; not significant, and that null result is the finding
+scope.band60_autonomous_pct	%.1f		60-minute population-weighted access, autonomous-practice states
+scope.band60_collaborative_pct	%.1f		60-minute population-weighted access, collaborative/supervisory states
+scope.band60_diff_pp	%.1f		the 60-minute access gap; opposite in sign to what density alone would predict

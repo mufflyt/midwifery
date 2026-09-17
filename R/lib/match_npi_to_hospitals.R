@@ -17,6 +17,7 @@ suppressPackageStartupMessages({
 })
 
 source("R/lib/common_helpers.R")
+source(file.path("R", "lib", "medicare_duckdb.R"))
 
 DEFAULT_DAC_PATH <- "data/CMS_Facility_Affiliation.csv"
 # CMS ROTATES THE RESOURCE ID ON EVERY REFRESH, so a hardcoded download URL
@@ -193,7 +194,7 @@ load_dac_national_npis <- function(
     return(NULL)
   }
   suppressPackageStartupMessages({library(DBI); library(duckdb)})
-  con <- DBI::dbConnect(duckdb::duckdb())
+  con <- duckdb_connect()
   on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
   DBI::dbGetQuery(con, sprintf(
     "SELECT DISTINCT CAST(NPI AS VARCHAR) AS npi

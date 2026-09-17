@@ -1,6 +1,6 @@
 {
   "artifact": "no_final_npi_provenance.csv",
-  "written_utc": "2026-08-30 07:50:15 UTC",
+  "written_utc": "2026-09-11 21:57:52.356 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",
@@ -12,19 +12,50 @@
     },
     {
       "path": "artifacts/frozen_cohort/analytic_cohort.csv",
-      "sha256": "926476f361d531e0e8238095a8db84e3fdb0e45212408d7656e642dd0c1ad3bb"
+      "sha256": "2bd7ee7ebf646ceedf80df367dff33b3a68830081b73cdbca75dc514b65a5520"
     },
     {
       "path": "artifacts/frozen_cohort/midwives_geography_guarded.csv",
-      "sha256": "9455138198e4d347fe191470a4e30e8e94267689ade8ee4a9acb20d8862d3f5a"
+      "sha256": "4bf50e11aa5d126330cc0d81d2e6a37121bd53e01eafd24232c2cdeb8533918f"
     },
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
-      "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
+      "sha256": "1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2"
     },
     {
       "path": "artifacts/frozen_stage2/midwives_with_nppes.csv",
-      "sha256": "93dc2e8bc2a2a066f255b84a351050a3594a253e4258575e0fde3e344ec5ff08"
+      "sha256": "5336b5f51917d8392e854f593233abde8732f866b9a9f8d743a460506f712adf"
+    }
+  ],
+  "code_sha256": "7e1c0c295e52dd403a278e08044c809bc8a0a916ecdcf368aff20400b67e3e0a",
+  "code": [
+    {
+      "path": "R/07-cohort-composition.R",
+      "sha256": "d17b082c608ff9306f060cfe796bbb4ff18354f660872e967303ea1ad5f2a1e1"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/common_helpers.R",
+      "sha256": "55c6b894798e2740f538b1262391e58e8fe9bea84f072b80708e59aea3197067"
+    },
+    {
+      "path": "R/lib/ct_county_crosswalk.R",
+      "sha256": "3242ed96fa0d870693718bfed2b79472a035aca0daba25b19725f1680964334d"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/lib/table1_bands.R",
+      "sha256": "71ec6199151cd15ffc4454fe5973375f90324204d7015139dcea047ab65a9c62"
+    },
+    {
+      "path": "R/lib/zip_county_crosswalk.R",
+      "sha256": "8b0fb8f7c9145c81ceda865e3ef0820ca3e832d460cf967ff40eb4c189899264"
     }
   ]
 }

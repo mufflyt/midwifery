@@ -182,7 +182,7 @@ if (sys.nframe() == 0) {
   SRC <- Sys.getenv("OP_ADDRESS_FILE", "artifacts/open_payments_recent_address.csv")
   dir.create("artifacts/audit", showWarnings = FALSE, recursive = TRUE)
 
-  con <- dbConnect(duckdb::duckdb(), DB, read_only = TRUE)
+  con <- duckdb_connect(DB, read_only = TRUE)
   on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
   org <- dbGetQuery(con, "
     SELECT CAST(npi AS VARCHAR) AS type2_npi, organization_name,

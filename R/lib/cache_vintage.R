@@ -72,7 +72,8 @@ geocode_cache_fingerprint <- function(path, table = "geocoding_cache") {
       !requireNamespace("duckdb", quietly = TRUE))
     return(absent("DBI/duckdb unavailable"))
 
-  con <- tryCatch(DBI::dbConnect(duckdb::duckdb(), dbdir = path, read_only = TRUE),
+source(file.path("R", "lib", "medicare_duckdb.R"))
+  con <- tryCatch(duckdb_connect(dbdir = path, read_only = TRUE),
                   error = function(e) NULL)
   if (is.null(con)) return(absent("cannot open read-only (locked?)"))
   on.exit(try(DBI::dbDisconnect(con, shutdown = TRUE), silent = TRUE), add = TRUE)

@@ -38,7 +38,8 @@ if (!nzchar(dac)) {
 stopifnot(!is.na(dac), file.exists(dac))
 cat("DAC source: ", basename(dac), "\n", sep = "")
 
-con <- dbConnect(duckdb::duckdb())
+source(file.path("R", "lib", "medicare_duckdb.R"))
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
 # Header fields are comma-space separated, so DuckDB sees leading blanks in the

@@ -493,6 +493,37 @@ jobs:
           done
           exit $rc
 
+      # mysterynpi holds strip_med_suffix(), which R/lib/training_institution.R
+      # delegates to and the Trilliant tests below exercise. Pinned to the
+      # commit that added it, so a later change there cannot move a result
+      # here without a pull request that moves the pin. Installed from GitHub
+      # with the job's token: without one, remotes falls back to its bundled
+      # PAT, which GitHub's API refuses (see nightly.yml).
+      - name: Install mysterynpi (pinned)
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Rscript -e 'if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")'
+          Rscript -e 'remotes::install_github("mufflyt/mysterynpi@ac42561b46d400a7e62649ee0161313628d914e8", upgrade = "never")'
+          Rscript -e 'stopifnot("strip_med_suffix" %in% getNamespaceExports("mysterynpi")); cat("mysterynpi", as.character(packageVersion("mysterynpi")), "\n")'
+
+      # The Trilliant layer's pure functions: which freeze and cohort a build may
+      # use, how work sites are counted and placed, how person-level files move
+      # between machines, and when the directory may stand in for a missing
+      # sex, school or age. The first three shipped in #196-#200 without a CI
+      # step, so they only ever ran on the machine that wrote them.
+      # test_trilliant_identity.R is the identity experiment's scoring: its
+      # identity_only variant may not let taxonomy break a tie, a changed
+      # surname or an NPI another certificant holds is never proposed, and an
+      # emptied pool is reported as emptied.
+      - name: Trilliant layer (cohort, work sites, data vault, demographics, identity)
+        run: |
+          Rscript tests/test_cohort_definitions.R
+          Rscript tests/test_work_site_topology.R
+          Rscript tests/test_data_vault.R
+          Rscript tests/test_trilliant_demographics.R
+          Rscript tests/test_trilliant_identity.R
+
       # Birth activity decides who counts as a practising midwife; license
       # resolution decides which of several licenses is the one. Both are pure.
       - name: Birth activity and license resolution
@@ -633,6 +664,27 @@ jobs:
       - name: FROZEN dependency completeness (T5)
         run: Rscript tests/test_frozen_dependency.R
 
+      # table1_midwives.csv went stale for a month (built 2026-08-14 against a
+      # roster of 11,920) while the linkage was regenerated multiple times,
+      # and nothing detected it -- a plain write_csv() carries no record of
+      # which linkage snapshot produced it. rebuild_frozen_dependents.R's own
+      # REBUILD_VERIFY_ONLY mode reads every artifact's .provenance.json
+      # sidecar and fails if its recorded input SHA-256 no longer matches the
+      # current upstream file, but nothing ran it in CI, so it caught nothing
+      # in practice. This wires it in.
+      #
+      # ubuntu-latest (this whole workflow) never has access to the
+      # gitignored, person-level amcb_npi_linkage_FROZEN.csv -- there is no
+      # self-hosted runner or secrets-based fetch for it anywhere in this
+      # repo's workflows. So this step reports SKIP on every CI run, the same
+      # as D8/D9 in ci_data_regression_guard.R (PRIVATE-OK). It is still
+      # worth running here: it documents the check as a standard part of the
+      # pipeline rather than a script someone has to remember exists, and the
+      # exit code is real (non-zero, gating) on any machine that DOES have
+      # the private data -- which is where the actual enforcement happens.
+      - name: FROZEN artifact freshness (provenance sidecars)
+        run: REBUILD_VERIFY_ONLY=1 Rscript rebuild_frozen_dependents.R
+
       # The three person-level linkage scripts, against regenerated fixtures.
       # They read the gitignored crosswalk, so without this they have no
       # coverage at all -- including the refusals, which are the half that
@@ -660,15 +712,15 @@ jobs:
   # automatically, with nothing here to fall out of sync.
   # ---------------------------------------------------------------------------
   science-law-coverage:
-    name: Science-law coverage (path-filtered)
+    name: Science-law coverage
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # THE JOB MUST SAY WHETHER IT DID THE WORK. Every law step below is gated on
-    # steps.relevance.outputs.run, so when the filter takes the fast path this
-    # job exits zero having evaluated nothing -- and a green tick is
-    # indistinguishable from a 6m30s run that checked twelve laws. It was
-    # indistinguishable, three times, on #99, #105 and #100. Exporting the
-    # decision lets the aggregate gate refuse to call that scientifically green.
+    # steps.relevance.outputs.run. When a path filter could set that to false,
+    # this job exited zero having evaluated nothing -- and a green tick was
+    # indistinguishable from a 6m30s run that checked twelve laws, three times,
+    # on #99, #105 and #100. The filter is gone, but the output stays, so the
+    # aggregate gate keeps refusing to call a run that skipped the laws green.
     outputs:
       executed: ${{ steps.relevance.outputs.run }}
     env:
@@ -678,93 +730,27 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Fails OPEN, not closed: no usable base ref (workflow_dispatch, a
-      # force-push whose `before` is the all-zero SHA, a shallow-history edge
-      # case) runs the check rather than silently skipping it. A skip is only
-      # ever earned by proving the diff, never assumed by default.
-      - name: Decide whether this change touches a registered law gate
+      # THE LAWS RUN ON EVERY EVENT. There used to be a path filter here that
+      # skipped them when a diff touched no registered law file. It was turned
+      # off for pull requests first, because the required `Scientific gate`
+      # refuses a run whose coverage job reported executed=false, so a skip
+      # turned any docs-only pull request red. It was kept for push, where it
+      # did the same thing to main: #197 through #201 were all docs or new
+      # scripts, every one took the fast path, and main was red for five merges
+      # in a row while every one of those pull requests had run the laws and
+      # passed. The filter and the gate cannot both be right on any event, and
+      # the gate is the one that means something. About six and a half minutes
+      # per merge buys a green tick on main that means twelve laws were
+      # evaluated.
+      #
+      # The step and its output are kept so the aggregate gate still reads the
+      # decision from the job rather than assuming it; tests/test_aggregate_gate.R
+      # asserts that the decision cannot be anything but run=true.
+      - name: The science laws run unconditionally
         id: relevance
         run: |
-          set -u
-          # A PULL REQUEST ALWAYS RUNS THE LAWS. The filter below is kept for
-          # push, where nothing is being gated and six minutes on a docs commit
-          # is pure cost.
-          #
-          # It is switched off here because it and the required aggregate gate
-          # cannot both be right. Once `Scientific gate` refuses to call a pull
-          # request green unless the laws actually executed, a fast path does
-          # not save six minutes -- it produces a red required status on any
-          # change the filter judged irrelevant. The choice is between running
-          # the science on every pull request and inventing a second meaning of
-          # green, and this repository has spent a day establishing that the
-          # second one is not worth having: the coverage check reported success
-          # in 6, 8 and 10 seconds on three consecutive pull requests while
-          # evaluating nothing.
-          #
-          # The saving was real and is being given up deliberately. Six and a
-          # half minutes per pull request buys the guarantee that a green tick
-          # means twelve laws were evaluated.
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "pull request: the laws run unconditionally, whatever changed."
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          BASE="${{ github.event.pull_request.base.sha || github.event.before || '' }}"
-          if [ -z "$BASE" ] || ! git cat-file -e "$BASE" 2>/dev/null; then
-            echo "no usable base ref -- running the coverage check to be safe"
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          changed=$(git diff --name-only "$BASE" "${{ github.sha }}")
-          registry="tests/science_law_registry.tsv"
-          # $1 == "law" drops the HEADER ROW. NR>1 alone does not: comment lines
-          # precede the header, so it survived and put the literal strings
-          # "gate" and "mutation" into the relevant-path list as though they
-          # were filenames. Harmless only because no such files exist.
-          relevant=$(awk -F'\t' '!/^#/ && NF > 1 && $1 != "law" {print $3; print $4}' "$registry" | sort -u)
-          # THE CHECKER MUST TRIGGER ON ITSELF. The list above holds the gates a
-          # law is evaluated BY; it did not hold the gate that checks that the
-          # laws were evaluated AT ALL, nor the harness proving that gate can
-          # fail. So a change to tests/ci_law_coverage.R took the fast path and
-          # reported success without running the thing it had just modified --
-          # which is how a coverage fix landed with a green tick that had
-          # verified nothing about it.
-          relevant=$(printf '%s\n%s\n%s\n%s\n' "$relevant" "$registry" \
-                            "tests/ci_law_coverage.R" "tests/test_law_coverage_detect.R")
-          hit=$(comm -12 <(printf '%s\n' "$changed" | sort -u) <(printf '%s\n' "$relevant" | sort -u))
-          # THE LIST ABOVE HOLDS THE FILES A LAW IS EVALUATED BY. It does not
-          # hold the files a law READS, and since L12 those are not the same
-          # set. L12 builds manuscript/R/build_stats_catalog.R and scans every
-          # manuscript/*.qmd for a protected literal, so a pure prose edit can
-          # fail it -- and PR #99 changed six manuscript files and took the fast
-          # path, reporting a 6-second success that had verified nothing about
-          # the law most likely to fire on it.
-          #
-          # Matched by pattern because these are directories and globs, not the
-          # fixed filenames comm can compare. Erring toward running: a needless
-          # 6-minute job is a cost, a green tick that checked nothing is a
-          # defect.
-          # This file is on the list, and finding that out cost a second round
-          # trip: the pull request that FIXED this filter changed only
-          # .github/workflows/ci.yml, so it took the fast path and reported an
-          # 8-second success for a filter nobody had exercised. The workflow
-          # that defines the law job is law-relevant by definition -- it decides
-          # whether the laws run at all.
-          inputs='^manuscript/R/|^manuscript/.*[.]qmd$|^artifacts/(linkage_selection_bounds|composition_rucc_cat|linkage_completeness_by_status)[.]csv$|^[.]github/workflows/(ci|nightly)[.]yml$'
-          input_hit=$(printf '%s\n' "$changed" | grep -E "$inputs" || true)
-          if [ -n "$input_hit" ]; then
-            hit=$(printf '%s\n%s\n' "$hit" "$input_hit" | grep -v '^$' || true)
-          fi
-          if [ -n "$hit" ]; then
-            echo "law-relevant file(s) changed:"
-            echo "$hit"
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "no registered law-gate file changed in this diff."
-            echo "This is the fast path, not a silent no-op: Nightly still runs the full"
-            echo "law-coverage check every 24h regardless of what changed."
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          fi
+          echo "${{ github.event_name }}: the laws run unconditionally, whatever changed."
+          echo "run=true" >> "$GITHUB_OUTPUT"
 
       - uses: r-lib/actions/setup-r@v2
         if: steps.relevance.outputs.run == 'true'

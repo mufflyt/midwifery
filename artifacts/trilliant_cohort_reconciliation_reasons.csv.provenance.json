@@ -1,0 +1,37 @@
+{
+  "artifact": "trilliant_cohort_reconciliation_reasons.csv",
+  "written_utc": "2026-09-13 19:53:15 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/tracked_roster_active_primary_linked.csv",
+      "sha256": "e2a2bba34b895d66bad03e5422bbdcc4933a8abbe4f4dc315d7af072676203dc"
+    },
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json",
+      "sha256": "c10ceeb5786d978d79e0fe27ce296a3ef262bfcb3b4ae7df1b7e3483bea11596"
+    }
+  ],
+  "code_sha256": "57bf35089a413374a12c0f521cffb938ed23635dc0050c2e35d5dd9814bcaf2f",
+  "code": [
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/cohort_definitions.R",
+      "sha256": "faa0edf2049f09d42edb3681956f29e39cb0c7dc6cdbe58d7ee5812714bffc49"
+    },
+    {
+      "path": "R/lib/common_helpers.R",
+      "sha256": "55c6b894798e2740f538b1262391e58e8fe9bea84f072b80708e59aea3197067"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "reconcile_trilliant_cohort.R",
+      "sha256": "1c626ce60ed11f09f42017803ff1904c6bfcbf10969342920493a71b33f59931"
+    }
+  ]
+}

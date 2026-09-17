@@ -20,6 +20,512 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-09-14 — Trilliant's directory as a second identity source (experiment)
+
+Technical appendix: [docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md](docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md).
+**No linkage, matcher or mysterynpi number changes.** This measures what the
+directory would add before anything is changed.
+
+### Added
+
+- **`build_trilliant_provider_identity_index.R`: an identity index over the
+  whole directory.**
+  - It covers all 7,518,635 individual NPIs, one row each (checked), not only
+    the linked cohort.
+  - Raw fields sit beside the keys `match_amcb_to_npi.R` compares on, made by
+    the same mysterynpi functions.
+  - The index is person-level and licensed, so it is gitignored. Its coverage
+    table is tracked.
+- **`experiment_trilliant_identity_linkage.R`, with `R/lib/trilliant_identity.R`.**
+  - Every certificant in the freeze is run through the full directory, using
+    exact-key blocking only.
+  - Each certificant's candidates are scored twice:
+    - with profession, as asked;
+    - without it, because DECISIONS_CONTRACT D17 has no ruling on taxonomy
+      breaking a tie.
+  - It reports confirm / contradict / choose / new / no-evidence outcomes by
+    stratum.
+  - It writes every proposed change with both sides' evidence. Nothing is
+    applied.
+- **`summarise_trilliant_identity_evidence.R`: every breakdown the appendix
+  quotes, from committed code.** It writes one aggregate table,
+  `artifacts/trilliant_identity_evidence_<sha8>.csv`, covering:
+  - likelihood ratios for graduation year;
+  - which way a discordant graduation year points;
+  - absent incumbents by AMCB status;
+  - where each contradiction came from;
+  - what the accepted recoveries are made of;
+  - the full × identity_only crosstab.
+
+  These were first computed in throwaway scripts.
+- **`make_trilliant_identity_figures.R`: three figures**, drawn only from
+  tracked aggregates:
+  - field coverage;
+  - outcomes by stratum;
+  - graduation year against certification year by link tier.
+
+  They are README figures 16–18.
+- **`tests/test_trilliant_identity.R`** (22 checks, in CI). It checks that:
+  - taxonomy cannot break a tie in the identity-only variant;
+  - a changed surname, or an NPI another certificant holds, is never proposed;
+  - an emptied pool is reported as emptied;
+  - a name-rule conflict is never credited to the directory.
+
+### Measured (2026-08-10 freeze `dbcc76f4`, not the current `1a7bd6a8`)
+
+- **High-confidence links (14,569):**
+  - 96.9% "confirmed" with profession scored, which is largely circular: the
+    tier was selected on the same NPPES taxonomy.
+  - **49.2% confirmed on graduation year alone,** the independent test. Where
+    a graduation year exists (54.0%), it is within one year of AMCB
+    certification for 89.7%.
+- **Nursing-tier links:**
+  - 47.6% of those with a known graduation year are more than ten years off.
+  - 205 of them graduated more than 20 years *after* the certificant certified.
+  - These are the directory's clearest false-link detections.
+- **Tied, contested or held-out certificants (3,303):**
+  - 945 get a unique best candidate with profession scored, and 366 without it.
+  - 329 are accepted either way.
+  - 616 are accepted only with profession, so they need a D17 ruling.
+  - 37 are accepted only without it.
+- **No-candidate certificants (2,108):**
+  - 244 ACCEPT and 104 REVIEW.
+  - Of the 244 accepted, 147 are NPIs enumerated after the freeze's 2025 panel
+    (94) or midwives filed under a non-midwifery taxonomy (61); 8 are both.
+  - **The other 97 are older NPIs the freeze's name panel should have held.**
+    Why the matcher missed them is not yet known.
+- **Two corrections made after looking at the first run, both recorded:**
+  - Fused or one-edit given names (ROSEANNE / Rose Anne, KATHRYN / KATHRIN)
+    had been counted as contradictions.
+  - Class-3 given-name conflicts were the matcher's own first-initial rule,
+    not the directory's evidence:
+    - in the first run, 578, each on the name in the freeze's NPPES record;
+    - in the final run, 545, of which 532 are on the NPI's current NPPES name.
+
+    Only the other 13 are credited to the directory.
+- **A pre-specified weight found wrong, left as it is.** A graduation year two
+  or three years off scores +1.5 but measures as evidence *against* a link
+  (likelihood ratio 0.30).
+- **School is the CMS medical-school field.** It names an institution for 7.6%
+  of linked midwives, so it is not identity evidence.
+
+### Fixed before release
+
+- **duckplyr reorders ordinary data frames.** Attaching duckplyr routes dplyr
+  joins on plain tibbles through DuckDB, which does not keep row order.
+  - The first runs attached profession by position after a join, so 22 of
+    655,646 candidates carried another row's profession.
+  - Two runs on identical inputs disagreed by one certificant in five cells;
+    that is how it was found.
+  - Both new scripts now call `duckplyr::methods_restore()`, and the experiment
+    fails closed if a row's profession is not its own.
+  - Two consecutive runs are now byte-identical.
+  - `analyze_trilliant_activity_flag.R`, `build_trilliant_work_sites.R` and
+    `enrich_trilliant_demographics.R` attach duckplyr the same way and have
+    not yet been checked.
+
+## [Unreleased] — 2026-09-13 — 3-Tier Hospital Linkage Architecture & Empirical Validation Framework
+
+Added 3-tier hospital linkage architecture and empirical validation framework in R referencing [github.com/mysterynpi](https://github.com/mysterynpi).
+Technical Appendix: [docs/TECHNICAL_APPENDIX_HOSPITAL_LINKAGE.md](docs/TECHNICAL_APPENDIX_HOSPITAL_LINKAGE.md).
+
+### Added
+
+- **3-Tier Hospital Linkage Engine.** Links certified midwives to hospital CMS Certification Numbers (CCNs) via a 3-tier hierarchy:
+  - *Tier 1 (Primary Analysis)*: CMS Doctors & Clinicians (DAC) clinician-facility affiliations (`Facility_Affiliation_2026-06.csv`). High specificity.
+  - *Tier 2 (Sensitivity Analysis)*: Municipal co-location candidate pairing (`ob_hospitals_geocoded.csv`). High coverage spatial candidate pool.
+  - *Negative Control*: Structural identity check between Type 1 Individual CNM NPIs and Type 2 Hospital Organization NPIs (0 matches confirmed).
+- **Decoupled Data Architecture.** Decouples clinician-hospital relationship definition from hospital price transparency (HPT) availability. HPT availability is represented as a secondary attribute (`has_hpt_crosswalk = TRUE/FALSE`).
+- **Empirical Validation Metrics.** Evaluated Tier 2 geographic candidate performance against Tier 1 CMS-observed reference standard:
+  - Geographic Candidate Recall / Sensitivity: **50.59%** (903 of 1,785 affiliations recovered).
+  - CMS-Observed Candidate Fraction: **32.39%** (903 confirmed pairs / 2,788 candidate pairs).
+  - Cross-City Affiliations: **20.56%** (367 of 1,785 affiliations occur in hospitals outside the practice city).
+  - Single-Hospital Town Recall: **59.11%** (46.72% of Tier 1 affiliations occur in single-hospital municipalities).
+- **Historical Audit Snapshot.** Preserved historical 11,093 40-state audit snapshot files in `audit_legacy_hospital_linkage_11093_20260913/` with `manifest.json`.
+
+---
+
+## [Unreleased] — 2026-09-13 — strip_med_suffix() moves to mysterynpi
+
+### Changed
+
+- **`strip_med_suffix()` now lives in the mysterynpi package**
+  (mufflyt/mysterynpi#23). It is exported and documented there, and pinned by
+  a fixture of the 88 distinct CMS school strings this repository's DAC and
+  Trilliant fields carry. `R/lib/training_institution.R` keeps the name and
+  calls `mysterynpi::strip_med_suffix()`. If the installed mysterynpi lacks
+  the function, it stops and says which commit to install.
+- **Output is unchanged.** The package version returns exactly what this
+  repository's did, on those 88 strings and on 182 variants of them (lower
+  case, title case, NA, blank).
+- **CI installs mysterynpi.** The `R unit tests` job installs it from GitHub,
+  pinned to the commit that added the function, so a later change there
+  cannot move a result here without a pull request that moves the pin. The
+  repo-integrity gate now lists mysterynpi as a CI package and the four
+  Trilliant tests as CI entrypoints.
+- **DAC's school is cleaned at read time.** `training_source_dac()` and Table 1
+  now clean `med_sch_raw` themselves instead of reading `med_sch_clean`, which
+  keeps whatever rule was current when the DAC extract last ran. A stale clean
+  ("BRODY") next to the Trilliant backup's current one ("EAST CAROLINA
+  UNIVERSITY") would have split one school across two Table 1 rows.
+
+## [Unreleased] — 2026-09-13 — Table 1 gets the patient panel's age; school names stop losing their university
+
+### Added
+
+- **Table 1 block "Median age of the midwife's patients (Trilliant claims
+  panel)".**
+  - It starts with a median (IQR) row, followed by <20, 20–29, 30–39, 40–49,
+    50–59, 60–69 and ≥70 years, and a row for midwives with no panel.
+  - Each midwife contributes one number: the median age of her patients.
+  - The median (IQR) row carries no count, so the block still sums to the
+    cohort.
+  - Checked in a sandbox build of Table 1 on the 2026-08-10 freeze. The median
+    (IQR) was 32 (30–35) years. The bands held 35, 1,948, 7,572, 701, 264, 119
+    and 67 midwives, and 1,214 had no panel. The block reconciles to 11,920.
+    The tracked Table 1 changes when it is next rebuilt with all its inputs.
+- **`band_panel_median_age()` and `table1_median_iqr()`** in
+  `R/lib/table1_bands.R`, tested in `tests/test_table1_bands.R`.
+
+### Fixed
+
+- **`strip_med_suffix()` reported a named school as though it were the
+  university.**
+  - "Brody School of Medicine at East Carolina University" became "BRODY"; the
+    same happened to Perelman (Penn), Jefferson (Thomas Jefferson), Sanford
+    (South Dakota), Netter (Quinnipiac), Edwards (Marshall) and Cleveland
+    Clinic Lerner (Case Western).
+  - It also cut institutions whose names are the medical phrase down to a
+    place: "BAYLOR", "OHIO" (Ohio Medical University), "PHILADELPHIA"
+    (Philadelphia College of Osteopathic Medicine), "LAKE ERIE" and
+    "MEHARRY".
+  - Now the university after "at", "of" or a comma is kept, and a strip that
+    leaves no institution word is refused.
+  - 19 of the 88 distinct DAC and Trilliant strings changed; the rest did not.
+    DAC's extract picks this up at its next run.
+
+## [Unreleased] — 2026-09-13 — Trilliant as a backup source for sex, school and age, and a patient-panel mix
+
+Nothing published changes until Table 1 and the age calibration are rebuilt on
+a machine with all their inputs. Checks:
+`artifacts/trilliant_demographics_validation_dbcc76f4.csv`. Method:
+[docs/TECHNICAL_APPENDIX_TRILLIANT.md](docs/TECHNICAL_APPENDIX_TRILLIANT.md), section 7.
+
+### Added
+
+- **`enrich_trilliant_demographics.R`.** Pulls sex, school, graduation year,
+  estimated age and patient-panel mix from Trilliant's provider directory for
+  every primary-linked certificant, and checks each against the source it
+  would back up.
+- **Sex.** Fills a blank NPPES code in Table 1, and a new `sex_source` column
+  records which source gave it. It agreed with NPPES for all 11,897 midwives
+  where both give F or M, and fills the 10 NPPES blanks.
+- **School.** The last source in `training_attach()` and in Table 1. It agreed
+  with CMS DAC for all 678 midwives both name: it is DAC's own string, which
+  reaches 400 midwives the current DAC file does not name.
+- **Patient panel.** Median patient age, share female and age bands, for the
+  10,706 midwives the directory flags active. No other source has this. It is
+  carried for analysis and not banded into Table 1.
+- **`R/lib/trilliant_demographics.R`**, tested by
+  `tests/test_trilliant_demographics.R` (20 checks).
+
+### Not used
+
+- **Trilliant's estimated age.** It is not a measurement: age plus graduation
+  year is 2052 for every midwife who has one. Against measured ages it runs
+  7.9 years young (mean absolute error 8.2, against 5.6 for the calibration it
+  would replace). `calibrate_amcb_certification_ages.R` has a slot for it that
+  `trl_age_admission()` fills only if a future snapshot's age is independent
+  and more accurate. The decision is recorded in the calibration provenance.
+
+### Changed
+
+- **`strip_med_suffix()` moved** from `extract_dac_cnm_education.R` to
+  `R/lib/training_institution.R`, so DAC and Trilliant school names clean by
+  one rule.
+
+## [Unreleased] — 2026-09-13 — The science laws run on every push to main
+
+### Fixed
+
+- **`main` was red after every docs merge, although nothing was broken.** The
+  science-law job still had a path filter for push events. It skipped the laws
+  when a merge touched no registered law file, and reported `executed=false`.
+  The required `Scientific gate` then failed, correctly, because the laws had
+  not run. #197 through #201 were all docs or new scripts, so all five left
+  `main` red, even though each pull request had run the laws and passed.
+  - The filter is removed for every event, so the laws now run on each merge
+    as they already did on each pull request. This costs about six and a half
+    minutes per merge.
+  - `tests/test_aggregate_gate.R` now fails if the relevance step can write
+    `run=false` on any event. It was checked against the old workflow and
+    fails there.
+  - The job is renamed from "Science-law coverage (path-filtered)" to
+    "Science-law coverage". Only `Scientific gate` is a required check.
+
+## [Unreleased] — 2026-09-13 — Where midwives work: the Trilliant claims directory, three cohort definitions, and a shared data vault
+
+PRs #196–#201. Nothing here changes cohort membership or any previously
+published number. It adds a new data asset, and says what that asset can and
+cannot show before any analysis is built on it. Full write-up:
+[docs/TECHNICAL_APPENDIX_TRILLIANT.md](docs/TECHNICAL_APPENDIX_TRILLIANT.md).
+
+### Added
+- **The Trilliant asset, inventoried** (#199).
+  `R/inventory_trilliant_research_fields.R` profiles all 12 tables (224
+  columns) of the Trilliant DuckLake read-only, and computes a feasibility
+  matrix for twelve research questions:
+  - Only `directory_provider` carries a clinician NPI, and it holds one
+    snapshot (2026-06-25).
+  - No table holds a clinician NPI, a service date and procedure codes
+    together, so **birth attendance and delivery volume are not identifiable**
+    from this asset.
+  - Current work setting, multi-site practice and current rurality are fully
+    identifiable.
+- **Where each midwife works** (#198, #200). `build_trilliant_work_sites.R`,
+  written in R/duckplyr with no SQL, builds each midwife's work sites from four
+  sources:
+  - the Trilliant claims-derived main site, with its visit share
+  - NPPES addresses
+  - CMS DAC facility affiliations
+  - CABC birth centers
+
+  Each site is typed as hospital, birth center, FQHC/CHC or clinic, placed at
+  a geocode, and given a county and a RUCC 2023 rurality band. Source rows
+  collapse into distinct physical sites. Blended hospital + birth-center
+  practice is defined twice, **strict** (evidence beyond a name) and
+  **broad**. Labs, pathology, pharmacy, ambulance and imaging are set aside as
+  places orders were filled, not workplaces.
+- **Three populations, defined once** (#198). `R/lib/cohort_definitions.R`
+  separates:
+  - the canonical ACTIVE, primary-linked cohort, from the manifest's freeze
+    only
+  - the board-validation subset: WA, CO and TX, the only boards genuinely
+    queried
+  - the CMS-observed subset, taken from the cohort, never from a board subset
+
+  30 tests pin it, including that a CMS-observed New Jersey midwife stays in
+  the CMS analysis.
+- **`active_provider` validated against the roster** (#201).
+  `analyze_trilliant_activity_flag.R`, run on the 2026-08-10 freeze. Flagged
+  active:
+  - ACTIVE 89.7%, RETIRED 31.5%, LAPSED 29.2%, DECEASED 3.2%
+  - retired certificants, by certification expiry: 8.9% (2016 or earlier) up
+    to 51.0% (2023 or later), so the flag lags a stop in practice by years
+  - ACTIVE certificants, by last Medicare billing year: 76.1% (2013) up to
+    99.1% (2023)
+
+  Inactive is strong evidence of not practising; active overstates practice
+  among recent leavers.
+- **A data vault** (#197). `R/lib/data_vault.R`, `publish_to_data_vault.R` and
+  [docs/DATA_VAULT.md](docs/DATA_VAULT.md) keep person-level inputs in one
+  Dropbox folder. Files are named by hash, never overwritten, and re-verified
+  on every lookup. The current freeze (sha256 `1a7bd6a8…`) was published there
+  on 2026-09-13.
+- **Figures 12–15** in the README, drawn by `make_trilliant_figures.R` from
+  committed aggregates only (#201).
+
+### Fixed
+- **CCN leading zeros.** The CMS hospital enrollment file publishes 934 of
+  9,161 CCNs without their leading zero (Denver Health `060011` as `60011`).
+  `pad_ccn()` restores them before any join.
+- **Hospital NPIs filed at the wrong address.** Trilliant's organization
+  directory files some hospital NPIs at a same-named hospital's address in
+  another state. A CCN whose hospital is in another state from the site is
+  rejected, and a main hospital's CCN is preferred over a psych or swing-bed
+  unit.
+- **The Nightly** (#196). Its four red jobs had been reporting the checks'
+  own defects:
+  - missing plotting packages
+  - an orphan-gate check that read only one workflow
+  - an exposure audit that ignored owner-reviewed exceptions
+  - an unauthenticated GitHub install
+
+  The seven DuckDB gates, which no job ran, now run nightly.
+
+### Clarified
+- **11,093 is not a cohort.** The tracked roster is the 2026-08-10 freeze's
+  11,920 ACTIVE, primary-linked certificants restricted to the 40 states of
+  the fabricated board "scrape":
+  - 787 are in 11 other jurisdictions
+  - 40 have military, territorial or foreign addresses
+  - none is unexplained
+
+  The canonical ACTIVE, primary-linked count against the current freeze is
+  **12,171**. `build_trilliant_work_sites.R` refuses any other freeze unless
+  named on purpose, so its results wait for that file.
+
+---
+
+## [Unreleased] — 2026-09-13 — Fabricated data removed, and what the sources actually say put in its place
+
+An AI coding tool wrote invented values into this repository in August 2026
+and labelled them as observed evidence. The 2026-08-29 entry below retracted
+the first layer of it (synthesized state-board licence numbers); PR #193
+deleted the scripts that wrote them.
+This entry covers what was left. Every replacement value below comes from a
+command run against a real source, named in the commit that made it. Where no
+source exists the claim is removed, not estimated.
+
+### Retracted
+- **"Active CPT delivery attenders": 7,470 (62.67%), later 5,024 (41.1%).**
+  The filter never read a procedure code; it kept every Doctors & Clinicians
+  row whose primary specialty is CNM (7,470 rows, 4,806 people). Public
+  Medicare Part B has **zero** rows for the global and delivery-only codes,
+  for any provider, in every year 2013–2023, because CMS suppresses cells
+  under 11 beneficiaries. Delivery attendance is not observable in this data.
+  The Table 1 split built on it (1a/1b … 5a/5b), the map badge and filter,
+  Figure 5, and a PECOS-missingness covariate are gone.
+- **"12,211 active CNMs, 100% matched to NPPES, 99.8% PPV."** 12,211 was the
+  row count of a file holding 11,920 certificants; the percentages were typed.
+  The headline is now 22,357 certificants, 15,328 ACTIVE, 12,192 of them
+  matched (79.5%), each read from a tracked artifact.
+- **"2,170 midwives (24.0%) with collaborative practice filings"** and the
+  sample file behind it: invented filings on a real CNM's and a real
+  physician's NPIs. No CPA data exists here.
+- **100% active licensure in every state** (a "simulated" renewal check),
+  **2,972 "Nursys compact" verifications** (no Nursys query was made), and a
+  list of "remaining unscraped states" whose premise was the fabrication.
+- **"400 addresses more current than NPPES", "98.5% PPV"**: typed literals.
+- **The 2026–2040 workforce forecast** (Figure 8): a 12,211 baseline and
+  unsourced rates. Withdrawn; DEBT.md D11 says what it needs to return.
+- **DOI 10.5281/zenodo.1054200 and "Version 4.0.0"**: the DOI belongs to an
+  unrelated 2016 Zenodo record and 4.0.0 was never tagged. CITATION.cff now
+  gives v0.7.0, the only tag, and no DOI.
+
+### Replaced with observed data
+- `measure_medicare_delivery_code_observability.R` records what Medicare
+  shows: 4,806 of the 2026-08-10 freeze's 11,920 ACTIVE primary-linked
+  certificants have a CNM primary specialty in the DAC, and there are no
+  delivery-code rows to link.
+- The tracked roster is rebuilt from its freeze as
+  `artifacts/tracked_roster_active_primary_linked.csv`: 262 repeated rows
+  removed, one hand-overwritten NPPES address restored (the Wolf Point case in
+  0.6.0), 31 columns dropped (the synthetic board and delivery fields, and
+  enrichment carried through the same chain), and board licence columns filled only
+  where Washington DOH, Colorado DORA or the Texas BON returned one.
+  Washington was re-queried against it: 369 of 443 midwives returned a
+  licence (the restored record among them, status Expired).
+- README Figure 1 now shows the three boards' results
+  (`make_board_licensure_figure.R`); the live map is rebuilt from tracked
+  inputs with every count computed and its missing states named.
+- `metadata.json` counts are checked against their source files by
+  `tests/test_midwifery_pipeline.py`.
+- The Elisabeth Thumm spotlight was rebuilt from observed sources the same
+  day (29be743), and its delivery-claim field is now removed with the rest.
+
+Each item is in `artifacts/bon_contamination_inventory.csv` (new `defect`
+column) and docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md §7. None of it
+entered the identity linkage.
+
+---
+
+## [Unreleased] — 2026-09-07 — DuckDB initialization becomes an enforceable subsystem, not a helper convention
+
+A CMS PECOS extract silently lost 10 real enrollment records — two of them
+accented/apostrophe'd names ("COURTNEY ÉLAN MCCALL", "CARNELL D'ANDRE
+JOHNSON") — because the file was Windows-1252, not UTF-8 or Latin-1, and
+DuckDB's built-in CSV reader only knows utf-8/utf-16/latin-1;
+`ignore_errors = TRUE` swallowed the bad rows instead of erroring. The fix
+for that one script was two lines. The fix for the *repository* is this
+entry: every DuckDB connection in the codebase now goes through one
+chokepoint with a machine-checked contract, a fail-closed encoding
+bootstrap, and a mutation-tested enforcement mechanism — not a convention
+anyone could quietly bypass six months from now.
+
+### Added — `duckdb_connect()`: the single canonical connection factory
+
+`R/lib/medicare_duckdb.R` now separates three responsibilities that used to
+be reimplemented ad hoc at each of 40 call sites: `ensure_duckdb_encodings()`
+(bootstrap), `duckdb_connect()` (connection creation with canonical
+defaults — the chokepoint), and `open_medicare_duckdb()` (the warehouse-
+specific opener, which calls the chokepoint and never initializes DuckDB
+independently). Every connection `duckdb_connect()` returns carries
+`attr(., "duckdb_bootstrap_version")` for provenance.
+
+### Added — structural (AST) enforcement, not a regex ratchet
+
+`duckdb_scan_for_raw_connections()` parses each file's real parse tree and
+flags a raw `dbConnect(duckdb::duckdb())` call anywhere — inline, behind a
+variable, inside a wrapper function's body, or aliased through a bare
+symbol (`x <- duckdb::duckdb; x()`). Run against **355 tracked `.R` files**,
+it found **two real, unmigrated call sites live** during this work
+(`analysis/audit_identity_flips.R`, `analysis/measure_taxonomy_scope_ceiling.R`)
+— added to the repo after the original migration pass, and exactly the
+regression class this scanner exists to catch. **Raw production connection
+sites outside the registry: 0**, of **7** total sites at **5** files, each
+requiring a `# duckdb-exception: <tag>` comment naming file, tag, class,
+owner, and removal condition — no anonymous allowlist, and no more
+file-level exemptions (a file-level version of this registry undercounted
+by 3, since it silently exempted every connection in a file once any one
+was registered).
+
+### Added — fail-closed bootstrap, proven from a genuinely fresh machine
+
+`DUCKDB_BOOTSTRAP_ALLOW_INSTALL=0` refuses to install the `encodings`
+extension and errors naming the missing capability, instead of silently
+continuing or attempting a network call — letting CI distinguish a code
+defect from a missing dependency from a network-restricted environment.
+Proven on a machine that has never installed the extension at all: a
+separate `Rscript` subprocess with a genuinely empty `extension_directory`
+(not just an unloaded extension already on disk, which DuckDB autoloads
+regardless of any bootstrap).
+
+### Added — 17 mutations, each with a named kill
+
+`tests/ci_duckdb_mutation_tests.R` and `tests/ci_duckdb_clean_environment.R`
+apply 17 distinct mutations to isolated copies of the bootstrap — a raw
+connection substituted back in, the driver aliased through a symbol, the
+bootstrap sourced after first use, the encoding bootstrap disabled (split
+into a structural check immune to extension autoload, and a dynamic
+clean-environment check that is the actual authority on whether this
+mutation is killed), two connections silently sharing state, `read_only`
+dropped, provenance stripped, a stale or unregistered exception-registry
+entry, and five mutations against a new unordered-table-equivalence
+comparator (`R/lib/table_equivalence.R`) and the geocode fixes below.
+**17/17 killed.**
+
+### Fixed — `geocode_panel_addresses.R`: a coordinate-column rename broke silently
+
+`geocoding_cache`'s coordinate columns were renamed at least once
+(`latitude`/`longitude` → `lat`/`lon`) without every reader being updated;
+this script assumed the old names unconditionally, which degrades to a
+silent 0% cache-hit rate rather than an error. `resolve_lat_lon_columns()`
+(`R/lib/geocode_cache_columns.R`) detects the actual column names and
+errors clearly if neither naming scheme is present.
+
+### Fixed — `geocode_queue_cascade.R`: an hours-long geocoding run could lose its own checkpoint
+
+The raw cascade result — hours of irreplaceable Census/ArcGIS network calls
+— was checkpointed via a direct `saveRDS()` to its final path, which is not
+atomic: a process dying mid-write could leave a truncated file that a later
+resume would load as current. `save_checkpoint_atomic()`/`load_checkpoint()`
+(`R/lib/checkpoint_utils.R`) write to a sibling temp file and promote via
+`file.rename()`, so a reader only ever sees the prior good checkpoint or
+the new complete one, never something in between. Also drops a stale
+`on_missing` argument `enrich_with_census_tracts()` no longer accepts
+upstream, which was erroring before ever reaching this script's own
+empty-geography-column protection.
+
+### Verified — one of six high-risk migrated workflows, against real production data
+
+`resolve_org_ambiguity.R`'s pre- and post-migration connection code was run
+side-by-side against the real, read-only 87 GB production warehouse and
+real NPPES/AMCB inputs (outputs redirected to scratch; no production
+artifact touched): stdout identical, 3 of 4 output files byte-identical,
+the 4th identical in content and row count with only DuckDB's unordered
+row sequencing differing. The other five (`build_pecos_organization_affiliations.R`,
+`extract_nppes_midwives.R`, `build_midwife_panel.R`,
+`build_care_compare_organization_panel.R`, `extract_dac_facility_affiliations.R`)
+are tracked as open verification debt in
+[issue #164](https://github.com/mufflyt/midwifery/issues/164) and
+`tests/fixtures/duckdb_migration_verification_ledger.csv`
+(`live_status = NOT_RUN_INPUT_UNAVAILABLE`, never `PASS`) — two are
+genuinely blocked by discontinued/unavailable source data, three simply
+were not run this session. See
+[`docs/TECHNICAL_APPENDIX_DUCKDB_BOOTSTRAP_ARCHITECTURE.md`](docs/TECHNICAL_APPENDIX_DUCKDB_BOOTSTRAP_ARCHITECTURE.md)
+for the full contract, registry, and mutation results.
+
 ---
 
 ## [Unreleased] — 2026-08-31 — Two runs that reported success having measured nothing
@@ -238,6 +744,8 @@ closing STROBE item 22.
 **Still unverified:** the DOI `10.5281/zenodo.1054200`, which replaced a
 `10.5281/zenodo.XXXXXXX` placeholder in the same commit that invented the demo
 ORCID, and which also appears in the manuscript's data-availability statement.
+*Checked 2026-09-13 and removed: it resolves to an unrelated 2016 Zenodo
+record. See the 2026-09-13 entry.*
 
 ---
 
@@ -573,6 +1081,7 @@ other nine were `None`.
 
 Genuine observed board evidence is **374 Washington DOH `credentialnumber`
 records**, corroborated independently by `live_wa_bon_summary_matrix.csv`.
+*(Corrected 2026-09-13: 374 rows, 368 people; the roster repeated rows.)*
 
 **Identity linkage is not affected and requires no recomputation.** Traced
 read-only across the repository: no R code reads `tier1_license_number`,
@@ -894,12 +1403,16 @@ release to carry a license, citation metadata and a changelog.
   `provider_license_number` field is an identifier-to-identifier join: it
   cannot fail the way token comparison fails on hyphenated, transliterated or
   post-marital surnames, which is the failure mode cycle 12 documented.
-- **State Board of Nursing ingestion across all 50 states**, in tiers by how
+- ~~**State Board of Nursing ingestion across all 50 states**, in tiers by how
   the state publishes: Tier 1 (11 bulk open-data states) → 5,120 midwives
   verified; Tier 2 (25 Nursys compact states) → 2,972; combined 8,092, then
-  9,037 across 20 boards at 74% national coverage. Washington was harvested
+  9,037 across 20 boards at 74% national coverage.~~ Washington was harvested
   through a live streaming API (374 CNMs, 83.3% match rate, 341 active
   licenses confirmed).
+  *Retracted 2026-09-13: every non-Washington licence in the tiers was
+  synthesized from the certification number and no Nursys query was made; the
+  374 Washington records were 368 people (the roster repeated rows). See
+  docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md §7.*
 - A state-by-state acquisition matrix classifying every state BON dataset by
   ingestion method, plus a dynamic acquisition manifest.
 - Former- and maiden-surname candidate expansion, with tests.
@@ -949,17 +1462,29 @@ release to carry a license, citation metadata and a changelog.
 - National CNM interactive Leaflet map: clustering, practice-setting filters,
   state scope-of-practice autonomy borders, a drive-time tool, and popups that
   hyperlink each claim to the source that supports it — NPI Registry, AMCB
-  verification, CMS Care Compare by 6-digit CCN, CPT claims, Open Payments.
+  verification, CMS Care Compare by 6-digit CCN, ~~CPT claims~~, Open Payments.
+  *Retracted 2026-09-13: the "CPT claims" were a relabelled Doctors & Clinicians
+  specialty field, and the header counts were typed in; the map is rebuilt from
+  tracked inputs. See the 2026-09-13 entry.*
   Certification year, age band and training school appear in the popup.
-- Three-way federal address-recency audit (NPPES × Open Payments × DAC PECOS),
+- ~~Three-way federal address-recency audit (NPPES × Open Payments × DAC PECOS),
   which identified **400 practice addresses more current than the one NPPES
-  carried**, with a benchmark suite over the updates.
+  carried**, with a benchmark suite over the updates.~~
+  *Retracted 2026-09-13: no code computes 400 (it appears only as a string
+  literal and a commit subject), the audit compares states, not dates, and its
+  DAC arm read columns the DAC does not have. See validate_address_recency_pipeline.R.*
 
 ### Fixed
-- One case study worth naming because it is the general problem in miniature: a
+- ~~One case study worth naming because it is the general problem in miniature: a
   CNM carried a Seattle, WA address in NPPES while practising at Trinity
   Hospital in Wolf Point, MT — a 1,000-mile error that would have placed her in
-  the wrong state, county, RUCC stratum and access band.
+  the wrong state, county, RUCC stratum and access band.~~
+  *Retracted 2026-09-13: this was not a pipeline fix. A one-off script
+  overwrote the record's `nppes_*` address fields by hand. CMS Doctors &
+  Clinicians (2026-06) does list a Wolf Point address and a Wolf Point hospital
+  affiliation for this NPI, but NPPES does not, so the columns asserted a
+  source that said otherwise. Restored from the freeze; see the 2026-09-13
+  entry.*
 
 ---
 
@@ -980,9 +1505,13 @@ point on a map", and every layer reports **absence separately from zero**.
   multi-hospital cities (Cleveland was the reproducer).
 - **Freestanding birth centers**: 221 midwives matched across 111 CABC-accredited
   centers.
-- **CPT delivery claims**: Part B claims filtered to 59400/59409/59410 confirm
+- ~~**CPT delivery claims**: Part B claims filtered to 59400/59409/59410 confirm
   7,470 midwives (62.67%) actively attending deliveries — an *observed
-  behaviour* layer, not a credential layer.
+  behaviour* layer, not a credential layer.~~
+  *Retracted 2026-09-13: the filter never read a procedure code. It kept every
+  Doctors & Clinicians row with primary specialty CNM (7,470 rows, 4,806
+  people). Public Part B has no delivery-code rows for any provider, 2013–2023.
+  See artifacts/medicare_delivery_code_observability.csv.*
 - **Open Payments**: 3,996 midwives linked; 819 resolved directly to Type 2
   organization NPIs and legal employer names.
 - **Training institution** recovered structurally, from which university

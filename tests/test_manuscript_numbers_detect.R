@@ -25,7 +25,8 @@ chk <- function(ok, m) { if (isTRUE(ok)) { pass <<- pass + 1L; cat(sprintf("  ok
 # defect in the gate.
 ART <- c("composition_rucc_cat.csv", "linkage_selection_bounds.csv",
          "linkage_completeness_by_status.csv", "table1_midwives.csv",
-         "linkage_coverage_floor.csv")
+         "linkage_coverage_floor.csv",
+         "access_by_scope_of_practice_significance.csv")
 
 #' A scratch repository whose manuscript is correct, then whatever is overridden
 #'

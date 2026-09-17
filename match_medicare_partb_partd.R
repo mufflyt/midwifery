@@ -40,7 +40,7 @@ if (!file.exists(DB)) {
                       "source."), DB), call. = FALSE)
 }
 
-con <- dbConnect(duckdb::duckdb(), DB, read_only = TRUE)
+con <- duckdb_connect(DB, read_only = TRUE)
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
 link <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv",

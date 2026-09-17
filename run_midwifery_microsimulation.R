@@ -138,32 +138,19 @@ project_workforce <- function(initial_workforce,
   do.call(rbind, rows)
 }
 
-.load_initial_workforce <- function(v4_file) {
-  nrow(readr::read_csv(v4_file, show_col_types = FALSE, progress = FALSE))
-}
-
 main <- function() {
-  cat("=== Running National Midwifery Workforce Microsimulation (2026-2040) ===\n")
-
-  v4_file <- "artifacts/cohort_midwives_tier1_tier2_bon_validated.csv"
-  initial_workforce <- .load_initial_workforce(v4_file)
-
-  projection_results <- project_workforce(initial_workforce)
-  current_active <- projection_results$Total_Active_CNM_Workforce[nrow(projection_results)]
-
-  out_csv <- "artifacts/midwifery_microsimulation_projections_2026_2040.csv"
-  readr::write_csv(projection_results, out_csv)
-
-  cat("\n=========================================================================\n")
-  cat("  MIDWIFERY WORKFORCE MICROSIMULATION COMPLETE (2026-2040)\n")
-  cat(sprintf("  2026 Baseline Active CNMs  : %s\n", format(initial_workforce, big.mark = ",")))
-  cat(sprintf("  2040 Projected Active CNMs : %s (+%.1f%%)\n",
-              format(current_active, big.mark = ","),
-              ((current_active - initial_workforce) / initial_workforce) * 100))
-  cat(sprintf("  2040 Projected Annual Births: %s Births Attended/Year\n",
-              format(as.integer(current_active * BIRTHS_PER_CNM), big.mark = ",")))
-  cat(sprintf("  Written to: %s\n", out_csv))
-  cat("=========================================================================\n")
+  # WITHDRAWN 2026-09-13 until every input has a source (DEBT.md D11). The
+  # published run took its baseline from nrow() of
+  # artifacts/cohort_midwives_tier1_tier2_bon_validated.csv: 12,211 rows for
+  # 11,920 certificants, in a file named for a board validation that never
+  # happened. The rates above -- 680 graduates a year, 3.2% attrition, 4.1%
+  # rural drift, a 14.3% rural baseline, 42.5 births per CNM -- carry no
+  # citation or derivation anywhere in the repository. project_workforce()
+  # stays, because its conservation logic is tested and correct; what is
+  # withdrawn is a forecast that looks like a finding.
+  stop(paste("The workforce forecast is withdrawn until its baseline and rates",
+             "are sourced; see DEBT.md D11. project_workforce() can still be",
+             "called directly with explicit, cited inputs."), call. = FALSE)
 }
 
 # Guard against side effects on source(): running this file for its functions

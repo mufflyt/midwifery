@@ -132,7 +132,7 @@ download_vintage <- function(v, url) {
 # =============================================================================
 # 3. LOAD into the DuckDB warehouse
 # =============================================================================
-con <- dbConnect(duckdb::duckdb(), DB_PATH)
+con <- duckdb_connect(DB_PATH)
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
 already <- if (TBL %in% dbListTables(con)) {

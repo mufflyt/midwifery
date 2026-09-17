@@ -56,10 +56,12 @@ cat("\n-- G1: derived identifiers must not pose as observed evidence --\n")
 # fails the build instead of blending in, and the count is reprinted on every
 # run so it cannot be quietly forgotten.
 DERIVED_ID_PATTERN <- "license[a-z_]*\"?\\]?\\s*=.*certification_number"
-KNOWN_DERIVED_ID_OFFENDERS <- c(
-  "harvest_all_tier1_live_bon_datasets.py",   # tier1_license_number
-  "scrape_20_more_state_bons.py"              # scraped_license_num
-)
+KNOWN_DERIVED_ID_OFFENDERS <- c()
+# Was harvest_all_tier1_live_bon_datasets.py (tier1_license_number) and
+# scrape_20_more_state_bons.py (scraped_license_num). Both deleted 2026-09-12
+# along with the rest of the fabricated BON-scraping scripts -- see the
+# commit deleting them for the full list. May shrink, must never grow: an
+# entry belongs here only for a file that still exists and still offends.
 
 # Prove the detector can fail: a synthetic offender must be caught. A guard
 # that has never been shown to fire is not evidence of anything.

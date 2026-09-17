@@ -1,5 +1,37 @@
 {
   "artifact": "invariant_address_provenance_failures.csv",
-  "written_utc": "2026-08-15 08:27:10 UTC",
-  "inputs": []
+  "written_utc": "2026-09-11 13:43:21.894 UTC",
+  "inputs": [
+    {
+      "path": "data/county_base.csv",
+      "sha256": "72e6acb856728843e4a8ec54cdac2642841a931d523cc07ed8942b3f1988ca5f"
+    }
+  ],
+  "code_sha256": "72adc751d0eec520ed48ead8203e2473119f5f9ca6b33730797a71dba5d62073",
+  "code": [
+    {
+      "path": "R/03-geography-hierarchy.R",
+      "sha256": "6deb9273871e2a4bf202286a754d5a1aecef172b953f63d9af2ddbd37bad46c4"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/common_helpers.R",
+      "sha256": "55c6b894798e2740f538b1262391e58e8fe9bea84f072b80708e59aea3197067"
+    },
+    {
+      "path": "R/lib/frozen_pin.R",
+      "sha256": "43ca93e0cb1812829a0144ee3815cdaf382c5522999b3a857be8d381042d5c8f"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/lib/zip_county_crosswalk.R",
+      "sha256": "8b0fb8f7c9145c81ceda865e3ef0820ca3e832d460cf967ff40eb4c189899264"
+    }
+  ]
 }

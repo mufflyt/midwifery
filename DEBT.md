@@ -335,6 +335,169 @@ arrival teaches people to ignore gates. **Do not** fix this by editing
 `panel.provider_years` were computed against the 16,892, and moving one without
 the others makes a count against a denominator it was never taken from.
 
+**Update 2026-09-11 (issue #176):** `repin_frozen_cohort.R` step done. The
+crosswalk had drifted further in the meantime (`cohort_member` grew to
+**17,028** via `reconcile_ab_20260910T193000_issue172`, see PR #182), and the
+snapshot is now re-pinned to that, not to the 16,898 this entry originally
+targeted. Re-running `tests/test_cohort_vintage.R` shows three of the four
+layers now agree at 17,028: `V1` (manifest), `V2` (linkage table's cohort),
+`V3` (pinned geography snapshot). Only `V4` (composition table, i.e.
+`analytic_cohort.csv` / `composition_rucc_cat.csv`) still reads 16,892 —
+off by -136, not the -6 this entry was raised over.
+
+`V4` cannot be closed by re-running `R/07-cohort-composition.R` on this
+machine: it requires `artifacts/frozen_stage2/midwives_with_nppes.csv`, a
+pinned person-level snapshot that is absent here (only its `SHA256SUMS`
+sidecar remains, dated 2026-08-14) and was not found on any machine checked
+that night. **The same missing file also blocks a real fix for L11**
+(`analyze_linkage_selection_bias.R` needs it to regenerate
+`artifacts/linkage_selection_bounds.csv`, which is why L11 still fails on the
+pre-rescrape 22,309-vs-22,357 count — see `tests/ci_data_regression_guard.R`
+D6/D7) **and README Figures 3, 10 and 12**, all three of which read from the
+same composition rebuild. One missing input, three stated gaps; the fix for
+any one of L11 / D10-V4 / the README figures is the same fix for all three:
+locate or regenerate `frozen_stage2/midwives_with_nppes.csv` on a machine that
+still has it, then re-run `R/07-cohort-composition.R`,
+`analyze_linkage_selection_bias.R`, and the three figure scripts in that
+order.
+
+**Why this keeps happening.** `artifacts/frozen_cohort/` has
+`repin_frozen_cohort.R`: a script that detects drift against a declared
+manifest count and re-pins deliberately, on request (`REPIN_APPLY=1`), the
+same tool that closed the `repin_frozen_cohort.R` step above.
+`artifacts/frozen_stage2/` has no equivalent. `R/05-stage-progression.R` only
+*reads* `frozen_stage2/midwives_with_nppes.csv`; nothing in this repo ever
+*writes* it. Whoever produced it copied the live `midwives_with_nppes.csv`
+(written by `match_nppes.R`) there by hand, once, and — same shape as the
+`cohort_member` regression this session found in `reconcile_linkage.R` — a
+manual step with no script behind it is a step that silently stops happening.
+A `repin_frozen_stage2.R` mirroring `repin_frozen_cohort.R`'s pattern (dry-run
+default, compare live `midwives_with_nppes.csv` row count against the current
+roster total in `linkage_manifest.json`, require `REPIN_APPLY=1` to write) is
+NOT written here: it needs the live `midwives_with_nppes.csv` and NPPES
+downloads to design and test the drift check against, and this machine has
+neither. Whoever next has both should write it rather than hand-copy the file
+again.
+
+**Update 2026-09-11, later the same night: closed for the parts this repo
+tests.** The live `midwives.csv` roster (dated to the same 2026-09-02 rescrape
+as the crosswalk) was already on this machine; `fetch_npi_candidates.py` +
+`Rscript match_nppes.R` regenerated `midwives_with_nppes.csv` for real (17,224
+of 22,357 accepted, match rate 77.0%, `validate_pipeline_output: PASS`).
+`repin_frozen_stage2.R` was written and tested against this real data (not
+hypothetical) and used to pin it. In order: `R/05-stage-progression.R`
+rebuilt `analytic_cohort.csv` (17,028, cohort flow `17,224 -> 17,028` reconciles
+exactly); `R/07-cohort-composition.R` rebuilt `composition_rucc_cat.csv`;
+`tests/test_cohort_vintage.R` now reports **V1-V4 all agree at 17,028**;
+`analyze_linkage_selection_bias.R` rebuilt `linkage_selection_bounds.csv`
+against the current roster/cohort; `tests/ci_science_laws.R` is
+**PASS (0 failures)**, L11 included. `tests/ci_data_regression_guard.R` is
+also **PASS (0 failures)**, including `D9` (analytic cohort row count),
+which had never had data to check before tonight.
+
+One more thing this surfaced: `L1`'s `LAW_COHORTS` registry did not yet
+recognize 17,028 as a valid cohort size (`stage_progression_like_for_like.csv`
+declaring it read as an unregistered cohort, correctly -- see that law's own
+"decision, not a heuristic" reasoning). Added deliberately, with 16,892 kept
+registered rather than replaced, same precedent as 11,920/12,129 above.
+
+README Figures 3, 10 and 12 (and the "Where the X go" table, and the
+Layer-1-identity ASCII diagram) were regenerated and their prose citations
+updated to the new real numbers, cross-checked against the regenerated CSVs
+rather than hand-derived. One number was deliberately NOT reproduced: Figure
+3's caption used to cite "519 certified in 2025-2026" as a specific count
+within the unresolved group. No script or artifact in this repo computes that
+number -- it was apparently a one-off manual count -- so rather than fabricate
+a new one, the caption now states the fact qualitatively and drops the stale
+figure. Whoever wants it back should compute it properly (roster certification
+date vs. NPPES panel coverage window) and give it a script, not another manual
+count.
+
+**Still open, deliberately not done here:** the provider panel
+(`panel.cohort_n_at_panel_build`, `panel.observed`, `panel.provider_years` in
+`manuscript/R/build_stats_catalog.R`) is a separate, heavier rebuild against
+`midwife_panel.csv` (493 MB) plus the persistence analysis in
+`docs/RESULTS_geographic_persistence.md`, and is not required by anything
+`tests/test_cohort_vintage.R` checks. Not touched -- moving one of
+`cohort_n_at_panel_build`/`observed`/`provider_years` without the others makes
+a count against a denominator it was never taken from (see the warning above,
+still correct). `tests/test_cohort_vintage.R` remains deliberately unwired
+from `.github/workflows/ci.yml` for the same reason it always was: it now
+passes here, but CI has no person-level data to run it against at all.
+
+---
+
+## D11 — The workforce microsimulation has no sourced inputs
+
+- **status:** open
+- **owner:** tyler
+- **raised:** 2026-09-13
+- **source:** `run_midwifery_microsimulation.R`, formerly README Figure 8
+
+The 2026–2040 forecast (`artifacts/midwifery_microsimulation_projections_2026_2040.csv`
+and `artifacts/plots/plot3_microsimulation_workforce_projections.png`) was
+withdrawn on 2026-09-13 and both files deleted. Nothing in it was a measurement:
+
+- **Baseline.** `nrow()` of `artifacts/cohort_midwives_tier1_tier2_bon_validated.csv`,
+  which is 12,211 rows for **11,920** distinct certificants (291 duplicate rows;
+  counted with Python `csv` against the file on 2026-09-13), in a file named for
+  a board validation that was synthesized
+  (docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md). The published 2026 row,
+  12,501 = 12,211 + 680 − 390, confirms that was the input.
+- **Rates.** 680 new graduates a year, 3.2% annual attrition, 4.1% rural drift,
+  a 14.3% rural baseline, 8% of graduates entering rural practice, 42.5 births
+  per CNM. None carries a citation or a derivation anywhere in the repository.
+
+`project_workforce()` is kept: its population-conservation logic is correct and
+tested (cycle 24, `tests/test_run_midwifery_microsimulation.R`,
+`tests/microsimulation_case_library.tsv`). `main()` now stops with a pointer
+here instead of writing a forecast.
+
+**To close:** a baseline taken from the current freeze by a stated rule (for
+example the ACTIVE, primary-linked count in `artifacts/table1_provenance.csv`),
+and each rate either derived from an artifact in this repository (AMCB
+certification dates for inflow, NPPES deactivation and the panel for exit and
+mobility, CDC WONDER for births) or cited to a published source. Then the
+figure can return, with those sources in its caption.
+
+## D12 — The Trilliant identity experiment is not yet decision-ready
+
+- **status:** open
+- **owner:** tyler
+- **raised:** 2026-09-14
+- **source:** `experiment_trilliant_identity_linkage.R`,
+  [docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md](docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md)
+
+The experiment measures what Trilliant's directory would add to the AMCB → NPI
+linkage. Four things stand between it and any change to the matcher or
+mysterynpi:
+
+- **Run on a superseded freeze.** It scored the 2026-08-10 freeze (`dbcc76f4`).
+  The current freeze (`1a7bd6a8`) was not on the machine that ran it. Its
+  candidate window reaches 2026, which covers the 94 accepted unmatched
+  recoveries that are recent enumerations.
+- **A mis-signed weight.** A graduation year two or three years off scores
+  +1.5. Measured, it is evidence *against* a link (likelihood ratio 0.30,
+  `artifacts/trilliant_identity_evidence_dbcc76f4.csv` section A). It was left
+  so the run stays pre-specified.
+- **D17 is unruled.** 616 of the 945 separations among tied certificants need
+  profession points (section F).
+- **97 unexplained recoveries.** These are accepted unmatched certificants
+  whose NPIs are older (enumerated 2005–2024) and filed under a midwifery or
+  nursing specialty. The freeze's name panel should have held them. Section E
+  counts them; why the matcher missed them is not known.
+- **Three older scripts carry the same duckplyr defect class.**
+  `analyze_trilliant_activity_flag.R`, `build_trilliant_work_sites.R` and
+  `enrich_trilliant_demographics.R` attach duckplyr, which routes joins on
+  plain tibbles through DuckDB and does not keep row order. None has been
+  checked for a column assigned by position after a join.
+
+**To close:** rerun on the current freeze; explain the 97; recalibrate the
+graduation-year bands; obtain a D17 ruling; add `duckplyr::methods_restore()` to the three
+scripts and show each reproduces byte-for-byte across two runs. Only then
+consider formal use, and test proposals against the v1 truth set only after it
+is unblinded.
+
 ## Closed
 
 ## D0 — Provenance determinism of the recorded name variant
