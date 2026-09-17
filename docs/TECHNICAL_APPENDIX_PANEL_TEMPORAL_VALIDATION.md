@@ -57,7 +57,7 @@ Both bugs were caught precisely *because* this cross-format check was run agains
 
 ## 2. Cross-check against the current AMCB roster: does the panel respect the certification-date floor?
 
-`artifacts/amcb_npi_linkage_FROZEN.csv` (the project's canonical AMCB↔NPI linkage) is gitignored and was not present in the local working copy at validation time. `artifacts/scraped_50_states_and_dc_midwives_master.csv` was used instead — a state-Board-of-Nursing scrape of AMCB-certified midwives carrying `npi` and `certification_date`, but **limited to `status = ACTIVE`** (11,355 of the panel's linkable population; no LAPSED/RETIRED/DECEASED rows are present in this substitute source, so the "does panel presence taper off after a person goes DECEASED" half of this check could not be run).
+`artifacts/amcb_npi_linkage_FROZEN.csv` (the project's canonical AMCB↔NPI linkage) is gitignored and was not present in the local working copy at validation time. `artifacts/scraped_50_states_and_dc_midwives_master.csv` was used instead — ~~a state-Board-of-Nursing scrape of AMCB-certified midwives~~ *(corrected 2026-09-13: not a scrape; see the note after the table)* carrying `npi` and `certification_date`, but **limited to `status = ACTIVE`** (11,355 of the panel's linkable population; no LAPSED/RETIRED/DECEASED rows are present in this substitute source, so the "does panel presence taper off after a person goes DECEASED" half of this check could not be run).
 
 **Method**: for each ACTIVE, NPI-matched person, compare her `certification_date` year against the *first* year she appears as `tax_class = 'midwife'` in the panel. A person should not show up under a midwifery taxonomy code before she was certified.
 
@@ -68,6 +68,16 @@ Both bugs were caught precisely *because* this cross-format check was run agains
 | First panel appearance **before** certification year | 104 | 0.9% |
 | First panel appearance **in** certification year | 2,058 | 18.1% |
 | First panel appearance **after** certification year | 9,192 | 81.0% |
+
+> **Correction, 2026-09-13.** The substitute file was not a board scrape. Its
+> `npi` and `certification_date` columns are the 2026-08-10 freeze's own, so the
+> method above is unaffected, but its "board" fields were synthesized
+> (docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md) and it repeated 262 of its
+> rows: 11,355 rows held 11,093 certificants. The n's in this table therefore
+> count rows, not people. The panel is not on the machine that found this, so
+> the table has not been recomputed; over distinct people the percentages will
+> move slightly. The file has been rebuilt without duplicates as
+> `artifacts/tracked_roster_active_primary_linked.csv` (build_tracked_roster.R).
 
 99.1% respect the expected causal ordering. The remaining 104 (0.9%) were inspected individually rather than written off as a linkage defect:
 

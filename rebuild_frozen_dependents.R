@@ -107,7 +107,16 @@ REBUILD_ORDER <- list(
                    # third time that has now happened and the reason T5 exists.
                    "make_evidence_class_figure.R",
                    "analyze_temporal_plausibility.R",
-                   "make_temporal_plausibility_figure.R")),
+                   "make_temporal_plausibility_figure.R",
+                   # Added 2026-09-13, by T5 in the pull request that introduced
+                   # it. It audits the cohort rather than feeding anything: it
+                   # reconciles the 2026-08-10 freeze's ACTIVE, primary-linked
+                   # list against the tracked roster and, given the current
+                   # freeze, gives every certificant one transition reason. It
+                   # needs LEGACY_FROZEN_CSV (hash-pinned) and stops without it,
+                   # which is right: a rebuild that cannot explain how the
+                   # cohort changed should say so, not skip the question.
+                   "reconcile_trilliant_cohort.R")),
   list(layer = "2-cohort-structure", why = "cohort flow/composition/progression read FROZEN directly",
        scripts = c("R/05-stage-progression.R", "R/06-cohort-flow.R",
                    "R/07-cohort-composition.R")),
@@ -163,6 +172,14 @@ REBUILD_ORDER <- list(
                    # link_practice_locations writes midwife_org_person.csv,
                    # and resolve_org_ambiguity reads BOTH, so it must follow.
                    "extract_dac_facility_affiliations.R",
+                   # Added 2026-09-13 with the script itself, which replaced
+                   # the fabricated CPT delivery-claims filter. Reads FROZEN for
+                   # the ACTIVE primary-linked cohort and reports how many are
+                   # Medicare-enrolled with a CNM primary specialty, and how
+                   # many public Part B delivery-code rows exist (none). Left
+                   # holding the previous cohort, its cohort_n would describe a
+                   # roster that no longer exists.
+                   "measure_medicare_delivery_code_observability.R",
                    "link_practice_locations_to_org_npi.R",
                    "resolve_org_ambiguity.R",
                    "match_open_payments_to_facility.R",
@@ -190,9 +207,38 @@ REBUILD_ORDER <- list(
                    # roster would publish a coverage floor for a cohort that no
                    # longer exists -- the same failure the bounds script above
                    # was added to prevent.
-                   "analyze_linkage_coverage_floor.R")),
+                   "analyze_linkage_coverage_floor.R",
+                   # Added 2026-09-13, by T5 in the pull request that introduced
+                   # it. Takes its cohort from canonical_active_primary() over
+                   # amcb_npi_linkage_FROZEN and refuses any freeze but the
+                   # manifest's, so left un-rebuilt it would not go stale
+                   # quietly -- it would stop. Needs the Trilliant lake and the
+                   # hpt_prices references on the external volume.
+                   "build_trilliant_work_sites.R",
+                   # Added 2026-09-13, by T5 in the pull request that introduced
+                   # it. Reads amcb_npi_linkage_FROZEN for every primary-linked
+                   # certificant and tests Trilliant's active_provider flag
+                   # against their status and Medicare billing. Its output name
+                   # carries the freeze's hash, so a rebuild writes a new file
+                   # beside the old one instead of overwriting it.
+                   "analyze_trilliant_activity_flag.R",
+                   # Added 2026-09-14, by T5 in the pull request that introduced
+                   # it. Reads amcb_npi_linkage_FROZEN for every certificant and
+                   # scores their candidates against Trilliant's directory; it
+                   # proposes, and writes nothing any other script reads. Needs
+                   # artifacts/trilliant_provider_identity_index.parquet (built
+                   # by build_trilliant_provider_identity_index.R, which does not
+                   # read the freeze) and the NPPES bulk file. Outputs carry the
+                   # freeze's hash, so a rebuild writes beside the old ones.
+                   "experiment_trilliant_identity_linkage.R")),
   list(layer = "5-enrichment-recompute", why = "age/enrichment recomputes from cached inputs (no network)",
-       scripts = c("calibrate_amcb_certification_ages.R", "enrich_doximity_cnm_ages.R",
+       scripts = c(# Added 2026-09-13, by T5 in the pull request that introduced
+                   # it. Reads amcb_npi_linkage_FROZEN and writes the Trilliant
+                   # backup demographics that the age calibration and Table 1
+                   # read, so it runs before both. Needs the Trilliant lake on
+                   # the external volume.
+                   "enrich_trilliant_demographics.R",
+                   "calibrate_amcb_certification_ages.R", "enrich_doximity_cnm_ages.R",
                    "match_florida_voter_ages.R", "sweep_healthgrades_enrichment.R",
                    # Added 2026-08-10: the completeness gate discovered this
                    # consumer had appeared since the order was declared, and

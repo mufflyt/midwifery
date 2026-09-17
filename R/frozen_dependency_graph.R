@@ -39,9 +39,17 @@ frozen_scan_files <- function(root = ".") {
   # rebuildable dependent it would re-pin the snapshot partway through a
   # rebuild, which is the 2026-08-10 failure in a different costume -- a runner
   # regenerating the thing it exists to hold fixed.
+  #
+  # publish_to_data_vault.R joins them because it MOVES the freeze and derives
+  # nothing from it: it copies artifacts/amcb_npi_linkage_FROZEN.csv into the
+  # shared vault under its hash, and refuses unless that copy is the one the
+  # manifest describes. No output of it depends on the cohort's contents, so
+  # there is nothing to rebuild; publishing the new freeze is a separate,
+  # deliberate step (docs/DATA_VAULT.md).
   f <- f[!basename(f) %in% c("frozen_dependency_graph.R",
                              "rebuild_frozen_dependents.R",
-                             "repin_frozen_cohort.R")]
+                             "repin_frozen_cohort.R",
+                             "publish_to_data_vault.R")]
   # Normalise "./x.R" and "x.R" to one form, or the declared set and the
   # discovered set compare unequal on identical scripts.
   f <- sub("^\\./", "", f)

@@ -186,6 +186,25 @@ chk(is.na(band_hg_age(17)) && band_hg_age(18) == "<35 years" &&
 chk(all(is.na(band_hg_age(c(NA_real_, NA_real_, NA_integer_)))),
     "all-NA input returns all-NA output")
 
+cat("\n-- band_panel_median_age: BVA --\n")
+pa <- band_panel_median_age(c(0, 19, 19.9, 20, 29, 30, 39, 40, 49, 50, 59, 60, 69, 70, 120))
+chk(identical(pa, c("<20 years", "<20 years", "<20 years", "20-29 years", "20-29 years",
+                    "30-39 years", "30-39 years", "40-49 years", "40-49 years",
+                    "50-59 years", "50-59 years", "60-69 years", "60-69 years",
+                    ">=70 years", ">=70 years")),
+    "each boundary opens the next band: 19.9 is <20, 20 is 20-29, 70 is >=70")
+chk(all(is.na(band_panel_median_age(c(NA, -1, 121, Inf, -Inf, NaN, "x")))),
+    "a missing or impossible median patient age is NA, never a band")
+chk(identical(sort(unique(band_panel_median_age(0:120))), sort(PANEL_AGE_LEVELS)),
+    "0-120 reaches every level and nothing else")
+chk(identical(band_panel_median_age("32"), "30-39 years"), "character input is read as a number")
+
+cat("\n-- table1_median_iqr --\n")
+chk(identical(table1_median_iqr(c(30, 31, 32, 35, 40)), "32 (31-35)"), "median (Q1-Q3), type-7 quartiles")
+chk(identical(table1_median_iqr(c(30, 31, 32, 35, 40, NA, Inf)), "32 (31-35)"), "NA and Inf are dropped, not counted")
+chk(is.na(table1_median_iqr(c(NA, NA))), "no values gives NA, not \"NA (NA-NA)\"")
+chk(identical(table1_median_iqr(c(1, 2), digits = 1), "1.5 (1.2-1.8)"), "digits controls rounding")
+
 cat(sprintf("\n%s (%d failure%s)\n", if (fails == 0L) "PASS" else "FAILURES",
             fails, if (fails == 1L) "" else "s"))
 quit(status = if (fails == 0L) 0L else 1L)

@@ -490,3 +490,95 @@ every other clone to lose it on pull. Treat any operation that changes what git
 considers tracked as destructive to the working tree at some later, unrelated
 moment, and check the invariant *after* the transition that threatens it, not
 before.
+
+## Tier 7 — Caught before merge: the Trilliant identity experiment (2026-09-14)
+
+Four defects I wrote while building
+[`experiment_trilliant_identity_linkage.R`](../experiment_trilliant_identity_linkage.R).
+All four were caught before PR #206 merged, and each needed a different check
+to find.
+
+### 17. duckplyr reordered rows, and a column attached by position followed the wrong row
+
+The experiment computed each candidate's profession as a vector, then pasted
+it onto the candidate table after a chain of joins. With `library(duckplyr)`
+attached, dplyr joins on *ordinary* tibbles run in DuckDB, and DuckDB does not
+promise row order. 22 of 655,646 candidates carried another row's profession.
+
+**How it presented:** two runs on identical inputs disagreed by exactly one
+certificant in five cells (14,112 against 14,111 confirmed). Nothing errored,
+and every sample I had read looked coherent. 22 in 655,646 is invisible to
+inspection.
+
+**Why it survived:** I read `left_join()` as order-preserving because dplyr's
+own is. The package I had attached quietly replaced it.
+
+**Corrected:** `duckplyr::methods_restore()` in each script; profession computed
+inside `mutate()` from the row's own columns; and a fail-closed recheck that
+recomputes profession and stops on any mismatch. The index's 1.6 million keys
+were verified the same way, with 0 mismatches. Two consecutive runs are now
+byte-identical.
+
+**Lesson:** run a new pipeline twice and `cmp` the outputs before quoting a
+number from it. A 1-in-30,000 misalignment is found by determinism, not by
+reading samples. Never attach a derived vector by position after a join.
+
+### 18. Credited the matcher's own rule to the new source
+
+The first run reported 305 existing links "contradicted by Trilliant" on the
+given name, and 578 given-name conflicts on class-3 links. Class 3 *is*
+"same surname and initial, different given name". In every one of those 578,
+the directory carried exactly the name the matcher had already seen in NPPES,
+so the "contradiction" was a stricter name rule, not new evidence.
+
+The same run also counted "ROSEANNE" / "Rose Anne"-shaped fused names,
+one-letter spelling variants and people using a middle name as contradictions
+of correct links.
+
+**How it presented:** as the experiment's headline finding. The existing-other
+stratum looked 38% contradicted.
+
+**Why it survived:** the contradiction flag recorded *that* two fields
+disagreed, not *which source* supplied the disagreeing fact.
+
+**Corrected:** `trl_contradiction_source()` credits the directory only for
+graduation year, current profession, or a name that differs from NPPES. A name
+conflict on the name NPPES carries is reported separately as
+`name_rule_conflict`. Three given-name levels were added (compound, spelling
+variant, given name kept as a middle).
+
+**Lesson:** when measuring what a new source adds, every positive and every
+negative must be attributed to the field that produced it. A disagreement you
+could have computed without the new source is not its evidence.
+
+### 19. Pushed examples copied from real records to a public repository
+
+Comments, the appendix and a test fixture used given-name pairs taken from
+actual certificants' records, including a rare given name beside the name that
+person uses in the licensed directory. This repository is public. The leak
+guard checks tracked files for person-level *columns*. It does not read prose
+or test fixtures, so it passed.
+
+**Corrected:** every example was replaced with invented names, and the branch
+was rewritten before the pull request existed. The orphaned commit may stay
+reachable by its SHA on GitHub until it is garbage-collected.
+
+**Lesson:** check a repository's visibility before the first push, and treat
+any example drawn from real data as person-level, even a given name alone.
+Invent examples from the start instead of sanitising them afterwards.
+
+### 20. Carried a first-run number and a subtraction into the write-up
+
+The appendix said "578 conflicts, all on the NPPES name" after the rules that
+produced 578 had changed; the final run has 545. It also said "the remainder"
+of 945 separations needed profession, meaning 945 − 366. The real crosstab is
+616 accepted only with profession and 37 accepted only without it. Subtracting
+two marginal totals is not a count of anything.
+
+**How it was caught:** moving the throwaway inspection scripts into a committed
+one, `summarise_trilliant_identity_evidence.R`, recomputed every quoted number
+from the final outputs.
+
+**Lesson:** a number quoted in a document must come from a committed script run
+on the final outputs, never from an exploratory run or from arithmetic on two
+other numbers.

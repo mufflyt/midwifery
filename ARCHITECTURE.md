@@ -54,6 +54,27 @@ flowchart TD
 | `dbg.py` | Interactive scratch script for poking at the AMCB report by hand. Not part of the pipeline. |
 | `tests/` | pytest suite for the Python parsing/transform logic, plus plain-Rscript tests for the R components. See [TEST_COVERAGE.md](TEST_COVERAGE.md). |
 
+### Trilliant work-site layer
+
+Keyed on the frozen linkage; none of it changes cohort membership. Methods in
+[docs/TECHNICAL_APPENDIX_TRILLIANT.md](docs/TECHNICAL_APPENDIX_TRILLIANT.md).
+
+| File | Role |
+|------|------|
+| `R/inventory_trilliant_research_fields.R` | Read-only inventory of the Trilliant DuckLake and a computed feasibility matrix (`artifacts/trilliant_schema_inventory.csv`, `artifacts/trilliant_research_question_feasibility.csv`). Needs no cohort. |
+| `R/lib/cohort_definitions.R` | The canonical ACTIVE, primary-linked cohort (manifest's freeze only), the board-validation subset (WA/CO/TX) and the CMS-observed subset; `cohort_transition_reasons()` between freezes. |
+| `reconcile_trilliant_cohort.R` | Person-by-person reconciliation of the 2026-08-10 freeze against the tracked roster, three-way when the current freeze is given. |
+| `analyze_trilliant_activity_flag.R` | Tests `active_provider` against AMCB status, time since leaving and Medicare billing recency; output named by freeze hash. |
+| `build_trilliant_work_sites.R` | Work sites per midwife (Trilliant, NPPES, DAC, CABC), site type, hospital CCN and price file, geocode, county, rurality, distinct sites, blended practice. Person-level outputs gitignored. |
+| `R/lib/work_site_topology.R` | Pure helpers for the above: `match_county()`, `assign_site_ids()`, `blended_practice()`, `topology_by_midwife()`. |
+| `R/lib/data_vault.R`, `publish_to_data_vault.R` | Share person-level inputs across machines by hash ([docs/DATA_VAULT.md](docs/DATA_VAULT.md)). |
+| `make_trilliant_figures.R` | README figures 12–15 from committed aggregates. |
+| `enrich_trilliant_demographics.R`, `R/lib/trilliant_demographics.R` | Trilliant as a backup for sex (after NPPES), school (after DAC, Healthgrades, repository) and age (only if `trl_age_admission()` says it beats the calibration; today it does not); carries the patient-panel mix. Checks against each primary source: `artifacts/trilliant_demographics_validation_<sha8>.csv`. |
+| `build_trilliant_provider_identity_index.R` | Identity index over all 7,518,635 directory NPIs: raw fields beside the mysterynpi keys the matcher compares on, plus specialty and credential classes (`artifacts/trilliant_provider_identity_index.parquet`, gitignored; coverage tracked in `artifacts/trilliant_provider_identity_coverage.csv`). Needs no cohort. |
+| `experiment_trilliant_identity_linkage.R`, `R/lib/trilliant_identity.R` | Experiment, never applied: every certificant searched against the whole directory by exact keys, scored with and without profession (D17), outcomes by stratum and every proposed change with both sides' evidence. Outputs named by freeze hash ([docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md](docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md)). |
+| `summarise_trilliant_identity_evidence.R` | The breakdowns the identity appendix quotes (graduation-year likelihood ratios, contradiction sources, recovery composition), as `artifacts/trilliant_identity_evidence_<sha8>.csv`. |
+| `make_trilliant_identity_figures.R` | README figures 16–18 from committed aggregates. |
+
 ### Linkage-improvement components (built, awaiting input data)
 
 Three tools that raise linkage quality once their input columns are supplied.
@@ -98,6 +119,12 @@ than `~/isochrones`, point the scripts at it with `ISOCHRONES_R` and
 | `NPPES_FILE` | `amcb_license_bridge.R` | `npidata_pfile_*.csv` | NPPES dissemination file scanned for license slots. |
 | `PRIOR_LINKAGE` | `amcb_license_bridge.R` | unset | Optional prior linkage artifact to reconcile the deterministic arm against. |
 | `AMCB_ROSTER` / `ARTIFACT_DIR` | `amcb_license_bridge.R` | `midwives.csv` / `artifacts` | Roster input / output directory. |
+| `TRILLIANT_LAKE` / `TRILLIANT_LAKE_ROOT` | `build_trilliant_work_sites.R`, `analyze_trilliant_activity_flag.R` / `R/inventory_trilliant_research_fields.R` | found on the Samsung volume by `samsung_volume_path()` | The Trilliant DuckLake (`…/lake/data/main` / `…/lake`). |
+| `HPT_PRICES` | `build_trilliant_work_sites.R` | `hpt_prices` on the Samsung volume | CMS hospital references and the price-file CCN crosswalk. |
+| `MIDWIFERY_ARTIFACTS` | Trilliant scripts | `artifacts` | Where the person-level inputs are read from. |
+| `MIDWIFERY_VAULT` | `R/lib/data_vault.R` | the Dropbox folder `midwifery-data` | The shared data vault. |
+| `ALLOW_FREEZE_SHA256` | `verify_linkage_freeze()` | unset | Accept a linkage file other than the manifest's freeze, on purpose, by its full sha256. |
+| `LEGACY_FROZEN_CSV` / `CURRENT_FROZEN_CSV` | `reconcile_trilliant_cohort.R` | unset | The 2026-08-10 freeze (required) and the current freeze (optional; makes the reconciliation three-way). |
 
 ## Dependencies
 

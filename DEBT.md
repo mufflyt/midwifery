@@ -425,6 +425,79 @@ still correct). `tests/test_cohort_vintage.R` remains deliberately unwired
 from `.github/workflows/ci.yml` for the same reason it always was: it now
 passes here, but CI has no person-level data to run it against at all.
 
+---
+
+## D11 — The workforce microsimulation has no sourced inputs
+
+- **status:** open
+- **owner:** tyler
+- **raised:** 2026-09-13
+- **source:** `run_midwifery_microsimulation.R`, formerly README Figure 8
+
+The 2026–2040 forecast (`artifacts/midwifery_microsimulation_projections_2026_2040.csv`
+and `artifacts/plots/plot3_microsimulation_workforce_projections.png`) was
+withdrawn on 2026-09-13 and both files deleted. Nothing in it was a measurement:
+
+- **Baseline.** `nrow()` of `artifacts/cohort_midwives_tier1_tier2_bon_validated.csv`,
+  which is 12,211 rows for **11,920** distinct certificants (291 duplicate rows;
+  counted with Python `csv` against the file on 2026-09-13), in a file named for
+  a board validation that was synthesized
+  (docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md). The published 2026 row,
+  12,501 = 12,211 + 680 − 390, confirms that was the input.
+- **Rates.** 680 new graduates a year, 3.2% annual attrition, 4.1% rural drift,
+  a 14.3% rural baseline, 8% of graduates entering rural practice, 42.5 births
+  per CNM. None carries a citation or a derivation anywhere in the repository.
+
+`project_workforce()` is kept: its population-conservation logic is correct and
+tested (cycle 24, `tests/test_run_midwifery_microsimulation.R`,
+`tests/microsimulation_case_library.tsv`). `main()` now stops with a pointer
+here instead of writing a forecast.
+
+**To close:** a baseline taken from the current freeze by a stated rule (for
+example the ACTIVE, primary-linked count in `artifacts/table1_provenance.csv`),
+and each rate either derived from an artifact in this repository (AMCB
+certification dates for inflow, NPPES deactivation and the panel for exit and
+mobility, CDC WONDER for births) or cited to a published source. Then the
+figure can return, with those sources in its caption.
+
+## D12 — The Trilliant identity experiment is not yet decision-ready
+
+- **status:** open
+- **owner:** tyler
+- **raised:** 2026-09-14
+- **source:** `experiment_trilliant_identity_linkage.R`,
+  [docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md](docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md)
+
+The experiment measures what Trilliant's directory would add to the AMCB → NPI
+linkage. Four things stand between it and any change to the matcher or
+mysterynpi:
+
+- **Run on a superseded freeze.** It scored the 2026-08-10 freeze (`dbcc76f4`).
+  The current freeze (`1a7bd6a8`) was not on the machine that ran it. Its
+  candidate window reaches 2026, which covers the 94 accepted unmatched
+  recoveries that are recent enumerations.
+- **A mis-signed weight.** A graduation year two or three years off scores
+  +1.5. Measured, it is evidence *against* a link (likelihood ratio 0.30,
+  `artifacts/trilliant_identity_evidence_dbcc76f4.csv` section A). It was left
+  so the run stays pre-specified.
+- **D17 is unruled.** 616 of the 945 separations among tied certificants need
+  profession points (section F).
+- **97 unexplained recoveries.** These are accepted unmatched certificants
+  whose NPIs are older (enumerated 2005–2024) and filed under a midwifery or
+  nursing specialty. The freeze's name panel should have held them. Section E
+  counts them; why the matcher missed them is not known.
+- **Three older scripts carry the same duckplyr defect class.**
+  `analyze_trilliant_activity_flag.R`, `build_trilliant_work_sites.R` and
+  `enrich_trilliant_demographics.R` attach duckplyr, which routes joins on
+  plain tibbles through DuckDB and does not keep row order. None has been
+  checked for a column assigned by position after a join.
+
+**To close:** rerun on the current freeze; explain the 97; recalibrate the
+graduation-year bands; obtain a D17 ruling; add `duckplyr::methods_restore()` to the three
+scripts and show each reproduces byte-for-byte across two runs. Only then
+consider formal use, and test proposals against the v1 truth set only after it
+is unblinded.
+
 ## Closed
 
 ## D0 — Provenance determinism of the recorded name variant

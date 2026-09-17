@@ -92,8 +92,7 @@ review board review was not required.
 
 **Data availability:** All source data are public. Analysis code, every derived
 artifact, and a provenance record giving the SHA-256 checksum of each input are
-archived at https://github.com/mufflyt/midwifery
-(doi:10.5281/zenodo.1054200). Person-level intermediate files are not
+archived at https://github.com/mufflyt/midwifery. Person-level intermediate files are not
 redistributed.
 
 **Each author has confirmed compliance with the journal's requirements for

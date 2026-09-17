@@ -43,7 +43,10 @@ ci_entrypoints <- file.path("tests", c(
   "test-den-032-safe-pct-manu-na-semantics.R", "test-join-safety.R",
   "test-join-safety-semantic-extended.R", "test-step2-npi-dedup-bug.R",
   "test-tract-vintage-boundary-bva-2019-2020-2021.R",
-  "test-step8-tract-vintage-routing.R"
+  "test-step8-tract-vintage-routing.R",
+  # The Trilliant layer's step in r-unit-tests.
+  "test_cohort_definitions.R", "test_work_site_topology.R",
+  "test_data_vault.R", "test_trilliant_demographics.R", "test_trilliant_identity.R"
 ))
 
 # Must match .github/workflows/ci.yml exactly. When they disagree, CI is red on
@@ -59,7 +62,11 @@ ci_packages <- c(
   # readxl: reached through R/build_amcb_state_licenses.R. Not installed in CI
   # today -- it passes only because that code path is not exercised, which is
   # the same latent break checkmate was before it fired.
-  "readxl"
+  "readxl",
+  # mysterynpi: reached through R/lib/training_institution.R
+  # (strip_med_suffix()). Installed from GitHub at a pinned commit by the
+  # "Install mysterynpi (pinned)" step of r-unit-tests.
+  "mysterynpi"
 )
 
 # chk(), ok() and check() are this repo's hand-rolled assertion helpers. Four

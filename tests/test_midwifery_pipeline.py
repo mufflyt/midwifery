@@ -8,8 +8,8 @@ import os
 import unittest
 
 # The master dataset is person-level -- names, certification numbers and NPIs
-# for 12,211 midwives -- so it is gitignored by design and absent from every
-# checkout. Three of the four tests below read it.
+# for every ACTIVE, primary-linked midwife -- so it is gitignored by design and
+# absent from every checkout. Three of the tests below read it.
 #
 # They SKIP when it is missing rather than fail. An absent-input branch that
 # fails cannot distinguish "the data is wrong" from "the data is not here",
@@ -17,15 +17,23 @@ import unittest
 # repository where it must NOT be committed. The rule is in the ci.yml header --
 # an absent-input branch skips loudly, or the suite does not belong in CI.
 #
-# The skip names the producing script, so a local run tells you how to get the
-# data rather than just that you lack it.
+# UPDATE 2026-09-12: MASTER_CSV's only producer, demonstrate_la_bon_access_
+# pipeline.py, was deleted along with the rest of the fabricated BON-scraping
+# scripts (docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md) -- it read
+# artifacts/cohort_midwives_tier1_tier2_bon_validated.csv, which the
+# contamination inventory flags RELABEL: 5,120 claimed, only 374 genuine.
+# There is currently no real producer for this file. This suite still SKIPs
+# correctly (the file is, and will remain, absent), but the skip reason no
+# longer names a script that exists. Whoever builds a genuine multi-state BON
+# master file (following harvest_live_wa/co_bon_from_tracked_roster.py's
+# proven real-data pattern) should point MASTER_PRODUCER at it.
 MASTER_CSV = "artifacts/cohort_midwives_tier1_tier2_bon_validated.csv"
-MASTER_PRODUCER = "demonstrate_la_bon_access_pipeline.py"
+MASTER_PRODUCER = None  # no real producer exists; see the note above
 
 SKIP_REASON = (
-    f"{MASTER_CSV} is absent. It is person-level and gitignored by design, so "
-    f"it is never present in a checkout; rebuild it locally with "
-    f"`python3 {MASTER_PRODUCER}` to run this test."
+    f"{MASTER_CSV} is absent, and has no real producer script currently -- "
+    f"its only prior producer wrote fabricated data and was deleted. See "
+    f"docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md."
 )
 
 
@@ -47,7 +55,41 @@ class TestMidwiferyPipeline(unittest.TestCase):
             data = json.load(f)
             self.assertIn("title", data)
             self.assertIn("cohort_statistics", data)
-            self.assertEqual(data["cohort_statistics"]["total_active_amcb_cnms"], 12211)
+            self.assertIn("cohort_statistics_sources", data)
+
+    def test_metadata_counts_equal_the_artifacts_they_cite(self):
+        """Every headline count in metadata.json must be re-derivable from the
+        tracked artifact it names.
+
+        This used to assert total_active_amcb_cnms == 12211 -- pinning a typed
+        number, which is how a duplicate-inflated row count (12,211 rows, 11,920
+        certificants) sat in the metadata as "100% matched" with a test
+        guarding it. A test that compares a number to itself protects nothing;
+        this one recomputes each value from its source, so the metadata can
+        only be right or red. All sources are tracked aggregates, so it runs
+        hermetically."""
+        with open(self.metadata_json) as f:
+            cs = json.load(f)["cohort_statistics"]
+        with open("artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json") as f:
+            manifest = json.load(f)
+        with open("artifacts/linkage_completeness_by_status.csv", newline="") as f:
+            active = [r for r in csv.DictReader(f) if r["status"] == "ACTIVE"][0]
+        with open("artifacts/table1_provenance.csv", newline="") as f:
+            table1 = list(csv.DictReader(f))[0]
+        returned = {}
+        with open("docs/figures/board_licensure_observed_counts.csv", newline="") as f:
+            for r in csv.DictReader(f):
+                if r["outcome"].startswith("Licence returned"):
+                    returned[r["state"]] = returned.get(r["state"], 0) + int(r["n"])
+
+        self.assertEqual(cs["amcb_roster_certificants"], manifest["artifact_rows"])
+        self.assertEqual(cs["analytic_cohort_members"], manifest["cohort_members"])
+        self.assertEqual(cs["amcb_active_certificants"], int(active["n"]))
+        self.assertEqual(cs["active_matched_to_nppes_midwifery"], int(active["matched"]))
+        self.assertEqual(cs["active_match_rate_pct"], float(active["pct_matched"]))
+        self.assertEqual(cs["table1_active_primary_linked"], int(table1["cohort_n"]))
+        self.assertEqual(cs["board_licences_returned"], returned)
+        self.assertEqual(cs["state_boards_queried_for_licensure"], sorted(returned))
 
     def test_master_dataset_schema(self):
         """Verify master dataset fields and non-empty rows."""

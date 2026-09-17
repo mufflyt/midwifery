@@ -235,6 +235,26 @@ scn_wilson <- function(x, n, z = 1.96) {
 scn_files <- ci_tracked("artifacts/*.csv")
 scn_files <- scn_files[!grepl("provenance[.]json$", scn_files)]
 
+# Person-level files are not published tables. Each row is one midwife, and
+# nothing in them prints a denominator, so the block detection below can only
+# find coincidences. In the 2026-09-13 tracked roster, the per-person linkage
+# diagnostics n_mid_vetoed_c5 and n_at_best_class happened to agree within
+# more than half the npi_match_method groups, and SCN3 held the rest to that.
+# The owner-reviewed list of person-level files is the one ci_leak_guard.R
+# reads, parsed the same way.
+scn_person_level <- local({
+  p <- file.path(root, "tests", "ci_leak_reviewed_exceptions.txt")
+  b <- if (file.exists(p)) trimws(readLines(p, warn = FALSE)) else character(0)
+  b <- b[nzchar(b) & !startsWith(b, "#")]
+  sub("\\s+#.*$", "", b)
+})
+if (length(intersect(scn_files, scn_person_level))) {
+  ci_skip("%d person-level file(s) from ci_leak_reviewed_exceptions.txt are not tables and are not recomputed: %s",
+          length(intersect(scn_files, scn_person_level)),
+          paste(basename(intersect(scn_files, scn_person_level)), collapse = ", "))
+}
+scn_files <- setdiff(scn_files, scn_person_level)
+
 if (!length(scn_files)) {
   ci_skip("no tracked artifacts/*.csv; nothing to recompute")
   ci_finish()

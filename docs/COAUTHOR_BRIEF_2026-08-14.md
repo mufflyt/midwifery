@@ -83,10 +83,16 @@ inactive.
 
 ### D12 — State-board coverage is reportable as an availability sample
 
-9,037 midwives verified across the first 20 state boards. The states that
+~~9,037 midwives verified across the first 20 state boards. The states that
 publish bulk data or belong to the Nursys compact are an availability sample,
 not a design. Usable with the state list and a non-random-coverage statement;
-misleading without one.
+misleading without one.~~
+
+*Retracted 2026-09-13: none of the 9,037 was a board record. Their licence
+numbers were synthesized from the certification number and no board or Nursys
+query was made. Board licensure is observed for Washington, Colorado and Texas
+only, from each board's open data; see README Figure 1 and
+docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md.*
 
 ### D13 — Table 1's `Language` row understates by construction
 

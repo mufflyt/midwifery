@@ -227,6 +227,42 @@ band_hg_age <- function(age) {
   out
 }
 
+PANEL_AGE_LEVELS <- c("<20 years", "20-29 years", "30-39 years", "40-49 years",
+                      "50-59 years", "60-69 years", ">=70 years")
+
+#' Band the median age of a midwife's patients into 10-year groups
+#'
+#' The input is one number per midwife: the median age of the patients in her
+#' Trilliant claims panel (`trl_panel_median_age`). It describes the patients,
+#' not the midwife, so it is banded separately from `band_hg_age()`. Ages
+#' below 0 or above 120 are not ages and return NA; a panel of children is
+#' plausible and is kept.
+#'
+#' @param age [numeric|character]: median patient age in years.
+#' @return [character] one of `PANEL_AGE_LEVELS`, NA where not classifiable.
+band_panel_median_age <- function(age) {
+  a <- suppressWarnings(as.numeric(as.character(age)))
+  bad <- is.na(a) | !is.finite(a) | a < 0 | a > 120
+  out <- rep(NA_character_, length(a))
+  brk <- c(-Inf, 20, 30, 40, 50, 60, 70, Inf)
+  out[!bad] <- PANEL_AGE_LEVELS[findInterval(a[!bad], brk, left.open = FALSE)]
+  out
+}
+
+#' "median (Q1-Q3)" for a Table 1 summary row
+#'
+#' Quartiles use R's default (type 7) and are rounded to `digits`. NA values
+#' are dropped; with none left the result is NA, not "NA (NA-NA)".
+#' @return [character(1)]
+table1_median_iqr <- function(x, digits = 0) {
+  x <- suppressWarnings(as.numeric(x))
+  x <- x[is.finite(x)]
+  if (!length(x)) return(NA_character_)
+  q <- round(unname(stats::quantile(x, c(0.5, 0.25, 0.75))), digits)
+  f <- function(v) formatC(v, format = "f", digits = digits)
+  sprintf("%s (%s-%s)", f(q[1]), f(q[2]), f(q[3]))
+}
+
 #' Band a certification year into its decade
 #'
 #' @param x `vector`: certification year, or anything [parse_enum_year()]

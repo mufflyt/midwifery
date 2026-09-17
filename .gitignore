@@ -2,6 +2,7 @@
 *.html
 cj.txt
 *.parquet
+audit_legacy_hospital_linkage_*/
 
 # Test / Python tooling artifacts
 __pycache__/
@@ -429,11 +430,11 @@ artifacts/amcb_npi_crosswalk_*panel-midwifery-plus-nursing*.csv
 /artifacts/cohort_midwife_facility_attributions_complete.csv
 /artifacts/cohort_midwife_building_taxonomy.csv
 /artifacts/scraped_20_state_bons_midwives_master.csv
-!/artifacts/scraped_50_states_and_dc_midwives_master.csv
 !/artifacts/scraped_40_state_bons_midwives_master.csv
 /artifacts/midwife_group_practice_names.csv
 /artifacts/tier1_tier2_combined_bon_validated_master.csv
 /artifacts/cohort_midwives_cpt_delivery_attenders.csv
+/artifacts/cohort_midwives_dac_primary_specialty_cnm.csv
 /artifacts/cohort_midwives_open_payments_employers.csv
 /midwives_unmatched.csv
 /artifacts/frozen_stage2/midwives_unmatched.csv
@@ -617,3 +618,29 @@ artifacts/truth/batches/
 # Adjudication queue machinery outputs (derived, person-level / run-state)
 artifacts/adjudication/adjudication_queue.csv
 artifacts/adjudication/adjudication_status.json
+
+# Trilliant work-site build (build_trilliant_work_sites.R): person-level, and
+# Trilliant's data are licensed. Only the aggregate
+# artifacts/midwife_work_setting_summary.csv is tracked.
+artifacts/midwife_work_sites_long.csv*
+artifacts/midwife_work_sites_summary.csv*
+artifacts/midwife_work_sites_excluded_non_workplace.csv*
+# reconcile_trilliant_cohort.R: one row per certificant (person-level). The
+# reason counts, artifacts/trilliant_cohort_reconciliation_reasons.csv, are tracked.
+artifacts/trilliant_cohort_reconciliation.csv*
+artifacts/trilliant_cohort_transitions.csv*
+# build_trilliant_work_sites.R: one row per midwife x physical site (person-level).
+artifacts/midwife_distinct_work_sites.csv*
+# enrich_trilliant_demographics.R: sex, school, age and patient panel per
+# certificant (person-level). The checks, trilliant_demographics_validation_*.csv, are tracked.
+artifacts/trilliant_demographics.csv*
+# build_trilliant_provider_identity_index.R: the index itself is *.parquet
+# (ignored above); its manifest names licensed source files. The coverage
+# table, trilliant_provider_identity_coverage.csv, is tracked.
+artifacts/trilliant_provider_identity_index.manifest.json
+# experiment_trilliant_identity_linkage.R: one row per certificant, and every
+# proposed change with the names behind it (person-level). The outcome,
+# coverage and graduation-year tables (trilliant_identity_{outcomes,
+# field_coverage,grad_year_agreement}_*.csv) are tracked.
+artifacts/trilliant_identity_decisions_*.csv*
+artifacts/trilliant_identity_proposals_*.csv*

@@ -1,0 +1,32 @@
+{
+  "artifact": "trilliant_activity_validation_dbcc76f4.csv",
+  "written_utc": "2026-09-14 00:06:31 UTC",
+  "inputs": [],
+  "code_sha256": "89001cab446e8275f06f644effa0f5aa3940b637c816249aaf4a71b9ffe5125e",
+  "code": [
+    {
+      "path": "analyze_trilliant_activity_flag.R",
+      "sha256": "963d1019b4c8aee198ce9b283d378920d697ca636825c09a095a7e05516ee73a"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/cohort_definitions.R",
+      "sha256": "faa0edf2049f09d42edb3681956f29e39cb0c7dc6cdbe58d7ee5812714bffc49"
+    },
+    {
+      "path": "R/lib/common_helpers.R",
+      "sha256": "55c6b894798e2740f538b1262391e58e8fe9bea84f072b80708e59aea3197067"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}

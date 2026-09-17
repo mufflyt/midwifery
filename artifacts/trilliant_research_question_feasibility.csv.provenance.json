@@ -1,0 +1,24 @@
+{
+  "artifact": "trilliant_research_question_feasibility.csv",
+  "written_utc": "2026-09-13 20:56:21 UTC",
+  "inputs": [],
+  "code_sha256": "3acb2fd8c6b45ce00fa62a3a000f9f1ab9912837bcb4bacdf7662fb33ed8e0db",
+  "code": [
+    {
+      "path": "R/inventory_trilliant_research_fields.R",
+      "sha256": "0f531487328c5837d543e63d9ee2302ea0ccf2adc220b299a71a231ab3fed078"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}

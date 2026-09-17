@@ -43,6 +43,7 @@ REF_YEAR <- 2026   # "years since" are measured to this study year, not Sys.Date
 source("R/lib/table1_bands.R")
 source("R/join_safety.R")   # assert_unique_keys(): conflict-safe dedup
 source("R/lib/artifact_provenance.R")   # write_with_provenance(): see below
+source("R/lib/training_institution.R")  # training_source_trilliant(): the school backup
 
 link_paths <- c(
   "artifacts/amcb_npi_linkage_FROZEN.csv",
@@ -250,6 +251,45 @@ if (file.exists(sx)) {
           call. = FALSE)
   coh$sex_code <- NA_character_; coh$enumeration_date <- NA_character_
 }
+# Trilliant's provider directory (enrich_trilliant_demographics.R) is a BACKUP:
+# it fills a blank NPPES code and never replaces one. Where both give F or M
+# they agreed for every midwife on the 2026-08-10 freeze
+# (artifacts/trilliant_demographics_validation_<sha8>.csv). Its
+# "UNSPECIFIED/OTHER" is not mapped, because NPPES distinguishes X from U and
+# the directory does not say which it means.
+trl_demo_file <- "artifacts/trilliant_demographics.csv"
+trl_demo <- if (file.exists(trl_demo_file))
+  read_csv(trl_demo_file, col_types = cols(.default = "c"), progress = FALSE) else NULL
+if (!is.null(trl_demo) && anyDuplicated(trl_demo$certification_number))
+  stop(trl_demo_file, " repeats a certification number; rebuild it.", call. = FALSE)
+coh$sex_source <- ifelse(is.na(coh$sex_code), NA_character_, "NPPES")
+if (!is.null(trl_demo)) {
+  coh <- coh %>%
+    left_join(select(trl_demo, certification_number, trl_sex_code),
+              by = "certification_number", relationship = "many-to-one") %>%
+    mutate(sex_source = if_else(is.na(sex_code) & !is.na(trl_sex_code),
+                                "Trilliant provider directory", sex_source),
+           sex_code = coalesce(sex_code, trl_sex_code)) %>%
+    select(-trl_sex_code)
+  cat(sprintf("Sex: Trilliant directory filled %d blank NPPES code(s).\n",
+              sum(coh$sex_source %in% "Trilliant provider directory")))
+}
+
+# --- Patient panel: the median age of each midwife's patients -----------------
+# From Trilliant's claims-derived panel (enrich_trilliant_demographics.R), which
+# exists only for providers the directory flags active and only where its age
+# bands sum to one. No other source describes a midwife's patients, so this is
+# the only one. One number per midwife -- the median age of HER patients -- so
+# the block describes midwives by the patients they see, not the patients.
+PANEL_CATEGORY <- "Median age of the midwife's patients (Trilliant claims panel)"
+if (!is.null(trl_demo)) {
+  coh <- coh %>%
+    left_join(select(trl_demo, certification_number, trl_panel_median_age),
+              by = "certification_number", relationship = "many-to-one") %>%
+    mutate(panel_median_age = suppressWarnings(as.numeric(trl_panel_median_age)),
+           panel_age_band = band_panel_median_age(panel_median_age)) %>%
+    select(-trl_panel_median_age)
+}
 coh <- coh %>%
   mutate(
     # NPPES calls this "Provider Sex Code" (2025 layout) and "Provider Gender
@@ -322,6 +362,7 @@ if (file.exists(calib_age_file)) {
       age_provenance = case_when(
         age_source %in% c("OH_Voter_Direct_DOB", "WA_Direct_BirthYear", "Healthgrades_Direct", "FL_Voter_Direct_DOB") ~ "Direct Verified DOB (OH/WA/FL/HG)",
         age_source == "IL_Derived_IssueYear" ~ "Derived State License Issue Date",
+        age_source == "Trilliant_Estimated" ~ "Trilliant Directory Estimate",
         TRUE ~ "OLS Calibrated Imputation"
       )
     )
@@ -406,9 +447,15 @@ if (file.exists("artifacts/dac_cnm_education.csv")) {
   .dac_sch <- read_csv("artifacts/dac_cnm_education.csv", show_col_types = FALSE,
                        progress = FALSE) %>%
     mutate(npi = as.character(NPI)) %>%
-    select(npi, med_sch_clean) %>%
+    select(npi, med_sch_raw) %>%
     assert_unique_keys("npi", label = "DAC CNM education (medical school)", dedupe = TRUE) %>%
-    transmute(npi, dac_school = ifelse(!is.na(med_sch_clean) & med_sch_clean != "OTHER",
+    # Cleaned HERE, from the raw string, by the rule every other source uses
+    # (mysterynpi::strip_med_suffix()) -- not read from med_sch_clean, which
+    # keeps whatever rule was current when the DAC extract last ran. A stale
+    # clean named "BRODY" where the Trilliant backup names "EAST CAROLINA
+    # UNIVERSITY", and one school became two rows.
+    mutate(med_sch_clean = strip_med_suffix(med_sch_raw)) %>%
+    transmute(npi, dac_school = ifelse(!is.na(med_sch_clean) & toupper(med_sch_clean) != "OTHER",
                                        med_sch_clean, NA_character_))
   .hg_sch <- if (!is.null(hg_link) && "hg_education_name" %in% names(hg_link))
     hg_link %>% distinct(certification_number, .keep_all = TRUE) %>%
@@ -420,10 +467,17 @@ if (file.exists("artifacts/dac_cnm_education.csv")) {
     coh <- coh %>% left_join(.hg_sch, by = "certification_number",
                              relationship = "one-to-one")
   if (!"hg_school" %in% names(coh)) coh$hg_school <- NA_character_
+  # Trilliant's directory last: DAC's own school strings for people the current
+  # DAC file no longer holds (training_source_trilliant()).
+  .trl_sch <- training_source_trilliant(trl_demo_file)
+  coh <- if (!is.null(.trl_sch))
+    left_join(coh, .trl_sch, by = "certification_number", relationship = "many-to-one")
+  else mutate(coh, trl_school = NA_character_)
 
   coh <- coh %>%
     mutate(training_institution = dplyr::coalesce(.norm_school(dac_school),
-                                                  .norm_school(hg_school)))
+                                                  .norm_school(hg_school),
+                                                  .norm_school(trl_school)))
   # A Table 1 row per institution would run to hundreds of levels, so the block
   # names the ten most common and pools the rest. The pooled row is labelled as
   # a pool, not as a school.
@@ -747,7 +801,8 @@ t1 <- bind_rows(
   # 5,876 of 5,878 (99.97%), with 2 disagreements. A merged variable is
   # therefore identical to the NPPES variable; publishing both blocks implied a
   # second, independent measurement of the same 11,913 people.
-  blk(coh, "sex", "Sex", unknown_label = "Sex not recorded in NPPES"),
+  # Trilliant's directory fills a blank NPPES code (sex_source says which).
+  blk(coh, "sex", "Sex", unknown_label = "Sex not recorded in NPPES or the Trilliant directory"),
   if ("state_concordance" %in% names(coh))
     blk(coh, "state_concordance", "Practice vs. Mailing State Concordance"),
   if ("age_band" %in% names(coh))
@@ -756,6 +811,16 @@ t1 <- bind_rows(
   if ("cert_year_band" %in% names(coh))
     blk(coh, "cert_year_band", "Years Since AMCB Initial Certification",
         lvls = c("<5 years", "5-9 years", "10-19 years", "20-29 years", ">=30 years")),
+  # The summary row has no count, so the block still sums to the cohort: the
+  # bands plus the no-panel row are the partition, and the median (IQR) is over
+  # the midwives in the bands.
+  if ("panel_age_band" %in% names(coh))
+    bind_rows(
+      tibble(characteristic = sprintf("Median (IQR), years: %s",
+                                      table1_median_iqr(coh$panel_median_age[!is.na(coh$panel_age_band)])),
+             n = NA_integer_, percent = NA_real_, category = PANEL_CATEGORY),
+      blk(coh, "panel_age_band", PANEL_CATEGORY, lvls = PANEL_AGE_LEVELS,
+          unknown_label = "No claims panel in the Trilliant directory")),
   # District percentages are computed on midwives who HAVE a district. Military
   # and territory addresses are excluded by decision (no District X), so they
   # are reported on their own line rather than inside "Unknown", which would
@@ -779,9 +844,9 @@ t1 <- bind_rows(
 
   if ("training_institution_top" %in% names(coh))
     blk(coh, "training_institution_top",
-        "Training institution (CMS DAC + Healthgrades)",
+        "Training institution (CMS DAC + Healthgrades + Trilliant directory)",
         lvls = c(school_src, "Other named institution"),
-        unknown_label = "No school named by CMS DAC or Healthgrades"),
+        unknown_label = "No school named by CMS DAC, Healthgrades or the Trilliant directory"),
 
   if ("dac_practice_size" %in% names(coh))
     blk(coh, "dac_practice_size",
