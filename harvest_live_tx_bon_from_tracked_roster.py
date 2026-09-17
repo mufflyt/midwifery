@@ -21,16 +21,38 @@
 # https://data.texas.gov/resource/jnzg-cr4w.json
 #
 # Matched by last+first name (same key scheme as the WA/CO scripts) against
-# nppes_state == "TX" in the tracked FROZEN linkage -- NOT a license-number or
-# NPI join, because this Texas dataset carries neither an AMCB nor an NPI
-# identifier. Name matching is imperfect (misses a hyphenated or maiden-name
-# mismatch, can over-match a common name); this script reports what it found
-# as its own result, not a confirmation of AMCB/NPPES identity.
+# nppes_state == "TX" in the cohort -- NOT a license-number or NPI join,
+# because this Texas dataset carries neither an AMCB nor an NPI identifier.
+# Name matching is imperfect (misses a hyphenated or maiden-name mismatch, can
+# over-match a common name); this script reports what it found as its own
+# result, not a confirmation of AMCB/NPPES identity.
+#
+# COHORT: artifacts/tracked_roster_active_primary_linked.csv (tracked; built by
+# build_tracked_roster.R), the same source harvest_live_wa_bon_from_tracked_
+# roster.py uses. It was artifacts/amcb_npi_linkage_FROZEN.csv, which is
+# gitignored, person-level, and absent from a checkout without the data vault,
+# so this script could not run at all on such a machine. The two cohorts are
+# not the same population and the counts are not comparable: the freeze carries
+# every certificant, the tracked roster only ACTIVE, primary-linked ones. TX
+# rows fell from 736 to 536 and matches from 498 to 469, so the match RATE rose
+# from 67.7% to 87.5%. The rows that went are mostly certificants the Texas
+# board has no active APRN record for, which is what a roster of active
+# certificants is supposed to leave out. Treat this output as its own result.
+#
+# TLS: verification stays ON. A macOS framework Python ships no CA store, so
+# ssl.create_default_context() raises CERTIFICATE_VERIFY_FAILED against
+# data.texas.gov; this falls back to certifi's bundle. It briefly used
+# CERT_NONE instead, which turns off certificate and hostname checking
+# altogether and would accept any server answering for that name.
 # =============================================================================
 import csv
+import hashlib
 import json
+import os
+import ssl
 import urllib.parse
 import urllib.request
+from datetime import datetime, timezone
 
 print("=== Live Texas BON cross-reference (tracked-roster cohort) ===")
 
@@ -42,9 +64,34 @@ TX_QUERY = {
 tx_url = TX_API + "?" + urllib.parse.urlencode(TX_QUERY)
 req = urllib.request.Request(tx_url, headers={"User-Agent": "Mozilla/5.0"})
 
+
+def verified_tls_context():
+    """A verifying TLS context, using certifi when the interpreter has no CA store.
+
+    Returns a context that checks the certificate chain and the hostname. Never
+    return an unverified one: without verification any host that answers for
+    data.texas.gov would be trusted, and a licensure record read from an
+    unauthenticated source is not evidence of anything.
+    """
+    ctx = ssl.create_default_context()
+    if ctx.cert_store_stats()["x509_ca"] > 0:
+        return ctx
+    try:
+        import certifi
+    except ImportError:
+        raise SystemExit(
+            "This Python has no CA certificate store, so HTTPS cannot be verified.\n"
+            "Install certifi (python3 -m pip install certifi), or on macOS run\n"
+            "'Install Certificates.command' from the Python installation folder."
+        )
+    ctx.load_verify_locations(cafile=certifi.where())
+    return ctx
+
+
+retrieved_at = datetime.now(timezone.utc)
 live_tx_records = []
 try:
-    with urllib.request.urlopen(req, timeout=30) as response:
+    with urllib.request.urlopen(req, context=verified_tls_context(), timeout=30) as response:
         live_tx_records = json.loads(response.read().decode("utf-8"))
     print(f"Successfully streamed {len(live_tx_records):,} live TX nurse-midwife APRN records.")
 except Exception as e:
@@ -60,7 +107,7 @@ for r in live_tx_records:
         tx_lookup.setdefault(f"{ln}_{fn}", []).append(r)
 
 # Cross-reference against the TRACKED roster, filtered to TX.
-roster_file = "artifacts/amcb_npi_linkage_FROZEN.csv"
+roster_file = "artifacts/tracked_roster_active_primary_linked.csv"
 matched_tx = []
 unmatched_tx = []
 
@@ -106,6 +153,7 @@ with open(roster_file, "r", encoding="utf-8", errors="ignore") as f:
             unmatched_tx.append(out)
 
 out_csv = "artifacts/live_texas_bon_ingested_midwives_from_tracked_roster.csv"
+out_provenance = out_csv + ".provenance.json"
 rows = matched_tx + unmatched_tx
 if rows:
     fieldnames = list(rows[0].keys())
@@ -113,6 +161,39 @@ if rows:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
+
+
+def sha256_file(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+# The sidecar every tracked artifact is supposed to carry: what was queried,
+# when, and the SHA-256 of both the cohort read and the artifact written. The
+# cohort is tracked now, so this artifact is reproducible from the repository
+# and no longer belongs on tests/ci_artifact_provenance_baseline.txt.
+if rows:
+    provenance = {
+        "artifact": out_csv,
+        "sha256": sha256_file(out_csv),
+        "byte_size": os.path.getsize(out_csv),
+        "source_api": tx_url,
+        "source_dataset": "Texas Board of Nursing, APRN-Active (data.texas.gov jnzg-cr4w)",
+        "retrieved_utc": retrieved_at.strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "records_retrieved": len(live_tx_records),
+        "cohort": roster_file,
+        "cohort_sha256": sha256_file(roster_file),
+        "cohort_rows_tx": len(rows),
+        "cohort_matched_rows": len(matched_tx),
+        "match_key": "last_name + first_name (upper, trimmed); ambiguous names reported unmatched",
+        "verification_portal": "https://www.bon.texas.gov/licensure_verification.asp",
+    }
+    with open(out_provenance, "w", encoding="utf-8") as f:
+        json.dump(provenance, f, indent=2)
+        f.write("\n")
 
 n_total = len(matched_tx) + len(unmatched_tx)
 n_rxn_active = sum(1 for r in matched_tx if r["live_rxn_authority_status"] == "Active")
@@ -124,4 +205,5 @@ if n_total:
 if matched_tx:
     print(f"  Of those, Active RXN authority         : {n_rxn_active:,} ({n_rxn_active/len(matched_tx)*100:.1f}%)")
 print(f"  Written to: {out_csv}")
+print(f"  Provenance: {out_provenance}")
 print("=========================================================================")
