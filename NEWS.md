@@ -20,6 +20,32 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-09-14 — NPPES address versus claims site: rural bands disagree 38–45%
+
+### Added
+
+- **The first tracked work-site summary on the current freeze.**
+  `artifacts/midwife_work_setting_summary.csv` is built from `1a7bd6a8…`
+  (12,171 ACTIVE, primary-linked midwives). Every dimension sums to 12,171.
+  Practice locations were rebuilt from that freeze by
+  `link_practice_locations_to_org_npi.R`. The DAC, CABC and resolved-employer
+  inputs are the 2026-08-10 extracts.
+- **The rurality comparison (appendix §6.5).** Of 9,320 midwives with a band
+  from both the NPPES primary address and the Trilliant claims site, 92.4%
+  agree. That figure is carried by Metro, which disagrees 3.8% of the time.
+  The rural bands disagree far more:
+  - Nonmetro adjacent: 44.6% (283 of 635)
+  - Nonmetro remote: 37.5% (108 of 288)
+  - NPPES counts 923 nonmetro midwives and claims count 903, but only 587 are
+    nonmetro by both.
+  - None of the 420 disagreeing midwives with coordinates is within 10 km of
+    the claims site, and 371 are 40 km or more away.
+  - This bears on the persistence paper, which assigns rurality from NPPES
+    addresses. Its rural strata are where NPPES and claims disagree most.
+- **`build_trilliant_work_sites.R`.** A "same band" level now names its band,
+  and a new dimension, `nppes_address_to_claims_site_distance`, bands the
+  great-circle distance between the two addresses.
+
 ## [Unreleased] — 2026-09-14 — Trilliant's directory as a second identity source (experiment)
 
 Technical appendix: [docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md](docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md).
