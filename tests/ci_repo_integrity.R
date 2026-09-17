@@ -46,7 +46,7 @@ ci_entrypoints <- file.path("tests", c(
   "test-step8-tract-vintage-routing.R",
   # The Trilliant layer's step in r-unit-tests.
   "test_cohort_definitions.R", "test_work_site_topology.R",
-  "test_data_vault.R", "test_trilliant_demographics.R"
+  "test_data_vault.R", "test_trilliant_demographics.R", "test_trilliant_identity.R"
 ))
 
 # Must match .github/workflows/ci.yml exactly. When they disagree, CI is red on

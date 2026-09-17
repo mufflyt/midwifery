@@ -221,7 +221,16 @@ REBUILD_ORDER <- list(
                    # against their status and Medicare billing. Its output name
                    # carries the freeze's hash, so a rebuild writes a new file
                    # beside the old one instead of overwriting it.
-                   "analyze_trilliant_activity_flag.R")),
+                   "analyze_trilliant_activity_flag.R",
+                   # Added 2026-09-14, by T5 in the pull request that introduced
+                   # it. Reads amcb_npi_linkage_FROZEN for every certificant and
+                   # scores their candidates against Trilliant's directory; it
+                   # proposes, and writes nothing any other script reads. Needs
+                   # artifacts/trilliant_provider_identity_index.parquet (built
+                   # by build_trilliant_provider_identity_index.R, which does not
+                   # read the freeze) and the NPPES bulk file. Outputs carry the
+                   # freeze's hash, so a rebuild writes beside the old ones.
+                   "experiment_trilliant_identity_linkage.R")),
   list(layer = "5-enrichment-recompute", why = "age/enrichment recomputes from cached inputs (no network)",
        scripts = c(# Added 2026-09-13, by T5 in the pull request that introduced
                    # it. Reads amcb_npi_linkage_FROZEN and writes the Trilliant

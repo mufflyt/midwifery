@@ -70,6 +70,10 @@ Keyed on the frozen linkage; none of it changes cohort membership. Methods in
 | `R/lib/data_vault.R`, `publish_to_data_vault.R` | Share person-level inputs across machines by hash ([docs/DATA_VAULT.md](docs/DATA_VAULT.md)). |
 | `make_trilliant_figures.R` | README figures 12–15 from committed aggregates. |
 | `enrich_trilliant_demographics.R`, `R/lib/trilliant_demographics.R` | Trilliant as a backup for sex (after NPPES), school (after DAC, Healthgrades, repository) and age (only if `trl_age_admission()` says it beats the calibration; today it does not); carries the patient-panel mix. Checks against each primary source: `artifacts/trilliant_demographics_validation_<sha8>.csv`. |
+| `build_trilliant_provider_identity_index.R` | Identity index over all 7,518,635 directory NPIs: raw fields beside the mysterynpi keys the matcher compares on, plus specialty and credential classes (`artifacts/trilliant_provider_identity_index.parquet`, gitignored; coverage tracked in `artifacts/trilliant_provider_identity_coverage.csv`). Needs no cohort. |
+| `experiment_trilliant_identity_linkage.R`, `R/lib/trilliant_identity.R` | Experiment, never applied: every certificant searched against the whole directory by exact keys, scored with and without profession (D17), outcomes by stratum and every proposed change with both sides' evidence. Outputs named by freeze hash ([docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md](docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md)). |
+| `summarise_trilliant_identity_evidence.R` | The breakdowns the identity appendix quotes (graduation-year likelihood ratios, contradiction sources, recovery composition), as `artifacts/trilliant_identity_evidence_<sha8>.csv`. |
+| `make_trilliant_identity_figures.R` | README figures 16–18 from committed aggregates. |
 
 ### Linkage-improvement components (built, awaiting input data)
 
