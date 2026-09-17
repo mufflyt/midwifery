@@ -644,3 +644,7 @@ artifacts/trilliant_provider_identity_index.manifest.json
 # field_coverage,grad_year_agreement}_*.csv) are tracked.
 artifacts/trilliant_identity_decisions_*.csv*
 artifacts/trilliant_identity_proposals_*.csv*
+
+# Oregon and Florida BON raw payload archives
+data_vault/osbn_raw/
+data_vault/fl_doh_raw/
