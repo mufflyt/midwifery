@@ -79,7 +79,15 @@ TRL_IDENTITY_WEIGHTS <- list(
                  initial = 1, conflict = 0),
   middle     = c(corroborates = 2, initial_only = 1, uninformative = 0, conflicts = -2),
   profession = c(midwife = 5, nursing = 1, unknown = 0, physician = -5, other = -5),
-  grad_year  = c(within_1 = 3, within_3 = 1.5, within_10 = 0, beyond_10 = -3, unknown = 0),
+  # within_3 CORRECTED 2026-09-18 from +1.5 to -1.7. The pre-specified table
+  # scored a two-to-three-year gap as weak evidence FOR a link; measured, it is
+  # evidence AGAINST one -- 3.4% of likely matches against 11.2% of likely
+  # non-matches, a likelihood ratio of 0.30 (log2 -1.73), reported in
+  # TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md section 5.2 and
+  # reproduced by an independent implementation. The appendix left it standing
+  # so that run stayed the pre-specified one, and said any future version must
+  # change it. This is that change; every number the appendix quotes predates it.
+  grad_year  = c(within_1 = 3, within_3 = -1.7, within_10 = 0, beyond_10 = -3, unknown = 0),
   sex        = c(male = -1, not_male = 0))
 
 #' Decision thresholds per scoring variant.
@@ -288,7 +296,10 @@ trl_score_pairs <- function(ev, weights = TRL_IDENTITY_WEIGHTS) {
       contra_grad_year = grad_year_band == "beyond_10",
       contradiction_count = as.integer(contra_given) + as.integer(contra_middle) +
         as.integer(contra_profession) + as.integer(contra_grad_year),
-      corroborated_identity = grad_year_band %in% c("within_1", "within_3"),
+      # within_3 is NOT corroboration: its measured likelihood ratio is 0.30,
+      # i.e. evidence against the link (see TRL_IDENTITY_WEIGHTS$grad_year).
+      # Counting it here was the same sign error as the weight it came from.
+      corroborated_identity = grad_year_band == "within_1",
       corroborated_full = corroborated_identity | profession_class == "midwife",
       score_identity_only = pts_surname + pts_given + pts_middle + pts_grad_year + pts_sex,
       score_full = score_identity_only + pts_profession)

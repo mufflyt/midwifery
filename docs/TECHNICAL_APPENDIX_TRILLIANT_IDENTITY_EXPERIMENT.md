@@ -311,6 +311,17 @@ Two readings follow:
   reported, not corrected, so that this run stays the pre-specified one. Any
   future version must change it.
 
+> **Corrected 2026-09-18.** That change has now been made:
+> `TRL_IDENTITY_WEIGHTS$grad_year["within_3"]` is −1.7, and `within_3` no
+> longer counts toward `corroborated_identity` — it was the same sign error in
+> a second place. **Every number in this appendix predates the correction and
+> describes the pre-specified table**; the counts in §5.3 and §5.5, which
+> depend on corroboration, will move when the pipeline is next run. The rule
+> itself is being lifted into mysterynpi with signed bands
+> (`graduation_year_agreement()`, mysterynpi#25), which also separates the
+> two directions this band pools: graduating a year *before* credentialing
+> carries a likelihood ratio of 10.2, a year *after* only 1.8.
+
 ### 5.3 Ambiguous certificants: most separations need taxonomy
 
 In the `full` variant, 945 of the 3,303 quarantined certificants get a unique,
