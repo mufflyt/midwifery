@@ -82,6 +82,57 @@ Each field then falls into one of three roles:
 before it was assumed meaningful. Inspection says it is the CMS medical-school
 field, "Other" or blank for 92% of linked midwives.
 
+### Is the directory just NPPES? — a finding to verify, not yet a citable result
+
+§5.1 argues that a midwifery profession "confirms" a primary link by
+construction, because Trilliant's primary specialty *is* the NPPES taxonomy the
+tier was selected on. A parallel run measured that rather than assuming it,
+field by field, over the 8,681 stratum-1 incumbents present in the directory
+(same freeze as this appendix, `dbcc76f4…`):
+
+| Trilliant field | equals the NPPES value |
+|---|---:|
+| first name | 100% |
+| last name | 99.96% |
+| sex | 99.92% |
+| primary taxonomy | 99.75% |
+| middle name | 97.72% |
+| **credential** | **81.33%** |
+
+Three things follow.
+
+- **Name, sex and specialty hold no identity information NPPES does not already
+  hold.** The circularity §5.1 describes for specialty applies to the name
+  fields equally: a separation these produce is NPPES restated, not a second
+  source agreeing. This strengthens §6.2 rather than contradicting it.
+- **Credential is the exception, at 81.33%.** It is the one scored identity
+  field where the two registries genuinely disagree, in roughly one incumbent in
+  five. That cuts both ways: credential evidence is not purely circular, and it
+  is also not corroborated by NPPES, so a credential-driven separation rests on
+  Trilliant alone.
+- **The directory supplies a middle name where NPPES has none for 2.2%** of
+  incumbents — the only measured case of it adding a name field rather than
+  echoing one.
+
+**Graduation year is not the enumeration date.** The obvious deflation of §6.1
+is that the year merely records when the NPI was issued, near certification.
+Measured on the same incumbents, it equals the NPPES enumeration year for
+39.4% (63.0% within a year), against 70.4% equal to the AMCB certification
+year. The field tracks certification, not enumeration, so §6.1's
+recommendation survives this check.
+
+**Provenance, and what must happen before these numbers may be cited.** They
+come from a parallel implementation that has since been retired as a duplicate
+(`analysis/trilliant_identity_02_evidence.R`, ignored at `.gitignore:725` in
+favour of the pipeline named in §8), and its outputs are not tracked. The
+committed pipeline does not compute this: `experiment_trilliant_identity_linkage.R`
+reads the NPPES name, sex, credential and taxonomy fields but never compares
+them with the directory's own. Reproducing this section needs that comparison
+added there, writing an aggregate beside the other tracked ones
+(`artifacts/trilliant_identity_nppes_redundancy_<freeze sha8>.csv`). Until that
+lands, this section records a finding to verify — it is deliberately not quoted
+elsewhere in this appendix, and no conclusion in §6 depends on it.
+
 ## 3. Candidates: exact keys only
 
 Every certificant in the freeze was searched against the whole directory, not
