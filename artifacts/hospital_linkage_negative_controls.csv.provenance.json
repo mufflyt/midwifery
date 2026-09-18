@@ -1,0 +1,41 @@
+{
+  "artifact": "hospital_linkage_negative_controls.csv",
+  "written_utc": "2026-09-18 17:27:14 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2"
+    },
+    {
+      "path": "artifacts/ob_hospitals_geocoded.csv",
+      "sha256": "19e9359707b1470d88e322808a8f430157d526ba23ef95cf0e9b432685b6ecf8"
+    },
+    {
+      "path": "artifacts/dac_facility_affiliations.csv",
+      "sha256": "26f39b3aef12e647a66f7c4f3987324f275a3ec575780cdccdff4ce6f526fedb"
+    }
+  ],
+  "code_sha256": "6a996e3c22ff41633110858af684ea2a427774b4ddf808a5618f3489ba29cb97",
+  "code": [
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/cohort_definitions.R",
+      "sha256": "faa0edf2049f09d42edb3681956f29e39cb0c7dc6cdbe58d7ee5812714bffc49"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "validate_hospital_linkage_controls.R",
+      "sha256": "32634ce5d391a785e36371f9c1a606a93ceae03a8c395814ff4cd4fad347a0dd"
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 **Repository**: `midwifery`
 **Panel Artifact**: `midwife_panel.csv` (gitignored, person-level; rebuilt 2026-08-26/27)
-**Builder Script**: [`build_midwife_panel.R`](file:///Users/tmuffly/midwifery/build_midwife_panel.R)
+**Builder Script**: [`build_midwife_panel.R`](../build_midwife_panel.R)
 **Panel Span**: 20 annual snapshots, 2007–2026 (`snapshot_year`), 4,748,145 rows, 451,793 distinct NPIs
 
 ---
