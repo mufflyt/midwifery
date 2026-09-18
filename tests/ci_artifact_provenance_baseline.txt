@@ -56,7 +56,6 @@ artifacts/coverage_nesting_report.csv
 artifacts/dac_hospital_affiliation_summary.csv
 artifacts/district_profiles/district_sentences.csv
 artifacts/dora_identification_technical_report.csv
-artifacts/exclusion_ledger.csv
 artifacts/florida_voter_license_ages_provenance.csv
 artifacts/frontier_dnp_projects.csv
 artifacts/geography_by_linkage_status.csv
