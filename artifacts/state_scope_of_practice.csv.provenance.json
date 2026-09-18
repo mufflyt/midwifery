@@ -1,12 +1,12 @@
 {
   "artifact": "state_scope_of_practice.csv",
-  "written_utc": "2026-09-11 13:27:37.981 UTC",
+  "written_utc": "2026-09-18 17:09:20 UTC",
   "inputs": [],
-  "code_sha256": "9f34d92fd17ed301411645f20175b0de83a08b9f62c22379afdb94035b877641",
+  "code_sha256": "0affdbee8b514d6d0d94d972b483b73fe9770a0107be2cbbace3c3cde5f80b85",
   "code": [
     {
       "path": "build_state_scope_of_practice.R",
-      "sha256": "20418947d585468fde082da30e94aff96b533cfac9bc8c7e92d19fed04a12246"
+      "sha256": "a7e9e64a89e12020f4b7c7e75e6d3ba9ce61d0052038cb23ded10a7e4d01fd64"
     },
     {
       "path": "R/lib/artifact_provenance.R",

@@ -469,9 +469,24 @@ mw_build_catalog <- function(root = ".") {
     row <- function(b) sig[sig$band_minutes == b, ]
     r30 <- row(30); r60 <- row(60)
     g <- function(r, col) if (nrow(r)) r[[col]][1] else NA_real_
+    gs <- function(r, col) if (nrow(r) && col %in% names(r)) as.character(r[[col]][1]) else NA_character_
     cat_$scope <- list(
       n_autonomous             = g(r30, "n_autonomous"),
       n_collaborative          = g(r30, "n_collaborative"),
+      # The two counts above are STATES WITH AN ACCESS MEASURE, not the
+      # classification. Two autonomous states (AK, HI) have no access row, so
+      # 24 vs 25 is being taken from a 26/25 classification -- an exclusion
+      # correlated with the exposure, and the manuscript says so rather than
+      # leaving a reader to diff two artifacts (#227).
+      n_classified_autonomous    = g(r30, "n_classified_autonomous"),
+      n_classified_collaborative = g(r30, "n_classified_collaborative"),
+      n_excluded                 = g(r30, "n_excluded"),
+      n_excluded_autonomous      = g(r30, "n_excluded_autonomous"),
+      n_excluded_collaborative   = g(r30, "n_excluded_collaborative"),
+      excluded_states            = gs(r30, "excluded_states"),
+      # The exposure's vintage: 2012-2016 law against a 2026 cohort (#226).
+      classification_window        = gs(r30, "classification_window"),
+      classification_snapshot_year = g(r30, "classification_snapshot_year"),
       band30_autonomous_pct    = g(r30, "mean_autonomous_pct"),
       band30_collaborative_pct = g(r30, "mean_collaborative_pct"),
       band30_diff_pp           = g(r30, "diff_pp"),

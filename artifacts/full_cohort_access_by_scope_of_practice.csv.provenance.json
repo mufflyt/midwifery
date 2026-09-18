@@ -1,21 +1,21 @@
 {
   "artifact": "full_cohort_access_by_scope_of_practice.csv",
-  "written_utc": "2026-09-11 16:23:43.886 UTC",
+  "written_utc": "2026-09-18 17:09:58 UTC",
   "inputs": [
     {
       "path": "artifacts/state_scope_of_practice.csv",
-      "sha256": "e276a0549924cbe7b9fb59e6e796c56ed569a87e0443f2457e3dfb54223b3851"
+      "sha256": "fb014844ad6c2baba3e3f52ac73e4d5929abe02f3f2a3f1008e36aac3930704d"
     },
     {
       "path": "artifacts/full_cohort_access_by_band_state.csv",
       "sha256": "daf469f286589a039a33a0129e3a95b8e0f0fbdb0b81cf0766aca0c71598edd1"
     }
   ],
-  "code_sha256": "a85b80280b5ce339a52f01b5fa7a7cbd0462515ff27fec58b87ddba268c9f49b",
+  "code_sha256": "60586c2f674c9d581c074f8b3a225b7cd74d048c8b4fd3d31998f0abf1621e12",
   "code": [
     {
       "path": "join_scope_of_practice_to_geography.R",
-      "sha256": "54eff0471f30391790876d46112ff05714c1a18becd343f93211ac52f334eb92"
+      "sha256": "a498925c4bf415f4c88af91f292acefe0ce0a5d369078ecc24b861b63e9ac782"
     },
     {
       "path": "R/lib/artifact_provenance.R",

@@ -1,52 +1,52 @@
-state,practice_authority_continuous,practice_authority_2016
-AK,Autonomous,Autonomous
-AL,Collaborative_supervisory,Collaborative_supervisory
-AR,Collaborative_supervisory,Collaborative_supervisory
-AZ,Autonomous,Autonomous
-CA,Collaborative_supervisory,Collaborative_supervisory
-CO,Autonomous,Autonomous
-CT,Autonomous,Autonomous
-DC,Autonomous,Autonomous
-DE,Collaborative_supervisory,Collaborative_supervisory
-FL,Collaborative_supervisory,Collaborative_supervisory
-GA,Collaborative_supervisory,Collaborative_supervisory
-HI,Changed_during_window_excluded,Autonomous
-IA,Autonomous,Autonomous
-ID,Autonomous,Autonomous
-IL,Collaborative_supervisory,Collaborative_supervisory
-IN,Collaborative_supervisory,Collaborative_supervisory
-KS,Collaborative_supervisory,Collaborative_supervisory
-KY,Collaborative_supervisory,Collaborative_supervisory
-LA,Collaborative_supervisory,Collaborative_supervisory
-MA,Changed_during_window_excluded,Autonomous
-MD,Autonomous,Autonomous
-ME,Autonomous,Autonomous
-MI,Changed_during_window_excluded,Collaborative_supervisory
-MN,Autonomous,Autonomous
-MO,Collaborative_supervisory,Collaborative_supervisory
-MS,Collaborative_supervisory,Collaborative_supervisory
-MT,Autonomous,Autonomous
-NC,Collaborative_supervisory,Collaborative_supervisory
-ND,Autonomous,Autonomous
-NE,Collaborative_supervisory,Collaborative_supervisory
-NH,Autonomous,Autonomous
-NJ,Changed_during_window_excluded,Autonomous
-NM,Autonomous,Autonomous
-NV,Changed_during_window_excluded,Autonomous
-NY,Autonomous,Autonomous
-OH,Collaborative_supervisory,Collaborative_supervisory
-OK,Collaborative_supervisory,Collaborative_supervisory
-OR,Autonomous,Autonomous
-PA,Collaborative_supervisory,Collaborative_supervisory
-RI,Autonomous,Autonomous
-SC,Collaborative_supervisory,Collaborative_supervisory
-SD,Collaborative_supervisory,Collaborative_supervisory
-TN,Collaborative_supervisory,Collaborative_supervisory
-TX,Collaborative_supervisory,Collaborative_supervisory
-UT,Autonomous,Autonomous
-VA,Collaborative_supervisory,Collaborative_supervisory
-VT,Autonomous,Autonomous
-WA,Autonomous,Autonomous
-WI,Collaborative_supervisory,Collaborative_supervisory
-WV,Changed_during_window_excluded,Autonomous
-WY,Autonomous,Autonomous
+state,practice_authority_continuous,practice_authority_2016,classification_window,classification_snapshot_year,classification_source
+AK,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+AL,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+AR,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+AZ,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+CA,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+CO,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+CT,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+DC,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+DE,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+FL,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+GA,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+HI,Changed_during_window_excluded,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+IA,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+ID,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+IL,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+IN,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+KS,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+KY,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+LA,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+MA,Changed_during_window_excluded,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+MD,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+ME,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+MI,Changed_during_window_excluded,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+MN,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+MO,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+MS,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+MT,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+NC,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+ND,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+NE,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+NH,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+NJ,Changed_during_window_excluded,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+NM,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+NV,Changed_during_window_excluded,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+NY,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+OH,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+OK,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+OR,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+PA,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+RI,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+SC,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+SD,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+TN,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+TX,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+UT,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+VA,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+VT,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+WA,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+WI,Collaborative_supervisory,Collaborative_supervisory,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+WV,Changed_during_window_excluded,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
+WY,Autonomous,Autonomous,2012-2016,2016,"Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). Not re-verified against post-2016 statute."
