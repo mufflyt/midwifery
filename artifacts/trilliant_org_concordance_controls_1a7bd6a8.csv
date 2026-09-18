@@ -1,0 +1,4 @@
+control,value,note
+observed_concordance,0.1692,share of judged candidate rows Trilliant agrees with
+shuffled_within_stratum,6e-4,same classifier after permuting the organization within each stratum
+state_guard_removed_extra_orgs,1264643,"extra (npi, org) bridge rows admitted when the state filter is removed"
