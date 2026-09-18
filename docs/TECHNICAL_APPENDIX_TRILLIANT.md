@@ -345,6 +345,64 @@ flags, not the rurality comparison. Every dimension partitions the cohort,
 so the published-numbers gate can check it. The build refuses any other
 freeze unless one is named on purpose with `ALLOW_FREEZE_SHA256`.
 
+### 6.5a The same comparison at address level, and what it costs
+
+§6.5 compares the two sources at the grain the persistence manuscript uses, a
+rurality band, and finds 92.4% agreement. Underneath that band the two sources
+are usually describing **different buildings**. On the current freeze
+`1a7bd6a8`, for the 10,321 of 12,171 ACTIVE primary-linked midwives who have a
+Trilliant practice-1 address (84.8%):
+
+| Trilliant top site vs NPPES primary practice address | midwives | share |
+| :--- | ---: | ---: |
+| same street and ZIP5 | 1,733 | **16.8%** |
+| same ZIP5 | 3,873 | 37.5% |
+| same city and state | 5,121 | 49.6% |
+| same state | 9,103 | 88.2% |
+| **different state** | **1,218** | **11.8%** |
+
+**This is not multi-site practice.** If the disagreement were simply a midwife
+working at several places, agreement should rise sharply where the top site
+holds nearly all the visits. It barely moves:
+
+| practice-1 share of visits | midwives | same street and ZIP5 |
+| :--- | ---: | ---: |
+| 25–50% | 689 | 10.9% |
+| 50–75% | 2,640 | 15.7% |
+| 75–99.9% | 4,842 | 17.6% |
+| 100% | 2,138 | **18.2%** |
+
+A midwife whose every observed visit is at one site still matches her NPPES
+registered address fewer than one time in five. The reading consistent with
+§6.5's distance evidence — 88% of band-disagreeing pairs 40 km or more apart —
+is that an NPPES practice address is a registration fact, frequently a billing
+address or one never updated, while the claims site is where care happened.
+Neither is wrong; they answer different questions.
+
+**The consequence, which is why this is recorded here.** The
+organization-resolution rules in `resolve_org_ambiguity.R` key on the NPPES
+practice address: `telephone` matches a registered phone, `zip9` a registered
+street plus ZIP+4. A claims-attributed directory therefore cannot adjudicate
+them. Measured directly by
+[`build_trilliant_org_concordance.R`](../build_trilliant_org_concordance.R)
+(`artifacts/trilliant_org_concordance_rates_1a7bd6a8.csv`), Trilliant agrees
+with the rules' organization for 17.1% of judged `telephone` candidates, 17.2%
+of `zip5_address` and 16.3% of `zip9` — against human adjudication that puts
+the same rules at 0.84 to 1.00. The gap is the premise, not the rules: only
+26–30% of the agreements sit at the address the rule keyed on, and widening
+"agrees" to *any* organization at the Trilliant address recovers just 15.1% of
+judged pairs.
+
+The reference is sound in its own terms — the shuffle control collapses to
+**0.06%**, so the signal is real, and the state guard is load-bearing, admitting
+1,264,643 spurious bridge rows when removed (`..._controls_1a7bd6a8.csv`). It is
+simply aimed at a different question. **Do not read the 17% as a rule error
+rate**, and do not use a claims-derived directory to promote or retire an
+address-keyed rule. What would answer that question is a source that names the
+*billing* organization, which is the construct the rules resolve — the
+Transparency in Coverage extraction is the candidate, once it covers more than
+one state.
+
 ## 7. A backup source for demographics
 
 The directory also carries a gender, a "medical school" with a graduation year,

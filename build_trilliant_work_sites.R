@@ -52,6 +52,7 @@ source(file.path("R", "lib", "medicare_duckdb.R"))      # samsung_volume_path()
 source(file.path("R", "lib", "artifact_provenance.R"))  # write_with_provenance()
 source(file.path("R", "lib", "cohort_definitions.R"))   # verify_linkage_freeze(), canonical_active_primary()
 source(file.path("R", "lib", "work_site_topology.R"))   # match_county(), assign_site_ids(), blended_practice(), topology_by_midwife()
+source(file.path("R", "lib", "trilliant_org_bridge.R")) # STREET_ABBREV, norm_street(), name_sim(), trl_read_orgs()
 source(file.path("R", "lib", "table1_bands.R"))         # band_rurality(), RURALITY_LABELS_COHORT
 source(file.path("R", "lib", "zip_county_crosswalk.R")) # zip_county_dominant()
 source(file.path("R", "lib", "ct_county_crosswalk.R"))  # ct_zip_to_region()
@@ -72,26 +73,9 @@ NPPES_VINTAGE      <- "2026-08-09"
 dir.create(OUT, showWarnings = FALSE, recursive = TRUE)
 
 # ---- text helpers ----------------------------------------------------------------
-# Street normalizer: drop suite/unit tails and punctuation, abbreviate suffixes
-# and directionals, so NPPES "2500 ENGLISH CREEK AVE STE 1000" meets Trilliant
-# "2500 English Creek Ave".
-STREET_ABBREV <- c(
-  street = "st", avenue = "ave", drive = "dr", road = "rd", boulevard = "blvd",
-  lane = "ln", parkway = "pkwy", highway = "hwy", place = "pl", court = "ct",
-  circle = "cir", terrace = "ter", square = "sq", plaza = "plz",
-  expressway = "expy", freeway = "fwy", northeast = "ne", northwest = "nw",
-  southeast = "se", southwest = "sw", north = "n", south = "s", east = "e",
-  west = "w", route = "rte", "state rte" = "rte", "us hwy" = "hwy", "state hwy" = "hwy"
-)
-norm_street <- function(s) {
-  s <- str_to_lower(coalesce(s, ""))
-  s <- str_remove(s, "\\s*(,|\\s)\\s*(ste|suite|unit|apt|fl|floor|rm|room|bldg|building|dept|#)\\b.*$")
-  s <- str_replace_all(s, "[^a-z0-9 ]", " ")
-  for (w in names(STREET_ABBREV)) {
-    s <- str_replace_all(s, paste0("\\b", w, "\\b"), STREET_ABBREV[[w]])
-  }
-  str_squish(s)
-}
+# STREET_ABBREV and norm_street() moved to R/lib/trilliant_org_bridge.R when the
+# organization-rule concordance reference became a second consumer; one copy
+# means both artifacts describe the same building the same way.
 
 has <- function(x, pattern) str_detect(str_to_lower(coalesce(x, "")), pattern)
 is_birth_center <- function(x) has(x, "birth(ing)?\\s*(center|centre|place|house|cottage|suite)|birthcenter|center for birth|maternity center")
@@ -107,8 +91,7 @@ is_lab          <- function(x) has(x, paste0(
 is_noncare      <- function(x) has(x, "pharmacy|\\bambulance\\b|\\bems\\b|radiology|imaging|medical supply|durable medical")
 is_surgery_urgent <- function(x) has(x, "surgery cent|surgical cent|\\basc\\b|ambulatory surg|urgent care")
 
-# Jaro-Winkler similarity of two names, 0..1 (1 = identical)
-name_sim <- function(a, b) stringsim(str_to_lower(a), str_to_lower(b), method = "jw", p = 0.1)
+# name_sim(): R/lib/trilliant_org_bridge.R
 
 # CCNs are six characters; the CMS enrollment file drops the leading zero
 # (Denver Health 060011 is published as 60011). pad_ccn() from common_helpers.R
