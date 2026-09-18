@@ -33,11 +33,32 @@
 # collaborative + 6 changed = 51 jurisdictions. The paper's own abstract states
 # these exact three counts.
 #
+# THE EXPOSURE IS A DECADE OLD, AND THAT TRAVELS WITH IT. The classification
+# window closed in 2016; the cohort is the 2026 freeze. Six of 51 jurisdictions
+# changed their law inside that five-year window -- which is why
+# `practice_authority_continuous` has a "changed" category at all -- and ten
+# further years have passed with nothing in this repository re-checking any of
+# the 51. Non-differential misclassification of a binary exposure biases a
+# comparison toward the null, so a null result understates a real difference,
+# while a state that gained autonomy after 2016 is now in the wrong arm in both
+# directions. Every row therefore carries `classification_window`,
+# `classification_snapshot_year` and `classification_source`, so the exposure's
+# date reaches any artifact that joins on this one rather than living only in
+# this header (#226).
+#
 # Output: artifacts/state_scope_of_practice.csv
 # =============================================================================
 
 suppressPackageStartupMessages({library(tibble); library(dplyr); library(readr)})
 source(file.path("R", "lib", "artifact_provenance.R"))
+
+# Carried as columns on every row; see the header.
+CLASSIFICATION_WINDOW <- "2012-2016"
+CLASSIFICATION_SNAPSHOT_YEAR <- 2016L
+CLASSIFICATION_SOURCE <- paste0(
+  "Ranchoff BM, Declercq ER. J Midwifery Womens Health. 2020;65(1):119-130, ",
+  "Table 1 (continuous 2012-2016) and Table 3 (2016 snapshot). ",
+  "Not re-verified against post-2016 statute.")
 
 CONTINUOUS_AUTONOMOUS <- c("AK","AZ","CO","CT","DC","ID","IA","ME","MD","MN",
                           "MT","NH","NM","NY","ND","OR","RI","UT","VT","WA","WY")
@@ -73,7 +94,10 @@ out <- bind_rows(
   tibble(state = CHANGED$state,
         practice_authority_continuous = "Changed_during_window_excluded",
         practice_authority_2016 = CHANGED$status_2016)
-) %>% arrange(state)
+) %>% arrange(state) %>%
+  mutate(classification_window = CLASSIFICATION_WINDOW,
+        classification_snapshot_year = CLASSIFICATION_SNAPSHOT_YEAR,
+        classification_source = CLASSIFICATION_SOURCE)
 
 stopifnot(nrow(out) == 51L, !anyDuplicated(out$state))
 
@@ -87,3 +111,6 @@ cat(sprintf("  continuous: %d autonomous, %d collaborative, %d excluded (changed
 cat(sprintf("  2016 snapshot: %d autonomous, %d collaborative\n",
             sum(out$practice_authority_2016 == "Autonomous"),
             sum(out$practice_authority_2016 == "Collaborative_supervisory")))
+cat(sprintf("  classification window: %s (snapshot %d); %d years stale against the 2026 cohort\n",
+            CLASSIFICATION_WINDOW, CLASSIFICATION_SNAPSHOT_YEAR,
+            2026L - CLASSIFICATION_SNAPSHOT_YEAR))

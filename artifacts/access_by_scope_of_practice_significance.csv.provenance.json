@@ -1,17 +1,17 @@
 {
   "artifact": "access_by_scope_of_practice_significance.csv",
-  "written_utc": "2026-09-11 16:23:43.974 UTC",
+  "written_utc": "2026-09-18 17:09:59 UTC",
   "inputs": [
     {
       "path": "artifacts/full_cohort_access_by_scope_of_practice.csv",
-      "sha256": "524df5e582d0164738de7db4a3fe2302a7193b4f9f39a6f6298a4558eee0e5fe"
+      "sha256": "d61af087ec14b01575439aebe5e07f96e40f9dccde406bf6e95b27fe3e72494a"
     }
   ],
-  "code_sha256": "a85b80280b5ce339a52f01b5fa7a7cbd0462515ff27fec58b87ddba268c9f49b",
+  "code_sha256": "60586c2f674c9d581c074f8b3a225b7cd74d048c8b4fd3d31998f0abf1621e12",
   "code": [
     {
       "path": "join_scope_of_practice_to_geography.R",
-      "sha256": "54eff0471f30391790876d46112ff05714c1a18becd343f93211ac52f334eb92"
+      "sha256": "a498925c4bf415f4c88af91f292acefe0ce0a5d369078ecc24b861b63e9ac782"
     },
     {
       "path": "R/lib/artifact_provenance.R",
