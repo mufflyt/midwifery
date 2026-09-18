@@ -22,43 +22,34 @@
 #
 # Removing a line requires the artifact to gain a real sidecar -- inputs and
 # their SHA-256 as recorded when it was written, not reconstructed afterwards.
+#
+# PRUNED 2026-09-18: 19 lines removed, 13 for artifacts that gained a sidecar
+# and 6 for artifacts that are no longer tracked at all. The gate had been
+# reporting the gain on every run ("delete these line(s) from the baseline to
+# hold the gain") without anything holding it, so a sidecar could have been
+# lost again and the ratchet would not have noticed.
 artifacts/.county_agreement_by_precision.csv
-artifacts/ab_middle_name/evidence_top2.csv
-artifacts/ab_middle_name/transitions_all.csv
-artifacts/ab_middle_name/transitions_exposed.csv
 artifacts/acme_dnp_authors.csv
 artifacts/acme_institution_audit.csv
 artifacts/acme_repository_registry.csv
 artifacts/amcb_age_calibration_provenance.csv
-artifacts/bc_resolver/bc_transitions.csv
-artifacts/bc_resolver/contested_evidence.csv
-artifacts/bc_resolver/crosstab_counts.csv
-artifacts/bc_resolver/crosstab_row_pct.csv
-artifacts/bc_resolver/targeted_questions.csv
 artifacts/bon_contamination_inventory.csv
-artifacts/bon_extracted_fields_inventory.csv
 artifacts/cabc_accredited_birth_centers_master.csv
 artifacts/cabc_birth_centers_master_clean.csv
 artifacts/cabc_birth_centers_master_perfect.csv
 artifacts/cabc_matched_midwives_perfect.csv
 artifacts/cd_midwifery_stats.csv
-artifacts/cohort_additions_by_mechanism.csv
 artifacts/cohort_flow_16743_to_17538.csv
-artifacts/cohort_flow_bidirectional.csv
 artifacts/cohort_midwives_matched_to_cabc_birth_centers.csv
 artifacts/cohort_midwives_open_payments_type2_postmastr_full.csv
 artifacts/cohort_midwives_open_payments_type2_standardized_matches.csv
-artifacts/cohort_transitions.csv
 artifacts/commencement_pdf_inventory.csv
 artifacts/county_midwifery_supply.csv
 artifacts/coverage_clip_provenance.csv
 artifacts/coverage_nesting_report.csv
 artifacts/dac_hospital_affiliation_summary.csv
-artifacts/district_profiles/district_sentences.csv
-artifacts/dora_identification_technical_report.csv
 artifacts/florida_voter_license_ages_provenance.csv
 artifacts/frontier_dnp_projects.csv
-artifacts/geography_by_linkage_status.csv
 artifacts/hcris_affiliated_hospitals_fy2023.csv
 artifacts/healthgrades_field_usability.csv
 artifacts/historical_isochrone_recovery_by_rucc.csv
@@ -75,12 +66,8 @@ artifacts/linkage_identity_changes.csv
 artifacts/live_colorado_rxn_prescriptive_authority.csv
 artifacts/medicare_participation_summary.csv
 artifacts/midwifery_theses_oai.csv
-artifacts/national_cnm_ascertainment_yield_report.csv
-artifacts/newly_resolved_by_prior_status.csv
-artifacts/npi_state_license_crosswalk_report.csv
 artifacts/oai_source_concentration.csv
 artifacts/ob_hospitals_fallback_log.csv
-artifacts/ob_hospitals_geocoded.csv
 artifacts/ohio_voter_license_ages_provenance.csv
 artifacts/org_resolution_distribution_shift.csv
 artifacts/org_resolution_ppv.csv

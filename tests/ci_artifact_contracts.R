@@ -213,9 +213,17 @@ if (length(arts) == 0) {
     ci_fail("A3: %d tracked artifact(s) have no .provenance.json sidecar and are not on the baseline. Write them through write_with_provenance() (R) so the sidecar records the inputs and their SHA-256:\n       %s",
             length(new_offenders), paste(utils::head(new_offenders, 8), collapse = "\n       "))
   } else if (length(fixed)) {
-    ci_ok("%d of %d artifacts lack a sidecar; %d gained one -- delete these line(s) from the baseline to hold the gain: %s",
+    # Two different reasons, reported apart: a baseline line clears either
+    # because the artifact gained a sidecar or because it is no longer tracked
+    # at all. Reporting both as "gained one" sent a reader looking for a
+    # sidecar that was never written -- four of the six in the 2026-09-18 prune
+    # were files that had simply been deleted.
+    gained_sidecar <- intersect(fixed, arts)
+    no_longer_tracked <- setdiff(fixed, arts)
+    ci_ok("%d of %d artifacts lack a sidecar; %d baseline line(s) can be deleted to hold the gain -- %d gained a sidecar (%s), %d no longer tracked (%s)",
           length(uncovered), length(arts), length(fixed),
-          paste(utils::head(fixed, 5), collapse = ", "))
+          length(gained_sidecar), paste(utils::head(gained_sidecar, 4), collapse = ", "),
+          length(no_longer_tracked), paste(utils::head(no_longer_tracked, 4), collapse = ", "))
   } else {
     ci_ok("%d of %d tracked artifacts lack a sidecar; all are on the baseline, none new",
           length(uncovered), length(arts))
