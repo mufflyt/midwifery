@@ -646,7 +646,35 @@ mw_build_catalog <- function(root = ".") {
       if (nrow(r)) r$n[1] else NA_real_
     }
     acog_excluded_n <- pickn("Overseas-military or US-territory address")
+    # t1$n[1] IS NOT NECESSARILY THE CANONICAL COHORT. The committed CSV is the
+    # last COMPLETE build (2026-08-14, n = 11,920) while docs/table1_midwives.md
+    # beside it states 12,171 -- a later render from a machine holding none of
+    # the enrichment inputs, committed on its own. So this denominator can be a
+    # superseded cohort while the published table says otherwise, which is
+    # exactly what happened (#233). Recorded here rather than assumed away:
+    # `n_canonical` and `n_is_canonical` let a consumer see which it is, and
+    # ci_artifact_contracts A5 holds the mismatch at its known value.
+    t1_n_canonical <- NA_integer_
+    .fro <- file.path(MW_ART, "amcb_npi_linkage_FROZEN.csv")
+    if (file.exists(.fro)) {
+      .cd <- file.path(dirname(MW_ART), "R", "lib", "cohort_definitions.R")
+      if (!file.exists(.cd)) .cd <- file.path("R", "lib", "cohort_definitions.R")
+      if (file.exists(.cd)) {
+        sys.source(.cd, envir = environment())
+        t1_n_canonical <- tryCatch(
+          nrow(canonical_active_primary(utils::read.csv(.fro, colClasses = "character"))),
+          error = function(e) NA_integer_)
+      }
+    }
+    if (!is.na(t1_n_canonical) && !identical(as.integer(t1$n[1]), as.integer(t1_n_canonical)))
+      message(sprintf(paste0(
+        "table1.n is %s, but canonical_active_primary() gives %s. Every percentage ",
+        "taken against table1.n describes the smaller, superseded cohort. See #233."),
+        format(t1$n[1], big.mark = ","), format(t1_n_canonical, big.mark = ",")))
     cat_$table1 <- list(
+      n_canonical    = t1_n_canonical,
+      n_is_canonical = !is.na(t1_n_canonical) &&
+        identical(as.integer(t1$n[1]), as.integer(t1_n_canonical)),
       n = t1$n[1], cnm_pct = pick("^Certified Nurse-Midwife$"),
       cm_pct = pick("^Certified Midwife$"), female_pct = pick("^Female$"),
       # NOTE: this n's denominator is t1$n[1] ("ACTIVE, primary-linked
@@ -656,7 +684,7 @@ mw_build_catalog <- function(root = ".") {
       #
       # WHAT THE DIFFERENCE ACTUALLY IS, measured on freeze 1a7bd6a8 rather
       # than assumed: exclusion.active_matched_n is match_status == "primary"
-      # = 12,254 ACTIVE certificants, against t1$n[1] = 12,171. The 83 extra
+      # = 12,254 ACTIVE certificants, against a canonical 12,171. The 83 extra
       # are ALL linkage_tier == "sensitivity_name_component" -- the class-5
       # surname-component tier the freeze manifest holds OUT of analytic
       # membership. Not one of them is nursing-taxonomy: an earlier version of
