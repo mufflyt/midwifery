@@ -23,13 +23,36 @@
 # excluded states) rather than practice_authority_continuous, so every row of
 # the geography artifacts gets a category -- see
 # build_state_scope_of_practice.R's own header for why the two columns exist
-# and are not collapsed into one.
+# and are not collapsed into one. Nothing here is restricted to the 45
+# jurisdictions of Table 1's continuous classification; a reader who sees
+# n = 24 vs 25 is NOT looking at the six mid-window changers being dropped.
+#
+# WHICH STATES THE ACCESS MEASURE CANNOT SEE, AND WHY IT IS RECORDED. The
+# significance test ran on 24 autonomous states against 25 collaborative ones
+# while the classification carries 26 and 25. The two missing are Alaska and
+# Hawaii, both Autonomous, and they are absent from
+# full_cohort_access_by_band_state.csv rather than from the join: the upstream
+# ACS tract extract is 48 states plus DC, and the census patches that fill the
+# remainder (patch_missing_state_census_data.R) did not cover AK or HI until
+# 2026-09-18. Two states lost from ONE arm of a two-arm comparison is a
+# deletion correlated with the exposure, and those two are the arm's
+# weakest-measured members (0 of 36 and 0 of 14 midwives represented in
+# isochrone_representation_by_scope_of_practice.csv), so excluding them biases
+# the autonomous mean upward -- against the reported direction at 60 minutes.
+# The significance artifact therefore carries n_excluded, the excluded states
+# and their arm, so 24-vs-26 is visible in the artifact instead of requiring a
+# reader to diff two files (#227).
+#
+# THE EXPOSURE IS 2012-2016 LAW. classification_window rides along from
+# state_scope_of_practice.csv onto every artifact written here (#226).
 #
 # Inputs : artifacts/state_scope_of_practice.csv
 #          artifacts/isochrone_representation_by_state.csv
 #          artifacts/geocoding_completeness_state.csv
 # Outputs: artifacts/isochrone_representation_by_scope_of_practice.csv
 #          artifacts/geocoding_completeness_by_scope_of_practice.csv
+#          artifacts/full_cohort_access_by_scope_of_practice.csv
+#          artifacts/access_by_scope_of_practice_significance.csv
 # =============================================================================
 
 suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr)})
@@ -124,6 +147,29 @@ if (!file.exists(acc_path)) {
                         inputs = c("artifacts/state_scope_of_practice.csv", acc_path))
   cat("\nwrote artifacts/full_cohort_access_by_scope_of_practice.csv\n")
 
+  # --- which classified jurisdictions the access measure never saw ----------
+  # Reported, not asserted away: a state with no access row is a state this
+  # project could not measure, and that fact belongs in the artifact beside
+  # the p-value. Loud on stderr too, because a silent arm shrinking is the
+  # failure mode this exists to catch.
+  missing_states <- sort(setdiff(SOP$state, unique(acc_j$state)))
+  missing_tbl <- SOP[SOP$state %in% missing_states, c("state", "practice_authority_2016")]
+  excluded_states <- paste(missing_states, collapse = ";")
+  excluded_states_authority <- paste(sprintf("%s=%s", missing_tbl$state,
+                                             missing_tbl$practice_authority_2016),
+                                     collapse = ";")
+  n_excluded_autonomous <- sum(missing_tbl$practice_authority_2016 == "Autonomous")
+  n_excluded_collaborative <- sum(missing_tbl$practice_authority_2016 == "Collaborative_supervisory")
+  if (length(missing_states)) {
+    cat(sprintf(paste0(
+      "\n!! %d of %d classified jurisdictions have no access row and are absent from\n",
+      "   the comparison: %s\n",
+      "   by arm: %d autonomous, %d collaborative -- an exclusion correlated with the\n",
+      "   exposure whenever these are not balanced across arms.\n"),
+      length(missing_states), nrow(SOP), excluded_states_authority,
+      n_excluded_autonomous, n_excluded_collaborative))
+  }
+
   # --- significance test, STATE as the unit of analysis ---------------------
   # NOT a proportions test on the raw women_with_access/women_total counts.
   # Those counts sum to hundreds of millions, and a two-proportion test
@@ -148,7 +194,19 @@ if (!file.exists(acc_path)) {
           diff_pp = round(mean(aut) - mean(col), 2),
           ci_lo = round(t$conf.int[1], 2), ci_hi = round(t$conf.int[2], 2),
           t_statistic = round(unname(t$statistic), 2), df = round(unname(t$parameter), 1),
-          p_value = round(t$p.value, 4))
+          p_value = round(t$p.value, 4),
+          # What the two n columns above do NOT say on their own.
+          n_classified_autonomous = sum(SOP$practice_authority_2016 == "Autonomous"),
+          n_classified_collaborative = sum(SOP$practice_authority_2016 == "Collaborative_supervisory"),
+          n_excluded = length(missing_states),
+          n_excluded_autonomous = n_excluded_autonomous,
+          n_excluded_collaborative = n_excluded_collaborative,
+          excluded_states = excluded_states,
+          excluded_states_authority = excluded_states_authority,
+          # The exposure's own date, so it travels with the p-value (#226).
+          classification_window = SOP$classification_window[1],
+          classification_snapshot_year = SOP$classification_snapshot_year[1],
+          classification_source = SOP$classification_source[1])
   }) %>% bind_rows()
 
   cat("\n=== SIGNIFICANCE (state as unit of analysis, Welch two-sample t-test) ===\n")
