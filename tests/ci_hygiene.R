@@ -12,6 +12,9 @@
 #       /Users/tmuffly/.gemini/... and none of them could run on this machine,
 #       so the committed provenance for two artifacts pointed at nothing.
 #   H3  No duplicate .gitignore entries.
+#   H5  No file:/// or absolute-path link in tracked markdown. H2 scans R and
+#       Python, so an absolute link in DOCUMENTATION went unseen -- and that is
+#       where it does most damage, because a reader clicks it.
 #   H4  No function defined at top level in more than one tracked .R file.
 #       norm_addr existed four times with divergent behaviour, zip5 three,
 #       and a test shadowed the canonical pad5. Two scripts keying the same
@@ -61,6 +64,29 @@ for (f in c(r_files, grep("[.]py$", tracked, value = TRUE))) {
   if (length(i)) hits <- c(hits, sprintf("%s:%d", f, i))
 }
 note(length(hits) == 0, "no hardcoded path into another user's home", hits)
+
+cat("\n-- H5 no absolute filesystem link in tracked documentation --\n")
+# H2 above scans R and Python, so an absolute path in a MARKDOWN link went
+# unseen -- and documentation is where such a link does the most damage,
+# because a reader clicks it. Two cases, both broken for everyone but the
+# machine that wrote them:
+#   file:///...            resolves on one filesystem and nowhere else, even
+#                          when the home directory happens to be this one.
+#                          Three slashes: `git clone file://$(pwd)` in a
+#                          documented shell command is a relative URL and fine.
+#   ](/Users/... or ](/Volumes/...   an absolute link target.
+# Found by #232: the hospital-linkage appendix carried three file:/// links,
+# and the panel appendix one into an account (/Users/tmuffly) that does not
+# exist on the machine holding the freeze. Repo-relative links (../artifacts/x)
+# work in the rendered site, on GitHub, and in an editor.
+md_files <- grep("[.]md$", tracked, value = TRUE)
+md_hits <- character(0)
+for (f in md_files) {
+  ln <- readLines(f, warn = FALSE)
+  i <- grep("file:///|\\]\\((/Users/|/Volumes/)", ln, perl = TRUE)
+  if (length(i)) md_hits <- c(md_hits, sprintf("%s:%d: %s", f, i, trimws(substr(ln[i], 1, 100))))
+}
+note(length(md_hits) == 0, "no file:/// or absolute-path link in tracked markdown", md_hits)
 
 cat("\n-- H3 .gitignore has no duplicate entries --\n")
 gi <- readLines(".gitignore", warn = FALSE)
