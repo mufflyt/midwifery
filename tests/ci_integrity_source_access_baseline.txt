@@ -23,6 +23,23 @@
 #   ct_legacy_to_region_weights.csv
 #       built from the Census API by R/lib/ct_county_crosswalk.R, so it is
 #       derived; it lacks the inputs sidecar that would exempt it.
+# TWO ENTRIES ADDED 2026-09-18, AND WHY THAT IS NOT THE LIST GROWING.
+# The gate's SCOPE grew, not the debt: until #230 it looked only under data/,
+# so the live board-of-nursing artifacts -- downloads by origin, landing in
+# artifacts/ -- were never checked. Bringing them into scope revealed two that
+# were committed with no sidecar at all. They now have one recording the
+# endpoint, the dataset, the producing script, the artifact's SHA-256 and the
+# row counts, all exact and recovered from the harvester and the artifact
+# itself. accessed_utc is the one field that is NOT recoverable: nothing
+# recorded when the API was queried, and Socrata revises in place, so a fresh
+# fetch cannot date the committed copy. It is null rather than invented, and
+# these two lines come off the moment either harvester is re-run -- both now
+# stamp accessed_utc at fetch time through tools/provenance.py.
+# The other three in that family (TX, FL, OR) pass: their dates were recorded,
+# under other names, and are restated under accessed_utc with the basis for
+# the restatement written into the sidecar.
+artifacts/live_colorado_bon_ingested_midwives_from_tracked_roster.csv
+artifacts/live_washington_bon_ingested_midwives_from_tracked_roster.csv
 data/2024_Gaz_counties_national.txt
 data/acs5_2023_county_births.json
 data/acs5_2023_county_subject.json

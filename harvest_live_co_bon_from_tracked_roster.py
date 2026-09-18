@@ -29,8 +29,13 @@
 # =============================================================================
 import csv
 import json
+import os
+import sys
 import urllib.parse
 import urllib.request
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools"))
+from provenance import sha256_file, utc_now, write_provenance  # noqa: E402
 
 print("=== Live Colorado BON cross-reference (tracked-roster cohort) ===")
 
@@ -44,6 +49,7 @@ co_url = CO_API + "?" + urllib.parse.urlencode(CO_QUERY)
 req = urllib.request.Request(co_url, headers={"User-Agent": "Mozilla/5.0"})
 
 live_co_records = []
+accessed_utc = utc_now()
 try:
     with urllib.request.urlopen(req, timeout=30) as response:
         live_co_records = json.loads(response.read().decode("utf-8"))
@@ -111,6 +117,25 @@ if rows:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
+
+    # This artifact carried NO sidecar at all until #230, while holding 489 of
+    # the 1,391 genuine board records -- the largest single block of the
+    # evidence that replaced the fabricated licence identifiers. The endpoint
+    # was known only to this file.
+    write_provenance(
+        out_csv,
+        source_url=co_url,
+        accessed_utc=accessed_utc,
+        source_dataset="Colorado DORA, Professional and Occupational Licenses (data.colorado.gov 7s5z-vewr), licensetype=APN subcategory=CNM",
+        records_retrieved=len(live_co_records),
+        cohort=roster_file,
+        cohort_sha256=sha256_file(roster_file),
+        cohort_rows_co=len(rows),
+        cohort_matched_rows=len(matched_co),
+        match_key="last_name + first_name (upper, trimmed); ambiguous names reported unmatched",
+        verification_portal="https://apps.colorado.gov/dora/licensing/Lookup/LicenseLookup.aspx",
+    )
+    print(f"  Provenance: {out_csv}.provenance.json")
 
 n_total = len(matched_co) + len(unmatched_co)
 print("=========================================================================")
