@@ -348,10 +348,14 @@ def main():
     # Rebuild `seen` from prior membership so cumulative counts stay correct.
     if done_positions and os.path.exists(membership_path):
         with open(membership_path) as handle:
-            reader = csv.reader(handle)
-            next(reader, None)
+            reader = csv.DictReader(handle)
+            if "pair_key" not in (reader.fieldnames or []):
+                raise RuntimeError(
+                    "legacy membership state cannot be resumed safely; rerun with --restart")
             for row in reader:
-                pair_index.setdefault(row[0], len(pair_index))
+                key = row["pair_key"]
+                seen.add(key)
+                pair_index[key] = int(row["pair_index"])
         print(f"[RESUME] {len(pair_index):,} pairs carried forward")
 
     per_file, membership = [], []
@@ -396,14 +400,17 @@ def main():
                     relationships[(npi, tin_type, tin_value, name)] = billing_class
 
         pairs = {(k[0], k[1], k[2]) for k in relationships}
-        new_pairs = pairs - seen
-        seen |= pairs
+        keyed_pairs = {
+            hashlib.blake2b("|".join(pair).encode(), digest_size=8).hexdigest(): pair
+            for pair in pairs
+        }
+        new_pairs = set(keyed_pairs) - seen
+        seen |= set(keyed_pairs)
 
         new_membership = []
-        for pair in pairs:
-            key = hashlib.blake2b("|".join(pair).encode(), digest_size=8).hexdigest()
+        for key in keyed_pairs:
             index = pair_index.setdefault(key, len(pair_index))
-            new_membership.append((index, position - 1))
+            new_membership.append((index, position - 1, key))
         membership.extend(new_membership)
 
         classes = collections.Counter(relationships.values())
@@ -419,8 +426,9 @@ def main():
         })
         row["elapsed_seconds"] = round(time.time() - file_start, 1)
         append_csv(per_file_path, PER_FILE_COLUMNS, [row])
-        append_csv(membership_path, ["pair_index", "file_position"],
-                   [{"pair_index": p, "file_position": q} for p, q in new_membership])
+        append_csv(membership_path, ["pair_index", "file_position", "pair_key"],
+                   [{"pair_index": p, "file_position": q, "pair_key": key}
+                    for p, q, key in new_membership])
         per_file.append(row)
         print(f"  [{position:>3}] {occurrences:>10,} occ  {len(pairs):>9,} pairs  "
               f"{len(new_pairs):>9,} new  {len(seen):>10,} cum  "

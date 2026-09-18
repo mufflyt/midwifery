@@ -12,9 +12,9 @@ groups, tied to this billing identifier.*
 
     npi | tin_type | tin_value | business_name | payer | source_month | source_file
 
-**Organization analyses MUST filter to `tin_type == "ein"`.** Rows with
-`tin_type == "npi"` are preserved but are never an organization — see the
-defect note below.
+Organization analyses must classify `tin_type == "npi"` identifiers with
+NPPES Entity Type Code: type 2 is an organization, type 1 is an individual.
+EIN rows remain a separate identifier class; see the defect note below.
 
 ## Project B — commercial insurance access
 
@@ -53,7 +53,7 @@ downstream artifact. Corrected Kaiser Colorado figures, after the fix:
 
     tin_type   rows        distinct ids   distinct npis
     ein        1,474,856         22,264         121,436
-    npi        1,037,644        348,622         348,622   (1 NPI each, by construction)
+    npi        1,037,644        348,622         348,622   (identifier membership observed)
 
     406  Colorado CNMs in the canonical cohort
     321  appear somewhere in Kaiser provider references

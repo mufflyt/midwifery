@@ -73,8 +73,6 @@ def _load(name):
 
 puller = _load("accessmrf_03_pull_provider_refs.py")
 
-LOCAL_RAW = os.path.join("data", "raw", "accessmrf")
-
 # NPPES Entity Type Code is the AUTHORITY on what a billing NPI is:
 # 1 = individual, 2 = organization (CMS data-dissemination code values).
 # Member count is evidence, never the classifier -- a Type 1 NPI anchoring
@@ -266,14 +264,15 @@ def main():
     parser.add_argument("--reparse", action="store_true",
                         help="reparse payloads already on disk; never downloads")
     parser.add_argument("--payer-dir", default=None)
-    parser.add_argument("--raw-dir", default=LOCAL_RAW,
-                        help="where the already-downloaded payloads are")
+    parser.add_argument("--raw-dir", default=None,
+                        help="override the configured raw payload directory")
     args = parser.parse_args()
 
     print(cfg.describe())
     parquet_dir = cfg.subdir("parquet")
     manifest_dir = cfg.subdir("manifests")
     scratch_dir = cfg.subdir("scratch")
+    args.raw_dir = args.raw_dir or cfg.subdir("raw")
     cfg.require_free_space(parquet_dir)
 
     entity_types = load_entity_types(parquet_dir)
@@ -286,7 +285,8 @@ def main():
     # Payer identity is carried by the directory name, which is the AccessMRF
     # slug; the human-readable group comes from the existing manifest.
     payer_by_dir = {}
-    old_manifest = os.path.join("artifacts", "accessmrf", "colorado_file_manifest.csv")
+    metadata_by_path = {}
+    old_manifest = os.path.join(manifest_dir, "colorado_file_manifest.csv")
     if os.path.exists(old_manifest):
         with open(old_manifest) as handle:
             for row in csv.DictReader(handle):
@@ -294,6 +294,7 @@ def main():
                 if local:
                     payer_by_dir[os.path.basename(os.path.dirname(local))] = (
                         row.get("payer_group", ""), row.get("payer_source", ""))
+                    metadata_by_path[os.path.abspath(local)] = row
 
     all_relationships, all_tins, file_rows, hash_rows = {}, set(), [], []
     seen_pairs, discovery_rows = set(), []
@@ -307,9 +308,11 @@ def main():
 
         for name in names:
             path = os.path.join(directory, name)
+            source_meta = metadata_by_path.get(os.path.abspath(path), {})
+            source_month = source_meta.get("file_date", "")
             try:
                 rels, tins, stats = extract_deduplicated(
-                    path, payer_group, payer_source, "", entity_types)
+                    path, payer_group, payer_source, source_month, entity_types)
             except Exception as exc:                          # noqa: BLE001
                 print(f"   ERR  {name[:52]}: {type(exc).__name__}: {exc}")
                 continue
@@ -341,6 +344,7 @@ def main():
                     prior[4] = max(prior[4], evidence[4])
             all_tins |= tins
             file_rows.append([file_id, name, payer_group, payer_source,
+                              source_meta.get("source_url", ""), source_month,
                               os.path.getsize(path), sha256_file(path),
                               stats["shape"]])
             hash_rows.append([file_id, name, payer_group,
@@ -378,7 +382,7 @@ def main():
         f"{tag}/dim_file.parquet": write_parquet(
             file_rows,
             ["source_file_id", "file_stem", "payer_group", "payer_source",
-             "bytes", "sha256", "shape"],
+             "source_url", "source_month", "bytes", "sha256", "shape"],
             os.path.join(part, "dim_file.parquet"), scratch_dir),
         f"{tag}/file_discovery_curve.parquet": write_parquet(
             discovery_rows,

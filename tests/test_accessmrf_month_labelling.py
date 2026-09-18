@@ -105,5 +105,10 @@ def run():
     return 0
 
 
+def test_month_labelling_regression():
+    """Pytest entry point; retain run() for direct command-line use."""
+    assert run() == 0
+
+
 if __name__ == "__main__":
     sys.exit(run())

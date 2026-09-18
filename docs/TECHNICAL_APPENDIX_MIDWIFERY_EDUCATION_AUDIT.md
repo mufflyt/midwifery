@@ -103,8 +103,9 @@ contains only observed names with source-document evidence.
 
 ## 4. Raw institutional alias inventory
 
-Saved artifact: [`artifacts/11_schools_raw_alias_inventory.csv`](../artifacts/11_schools_raw_alias_inventory.csv).
-The filename predates the addition of UAB and is retained for compatibility.
+Local generated artifact: `artifacts/11_schools_raw_alias_inventory.csv`.
+It is intentionally gitignored because it contains person-level working data;
+the filename predates the addition of UAB and is retained for compatibility.
 
 To prevent data loss from string variance, candidate matching evaluates all historical institutional aliases across DAC, Physician Compare (2013–2025), NPPES, State BONs, and Trilliant:
 
@@ -157,8 +158,9 @@ Institutional programs arrive in three forms: text-bearing PDFs, Issuu page
 images, and archived web copies. The acquisition scripts keep those raw inputs
 outside the tracked analytical artifacts:
 
-- `process_all_vusn_commencement.py` and the focused parsers read text-bearing
-  Vanderbilt and Georgetown programs;
+- local, gitignored institution-specific parsers read text-bearing Vanderbilt
+  and Georgetown programs; they are exploratory until their provenance and
+  privacy contracts are suitable for promotion;
 - `harvest_issuu_commencement.py` downloads Frontier page renders and invokes
   the macOS Vision helper in [`scripts/ocr_local.swift`](../scripts/ocr_local.swift).
 

@@ -42,6 +42,8 @@ import ssl
 import sys
 import urllib.request
 
+import accessmrf_config as cfg
+
 API = "https://www.accessmrf.com/api"
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
@@ -66,10 +68,7 @@ def _ssl_context():
 
 SSL_CONTEXT = _ssl_context()
 
-RAW_DIR = os.path.join("data", "raw", "accessmrf")
-ARTIFACT_DIR = os.path.join("artifacts", "accessmrf")
-OBS_PATH = os.path.join(ARTIFACT_DIR, "colorado_provider_observations.csv")
-MANIFEST_PATH = os.path.join(ARTIFACT_DIR, "colorado_file_manifest.csv")
+RAW_DIR = ARTIFACT_DIR = OBS_PATH = MANIFEST_PATH = None
 
 OBS_COLUMNS = ["npi", "tin", "tin_type", "business_name", "payer_group", "payer_source",
                "network_name", "source_file_id", "source_file_stem",
@@ -308,6 +307,7 @@ def append_rows(path, columns, rows):
 
 
 def main():
+    global RAW_DIR, ARTIFACT_DIR, OBS_PATH, MANIFEST_PATH
     parser = argparse.ArgumentParser()
     parser.add_argument("--slug", required=True)
     parser.add_argument("--payer-group", required=True)
@@ -320,7 +320,12 @@ def main():
                         help="inline-shape files above this are skipped, not RAM-parsed")
     args = parser.parse_args()
 
-    os.makedirs(ARTIFACT_DIR, exist_ok=True)
+    print(cfg.describe())
+    RAW_DIR = cfg.subdir("raw")
+    ARTIFACT_DIR = cfg.subdir("manifests")
+    OBS_PATH = os.path.join(ARTIFACT_DIR, "colorado_provider_observations.csv")
+    MANIFEST_PATH = os.path.join(ARTIFACT_DIR, "colorado_file_manifest.csv")
+    cfg.require_free_space(RAW_DIR)
     payer_dir = os.path.join(RAW_DIR, args.slug[:60])
     os.makedirs(payer_dir, exist_ok=True)
 
@@ -335,8 +340,19 @@ def main():
     print(f"[{display}] {len(source.get('files', []))} files indexed, "
           f"{len(selected)} match {args.stem_pattern!r}")
 
-    manifest, total_observations = [], 0
+    completed_file_ids = set()
+    if os.path.exists(MANIFEST_PATH):
+        with open(MANIFEST_PATH, newline="") as handle:
+            completed_file_ids = {
+                row.get("file_id") for row in csv.DictReader(handle)
+                if row.get("status") == "parsed"
+            }
+
+    manifest, total_observations, downloaded_bytes = [], 0, 0
     for entry in selected[:args.limit]:
+        if entry["fileId"] in completed_file_ids:
+            print(f"   DONE {entry['fileStem'][:64]} (already parsed)")
+            continue
         size = entry.get("totalCompressedSize") or 0
         record = {"payer_group": args.payer_group, "payer_source": display,
                   "file_id": entry["fileId"], "file_stem": entry["fileStem"],
@@ -368,8 +384,14 @@ def main():
                 destination = os.path.join(payer_dir, name)
 
                 if not (os.path.exists(destination) and os.path.getsize(destination) > 1000):
+                    cfg.verify_root_alive()
+                    if downloaded_bytes + size > cfg.MAX_TEMP_BYTES:
+                        raise RuntimeError(
+                            f"run download limit would exceed {cfg.MAX_TEMP_BYTES} bytes")
+                    cfg.require_free_space(RAW_DIR, max(cfg.MIN_FREE_BYTES, size))
                     print(f"   GET  {entry['fileStem'][:64]} part {index+1}/{len(parts)}")
                     download(url, destination)
+                    downloaded_bytes += os.path.getsize(destination)
 
                 meta = {"payer_group": args.payer_group, "payer_source": display,
                         "source_file_id": entry["fileId"],
@@ -397,15 +419,16 @@ def main():
                 # until the end cost ~650 MB of Anthem parsing to an OOM kill
                 # and lost all of it, because nothing had been flushed yet.
                 append_rows(OBS_PATH, OBS_COLUMNS, rows)
-                total_observations += len(rows)
-                del rows
+                row_count = len(rows)
+                total_observations += row_count
 
                 record.update({"source_url": url.split("?")[0],
                                "local_path": destination,
                                "sha256": sha256_file(destination),
                                "status": "parsed",
-                               "observations": record["observations"] + len(rows)})
-                print(f"        -> {len(rows):,} provider observations")
+                               "observations": record["observations"] + row_count})
+                print(f"        -> {row_count:,} provider observations")
+                del rows
 
         except Exception as exc:                      # noqa: BLE001
             record["status"] = f"error: {type(exc).__name__}: {exc}"[:200]
