@@ -50,9 +50,13 @@ import hashlib
 import json
 import os
 import ssl
+import sys
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools"))
+from provenance import sha256_file, write_provenance  # noqa: E402
 
 print("=== Live Texas BON cross-reference (tracked-roster cohort) ===")
 
@@ -163,37 +167,31 @@ if rows:
         writer.writerows(rows)
 
 
-def sha256_file(path):
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
-
 # The sidecar every tracked artifact is supposed to carry: what was queried,
 # when, and the SHA-256 of both the cohort read and the artifact written. The
 # cohort is tracked now, so this artifact is reproducible from the repository
 # and no longer belongs on tests/ci_artifact_provenance_baseline.txt.
+#
+# source_url and accessed_utc are written under those exact names (#230):
+# "source_api"/"retrieved_utc" said the same two things in a vocabulary no
+# automated check reads. Both older keys are kept as aliases so anything
+# already reading them keeps working.
 if rows:
-    provenance = {
-        "artifact": out_csv,
-        "sha256": sha256_file(out_csv),
-        "byte_size": os.path.getsize(out_csv),
-        "source_api": tx_url,
-        "source_dataset": "Texas Board of Nursing, APRN-Active (data.texas.gov jnzg-cr4w)",
-        "retrieved_utc": retrieved_at.strftime("%Y-%m-%d %H:%M:%S UTC"),
-        "records_retrieved": len(live_tx_records),
-        "cohort": roster_file,
-        "cohort_sha256": sha256_file(roster_file),
-        "cohort_rows_tx": len(rows),
-        "cohort_matched_rows": len(matched_tx),
-        "match_key": "last_name + first_name (upper, trimmed); ambiguous names reported unmatched",
-        "verification_portal": "https://www.bon.texas.gov/licensure_verification.asp",
-    }
-    with open(out_provenance, "w", encoding="utf-8") as f:
-        json.dump(provenance, f, indent=2)
-        f.write("\n")
+    write_provenance(
+        out_csv,
+        source_url=tx_url,
+        accessed_utc=retrieved_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        source_api=tx_url,
+        retrieved_utc=retrieved_at.strftime("%Y-%m-%d %H:%M:%S UTC"),
+        source_dataset="Texas Board of Nursing, APRN-Active (data.texas.gov jnzg-cr4w)",
+        records_retrieved=len(live_tx_records),
+        cohort=roster_file,
+        cohort_sha256=sha256_file(roster_file),
+        cohort_rows_tx=len(rows),
+        cohort_matched_rows=len(matched_tx),
+        match_key="last_name + first_name (upper, trimmed); ambiguous names reported unmatched",
+        verification_portal="https://www.bon.texas.gov/licensure_verification.asp",
+    )
 
 n_total = len(matched_tx) + len(unmatched_tx)
 n_rxn_active = sum(1 for r in matched_tx if r["live_rxn_authority_status"] == "Active")

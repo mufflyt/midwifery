@@ -1,0 +1,19 @@
+{
+  "artifact": "live_colorado_bon_ingested_midwives_from_tracked_roster.csv",
+  "source_url": "https://data.colorado.gov/resource/7s5z-vewr.json?licensetype=APN&subcategory=CNM&%24limit=5000",
+  "accessed_utc": null,
+  "accessed_utc_upper_bound": "2026-09-12T03:23:33Z",
+  "accessed_utc_upper_bound_basis": "first commit of this artifact, ce14370 (2026-09-11 21:23:33 -0600); the fetch preceded it",
+  "provenance_status": "BACKFILLED_RETRIEVAL_TIME_UNKNOWN",
+  "provenance_note": "BACKFILLED 2026-09-18 (#230). This artifact was committed with no sidecar at all. source_url, source_dataset and the counts below are recovered from the harvester that wrote it and from the artifact's own rows, and are exact. accessed_utc is NOT recoverable: nothing recorded when the API was queried, and re-querying today would return different bytes under the same endpoint, so a fresh fetch cannot date the committed copy. It is left null rather than invented. The next run of the named harvester writes a real one -- it now stamps accessed_utc at fetch time through tools/provenance.py.",
+  "sha256": "78a5970885abbb1921642fa029c6f4a03a4c74f9d52173093046f53da9481b1e",
+  "byte_size": 51434,
+  "source_dataset": "Colorado DORA, Professional and Occupational Licenses (data.colorado.gov 7s5z-vewr), licensetype=APN subcategory=CNM",
+  "producer": "harvest_live_co_bon_from_tracked_roster.py",
+  "cohort": "artifacts/amcb_npi_linkage_FROZEN.csv",
+  "cohort_rows": 557,
+  "cohort_matched_rows": 486,
+  "cohort_ambiguous_rows": 3,
+  "match_key": "last_name + first_name (upper, trimmed)",
+  "verification_portal": "https://apps.colorado.gov/dora/licensing/Lookup/LicenseLookup.aspx"
+}

@@ -106,6 +106,38 @@ unlink(file.path(tmp, "data", "api_response.json"))
 unlink(file.path(tmp, "data", "derived.csv"))
 unlink(file.path(tmp, "data", "derived.csv.provenance.json"))
 
+# 5f. THE RE-SCOPE ITSELF (#230). A download that lands OUTSIDE data/ is
+#     invisible to a gate scoped to data/ -- which is how the live
+#     board-of-nursing artifacts, the evidence that replaced the fabricated
+#     licence identifiers, were exempt from the one rule that would have
+#     checked them. scope_globs brings named families in without dragging in
+#     all of artifacts/, which is derived output governed by A3 instead.
+dir.create(file.path(tmp, "artifacts"), recursive = TRUE, showWarnings = FALSE)
+writeLines("a,b\n1,2", file.path(tmp, "artifacts", "live_zz_bon_ingested.csv"))
+report("a download outside data/ is invisible without scope_globs",
+       nrow(repo_gate_check_access_dates(tmp)) == 0)
+report("the same file is detected once scope_globs names it",
+       nrow(repo_gate_check_access_dates(
+         tmp, scope_globs = "artifacts/live_*_bon_*.csv")) > 0)
+
+# 5g. and a BACKFILL -- URL recoverable, retrieval instant not -- still fails,
+#     but reports the half that IS known rather than two NAs.
+writeLines('{"source_url":"https://example.org/api.json","accessed_utc":null}',
+           file.path(tmp, "artifacts", "live_zz_bon_ingested.csv.provenance.json"))
+.f <- repo_gate_check_access_dates(tmp, scope_globs = "artifacts/live_*_bon_*.csv")
+report("a null accessed_utc is still a failure",
+       nrow(.f) == 1L && is.na(.f$accessed_utc[[1]]))
+report("the recoverable source_url is reported even when the date is gone",
+       identical(.f$source_url[[1]], "https://example.org/api.json"))
+
+writeLines('{"source_url":"https://example.org/api.json","accessed_utc":"2026-09-14T03:41:07Z"}',
+           file.path(tmp, "artifacts", "live_zz_bon_ingested.csv.provenance.json"))
+report("both fields present clears the re-scoped family too",
+       nrow(repo_gate_check_access_dates(
+         tmp, scope_globs = "artifacts/live_*_bon_*.csv")) == 0)
+unlink(file.path(tmp, "artifacts", "live_zz_bon_ingested.csv"))
+unlink(file.path(tmp, "artifacts", "live_zz_bon_ingested.csv.provenance.json"))
+
 # 6. safe_percent(default = 0)
 writeLines(paste0("v <- ", "safe_percent(part, total, default = 0)"),
            file.path(tmp, "R", "pct.R"))

@@ -1109,19 +1109,38 @@ repo_gate_check_missing_inputs <- function(
 # already records. A file we fetched from a publisher has no inputs -- its
 # provenance is a URL and a date, and the date is the part that becomes
 # unrecoverable, because publishers revise in place.
-repo_gate_find_source_files <- function(root, scope_dirs = "data") {
+#' @param scope_globs [character] additional file globs, relative to `root`,
+#'   whose matches are scanned alongside `scope_dirs`. A gate scoped to `data/`
+#'   protects the inputs and not the evidence: the live board-of-nursing
+#'   artifacts are downloads by origin, they live in `artifacts/`, and they
+#'   carry the records that replaced the fabricated licence identifiers -- so
+#'   they were exempt from the one rule that would have checked them (#230).
+#'   Named globs rather than the whole of `artifacts/`, which is mostly derived
+#'   output governed by ci_artifact_contracts A3's inputs+sha256 ratchet;
+#'   two gates measuring the same debt with incompatible field names is the
+#'   arrangement this one already avoids for `data/`.
+repo_gate_find_source_files <- function(root, scope_dirs = "data",
+                                        scope_globs = base::character()) {
   dirs <- fs::path(root, scope_dirs)
   dirs <- dirs[fs::dir_exists(dirs)]
 
-  if (base::length(dirs) == 0L) {
-    return(base::character())
+  from_dirs <- if (base::length(dirs) == 0L) {
+    base::character()
+  } else {
+    base::as.character(fs::dir_ls(dirs, recurse = TRUE, type = "file"))
   }
 
-  fs::dir_ls(
-    dirs,
-    recurse = TRUE,
-    type = "file"
-  )
+  from_globs <- if (base::length(scope_globs) == 0L) {
+    base::character()
+  } else {
+    hits <- base::unlist(
+      base::lapply(scope_globs, function(g) base::Sys.glob(fs::path(root, g))),
+      use.names = FALSE
+    )
+    hits[fs::file_exists(hits) & !fs::is_dir(hits)]
+  }
+
+  base::unique(base::c(from_dirs, from_globs))
 }
 
 
@@ -1233,10 +1252,32 @@ repo_gate_read_accessed_utc <- function(path) {
     }
   }
 
+  # A sidecar can record the URL and not the date -- a backfill, where the
+  # endpoint is recoverable from the producing script and the retrieval instant
+  # is not. Reporting both as NA hid the half that WAS known, so the operator
+  # could not tell "nobody wrote anything down" from "the date specifically is
+  # gone". Report whatever the first readable sidecar carries.
+  fallback_src <- NA_character_
+  for (candidate in candidates) {
+    metadata <- tryCatch(
+      jsonlite::fromJSON(candidate, simplifyVector = TRUE),
+      error = function(err) NULL
+    )
+    if (base::is.null(metadata) || !base::is.list(metadata) ||
+          base::is.null(base::names(metadata))) {
+      next
+    }
+    src <- metadata[["source_url"]]
+    if (!base::is.null(src) && base::length(src) >= 1L) {
+      fallback_src <- base::as.character(src)[[1L]]
+      break
+    }
+  }
+
   tibble::tibble(
     sidecar = base::as.character(candidates[[1L]]),
     accessed_utc = NA_character_,
-    source_url = NA_character_
+    source_url = fallback_src
   )
 }
 
@@ -1266,13 +1307,18 @@ repo_gate_valid_utc <- function(value) {
 repo_gate_check_access_dates <- function(
   root,
   since = NULL,
-  scope_dirs = "data"
+  scope_dirs = "data",
+  scope_globs = base::character()
 ) {
   repo_gate_log(
     "Checking downloaded source data for accessed_utc and source_url"
   )
 
-  paths <- repo_gate_find_source_files(root, scope_dirs = scope_dirs)
+  paths <- repo_gate_find_source_files(
+    root,
+    scope_dirs = scope_dirs,
+    scope_globs = scope_globs
+  )
 
   if (base::length(paths) == 0L) {
     repo_gate_log("No source payloads found")
@@ -1452,6 +1498,7 @@ run_repo_integrity_gates <- function(
   missing_input_baseline = base::character(),
   access_date_grandfathered = NULL,
   access_date_scope = "data",
+  access_date_globs = base::character(),
   safe_percent_allow = base::character()
 ) {
   root <- fs::path_abs(root)
@@ -1522,7 +1569,8 @@ run_repo_integrity_gates <- function(
   access_dates <- repo_gate_check_access_dates(
     root,
     since = access_date_grandfathered,
-    scope_dirs = access_date_scope
+    scope_dirs = access_date_scope,
+    scope_globs = access_date_globs
   )
 
   unsafe_percent <- repo_gate_scan_percent_zero_default(
