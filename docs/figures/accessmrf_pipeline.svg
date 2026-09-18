@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="430" viewBox="0 0 1200 430" role="img" aria-labelledby="title desc">
+  <title id="title">AccessMRF provider-to-billing relationship pipeline</title>
+  <desc id="desc">Colorado cohort and payer denominator feed guarded acquisition, streaming extraction, deduplication, NPPES classification, and interpretation-limited outputs.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+    <style>
+      .box { fill:#f8fafc; stroke:#334155; stroke-width:2; rx:16; }
+      .guard { fill:#ecfeff; stroke:#0e7490; stroke-width:2; rx:16; }
+      .out { fill:#f0fdf4; stroke:#15803d; stroke-width:2; rx:16; }
+      .warn { fill:#fff7ed; stroke:#c2410c; stroke-width:2; rx:16; }
+      .h { font:700 19px system-ui,sans-serif; fill:#0f172a; }
+      .t { font:15px system-ui,sans-serif; fill:#334155; }
+      .a { stroke:#334155; stroke-width:2.5; fill:none; marker-end:url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1200" height="430" fill="white"/>
+  <rect class="box" x="35" y="55" width="220" height="115"/>
+  <text class="h" x="145" y="88" text-anchor="middle">Define first</text>
+  <text class="t" x="145" y="118" text-anchor="middle">406-person CO cohort</text>
+  <text class="t" x="145" y="143" text-anchor="middle">CMS MLR payer denominator</text>
+
+  <rect class="guard" x="325" y="55" width="220" height="115"/>
+  <text class="h" x="435" y="88" text-anchor="middle">Acquire safely</text>
+  <text class="t" x="435" y="118" text-anchor="middle">required external root</text>
+  <text class="t" x="435" y="143" text-anchor="middle">hashes + disk guards</text>
+
+  <rect class="box" x="615" y="55" width="220" height="115"/>
+  <text class="h" x="725" y="88" text-anchor="middle">Stream + deduplicate</text>
+  <text class="t" x="725" y="118" text-anchor="middle">both TiC group shapes</text>
+  <text class="t" x="725" y="143" text-anchor="middle">no negotiated prices</text>
+
+  <rect class="out" x="905" y="55" width="255" height="115"/>
+  <text class="h" x="1032" y="88" text-anchor="middle">Classified graph</text>
+  <text class="t" x="1032" y="118" text-anchor="middle">NPI ↔ billing identifier</text>
+  <text class="t" x="1032" y="143" text-anchor="middle">NPPES entity type attached</text>
+
+  <path class="a" d="M255 112 H315"/><path class="a" d="M545 112 H605"/><path class="a" d="M835 112 H895"/>
+
+  <rect class="warn" x="155" y="255" width="890" height="115"/>
+  <text class="h" x="600" y="289" text-anchor="middle">Interpretation boundary</text>
+  <text class="t" x="600" y="321" text-anchor="middle">Appearance is evidence of a file relationship—not employment, ownership, accepting-new-patient status, or insurance access.</text>
+  <text class="t" x="600" y="346" text-anchor="middle">Absence from sampled files is not evidence of non-participation.</text>
+  <path class="a" d="M1032 170 V215 H600 V245"/>
+</svg>

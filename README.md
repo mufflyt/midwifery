@@ -41,6 +41,19 @@ flowchart LR
 
 ## Key Visualizations & Data Gallery
 
+### Provider-to-billing relationships from Transparency in Coverage files
+
+![AccessMRF pipeline from cohort and payer denominator to a classified provider–billing graph](docs/figures/accessmrf_pipeline.svg)
+
+The AccessMRF pipeline reduces payer TiC files to a deduplicated graph between
+clinician NPIs and billing identifiers. It does **not** infer employment,
+ownership, accepting-new-patient status, or insurance access. The runnable
+eight-step guide is [`README_accessmrf.md`](README_accessmrf.md); definitions,
+classification rules, storage controls, limitations, and the retracted pilot
+statistic are in the
+[technical appendix](docs/TECHNICAL_APPENDIX_ACCESSMRF.md).
+
+
 ### 1. State board licensure, where a board was actually queried
 ![State board licensure observed in WA, CO and TX](docs/figures/board_licensure_observed.png)
 *Figure 1: The three states whose Board of Nursing publishes licensure as open

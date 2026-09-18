@@ -1,6 +1,6 @@
 # Changelog
 
-Notable changes to the pipeline, newest first.
+Notable changes to the pipeline.
 
 Two conventions worth stating before you read it:
 
@@ -149,6 +149,55 @@ directory would add before anything is changed.
   - `analyze_trilliant_activity_flag.R`, `build_trilliant_work_sites.R` and
     `enrich_trilliant_demographics.R` attach duckplyr the same way and have
     not yet been checked.
+## [Unreleased] — 2026-09-17 — AccessMRF provider-to-billing graph
+
+### Added
+
+- **An eight-step Transparency in Coverage pipeline.** `accessmrf_01_*` through
+  `accessmrf_08_*` define a Colorado cohort and payer denominator, extract both
+  TiC provider-group layouts, audit duplicate sources, build normalized Parquet
+  relationships, sample UHC without downloading rate bodies, and estimate
+  order-independent saturation curves.
+- **Fail-closed archive configuration.** `accessmrf_config.py` requires a
+  writable `MIDWIFERY_MRF_ROOT`, rechecks the mounted volume between work
+  units, and enforces row, temporary-storage and free-space limits.
+- **Billing-identifier classification.** Raw EINs remain EINs; NPI identifiers
+  are classified with NPPES Entity Type rather than group size. The output
+  distinguishes organization NPIs, self-billing individuals, ambiguous Type 1
+  anchors and unresolved NPIs.
+- **Documentation.** [`README_accessmrf.md`](README_accessmrf.md) is the runbook
+  and [`docs/TECHNICAL_APPENDIX_ACCESSMRF.md`](docs/TECHNICAL_APPENDIX_ACCESSMRF.md)
+  states the estimand, data model, storage controls and interpretation limits.
+
+### Retracted
+
+- **“90.5% of TINs have a single NPI.”** The four-file pilot conflated
+  `tin.type=npi` self-billing identifiers with EIN organizations. Superseded
+  artifacts are retained only as defect provenance and must not be cited as an
+  organization-size result.
+
+## [Unreleased] — 2026-09-17 — Education completeness audit
+
+### Added
+
+- **IPEDS completion denominators for 12 nurse-midwifery programs.** Acquisition
+  and audit scripts preserve award level and CIP, distinguish unavailable 2025
+  data from zero completions, and compare institutional reports with the
+  federal counts.
+- **Commencement-page OCR.** The Issuu workflow builds reviewable candidate
+  evidence without mutating the frozen AMCB linkage. Reusable macOS Vision OCR
+  source now lives at
+  `scripts/ocr_local.swift`; its binary and downloaded pages remain local.
+- **Historical CMS comparison.** The 2013 Physician Compare/DAC spine and NPPES
+  audit make education-field disagreement and identity drift explicit rather
+  than silently overwriting a current value.
+- **Scratch material was separated from evidence.** Reusable macOS OCR source
+  moved to `scripts/ocr_local.swift`; downloaded PDFs, OCR pages and text stay
+  under ignored scratch paths. Draft generators that emit placeholder people
+  are explicitly quarantined and are not tracked or used in figures.
+- **Technical appendix.** [`docs/TECHNICAL_APPENDIX_MIDWIFERY_EDUCATION_AUDIT.md`](docs/TECHNICAL_APPENDIX_MIDWIFERY_EDUCATION_AUDIT.md)
+  documents denominators, aliases, candidate governance, OCR acquisition and
+  interpretation limits.
 
 ## [Unreleased] — 2026-09-13 — 3-Tier Hospital Linkage Architecture & Empirical Validation Framework
 
