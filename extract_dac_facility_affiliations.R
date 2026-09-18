@@ -40,6 +40,8 @@ source("R/lib/common_helpers.R")
 
 DAC_VINTAGE <- Sys.getenv("DAC_VINTAGE", "2026-06")
 source(file.path("R", "lib", "medicare_duckdb.R"))
+source(file.path("R", "lib", "cohort_definitions.R"))
+source(file.path("R", "lib", "artifact_provenance.R"))
 FA <- Sys.getenv("FACILITY_AFFILIATION_FILE", "")
 if (!nzchar(FA))
   FA <- samsung_volume_path(file.path("facility_affiliation",
@@ -69,8 +71,8 @@ if (!str_detect(basename(FA), fixed(DAC_VINTAGE))) {
 cat(sprintf("DAC vintage: %s\naffiliation file: %s\n\n", DAC_VINTAGE, basename(FA)))
 
 # --- cohort ------------------------------------------------------------------
-link <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv",
-                 show_col_types = FALSE, progress = FALSE)
+LINKAGE <- "artifacts/amcb_npi_linkage_FROZEN.csv"
+link <- read_csv(LINKAGE, show_col_types = FALSE, progress = FALSE)
 coh <- link %>%
   filter(status == "ACTIVE", linkage_tier == "primary_midwifery") %>%
   distinct(certification_number, .keep_all = TRUE) %>%
@@ -79,6 +81,25 @@ coh <- link %>%
   select(certification_number, npi)
 N <- nrow(coh)
 cat(sprintf("cohort with an NPI: %s\n", format(N, big.mark = ",")))
+
+# The denominator every count in this script's summary is taken against, so it
+# is asserted rather than reported. The committed
+# dac_hospital_affiliation_summary.csv records cohort_n = 12,129 against a
+# canonical 12,171 on freeze 1a7bd6a8 -- 42 fewer people under filters that
+# reproduce exactly here, so it was built on a different linkage file, and with
+# no provenance sidecar there is nothing that says which (#231). This costs one
+# comparison and would have caught it at build time.
+N_CANON <- nrow(canonical_active_primary(
+  read_csv(LINKAGE, show_col_types = FALSE, progress = FALSE,
+           col_types = cols(.default = "c"))))
+if (!identical(as.integer(N), as.integer(N_CANON))) {
+  stop(sprintf(paste0(
+    "cohort_n = %s, but canonical_active_primary() on the same linkage file gives %s.\n",
+    "  These must agree: this script's own filters ARE the canonical cohort rule.\n",
+    "  A difference means the linkage file changed under one of them, or a filter drifted.\n",
+    "  linkage: %s"), format(N, big.mark = ","), format(N_CANON, big.mark = ","), LINKAGE),
+    call. = FALSE)
+}
 
 # --- affiliation rows --------------------------------------------------------
 fa <- chr(FA)
@@ -167,7 +188,12 @@ summ <- tibble(
   any_critical     = sum(out$any_critical_access, na.rm = TRUE),
   any_birth_friendly = sum(out$any_birth_friendly, na.rm = TRUE),
   multi_hospital   = sum(out$n_hospitals > 1L))
-write_csv(summ, "artifacts/dac_hospital_affiliation_summary.csv")
+# Through write_with_provenance(), like its neighbours: the counts below rest
+# entirely on cohort_n, and without a sidecar recording the linkage file and
+# its sha256 a wrong denominator cannot be told from a different membership
+# rule or an interrupted run (#231).
+write_with_provenance(summ, "artifacts/dac_hospital_affiliation_summary.csv",
+                      inputs = c(LINKAGE, FA))
 
 f <- function(x, lab) cat(sprintf("  %-52s %6s (%4.1f%%)\n", lab,
                                   format(x, big.mark = ","), 100 * x / N))
