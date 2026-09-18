@@ -370,6 +370,36 @@ if (file.exists(calib_age_file)) {
   cat("Merged calibrated empirical age blocks into cohort.\n")
 }
 
+# The age block's heading names the model the ages came from, rather than only
+# their coverage. "Calibrated Age (100% Cohort Coverage)" is true of the
+# coverage and silent about whether the line behind it was fitted or assumed:
+# when no ground truth is present the calibration used to substitute a 29.5-year
+# literature prior with a slope of 1.0, impute an age for everyone, and reach
+# print under that identical label (#216; it happened for real in #172).
+# calibrate_amcb_certification_ages.R now refuses that fallback unless
+# ALLOW_LITERATURE_PRIOR is set, and stamps the choice into `selected_model` --
+# which this reads, so a prior cannot arrive wearing a fit's label.
+AGE_BLOCK_LABEL <- "Calibrated Age (100% Cohort Coverage)"
+calib_prov_file <- "artifacts/amcb_age_calibration_provenance.csv"
+if (file.exists(calib_prov_file)) {
+  .cp <- read_csv(calib_prov_file, show_col_types = FALSE, progress = FALSE)
+  if ("selected_model" %in% names(.cp) && nrow(.cp) >= 1L) {
+    AGE_BLOCK_LABEL <- sprintf("Calibrated Age -- %s", .cp$selected_model[[1]])
+    # And the selection in the calibration sample, which the model string does
+    # not carry. 57% of the 5,448 direct ages are self-reported Healthgrades
+    # profiles, whose holders run 8-13 years older in median than either
+    # measured source; refitting on measured birth years alone gives a slope
+    # 11% shallower and moves 12.3% of the cohort into a younger band
+    # (docs/TECHNICAL_APPENDIX_AGE_IMPUTATION.md section 8.2, #218). The
+    # direction of that bias belongs where the ages are published, not only in
+    # the appendix that documents them.
+    if (isTRUE(.cp$direct_ground_truth_n[[1]] > 0))
+      AGE_BLOCK_LABEL <- paste0(
+        AGE_BLOCK_LABEL,
+        "; the calibration sample is majority self-reported and skews older (appendix 8.2)")
+  }
+}
+
 # --- CMS Doctors & Clinicians (DAC): practice structure ----------------------
 # Produced by extract_dac_cnm_education.R, one row per NPI.
 #
@@ -806,7 +836,7 @@ t1 <- bind_rows(
   if ("state_concordance" %in% names(coh))
     blk(coh, "state_concordance", "Practice vs. Mailing State Concordance"),
   if ("age_band" %in% names(coh))
-    blk(coh, "age_band", "Calibrated Age (100% Cohort Coverage)",
+    blk(coh, "age_band", AGE_BLOCK_LABEL,
         lvls = c("<35 years", "35-44 years", "45-54 years", "55-64 years", ">=65 years")),
   if ("cert_year_band" %in% names(coh))
     blk(coh, "cert_year_band", "Years Since AMCB Initial Certification",
