@@ -51,7 +51,9 @@
 #
 # Inputs : midwives.csv, nppes_candidates.csv (see fetch_npi_candidates.py)
 # Outputs: midwives_with_nppes.csv, midwives_unmatched.csv,
-#          artifacts/match_ledger.csv, artifacts/exclusion_ledger.csv
+#          artifacts/match_ledger.csv,
+#          artifacts/exclusion_ledger.rds (the ledger log_exclusion() writes)
+#          artifacts/exclusion_ledger.csv (the same table, as a real CSV)
 # =============================================================================
 
 suppressPackageStartupMessages({
@@ -102,9 +104,18 @@ cat(sprintf("validate_scoring_invariants: %s\n",
             if (isTRUE(invariants)) "PASS" else "see message above"))
 
 dir.create("artifacts", showWarnings = FALSE)
-LEDGER    <- file.path("artifacts", "match_ledger.csv")
-EXCLUSION <- file.path("artifacts", "exclusion_ledger.csv")
-unlink(c(LEDGER, EXCLUSION))
+LEDGER <- file.path("artifacts", "match_ledger.csv")
+# log_exclusion() serialises the ledger with saveRDS(); the path it is handed
+# is the path it writes, whatever the extension says. This was
+# "artifacts/exclusion_ledger.csv" until #223, which is how a gzipped RDS came
+# to be tracked under a .csv name -- read_csv() on it returned a decode error,
+# and only readRDS() opened it. The ledger keeps its RDS form (that is the
+# upstream contract, and the summary/JSON exporters read it back), and a real
+# CSV is derived from it below for anyone reaching for the artifact by
+# extension.
+EXCLUSION_RDS <- file.path("artifacts", "exclusion_ledger.rds")
+EXCLUSION_CSV <- file.path("artifacts", "exclusion_ledger.csv")
+unlink(c(LEDGER, EXCLUSION_RDS, EXCLUSION_CSV))
 
 # --- AMCB roster -------------------------------------------------------------
 amcb <- read_csv("midwives.csv", show_col_types = FALSE) %>%
@@ -667,10 +678,34 @@ write_csv(filter(out, match_decision != "Accept") %>% select(-roster_id),
 
 # --- Exclusion + output validation (NN #15) ----------------------------------
 accepted <- filter(out, match_decision == "Accept")
+
+# Itemise the drop, rather than leaving it at one headline reason.
+# log_exclusion() honours an explicit drop_reason_primary IN PREFERENCE to
+# deriving from reason_col, and fills whichever of the pair the caller omits
+# with the literal string "unknown" (see utils/exclusion_ledger.R, "Honor
+# explicit drop_reason_primary / drop_reasons_all when supplied"). Passing
+# only the primary is why every ledger written before #223 recorded
+# drop_reasons_all = "unknown" for all 5,133 dropped certificants. Both are
+# passed now: the primary stays the descriptive label, and the tally is the
+# one the library would have derived from match_decision, in the "name=count"
+# form separated by ";" that scan_unexplained_drops.R parses.
+drop_tally <- out %>%
+  filter(!roster_id %in% accepted$roster_id) %>%
+  count(match_decision, sort = TRUE)
+drop_reasons_all <- if (nrow(drop_tally))
+  paste(drop_tally$match_decision, drop_tally$n, sep = "=", collapse = ";") else "none"
+
 invisible(log_exclusion("nppes_match", data_in = out, data_out = accepted,
-                        id_col = "roster_id", ledger_path = EXCLUSION,
+                        id_col = "roster_id", ledger_path = EXCLUSION_RDS,
                         drop_reason_primary = "no_confident_nppes_match",
+                        drop_reasons_all = drop_reasons_all,
                         verbose = FALSE))
+
+# The CSV a reader expects to find at a .csv path, with the sidecar its
+# neighbours carry. Derived from the RDS so the two cannot disagree.
+source(file.path("R", "lib", "artifact_provenance.R"))
+write_with_provenance(readRDS(EXCLUSION_RDS), EXCLUSION_CSV, inputs = EXCLUSION_RDS)
+cat(sprintf("exclusion ledger: %s (RDS) and %s (CSV)\n", EXCLUSION_RDS, EXCLUSION_CSV))
 
 cat("\nMatch decisions:\n"); print(count(out, match_decision, sort = TRUE))
 cat("\nAccepted by evidence tier:\n"); print(count(accepted, evidence, sort = TRUE))

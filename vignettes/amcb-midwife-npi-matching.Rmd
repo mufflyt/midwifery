@@ -254,7 +254,10 @@ The panel yields two things nothing else does:
   `certification_number` so the output is reproducible.
 
 Every candidate pair considered is written to `artifacts/match_ledger.csv`,
-and every exclusion to `artifacts/exclusion_ledger.csv` (non-negotiable #15).
+and every exclusion to `artifacts/exclusion_ledger.rds` (non-negotiable #15) --
+`.rds`, because `log_exclusion()` serialises with `saveRDS()`. The same table
+is also written as `artifacts/exclusion_ledger.csv` for anyone reaching for it
+by extension.
 
 ---
 
