@@ -232,6 +232,12 @@ artifacts/dac_cnm_locations.csv
 # tracked: an earlier `git add ... 2>/dev/null` hid the "paths are ignored"
 # warning, so they were reported as committed when they were not.
 !docs/table1_midwives.html
+# A degraded build (ALLOW_PARTIAL_TABLE1=1) writes *_PARTIAL names so it
+# cannot overwrite the published table; it must not be committable either.
+artifacts/table1_midwives_PARTIAL.csv
+artifacts/table1_midwives_PARTIAL.csv.provenance.json
+docs/table1_midwives_PARTIAL.md
+docs/table1_midwives_PARTIAL.html
 !docs/table1_midwives_gt.html
 
 # The GitHub Pages landing page. Same reasoning as the Table 1 renders: the
