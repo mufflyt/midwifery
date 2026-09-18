@@ -1,0 +1,4 @@
+control,question,source,n_cohort_npi,n_hospital_ids,n_collisions,status,detail
+NC1,does any cohort NPI appear as a hospital CCN?,artifacts/ob_hospitals_geocoded.csv$prvdr_num,12171,2784,0,PASS,no cohort NPI appears in this identifier space
+NC2,does any cohort NPI appear as an affiliation CCN?,artifacts/dac_facility_affiliations.csv$ccn,12171,902,0,PASS,no cohort NPI appears in this identifier space
+NC3,does any cohort Type 1 NPI appear as a hospital Type 2 organization NPI?,$HPT_PRICES/reference: npi_ccn_crosswalk.csv + cms_enrollments/Hospital_Enrollments_*.csv,12171,NA,NA,SKIPPED,npi_ccn_crosswalk.csv unreadable (cannot open the connection)
