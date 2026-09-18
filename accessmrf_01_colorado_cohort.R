@@ -72,6 +72,12 @@ cohort <- roster |>
     # join can never silently mix in a non-canonical NPI.
     canonical_cohort_flag = TRUE
   ) |>
+  # Sort BEFORE de-duplicating: arranging afterwards orders the survivors but
+  # leaves the CHOICE of survivor to row order, which is exactly the ambiguity
+  # the .keep_all sweep exists to catch. Two certificants sharing one NPI is a
+  # real (contested) case in this linkage, so the tiebreak is made explicit --
+  # lowest amcb_id wins -- and the output ordering is restored afterwards.
+  arrange(.data$npi, .data$amcb_id) |>
   distinct(.data$npi, .keep_all = TRUE) |>
   arrange(.data$last_name, .data$first_name)
 

@@ -239,7 +239,13 @@ write_with_provenance(joined, audit_path,
 
 # One row per NPI, so a provider present in both snapshots is not counted
 # twice. Snapshot-invariant fields make this safe.
-per_npi <- joined |> distinct(.data$npi, .keep_all = TRUE)
+# The left_join above can fan out when NPPES holds more than one row for an
+# NPI, so the surviving row is chosen by position unless an order is stated.
+# If the snapshot-invariance claim above holds, this arrange() changes nothing;
+# if it ever does change a rate, the claim was wrong and that is worth seeing.
+per_npi <- joined |>
+  arrange(.data$npi, .data$nppes_last, .data$nppes_first) |>
+  distinct(.data$npi, .keep_all = TRUE)
 
 rate <- function(flag, label, data = per_npi) {
   v <- data[[flag]]
