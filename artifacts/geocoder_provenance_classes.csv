@@ -1,0 +1,13 @@
+geocoder_provenance,class,is_defect,match_type,validation_status,precision_class,effective_provenance,provider_recovered,note,n
+legacy_csv_20251011,import_event,FALSE,cache_merge,valid,unknown,legacy_csv_20251011,FALSE,"A CSV imported 2025-10-11. The producing geocoder is not recorded, and predates the attempt log, so it is not recoverable from the cache",13303
+census_batch,geocoder,FALSE,interpolated,valid,interpolated,census_batch,FALSE,US Census Bureau batch geocoder; returns street-segment interpolation,7139
+ArcGIS_World,geocoder,FALSE,match,valid,address_match,ArcGIS_World,FALSE,ArcGIS World Geocoding Service,5043
+cohort_backfill_20260603,import_event,FALSE,cache_merge,valid,unknown,US_Census_Bureau,TRUE,A backfill run on 2026-06-03. The attempt log resolves the real provider for most of these,3283
+cohort_backfill_20260603,import_event,FALSE,cache_merge,valid,unknown,ArcGIS_World,TRUE,A backfill run on 2026-06-03. The attempt log resolves the real provider for most of these,361
+cohort_backfill_20260603,import_event,FALSE,cache_merge,valid,unknown,cohort_backfill_20260603,FALSE,A backfill run on 2026-06-03. The attempt log resolves the real provider for most of these,318
+OpenStreetMap_Nominatim,geocoder,FALSE,match,valid,address_match,OpenStreetMap_Nominatim,FALSE,OpenStreetMap Nominatim,204
+legacy_csv_20251011,import_event,FALSE,cache_merge,valid,unknown,US_Census_Bureau,TRUE,"A CSV imported 2025-10-11. The producing geocoder is not recorded, and predates the attempt log, so it is not recoverable from the cache",137
+unknown+shared_merge,unknown,TRUE,NA,valid,unknown,unknown+shared_merge,FALSE,DEFECT CLASS: origin already lost when these were merged in. Not usable where precision matters,110
+legacy_csv_20251011,import_event,FALSE,cache_merge,valid,unknown,ArcGIS_World,TRUE,"A CSV imported 2025-10-11. The producing geocoder is not recorded, and predates the attempt log, so it is not recoverable from the cache",9
+City_Centroid_Dataset,geocoder,FALSE,NA,valid,city_centroid,City_Centroid_Dataset,FALSE,"A city centroid, not a match to the address. One row, and a very different precision claim from a rooftop match",1
+census_batch,geocoder,FALSE,NA,valid,unknown,census_batch,FALSE,US Census Bureau batch geocoder; returns street-segment interpolation,1
