@@ -1,0 +1,19 @@
+# The Table 1 mismatch that already exists. May be DELETED, never added to.
+#
+# artifacts/table1_midwives.csv is the last COMPLETE build (2026-08-14, cohort
+# 11,920, 24 categories). docs/table1_midwives.md is a later render from a
+# machine that held none of the enrichment inputs (2026-09-11, cohort 12,171,
+# 8 categories, Sex 100% "not recorded", ACOG district 99.7% "not mappable").
+# Only the render was committed, so the repository carries a complete table on
+# a superseded cohort beside a current-cohort table missing 16 categories.
+#
+# Five tracked consumers read the CSV, so manuscript/R/build_stats_catalog.R
+# divides by 11,920 while the published table states 12,171.
+#
+# This line comes off when the CSV is rebuilt on the canonical freeze. That
+# needs the person-level enrichment inputs listed in
+# build_table1_midwives.R's TABLE1_ENRICHMENT, none of which are in any
+# checkout. The guard there now makes the same divergence impossible: a build
+# missing any of them writes *_PARTIAL names and leaves the published files
+# alone. See issue #233.
+table1_csv_n=11920 table1_md_n=12171 canonical_n=12171
