@@ -197,11 +197,18 @@ mw_build_catalog <- function(root = ".") {
     #
     # WHAT IT DOES INCLUDE, and Table 1 does not: the class-5
     # surname-component tier. On freeze 1a7bd6a8 that is 83 ACTIVE
-    # certificants (12,254 here against Table 1's 12,171), every one of them
+    # certificants (12,254 against Table 1's 12,171), every one of them
     # linkage_tier == "sensitivity_name_component", which the freeze manifest
-    # holds OUT of analytic membership. So this stage and Table 1 describe
-    # populations that differ by a named, counted group -- see issue #222,
-    # which asks which of the two the published exclusion figure should use.
+    # holds OUT of analytic membership.
+    #
+    # RULED 2026-09-18 (#222): the published exclusion figure describes the
+    # ANALYTIC COHORT, so its "matched" stage is the membership rule and the 83
+    # are itemised as their own exclusion reason rather than counted as
+    # matched. The switch is gated on geography_by_amcb_status.csv carrying
+    # cohort_rule == "canonical_active_primary"; the committed vintage predates
+    # the ruling and its rebuild needs gitignored person-level geography, so
+    # both counts are published either way and the block below reports on
+    # stderr which rule is in force.
     if (!is.null(frozen)) {
       tot_f <- nrow(frozen)
       status_n <- table(frozen$status)
@@ -210,7 +217,45 @@ mw_build_catalog <- function(root = ".") {
                                        tolower(inactive_statuses))
       active_rows <- frozen[frozen$status == "ACTIVE", ]
       active_n_f <- nrow(active_rows)
-      active_matched_n <- sum(active_rows$match_status == "primary", na.rm = TRUE)
+
+      # THE LADDER FOLLOWS THE MEMBERSHIP RULE, once the aggregate it joins
+      # does. RULED 2026-09-18 (#222): the figure explains how the roster
+      # becomes THE ANALYTIC COHORT, so its "matched" stage is
+      # canonical_active_primary(), not match_status == "primary". The two
+      # differ by 83 ACTIVE certificants on freeze 1a7bd6a8, every one of them
+      # linkage_tier == "sensitivity_name_component" -- the class-5 tier the
+      # freeze manifest holds OUT of analytic membership.
+      #
+      # geography_by_amcb_status.csv supplies the geocoding stage and was built
+      # on the OLD definition; its rebuild needs person-level geography that is
+      # gitignored. So the rule in force is read from that artifact rather than
+      # assumed, and the ladder stays internally consistent either way. Both
+      # counts are published, so a reader never has to diff two artifacts to
+      # find the 83.
+      membership <- active_rows$linkage_tier %in% "primary_midwifery" &
+        !is.na(active_rows$npi) & nzchar(trimws(as.character(active_rows$npi)))
+      active_membership_n <- sum(membership)
+      active_match_status_n <- sum(active_rows$match_status == "primary", na.rm = TRUE)
+      held_out_class5_n <- sum(!membership & active_rows$match_status %in% "primary")
+
+      .gs_rule <- {
+        .g <- rd(file.path(MW_ART, "geography_by_amcb_status.csv"))
+        if (!is.null(.g) && "cohort_rule" %in% names(.g)) .g$cohort_rule[1] else NA_character_
+      }
+      exclusion_cohort_rule <- if (identical(.gs_rule, "canonical_active_primary"))
+        "canonical_active_primary" else "match_status_primary"
+      if (exclusion_cohort_rule != "canonical_active_primary")
+        message(sprintf(paste0(
+          "exclusion ladder still on match_status == \"primary\" (%s) because ",
+          "artifacts/geography_by_amcb_status.csv predates the #222 ruling; the ",
+          "membership rule gives %s, a difference of %d held-out class-5 matches. ",
+          "Re-run build_geography_by_amcb_status.R on the machine holding ",
+          "midwives_geography_FROZEN.csv."),
+          format(active_match_status_n, big.mark = ","),
+          format(active_membership_n, big.mark = ","), held_out_class5_n))
+
+      active_matched_n <- if (exclusion_cohort_rule == "canonical_active_primary")
+        active_membership_n else active_match_status_n
       active_unmatched_n <- active_n_f - active_matched_n
 
       # Every non-"primary" match_status value among ACTIVE, itemised --
@@ -228,6 +273,14 @@ mw_build_catalog <- function(root = ".") {
         active_rows$match_status[active_rows$match_status != "primary"],
         levels = names(reason_labels)))
       active_unmatched_by_reason <- setNames(as.integer(reason_tab), names(reason_labels))
+      # Under the membership rule the 83 leave the "matched" box, and they are
+      # itemised as their own reason rather than folded into an
+      # undifferentiated "no match": a candidate NPI held to a stricter
+      # identity bar is not the same thing as never finding one.
+      if (exclusion_cohort_rule == "canonical_active_primary")
+        active_unmatched_by_reason <- c(
+          active_unmatched_by_reason,
+          sensitivity_name_component = as.integer(held_out_class5_n))
 
       cat_$exclusion <- list(
         roster_n           = tot_f,
@@ -236,6 +289,11 @@ mw_build_catalog <- function(root = ".") {
         inactive_n         = tot_f - active_n_f,
         inactive_pct       = 100 * (tot_f - active_n_f) / tot_f,
         inactive_by_status = inactive_n_by_status,
+        # Which rule this ladder is on, and both counts, always.
+        cohort_rule           = exclusion_cohort_rule,
+        active_membership_n   = active_membership_n,
+        active_match_status_n = active_match_status_n,
+        held_out_class5_n     = held_out_class5_n,
         active_matched_n   = active_matched_n,
         active_matched_pct = 100 * active_matched_n / active_n_f,
         active_unmatched_n = active_unmatched_n,
@@ -605,8 +663,9 @@ mw_build_catalog <- function(root = ".") {
       # this comment attributed the gap to the nursing sensitivity tier, which
       # the data contradicts, and the block above at "Matched means
       # match_status == primary" says the opposite again. Both are now
-      # superseded by this count. See issue #222 for the open question of
-      # which definition the exclusion figure should use.
+      # superseded by this count. #222 is settled: the figure uses the
+      # membership rule (exclusion.active_membership_n), and
+      # exclusion.active_match_status_n remains published beside it.
       acog_excluded_n   = acog_excluded_n,
       acog_excluded_pct = if (!is.na(acog_excluded_n)) 100 * acog_excluded_n / t1$n[1] else NA_real_
     )

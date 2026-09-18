@@ -61,6 +61,19 @@ not_geocoded_n <- stat_num("exclusion.not_geocoded_n")
 acog_excluded_n <- stat_num("exclusion.acog_excluded_n")
 final_cohort_n  <- stat_num("exclusion.final_cohort_n")
 
+# WHICH POPULATION THIS LADDER DESCRIBES. Ruled 2026-09-18 (#222): the analytic
+# cohort, i.e. canonical_active_primary(). The ladder cannot switch on its own,
+# because its geocoding stage comes from geography_by_amcb_status.csv, and that
+# aggregate's rebuild needs person-level geography that is gitignored. Until it
+# is rebuilt the ladder stays on match_status == "primary" -- internally
+# consistent, and 83 people wider than Table 1 -- and says so on the figure and
+# on stderr rather than leaving a reader to find it by diffing two artifacts.
+cohort_rule <- tryCatch(.mw_get("exclusion.cohort_rule", .mw_catalog),
+                        error = function(e) NA_character_)
+held_out_class5_n <- stat_num("exclusion.held_out_class5_n")
+membership_n <- stat_num("exclusion.active_membership_n")
+on_membership_rule <- identical(cohort_rule, "canonical_active_primary")
+
 if (is.na(geocoded_n) || is.na(not_geocoded_n)) {
   stop(paste0(
     "exclusion.geocoded_n / exclusion.not_geocoded_n are not in the catalog.\n",
@@ -118,15 +131,19 @@ nonzero_lines <- function(counts, labels) {
         collapse = "\n")
 }
 
-# "No NPI match" here means match_status != "primary" -- six structurally
-# different failure modes, not one undifferentiated bucket: three are
-# genuine non-matches (unmatched, tied names, contested NPI, unruled-out
-# component) and two are candidate NPIs that WERE found but held to a
-# stricter identity-confidence bar (fuzzy surname, nursing-only taxonomy) --
-# see reconcile_linkage.R's header comment for why those two are excluded
-# from "matched" rather than counted as confirmed identity.
+# "No NPI match" is not one undifferentiated bucket. Under either rule it is
+# six structurally different failure modes: three are genuine non-matches
+# (unmatched, tied names, contested NPI, unruled-out component) and two are
+# candidate NPIs that WERE found but held to a stricter identity-confidence bar
+# (fuzzy surname, nursing-only taxonomy) -- see reconcile_linkage.R's header for
+# why those two are excluded from "matched" rather than counted as confirmed
+# identity. Under the membership rule a seventh appears, the class-5
+# surname-component tier (83 on freeze 1a7bd6a8), added by the catalog and
+# labelled below; it is itemised for the same reason as the other two, because
+# a candidate held to a stricter bar is not the same as never finding one.
 unmatched_by_reason <- .mw_get("exclusion.active_unmatched_by_reason", .mw_catalog)
 unmatched_reason_labels <- c(
+  sensitivity_name_component      = "Surname-component match, held out of analytic membership",
   unmatched                       = "Unmatched, no candidate found",
   ambiguous_tied_names            = "Tied names, evidence could not separate",
   ambiguous_contested_npi         = "Contested NPI, claimed by 2+ certificants",
@@ -152,6 +169,10 @@ tier_labels <- c(
 )
 matched_tier_lines <- nonzero_lines(matched_by_tier, tier_labels)
 
+matched_label <- if (on_membership_rule)
+  "Matched to an NPI (analytic membership)" else "Matched to an NPI"
+final_label <- "Final analytic cohort"
+
 fc <- as_fc(
     N = roster_n, label = "AMCB certification roster",
     text_pattern = "{label}\nN = {N}"
@@ -163,7 +184,7 @@ fc <- as_fc(
     text_pattern_exc = paste0("{label}\nN = {n} ({perc}%)\n", exc_inactive_lines)
   ) %>%
   fc_filter(
-    N = matched_n, label = "Matched to an NPI",
+    N = matched_n, label = matched_label,
     text_pattern = "{label}\nN = {n} ({perc}%)",
     show_exc = TRUE, label_exc = "No NPI match",
     text_pattern_exc = paste0("{label}\nN = {n} ({perc}%)\n", exc_unmatched_lines)
@@ -202,6 +223,12 @@ counts <- data.frame(
   n = c(roster_n, active_n, inactive_n, matched_n, unmatched_n,
        geocoded_n, not_geocoded_n, final_cohort_n, acog_excluded_n)
 )
+# Stamped with the rule, so the counts cannot be read as the analytic cohort
+# when they are not. Also carried: the membership count and the 83, so the gap
+# travels with the figure instead of being discoverable only by diffing.
+counts$cohort_rule <- if (is.na(cohort_rule)) "unknown" else cohort_rule
+counts$analytic_cohort_n <- membership_n
+counts$held_out_class5_n <- held_out_class5_n
 counts_path <- file.path("docs", "figures", "cohort_exclusion_flow_counts.csv")
 write_with_provenance(
   counts, counts_path,
@@ -225,6 +252,23 @@ write_with_provenance(
   tiers, tiers_path,
   inputs = c(file.path("artifacts", "amcb_npi_linkage_FROZEN.csv"))
 )
+
+if (!on_membership_rule) {
+  message(sprintf(paste0(
+    "\n!! This ladder is on match_status == \"primary\" (%s matched, final cohort %s),\n",
+    "   not the analytic membership rule (%s). The difference is %s ACTIVE certificants,\n",
+    "   every one linkage_tier == \"sensitivity_name_component\" -- the class-5 tier the\n",
+    "   freeze manifest holds OUT of analytic membership. Ruled 2026-09-18 (#222) that the\n",
+    "   figure should use the membership rule; switching it needs\n",
+    "   build_geography_by_amcb_status.R re-run against midwives_geography_FROZEN.csv,\n",
+    "   which is gitignored and absent here.\n"),
+    fmt(matched_n), fmt(final_cohort_n), fmt(membership_n), fmt(held_out_class5_n)))
+} else {
+  # The guard the ladder's own arithmetic could never provide: all four sums
+  # held while the population entering the ladder was not the published one.
+  stopifnot(final_cohort_n <= membership_n, matched_n == membership_n)
+  message(sprintf("ladder is on the analytic membership rule (%s matched)", fmt(matched_n)))
+}
 
 message(sprintf("roster reconciles:   %s = %s + %s", fmt(roster_n), fmt(active_n), fmt(inactive_n)))
 message(sprintf("active reconciles:   %s = %s + %s", fmt(active_n), fmt(matched_n), fmt(unmatched_n)))
