@@ -722,6 +722,12 @@ harvest_live_oregon_bon.py
 tests/test_fldoh_triple_proof_gate.R
 tests/test_osbn_triple_proof_gate.R
 
+# Superseded by the tracked build_trilliant_provider_identity_index.R /
+# experiment_trilliant_identity_linkage.R pipeline already on main.
+analysis/trilliant_identity_00_nppes_slim.R
+analysis/trilliant_identity_01_inventory.R
+analysis/trilliant_identity_02_evidence.R
+
 # Oregon and Florida BON raw payload archives
 data_vault/osbn_raw/
 data_vault/fl_doh_raw/

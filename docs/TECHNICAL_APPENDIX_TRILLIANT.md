@@ -17,7 +17,6 @@ Scripts, in the order they run:
 | [`analyze_trilliant_activity_flag.R`](../analyze_trilliant_activity_flag.R) | `artifacts/trilliant_activity_validation_<freeze sha8>.csv` | yes (aggregate) |
 | [`build_trilliant_work_sites.R`](../build_trilliant_work_sites.R) | `artifacts/midwife_work_setting_summary.csv`; person-level `midwife_work_sites_long.csv`, `midwife_distinct_work_sites.csv`, `midwife_work_sites_summary.csv`, `midwife_work_sites_excluded_non_workplace.csv` | summary only |
 | [`enrich_trilliant_demographics.R`](../enrich_trilliant_demographics.R) | `artifacts/trilliant_demographics_validation_<freeze sha8>.csv`; person-level `trilliant_demographics.csv` | checks only |
-| [`analysis/trilliant_identity_00_nppes_slim.R`](../analysis/trilliant_identity_00_nppes_slim.R) through [`analysis/trilliant_identity_02_evidence.R`](../analysis/trilliant_identity_02_evidence.R) | local field inventory, candidate evidence, calibration and audit tables | no; licensed/person-level |
 | [`make_trilliant_figures.R`](../make_trilliant_figures.R) | `docs/figures/trilliant_*.png` | yes |
 
 Libraries: [`R/lib/cohort_definitions.R`](../R/lib/cohort_definitions.R),

@@ -1,6 +1,6 @@
 # Changelog
 
-Notable changes to the pipeline, newest first.
+Notable changes to the pipeline.
 
 Two conventions worth stating before you read it:
 
@@ -176,7 +176,7 @@ directory would add before anything is changed.
   artifacts are retained only as defect provenance and must not be cited as an
   organization-size result.
 
-## [Unreleased] — 2026-09-17 — Education completeness and source-overlap audit
+## [Unreleased] — 2026-09-17 — Education completeness audit
 
 ### Added
 
@@ -184,18 +184,13 @@ directory would add before anything is changed.
   and audit scripts preserve award level and CIP, distinguish unavailable 2025
   data from zero completions, and compare institutional reports with the
   federal counts.
-- **Commencement and repository discovery.** Historical PDF, Wayback and Issuu
-  workflows build reviewable candidate evidence without mutating the frozen
-  AMCB linkage. Reusable macOS Vision OCR source now lives at
+- **Commencement-page OCR.** The Issuu workflow builds reviewable candidate
+  evidence without mutating the frozen AMCB linkage. Reusable macOS Vision OCR
+  source now lives at
   `scripts/ocr_local.swift`; its binary and downloaded pages remain local.
 - **Historical CMS comparison.** The 2013 Physician Compare/DAC spine and NPPES
   audit make education-field disagreement and identity drift explicit rather
   than silently overwriting a current value.
-- **Trilliant identity-evidence experiment.** Three read-only analysis stages
-  inventory directory fields, search the full provider directory for candidate
-  NPIs, and learn cross-fitted likelihood-ratio weights from a prespecified
-  high-confidence control stratum. Contextual claims data never establish an
-  identity, and licensed/person-level outputs remain gitignored.
 - **Scratch material was separated from evidence.** Reusable macOS OCR source
   moved to `scripts/ocr_local.swift`; downloaded PDFs, OCR pages and text stay
   under ignored scratch paths. Draft generators that emit placeholder people
