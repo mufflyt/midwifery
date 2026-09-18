@@ -113,6 +113,14 @@ jobs:
       - name: Table 1 banding tests
         run: Rscript tests/test_table1_bands.R
 
+      # Base R only, same as above. 58.6% of the coordinates behind every
+      # access map and the rurality stratifier carry a label naming the batch
+      # they arrived in rather than the geocoder that produced them (#225).
+      # These rules keep a delivery date from reading as a provider and a city
+      # centroid from reading as a rooftop match.
+      - name: Geocoder provenance classification
+        run: Rscript tests/test_geocoder_provenance.R
+
       # The check with the most to prevent. Four commits in one week untracked
       # person-level artifacts one at a time, each found by hand AFTER it was
       # committed. This blocks the next one, caps tracked file size, and holds a
