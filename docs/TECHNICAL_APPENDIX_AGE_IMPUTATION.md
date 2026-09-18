@@ -44,6 +44,12 @@ $$\begin{array}{l|c|l}
 ## 3. Empirical Calibration Models & Statistical Evaluation
 
 ### 3.1 Model 1: Gold-Standard Direct Ground-Truth Model (Disambiguated OH DOBs + WA Direct + Healthgrades)
+
+> **Superseded — history only.** This is the 2,052-record fit. It was replaced
+> on 2026-08-10 by the 5,448-record refit described in §3.2 and §4, which is
+> what `artifacts/amcb_age_calibration_provenance.csv` holds and what every
+> current run applies: $\text{Age} = 35.864 + 0.9428 \cdot T_i$.
+
 * **Sample**: $N = 2,052$ certificants with 100% verified direct dates of birth from the Ohio Secretary of State Voter Database (`OH_Voter_Direct_DOB`), Washington State DOH (`WA_Direct_BirthYear`), and verified Healthgrades ages.
 * **Regression Formula**:
   $$\text{Age}_{\text{Direct}} = 37.30 + 0.738 \cdot T_i$$
@@ -94,7 +100,65 @@ Illinois-derived alternative is deleted rather than presented as a choice.
 
 ## 5. Cohort Imputation & Demographic Age Bands
 
-Applying the gold-standard direct calibration model ($\text{Age} = 37.30 + 0.738 \cdot T_i$) across the $N = 22,309$ AMCB cohort yields the following national demographic distribution:
+### 5.0 Which model this section describes
+
+Everything below the next paragraph was computed from
+$\text{Age} = 37.30 + 0.738 \cdot T_i$ — the **§3.1 fit**, $N = 2{,}052$,
+$R^2 = 0.275$, superseded on 2026-08-10. **It is retained as history and is not
+the model in use.** The committed artifact
+`artifacts/amcb_age_calibration_provenance.csv` holds
+$\text{Age} = 35.864 + 0.9428 \cdot T_i$, $N = 5{,}448$, $R^2 = 0.721$, which
+§3.2 and §4 describe and which every current run applies.
+
+The two lines cross at $T = 7.0$ years certified and diverge after it — $+2.7$
+years at 20 years certified, $+4.7$ at 30, $+6.8$ at 40 — so this is not a
+rounding difference. The published bands are cut at 35/45/55/65, so a shift of
+that size moves long-certified midwives across boundaries wholesale.
+
+### 5.1 The imputed line under each model, on the current roster
+
+The comparison below is the **imputed line alone**, $\hat{A}_i = \alpha + \beta
+T_i$, applied to every certificant on the canonical 22,357-row roster (freeze
+`1a7bd6a8`, all 22,357 rows carry a parseable `certification_date`). It is
+reproducible from tracked files:
+
+```r
+source("R/lib/table1_bands.R")
+r <- readr::read_csv("artifacts/amcb_npi_linkage_FROZEN.csv", col_types = readr::cols(.default = "c"))
+T_i <- 2026L - as.integer(stringr::str_extract(r$certification_date, "[0-9]{4}"))
+table(band_hg_age(35.86433877 + 0.94276412 * T_i))
+```
+
+| | §5.2 as published (0.738) | artifact in use (0.9428) |
+| :--- | ---: | ---: |
+| Median | 51.3 y | **53.8 y** |
+| Mean | 53.1 y | **56.0 y** |
+| 1st / 3rd quartile | 42.5 / 60.9 y | 42.5 / **66.0** y |
+| $<35$ years | 0 | 0 |
+| $35$–$44$ years | 7,570 (33.9%) | 6,924 (31.0%) |
+| $45$–$54$ years | 5,104 (22.8%) | 4,761 (21.3%) |
+| $55$–$64$ years | 5,634 (25.2%) | 4,293 (19.2%) |
+| $\ge 65$ years | **4,049 (18.1%)** | **6,379 (28.5%)** |
+
+**The $\ge 65$ count is 2,330 certificants larger under the model actually in
+use** — 28.5% against 18.1%, in the figure most likely to be quoted about an
+ageing workforce. This is the opposite direction from §8.2's measured-source
+refit, which moves the cohort *younger*; the two are independent and both
+apply.
+
+Neither column is the §5.2 table below. §5.2 blends measured ages in wherever a
+direct source has one (`final_age = known_age` when present, `fitted_age`
+otherwise), which is why it has a `<35 years` band at all — the fitted line has
+a floor at its own intercept and cannot produce one. That blend cannot be
+recomputed here: all five age sources are person-level and gitignored
+(see §8.1 and #216). Regenerating §5.2 against the current model therefore
+requires a run on the machine that holds them.
+
+### 5.2 Superseded: the distribution published from the §3.1 fit
+
+*Historical. Model $\text{Age} = 37.30 + 0.738 \cdot T_i$, roster $N = 22{,}309$
+(the 2026-08-10 freeze, superseded by 22,357). Retained so the bands quoted in
+earlier drafts can be traced.*
 
 ### Continuous Age Summary Statistics ($N = 22,309$)
 * **Minimum**: $22.0\text{ years}$
@@ -272,24 +336,48 @@ against 1,128 committed**, an 89% difference in the figure most likely to be
 quoted about an ageing workforce. Tracked as
 [#218](https://github.com/mufflyt/midwifery/issues/218).
 
+**What shipped for it.** The refit above was a one-off. It is now part of the
+calibration: §3b of `calibrate_amcb_certification_ages.R` fits the line on each
+direct source separately and on the measured sources together, writes
+`artifacts/amcb_age_calibration_by_source.csv`, and carries
+`measured_ground_truth_n`, `measured_share_of_direct`, `measured_alpha`,
+`measured_beta` and `measured_r2` in the provenance row — so the weight is
+visible in the artifacts rather than argued in this appendix. Table 1's age
+heading now states the direction of the bias where the ages are published. The
+published model is unchanged: the measured-only line is a diagnostic, not a
+replacement, because WA alone is itself a selected sample (§8.6).
+
 ### 8.3 Two hazards in how the number reaches print
 
-**The calibration degrades silently.** When no ground truth is available the
-model selector does not stop: it substitutes `DEFAULT_ENTRY_AGE` with a slope
-of 1.0, labels itself "Literature Prior (29.5y entry age)", imputes an age for
-every certificant, and the table still reports "100% Cohort Coverage". [#172](https://github.com/mufflyt/midwifery/issues/172)
+**The calibration degraded silently.** When no ground truth was available the
+model selector did not stop: it substituted `DEFAULT_ENTRY_AGE` with a slope
+of 1.0, labelled itself "Literature Prior (29.5y entry age)", imputed an age for
+every certificant, and the table still reported "100% Cohort Coverage". [#172](https://github.com/mufflyt/midwifery/issues/172)
 recorded this happening for real — `direct_ground_truth_n` collapsing 5,448 → 0
 — and it was caught by someone reading a provenance column, not by a failure.
-Every one of the five source files is gitignored, so a fresh clone reproduces
-the fallback by default. Tracked as
-[#216](https://github.com/mufflyt/midwifery/issues/216).
+Every one of the five source files is gitignored, so a fresh clone reproduced
+the fallback by default.
 
-**§5 publishes a distribution from a superseded model.** It applies
+**Fixed** ([#216](https://github.com/mufflyt/midwifery/issues/216)).
+`calibrate_amcb_certification_ages.R` now stops when neither sample clears 30
+ground-truth ages, naming which of the five source files were absent and which
+were present. `ALLOW_LITERATURE_PRIOR=1` keeps an exploratory run available and
+stamps `selected_model` as `LITERATURE PRIOR, NOT A FIT`. Table 1's age block
+heading is built from that same `selected_model` string rather than the bare
+"100% Cohort Coverage", so a prior cannot reach print wearing a fit's label.
+
+**§5 published a distribution from a superseded model.** It applied
 Age = 37.30 + 0.738 · T (the §3.1 fit, $N = 2{,}052$, $R^2 = 0.275$) while the
 artifact in use is Age = 35.86 + 0.943 · T ($N = 5{,}448$, $R^2 = 0.721$). The
 two lines cross at 7.0 years certified and then diverge by up to 6.8 years at
-40. The §5 medians and the Table 1 bands cannot both descend from them.
-Tracked as [#217](https://github.com/mufflyt/midwifery/issues/217).
+40.
+
+**Fixed** ([#217](https://github.com/mufflyt/midwifery/issues/217)). §3.1 and
+§5.2 are marked as history, and §5.1 publishes the imputed line under both
+models on the current 22,357-row roster: the $\ge 65$ band holds 6,379
+certificants (28.5%) under the model in use against 4,049 (18.1%) under the
+superseded one. §5.2's *blended* distribution cannot be regenerated without the
+gitignored person-level sources, and is labelled rather than silently retained.
 
 ### 8.4 Vintage
 
