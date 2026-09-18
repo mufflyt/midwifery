@@ -59,8 +59,27 @@
 
 suppressPackageStartupMessages({
   library(tidycensus); library(tigris); library(sf); library(dplyr); library(readr)
+  library(jsonlite)
 })
 options(tigris_use_cache = TRUE)
+
+# Every file here is DOWNLOADED, not derived, so tests/ci_repo_integrity.R
+# requires a sidecar carrying both source_url and accessed_utc: a date alone
+# says when something was fetched but not what, and this repository has had to
+# reconstruct a layer once already after values turned out to be unsourced.
+# The URL is the ACS endpoint tidycensus queries, written out so a reader can
+# re-fetch the identical table without reading tidycensus's internals.
+acs_sidecar <- function(path, state_fips) {
+  jsonlite::write_json(
+    list(source_url = sprintf(
+           "https://api.census.gov/data/2023/acs/acs5?get=B01001_026E&for=tract:*&in=state:%s",
+           state_fips),
+         accessed_utc = format(as.POSIXct(Sys.time(), tz = "UTC"), "%Y-%m-%dT%H:%M:%SZ"),
+         variable = "B01001_026E (female population, ACS5 2023)",
+         retrieved_with = sprintf("tidycensus::get_acs() %s",
+                                  as.character(utils::packageVersion("tidycensus")))),
+    paste0(path, ".provenance.json"), auto_unbox = TRUE, pretty = TRUE)
+}
 
 cat("-- WY: pulling tract-level female population, ACS5 2023 --\n")
 wy <- get_acs(geography = "tract", variables = c(female_population = "B01001_026E"),
@@ -68,6 +87,7 @@ wy <- get_acs(geography = "tract", variables = c(female_population = "B01001_026
   transmute(tract_geoid = GEOID, female_population = female_population)
 stopifnot(nrow(wy) > 0L, all(substr(wy$tract_geoid, 1, 2) == "56"))
 write_csv(wy, "data/census_patch_wy_female_population.csv")
+acs_sidecar("data/census_patch_wy_female_population.csv", "56")
 cat(sprintf("   wrote data/census_patch_wy_female_population.csv (%d tracts, %s women)\n",
             nrow(wy), format(sum(wy$female_population, na.rm = TRUE), big.mark = ",")))
 
@@ -84,6 +104,7 @@ for (st in c(AK = "02", HI = "15")) {
   stopifnot(nrow(d) > 0L, all(substr(d$tract_geoid, 1, 2) == st))
   out <- sprintf("data/census_patch_%s_female_population.csv", tolower(nm))
   write_csv(d, out)
+  acs_sidecar(out, st)
   cat(sprintf("   wrote %s (%d tracts, %s women)\n", out, nrow(d),
               format(sum(d$female_population, na.rm = TRUE), big.mark = ",")))
 }
