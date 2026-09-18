@@ -2,10 +2,10 @@
 
 **Repository**: `midwifery`  
 **Target Reference Year**: 2026  
-**Primary Calibration Script**: [`calibrate_amcb_certification_ages.R`](file:///Users/tmuffly/midwifery/calibrate_amcb_certification_ages.R)  
-**Disambiguation Engine**: [`refine_ohio_voter_matching.py`](file:///Users/tmuffly/midwifery/refine_ohio_voter_matching.py)  
-**Primary Output Artifact**: [`artifacts/amcb_calibrated_ages.csv`](file:///Users/tmuffly/midwifery/artifacts/amcb_calibrated_ages.csv)  
-**Provenance Log**: [`artifacts/amcb_age_calibration_provenance.csv`](file:///Users/tmuffly/midwifery/artifacts/amcb_age_calibration_provenance.csv)  
+**Primary Calibration Script**: [`calibrate_amcb_certification_ages.R`](../calibrate_amcb_certification_ages.R)  
+**Disambiguation Engine**: [`refine_ohio_voter_matching.py`](../refine_ohio_voter_matching.py)  
+**Primary Output Artifact**: [`artifacts/amcb_calibrated_ages.csv`](../artifacts/amcb_calibrated_ages.csv)  
+**Provenance Log**: [`artifacts/amcb_age_calibration_provenance.csv`](../artifacts/amcb_age_calibration_provenance.csv)  
 
 ---
 
@@ -199,10 +199,122 @@ python3 refine_ohio_voter_matching.py
 
 | Artifact File | Description |
 | :--- | :--- |
-| [`refine_ohio_voter_matching.py`](file:///Users/tmuffly/midwifery/refine_ohio_voter_matching.py) | 3-Stage Deduplication & Disambiguation Engine for $7.95\text{M}$ Ohio voter records |
-| [`enrich_state_nursing_license_ages.R`](file:///Users/tmuffly/midwifery/enrich_state_nursing_license_ages.R) | Executable Socrata query & multi-tier name matcher script |
-| [`calibrate_amcb_certification_ages.R`](file:///Users/tmuffly/midwifery/calibrate_amcb_certification_ages.R) | Multi-model OLS regression & age imputation pipeline |
-| [`artifacts/ohio_voter_license_ages.csv`](file:///Users/tmuffly/midwifery/artifacts/ohio_voter_license_ages.csv) | High-confidence disambiguated Ohio voter DOB dataset ($N = 1,113$) |
-| [`artifacts/state_nursing_license_ages.csv`](file:///Users/tmuffly/midwifery/artifacts/state_nursing_license_ages.csv) | Matched state licensee records ($N = 1,833$) |
-| [`artifacts/amcb_calibrated_ages.csv`](file:///Users/tmuffly/midwifery/artifacts/amcb_calibrated_ages.csv) | Full cohort dataset ($N = 22,309$) with direct and calibrated ages |
-| [`artifacts/amcb_age_calibration_provenance.csv`](file:///Users/tmuffly/midwifery/artifacts/amcb_age_calibration_provenance.csv) | Provenance log recording regression parameters ($\alpha$, $\beta$, $R^2$, RSE) |
+| [`refine_ohio_voter_matching.py`](../refine_ohio_voter_matching.py) | 3-Stage Deduplication & Disambiguation Engine for $7.95\text{M}$ Ohio voter records |
+| [`enrich_state_nursing_license_ages.R`](../enrich_state_nursing_license_ages.R) | Executable Socrata query & multi-tier name matcher script |
+| [`calibrate_amcb_certification_ages.R`](../calibrate_amcb_certification_ages.R) | Multi-model OLS regression & age imputation pipeline |
+| [`artifacts/ohio_voter_license_ages.csv`](../artifacts/ohio_voter_license_ages.csv) | High-confidence disambiguated Ohio voter DOB dataset ($N = 1,113$) |
+| [`artifacts/state_nursing_license_ages.csv`](../artifacts/state_nursing_license_ages.csv) | Matched state licensee records ($N = 1,833$) |
+| [`artifacts/amcb_calibrated_ages.csv`](../artifacts/amcb_calibrated_ages.csv) | Full cohort dataset ($N = 22,309$) with direct and calibrated ages |
+| [`artifacts/amcb_age_calibration_provenance.csv`](../artifacts/amcb_age_calibration_provenance.csv) | Provenance log recording regression parameters ($\alpha$, $\beta$, $R^2$, RSE) |
+
+---
+
+## 8. Quality assurance (2026-09-18)
+
+A QA pass over the age variable, run against the canonical freeze
+`1a7bd6a8…`. Nothing here changed a pipeline; it records what was checked, what
+held, and what did not. Four findings are tracked as issues.
+
+### 8.1 Where the 5,448 direct ages come from
+
+`direct_ground_truth_n = 5,448` is the number the whole age distribution rests
+on, so it was traced source by source. Against the 11,913 ACTIVE primary-linked
+cohort (§5b): Healthgrades 3,099, WA DOH 1,029, OH voter 203, Florida 0,
+Illinois 0 — **4,331**. The remaining ~1,117 is scope, not a missing source:
+§5b counts coverage *within* that cohort while the calibration fits over the
+full 22,309-row roster, so ages for lapsed, retired and nursing-tier
+certificants count toward 5,448 and not toward 4,331. That implies roughly
+10.7% coverage outside the cohort against 36.4% inside, which is the expected
+direction for certificants who are harder to match. It could not be verified
+directly — every source file is person-level and gitignored — so it stands as
+the only explanation consistent with the record rather than as a measurement.
+
+**Doximity contributes nothing.** Its age sits behind a login wall,
+`enrich_doximity_cnm_ages.R` requires a hand-downloaded input, no artifact
+exists, and §5b does not list it. Any future reading of "five sources" should
+be "three, of which one is self-reported".
+
+### 8.2 The measured-source refit
+
+§5b warns that "any age statistic quoted from Healthgrades alone describes
+profile-holders, not the workforce". The fitted line is such a statistic —
+Healthgrades is 3,099 of 5,448, larger than both measured sources combined — so
+the model was refitted on measured birth years only. Ohio's data file no longer
+exists (only its provenance), so this is WA direct, $N = 1{,}025$ of the 1,232
+measured, with the script's own variable definitions
+(`REF_YEAR = 2026`, ages clipped 21–85).
+
+| | measured only (WA direct) | committed (57% Healthgrades) |
+| :--- | ---: | ---: |
+| model | Age = 36.18 + 0.847 · T | Age = 35.86 + 0.943 · T |
+| $N$ | 1,025 | 5,448 |
+| $R^2$ | 0.541 | 0.721 |
+| RSE | 7.87 y | 7.39 y |
+
+**The intercept survives the check and the slope does not.** Entry age at
+certification is 36.2 measured against 35.9 committed — a third of a year. The
+slope is about 11% steeper in the committed fit, and because it multiplies
+tenure the gap compounds: +0.6 years at 10 years certified, +1.6 at 20, +2.6 at
+30, +3.5 at 40.
+
+That is the signature of selection rather than of inaccuracy, and it is
+consistent with §5b's own evidence: per-person agreement with Healthgrades is
+excellent (87.6% exact against WA), while the *samples* differ by 8–13 years in
+median. Profile-holders are both older and longer-certified, so the correlation
+between age and tenure is stronger in that subsample and the line rotates
+upward around a fixed entry age.
+
+Over the ACTIVE primary-linked cohort ($N = 12{,}171$), swapping one line for
+the other moves **1,492 certificants (12.3%)** into a different published band,
+every move in the same direction — older: 536 from 35–44 to 45–54, 424 from
+45–54 to 55–64, 532 from 55–64 to ≥65. The `≥65` count is **596 measured
+against 1,128 committed**, an 89% difference in the figure most likely to be
+quoted about an ageing workforce. Tracked as
+[#218](https://github.com/mufflyt/midwifery/issues/218).
+
+### 8.3 Two hazards in how the number reaches print
+
+**The calibration degrades silently.** When no ground truth is available the
+model selector does not stop: it substitutes `DEFAULT_ENTRY_AGE` with a slope
+of 1.0, labels itself "Literature Prior (29.5y entry age)", imputes an age for
+every certificant, and the table still reports "100% Cohort Coverage". [#172](https://github.com/mufflyt/midwifery/issues/172)
+recorded this happening for real — `direct_ground_truth_n` collapsing 5,448 → 0
+— and it was caught by someone reading a provenance column, not by a failure.
+Every one of the five source files is gitignored, so a fresh clone reproduces
+the fallback by default. Tracked as
+[#216](https://github.com/mufflyt/midwifery/issues/216).
+
+**§5 publishes a distribution from a superseded model.** It applies
+Age = 37.30 + 0.738 · T (the §3.1 fit, $N = 2{,}052$, $R^2 = 0.275$) while the
+artifact in use is Age = 35.86 + 0.943 · T ($N = 5{,}448$, $R^2 = 0.721$). The
+two lines cross at 7.0 years certified and then diverge by up to 6.8 years at
+40. The §5 medians and the Table 1 bands cannot both descend from them.
+Tracked as [#217](https://github.com/mufflyt/midwifery/issues/217).
+
+### 8.4 Vintage
+
+The Table 1 age bands sum to **11,920** — the 2026-08-10 cohort — against a
+canonical ACTIVE primary-linked count of **12,171**, and the calibration's own
+`roster_source` records 22,309 rows against the canonical 22,357. The age rows
+therefore describe a superseded cohort, the same staleness that
+[#176](https://github.com/mufflyt/midwifery/issues/176) tracks for geography.
+
+### 8.5 What is working
+
+`provider_estimated_age` from the commercial directory is correctly refused.
+It is an imputation — estimated age plus graduation year is the constant 2052
+for every midwife who has it — and `trl_age_admission()` gates it, reporting
+"not used" when it fails. No modelled age from that source reaches a published
+figure.
+
+### 8.6 What this pass does **not** establish
+
+* **Ohio could not be included** in the refit; its data file is gone. Its
+  median age is 41 against WA's 46, so including it would most likely flatten
+  the measured slope further and widen the gap rather than close it.
+* **WA is itself a selected sample** — certificants licensed in one state,
+  matched by name. The refit is a measured-source comparison, not an unbiased
+  reference.
+* **No adjudicated ages exist.** Neither line is validated against a vital
+  record for this cohort, and at RSE ≈ 7.4–7.9 years neither supports
+  individual-level banding.

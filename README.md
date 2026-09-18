@@ -1217,6 +1217,18 @@ since NPI enumeration, and years observed in NPPES. Long format
 (`characteristic` / `n` / `percent` / `category`) following the isochrones
 vignette `how-to-create-table-1.Rmd`.
 
+**The age rows are modelled, not measured.** Every certificant gets an age from
+an OLS fit on certification tenure, so "100% Cohort Coverage" describes the
+imputation, not the evidence: the fit rests on 5,448 ground-truth ages, 57% of
+them self-reported to a commercial profile, with a residual standard error of
+about 7.4 years against 10-year bands. Refitting on measured birth years alone
+moves 12.3% of the cohort into a different band, all of them older. The
+derivation, the multi-source triangulation and a 2026-09-18 QA pass —
+including that refit and three open defects — are in
+[docs/TECHNICAL_APPENDIX_AGE_IMPUTATION.md](docs/TECHNICAL_APPENDIX_AGE_IMPUTATION.md).
+The **11,920** above is also the 2026-08-10 cohort, not the current 12,171
+([#176](https://github.com/mufflyt/midwifery/issues/176) tracks the rebuild).
+
 Percentages use the **non-missing** denominator and unknowns get their own row,
 so the table never implies more is known than is. Three naming choices are
 deliberate:
