@@ -178,9 +178,12 @@ mw_build_catalog <- function(root = ".") {
     # status == "ACTIVE". Every other status (LAPSED, RETIRED, DECEASED,
     # EMERITUS, DEACTIVATED, REVOKED, SURRENDERED, SUSPENDED) is folded into
     # "deceased or inactive" -- ACTIVE is the only status meaning "currently
-    # certified." That folds EMERITUS in with the excluded, which is a
-    # judgement call worth a reviewer's eye; the itemised per-status counts
-    # below are kept so it can be revisited without re-deriving them.
+    # certified." That folds EMERITUS in with the excluded. RULED 2026-09-18:
+    # emeritus means no longer practising, so the fold is correct and this is
+    # settled, not open. It is worth 31 certificants, 23 of whom carry a
+    # primary-linked NPI and would otherwise enter the cohort. The itemised
+    # per-status counts below are kept so the ruling can be audited without
+    # re-deriving them.
     #
     # "Matched" means match_status == "primary" -- the reconciliation's own
     # clean definition (see reconcile_linkage.R's header comment), which
@@ -191,6 +194,14 @@ mw_build_catalog <- function(root = ".") {
     # count. Both are real candidate NPIs, just weaker claims than an exact
     # name match -- they're itemised into "No NPI match" below rather than
     # silently counted as confirmed identity.
+    #
+    # WHAT IT DOES INCLUDE, and Table 1 does not: the class-5
+    # surname-component tier. On freeze 1a7bd6a8 that is 83 ACTIVE
+    # certificants (12,254 here against Table 1's 12,171), every one of them
+    # linkage_tier == "sensitivity_name_component", which the freeze manifest
+    # holds OUT of analytic membership. So this stage and Table 1 describe
+    # populations that differ by a named, counted group -- see issue #222,
+    # which asks which of the two the published exclusion figure should use.
     if (!is.null(frozen)) {
       tot_f <- nrow(frozen)
       status_n <- table(frozen$status)
@@ -582,9 +593,20 @@ mw_build_catalog <- function(root = ".") {
       cm_pct = pick("^Certified Midwife$"), female_pct = pick("^Female$"),
       # NOTE: this n's denominator is t1$n[1] ("ACTIVE, primary-linked
       # midwives" -- ACTIVE status AND primary midwifery-taxonomy match
-      # only), NOT exclusion.active_matched_n (which also includes the
-      # nursing-taxonomy sensitivity tier). Don't divide this by the wrong
+      # only), NOT exclusion.active_matched_n. Don't divide this by the wrong
       # cohort size; the two are close but not the same population.
+      #
+      # WHAT THE DIFFERENCE ACTUALLY IS, measured on freeze 1a7bd6a8 rather
+      # than assumed: exclusion.active_matched_n is match_status == "primary"
+      # = 12,254 ACTIVE certificants, against t1$n[1] = 12,171. The 83 extra
+      # are ALL linkage_tier == "sensitivity_name_component" -- the class-5
+      # surname-component tier the freeze manifest holds OUT of analytic
+      # membership. Not one of them is nursing-taxonomy: an earlier version of
+      # this comment attributed the gap to the nursing sensitivity tier, which
+      # the data contradicts, and the block above at "Matched means
+      # match_status == primary" says the opposite again. Both are now
+      # superseded by this count. See issue #222 for the open question of
+      # which definition the exclusion figure should use.
       acog_excluded_n   = acog_excluded_n,
       acog_excluded_pct = if (!is.na(acog_excluded_n)) 100 * acog_excluded_n / t1$n[1] else NA_real_
     )
