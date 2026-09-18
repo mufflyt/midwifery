@@ -63,6 +63,7 @@ source(file.path("R", "lib", "artifact_provenance.R"))   # write_with_provenance
 source(file.path("R", "lib", "address_keys.R"))          # zip5(), phone10()
 source(file.path("R", "lib", "org_names.R"))             # norm_org()
 source(file.path("R", "lib", "trilliant_org_bridge.R"))  # norm_street(), name_sim(), trl_read_orgs()
+source(file.path("R", "lib", "wilson_interval.R"))       # wilson() -- the same interval report_org_resolution_ppv.R uses
 
 FROZEN <- Sys.getenv("LINKAGE_CSV", file.path("artifacts", "amcb_npi_linkage_FROZEN.csv"))
 LAKE   <- { v <- Sys.getenv("TRILLIANT_LAKE", "")
@@ -186,13 +187,6 @@ pairs <- cand |>
     same_address_as_rule = coalesce(zip5(zip) == trl_zip5 & norm_street(addr) == ns, FALSE))
 
 # ---- 5. rates, with the same interval the PPV report uses -------------------------
-wilson <- function(x, n, conf = 0.95) {
-  if (n == 0) return(c(NA_real_, NA_real_))
-  z <- qnorm(1 - (1 - conf) / 2); p <- x / n
-  d <- 1 + z^2 / n
-  c((p + z^2/(2*n) - z*sqrt((p*(1-p) + z^2/(4*n))/n))/d,
-    (p + z^2/(2*n) + z*sqrt((p*(1-p) + z^2/(4*n))/n))/d)
-}
 rates <- pairs |>
   group_by(review_stratum) |>
   summarise(n_candidates = n(),

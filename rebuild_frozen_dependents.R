@@ -230,7 +230,19 @@ REBUILD_ORDER <- list(
                    # by build_trilliant_provider_identity_index.R, which does not
                    # read the freeze) and the NPPES bulk file. Outputs carry the
                    # freeze's hash, so a rebuild writes beside the old ones.
-                   "experiment_trilliant_identity_linkage.R")),
+                   "experiment_trilliant_identity_linkage.R",
+                   # Added 2026-09-18, by the same completeness gate (T5),
+                   # which caught it in the pull request that introduced it.
+                   # Measures how far Trilliant's claims-attributed
+                   # organization agrees with the rules resolve_org_ambiguity.R
+                   # applied, so it must follow that script -- it reads the
+                   # candidate table that script writes -- and it reads FROZEN
+                   # to pin the cohort. Last in this layer: it writes only
+                   # measurement artifacts, and nothing downstream reads them.
+                   # Needs the Trilliant lake on the external volume. Its
+                   # outputs carry the freeze's sha8, so a rebuild writes
+                   # beside the old ones rather than over them.
+                   "build_trilliant_org_concordance.R")),
   list(layer = "5-enrichment-recompute", why = "age/enrichment recomputes from cached inputs (no network)",
        scripts = c(# Added 2026-09-13, by T5 in the pull request that introduced
                    # it. Reads amcb_npi_linkage_FROZEN and writes the Trilliant
