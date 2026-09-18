@@ -21,6 +21,7 @@
 # Outputs:
 #   artifacts/amcb_calibrated_ages.csv
 #   artifacts/amcb_age_calibration_provenance.csv
+#   artifacts/amcb_age_calibration_by_source.csv   (the line, source by source)
 # =============================================================================
 
 suppressPackageStartupMessages({
@@ -38,9 +39,31 @@ suppressPackageStartupMessages({
 # which has no bound on years_certified) would silently publish a Table 1 age
 # category instead of being rejected. Cycle 26 of the adversarial loop.
 source(file.path(if (dir.exists("R")) "." else "..", "R", "lib", "table1_bands.R"))
+source(file.path(if (dir.exists("R")) "." else "..", "R", "lib", "artifact_provenance.R"))
 
 REF_YEAR <- 2026L
 DEFAULT_ENTRY_AGE <- 29.5
+
+# The five person-level files any direct age can come from. Every one of them
+# is gitignored, so a clone has none, and the selector below used to answer
+# that by substituting a literature prior and imputing an age for every
+# certificant anyway -- silently, with the artifact keeping its shape and only
+# a string in `selected_model` to tell a fit from an assumption. #172 recorded
+# that happening for real (direct_ground_truth_n collapsed 5,448 -> 0) and it
+# was caught by someone reading a provenance column. Named here so the refusal
+# can say WHICH sources were missing, rather than only that none were found.
+AGE_SOURCE_FILES <- c(
+  Healthgrades = "healthgrades_profile_attrs.csv",
+  `State nursing licences (WA direct / IL derived)` = "artifacts/state_nursing_license_ages.csv",
+  `Florida voter` = "artifacts/florida_voter_license_ages.csv",
+  `Ohio voter` = "artifacts/ohio_voter_license_ages.csv",
+  Doximity = "artifacts/doximity_cnm_ages.csv"
+)
+
+# Set ALLOW_LITERATURE_PRIOR=1 to run without ground truth on purpose. The
+# choice is stamped into selected_model, so it cannot reach print wearing the
+# same label as a fit.
+ALLOW_LITERATURE_PRIOR <- nzchar(Sys.getenv("ALLOW_LITERATURE_PRIOR"))
 
 cat(sprintf("=== AMCB Midwife Age Calibration & Imputation (Ref Year: %d) ===\n", REF_YEAR))
 
@@ -75,7 +98,7 @@ df$age_source <- NA_character_
 df$is_direct_ground_truth <- FALSE
 
 # A. Healthgrades profile attributes (Direct Age)
-hg_paths <- c("healthgrades_profile_attrs.csv", "artifacts/healthgrades_profile_attrs.csv")
+hg_paths <- c(AGE_SOURCE_FILES[["Healthgrades"]], "artifacts/healthgrades_profile_attrs.csv")
 hg_path <- hg_paths[file.exists(hg_paths)][1]
 
 if (!is.na(hg_path)) {
@@ -105,7 +128,7 @@ if (!is.na(hg_path)) {
 }
 
 # B. State Nursing License ages (WA Direct Birth Year + IL Derived)
-state_path <- "artifacts/state_nursing_license_ages.csv"
+state_path <- AGE_SOURCE_FILES[["State nursing licences (WA direct / IL derived)"]]
 if (file.exists(state_path)) {
   cat(sprintf("Merging calibration sample from State Nursing Licenses: %s\n", state_path))
   st_ages <- read_csv(state_path, show_col_types = FALSE, progress = FALSE)
@@ -138,7 +161,7 @@ if (file.exists(state_path)) {
 }
 
 # C2. Florida Statewide Voter Database direct DOBs (22 <= Age <= 80)
-fl_voter_path <- "artifacts/florida_voter_license_ages.csv"
+fl_voter_path <- AGE_SOURCE_FILES[["Florida voter"]]
 if (file.exists(fl_voter_path)) {
   fl_voter <- read_csv(fl_voter_path, show_col_types = FALSE, progress = FALSE)
   if ("fl_age_at_ref" %in% names(fl_voter) && nrow(fl_voter) > 0) {
@@ -158,7 +181,7 @@ if (file.exists(fl_voter_path)) {
       select(-any_of("fl_age"))
   }
 }
-oh_path <- "artifacts/ohio_voter_license_ages.csv"
+oh_path <- AGE_SOURCE_FILES[["Ohio voter"]]
 if (file.exists(oh_path)) {
   cat(sprintf("Merging calibration sample from Ohio Voter File: %s\n", oh_path))
   oh_voter <- read_csv(oh_path, show_col_types = FALSE, progress = FALSE)
@@ -180,7 +203,7 @@ if (file.exists(oh_path)) {
 }
 
 # D. Doximity frozen ages (if available locally)
-dox_path <- "artifacts/doximity_cnm_ages.csv"
+dox_path <- AGE_SOURCE_FILES[["Doximity"]]
 if (file.exists(dox_path)) {
   cat(sprintf("Merging calibration sample from Doximity: %s\n", dox_path))
   dox_ages <- read_csv(dox_path, show_col_types = FALSE, progress = FALSE)
@@ -266,14 +289,94 @@ if (n_direct >= 30) {
   rse   <- rse_comb
   calibration_type <- sprintf("Combined Sample OLS (N = %d, R2 = %.3f)", n_combined, r2_comb)
 } else {
+  # Stop, rather than substitute. Neither sample cleared 30 ground-truth ages,
+  # so there is nothing to fit: the alternative is a 29.5-year entry age and a
+  # slope of exactly 1.0, applied to every certificant and published under the
+  # label "Calibrated Age (100% Cohort Coverage)".
+  missing <- AGE_SOURCE_FILES[!file.exists(AGE_SOURCE_FILES)]
+  present <- AGE_SOURCE_FILES[file.exists(AGE_SOURCE_FILES)]
+  detail <- paste0(
+    sprintf("  direct ground truth: N = %d (needs 30)\n", n_direct),
+    sprintf("  combined sample:     N = %d (needs 30)\n", n_combined),
+    if (length(missing))
+      paste0("  absent:  ", paste(sprintf("%s (%s)", names(missing), missing),
+                                  collapse = "\n           "), "\n") else "",
+    if (length(present))
+      paste0("  present: ", paste(sprintf("%s (%s)", names(present), present),
+                                  collapse = "\n           "), "\n") else "")
+  if (!ALLOW_LITERATURE_PRIOR) {
+    stop(sprintf(paste0(
+      "No calibration sample: falling back to the literature prior would impute an age for\n",
+      "every certificant from an assumption and overwrite %s,\n",
+      "which currently records a real fit. Every age source is person-level and gitignored,\n",
+      "so this is what a fresh clone does by default.\n\n%s\n",
+      "Run on the machine that holds these files, or set ALLOW_LITERATURE_PRIOR=1 to proceed\n",
+      "deliberately (the artifact and every downstream label are stamped as a prior, not a fit)."),
+      "artifacts/amcb_age_calibration_provenance.csv", detail), call. = FALSE)
+  }
+  cat("\n!! ALLOW_LITERATURE_PRIOR is set: imputing from an assumption, not a fit.\n")
+  cat(detail)
   alpha <- DEFAULT_ENTRY_AGE
   beta  <- 1.0
   r2    <- NA_real_
   rse   <- NA_real_
-  calibration_type <- "Literature Prior (29.5y entry age)"
+  calibration_type <- sprintf(
+    "LITERATURE PRIOR, NOT A FIT (%.1fy entry age, slope 1.0; ALLOW_LITERATURE_PRIOR was set)",
+    DEFAULT_ENTRY_AGE)
 }
 
 cat(sprintf("\n--> Selected Imputation Model: Age = %.2f + %.3f * years_certified\n", alpha, beta))
+
+# --- 3b. The same line, fitted source by source ------------------------------
+# The selected model pools every direct source, and the pool is not balanced:
+# Healthgrades is 3,099 of the 5,448 direct ages, larger than both measured
+# sources combined, and its holders run 8-13 years older in median than either
+# (section 5b of the appendix). Per-person agreement is good -- 87.6% exact
+# against WA licensing -- so this is selection, not inaccuracy: a public
+# marketing profile selects for established practice, which steepens the
+# tenure slope while leaving the entry-age intercept alone.
+#
+# A pooled fit cannot show that. Fitting each source separately, and the
+# measured sources together, makes the weight visible instead of argued (#218).
+# MEASURED means a birth year someone else recorded -- a licence file or a
+# voter roll. Self-reported and derived-from-issue-date are not that, whatever
+# their per-person agreement.
+MEASURED_SOURCES <- c("WA_Direct_BirthYear", "OH_Voter_Direct_DOB", "FL_Voter_Direct_DOB")
+
+#' One row of OLS coefficients, or a row of NAs when the sample is too small.
+#' @keywords internal
+#' @noRd
+.fit_row <- function(d, label) {
+  if (nrow(d) < 30L)
+    return(tibble(sample = label, n = nrow(d), alpha = NA_real_, beta = NA_real_,
+                  r2 = NA_real_, rse = NA_real_, median_known_age = NA_real_))
+  f <- lm(known_age ~ years_certified, data = d)
+  sm <- summary(f)
+  tibble(sample = label, n = nrow(d),
+         alpha = unname(f$coefficients[1]), beta = unname(f$coefficients[2]),
+         r2 = sm$r.squared, rse = sm$sigma,
+         median_known_age = stats::median(d$known_age))
+}
+
+measured_subset <- direct_subset %>% filter(age_source %in% MEASURED_SOURCES)
+by_source <- bind_rows(
+  .fit_row(direct_subset, "all direct (selected model)"),
+  .fit_row(measured_subset, "measured birth year only"),
+  lapply(sort(unique(stats::na.omit(direct_subset$age_source))),
+         function(sc) .fit_row(filter(direct_subset, age_source == sc), sc))
+)
+by_source_file <- "artifacts/amcb_age_calibration_by_source.csv"
+cat("\n--- Calibration line by source ---\n")
+print(as.data.frame(by_source %>% mutate(across(where(is.numeric), ~ round(.x, 3)))))
+
+# The measured-only line, carried into the provenance row so the comparison
+# travels with the coefficients rather than living only in a companion file.
+.meas <- by_source %>% filter(sample == "measured birth year only")
+measured_n     <- .meas$n[[1]]
+measured_alpha <- .meas$alpha[[1]]
+measured_beta  <- .meas$beta[[1]]
+measured_r2    <- .meas$r2[[1]]
+measured_share_of_direct <- if (n_direct > 0) measured_n / n_direct else NA_real_
 
 # --- 4. Age Imputation and Banding -------------------------------------------
 df <- df %>%
@@ -361,6 +464,13 @@ prov <- tibble(
   total_roster_n      = nrow(df),
   direct_ground_truth_n = n_direct,
   combined_sample_n   = n_combined,
+  # Section 3b: how much of the selected fit is measured birth years rather
+  # than self-report, and what the line looks like on the measured ones alone.
+  measured_ground_truth_n  = measured_n,
+  measured_share_of_direct = measured_share_of_direct,
+  measured_alpha           = measured_alpha,
+  measured_beta            = measured_beta,
+  measured_r2              = measured_r2,
   selected_model      = calibration_type,
   alpha_intercept     = alpha,
   beta_slope          = beta,
@@ -384,5 +494,8 @@ prov <- tibble(
 )
 write_csv(prov, prov_file, na = "")
 cat(sprintf("Written: %s\n", prov_file))
+
+write_with_provenance(by_source, by_source_file, inputs = roster_path, na = "")
+cat(sprintf("Written: %s\n", by_source_file))
 
 cat("\n=== Done. ===\n")
