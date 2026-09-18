@@ -116,7 +116,22 @@ REBUILD_ORDER <- list(
                    # needs LEGACY_FROZEN_CSV (hash-pinned) and stops without it,
                    # which is right: a rebuild that cannot explain how the
                    # cohort changed should say so, not skip the question.
-                   "reconcile_trilliant_cohort.R")),
+                   "reconcile_trilliant_cohort.R",
+                   # Added 2026-09-18, by T5 in the pull request that introduced
+                   # it -- the fourth time, and the reason this gate exists. It
+                   # runs the hospital-linkage negative controls: no cohort NPI
+                   # may appear in any hospital identifier space. That is a
+                   # statement about the CURRENT cohort's NPIs, so a control
+                   # left holding the previous freeze would certify separation
+                   # for a set of identifiers the study no longer uses -- a
+                   # negative control that passes on the wrong population is
+                   # worse than none.
+                   #
+                   # Belongs in this layer because it audits the crosswalk's
+                   # identifiers and feeds nothing downstream; its only output
+                   # is artifacts/hospital_linkage_negative_controls.csv. Order
+                   # within the layer is free.
+                   "validate_hospital_linkage_controls.R")),
   list(layer = "2-cohort-structure", why = "cohort flow/composition/progression read FROZEN directly",
        scripts = c("R/05-stage-progression.R", "R/06-cohort-flow.R",
                    "R/07-cohort-composition.R")),
