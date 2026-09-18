@@ -87,25 +87,29 @@ recovered <- sum(led$n[led$provider_recovered])
 named_before <- sum(led$n[led$class == "geocoder"])
 
 fmt <- function(x) format(x, big.mark = ",", trim = TRUE)
-pct <- function(x) sprintf("%.1f%%", 100 * x / total)
+# Not `pct`: geocode_midwives.R already defines a top-level `pct`, and
+# tests/ci_hygiene.R H4 rejects one name defined at top level in two files --
+# a rule that exists because norm_addr() once existed four times with
+# divergent behaviour.
+share_of_cache <- function(x) sprintf("%.1f%%", 100 * x / total)
 
 cat(sprintf("coordinates in the cache: %s\n\n", fmt(total)))
 cat("--- what the recorded label identifies ---\n")
 for (i in seq_len(nrow(by_class)))
   cat(sprintf("  %-14s %8s  (%s)\n", by_class$class[i], fmt(by_class$n[i]),
-              pct(by_class$n[i])))
+              share_of_cache(by_class$n[i])))
 cat(sprintf("\n--- recovery from the attempt log ---\n"))
-cat(sprintf("  named a geocoder already      %8s  (%s)\n", fmt(named_before), pct(named_before)))
-cat(sprintf("  provider recovered from log   %8s  (%s)\n", fmt(recovered), pct(recovered)))
+cat(sprintf("  named a geocoder already      %8s  (%s)\n", fmt(named_before), share_of_cache(named_before)))
+cat(sprintf("  provider recovered from log   %8s  (%s)\n", fmt(recovered), share_of_cache(recovered)))
 cat(sprintf("  still undescribed             %8s  (%s)\n",
-            fmt(total - named_before - recovered), pct(total - named_before - recovered)))
+            fmt(total - named_before - recovered), share_of_cache(total - named_before - recovered)))
 
 cat("\n--- precision ---\n")
 prec <- led |> group_by(precision_class) |> summarise(n = sum(n), .groups = "drop") |>
   arrange(desc(n))
 for (i in seq_len(nrow(prec)))
   cat(sprintf("  %-16s %8s  (%s)\n", prec$precision_class[i], fmt(prec$n[i]),
-              pct(prec$n[i])))
+              share_of_cache(prec$n[i])))
 
 defect <- sum(led$n[led$is_defect])
 if (defect > 0)

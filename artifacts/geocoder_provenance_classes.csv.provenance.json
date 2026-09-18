@@ -1,12 +1,12 @@
 {
   "artifact": "geocoder_provenance_classes.csv",
-  "written_utc": "2026-09-18 17:33:45 UTC",
+  "written_utc": "2026-09-18 17:40:47 UTC",
   "inputs": [],
-  "code_sha256": "bcfc581497ee680b889a8c3e5342e8c6a6ae2f4aa40b0fa35508335cebe315fc",
+  "code_sha256": "e72c8acca04a73daf38c5d5f8d4fb06699e7339cc86151e07ad15b119cf65bc8",
   "code": [
     {
       "path": "audit_geocoder_provenance_classes.R",
-      "sha256": "e284f1a2b7ebeec8395bec6b471aebd97318f2f2119b5c0c78bc5f224134c3b3"
+      "sha256": "20917c1d117502d63f87a127ca30fda42bffeb606427fa6d4873709a6d6d3fba"
     },
     {
       "path": "R/lib/artifact_provenance.R",
