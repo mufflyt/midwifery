@@ -1,0 +1,12 @@
+{
+  "artifact": "exclusion_ledger.csv",
+  "written_utc": "2026-09-18 16:52:43 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/exclusion_ledger.rds",
+      "sha256": "daad9a7c066464a35cd145084e0c295499244f612f493bd74c39b1fe720eee3a"
+    }
+  ],
+  "code_sha256": null,
+  "code": []
+}
