@@ -16,4 +16,9 @@
 # checkout. The guard there now makes the same divergence impossible: a build
 # missing any of them writes *_PARTIAL names and leaves the published files
 # alone. See issue #233.
+# Two lines for one state. The freeze is person-level and gitignored, so a CI
+# runner cannot evaluate canonical_active_primary() and reports "unchecked",
+# while a machine holding the freeze reports 12,171. Both describe the same
+# known mismatch; both come off together when the CSV is rebuilt.
 table1_csv_n=11920 table1_md_n=12171 canonical_n=12171
+table1_csv_n=11920 table1_md_n=12171 canonical_n=unchecked
