@@ -681,10 +681,24 @@ if (file.exists("artifacts/dac_hospital_affiliation_person.csv")) {
 # Practitioners file and the Part D Prescribers file, one row per provider per
 # year, eleven years matched on BOTH sides.
 #
-# ABSENCE IS NOT ZERO. CMS suppresses any provider-year below 11 beneficiaries,
-# so a midwife absent from a file billed nothing OR billed fewer than 11
-# beneficiaries -- indistinguishable here. The rows below say "no record of",
-# never "did not bill", and the negative level is named accordingly.
+# ABSENCE IS NOT ZERO, AND IT IS NOT TWO THINGS EITHER. CMS suppresses any
+# provider-year below 11 beneficiaries, so a midwife absent from a file billed
+# nothing OR billed fewer than 11 beneficiaries. The Part B file adds a third,
+# and it is the one that explains the shape of these two rows: the Physician &
+# Other Practitioners file is keyed on the RENDERING NPI, so a midwife whose
+# encounter is billed under a supervising physician's or a group's number does
+# not appear in it at all -- while her prescriptions carry her own NPI into
+# Part D regardless of who billed the visit.
+#
+# That is exactly the observed pattern (#246). On the 2026-08-10 build: Part B
+# 2,320 (19.5%), Part D 5,615 (47.1%), with 3,364 prescribing without any Part
+# B record against 69 the reverse -- a 49-to-1 asymmetry, Part B almost
+# entirely nested inside Part D. Both files suppress on comparable rules, so
+# suppression alone does not produce a 2.4x gap in one direction for the same
+# people. The Part B label below names the rendering-NPI limit rather than
+# offering a two-way choice where there is at least a three-way one.
+#
+# The rows still say "no record of", never "did not bill".
 mcare <- NULL
 if (file.exists("artifacts/medicare_participation.csv")) {
   mcare <- read_csv("artifacts/medicare_participation.csv",
@@ -695,11 +709,20 @@ if (file.exists("artifacts/medicare_participation.csv")) {
     by = "certification_number", relationship = "one-to-one") %>%
     mutate(
       medicare_part_b = dplyr::if_else(is.na(part_b_any), NA_character_,
-        dplyr::if_else(part_b_any, "Billed Part B in at least one year",
-                       "No Part B record (billed <11 beneficiaries, or none)")),
+        dplyr::if_else(part_b_any, "Billed Part B under her own NPI in at least one year",
+                       "No Part B record under her own NPI (billed under another NPI, <11 beneficiaries, or none)")),
       medicare_part_d = dplyr::if_else(is.na(part_d_any), NA_character_,
         dplyr::if_else(part_d_any, "Prescribed under Part D in at least one year",
-                       "No Part D record (billed <11 beneficiaries, or none)")))
+                       "No Part D record (<11 beneficiaries, or none)")),
+      # THE ASYMMETRY AS ITS OWN ROW SET. Part B and Part D in two independent
+      # blocks let a reader see 19.5% and 47.1% without seeing that one is
+      # almost a subset of the other. This block is the finding.
+      medicare_pattern = dplyr::case_when(
+        is.na(part_b_any) | is.na(part_d_any) ~ NA_character_,
+        part_b_any & part_d_any   ~ "Part B and Part D",
+        !part_b_any & part_d_any  ~ "Part D only (prescribes, no rendering-NPI claim)",
+        part_b_any & !part_d_any  ~ "Part B only (rendering-NPI claim, no prescriptions)",
+        TRUE                      ~ "Neither (billed under another NPI, <11 beneficiaries, or none)"))
 }
 
 # --- Healthgrades banded columns ----------------------------------------------
@@ -974,21 +997,30 @@ t1 <- bind_rows(
         lvls = c(school_src, "Other named institution"),
         unknown_label = "No school named by CMS DAC, Healthgrades or the Trilliant directory"),
 
+  # ONE STATED FACT MUST NOT CARRY TWO COUNTS. These three blocks and the
+  # hospital-affiliation block below all read "Not enrolled in Medicare (absent
+  # from CMS DAC)" and reported 7,050 here against 6,936 there -- 114 people
+  # enrolled by one CMS extract and not by the other, because the two come from
+  # different DAC pulls (dac_cnm_education.csv against
+  # dac_hospital_affiliation_person.csv, the latter built on the unreproducible
+  # cohort_n = 12,129 of #231). Every block still summed to the cohort, so A1
+  # could not see it. The labels now name which extract each one means, so the
+  # two counts describe two things rather than contradicting each other (#246).
   if ("dac_practice_size" %in% names(coh))
     blk(coh, "dac_practice_size",
         "Medicare practice group size (CMS DAC)",
         lvls = PRACTICE_SIZE_LEVELS,
-        unknown_label = "Not enrolled in Medicare (absent from CMS DAC)"),
+        unknown_label = "Absent from the CMS DAC enrolment extract"),
   if ("dac_practice_sites" %in% names(coh))
     blk(coh, "dac_practice_sites",
         "Number of practice locations (CMS DAC)",
         lvls = PRACTICE_LOCATION_LEVELS,
-        unknown_label = "Not enrolled in Medicare (absent from CMS DAC)"),
+        unknown_label = "Absent from the CMS DAC enrolment extract"),
   if ("dac_assignment" %in% names(coh))
     blk(coh, "dac_assignment",
         "Medicare assignment (CMS DAC)",
         lvls = MEDICARE_ASSIGNMENT_LEVELS,
-        unknown_label = "Not enrolled in Medicare (absent from CMS DAC)"),
+        unknown_label = "Absent from the CMS DAC enrolment extract"),
 
   if ("hpsa_status" %in% names(coh))
     blk(coh, "hpsa_status", "Primary-care shortage area (HRSA HPSA)",
@@ -1002,7 +1034,7 @@ t1 <- bind_rows(
     blk(coh, "hospital_affiliation", "Hospital affiliation (CMS facility affiliation, CCN)",
         lvls = c("Hospital privilege recorded in Medicare",
                  "Enrolled in Medicare, no hospital privilege recorded"),
-        unknown_label = "Not enrolled in Medicare (absent from CMS DAC)"),
+        unknown_label = "Absent from the CMS facility-affiliation extract"),
   if ("hospital_count" %in% names(coh))
     blk(coh, "hospital_count", "Number of affiliated hospitals (CCN)",
         lvls = c("1 hospital", "2 hospitals", ">=3 hospitals"),
@@ -1026,12 +1058,18 @@ t1 <- bind_rows(
 
   if ("medicare_part_b" %in% names(coh))
     blk(coh, "medicare_part_b", "Medicare Part B, any year 2013-2023",
-        lvls = c("Billed Part B in at least one year",
-                 "No Part B record (billed <11 beneficiaries, or none)")),
+        lvls = c("Billed Part B under her own NPI in at least one year",
+                 "No Part B record under her own NPI (billed under another NPI, <11 beneficiaries, or none)")),
   if ("medicare_part_d" %in% names(coh))
     blk(coh, "medicare_part_d", "Medicare Part D, any year 2013-2023",
         lvls = c("Prescribed under Part D in at least one year",
-                 "No Part D record (billed <11 beneficiaries, or none)")),
+                 "No Part D record (<11 beneficiaries, or none)")),
+  if ("medicare_pattern" %in% names(coh))
+    blk(coh, "medicare_pattern", "How Medicare observes her, 2013-2023",
+        lvls = c("Part B and Part D",
+                 "Part D only (prescribes, no rendering-NPI claim)",
+                 "Part B only (rendering-NPI claim, no prescriptions)",
+                 "Neither (billed under another NPI, <11 beneficiaries, or none)")),
 
   # Language: use Healthgrades data when available; otherwise note it is absent.
   # LANGUAGE IS A FLOOR, NOT A PROPORTION.
