@@ -134,7 +134,7 @@ if (!nzchar(hpt)) hpt <- tryCatch(samsung_volume_path("hpt_prices", must_exist =
 org_npi <- NULL
 skip_why <- NA_character_
 if (is.na(hpt) || !nzchar(hpt)) {
-  skip_why <- "HPT_PRICES not set and no /Volumes/MufflySamsung*/hpt_prices mount found"
+  skip_why <- "HPT_PRICES not set and no Samsung volume hpt_prices mount found"
 } else {
   xwalk <- file.path(hpt, "reference", "npi_ccn_crosswalk.csv")
   enroll <- Sys.glob(file.path(hpt, "reference", "cms_enrollments",
