@@ -1,0 +1,134 @@
+artifact,status,n_inputs_checked,n_stale,n_changed,n_absent,stale_kinds,stale_inputs,on_baseline
+artifacts/accessmrf/colorado_cnm_cohort.csv,STALE,4,1,1,0,code,accessmrf_01_colorado_cohort.R,TRUE
+artifacts/accessmrf/colorado_payer_market.csv,STALE,4,1,1,0,code,accessmrf_02_payer_market.R,TRUE
+artifacts/amcb_npi_geography_by_state.csv,STALE,1,1,1,0,input,artifacts/amcb_npi_linkage_FROZEN.csv,TRUE
+artifacts/cms_physician_compare/dac_identity_spine_2013_20260915_211119.csv,STALE,5,3,1,2,code;input,build_dac_identity_spine_2013.R;data/raw/cms_physician_compare/2013/physician_compare_2013_06_National_Downloadable_File.csv;data/raw/cms_physician_compare/2013/physician_compare_2013_09_National_Downloadable_File.csv,TRUE
+artifacts/cms_physician_compare/dac_nppes_2013_disagreement_20260915_211852.csv,STALE,6,3,1,2,code;input,audit_2013_dac_vs_nppes.R;data/raw/cms_physician_compare/2013/physician_compare_2013_06_National_Downloadable_File.csv;data/raw/cms_physician_compare/2013/physician_compare_2013_09_National_Downloadable_File.csv,TRUE
+artifacts/cms_physician_compare/dac_person_comparison_2013_20260915_211119.csv,STALE,5,3,1,2,code;input,build_dac_identity_spine_2013.R;data/raw/cms_physician_compare/2013/physician_compare_2013_06_National_Downloadable_File.csv;data/raw/cms_physician_compare/2013/physician_compare_2013_09_National_Downloadable_File.csv,TRUE
+artifacts/cms_physician_compare/dac_person_snapshot_2013_20260915_211119.csv,STALE,5,3,1,2,code;input,build_dac_identity_spine_2013.R;data/raw/cms_physician_compare/2013/physician_compare_2013_06_National_Downloadable_File.csv;data/raw/cms_physician_compare/2013/physician_compare_2013_09_National_Downloadable_File.csv,TRUE
+artifacts/cms_physician_compare/identity_drift_2013_2026_20260915_212619.csv,STALE,5,2,1,1,code;input,build_identity_drift_prior.R;data/raw/cms_physician_compare/2026/DAC_NationalDownloadableFile_2026-08.csv,TRUE
+artifacts/cms_physician_compare/identity_drift_2013_2026_20260915_212727.csv,STALE,5,2,1,1,code;input,build_identity_drift_prior.R;data/raw/cms_physician_compare/2026/DAC_NationalDownloadableFile_2026-08.csv,TRUE
+artifacts/cms_physician_compare/physician_compare_2013_midwives_20260915_203707.csv,STALE,4,2,1,1,code;input,acquire_physician_compare_2013.R;data/raw/cms_physician_compare/2013/physician_compare_2013_06_National_Downloadable_File.csv,TRUE
+artifacts/cohort_additions_16743_to_17538.csv,STALE,3,3,1,2,input,artifacts/amcb_npi_linkage_FROZEN.csv;artifacts/frozen_cohort/analytic_cohort.csv;artifacts/frozen_stage2/midwives_with_nppes.csv,TRUE
+artifacts/cohort_additions_by_mechanism.csv,STALE,3,3,1,2,input,artifacts/amcb_npi_linkage_FROZEN.csv;artifacts/frozen_cohort/analytic_cohort.csv;artifacts/frozen_stage2/midwives_with_nppes.csv,TRUE
+artifacts/cohort_flow_17224_to_17028.csv,STALE,9,2,1,1,code;input,artifacts/frozen_stage2/midwives_with_nppes.csv;R/lib/table1_bands.R,TRUE
+artifacts/cohort_flow_bidirectional.csv,STALE,3,3,1,2,input,artifacts/amcb_npi_linkage_FROZEN.csv;artifacts/frozen_cohort/analytic_cohort.csv;artifacts/frozen_stage2/midwives_with_nppes.csv,TRUE
+artifacts/cohort_membership_four_way.csv,STALE,13,4,1,3,code;input,artifacts/frozen_cohort/analytic_cohort.csv;artifacts/frozen_cohort/midwives_geography_guarded.csv;artifacts/frozen_stage2/midwives_with_nppes.csv;R/lib/table1_bands.R,TRUE
+artifacts/cohort_transitions.csv,STALE,3,3,1,2,input,artifacts/amcb_npi_linkage_FROZEN.csv;artifacts/frozen_cohort/analytic_cohort.csv;artifacts/frozen_stage2/midwives_with_nppes.csv,TRUE
+artifacts/composition_cert_decade.csv,STALE,13,4,1,3,code;input,artifacts/frozen_cohort/analytic_cohort.csv;artifacts/frozen_cohort/midwives_geography_guarded.csv;artifacts/frozen_stage2/midwives_with_nppes.csv;R/lib/table1_bands.R,TRUE
+artifacts/composition_certification.csv,STALE,13,4,1,3,code;input,artifacts/frozen_cohort/analytic_cohort.csv;artifacts/frozen_cohort/midwives_geography_guarded.csv;artifacts/frozen_stage2/midwives_with_nppes.csv;R/lib/table1_bands.R,TRUE
+artifacts/composition_missingness_ledger.csv,STALE,13,4,1,3,code;input,artifacts/frozen_cohort/analytic_cohort.csv;artifacts/frozen_cohort/midwives_geography_guarded.csv;artifacts/frozen_stage2/midwives_with_nppes.csv;R/lib/table1_bands.R,TRUE
+artifacts/composition_practice_state.csv,STALE,13,4,1,3,code;input,artifacts/frozen_cohort/analytic_cohort.csv;artifacts/frozen_cohort/midwives_geography_guarded.csv;artifacts/frozen_stage2/midwives_with_nppes.csv;R/lib/table1_bands.R,TRUE
+artifacts/composition_rucc_cat.csv,STALE,13,4,1,3,code;input,artifacts/frozen_cohort/analytic_cohort.csv;artifacts/frozen_cohort/midwives_geography_guarded.csv;artifacts/frozen_stage2/midwives_with_nppes.csv;R/lib/table1_bands.R,TRUE
+artifacts/composition_status.csv,STALE,13,4,1,3,code;input,artifacts/frozen_cohort/analytic_cohort.csv;artifacts/frozen_cohort/midwives_geography_guarded.csv;artifacts/frozen_stage2/midwives_with_nppes.csv;R/lib/table1_bands.R,TRUE
+artifacts/frozen_cohort/analytic_cohort.csv,STALE,9,2,1,1,code;input,artifacts/frozen_stage2/midwives_with_nppes.csv;R/lib/table1_bands.R,TRUE
+artifacts/full_cohort_access_by_band_rucc.csv,STALE,7,4,2,2,code;input,access_full_cohort.R;artifacts/maps/midwifery_isochrone_union_30min.rds;artifacts/maps/midwifery_isochrone_union_60min.rds;R/lib/table1_bands.R,TRUE
+artifacts/full_cohort_access_by_band_state.csv,STALE,7,4,2,2,code;input,access_full_cohort.R;artifacts/maps/midwifery_isochrone_union_30min.rds;artifacts/maps/midwifery_isochrone_union_60min.rds;R/lib/table1_bands.R,TRUE
+artifacts/full_cohort_access_by_band.csv,STALE,7,4,2,2,code;input,access_full_cohort.R;artifacts/maps/midwifery_isochrone_union_30min.rds;artifacts/maps/midwifery_isochrone_union_60min.rds;R/lib/table1_bands.R,TRUE
+artifacts/geocoder_provenance_classes.csv,STALE,4,1,1,0,code,audit_geocoder_provenance_classes.R,TRUE
+artifacts/geography_by_amcb_status.csv,STALE,6,2,1,1,code;input,artifacts/midwives_geography_FROZEN.csv;build_geography_by_amcb_status.R,TRUE
+artifacts/isochrone_union_manifest.csv,STALE,6,3,1,2,code;input,artifacts/maps/midwifery_isochrone_union_30min.rds;artifacts/maps/midwifery_isochrone_union_60min.rds;R/lib/medicare_duckdb.R,TRUE
+artifacts/linkage_coverage_floor.csv,STALE,1,1,1,0,input,artifacts/amcb_npi_linkage_FROZEN.csv,TRUE
+artifacts/linkage_selection_bounds.csv,STALE,13,3,1,2,code;input,artifacts/frozen_cohort/analytic_cohort.csv;artifacts/frozen_stage2/midwives_with_nppes.csv;R/lib/table1_bands.R,TRUE
+artifacts/medicare_delivery_code_observability.csv,STALE,7,2,1,1,input,artifacts/amcb_npi_linkage_FROZEN.csv;DAC_NationalDownloadableFile_2026-06.csv,TRUE
+artifacts/midwife_distinct_work_sites.csv,STALE,15,1,1,0,code,build_trilliant_work_sites.R,TRUE
+artifacts/midwife_work_setting_summary.csv,STALE,16,1,1,0,code,build_trilliant_work_sites.R,TRUE
+artifacts/midwife_work_sites_excluded_non_workplace.csv,STALE,15,1,1,0,code,build_trilliant_work_sites.R,TRUE
+artifacts/midwife_work_sites_long.csv,STALE,15,1,1,0,code,build_trilliant_work_sites.R,TRUE
+artifacts/midwife_work_sites_summary.csv,STALE,15,1,1,0,code,build_trilliant_work_sites.R,TRUE
+artifacts/midwives_geography_FROZEN.csv,STALE,9,2,1,1,input,artifacts/amcb_npi_linkage_FROZEN.csv;midwives_panel_geocoded_enhanced.csv,TRUE
+artifacts/msn_dnp_credential_classification.csv,STALE,4,1,1,0,input,artifacts/amcb_npi_linkage_FROZEN.csv,TRUE
+artifacts/newly_resolved_by_prior_status.csv,STALE,3,3,1,2,input,artifacts/amcb_npi_linkage_FROZEN.csv;artifacts/frozen_cohort/analytic_cohort.csv;artifacts/frozen_stage2/midwives_with_nppes.csv,TRUE
+artifacts/no_final_npi_provenance.csv,STALE,13,4,1,3,code;input,artifacts/frozen_cohort/analytic_cohort.csv;artifacts/frozen_cohort/midwives_geography_guarded.csv;artifacts/frozen_stage2/midwives_with_nppes.csv;R/lib/table1_bands.R,TRUE
+artifacts/osmde_full_cohort_coverage_by_rucc.csv,STALE,5,4,1,3,input,artifacts/amcb_npi_linkage_FROZEN.csv;artifacts/midwife_isochrone_match.csv;artifacts/midwives_geography_FROZEN.csv;artifacts/osmde_location_crosswalk.csv,TRUE
+artifacts/osmde_full_cohort_coverage_by_state.csv,STALE,5,4,1,3,input,artifacts/amcb_npi_linkage_FROZEN.csv;artifacts/midwife_isochrone_match.csv;artifacts/midwives_geography_FROZEN.csv;artifacts/osmde_location_crosswalk.csv,TRUE
+artifacts/osmde_polygon_quality_by_rucc.csv,STALE,4,3,1,2,input,artifacts/amcb_npi_linkage_FROZEN.csv;artifacts/midwives_geography_FROZEN.csv;artifacts/osmde_location_crosswalk.csv,TRUE
+artifacts/osmde_validation_table.csv,STALE,5,4,1,3,input,artifacts/amcb_npi_linkage_FROZEN.csv;artifacts/midwife_isochrone_match.csv;artifacts/midwives_geography_FROZEN.csv;artifacts/osmde_location_crosswalk.csv,TRUE
+artifacts/stage_progression_like_for_like.csv,STALE,9,2,1,1,code;input,artifacts/frozen_stage2/midwives_with_nppes.csv;R/lib/table1_bands.R,TRUE
+artifacts/temporal_plausibility_grace_sweep.csv,STALE,6,2,1,1,input,artifacts/amcb_npi_linkage_FROZEN.csv;midwife_panel.csv,TRUE
+artifacts/temporal_plausibility_summary.csv,STALE,6,2,1,1,input,artifacts/amcb_npi_linkage_FROZEN.csv;midwife_panel.csv,TRUE
+artifacts/tracked_roster_active_primary_linked.csv,STALE,7,2,1,1,input,artifacts/amcb_npi_linkage_FROZEN_2026-08-10.csv;artifacts/live_texas_bon_ingested_midwives_from_tracked_roster.csv,TRUE
+artifacts/trilliant_activity_validation_dbcc76f4.csv,STALE,6,1,1,0,code,analyze_trilliant_activity_flag.R,TRUE
+artifacts/trilliant_identity_field_coverage_dbcc76f4.csv,STALE,9,1,1,0,code,R/lib/trilliant_identity.R,TRUE
+artifacts/trilliant_identity_grad_year_agreement_dbcc76f4.csv,STALE,9,1,1,0,code,R/lib/trilliant_identity.R,TRUE
+artifacts/trilliant_identity_outcomes_dbcc76f4.csv,STALE,9,1,1,0,code,R/lib/trilliant_identity.R,TRUE
+artifacts/trilliant_org_concordance_controls_1a7bd6a8.csv,STALE,11,1,1,0,code,build_trilliant_org_concordance.R,TRUE
+artifacts/trilliant_org_concordance_rates_1a7bd6a8.csv,STALE,11,1,1,0,code,build_trilliant_org_concordance.R,TRUE
+artifacts/trilliant_provider_identity_coverage.csv,STALE,8,1,1,0,code,R/lib/trilliant_identity.R,TRUE
+artifacts/trilliant_research_question_feasibility.csv,STALE,4,1,1,0,code,R/inventory_trilliant_research_fields.R,TRUE
+artifacts/trilliant_schema_inventory.csv,STALE,4,1,1,0,code,R/inventory_trilliant_research_fields.R,TRUE
+artifacts/ab_middle_name/evidence_top2.csv,UNVERIFIABLE,3,3,0,3,input,artifacts/match_ledger.csv;midwives.csv;nppes_candidates.csv,TRUE
+artifacts/ab_middle_name/transitions_all.csv,UNVERIFIABLE,3,3,0,3,input,artifacts/match_ledger.csv;midwives.csv;nppes_candidates.csv,TRUE
+artifacts/ab_middle_name/transitions_exposed.csv,UNVERIFIABLE,3,3,0,3,input,artifacts/match_ledger.csv;midwives.csv;nppes_candidates.csv,TRUE
+artifacts/address_fuzzy_false_match_rate.csv,UNVERIFIABLE,1,1,0,1,input,/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2025/npidata_pfile_20050523-20251109.csv,TRUE
+artifacts/address_match_failure_taxonomy.csv,UNVERIFIABLE,1,1,0,1,input,/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2025/npidata_pfile_20050523-20251109.csv,TRUE
+artifacts/address_parser_reconciliation.csv,UNVERIFIABLE,2,2,0,2,input,/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2025/npidata_pfile_20050523-20251109.csv;artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv,TRUE
+artifacts/affiliation_coverage_summary.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/affiliation_coverage_matrix.csv,TRUE
+artifacts/bc_resolver/bc_transitions.csv,UNVERIFIABLE,3,3,0,3,input,artifacts/match_ledger.csv;midwives.csv;nppes_candidates.csv,TRUE
+artifacts/bc_resolver/contested_evidence.csv,UNVERIFIABLE,3,3,0,3,input,artifacts/match_ledger.csv;midwives.csv;nppes_candidates.csv,TRUE
+artifacts/bc_resolver/crosstab_counts.csv,UNVERIFIABLE,3,3,0,3,input,artifacts/match_ledger.csv;midwives.csv;nppes_candidates.csv,TRUE
+artifacts/bc_resolver/crosstab_row_pct.csv,UNVERIFIABLE,3,3,0,3,input,artifacts/match_ledger.csv;midwives.csv;nppes_candidates.csv,TRUE
+artifacts/bc_resolver/targeted_questions.csv,UNVERIFIABLE,3,3,0,3,input,artifacts/match_ledger.csv;midwives.csv;nppes_candidates.csv,TRUE
+artifacts/cohort_flow_16743_to_16892.csv,UNVERIFIABLE,3,1,0,1,input,artifacts/frozen_stage2/midwives_with_nppes.csv,TRUE
+artifacts/county_profiles/county_sentences.csv,UNVERIFIABLE,2,1,0,1,input,artifacts/midwives_geography_FROZEN.csv,TRUE
+artifacts/cross_state_diagnosis.csv,UNVERIFIABLE,3,3,0,3,input,artifacts/zip_fallback_discordant.csv;midwives_geography.csv;midwives_with_nppes.csv,TRUE
+artifacts/cross_state_partition.csv,UNVERIFIABLE,3,3,0,3,input,artifacts/zip_fallback_discordant.csv;midwives_geography.csv;midwives_with_nppes.csv,TRUE
+artifacts/district_profiles/district_sentences.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/midwives_geography_FROZEN.csv,TRUE
+artifacts/embedded_org_name_yield.csv,UNVERIFIABLE,1,1,0,1,input,/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2025/npidata_pfile_20050523-20251109.csv,TRUE
+artifacts/endpoint_location_yield.csv,UNVERIFIABLE,3,3,0,3,input,/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2026/endpoint_pfile_20050523-20260809.csv;/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2026/npidata_pfile_20050523-20260809.csv;/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2026/pl_pfile_20050523-20260809.csv,TRUE
+artifacts/external_source_yield.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv,TRUE
+artifacts/geocoding_completeness_by_stage.csv,UNVERIFIABLE,2,2,0,2,input,healthgrades_midwives.csv;midwives_geocoded.csv,TRUE
+artifacts/geocoding_completeness_characteristics.csv,UNVERIFIABLE,3,2,0,2,input,healthgrades_midwives.csv;midwives_geocoded.csv,TRUE
+artifacts/geocoding_completeness_rucc.csv,UNVERIFIABLE,3,2,0,2,input,healthgrades_midwives.csv;midwives_geocoded.csv,TRUE
+artifacts/geocoding_completeness_state.csv,UNVERIFIABLE,3,2,0,2,input,healthgrades_midwives.csv;midwives_geocoded.csv,TRUE
+artifacts/isochrone_representation_by_county.csv,UNVERIFIABLE,4,2,0,2,input,data/ahrf/AHRF2025.csv;data/cms_pos_hospital.csv,TRUE
+artifacts/live_wa_bon_summary_matrix.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/live_washington_bon_ingested_midwives.csv,TRUE
+artifacts/midwife_organization_affiliation_by_state.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/midwife_pecos_organization_affiliations.csv,TRUE
+artifacts/midwife_organization_panel_summary.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/midwife_organization_panel.csv,TRUE
+artifacts/midwife_pecos_organization_affiliations.csv,UNVERIFIABLE,4,4,0,4,input,/Volumes/MufflySamsung 1/pecos_data/ppefaddr.csv;/Volumes/MufflySamsung 1/pecos_data/ppefenrol.csv;/Volumes/MufflySamsung 1/pecos_data/ppefreassign.csv;artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv,TRUE
+artifacts/no_org_anomaly_mechanism.csv,UNVERIFIABLE,1,1,0,1,input,/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2026/npidata_pfile_20050523-20260809.csv,TRUE
+artifacts/nppes_colocation_2025_summary.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/nppes_colocation_2025.csv,TRUE
+artifacts/organization_affiliation_unresolved.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv,TRUE
+artifacts/organization_identity_bridge_provenance.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/organization_identity_pairings.csv,TRUE
+artifacts/organization_identity_conflicts.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/pac_npi_ever.csv,TRUE
+artifacts/organization_identity_coverage.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/organization_identity_pairings.csv,TRUE
+artifacts/organization_identity_transitions.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/organization_identity_pairings.csv,TRUE
+artifacts/pac_npi_arm_coverage.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/pac_npi_ever.csv,TRUE
+artifacts/pac_npi_cardinality.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/pac_npi_snapshot.csv,TRUE
+artifacts/pac_npi_crosswalk_summary.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/pac_npi_snapshot.csv,TRUE
+artifacts/pac_npi_snapshot_manifest.csv,UNVERIFIABLE,2,2,0,2,input,/Volumes/MufflySamsung 1/ppef_raw/PPEF_Enrollment_Extract_2026.04.01.csv;/Volumes/MufflySamsung 1/ppef_raw/PPEF_Enrollment_Extract_2026.07.17.csv,TRUE
+artifacts/pecos_missingness_comparison.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/affiliation_coverage_matrix.csv,TRUE
+artifacts/represented_subset_access_by_band_rucc.csv,UNVERIFIABLE,3,1,0,1,input,artifacts/midwife_isochrone_match.csv,TRUE
+artifacts/represented_subset_access_by_band.csv,UNVERIFIABLE,3,1,0,1,input,artifacts/midwife_isochrone_match.csv,TRUE
+artifacts/revalidation_vintage_manifest.csv,UNVERIFIABLE,39,39,0,39,input,/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2021-12.csv;/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2022-03.csv;/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2022-05.csv;/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2022-07.csv;/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2022-08.csv;/Volumes/MufflySamsung 1/cms_revalidation_raw/revalidation_reassignment_2022-10.csv,TRUE
+artifacts/trilliant_cohort_reconciliation.csv,UNVERIFIABLE,7,1,0,1,input,/Users/tylermuffly/Library/Mobile Documents/com~apple~CloudDocs/Documents/Broken_Mac_Rescue/midwifery/artifacts/amcb_npi_linkage_FROZEN.csv,TRUE
+artifacts/trilliant_demographics.csv,UNVERIFIABLE,9,1,0,1,input,/Users/tylermuffly/Library/Mobile Documents/com~apple~CloudDocs/Documents/Broken_Mac_Rescue/midwifery/artifacts/amcb_npi_linkage_FROZEN.csv,TRUE
+artifacts/unresolved_affiliation_reasons_summary.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/unresolved_affiliation_reasons.csv,TRUE
+artifacts/unresolved_disambiguation_yield.csv,UNVERIFIABLE,1,1,0,1,input,artifacts/unresolved_disambiguation_candidates.csv,TRUE
+artifacts/unresolved_no_org_character.csv,UNVERIFIABLE,1,1,0,1,input,/Volumes/MufflySamsung 1/nppes_historical_downloads/extracted_2025/npidata_pfile_20050523-20251109.csv,TRUE
+artifacts/access_by_scope_of_practice_significance.csv,FRESH,4,0,0,0,,,FALSE
+artifacts/cd_obstetric_workforce.csv,FRESH,2,0,0,0,,,FALSE
+artifacts/county_profiles/county_birth_profiles.csv,FRESH,1,0,0,0,,,FALSE
+artifacts/county_profiles/county_cnm_births.csv,FRESH,5,0,0,0,,,FALSE
+artifacts/district_profiles/district_profiles.csv,FRESH,1,0,0,0,,,FALSE
+artifacts/exclusion_ledger.csv,FRESH,1,0,0,0,,,FALSE
+artifacts/full_cohort_access_by_scope_of_practice.csv,FRESH,5,0,0,0,,,FALSE
+artifacts/geocoding_completeness_by_scope_of_practice.csv,FRESH,5,0,0,0,,,FALSE
+artifacts/geography_by_linkage_status.csv,FRESH,7,0,0,0,,,FALSE
+artifacts/geography_class_counts.csv,FRESH,7,0,0,0,,,FALSE
+artifacts/hospital_linkage_negative_controls.csv,FRESH,8,0,0,0,,,FALSE
+artifacts/invariant_address_provenance_failures.csv,FRESH,7,0,0,0,,,FALSE
+artifacts/invariant_cross_state_failures.csv,FRESH,7,0,0,0,,,FALSE
+artifacts/ipeds/ipeds_midwifery_completions_2015_2024_20260915_214018.csv,FRESH,13,0,0,0,,,FALSE
+artifacts/isochrone_representation_by_scope_of_practice.csv,FRESH,5,0,0,0,,,FALSE
+artifacts/ob_hospitals_geocoded.csv,FRESH,2,0,0,0,,,FALSE
+artifacts/organization_affiliation_summary.csv,FRESH,1,0,0,0,,,FALSE
+artifacts/state_obstetric_workforce.csv,FRESH,1,0,0,0,,,FALSE
+artifacts/state_scope_of_practice.csv,FRESH,3,0,0,0,,,FALSE
+artifacts/trilliant_cohort_reconciliation_reasons.csv,FRESH,7,0,0,0,,,FALSE
+artifacts/trilliant_demographics_validation_dbcc76f4.csv,FRESH,8,0,0,0,,,FALSE
+artifacts/trilliant_identity_evidence_dbcc76f4.csv,FRESH,3,0,0,0,,,FALSE
+artifacts/zcta_county_crosswalk.csv,FRESH,1,0,0,0,,,FALSE
+artifacts/zip_fallback_discordant.csv,FRESH,7,0,0,0,,,FALSE
+artifacts/zip_fallback_validation.csv,FRESH,7,0,0,0,,,FALSE
+data/county_base.csv,FRESH,4,0,0,0,,,FALSE
