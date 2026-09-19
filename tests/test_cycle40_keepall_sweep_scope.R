@@ -116,7 +116,7 @@ cat("\n-- SEMANTIC --\n")
 # merged out of authoring order -- so far 28, 32, 39, 41, and now 42) have
 # already landed and correctly REDUCED the true count, to 103; PR #193 and
 # the fabricated-data removal (#195) then deleted scripts carrying one more,
-# so it is now 102. A
+# so it is now 103. A
 # mismatch here means either new debt was introduced since the last recount
 # (the ratchet should have caught that on its own) or the codebase changed
 # in a way this test's own copy of the baseline has not been told about --
@@ -128,8 +128,8 @@ cat("\n-- SEMANTIC --\n")
     list.files(file.path(root, "R"), pattern = "\\.R$", recursive = TRUE, full.names = TRUE),
     list.files(root, pattern = "\\.R$", recursive = FALSE, full.names = TRUE))
   n <- length(detect_offenders(files))
-  chk(n == 102L,
-      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 102)", n))
+  chk(n == 103L,
+      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 103)", n))
 }
 
 # T40-6. DOCUMENTED LIMITATION, not fixed this cycle: the detection regex
