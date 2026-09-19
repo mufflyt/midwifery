@@ -34,9 +34,23 @@
 #'   quarantined                 candidates existed; identity not resolvable.
 #'   unmatched                   no candidate at all.
 #'
-#' Changing this vector CHANGES THE ANALYTIC COHORT. It is not a tuning knob:
-#' every edit needs an explicit decision and a re-freeze, not an incidental
-#' rebuild. See docs/ and the freeze manifest.
+#' WHAT CHANGING THIS VECTOR ACTUALLY CHANGES. It said "the analytic cohort"
+#' until 2026-09-19, and that was wrong (#244): no published estimate reads
+#' this allowlist. It governs the LINKAGE-ELIGIBLE set -- the `cohort_member`
+#' column, the freeze manifest's `membership_rule`, and therefore who gets a
+#' geography row (build_midwives_geography_guarded.R), a birth-activity record
+#' (R/15-build-birth-activity.R), a composition row (R/07-cohort-composition.R),
+#' an affiliation-coverage row and a credential classification.
+#'
+#' The STUDY cohort is canonical_active_primary() in R/lib/cohort_definitions.R:
+#' ACTIVE and primary_midwifery only. This allowlist is a strict superset of it,
+#' by 910 ACTIVE certificants on freeze 1a7bd6a8 (821 sensitivity_nursing, 89
+#' sensitivity_fuzzy). cohort_rule_reconciliation() measures the gap; the two
+#' rules must not be conflated, and neither may be called "the cohort" without
+#' saying which.
+#'
+#' Still not a tuning knob: every edit needs an explicit decision and a
+#' re-freeze, not an incidental rebuild. See docs/ and the freeze manifest.
 #' @export
 COHORT_MEMBERSHIP_TIERS <- c(
   "primary_midwifery",             # exact/near-exact identity, midwifery taxonomy
@@ -45,7 +59,13 @@ COHORT_MEMBERSHIP_TIERS <- c(
   "sensitivity_unknown_taxonomy"    # identity evidence present; taxonomy label dirty
 )
 
-#' Is this crosswalk row a member of the primary analytic cohort?
+#' Is this crosswalk row linkage-eligible?
+#'
+#' NOT "a member of the analytic cohort" -- see the note above the allowlist.
+#' The name is kept because it is written into the freeze, ~25 scripts and
+#' several gates; renaming it would need a re-freeze, and the misreading it
+#' invites is fixed by saying what it means rather than by churning an
+#' identifier.
 #'
 #' Requires BOTH a resolved NPI and an allowlisted evidence tier. Having an NPI
 #' is necessary and NOT sufficient -- that distinction is the entire point.
