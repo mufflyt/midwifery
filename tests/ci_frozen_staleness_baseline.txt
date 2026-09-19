@@ -1,0 +1,144 @@
+# Artifacts stale against the current freeze. May SHRINK, must never grow.
+#
+# Same rule as tests/ci_leak_baseline.txt. rebuild_frozen_dependents.R's
+# REBUILD_VERIFY_ONLY mode reads every artifact's .provenance.json and compares
+# the recorded input SHA-256 against the current upstream file. It was correct
+# and permanently red -- 107 stale at once -- so a NEW stale artifact was
+# indistinguishable from the standing 107, and the only place the verdict
+# appeared was a console line on whichever machine held the private data. CI
+# runs the check and SKIPs by design, because the runner has no freeze.
+#
+# With this file, a new stale artifact FAILS and these are reported. The full
+# per-artifact detail, including which input moved and whether it was data or
+# the producing code, is in artifacts/freeze_freshness_report.csv.
+#
+# A LINE COMES OFF WHEN THE ARTIFACT IS REBUILT, not when someone decides it is
+# fine. Several of these are the blockers behind other issues:
+#
+#   artifacts/midwives_geography_FROZEN.csv
+#       built from freeze b84e07ec..., current is 1a7bd6a8... The geography
+#       layer is a freeze behind, and this is the file blocking #176, #222 and
+#       #233. It is not merely missing from some machines; the copy that exists
+#       is stale.
+#   artifacts/tracked_roster_active_primary_linked.csv
+#       the cohort the live BON harvesters match against (#230).
+#   artifacts/dac_hospital_affiliation_summary.csv
+#       already tracked separately as #231, whose cohort_n cannot be reproduced.
+#
+# TWO KINDS OF FLAG, AND THE SPLIT MATTERS. Of the 107 below, 58 are genuinely
+# STALE -- an input that IS present on the machine changed under the artifact --
+# and 49 are UNVERIFIABLE, meaning the recorded input is not in this checkout at
+# all (most of this project's inputs are person-level and gitignored), so
+# freshness cannot be established either way. check_provenance() reports both as
+# stale because a missing file's hash is NA; the report splits them, because
+# "rebuild this" and "run this where the data lives" are different instructions.
+# artifacts/midwives_geography_FROZEN.csv is in the first group.
+#
+# Generated 2026-09-19 from a run on the machine holding the freeze. See #248.
+artifacts/ab_middle_name/evidence_top2.csv 
+artifacts/ab_middle_name/transitions_all.csv 
+artifacts/ab_middle_name/transitions_exposed.csv 
+artifacts/accessmrf/colorado_cnm_cohort.csv 
+artifacts/accessmrf/colorado_payer_market.csv 
+artifacts/address_fuzzy_false_match_rate.csv 
+artifacts/address_match_failure_taxonomy.csv 
+artifacts/address_parser_reconciliation.csv 
+artifacts/affiliation_coverage_summary.csv 
+artifacts/amcb_npi_geography_by_state.csv 
+artifacts/bc_resolver/bc_transitions.csv 
+artifacts/bc_resolver/contested_evidence.csv 
+artifacts/bc_resolver/crosstab_counts.csv 
+artifacts/bc_resolver/crosstab_row_pct.csv 
+artifacts/bc_resolver/targeted_questions.csv 
+artifacts/cms_physician_compare/dac_identity_spine_2013_20260915_211119.csv 
+artifacts/cms_physician_compare/dac_nppes_2013_disagreement_20260915_211852.csv 
+artifacts/cms_physician_compare/dac_person_comparison_2013_20260915_211119.csv 
+artifacts/cms_physician_compare/dac_person_snapshot_2013_20260915_211119.csv 
+artifacts/cms_physician_compare/identity_drift_2013_2026_20260915_212619.csv 
+artifacts/cms_physician_compare/identity_drift_2013_2026_20260915_212727.csv 
+artifacts/cms_physician_compare/physician_compare_2013_midwives_20260915_203707.csv 
+artifacts/cohort_additions_16743_to_17538.csv 
+artifacts/cohort_additions_by_mechanism.csv 
+artifacts/cohort_flow_16743_to_16892.csv 
+artifacts/cohort_flow_17224_to_17028.csv 
+artifacts/cohort_flow_bidirectional.csv 
+artifacts/cohort_membership_four_way.csv 
+artifacts/cohort_transitions.csv 
+artifacts/composition_cert_decade.csv 
+artifacts/composition_certification.csv 
+artifacts/composition_missingness_ledger.csv 
+artifacts/composition_practice_state.csv 
+artifacts/composition_rucc_cat.csv 
+artifacts/composition_status.csv 
+artifacts/county_profiles/county_sentences.csv 
+artifacts/cross_state_diagnosis.csv 
+artifacts/cross_state_partition.csv 
+artifacts/district_profiles/district_sentences.csv 
+artifacts/embedded_org_name_yield.csv 
+artifacts/endpoint_location_yield.csv 
+artifacts/external_source_yield.csv 
+artifacts/frozen_cohort/analytic_cohort.csv 
+artifacts/full_cohort_access_by_band.csv 
+artifacts/full_cohort_access_by_band_rucc.csv 
+artifacts/full_cohort_access_by_band_state.csv 
+artifacts/geocoder_provenance_classes.csv 
+artifacts/geocoding_completeness_by_stage.csv 
+artifacts/geocoding_completeness_characteristics.csv 
+artifacts/geocoding_completeness_rucc.csv 
+artifacts/geocoding_completeness_state.csv 
+artifacts/geography_by_amcb_status.csv 
+artifacts/isochrone_representation_by_county.csv 
+artifacts/isochrone_union_manifest.csv 
+artifacts/linkage_coverage_floor.csv 
+artifacts/linkage_selection_bounds.csv 
+artifacts/live_wa_bon_summary_matrix.csv 
+artifacts/medicare_delivery_code_observability.csv 
+artifacts/midwife_distinct_work_sites.csv 
+artifacts/midwife_organization_affiliation_by_state.csv 
+artifacts/midwife_organization_panel_summary.csv 
+artifacts/midwife_pecos_organization_affiliations.csv 
+artifacts/midwife_work_setting_summary.csv 
+artifacts/midwife_work_sites_excluded_non_workplace.csv 
+artifacts/midwife_work_sites_long.csv 
+artifacts/midwife_work_sites_summary.csv 
+artifacts/midwives_geography_FROZEN.csv 
+artifacts/msn_dnp_credential_classification.csv 
+artifacts/newly_resolved_by_prior_status.csv 
+artifacts/no_final_npi_provenance.csv 
+artifacts/no_org_anomaly_mechanism.csv 
+artifacts/nppes_colocation_2025_summary.csv 
+artifacts/organization_affiliation_unresolved.csv 
+artifacts/organization_identity_bridge_provenance.csv 
+artifacts/organization_identity_conflicts.csv 
+artifacts/organization_identity_coverage.csv 
+artifacts/organization_identity_transitions.csv 
+artifacts/osmde_full_cohort_coverage_by_rucc.csv 
+artifacts/osmde_full_cohort_coverage_by_state.csv 
+artifacts/osmde_polygon_quality_by_rucc.csv 
+artifacts/osmde_validation_table.csv 
+artifacts/pac_npi_arm_coverage.csv 
+artifacts/pac_npi_cardinality.csv 
+artifacts/pac_npi_crosswalk_summary.csv 
+artifacts/pac_npi_snapshot_manifest.csv 
+artifacts/pecos_missingness_comparison.csv 
+artifacts/represented_subset_access_by_band.csv 
+artifacts/represented_subset_access_by_band_rucc.csv 
+artifacts/revalidation_vintage_manifest.csv 
+artifacts/stage_progression_like_for_like.csv 
+artifacts/temporal_plausibility_grace_sweep.csv 
+artifacts/temporal_plausibility_summary.csv 
+artifacts/tracked_roster_active_primary_linked.csv 
+artifacts/trilliant_activity_validation_dbcc76f4.csv 
+artifacts/trilliant_cohort_reconciliation.csv 
+artifacts/trilliant_demographics.csv 
+artifacts/trilliant_identity_field_coverage_dbcc76f4.csv 
+artifacts/trilliant_identity_grad_year_agreement_dbcc76f4.csv 
+artifacts/trilliant_identity_outcomes_dbcc76f4.csv 
+artifacts/trilliant_org_concordance_controls_1a7bd6a8.csv 
+artifacts/trilliant_org_concordance_rates_1a7bd6a8.csv 
+artifacts/trilliant_provider_identity_coverage.csv 
+artifacts/trilliant_research_question_feasibility.csv 
+artifacts/trilliant_schema_inventory.csv 
+artifacts/unresolved_affiliation_reasons_summary.csv 
+artifacts/unresolved_disambiguation_yield.csv 
+artifacts/unresolved_no_org_character.csv 
