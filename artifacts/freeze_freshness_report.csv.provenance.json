@@ -1,0 +1,28 @@
+{
+  "artifact": "freeze_freshness_report.csv",
+  "written_utc": "2026-09-19 14:04:04 UTC",
+  "inputs": [],
+  "code_sha256": "08c3be49ae13e882ab1e242ebab4eb0039b24437fa1895b6a786e1817620365f",
+  "code": [
+    {
+      "path": "R/amcb_match_rules.R",
+      "sha256": "286c95f37acd4e1c4130e81ab7a4b1ad7441de33315368d454fe5bfaa87966fc"
+    },
+    {
+      "path": "R/frozen_dependency_graph.R",
+      "sha256": "e5ec7afa8688015996f2cd7312be946817014024c06196d9399bf110c5418180"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "rebuild_frozen_dependents.R",
+      "sha256": "89d4b0676463f9bd5645a59f7d314b8a47173decbc4d8fb94dee336049ce1066"
+    }
+  ]
+}

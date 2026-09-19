@@ -368,6 +368,32 @@ for (L in REBUILD_ORDER) {
 }
 
 # --- Stale-artifact verification --------------------------------------------
+# WHY THIS WRITES A REPORT AND KEEPS A BASELINE (#248). This check was correct
+# and permanently red: 107 artifacts stale against the current freeze, and the
+# only place the verdict appeared was a console line on whichever machine
+# happened to hold the private data -- CI runs it and SKIPs by design, because
+# the runner has no freeze. A gate nobody can act on is not a gate, and "107
+# silent staleness flags" and "107 reviewed decisions to pin an older vintage"
+# looked identical.
+#
+# So: the verdict becomes a tracked artifact, and the known set becomes a
+# shrink-only baseline in the same idiom as ci_leak_baseline.txt. A NEW stale
+# artifact fails; a baselined one is reported and does not. The count is in the
+# repository, so it can go down.
+# NOT "frozen_..." in the name: .gitignore keeps artifacts/**/*FROZEN*.csv out
+# of the repository, because that is where the person-level crosswalk and
+# geography live. This report is an aggregate and must be TRACKED -- the whole
+# point is that the verdict stops being a console line -- so it steps around a
+# leak-prevention rule by name rather than by exemption.
+FRESHNESS_REPORT <- file.path("artifacts", "freeze_freshness_report.csv")
+FRESHNESS_BASELINE <- file.path("tests", "ci_frozen_staleness_baseline.txt")
+
+read_freshness_baseline <- function() {
+  if (!file.exists(FRESHNESS_BASELINE)) return(character(0))
+  x <- trimws(readLines(FRESHNESS_BASELINE, warn = FALSE))
+  x[nzchar(x) & !startsWith(x, "#")]
+}
+
 verify_freshness <- function() {
   sidecars <- list.files(c("artifacts", "data"), pattern = "\\.provenance\\.json$",
                          recursive = TRUE, full.names = TRUE)
@@ -376,22 +402,95 @@ verify_freshness <- function() {
     return(invisible(NULL))
   }
   arts <- sub("\\.provenance\\.json$", "", sidecars)
+  # The report does not audit itself. It carries a sidecar so it is not one more
+  # line on the provenance baseline, and that sidecar records the producing
+  # code -- so leaving it in the scan would mark the report stale on every edit
+  # to this runner, and a self-inflicted new-stale entry would fail the gate
+  # for a reason that has nothing to do with the freeze.
+  arts <- setdiff(arts, FRESHNESS_REPORT)
+  rows <- list()
   stale <- character(0)
   for (a in arts) {
     st <- tryCatch(check_provenance(a), error = function(e) NULL)
     if (is.null(st) || !nrow(st)) next
-    if (any(st$stale)) stale <- c(stale, a)
+    bad <- st[st$stale, , drop = FALSE]
+    if (nrow(bad)) stale <- c(stale, a)
+    # TWO DIFFERENT THINGS, REPORTED APART. check_provenance() marks an input
+    # stale when its current hash differs from the recorded one -- which
+    # includes the case where the input is not in this checkout at all, and
+    # its current hash is NA. "The upstream file changed under me" is real
+    # staleness; "I cannot see the upstream file" is unverifiable, and most of
+    # this project's inputs are person-level and gitignored. Rolling them
+    # together made the count unactionable.
+    n_absent <- sum(is.na(bad$current))
+    n_changed <- nrow(bad) - n_absent
+    rows[[a]] <- data.frame(
+      artifact = a,
+      status = if (n_changed > 0L) "STALE" else if (nrow(bad)) "UNVERIFIABLE" else "FRESH",
+      n_inputs_checked = nrow(st),
+      n_stale = nrow(bad),
+      n_changed = n_changed,
+      n_absent = n_absent,
+      # WHICH input moved, and whether it was data or the producing code. An
+      # artifact stale because its code changed needs a different decision from
+      # one stale because its upstream data did.
+      stale_kinds = if (nrow(bad)) paste(sort(unique(bad$kind)), collapse = ";") else "",
+      stale_inputs = if (nrow(bad)) paste(utils::head(sort(unique(bad$path)), 6),
+                                          collapse = ";") else "",
+      stringsAsFactors = FALSE)
   }
-  cat(sprintf("\n---- freshness ----\nartifacts with sidecars : %d\nSTALE                   : %d\n",
-              length(arts), length(stale)))
-  if (length(stale)) for (s in stale) cat("   stale:", s, "\n")
-  invisible(stale)
+  report <- do.call(rbind, rows)
+  if (!is.null(report)) {
+    report <- report[order(match(report$status, c("STALE", "UNVERIFIABLE", "FRESH")),
+                           report$artifact), , drop = FALSE]
+    known <- read_freshness_baseline()
+    report$on_baseline <- report$artifact %in% known
+    # Written through write_with_provenance() like its neighbours, with no
+    # inputs: what it describes is the state of every OTHER sidecar, not a
+    # transformation of some upstream file. The sidecar keeps it off
+    # tests/ci_artifact_provenance_baseline.txt, which may shrink and never grow.
+    write_with_provenance(report, FRESHNESS_REPORT, inputs = character(0))
+  }
+
+  known <- read_freshness_baseline()
+  new_stale <- setdiff(stale, known)
+  fixed <- setdiff(known, stale)
+
+  n_changed_arts <- if (is.null(report)) 0L else sum(report$status == "STALE")
+  n_unverif <- if (is.null(report)) 0L else sum(report$status == "UNVERIFIABLE")
+  cat(sprintf(paste0(
+    "\n---- freshness ----\n",
+    "artifacts with sidecars : %d\n",
+    "STALE (input changed)   : %d\n",
+    "UNVERIFIABLE (input absent from this checkout) : %d\n",
+    "flagged in total        : %d (%d on the baseline, %d new)\n"),
+    length(arts), n_changed_arts, n_unverif,
+    length(stale), length(intersect(stale, known)), length(new_stale)))
+  if (length(new_stale)) {
+    cat("\n   NEW since the baseline -- these fail:\n")
+    for (s in new_stale) cat("   stale:", s, "\n")
+  }
+  if (length(fixed)) {
+    cat(sprintf("\n   %d baselined artifact(s) are fresh again -- delete their line(s) from %s to hold the gain:\n",
+                length(fixed), FRESHNESS_BASELINE))
+    for (s in utils::head(fixed, 10)) cat("   fresh:", s, "\n")
+  }
+  if (length(stale)) cat(sprintf("\n   full list: %s\n", FRESHNESS_REPORT))
+  invisible(list(all = stale, new = new_stale, fixed = fixed))
 }
-stale <- verify_freshness()
+fresh <- verify_freshness()
+stale <- if (is.null(fresh)) character(0) else fresh$all
+new_stale <- if (is.null(fresh)) character(0) else fresh$new
 
 if (VERIFY_ONLY) {
-  ok <- !length(fail) && !length(stale)
-  cat(sprintf("\n%s\n", if (ok) "VERIFY: PASS" else "VERIFY: FAIL"))
+  # A baselined artifact is reported, not fatal. A new one is fatal, which is
+  # the state this gate was designed to catch and could not while it was red
+  # for everything at once.
+  ok <- !length(fail) && !length(new_stale)
+  cat(sprintf("\n%s%s\n", if (ok) "VERIFY: PASS" else "VERIFY: FAIL",
+              if (ok && length(stale))
+                sprintf("  (%d known-stale artifact(s) on %s)", length(stale), FRESHNESS_BASELINE)
+              else ""))
   quit(status = if (ok) 0L else 1L)
 }
 
