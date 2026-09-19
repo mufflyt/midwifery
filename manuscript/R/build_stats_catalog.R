@@ -560,6 +560,28 @@ mw_build_catalog <- function(root = ".") {
     )
   }
 
+  # --- Linkage veto strata: ruled in, or never ruled out ---------------------
+  # The precision claim behind the cohort that nothing published. A middle-
+  # initial conflict vetoes a candidate; where every rival is vetoed and the
+  # survivor records no middle name, it was not ruled IN. report_linkage_veto_
+  # strata.R measures it; this makes it citable. See #245.
+  vs <- rd(file.path(MW_ART, "linkage_veto_strata.csv"))
+  if (!is.null(vs)) {
+    g <- function(k, col) {
+      r <- vs[vs$stratum == k, ]
+      if (nrow(r)) r[[col]][1] else NA_real_
+    }
+    cat_$veto <- list(
+      absence_c2_cohort_n   = g("resolved_by_absence_c2", "n_study_cohort"),
+      absence_c2_cohort_pct = g("resolved_by_absence_c2", "pct_of_study_cohort"),
+      absence_c5_cohort_n   = g("resolved_by_absence_c5", "n_study_cohort"),
+      demoted_c5_roster_n   = g("npi_demoted_absence_c5", "n_roster"),
+      unmatched_after_veto_roster_n = g("unmatched_after_middle_veto", "n_roster"),
+      multi_exact_cohort_n  = g("exact_first_last_multiple_candidates", "n_study_cohort"),
+      multi_exact_cohort_pct = g("exact_first_last_multiple_candidates", "pct_of_study_cohort")
+    )
+  }
+
   # --- Persistence -----------------------------------------------------------
   # PINNED, and flagged as such. These come from the 2007-2025 provider panel
   # (midwife_panel.csv, ~493 MB, gitignored and person-level) and from the
