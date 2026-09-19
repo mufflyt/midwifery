@@ -1,0 +1,62 @@
+# =============================================================================
+# Midwifery External-World Sentinel CI Workflow
+# =============================================================================
+# Read-only external-world monitoring system for the midwifery dataset.
+# Detects when AMCB, NPPES, provider facts, addresses, or Census Geocoder shift.
+#
+# Outcome classification:
+#   PASS             Compatible with governed expectations.
+#   WORLD_DRIFT      External fact changed (reported, non-failing info/warning).
+#   PIPELINE_FAILURE Software/matcher defect or parser error (exits non-zero).
+#
+# SAFETY GUARANTEE: Read-only. NEVER modifies production datasets or frozen cohorts.
+# =============================================================================
+name: Midwifery External-World Sentinel
+
+on:
+  schedule:
+    - cron: "37 4 * * *"
+  workflow_dispatch:
+    inputs:
+      subsystem:
+        description: 'Subsystem to evaluate (all, amcb, identity, geocoding)'
+        required: true
+        default: 'all'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sentinel:
+    name: External-world drift & source-health sentinel
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Install dependencies
+        run: |
+          pkgs <- c("dplyr", "readr", "jsonlite", "openssl", "tibble")
+          missing <- pkgs[!pkgs %in% rownames(installed.packages())]
+          if (length(missing)) install.packages(missing)
+        shell: Rscript {0}
+
+      - name: Run sentinel framework & classification engine
+        run: Rscript tests/test_sentinel_framework.R
+
+      - name: Upload Sentinel Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: midwifery-sentinel-report
+          path: |
+            artifacts/sentinel/sentinel_summary.json
+            artifacts/sentinel/sentinel_events.csv
+            artifacts/sentinel/sentinel_report.md
+          if-no-files-found: ignore

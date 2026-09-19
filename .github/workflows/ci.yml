@@ -587,6 +587,16 @@ jobs:
       - name: Flow diagram layout engine
         run: Rscript tests/test_cycle36_flow_diagram.R
 
+      # Cohort exclusion criteria, stage classification rules, and population
+      # conservation invariants across the exclusion waterfall.
+      - name: Cohort exclusion invariants and flow counts
+        run: Rscript tests/test_exclusion_invariants.R
+
+      # Table 1 demographics Quality Control (QC): block category sums, percent
+      # validity, demographic plausibility bounds, and markdown concordance.
+      - name: Table 1 demographics quality control
+        run: Rscript tests/test_table1_demographics_qc.R
+
       # Open Payments -> OB facility matching: recency resolution and the
       # conflict-safe dedup fix for both the hospital master and the cohort
       # linkage (assert_unique_keys, not distinct(.keep_all=TRUE)).
@@ -766,15 +776,27 @@ jobs:
           r-version: release
           use-public-rspm: true
 
+      - name: Cache APT packages for sf
+        if: steps.relevance.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-sf-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: ${{ runner.os }}-apt-sf-
+
       # sf needs the geo stack ci.yml otherwise refuses (see the file header).
       # Confined to this job, and only installed when the relevance check
       # above says it is actually needed.
       - name: System libraries for sf
         if: steps.relevance.outputs.run == 'true'
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            libgdal-dev libproj-dev libgeos-dev libudunits2-dev
+          if dpkg -s libgdal-dev libproj-dev libgeos-dev libudunits2-dev >/dev/null 2>&1; then
+            echo "sf system libraries already installed."
+          else
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends \
+              libgdal-dev libproj-dev libgeos-dev libudunits2-dev
+          fi
 
       # Exactly the packages L6-L10's gates need, mirrored from
       # nightly.yml's own install step for the same job -- see that file for
