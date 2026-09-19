@@ -131,7 +131,17 @@ REBUILD_ORDER <- list(
                    # identifiers and feeds nothing downstream; its only output
                    # is artifacts/hospital_linkage_negative_controls.csv. Order
                    # within the layer is free.
-                   "validate_hospital_linkage_controls.R")),
+                   "validate_hospital_linkage_controls.R",
+                   # Added 2026-09-19, by T5 in the pull request that
+                   # introduced it. It turns the freeze's own per-row veto
+                   # columns into an aggregate, so a stale run would publish
+                   # the previous cohort's "ruled in vs never ruled out"
+                   # counts under the current freeze's name -- and those
+                   # counts are a precision claim about the published cohort.
+                   #
+                   # Layer 1: it describes the crosswalk and feeds nothing
+                   # downstream. Order within the layer is free.
+                   "report_linkage_veto_strata.R")),
   list(layer = "2-cohort-structure", why = "cohort flow/composition/progression read FROZEN directly",
        scripts = c("R/05-stage-progression.R", "R/06-cohort-flow.R",
                    "R/07-cohort-composition.R")),
