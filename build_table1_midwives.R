@@ -968,6 +968,13 @@ t1 <- bind_rows(
                  "Nonmetropolitan, remote (RUCC 7-9)"),
         unknown_label = "County not resolved (no RUCC code)"),
 
+  # HOW MUCH OF THE COHORT THIS BLOCK DESCRIBES. On the 2026-08-10 build, 10,692
+  # of 11,920 (89.7%) have no school named by any source, so every percentage
+  # here is on the ~10.3% who do -- the correct non-missing convention, and
+  # worth knowing before quoting one. validate_training_institution_against_acme.R
+  # checks the top ten against ACME's accredited list, which is 469 people,
+  # 3.9% of the cohort; it prints that coverage rather than letting "9 of 10
+  # matched" read as reassurance about the variable (#247).
   if ("training_institution_top" %in% names(coh))
     blk(coh, "training_institution_top",
         "Training institution (CMS DAC + Healthgrades + Trilliant directory)",
