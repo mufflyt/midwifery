@@ -31,6 +31,7 @@ suppressPackageStartupMessages({
 })
 source(file.path("R", "lib", "geocoder_provenance.R"))
 source(file.path("R", "lib", "artifact_provenance.R"))
+source(file.path("R", "lib", "medicare_duckdb.R"))
 
 CACHE <- Sys.getenv("GEOCODING_CACHE_PATH",
                     path.expand("~/isochrones/data/geocoding_cache.duckdb"))
@@ -45,7 +46,7 @@ if (!file.exists(CACHE)) {
     call. = FALSE)
 }
 
-con <- dbConnect(duckdb::duckdb(), CACHE, read_only = TRUE)
+con <- duckdb_connect(CACHE, read_only = TRUE)
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
 cache <- tbl(con, "geocoding_cache")

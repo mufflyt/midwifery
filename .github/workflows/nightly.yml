@@ -99,14 +99,25 @@ jobs:
           key: ${{ runner.os }}-r-nightly-${{ hashFiles('.github/workflows/nightly.yml') }}
           restore-keys: ${{ runner.os }}-r-nightly-
 
+      - name: Cache APT packages for sf
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-sf-${{ hashFiles('.github/workflows/nightly.yml') }}
+          restore-keys: ${{ runner.os }}-apt-sf-
+
       # ci.yml deliberately refuses the geo stack to stay hermetic and fast.
       # The nightly is where the spatial suites actually get to run, so the
       # system libraries sf links against are installed here and nowhere else.
       - name: System libraries for sf
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            libgdal-dev libproj-dev libgeos-dev libudunits2-dev
+          if dpkg -s libgdal-dev libproj-dev libgeos-dev libudunits2-dev >/dev/null 2>&1; then
+            echo "sf system libraries already installed."
+          else
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends \
+              libgdal-dev libproj-dev libgeos-dev libudunits2-dev
+          fi
 
       # The superset: what the tests name, plus everything reached through
       # source() chains. A package missing here reads as a test failure, which
@@ -357,11 +368,22 @@ jobs:
       # then fails outright without libgdal/libproj/libgeos/libudunits2 --
       # confirmed on this exact runner (run 33180290956, 2026-08-28): "Error:
       # package still unavailable after install: sf".
+      - name: Cache APT packages for sf
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-sf-${{ hashFiles('.github/workflows/nightly.yml') }}
+          restore-keys: ${{ runner.os }}-apt-sf-
+
       - name: System libraries for sf
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            libgdal-dev libproj-dev libgeos-dev libudunits2-dev
+          if dpkg -s libgdal-dev libproj-dev libgeos-dev libudunits2-dev >/dev/null 2>&1; then
+            echo "sf system libraries already installed."
+          else
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends \
+              libgdal-dev libproj-dev libgeos-dev libudunits2-dev
+          fi
 
       - name: Install packages needed by L6-L10's gates
         run: |
@@ -633,11 +655,22 @@ jobs:
           r-version: release
           use-public-rspm: true
 
+      - name: Cache APT packages for sf
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-sf-${{ hashFiles('.github/workflows/nightly.yml') }}
+          restore-keys: ${{ runner.os }}-apt-sf-
+
       - name: System libraries for sf
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            libgdal-dev libproj-dev libgeos-dev libudunits2-dev
+          if dpkg -s libgdal-dev libproj-dev libgeos-dev libudunits2-dev >/dev/null 2>&1; then
+            echo "sf system libraries already installed."
+          else
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends \
+              libgdal-dev libproj-dev libgeos-dev libudunits2-dev
+          fi
 
       - name: Install packages
         run: |
