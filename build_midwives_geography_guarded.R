@@ -21,9 +21,19 @@
 # itself is NPI-matched (17,181+ rows: everyone with a resolved NPI,
 # including class-5/sensitivity rows that never entered the cohort), not
 # cohort-filtered, so it fails that check directly. Filtering by
-# cohort_member (R/amcb_cohort_membership.R::is_cohort_member(), the same
-# rule every other cohort-membership decision in this project uses) is what
-# makes the two numbers agree.
+# cohort_member (R/amcb_cohort_membership.R::is_cohort_member()) is what makes
+# the two numbers agree.
+#
+# THAT IS THE LINKAGE-ELIGIBLE RULE, NOT THE STUDY COHORT. This comment said
+# "the same rule every other cohort-membership decision in this project uses"
+# until 2026-09-19, and it was wrong (#244): Table 1, the access measure, the
+# hospital linkage, the age calibration and the exclusion figure all use
+# canonical_active_primary() -- ACTIVE and primary_midwifery only -- which is
+# 910 ACTIVE certificants narrower. Geography is deliberately built WIDER than
+# the study cohort, so a sensitivity-tier analysis has coordinates to work
+# with; every consumer that reports an estimate subsets it afterwards. Building
+# it narrow would make those sensitivity analyses impossible, so this is the
+# right rule HERE and the wrong one to describe as universal.
 #
 # Inputs : artifacts/amcb_npi_linkage_FROZEN.csv (for cohort_member)
 #          artifacts/midwives_geography_FROZEN.csv (Stage 3's geography)
