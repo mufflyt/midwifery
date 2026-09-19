@@ -33,7 +33,7 @@ suppressPackageStartupMessages({
   library(readr); library(stringr); library(purrr)
 })
 source(file.path("R", "lib", "common_helpers.R"))       # chr()
-source(file.path("R", "lib", "medicare_duckdb.R"))      # samsung_volume_path(), resolve_midwifery_duckdb()
+source(file.path("R", "lib", "medicare_duckdb.R"))      # duckdb_connect(), samsung_volume_path(), resolve_midwifery_duckdb()
 source(file.path("R", "lib", "artifact_provenance.R"))  # write_with_provenance()
 source(file.path("R", "lib", "cohort_definitions.R"))   # verify_linkage_freeze()
 
@@ -88,7 +88,7 @@ by_exit <- left_practice |>
   map_dfr(\(d) activity_tally(d, paste0("2_", tolower(d$status[1]), "_by_certification_expiry"), band))
 
 # ---- last Medicare billing year, ACTIVE certificants ------------------------------
-con <- dbConnect(duckdb::duckdb(), resolve_midwifery_duckdb(), read_only = TRUE)
+con <- duckdb_connect(resolve_midwifery_duckdb(), read_only = TRUE)
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 tabs <- dbListTables(con)
 part_b <- sort(grep("^medicare_part_b_[0-9]{4}$", tabs, value = TRUE))

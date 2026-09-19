@@ -1,0 +1,29 @@
+{
+  "artifact": "linkage_veto_strata.csv",
+  "written_utc": "2026-09-19 13:47:50 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2"
+    }
+  ],
+  "code_sha256": "a2d0703666861190cee27f6b792094957d510391cf1b7341557e6a6650efdb82",
+  "code": [
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/cohort_definitions.R",
+      "sha256": "faa0edf2049f09d42edb3681956f29e39cb0c7dc6cdbe58d7ee5812714bffc49"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "report_linkage_veto_strata.R",
+      "sha256": "c105fb2f20a8c27e0f170d006543b97e1b959e04561bbdd1486c43df63bd1272"
+    }
+  ]
+}

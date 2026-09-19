@@ -30,7 +30,7 @@
 suppressPackageStartupMessages({
   library(DBI); library(duckdb); library(dplyr); library(stringr); library(purrr)
 })
-source(file.path("R", "lib", "medicare_duckdb.R"))      # samsung_volume_path()
+source(file.path("R", "lib", "medicare_duckdb.R"))      # duckdb_connect(), samsung_volume_path()
 source(file.path("R", "lib", "artifact_provenance.R"))  # write_with_provenance()
 
 LAKE_REL <- "hpt_prices/trilliant/20260721/lake"
@@ -38,7 +38,7 @@ LAKE <- { v <- Sys.getenv("TRILLIANT_LAKE_ROOT", ""); if (nzchar(v)) v else sams
 BIG_TABLE_ROWS <- 20e6
 SAMPLE_FILES <- 3L   # price tables: profile 3 evenly spaced whole parquet files
 
-con <- dbConnect(duckdb::duckdb())
+con <- duckdb_connect()  # in-memory; the lake is ATTACHed read-only below
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 dbExecute(con, "INSTALL ducklake; LOAD ducklake;")
 dbExecute(con, sprintf(

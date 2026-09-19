@@ -232,6 +232,12 @@ artifacts/dac_cnm_locations.csv
 # tracked: an earlier `git add ... 2>/dev/null` hid the "paths are ignored"
 # warning, so they were reported as committed when they were not.
 !docs/table1_midwives.html
+# A degraded build (ALLOW_PARTIAL_TABLE1=1) writes *_PARTIAL names so it
+# cannot overwrite the published table; it must not be committable either.
+artifacts/table1_midwives_PARTIAL.csv
+artifacts/table1_midwives_PARTIAL.csv.provenance.json
+docs/table1_midwives_PARTIAL.md
+docs/table1_midwives_PARTIAL.html
 !docs/table1_midwives_gt.html
 
 # The GitHub Pages landing page. Same reasoning as the Table 1 renders: the
@@ -634,3 +640,117 @@ artifacts/midwife_distinct_work_sites.csv*
 # enrich_trilliant_demographics.R: sex, school, age and patient panel per
 # certificant (person-level). The checks, trilliant_demographics_validation_*.csv, are tracked.
 artifacts/trilliant_demographics.csv*
+# build_trilliant_provider_identity_index.R: the index itself is *.parquet
+# (ignored above); its manifest names licensed source files. The coverage
+# table, trilliant_provider_identity_coverage.csv, is tracked.
+artifacts/trilliant_provider_identity_index.manifest.json
+# experiment_trilliant_identity_linkage.R: one row per certificant, and every
+# proposed change with the names behind it (person-level). The outcome,
+# coverage and graduation-year tables (trilliant_identity_{outcomes,
+# field_coverage,grad_year_agreement}_*.csv) are tracked.
+artifacts/trilliant_identity_decisions_*.csv*
+artifacts/trilliant_identity_proposals_*.csv*
+
+# Local research scratch space and downloaded commencement programs. Reusable
+# source belongs under scripts/; fetched PDFs, page renders, OCR text and local
+# Swift binaries are reproducible intermediates and must not enter git.
+scratch/
+vusn_pdfs/
+/ocr_local
+
+# README figure build copies. The publishable copies live in docs/figures/.
+artifacts/midwife_sources_upset_plot.png
+artifacts/national_midwives_euler_diagram.png
+artifacts/national_midwives_full_upset_plot.png
+artifacts/national_midwives_venn_diagram.png
+
+# Quarantined research drafts: these generate placeholder or manually entered
+# person records and are not admissible as observed evidence. They remain local
+# for audit/recovery but must not enter the repository or downstream figures.
+harvest_historical_issuu_catalog.py
+harvest_historical_commencement_wayback.py
+ingest_acme_commencement_pamphlets.py
+build_ground_truth_commencement_roster.py
+audit_frontier_ipeds_completions.py
+build_frontier_recovery_audit.py
+artifacts/commencement_midwifery_graduates.csv
+artifacts/discovered_midwife_candidates.csv
+artifacts/frontier_ipeds_recovery_audit.csv
+scripts/generate_all_midwife_population_diagrams.R
+docs/figures/national_midwives_euler_diagram.png
+docs/figures/national_midwives_full_upset_plot.png
+docs/figures/national_midwives_venn_diagram.png
+
+# Additional unverified education-discovery drafts and person-level working
+# artifacts. The NCES acquisition under acquire_ipeds_midwifery_completions.R
+# is the admissible denominator path; these files remain local until each
+# source row has provenance and the placeholder paths are removed.
+audit_ipeds_11_schools_completeness.py
+audit_school_published_discrepancies.py
+compare_pamphlets_vs_dac.py
+compare_scraped_vs_dac.py
+discover_candidate_midwives_multi_source.py
+extract_all_vusn_graduates.py
+harvest_uc_dac_midwives.py
+inventory_11_school_aliases_all_sources.py
+inventory_raw_frontier_education_values.py
+parse_commencement_inventory.py
+parse_georgetown_commencement.py
+parse_vusn_all.py
+parse_vusn_fast.py
+process_all_vusn_commencement.py
+search_uc_dnp_midwives.py
+test_vusn.py
+artifacts/11_schools_raw_alias_inventory.csv
+artifacts/candidate_theses_crosswalk.csv
+artifacts/frontier_raw_school_value_inventory.csv
+artifacts/ipeds_11_schools_completeness_audit.csv
+artifacts/issuu_commencement_inventory.csv
+artifacts/school_published_vs_ipeds_discrepancy_audit.csv
+artifacts/uc_dac_midwives.csv
+artifacts/wayback_commencement_pdf_inventory.csv
+
+# Generated pilot/audit outputs. These are person-level or currently lack a
+# complete per-file provenance sidecar, so only their generators and method
+# documentation are tracked.
+artifacts/accessmrf/*.csv
+artifacts/accessmrf/*.py
+artifacts/accessmrf/*.provenance.json
+artifacts/cms_physician_compare/
+artifacts/ipeds/
+artifacts/live_florida_bon_ingested_midwives.csv*
+artifacts/live_oregon_bon_ingested_midwives.csv*
+
+# State-board drafts are retained locally until their tracked-output tests can
+# run from a fresh checkout without requiring pre-generated person-level data.
+harvest_live_florida_bon.py
+harvest_live_oregon_bon.py
+tests/test_fldoh_triple_proof_gate.R
+tests/test_osbn_triple_proof_gate.R
+
+# Superseded by the tracked build_trilliant_provider_identity_index.R /
+# experiment_trilliant_identity_linkage.R pipeline already on main.
+analysis/trilliant_identity_00_nppes_slim.R
+analysis/trilliant_identity_01_inventory.R
+analysis/trilliant_identity_02_evidence.R
+
+# Oregon and Florida BON raw payload archives
+data_vault/osbn_raw/
+data_vault/fl_doh_raw/
+# Raw Physician Compare snapshots from the NBER mirror (~1 GB each). Reacquire
+# with acquire_physician_compare_2013.R; the sha256 of whatever was used is
+# recorded in artifacts/cms_physician_compare/*_provenance_*.csv.
+data/raw/cms_physician_compare/
+
+# Raw NPPES dissemination archives (~455 MB zipped, 4.8 GB expanded). Reacquire
+# with audit_2013_dac_vs_nppes.R; sha256 recorded in
+# artifacts/cms_physician_compare/nppes_2013_provenance.csv.
+data/raw/nppes/
+
+# IPEDS Completions archives (~8-9 MB each). Reacquire with
+# acquire_ipeds_midwifery_completions.R; sha256 recorded in the artifact.
+data/raw/ipeds/
+
+# Raw Transparency in Coverage MRF payloads (payer-hosted, large).
+# Reacquire with accessmrf_03_pull_provider_refs.py; sha256 in the file manifest.
+data/raw/accessmrf/

@@ -115,6 +115,56 @@ metropolitan — a departure of **56.7 points** from what was observed. The
 qualitative conclusion survives a departure that large; that is what makes it
 reportable despite the width.
 
+## 5b. Ruled in, or merely never ruled out
+
+Everything above is about who entered the cohort. This is about how firmly the
+people who did are held.
+
+A recorded middle-initial conflict vetoes a candidate — correctly, and in both
+directions. But where **every** rival is vetoed and the survivor is the one NPI
+with no middle name recorded at all, it was not ruled *in* by agreeing with
+anything. It was the only one that could not be ruled *out*, and the surviving
+row is indistinguishable downstream from a genuine unique match.
+
+Measured on freeze `1a7bd6a8` by
+[`report_linkage_veto_strata.R`](../report_linkage_veto_strata.R), which writes
+[`linkage_veto_strata.csv`](../artifacts/linkage_veto_strata.csv):
+
+| stratum | roster | ACTIVE | study cohort | what happens to them |
+| :--- | ---: | ---: | ---: | :--- |
+| `resolved_by_absence_c2` | 221 | 133 | **98 (0.81%)** | **published as full cohort members** |
+| `resolved_by_absence_c5` | 8 | 5 | **0** | quarantined: `npi` set to NA, candidate kept in `class5_candidate_npi` |
+| `unmatched_after_middle_veto` | 84 | 39 | 0 | published as *"no candidate found"* |
+| `exact_first_last_multiple_candidates` | 9,363 | 7,298 | 6,886 (56.6%) | resolved by middle-name evidence or by the veto |
+
+**The asymmetry is the finding.** The class-5 version of this question was
+asked, answered and acted on — those matches are quarantined and none reaches
+the cohort — and `resolved_by_absence_c5` is named in the README. The class-2
+version was asked and answered and deliberately *not* acted on, and until
+2026-09-19 it appeared in no document, appendix or artifact. **The disclosed
+stratum was the one that cannot affect a result.**
+
+Not acting on it remains the right call: at class 2 the surviving claim rests
+on agreement of the whole given name *and* the whole surname, which is not thin
+evidence, and moving cohort membership on a rule nothing had ever reported
+would be a change made blind. Reporting is the precondition the matcher itself
+names for deciding anything about it; this closes that, and demotes nobody.
+
+**The other tail belongs here too.** 84 certificants are published as *"no
+candidate found"* when their only exact-name candidate was deleted by the veto.
+That is a *recall* claim the artifacts overstate — the matcher did find someone
+and then removed them — and it is 39 ACTIVE people.
+
+**What the 56.6% is not.** More than half the cohort had several NPIs sharing
+the whole given name and the whole surname. That is not a weakness: every one
+of them resolved to a unique winner at its best evidence class
+(`n_at_best_class` is 1 for **every** cohort member), with ties routed to
+`quarantined` / `ambiguous_tied_names` — 2,960 rows — rather than broken by a
+tiebreak. It is context for the two strata above, which are about *how* the
+winner was chosen when the middle name did the choosing.
+
+Tracked as [#245](https://github.com/mufflyt/midwifery/issues/245).
+
 ## 6. Part of the unlinked third was never a linkage failure
 
 NPPES began enumerating providers in 2006. A certificant who qualified in 1995

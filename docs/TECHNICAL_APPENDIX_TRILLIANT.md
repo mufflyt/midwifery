@@ -304,13 +304,104 @@ compared with that of the Trilliant claims site. The persistence manuscript
 assigns rurality from NPPES addresses, so this measures how often that
 assignment disagrees with where claims place the same midwife.
 
-**Results for sections 5 and 6 are pending.** They will come from
-`artifacts/midwife_work_setting_summary.csv` once
-`build_trilliant_work_sites.R` has run against the current freeze. Every
-dimension there partitions the cohort, so the published-numbers gate can check
-it. The build refuses any other freeze unless one is named on purpose with
-`ALLOW_FREEZE_SHA256`; development runs against the 2026-08-10 freeze were
-never committed.
+A "same band" row names its band, so each band's disagreement rate can be
+read off the summary. A second dimension, `nppes_address_to_claims_site_distance`,
+gives the great-circle distance between the two addresses.
+
+**Result** (`artifacts/midwife_work_setting_summary.csv`, current freeze
+`1a7bd6a8`, 12,171 midwives). 9,320 midwives have a band from both sources, and
+92.4% of them are in the same band. That figure is carried by Metro:
+
+| NPPES address band | Midwives | Claims site in a different band |
+|---|---|---|
+| Metro (RUCC 1–3) | 8,397 | 316 (3.8%) |
+| Nonmetro, adjacent (4–6) | 635 | 283 (44.6%), 255 of them Metro by claims |
+| Nonmetro, remote (7–9) | 288 | 108 (37.5%), 81 of them Metro by claims |
+
+- **Rural headcounts hold up; rural assignments do not.** NPPES puts 923
+  midwives in nonmetro counties and claims put 903 there, but only 587 are
+  nonmetro by both.
+- **The disagreements are different places, not a county line.** Of the 420
+  disagreeing midwives with coordinates for both addresses, none are within
+  10 km. 371 (88%) are 40 km or more apart and 142 are 250 km or more apart.
+- **Distance does not need a band change.** 617 midwives in the same band are
+  250 km or more from their claims site, which points to NPPES addresses that
+  were never updated.
+- **Not comparable: 2,851.** 2,026 have no Trilliant site. The rest have no
+  NPPES primary location, or one that has no county.
+
+Two cautions.
+- **Neither source is ground truth.** The NPPES practice-location file runs to
+  2026-08-09 and the directory snapshot is 2026-06-25; Trilliant does not
+  document the claims window behind a site.
+- **This checks the persistence paper's end point, not its origin.** That
+  paper takes origin rurality from a midwife's first NPPES address. The
+  disagreement bears on where the midwife is last observed.
+
+Inputs: the practice locations were rebuilt from the current freeze by
+`link_practice_locations_to_org_npi.R`. The DAC, CABC and resolved-employer
+inputs are the 2026-08-10 extracts; they affect site type and the setting
+flags, not the rurality comparison. Every dimension partitions the cohort,
+so the published-numbers gate can check it. The build refuses any other
+freeze unless one is named on purpose with `ALLOW_FREEZE_SHA256`.
+
+### 6.5a The same comparison at address level, and what it costs
+
+§6.5 compares the two sources at the grain the persistence manuscript uses, a
+rurality band, and finds 92.4% agreement. Underneath that band the two sources
+are usually describing **different buildings**. On the current freeze
+`1a7bd6a8`, for the 10,321 of 12,171 ACTIVE primary-linked midwives who have a
+Trilliant practice-1 address (84.8%):
+
+| Trilliant top site vs NPPES primary practice address | midwives | share |
+| :--- | ---: | ---: |
+| same street and ZIP5 | 1,733 | **16.8%** |
+| same ZIP5 | 3,873 | 37.5% |
+| same city and state | 5,121 | 49.6% |
+| same state | 9,103 | 88.2% |
+| **different state** | **1,218** | **11.8%** |
+
+**This is not multi-site practice.** If the disagreement were simply a midwife
+working at several places, agreement should rise sharply where the top site
+holds nearly all the visits. It barely moves:
+
+| practice-1 share of visits | midwives | same street and ZIP5 |
+| :--- | ---: | ---: |
+| 25–50% | 689 | 10.9% |
+| 50–75% | 2,640 | 15.7% |
+| 75–99.9% | 4,842 | 17.6% |
+| 100% | 2,138 | **18.2%** |
+
+A midwife whose every observed visit is at one site still matches her NPPES
+registered address fewer than one time in five. The reading consistent with
+§6.5's distance evidence — 88% of band-disagreeing pairs 40 km or more apart —
+is that an NPPES practice address is a registration fact, frequently a billing
+address or one never updated, while the claims site is where care happened.
+Neither is wrong; they answer different questions.
+
+**The consequence, which is why this is recorded here.** The
+organization-resolution rules in `resolve_org_ambiguity.R` key on the NPPES
+practice address: `telephone` matches a registered phone, `zip9` a registered
+street plus ZIP+4. A claims-attributed directory therefore cannot adjudicate
+them. Measured directly by
+[`build_trilliant_org_concordance.R`](../build_trilliant_org_concordance.R)
+(`artifacts/trilliant_org_concordance_rates_1a7bd6a8.csv`), Trilliant agrees
+with the rules' organization for 17.1% of judged `telephone` candidates, 17.2%
+of `zip5_address` and 16.3% of `zip9` — against human adjudication that puts
+the same rules at 0.84 to 1.00. The gap is the premise, not the rules: only
+26–30% of the agreements sit at the address the rule keyed on, and widening
+"agrees" to *any* organization at the Trilliant address recovers just 15.1% of
+judged pairs.
+
+The reference is sound in its own terms — the shuffle control collapses to
+**0.06%**, so the signal is real, and the state guard is load-bearing, admitting
+1,264,643 spurious bridge rows when removed (`..._controls_1a7bd6a8.csv`). It is
+simply aimed at a different question. **Do not read the 17% as a rule error
+rate**, and do not use a claims-derived directory to promote or retire an
+address-keyed rule. What would answer that question is a source that names the
+*billing* organization, which is the construct the rules resolve — the
+Transparency in Coverage extraction is the candidate, once it covers more than
+one state.
 
 ## 7. A backup source for demographics
 
@@ -365,6 +456,19 @@ The tracked Table 1 and calibrated ages pick these backups up the next time
 they are rebuilt on a machine holding all their inputs. That includes the
 Healthgrades files, which this one does not have.
 
+## 7b. The directory as a second identity source
+
+The directory's identity fields (name, credential, specialty, graduation
+year) are tested as evidence for the AMCB → NPI linkage itself in a separate
+experiment. It measures:
+
+- which existing links the directory confirms or contradicts;
+- which ties it separates;
+- which unmatched certificants it finds.
+
+Nothing is applied. Its methods, results and limitations are in
+[`TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md`](TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md).
+
 ## 8. Running it
 
 Everything reads person-level inputs from `artifacts/` or from the data vault
@@ -397,7 +501,7 @@ Rscript make_trilliant_figures.R
 declared in `rebuild_frozen_dependents.R`, so a re-freeze re-runs them. The
 demographics enricher runs before the age calibration, which reads it.
 
-## 9. Limitations
+## 10. Limitations
 
 - **One snapshot.** The directory has no history, so it cannot show where a
   midwife started or when they stopped.

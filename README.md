@@ -41,6 +41,19 @@ flowchart LR
 
 ## Key Visualizations & Data Gallery
 
+### Provider-to-billing relationships from Transparency in Coverage files
+
+![AccessMRF pipeline from cohort and payer denominator to a classified provider–billing graph](docs/figures/accessmrf_pipeline.svg)
+
+The AccessMRF pipeline reduces payer TiC files to a deduplicated graph between
+clinician NPIs and billing identifiers. It does **not** infer employment,
+ownership, accepting-new-patient status, or insurance access. The runnable
+eight-step guide is [`README_accessmrf.md`](README_accessmrf.md); definitions,
+classification rules, storage controls, limitations, and the retracted pilot
+statistic are in the
+[technical appendix](docs/TECHNICAL_APPENDIX_ACCESSMRF.md).
+
+
 ### 1. State board licensure, where a board was actually queried
 ![State board licensure observed in WA, CO and TX](docs/figures/board_licensure_observed.png)
 *Figure 1: The three states whose Board of Nursing publishes licensure as open
@@ -221,6 +234,39 @@ name carries the freeze hash. Source:
 `artifacts/trilliant_activity_validation_dbcc76f4.csv`
 ([`analyze_trilliant_activity_flag.R`](analyze_trilliant_activity_flag.R)). Full
 write-up: [docs/TECHNICAL_APPENDIX_TRILLIANT.md](docs/TECHNICAL_APPENDIX_TRILLIANT.md).*
+
+### 16. Can Trilliant's directory resolve who is who? (experiment)
+![What Trilliant's directory says about each certificant's NPI](docs/figures/trilliant_identity_outcomes.png)
+*Figure 16: Every certificant in the 2026-08-10 freeze searched against all
+7.5 million directory NPIs by exact keys, and scored twice: with profession,
+and without it (taxonomy may not break a tie, D17). With profession, 96.9% of
+high-confidence links are "confirmed", but that is largely circular, because
+the tier was chosen on the same taxonomy. **Graduation year alone confirms
+49.2%.** It contradicts nearly half the nursing-tier links that carry one.
+Proposals only; nothing is applied, and the current freeze has yet to be run
+through it. Source: `artifacts/trilliant_identity_outcomes_dbcc76f4.csv`
+([`experiment_trilliant_identity_linkage.R`](experiment_trilliant_identity_linkage.R)).
+Full write-up: [docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md](docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md).*
+
+### 17. Which identity fields the directory carries
+![Which identity fields Trilliant's directory carries](docs/figures/trilliant_identity_fields.png)
+*Figure 17: Field coverage over all 7,518,635 individual NPIs and over the
+25,540 with a midwifery specialty or credential. Name, sex and credential are
+nearly complete. Graduation year exists for 41% of midwifery records. A named
+school exists for under 6%: the field is CMS's *medical* school, "Other" or
+blank for nearly every midwife, so it cannot serve as identity evidence. Source:
+`artifacts/trilliant_provider_identity_coverage.csv`
+([`build_trilliant_provider_identity_index.R`](build_trilliant_provider_identity_index.R)).*
+
+### 18. Graduation year separates true links from namesakes
+![Trilliant's graduation year against the AMCB certification year](docs/figures/trilliant_identity_grad_year.png)
+*Figure 18: For each current link, the directory's graduation year minus the
+AMCB certification year, among pairs where the directory has one. Primary-tier
+links sit almost entirely within a year. Nursing- and fuzzy-tier links look like
+the namesakes every other candidate represents. The likelihood ratios behind
+this (9.4 within a year, 0.05 beyond ten) are in
+`artifacts/trilliant_identity_evidence_dbcc76f4.csv`. Source:
+`artifacts/trilliant_identity_grad_year_agreement_dbcc76f4.csv`.*
 
 ### Three more you build yourself
 
@@ -1170,6 +1216,18 @@ Characteristics of the **11,920** ACTIVE, primary-linked midwives: certification
 since NPI enumeration, and years observed in NPPES. Long format
 (`characteristic` / `n` / `percent` / `category`) following the isochrones
 vignette `how-to-create-table-1.Rmd`.
+
+**The age rows are modelled, not measured.** Every certificant gets an age from
+an OLS fit on certification tenure, so "100% Cohort Coverage" describes the
+imputation, not the evidence: the fit rests on 5,448 ground-truth ages, 57% of
+them self-reported to a commercial profile, with a residual standard error of
+about 7.4 years against 10-year bands. Refitting on measured birth years alone
+moves 12.3% of the cohort into a different band, all of them older. The
+derivation, the multi-source triangulation and a 2026-09-18 QA pass —
+including that refit and three open defects — are in
+[docs/TECHNICAL_APPENDIX_AGE_IMPUTATION.md](docs/TECHNICAL_APPENDIX_AGE_IMPUTATION.md).
+The **11,920** above is also the 2026-08-10 cohort, not the current 12,171
+([#176](https://github.com/mufflyt/midwifery/issues/176) tracks the rebuild).
 
 Percentages use the **non-missing** denominator and unknowns get their own row,
 so the table never implies more is known than is. Three naming choices are

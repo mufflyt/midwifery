@@ -51,13 +51,7 @@ if (n_blank == nrow(s))
 if (n_blank > 0)
   cat(sprintf("  %d unreviewed rows are EXCLUDED from every denominator below.\n", n_blank))
 
-# Wilson score interval: the normal approximation is not usable at n=25.
-wilson <- function(x, n, conf = 0.95) {
-  if (n == 0) return(c(NA_real_, NA_real_))
-  z <- qnorm(1 - (1 - conf) / 2); p <- x / n
-  d <- 1 + z^2 / n; c((p + z^2/(2*n) - z*sqrt((p*(1-p) + z^2/(4*n))/n))/d,
-                      (p + z^2/(2*n) + z*sqrt((p*(1-p) + z^2/(4*n))/n))/d)
-}
+source(file.path("R", "lib", "wilson_interval.R"))  # wilson()
 
 ppv_by <- function(d, grp) {
   d %>% filter(v %in% c("correct", "incorrect")) %>%

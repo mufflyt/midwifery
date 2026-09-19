@@ -34,8 +34,9 @@
 #          ~/isochrones/data/09-census/output/tract_accessibility_with_demographics_2023.csv
 #          ~/isochrones/data/census/census_tracts_2020.rds
 #          data/rucc_2023.xlsx
-#          data/census_patch_wy_female_population.csv (optional; see
-#            patch_missing_state_census_data.R -- fills WY, absent upstream)
+#          data/census_patch_{wy,ak,hi}_female_population.csv (optional; see
+#            patch_missing_state_census_data.R -- fill WY, AK and HI, all
+#            absent from the upstream extract, which is 48 states plus DC)
 #          data/census_patch_ct_tracts_2023.rds (optional, same script --
 #            replaces CT's pre-2022 tract geometry, which no longer matches
 #            the upstream demographics extract's post-2022-planning-region
@@ -87,21 +88,38 @@ dem <- read_csv(file.path(ISO, "data/09-census/output",
   filter(!is.na(female_population)) %>%
   distinct(GEOID, .keep_all = TRUE)
 
-# PATCH: WY has zero rows in the sibling project's demographics extract (no
-# batch-failure marker explains why; see patch_missing_state_census_data.R's
-# header). Its tract geometry is unaffected -- only the population figure was
-# missing -- so a same-shape ACS pull slots in cleanly. AK and HI are NOT
-# patched: nothing establishes whether this project's isochrones ever reached
-# them, and filling in population there would misrepresent "never routed" as
-# "measured, zero access assumed".
-wy_patch <- "data/census_patch_wy_female_population.csv"
-if (file.exists(wy_patch)) {
-  wy <- read_csv(wy_patch, show_col_types = FALSE) %>%
+# PATCH: WY, AK and HI have zero rows in the sibling project's demographics
+# extract, which covers 48 states plus DC and no territories (no batch-failure
+# marker explains the omissions; see patch_missing_state_census_data.R). Their
+# tract geometry is unaffected in census_tracts_2020.rds -- only the population
+# figures were missing -- so a same-shape ACS pull slots in cleanly.
+#
+# AK and HI were deliberately withheld until 2026-09-18 on the grounds that
+# nothing established whether this project's isochrones ever reached them, and
+# filling in population would misrepresent "never routed" as "measured, zero
+# access assumed". artifacts/osmde_full_cohort_coverage_by_state.csv settles
+# that: pct_osmde_exact is 100 for both, so all 36 Alaskan and 14 Hawaiian
+# midwives have their own 30- and 60-minute polygons. The denominator now has a
+# numerator, and withholding it understates the measured cohort instead.
+#
+# If that coverage check ever stops reporting 100% for one of these states, its
+# patch belongs withdrawn -- the original reasoning was right, only its premise
+# changed.
+for (pf in c("data/census_patch_wy_female_population.csv",
+             "data/census_patch_ak_female_population.csv",
+             "data/census_patch_hi_female_population.csv")) {
+  if (!file.exists(pf)) next
+  add <- read_csv(pf, show_col_types = FALSE) %>%
     transmute(GEOID = str_pad(as.character(tract_geoid), 11, "left", "0"),
              female_population = as.numeric(female_population)) %>%
     filter(!is.na(female_population), !(GEOID %in% dem$GEOID))
-  cat(sprintf("patched: %s WY tract(s) added from %s\n", format(nrow(wy), big.mark = ","), wy_patch))
-  dem <- bind_rows(dem, wy)
+  # Hawaii's ACS pull returns 461 tracts against 436 in the geometry file: the
+  # 25 extra are water tracts (GEOID ...99xxxx) carrying zero women, so they
+  # neither inflate the denominator nor need geometry. Alaska matches exactly.
+  cat(sprintf("patched: %s tract(s) added from %s (%s women)\n",
+              format(nrow(add), big.mark = ","), pf,
+              format(sum(add$female_population, na.rm = TRUE), big.mark = ",")))
+  dem <- bind_rows(dem, add)
 }
 
 tr <- readRDS(file.path(ISO, "data/census/census_tracts_2020.rds"))

@@ -1,0 +1,53 @@
+{
+  "artifact": "trilliant_org_concordance_controls_1a7bd6a8.csv",
+  "written_utc": "2026-09-18 06:34:56 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2"
+    },
+    {
+      "path": "artifacts/midwife_org_links.csv",
+      "sha256": "02f41b16ec7af92a956ed095b002b5a54b1f420e89dbeed49df51d8aa8d1fb0d"
+    }
+  ],
+  "code_sha256": "c21074f042f26d6bb49f093dfb16367a0bcd91b58db90aa186663b228b00bffe",
+  "code": [
+    {
+      "path": "build_trilliant_org_concordance.R",
+      "sha256": "ca649f97a9256bb70303f28e1124c734189a458ef30758e36087ee9001c1adae"
+    },
+    {
+      "path": "R/lib/address_keys.R",
+      "sha256": "a7af6a6a3a30dc033217df46d6a53f4492b7c9f64e3d29408cae2875c743dcce"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/cohort_definitions.R",
+      "sha256": "faa0edf2049f09d42edb3681956f29e39cb0c7dc6cdbe58d7ee5812714bffc49"
+    },
+    {
+      "path": "R/lib/common_helpers.R",
+      "sha256": "55c6b894798e2740f538b1262391e58e8fe9bea84f072b80708e59aea3197067"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/org_names.R",
+      "sha256": "8f70e7a4ed15353f440013f550a46687cbc6c918b87d6b4ce779dd85746dbee3"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/lib/trilliant_org_bridge.R",
+      "sha256": "f35a969cb1cd30b0e36f86521c75623e1d946a7b1a347ab18c1d4f1c0c26c901"
+    }
+  ]
+}

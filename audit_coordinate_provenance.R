@@ -10,6 +10,7 @@
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(DBI); library(duckdb)
 source(file.path("R", "lib", "medicare_duckdb.R"))
+source(file.path("R", "lib", "geocode_cache_columns.R"))  # resolve_lat_lon_columns()
 })
 
 fro <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv", show_col_types=FALSE) %>%
@@ -25,8 +26,17 @@ cache_path <- Sys.getenv("GEOCODING_CACHE_PATH",
                          path.expand("~/isochrones/data/geocoding_cache.duckdb"))
 con <- duckdb_connect(cache_path, read_only=TRUE)
 on.exit(dbDisconnect(con, shutdown=TRUE), add=TRUE)
-cache <- dbGetQuery(con, "SELECT address_hash, latitude, longitude, geocoder_provenance
-                          FROM geocoding_cache WHERE latitude IS NOT NULL") %>%
+# The cache's coordinate columns were renamed once already
+# (latitude/longitude -> lat/lon) and this reader was not updated with the
+# others, so every run died on a binder error before reading a row -- which is
+# why no coordinate-provenance audit has been produced. resolve_lat_lon_columns()
+# is the repository's answer to that rename: detect, never assume, and fail
+# with a readable message rather than a binder error if it happens again.
+cc <- resolve_lat_lon_columns(dbListFields(con, "geocoding_cache"))
+cache <- dbGetQuery(con, sprintf(
+  "SELECT address_hash, %s AS lat, %s AS lon, geocoder_provenance
+     FROM geocoding_cache WHERE %s IS NOT NULL",
+  cc$lat_col, cc$lon_col, cc$lat_col)) %>%
   distinct(address_hash, .keep_all=TRUE)
 
 # Coordinates the previous runs produced, keyed on address FIELDS (the cache's
@@ -44,7 +54,7 @@ aud <- fro %>%
             state = nppes_state, zip = nppes_zip) %>%
   mutate(address_hash = key_of(addr, city, state, zip),
          has_address = !is.na(addr) & nzchar(addr)) %>%
-  left_join(cache %>% transmute(address_hash, cache_lat = latitude,
+  left_join(cache %>% transmute(address_hash, cache_lat = lat,
                                 cache_prov = geocoder_provenance), by="address_hash") %>%
   left_join(prior, by=c("addr"="a","city"="c","state"="s","zip"="z")) %>%
   left_join(pg %>% transmute(certification_number, stage3_lat = latitude), by="certification_number") %>%

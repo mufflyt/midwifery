@@ -82,14 +82,30 @@ id_link <- .resolve_col(linkage, c("amcb_id", "certification_number"), "the froz
 id_geo  <- .resolve_col(geo,     c("amcb_id", "certification_number"), "the geography artifact")
 status_col <- .resolve_col(linkage, c("status", "amcb_status", "certification_status"),
                            "the frozen linkage")
-# "matched" means match_status == "primary" -- the reconciliation's own clean
-# definition (reconcile_linkage.R), which deliberately excludes fuzzy-surname
-# matches (weak name-identity evidence) and nursing-taxonomy-only matches
-# (taxonomy ambiguity) from the confirmed-identity count. npi_match_status
-# alone cannot make this distinction -- it folds all three together under
-# "matched"/"matched_nursing_taxonomy" -- so match_status is required, not a
-# fallback candidate.
+# "MATCHED" IS THE ANALYTIC MEMBERSHIP RULE, NOT match_status == "primary".
+# RULED 2026-09-18, issue #222. Both definitions are defensible and they differ
+# by a named, counted group: on freeze 1a7bd6a8 match_status == "primary" gives
+# 12,254 ACTIVE certificants against the membership rule's 12,171, and all 83
+# of the difference are linkage_tier == "sensitivity_name_component" -- the
+# class-5 surname-component tier that
+# amcb_npi_linkage_FROZEN.csv.manifest.json holds OUT of analytic membership
+# (membership_rule lists primary_midwifery, sensitivity_nursing,
+# sensitivity_fuzzy, sensitivity_unknown_taxonomy -- not this one).
+#
+# This aggregate feeds the published exclusion figure, whose job is to explain
+# how the AMCB roster becomes THE ANALYTIC COHORT. A ladder whose "matched"
+# stage counts 83 people the cohort definition excludes describes a population
+# no analysis uses, and its final_cohort lands on 12,183 against Table 1's
+# 12,171. So the ladder follows canonical_active_primary(): status ACTIVE,
+# linkage_tier == "primary_midwifery", an NPI present.
+#
+# match_status is still read, because the 83 are itemised as their own
+# exclusion reason rather than folded into an undifferentiated "no match" --
+# they are real candidate NPIs held to a stricter identity bar, which is a
+# different thing from never finding one.
 match_col  <- .resolve_col(linkage, c("match_status"), "the frozen linkage")
+tier_col   <- .resolve_col(linkage, c("linkage_tier"), "the frozen linkage")
+npi_col    <- .resolve_col(linkage, c("npi"), "the frozen linkage")
 state_col  <- .resolve_col(linkage, c("nppes_state"), "the frozen linkage")
 geocode_col <- .resolve_col(geo, c("county_best", "county_exact", "geo_class"),
                             "the geography artifact")
@@ -103,7 +119,8 @@ ACOG_UNMAPPED <- c("AA", "AE", "AP", "GU", "PR", "VI", "AS", "MP", "FM", "PW", "
 
 linkage_std <- linkage %>%
   transmute(.id = .data[[id_link]], status = .data[[status_col]],
-           match_status = .data[[match_col]], nppes_state = .data[[state_col]])
+           match_status = .data[[match_col]], linkage_tier = .data[[tier_col]],
+           npi = as.character(.data[[npi_col]]), nppes_state = .data[[state_col]])
 geo_std <- geo %>%
   transmute(.id = .data[[id_geo]],
            geocoded = !is.na(.data[[geocode_col]]) & nzchar(trimws(.data[[geocode_col]])))
@@ -115,17 +132,35 @@ joined <- tryCatch(
 )
 
 joined <- joined %>%
-  mutate(match_bucket = if_else(match_status == "primary", "matched", "not_matched"),
+  mutate(in_cohort = linkage_tier == "primary_midwifery" &
+           !is.na(npi) & nzchar(trimws(npi)),
+         # The 83: match_status says "primary", the membership rule says no.
+         held_out_class5 = !in_cohort & match_status == "primary",
+         match_bucket = if_else(in_cohort, "matched", "not_matched"),
          geocoded = coalesce(geocoded, FALSE),
          acog_unmapped = geocoded & nppes_state %in% ACOG_UNMAPPED)
 
 out <- joined %>%
   group_by(status, match_status = match_bucket) %>%
   summarise(n = n(), n_geocoded = sum(geocoded),
-           n_acog_unmapped = sum(acog_unmapped), .groups = "drop") %>%
-  arrange(status, match_status)
+           n_acog_unmapped = sum(acog_unmapped),
+           # Counted, not dropped: the reader can see the size of the group the
+           # membership rule excludes and where it went, instead of having to
+           # diff this artifact against the previous vintage.
+           n_held_out_class5 = sum(held_out_class5),
+           .groups = "drop") %>%
+  arrange(status, match_status) %>%
+  # Names the rule this artifact was built under, so a consumer can tell a
+  # membership-rule ladder from a match_status one without guessing from the
+  # numbers. The committed vintage predates the ruling and carries no such
+  # column; make_cohort_exclusion_flow_figure.R checks for it.
+  mutate(cohort_rule = "canonical_active_primary")
 
 stopifnot(sum(out$n) == nrow(linkage))
+
+cat(sprintf("ACTIVE, membership rule: %s | held out (match_status primary, tier class-5): %s\n",
+            format(sum(out$n[out$status == "ACTIVE" & out$match_status == "matched"]), big.mark = ","),
+            format(sum(out$n_held_out_class5[out$status == "ACTIVE"]), big.mark = ",")))
 
 write_with_provenance(out, OUT, inputs = c(LINKAGE, GEOGRAPHY))
 cat(sprintf("Wrote %s (%d rows)\n", OUT, nrow(out)))

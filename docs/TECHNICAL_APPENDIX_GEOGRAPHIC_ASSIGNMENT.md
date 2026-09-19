@@ -74,6 +74,65 @@ variant loses **22.1%** of addresses and flattens the rurality gradient, which
 is itself informative: the flattening is a coverage artifact of the stricter
 geocoder, not a finding.
 
+## 4.1 What the cache records about who produced each coordinate
+
+The cascade above is what the pipeline *does*. What the cache *records* is a
+separate question, and for most coordinates it does not name a geocoder at all.
+Measured over all 29,909 cached coordinates by
+[`audit_geocoder_provenance_classes.R`](../audit_geocoder_provenance_classes.R),
+which writes [`geocoder_provenance_classes.csv`](../artifacts/geocoder_provenance_classes.csv):
+
+| what the recorded label identifies | n | share |
+|---|---:|---:|
+| a geocoder (`census_batch`, `ArcGIS_World`, `OpenStreetMap_Nominatim`, `City_Centroid_Dataset`) | 12,388 | 41.4% |
+| **an import event** (`legacy_csv_20251011` 13,449, `cohort_backfill_20260603` 3,962) | **17,411** | **58.2%** |
+| explicitly unknown (`unknown+shared_merge`) | 110 | 0.4% |
+
+`match_type` says the same thing from the other side: `cache_merge` for 17,411
+rows, which describes the *transfer*, not the geocode.
+
+**This does not claim any coordinate is wrong.** `validation_status` is `valid`
+for all 29,909. The claim is narrower: for 58.6% of them the recorded provenance
+cannot answer *"which geocoder produced this, and at what precision"*. That is a
+weaker floor than a project that has already had to reconstruct one layer after
+finding synthesised values
+([`PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md`](PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md))
+should accept without recording it.
+
+**Recovery, where the cache can say.** `geocoding_attempt_log` records which
+provider was tried per address and whether it succeeded, so a successful attempt
+names the geocoder behind an import label.
+`resolve_effective_provenance()` prefers it, and never overwrites a label that
+already names a geocoder — a recorded producer beats an inference. That resolves
+**3,790 coordinates (12.7%)**, almost all of the backfill:
+
+| import label | rows | provider recovered | share |
+|---|---:|---:|---:|
+| `cohort_backfill_20260603` | 3,962 | 3,644 (Census 3,283, ArcGIS 361) | **92%** |
+| `legacy_csv_20251011` | 13,449 | 146 | 1% |
+
+The legacy import predates the attempt log, so for those 13,303 the source file
+is the whole of the record. **They are not recoverable from the cache**, and the
+ledger says so rather than leaving a reader to infer it from a date suffix.
+Named-geocoder coverage after recovery is 54.1%; 45.9% remains undescribed.
+
+**Precision is recorded separately from provider**, so a centroid can never be
+read as a rooftop match: `interpolated` 7,139 (23.9%), `address_match` 5,247
+(17.5%), `city_centroid` 1, `unknown` 17,522 (58.6%).
+`geocode_precision_class()` gives `City_Centroid_Dataset` precedence over
+`match_type`, because a centroid is a centroid whatever the match type says.
+
+**`unknown+shared_merge` is treated as a defect class, not a value.** Those 110
+coordinates had already lost their origin when they were merged in; they are
+excluded from precision-sensitive use rather than carried as if described.
+
+The classification lives in
+[`R/lib/geocoder_provenance.R`](../R/lib/geocoder_provenance.R) and an
+unregistered provenance value **stops** rather than defaulting to "unknown", so a
+new import label cannot enter the study unannounced. Tracked as
+[#225](https://github.com/mufflyt/midwifery/issues/225); the remaining debt is
+the 13,303 legacy coordinates.
+
 ## 5. Connecticut crosses a vintage boundary mid-join
 
 The ZIP-to-county relationship file is **2020 vintage** and reports Connecticut

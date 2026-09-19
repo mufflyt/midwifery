@@ -38,6 +38,55 @@ suppressPackageStartupMessages({
 
 REF_YEAR <- 2026   # "years since" are measured to this study year, not Sys.Date()
 
+# =============================================================================
+# A PARTIAL TABLE 1 MUST NOT OVERWRITE THE PUBLISHED ONE
+# =============================================================================
+# Every enrichment below is optional at its own call site -- absent file, block
+# fills with NA, script carries on. That is right per block and wrong in
+# aggregate: on 2026-09-11 this script ran on a machine holding none of them
+# and wrote a table with Sex 100% "not recorded", ACOG district 99.7%
+# "not mappable", and Language / Accepts new patients / Offers telehealth as
+# three empty rows -- 8 categories against the full table's 24 -- under the
+# SAME two filenames. docs/table1_midwives.md still carries that render, while
+# artifacts/table1_midwives.csv is the last complete build (2026-08-14, cohort
+# 11,920). Five tracked consumers read the CSV, so the stats catalog divides by
+# 11,920 while the published table states 12,171 (#233).
+#
+# The fix is structural rather than a warning: a build missing any required
+# enrichment cannot write to the published paths AT ALL. It stops, naming what
+# is missing and which blocks depend on it; ALLOW_PARTIAL_TABLE1=1 lets it run
+# and diverts both outputs to *_PARTIAL names, so the two published files can
+# only ever come from one complete run.
+#
+# `blocks` is what a reader loses, not a description of the file -- it is the
+# sentence the refusal prints.
+TABLE1_ENRICHMENT <- data.frame(
+  path = c(
+    "artifacts/nppes_sex_enumeration.csv",
+    "artifacts/amcb_npi_geography.csv",
+    "artifacts/amcb_calibrated_ages.csv",
+    "artifacts/midwife_panel_midwifeonly.csv",
+    "artifacts/dac_cnm_education.csv",
+    "artifacts/hpsa_status.csv",
+    "artifacts/dac_hospital_affiliation_person.csv",
+    "artifacts/medicare_participation.csv",
+    "healthgrades_midwives.csv",
+    "healthgrades_profile_attrs.csv"),
+  blocks = c(
+    "Sex",
+    "Primary NPPES Specialty Taxonomy; Practice vs. Mailing State Concordance",
+    "Calibrated Age; Years Since AMCB Initial Certification",
+    "Years observed in the provider panel",
+    "Training institution; Medicare practice group size; Number of practice locations; Medicare assignment",
+    "Primary-care shortage area (HRSA HPSA)",
+    "Hospital affiliation; Number of affiliated hospitals; Affiliated hospital type; Affiliated hospital ownership; Birthing-friendly designation",
+    "Medicare Part B; Medicare Part D",
+    "Language floor; Accepts new patients; Offers telehealth",
+    "Language floor; Accepts new patients; Offers telehealth"),
+  stringsAsFactors = FALSE
+)
+ALLOW_PARTIAL_TABLE1 <- nzchar(Sys.getenv("ALLOW_PARTIAL_TABLE1"))
+
 # Banding and date parsing live in one tested place. Inline, each rule held
 # only because the current artifacts satisfy an assumption it never enforced.
 source("R/lib/table1_bands.R")
@@ -370,6 +419,36 @@ if (file.exists(calib_age_file)) {
   cat("Merged calibrated empirical age blocks into cohort.\n")
 }
 
+# The age block's heading names the model the ages came from, rather than only
+# their coverage. "Calibrated Age (100% Cohort Coverage)" is true of the
+# coverage and silent about whether the line behind it was fitted or assumed:
+# when no ground truth is present the calibration used to substitute a 29.5-year
+# literature prior with a slope of 1.0, impute an age for everyone, and reach
+# print under that identical label (#216; it happened for real in #172).
+# calibrate_amcb_certification_ages.R now refuses that fallback unless
+# ALLOW_LITERATURE_PRIOR is set, and stamps the choice into `selected_model` --
+# which this reads, so a prior cannot arrive wearing a fit's label.
+AGE_BLOCK_LABEL <- "Calibrated Age (100% Cohort Coverage)"
+calib_prov_file <- "artifacts/amcb_age_calibration_provenance.csv"
+if (file.exists(calib_prov_file)) {
+  .cp <- read_csv(calib_prov_file, show_col_types = FALSE, progress = FALSE)
+  if ("selected_model" %in% names(.cp) && nrow(.cp) >= 1L) {
+    AGE_BLOCK_LABEL <- sprintf("Calibrated Age -- %s", .cp$selected_model[[1]])
+    # And the selection in the calibration sample, which the model string does
+    # not carry. 57% of the 5,448 direct ages are self-reported Healthgrades
+    # profiles, whose holders run 8-13 years older in median than either
+    # measured source; refitting on measured birth years alone gives a slope
+    # 11% shallower and moves 12.3% of the cohort into a younger band
+    # (docs/TECHNICAL_APPENDIX_AGE_IMPUTATION.md section 8.2, #218). The
+    # direction of that bias belongs where the ages are published, not only in
+    # the appendix that documents them.
+    if (isTRUE(.cp$direct_ground_truth_n[[1]] > 0))
+      AGE_BLOCK_LABEL <- paste0(
+        AGE_BLOCK_LABEL,
+        "; the calibration sample is majority self-reported and skews older (appendix 8.2)")
+  }
+}
+
 # --- CMS Doctors & Clinicians (DAC): practice structure ----------------------
 # Produced by extract_dac_cnm_education.R, one row per NPI.
 #
@@ -602,10 +681,24 @@ if (file.exists("artifacts/dac_hospital_affiliation_person.csv")) {
 # Practitioners file and the Part D Prescribers file, one row per provider per
 # year, eleven years matched on BOTH sides.
 #
-# ABSENCE IS NOT ZERO. CMS suppresses any provider-year below 11 beneficiaries,
-# so a midwife absent from a file billed nothing OR billed fewer than 11
-# beneficiaries -- indistinguishable here. The rows below say "no record of",
-# never "did not bill", and the negative level is named accordingly.
+# ABSENCE IS NOT ZERO, AND IT IS NOT TWO THINGS EITHER. CMS suppresses any
+# provider-year below 11 beneficiaries, so a midwife absent from a file billed
+# nothing OR billed fewer than 11 beneficiaries. The Part B file adds a third,
+# and it is the one that explains the shape of these two rows: the Physician &
+# Other Practitioners file is keyed on the RENDERING NPI, so a midwife whose
+# encounter is billed under a supervising physician's or a group's number does
+# not appear in it at all -- while her prescriptions carry her own NPI into
+# Part D regardless of who billed the visit.
+#
+# That is exactly the observed pattern (#246). On the 2026-08-10 build: Part B
+# 2,320 (19.5%), Part D 5,615 (47.1%), with 3,364 prescribing without any Part
+# B record against 69 the reverse -- a 49-to-1 asymmetry, Part B almost
+# entirely nested inside Part D. Both files suppress on comparable rules, so
+# suppression alone does not produce a 2.4x gap in one direction for the same
+# people. The Part B label below names the rendering-NPI limit rather than
+# offering a two-way choice where there is at least a three-way one.
+#
+# The rows still say "no record of", never "did not bill".
 mcare <- NULL
 if (file.exists("artifacts/medicare_participation.csv")) {
   mcare <- read_csv("artifacts/medicare_participation.csv",
@@ -616,11 +709,20 @@ if (file.exists("artifacts/medicare_participation.csv")) {
     by = "certification_number", relationship = "one-to-one") %>%
     mutate(
       medicare_part_b = dplyr::if_else(is.na(part_b_any), NA_character_,
-        dplyr::if_else(part_b_any, "Billed Part B in at least one year",
-                       "No Part B record (billed <11 beneficiaries, or none)")),
+        dplyr::if_else(part_b_any, "Billed Part B under her own NPI in at least one year",
+                       "No Part B record under her own NPI (billed under another NPI, <11 beneficiaries, or none)")),
       medicare_part_d = dplyr::if_else(is.na(part_d_any), NA_character_,
         dplyr::if_else(part_d_any, "Prescribed under Part D in at least one year",
-                       "No Part D record (billed <11 beneficiaries, or none)")))
+                       "No Part D record (<11 beneficiaries, or none)")),
+      # THE ASYMMETRY AS ITS OWN ROW SET. Part B and Part D in two independent
+      # blocks let a reader see 19.5% and 47.1% without seeing that one is
+      # almost a subset of the other. This block is the finding.
+      medicare_pattern = dplyr::case_when(
+        is.na(part_b_any) | is.na(part_d_any) ~ NA_character_,
+        part_b_any & part_d_any   ~ "Part B and Part D",
+        !part_b_any & part_d_any  ~ "Part D only (prescribes, no rendering-NPI claim)",
+        part_b_any & !part_d_any  ~ "Part B only (rendering-NPI claim, no prescriptions)",
+        TRUE                      ~ "Neither (billed under another NPI, <11 beneficiaries, or none)"))
 }
 
 # --- Healthgrades banded columns ----------------------------------------------
@@ -785,6 +887,47 @@ blk_hg <- function(col, category, lvls = NULL, binary_yes = NULL,
                      n = unattributable, percent = NA_real_, category = category))
 }
 
+# --- complete, or diverted -----------------------------------------------------
+# Rurality and ACOG district are resolved above rather than by a bare
+# file.exists(), so they are added to the check here with what was actually
+# found: `geo_path` is NA when neither geography artifact is present, and
+# `acog_ok` is FALSE when the crosswalk could not be sourced.
+t1_missing <- TABLE1_ENRICHMENT[!file.exists(TABLE1_ENRICHMENT$path), , drop = FALSE]
+if (is.na(geo_path))
+  t1_missing <- rbind(t1_missing, data.frame(
+    path = paste(geo_paths, collapse = " or "),
+    blocks = "Rurality (RUCC 2023)", stringsAsFactors = FALSE))
+if (!isTRUE(acog_ok))
+  # Named by its env var, not by the resolved path: this string lands in
+  # artifacts/table1_provenance.csv, which is tracked, and an absolute
+  # /Users/... path resolves for nobody else.
+  t1_missing <- rbind(t1_missing, data.frame(
+    path = "$ISOCHRONES_HOME/R/acog_districts.R",
+    blocks = "ACOG district", stringsAsFactors = FALSE))
+
+T1_PARTIAL <- nrow(t1_missing) > 0L
+if (T1_PARTIAL && !ALLOW_PARTIAL_TABLE1) {
+  stop(sprintf(paste0(
+    "%d enrichment input(s) are missing, so this build would publish a Table 1 with\n",
+    "empty or all-unknown blocks under the same filenames as the complete one.\n",
+    "That is how docs/table1_midwives.md and artifacts/table1_midwives.csv came to\n",
+    "describe different populations (#233).\n\n%s\n",
+    "Run on the machine that holds these, or set ALLOW_PARTIAL_TABLE1=1 to build\n",
+    "anyway -- the outputs then go to artifacts/table1_midwives_PARTIAL.csv and\n",
+    "docs/table1_midwives_PARTIAL.md, and the published files are left untouched."),
+    nrow(t1_missing),
+    paste(sprintf("  %-46s  %s", t1_missing$path, t1_missing$blocks),
+          collapse = "\n")), call. = FALSE)
+}
+if (T1_PARTIAL) {
+  cat(sprintf("\n!! PARTIAL BUILD: %d enrichment input(s) missing; writing *_PARTIAL outputs.\n",
+              nrow(t1_missing)))
+  cat(paste(sprintf("   %-46s  %s", t1_missing$path, t1_missing$blocks),
+            collapse = "\n"), "\n")
+}
+T1_CSV <- if (T1_PARTIAL) "artifacts/table1_midwives_PARTIAL.csv" else "artifacts/table1_midwives.csv"
+T1_MD  <- if (T1_PARTIAL) "docs/table1_midwives_PARTIAL.md" else "docs/table1_midwives.md"
+
 t1 <- bind_rows(
   tibble(characteristic = "ACTIVE, primary-linked midwives", n = N,
          percent = 100, category = "Cohort"),
@@ -806,7 +949,7 @@ t1 <- bind_rows(
   if ("state_concordance" %in% names(coh))
     blk(coh, "state_concordance", "Practice vs. Mailing State Concordance"),
   if ("age_band" %in% names(coh))
-    blk(coh, "age_band", "Calibrated Age (100% Cohort Coverage)",
+    blk(coh, "age_band", AGE_BLOCK_LABEL,
         lvls = c("<35 years", "35-44 years", "45-54 years", "55-64 years", ">=65 years")),
   if ("cert_year_band" %in% names(coh))
     blk(coh, "cert_year_band", "Years Since AMCB Initial Certification",
@@ -837,32 +980,54 @@ t1 <- bind_rows(
     if (n_acog_excluded > 0L)
       tibble(characteristic = "Overseas-military or US-territory address (no ACOG district)",
              n = n_acog_excluded, percent = NA_real_, category = "ACOG district")),
-  blk(coh, "rurality", "Rurality (RUCC 2023)",
-      lvls = c("Metropolitan (RUCC 1-3)", "Nonmetropolitan, adjacent (RUCC 4-6)",
-               "Nonmetropolitan, remote (RUCC 7-9)"),
-      unknown_label = "County not resolved (no RUCC code)"),
+  # Conditional like every other optional block. Unconditional, it was the
+  # first thing to fail on a machine with no geography artifact -- before the
+  # enrichment guard above could name all twelve missing inputs. That guard
+  # now subsumes blk()'s own "an absent column is an error" rule for a
+  # published build, so this only relaxes what a *_PARTIAL build may emit.
+  if ("rurality" %in% names(coh))
+    blk(coh, "rurality", "Rurality (RUCC 2023)",
+        lvls = c("Metropolitan (RUCC 1-3)", "Nonmetropolitan, adjacent (RUCC 4-6)",
+                 "Nonmetropolitan, remote (RUCC 7-9)"),
+        unknown_label = "County not resolved (no RUCC code)"),
 
+  # HOW MUCH OF THE COHORT THIS BLOCK DESCRIBES. On the 2026-08-10 build, 10,692
+  # of 11,920 (89.7%) have no school named by any source, so every percentage
+  # here is on the ~10.3% who do -- the correct non-missing convention, and
+  # worth knowing before quoting one. validate_training_institution_against_acme.R
+  # checks the top ten against ACME's accredited list, which is 469 people,
+  # 3.9% of the cohort; it prints that coverage rather than letting "9 of 10
+  # matched" read as reassurance about the variable (#247).
   if ("training_institution_top" %in% names(coh))
     blk(coh, "training_institution_top",
         "Training institution (CMS DAC + Healthgrades + Trilliant directory)",
         lvls = c(school_src, "Other named institution"),
         unknown_label = "No school named by CMS DAC, Healthgrades or the Trilliant directory"),
 
+  # ONE STATED FACT MUST NOT CARRY TWO COUNTS. These three blocks and the
+  # hospital-affiliation block below all read "Not enrolled in Medicare (absent
+  # from CMS DAC)" and reported 7,050 here against 6,936 there -- 114 people
+  # enrolled by one CMS extract and not by the other, because the two come from
+  # different DAC pulls (dac_cnm_education.csv against
+  # dac_hospital_affiliation_person.csv, the latter built on the unreproducible
+  # cohort_n = 12,129 of #231). Every block still summed to the cohort, so A1
+  # could not see it. The labels now name which extract each one means, so the
+  # two counts describe two things rather than contradicting each other (#246).
   if ("dac_practice_size" %in% names(coh))
     blk(coh, "dac_practice_size",
         "Medicare practice group size (CMS DAC)",
         lvls = PRACTICE_SIZE_LEVELS,
-        unknown_label = "Not enrolled in Medicare (absent from CMS DAC)"),
+        unknown_label = "Absent from the CMS DAC enrolment extract"),
   if ("dac_practice_sites" %in% names(coh))
     blk(coh, "dac_practice_sites",
         "Number of practice locations (CMS DAC)",
         lvls = PRACTICE_LOCATION_LEVELS,
-        unknown_label = "Not enrolled in Medicare (absent from CMS DAC)"),
+        unknown_label = "Absent from the CMS DAC enrolment extract"),
   if ("dac_assignment" %in% names(coh))
     blk(coh, "dac_assignment",
         "Medicare assignment (CMS DAC)",
         lvls = MEDICARE_ASSIGNMENT_LEVELS,
-        unknown_label = "Not enrolled in Medicare (absent from CMS DAC)"),
+        unknown_label = "Absent from the CMS DAC enrolment extract"),
 
   if ("hpsa_status" %in% names(coh))
     blk(coh, "hpsa_status", "Primary-care shortage area (HRSA HPSA)",
@@ -876,7 +1041,7 @@ t1 <- bind_rows(
     blk(coh, "hospital_affiliation", "Hospital affiliation (CMS facility affiliation, CCN)",
         lvls = c("Hospital privilege recorded in Medicare",
                  "Enrolled in Medicare, no hospital privilege recorded"),
-        unknown_label = "Not enrolled in Medicare (absent from CMS DAC)"),
+        unknown_label = "Absent from the CMS facility-affiliation extract"),
   if ("hospital_count" %in% names(coh))
     blk(coh, "hospital_count", "Number of affiliated hospitals (CCN)",
         lvls = c("1 hospital", "2 hospitals", ">=3 hospitals"),
@@ -900,12 +1065,18 @@ t1 <- bind_rows(
 
   if ("medicare_part_b" %in% names(coh))
     blk(coh, "medicare_part_b", "Medicare Part B, any year 2013-2023",
-        lvls = c("Billed Part B in at least one year",
-                 "No Part B record (billed <11 beneficiaries, or none)")),
+        lvls = c("Billed Part B under her own NPI in at least one year",
+                 "No Part B record under her own NPI (billed under another NPI, <11 beneficiaries, or none)")),
   if ("medicare_part_d" %in% names(coh))
     blk(coh, "medicare_part_d", "Medicare Part D, any year 2013-2023",
         lvls = c("Prescribed under Part D in at least one year",
-                 "No Part D record (billed <11 beneficiaries, or none)")),
+                 "No Part D record (<11 beneficiaries, or none)")),
+  if ("medicare_pattern" %in% names(coh))
+    blk(coh, "medicare_pattern", "How Medicare observes her, 2013-2023",
+        lvls = c("Part B and Part D",
+                 "Part D only (prescribes, no rendering-NPI claim)",
+                 "Part B only (rendering-NPI claim, no prescriptions)",
+                 "Neither (billed under another NPI, <11 beneficiaries, or none)")),
 
   # Language: use Healthgrades data when available; otherwise note it is absent.
   # LANGUAGE IS A FLOOR, NOT A PROPORTION.
@@ -965,7 +1136,7 @@ t1 <- bind_rows(
 # (REBUILD_VERIFY_ONLY=1) reads that sidecar to catch exactly this drift
 # going forward, the same way it already does for every other declared
 # FROZEN consumer.
-write_with_provenance(t1, "artifacts/table1_midwives.csv", inputs = link_path, na = "")
+write_with_provenance(t1, T1_CSV, inputs = link_path, na = "")
 
 # Vintage stamp. The Healthgrades crawl is still running, so the ambiguity
 # count is a function of WHEN this was built. Recording the scrape vintage
@@ -977,11 +1148,24 @@ readr::write_csv(tibble::tibble(
   scrape_rows         = if (exists("hg")) nrow(hg) else NA_integer_,
   scrape_certificants = if (exists("hg")) dplyr::n_distinct(hg$certification_number) else NA_integer_,
   cohort_n            = N,
-  hg_ambiguous_cohort = length(hg_ambiguous)),
+  hg_ambiguous_cohort = length(hg_ambiguous),
+  # COMPLETE or PARTIAL, and what was missing. This file recorded cohort_n =
+  # 12,171 from the 2026-09-11 partial build while the CSV beside it held
+  # 11,920 from the last complete one, and nothing in it said which was which.
+  build_status        = if (T1_PARTIAL) "PARTIAL" else "COMPLETE",
+  missing_inputs      = if (T1_PARTIAL) paste(t1_missing$path, collapse = ";") else "",
+  table1_csv          = T1_CSV,
+  table1_md           = T1_MD),
   "artifacts/table1_provenance.csv")
 
 # --- markdown render ----------------------------------------------------------
 md <- c("# Table 1. Characteristics of the ACTIVE certified-midwife cohort", "",
+        if (T1_PARTIAL) c(
+          sprintf(paste0("> **PARTIAL BUILD -- NOT THE PUBLISHED TABLE.** %d enrichment ",
+                         "input(s) were absent, so the blocks they feed are empty or ",
+                         "all-unknown: %s. Published Table 1 is `docs/table1_midwives.md`."),
+                  nrow(t1_missing), paste(unique(t1_missing$blocks), collapse = "; ")),
+          "") else NULL,
         sprintf("Cohort: **%s** midwives with AMCB status ACTIVE and a primary-tier NPI link.",
                 format(N, big.mark = ",")),
         "Percentages are within category and use the non-missing denominator;",
@@ -1007,7 +1191,7 @@ for (cat_i in unique(t1$category)) {
                                sprintf("%.1f", d$percent[i]))))
 }
 dir.create("docs", showWarnings = FALSE)
-writeLines(md, "docs/table1_midwives.md")
+writeLines(md, T1_MD)
 
 # Also render HTML. The markdown is the source of truth, but .md is associated
 # with TeXShop on this machine, which renders LaTeX and shows the raw pipe
@@ -1028,16 +1212,20 @@ local({
       " tr:has(td strong){background:#f4f6f8}",
       " h1{font-size:1.5rem;border-bottom:2px solid #333;padding-bottom:.4rem}",
       "</style>"), css)
-    st <- system2("pandoc", c("docs/table1_midwives.md", "-s", "--embed-resources",
+    # The HTML follows whichever markdown this run wrote, so a partial build
+    # cannot leave a complete-looking page beside a PARTIAL render.
+    t1_html <- sub("[.]md$", ".html", T1_MD)
+    st <- system2("pandoc", c(T1_MD, "-s", "--embed-resources",
                               "--metadata", shQuote("title=Table 1"),
-                              "-H", shQuote(css), "-o", "docs/table1_midwives.html"),
+                              "-H", shQuote(css), "-o", t1_html),
                   stdout = FALSE, stderr = FALSE)
-    if (st == 0L) cat("written: docs/table1_midwives.html\n")
-    else cat("NOTE: pandoc failed; docs/table1_midwives.html not refreshed\n")
+    if (st == 0L) cat(sprintf("written: %s\n", t1_html))
+    else cat(sprintf("NOTE: pandoc failed; %s not refreshed\n", t1_html))
   } else {
     cat("NOTE: pandoc not found; docs/table1_midwives.html not refreshed\n")
   }
 })
 
 cat("\n"); print(as.data.frame(t1), row.names = FALSE)
-cat("\nwritten: artifacts/table1_midwives.csv, docs/table1_midwives.md\n")
+cat(sprintf("\nwritten: %s, %s%s\n", T1_CSV, T1_MD,
+            if (T1_PARTIAL) "  (PARTIAL -- the published files were left untouched)" else ""))

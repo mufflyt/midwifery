@@ -17,6 +17,12 @@
 #   A4  A row carried an NPPES city and state while carrying no NPI at all --
 #       geography with no identity behind it, in a pipeline whose whole claim is
 #       that location is downstream of identity resolution.
+#   A5  The Table 1 CSV and the Table 1 markdown described DIFFERENT
+#       POPULATIONS for a month -- 11,920 over 24 categories against 12,171
+#       over 8 -- because a build on a machine missing every enrichment input
+#       wrote the render and not the table. Five tracked consumers read the
+#       CSV, so the stats catalog divided by a cohort the published table did
+#       not report. A1 could not see it: both files are internally consistent.
 #   A3  write_with_provenance is described as wired across every pipeline write.
 #       21 of 166 tracked artifacts have a sidecar. The ratchet holds that ratio
 #       and lets it improve.
@@ -207,9 +213,17 @@ if (length(arts) == 0) {
     ci_fail("A3: %d tracked artifact(s) have no .provenance.json sidecar and are not on the baseline. Write them through write_with_provenance() (R) so the sidecar records the inputs and their SHA-256:\n       %s",
             length(new_offenders), paste(utils::head(new_offenders, 8), collapse = "\n       "))
   } else if (length(fixed)) {
-    ci_ok("%d of %d artifacts lack a sidecar; %d gained one -- delete these line(s) from the baseline to hold the gain: %s",
+    # Two different reasons, reported apart: a baseline line clears either
+    # because the artifact gained a sidecar or because it is no longer tracked
+    # at all. Reporting both as "gained one" sent a reader looking for a
+    # sidecar that was never written -- four of the six in the 2026-09-18 prune
+    # were files that had simply been deleted.
+    gained_sidecar <- intersect(fixed, arts)
+    no_longer_tracked <- setdiff(fixed, arts)
+    ci_ok("%d of %d artifacts lack a sidecar; %d baseline line(s) can be deleted to hold the gain -- %d gained a sidecar (%s), %d no longer tracked (%s)",
           length(uncovered), length(arts), length(fixed),
-          paste(utils::head(fixed, 5), collapse = ", "))
+          length(gained_sidecar), paste(utils::head(gained_sidecar, 4), collapse = ", "),
+          length(no_longer_tracked), paste(utils::head(no_longer_tracked, 4), collapse = ", "))
   } else {
     ci_ok("%d of %d tracked artifacts lack a sidecar; all are on the baseline, none new",
           length(uncovered), length(arts))
@@ -285,6 +299,75 @@ if (!file.exists(FROZEN_XWALK)) {
       ci_ok("%d orphaned-geography row(s); no regression (156 held-out class-5 candidates are NOT counted -- they record their candidate NPI)",
             orphans)
     }
+  }
+}
+
+# -----------------------------------------------------------------------------
+ci_section("A5 the two Table 1s describe one cohort")
+
+# THE ONE ASSERTION THAT WOULD HAVE CAUGHT #233 TWO WEEKS EARLY. A1 checks that
+# each file adds up; nothing checked that the two agree with each other, or with
+# the cohort definition they both claim to use.
+#
+# The baseline is a single line naming the mismatch that already exists, in the
+# same shrink-only spirit as ci_leak_baseline.txt: it may be deleted, never
+# added to. Removing it requires a complete rebuild of the CSV, which needs the
+# person-level enrichment inputs (see build_table1_midwives.R's
+# TABLE1_ENRICHMENT guard).
+t1_csv <- file.path(root, "artifacts", "table1_midwives.csv")
+t1_md  <- file.path(root, "docs", "table1_midwives.md")
+frozen <- file.path(root, "artifacts", "amcb_npi_linkage_FROZEN.csv")
+base5  <- file.path(root, "tests", "ci_table1_cohort_baseline.txt")
+
+read_known <- function(path) {
+  if (!file.exists(path)) return(character(0))
+  ln <- trimws(readLines(path, warn = FALSE))
+  ln[nzchar(ln) & !startsWith(ln, "#")]
+}
+
+if (!file.exists(t1_csv) || !file.exists(t1_md)) {
+  ci_skip("A5: one of the two Table 1 files is absent; skipped")
+} else {
+  t1c <- read.csv(t1_csv, check.names = FALSE, stringsAsFactors = FALSE)
+  csv_n <- suppressWarnings(as.integer(t1c$n[t1c$category == "Cohort"][1]))
+
+  md <- readLines(t1_md, warn = FALSE)
+  md_hit <- grep("^Cohort: \\*\\*[0-9,]+\\*\\*", md, value = TRUE)
+  md_n <- if (length(md_hit))
+    suppressWarnings(as.integer(gsub(",", "", sub("^Cohort: \\*\\*([0-9,]+)\\*\\*.*$", "\\1", md_hit[1]))))
+  else NA_integer_
+
+  # The cohort definition both files claim. Person-level and gitignored, so a
+  # clone compares the two files only -- which is still the check that failed.
+  canon_n <- NA_integer_
+  if (file.exists(frozen)) {
+    source(file.path(root, "R", "lib", "cohort_definitions.R"))
+    lk <- utils::read.csv(frozen, colClasses = "character")
+    canon_n <- nrow(canonical_active_primary(lk))
+  }
+
+  known <- read_known(base5)
+  observed <- sprintf("table1_csv_n=%s table1_md_n=%s canonical_n=%s",
+                      csv_n, md_n, if (is.na(canon_n)) "unchecked" else canon_n)
+
+  agree <- !is.na(csv_n) && !is.na(md_n) && csv_n == md_n &&
+    (is.na(canon_n) || csv_n == canon_n)
+
+  if (agree) {
+    ci_ok("A5: both Table 1 files report %s%s", format(csv_n, big.mark = ","),
+          if (is.na(canon_n)) " (freeze absent; canonical count unchecked)"
+          else ", matching canonical_active_primary()")
+    if (length(known))
+      ci_ok("A5: the recorded mismatch is gone -- delete tests/ci_table1_cohort_baseline.txt to hold the gain")
+  } else if (observed %in% known) {
+    ci_ok("A5: known mismatch, unchanged (%s); see tests/ci_table1_cohort_baseline.txt", observed)
+  } else {
+    ci_fail(paste0("A5: the Table 1 CSV and markdown do not describe one cohort -- %s.\n",
+                   "       These are the numbers a reader and the stats catalog divide by. If this\n",
+                   "       is a deliberate, reviewed state, record the line above in\n",
+                   "       tests/ci_table1_cohort_baseline.txt; otherwise rebuild both from one run\n",
+                   "       (build_table1_midwives.R writes them together, and now refuses to write\n",
+                   "       either when an enrichment input is missing)."), observed)
   }
 }
 

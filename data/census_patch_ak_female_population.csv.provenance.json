@@ -1,0 +1,6 @@
+{
+  "source_url": "https://api.census.gov/data/2023/acs/acs5?get=B01001_026E&for=tract:*&in=state:02",
+  "accessed_utc": "2026-09-18T14:55:25Z",
+  "variable": "B01001_026E (female population, ACS5 2023)",
+  "retrieved_with": "tidycensus::get_acs() 1.7.5"
+}

@@ -46,7 +46,7 @@ ci_entrypoints <- file.path("tests", c(
   "test-step8-tract-vintage-routing.R",
   # The Trilliant layer's step in r-unit-tests.
   "test_cohort_definitions.R", "test_work_site_topology.R",
-  "test_data_vault.R", "test_trilliant_demographics.R"
+  "test_data_vault.R", "test_trilliant_demographics.R", "test_trilliant_identity.R"
 ))
 
 # Must match .github/workflows/ci.yml exactly. When they disagree, CI is red on
@@ -139,6 +139,14 @@ run_repo_integrity_gates(
   missing_input_ignore = missing_input_ignore,
   access_date_grandfathered = grandfathered_sources,
   access_date_scope = "data",
+  # The live board-of-nursing artifacts are downloads by origin -- a real
+  # request to a state's own public API -- but they land in artifacts/, so a
+  # gate scoped to data/ never saw them. That asymmetry is the whole of #230:
+  # this rule correctly failed a commit for pulling two ACS files into data/
+  # without a sidecar, while the files that replaced the FABRICATED licence
+  # identifiers were exempt from it. Named globs rather than all of artifacts/,
+  # which is mostly derived output already ratcheted by ci_artifact_contracts A3.
+  access_date_globs = c("artifacts/live_*_bon_*.csv"),
   missing_input_baseline = missing_input_baseline,
   safe_percent_allow = c("R/safe_divide\\.R", self_referential)
 )

@@ -113,6 +113,14 @@ jobs:
       - name: Table 1 banding tests
         run: Rscript tests/test_table1_bands.R
 
+      # Base R only, same as above. 58.6% of the coordinates behind every
+      # access map and the rurality stratifier carry a label naming the batch
+      # they arrived in rather than the geocoder that produced them (#225).
+      # These rules keep a delivery date from reading as a provider and a city
+      # centroid from reading as a rooftop match.
+      - name: Geocoder provenance classification
+        run: Rscript tests/test_geocoder_provenance.R
+
       # The check with the most to prevent. Four commits in one week untracked
       # person-level artifacts one at a time, each found by hand AFTER it was
       # committed. This blocks the next one, caps tracked file size, and holds a
@@ -512,12 +520,17 @@ jobs:
       # between machines, and when the directory may stand in for a missing
       # sex, school or age. The first three shipped in #196-#200 without a CI
       # step, so they only ever ran on the machine that wrote them.
-      - name: Trilliant layer (cohort, work sites, data vault, demographics)
+      # test_trilliant_identity.R is the identity experiment's scoring: its
+      # identity_only variant may not let taxonomy break a tie, a changed
+      # surname or an NPI another certificant holds is never proposed, and an
+      # emptied pool is reported as emptied.
+      - name: Trilliant layer (cohort, work sites, data vault, demographics, identity)
         run: |
           Rscript tests/test_cohort_definitions.R
           Rscript tests/test_work_site_topology.R
           Rscript tests/test_data_vault.R
           Rscript tests/test_trilliant_demographics.R
+          Rscript tests/test_trilliant_identity.R
 
       # Birth activity decides who counts as a practising midwife; license
       # resolution decides which of several licenses is the one. Both are pure.
