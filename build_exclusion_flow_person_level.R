@@ -10,7 +10,8 @@
 #'
 #' Exclusion stage is assigned in the SAME order and on the SAME
 #' definitions as the figure: deceased/inactive, no NPI match (match_status
-#' != "primary"), no geocodable address, no ACOG district. A person is
+#' != "primary"), NPI-linked federal adverse action, no geocodable address,
+#' no ACOG district. A person is
 #' assigned to the FIRST stage that excludes them -- someone both inactive
 #' and unmatched is filed under "deceased_or_inactive" only, matching how
 #' the figure's ladder works (later stages are conditioned on surviving
@@ -27,9 +28,11 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr)
 })
 source(file.path("R", "lib", "artifact_provenance.R"))
+source(file.path("R", "federal_adverse_action_exclusions.R"))
 
 LINKAGE   <- file.path("artifacts", "amcb_npi_linkage_FROZEN.csv")
 GEOGRAPHY <- file.path("artifacts", "midwives_geography_FROZEN.csv")
+ACTION_FLAGS <- file.path("artifacts", "federal_adverse_action_flags.csv")
 
 ACOG_UNMAPPED <- c("AA", "AE", "AP", "GU", "PR", "VI", "AS", "MP", "FM", "PW", "MH")
 
@@ -39,8 +42,22 @@ geo     <- read_csv(GEOGRAPHY, show_col_types = FALSE, progress = FALSE, guess_m
 geo_std <- geo %>%
   transmute(certification_number, geocoded = !is.na(county_best))
 
+action_flags <- if (file.exists(ACTION_FLAGS)) {
+  read_csv(ACTION_FLAGS, show_col_types = FALSE, progress = FALSE) %>%
+    transmute(npi_action_key = gsub("[^0-9]", "", as.character(npi)),
+              federal_adverse_action_excluded,
+              federal_adverse_action_source) %>%
+    distinct(npi_action_key, .keep_all = TRUE)
+} else {
+  tibble(npi_action_key = character(), federal_adverse_action_excluded = logical(),
+         federal_adverse_action_source = character())
+}
+
 joined <- linkage %>%
   left_join(geo_std, by = "certification_number") %>%
+  mutate(npi_action_key = gsub("[^0-9]", "", as.character(npi))) %>%
+  left_join(action_flags, by = "npi_action_key") %>%
+  mutate(federal_adverse_action_excluded = coalesce(federal_adverse_action_excluded, FALSE)) %>%
   mutate(geocoded = coalesce(geocoded, FALSE),
          acog_mapped = geocoded & !(nppes_state %in% ACOG_UNMAPPED))
 
@@ -48,6 +65,7 @@ out <- joined %>%
   transmute(
     certification_number, last_name, first_name, middle_name, status,
     match_status, name_evidence_class, nppes_state, geocoded, acog_mapped,
+    federal_adverse_action_excluded, federal_adverse_action_source,
     # For sensitivity_fuzzy / sensitivity_nursing_taxonomy the matcher DID
     # find and keep a candidate NPI -- it's just held out of the "primary"
     # definition, not demoted to NA the way a lost class-5 candidate is. So
@@ -71,6 +89,7 @@ out <- joined %>%
     exclusion_stage = case_when(
       status != "ACTIVE"              ~ "deceased_or_inactive",
       match_status != "primary"       ~ "no_npi_match",
+      federal_adverse_action_excluded ~ "federal_adverse_action_dea_fda_medicare",
       !geocoded                       ~ "no_geocodable_address",
       !acog_mapped                    ~ "no_acog_district",
       TRUE                            ~ "included_final_cohort"

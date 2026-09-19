@@ -4,6 +4,8 @@ active,15328
 inactive,7029
 matched,12254
 unmatched,3074
+federal_adverse_action,0
+after_federal_adverse_action,12254
 geocoded,12199
 not_geocoded,55
 final_cohort,12183

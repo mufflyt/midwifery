@@ -61,6 +61,37 @@ not_geocoded_n <- stat_num("exclusion.not_geocoded_n")
 acog_excluded_n <- stat_num("exclusion.acog_excluded_n")
 final_cohort_n  <- stat_num("exclusion.final_cohort_n")
 
+# C17: NPI-linked federal adverse actions. The flags file is optional so the
+# frozen figure remains reproducible before the first DEA/FDA/CMS refresh; when
+# present, only active primary-linked NPIs are eligible for this exclusion.
+ACTION_FLAGS <- file.path("artifacts", "federal_adverse_action_flags.csv")
+adverse_n <- 0L
+adverse_lines <- "No NPI-linked federal adverse-action flags supplied"
+if (file.exists(ACTION_FLAGS)) {
+  af <- read.csv(ACTION_FLAGS, stringsAsFactors = FALSE, check.names = FALSE)
+  if (!all(c("npi", "federal_adverse_action_excluded") %in% names(af))) {
+    stop("federal_adverse_action_flags.csv must contain npi and federal_adverse_action_excluded")
+  }
+  flagged_npi <- as.character(af$npi[
+    tolower(trimws(as.character(af$federal_adverse_action_excluded))) %in%
+      c("true", "t", "yes", "y", "1")])
+  linkage_for_actions <- read.csv(
+    file.path("artifacts", "amcb_npi_linkage_FROZEN.csv"),
+    stringsAsFactors = FALSE, check.names = FALSE)
+  active_primary_npi <- as.character(linkage_for_actions$npi[
+    linkage_for_actions$status == "ACTIVE" &
+      linkage_for_actions$match_status == "primary"])
+  adverse_n <- sum(active_primary_npi %in% flagged_npi, na.rm = TRUE)
+  if ("federal_adverse_action_source" %in% names(af)) {
+    src <- table(af$federal_adverse_action_source[
+      tolower(trimws(as.character(af$federal_adverse_action_excluded))) %in%
+        c("true", "t", "yes", "y", "1")])
+    adverse_lines <- paste(sprintf("%s, N = %s", names(src), fmt(as.integer(src))),
+                           collapse = "\n")
+  }
+}
+matched_after_adverse_n <- matched_n - adverse_n
+
 if (is.na(geocoded_n) || is.na(not_geocoded_n)) {
   stop(paste0(
     "exclusion.geocoded_n / exclusion.not_geocoded_n are not in the catalog.\n",
@@ -169,6 +200,12 @@ fc <- as_fc(
     text_pattern_exc = paste0("{label}\nN = {n} ({perc}%)\n", exc_unmatched_lines)
   ) %>%
   fc_filter(
+    N = matched_after_adverse_n, label = "No federal adverse action",
+    text_pattern = "{label}\nN = {n} ({perc}%)",
+    show_exc = TRUE, label_exc = "Federal adverse action (DEA/FDA/Medicare)",
+    text_pattern_exc = paste0("{label}\nN = {n} ({perc}%)\n", adverse_lines)
+  ) %>%
+  fc_filter(
     N = geocoded_n, label = "Geocodable address",
     text_pattern = "{label}\nN = {n} ({perc}%)",
     show_exc = TRUE, label_exc = "No geocodable address",
@@ -198,8 +235,10 @@ for (f in c("cohort_exclusion_flow.png", "cohort_exclusion_flow.pdf")) {
 
 counts <- data.frame(
   stage = c("roster", "active", "inactive", "matched", "unmatched",
+           "federal_adverse_action", "after_federal_adverse_action",
            "geocoded", "not_geocoded", "final_cohort", "acog_excluded"),
   n = c(roster_n, active_n, inactive_n, matched_n, unmatched_n,
+       adverse_n, matched_after_adverse_n,
        geocoded_n, not_geocoded_n, final_cohort_n, acog_excluded_n)
 )
 counts_path <- file.path("docs", "figures", "cohort_exclusion_flow_counts.csv")

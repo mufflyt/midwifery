@@ -1,6 +1,6 @@
 {
   "artifact": "cohort_exclusion_flow_counts.csv",
-  "written_utc": "2026-09-11 18:48:02.610 UTC",
+  "written_utc": "2026-09-19 17:52:42.512 UTC",
   "inputs": [
     {
       "path": "artifacts/linkage_completeness_by_status.csv",
@@ -11,15 +11,15 @@
       "sha256": "8933b2f2ca27d6a96a47a5b2dc421fb9700de1a8787efd7371beddfdb21a2392"
     }
   ],
-  "code_sha256": "bb00361a128b1f7b75a78a7e8fd7089906852029066e72d9dae6ef3d661cb6ab",
+  "code_sha256": "0a403d9ed3efb5d2c5d2c813c8146bcbfee810ddbd4b794e064a32f1bbcdc736",
   "code": [
     {
       "path": "make_cohort_exclusion_flow_figure.R",
-      "sha256": "e22e0f282da0d3c9529630a062b7fc1b5bf9648b69f324565c28248235476dd6"
+      "sha256": "601b5df0b47bf1185d1b2c84db4f6dd83ffc5e93e8d29fa8c3dc91deb3264e0a"
     },
     {
       "path": "manuscript/R/build_stats_catalog.R",
-      "sha256": "a09f304f7e85a3287e39cfc6883dd10d87ac94892478db6949a3da3a472855b3"
+      "sha256": "7c40f5cc223bbfe4de0742e5115a79eae49393c7a0551331c4ebc98267537033"
     },
     {
       "path": "manuscript/R/inline_stats.R",
