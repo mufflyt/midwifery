@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# Three populations, three definitions: R/lib/cohort_definitions.R
+# Four populations, four definitions: R/lib/cohort_definitions.R
 # =============================================================================
 # The 11,093-row tracked roster was being read as "the active midwife
 # cohort". It is the 2026-08-10 freeze's 11,920 ACTIVE, primary-linked
@@ -120,6 +120,56 @@ chk(nrow(tr) == length(union(canonical_active_primary(old)$certification_number,
 chk(sum(tr$in_new) - sum(tr$in_old) ==
       sum(startsWith(tr$reason, "joined")) - sum(startsWith(tr$reason, "left")),
     "T30 joined minus left equals the change in cohort size")
+
+# --- the fourth population, and the gap it hides (#244) -----------------------
+# The linkage-eligible set was live for weeks under the name "the analytic
+# cohort", 910 ACTIVE certificants wider than the study cohort, with each file
+# claiming to be the rule. These pin the RELATIONSHIP, so a change to either
+# allowlist shows up as a failure here rather than as a silently different
+# denominator downstream.
+cat("\n-- linkage-eligible vs the study cohort --\n")
+
+mk <- function(cert, status, tier, npi)
+  data.frame(certification_number = cert, status = status, linkage_tier = tier,
+             npi = npi, nppes_state = "CO", stringsAsFactors = FALSE)
+
+fx <- mk(
+  cert   = c("C1", "C2", "C3", "C4", "C5", "C6", "C7"),
+  status = c("ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "LAPSED", "ACTIVE", "ACTIVE"),
+  tier   = c("primary_midwifery", "primary_midwifery", "sensitivity_nursing",
+             "sensitivity_fuzzy", "primary_midwifery", "sensitivity_name_component",
+             "primary_midwifery"),
+  npi    = c("1003000126", "1013912047", "1023001902", "1033109962", "1043208908",
+             "1053308947", ""))
+
+rec <- cohort_rule_reconciliation(fx)
+
+# C1, C2 are the study cohort. C7 has a primary tier and no NPI, so neither rule
+# admits it. C5 is LAPSED. C6 is class-5 and on no allowlist.
+chk(rec$n_canonical == 2L, "T31 the study cohort is ACTIVE + primary_midwifery + an NPI")
+chk(rec$n_linkage_eligible == 5L,
+    "T32 linkage-eligible admits the sensitivity tiers and ignores status")
+chk(rec$n_linkage_eligible_active == 4L, "T33 ACTIVE linkage-eligible counts C1-C4")
+chk(rec$n_active_only_in_linkage_eligible == 2L,
+    "T34 the gap is exactly the ACTIVE sensitivity-tier rows")
+chk(identical(sort(names(rec$by_tier)), c("sensitivity_fuzzy", "sensitivity_nursing")),
+    "T35 the gap is itemised by the tier that causes it")
+
+# THE DIRECTION MATTERS. A superset can be subset afterwards; an overlap cannot.
+# If these two ever cross, a script that builds geography on one and reports on
+# the other is silently dropping people rather than carrying spares.
+canon_ids <- canonical_active_primary(fx)$certification_number
+elig_active <- fx$certification_number[linkage_eligible(fx) & fx$status == "ACTIVE"]
+chk(all(canon_ids %in% elig_active),
+    "T36 the study cohort is a SUBSET of the ACTIVE linkage-eligible set")
+
+# The class-5 tier is on neither allowlist, which is the whole point of #222.
+chk(!("C6" %in% elig_active) && !("C6" %in% canon_ids),
+    "T37 sensitivity_name_component is in neither population")
+
+# An NPI is necessary for both. C7 carries the strongest tier and no identifier.
+chk(!("C7" %in% elig_active) && !("C7" %in% canon_ids),
+    "T38 an allowlisted tier with no NPI resolved nothing, under either rule")
 
 cat(if (fails) sprintf("\nFAILURES (%d)\n", fails) else "\nPASS (0 failures)\n")
 quit(status = if (fails) 1L else 0L)
