@@ -1,9 +1,33 @@
 # =============================================================================
-# The three populations the pipeline reports on, kept apart on purpose
+# The four populations the pipeline reports on, kept apart on purpose
 # =============================================================================
 # A single denominator stood in for three different questions, and the
 # difference only surfaced when two outputs disagreed (11,920 against 11,093;
-# reconcile_trilliant_cohort.R). They are:
+# reconcile_trilliant_cohort.R). A fourth was added to this list on 2026-09-19
+# after issue #244 found it had been live all along under the name "the
+# analytic cohort", which it is not. They are:
+#
+#   linkage_eligible()           WHO THE CROSSWALK RESOLVED TO AN IDENTITY.
+#       An NPI plus an allowlisted evidence tier, per
+#       R/amcb_cohort_membership.R::is_cohort_member() and
+#       COHORT_MEMBERSHIP_TIERS. This is the `cohort_member` column carried in
+#       the freeze and declared as `membership_rule` in its manifest. It is a
+#       LINKAGE-QUALITY statement -- "the matcher resolved this person and the
+#       evidence clears the bar" -- and it is a strict SUPERSET of the study
+#       cohort below, because it admits three sensitivity tiers the study does
+#       not: sensitivity_nursing, sensitivity_fuzzy, sensitivity_unknown_taxonomy.
+#
+#       Measured on freeze 1a7bd6a8: 17,028 rows, 13,081 of them ACTIVE, against
+#       the canonical 12,171 -- a difference of 910 ACTIVE certificants (821
+#       sensitivity_nursing, 89 sensitivity_fuzzy). Read by the geography,
+#       birth-activity, composition, affiliation-coverage and credential layers.
+#
+#       IT IS NOT THE STUDY COHORT AND MUST NOT BE CALLED ONE. Every published
+#       estimate -- Table 1, the access measure, the hospital linkage, the age
+#       calibration, the exclusion figure, the stats catalog -- uses
+#       canonical_active_primary(). Editing COHORT_MEMBERSHIP_TIERS changes
+#       which people have geography and activity records computed for them; it
+#       does not change who is in the study.
 #
 #   canonical_active_primary()   WHO IS IN THE STUDY. ACTIVE AMCB certificants
 #       with a primary-tier NPI link, in the freeze the tracked manifest
@@ -23,7 +47,10 @@
 #       observes a clinician, so this subset is taken from the canonical
 #       cohort, never from a board-restricted one.
 #
-# Each subset is a subset of the canonical cohort and of nothing else.
+# The last two are subsets of the canonical cohort and of nothing else. The
+# canonical cohort is in turn a subset of the linkage-eligible set restricted
+# to ACTIVE, and cohort_rule_reconciliation() below measures the gap rather
+# than leaving a reader to diff two scripts.
 # =============================================================================
 
 #' States whose Board of Nursing this project has genuinely queried
@@ -73,6 +100,62 @@ canonical_active_primary <- function(linkage) {
     stop(sprintf("%d certification number(s) carry more than one NPI (e.g. %s); resolve the identity before counting.",
                  length(conflict), conflict[1]), call. = FALSE)
   x[!duplicated(x$certification_number), , drop = FALSE]
+}
+
+#' Who the crosswalk resolved, which is not who is in the study
+#'
+#' The `cohort_member` rule, expressed here so the distinction lives in the file
+#' that exists to keep these populations apart. Delegates to
+#' [is_cohort_member()] rather than restating the allowlist -- one copy of the
+#' rule, or the two definitions drift the way #244 found them drifted.
+#'
+#' @param linkage [data.frame] the linkage freeze.
+#' @return [logical] one value per row, never NA.
+#' @family cohorts
+linkage_eligible <- function(linkage) {
+  need <- c("npi", "linkage_tier")
+  miss <- setdiff(need, names(linkage))
+  if (length(miss)) stop("linkage is missing column(s): ", paste(miss, collapse = ", "), call. = FALSE)
+  if (!exists("is_cohort_member", mode = "function")) {
+    src <- file.path(dirname(dirname(normalizePath(".", mustWork = FALSE))), "R",
+                     "amcb_cohort_membership.R")
+    cand <- c("R/amcb_cohort_membership.R", "../R/amcb_cohort_membership.R", src)
+    hit <- cand[file.exists(cand)]
+    if (!length(hit))
+      stop("linkage_eligible() needs R/amcb_cohort_membership.R::is_cohort_member()",
+           call. = FALSE)
+    sys.source(hit[[1L]], envir = environment())
+  }
+  is_cohort_member(linkage$npi, linkage$linkage_tier)
+}
+
+#' Reconcile the linkage-eligible set against the study cohort
+#'
+#' The one number nobody could quote before #244: how many people the two rules
+#' disagree about, and which tiers they are. Reported rather than asserted, so
+#' a deliberate change to either rule shows up as a changed count instead of a
+#' silent redefinition.
+#'
+#' @param linkage [data.frame] the linkage freeze, all columns character.
+#' @return [list] with `n_linkage_eligible`, `n_linkage_eligible_active`,
+#'   `n_canonical`, `n_active_only_in_linkage_eligible`, and `by_tier`, a named
+#'   integer vector of the ACTIVE rows in the first and not the second.
+#' @family cohorts
+cohort_rule_reconciliation <- function(linkage) {
+  elig <- linkage_eligible(linkage)
+  active <- linkage$status %in% "ACTIVE"
+  canon <- canonical_active_primary(linkage)$certification_number
+  extra <- linkage[elig & active & !(linkage$certification_number %in% canon), , drop = FALSE]
+  extra <- extra[!duplicated(extra$certification_number), , drop = FALSE]
+  list(
+    n_linkage_eligible = sum(elig),
+    n_linkage_eligible_active = sum(elig & active),
+    n_canonical = length(canon),
+    n_active_only_in_linkage_eligible = nrow(extra),
+    by_tier = {
+      t <- table(extra$linkage_tier)
+      setNames(as.integer(t), names(t))
+    })
 }
 
 #' Canonical members a state board could confirm

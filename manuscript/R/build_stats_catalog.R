@@ -210,6 +210,28 @@ mw_build_catalog <- function(root = ".") {
     # both counts are published either way and the block below reports on
     # stderr which rule is in force.
     if (!is.null(frozen)) {
+      # THE TWO COHORT RULES, BOTH PUBLISHED (#244). The linkage-eligible set
+      # (is_cohort_member(), four tiers, the freeze's own `membership_rule`) is
+      # a strict superset of the study cohort, and was being called "the
+      # analytic cohort" in places that do not report an estimate. Carrying
+      # both here means the 910-person gap is quotable without the freeze,
+      # instead of requiring a reader to diff two scripts.
+      .cd <- c("R/lib/cohort_definitions.R",
+               file.path(dirname(MW_ART), "R", "lib", "cohort_definitions.R"))
+      .cd <- .cd[file.exists(.cd)]
+      if (length(.cd)) {
+        sys.source(.cd[[1L]], envir = environment())
+        rec <- tryCatch(cohort_rule_reconciliation(frozen), error = function(e) NULL)
+        if (!is.null(rec)) {
+          cat_$cohort_rules <- list(
+            linkage_eligible_n        = rec$n_linkage_eligible,
+            linkage_eligible_active_n = rec$n_linkage_eligible_active,
+            study_cohort_n            = rec$n_canonical,
+            active_gap_n              = rec$n_active_only_in_linkage_eligible,
+            active_gap_by_tier        = rec$by_tier)
+        }
+      }
+
       tot_f <- nrow(frozen)
       status_n <- table(frozen$status)
       inactive_statuses <- setdiff(names(status_n), "ACTIVE")
