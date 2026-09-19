@@ -62,7 +62,11 @@ ci_section("L1 an artifact may not declare an unregistered cohort")
 # cannot drift, and a heuristic that infers "close enough to 11,920" would have
 # accepted the 11,913 that motivated this law.
 LAW_COHORTS <- c(
-  "16892" = "analytic cohort (frozen_cohort/analytic_cohort.csv)",
+  # "analytic cohort" here means the LINKAGE-ELIGIBLE set (is_cohort_member(),
+  # the four-tier allowlist), not the study cohort. Relabelled 2026-09-19,
+  # #244: the study cohort is ACTIVE + primary_midwifery, which is the
+  # 11920/12129/12171 family below and is 910 ACTIVE certificants narrower.
+  "16892" = "linkage-eligible set (frozen_cohort/analytic_cohort.csv)",
   "11920" = "ACTIVE, primary-linked (Table 1), 2026-08-10 freeze vintage",
   # Added 2026-09-10, issue #172's A/B reconciliation: the same ACTIVE,
   # primary-linked definition (status == "ACTIVE", linkage_tier ==
@@ -73,7 +77,7 @@ LAW_COHORTS <- c(
   # what was true then -- so 11920 stays registered rather than being
   # replaced.
   "12129" = "ACTIVE, primary-linked (Table 1), 2026-09-10 reconciled vintage",
-  # Added 2026-09-11, issue #176: the analytic cohort (is_cohort_member() in
+  # Added 2026-09-11, issue #176: the linkage-eligible set (is_cohort_member() in
   # reconcile_linkage.R) against the reconciled 22,357-row roster, once BOTH
   # artifacts/frozen_cohort/ (PR #182, repin_frozen_cohort.R) and
   # artifacts/frozen_stage2/ (this session, repin_frozen_stage2.R -- see
@@ -81,7 +85,7 @@ LAW_COHORTS <- c(
   # vintage. 16892 above is the SAME analytic-cohort definition at the
   # previous freeze and stays registered -- it describes what was true then,
   # not a stale artifact awaiting a rebuild.
-  "17028" = "analytic cohort (frozen_cohort/analytic_cohort.csv), 2026-09-11 repin vintage",
+  "17028" = "linkage-eligible set (frozen_cohort/analytic_cohort.csv), 2026-09-11 repin vintage",
   # Added 2026-09-11, artifacts/table1_provenance.csv (built 18:39, PR #184):
   # same ACTIVE, primary-linked definition as 11920/12129 above, against the
   # SAME current amcb_npi_linkage_FROZEN.csv this session's other fixes use --
