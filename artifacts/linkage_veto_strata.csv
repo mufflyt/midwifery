@@ -1,0 +1,8 @@
+stratum,question,consequence,n_roster,n_active,n_study_cohort,pct_of_study_cohort
+resolved_by_absence_c2,"class 2: every exact-name rival was vetoed on a middle initial, and the survivor records none","PUBLISHED as a full study-cohort member, indistinguishable from a genuine unique match",221,126,98,0.81
+resolved_by_absence_c5,class 5: the same pattern where the surname evidence is already partial,"QUARANTINED: demoted to class5_candidate_npi, npi set to NA, reaches no cohort",8,5,0,0
+npi_demoted_absence_c5,"the demotion the line above describes, as applied",the row keeps its candidate NPI in class5_candidate_npi and carries no npi,8,5,0,0
+unmatched_after_middle_veto,the other tail: the ONLY exact-name candidate was deleted by the veto,"PUBLISHED as 'no candidate found', which overstates the recall failure",84,39,0,0
+exact_first_last_multiple_candidates,more than one NPI shared the whole given name and the whole surname,resolved by middle-name evidence or by the veto; context for the two strata above,9363,7298,6886,56.58
+n_mid_vetoed_c2,exact-name rivals removed by a middle-initial conflict,"count of vetoes, not of people; a row may carry several",6927,4823,2505,NA
+n_mid_vetoed_c5,class-5 rivals removed by a middle-initial conflict,"count of vetoes, not of people; a row may carry several",1246,810,546,NA
