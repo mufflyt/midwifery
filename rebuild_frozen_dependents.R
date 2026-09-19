@@ -293,7 +293,13 @@ REBUILD_ORDER <- list(
        # the gitignored person-level export, both of which read the crosswalk
        # and its geography. It is a publication product, so it belongs after
        # everything it summarises.
+       # validate_training_institution_against_acme.R reads the freeze to say
+       # whether the Table 1 it is validating is the canonical cohort (#247).
+       # It must follow build_table1_midwives.R within this layer: run before
+       # it, the vintage check would compare the freeze against the PREVIOUS
+       # table and report a staleness the rebuild is in the middle of fixing.
        scripts = c("build_table1_midwives.R", "export_amcb_npi_geography.R",
+                   "validate_training_institution_against_acme.R",
                    "provenance_manifest.R"))
 )
 declared <- unlist(lapply(REBUILD_ORDER, `[[`, "scripts"))
