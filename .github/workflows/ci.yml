@@ -118,6 +118,9 @@ jobs:
       - name: Table 1 banding tests
         run: Rscript tests/test_table1_bands.R
 
+      - name: Table 1 ACNM region mapping contract
+        run: Rscript tests/test_acnm_regions.R
+
       # Base R only, same as above. 58.6% of the coordinates behind every
       # access map and the rurality stratifier carry a label naming the batch
       # they arrived in rather than the geocoder that produced them (#225).
