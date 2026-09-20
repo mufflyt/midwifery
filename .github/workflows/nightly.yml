@@ -989,7 +989,7 @@ jobs:
         shell: Rscript {0}
 
       - name: Run sentinel framework & classification engine
-        run: Rscript tests/test_sentinel_framework.R
+        run: Rscript scripts/nightly/run_nightly.R
 
       - name: Upload Sentinel Artifacts
         if: always()
@@ -997,9 +997,11 @@ jobs:
         with:
           name: midwifery-sentinel-report
           path: |
-            artifacts/sentinel/sentinel_summary.json
-            artifacts/sentinel/sentinel_events.csv
-            artifacts/sentinel/sentinel_report.md
+            artifacts/nightly/run_manifest.json
+            artifacts/nightly/sentinel_summary.json
+            artifacts/nightly/sentinel_events.csv
+            artifacts/nightly/sentinel_events.jsonl
+            artifacts/nightly/nightly_report.md
           if-no-files-found: ignore
 
   # ===========================================================================

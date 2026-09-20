@@ -1,0 +1,15 @@
+{
+  "sentinel_id": "amcb_canary_active_001",
+  "check_type": "source",
+  "source": "amcb",
+  "classification": "PASS",
+  "severity": "INFO",
+  "event_code": "EXPECTED_SOURCE_FACT_CONFIRMED",
+  "expected_value": "active",
+  "observed_value": "active",
+  "message": "Expected status confirmed",
+  "response_status": "200",
+  "response_hash": "sha256:1a2b3c",
+  "started_at_utc": "2026-09-20T01:00:00Z",
+  "finished_at_utc": "2026-09-20T01:00:01Z"
+}

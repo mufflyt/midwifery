@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "registry_version",
+    "sentinels"
+  ],
+  "properties": {
+    "registry_version": {
+      "type": "string"
+    },
+    "sentinels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sentinel_id",
+          "enabled",
+          "check_type",
+          "source",
+          "runner"
+        ],
+        "properties": {
+          "sentinel_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "check_type": {
+            "enum": [
+              "repository",
+              "pipeline",
+              "source",
+              "identity",
+              "completeness",
+              "scientific_invariant"
+            ]
+          },
+          "source": {
+            "type": "string"
+          },
+          "runner": {
+            "type": "string"
+          },
+          "expected": {
+            "type": "object"
+          },
+          "policy": {
+            "type": "object"
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}

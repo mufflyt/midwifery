@@ -1,0 +1,15 @@
+{
+  "sentinel_id": "amcb_source_health",
+  "check_type": "source",
+  "source": "amcb",
+  "classification": "PIPELINE_FAILURE",
+  "severity": "CRITICAL",
+  "event_code": "AMCB_SOURCE_FAILURE",
+  "expected_value": "HTTP 200 OK",
+  "observed_value": "HTTP 503",
+  "message": "Source amcb returned HTTP 503 Service Unavailable",
+  "response_status": "503",
+  "response_hash": "sha256:503err",
+  "started_at_utc": "2026-09-20T01:00:00Z",
+  "finished_at_utc": "2026-09-20T01:00:01Z"
+}

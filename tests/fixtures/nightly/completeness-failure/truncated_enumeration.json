@@ -1,0 +1,15 @@
+{
+  "sentinel_id": "github_open_pr_population",
+  "check_type": "completeness",
+  "source": "github",
+  "classification": "PIPELINE_FAILURE",
+  "severity": "ERROR",
+  "event_code": "ENUMERATION_INCOMPLETE",
+  "expected_value": "authoritative_total=58",
+  "observed_value": "retrieved_total=30",
+  "message": "Population total mismatch: expected 58, observed 30",
+  "response_status": "200",
+  "response_hash": "sha256:trunc",
+  "started_at_utc": "2026-09-20T01:00:00Z",
+  "finished_at_utc": "2026-09-20T01:00:01Z"
+}

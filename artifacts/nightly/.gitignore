@@ -1,0 +1,6 @@
+# Ignore generated nightly artifacts
+*.json
+*.csv
+*.jsonl
+*.md
+!.gitignore

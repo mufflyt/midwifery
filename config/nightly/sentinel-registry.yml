@@ -1,0 +1,46 @@
+registry_version: "1.0.0"
+
+sentinels:
+  - sentinel_id: amcb_canary_active_001
+    enabled: true
+    check_type: source
+    source: amcb
+    runner: check_amcb_canary
+    expected:
+      certification_status: active
+    policy:
+      world_drift_severity: warning
+      timeout_seconds: 30
+
+  - sentinel_id: npi_identity_positive_001
+    enabled: true
+    check_type: identity
+    source: nppes
+    runner: check_npi_identity
+    expected:
+      npi: "1234567890"
+
+  - sentinel_id: census_geocoder_benchmark_001
+    enabled: true
+    check_type: source
+    source: census_geocoder
+    runner: check_census_geocoder
+    expected:
+      benchmark: "Current"
+
+  - sentinel_id: github_open_pr_population
+    enabled: true
+    check_type: completeness
+    source: github
+    runner: check_github_pr_completeness
+    expected:
+      enumeration_complete: true
+
+  - sentinel_id: headline_cohort_invariant
+    enabled: true
+    check_type: scientific_invariant
+    source: midwifery_cohort
+    runner: check_cohort_invariant
+    expected:
+      invariant_id: "cohort_population_conservation"
+      tolerance: 0
