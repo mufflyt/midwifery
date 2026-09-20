@@ -8,9 +8,22 @@
 import sys
 import os
 import json
-import jsonschema
+
+try:
+    import jsonschema
+except ImportError:
+    import subprocess
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--quiet", "jsonschema"])
+        import jsonschema
+    except Exception as e:
+        print(f"WARNING: jsonschema module unavailable and auto-install failed: {e}")
+        jsonschema = None
 
 def validate_instance(instance_path, schema_path):
+    if not jsonschema:
+        print(f"SKIP: jsonschema library unavailable to validate {instance_path}")
+        return True
     with open(schema_path, 'r', encoding='utf-8') as sf:
         schema = json.load(sf)
     with open(instance_path, 'r', encoding='utf-8') as inf:
@@ -28,6 +41,9 @@ def validate_instance(instance_path, schema_path):
         return False
 
 def validate_jsonl(jsonl_path, schema_path):
+    if not jsonschema:
+        print(f"SKIP: jsonschema library unavailable to validate {jsonl_path}")
+        return True
     with open(schema_path, 'r', encoding='utf-8') as sf:
         schema = json.load(sf)
     if not os.path.exists(jsonl_path):

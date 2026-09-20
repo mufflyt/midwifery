@@ -84,7 +84,9 @@ jobs:
         run: Rscript scripts/nightly/run_nightly.R
 
       - name: Validate Draft 2020-12 JSON schemas
-        run: python3 scripts/nightly/validate_schema.py artifacts/nightly/
+        run: |
+          python3 -m pip install --quiet jsonschema
+          python3 scripts/nightly/validate_schema.py artifacts/nightly/
 
       - name: Upload Sentinel Artifacts
         if: always()
