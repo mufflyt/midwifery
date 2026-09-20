@@ -14,6 +14,8 @@ RENV_LIB <- file.path(here::here("renv", "library"), sprintf("R-%s", getRversion
 if (dir.exists(RENV_LIB)) .libPaths(c(RENV_LIB, .libPaths()))
 
 source(here::here("R", "safe_divide.R"))
+if (!requireNamespace("testthat", quietly = TRUE)) library(testthat)
+library(testthat)
 
 # DEN-032: safe_pct_manu in R/safe_divide.R must return NA_real_ (not 0)
 # when the denominator is 0 or NA. The manuscript path
