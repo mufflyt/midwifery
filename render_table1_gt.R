@@ -18,8 +18,8 @@
 #
 #   * registry rows use N = 11,913 while Healthgrades rows use 11,801, because
 #     112 midwives share a profile URL and cannot be attributed one;
-#   * ACOG percentages exclude military and territory addresses on their own
-#     line rather than folding them into "Unknown";
+#   * ACNM regional percentages use Regions I-VII and retain jurisdictions
+#     absent from the supplied table on an explicit unmapped row;
 #   * language is a FLOOR against the eligible denominator, not a proportion,
 #     because an absent language means "not listed", not "English only";
 #   * a CONSTANT field (hg_years_experience) is barred at any coverage.
@@ -104,7 +104,7 @@ gt_tab <- tab %>%
     "runs ~8 years above WA licensing and ~13 above OH voter registration; the ",
     "calibrated age block covers the whole cohort."))) %>%
   tab_source_note(md(paste0(
-    "Source: AMCB roster linked to NPPES; RUCC 2023; ACOG district crosswalk; ",
+    "Source: AMCB roster linked to NPPES; RUCC 2023; ACNM region crosswalk; ",
     "Healthgrades profile scrape; Trilliant provider directory (patient panel, ",
     "and sex and school where the other sources are silent).")))
 
