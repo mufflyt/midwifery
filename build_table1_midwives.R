@@ -28,7 +28,7 @@
 #          artifacts/nppes_sex_enumeration.csv   (built from the NPPES bulk file)
 #          artifacts/midwife_panel_midwifeonly.csv
 #          data/rucc_2023.xlsx
-#          ~/isochrones/config/acog_districts.yml  (canonical ACOG mapping)
+#          R/lib/acnm_regions.R  (ACNM Board regional mapping)
 # Outputs: artifacts/table1_midwives.csv
 #          docs/table1_midwives.md
 # =============================================================================
@@ -44,7 +44,7 @@ REF_YEAR <- 2026   # "years since" are measured to this study year, not Sys.Date
 # Every enrichment below is optional at its own call site -- absent file, block
 # fills with NA, script carries on. That is right per block and wrong in
 # aggregate: on 2026-09-11 this script ran on a machine holding none of them
-# and wrote a table with Sex 100% "not recorded", ACOG district 99.7%
+# and wrote a table with Sex 100% "not recorded", the regional block nearly
 # "not mappable", and Language / Accepts new patients / Offers telehealth as
 # three empty rows -- 8 categories against the full table's 24 -- under the
 # SAME two filenames. docs/table1_midwives.md still carries that render, while
@@ -90,6 +90,7 @@ ALLOW_PARTIAL_TABLE1 <- nzchar(Sys.getenv("ALLOW_PARTIAL_TABLE1"))
 # Banding and date parsing live in one tested place. Inline, each rule held
 # only because the current artifacts satisfy an assumption it never enforced.
 source("R/lib/table1_bands.R")
+source("R/lib/acnm_regions.R")
 source("R/join_safety.R")   # assert_unique_keys(): conflict-safe dedup
 source("R/lib/artifact_provenance.R")   # write_with_provenance(): see below
 source("R/lib/training_institution.R")  # training_source_trilliant(): the school backup
@@ -123,7 +124,7 @@ cat(sprintf("cohort: %s ACTIVE primary-linked midwives\n", format(N, big.mark = 
 # attributed to a specific midwife.
 #
 # SCOPE. This disqualifies them from HEALTHGRADES-DERIVED fields only. Their
-# NPPES sex, certification type, ACOG district, rurality and enumeration dates
+# NPPES sex, certification type, ACNM region, rurality and enumeration dates
 # are untouched by the collision, so removing them from the cohort would
 # discard sound registry data, shift the denominator off N, and break
 # comparability with every figure already published against it. The cohort
@@ -214,58 +215,28 @@ if (file.exists("healthgrades_profile_attrs.csv") &&
   }
 }
 
-# --- ACOG district, from the canonical crosswalk ------------------------------
-# map_state_to_acog() lives in mufflyt/isochrones and is loaded rather than
-# reimplemented; the district definitions there were corrected against the ACOG
-# website in 2025-12 and a local copy would silently miss that.
-acog_home <- Sys.getenv("ISOCHRONES_HOME", path.expand("~/isochrones-main"))
-acog_ok <- FALSE
-if (file.exists(file.path(acog_home, "R", "acog_districts.R"))) {
-  local({
-    owd <- setwd(acog_home); on.exit(setwd(owd), add = TRUE)
-    suppressWarnings(suppressMessages(
-      sys.source(file.path("R", "acog_districts.R"), envir = globalenv())))
-  })
-  acog_ok <- exists("map_state_to_acog", mode = "function")
-}
-# Coverage guard: every state code must map to a district or be an expected
-# exclusion (overseas military AA/AE/AP, US territories). Anything else is junk
-# in the state field. This cohort's Unknown row was hiding MONTSERRADO (Liberia)
-# and RHINELAND-PFALZ (Germany) among 38 legitimate exclusions -- indistinguishable
-# until the two kinds were separated.
-if (acog_ok) {
-  ex <- tryCatch(
-    assert_acog_coverage(coh$nppes_state,
-                         context = "Table 1: nppes_state -> ACOG district"),
-    error = function(e) {
-      # Report rather than abort: the two foreign values are a known upstream
-      # defect in the AMCB/NPPES state field, not a reason to withhold the whole
-      # table. They are counted as excluded and named here.
-      message("ACOG coverage guard: ", conditionMessage(e))
-      integer(0)
-    })
-  if (length(ex))
-    cat(sprintf("excluded from district analysis: %s\n",
-                paste(sprintf("%s=%d", names(ex), ex), collapse = ", ")))
-}
+# --- ACNM Board of Directors region -------------------------------------------
+# This variable replaces ACOG district in Table 1. The mapping is local and
+# tested in this repository because ACNM geography, not ACOG geography, is the
+# relevant professional representation for a midwifery cohort.
+coh$acnm_region <- map_state_to_acnm_region(coh$nppes_state)
+n_acnm_unmapped <- sum(is.na(coh$acnm_region))
 
-# ACOG district. THE ASSIGNMENT WAS DELETED AT SOME POINT while the block that
-# publishes it remained, so Table 1 shipped with an empty ACOG section and
-# nothing failed -- blk() on a NULL column returns zero rows AND zero
-# "Unknown", so the category simply disappeared. Restored 2026-08-10.
-n_acog_excluded <- if (acog_ok)
-  sum(coh$nppes_state %in% ACOG_EXPECTED_UNMAPPED, na.rm = TRUE) else 0L
-
-coh$acog_district <- if (acog_ok) {
-  suppressWarnings(map_state_to_acog(coh$nppes_state))
-} else {
-  warning("canonical ACOG crosswalk not found; district left NA", call. = FALSE)
-  NA_character_
-}
-
-
-if (!exists("ACOG_EXPECTED_UNMAPPED")) {
-  ACOG_EXPECTED_UNMAPPED <- c("AA", "AE", "AP", "GU", "PR", "VI", "AS", "MP", "FM", "PW", "MH")
+acnm_unmapped_values <- sort(table(
+  trimws(as.character(coh$nppes_state[is.na(coh$acnm_region)]))
+))
+if (length(acnm_unmapped_values)) {
+  cat(sprintf(
+    "not mappable to supplied ACNM regions: %s\n",
+    paste(
+      sprintf(
+        "%s=%d",
+        names(acnm_unmapped_values),
+        as.integer(acnm_unmapped_values)
+      ),
+      collapse = ", "
+    )
+  ))
 }
 
 # --- rurality, from county via RUCC -------------------------------------------
@@ -793,7 +764,7 @@ blk <- function(df, col, category, lvls = NULL,
   # AN ABSENT COLUMN IS AN ERROR, NOT AN EMPTY BLOCK. df[[col]] on a missing
   # column returns NULL; as.character(NULL) has zero rows and sum(is.na(NULL))
   # is 0, so the category vanished from the table entirely -- no rows, no
-  # "Unknown", no warning. That is how the ACOG block disappeared. A published
+  # "Unknown", no warning. That is how the old regional block disappeared. A published
   # block that silently omits itself is worse than one that fails loudly.
   if (!col %in% names(df)) {
     stop(sprintf(paste0("Table 1 block '%s' requires column '%s', which is not ",
@@ -888,23 +859,14 @@ blk_hg <- function(col, category, lvls = NULL, binary_yes = NULL,
 }
 
 # --- complete, or diverted -----------------------------------------------------
-# Rurality and ACOG district are resolved above rather than by a bare
-# file.exists(), so they are added to the check here with what was actually
-# found: `geo_path` is NA when neither geography artifact is present, and
-# `acog_ok` is FALSE when the crosswalk could not be sourced.
+# Rurality is resolved above rather than by a bare file.exists(), so it is
+# added to the check here with what was actually found. ACNM region is a local
+# tested mapping and is therefore not an optional enrichment input.
 t1_missing <- TABLE1_ENRICHMENT[!file.exists(TABLE1_ENRICHMENT$path), , drop = FALSE]
 if (is.na(geo_path))
   t1_missing <- rbind(t1_missing, data.frame(
     path = paste(geo_paths, collapse = " or "),
     blocks = "Rurality (RUCC 2023)", stringsAsFactors = FALSE))
-if (!isTRUE(acog_ok))
-  # Named by its env var, not by the resolved path: this string lands in
-  # artifacts/table1_provenance.csv, which is tracked, and an absolute
-  # /Users/... path resolves for nobody else.
-  t1_missing <- rbind(t1_missing, data.frame(
-    path = "$ISOCHRONES_HOME/R/acog_districts.R",
-    blocks = "ACOG district", stringsAsFactors = FALSE))
-
 T1_PARTIAL <- nrow(t1_missing) > 0L
 if (T1_PARTIAL && !ALLOW_PARTIAL_TABLE1) {
   stop(sprintf(paste0(
@@ -964,22 +926,16 @@ t1 <- bind_rows(
              n = NA_integer_, percent = NA_real_, category = PANEL_CATEGORY),
       blk(coh, "panel_age_band", PANEL_CATEGORY, lvls = PANEL_AGE_LEVELS,
           unknown_label = "No claims panel in the Trilliant directory")),
-  # District percentages are computed on midwives who HAVE a district. Military
-  # and territory addresses are excluded by decision (no District X), so they
-  # are reported on their own line rather than inside "Unknown", which would
-  # imply the district is missing when it is not applicable.
-  # The comment above says these are reported on their own line. They were not:
-  # filter() removed them before blk() ever saw them, so the block summed to
-  # 11,882 against a cohort of 11,920 and the 38 were invisible. Now the line
-  # exists, as described.
-  bind_rows(
-    blk(coh %>% filter(!nppes_state %in% ACOG_EXPECTED_UNMAPPED),
-        "acog_district", "ACOG district",
-        lvls = if (acog_ok) ACOG_DISTRICT_LEVELS else NULL,
-        unknown_label = "State not mappable to an ACOG district"),
-    if (n_acog_excluded > 0L)
-      tibble(characteristic = "Overseas-military or US-territory address (no ACOG district)",
-             n = n_acog_excluded, percent = NA_real_, category = "ACOG district")),
+  # ACNM percentages use the mappable regional denominator. Any state or
+  # jurisdiction absent from the supplied ACNM table remains visible as an
+  # unmapped row with no percentage, so the block still reconciles to N.
+  blk(
+    coh,
+    "acnm_region",
+    "ACNM region",
+    lvls = ACNM_REGION_LEVELS,
+    unknown_label = "State/jurisdiction not mappable to an ACNM region"
+  ),
   # Conditional like every other optional block. Unconditional, it was the
   # first thing to fail on a machine with no geography artifact -- before the
   # enrichment guard above could name all twelve missing inputs. That guard
@@ -1149,6 +1105,8 @@ readr::write_csv(tibble::tibble(
   scrape_certificants = if (exists("hg")) dplyr::n_distinct(hg$certification_number) else NA_integer_,
   cohort_n            = N,
   hg_ambiguous_cohort = length(hg_ambiguous),
+  acnm_unmapped_cohort = n_acnm_unmapped,
+  acnm_region_mapping  = "R/lib/acnm_regions.R",
   # COMPLETE or PARTIAL, and what was missing. This file recorded cohort_n =
   # 12,171 from the 2026-09-11 partial build while the CSV beside it held
   # 11,920 from the last complete one, and nothing in it said which was which.
@@ -1173,12 +1131,12 @@ md <- c("# Table 1. Characteristics of the ACTIVE certified-midwife cohort", "",
         sprintf(paste0("Registry-derived rows use the full cohort. Healthgrades-derived ",
                        "rows use a smaller denominator of **%s**: %s a Healthgrades ",
                        "profile with another certificant and cannot be attributed one. ",
-                       "They remain in the cohort for every registry-derived row above, and appear on their own row here so the block still sums to the cohort. ACOG district percentages likewise exclude %s midwives with an overseas-military or US-territory address (no district exists for them); they too are shown on their own row, so every block in this table sums to %s."),
+                       "They remain in the cohort for every registry-derived row above, and appear on their own row here so the block still sums to the cohort. ACNM region percentages use Board of Directors Regions I-VII; %s midwives have a state/jurisdiction not mappable from the supplied regional table and are shown on their own unmapped row. Every block therefore still sums to %s."),
                 format(N - length(hg_ambiguous), big.mark = ","),
                 if (length(hg_ambiguous) == 1L) "one midwife shares"
                 else sprintf("%s midwives share",
                              format(length(hg_ambiguous), big.mark = ",")),
-                format(n_acog_excluded, big.mark = ","),
+                format(n_acnm_unmapped, big.mark = ","),
                 format(N, big.mark = ",")), "",
         "| Characteristic | n | % |", "|---|---:|---:|")
 for (cat_i in unique(t1$category)) {

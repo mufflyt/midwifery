@@ -1212,7 +1212,7 @@ routed midwife.
 and `artifacts/table1_midwives.csv`.
 
 Characteristics of the **11,920** ACTIVE, primary-linked midwives: certification
-(CNM 99.0% / CM 1.0%), sex as recorded in NPPES, ACOG district, rurality, years
+(CNM 99.0% / CM 1.0%), sex as recorded in NPPES, ACNM region, rurality, years
 since NPI enumeration, and years observed in NPPES. Long format
 (`characteristic` / `n` / `percent` / `category`) following the isochrones
 vignette `how-to-create-table-1.Rmd`.
