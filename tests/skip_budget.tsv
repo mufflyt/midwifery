@@ -76,5 +76,6 @@ tests/test-nightly-classification.R	testthat	pr	0	0	Nightly framework classifica
 tests/test-nightly-completeness.R	testthat	pr	0	0	Nightly framework population completeness assertion tests
 tests/test-nightly-source-failure.R	testthat	pr	0	0	Nightly framework source failure precedence tests
 tests/test-nightly-mutations.R	testthat	pr	0	0	Nightly framework mutation tests
+tests/test-nightly-pr-enumeration.R	testthat	pr	0	0	Nightly framework open PR enumeration completeness tests
 
 

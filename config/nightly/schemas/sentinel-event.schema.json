@@ -8,12 +8,18 @@
     "classification",
     "severity",
     "event_code",
+    "expected_value",
+    "observed_value",
+    "message",
+    "response_status",
+    "response_hash",
     "started_at_utc",
     "finished_at_utc"
   ],
   "properties": {
     "sentinel_id": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "check_type": {
       "enum": [
@@ -26,7 +32,8 @@
       ]
     },
     "source": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "classification": {
       "enum": [
@@ -44,7 +51,8 @@
       ]
     },
     "event_code": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "expected_value": {},
     "observed_value": {},
@@ -75,5 +83,6 @@
       "type": "string",
       "format": "date-time"
     }
-  }
+  },
+  "additionalProperties": true
 }
