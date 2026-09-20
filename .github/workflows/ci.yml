@@ -51,10 +51,15 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   r-checks:
     name: R hygiene and join keys
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -196,12 +201,14 @@ jobs:
   python-checks:
     name: Python syntax and address keys
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: 'pip'
 
       # Compiles every tracked .py. The scrapers import requests/bs4, which are
       # NOT installed here -- compileall checks syntax without importing, which
@@ -262,6 +269,7 @@ jobs:
   r-unit-tests:
     name: R unit tests (pure functions)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -845,6 +853,7 @@ jobs:
   scientific-gate:
     name: Scientific gate
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: always()
     needs: [r-checks, python-checks, r-unit-tests, science-law-coverage]
     steps:

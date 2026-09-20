@@ -6,6 +6,11 @@
 #   if any PIPELINE_FAILURE: PIPELINE_FAILURE (workflow_should_fail = TRUE)
 #   else if any WORLD_DRIFT: WORLD_DRIFT (workflow_should_fail = FALSE)
 #   else: PASS (workflow_should_fail = FALSE)
+#
+# End-to-End Status Distinction:
+#   FULL_END_TO_END_PASS: All repo checks pass AND live Valhalla routing canary is ONLINE.
+#   COMPREHENSIVE_OFFLINE_PASS: All repo checks pass BUT Valhalla routing canary is OFFLINE.
+#   PIPELINE_FAILURE: Software defect or assertion failure.
 # =============================================================================
 
 nightly_classify <- function(observation) {
@@ -13,6 +18,7 @@ nightly_classify <- function(observation) {
   if (is.null(events) || nrow(events) == 0) {
     return(list(
       overall_classification = "PASS",
+      e2e_classification = "COMPREHENSIVE_OFFLINE_PASS",
       workflow_should_fail = FALSE,
       counts = list(total = 0, pass = 0, world_drift = 0, pipeline_failure = 0),
       severity_counts = list(info = 0, warning = 0, error = 0, critical = 0)
@@ -34,6 +40,7 @@ nightly_classify <- function(observation) {
   if (any(!events$classification %in% valid_classes)) {
     return(list(
       overall_classification = "PIPELINE_FAILURE",
+      e2e_classification = "PIPELINE_FAILURE",
       workflow_should_fail = TRUE,
       counts = list(total = n_total, pass = n_pass, world_drift = n_drift, pipeline_failure = n_total),
       severity_counts = list(info = 0, warning = 0, error = 0, critical = n_total)
@@ -52,8 +59,18 @@ nightly_classify <- function(observation) {
     should_fail <- FALSE
   }
 
+  valhalla_online <- any(events$event_code == "VALHALLA_ROUTING_ONLINE_VERIFIED", na.rm = TRUE)
+  if (n_pfail > 0) {
+    e2e_status <- "PIPELINE_FAILURE"
+  } else if (valhalla_online) {
+    e2e_status <- "FULL_END_TO_END_PASS"
+  } else {
+    e2e_status <- "COMPREHENSIVE_OFFLINE_PASS"
+  }
+
   list(
     overall_classification = overall,
+    e2e_classification = e2e_status,
     workflow_should_fail = should_fail,
     counts = list(
       total = as.integer(n_total),
@@ -90,6 +107,7 @@ nightly_build_summary <- function(events, context = list()) {
     started_at_utc = started_utc,
     finished_at_utc = finished_utc,
     classification = res$overall_classification,
+    e2e_classification = res$e2e_classification,
     workflow_should_fail = res$workflow_should_fail,
     counts = res$counts,
     severity_counts = res$severity_counts,

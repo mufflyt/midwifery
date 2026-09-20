@@ -79,7 +79,7 @@ nightly_validate_registry <- function(registry, schema_path = "config/nightly/sc
     return(list(valid = FALSE, message = "Missing or invalid sentinels array"))
   }
 
-  valid_types <- c("repository", "pipeline", "source", "identity", "completeness", "scientific_invariant")
+  valid_types <- c("repository", "pipeline", "source", "identity", "completeness", "scientific_invariant", "routing")
 
   for (s in registry$sentinels) {
     if (is.null(s$sentinel_id) || nchar(trimws(s$sentinel_id)) == 0) {

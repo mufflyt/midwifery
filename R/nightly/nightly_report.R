@@ -20,6 +20,8 @@ nightly_write_artifacts <- function(events,
   run_id <- if (!is.null(manifest$run_id)) manifest$run_id else Sys.getenv("GITHUB_RUN_ID", "local-dev-run")
   repo_sha <- if (!is.null(manifest$repository_sha)) manifest$repository_sha else tryCatch(trimws(system("git rev-parse HEAD", intern = TRUE)), error = function(e) "0000000000000000000000000000000000000000")
 
+  e2e_class <- if (!is.null(summary$e2e_classification)) summary$e2e_classification else "COMPREHENSIVE_OFFLINE_PASS"
+
   # 1. Write run_manifest.json
   manifest_obj <- list(
     run_id = as.character(run_id),
@@ -53,6 +55,7 @@ nightly_write_artifacts <- function(events,
     started_at_utc = started_utc,
     finished_at_utc = finished_utc,
     classification = summary$overall_classification,
+    e2e_classification = e2e_class,
     workflow_should_fail = summary$workflow_should_fail,
     counts = summary$counts,
     severity_counts = summary$severity_counts,
@@ -85,6 +88,7 @@ nightly_write_artifacts <- function(events,
     paste0("**Finished**: `", finished_utc, "`"),
     "",
     paste0("## Overall Classification: **", summary$overall_classification, "**"),
+    paste0("## End-to-End Status: **", e2e_class, "**"),
     "",
     paste0("- **Total checks evaluated**: ", summary$counts$total),
     paste0("- **PASS**: ", summary$counts$pass),
@@ -106,6 +110,10 @@ nightly_write_artifacts <- function(events,
     "## Source Health Status",
     paste0("Sources Checked: ", sources_checked, " | Sources Failed: ", sources_failed),
     if (sources_failed > 0) "⚠️ Source-level failures detected." else "✓ All sources healthy and observable.",
+    "",
+    "## Routing & Valhalla Canary Status",
+    paste0("End-to-End Classification: **", e2e_class, "**"),
+    if (e2e_class == "FULL_END_TO_END_PASS") "✓ Valhalla routing engine active and 30/60m contour verified." else "ℹ️ Offline/unreachable routing engine fallback (COMPREHENSIVE_OFFLINE_PASS).",
     "",
     "## Execution Provenance",
     paste0("- **Framework Version**: `v1.0.0`"),

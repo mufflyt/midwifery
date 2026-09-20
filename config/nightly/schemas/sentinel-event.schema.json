@@ -28,7 +28,8 @@
         "source",
         "identity",
         "completeness",
-        "scientific_invariant"
+        "scientific_invariant",
+        "routing"
       ]
     },
     "source": {
