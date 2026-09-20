@@ -7,6 +7,7 @@
     "started_at_utc",
     "finished_at_utc",
     "classification",
+    "e2e_classification",
     "workflow_should_fail",
     "counts",
     "severity_counts",
@@ -33,6 +34,13 @@
       "enum": [
         "PASS",
         "WORLD_DRIFT",
+        "PIPELINE_FAILURE"
+      ]
+    },
+    "e2e_classification": {
+      "enum": [
+        "FULL_END_TO_END_PASS",
+        "COMPREHENSIVE_OFFLINE_PASS",
         "PIPELINE_FAILURE"
       ]
     },

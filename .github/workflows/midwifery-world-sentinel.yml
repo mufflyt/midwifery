@@ -23,6 +23,10 @@ on:
         required: true
         default: 'all'
 
+concurrency:
+  group: sentinel-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   issues: write
@@ -40,15 +44,49 @@ jobs:
           r-version: release
           use-public-rspm: true
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache R packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: ${{ runner.os }}-r-sentinel-${{ hashFiles('.github/workflows/midwifery-world-sentinel.yml') }}
+          restore-keys: ${{ runner.os }}-r-sentinel-
+
+      - name: Cache APT packages for sf
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-sf-${{ hashFiles('.github/workflows/midwifery-world-sentinel.yml') }}
+          restore-keys: ${{ runner.os }}-apt-sf-
+
+      - name: System libraries for sf
+        run: |
+          if dpkg -s libgdal-dev libproj-dev libgeos-dev libudunits2-dev >/dev/null 2>&1; then
+            echo "sf system libraries already installed."
+          else
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends \
+              libgdal-dev libproj-dev libgeos-dev libudunits2-dev
+          fi
+          sudo chown -R $USER /var/cache/apt/archives || true
+
       - name: Install dependencies
         run: |
-          pkgs <- c("dplyr", "readr", "jsonlite", "openssl", "tibble")
+          pkgs <- c("dplyr", "readr", "jsonlite", "openssl", "tibble", "stringr")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
         shell: Rscript {0}
 
       - name: Run sentinel framework & classification engine
         run: Rscript scripts/nightly/run_nightly.R
+
+      - name: Validate Draft 2020-12 JSON schemas
+        run: |
+          python3 -m pip install --quiet jsonschema
+          python3 scripts/nightly/validate_schema.py artifacts/nightly/
 
       - name: Upload Sentinel Artifacts
         if: always()
@@ -61,4 +99,5 @@ jobs:
             artifacts/nightly/sentinel_events.csv
             artifacts/nightly/sentinel_events.jsonl
             artifacts/nightly/nightly_report.md
+          retention-days: 14
           if-no-files-found: ignore

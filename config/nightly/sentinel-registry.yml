@@ -44,3 +44,16 @@ sentinels:
     expected:
       invariant_id: "cohort_population_conservation"
       tolerance: 0
+
+  - sentinel_id: valhalla_routing_canary_001
+    enabled: true
+    check_type: routing
+    source: valhalla
+    runner: check_valhalla_routing_canary
+    expected:
+      provider_location: "Westchester Medical Center, Valhalla, NY"
+      lat: 41.0859065
+      lon: -73.8034506
+      contours_minutes: [30, 60]
+      min_area_km2: 1.0
+      max_area_km2: 10000.0

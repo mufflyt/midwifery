@@ -208,7 +208,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install
         run: |
@@ -963,6 +963,17 @@ jobs:
           r-version: release
           use-public-rspm: true
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache R packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: ${{ runner.os }}-r-nightly-sentinel-${{ hashFiles('.github/workflows/nightly.yml') }}
+          restore-keys: ${{ runner.os }}-r-nightly-sentinel-
+
       - name: Cache APT packages for sf
         uses: actions/cache@v4
         with:
@@ -991,6 +1002,11 @@ jobs:
       - name: Run sentinel framework & classification engine
         run: Rscript scripts/nightly/run_nightly.R
 
+      - name: Validate Draft 2020-12 JSON schemas
+        run: |
+          python3 -m pip install --quiet jsonschema
+          python3 scripts/nightly/validate_schema.py artifacts/nightly/
+
       - name: Upload Sentinel Artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -1002,6 +1018,7 @@ jobs:
             artifacts/nightly/sentinel_events.csv
             artifacts/nightly/sentinel_events.jsonl
             artifacts/nightly/nightly_report.md
+          retention-days: 14
           if-no-files-found: ignore
 
   # ===========================================================================
