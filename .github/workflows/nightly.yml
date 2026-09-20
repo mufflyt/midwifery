@@ -118,6 +118,7 @@ jobs:
             sudo apt-get install -y --no-install-recommends \
               libgdal-dev libproj-dev libgeos-dev libudunits2-dev
           fi
+          sudo chown -R $USER /var/cache/apt/archives || true
 
       # The superset: what the tests name, plus everything reached through
       # source() chains. A package missing here reads as a test failure, which
@@ -384,6 +385,7 @@ jobs:
             sudo apt-get install -y --no-install-recommends \
               libgdal-dev libproj-dev libgeos-dev libudunits2-dev
           fi
+          sudo chown -R $USER /var/cache/apt/archives || true
 
       - name: Install packages needed by L6-L10's gates
         run: |
@@ -671,6 +673,7 @@ jobs:
             sudo apt-get install -y --no-install-recommends \
               libgdal-dev libproj-dev libgeos-dev libudunits2-dev
           fi
+          sudo chown -R $USER /var/cache/apt/archives || true
 
       - name: Install packages
         run: |
@@ -948,12 +951,64 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ===========================================================================
+  sentinel:
+    name: External-world drift & source-health sentinel
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Cache APT packages for sf
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-sf-${{ hashFiles('.github/workflows/nightly.yml') }}
+          restore-keys: ${{ runner.os }}-apt-sf-
+
+      - name: System libraries for sf
+        run: |
+          if dpkg -s libgdal-dev libproj-dev libgeos-dev libudunits2-dev >/dev/null 2>&1; then
+            echo "sf system libraries already installed."
+          else
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends \
+              libgdal-dev libproj-dev libgeos-dev libudunits2-dev
+          fi
+          sudo chown -R $USER /var/cache/apt/archives || true
+
+      - name: Install dependencies
+        run: |
+          pkgs <- c("dplyr", "readr", "jsonlite", "openssl", "tibble", "stringr")
+          missing <- pkgs[!pkgs %in% rownames(installed.packages())]
+          if (length(missing)) install.packages(missing)
+        shell: Rscript {0}
+
+      - name: Run sentinel framework & classification engine
+        run: Rscript tests/test_sentinel_framework.R
+
+      - name: Upload Sentinel Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: midwifery-sentinel-report
+          path: |
+            artifacts/sentinel/sentinel_summary.json
+            artifacts/sentinel/sentinel_events.csv
+            artifacts/sentinel/sentinel_report.md
+          if-no-files-found: ignore
+
+  # ===========================================================================
   summary:
     name: Nightly summary
     runs-on: ubuntu-latest
     # Blocking jobs only. network-tests and external-deps are informational by
     # construction and must not be able to redden the nightly.
-    needs: [r-suite, python-suite, gates, science, suite-coverage, public-exposure, mutation-testing]
+    needs: [r-suite, python-suite, gates, science, suite-coverage, public-exposure, mutation-testing, sentinel]
     if: always()
     steps:
       - name: Report
@@ -968,6 +1023,7 @@ jobs:
             echo "| Suite coverage | ${{ needs.suite-coverage.result }} |"
             echo "| Public exposure | ${{ needs.public-exposure.result }} |"
             echo "| Mutation testing | ${{ needs.mutation-testing.result }} |"
+            echo "| External-World Sentinel | ${{ needs.sentinel.result }} |"
           } >> "$GITHUB_STEP_SUMMARY"
 
       # A skipped or cancelled blocking job is NOT a pass. Requiring 'success'
@@ -980,7 +1036,8 @@ jobs:
                    "${{ needs.science.result }}" \
                    "${{ needs.suite-coverage.result }}" \
                    "${{ needs.public-exposure.result }}" \
-                   "${{ needs.mutation-testing.result }}"; do
+                   "${{ needs.mutation-testing.result }}" \
+                   "${{ needs.sentinel.result }}"; do
             [ "$r" = "success" ] || { echo "blocking job result: $r"; exit 1; }
           done
           echo "all blocking jobs succeeded"
