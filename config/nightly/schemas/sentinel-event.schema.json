@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "sentinel_id",
+    "check_type",
+    "source",
+    "classification",
+    "severity",
+    "event_code",
+    "started_at_utc",
+    "finished_at_utc"
+  ],
+  "properties": {
+    "sentinel_id": {
+      "type": "string"
+    },
+    "check_type": {
+      "enum": [
+        "repository",
+        "pipeline",
+        "source",
+        "identity",
+        "completeness",
+        "scientific_invariant"
+      ]
+    },
+    "source": {
+      "type": "string"
+    },
+    "classification": {
+      "enum": [
+        "PASS",
+        "WORLD_DRIFT",
+        "PIPELINE_FAILURE"
+      ]
+    },
+    "severity": {
+      "enum": [
+        "INFO",
+        "WARNING",
+        "ERROR",
+        "CRITICAL"
+      ]
+    },
+    "event_code": {
+      "type": "string"
+    },
+    "expected_value": {},
+    "observed_value": {},
+    "message": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "response_status": {
+      "type": [
+        "string",
+        "integer",
+        "null"
+      ]
+    },
+    "response_hash": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "started_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finished_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

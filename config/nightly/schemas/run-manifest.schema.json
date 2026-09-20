@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "run_id",
+    "run_attempt",
+    "repository",
+    "repository_sha",
+    "repository_ref",
+    "framework_version",
+    "registry_version",
+    "event_trigger",
+    "scheduled_for_utc",
+    "started_at_utc",
+    "finished_at_utc",
+    "runner_os",
+    "r_version",
+    "random_seed",
+    "read_only"
+  ],
+  "properties": {
+    "run_id": { "type": "string" },
+    "run_attempt": { "type": "integer" },
+    "repository": { "type": "string" },
+    "repository_sha": { "type": "string" },
+    "repository_ref": { "type": "string" },
+    "framework_version": { "type": "string" },
+    "registry_version": { "type": "string" },
+    "event_trigger": { "type": "string" },
+    "scheduled_for_utc": { "type": "string", "format": "date-time" },
+    "started_at_utc": { "type": "string", "format": "date-time" },
+    "finished_at_utc": { "type": "string", "format": "date-time" },
+    "runner_os": { "type": "string" },
+    "r_version": { "type": "string" },
+    "random_seed": { "type": "integer" },
+    "read_only": { "type": "boolean" }
+  },
+  "additionalProperties": false
+}

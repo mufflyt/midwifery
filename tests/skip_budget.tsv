@@ -71,4 +71,10 @@ tests/ci_duckdb_connection_contract.R	ci_skip	pr	3	3	three UNSPECIFIED-by-design
 tests/ci_duckdb_clean_environment.R	ci_skip	pr	0	0	the one ci_skip() note only fires if the install-allowed scenario cannot reach the network to download the encodings extension; GitHub-hosted runners have outbound internet access by default, so this is expected to be 0 -- if a runner network-restricts this, bump to 1 and note the runner, not a code regression
 tests/test_exclusion_invariants.R	ci_skip	pr	1	1	E3 checks person-level frozen datasets (amcb_npi_linkage_FROZEN.csv and midwives_geography_FROZEN.csv), which are gitignored; skips when absent
 tests/test_table1_demographics_qc.R	ci_skip	pr	0	0	Table 1 CSV is tracked; declared so that gaining a skip is a failure
+tests/test-nightly-registry.R	testthat	pr	0	0	Nightly framework registry schema validation tests
+tests/test-nightly-classification.R	testthat	pr	0	0	Nightly framework classification and severity policy tests
+tests/test-nightly-completeness.R	testthat	pr	0	0	Nightly framework population completeness assertion tests
+tests/test-nightly-source-failure.R	testthat	pr	0	0	Nightly framework source failure precedence tests
+tests/test-nightly-mutations.R	testthat	pr	0	0	Nightly framework mutation tests
+
 

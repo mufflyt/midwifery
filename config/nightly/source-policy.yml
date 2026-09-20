@@ -1,0 +1,24 @@
+source_policies:
+  amcb:
+    max_retries: 3
+    timeout_seconds: 15
+    warning_latency_seconds: 10
+    critical_on_source_failure: true
+
+  nppes:
+    max_retries: 3
+    timeout_seconds: 15
+    warning_latency_seconds: 5
+    critical_on_source_failure: true
+
+  census_geocoder:
+    max_retries: 2
+    timeout_seconds: 20
+    warning_latency_seconds: 10
+    critical_on_source_failure: true
+
+  github:
+    max_retries: 3
+    timeout_seconds: 10
+    warning_latency_seconds: 5
+    critical_on_source_failure: true

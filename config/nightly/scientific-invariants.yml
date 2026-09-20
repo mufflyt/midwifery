@@ -1,0 +1,24 @@
+invariants:
+  - invariant_id: cohort_population_conservation
+    description: "Conservation rule: roster = active + inactive"
+    measurement: "flow_diagram_reconciliation"
+    expected: "exact_equality"
+    tolerance: 0.0
+    classification_on_breach: PIPELINE_FAILURE
+    severity_on_breach: ERROR
+
+  - invariant_id: table1_demographic_sum
+    description: "Demographic block category sums reconcile to Cohort N"
+    measurement: "table1_sum_check"
+    expected: "exact_equality"
+    tolerance: 0.0
+    classification_on_breach: PIPELINE_FAILURE
+    severity_on_breach: ERROR
+
+  - invariant_id: amcb_roster_integrity
+    description: "No missing certification stage in frozen roster"
+    measurement: "amcb_frozen_roster_na_count"
+    expected: 0
+    tolerance: 0
+    classification_on_breach: PIPELINE_FAILURE
+    severity_on_breach: ERROR

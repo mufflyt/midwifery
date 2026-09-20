@@ -1,0 +1,15 @@
+{
+  "sentinel_id": "amcb_source_health",
+  "check_type": "source",
+  "source": "amcb",
+  "classification": "PIPELINE_FAILURE",
+  "severity": "CRITICAL",
+  "event_code": "AMCB_MALFORMED_PAYLOAD",
+  "expected_value": "Valid payload schema",
+  "observed_value": "Malformed or unparsable payload",
+  "message": "Source amcb payload is malformed",
+  "response_status": "200",
+  "response_hash": "sha256:badpayload",
+  "started_at_utc": "2026-09-20T01:00:00Z",
+  "finished_at_utc": "2026-09-20T01:00:01Z"
+}

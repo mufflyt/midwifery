@@ -1,0 +1,15 @@
+{
+  "sentinel_id": "amcb_canary_active_001",
+  "check_type": "source",
+  "source": "amcb",
+  "classification": "WORLD_DRIFT",
+  "severity": "WARNING",
+  "event_code": "WORLD_SOURCE_DRIFT",
+  "expected_value": "active",
+  "observed_value": "inactive",
+  "message": "Status changed in world from active to inactive",
+  "response_status": "200",
+  "response_hash": "sha256:4d5e6f",
+  "started_at_utc": "2026-09-20T01:00:00Z",
+  "finished_at_utc": "2026-09-20T01:00:01Z"
+}
