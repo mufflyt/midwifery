@@ -54,6 +54,10 @@ if (isTRUE(params$dev_mode)) {
 # build_stats_catalog.R for the three-vintages-of-one-number problem this
 # solves. If an input artifact has moved, this manuscript moves with it.
 K <- mw_init_stats(root)
+
+style_manuscript_table <- function(x, ..., align = NULL) {
+  knitr::kable(x, row.names = FALSE, align = align, ...)
+}
 ```
 
 ::: {.callout-note appearance="simple"}
@@ -741,13 +745,20 @@ least able to replace one.
 # blocks, several of which (Medicare practice group size, telehealth, training
 # institution) belong to other papers. The blocks named here are the ones a
 # reader of a MOBILITY paper needs in order to judge who moved: credential,
-# sex, age, time since certification, and the rurality the persistence analysis
-# stratifies on. Named explicitly so adding a block to the artifact cannot
-# silently lengthen Table 1.
+# sex, clinician age, time since certification, panel observability, patient
+# age when Trilliant is available, work-setting context, and the
+# rurality the persistence analysis stratifies on. Named explicitly so adding a
+# block to the artifact cannot silently lengthen Table 1.
 BLOCKS <- c("Certification",
             "Sex",
             "Calibrated Age (100% Cohort Coverage)",
             "Years Since AMCB Initial Certification",
+            "Years Observed in NPPES Panel",
+            "Median age of the midwife's patients",
+            "Medicare practice group size (CMS DAC)",
+            "Number of practice locations (CMS DAC)",
+            "Any observed hospital work site",
+            "Primary claims-site setting",
             "Rurality (RUCC 2023)")
 
 t1src <- readr::read_csv(file.path(root, "artifacts", "table1_midwives.csv"),
@@ -765,7 +776,8 @@ for (b in BLOCKS) {
     rows[[length(rows) + 1]] <- data.frame(
       Characteristic = paste0("\u00a0\u00a0", blk$characteristic[i]),
       `n (%)` = if (is.na(pct)) {
-        sprintf("%s (not recorded)", formatC(blk$n[i], format = "d", big.mark = ","))
+        sprintf("%s (not recorded/unresolved/not applicable)",
+                formatC(blk$n[i], format = "d", big.mark = ","))
       } else {
         sprintf("%s (%.1f)", formatC(blk$n[i], format = "d", big.mark = ","), pct)
       },
@@ -774,8 +786,8 @@ for (b in BLOCKS) {
 }
 t1out <- do.call(rbind, rows)
 
-knitr::kable(t1out, row.names = FALSE, align = "lr",
-  caption = sprintf("Table 1. Characteristics of the %s actively certified, primary-linked midwives. Values are n (%%) unless noted. Percentages within a block are computed on the members of that block with the characteristic recorded, so a block containing a not-recorded row does not sum to 100.",
+style_manuscript_table(t1out, align = "lr",
+  caption = sprintf("Table 1. Characteristics of the %s actively certified, primary-linked midwives. Values are n (%%) unless noted. Percentages exclude rows labelled not recorded/unresolved/not applicable; those rows are shown to preserve cohort accounting.",
                     formatC(t1src$n[1], format = "d", big.mark = ",")))
 ```
 
@@ -786,7 +798,7 @@ t2 <- data.frame(
   `Same ZIP code` = sprintf("%.1f", c(K$persist$annual_zip, K$persist$career_zip)),
   `Same state` = sprintf("%.1f", c(K$persist$annual_state, K$persist$career_state)),
   check.names = FALSE)
-knitr::kable(t2, row.names = FALSE, align = "lrrr",
+style_manuscript_table(t2, align = "lrrr",
   caption = "Table 2. Persistence at two horizons, by geographic unit. Values are percentages.")
 ```
 
@@ -798,7 +810,7 @@ t3 <- data.frame(
   `Same county, %` = sprintf("%.1f", r$pct),
   `95% CI` = sprintf("%.1f-%.1f", r$lo, r$hi),
   check.names = FALSE)
-knitr::kable(t3, row.names = FALSE, align = "lrrr",
+style_manuscript_table(t3, align = "lrrr",
   caption = sprintf("Table 3. Career same-county persistence by rurality of the county of first observed practice. %s for trend; metropolitan minus remote %.1f percentage points (95%% CI %.1f-%.1f).",
                     gsub("\\*", "", mw_pval(K$rural$trend_p)),
                     K$rural$diff, K$rural$diff_lo, K$rural$diff_hi))
@@ -807,9 +819,13 @@ knitr::kable(t3, row.names = FALSE, align = "lrrr",
 ```{r tbl4}
 m <- K$movers$table
 t4 <- data.frame(`Origin stratum` = rownames(m), check.names = FALSE)
-for (cn in colnames(m)) t4[[cn]] <- formatC(m[, cn], format = "d", big.mark = ",")
-knitr::kable(t4, row.names = FALSE, align = "lrrr",
-  caption = sprintf("Table 4. Destination stratum of providers who changed county over their career. Net flow: %s nonmetropolitan-origin providers ended metropolitan; %s metropolitan-origin providers ended nonmetropolitan.",
+row_totals <- rowSums(m)
+for (cn in colnames(m)) {
+  pct <- ifelse(row_totals > 0, 100 * m[, cn] / row_totals, NA_real_)
+  t4[[cn]] <- sprintf("%s (%.1f)", formatC(m[, cn], format = "d", big.mark = ","), pct)
+}
+style_manuscript_table(t4, align = "lrrr",
+  caption = sprintf("Table 4. Destination stratum of providers who changed county over their career. Values are n (%%). Percentages are row percentages within origin stratum. Net flow: %s nonmetropolitan-origin providers ended metropolitan; %s metropolitan-origin providers ended nonmetropolitan.",
                     formatC(K$movers$out_of_nonmetro, format = "d", big.mark = ","),
                     formatC(K$movers$into_nonmetro, format = "d", big.mark = ",")))
 ```

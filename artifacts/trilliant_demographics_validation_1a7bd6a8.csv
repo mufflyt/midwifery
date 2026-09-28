@@ -1,0 +1,20 @@
+field,check,n,value,note,frozen_sha256,trilliant_snapshot
+all,"cohort (ACTIVE, primary-linked)",12171,12171,,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+all,in the Trilliant directory,12171,12171,,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+sex,Trilliant gives F or M,12171,12154,,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+sex,not checked,,,nppes_sex_enumeration.csv not found,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+school,Trilliant names a school,12171,1095,,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+school,not checked,,,dac_cnm_education.csv not found,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+age,Trilliant gives an age,12171,7784,,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+age,share with the modal age + graduation year,7784,1,modal sum 2052; derived from graduation year: TRUE,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+age,not checked,,,amcb_calibrated_ages.csv not found,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+panel,coherent patient panel,12171,10877,,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+panel,"panel median patient age, median",10877,32,,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+panel,"panel median patient age, 25th percentile",10877,30,,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+panel,"panel median patient age, 75th percentile",10877,35,,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+panel,"share of patients female (%), median across midwives",10877,99.6774,,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+panel,"share of patients aged 0-19 (%), mean across midwives",10877,2.4517,,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+panel,"share of patients aged 20-44 (%), mean across midwives",10877,82.6978,,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+panel,"share of patients aged 45-64 (%), mean across midwives",10877,10.8128,,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+panel,"share of patients aged 65-84 (%), mean across midwives",10877,3.7734,,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25
+panel,"share of patients aged 85-plus (%), mean across midwives",10877,0.2642,,1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2,2026-06-25

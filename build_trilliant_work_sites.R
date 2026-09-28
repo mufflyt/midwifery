@@ -309,13 +309,22 @@ dac_sites <- chr(file.path(ART, "dac_facility_affiliations.csv")) |>
             site_name = facility_name, state, facility_type = "hospital",
             facility_type_basis = "cms_dac_facility_affiliation_file", ccn, detail = hospital_type)
 
-cabc_sites <- chr(file.path(ART, "cabc_matched_midwives_final.csv")) |>
-  semi_join(cohort, by = "certification_number") |>
-  transmute(certification_number, npi = as.numeric(npi),
-            source = "cabc_birth_center", source_rank = 5L,
-            site_name = matched_cabc_birth_center, street = cabc_address, state = midwife_state,
-            zip5 = str_sub(cabc_zip, 1, 5), facility_type = "birth_center",
-            facility_type_basis = "cabc_accreditation")
+if (file.exists(file.path(ART, "cabc_matched_midwives_final.csv"))) {
+  cabc_sites <- chr(file.path(ART, "cabc_matched_midwives_final.csv")) |>
+    semi_join(cohort, by = "certification_number") |>
+    transmute(certification_number, npi = as.numeric(npi),
+              source = "cabc_birth_center", source_rank = 5L,
+              site_name = matched_cabc_birth_center, street = cabc_address, state = midwife_state,
+              zip5 = str_sub(cabc_zip, 1, 5), facility_type = "birth_center",
+              facility_type_basis = "cabc_accreditation")
+} else {
+  cabc_sites <- tibble(certification_number = character(), npi = numeric(),
+                       source = character(), source_rank = integer(),
+                       site_name = character(), street = character(), state = character(),
+                       zip5 = character(), facility_type = character(),
+                       facility_type_basis = character())
+  cat("CABC sidecar absent; continuing without accredited birth-center matches.\n")
+}
 
 trilliant_org_sites <- trilliant |>
   filter(!is.na(primary_organization_name)) |>
@@ -324,19 +333,46 @@ trilliant_org_sites <- trilliant |>
             site_name = primary_organization_name, state = provider_affiliated_practice_1_state,
             facility_type = employer_type(primary_organization_name), facility_type_basis = "name_pattern")
 
-resolved_org_sites <- chr(file.path(ART, "organization_affiliation_resolved.csv")) |>
-  semi_join(cohort, by = "certification_number") |>
-  transmute(certification_number, npi = as.numeric(npi),
-            source = "resolved_employer_org", source_rank = 7L,
-            site_name = organization_name,
-            facility_type = employer_type(organization_name), facility_type_basis = "name_pattern",
-            detail = paste0(affiliation_class, " / ", currentness_class, " / last ",
-                            coalesce(last_evidence_date, "?")))
+if (file.exists(file.path(ART, "organization_affiliation_resolved.csv"))) {
+  resolved_org_sites <- chr(file.path(ART, "organization_affiliation_resolved.csv")) |>
+    semi_join(cohort, by = "certification_number") |>
+    transmute(certification_number, npi = as.numeric(npi),
+              source = "resolved_employer_org", source_rank = 7L,
+              site_name = organization_name,
+              facility_type = employer_type(organization_name), facility_type_basis = "name_pattern",
+              detail = paste0(affiliation_class, " / ", currentness_class, " / last ",
+                              coalesce(last_evidence_date, "?")))
+} else {
+  resolved_org_sites <- tibble(certification_number = character(), npi = numeric(),
+                               source = character(), source_rank = integer(),
+                               site_name = character(), facility_type = character(),
+                               facility_type_basis = character(), detail = character())
+  cat("Resolved organization sidecar absent; continuing without employer-organization rows.\n")
+}
 
 # =============================================================================
 # 8. Hospital CCN, and the hospital's price-transparency file
 # =============================================================================
-enrollments <- read_latin1(file.path(HPT, "reference/cms_enrollments/Hospital_Enrollments_2026.07.31.csv")) |>
+enroll_path <- file.path(HPT, "reference/cms_enrollments/Hospital_Enrollments_2026.07.31.csv")
+additional_path <- file.path(HPT, "reference/cms_enrollments/Hospital_Additional_NPIs_2026.07.31.csv")
+crosswalk_path <- file.path(HPT, "reference/npi_ccn_crosswalk.csv")
+universe_path <- file.path(HPT, "reference/hospital_universe.csv")
+price_path <- file.path(HPT, "crosswalk/facility_ccn.parquet")
+
+if (!all(file.exists(c(enroll_path, additional_path, crosswalk_path, universe_path)))) {
+  hospital_info <- read_csv(file.path("data", "CMS_Hospital_General_Information.csv"),
+                            show_col_types = FALSE, progress = FALSE)
+  npi_to_ccn <- tibble(org_npi = character(), ccn = character())
+  hospital_ref <- hospital_info |>
+    transmute(ccn = pad_ccn(`Facility ID`), hname = str_to_upper(`Facility Name`),
+              hstate = State, hcity = str_to_upper(`City/Town`),
+              hns = norm_street(Address), hz = str_sub(str_pad(`ZIP Code`, 5, pad = "0"), 1, 5)) |>
+    filter(!is.na(ccn)) |> distinct()
+  price_files <- tibble(ccn = character(), mrf_hospital_name = character(),
+                        mrf_facility_key = character())
+  cat("External hospital reference bundle absent; using the repository CMS hospital master.\n")
+} else {
+enrollments <- read_latin1(enroll_path) |>
   rename_with(\(x) str_to_lower(str_replace_all(x, "[^A-Za-z0-9]+", "_"))) |>
   mutate(ccn = pad_ccn(ccn))
 
@@ -372,6 +408,7 @@ price_files <- read_parquet_duckdb(file.path(HPT, "crosswalk/facility_ccn.parque
   arrange(ccn, desc(ccn_match_score)) |>
   distinct(ccn, .keep_all = TRUE) |>
   select(ccn, mrf_hospital_name = hospital_name, mrf_facility_key = facility_key)
+}
 
 # CCN for hospital addresses. Collect every candidate CCN, from four kinds of
 # evidence, best first:
@@ -452,6 +489,29 @@ sites_all <- bind_rows(addr_rows, dac_sites, cabc_sites, trilliant_org_sites, re
 # that crosswalk is present. Rurality: RUCC 2023 from data/county_base.csv,
 # banded exactly as the cohort papers band it.
 NON_WORKPLACE <- c("lab_pathology", "non_care_other")
+# NPPES includes international practice locations. They are retained in the
+# excluded audit artifact but do not enter the U.S. work-site tables.
+# This midwifery project is limited to the 50 states + DC. Military mail codes,
+# U.S. territories, and foreign administrative values are retained only in the
+# excluded audit artifact.
+PROJECT_US_STATE_VALUES <- c(state.abb, "DC")
+MILITARY_TERRITORY_STATE_VALUES <- c("AA", "AE", "AP", "AS", "GU", "MP", "PR", "VI")
+# High-confidence military ZIP evidence adapted from the isochrones project:
+# overseas APO/FPO ranges plus a curated list of domestic installations.
+MILITARY_POSTAL_ZIP_PREFIXES <- c("093", "096", "340", "962", "963", "964")
+MILITARY_BASE_ZIPS <- c(
+  "80840", "80841", "10996", "10997", "21402", "20762", "21412",
+  "71459", "31905", "28310", "73503", "73505", "65473", "66442",
+  "98433", "98438", "32542", "32544", "29404", "85309", "80022"
+)
+CURATED_MILITARY_FACILITY_NAMES <- c(
+  "BLANCHFIELD ARMY HOSPITAL", "BROOKE ARMY MEDICAL CENTER",
+  "NAVAL MEDICAL CENTER PORTSMOUTH", "WALTER REED NATIONAL MILITARY MEDICAL CENTER",
+  "TRIPLER ARMY MEDICAL CENTER", "NAVAL MEDICAL CENTER CAMP LEJEUNE",
+  "NAVAL MEDICAL CENTER SAN DIEGO", "ALEXANDER T AUGUSTA MILITARY MEDICAL CENTER",
+  "MADIGAN ARMY MEDICAL CENTER", "NAVAL HOSPITAL CAMP PENDLETON",
+  "NAVAL HOSPITAL BREMERTON", "NAVAL HOSPITAL GUAM"
+)
 EMPLOYER_SOURCES <- c("trilliant_primary_org", "resolved_employer_org")
 
 dac_addr <- hospital_ref |>
@@ -517,6 +577,42 @@ sites_all <- sites_all |>
   mutate(rucc_cat = coalesce(band_rurality(rucc_2023, RURALITY_LABELS_COHORT), "Unknown")) |>
   select(-geoid_from_name, -geoid_from_zip, -state_geo)
 
+# Flag military-base work sites conservatively. A generic place name such as
+# "Fort Collins" is not sufficient; domestic name evidence requires an exact
+# curated facility name, while future DoD/TRICARE rows are trusted by source.
+sites_all <- sites_all |>
+  mutate(
+    .military_state = str_to_upper(str_squish(coalesce(state, ""))) %in%
+      c("AA", "AE", "AP"),
+    .military_address = str_detect(
+      str_to_upper(str_squish(paste(coalesce(street, ""), coalesce(city, ""), coalesce(state, "")))),
+      "\\b(APO|FPO|DPO)\\b"
+    ),
+    .zip_flag = str_sub(str_pad(str_squish(coalesce(zip5, "")), 5, side = "left", pad = "0"), 1, 5),
+    .military_zip_prefix = str_sub(.zip_flag, 1, 3) %in% MILITARY_POSTAL_ZIP_PREFIXES,
+    .military_base_zip = .zip_flag %in% MILITARY_BASE_ZIPS,
+    .dod_tricare_source = source == "DoD/TRICARE military treatment facilities",
+    .military_name = str_to_upper(str_squish(coalesce(site_name, ""))) %in%
+      CURATED_MILITARY_FACILITY_NAMES,
+    military_base_flag = .military_state | .military_address | .military_zip_prefix |
+      .military_base_zip | .dod_tricare_source | .military_name,
+    military_base_reason = case_when(
+      .military_state | .military_address ~ "military_postal_code",
+      .military_zip_prefix | .military_base_zip ~ "military_zip",
+      .dod_tricare_source ~ "dod_tricare_facility_source",
+      .military_name ~ "curated_military_facility_name",
+      TRUE ~ NA_character_
+    ),
+    military_base_source = case_when(
+      .military_state | .military_address ~ "military_postal_code",
+      .military_zip_prefix | .military_base_zip ~ "isochrones_curated_military_zip",
+      .dod_tricare_source ~ "DoD/TRICARE facility source",
+      .military_name ~ "curated_military_facility_name",
+      TRUE ~ NA_character_
+    )
+  ) |>
+  select(-starts_with("."))
+
 # Which rows are one physical place: same coordinates to ~11 m, or same street + ZIP.
 work_rows <- !sites_all$facility_type %in% NON_WORKPLACE & !sites_all$source %in% EMPLOYER_SOURCES
 sites_all$site_id <- NA_character_
@@ -529,14 +625,26 @@ sites_all$site_id[work_rows] <- assign_site_ids(
 # =============================================================================
 # Labs, pathology practices, pharmacies, DME suppliers, ambulance and imaging are
 # where a midwife's ORDERS were filled, not where the midwife works.
-sites_long <- sites_all |> filter(!facility_type %in% NON_WORKPLACE)
-excluded   <- sites_all |> filter(facility_type %in% NON_WORKPLACE)
+sites_all <- sites_all |>
+  mutate(state_scope = str_to_upper(str_squish(coalesce(state, ""))),
+         exclusion_reason = case_when(
+    state_scope %in% MILITARY_TERRITORY_STATE_VALUES ~ "outside_us_military_or_territory_code",
+    nzchar(state_scope) & !state_scope %in% PROJECT_US_STATE_VALUES ~ "outside_us_nonstate_value",
+    facility_type %in% NON_WORKPLACE ~ "non_workplace_facility_type",
+    TRUE ~ NA_character_
+  )) |>
+  select(-state_scope)
+sites_long <- sites_all |>
+  filter(is.na(exclusion_reason))
+excluded <- sites_all |>
+  filter(!is.na(exclusion_reason))
 
 # The repository-side inputs, for the sidecars. The Trilliant and hpt_prices
 # files live on the external volume and are named in the header instead.
 INPUTS <- file.path(ART, c("amcb_npi_linkage_FROZEN.csv", "midwife_practice_locations.csv",
                            "dac_facility_affiliations.csv", "cabc_matched_midwives_final.csv",
                            "organization_affiliation_resolved.csv"))
+INPUTS <- INPUTS[file.exists(INPUTS)]
 write_with_provenance(arrange(sites_long, certification_number, source_rank),
                       file.path(OUT, "midwife_work_sites_long.csv"), inputs = INPUTS, na = "")
 write_with_provenance(arrange(excluded, certification_number, source_rank),
@@ -546,6 +654,10 @@ write_with_provenance(arrange(excluded, certification_number, source_rank),
 # One row per midwife x physical place. The name, coordinates and county come
 # from the best-ranked source at that place (Trilliant claims site first).
 first_known <- function(x) { x <- x[!is.na(x)]; if (length(x)) x[1] else x[NA_integer_] }
+collapse_nonempty <- function(x) {
+  x <- sort(unique(x[!is.na(x) & nzchar(x)]))
+  if (length(x)) paste(x, collapse = "; ") else NA_character_
+}
 distinct_sites <- sites_long |>
   filter(!is.na(site_id)) |>
   arrange(certification_number, site_id, source_rank, site_name) |>
@@ -556,6 +668,9 @@ distinct_sites <- sites_long |>
             coordinate_basis = first_known(coordinate_basis), county_geoid = first_known(county_geoid),
             geography_basis = first_known(geography_basis), rucc_2023 = first_known(rucc_2023),
             rucc_cat = first_known(rucc_cat), visit_share = first_known(visit_share), ccn = first_known(ccn),
+            military_base_flag = any(military_base_flag),
+            military_base_reason = collapse_nonempty(military_base_reason),
+            military_base_source = collapse_nonempty(military_base_source),
             .groups = "drop")
 write_with_provenance(distinct_sites, file.path(OUT, "midwife_distinct_work_sites.csv"), inputs = INPUTS, na = "")
 
@@ -580,6 +695,10 @@ flags <- sites_long |>
     hospital_names   = paste(sort(unique(str_to_upper(site_name[facility_type == "hospital" & !is.na(site_name)]))), collapse = " | "),
     birth_center_names = paste(sort(unique(coalesce(site_name, addr_birth_center_name)[facility_type == "birth_center"])), collapse = " | "),
     n_distinct_addresses = n_distinct(paste(norm_street(street), zip5)[!is.na(street) & !is.na(zip5)]),
+    military_base_flag = any(military_base_flag),
+    n_military_base_sites = n_distinct(site_id[military_base_flag & !is.na(site_id)]),
+    military_base_reasons = collapse_nonempty(military_base_reason),
+    military_base_sources = collapse_nonempty(military_base_source),
     sources = paste(sort(unique(source)), collapse = "; "),
     .groups = "drop")
 
@@ -600,7 +719,9 @@ summary_tbl <- cohort |>
   mutate(trilliant_primary_org = if_else(is_lab(primary_organization_name), NA_character_, primary_organization_name)) |>
   select(-primary_organization_name) |>
   left_join(flags, by = "certification_number") |>
-  mutate(across(c(any_hospital, any_birth_center, any_fqhc, any_clinic), \(x) coalesce(x, FALSE)))
+  mutate(across(c(any_hospital, any_birth_center, any_fqhc, any_clinic, military_base_flag),
+                \(x) coalesce(x, FALSE)),
+         n_military_base_sites = coalesce(n_military_base_sites, 0L))
 
 # Topology, blended practice and rurality (R/lib/work_site_topology.R).
 topology <- topology_by_midwife(sites_long |>
