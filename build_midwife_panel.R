@@ -137,6 +137,44 @@ for (rd in reshaped_dirs) {
   kind <- c(kind, "reshaped")
 }
 
+# A third NBER distribution: "core" parquet pairs (npi_<Month>_<Year>.parquet +
+# ptax_<Month>_<Year>.parquet, wide/one-row-per-NPI like the classic path, but
+# parquet instead of CSV). Confirmed as the real, previously undocumented
+# source of the panel's 2023 vintage -- there is no classic npidata_ zip for
+# April 2023 on record anywhere this script looks, and until now nothing read
+# this format at all, which is why 542 cohort members' practice_state silently
+# went missing from that year's row: the original build of this file did not
+# go through this script's logic, and whatever did produce it dropped data.
+#
+# The parquet filename encodes month and year, not the exact release day, so
+# the day is a short explicit lookup rather than a guess -- a wrong guess
+# would silently relabel the vintage, and this script's stated preference
+# throughout is to error rather than silently mislabel (see the hardening
+# appendix's case 6 and case 10, both "refuses to run").
+CORE_PARQUET_DAY <- c(
+  # April-vintage NPPES releases cluster on day 9-12 in every classic zip this
+  # repository has on record (2011: 11, 2015: 12, 2017: 09); 09 matches the
+  # day already published throughout this repo's Table 1 and persistence
+  # results for 2023 and is kept for continuity rather than re-derived.
+  "April_2023" = "09")
+core_files <- list.files(ROOT, pattern = "^npi_[A-Za-z]+_[0-9]{4}\\.parquet$",
+                         recursive = TRUE, full.names = TRUE)
+for (nf in core_files) {
+  tag <- sub("^npi_(.*)\\.parquet$", "\\1", basename(nf))   # e.g. "April_2023"
+  pf  <- file.path(dirname(nf), sprintf("ptax_%s.parquet", tag))
+  if (!file.exists(pf)) {
+    cat(sprintf("  [core] %s has no matching ptax_%s.parquet -- skipped\n", tag, tag))
+    next
+  }
+  cy <- as.integer(sub(".*_([0-9]{4})$", "\\1", tag))
+  if (!(tag %in% names(CORE_PARQUET_DAY)))
+    stop(sprintf(paste("core-parquet snapshot '%s' has no entry in CORE_PARQUET_DAY --",
+                       "add one rather than guessing its release day."), tag), call. = FALSE)
+  cd <- sprintf("%d%02d%s", cy, match(sub("_.*", "", tag), month.name), CORE_PARQUET_DAY[[tag]])
+  files <- c(files, nf); snap_date <- c(snap_date, cd); snap_year <- c(snap_year, cy)
+  kind <- c(kind, "core_parquet")
+}
+
 ord <- order(snap_date)                     # order ONCE, then subset together
 files <- files[ord]; snap_date <- snap_date[ord]; snap_year <- snap_year[ord]; kind <- kind[ord]
 keep <- !duplicated(snap_year)
@@ -208,7 +246,6 @@ process_reshaped_year <- function(con, dir, year, snap_date_str, midwife_tax) {
     "SELECT n.npi, %s,
             CASE WHEN EXISTS (SELECT 1 FROM rs_tax_hits h WHERE h.npi = n.npi AND h.code IN ('%s'))
                  THEN 'midwife' ELSE 'nursing' END AS tax_class,
-            '%s' AS tax_scope,
             %d AS snapshot_year, '%s' AS snapshot_date
      FROM rs_npis n
      %s
@@ -217,8 +254,57 @@ process_reshaped_year <- function(con, dir, year, snap_date_str, midwife_tax) {
      -- Confirmed against the real 2025 file -- '1' matched nothing and
      -- silently zeroed the whole snapshot.
      WHERE UPPER(TRIM(j_entity.entity)) = 'INDIVIDUAL'",
+    # BUG FIX: this used to also emit a `tax_scope` column, but the panel's
+    # real header (and every reader of it, e.g. match_amcb_to_npi.R's explicit
+    # `if (!"tax_scope" %in% names(panel_df))` fallback) has never carried one
+    # -- that column was added here after the committed file was last built
+    # and nobody had done an incremental append since, so it sat latent. With
+    # it, DuckDB's default reader sniffs the column count from the existing
+    # 13-column rows and then silently drops every row this function writes,
+    # with no error under ignore_errors=true. Caught via a real resume run.
     paste(selects, collapse = ", "), paste(midwife_tax, collapse = "','"),
-    PANEL_SCOPE, year, snap_date_str, paste(joins, collapse = "\n     "))
+    year, snap_date_str, paste(joins, collapse = "\n     "))
+  dbGetQuery(con, sql)
+}
+
+#' Build the panel rows for one NBER "core" snapshot: a wide npi_<Month>_<Year>.parquet
+#' (names, address, credential, deactivation -- one row per NPI) joined to a
+#' sibling ptax_<Month>_<Year>.parquet (taxonomy code slots 1-15, the same row
+#' shape as the classic path's healthcare_provider_taxonomy_code_N columns).
+#' Unlike process_reshaped_year(), entity here uses the classic numeric code
+#' ('1'/'2'), not the spelled-out string -- confirmed against the real April
+#' 2023 file (5,885,301 of 7,751,340 rows coded '1'). Using the reshaped
+#' path's string test here would silently zero the whole snapshot, the exact
+#' failure mode that function's own comment warns about for ITS format.
+#' @keywords internal
+#' @noRd
+process_core_parquet_year <- function(con, npi_parquet, ptax_parquet, year, snap_date_str, midwife_tax) {
+  tax_cols  <- sprintf("ptaxcode%d", 1:15)
+  where_tax <- paste(vapply(tax_cols, function(cc) panel_tax_predicate(paste0("t.", cc)),
+                            character(1)), collapse = " OR ")
+  mid_expr  <- paste(sprintf("UPPER(TRIM(t.%s)) IN ('%s')", tax_cols,
+                             paste(midwife_tax, collapse = "','")), collapse = " OR ")
+  sql <- sprintf(
+    "SELECT n.npi::VARCHAR AS npi,
+            UPPER(TRIM(n.plname)) AS last_name, UPPER(TRIM(n.pfname)) AS first_name,
+            UPPER(TRIM(n.pmname)) AS middle_name, UPPER(TRIM(n.pcredential)) AS credential,
+            UPPER(TRIM(n.plocline1)) AS practice_address, UPPER(TRIM(n.ploccityname)) AS practice_city,
+            UPPER(TRIM(n.plocstatename)) AS practice_state,
+            SUBSTR(TRIM(n.ploczip), 1, 5) AS practice_zip,
+            n.npideactdatest::VARCHAR AS deactivation_date,
+            CASE WHEN (%s) THEN 'midwife' ELSE 'nursing' END AS tax_class,
+            %d AS snapshot_year, '%s' AS snapshot_date
+     FROM read_parquet('%s') n
+     JOIN read_parquet('%s') t ON t.npi = n.npi
+     WHERE TRIM(n.entity) = '1' AND (%s)
+     -- A duplicate npi in the ptax file (a malformed source, not something
+     -- the real April 2023 file has -- confirmed 7,751,340 rows for
+     -- 7,751,340 distinct npi) would otherwise fan the join out to two rows
+     -- for one person. Keep at most one.
+     QUALIFY ROW_NUMBER() OVER (PARTITION BY n.npi) = 1",
+    # No tax_scope column -- see the matching BUG FIX note in
+    # process_reshaped_year(); the panel's real header has 13 columns.
+    mid_expr, year, snap_date_str, npi_parquet, ptax_parquet, where_tax)
   dbGetQuery(con, sql)
 }
 
@@ -279,6 +365,25 @@ for (k in seq_along(files)) {
                 col.names = first, append = !first, qmethod = "double")
     first <- FALSE
     cat(sprintf("  [%d/%d] %s (reshaped) -> %s rows (%s midwife, %s nursing) (%.0fs)\n",
+                k, length(files), snap_year[k], format(nrow(rows), big.mark = ","),
+                format(sum(rows$tax_class == "midwife"), big.mark = ","),
+                format(sum(rows$tax_class == "nursing"), big.mark = ","),
+                as.numeric(difftime(Sys.time(), t0, units = "secs"))))
+    next
+  }
+
+  if (kind[k] == "core_parquet") {
+    t0 <- Sys.time()
+    tag <- sub("^npi_(.*)\\.parquet$", "\\1", basename(f))
+    ptax_f <- file.path(dirname(f), sprintf("ptax_%s.parquet", tag))
+    rows <- tryCatch(process_core_parquet_year(con, f, ptax_f, snap_year[k], snap_date[k], MIDWIFE_TAX),
+                     error = function(e) {cat("  ERR:", substr(conditionMessage(e), 1, 90),
+                                              "\n"); NULL})
+    if (is.null(rows) || !nrow(rows)) next
+    write.table(rows, out_path, sep = ",", row.names = FALSE, na = "",
+                col.names = first, append = !first, qmethod = "double")
+    first <- FALSE
+    cat(sprintf("  [%d/%d] %s (core parquet) -> %s rows (%s midwife, %s nursing) (%.0fs)\n",
                 k, length(files), snap_year[k], format(nrow(rows), big.mark = ","),
                 format(sum(rows$tax_class == "midwife"), big.mark = ","),
                 format(sum(rows$tax_class == "nursing"), big.mark = ","),
@@ -361,7 +466,6 @@ for (k in seq_along(files)) {
 
   sql <- sprintf("SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                          CASE WHEN (%s) THEN 'midwife' ELSE 'nursing' END AS tax_class,
-                         '%s' AS tax_scope,
                          %d AS snapshot_year, '%s' AS snapshot_date
                   FROM %s WHERE (%s)%s",
                  sprintf("%s AS npi", col$npi),
@@ -373,7 +477,10 @@ for (k in seq_along(files)) {
                  else sprintf("SUBSTR(TRIM(%s), 1, 5) AS practice_zip", col$zip),
                  if (is.na(col$deact)) "NULL AS deactivation_date"
                  else sprintf("TRIM(%s) AS deactivation_date", col$deact),
-                 mid_expr, PANEL_SCOPE, snap_year[k], snap_date[k], src, where_tax,
+                 # BUG FIX: this used to also emit a `tax_scope` column -- see
+                 # the matching note in process_reshaped_year(). The panel's
+                 # real, already-depended-upon header has 13 columns, not 14.
+                 mid_expr, snap_year[k], snap_date[k], src, where_tax,
                  # BUG FIX: every other field is UPPER(TRIM(...))'d before
                  # comparison; this one compared the raw value, so incidental
                  # whitespace (" 1") silently failed the match and dropped
