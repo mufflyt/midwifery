@@ -192,6 +192,47 @@ MUTATIONS <- list(
   ),
 
   list(
+    id = "resolver-ambiguous-anchor-dropped",
+    file = "R/amcb_resolver.R",
+    find = '    grepl("^ambiguous", match_status)      ~ "quarantined",',
+    repl = '    grepl("ambiguous", match_status)        ~ "quarantined",',
+    why = paste("Drops the start-of-string anchor, so any match_status that merely",
+                "MENTIONS \"ambiguous\" anywhere (e.g. a future",
+                "'formerly_ambiguous_now_resolved' value) gets quarantined instead",
+                "of only the three real ambiguous_* strings match_amcb_to_npi.R",
+                "actually writes."),
+    killers = c("tests/test_amcb_resolver_saboteur_paths.R")
+  ),
+
+  list(
+    id = "resolver-demotion-inverted",
+    file = "R/amcb_resolver.R",
+    find = '    demoted_absence_c5 %in% TRUE           ~ "quarantined",',
+    repl = '    demoted_absence_c5 %in% FALSE          ~ "quarantined",',
+    why = paste("Inverts the demotion flag, so a class-5 match that was correctly",
+                "demoted for being resolved only by the middle-name veto's",
+                "manufactured uniqueness falls through to unmatched instead of",
+                "quarantined -- the demotion silently stops doing anything."),
+    killers = c("tests/test_amcb_resolver_saboteur_paths.R")
+  ),
+
+  list(
+    id = "cohort-membership-length-guard-removed",
+    file = "R/amcb_cohort_membership.R",
+    find = paste0('  if (length(npi) != length(linkage_tier)) {\n',
+                  '    stop(sprintf("npi and linkage_tier differ in length (%d vs %d)",\n',
+                  '                 length(npi), length(linkage_tier)), call. = FALSE)\n',
+                  '  }\n'),
+    repl = "",
+    why = paste("Removes the explicit length-mismatch guard, so a caller passing",
+                "mismatched npi/linkage_tier vectors gets silent R recycling",
+                "instead of a loud error -- exactly the unguarded hazard",
+                "documented for amcb_linkage_tier() in R/amcb_resolver.R, now",
+                "reintroduced into the one function that used to guard against it."),
+    killers = c("tests/test_amcb_cohort_membership_saboteur.R")
+  ),
+
+  list(
     id = "adversarial-missing-is-agreement",
     file = "R/amcb_cohort_membership.R",
     find = "  has_npi <- !is.na(npi) & nzchar(npi)",

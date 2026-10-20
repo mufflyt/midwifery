@@ -435,6 +435,15 @@ extract_nppes_license_slots <- function(nppes_records, max_slots = 15L) {
   npi_col <- find_column(names(nppes_records), c("NPI", "npi"))
   if (is.na(npi_col)) stop("NPPES input does not contain NPI.", call. = FALSE)
 
+  # Named so a run with no license/state columns at any slot (a legitimate,
+  # if uninformative, NPPES extract) returns this typed empty result instead
+  # of reaching bind_rows() on an all-NULL list, which drops every column --
+  # including npi -- and crashes the filter below on a missing column it
+  # never names.
+  empty <- tibble::tibble(npi = character(0), license_state = character(0),
+                          license_number = character(0), taxonomy_code = character(0),
+                          taxonomy_slot = integer(0))
+
   slots <- lapply(seq_len(max_slots), function(slot) {
     license_col <- find_column(names(nppes_records),
                                c(paste0("Provider License Number_", slot),
@@ -459,6 +468,9 @@ extract_nppes_license_slots <- function(nppes_records, max_slots = 15L) {
       taxonomy_code = taxonomy_value,
       taxonomy_slot = slot)
   })
+
+  slots <- Filter(Negate(is.null), slots)
+  if (!length(slots)) return(empty)
 
   dplyr::bind_rows(slots) |>
     dplyr::filter(!is.na(.data$npi), !is.na(.data$license_state),
