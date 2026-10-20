@@ -535,9 +535,18 @@ jobs:
         run: |
           Rscript tests/test_cohort_definitions.R
           Rscript tests/test_work_site_topology.R
+          Rscript tests/test_work_site_topology_saboteurs.R
           Rscript tests/test_data_vault.R
           Rscript tests/test_trilliant_demographics.R
           Rscript tests/test_trilliant_identity.R
+
+      # Added alongside tonight's join/checkpoint/scraper safety-net fixes;
+      # previously only covered by nightly's glob, up to a day behind a
+      # breaking PR.
+      - name: DuckDB guards and analysis-script argument handling
+        run: |
+          Rscript tests/test_duckdb_guards.R
+          Rscript tests/test_analysis_args.R
 
       # Birth activity decides who counts as a practising midwife; license
       # resolution decides which of several licenses is the one. Both are pure.

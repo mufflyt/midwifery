@@ -1,0 +1,45 @@
+{
+  "artifact": "table1_midwives.csv",
+  "written_utc": "2026-09-14 22:12:09.261 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2"
+    }
+  ],
+  "code_sha256": "74d2f6b6d73521d14839a74ae08813bed35339cf4b3951807032e8117a629a90",
+  "code": [
+    {
+      "path": "build_table1_midwives.R",
+      "sha256": "882ab32ce8266ab68245fe2df103b871ade677ca9ae1d0332d45ccc407b10847"
+    },
+    {
+      "path": "R/join_safety.R",
+      "sha256": "fad3ef2fb193108fed7f9668f59d3a59472881ac983d42dda90c1a1f83658928"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/field_quality.R",
+      "sha256": "7f290d63cff2d035421450be24f1937ef86228400b1b2e082cf6990cb226011e"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/lib/table1_bands.R",
+      "sha256": "312b7504d0fed8ae986eadae6c55b0efd6f1099a613e4589f772387a2db115e1"
+    },
+    {
+      "path": "R/lib/training_institution.R",
+      "sha256": "0a2088bf224dc6b0edeb8d9ef14ca6a50f2eaf074192301fd9f90a72851c0367"
+    },
+    {
+      "path": "R/safe_divide.R",
+      "sha256": "9676b960bacb210a2167e7751dd84c5b9c80a0bf5442425e0b0f322b25aa04bc"
+    }
+  ]
+}

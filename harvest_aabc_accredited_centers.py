@@ -7,7 +7,7 @@ import json
 import csv
 import re
 
-MIDWIVES_FILE = "artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv"
+MIDWIVES_FILE = "artifacts/amcb_npi_crosswalk_panel-midwifery-plus-nursing_years-2007-2026.csv"
 GEO_FILE = "artifacts/amcb_npi_geography.csv"
 OUT_CSV = "artifacts/aabc_matched_birth_center_midwives.csv"
 

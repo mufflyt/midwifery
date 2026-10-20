@@ -1,0 +1,25 @@
+{
+  "artifact": "accepted_by_evidence_class.csv",
+  "written_utc": "2026-10-19 15:02:17.034 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2"
+    }
+  ],
+  "code_sha256": "4e4bb138b76b785426000553a30ab515272bcf35e1ac8437f1bd2b30f9f776a4",
+  "code": [
+    {
+      "path": "make_evidence_class_figure.R",
+      "sha256": "c45d1cf05cabca736c1cb0018db75c1d3d11688de326e4ee564b8db10c16588a"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}

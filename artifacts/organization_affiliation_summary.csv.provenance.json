@@ -1,10 +1,33 @@
 {
   "artifact": "organization_affiliation_summary.csv",
-  "written_utc": "2026-08-16 19:28:50 UTC",
+  "written_utc": "2026-10-20 12:59:47.902 UTC",
   "inputs": [
     {
       "path": "artifacts/organization_affiliation_resolved.csv",
-      "sha256": "052144d447bb98e594787511b5ec3c3076a4c76e57e2964bfc154ea3c633cf2c"
+      "sha256": "5b4575eb3fff4394f2cb532d4c9af2d7ae905ddc04c64a956330ac7be968653f"
+    }
+  ],
+  "code_sha256": "a3d15d16da4f62bb342811f5ba72ab14222334557767cea75d5dfe4d18110d31",
+  "code": [
+    {
+      "path": "build_organization_affiliation_resolver.R",
+      "sha256": "41e7aad5c8c92465eca51cd116f353743fa6a3cdc1ece6b1221c79b693242db6"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/org_names.R",
+      "sha256": "8f70e7a4ed15353f440013f550a46687cbc6c918b87d6b4ce779dd85746dbee3"
+    },
+    {
+      "path": "R/lib/organization_affiliation_status.R",
+      "sha256": "e3bdb12ba0578000ce8356023ad0d64a2ddde21fb0e9774ba985366b7008588b"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
     }
   ]
 }

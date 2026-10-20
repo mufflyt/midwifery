@@ -9,17 +9,18 @@ import sys
 
 # The CABC accredited-centre directory renders its listings client-side, so the
 # input is a SAVED SNAPSHOT of the rendered page rather than a fetch. That
-# snapshot is not in the repo, and the path this script used to carry pointed
-# into a scratch directory on an account that does not exist on this machine
-# (/Users/tmuffly/...), so the script has not been runnable as committed. It is
-# kept because it documents how the two tracked artifacts were produced.
-#
-# To re-run: save the rendered directory page to the path below. Re-parsing a
-# fresh capture will NOT reproduce the tracked artifacts byte for byte -- CABC
+# snapshot is not in the repo (gitignored, like the tracked-but-derived
+# artifacts below it are not), so a clean checkout cannot run this without
+# capturing one first -- save the rendered directory page to the path below,
+# or point CABC_SNAPSHOT at one. Re-run successfully on 2026-10-19 (109
+# centers live that day, matched 220 midwives across 66 of them) via a
+# snapshot captured straight out of the rendered DOM rather than a saved
+# browser page -- see docs/HANDOFF_worksite_merge_conflict_audit.md. Re-parsing
+# a fresh capture will NOT reproduce past counts byte for byte -- CABC
 # accreditation is a moving roster, and that is a real change in the source,
 # not a bug in this parser.
 HTML_FILE = os.environ.get("CABC_SNAPSHOT", "data/cabc_directory_snapshot.html")
-MIDWIVES_FILE = "artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv"
+MIDWIVES_FILE = "artifacts/amcb_npi_crosswalk_panel-midwifery-plus-nursing_years-2007-2026.csv"
 GEO_FILE = "artifacts/amcb_npi_geography.csv"
 OUT_BC_MASTER = "artifacts/cabc_accredited_birth_centers_master.csv"
 OUT_MATCHES = "artifacts/cabc_matched_midwives_final.csv"

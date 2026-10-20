@@ -39,6 +39,41 @@ flowchart LR
 | Licences a board returned | 1,353: WA 369, CO 486, TX 498 (any status the board reported) | `docs/figures/board_licensure_observed_counts.csv` |
 | Delivery attendance | not observable: public Medicare Part B has no delivery-code rows for any provider, 2013–2023 | `artifacts/medicare_delivery_code_observability.csv` |
 
+<details>
+<summary><strong>Contents</strong> (click to expand)</summary>
+
+**Findings**
+- [Key Visualizations & Data Gallery](#key-visualizations--data-gallery) — the 16 numbered figures
+- [Objective, rationale and aims](#objective-rationale-and-aims)
+- [Table 1](#table-1)
+
+**Methods**
+- [From a midwife's name to a county on a map](#from-a-midwifes-name-to-a-county-on-a-map) — the linkage pipeline
+- [Attribute layers: what we know about each midwife](#attribute-layers-what-we-know-about-each-midwife)
+- [Where midwives work: the Trilliant claims directory](#where-midwives-work-the-trilliant-claims-directory)
+- [Maps](#maps)
+- [Isochrone reuse: a negative validation result](#isochrone-reuse-a-negative-validation-result)
+- [Existing-isochrone recovery search](#existing-isochrone-recovery-search)
+
+**Reproducing this**
+- [Data sources](#data-sources)
+- [Repository layout](#repository-layout)
+- [Model architecture](#model-architecture)
+- [Usage](#usage)
+- [How it works](#how-it-works)
+- [Location data](#location-data)
+- [Output columns](#output-columns)
+- [Continuous integration](#continuous-integration)
+- [Automated CI Testing Suite](#automated-ci-testing-suite)
+
+**Reference**
+- [Changelog](#changelog)
+- [Citation](#citation)
+- [License](#license)
+- [Dataset Metadata & Specifications](#dataset-metadata--specifications)
+
+</details>
+
 ## Key Visualizations & Data Gallery
 
 ### Provider-to-billing relationships from Transparency in Coverage files
@@ -222,9 +257,9 @@ canonical cohort against the current freeze is the registered 12,171.
 cohort, the board-validation subset (WA, CO, TX) and the CMS-observed subset
 apart. Source: `artifacts/trilliant_cohort_reconciliation_reasons.csv`.*
 
-### 15. Does Trilliant's `active_provider` flag mean a midwife is practising?
+### 16. Does Trilliant's `active_provider` flag mean a midwife is practising?
 ![active_provider against AMCB status and Medicare billing](docs/figures/trilliant_activity_validation.png)
-*Figure 15: Tested against the AMCB roster and Medicare billing. **A:**
+*Figure 16: Tested against the AMCB roster and Medicare billing. **A:**
 deceased and retired certificants are rarely flagged active. **B:** among
 retirees the flag decays with years since the certification expired, so it lags
 a stop in practice. **C:** among ACTIVE certificants it tracks how recently
@@ -1307,13 +1342,20 @@ repaired later.
 > **The NPPES file format changed in December 2024**, and `build_midwife_panel.R`
 > gained a second parsing path to read it. The two paths were validated to
 > produce byte-identical output on the December 2024 snapshot (393,409 rows,
-> zero mismatches), and ten adversarial schema/concurrency fixtures spanning
-> the 2007–2026 file history — an accented name under an ASCII header, a
-> missing column, a lowercase taxonomy code, a live lock file — are now a
-> permanent test (`tests/test_build_midwife_panel.R`). The same investigation
-> found that AMCB's `certification_date` is a renewal date rather than an
-> original-certification date for **0.9%** of linked ACTIVE certificants,
-> which understates "years since certification" for that subset. See
+> zero mismatches). A third path was added 2026-10-19 for the panel's 2023
+> vintage, which turned out to have no classic `npidata_` file on record at
+> all — the real source was an undocumented third NBER distribution (an
+> `npi_<Month>_<Year>.parquet` + `ptax_<Month>_<Year>.parquet` pair), and
+> nothing had ever read it; 542 cohort members' practice addresses had
+> silently gone missing from that year's row as a result, now fixed. Thirty
+> adversarial schema/concurrency fixtures spanning the 2007–2026 file history
+> — an accented name under an ASCII header, a missing column, a lowercase
+> taxonomy code, a live lock file, an unmapped parquet vintage, a duplicated
+> join row — are now a permanent test (`tests/test_build_midwife_panel.R`).
+> The same investigation found that AMCB's `certification_date` is a renewal
+> date rather than an original-certification date for **0.9%** of linked
+> ACTIVE certificants, which understates "years since certification" for that
+> subset. See
 > [`docs/TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md`](docs/TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md).
 
 ### Tier B — geography and boundaries
@@ -1567,7 +1609,7 @@ python3 scrape.py
 
 # 2. Identity — candidates, then ranked-class resolution
 python3 fetch_npi_candidates.py        # live NPI Registry API
-Rscript  build_midwife_panel.R         # NPPES 2007-2025 -> midwife_panel.csv
+Rscript  build_midwife_panel.R         # NPPES 2007-2026 -> midwife_panel.csv
 Rscript  match_amcb_to_npi.R
 Rscript  reconcile_linkage.R           # -> artifacts/amcb_npi_linkage_FROZEN.csv
 Rscript  provenance_manifest.R         # -> artifacts/linkage_manifest.json
@@ -2082,34 +2124,36 @@ Version numbers there are retrospective groupings of 280 commits, not git tags.
 To reproduce a specific figure, use the commit SHA in that artifact's
 `.provenance.json` sidecar rather than a version string.
 
-## How to cite
+## Citation
 
-If you use this pipeline or the workforce estimates it produces, cite the
-software:
+If you use this dataset or pipeline, cite it as [`CITATION.cff`](CITATION.cff)
+does — GitHub renders it as a "Cite this repository" button. There is no DOI:
+the one printed here until 2026-09-13, 10.5281/zenodo.1054200, belongs to an
+unrelated 2016 Zenodo record, and the "Version 4.0.0" beside it was never
+tagged. The repository's only tag is `v0.7.0` (2026-08-13); for anything
+later, cite the commit SHA.
 
-> Muffly, T. (2026). *midwifery: linking the AMCB certification roster to NPI
-> identity and county geography* (Version 0.7.0) [Computer software].
-> https://github.com/mufflyt/midwifery
+**APA format:**
+> Muffly, T., & Thumm, E. B. (2026). *National Certified Nurse-Midwife (CNM)
+> 50-State & DC Workforce Registry Dataset* (Version 0.7.0) [Data set &
+> Software]. GitHub. https://github.com/mufflyt/midwifery
 
-BibTeX:
-
+**BibTeX:**
 ```bibtex
-@software{muffly_midwifery_2026,
-  author  = {Muffly, Tyler},
-  title   = {midwifery: linking the {AMCB} certification roster to
-             {NPI} identity and county geography},
-  year    = {2026},
-  version = {0.7.0},
-  url     = {https://github.com/mufflyt/midwifery},
-  license = {MIT}
+@misc{muffly2026midwifery,
+  author       = {Tyler Muffly and E. Brie Thumm},
+  title        = {National Certified Nurse-Midwife (CNM) 50-State \& DC Workforce Registry Dataset},
+  year         = {2026},
+  version      = {0.7.0},
+  publisher    = {GitHub},
+  url          = {https://github.com/mufflyt/midwifery}
 }
 ```
 
-[`CITATION.cff`](CITATION.cff) carries the same metadata in machine-readable
-form, plus structured citations for all twelve upstream data sources; GitHub
-renders it as a "Cite this repository" button. Two fields in it are marked
-`TODO` because they cannot be inferred — an ORCID, and a Zenodo DOI if you
-archive a release.
+`CITATION.cff` carries the same metadata in machine-readable form, plus
+structured citations for all twelve upstream data sources. Two fields in it
+are marked `TODO` because they cannot be inferred — an ORCID for each author,
+and a Zenodo DOI if you archive a release.
 
 **Cite the sources too, not just this repository.** The code is not the
 evidence. Any published estimate rests on the AMCB directory, NPPES, the CMS
@@ -2150,29 +2194,6 @@ Person-level derived tables — anything keyed to a certification number, an NPI
 a name, or a practice address for an identifiable midwife — are gitignored by
 design, are not distributed, and are rebuildable from the sources by anyone
 with the access described under [Access requirements](#access-requirements).
-
-## Citation
-
-If you use this dataset or pipeline, cite it as [`CITATION.cff`](CITATION.cff)
-does. There is no DOI: the one printed here until 2026-09-13,
-10.5281/zenodo.1054200, belongs to an unrelated 2016 Zenodo record, and the
-"Version 4.0.0" beside it was never tagged. The repository's only tag is
-`v0.7.0` (2026-08-13); for anything later, cite the commit SHA.
-
-### APA Format
-> Muffly, T., & Thumm, E. B. (2026). *National Certified Nurse-Midwife (CNM) 50-State & DC Workforce Registry Dataset* (Version 0.7.0) [Data set & Software]. GitHub. https://github.com/mufflyt/midwifery
-
-### BibTeX Format
-```bibtex
-@misc{muffly2026midwifery,
-  author       = {Tyler Muffly and Elisabeth B. Thumm},
-  title        = {National Certified Nurse-Midwife (CNM) 50-State \& DC Workforce Registry Dataset},
-  year         = {2026},
-  version      = {0.7.0},
-  publisher    = {GitHub},
-  url          = {https://github.com/mufflyt/midwifery}
-}
-```
 
 ## Dataset Metadata & Specifications
 

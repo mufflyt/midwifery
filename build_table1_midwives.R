@@ -111,7 +111,8 @@ link <- read_csv(link_path, show_col_types = FALSE, progress = FALSE)
 coh <- link %>%
   filter(status == "ACTIVE", linkage_tier == "primary_midwifery") %>%
   assert_unique_keys("certification_number",
-                     label = "Table 1 cohort linkage (ACTIVE primary_midwifery)", dedupe = TRUE)
+                     label = "Table 1 cohort linkage (ACTIVE primary_midwifery)", dedupe = TRUE) %>%
+  mutate(npi = as.character(npi))
 N <- nrow(coh)
 cat(sprintf("cohort: %s ACTIVE primary-linked midwives\n", format(N, big.mark = ",")))
 
@@ -330,7 +331,7 @@ if (!is.null(trl_demo)) {
 # bands sum to one. No other source describes a midwife's patients, so this is
 # the only one. One number per midwife -- the median age of HER patients -- so
 # the block describes midwives by the patients they see, not the patients.
-PANEL_CATEGORY <- "Median age of the midwife's patients (Trilliant claims panel)"
+PANEL_CATEGORY <- "Median age of the midwife's patients"
 if (!is.null(trl_demo)) {
   coh <- coh %>%
     left_join(select(trl_demo, certification_number, trl_panel_median_age),
@@ -338,6 +339,39 @@ if (!is.null(trl_demo)) {
     mutate(panel_median_age = suppressWarnings(as.numeric(trl_panel_median_age)),
            panel_age_band = band_panel_median_age(panel_median_age)) %>%
     select(-trl_panel_median_age)
+}
+
+# Trilliant work sites provide a multi-site practice-setting signal. It is
+# distinct from a CMS privilege record: a midwife is positive when any
+# classified work site is a hospital, regardless of which site is primary.
+TRILLIANT_HOSPITAL_CATEGORY <- "Any observed hospital work site"
+TRILLIANT_HOSPITAL_LEVELS <- c("At least one hospital work site observed",
+                               "No hospital work site among classified sites")
+TRILLIANT_PRIMARY_SITE_CATEGORY <- "Primary claims-site setting"
+TRILLIANT_PRIMARY_SITE_LEVELS <- c("Hospital", "Clinic/practice", "FQHC/community health",
+                                   "Birth center", "Other facility", "Unclassified")
+if (file.exists("artifacts/midwife_work_sites_summary.csv")) {
+  work_sites <- read_csv("artifacts/midwife_work_sites_summary.csv",
+                         show_col_types = FALSE, progress = FALSE) %>%
+    distinct(certification_number, .keep_all = TRUE) %>%
+    select(certification_number, any_hospital, n_distinct_sites,
+           top_site_facility_type)
+  coh <- coh %>%
+    left_join(work_sites, by = "certification_number", relationship = "one-to-one") %>%
+    mutate(trilliant_any_hospital_site = case_when(
+      any_hospital %in% TRUE ~ "At least one hospital work site observed",
+      !is.na(n_distinct_sites) & n_distinct_sites > 0 ~
+        "No hospital work site among classified sites",
+      TRUE ~ NA_character_),
+      trilliant_primary_site_setting = case_when(
+        top_site_facility_type == "hospital" ~ "Hospital",
+        top_site_facility_type == "clinic_practice" ~ "Clinic/practice",
+        top_site_facility_type == "fqhc_community_health" ~ "FQHC/community health",
+        top_site_facility_type == "birth_center" ~ "Birth center",
+        top_site_facility_type == "other_facility" ~ "Other facility",
+        top_site_facility_type == "unclassified" ~ "Unclassified",
+        TRUE ~ NA_character_)) %>%
+    select(-any_hospital, -n_distinct_sites, -top_site_facility_type)
 }
 coh <- coh %>%
   mutate(
@@ -490,6 +524,7 @@ if (file.exists("artifacts/dac_cnm_education.csv")) {
       dac_practice_sites  = band_practice_locations(n_locations),
       dac_assignment      = label_medicare_assignment(accepts_assignment))
 }
+if (!"in_dac" %in% names(coh)) coh$in_dac <- FALSE
 
 # --- Training institution (DAC + Healthgrades) --------------------------------
 # Requested to support work on where midwives trained. Built from BOTH sources
@@ -623,57 +658,6 @@ if (file.exists("artifacts/hpsa_status.csv")) {
       hpsa_population_only   ~ "Population-group HPSA only (not location-based)",
       hpsa_withdrawal_only   ~ "HPSA proposed for withdrawal only",
       TRUE                   ~ "Not in a primary-care HPSA"))
-}
-
-# --- Hospital affiliation via CCN (CMS facility-affiliation file) ------------
-# Produced by extract_dac_facility_affiliations.R. CMS publishes a facility
-# affiliation file alongside the DAC, keyed NPI -> CCN, and the CCN is a key
-# into cms_hospital_info -- so an affiliation becomes a named hospital with a
-# type, an owner and a birthing-friendly designation, rather than a free-text
-# employer string.
-#
-# THREE STATES, NOT TWO. Only Medicare-enrolled clinicians appear in the DAC at
-# all, so a blank here means one of two different things, and collapsing them
-# would read as "does not work at a hospital":
-#   - not enrolled in Medicare (absent from the DAC entirely); or
-#   - enrolled, but with no hospital privilege recorded by CMS.
-# in_dac separates them. Vintage is asserted upstream: the affiliation file and
-# the DAC must come from the same monthly CMS release. Matching 2026-06 to
-# 2026-06 rather than reusing an April-2025 copy moved coverage from 7.3% to
-# 14.0%, so the vintage is not a formality.
-#
-# MULTI-HOSPITAL MIDWIVES ARE NOT REDUCED TO A "PRIMARY" HOSPITAL. CMS supplies
-# no rank, volume or FTE, so picking one would be arbitrary and would then set
-# a percentage. The rows below are any-flags, which are well defined however
-# many hospitals a midwife holds privileges at.
-if (file.exists("artifacts/dac_hospital_affiliation_person.csv")) {
-  .aff <- read_csv("artifacts/dac_hospital_affiliation_person.csv",
-                   show_col_types = FALSE, progress = FALSE) %>%
-    distinct(certification_number, .keep_all = TRUE) %>%
-    select(certification_number, has_hospital, n_hospitals,
-           any_critical_access, any_birth_friendly, ownership)
-  coh <- coh %>%
-    left_join(.aff, by = "certification_number", relationship = "one-to-one") %>%
-    mutate(
-      has_hospital = coalesce(has_hospital, FALSE),
-      hospital_affiliation = dplyr::case_when(
-        has_hospital                      ~ "Hospital privilege recorded in Medicare",
-        !in_dac                           ~ NA_character_,
-        TRUE                              ~ "Enrolled in Medicare, no hospital privilege recorded"),
-      hospital_count = dplyr::case_when(
-        !has_hospital     ~ NA_character_,
-        n_hospitals == 1L ~ "1 hospital",
-        n_hospitals == 2L ~ "2 hospitals",
-        n_hospitals >= 3L ~ ">=3 hospitals"),
-      hospital_type_band = dplyr::case_when(
-        !has_hospital        ~ NA_character_,
-        any_critical_access  ~ "Any critical-access hospital",
-        TRUE                 ~ "Acute care hospital(s) only"),
-      birthing_friendly_band = dplyr::case_when(
-        !has_hospital       ~ NA_character_,
-        any_birth_friendly  ~ "Affiliated with a birthing-friendly hospital",
-        TRUE                ~ "No birthing-friendly designation among affiliations"),
-      hospital_ownership_band = dplyr::if_else(has_hospital, ownership, NA_character_))
 }
 
 # --- Medicare participation (Part B and Part D, 2013-2023) --------------------
@@ -853,8 +837,11 @@ blk <- function(df, col, category, lvls = NULL,
 blk_hg <- function(col, category, lvls = NULL, binary_yes = NULL,
                    unknown_label = "No public Healthgrades profile") {
   if (is.null(hg_link) || !col %in% names(hg_link)) {
+    # n = N, not NA: A1 requires every block to sum to the cohort, with no
+    # exemptions. "Not available" is the whole cohort's remainder here, not
+    # an unknown count to be left out of the sum.
     return(tibble(characteristic = "Healthgrades data not available",
-                  n = NA_integer_, percent = NA_real_, category = category))
+                  n = N, percent = NA_real_, category = category))
   }
   N_hg <- N - length(hg_ambiguous)
   v <- hg_link[[col]]
@@ -954,6 +941,10 @@ t1 <- bind_rows(
   if ("cert_year_band" %in% names(coh))
     blk(coh, "cert_year_band", "Years Since AMCB Initial Certification",
         lvls = c("<5 years", "5-9 years", "10-19 years", "20-29 years", ">=30 years")),
+  if ("active_band" %in% names(coh))
+    blk(coh, "active_band", "Years Observed in NPPES Panel",
+        lvls = c("<5 years", "5-9 years", "10-14 years", ">=15 years"),
+        unknown_label = "Not observed in the NPPES annual panel"),
   # The summary row has no count, so the block still sums to the cohort: the
   # bands plus the no-panel row are the partition, and the median (IQR) is over
   # the midwives in the bands.
@@ -963,7 +954,7 @@ t1 <- bind_rows(
                                       table1_median_iqr(coh$panel_median_age[!is.na(coh$panel_age_band)])),
              n = NA_integer_, percent = NA_real_, category = PANEL_CATEGORY),
       blk(coh, "panel_age_band", PANEL_CATEGORY, lvls = PANEL_AGE_LEVELS,
-          unknown_label = "No claims panel in the Trilliant directory")),
+          unknown_label = "NA")),
   # District percentages are computed on midwives who HAVE a district. Military
   # and territory addresses are excluded by decision (no District X), so they
   # are reported on their own line rather than inside "Unknown", which would
@@ -1062,6 +1053,14 @@ t1 <- bind_rows(
         lvls = c("Affiliated with a birthing-friendly hospital",
                  "No birthing-friendly designation among affiliations"),
         unknown_label = "No hospital privilege recorded"),
+  if ("trilliant_any_hospital_site" %in% names(coh))
+    blk(coh, "trilliant_any_hospital_site", TRILLIANT_HOSPITAL_CATEGORY,
+        lvls = TRILLIANT_HOSPITAL_LEVELS,
+        unknown_label = "NA"),
+  if ("trilliant_primary_site_setting" %in% names(coh))
+    blk(coh, "trilliant_primary_site_setting", TRILLIANT_PRIMARY_SITE_CATEGORY,
+        lvls = TRILLIANT_PRIMARY_SITE_LEVELS,
+        unknown_label = "NA"),
 
   if ("medicare_part_b" %in% names(coh))
     blk(coh, "medicare_part_b", "Medicare Part B, any year 2013-2023",
@@ -1107,8 +1106,9 @@ t1 <- bind_rows(
         category = "Language (Healthgrades floor)")
     })
   else
+    # n = N, not NA: same A1 requirement as blk_hg()'s fallback above.
     tibble(characteristic = "Not collected by NPPES, CMS DAC or the Healthgrades scrape",
-           n = NA_integer_, percent = NA_real_, category = "Language"),
+           n = N, percent = NA_real_, category = "Language"),
 
   # Healthgrades-derived person-level characteristics
   blk_hg("hg_accepts_new_patients", "Accepts new patients",
@@ -1168,8 +1168,10 @@ md <- c("# Table 1. Characteristics of the ACTIVE certified-midwife cohort", "",
           "") else NULL,
         sprintf("Cohort: **%s** midwives with AMCB status ACTIVE and a primary-tier NPI link.",
                 format(N, big.mark = ",")),
-        "Percentages are within category and use the non-missing denominator;",
-        "unknowns are counted on their own row.", "",
+        paste0("Percentages are within category and use the non-missing denominator. ",
+               "Rows labelled not recorded, unresolved, or not applicable are shown ",
+               "so each block remains auditable, but they are not percentage ",
+               "denominators unless explicitly labelled as cohort rows."), "",
         sprintf(paste0("Registry-derived rows use the full cohort. Healthgrades-derived ",
                        "rows use a smaller denominator of **%s**: %s a Healthgrades ",
                        "profile with another certificant and cannot be attributed one. ",

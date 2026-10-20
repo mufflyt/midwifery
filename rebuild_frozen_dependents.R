@@ -240,6 +240,17 @@ REBUILD_ORDER <- list(
                    # quietly -- it would stop. Needs the Trilliant lake and the
                    # hpt_prices references on the external volume.
                    "build_trilliant_work_sites.R",
+                   # Added 2026-10-20, discovered by this same completeness
+                   # gate (T5). Both read amcb_npi_linkage_FROZEN directly and
+                   # artifacts/midwife_work_sites_long.csv, which
+                   # build_trilliant_work_sites.R immediately above writes --
+                   # so they must follow it. Neither's output is read by any
+                   # other script in this order: build_worksite_address_
+                   # resolution.R writes worksite_address_resolution.csv (plus
+                   # its unresolved subset), and build_worksite_leaflet_map.R
+                   # writes an HTML map, both leaves.
+                   "build_worksite_address_resolution.R",
+                   "build_worksite_leaflet_map.R",
                    # Added 2026-09-13, by T5 in the pull request that introduced
                    # it. Reads amcb_npi_linkage_FROZEN for every primary-linked
                    # certificant and tests Trilliant's active_provider flag
@@ -282,12 +293,7 @@ REBUILD_ORDER <- list(
                    # REFUSED to rebuild until it was placed. That is the gate
                    # doing its job -- undeclared, it would have been left
                    # holding the old cohort with the rebuild reporting success.
-                   "match_medicare_partb_partd.R",
-                   # Added 2026-09-10, by the same completeness gate (T5).
-                   # Classifies each cohort member's self-reported degree
-                   # level from the NPPES credential field; reads FROZEN
-                   # directly and recomputes from that cached input alone.
-                   "classify_msn_dnp_credentials.R")),
+                   "match_medicare_partb_partd.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        # export_amcb_npi_geography.R writes the tracked state aggregate and
        # the gitignored person-level export, both of which read the crosswalk
@@ -298,9 +304,13 @@ REBUILD_ORDER <- list(
        # It must follow build_table1_midwives.R within this layer: run before
        # it, the vintage check would compare the freeze against the PREVIOUS
        # table and report a staleness the rebuild is in the middle of fixing.
+       # diagnose_migration_year_over_year.R reads the freeze and the panel
+       # but writes nothing tracked -- it is a read-only diagnostic (prints
+       # its table to stdout). It belongs last regardless, same reasoning as
+       # every other script in this layer: it reads everything above.
        scripts = c("build_table1_midwives.R", "export_amcb_npi_geography.R",
                    "validate_training_institution_against_acme.R",
-                   "provenance_manifest.R"))
+                   "provenance_manifest.R", "diagnose_migration_year_over_year.R"))
 )
 declared <- unlist(lapply(REBUILD_ORDER, `[[`, "scripts"))
 

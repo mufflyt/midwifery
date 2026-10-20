@@ -20,7 +20,80 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — 2026-09-14 — NPPES address versus claims site: rural bands disagree 38–45%
+## [Unreleased] — 2026-10-20 — The panel's missing 2023 vintage, a column-count bug it exposed, and a 25-doc staleness pass
+
+### Fixed
+
+- **`midwife_panel.csv` had no real source for its 2023 vintage.** There is no
+  classic `npidata_` zip for April 2023 on record anywhere `build_midwife_panel.R`
+  looks. The real source turned out to be a third, previously unhandled NBER
+  distribution — an `npi_<Month>_<Year>.parquet` + `ptax_<Month>_<Year>.parquet`
+  pair — and whatever originally produced the committed 2023 row silently
+  dropped data from it: 542 cohort members' `practice_state` was missing where
+  the raw source had it. `process_core_parquet_year()` adds that path; the
+  2023 slice has been rebuilt from it, closing the gap for the 14,693 cohort
+  members whose April-2023 taxonomy was in scope (the remaining 542 are a
+  real, unrelated taxonomy-scope exclusion, not a residual bug).
+- **A latent column-count bug, found by that rebuild.** `tax_scope` had been
+  added to every ingestion path's SELECT list after the committed panel was
+  last built, so the next incremental resume — any of them, not just the 2023
+  one — would have silently written 14-column rows against the panel's real
+  13-column header. DuckDB's default reader sniffs column count from existing
+  rows and drops every row that doesn't match, with no error under
+  `ignore_errors=true`. Removed from all three paths.
+- **A year-by-year migration analysis surfaced, then ruled out, a parser
+  explanation for two mobility spikes.** The two largest year-over-year
+  state-move-rate transitions in the 2007–2026 panel (2017→2018, 2023→2024)
+  both coincide with the two NPPES file-format changes this repo tracks (the
+  2018 Latin-1→UTF-8 switch; the December 2024 "reshaped" restructure). A
+  classic-path-vs-reshaped-path parser diff on the real December 2024
+  snapshot, extended to the address fields `TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md`'s
+  own validation never covered, came back with zero mismatches across all
+  17,028 cohort NPIs — clearing the parser. The mechanism behind the
+  correlation remains unidentified; it is not the 2023 data gap above (which
+  doesn't participate in the move-rate calculation either way).
+
+### Added
+
+- **20 adversarial tests for `build_midwife_panel.R`**
+  (`tests/test_build_midwife_panel.R`, cases 11–30, 30 total with the
+  pre-existing 10): resume-append column-count regressions for the classic
+  and reshaped paths, and correctness/error handling for the new parquet path
+  — missing sibling files, an unmapped vintage date, organization/blank
+  entity codes, a non-first taxonomy slot, a duplicated join row (guarded
+  with a `QUALIFY` dedup), decoy filenames, a cross-format tie-break, and
+  wide/narrow taxonomy-scope correctness.
+- **`diagnose_migration_year_over_year.R`** — the year-by-year migration
+  analysis above, as a reproducible script rather than a one-off query.
+- **`docs/TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md`** — the full
+  investigation: the year-by-year mover-rate table, the format-change
+  correlation, the parser-diff test that cleared it, and what remains open.
+
+### Changed
+
+- **A 25-file pass over `docs/TECHNICAL_APPENDIX_*.md` and
+  `docs/RESULTS_*.md`**, checking cohort counts, cross-references and
+  "pending" claims against what the repo's code and artifacts actually say
+  today (not assumed). Real fixes landed in nine of them: a stale
+  calibration caveat (`AGE_IMPUTATION`), a duplicate section-9 heading
+  (`LINKAGE_SELECTION`), an undercounted test suite and missing third
+  ingestion path (`PANEL_BUILDER_HARDENING`), a resolved-but-still-flagged
+  encoding-gate callout naming the wrong bypass sites (`CSV_INGESTION_ENCODING`),
+  a stale regression-guard count, 156→153 (`DATA_REGRESSION_GUARD`), an
+  exception-registry note that didn't yet know about three new raw
+  `dbConnect()` sites (`DUCKDB_BOOTSTRAP_ARCHITECTURE`) — those three sites
+  are the new saboteur tests above; they still need routing through
+  `duckdb_connect()` or registering as exceptions, not yet done — a stale
+  panel row count and an overstated "two parsing paths" claim
+  (`PANEL_TEMPORAL_VALIDATION`), four stale file:line citations
+  (`RECORD_LINKAGE`), and a stale panel NPI count with no existing staleness
+  caveat, unlike its siblings (`TAXONOMY_SCOPE`). Sixteen files were already
+  accurate and needed nothing. `DEBT.md`'s D10 entry was flagged as
+  contradicting `TECHNICAL_APPENDIX_COHORT_VINTAGE.md` (D10 still says
+  "open/never re-pinned"; a direct test run says otherwise) but not fixed —
+  out of scope for this pass.
+
+## [Unreleased] — 2026-10-19 — Join/checkpoint/scraper safety nets, a CMS catalogue break, two new QA instruments
 
 ### Added
 
@@ -45,6 +118,187 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`build_trilliant_work_sites.R`.** A "same band" level now names its band,
   and a new dimension, `nppes_address_to_claims_site_distance`, bands the
   great-circle distance between the two addresses.
+
+### Fixed
+
+- **`safe_inner_join()` had two silently inert checks** (`R/join_safety.R`).
+  `use_enhanced_metrics=TRUE` and its `agree_on`/`agree_map` arguments
+  validated but never ran, because the `R/join_metrics.R` module they called
+  into does not exist in this repo; callers who asked for those checks got
+  none, with no error. `max_right_dup_keys` was dead code for any join with
+  `expect_unique_both=FALSE` — the enforcement comment said "Code removed -
+  parameter now enforced via join metrics," a module that does not exist
+  either. `use_enhanced_metrics` now defaults `FALSE` and hard-stops if
+  requested; `max_right_dup_keys` is enforced unconditionally.
+- **`save_checkpoint_atomic()` had a fixed temp-file name** (`R/lib/checkpoint_utils.R:save_checkpoint_atomic`)
+  — two overlapping runs writing the same checkpoint could race on the same
+  `path.tmp` and corrupt each other's write. The temp name is now salted with
+  the writing process's PID. `tests/test_geocode_checkpoint_safety.R` updated.
+- **`match_nppes.R`'s exact-match stage could match on two blank first names.**
+  A parse failure that left both sides' first name empty previously counted
+  as `"" == ""` agreement, manufacturing an unevidenced identity match.
+- **AMCB scraper reconnects retried the stale URL.** `scrape.py`'s `_request()`
+  rebuilt the request URL once and reused it across retries, so a reconnect
+  that got a new APEX instance/region id kept hitting the old one. It now
+  takes a `build()` closure re-invoked per attempt. `Session.connect()` also
+  raises a named `RuntimeError` (which regex failed) instead of a bare
+  `AttributeError` if AMCB's markup shifts again. New tests in
+  `tests/test_scrape.py`.
+- **`fetch_npi_candidates.py` dropped NPPES results past page 1.** The NPI
+  Registry API caps results at 200 per query; a surname+first-name pair with
+  more than 200 true matches silently lost everything past the first page,
+  since the refine-by-first-name pass only narrowed the query, it never paged
+  it. `nppes_query_all_pages()` now pages up to a 1,200-row ceiling.
+- **`build_midwife_hospital_affiliations.py` read the wrong column and a stale
+  filename.** `r.get("state")` is not a column this script's input carries —
+  the state column is `nppes_state`. `MIDWIVES_FILE` pointed at an old
+  date-range/suffix that no longer exists.
+- **`archive_revalidation_reassignment.R` stopped finding its CMS dataset.**
+  As of 2026-10, CMS split the one "Revalidation Clinic Group Practice
+  Reassignment" dataset into ~44 separate per-month datasets in its
+  catalogue; an exact-title match found nothing. Matching is now by
+  `startsWith()`, which covers both the old single-dataset shape and the new
+  one. Re-run end to end: all 39 missing monthly vintages (2021-12 through
+  2026-09) downloaded and loaded, warehouse now holds 40 vintages,
+  `/Volumes/MufflySamsung/DuckDB/cms_revalidation.duckdb`.
+- **`refuse_if_large()` gave an opaque "argument is of length zero" error**
+  on a non-data-frame input (`R/lib/duckdb_guards.R`); it now checks
+  `is.data.frame()` first and says what was actually passed. New test:
+  `tests/test_duckdb_guards.R`.
+
+### Added
+
+- **A CMS Revalidation Group Practice Reassignment warehouse**, 40 monthly
+  vintages (2021-12–2026-09, ~3.0–3.6M rows each) in a persistent DuckDB at
+  `/Volumes/MufflySamsung/DuckDB/cms_revalidation.duckdb`, with raw CSVs kept
+  alongside under `/Volumes/MufflySamsung/cms_revalidation_raw`. First
+  per-vintage, per-state midwife summary: `artifacts/midwife_reassignment_panel_summary.csv`.
+- **`artifacts/nppes_license_concordance.csv`** — license number and state
+  pulled from each matched midwife's NPPES taxonomy entries (not previously
+  extracted anywhere in this repo), via new `measure_nppes_license_concordance.py`.
+  Checked against this repo's three genuine board pulls (WA, CO, TX) where
+  both exist.
+- **`artifacts/nursys_qa_sample.csv`** — a 120-row, state-stratified
+  (WA/CO/TX) manual-lookup QA sample comparing board license numbers against
+  Nursys, drawn by new `draw_nursys_qa_sample.py`. This is an **instrument,
+  not a result**: Nursys QuickConfirm has no bulk API, so the `NURSYS_*`
+  columns are left blank, awaiting a human to look each one up by hand — same
+  posture as the 327-row blinded adjudication truth set in `artifacts/truth/`.
+- **`artifacts/accepted_by_evidence_class.csv`** committed for the first
+  time (script `make_evidence_class_figure.R` already existed; its output
+  artifact had not been). Backs new `make_amcb_npi_matching_slide.R`.
+- Four new slide-generation scripts (`make_access_stack_slide.R`,
+  `make_amcb_npi_matching_slide.R`, `make_source_reliability_slide.R`,
+  `make_worksite_address_problem_slide.R`), each adapted from an unrelated
+  `~/isochrones/` project's layout code but drawing this project's own,
+  computed numbers — no source-accuracy figures were invented to fill a
+  borrowed panel.
+- `manuscript/slides_overview.qmd`, a PowerPoint-output Quarto deck whose
+  numbers come from `mw_init_stats()` at render time, not typed in.
+- `analysis/make_internal_dot_map_qa_only.R` — an explicitly never-publish,
+  internal-only QA dot map; its output path (`artifacts/internal_qa/`) is
+  now gitignored.
+
+### Changed
+
+- **E. Brie Thumm's affiliation** updated from Denver Health to College of
+  Nursing, University of Colorado Anschutz Medical Campus, consistently
+  across `CITATION.cff`, `manuscript/title_page.qmd`,
+  `manuscript/midwife_persistence.qmd`, `manuscript/STROBE_checklist.md`,
+  `manuscript/slides_overview.qmd`, and README's citation block.
+- **A doc-hygiene pass** adds "numbers are stale, mechanism is not" notes to
+  thirteen docs under `docs/` whose cohort counts predate the 2026-09-02
+  re-scrape (22,309/11,920 → 22,357/12,171 per DEBT.md D10), each spelling out
+  the specific old-vs-current numbers rather than silently leaving them wrong.
+  One (`TECHNICAL_APPENDIX_CSV_INGESTION_ENCODING.md`) instead reports a
+  **currently-failing gate**: two new raw `dbConnect()` call sites (added
+  2026-09-13/14) bypass the encoding chokepoint the gate exists to enforce.
+  `DECISIONS_CONTRACT.md` D15 ("does practice setting belong in Table 1?") is
+  recorded as ruled, Option A, 2026-09-28.
+
+### Removed
+
+- **`classify_msn_dnp_credentials.R`** and its two artifacts, along with the
+  `degree_nppes_text` source and the "DNP versus MSN" feasibility row it fed
+  (`R/inventory_trilliant_research_fields.R`,
+  `docs/TECHNICAL_APPENDIX_TRILLIANT.md`'s research-question count 12→11,
+  `rebuild_frozen_dependents.R`'s rebuild order, its CI leak allowlist entry).
+  Six exploratory/demo scripts moved to `@archive/` rather than deleted
+  (`demonstrate_attanasio_medicare_medicaid_link.R`,
+  `demonstrate_postmastr_address_standardization.R`,
+  `experiment_disambiguate_unresolved.R`,
+  `experiment_endpoint_and_secondary_location.R`,
+  `experiment_external_org_sources.R`, `investigate_no_org_anomaly.R`).
+
+### Known, unresolved
+
+- **The hospital/clinic worksite counts in `docs/table_worksite_settings.md`,
+  `table_worksite_combinations.md`, `table_worksite_topology.md` and
+  `table_trilliant_worksite_detail.md` disagree slightly with the figures
+  already committed in `docs/table1_midwives.md` and
+  `docs/SCOPE_AND_LIMITATIONS.md`** (e.g. hospital 7,681 vs. 7,685,
+  clinic/practice 6,017 vs. 6,023) after a same-night rebuild of
+  `build_trilliant_work_sites.R`'s outputs. Both sets are committed as of this
+  entry. Not reconciled — see the note in `docs/table1_midwives.md`.
+
+## [Unreleased] — 2026-10-19 — Worksite merge-conflict audit: root-caused, not closed
+
+Full writeup: [docs/HANDOFF_worksite_merge_conflict_audit.md](docs/HANDOFF_worksite_merge_conflict_audit.md).
+Owner declined to resolve the pending `git rebase origin/main` by picking a
+side on numbers alone and asked for an evidence-based audit first. This is
+that audit. Nothing below changes a previously published number — it adds a
+third, still-not-final number and says exactly why it isn't final.
+
+### Added
+
+- **20 adversarial tests for the three pure functions that build worksite
+  data** — `tests/test_work_site_topology_saboteurs.R`, targeting
+  `assign_site_ids()`, `blended_practice()` and `topology_by_midwife()` in
+  `R/lib/work_site_topology.R`: shared hospital campuses that must stay two
+  sites, a same-ZIP/different-street pair that must never fuse, the exact
+  4-decimal coordinate-rounding boundary the function uses, employer/billing
+  rows that must never count as workplace evidence, a hospital affiliation
+  with no resolved coordinates that still counts as strict evidence (by
+  design — a separate question from physical-site counting), and duplicate
+  source rows that must not inflate a count. One real characteristic found
+  in the process, now pinned down by a test rather than left implicit: a
+  midwife whose only rows are employer sources is **absent** from
+  `blended_practice()`'s own output, not present with `FALSE` flags — safe
+  today only because the caller's `left_join` + `coalesce(FALSE)` papers
+  over it.
+
+### Fixed (partially)
+
+- **`origin/main`'s committed `artifacts/midwife_work_setting_summary.csv`
+  (241/34 strict/broad hospital+birth-center evidence) was built with all 5
+  proper inputs; the previously-committed local version (156/63) was built
+  without two of them** (`cabc_matched_midwives_final.csv`,
+  `organization_affiliation_resolved.csv` — confirmed from the local
+  provenance JSON's input list, silently short because of a now-removed
+  `INPUTS[file.exists(INPUTS)]` fallback). Both regenerated from primary
+  sources this session: `organization_affiliation_resolved.csv` ran clean
+  from already-committed arm artifacts; `cabc_matched_midwives_final.csv`
+  needed a fresh browser-captured snapshot of the CABC directory (its own
+  script header says why — the listing renders client-side), 109 centers
+  live on 2026-10-19 matched to 220 midwives across 66 centers. Re-running
+  with both restored moved the local count from 156/63 to 203/76 — confirming
+  this was a real cause, but **still not a match** for `origin/main`'s
+  241/34, taken as the current committed figure in this rebase.
+- **The remaining, unclosed cause**: the external hospital CCN/price-
+  transparency reference bundle (`/Volumes/MufflySamsung/hpt_prices/reference/`,
+  `/crosswalk/`) is absent on this machine, so the rerun above still used a
+  degraded fallback (empty NPI→CCN crosswalk) that `origin/main`'s version of
+  `build_trilliant_work_sites.R` no longer tolerates. No worksite number —
+  committed or rerun — should be published as final until that bundle is
+  located and the comparison is redone with it present.
+- **`origin/main`'s published `docs/table1_midwives.md` is a known-broken
+  stale partial build, not newer truth.** Its own `build_table1_midwives.R`
+  documents a 2026-09-11 incident (PR #241) where a run missing enrichment
+  inputs published Sex 100% "not recorded" and ACOG district 99.7% "not
+  mappable"; a guard shipped afterward to prevent a repeat, but the already-
+  published file was never regenerated and still shows exactly that broken
+  state at `origin/main` tip. The locally-authored version is complete and
+  correct and is what this rebase keeps for that file.
 
 ## [Unreleased] — 2026-09-14 — Trilliant's directory as a second identity source (experiment)
 

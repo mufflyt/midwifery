@@ -4,6 +4,10 @@ cj.txt
 *.parquet
 audit_legacy_hospital_linkage_*/
 
+# Claude Code local settings/lock files; machine-local, not a project artifact
+.claude/
+.DS_Store
+
 # Test / Python tooling artifacts
 __pycache__/
 *.pyc
@@ -95,6 +99,9 @@ stage3_*.log
 .pool_done
 artifacts/midwives_geography_FROZEN.csv
 artifacts/coordinate_provenance_audit.csv
+# person-level dot map, same disclosure judgement as map_midwife_geography.R:
+# a dot in a sparse county can identify one clinician. QA only, never commit.
+artifacts/internal_qa/
 logs_*.log
 midwives_geography_enhanced.csv
 midwives_panel_geocoded_enhanced.csv
@@ -283,6 +290,14 @@ artifacts/midwife_org_links.csv
 artifacts/midwife_org_person.csv
 artifacts/midwife_org_person_candidate.csv
 artifacts/midwife_org_affiliations_candidate.csv
+artifacts/midwife_organization_affiliation_report.csv
+artifacts/table_worksite_*.csv
+artifacts/table_trilliant_worksite_detail.csv
+artifacts/worksite_address_resolution*.csv
+artifacts/worksite_address_setting_*.csv
+artifacts/worksite_setting_source_registry.csv
+data/HRSA_Health_Center_Service_Delivery_and_LookAlike_Sites.csv
+data/CMS_RHC_Enrollments_2026-07-17.csv
 artifacts/midwife_hospital_matches.csv
 
 # Hospital affiliation, person level

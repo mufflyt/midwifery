@@ -29,8 +29,9 @@ know.
 
 Ten single-row NPPES fixtures, each isolating one hazard, were run against
 `build_midwife_panel.R` via the `NPPES_HISTORY` environment variable it
-already reads. All ten are now `tests/test_build_midwife_panel.R`, wired into
-`ci.yml` on every push and pull request. Table:
+already reads. All ten are among the 30 cases now in
+`tests/test_build_midwife_panel.R`, wired into `ci.yml` on every push and pull
+request. Table:
 
 | # | Hazard | Expected behavior | Result |
 |---|---|---|---|
@@ -56,9 +57,12 @@ promoting these from an ad hoc bug hunt into a permanent test.
 
 Starting with the December 2024 snapshot, NPPES began publishing files in a
 different structure ("reshaped" in the script's own log output) from every
-prior year. `build_midwife_panel.R` gained a second parsing path to read it.
-The obvious risk of a second path is that it silently produces a *different*
-population than the original path would have for the same data.
+prior year. `build_midwife_panel.R` gained a second parsing path to read it
+(a third, `process_core_parquet_year()`, was added later for an NBER "core"
+parquet distribution — the real source of the panel's 2023 vintage, which no
+classic npidata_ zip exists for on record). The obvious risk of a second path
+is that it silently produces a *different* population than the original path
+would have for the same data.
 
 It does not. The December 2024 snapshot, extracted through the new reshaped
 path (`393,409` rows), was compared row-for-row against the same snapshot
@@ -77,6 +81,15 @@ discontinuity at the format boundary. Annualized growth declines smoothly
 from 11.1% (2008) to 4.5-6% (2025-2026) across the entire 2007-2026 series;
 the 2024 and 2025 reshaped-path snapshots (19,282 and 19,690 midwives) sit
 exactly on that trend, not off it.
+
+This check covered row count, `tax_class`, and `last_name` only. It was
+later extended to the address fields (`practice_address`, `practice_state`,
+`practice_zip`) after a year-by-year migration analysis found the two
+largest state-move-rate spikes in the whole panel landing on this exact
+format change and the 2018 encoding switch — see
+[`TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md`](TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md).
+The address-field extension also came back with zero mismatches; the spikes'
+mechanism remains unidentified.
 
 ## 4. AMCB `certification_date` is not always the date of original certification
 

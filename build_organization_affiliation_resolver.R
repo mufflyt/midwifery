@@ -86,6 +86,17 @@ arm_note <- function(arm, d) {
 }
 have <- function(p) file.exists(p)
 
+# Which file(s) actually determine each arm, for provenance -- kept next to
+# the `have()` checks below so the two can't drift apart silently.
+ARM_INPUT_FILES <- list(
+  pecos_reassignment    = "artifacts/midwife_reassignment_spells.csv",
+  care_compare_group    = "artifacts/midwife_organization_panel.csv",
+  nppes_org_colocation  = c("artifacts/nppes_colocation_2025.csv", "artifacts/midwife_org_person.csv"),
+  facility_affiliation  = "artifacts/dac_facility_affiliations.csv",
+  hospital_affiliation  = "artifacts/midwife_hospital_affiliations.csv",
+  birth_center_registry = "artifacts/cabc_matched_midwives_final.csv",
+  open_payments_org     = "artifacts/cohort_midwives_open_payments_type2_organizations.csv")
+
 cli::cli_h2("Arms")
 
 # PECOS reassignment -- carries real dates, from the spell table.
@@ -157,12 +168,25 @@ if (have("artifacts/midwife_hospital_affiliations.csv")) {
     filter(!is.na(npi), nzchar(npi)))
 }
 
-# Birth-centre arms. PARTIAL BY CONSTRUCTION: these registries cover accredited
-# or listed centres only, so absence from them is not evidence of anything.
+# Birth-centre arm. PARTIAL BY CONSTRUCTION: this registry covers accredited
+# centres only, so absence from it is not evidence of anything.
+#
+# `aabc_matched_birth_center_midwives.csv` and
+# `freestanding_birth_center_midwives_expanded.csv` are deliberately NOT
+# folded in here. Both are keyword matches against the midwife's OWN NPPES
+# address/taxonomy text (neither script actually queries AABC -- confirmed by
+# grep, there is no AABC web request anywhere in this repo), not a real
+# accreditation check. One of their keyword lists accepts the bare words
+# "MIDWIFERY"/"MIDWIVES" with no "BIRTH" or "CENTER" nearby, so an ordinary
+# midwife practice literally named "___ Midwifery" matches. Mixing that into
+# `birth_center_registry` would let an unverified text guess inflate the same
+# evidence class as genuine CABC accreditation, with no column distinguishing
+# the two. `build_affiliation_coverage_matrix.R` already keeps these two as
+# their own named, separate columns (`birth_center_aabc`,
+# `birth_center_freestanding`) rather than merging them -- do the same here
+# if this evidence is ever wanted, not as a silent addition to this arm.
 bc <- list(
-  c("artifacts/cabc_matched_midwives_final.csv", "matched_cabc_birth_center"),
-  c("artifacts/aabc_matched_birth_center_midwives.csv", "matched_facility_text"),
-  c("artifacts/freestanding_birth_center_midwives_expanded.csv", "taxonomy_description"))
+  c("artifacts/cabc_matched_midwives_final.csv", "matched_cabc_birth_center"))
 bc_rows <- lapply(bc, function(x) {
   if (!have(x[1])) return(NULL)
   d <- rd(x[1]); if (!x[2] %in% names(d)) return(NULL)
@@ -266,7 +290,7 @@ out <- pair %>%
   arrange(certification_number, desc(affiliation_evidence_count), organization_name)
 
 write_with_provenance(out, OUT, na = "",
-  inputs = prov_inputs(c(cw, unlist(lapply(ARMS_SEEN, function(a) NULL)))))
+  inputs = prov_inputs(c(cw, unlist(ARM_INPUT_FILES[ARMS_SEEN], use.names = FALSE))))
 cli::cli_alert_success("wrote {OUT}")
 
 # --- what the non-Medicare layer actually bought -----------------------------
