@@ -201,10 +201,15 @@ neither is worth building for a sensitivity arm already 3:1 against.
 
 Two boundaries remain outside this measurement entirely:
 
-- **The panel window.** Snapshots run 2007–2025. 1,174 certificants certified in
-  2025–2026 and 519 of them are unresolved, at no-candidate rates of 10.2% and
-  35.6% against 2.7% for 2024. Those are not linkage failures and no pool change
-  reaches them. See
+- **The panel window.** Snapshots run 2007–2025, and certificants from
+  2025–2026 fall outside it, which is not a linkage failure and no pool change
+  reaches them. (A prior draft of this point cited "1,174 certificants
+  certified in 2025–2026, 519 unresolved" — `DEBT.md` D10 records that no
+  script or artifact in this repo computes that count; it was apparently a
+  one-off manual tally, and README's own Figure 3 caption has since dropped it
+  for the same reason, stating the fact qualitatively instead. Whoever wants
+  the number back should compute it properly, from roster certification date
+  against the NPPES panel coverage window, and give it a script.) See
   [`TECHNICAL_APPENDIX_RECORD_LINKAGE.md`](TECHNICAL_APPENDIX_RECORD_LINKAGE.md).
 - **Ties.** 3,044 records tie on name evidence and 1,196 of them have no
   midwifery candidate at all. Breaking those needs an identifier neither source

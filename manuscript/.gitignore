@@ -6,6 +6,7 @@
 # were committed by a `git add manuscript/` that looked clean.
 *.docx
 *.html
+*.pptx
 *_files/
 /.quarto/
 

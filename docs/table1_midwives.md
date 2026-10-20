@@ -50,6 +50,13 @@ Registry-derived rows use the full cohort. Healthgrades-derived rows use a small
 | Nonmetropolitan, adjacent (RUCC 4-6) | 800 | 6.7 |
 | Nonmetropolitan, remote (RUCC 7-9) | 344 | 2.9 |
 | County not resolved (no RUCC code) | 196 | — |
+> **Known, unresolved (2026-10-19).** A same-night rebuild of
+> `build_trilliant_work_sites.R`'s outputs (`docs/table_worksite_settings.md`
+> et al.) shows slightly different counts than the two blocks below — hospital
+> 7,681 vs. 7,685, clinic/practice 6,017 vs. 6,023. Both versions are
+> committed as of this note; the discrepancy has not been reconciled. See
+> [NEWS.md](../NEWS.md).
+
 | **Any observed hospital work site** | | |
 | At least one hospital work site observed | 7,685 | 64.4 |
 | No hospital work site among classified sites | 4,248 | 35.6 |

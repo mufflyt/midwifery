@@ -1,5 +1,16 @@
 # Geographic persistence of the located midwifery workforce, 2007–2025
 
+> **Status (2026-09-11 onward): pending rebuild, not yet stale-flagged
+> elsewhere.** The analysis below is restricted to the **16,892**-NPI frozen
+> cohort as it stood on 2026-08-14. The cohort has since moved to **17,028**
+> (`DEBT.md` D10). Per D10's own account, rebuilding this analysis is a
+> separate, heavier pass against `midwife_panel.csv` (493 MB) that was
+> deliberately NOT done as part of the 2026-09-11 re-pin, because
+> `tests/test_cohort_vintage.R` does not check it. Every count below —
+> providers observed, provider-years, the persistence rates — predates the
+> re-pin; treat them as describing the 16,892 cohort, not the current one,
+> until this doc is regenerated.
+
 Computed 2026-08-14 from `midwife_panel.csv` (NPPES annual snapshots) restricted
 to the 16,892 NPIs in the frozen AMCB linkage.
 

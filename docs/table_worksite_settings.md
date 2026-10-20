@@ -4,7 +4,7 @@ Cohort denominator: **12,171** midwives. Rows are nonexclusive; percentages do n
 
 | Setting | n | % |
 |---|---:|---:|
-| Hospital | 7,685 | 63.1 |
-| Clinic/practice | 6,023 | 49.5 |
+| Hospital | 7,681 | 63.1 |
+| Clinic/practice | 6,017 | 49.4 |
 | FQHC/community health | 1,493 | 12.3 |
 | Birth center | 564 | 4.6 |

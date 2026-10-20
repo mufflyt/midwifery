@@ -1,6 +1,17 @@
-# Test coverage: current state and proposal
+# Test coverage: origin proposal (historical)
 
-## Where we are
+> **Status:** this document is the original 2026-08-07 proposal that
+> introduced testing to this repository. It is kept for the design rationale,
+> but it is **not** a live coverage report and several of its claims are now
+> wrong — most notably its P0 item below, which is done. For the actual,
+> current coverage, read the test suite itself: `tests/ci_*.R` are the CI
+> gates (wired into [`.github/workflows/ci.yml`](.github/workflows/ci.yml) and
+> [`.github/workflows/nightly.yml`](.github/workflows/nightly.yml)), and
+> `tests/test*.{R,py}` (~150 files) are the tests themselves, one per behavior
+> under test. A file's own name and header comment are more reliable than this
+> proposal's description of it.
+
+## Where we started
 
 Before this change the repository had **no tests and no test tooling** — no
 `tests/` directory, no `pytest`/`testthat` config, no CI workflow. Every file is
@@ -46,10 +57,14 @@ pytest
 
 ## Proposed priorities (highest value first)
 
-### P0 — `credential_compatibility.R` (pure, high-stakes, zero deps)
+### P0 — `credential_compatibility.R` (pure, high-stakes, zero deps) — DONE
 
-This is the best test target in the repo and currently has none. Both functions
-are pure, dependency-free, and gate every match decision:
+~~This is the best test target in the repo and currently has none.~~ Done:
+`tests/test_identity_collision_corpus.R` exercises both
+`normalize_credential_class()` and `are_credentials_compatible_midwifery()`
+directly. The rest of this section is kept for the rationale (why these two
+functions were worth testing first), not as an open item. Both functions are
+pure, dependency-free, and gate every match decision:
 
 - `normalize_credential_class()` — verify the **most-specific-class-wins** rule
   the code comments promise: `"CNM, RN"` → `midwifery` (not `nursing`);

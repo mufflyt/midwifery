@@ -2,6 +2,14 @@
 
 *Draft methods subsection. Numbers current as of 2026-08-10.*
 
+> **Superseded.** This was an early pilot (12 of 20 ACNM-accredited programs,
+> 1,986 CONTENTdm records, 555 certificants identified, 2.5% of the
+> pre-rescrape 22,309-roster). The current methodology is
+> [`TECHNICAL_APPENDIX_OAI_TRAINING_INSTITUTION.md`](TECHNICAL_APPENDIX_OAI_TRAINING_INSTITUTION.md):
+> ACME's 50-program frame, 34 repositories, 35,038 author-records across 25
+> institutions, with ORCID disambiguation. This draft is kept for the early
+> rationale, not as a current methods description.
+
 ## Rationale
 
 Practice location for certified nurse-midwives (CNMs) is recoverable from NPPES

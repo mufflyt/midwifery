@@ -75,24 +75,38 @@ class Session:
             urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
         self.opener.addheaders = [("User-Agent", "Mozilla/5.0")]
         home = self._get(BASE + "f?p=AMCBSSA:17800")
-        self.instance = re.search(r'name="p_instance" value="(\d+)"', home).group(1)
-        self.region = re.search(r"apex\.widget\.report\.paginate\('(\d+)'", home).group(1)
+        instance = re.search(r'name="p_instance" value="(\d+)"', home)
+        if not instance:
+            raise RuntimeError(
+                "connect(): could not find p_instance on the AMCB report home "
+                "page -- its markup may have changed")
+        region = re.search(r"apex\.widget\.report\.paginate\('(\d+)'", home)
+        if not region:
+            raise RuntimeError(
+                "connect(): could not find the report region id on the AMCB "
+                "report home page -- its markup may have changed")
+        self.instance = instance.group(1)
+        self.region = region.group(1)
 
     def _get(self, url, body=None):
         """Fetch one URL (GET, or POST if `body` is given) as decoded text."""
         return self.opener.open(url, body, timeout=90).read().decode("utf8", "replace")
 
-    def _request(self, url, body=None):
-        """`_get` with up to four tries; reconnect (new session) from the
-        second failure on, since a dropped APEX session can't be resumed."""
+    def _request(self, build):
+        """Call `build()` for a fresh (url, body) and fetch it, with up to
+        four tries; reconnect (new session) from the second failure on, since
+        a dropped APEX session can't be resumed. `build` is re-invoked on
+        every attempt so a reconnect's new instance/region id is used instead
+        of a URL baked from the session that just failed."""
         for attempt in range(4):
+            url, body = build()
             try:
                 return self._get(url, body)
             except Exception as exc:
                 print(f"  retry {attempt + 1}: {exc}", file=sys.stderr)
                 if attempt:
                     self.connect()
-        raise RuntimeError(f"gave up on {url}")
+        raise RuntimeError(f"gave up on {build()[0]}")
 
     def search(self, cert, number):
         """Apply the search and return the exact total, cap notwithstanding."""
@@ -101,8 +115,10 @@ class Session:
 
     def _apply_search(self, cert, number):
         vals = ",".join(urllib.parse.quote(v) for v in (cert, number))
-        doc = self._request(f"{BASE}f?p=500:17800:{self.instance}::NO::"
-                            f"P17800_CERT,P17800_CERT_NUMBER,P17800_SEARCH_FLG:{vals},Y")
+        doc = self._request(lambda: (
+            f"{BASE}f?p=500:17800:{self.instance}::NO::"
+            f"P17800_CERT,P17800_CERT_NUMBER,P17800_SEARCH_FLG:{vals},Y", None))
+        self._needs_reapply = False
         return parse_total(doc)
 
     def rows(self):
@@ -115,13 +131,16 @@ class Session:
         """
         if getattr(self, "_needs_reapply", False) and self._applied:
             self._apply_search(*self._applied)
-            self._needs_reapply = False
-        body = urllib.parse.urlencode({
-            "p_flow_id": "500", "p_flow_step_id": "17800", "p_instance": self.instance,
-            "p_request": f"FLOW_PPR_OUTPUT_R{self.region}_pg_R_{self.region}",
-            "p_pg_min_row": 1, "p_pg_max_rows": CAP, "p_pg_rows_fetched": CAP,
-        }).encode()
-        doc = self._request(BASE + "wwv_flow.show", body)
+
+        def build():
+            body = urllib.parse.urlencode({
+                "p_flow_id": "500", "p_flow_step_id": "17800", "p_instance": self.instance,
+                "p_request": f"FLOW_PPR_OUTPUT_R{self.region}_pg_R_{self.region}",
+                "p_pg_min_row": 1, "p_pg_max_rows": CAP, "p_pg_rows_fetched": CAP,
+            }).encode()
+            return BASE + "wwv_flow.show", body
+
+        doc = self._request(build)
         return parse_rows(doc)
 
 

@@ -1,0 +1,331 @@
+---
+title: "Locating America's Midwives"
+subtitle: "A reproducible AMCB -> NPI linkage, Table 1, and a geographic-persistence study"
+author: "Tyler Muffly, MD · E. Brie Thumm, PhD, CNM, RN, MBA, FACNM"
+date: today
+format:
+  pptx:
+    slide-level: 2
+params:
+  dev_mode: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+# Same resolution trick as midwife_persistence.qmd: render from manuscript/ or
+# from the repository root without caring which one the caller used.
+root <- if (dir.exists("artifacts")) "." else ".."
+source(file.path(root, "manuscript", "R", "build_stats_catalog.R"))
+source(file.path(root, "manuscript", "R", "inline_stats.R"))
+
+if (isTRUE(params$dev_mode)) {
+  Sys.setenv(MANUSCRIPT_DEV_MODE = "1")
+} else {
+  Sys.unsetenv("MANUSCRIPT_DEV_MODE")
+}
+
+# Rebuilt live, same as the manuscript -- a slide with a stale number is worse
+# than a slide that is a day late.
+K <- mw_init_stats(root)
+```
+
+## The problem
+
+AMCB's public directory publishes **22,309 certificants** -- name, credential,
+status, dates.
+
+It publishes **no address at any level.** Not state, not ZIP, not county.
+
+> Every geographic statement about this workforce -- where midwives are, where
+> they're leaving, who they're near -- has to be *derived*. There is nothing
+> to look up.
+
+**Getting even the roster out was its own problem:**
+
+- AMCB's directory **hard-caps every search at 500 rows** -- paging past row
+  500 fails outright. Worked around by partitioning certification numbers into
+  digit-by-digit buckets that each stay under the cap, then summing the exact
+  `Total : N` line per bucket
+- **No bulk export, no API** -- only an Oracle APEX HTML report with
+  server-side session state that drops and must be reconnected mid-scrape
+- **No location data published anywhere.** City/state sit behind AMCB's paid,
+  per-record primary-source verification -- deliberately never purchased or
+  scraped; nothing here comes from behind a paywall or a login
+- The **NPI Registry API caps responses at 200 rows per query** too, and
+  returns them alphabetically (not by relevance) -- paged past that cap up to
+  its 1,200-row hard ceiling, or candidates for common names (e.g. "Smith,
+  John") silently go missing
+
+## AMCB's publicly searchable database
+
+```{r fig-amcb-screenshot}
+knitr::include_graphics(file.path(root, "docs", "figures",
+  "amcb_instant_verification_screenshot.png"))
+```
+
+AMCB's "Instant Verification" tool (`ams.amcbmidwife.org`) is searchable by
+name or certification number and returns **status only** -- Active, Retired,
+Deceased, Lapsed, Suspended, and so on. No practice address, city, state or
+ZIP appears anywhere on it, and AMCB itself states it is "not considered
+primary source." This is the entire public roster this project starts from.
+
+## What we built
+
+A reproducible pipeline that turns an unlocated certification roster into a
+located, auditable cohort, plus the analyses and manuscript built on top of
+it:
+
+1. **Scrape** the AMCB directory (name, credential, status)
+2. **Link** each certificant to an NPI (National Provider Identifier)
+3. **Geocode** the linked practice address -> county, ACOG district, rurality
+4. **Enrich** with CMS, Trilliant claims, Healthgrades, CABC birth-center data
+5. **Characterize** the located cohort (Table 1)
+6. **Track** the 2007-2025 provider panel for entry, movement, and attrition
+7. **Write it up** -- a manuscript, 4 tables, 7 figures, 3 appendices
+
+## Data sources
+
+| Source | What it gives us |
+|---|---|
+| AMCB public directory | the roster itself: name, credential, status, dates |
+| NPI Registry (NPPES) | identity link, practice address, 2007-2025 panel |
+| CMS Doctors & Clinicians | hospital affiliation, school, sex, age |
+| Trilliant provider directory | backup sex/school/age, patient-panel mix |
+| Healthgrades | profile attributes, language (partial) |
+| CABC | birth-center accreditation |
+| USDA RUCC, ACS, CDC WONDER | rurality, population denominators, births |
+
+## Table 1, variable by variable: where it actually comes from
+
+| Variable | Primary source | Backup / fallback | Note |
+|---|---|---|---|
+| Certification, status, dates | AMCB directory (`ams.amcbmidwife.org`) | -- | 22,309 on the roster; cohort is 12,052 CNM (99.0%) + 119 CM (1.0%) of 12,171 ACTIVE, primary-linked |
+| Sex | NPPES (self-enumerated) | Trilliant | 12,089 female (99.5%), 65 male (0.5%), 17 not recorded |
+| Training institution | CMS DAC, cleaned by `strip_med_suffix()` | Healthgrades -> repository -> Trilliant (last; agrees with DAC on every overlap) | DAC alone names a school for only 14.3% of the cohort; Trilliant's DAC-derived string reaches ~400 more (678 overlap, 100% agree); built, not yet in the published Table 1 |
+| Years observed / age-in-panel | NPPES panel itself | NBER's mirror of NPPES for pre-2024 snapshots | <5 yrs 2,597 (21.3%), 5-9 yrs 2,885 (23.7%), 10-14 yrs 2,424 (19.9%), >=15 yrs 4,265 (35.0%) |
+| Clinician age | OH voter DOBs (3-tier disambiguated against 7.95M records), WA DOH direct birth years, Healthgrades ages -- N=5,448 ground-truth, 100% verified | Ordinary least squares: Age = 35.86 + 0.943 x years-certified (R^2=0.72, residual error ~7.4 yrs), fitted on the 5,448 and applied to impute every one of the other 16,861 roster members | built (Technical Appendix, `artifacts/amcb_calibrated_ages.csv`); not yet in the published Table 1 |
+| Median patient-panel age | Trilliant claims | -- | median (IQR) 32 (30-35) yrs across 10,877 midwives with an observed panel (89.4% of cohort); no other source has this at all |
+| Practice address | NPPES (self-enumerated) | NPPES secondary (pl_pfile), CMS DAC facility, Trilliant claims site | switching pl_pfile vintage alone lifted cohort secondary locations from 2,687 to 5,303 -- see "The work-site address problem" |
+| Hospital affiliation | CMS DAC (Tier 1, Medicare enrollment) | Tier 2 municipal co-location (sensitivity), Trilliant claims -> hospital CCN | Table 1: 7,685 (64.4%) have >=1 observed hospital site; Tier-2 recall vs. Tier-1 is 50.59% (903/1,785); negative control: 0 structural NPI Type-1<->Type-2 matches |
+| ACOG district, rurality (RUCC) | Geocoded practice address | USDA RUCC 2023 / ACOG boundaries | metro 10,831 (90.4%), nonmetro-adjacent 800 (6.7%), nonmetro-remote 344 (2.9%); 196 unresolved |
+| Primary claims-site setting | Trilliant claims | CMS DAC facility affiliation, CABC | hospital 6,527 (64.3%), clinic/practice 2,605 (25.7%), FQHC 651 (6.4%), birth center 169 (1.7%) |
+| Language | Healthgrades | -- | currently unavailable: not collected by NPPES, CMS DAC, or the Healthgrades scrape |
+| Accepts new patients, telehealth | Healthgrades | -- | currently unavailable: Healthgrades data not available for this cohort |
+
+## Where location reliability actually comes from
+
+```{r fig-reliability}
+knitr::include_graphics(file.path(root, "docs", "figures", "source_reliability_spectrum.png"))
+```
+
+## Linking a name to a person
+
+A same-surname candidate pool means a perfect name match can still be the
+**wrong person.** So identity is *ranked*, not scored:
+
+- Candidates come from a **surname block** -- the NPI Registry query itself
+- Ranked into a **name-evidence class**: exact full name, then first+last,
+  then last name + first initial, then nickname- and former/maiden-name
+  expansion
+- Narrowed by **credential/taxonomy compatibility** -- an NPI credentialed MD
+  or DO is rejected as almost certainly a different person who shares the name
+- A record resolves only when exactly **one** candidate occupies the
+  strongest class it reaches; everything else is **quarantined**, not
+  discarded
+
+**Deliberately not used:**
+
+- **Gender** -- the cohort is ~99% women, so gender blocking discriminates
+  poorly and would have to be *inferred* from first name: risk without benefit
+- **Age** -- built (`validate_age_at_certification.R`) but not active; it
+  needs a year-of-birth the current AMCB scrape doesn't provide
+
+```{r fig-exclusion}
+knitr::include_graphics(file.path(root, "docs", "figures", "cohort_exclusion_flow.png"))
+```
+
+## Matching AMCB names to NPI numbers
+
+```{r fig-matching-slide}
+knitr::include_graphics(file.path(root, "docs", "figures", "amcb_npi_matching_slide.png"))
+```
+
+## The work-site address problem
+
+```{r fig-address-problem}
+knitr::include_graphics(file.path(root, "docs", "figures", "worksite_address_problem.png"))
+```
+
+## From roster to located cohort
+
+```{r fig-bounds}
+knitr::include_graphics(file.path(root, "docs", "figures", "selection_bounds.png"))
+```
+
+`r mw_safe_stat("linkage.matched_pct", "%.1f")`% of the roster links to a
+confirmed NPI. Linkage is **not random**: ACTIVE certificants link far more
+often than DECEASED ones, so every downstream figure describes the linked,
+mostly-active subset -- stated, not implied.
+
+## Table 1: who the cohort is
+
+Built from the frozen linkage plus every enrichment layer, with one rule: a
+block that cannot resolve a denominator shows its unresolved rows rather than
+dropping them.
+
+- `r mw_safe_stat("table1.cnm_pct", "%.1f")`% Certified Nurse-Midwife /
+  `r mw_safe_stat("table1.cm_pct", "%.1f")`% Certified Midwife
+- `r mw_safe_stat("table1.female_pct", "%.1f")`% female
+- Median patient-panel age (Trilliant claims): 32 years (IQR 30-35)
+- `r mw_safe_stat("cohort.metro_pct", "%.1f")`% practice in a metropolitan
+  county
+
+Full table: `docs/table1_midwives.md` / `artifacts/table1_midwives.csv`.
+
+## The persistence question
+
+Retention is proposed as a way to sustain midwife-led obstetric access. That
+carries an assumption nobody had measured: **is a midwife retained in the
+profession retained in the same community?**
+
+- `r mw_safe_stat("panel.year_min")`-`r mw_safe_stat("panel.year_max")`
+  NPPES practice-location panel, one row per provider per year
+- Three observable quantities: **entry**, **county-to-county movement**,
+  **cessation**
+- Tracked against rurality strata and state scope-of-practice regime, not
+  just in aggregate
+
+## What we found: persistence is sticky year-to-year, not over a career
+
+```{r fig-rural}
+suppressPackageStartupMessages(library(ggplot2))
+r <- K$rural$table
+r$origin <- factor(r$origin, levels = rev(r$origin))
+
+ggplot(r, aes(x = pct, y = origin)) +
+  geom_errorbarh(aes(xmin = lo, xmax = hi), height = 0.10, linewidth = 0.5,
+                 color = "grey35") +
+  geom_point(size = 3.4, color = "grey15") +
+  geom_text(aes(label = sprintf("%.1f%%", pct)), vjust = -1.6, size = 4.2,
+            color = "grey15") +
+  scale_x_continuous(limits = c(55, 71), breaks = seq(55, 70, 5),
+                     labels = function(x) paste0(x, "%")) +
+  labs(x = "Ended career in county of first practice", y = NULL) +
+  theme_classic(base_size = 13) +
+  theme(axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.major.x = element_line(color = "grey92", linewidth = 0.3),
+        plot.margin = margin(6, 14, 6, 6))
+```
+
+Annual same-county persistence: `r mw_safe_stat("persist.annual_county", "%.1f")`%.
+Career-long: `r mw_safe_stat("persist.career_county", "%.1f")`%. Metropolitan
+minus remote: `r mw_safe_stat("rural.diff", "%.1f")` percentage points.
+
+## Where movers go
+
+```{r fig-movers}
+m <- K$movers$table
+d <- data.frame(
+  origin = rep(rownames(m), times = ncol(m)),
+  dest   = rep(colnames(m), each = nrow(m)),
+  n      = as.vector(m))
+d$origin <- factor(d$origin, levels = rev(rownames(m)))
+d$dest   <- factor(d$dest, levels = colnames(m))
+d$pct    <- 100 * d$n / ave(d$n, d$origin, FUN = sum)
+
+ggplot(d, aes(x = pct, y = origin, fill = dest)) +
+  geom_col(width = 0.62, color = "white", linewidth = 0.7,
+           position = position_stack(reverse = TRUE)) +
+  geom_text(aes(label = ifelse(pct >= 7, sprintf("%.0f%%", pct), ""), color = dest),
+            position = position_stack(vjust = 0.5, reverse = TRUE), size = 3.8,
+            show.legend = FALSE) +
+  scale_fill_manual(values = c("To metropolitan"      = "grey30",
+                               "To nonmetro adjacent" = "grey65",
+                               "To nonmetro remote"   = "grey86"),
+                    name = NULL) +
+  scale_color_manual(values = c("To metropolitan"      = "white",
+                                "To nonmetro adjacent" = "grey15",
+                                "To nonmetro remote"   = "grey15")) +
+  scale_x_continuous(expand = c(0, 0), labels = function(x) paste0(x, "%")) +
+  labs(x = "Percentage of movers from that origin", y = NULL) +
+  theme_classic(base_size = 13) +
+  theme(axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.position = "bottom",
+        legend.key.size = unit(0.45, "cm"),
+        plot.margin = margin(6, 14, 6, 6))
+```
+
+Rural-origin movers relocate predominantly to metropolitan counties -- supply
+can thin in a county without the national count changing at all.
+
+## Geographic distribution
+
+```{r fig-map}
+sw <- readr::read_csv(file.path(root, "artifacts", "state_obstetric_workforce.csv"),
+                      show_col_types = FALSE, progress = FALSE) |>
+  dplyr::filter(.data$state %in% c(state.abb, "DC"), .data$births > 0)
+
+print(mysterymaps::mysterymaps_geographic_map(
+  data        = as.data.frame(sw),
+  state_col   = "state",
+  outcome_col = "midwives_per_1k_births",
+  fill_label  = "Midwives per\n1,000 births",
+  palette     = "viridis",
+  low_states_warn = 0L,
+  labels      = function(x) sprintf("%.0f", x)))
+```
+
+## The access stack, bottom to top
+
+```{r fig-access-stack}
+knitr::include_graphics(file.path(root, "docs", "figures", "access_stack_conus.png"))
+```
+
+## Where the cohort actually is {.internal}
+
+```{r fig-dotmap}
+knitr::include_graphics(file.path(root, "artifacts", "internal_qa",
+  "dot_map_active_cohort_INTERNAL_DO_NOT_PUBLISH.png"))
+```
+
+**INTERNAL REVIEW ONLY.** One jittered dot per ACTIVE, primary-linked midwife
+(`analysis/make_internal_dot_map_qa_only.R`). In a sparse rural county a dot
+can still identify a specific clinician -- remove this slide before sharing
+the deck outside the immediate team; the public-facing map is
+`docs/cnm_national_leaflet_map.html`.
+
+## What makes this reproducible
+
+- **Every artifact carries a provenance sidecar** -- SHA-256 of each input, so
+  any figure traces to the run that produced it
+- **Absence is never zero.** Suppressed cells, unobserved activity, and
+  unascertained attributes stay `NA`
+- **The manuscript's statistics catalog is rebuilt on every render**, never
+  cached -- a stale input moves the number, it doesn't get frozen
+- **Identity evidence is ranked, never scored** -- a tie is a tie, not an
+  average
+
+## Honest limits
+
+- **Scope is CNM/CM only.** Certified Professional Midwives and
+  state-licensed direct-entry midwives are outside the AMCB directory
+  entirely -- this understates midwifery access, worst where non-AMCB
+  midwifery is strongest
+- **The linked subset is not a random sample** of the roster
+- Employer/organization affiliation is built but **withheld** -- its linkage
+  agreement (16.4%) falls below the accepted threshold
+- Practice setting is built but **not yet in Table 1** -- an unruled decision
+- Birth-attendance via Medicare claims was **retracted**: public Medicare Part
+  B carries no delivery-code rows for any provider, 2013-2023
+
+## Deliverables today
+
+- `manuscript/midwife_persistence.qmd` -- the paper (4 tables, 7 figures,
+  renders clean to `.docx` / `.html`)
+- `docs/table1_midwives.md` -- full cohort-characteristics table
+- 3 appendices (linkage, verification, board verification) + STROBE checklist
+- `artifacts/` -- every number behind every figure, with provenance
+- This deck, rebuilt the same way: `quarto render slides_overview.qmd`

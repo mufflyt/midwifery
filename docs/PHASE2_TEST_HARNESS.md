@@ -10,6 +10,17 @@ assertion that it matters.
 Phase 2 starts with a **new ledger and a new artifact directory**. It does not
 resume at cycle 22.
 
+> **Note, added later: this restart condition was not followed.**
+> `docs/ADVERSARIAL_LOOP_LEDGER.md` kept the same ledger and continued
+> numbering straight through cycle 22 up to cycle 47 (`tests/test_cycle22_*.R`
+> through `tests/test_cycle47_*.R` all exist), rather than starting fresh as
+> required above. R7's own duplicate-heading defect also recurred in that
+> continued ledger and got worse: 14 cycle numbers now have a duplicate
+> `## Cycle` heading (2, 5, 7, 8, 9, 10, 11, 12, 15–20), and cycle 21 has
+> three, rather than the one-row-per-cycle requirement below having been
+> applied. Neither restart condition nor R7 was enforced going forward from
+> this document.
+
 ---
 
 ## R1. Fail if an expected column is absent
@@ -143,7 +154,9 @@ evidence.
 Only these survive as inputs; everything else restarts.
 
 - `docs/DECISIONS_CONTRACT.md` — nine rulings, unresolved.
-- `docs/COHORT_REFREEZE_2026-08-10.md` — the pin is now consistent at 16,892.
+- `docs/COHORT_REFREEZE_2026-08-10.md` — the pin was consistent at 16,892 as of
+  that date. Since re-pinned twice more (`DEBT.md` D10): 16,898, then the
+  current **17,028**.
 - The confirmed defect list and its fixes, already committed and independently
   verified against external figures where possible.
 - `.quarantine/killed_session_20260810/` — 15 regenerable artifacts and two

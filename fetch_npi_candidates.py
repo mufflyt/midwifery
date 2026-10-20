@@ -22,6 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 API = "https://npiregistry.cms.hhs.gov/api/"
 LIMIT = 200
+MAX_TOTAL = 1200                  # the API's hard ceiling on skip + limit
 WORKERS = 10
 DELAY = 0.1                       # 10 req/sec, memoise_api_setup.R guidance
 CACHE = "nppes_api_cache.jsonl"
@@ -31,8 +32,8 @@ _throttle = threading.Lock()
 _last_call = [0.0]
 
 
-def nppes_query(last, first=None):
-    """Query the NPI Registry API for individual providers by surname.
+def nppes_query(last, first=None, skip=0):
+    """Query one page of the NPI Registry API for individual providers by surname.
 
     Paces itself to the global 10 req/sec ceiling and retries transient
     failures up to four times with linear back-off. Returns the parsed JSON
@@ -40,11 +41,14 @@ def nppes_query(last, first=None):
 
     :param last: surname to search (upper-cased and trimmed).
     :param first: optional given name, used to refine a truncated surname pull.
+    :param skip: result offset, for paging past the per-call ``LIMIT``.
     """
     params = {"version": "2.1", "limit": str(LIMIT), "enumeration_type": "NPI-1",
               "last_name": last.upper().strip()}
     if first:
         params["first_name"] = first.upper().strip()
+    if skip:
+        params["skip"] = str(skip)
     url = API + "?" + urllib.parse.urlencode(params)
     for attempt in range(4):
         with _throttle:                       # global pacing across workers
@@ -60,6 +64,26 @@ def nppes_query(last, first=None):
                 print(f"  failed {last} {first or ''}: {exc}", file=sys.stderr)
                 return None
             time.sleep(2 * (attempt + 1))
+
+
+def nppes_query_all_pages(last, first=None):
+    """Page a surname (or surname+first-name) query past the per-call
+    ``LIMIT``, up to the API's ``MAX_TOTAL`` ceiling, and return every result.
+
+    Without this, any query whose true result count exceeds ``LIMIT`` (e.g. a
+    common pair like SMITH/JOHN) silently lost every candidate past the first
+    page -- the first-name refinement pass only further narrows the query, it
+    never actually paged the one already being fetched.
+    """
+    results = []
+    skip = 0
+    while True:
+        data = nppes_query(last, first, skip=skip)
+        page = (data or {}).get("results", []) or []
+        results.extend(page)
+        if len(page) < LIMIT or skip + LIMIT >= MAX_TOTAL:
+            return results
+        skip += LIMIT
 
 
 def load_cache():
@@ -154,8 +178,7 @@ def main():
         key = f"{last}|{first or ''}"
         if key in cache:
             return cache[key], False
-        data = nppes_query(last, first)
-        results = (data or {}).get("results", []) or []
+        results = nppes_query_all_pages(last, first)
         with cache_lock:
             log.write(json.dumps({"query": key, "results": results}) + "\n")
             log.flush()
@@ -167,7 +190,7 @@ def main():
         with ThreadPoolExecutor(WORKERS) as pool:
             for (query, (results, fetched)) in zip(queries, pool.map(fetch, queries)):
                 done += 1
-                if len(results) >= LIMIT:
+                if len(results) >= MAX_TOTAL:
                     truncated.append(query[0])
                 if done % 500 == 0:
                     print(f"  {label}: {done:,}/{len(queries):,}", file=sys.stderr)
@@ -180,8 +203,8 @@ def main():
         truncated = []
     else:
         truncated = run([(s, None) for s in surnames], "surnames")
-    print(f"{len(truncated):,} surnames hit the {LIMIT}-row API limit; "
-          f"refining by first name", file=sys.stderr)
+    print(f"{len(truncated):,} surnames hit the {MAX_TOTAL}-row API ceiling "
+          f"even after paging; refining by first name", file=sys.stderr)
 
     if truncated and os.environ.get("NPI_BUILD_ONLY") != "1":
         big = set(truncated)

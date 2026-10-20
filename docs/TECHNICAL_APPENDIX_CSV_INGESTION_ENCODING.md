@@ -4,7 +4,19 @@
 **Canonical chokepoint**: [`R/lib/medicare_duckdb.R`](../R/lib/medicare_duckdb.R) — `duckdb_connect()`, `ensure_duckdb_encodings()`
 **Enforcement**: [`tests/ci_duckdb_ingestion_bootstrap.R`](../tests/ci_duckdb_ingestion_bootstrap.R)
 **Investigation date**: 2026-09-06
-**Status**: implemented and enforced. All 36 production call sites migrated and verified (syntax-checked; a representative sample re-run against live data and confirmed to reproduce prior results exactly). The regression test is proven to fail on a real bypass, not just pass trivially — see §5.
+**Status (as of 2026-09-06)**: implemented and enforced. All 36 production call sites migrated and verified (syntax-checked; a representative sample re-run against live data and confirmed to reproduce prior results exactly). The regression test is proven to fail on a real bypass, not just pass trivially — see §5.
+
+> **Update: the gate is currently failing, not a hypothetical.** Running
+> `tests/ci_duckdb_ingestion_bootstrap.R` today reports 4 failures: two new raw
+> `dbConnect(duckdb::duckdb(), ...)` call sites — `R/inventory_trilliant_research_fields.R:41`
+> and `analyze_trilliant_activity_flag.R:91` — bypass the chokepoint. Both were
+> added 2026-09-13/09-14 (the Trilliant work-site layer), after this
+> investigation closed, so the "36 sites" count and "enforced" claim above no
+> longer describe every production call site. The gate runs nightly, not on
+> every push (`.github/workflows/nightly.yml`), so this has not blocked a
+> merge. **Needs a decision**: route both through `duckdb_connect()`, or add
+> justified, tagged entries to `DUCKDB_RAW_CONNECTION_EXCEPTIONS` if there's a
+> real reason these two read the Trilliant DuckLake differently.
 
 ---
 

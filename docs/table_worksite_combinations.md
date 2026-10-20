@@ -5,12 +5,12 @@ Cohort denominator: **12,171** midwives. Each midwife contributes once; combinat
 | Setting | n | % |
 |---|---:|---:|
 | Hospital | 3,668 | 30.1 |
-| clinic/practice + Hospital | 3,032 | 24.9 |
-| Clinic/practice | 2,277 | 18.7 |
-| No classified setting | 1,002 | 8.2 |
+| clinic/practice + Hospital | 3,028 | 24.9 |
+| Clinic/practice | 2,276 | 18.7 |
+| No classified setting | 1,007 | 8.3 |
 | FQHC/community health + Hospital | 515 | 4.2 |
-| FQHC/community health | 489 | 4.0 |
-| clinic/practice + FQHC/community health | 258 | 2.1 |
+| FQHC/community health | 490 | 4.0 |
+| clinic/practice + FQHC/community health | 257 | 2.1 |
 | Birth center | 204 | 1.7 |
 | clinic/practice + FQHC/community health + Hospital | 184 | 1.5 |
 | birth center + Hospital | 154 | 1.3 |

@@ -44,6 +44,16 @@ own `certification_number` — not by reading the generating code alone:
 | `artifacts/tier1_live_bon_all_states_complete.csv` | **4,746 / 5,120** | **374** |
 | `artifacts/tier1_tier2_combined_bon_validated_master.csv` | **4,746 / 5,120** | **374** |
 
+**These four artifacts and the `harvest_all_tier1_live_bon_datasets.py` origin
+script cited above no longer exist** — deleted in the same remediation pass as
+the scripts in §7 (`f5c2256`, `29be743`), so this table can no longer be
+independently re-verified against its own sources. The counts stand as a
+historical record of what was measured before deletion; the durable,
+re-checkable record going forward is
+[`artifacts/bon_contamination_inventory.csv`](../artifacts/bon_contamination_inventory.csv),
+which still carries the per-row synthetic/genuine breakdown and survived the
+cleanup.
+
 **Genuine observed BON evidence: 374 Washington records**, carrying WA DOH
 `credentialnumber` values of the form `ARNP.AP.60949950-CNM`. This is
 corroborated independently: `artifacts/live_wa_bon_summary_matrix.csv` reports

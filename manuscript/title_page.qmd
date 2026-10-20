@@ -48,7 +48,7 @@ Midwife Workforce in the United States, `r mw_safe_stat("panel.year_min")`--`r m
 
 Tyler Muffly, MD^1,2^
 
-Elisabeth B. Thumm, PhD, CNM^1^
+E. Brie Thumm, PhD, CNM, RN, MBA, FACNM^3^
 
 **Affiliations:**
 
@@ -57,6 +57,9 @@ Denver, Colorado.
 
 ^2^Department of Obstetrics and Gynecology, University of Colorado School of
 Medicine, Aurora, Colorado.
+
+^3^College of Nursing, University of Colorado Anschutz Medical Campus, Aurora,
+Colorado.
 
 **Corresponding author:**
 

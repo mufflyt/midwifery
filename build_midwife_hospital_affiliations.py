@@ -5,7 +5,7 @@
 import csv
 import os
 
-MIDWIVES_FILE = "artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv"
+MIDWIVES_FILE = "artifacts/amcb_npi_crosswalk_panel-midwifery-plus-nursing_years-2007-2026.csv"
 FACILITY_AFFIL_FILE = "data/CMS_Facility_Affiliation.csv"
 OB_HOSPITALS_FILE = "artifacts/ob_hospitals_geocoded.csv"
 OUT_FILE = "artifacts/midwife_hospital_affiliations.csv"
@@ -44,7 +44,7 @@ with open(MIDWIVES_FILE, "r", encoding="utf-8", errors="ignore") as f:
                     "certification_number": r.get("certification_number"),
                     "first_name": r.get("first_name"),
                     "last_name": r.get("last_name"),
-                    "nppes_state": r.get("state")
+                    "nppes_state": r.get("nppes_state")
                 }
 
 print(f"Loaded {len(coh_npis)} active cohort midwives.")

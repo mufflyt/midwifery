@@ -1,0 +1,37 @@
+{
+  "artifact": "midwife_organization_panel.csv",
+  "written_utc": "2026-10-19 19:49:50.211 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_panel-midwifery-plus-nursing_years-2007-2026.csv",
+      "sha256": "5eb0b7c85cd61dbafe11ab8b1f6fc9cc80fe1d5a622ebd1d0e06d3bacde0f6f1"
+    },
+    {
+      "path": "/Volumes/MufflySamsung/nppes_historical_downloads/DAC_NationalDownloadableFile.csv",
+      "sha256": "80959c82e2b204a0e99a5b637ae7eac5f39611e6e9ff54903d9886f9bf8d3328"
+    },
+    {
+      "path": "data/CMS_DAC_NationalDownloadableFile.csv",
+      "sha256": "8448857a9edf81eee70754e98967be06b3e24c8d3d30e15371f117ec116d063c"
+    }
+  ],
+  "code_sha256": "6f3395a5906863c3b3664f68cf0c7580fcf9e28d10cfe743ab9fa09bfac314a6",
+  "code": [
+    {
+      "path": "build_care_compare_organization_panel.R",
+      "sha256": "1ef64ec9c14ac514a570d48b90e72707442563f1a3c5d682250c47ed7abba30a"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}

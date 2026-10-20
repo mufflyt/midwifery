@@ -19,7 +19,7 @@ import sys
 # accreditation is a moving roster, and that is a real change in the source,
 # not a bug in this parser.
 HTML_FILE = os.environ.get("CABC_SNAPSHOT", "data/cabc_directory_snapshot.html")
-MIDWIVES_FILE = "artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv"
+MIDWIVES_FILE = "artifacts/amcb_npi_crosswalk_panel-midwifery-plus-nursing_years-2007-2026.csv"
 GEO_FILE = "artifacts/amcb_npi_geography.csv"
 OUT_BC_MASTER = "artifacts/cabc_accredited_birth_centers_master.csv"
 OUT_MATCHES = "artifacts/cabc_matched_midwives_final.csv"

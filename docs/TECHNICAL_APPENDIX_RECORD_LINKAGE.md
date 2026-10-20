@@ -7,6 +7,17 @@
 **Investigation date**: 2026-08-29
 **Status**: every count below is read from a committed artifact and reproduced by the gates named in §8.
 
+> **Update 2026-09-12 (pending): the cohort-flow diagram and counts in §2/§6/§9
+> are behind the current freeze.** `artifacts/linkage_completeness_by_status.csv`
+> was regenerated 2026-09-11 against the current 22,357-certificant roster and
+> 17,028-member analytic cohort (`DEBT.md` D10; README Figure 3), not the
+> 22,309-roster / 16,892-cohort snapshot this appendix's §2 mermaid diagram and
+> §6/§9 prose still describe. The mechanism each section documents (why a
+> record lands in each bucket, the registry-boundary argument in §7) is
+> unaffected — only the specific counts are stale. Regenerate §2's diagram and
+> the dependent counts from the current artifact rather than hand-editing the
+> numbers in place.
+
 ---
 
 ## 1. The problem

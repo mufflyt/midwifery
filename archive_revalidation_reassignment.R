@@ -81,18 +81,26 @@ dir.create(RAW_DIR, showWarnings = FALSE, recursive = TRUE)
 # =============================================================================
 cli::cli_h2("CMS catalogue")
 cat_json <- jsonlite::fromJSON("https://data.cms.gov/data.json", simplifyVector = FALSE)
+# CMS used to publish ONE dataset titled exactly "Revalidation Clinic Group
+# Practice Reassignment" with one distribution per month. As of 2026-10 it
+# publishes ~44 SEPARATE datasets instead, one per month, each titled
+# "Revalidation Clinic Group Practice Reassignment : YYYY-MM-DD". An exact
+# title match therefore finds nothing against the current catalogue.
+# startsWith() matches both shapes: the old single dataset (title equals the
+# prefix) and the new many-datasets-per-month one, so this does not need to be
+# re-broken the next time CMS reorganises the catalogue a third way.
 target <- Filter(function(x)
-  identical(x$title, "Revalidation Clinic Group Practice Reassignment"),
+  startsWith(x$title %||% "", "Revalidation Clinic Group Practice Reassignment"),
   cat_json$dataset)
 if (!length(target)) {
   stop("dataset not found in the CMS catalogue. Refusing to proceed rather ",
        "than warehouse nothing and report success.", call. = FALSE)
 }
 
-urls <- unlist(lapply(target[[1]]$distribution, function(d) {
+urls <- unlist(lapply(target, function(ds) lapply(ds$distribution, function(d) {
   u <- d$downloadURL %||% ""
-  if (grepl("\\.csv$", u)) u else NULL
-}))
+  if (grepl("\\.csv$", u, ignore.case = TRUE)) u else NULL
+})))
 vintage_of <- function(u) sub(".*/files/([0-9]{4}-[0-9]{2})/.*", "\\1", u)
 
 rel <- tibble::tibble(url = urls, vintage = vintage_of(urls)) %>%

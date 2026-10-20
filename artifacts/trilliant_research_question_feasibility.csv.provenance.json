@@ -1,12 +1,12 @@
 {
   "artifact": "trilliant_research_question_feasibility.csv",
-  "written_utc": "2026-09-14 21:07:25.919 UTC",
+  "written_utc": "2026-10-19 20:54:24.551 UTC",
   "inputs": [],
-  "code_sha256": "3acb2fd8c6b45ce00fa62a3a000f9f1ab9912837bcb4bacdf7662fb33ed8e0db",
+  "code_sha256": "406c232309d2fcd3b5982c955263a13743da6eb229cf03407eefc5c34af98446",
   "code": [
     {
       "path": "R/inventory_trilliant_research_fields.R",
-      "sha256": "0f531487328c5837d543e63d9ee2302ea0ccf2adc220b299a71a231ab3fed078"
+      "sha256": "123a073483efde93601bfb0be8233c1d9540aa8e63723df532513f11ff3f608a"
     },
     {
       "path": "R/lib/artifact_provenance.R",

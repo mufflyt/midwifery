@@ -106,6 +106,20 @@ counts that are pending a rebuild.
 
 ## 5. Historical 11,093 Audit Provenance & Preservation
 
-The historical 11,093 40-state audit snapshot files have been preserved in:
-- Directory: [`audit_legacy_hospital_linkage_11093_20260913/`](../audit_legacy_hospital_linkage_11093_20260913/)
-- Sidecar Manifest: [`audit_legacy_hospital_linkage_11093_20260913/manifest.json`](../audit_legacy_hospital_linkage_11093_20260913/manifest.json)
+The historical 11,093 40-state audit snapshot files were preserved in a
+directory named `audit_legacy_hospital_linkage_11093_20260913/`, with a sidecar
+`manifest.json`. **Neither is present in this checkout** — confirmed again at
+this rebase: the directory does not exist anywhere in this repository as
+tracked by git, and the links above point at another machine's home directory
+(`file:///Users/tylermuffly/...`, not this one). If this audit still exists on
+the machine that wrote it, re-link it here with a repo-relative path;
+otherwise this section should say so rather than link to it.
+
+> **Note on this appendix's Negative Control (§1, §3): resolved.** The proper,
+> run negative-control check this note used to flag as living only on an
+> unmerged branch (`feat/federal-adverse-action-midwifery`, commit `63cff76`)
+> is now §3.1 above — `validate_hospital_linkage_controls.R` runs three real
+> controls (NC1/NC2 pass, NC3 skipped, reasons stated) rather than asserting
+> one. That branch's other finding, that `dac_hospital_affiliation_summary.csv`'s
+> `cohort_n=12,129` does not reproduce against the canonical 12,171, is
+> unresolved and tracked separately in §4.1 above.

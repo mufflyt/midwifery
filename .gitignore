@@ -4,6 +4,10 @@ cj.txt
 *.parquet
 audit_legacy_hospital_linkage_*/
 
+# Claude Code local settings/lock files; machine-local, not a project artifact
+.claude/
+.DS_Store
+
 # Test / Python tooling artifacts
 __pycache__/
 *.pyc
@@ -95,6 +99,9 @@ stage3_*.log
 .pool_done
 artifacts/midwives_geography_FROZEN.csv
 artifacts/coordinate_provenance_audit.csv
+# person-level dot map, same disclosure judgement as map_midwife_geography.R:
+# a dot in a sparse county can identify one clinician. QA only, never commit.
+artifacts/internal_qa/
 logs_*.log
 midwives_geography_enhanced.csv
 midwives_panel_geocoded_enhanced.csv

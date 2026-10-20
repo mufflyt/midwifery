@@ -503,7 +503,15 @@ only the CPT-confirmed delivery-attendance row, which has the best coverage.~~
 (C) Keep out of Table 1, report in a supplement. (D) Keep out and say why in
 the limitations.
 
-**RULING: none.**
+**RULING: (A), 2026-09-28.** `build_trilliant_work_sites.R` /
+`artifacts/midwife_work_setting_summary.csv` added two blocks to Table 1: "Any
+observed hospital work site" (7,685 of 12,171, 64.4%) and "Primary claims-site
+setting" (Hospital 6,527, 64.3%; Clinic/practice 2,605, 25.7%; FQHC/community
+health 651, 6.4%; Birth center 169, 1.7%; remaining categories smaller). The
+three further layers in the Evidence above (CABC accreditation, freestanding
+birth-center identification, building taxonomy) remain out of Table 1 — their
+coverage is thinner and more uneven than the claims-derived blocks just added.
+See `docs/SCOPE_AND_LIMITATIONS.md`.
 
 ---
 
