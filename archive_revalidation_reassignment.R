@@ -108,6 +108,18 @@ rel <- tibble::tibble(url = urls, vintage = vintage_of(urls)) %>%
   # double every count for that month in any panel built from the warehouse.
   distinct(vintage, .keep_all = TRUE) %>%
   arrange(desc(vintage))
+# vintage_of() returns its input UNCHANGED if the URL layout doesn't match --
+# sub() never errors or returns NA on a non-match. Catching that here, once,
+# stops a garbage "vintage" (the whole URL) from becoming a SQL literal and a
+# filename a few lines down. This catalogue has already changed its layout
+# once this year (see the startsWith() comment above); it can again.
+bad <- !grepl("^[0-9]{4}-[0-9]{2}$", rel$vintage)
+if (any(bad)) {
+  stop(sprintf(paste("vintage_of() could not read a YYYY-MM vintage from %d url(s) --",
+                     "the CMS catalogue's path layout has likely changed again.\n",
+                     "Offending url(s):\n  %s"),
+               sum(bad), paste(rel$url[bad], collapse = "\n  ")), call. = FALSE)
+}
 cli::cli_alert_success("{nrow(rel)} monthly releases, {min(rel$vintage)} to {max(rel$vintage)}")
 
 # =============================================================================

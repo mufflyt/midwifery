@@ -16,7 +16,7 @@ number, last name and first name. Certification number matches by INSTR
     least three digits contains one. Shorter numbers are picked up by the
     2- and 1-digit sweeps, which run only if the count still falls short.
 """
-import csv, html, http.cookiejar, re, sys, threading, urllib.parse, urllib.request
+import csv, html, http.cookiejar, re, sys, threading, time, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 BASE = "https://ams.amcbmidwife.org/amcbssa/"
@@ -106,6 +106,8 @@ class Session:
                 print(f"  retry {attempt + 1}: {exc}", file=sys.stderr)
                 if attempt:
                     self.connect()
+                if attempt < 3:
+                    time.sleep(2 * (attempt + 1))
         raise RuntimeError(f"gave up on {build()[0]}")
 
     def search(self, cert, number):
@@ -219,6 +221,18 @@ def sweeps(cert):
     yield list("0123456789")
 
 
+def write_csv(records):
+    """Write the records collected so far. Called after every certification's
+    sweep, not only at the end, so a crash partway through does not throw away
+    hours of already-collected scraping."""
+    rows = sorted(records.values(), key=lambda r: (r["last_name"], r["first_name"]))
+    with open("midwives.csv", "w", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=COLS + ["customer_id"])
+        writer.writeheader()
+        writer.writerows(rows)
+    print(f"wrote {len(rows)} rows to midwives.csv", file=sys.stderr)
+
+
 def main():
     probe = Session()
     records = {}
@@ -235,13 +249,7 @@ def main():
         status = "complete" if got == expected else f"SHORT BY {expected - got}"
         print(f"{cert}: collected {got}/{expected} -- {status}", file=sys.stderr)
         records.update(collector.records)
-
-    rows = sorted(records.values(), key=lambda r: (r["last_name"], r["first_name"]))
-    with open("midwives.csv", "w", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=COLS + ["customer_id"])
-        writer.writeheader()
-        writer.writerows(rows)
-    print(f"wrote {len(rows)} rows to midwives.csv", file=sys.stderr)
+        write_csv(records)
 
 
 if __name__ == "__main__":

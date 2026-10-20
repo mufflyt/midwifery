@@ -74,12 +74,20 @@ def nppes_query_all_pages(last, first=None):
     common pair like SMITH/JOHN) silently lost every candidate past the first
     page -- the first-name refinement pass only further narrows the query, it
     never actually paged the one already being fetched.
+
+    Returns ``None`` -- not a short list -- if any page's fetch genuinely
+    failed (all 4 retries exhausted). A failed page must never be mistaken
+    for "no more results": a `None` first page and a 0-result first page both
+    produce an empty ``results`` list otherwise, and the empty list would then
+    get cached forever as this surname's final answer.
     """
     results = []
     skip = 0
     while True:
         data = nppes_query(last, first, skip=skip)
-        page = (data or {}).get("results", []) or []
+        if data is None:
+            return None
+        page = data.get("results", []) or []
         results.extend(page)
         if len(page) < LIMIT or skip + LIMIT >= MAX_TOTAL:
             return results
@@ -179,6 +187,10 @@ def main():
         if key in cache:
             return cache[key], False
         results = nppes_query_all_pages(last, first)
+        if results is None:
+            # A genuine fetch failure, not "zero results" -- never cache this,
+            # so the next run retries it instead of treating it as resolved.
+            return None, True
         with cache_lock:
             log.write(json.dumps({"query": key, "results": results}) + "\n")
             log.flush()
@@ -186,14 +198,19 @@ def main():
         return results, True
 
     def run(queries, label):
-        truncated, done = [], 0
+        truncated, failed, done = [], 0, 0
         with ThreadPoolExecutor(WORKERS) as pool:
             for (query, (results, fetched)) in zip(queries, pool.map(fetch, queries)):
                 done += 1
-                if len(results) >= MAX_TOTAL:
+                if results is None:
+                    failed += 1
+                elif len(results) >= MAX_TOTAL:
                     truncated.append(query[0])
                 if done % 500 == 0:
                     print(f"  {label}: {done:,}/{len(queries):,}", file=sys.stderr)
+        if failed:
+            print(f"  {label}: {failed:,} queries failed every retry and were "
+                  f"NOT cached -- re-run to pick them up", file=sys.stderr)
         return truncated
 
     if os.environ.get("NPI_BUILD_ONLY") == "1":

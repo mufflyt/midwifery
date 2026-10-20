@@ -1,30 +1,30 @@
 practice_state,taxonomy_description,n_midwives,suppressed
 ,,350,FALSE
 CA,Certified Nurse Midwife,319,FALSE
-NY,Certified Nurse Midwife,214,FALSE
-FL,Certified Nurse Midwife,141,FALSE
+NY,Certified Nurse Midwife,213,FALSE
 NY,Midwife,141,FALSE
-TX,Certified Nurse Midwife,132,FALSE
-GA,Certified Nurse Midwife,122,FALSE
-OR,Certified Nurse Midwife,106,FALSE
-WA,Certified Nurse Midwife,104,FALSE
-CO,Certified Nurse Midwife,100,FALSE
-IL,Certified Nurse Midwife,96,FALSE
-NC,Certified Nurse Midwife,88,FALSE
-MA,Certified Nurse Midwife,81,FALSE
+FL,Certified Nurse Midwife,140,FALSE
+TX,Certified Nurse Midwife,126,FALSE
+GA,Certified Nurse Midwife,123,FALSE
+WA,Certified Nurse Midwife,102,FALSE
+OR,Certified Nurse Midwife,97,FALSE
+CO,Certified Nurse Midwife,93,FALSE
+IL,Certified Nurse Midwife,92,FALSE
+NC,Certified Nurse Midwife,82,FALSE
+MA,Certified Nurse Midwife,80,FALSE
 CA,Midwife,76,FALSE
+MD,Certified Nurse Midwife,72,FALSE
 OH,Certified Nurse Midwife,72,FALSE
-MD,Certified Nurse Midwife,70,FALSE
-PA,Certified Nurse Midwife,67,FALSE
 NY,Registered Nurse,66,FALSE
-MN,Certified Nurse Midwife,65,FALSE
 MI,Certified Nurse Midwife,62,FALSE
-VA,Certified Nurse Midwife,60,FALSE
-AZ,Certified Nurse Midwife,57,FALSE
+PA,Certified Nurse Midwife,62,FALSE
+MN,Certified Nurse Midwife,56,FALSE
+AZ,Certified Nurse Midwife,55,FALSE
+VA,Certified Nurse Midwife,54,FALSE
 WI,Certified Nurse Midwife,54,FALSE
 NJ,Certified Nurse Midwife,50,FALSE
 NM,Certified Nurse Midwife,48,FALSE
-IN,Certified Nurse Midwife,47,FALSE
+IN,Certified Nurse Midwife,46,FALSE
 CA,Registered Nurse,40,FALSE
 OH,Registered Nurse,39,FALSE
 CT,Certified Nurse Midwife,33,FALSE
@@ -35,31 +35,31 @@ KY,Certified Nurse Midwife,28,FALSE
 MI,Registered Nurse,28,FALSE
 FL,"Nurse Practitioner, Obstetrics & Gynecology",26,FALSE
 ME,Certified Nurse Midwife,26,FALSE
-PA,Midwife,25,FALSE
-SC,Certified Nurse Midwife,25,FALSE
+SC,Certified Nurse Midwife,24,FALSE
 MO,Certified Nurse Midwife,23,FALSE
 CO,Midwife,22,FALSE
 CO,Registered Nurse,22,FALSE
 IA,Certified Nurse Midwife,22,FALSE
 OK,Certified Nurse Midwife,22,FALSE
 TX,Midwife,22,FALSE
-NC,Midwife,21,FALSE
 HI,Certified Nurse Midwife,20,FALSE
 KS,Certified Nurse Midwife,20,FALSE
 MA,Midwife,20,FALSE
+NC,Midwife,20,FALSE
 NM,Midwife,20,FALSE
 WA,Registered Nurse,20,FALSE
 CA,Nurse Practitioner,19,FALSE
 GA,Midwife,19,FALSE
+PA,Midwife,19,FALSE
 UT,Certified Nurse Midwife,18,FALSE
 FL,Nurse Practitioner,17,FALSE
 NV,Certified Nurse Midwife,17,FALSE
 PA,Registered Nurse,17,FALSE
 TX,Registered Nurse,17,FALSE
 WA,Nurse Practitioner,17,FALSE
-AK,Certified Nurse Midwife,16,FALSE
 AZ,Registered Nurse,16,FALSE
 TN,Registered Nurse,16,FALSE
+AK,Certified Nurse Midwife,15,FALSE
 CA,"Nurse Practitioner, Women's Health",14,FALSE
 GA,Registered Nurse,14,FALSE
 WA,"Nurse Practitioner, Obstetrics & Gynecology",14,FALSE

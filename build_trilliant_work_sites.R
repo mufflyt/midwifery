@@ -359,7 +359,7 @@ crosswalk_path <- file.path(HPT, "reference/npi_ccn_crosswalk.csv")
 universe_path <- file.path(HPT, "reference/hospital_universe.csv")
 price_path <- file.path(HPT, "crosswalk/facility_ccn.parquet")
 
-if (!all(file.exists(c(enroll_path, additional_path, crosswalk_path, universe_path)))) {
+if (!all(file.exists(c(enroll_path, additional_path, crosswalk_path, universe_path, price_path)))) {
   hospital_info <- read_csv(file.path("data", "CMS_Hospital_General_Information.csv"),
                             show_col_types = FALSE, progress = FALSE)
   npi_to_ccn <- tibble(org_npi = character(), ccn = character())

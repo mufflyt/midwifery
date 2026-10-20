@@ -53,9 +53,14 @@ Registry-derived rows use the full cohort. Healthgrades-derived rows use a small
 > **Known, unresolved (2026-10-19).** A same-night rebuild of
 > `build_trilliant_work_sites.R`'s outputs (`docs/table_worksite_settings.md`
 > et al.) shows slightly different counts than the two blocks below — hospital
-> 7,681 vs. 7,685, clinic/practice 6,017 vs. 6,023. Both versions are
-> committed as of this note; the discrepancy has not been reconciled. See
-> [NEWS.md](../NEWS.md).
+> 7,681 vs. 7,685, clinic/practice 6,017 vs. 6,023 — and a separate, larger
+> three-way disagreement on the hospital+birth-center blended-practice counts
+> (241/34 here vs. 156/63 on `origin/main` vs. 203/76 on a since-regenerated
+> rerun) was root-caused but not fully closed: two missing source files were
+> restored and regenerated, one external reference bundle (hospital CCN
+> crosswalk) is still absent on this machine. None of these numbers should be
+> taken as final. Full audit:
+> [docs/HANDOFF_worksite_merge_conflict_audit.md](HANDOFF_worksite_merge_conflict_audit.md).
 
 | **Any observed hospital work site** | | |
 | At least one hospital work site observed | 7,685 | 64.4 |

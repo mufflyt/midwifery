@@ -1,17 +1,17 @@
 {
   "artifact": "organization_affiliation_summary.csv",
-  "written_utc": "2026-10-20 03:07:41.510 UTC",
+  "written_utc": "2026-10-20 12:59:47.902 UTC",
   "inputs": [
     {
       "path": "artifacts/organization_affiliation_resolved.csv",
-      "sha256": "19057b19e758cc7fc403f9d3614e5c859dd75f6e22a71e5943545da859884666"
+      "sha256": "5b4575eb3fff4394f2cb532d4c9af2d7ae905ddc04c64a956330ac7be968653f"
     }
   ],
-  "code_sha256": "da22ffe5d81fbe41e659fa9e10989cc1e11061a8d52bb7569860f47db7482073",
+  "code_sha256": "a3d15d16da4f62bb342811f5ba72ab14222334557767cea75d5dfe4d18110d31",
   "code": [
     {
       "path": "build_organization_affiliation_resolver.R",
-      "sha256": "c24a340acdd10b5879c97f0c9028d3b3513f6ef3fc43ccf53b34e0685149bdd6"
+      "sha256": "41e7aad5c8c92465eca51cd116f353743fa6a3cdc1ece6b1221c79b693242db6"
     },
     {
       "path": "R/lib/artifact_provenance.R",
