@@ -7,6 +7,14 @@
 **Investigation date**: 2026-08-30
 **Decision**: the wide pool is a **sensitivity artifact**. It is not the primary panel.
 
+> **Note (added later): the primary artifact has since grown.** `midwife_panel.csv`
+> now holds 451,793 distinct NPIs, not the 443,623 measured at this
+> investigation's 2026-08-30 date — the panel has picked up additional
+> snapshot years since, including a fix to the 2023 vintage's ingestion. The
+> mechanism this appendix documents (the pool-widening cost/benefit
+> accounting in §4-§6) is unaffected; its specific counts are a property of
+> that date's pull and have not been recomputed against the current panel.
+
 ---
 
 ## 1. The pool is the ceiling

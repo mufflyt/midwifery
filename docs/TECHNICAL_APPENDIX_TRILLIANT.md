@@ -531,7 +531,7 @@ Rscript make_trilliant_figures.R
 declared in `rebuild_frozen_dependents.R`, so a re-freeze re-runs them. The
 demographics enricher runs before the age calibration, which reads it.
 
-## 10. Limitations
+## 9. Limitations
 
 - **One snapshot.** The directory has no history, so it cannot show where a
   midwife started or when they stopped.

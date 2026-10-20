@@ -104,10 +104,10 @@ download. Two consequences follow:
   surname change between certification and the present does not by itself
   prevent a match.
 
-[`match_amcb_to_npi.R:227`](../match_amcb_to_npi.R) —
+[`match_amcb_to_npi.R:252`](../match_amcb_to_npi.R) —
 *"one row per (NPI, name spelling) so every historical surname is matchable, not
 just the current one."* The second path,
-[`match_nppes.R:253-260`](../match_nppes.R), appends panel name-rows not already
+[`match_nppes.R:267-278`](../match_nppes.R), appends panel name-rows not already
 present in the live-API candidate file and reports how many NPIs it revived.
 
 **A former-name crosswalk therefore adds nothing.** Building one from the same
@@ -130,11 +130,11 @@ exactly one candidate occupies its strongest available class**.
 
 **Class 3 is a first-initial rule, not a nickname dictionary.** An earlier
 version of this table said "given name equivalent via nickname dictionary". A
-nickname dictionary does exist in this repository — `create_nickname_dictionary()`
-in [`match_nppes.R:331`](../match_nppes.R) — but it belongs to the *other*
+nickname dictionary is called in this repository — `create_nickname_dictionary()`
+at [`match_nppes.R:342`](../match_nppes.R) — but it belongs to the *other*
 matcher and is not reachable from the code that produced the frozen linkage.
 What class 3 actually requires is
-[`match_amcb_to_npi.R:433`](../match_amcb_to_npi.R), `exact_last & first_init_ok`,
+[`match_amcb_to_npi.R:478`](../match_amcb_to_npi.R), `exact_last == 1L & first_init_ok == 1L`,
 fed by strategy `s2`, which joins on surname + first initial and then explicitly
 excludes exact given-name agreement. It is "same surname, same first letter,
 different given name" — SMITH and any S.

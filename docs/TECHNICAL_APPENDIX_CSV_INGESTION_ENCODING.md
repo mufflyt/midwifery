@@ -6,17 +6,17 @@
 **Investigation date**: 2026-09-06
 **Status (as of 2026-09-06)**: implemented and enforced. All 36 production call sites migrated and verified (syntax-checked; a representative sample re-run against live data and confirmed to reproduce prior results exactly). The regression test is proven to fail on a real bypass, not just pass trivially — see §5.
 
-> **Update: the gate is currently failing, not a hypothetical.** Running
-> `tests/ci_duckdb_ingestion_bootstrap.R` today reports 4 failures: two new raw
-> `dbConnect(duckdb::duckdb(), ...)` call sites — `R/inventory_trilliant_research_fields.R:41`
-> and `analyze_trilliant_activity_flag.R:91` — bypass the chokepoint. Both were
-> added 2026-09-13/09-14 (the Trilliant work-site layer), after this
-> investigation closed, so the "36 sites" count and "enforced" claim above no
-> longer describe every production call site. The gate runs nightly, not on
-> every push (`.github/workflows/nightly.yml`), so this has not blocked a
-> merge. **Needs a decision**: route both through `duckdb_connect()`, or add
-> justified, tagged entries to `DUCKDB_RAW_CONNECTION_EXCEPTIONS` if there's a
-> real reason these two read the Trilliant DuckLake differently.
+> **Update: the two production bypasses below are fixed; the gate is still
+> failing for a different reason.** `R/inventory_trilliant_research_fields.R:41`
+> and `analyze_trilliant_activity_flag.R:91` now both call `duckdb_connect()`
+> — that bypass is closed. Running `tests/ci_duckdb_ingestion_bootstrap.R`
+> today instead reports 8 failures, all from raw `dbConnect(duckdb::duckdb(),
+> ...)` call sites added to `tests/test_build_midwife_panel.R` (lines 282, 323,
+> 348, 610) to write synthetic parquet fixtures — no CSV is read through them,
+> the same shape of exception already granted the two files in §4.1. **Needs a
+> decision**: add justified, tagged entries to `DUCKDB_RAW_CONNECTION_EXCEPTIONS`
+> for these four, or route them through `duckdb_connect()` for consistency even
+> though no encoding hazard applies.
 
 ---
 

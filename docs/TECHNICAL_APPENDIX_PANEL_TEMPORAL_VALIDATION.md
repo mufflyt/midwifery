@@ -3,7 +3,7 @@
 **Repository**: `midwifery`
 **Panel Artifact**: `midwife_panel.csv` (gitignored, person-level; rebuilt 2026-08-26/27)
 **Builder Script**: [`build_midwife_panel.R`](../build_midwife_panel.R)
-**Panel Span**: 20 annual snapshots, 2007–2026 (`snapshot_year`), 4,748,145 rows, 451,793 distinct NPIs
+**Panel Span**: 20 annual snapshots, 2007–2026 (`snapshot_year`), 4,747,648 rows, 451,793 distinct NPIs
 
 ---
 
@@ -24,8 +24,9 @@ Four validation strategies were used instead, each independent of a historical A
 
 `build_midwife_panel.R` has two independent code paths for turning an NPPES snapshot into panel rows:
 
-- **Classic path** — parses NBER's historical flat `npidata_<dates>.csv` mirror of the original NPPES dissemination file (used for all snapshot years 2007–2024 and 2026 in this panel).
+- **Classic path** — parses NBER's historical flat `npidata_<dates>.csv` mirror of the original NPPES dissemination file (used for most snapshot years 2007–2024 and 2026 in this panel; see the 2023 exception below).
 - **Reshaped path** (`process_reshaped_year()`) — NBER stopped publishing that flat format after 2024 and now reshapes each snapshot into per-field CSVs under `byvar/`. This panel's 2025 snapshot is built entirely through this second code path, which was written new for this rebuild and validated only against synthetic fixtures before this check.
+- **Core-parquet path** (`process_core_parquet_year()`) — added later: there is no classic `npidata_` file for the April 2023 vintage anywhere this script looks. 2023 is instead built from a third NBER distribution, an `npi_<Month>_<Year>.parquet` + `ptax_<Month>_<Year>.parquet` pair.
 
 December 2024 is the one month NBER still has published in **both** formats, which makes it possible to run the reshaped path against real production data and diff its output against the classic path's already-verified result for the exact same snapshot — a check that needs no AMCB access at all.
 

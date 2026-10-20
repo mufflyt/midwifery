@@ -7,14 +7,12 @@
 **Primary Output Artifact**: [`artifacts/amcb_calibrated_ages.csv`](../artifacts/amcb_calibrated_ages.csv)  
 **Provenance Log**: [`artifacts/amcb_age_calibration_provenance.csv`](../artifacts/amcb_age_calibration_provenance.csv)  
 
-> **Note: the calibration predates the 2026-09-02 rescrape.** The provenance
-> log's single row is dated 2026-08-10 against `total_roster_n=22309`, and
-> every count in this appendix (full cohort 22,309; ACTIVE primary-linked
-> 11,913) is faithful to that input. The roster has since grown to 22,357
-> (cohort 17,028, Table-1 cohort 12,171; `DEBT.md` D10). The calibration
-> itself has not been re-run against the new roster — re-run
-> `calibrate_amcb_certification_ages.R` and update this doc together with the
-> provenance log when it is.
+> **Vintage note.** The regression coefficients were fit on a 2026-08-10
+> ground-truth sample and have not been refit since; §5.1 applies that same
+> fitted line to every certificant on the current 22,357-row roster. §3.1,
+> §5.2 and §7 describe sections still computed on the older 22,309-row/11,913
+> cohort and are labelled as historical where that applies. See §8.4 for the
+> precise accounting of which number describes which vintage.
 
 ---
 

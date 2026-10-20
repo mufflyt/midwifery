@@ -1342,13 +1342,20 @@ repaired later.
 > **The NPPES file format changed in December 2024**, and `build_midwife_panel.R`
 > gained a second parsing path to read it. The two paths were validated to
 > produce byte-identical output on the December 2024 snapshot (393,409 rows,
-> zero mismatches), and ten adversarial schema/concurrency fixtures spanning
-> the 2007–2026 file history — an accented name under an ASCII header, a
-> missing column, a lowercase taxonomy code, a live lock file — are now a
-> permanent test (`tests/test_build_midwife_panel.R`). The same investigation
-> found that AMCB's `certification_date` is a renewal date rather than an
-> original-certification date for **0.9%** of linked ACTIVE certificants,
-> which understates "years since certification" for that subset. See
+> zero mismatches). A third path was added 2026-10-19 for the panel's 2023
+> vintage, which turned out to have no classic `npidata_` file on record at
+> all — the real source was an undocumented third NBER distribution (an
+> `npi_<Month>_<Year>.parquet` + `ptax_<Month>_<Year>.parquet` pair), and
+> nothing had ever read it; 542 cohort members' practice addresses had
+> silently gone missing from that year's row as a result, now fixed. Thirty
+> adversarial schema/concurrency fixtures spanning the 2007–2026 file history
+> — an accented name under an ASCII header, a missing column, a lowercase
+> taxonomy code, a live lock file, an unmapped parquet vintage, a duplicated
+> join row — are now a permanent test (`tests/test_build_midwife_panel.R`).
+> The same investigation found that AMCB's `certification_date` is a renewal
+> date rather than an original-certification date for **0.9%** of linked
+> ACTIVE certificants, which understates "years since certification" for that
+> subset. See
 > [`docs/TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md`](docs/TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md).
 
 ### Tier B — geography and boundaries
@@ -1602,7 +1609,7 @@ python3 scrape.py
 
 # 2. Identity — candidates, then ranked-class resolution
 python3 fetch_npi_candidates.py        # live NPI Registry API
-Rscript  build_midwife_panel.R         # NPPES 2007-2025 -> midwife_panel.csv
+Rscript  build_midwife_panel.R         # NPPES 2007-2026 -> midwife_panel.csv
 Rscript  match_amcb_to_npi.R
 Rscript  reconcile_linkage.R           # -> artifacts/amcb_npi_linkage_FROZEN.csv
 Rscript  provenance_manifest.R         # -> artifacts/linkage_manifest.json

@@ -20,6 +20,79 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-20 — The panel's missing 2023 vintage, a column-count bug it exposed, and a 25-doc staleness pass
+
+### Fixed
+
+- **`midwife_panel.csv` had no real source for its 2023 vintage.** There is no
+  classic `npidata_` zip for April 2023 on record anywhere `build_midwife_panel.R`
+  looks. The real source turned out to be a third, previously unhandled NBER
+  distribution — an `npi_<Month>_<Year>.parquet` + `ptax_<Month>_<Year>.parquet`
+  pair — and whatever originally produced the committed 2023 row silently
+  dropped data from it: 542 cohort members' `practice_state` was missing where
+  the raw source had it. `process_core_parquet_year()` adds that path; the
+  2023 slice has been rebuilt from it, closing the gap for the 14,693 cohort
+  members whose April-2023 taxonomy was in scope (the remaining 542 are a
+  real, unrelated taxonomy-scope exclusion, not a residual bug).
+- **A latent column-count bug, found by that rebuild.** `tax_scope` had been
+  added to every ingestion path's SELECT list after the committed panel was
+  last built, so the next incremental resume — any of them, not just the 2023
+  one — would have silently written 14-column rows against the panel's real
+  13-column header. DuckDB's default reader sniffs column count from existing
+  rows and drops every row that doesn't match, with no error under
+  `ignore_errors=true`. Removed from all three paths.
+- **A year-by-year migration analysis surfaced, then ruled out, a parser
+  explanation for two mobility spikes.** The two largest year-over-year
+  state-move-rate transitions in the 2007–2026 panel (2017→2018, 2023→2024)
+  both coincide with the two NPPES file-format changes this repo tracks (the
+  2018 Latin-1→UTF-8 switch; the December 2024 "reshaped" restructure). A
+  classic-path-vs-reshaped-path parser diff on the real December 2024
+  snapshot, extended to the address fields `TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md`'s
+  own validation never covered, came back with zero mismatches across all
+  17,028 cohort NPIs — clearing the parser. The mechanism behind the
+  correlation remains unidentified; it is not the 2023 data gap above (which
+  doesn't participate in the move-rate calculation either way).
+
+### Added
+
+- **20 adversarial tests for `build_midwife_panel.R`**
+  (`tests/test_build_midwife_panel.R`, cases 11–30, 30 total with the
+  pre-existing 10): resume-append column-count regressions for the classic
+  and reshaped paths, and correctness/error handling for the new parquet path
+  — missing sibling files, an unmapped vintage date, organization/blank
+  entity codes, a non-first taxonomy slot, a duplicated join row (guarded
+  with a `QUALIFY` dedup), decoy filenames, a cross-format tie-break, and
+  wide/narrow taxonomy-scope correctness.
+- **`diagnose_migration_year_over_year.R`** — the year-by-year migration
+  analysis above, as a reproducible script rather than a one-off query.
+- **`docs/TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md`** — the full
+  investigation: the year-by-year mover-rate table, the format-change
+  correlation, the parser-diff test that cleared it, and what remains open.
+
+### Changed
+
+- **A 25-file pass over `docs/TECHNICAL_APPENDIX_*.md` and
+  `docs/RESULTS_*.md`**, checking cohort counts, cross-references and
+  "pending" claims against what the repo's code and artifacts actually say
+  today (not assumed). Real fixes landed in nine of them: a stale
+  calibration caveat (`AGE_IMPUTATION`), a duplicate section-9 heading
+  (`LINKAGE_SELECTION`), an undercounted test suite and missing third
+  ingestion path (`PANEL_BUILDER_HARDENING`), a resolved-but-still-flagged
+  encoding-gate callout naming the wrong bypass sites (`CSV_INGESTION_ENCODING`),
+  a stale regression-guard count, 156→153 (`DATA_REGRESSION_GUARD`), an
+  exception-registry note that didn't yet know about three new raw
+  `dbConnect()` sites (`DUCKDB_BOOTSTRAP_ARCHITECTURE`) — those three sites
+  are the new saboteur tests above; they still need routing through
+  `duckdb_connect()` or registering as exceptions, not yet done — a stale
+  panel row count and an overstated "two parsing paths" claim
+  (`PANEL_TEMPORAL_VALIDATION`), four stale file:line citations
+  (`RECORD_LINKAGE`), and a stale panel NPI count with no existing staleness
+  caveat, unlike its siblings (`TAXONOMY_SCOPE`). Sixteen files were already
+  accurate and needed nothing. `DEBT.md`'s D10 entry was flagged as
+  contradicting `TECHNICAL_APPENDIX_COHORT_VINTAGE.md` (D10 still says
+  "open/never re-pinned"; a direct test run says otherwise) but not fixed —
+  out of scope for this pass.
+
 ## [Unreleased] — 2026-10-19 — Join/checkpoint/scraper safety nets, a CMS catalogue break, two new QA instruments
 
 ### Added
