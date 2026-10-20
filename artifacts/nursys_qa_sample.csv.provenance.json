@@ -1,0 +1,29 @@
+{
+  "artifact": "artifacts/nursys_qa_sample.csv",
+  "inputs": [
+    {
+      "path": "artifacts/live_washington_bon_ingested_midwives_from_tracked_roster.csv",
+      "sha256": "b6754ad5da54263624e823bc1e1ae2d1d4cb2ffd715cdd192ae2094fba2d7d82"
+    },
+    {
+      "path": "artifacts/live_colorado_bon_ingested_midwives_from_tracked_roster.csv",
+      "sha256": "78a5970885abbb1921642fa029c6f4a03a4c74f9d52173093046f53da9481b1e"
+    },
+    {
+      "path": "artifacts/live_texas_bon_ingested_midwives_from_tracked_roster.csv",
+      "sha256": "8439d02fd12ebb93f6aad6822c3a70a114891c5b98cd0b6cbee5fea35230867a"
+    }
+  ],
+  "summary": {
+    "n_per_state_target": 40,
+    "seed": 20261019,
+    "n_rows": 120,
+    "drawn_by_state": {
+      "WA": 40,
+      "CO": 40,
+      "TX": 40
+    },
+    "n_rows_with_nursys_lookup_completed": 2,
+    "n_rows_pending_manual_lookup": 118
+  }
+}

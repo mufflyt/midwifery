@@ -45,6 +45,6 @@ Birth center,169,1.7,Primary claims-site setting
 Other facility,151,1.5,Primary claims-site setting
 Unclassified,42,0.4,Primary claims-site setting
 NA,2026,,Primary claims-site setting
-"Not collected by NPPES, CMS DAC or the Healthgrades scrape",,,Language
-Healthgrades data not available,,,Accepts new patients
-Healthgrades data not available,,,Offers telehealth
+"Not collected by NPPES, CMS DAC or the Healthgrades scrape",12171,,Language
+Healthgrades data not available,12171,,Accepts new patients
+Healthgrades data not available,12171,,Offers telehealth

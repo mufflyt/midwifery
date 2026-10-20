@@ -837,8 +837,11 @@ blk <- function(df, col, category, lvls = NULL,
 blk_hg <- function(col, category, lvls = NULL, binary_yes = NULL,
                    unknown_label = "No public Healthgrades profile") {
   if (is.null(hg_link) || !col %in% names(hg_link)) {
+    # n = N, not NA: A1 requires every block to sum to the cohort, with no
+    # exemptions. "Not available" is the whole cohort's remainder here, not
+    # an unknown count to be left out of the sum.
     return(tibble(characteristic = "Healthgrades data not available",
-                  n = NA_integer_, percent = NA_real_, category = category))
+                  n = N, percent = NA_real_, category = category))
   }
   N_hg <- N - length(hg_ambiguous)
   v <- hg_link[[col]]
@@ -1103,8 +1106,9 @@ t1 <- bind_rows(
         category = "Language (Healthgrades floor)")
     })
   else
+    # n = N, not NA: same A1 requirement as blk_hg()'s fallback above.
     tibble(characteristic = "Not collected by NPPES, CMS DAC or the Healthgrades scrape",
-           n = NA_integer_, percent = NA_real_, category = "Language"),
+           n = N, percent = NA_real_, category = "Language"),
 
   # Healthgrades-derived person-level characteristics
   blk_hg("hg_accepts_new_patients", "Accepts new patients",

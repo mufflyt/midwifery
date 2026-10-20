@@ -75,8 +75,8 @@ Registry-derived rows use the full cohort. Healthgrades-derived rows use a small
 | Unclassified | 42 | 0.4 |
 | NA | 2,026 | — |
 | **Language** | | |
-| Not collected by NPPES, CMS DAC or the Healthgrades scrape | — | — |
+| Not collected by NPPES, CMS DAC or the Healthgrades scrape | 12,171 | — |
 | **Accepts new patients** | | |
-| Healthgrades data not available | — | — |
+| Healthgrades data not available | 12,171 | — |
 | **Offers telehealth** | | |
-| Healthgrades data not available | — | — |
+| Healthgrades data not available | 12,171 | — |

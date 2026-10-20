@@ -26,6 +26,8 @@ Run: python3 draw_nursys_qa_sample.py [n_per_state]
 Output: artifacts/nursys_qa_sample.csv
 """
 import csv
+import hashlib
+import json
 import random
 import sys
 
@@ -40,9 +42,18 @@ BON_FILES = {
 OUT = "artifacts/nursys_qa_sample.csv"
 
 
+def sha256_of(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def main():
     rng = random.Random(SEED)
     rows_out = []
+    drawn_by_state = {}
 
     for state, (path, license_field) in BON_FILES.items():
         verified = []
@@ -53,6 +64,7 @@ def main():
         k = min(N_PER_STATE, len(verified))
         sample = rng.sample(verified, k)
         sample.sort(key=lambda r: (r["last_name"], r["first_name"]))
+        drawn_by_state[state] = {"drawn": k, "verified_pool": len(verified)}
         print(f"{state}: drew {k} of {len(verified)} verified board records")
 
         for row in sample:
@@ -80,6 +92,19 @@ def main():
         w = csv.DictWriter(f, fieldnames=list(rows_out[0].keys()))
         w.writeheader()
         w.writerows(rows_out)
+
+    provenance = {
+        "artifact": OUT,
+        "inputs": [{"path": p, "sha256": sha256_of(p)} for p, _ in BON_FILES.values()],
+        "summary": {
+            "n_per_state_target": N_PER_STATE,
+            "seed": SEED,
+            "n_rows": len(rows_out),
+            "drawn_by_state": drawn_by_state,
+        },
+    }
+    with open(OUT + ".provenance.json", "w", encoding="utf-8") as f:
+        json.dump(provenance, f, indent=2)
 
     print(f"\nwrote {len(rows_out)} rows ({N_PER_STATE}/state target) to {OUT}")
     print("Fill in the nursys_* columns and match_board_vs_nursys by hand, "
