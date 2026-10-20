@@ -1,10 +1,33 @@
 {
   "artifact": "organization_affiliation_unresolved.csv",
-  "written_utc": "2026-08-16 19:28:50 UTC",
+  "written_utc": "2026-10-20 03:07:41.708 UTC",
   "inputs": [
     {
-      "path": "artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv",
-      "sha256": "4eb27a91359b244b8f7ce5e6a8e6d455331f53830c735e9e6c5680bae2315545"
+      "path": "artifacts/amcb_npi_linkage_panel-midwifery-plus-nursing_years-2007-2026.csv",
+      "sha256": "5eb0b7c85cd61dbafe11ab8b1f6fc9cc80fe1d5a622ebd1d0e06d3bacde0f6f1"
+    }
+  ],
+  "code_sha256": "da22ffe5d81fbe41e659fa9e10989cc1e11061a8d52bb7569860f47db7482073",
+  "code": [
+    {
+      "path": "build_organization_affiliation_resolver.R",
+      "sha256": "c24a340acdd10b5879c97f0c9028d3b3513f6ef3fc43ccf53b34e0685149bdd6"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/org_names.R",
+      "sha256": "8f70e7a4ed15353f440013f550a46687cbc6c918b87d6b4ce779dd85746dbee3"
+    },
+    {
+      "path": "R/lib/organization_affiliation_status.R",
+      "sha256": "e3bdb12ba0578000ce8356023ad0d64a2ddde21fb0e9774ba985366b7008588b"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
     }
   ]
 }

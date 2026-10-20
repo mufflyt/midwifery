@@ -168,6 +168,65 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `build_trilliant_work_sites.R`'s outputs. Both sets are committed as of this
   entry. Not reconciled — see the note in `docs/table1_midwives.md`.
 
+## [Unreleased] — 2026-10-19 — Worksite merge-conflict audit: root-caused, not closed
+
+Full writeup: [docs/HANDOFF_worksite_merge_conflict_audit.md](docs/HANDOFF_worksite_merge_conflict_audit.md).
+Owner declined to resolve the pending `git rebase origin/main` by picking a
+side on numbers alone and asked for an evidence-based audit first. This is
+that audit. Nothing below changes a previously published number — it adds a
+third, still-not-final number and says exactly why it isn't final.
+
+### Added
+
+- **20 adversarial tests for the three pure functions that build worksite
+  data** — `tests/test_work_site_topology_saboteurs.R`, targeting
+  `assign_site_ids()`, `blended_practice()` and `topology_by_midwife()` in
+  `R/lib/work_site_topology.R`: shared hospital campuses that must stay two
+  sites, a same-ZIP/different-street pair that must never fuse, the exact
+  4-decimal coordinate-rounding boundary the function uses, employer/billing
+  rows that must never count as workplace evidence, a hospital affiliation
+  with no resolved coordinates that still counts as strict evidence (by
+  design — a separate question from physical-site counting), and duplicate
+  source rows that must not inflate a count. One real characteristic found
+  in the process, now pinned down by a test rather than left implicit: a
+  midwife whose only rows are employer sources is **absent** from
+  `blended_practice()`'s own output, not present with `FALSE` flags — safe
+  today only because the caller's `left_join` + `coalesce(FALSE)` papers
+  over it.
+
+### Fixed (partially)
+
+- **`origin/main`'s committed `artifacts/midwife_work_setting_summary.csv`
+  (241/34 strict/broad hospital+birth-center evidence) was built with all 5
+  proper inputs; the previously-committed local version (156/63) was built
+  without two of them** (`cabc_matched_midwives_final.csv`,
+  `organization_affiliation_resolved.csv` — confirmed from the local
+  provenance JSON's input list, silently short because of a now-removed
+  `INPUTS[file.exists(INPUTS)]` fallback). Both regenerated from primary
+  sources this session: `organization_affiliation_resolved.csv` ran clean
+  from already-committed arm artifacts; `cabc_matched_midwives_final.csv`
+  needed a fresh browser-captured snapshot of the CABC directory (its own
+  script header says why — the listing renders client-side), 109 centers
+  live on 2026-10-19 matched to 220 midwives across 66 centers. Re-running
+  with both restored moved the local count from 156/63 to 203/76 — confirming
+  this was a real cause, but **still not a match** for `origin/main`'s
+  241/34, taken as the current committed figure in this rebase.
+- **The remaining, unclosed cause**: the external hospital CCN/price-
+  transparency reference bundle (`/Volumes/MufflySamsung/hpt_prices/reference/`,
+  `/crosswalk/`) is absent on this machine, so the rerun above still used a
+  degraded fallback (empty NPI→CCN crosswalk) that `origin/main`'s version of
+  `build_trilliant_work_sites.R` no longer tolerates. No worksite number —
+  committed or rerun — should be published as final until that bundle is
+  located and the comparison is redone with it present.
+- **`origin/main`'s published `docs/table1_midwives.md` is a known-broken
+  stale partial build, not newer truth.** Its own `build_table1_midwives.R`
+  documents a 2026-09-11 incident (PR #241) where a run missing enrichment
+  inputs published Sex 100% "not recorded" and ACOG district 99.7% "not
+  mappable"; a guard shipped afterward to prevent a repeat, but the already-
+  published file was never regenerated and still shows exactly that broken
+  state at `origin/main` tip. The locally-authored version is complete and
+  correct and is what this rebase keeps for that file.
+
 ## [Unreleased] — 2026-09-14 — Trilliant's directory as a second identity source (experiment)
 
 Technical appendix: [docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md](docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md).
