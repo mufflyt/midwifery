@@ -101,7 +101,7 @@ it:
 | Variable | Primary source | Backup / fallback | Note |
 |---|---|---|---|
 | Certification, status, dates | AMCB directory (`ams.amcbmidwife.org`) | -- | 22,309 on the roster; cohort is 12,052 CNM (99.0%) + 119 CM (1.0%) of 12,171 ACTIVE, primary-linked |
-| Sex | NPPES (self-enumerated) | Trilliant | 12,089 female (99.5%), 65 male (0.5%), 17 not recorded |
+| Sex | NPPES (self-enumerated) | Trilliant | 12,089 female (`r mw_safe_stat("table1.female_pct", "%.1f")`%), 65 male (0.5%), 17 not recorded |
 | Training institution | CMS DAC, cleaned by `strip_med_suffix()` | Healthgrades -> repository -> Trilliant (last; agrees with DAC on every overlap) | DAC alone names a school for only 14.3% of the cohort; Trilliant's DAC-derived string reaches ~400 more (678 overlap, 100% agree); built, not yet in the published Table 1 |
 | Years observed / age-in-panel | NPPES panel itself | NBER's mirror of NPPES for pre-2024 snapshots | <5 yrs 2,597 (21.3%), 5-9 yrs 2,885 (23.7%), 10-14 yrs 2,424 (19.9%), >=15 yrs 4,265 (35.0%) |
 | Clinician age | OH voter DOBs (3-tier disambiguated against 7.95M records), WA DOH direct birth years, Healthgrades ages -- N=5,448 ground-truth, 100% verified | Ordinary least squares: Age = 35.86 + 0.943 x years-certified (R^2=0.72, residual error ~7.4 yrs), fitted on the 5,448 and applied to impute every one of the other 16,861 roster members | built (Technical Appendix, `artifacts/amcb_calibrated_ages.csv`); not yet in the published Table 1 |
