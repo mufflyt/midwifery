@@ -122,14 +122,22 @@ cat("\n-- SEMANTIC --\n")
 # in a way this test's own copy of the baseline has not been told about --
 # either direction is worth recounting fresh rather than trusting either
 # number.
+#
+# Recounted 2026-10-20 after rebasing onto origin/main (53 commits): true
+# count is 105, not 103. Confirmed as discovered debt, not newly introduced:
+# none of the two new offenders is in a file this branch's own commits
+# touched -- both arrived already present in origin/main's history, and the
+# widened sweep (tests/test_cycle5_key_resolution.R's own BASELINE, 110L)
+# already tolerates up to 110, so this was never a silent regression, only
+# this file's own stricter exact-match copy of the number going stale.
 {
   root <- "."
   files <- c(
     list.files(file.path(root, "R"), pattern = "\\.R$", recursive = TRUE, full.names = TRUE),
     list.files(root, pattern = "\\.R$", recursive = FALSE, full.names = TRUE))
   n <- length(detect_offenders(files))
-  chk(n == 103L,
-      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 103)", n))
+  chk(n == 105L,
+      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 105)", n))
 }
 
 # T40-6. DOCUMENTED LIMITATION, not fixed this cycle: the detection regex
