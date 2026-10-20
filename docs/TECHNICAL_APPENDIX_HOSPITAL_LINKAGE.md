@@ -111,7 +111,8 @@ directory named `audit_legacy_hospital_linkage_11093_20260913/`, with a sidecar
 `manifest.json`. **Neither is present in this checkout** — confirmed again at
 this rebase: the directory does not exist anywhere in this repository as
 tracked by git, and the links above point at another machine's home directory
-(`file:///Users/tylermuffly/...`, not this one). If this audit still exists on
+(a local-filesystem link into another machine's home directory, not this
+one). If this audit still exists on
 the machine that wrote it, re-link it here with a repo-relative path;
 otherwise this section should say so rather than link to it.
 

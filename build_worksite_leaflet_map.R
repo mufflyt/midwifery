@@ -11,6 +11,7 @@ suppressPackageStartupMessages({
   library(readr)
   library(stringr)
 })
+source(file.path("R", "lib", "worksite_text_helpers.R"))
 
 ART <- "artifacts"
 OUT <- "qa/leaflet_work_sites_INTERNAL.html"
@@ -33,14 +34,6 @@ cohort <- read_csv(file.path(ART, "amcb_npi_linkage_FROZEN.csv"),
   distinct(certification_number, .keep_all = TRUE)
 
 esc <- function(x) htmlEscape(ifelse(is.na(x), "", as.character(x)))
-first_nonempty <- function(x) {
-  x <- x[!is.na(x) & nzchar(str_squish(as.character(x)))]
-  if (length(x)) x[[1L]] else NA_character_
-}
-collapse_unique <- function(x) {
-  x <- sort(unique(x[!is.na(x) & nzchar(str_squish(as.character(x)))]))
-  if (length(x)) paste(x, collapse = "; ") else NA_character_
-}
 
 # Exact provider-location to NPPES Type-2 organization matches. These names
 # identify an organization associated with the address; they are not treated

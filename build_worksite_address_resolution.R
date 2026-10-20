@@ -9,6 +9,7 @@ suppressPackageStartupMessages({
   library(readr)
   library(stringr)
 })
+source(file.path("R", "lib", "worksite_text_helpers.R"))
 
 ART <- "artifacts"
 dir.create(ART, recursive = TRUE, showWarnings = FALSE)
@@ -34,21 +35,11 @@ cohort <- read_csv(file.path(ART, "amcb_npi_linkage_FROZEN.csv"),
   ) %>%
   distinct(certification_number, .keep_all = TRUE)
 
-nonempty <- function(x) !is.na(x) & nzchar(str_squish(as.character(x)))
-first_nonempty <- function(x) {
-  x <- x[nonempty(x)]
-  if (length(x)) x[[1L]] else NA_character_
-}
-collapse_unique <- function(x) {
-  x <- sort(unique(x[nonempty(x)]))
-  if (length(x)) paste(x, collapse = "; ") else NA_character_
-}
-address_key <- function(street, city, state, zip5) {
+# address_key_from_clean_parts(): distinct from build_worksite_setting_crosswalk.R's
+# address_key(), which additionally normalises street/city/state/zip itself.
+# This one assumes its caller already cleaned each part.
+address_key_from_clean_parts <- function(street, city, state, zip5) {
   str_squish(str_to_upper(paste(street, city, state, zip5)))
-}
-first_finite <- function(x) {
-  x <- x[is.finite(x)]
-  if (length(x)) x[[1L]] else NA_real_
 }
 
 nppes_org <- if (file.exists(file.path(ART, "midwife_org_person.csv"))) {
@@ -91,7 +82,7 @@ sites <- rows %>%
     .groups = "drop"
   ) %>%
   mutate(
-    address_key = address_key(street, city, state, zip5),
+    address_key = address_key_from_clean_parts(street, city, state, zip5),
     resolved_site_name = case_when(
       nonempty(trilliant_site_name) ~ trilliant_site_name,
       nonempty(organization_directory_name) ~ organization_directory_name,

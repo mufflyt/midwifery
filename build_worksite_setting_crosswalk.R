@@ -32,6 +32,7 @@ suppressPackageStartupMessages({
   library(readr)
   library(stringr)
 })
+source(file.path("R", "lib", "worksite_text_helpers.R"))
 
 ART <- "artifacts"
 DATA <- "data"
@@ -51,7 +52,7 @@ title_case <- function(x) {
   y <- str_replace_all(y, "\\bIhs\\b", "IHS")
   na_if(y, "")
 }
-zip5 <- function(x) str_extract(clean(x), "[0-9]{5}")
+zip5_from_free_text <- function(x) str_extract(clean(x), "[0-9]{5}")
 street_key <- function(x) {
   x <- clean(x)
   x <- str_replace_all(x, "[^A-Z0-9 ]", " ")
@@ -63,18 +64,9 @@ street_key <- function(x) {
   x <- str_replace_all(x, "\\b(HIGHWAY|HWY)\\b", "HWY")
   str_squish(x)
 }
-address_key <- function(street, city, state, zip) {
-  paste(street_key(street), clean(city), clean(state), zip5(zip), sep = "|")
+address_key_from_raw_parts <- function(street, city, state, zip) {
+  paste(street_key(street), clean(city), clean(state), zip5_from_free_text(zip), sep = "|")
 }
-first_nonempty <- function(x) {
-  x <- x[!is.na(x) & nzchar(str_squish(as.character(x)))]
-  if (length(x)) x[[1L]] else NA_character_
-}
-first_finite <- function(x) {
-  x <- x[is.finite(x)]
-  if (length(x)) x[[1L]] else NA_real_
-}
-
 work <- read_csv(file.path(ART, "midwife_work_sites_long.csv"),
                  show_col_types = FALSE, progress = FALSE,
                  col_types = cols(.default = col_character())) %>%
@@ -91,7 +83,7 @@ work_sites <- work %>%
   ) %>%
   select(site_id, worksite_street, worksite_city, worksite_state, worksite_zip5,
          worksite_lat, worksite_lon) %>%
-  mutate(worksite_address_key = address_key(worksite_street, worksite_city,
+  mutate(worksite_address_key = address_key_from_raw_parts(worksite_street, worksite_city,
                                              worksite_state, worksite_zip5))
 
 source_rows <- list()
@@ -222,7 +214,7 @@ if (file.exists(cabc_path)) {
                    name_repair = "minimal", show_col_types = FALSE,
                    progress = FALSE) %>%
     mutate(
-      parsed_zip = coalesce(zip5(zip_code), zip5(full_address)),
+      parsed_zip = coalesce(zip5_from_free_text(zip_code), zip5_from_free_text(full_address)),
       parsed_street = str_squish(str_extract(full_address, "^[^,]+"))
     ) %>%
     transmute(
@@ -328,8 +320,8 @@ optional_sources <- tibble(
 crosswalk <- bind_rows(source_rows) %>%
   mutate(
     street = as.character(street), city = as.character(city),
-    state = clean(state), zip5 = zip5(zip),
-    address_key = address_key(street, city, state, zip5),
+    state = clean(state), zip5 = zip5_from_free_text(zip),
+    address_key = address_key_from_raw_parts(street, city, state, zip5),
     source_row_id = paste(source, source_id, sep = "|")
   ) %>%
   left_join(work_sites, by = c("address_key" = "worksite_address_key"),
