@@ -78,7 +78,7 @@ table with `comparable_n`/`agree_n` alongside every percentage.
 | State | 89.8% | 94.8% | 94.8% | 95.8% |
 | City | 55.6% | 81.9% | 80.7% | 82.2% |
 | ZIP5 | 47.1% | 78.6% | 75.0% | 77.6% |
-| Street | 32.2% | 75.4% | 70.7% | 73.5% |
+| Street | 32.8% | 75.5% | 70.7% | 73.6% |
 
 ### 3b. Open Payments against itself, different program years, same person (n = 2,175–2,500)
 
@@ -99,7 +99,7 @@ it will be computable the next time one of these years is re-pulled.)
 | State | 84.4% | 85.9% | 88.8% |
 | City | 44.2% | 47.6% | 51.4% |
 | ZIP5 | 34.1% | 38.1% | 43.4% |
-| Street | 21.1% | 26.3% | 29.2% |
+| Street | 21.4% | 26.8% | 29.5% |
 
 ## 4. The finding that wasn't expected going in
 

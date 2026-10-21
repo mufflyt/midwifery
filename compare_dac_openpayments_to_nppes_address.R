@@ -32,19 +32,12 @@
 # =============================================================================
 suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr); library(tidyr); library(purrr); library(cli)})
 source(file.path("R", "lib", "artifact_provenance.R"))
+# norm_street(): R/lib/trilliant_org_bridge.R. One normalizer, not a second
+# copy -- see that file's own header for exactly why (tests/ci_hygiene.R H4
+# exists for this).
+source(file.path("R", "lib", "trilliant_org_bridge.R"))
 
 OUT <- "artifacts/dac_openpayments_vs_nppes_address_agreement.csv"
-
-norm_street <- function(s) {
-  s <- str_to_upper(coalesce(s, ""))
-  s <- str_replace_all(s, "[^A-Z0-9 ]", " ")
-  s <- str_squish(s)
-  s <- str_remove(s, "\\b(STE|SUITE|UNIT|APT|FL|FLOOR|RM|ROOM|BLDG|BUILDING|DEPT)\\b.*$")
-  repl <- c(STREET = "ST", AVENUE = "AVE", DRIVE = "DR", ROAD = "RD", BOULEVARD = "BLVD",
-            LANE = "LN", PARKWAY = "PKWY", HIGHWAY = "HWY", PLACE = "PL", COURT = "CT")
-  for (w in names(repl)) s <- str_replace_all(s, paste0("\\b", w, "\\b"), repl[[w]])
-  str_squish(s)
-}
 
 stopifnot(file.exists("dac_midwives.csv"), file.exists("midwife_panel.csv"))
 
