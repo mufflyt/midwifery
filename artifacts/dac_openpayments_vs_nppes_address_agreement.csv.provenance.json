@@ -1,0 +1,41 @@
+{
+  "artifact": "dac_openpayments_vs_nppes_address_agreement.csv",
+  "written_utc": "2026-10-21 01:55:35 UTC",
+  "inputs": [
+    {
+      "path": "dac_midwives.csv",
+      "sha256": "446a935a516a9decc5da253e97a0f22dcdf92be86ea031d0399d7b8ebc23cc7e"
+    },
+    {
+      "path": "midwife_panel.csv",
+      "sha256": "40c45ce1161f2ebe238aa3770988724ae7b1099df045ea981cfd6ccd41339386"
+    },
+    {
+      "path": "artifacts/cohort_midwives_open_payments_general_2022.csv",
+      "sha256": "cc6f2c339939e37f93f6d7e16c56c2e72825e24ba0c4dacc490aeea0e7f15b50"
+    },
+    {
+      "path": "artifacts/cohort_midwives_open_payments_general_2023.csv",
+      "sha256": "5ec1dae4010153a968d6f39748cafa96107b666952fb1290ca9c31250927b231"
+    },
+    {
+      "path": "artifacts/cohort_midwives_open_payments_general_2024.csv",
+      "sha256": "40290afbf208e5b20b279e8f1a6e99ed061bf2efa27814570f4b105b94388ca7"
+    }
+  ],
+  "code_sha256": "4be30a5e0d863b1c4fce6f99e197737fe286dfc6066514c698891ff7e2c129a8",
+  "code": [
+    {
+      "path": "compare_dac_openpayments_to_nppes_address.R",
+      "sha256": "c0e39d11c335bbd9902747150e72b047d70001b023ae93b6e7680220545ef78e"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}
