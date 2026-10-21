@@ -36,6 +36,11 @@ source(file.path("R", "lib", "artifact_provenance.R"))
 # copy -- see that file's own header for exactly why (tests/ci_hygiene.R H4
 # exists for this).
 source(file.path("R", "lib", "trilliant_org_bridge.R"))
+source(file.path("R", "join_safety.R"))  # assert_unique_keys(dedupe = TRUE):
+# a plain distinct(.keep_all = TRUE) silently picks whichever row sorts first
+# when two rows for one NPI disagree -- e.g. two Open Payments records with
+# different recipient addresses that year. This errors on a real
+# disagreement instead, naming it, and only dedupes rows that are identical.
 
 OUT <- "artifacts/dac_openpayments_vs_nppes_address_agreement.csv"
 
@@ -49,9 +54,29 @@ shape_dac <- function() {
               zip5 = str_sub(practice_zip, 1, 5),
               street = norm_street(practice_address))
 }
+# Open Payments is one row per payment TRANSACTION, not one row per
+# recipient-year: ~37% of cohort midwives in the 2022 file have more than
+# one reported address that same program year (payments from more than one
+# employer/site). assert_unique_keys(dedupe = TRUE) correctly refuses to
+# collapse that -- it is a real disagreement, not a duplicate -- so picking
+# a single representative address per NPI-year needs an explicit, stated
+# rule instead of the old distinct(.keep_all = TRUE), which silently kept
+# whichever transaction happened to sort first. The rule here: the address
+# combination (state, city, zip, street) reported on the MOST transactions
+# that year, ties broken alphabetically for determinism.
+collapse_to_modal_address <- function(d) {
+  d %>%
+    count(npi, recipient_state, recipient_city, recipient_zip, recipient_address, name = "n_txn") %>%
+    arrange(npi, desc(n_txn), recipient_state, recipient_city, recipient_zip, recipient_address) %>%
+    group_by(npi) %>%
+    slice(1) %>%
+    ungroup() %>%
+    select(-n_txn)
+}
 shape_op <- function(path) {
-  d <- read_csv(path, col_types = cols(.default = "c"), progress = FALSE) %>%
-    distinct(npi, .keep_all = TRUE)
+  d <- read_csv(path, col_types = cols(.default = "c"), progress = FALSE)
+  d <- collapse_to_modal_address(d)
+  d <- assert_unique_keys(d, "npi", label = basename(path), dedupe = TRUE)
   tibble(npi = d$npi,
          state = str_to_upper(str_squish(d$recipient_state)),
          city = str_to_upper(str_squish(d$recipient_city)),
@@ -68,8 +93,8 @@ dac <- shape_dac()
 need_nppes_years <- union("2026", op_years)
 cli::cli_alert_info("Scanning midwife_panel.csv for snapshot_year in {paste(need_nppes_years, collapse = ', ')}...")
 nppes_all <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
-  filter(snapshot_year %in% need_nppes_years) %>%
-  distinct(npi, snapshot_year, .keep_all = TRUE) %>%
+  filter(snapshot_year %in% need_nppes_years)
+nppes_all <- assert_unique_keys(nppes_all, c("npi", "snapshot_year"), label = "midwife_panel.csv", dedupe = TRUE) %>%
   transmute(npi, snapshot_year,
             state = str_to_upper(str_squish(practice_state)),
             city = str_to_upper(str_squish(practice_city)),
@@ -101,12 +126,13 @@ for (yr in op_years)
                                                    yr, yr, "vs_nppes_same_year")
 
 # 2. Open Payments year-over-year: same source, same person, different program years
+# (street included: all op_years now carry recipient_address -- see match_open_payments_general_payments.py)
 if (length(op_years) >= 2) {
   pairs <- combn(sort(op_years), 2, simplify = FALSE)
   for (p in pairs)
     out[[paste0("op_yoy_", p[1], "_", p[2])]] <- compare_two(
       op[[p[1]]], op[[p[2]]], sprintf("Open Payments %s vs %s", p[1], p[2]),
-      p[1], p[2], "open_payments_yoy", levels = c("state", "city", "zip5"))
+      p[1], p[2], "open_payments_yoy")
 }
 
 # 3. DAC vs Open Payments directly, nearest available years (a real gap -- DAC is 2026-only)

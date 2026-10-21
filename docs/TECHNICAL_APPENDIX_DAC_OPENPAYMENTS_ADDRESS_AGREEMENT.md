@@ -54,6 +54,19 @@ Three questions, not one:
     in Open Payments at all, for 2022 / 2023 / 2024 respectively — appearing
     requires having received a reportable industry payment that year, so
     this is a real but partial subset, not a universal check.
+  - **Open Payments is one row per payment *transaction*, not one row per
+    recipient-year**: ~37% of matched midwives in the 2022 file (and
+    similar shares in 2023/2024) have more than one reported address in the
+    same program year — multiple employers or practice sites paying out
+    that year. Picking a single representative address per NPI-year
+    therefore needs a stated rule, not an arbitrary row. This repo's safe
+    rule is: the `(state, city, zip, street)` combination reported on the
+    **most transactions** that year, ties broken alphabetically for
+    determinism (`collapse_to_modal_address()` in
+    `compare_dac_openpayments_to_nppes_address.R`). The repo's live
+    `distinct(.keep_all = TRUE)` drift ratchet
+    (`tests/test_cycle40_keepall_sweep_scope.R`, T40-5) is what caught the
+    original arbitrary-row version of this script and forced this fix.
 - **NPPES**: `midwife_panel.csv`, the same annual-snapshot panel the
   migration appendix uses. Each comparison below pulls the NPPES snapshot
   for **the same year the other source is dated to** — DAC (2026) against
@@ -75,38 +88,35 @@ table with `comparable_n`/`agree_n` alongside every percentage.
 
 | Level | DAC (2026) | Open Payments 2022 | 2023 | 2024 |
 |---|---:|---:|---:|---:|
-| State | 89.8% | 94.8% | 94.8% | 95.8% |
-| City | 55.6% | 81.9% | 80.7% | 82.2% |
-| ZIP5 | 47.1% | 78.6% | 75.0% | 77.6% |
-| Street | 32.8% | 75.5% | 70.7% | 73.6% |
+| State | 89.8% | 95.3% | 95.2% | 96.1% |
+| City | 55.6% | 84.1% | 82.9% | 83.9% |
+| ZIP5 | 47.1% | 81.3% | 77.9% | 79.2% |
+| Street | 32.8% | 78.8% | 74.6% | 75.5% |
 
 ### 3b. Open Payments against itself, different program years, same person (n = 2,175–2,500)
 
 | Level | 2022 vs 2023 | 2022 vs 2024 | 2023 vs 2024 |
 |---|---:|---:|---:|
-| State | 94.4% | 92.3% | 93.2% |
-| City | 74.9% | 71.2% | 73.4% |
-| ZIP5 | 68.9% | 65.1% | 67.6% |
-
-(No street row: `recipient_address` was only captured starting with this
-session's fix, so year-over-year street continuity cannot yet be checked —
-it will be computable the next time one of these years is re-pulled.)
+| State | 95.0% | 92.1% | 93.8% |
+| City | 80.2% | 74.1% | 78.7% |
+| ZIP5 | 74.9% | 67.9% | 73.4% |
+| Street | 70.9% | 62.1% | 68.6% |
 
 ### 3c. DAC (2026) vs. Open Payments directly, no NPPES in between (n = 1,577–2,019)
 
 | Level | vs. 2022 | vs. 2023 | vs. 2024 |
 |---|---:|---:|---:|
-| State | 84.4% | 85.9% | 88.8% |
-| City | 44.2% | 47.6% | 51.4% |
-| ZIP5 | 34.1% | 38.1% | 43.4% |
-| Street | 21.4% | 26.8% | 29.5% |
+| State | 84.5% | 85.8% | 89.0% |
+| City | 44.5% | 48.5% | 52.3% |
+| ZIP5 | 34.6% | 38.8% | 43.8% |
+| Street | 21.9% | 27.4% | 30.2% |
 
 ## 4. The finding that wasn't expected going in
 
 Two independent sources agree with NPPES noticeably more than they agree
 with **each other**. DAC vs. NPPES is 55.6% at the city level; DAC vs. Open
-Payments is 44.2–51.4%, lower every year, despite Open Payments itself
-agreeing with NPPES at 80–82% city-level. If DAC and Open Payments were each
+Payments is 44.5–52.3%, lower every year, despite Open Payments itself
+agreeing with NPPES at 83–84% city-level. If DAC and Open Payments were each
 simply "noisy around the truth," two independent noisy measurements of the
 same thing should not agree with each other *less* than each agrees with a
 third, also-independent measurement.
@@ -130,7 +140,7 @@ Three non-exclusive explanations, none confirmed here:
   the DAC-vs-Open-Payments disagreement could be genuine moves in the
   intervening 2–4 years rather than source noise — consistent with §3c's
   own pattern of improving agreement as the Open Payments year gets closer
-  to DAC's 2026 vintage (44.2% → 47.6% → 51.4% at the city level, 2022 →
+  to DAC's 2026 vintage (44.5% → 48.5% → 52.3% at the city level, 2022 →
   2023 → 2024).
 - **DAC's PECOS-sourced address and a Medicare-unrelated commercial
   address (Open Payments) are simply two different kinds of record** —
@@ -157,8 +167,8 @@ Three non-exclusive explanations, none confirmed here:
   and re-running `compare_dac_openpayments_to_nppes_address.R`.
 - **The Open-Payments-vs-itself check (§3b) is the one genuinely
   same-source longitudinal address signal this project now has**, independent
-  of NPPES. Its year-over-year disagreement (city: 25–29%) is higher than
-  the within-year Open-Payments-vs-NPPES disagreement (city: 18–19%), which
+  of NPPES. Its year-over-year disagreement (city: 20–26%) is higher than
+  the within-year Open-Payments-vs-NPPES disagreement (city: 16–17%), which
   is the expected direction if some of it is real movement rather than pure
   source noise — but the two are not cleanly separable from this comparison
   alone.

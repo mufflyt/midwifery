@@ -1,6 +1,6 @@
 {
   "artifact": "dac_openpayments_vs_nppes_address_agreement.csv",
-  "written_utc": "2026-10-21 02:00:07 UTC",
+  "written_utc": "2026-10-21 02:14:58 UTC",
   "inputs": [
     {
       "path": "dac_midwives.csv",
@@ -23,11 +23,15 @@
       "sha256": "40290afbf208e5b20b279e8f1a6e99ed061bf2efa27814570f4b105b94388ca7"
     }
   ],
-  "code_sha256": "4b7cb058846a8607dc20d556aeaf86310212f5d329018eb4ae53dd5bf0725da6",
+  "code_sha256": "9dc899b83fc4b722df5c32150cc45fcd235d2b0f99e7e7e99746fec499e94722",
   "code": [
     {
       "path": "compare_dac_openpayments_to_nppes_address.R",
-      "sha256": "b5d5162c68b0c481aa187e4d749aed14b2569c37fb9330a860f5da10bd809429"
+      "sha256": "e29a91c88bf155e83e56f91371cc66bbb914bbf5e857bc6ba59f79c1f90882dc"
+    },
+    {
+      "path": "R/join_safety.R",
+      "sha256": "96a2eeeef8b9821178abed57d90213e299c9539f4358b4f6ed47c9fc2b8c0280"
     },
     {
       "path": "R/lib/artifact_provenance.R",
@@ -40,6 +44,10 @@
     {
       "path": "R/lib/trilliant_org_bridge.R",
       "sha256": "f35a969cb1cd30b0e36f86521c75623e1d946a7b1a347ab18c1d4f1c0c26c901"
+    },
+    {
+      "path": "R/safe_divide.R",
+      "sha256": "9676b960bacb210a2167e7751dd84c5b9c80a0bf5442425e0b0f322b25aa04bc"
     }
   ]
 }
