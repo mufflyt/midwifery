@@ -437,7 +437,7 @@ artifacts/amcb_npi_crosswalk_*panel-midwifery-plus-nursing*.csv
 # profiles, Table 1, PPV summaries), and losing those would quietly break every
 # figure that rebuilds from a committed artifact.
 /artifacts/amcb_calibrated_ages.csv
-/artifacts/cohort_midwives_open_payments_general_2024.csv
+/artifacts/cohort_midwives_open_payments_general_*.csv
 /artifacts/cohort_membership_four_way.csv
 /artifacts/amcb_npi_geography.csv
 /artifacts/frozen_cohort/analytic_cohort.csv

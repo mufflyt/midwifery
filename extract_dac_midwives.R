@@ -30,6 +30,8 @@ suppressPackageStartupMessages({library(DBI); library(duckdb)})
 dac <- Sys.getenv("DAC_FILE", "")
 if (!nzchar(dac)) {
   candidates <- c("DAC_NationalDownloadableFile_2026-06.csv",
+                  "DAC_NationalDownloadableFile.csv",
+                  "data/CMS_DAC_NationalDownloadableFile.csv",
                   path.expand(paste0("~/Documents/Documents - TMuff/",
                                      "doctors_and_clinicians_current_data/",
                                      "DAC_NationalDownloadableFile.csv")))
