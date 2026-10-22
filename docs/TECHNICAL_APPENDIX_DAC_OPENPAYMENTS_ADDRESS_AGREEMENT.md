@@ -4,7 +4,7 @@
 **Primary scripts**: [`extract_dac_midwives.R`](../extract_dac_midwives.R), [`match_open_payments_general_payments.py`](../match_open_payments_general_payments.py), [`compare_dac_openpayments_to_nppes_address.R`](../compare_dac_openpayments_to_nppes_address.R), [`make_address_agreement_figure.R`](../make_address_agreement_figure.R), [`make_address_agreement_additional_figures.R`](../make_address_agreement_additional_figures.R)
 **Related**: [`TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md`](TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md) (the question this was raised to help answer — can an NPPES-measured move be independently confirmed), [`OPEN_PAYMENTS_LINKAGE_COMPARISON.md`](OPEN_PAYMENTS_LINKAGE_COMPARISON.md) (two prior, disagreeing Open Payments employer-linkage builds — a different question from this one)
 **Investigation date**: 2026-10-20 to 2026-10-22
-**Status**: measurement complete. Every comparison in this appendix is year-matched; a DAC-vs-Open-Payments comparison was built, found to be impossible to year-match, and removed — see §4.
+**Status**: measurement complete. One comparison, every row of it year-matched: DAC or Open Payments against NPPES, same provider, same year. Two other comparisons were built and removed — see §4.
 
 ---
 
@@ -19,15 +19,12 @@ appendix is that check, run for real against two sources already present in
 this project: CMS Doctors & Clinicians (DAC, PECOS-derived) and CMS Open
 Payments (Sunshine Act general payments).
 
-Two questions, both answerable without comparing across mismatched years:
+One question: **does DAC, or does Open Payments, agree with NPPES on a
+midwife's practice address — for the same provider, in the same year?**
 
-1. **Does DAC agree with NPPES, for the same provider, in the same year?**
-2. **Does Open Payments agree with NPPES, for the same provider, in the same
-   year — and does Open Payments agree with *itself* across different
-   program years for the same person?**
-
-A third, originally-planned question — do DAC and Open Payments agree with
-*each other* — turned out not to be answerable this way at all. See §4.
+Two other questions were tried and abandoned, both for the same reason:
+neither could be answered without comparing data from different years as if
+they were the same year. See §4.
 
 ## 2. What was pulled, and what it's dated to
 
@@ -81,13 +78,11 @@ A third, originally-planned question — do DAC and Open Payments agree with
 All agreement percentages are computed only over pairs where **both** sides
 have a non-blank value at that geographic level (`comparable_n`); see
 `artifacts/dac_openpayments_vs_nppes_address_agreement.csv` for the full
-table with `comparable_n`/`agree_n` alongside every percentage. Both tables
-below are year-matched — see §4 for the comparison that isn't, and why it's
-not here.
+table with `comparable_n`/`agree_n` alongside every percentage.
 
-![Two ways to check a midwife's address, and how often they agree](figures/dac_openpayments_vs_nppes_agreement.png)
+![How well do DAC and Open Payments agree with NPPES on address?](figures/dac_openpayments_vs_nppes_agreement.png)
 
-### 3a. Each source vs. NPPES, same year (n = 5,576 DAC; 3,210–4,020/year Open Payments)
+### Each source vs. NPPES, same year (n = 5,576 DAC; 3,210–4,020/year Open Payments)
 
 | Level | DAC (2026) | Open Payments 2022 | 2023 | 2024 |
 |---|---:|---:|---:|---:|
@@ -96,49 +91,42 @@ not here.
 | ZIP5 | 47.1% | 81.3% | 77.9% | 79.2% |
 | Street | 32.8% | 78.8% | 74.6% | 75.5% |
 
-### 3b. Open Payments against itself, different program years, same person (n = 2,175–2,500)
+## 4. Two comparisons that were tried and removed
 
-| Level | 2022 vs 2023 | 2022 vs 2024 | 2023 vs 2024 |
-|---|---:|---:|---:|
-| State | 95.0% | 92.1% | 93.8% |
-| City | 80.2% | 74.1% | 78.7% |
-| ZIP5 | 74.9% | 67.9% | 73.4% |
-| Street | 70.9% | 62.1% | 68.6% |
+Two other comparisons lived in earlier versions of this appendix. Both are
+gone as of 2026-10-22.
 
-## 4. Why there is no DAC-vs-Open-Payments comparison
-
-An earlier version of this appendix included a third comparison, DAC
-directly against Open Payments, plus a three-way NPPES/DAC/Open-Payments
-concordance figure built on top of it. Both are removed as of 2026-10-22.
-
-The reason: DAC has exactly **one** public vintage. Checked directly against
-CMS's own metastore API (`data.cms.gov/provider-data/api/1/metastore/schemas/dataset/items/mj5m-pzi6`)
+**DAC directly against Open Payments** (plus a three-way NPPES/DAC/Open-
+Payments concordance figure built on top of it). DAC has exactly **one**
+public vintage. Checked directly against CMS's own metastore API
+(`data.cms.gov/provider-data/api/1/metastore/schemas/dataset/items/mj5m-pzi6`)
 — it returns a single `distribution`, no history. Wayback Machine has only
 captured the dataset's JS-rendered landing page, not the underlying
 700+MB CSV. There is no public way to fetch "DAC as it stood in 2022" (or
 2023, or 2024) the way Open Payments publishes one archived file per program
-year. Any DAC-vs-Open-Payments comparison is therefore always DAC's single
+year. Any DAC-vs-Open-Payments comparison was therefore always DAC's single
 2026 vintage against an Open Payments year 2–4 years earlier — a real,
-unclosable gap, not a year-matched comparison, no matter how clearly the
-gap is labeled.
+unclosable gap, not a year match, no matter how clearly the gap was
+labeled. (A personal 2021 DAC snapshot exists in the repo owner's iCloud
+Drive, which would narrow the gap to one year for the 2022 Open Payments
+pull only — not pursued, since it still wouldn't be a true match, and would
+leave 2023/2024 with no DAC comparison at all.) What it had shown, for the
+record: DAC agreed with Open Payments *less* than DAC agreed with NPPES
+directly, despite Open Payments agreeing with NPPES far more than DAC
+did — consistent with, though no longer offered as evidence for, the
+NPPES-sourcing suspicion in §5.
 
-"Every analysis needs to be year matched" is a hard rule in this project.
-A labeled mismatch is still a mismatch, so both the pairwise
-DAC-vs-Open-Payments numbers and the three-way concordance figure built on
-them were removed rather than kept with a caveat. (A personal 2021 DAC
-snapshot exists in the repo owner's iCloud Drive, which would narrow the
-gap to one year for the 2022 Open Payments pull only — not pursued, since
-it still wouldn't be a true match, and would leave 2023/2024 with no DAC
-comparison at all.)
+**Open Payments against itself, different program years, same person.**
+This one *was* genuinely year-matched in the sense that every comparison
+pair was labeled with the two real years being compared — the problem the
+other removed comparison had. It was removed anyway, at the repo owner's
+request, so this appendix carries exactly one comparison type rather than
+mixing same-source-across-years results in with same-year-across-sources
+results.
 
-What the removed comparison had shown, for the record (see git history for
-the exact figures if needed): DAC agreed with Open Payments *less* than DAC
-agreed with NPPES directly, despite Open Payments agreeing with NPPES far
-more than DAC did — the kind of asymmetry you'd expect if Open Payments'
-agreement with NPPES weren't fully independent confirmation. That finding no
-longer stands as evidence here, for the year-matching reason above, but it's
-consistent with — and motivated a closer look at — the weaker, still
-year-matched version of the same asymmetry in §5.
+"Every analysis needs to be year matched" is a hard rule in this project —
+see git history for the removed figures, computations, and exact prior
+numbers for both.
 
 ## 5. What this does and does not establish
 
@@ -168,13 +156,6 @@ year-matched version of the same asymmetry in §5.
   that a one-line change:
   `OPEN_PAYMENTS_YEAR=2017 python3 match_open_payments_general_payments.py`)
   and re-running `compare_dac_openpayments_to_nppes_address.R`.
-- **The Open-Payments-vs-itself check (§3b) is the one genuinely
-  same-source longitudinal address signal this project now has**, independent
-  of NPPES. Its year-over-year disagreement (city: 20–26%) is higher than
-  the within-year Open-Payments-vs-NPPES disagreement (city: 16–17%), which
-  is the expected direction if some of it is real movement rather than pure
-  source noise — but the two are not cleanly separable from this comparison
-  alone.
 
 ## 6. Three more views
 
@@ -182,19 +163,18 @@ year-matched version of the same asymmetry in §5.
 re-plots the table in §3 from three different angles — no new numbers of its
 own.
 
-![Every source pair, every geographic level, one view](figures/address_agreement_heatmap.png)
+![Every source, every geographic level, one view](figures/address_agreement_heatmap.png)
 
 - **Heatmap** (`docs/figures/address_agreement_heatmap.png`): every
-  source-pair/level cell in §3 in one grid. Fastest way to see that the
-  DAC row runs noticeably warmer (lower agreement) than every Open Payments
-  row.
+  source/level cell in §3 in one grid. Fastest way to see that the DAC row
+  runs noticeably warmer (lower agreement) than every Open Payments row.
 
 ![Agreement falls apart at finer geography](figures/address_agreement_cascade.png)
 
 - **Cascade** (`docs/figures/address_agreement_cascade.png`): the same data
-  as connected lines, State through Street. Both comparison families
-  degrade with geographic grain at roughly the same rate; the DAC line just
-  starts lower and ends lower.
+  as connected lines, State through Street. All four sources degrade with
+  geographic grain at roughly the same rate; the DAC line just starts lower
+  and ends lower.
 
 ![No headline number rests on a tiny sample](figures/address_agreement_power.png)
 
