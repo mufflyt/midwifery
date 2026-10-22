@@ -173,7 +173,50 @@ Three non-exclusive explanations, none confirmed here:
   source noise — but the two are not cleanly separable from this comparison
   alone.
 
-## 6. Reproducing
+## 6. Four more views, including one new finding
+
+[`make_address_agreement_additional_figures.R`](../make_address_agreement_additional_figures.R)
+produces four more figures. The first three re-plot the table above from
+different angles; the fourth is a new computation, not a replot.
+
+![Every source pair, every geographic level, one view](figures/address_agreement_heatmap.png)
+
+- **Heatmap** (`docs/figures/address_agreement_heatmap.png`): every
+  source-pair/level cell in §3 in one grid. Fastest way to see that every
+  row touching DAC runs noticeably warmer (lower agreement) than every row
+  that doesn't.
+
+![Agreement falls apart at finer geography](figures/address_agreement_cascade.png)
+
+- **Cascade** (`docs/figures/address_agreement_cascade.png`): the same data
+  as connected lines, State through Street. All three comparison families
+  degrade with geographic grain at roughly the same rate; DAC comparisons
+  just start lower and end lower.
+
+![No headline number rests on a tiny sample](figures/address_agreement_power.png)
+
+- **Power check** (`docs/figures/address_agreement_power.png`): agreement
+  percent against how many comparable records it's based on (1,500–5,500
+  per row). Confirms the low DAC numbers aren't a small-sample artifact —
+  they sit on comparable or larger n than the high Open-Payments-vs-NPPES
+  numbers next to them.
+
+![When all three sources are checked at once, who agrees with whom?](figures/address_agreement_threeway_concordance.png)
+
+- **Three-way concordance** (`docs/figures/address_agreement_threeway_concordance.png`,
+  backed by the tracked
+  `artifacts/dac_openpayments_nppes_threeway_city_concordance.csv`): for
+  midwives present in DAC, NPPES, *and* Open Payments at once that year,
+  classifies city-level agreement as all three agreeing, one pairwise
+  fault line, or all three differing. **"NPPES + Open Payments agree,
+  DAC doesn't" is the dominant disagreement pattern every year (37–45% of
+  comparable midwives) — far larger than "NPPES + DAC agree, Open Payments
+  doesn't" (3–4%).** That's the sharpest evidence yet for §4's
+  NPPES-sourcing hypothesis: if Open Payments' agreement with NPPES were
+  fully independent confirmation, it should not fail to agree with the one
+  genuinely independent source (DAC) at nearly this asymmetric a rate.
+
+## 7. Reproducing
 
 ```sh
 # DAC (one vintage; set DAC_FILE if the national file lives somewhere else)
@@ -187,6 +230,9 @@ OPEN_PAYMENTS_YEAR=2024 python3 match_open_payments_general_payments.py
 # Comparison + figure (auto-discovers whichever Open Payments years exist in artifacts/)
 Rscript compare_dac_openpayments_to_nppes_address.R
 Rscript make_address_agreement_figure.R
+
+# Four more views (heatmap, cascade, power check, three-way concordance)
+Rscript make_address_agreement_additional_figures.R
 ```
 
 Requires `midwife_panel.csv` (NPPES annual snapshots, gitignored,
