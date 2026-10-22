@@ -134,12 +134,13 @@ numbers for both.
   comparisons are year-matched.** DAC vs. NPPES (2026 vs. 2026) is 55.6% at
   the city level; Open Payments vs. NPPES (same year, each of 2022/2023/2024)
   is 82.9–84.1%. DAC is a genuinely independent source (PECOS-derived, not
-  NPPES self-report); Open Payments is suspected of partial NPPES-sourcing
-  for its recipient address field (CMS documentation not yet checked to
-  confirm the mechanism). This asymmetry is consistent with that suspicion,
-  though it's a weaker signal than the removed DAC-vs-Open-Payments /
-  three-way comparison would have given — that one is gone for the
-  year-matching reason in §4, not because it was uninformative.
+  NPPES self-report); Open Payments is no longer merely *suspected* of
+  partial NPPES-dependence — CMS's own documentation confirms NPPES and
+  PECOS feed Open Payments' covered-recipient data pipeline (§8). This
+  asymmetry is consistent with that confirmed dependence, though it's a
+  weaker signal than the removed DAC-vs-Open-Payments / three-way
+  comparison would have given — that one is gone for the year-matching
+  reason in §4, not because it was uninformative.
 - **It gives a real, measured, year-matched answer to "how much do
   independent address sources disagree," at four geographic grains** —
   useful context for interpreting any NPPES-based result, including the
@@ -207,3 +208,70 @@ Requires `midwife_panel.csv` (NPPES annual snapshots, gitignored,
 person-level, ~455 MB) and a network connection for the DAC national file and
 each Open Payments program-year pull (tens of millions of rows streamed and
 filtered; each year takes several minutes).
+
+## 8. Related literature
+
+Two primary sources, both fetched and read directly (not relayed secondhand)
+before citing.
+
+**NPPES-vs-PECOS disagreement is well-precedented, at a comparable
+magnitude.** HHS OIG, *Improvements Needed To Ensure Provider Enumeration
+and Medicare Enrollment Data Are Accurate, Complete, and Consistent*
+(OEI-07-09-00440, May 2013) compared NPPES against PECOS directly for a
+national Medicare-provider sample (N=987,266) and found 97% of records
+inconsistent between the two systems on at least one field. Broken out by
+field (its Table 4): **practice-location address inconsistent in 88.6% of
+records**, mailing address in 50.7%, license number in 42.1%. DAC in this
+appendix is PECOS-derived, so §3's DAC-vs-NPPES comparison is the same
+comparison OIG ran in 2013, on a different (midwife) cohort a decade later.
+This repo's city-level 55.6% agreement (44.4% disagreement) and street-level
+32.8% agreement (67.2% disagreement) are the same order of magnitude as
+OIG's 88.6% address-field inconsistency — this is a longstanding,
+well-documented gap between CMS's two provider-data systems, not an
+anomaly specific to this cohort, this year, or this repo's normalization
+code.
+
+**CMS confirms NPPES and PECOS feed Open Payments' covered-recipient
+pipeline — not just a hypothesis anymore.** CMS, *Open Payments Frequently
+Asked Questions* (July 2024 edition), three relevant answers:
+- FAQ #2012: "CMS will use a combination of data contained in the NPPES and
+  PECOS systems, a commercial data source of aggregated data from state
+  boards, and other sources to validate reported data on non-physician
+  practitioners (... Certified Nurse-midwives)" — stated specifically for
+  the CNM credential this repo's cohort holds.
+- FAQ #9128: the Validated Physician List (VPL) — what CMS directs
+  manufacturers to use when reporting a covered recipient's identifiers —
+  "contains information from NPPES as well as other CMS data sources."
+- FAQ #10094: manufacturers are told to consult NPPES directly for any
+  covered recipient not already on the VPL/NPPL.
+
+None of these three answers names "address" specifically next to
+NPPES/PECOS — CMS's methodology/data-dictionary PDF, checked directly, also
+doesn't. So this appendix does not claim CMS has published the exact
+sentence "the recipient address field is populated from NPPES." What's
+confirmed instead: NPPES and PECOS are explicitly, repeatedly named as
+inputs to how CMS validates and manufacturers source covered-recipient
+profile data for Open Payments generally, and specifically for the CNM
+credential — which is a materially stronger basis for the NPPES-sourcing
+suspicion in §5 than existed before this literature check, even though it
+stops short of a field-by-field CMS admission.
+
+**No literature-endorsed standard exists for this appendix's specific
+method.** Fellegi & Sunter (1969) is the foundational framework for
+probabilistic record linkage, but it solves a different problem — deciding
+whether two records refer to the same entity — than this appendix has
+(NPI is already a deterministic shared key across all three sources here).
+No health-services-research paper was found that validates "percent
+agreement at four cascading geographic grains, year-matched" as a named,
+citable methodology; it's a reasonable, intuitive approach, not a
+replication of an established standard. Similarly, the "ghost networks"
+literature (CMS Medicare Advantage directory audits, 2017–18; U.S. Senate
+Finance Committee secret-shopper study, May 2023) measures something
+related but different — phone-verified current provider availability, not
+cross-database address concordance — and the maternity-care-access
+literature (e.g., March of Dimes' *Nowhere to Go: Maternity Care Deserts*)
+triangulates *classification* (rural/urban, desert status) against HRSA and
+professional-board data, not NPPES *addresses* against a second
+administrative source the way this appendix does. That specific comparison
+appears to be a gap this appendix fills rather than a replication of
+established practice.
