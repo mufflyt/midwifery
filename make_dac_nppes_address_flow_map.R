@@ -20,15 +20,22 @@
 # validated. The facet by `source` is kept in the code so adding that panel
 # later is a data change, not a rewrite.
 #
-# min_flow_n is a disclosure control as much as a legibility one: a flow of
-# n=1 names a specific midwife's two addresses on a public map.
+# min_flow_n=1 (set below, 2026-10-22 at the repo owner's request): every
+# city-pair is drawn, including ones shared by exactly one midwife. NPPES
+# and DAC are both public CMS data (NPI is a public identifier; per this
+# project's own standing policy, NPI-level provider data is not treated as
+# person-level-sensitive), so a flow of n=1 names a public provider's two
+# publicly-reported addresses, not private information -- min_flow_n is
+# kept as a parameter (legibility, not disclosure) rather than removed, so
+# a future caller can still raise it.
 #
 # Input : artifacts/dac_vs_nppes_address_pairs.csv (person-level, gitignored;
 #           build_dac_nppes_address_flow_pairs.R)
 # Output: docs/figures/dac_vs_nppes_address_flows_national_2026.png
 #         docs/figures/dac_vs_nppes_address_flows_colorado_2026.png
 #         artifacts/dac_vs_nppes_address_flows.csv (aggregated, tracked --
-#           city-level flow counts only, no individual coordinates)
+#           city-level flow counts; at min_flow_n=1 a row can correspond to
+#           one midwife's own two addresses, same public-data basis above)
 # =============================================================================
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(tidyr)
@@ -48,12 +55,13 @@ options(tigris_use_cache = TRUE)
 #'   comparison_lat. source must be "DAC" or "Open Payments".
 #' @param study_year Calendar year to display.
 #' @param min_flow_n Minimum midwives sharing a city-to-city flow before it's
-#'   drawn -- also a disclosure control, not just a legibility threshold.
+#'   drawn. Default here is 1 (every flow) -- NPPES/DAC are public CMS data,
+#'   see the file header.
 #' @param colorado_only Restrict the basemap and flows to Colorado + its
 #'   immediate neighbors.
 #' @param save_dir Directory for the exported PNG.
 #' @return list(plot, flows, summary, saved_path)
-plot_midwife_address_flows <- function(address_pairs, study_year = 2026L, min_flow_n = 5L,
+plot_midwife_address_flows <- function(address_pairs, study_year = 2026L, min_flow_n = 1L,
                                         colorado_only = FALSE, save_dir = "docs/figures") {
   validate_address_pairs_columns(address_pairs)
   if (min_flow_n < 1) stop("min_flow_n must be at least one")
@@ -92,6 +100,14 @@ plot_midwife_address_flows <- function(address_pairs, study_year = 2026L, min_fl
   if (colorado_only) mismatches <- mismatches %>% filter(nppes_state == "CO" | comparison_state == "CO")
   if (nrow(mismatches) == 0) stop("No geographic mismatches to display")
   cli_alert_info("Different-city/state records: {nrow(mismatches)}")
+
+  # Median +/- SD straight-line distance for exactly the pairs THIS map is
+  # showing (CONUS, and CO-only when colorado_only) -- not the national
+  # figure reused on the Colorado view. 1 km = 0.621371 mi, same conversion
+  # the distance-distribution figure below uses.
+  mismatches$dist_mi <- mismatches$dist_km * 0.621371
+  dist_median_mi <- median(mismatches$dist_mi)
+  dist_sd_mi <- sd(mismatches$dist_mi)
 
   flows <- aggregate_flows(mismatches, min_flow_n)
   flow_pairs <- flows$all
@@ -151,10 +167,12 @@ plot_midwife_address_flows <- function(address_pairs, study_year = 2026L, min_fl
                                breaks = function(lims) sort(unique(round(scales::extended_breaks(n = 5)(lims))))) +
     coord_sf(datum = NA) +
     labs(title = "Where NPPES and DAC disagree on practice location",
-        subtitle = paste0("NPPES practice address vs. DAC (PECOS-derived), ", study_year, " -- both sources year-matched"),
+        subtitle = paste0("NPPES practice address vs. DAC (PECOS-derived), ", study_year, " -- both sources year-matched\n",
+                          "Straight-line distance: median ", round(dist_median_mi, 1), " mi ± ",
+                          round(dist_sd_mi, 1), " mi (SD), n=", nrow(mismatches), " mismatches"),
         caption = paste0(
           "Each curve connects a reported NPPES city to DAC's city for the same NPI, same year -- the arrow points FROM NPPES TO DAC.\n",
-          "Only flows involving at least ", min_flow_n, " midwives are drawn (also a disclosure control).\n",
+          if (min_flow_n > 1) paste0("Only flows involving at least ", min_flow_n, " midwives are drawn.\n") else "",
           "Same-city/exact-address disagreements are excluded here; see docs/TECHNICAL_APPENDIX_DAC_OPENPAYMENTS_ADDRESS_AGREEMENT.md.")) +
     theme_void(base_size = 11) +
     theme(plot.title = element_text(face = "bold", size = 17),
@@ -184,16 +202,17 @@ if (sys.nframe() == 0) {
   stopifnot(file.exists(IN))
   address_pairs <- read_csv(IN, show_col_types = FALSE)
 
-  national <- plot_midwife_address_flows(address_pairs, study_year = 2026L, min_flow_n = 2L, colorado_only = FALSE)
+  national <- plot_midwife_address_flows(address_pairs, study_year = 2026L, min_flow_n = 1L, colorado_only = FALSE)
   print(as.data.frame(national$summary))
-  colorado <- plot_midwife_address_flows(address_pairs, study_year = 2026L, min_flow_n = 2L, colorado_only = TRUE)
+  colorado <- plot_midwife_address_flows(address_pairs, study_year = 2026L, min_flow_n = 1L, colorado_only = TRUE)
   print(as.data.frame(colorado$summary))
 
-  # Track only the aggregated, disclosure-controlled flow table -- no
-  # individual coordinates, min_flow_n already applied in national$flows'
-  # upstream filter is NOT applied here, so re-derive at the same threshold
-  # used for the national map before writing.
-  tracked <- national$flows %>% dplyr::filter(n_midwives >= 2L)
+  # Track the aggregated flow table -- city-level, not individual
+  # coordinates (median of whichever NPIs share that city-pair; at n=1
+  # that's just the one NPI's own point). min_flow_n is applied in
+  # national$flows' upstream filter but NOT re-applied here automatically,
+  # so re-derive at the same threshold used for the national map.
+  tracked <- national$flows %>% dplyr::filter(n_midwives >= 1L)
   write_with_provenance(tracked, "artifacts/dac_vs_nppes_address_flows.csv",
                         inputs = "artifacts/dac_vs_nppes_address_pairs.csv")
 
@@ -230,8 +249,8 @@ if (sys.nframe() == 0) {
         caption = paste0(
           "Median ", round(dist_summary$median_mi, 1), " mi; 90th percentile ",
           round(dist_summary$p90_mi, 1), " mi; max ", round(dist_summary$max_mi, 0), " mi.\n",
-          "Every disparate pair is included here, not only the ", nrow(tracked),
-          " flows shared by 2+ midwives drawn on the map.")) +
+          "Every disparate pair is included here, individually -- the map instead collapses them into ",
+          nrow(tracked), " distinct city-to-city flows.")) +
     theme_minimal(base_size = 12)
   ggsave("docs/figures/dac_vs_nppes_address_distance_distribution.png", dist_plot,
         width = 9, height = 6, dpi = 200, bg = "white")
