@@ -5,8 +5,12 @@
 # match_amcb_to_npi.R deleted strategy 3 (the stringdist()-based fuzzy-surname
 # join that used to produce evidence class 4) and, because the private sibling
 # repo it used to live-source five small utility functions from had deleted
-# its own copy, vendored norm_name(), first_initial(), safe_pct() and
-# rank_one_to_one() directly into the script instead.
+# its own copy, vendored norm_name(), safe_pct() and rank_one_to_one()
+# directly into the script instead. (first_initial() and compute_match_score()
+# were ALSO sourced from that repo before, but both were genuinely unused here
+# -- vendoring a dead first_initial() duplicated the real one already defined
+# in amcb_license_bridge.R and failed tests/ci_hygiene.R's H4 check, so it was
+# dropped rather than vendored; see T3 below.)
 #
 # These tests cannot source() match_amcb_to_npi.R directly -- it is a flat
 # script with no main-guard, and sourcing it reads a 455MB NPPES panel and
@@ -68,14 +72,23 @@ cat("\n-- T2: norm_name() -- delegates to mysterynpi, does not reimplement it --
       "T2 norm_name()'s output is byte-identical to mysterynpi::name_key() on the same input -- a real delegate, not a drifted copy")
 }
 
-cat("\n-- T3: first_initial() -- absence stays absence, not an empty string --\n")
+cat("\n-- T3: first_initial() is deliberately NOT vendored -- no duplicate --\n")
 {
-  first_initial <- get("first_initial", envir = vendored_env)
-  got <- first_initial(c("Jennifer", "", NA_character_, "  "))
-  chk(identical(got[1], "J"), sprintf("T3a a normal name returns its first letter [%s]", got[1]))
-  chk(is.na(got[2]) && is.na(got[3]) && is.na(got[4]),
-      sprintf("T3b blank, NA and whitespace-only all return NA, not \"\" -- a caller testing nzchar() would be fooled by \"\" into thinking a candidate value was present [%s]",
-              paste(got[2:4], collapse = "|")))
+  # amcb_license_bridge.R already defines a top-level first_initial().
+  # match_amcb_to_npi.R's own logic calls the differently-named
+  # amcb_first_initial() throughout and never calls a bare first_initial()
+  # -- vendoring one here would be dead code AND a second top-level
+  # definition of a name the hygiene suite (tests/ci_hygiene.R's H4 check)
+  # requires be unique. Confirms the fix tests/ci_hygiene.R caught stays
+  # fixed: no "first_initial" binding leaks into this script's own
+  # environment, and it is not on the required-functions list either.
+  chk(!exists("first_initial", envir = vendored_env, inherits = FALSE),
+      "T3a first_initial is genuinely absent from the vendored prefix's own environment")
+  guard_text_t3 <- paste(deparse(parse(SRC_PATH)[[
+    which(sapply(parse(SRC_PATH), function(e) grepl("^for \\(fn in c\\(", deparse(e)[1])))
+  ]]), collapse = " ")
+  chk(!grepl("first_initial", guard_text_t3),
+      "T3b first_initial is not in the required-functions guard -- nobody can silently require it again without also re-adding a definition")
 }
 
 cat("\n-- T4: rank_one_to_one() -- a missing id column fails loudly --\n")

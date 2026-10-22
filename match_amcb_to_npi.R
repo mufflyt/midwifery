@@ -7,7 +7,7 @@
 # matching-pipeline logic vendored from the isochrones repo (see "VENDORED,
 # NOT SOURCED LIVE" below) rather than reimplementing it:
 #
-#   norm_name(), first_initial()   name normalisation (mysterynpi-backed)
+#   norm_name()                     name normalisation (mysterynpi-backed)
 #   rank_one_to_one()              greedy bijection with deterministic tiebreak
 #   safe_pct()                     reporting helper
 #
@@ -15,6 +15,11 @@
 # said so (it collapses categorical identity evidence into one number, and
 # this cohort has no location/DOB to make a finer scale mean anything --
 # ordered evidence classes instead), so it is no longer required to exist.
+# first_initial() is likewise dropped (2026-10-22): nothing here ever called
+# it bare (AMCB's own first-initial logic is the differently-named
+# amcb_first_initial(), used throughout the strategies below), and a second
+# top-level first_initial() duplicated the one already defined in
+# amcb_license_bridge.R -- see tests/ci_hygiene.R's H4 check.
 #
 # ENTHealth is the right precedent: a scrape with names but no NPI, matched
 # against an NPPES pool. AMCB is the harder case of the same shape, because it
@@ -47,7 +52,8 @@ root_dir <- {
 # This used to setwd() into a private sibling repo (~/isochrones) and
 # source() scripts/match_enthealth_to_npi.R live, picking up norm_name(),
 # first_initial(), compute_match_score(), rank_one_to_one() and safe_pct()
-# by side effect. That file was deleted upstream in an unrelated cleanup
+# by side effect (first_initial() and compute_match_score() are no longer
+# reused at all -- see above). That file was deleted upstream in an unrelated cleanup
 # (isochrones commit 484d7405d, "remove the ENT side lane"), which is exactly
 # the risk a live cross-repo source() always carries: this same mechanism had
 # ALREADY caused three separate documented bugs here before it broke outright
@@ -64,11 +70,9 @@ root_dir <- {
 # ac42561b (see ci.yml / nightly.yml), which predates that function, so the
 # current isochrones version cannot run here; this older, fully
 # self-contained version can, and is what has actually been producing this
-# pipeline's output. norm_name()/first_initial() now call mysterynpi
-# directly rather than going through isochrones' own thin wrappers around
-# the same package.
-norm_name     <- function(x) mysterynpi::name_key(x)
-first_initial <- function(x) mysterynpi::first_initial(x)
+# pipeline's output. norm_name() now calls mysterynpi directly rather than
+# going through isochrones' own thin wrapper around the same package.
+norm_name <- function(x) mysterynpi::name_key(x)
 safe_pct <- function(n, d) {
   if (length(d) != 1L || is.na(d) || d == 0) return(0)
   if (length(n) != 1L) return(0)
@@ -204,19 +208,19 @@ rank_one_to_one <- function(candidates, id_col = "abog_id") {
   stopifnot(!any(duplicated(out[[id_col]])), !any(duplicated(out$npi)))
   out
 }
-for (fn in c("norm_name", "first_initial", "rank_one_to_one", "safe_pct")) {
+for (fn in c("norm_name", "rank_one_to_one", "safe_pct")) {
   if (!exists(fn)) stop(sprintf("%s() not available", fn), call. = FALSE)
 }
 cat("reusing (vendored):", paste(c("rank_one_to_one", "safe_pct"), collapse = ", "), "\n")
 
 # NAME NORMALISATION IS NOT TAKEN FROM THE ENT SCRIPT (2026-08-10).
 #
-# norm_name() and first_initial() are still defined above -- rank_one_to_one()
-# and the ENT script's own internals rely on them -- but this pipeline must NOT
-# use them for AMCB. norm_name() is toupper(trimws(...)) and nothing more, so
-# it PRESERVES accents rather than transliterating them:
+# norm_name() is still defined above -- rank_one_to_one() and the ENT
+# script's own internals rely on it -- but this pipeline must NOT use it for
+# AMCB. The OLD norm_name() was toupper(trimws(...)) and nothing more, so
+# it PRESERVED accents rather than transliterating them:
 #
-#   norm_name("Álvarez") -> "ÁLVAREZ"   first_initial(...) -> "Á"
+#   norm_name("Álvarez") -> "ÁLVAREZ"
 #
 # Every strategy below joins on exact first name or exact first initial, so an
 # accented roster name could not reach its unaccented NPPES spelling by any
