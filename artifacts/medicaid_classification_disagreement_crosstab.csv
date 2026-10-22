@@ -1,0 +1,10 @@
+classification_year_overlap,classification_point_in_time,n
+Concordant,Concordant,19202
+Concordant,Not observed,923
+Discordant,Discordant,6742
+Discordant,Not observed,599
+Multistate,Concordant,510
+Multistate,Discordant,239
+Multistate,Multistate,6259
+Multistate,Not observed,42
+Not observed,Not observed,31776

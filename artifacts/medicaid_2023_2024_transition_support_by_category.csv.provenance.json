@@ -1,0 +1,49 @@
+{
+  "artifact": "medicaid_2023_2024_transition_support_by_category.csv",
+  "written_utc": "2026-10-22 21:15:36 UTC",
+  "inputs": [
+    {
+      "path": "midwife_panel.csv",
+      "sha256": "40c45ce1161f2ebe238aa3770988724ae7b1099df045ea981cfd6ccd41339386"
+    },
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716"
+    },
+    {
+      "path": "/Volumes/MufflySamsung/DuckDB/medicaid_provider_enrollment_segments.duckdb",
+      "sha256": "900db6fbe72e3b5cb55447079d3bbac39550dc93853353a8b9357ec160a2a49b"
+    }
+  ],
+  "code_sha256": "e6e6040258214253d5c148b5ee4191d7a8a4f0a9e333e67d3cdb3fdbe1b2e70d",
+  "code": [
+    {
+      "path": "analyze_medicaid_2023_2024_transition_support.R",
+      "sha256": "ca3a91a557b1d702ce79d9f686ac6a1101f48e734c69df702f32f1843ed8d729"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/cohort_definitions.R",
+      "sha256": "15b1a0d8b5f1973e29a5258fc1e7d97df437b09208f367f38c78984a8dfd7dc5"
+    },
+    {
+      "path": "R/lib/medicaid_enrollment_intervals.R",
+      "sha256": "64965095c36253158d390a197c6e9844a27230e149f8fc9045f5ce168699f6d6"
+    },
+    {
+      "path": "R/lib/medicaid_state_concordance.R",
+      "sha256": "bee349ff42181791d0583ad491957b2280d888876f05e9f0afc0555904e4bedb"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}
