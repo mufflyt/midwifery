@@ -3,7 +3,7 @@
 **Repository**: `midwifery`
 **Primary script**: [`diagnose_migration_year_over_year.R`](../diagnose_migration_year_over_year.R)
 **Related**: [`docs/RESULTS_geographic_persistence.md`](RESULTS_geographic_persistence.md) (pooled annual/career persistence rates), [`docs/TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md`](TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md) (the format-change validation this appendix extends)
-**Investigation date**: 2026-10-19 to 2026-10-20
+**Investigation date**: 2026-10-19 to 2026-10-22
 **Status**: the measurement is settled; the mechanism behind two spikes is not.
 
 ---
@@ -70,6 +70,33 @@ year centered on the December 2024 transition (0.02%, below the series
 median). **This hypothesis is rejected.** The transitions themselves are
 also geographically ordinary — CA↔WA, NJ↔PA, GA↔FL, DC/VA↔MD — not malformed
 codes or null-to-value noise.
+
+**Stronger version of the same hypothesis: even without reverting, a
+corrupted address might not *persist* — real migration should hold, noise
+shouldn't.** The blip test only catches a round trip (A,B,A); it would miss
+a value that changes once and never reverts but also never stabilizes. The
+repo owner asked for a stricter bar (2026-10-22): a transition only counts
+as a *confirmed* move if the state was unchanged for the year immediately
+before it and unchanged for the year immediately after (A,A,B,B — four
+consecutive snapshots required, so 2007→2008 and 2025→2026 can't be
+confirmed either way and are reported as such rather than as 0). Result,
+same denominator for raw and confirmed within each row so the comparison
+isn't contaminated by a population shift:
+
+| | raw | confirmed | survives |
+|---|---:|---:|---:|
+| 2017→2018 and 2023→2024 | 3.17% | 2.92% | 92% |
+| every other transition | 1.83% | 1.69% | 92% |
+
+**Identical survival rate.** If the spike were disproportionately noise —
+values that change once and don't hold — the format-change years should
+lose a *larger* share of their raw rate under confirmation than ordinary
+years do. They don't: both groups retain exactly 92% of their raw rate.
+**This is further evidence against a parsing-artifact mechanism**, on top
+of (not a replacement for) the round-trip test above — the elevated
+2018/2024 rate is exactly as durable as normal-year migration, not a
+population of changes that happen not to immediately revert but also don't
+stick.
 
 **Hypothesis: the reshaped-format parser itself reads the address fields
 differently from the classic parser.** `TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md`
