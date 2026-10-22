@@ -41,11 +41,16 @@ stopifnot(all(d$comparison_type == "vs_nppes_same_year"))
 d$level <- factor(d$level, levels = c("state", "city", "zip5", "street"),
                    labels = c("State", "City", "ZIP5", "Street"))
 
-# Shorten labels: drop the repeated "vs NPPES" text.
-d$series <- str_remove(d$source_pair, " vs NPPES$")
-d$series <- str_replace(d$series, "^Open Payments ", "")
-d$series <- factor(d$series, levels = c("DAC", "(2022)", "(2023)", "(2024)"))
-pal <- c("DAC" = "#c0392b", "(2022)" = "#aed6f1", "(2023)" = "#5dade2", "(2024)" = "#1b4f72")
+# Legend label = the non-NPPES side's name and year, e.g. "DAC (2026)" or
+# "Open Payments (2022)" -- the NPPES side's year is dropped here only
+# because it's identical (source_pair itself, e.g. "DAC (2026) vs NPPES
+# (2026)", always spells out both, and is used as-is for the heatmap's
+# row labels below).
+d$series <- str_remove(d$source_pair, " vs NPPES \\([0-9]{4}\\)$")
+d$series <- factor(d$series, levels = c("DAC (2026)", "Open Payments (2022)",
+                                         "Open Payments (2023)", "Open Payments (2024)"))
+pal <- c("DAC (2026)" = "#c0392b", "Open Payments (2022)" = "#aed6f1",
+         "Open Payments (2023)" = "#5dade2", "Open Payments (2024)" = "#1b4f72")
 
 cli_alert_info("A. Heatmap: every source x every geographic level")
 heat <- ggplot(d, aes(x = level, y = source_pair, fill = agree_pct)) +

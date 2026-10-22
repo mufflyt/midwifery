@@ -123,10 +123,12 @@ compare_two <- function(a, b, label, year_a, year_b, comparison_type, levels = c
 
 out <- list()
 
-# vs NPPES, same year each source is dated to
-out[["dac_vs_nppes"]] <- compare_two(dac, nppes("2026"), "DAC vs NPPES", "2026", "2026", "vs_nppes_same_year")
+# vs NPPES, same year each source is dated to. source_pair spells out BOTH
+# sides' years (not just the non-NPPES side's) so it's unambiguous on sight
+# that NPPES is pulled from the matching year, not "current" NPPES.
+out[["dac_vs_nppes"]] <- compare_two(dac, nppes("2026"), "DAC (2026) vs NPPES (2026)", "2026", "2026", "vs_nppes_same_year")
 for (yr in op_years)
-  out[[paste0("op_vs_nppes_", yr)]] <- compare_two(op[[yr]], nppes(yr), sprintf("Open Payments (%s) vs NPPES", yr),
+  out[[paste0("op_vs_nppes_", yr)]] <- compare_two(op[[yr]], nppes(yr), sprintf("Open Payments (%s) vs NPPES (%s)", yr, yr),
                                                    yr, yr, "vs_nppes_same_year")
 
 out <- bind_rows(out)
