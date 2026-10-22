@@ -66,7 +66,18 @@ plot_midwife_address_flows <- function(address_pairs, study_year = 2026L, min_fl
   cli_alert_info("Rows after year/source filtering: {nrow(rows)}")
   check_no_duplicate_rows(rows)
 
+  # CONUS only: AK, HI, and PR are excluded from the basemap display anyway
+  # (see tigris::states() filter below) -- excluding them from the data too,
+  # not just the drawing, keeps a flow/distance from counting a record the
+  # map could never show. A midwife with either address in one of these
+  # drove the single largest outlier in the distance distribution (Anchorage
+  # AK, 4,343 mi) -- genuine, not a bug, but out of scope for a CONUS map.
+  NON_CONUS <- c("AK", "HI", "PR")
+  pre_conus_n <- nrow(valid_coordinate_rows(rows))
   comparable <- valid_coordinate_rows(rows) %>%
+    filter(!nppes_state %in% NON_CONUS, !comparison_state %in% NON_CONUS)
+  cli_alert_info("Excluded for AK/HI/PR (CONUS only): {pre_conus_n - nrow(comparable)}")
+  comparable <- comparable %>%
     mutate(mismatch_type = classify_mismatch(nppes_lat, nppes_lon, nppes_city, nppes_state,
                                              comparison_lat, comparison_lon, comparison_city, comparison_state),
           # Same haversine_km() classify_mismatch() uses internally, exposed

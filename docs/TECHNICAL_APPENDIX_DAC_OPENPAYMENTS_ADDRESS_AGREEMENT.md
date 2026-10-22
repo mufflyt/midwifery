@@ -299,7 +299,14 @@ Open-Payments-vs-NPPES panel across all three pulled years would need
 roughly 25,000-30,000 more addresses geocoded the same way; scoped out
 until this smaller panel is validated. Match rate: 4,690/5,680 (82.6%) DAC
 addresses, 5,044/5,576 (90.5%) NPPES-2026 addresses; 4,316 NPIs geocoded on
-both sides.
+both sides. **CONUS only**: Alaska, Hawaii, and Puerto Rico are excluded
+from both the map and the distance analysis below, not only from the
+basemap display -- 52 of the 4,316 geocoded pairs involved one of these
+and are dropped before any mismatch is classified, leaving 4,264 CONUS
+comparable pairs. (Excluding them removed one striking but off-scope
+outlier: a 4,343-mile Anchorage-AK-vs-Florida pair that traced to a likely
+DAC source-data error, not a geocoding bug -- see git history for the
+earlier, non-CONUS-filtered version of this analysis.)
 
 ![Where NPPES and DAC disagree on practice location](figures/dac_vs_nppes_address_flows_national_2026.png)
 
@@ -310,12 +317,12 @@ not add signal); only flows shared by **2 or more midwives** are shown --
 a legibility threshold and a disclosure control together, since a flow of
 n=1 would name one specific midwife's two addresses on a public map. (An
 n≥5 national draft shown earlier was too sparse to be useful -- only 12 of
-1,418 distinct city-pairs repeat that often -- so the threshold was lowered
+1,402 distinct city-pairs repeat that often -- so the threshold was lowered
 to match the Colorado view's n≥2; a flow of exactly 2 is a weaker privacy
 bar than n≥5, a real tradeoff made deliberately here, not a default.) Of
-4,316 geocoded pairs, 1,647 disagree at city-level-or-coarser; those collapse
-into 1,418 distinct city-to-city flows, of which 138 clear the n≥2 threshold
-nationally (367 midwives -- 134 different-city/same-state, 4 different-state)
+4,264 CONUS-comparable pairs, 1,631 disagree at city-level-or-coarser; those
+collapse into 1,402 distinct city-to-city flows, of which 138 clear the n≥2
+threshold nationally (367 midwives -- 134 different-city/same-state, 4 different-state)
 and 4 within Colorado (12 midwives, same n≥2 threshold).
 
 ![Colorado-focused view](figures/dac_vs_nppes_address_flows_colorado_2026.png)
@@ -357,7 +364,7 @@ by a river; Elmer NJ/Philadelphia PA, Brooklyn NY/Lakewood NJ, and New York
 NY/Jersey City NJ are all commuting-distance metro-area pairs) -- not the kind
 of long-distance relocation Spokane → Gig Harbor, WA (a same-state flow,
 visibly curved at the state's full width) represents. This map still
-cannot speak to the roughly 1,280 one-off, idiosyncratic disagreements
+cannot speak to the roughly 1,264 one-off, idiosyncratic disagreements
 shared by exactly one midwife -- those remain below even the n≥2 threshold
 and are exactly what min_flow_n exists
 to keep off a public map.
@@ -365,34 +372,32 @@ to keep off a public map.
 **How far apart, in miles, for every single disparate pair -- not just the
 ones shown on the map.** The flow map only draws recurring city-pairs
 (n≥2); it can't speak to how far apart a typical disagreement actually is.
-Straight-line (haversine) distance, computed for all 1,647 city-level-or-
-coarser mismatches, tracked in
+Straight-line (haversine) distance, computed for all 1,631 CONUS
+city-level-or-coarser mismatches, tracked in
 `artifacts/dac_vs_nppes_address_distance_summary.csv`:
 
 | n | min | p25 | median | p75 | p90 | max | mean |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| 1,647 | 0.7 mi | 10.6 mi | 24.1 mi | 69.7 mi | 521.1 mi | 4,342.7 mi | 177.3 mi |
+| 1,631 | 0.7 mi | 10.5 mi | 23.7 mi | 68.2 mi | 503.2 mi | 2,572.2 mi | 166.9 mi |
 
 ![How far apart are NPPES and DAC when they disagree?](figures/dac_vs_nppes_address_distance_distribution.png)
 
 The distribution is clearly bimodal, and the two modes line up with the two
 `mismatch_type` categories almost exactly: a cluster at 6-60 mi (teal,
 "different city, same state" -- consistent with the nearby-suburb mix-ups
-described above) and a separate cluster at 300-3,000 mi (orange,
+described above) and a separate cluster at 300-2,600 mi (orange,
 "different state" -- genuine cross-country disagreements, not a long tail
-off the first cluster). The mean (177 mi) is far above the median (24 mi)
+off the first cluster). The mean (167 mi) is far above the median (24 mi)
 because of that second cluster, not because of a handful of extreme
-outliers -- the 90th percentile alone is already 521 mi.
+outliers -- the 90th percentile alone is already 503 mi.
 
-One top outlier is flagged, not quietly left in: the single largest
-distance (4,343 mi, Anchorage AK → a DAC record giving city "COOKEVILLE"
-with state "FL") is likely a DAC *source-data* inconsistency, not a
-geocoding error on this project's end -- Cookeville is a real city, but in
-Tennessee, not Florida. Census's batch geocoder returned a "Match" for the
-invalid combination anyway, landing near Jacksonville. The next several
-largest distances (Hillsboro OR ↔ Honolulu HI; several California ↔ New
-York pairs) show no such internal inconsistency and are treated as
-plausible, real disagreements.
+With AK/HI/PR excluded (above), the top of the distribution is no longer an
+anomaly needing a flag: the single largest distance (2,572 mi) is San
+Francisco CA ↔ Bronxville NY, and the next several (Redwood City CA ↔
+Mount Kisco NY; New York ↔ San Francisco; several more California ↔ New
+York pairs) show the same pattern -- all plausible, real disagreements
+between two major-metro coasts, no internal source-data inconsistency like
+the excluded Anchorage/Cookeville pair had.
 
 ```sh
 # Requires the two inputs compare_dac_openpayments_to_nppes_address.R
