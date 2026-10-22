@@ -362,6 +362,38 @@ shared by exactly one midwife -- those remain below even the n≥2 threshold
 and are exactly what min_flow_n exists
 to keep off a public map.
 
+**How far apart, in kilometers, for every single disparate pair -- not just
+the ones shown on the map.** The flow map only draws recurring city-pairs
+(n≥2); it can't speak to how far apart a typical disagreement actually is.
+Straight-line (haversine) distance, computed for all 1,647 city-level-or-
+coarser mismatches, tracked in
+`artifacts/dac_vs_nppes_address_distance_summary.csv`:
+
+| n | min | p25 | median | p75 | p90 | max | mean |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 1,647 | 1.2 km | 17.0 km | 38.8 km | 112.2 km | 838.6 km | 6,988.9 km | 285.4 km |
+
+![How far apart are NPPES and DAC when they disagree?](figures/dac_vs_nppes_address_distance_distribution.png)
+
+The distribution is clearly bimodal, and the two modes line up with the two
+`mismatch_type` categories almost exactly: a cluster at 10-100 km (teal,
+"different city, same state" -- consistent with the nearby-suburb mix-ups
+described above) and a separate cluster at 500-5,000 km (orange,
+"different state" -- genuine cross-country disagreements, not a long tail
+off the first cluster). The mean (285 km) is far above the median (39 km)
+because of that second cluster, not because of a handful of extreme
+outliers -- the 90th percentile alone is already 839 km.
+
+One top outlier is flagged, not quietly left in: the single largest
+distance (6,989 km, Anchorage AK → a DAC record giving city "COOKEVILLE"
+with state "FL") is likely a DAC *source-data* inconsistency, not a
+geocoding error on this project's end -- Cookeville is a real city, but in
+Tennessee, not Florida. Census's batch geocoder returned a "Match" for the
+invalid combination anyway, landing near Jacksonville. The next several
+largest distances (Hillsboro OR ↔ Honolulu HI; several California ↔ New
+York pairs) show no such internal inconsistency and are treated as
+plausible, real disagreements.
+
 ```sh
 # Requires the two inputs compare_dac_openpayments_to_nppes_address.R
 # already needs (dac_midwives.csv, midwife_panel.csv) plus a network

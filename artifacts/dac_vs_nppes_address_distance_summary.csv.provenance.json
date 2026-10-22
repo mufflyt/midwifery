@@ -1,0 +1,33 @@
+{
+  "artifact": "dac_vs_nppes_address_distance_summary.csv",
+  "written_utc": "2026-10-22 20:10:05 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/dac_vs_nppes_address_pairs.csv",
+      "sha256": "e114608df4a7246d28ed7dd068af74a1bb3e106062e190fd1c188c850be2e7b3"
+    }
+  ],
+  "code_sha256": "839a0699a933051be21e86a3c8eb74a033a933eb3a5286aad3a20ae13197787b",
+  "code": [
+    {
+      "path": "make_dac_nppes_address_flow_map.R",
+      "sha256": "98508f985f1a329ae0384d61e1a1ff6d08907268d7c2ee4fa836aaba5f6f3612"
+    },
+    {
+      "path": "R/lib/address_flow_helpers.R",
+      "sha256": "c530efdc631196c8c03e08ca4c3a73b4b1f2591f2ca62a8f6c9f63463a949731"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/lib/work_site_topology.R",
+      "sha256": "45f1c85cfe7bfce47eddc2a7998758e3fdf3e30a1630ff0add270fdbc7bcb848"
+    }
+  ]
+}

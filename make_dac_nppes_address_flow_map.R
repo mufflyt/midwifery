@@ -68,7 +68,13 @@ plot_midwife_address_flows <- function(address_pairs, study_year = 2026L, min_fl
 
   comparable <- valid_coordinate_rows(rows) %>%
     mutate(mismatch_type = classify_mismatch(nppes_lat, nppes_lon, nppes_city, nppes_state,
-                                             comparison_lat, comparison_lon, comparison_city, comparison_state))
+                                             comparison_lat, comparison_lon, comparison_city, comparison_state),
+          # Same haversine_km() classify_mismatch() uses internally, exposed
+          # here as a column: the straight-line (great-circle) distance
+          # between NPPES's and DAC's reported address for every record,
+          # not just the ones that disagree at city level. "Straight line"
+          # because that's what haversine computes -- not driving distance.
+          dist_km = haversine_km(nppes_lat, nppes_lon, comparison_lat, comparison_lon))
   cli_alert_info("Geocoded comparable records: {nrow(comparable)}")
 
   mismatches <- comparable %>% filter(mismatch_type != "Same city")
@@ -159,7 +165,7 @@ plot_midwife_address_flows <- function(address_pairs, study_year = 2026L, min_fl
   ggsave(saved_path, p, width = 11, height = 8, dpi = 200, bg = "white")
   cli_alert_success("wrote {saved_path}")
 
-  list(plot = p, flows = flow_pairs, summary = summary_table, saved_path = saved_path)
+  list(plot = p, flows = flow_pairs, summary = summary_table, saved_path = saved_path, mismatches = mismatches)
 }
 
 if (sys.nframe() == 0) {
@@ -179,4 +185,39 @@ if (sys.nframe() == 0) {
   tracked <- national$flows %>% dplyr::filter(n_midwives >= 2L)
   write_with_provenance(tracked, "artifacts/dac_vs_nppes_address_flows.csv",
                         inputs = "artifacts/dac_vs_nppes_address_pairs.csv")
+
+  # Straight-line (haversine) distance between NPPES's and DAC's reported
+  # address for EVERY disparate (city-level-or-coarser mismatch) pair --
+  # national scope, not Colorado-restricted. Individual distances stay in
+  # memory/the gitignored mismatches table (person-level, same treatment as
+  # address_pairs.csv); only the distribution's quantiles are tracked.
+  d <- national$mismatches$dist_km
+  dist_summary <- tibble::tibble(
+    n = length(d), min_km = min(d), p25_km = quantile(d, 0.25, names = FALSE),
+    median_km = median(d), p75_km = quantile(d, 0.75, names = FALSE),
+    p90_km = quantile(d, 0.90, names = FALSE), max_km = max(d), mean_km = mean(d)) %>%
+    mutate(across(-n, ~ round(.x, 1)))
+  cli_alert_info("Straight-line distance, all {nrow(national$mismatches)} disparate pairs (national, km):")
+  print(as.data.frame(dist_summary))
+  write_with_provenance(dist_summary, "artifacts/dac_vs_nppes_address_distance_summary.csv",
+                        inputs = "artifacts/dac_vs_nppes_address_pairs.csv")
+
+  dist_plot <- ggplot(national$mismatches, aes(x = dist_km, fill = mismatch_type)) +
+    geom_histogram(bins = 40, alpha = 0.8, position = "identity") +
+    scale_x_log10(labels = scales::label_comma(), breaks = c(1, 10, 100, 1000, 5000)) +
+    scale_fill_manual(values = c("Different city, same state" = "#0D9488", "Different state" = "#E76F51"),
+                      name = "Type of mismatch") +
+    labs(title = "How far apart are NPPES and DAC when they disagree?",
+        subtitle = sprintf("Straight-line distance, all %s city-level-or-coarser mismatches (2026, DAC vs. NPPES)",
+                           format(nrow(national$mismatches), big.mark = ",")),
+        x = "Distance between NPPES and DAC addresses (km, log scale)", y = "Number of midwives",
+        caption = paste0(
+          "Median ", round(dist_summary$median_km, 1), " km; 90th percentile ",
+          round(dist_summary$p90_km, 1), " km; max ", round(dist_summary$max_km, 0), " km.\n",
+          "Every disparate pair is included here, not only the ", nrow(tracked),
+          " flows shared by 2+ midwives drawn on the map.")) +
+    theme_minimal(base_size = 12)
+  ggsave("docs/figures/dac_vs_nppes_address_distance_distribution.png", dist_plot,
+        width = 9, height = 6, dpi = 200, bg = "white")
+  cli_alert_success("wrote docs/figures/dac_vs_nppes_address_distance_distribution.png")
 }
