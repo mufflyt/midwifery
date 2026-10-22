@@ -22,21 +22,11 @@
 # Output : artifacts/dac_vs_nppes_address_pairs.csv (person-level, gitignored)
 # =============================================================================
 suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr); library(tidyr); library(cli)})
+source(file.path("R", "lib", "address_flow_helpers.R"))  # read_census_batch_result()
+source(file.path("R", "join_safety.R"))  # assert_unique_keys(dedupe = TRUE)
 
 GEOCODE_DIR <- "artifacts/flowmap_geocoding"
 OUT <- "artifacts/dac_vs_nppes_address_pairs.csv"
-
-# Census batch geocoder output has no header:
-# ID,input_address,match_status,match_type,matched_address,"lon,lat",tiger_line_id,side
-read_census_batch_result <- function(path) {
-  stopifnot(file.exists(path))
-  read_csv(path, col_names = c("id", "input_address", "match_status", "match_type",
-                               "matched_address", "coords", "tiger_line_id", "side"),
-           col_types = cols(.default = "c"), progress = FALSE) %>%
-    filter(match_status == "Match") %>%
-    separate(coords, into = c("lon", "lat"), sep = ",", convert = TRUE) %>%
-    transmute(npi = id, lon, lat)
-}
 
 dac_geo <- read_census_batch_result(file.path(GEOCODE_DIR, "dac_geocoded_raw.csv"))
 nppes_geo <- read_census_batch_result(file.path(GEOCODE_DIR, "nppes2026_geocoded_raw.csv"))
@@ -50,8 +40,8 @@ dac <- read_csv("dac_midwives.csv", col_types = cols(.default = "c"), progress =
   rename(comparison_lon = lon, comparison_lat = lat)
 
 nppes <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
-  filter(snapshot_year == "2026", npi %in% dac$npi) %>%
-  distinct(npi, .keep_all = TRUE) %>%
+  filter(snapshot_year == "2026", npi %in% dac$npi)
+nppes <- assert_unique_keys(nppes, "npi", label = "midwife_panel.csv (2026)", dedupe = TRUE) %>%
   transmute(npi, nppes_city = str_to_upper(str_squish(practice_city)),
             nppes_state = str_to_upper(str_squish(practice_state))) %>%
   inner_join(nppes_geo, by = "npi") %>%

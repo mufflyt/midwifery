@@ -35,7 +35,7 @@ suppressPackageStartupMessages({
   library(ggplot2); library(sf); library(tigris); library(cli)
 })
 source(file.path("R", "lib", "artifact_provenance.R"))
-source(file.path("R", "lib", "work_site_topology.R"))  # haversine_km()
+source(file.path("R", "lib", "address_flow_helpers.R"))
 
 options(tigris_use_cache = TRUE)
 
@@ -55,10 +55,7 @@ options(tigris_use_cache = TRUE)
 #' @return list(plot, flows, summary, saved_path)
 plot_midwife_address_flows <- function(address_pairs, study_year = 2026L, min_flow_n = 5L,
                                         colorado_only = FALSE, save_dir = "docs/figures") {
-  required_cols <- c("npi", "year", "source", "nppes_city", "nppes_state", "nppes_lon", "nppes_lat",
-                     "comparison_city", "comparison_state", "comparison_lon", "comparison_lat")
-  missing_cols <- setdiff(required_cols, names(address_pairs))
-  if (length(missing_cols) > 0) stop("Missing columns: ", paste(missing_cols, collapse = ", "))
+  validate_address_pairs_columns(address_pairs)
   if (min_flow_n < 1) stop("min_flow_n must be at least one")
 
   rows <- address_pairs %>%
@@ -67,57 +64,22 @@ plot_midwife_address_flows <- function(address_pairs, study_year = 2026L, min_fl
                  ~ str_to_upper(str_squish(as.character(.x))))) %>%
     filter(year == study_year, source %in% c("DAC", "Open Payments"))
   cli_alert_info("Rows after year/source filtering: {nrow(rows)}")
+  check_no_duplicate_rows(rows)
 
-  dupes <- rows %>% count(npi, year, source) %>% filter(n > 1)
-  if (nrow(dupes) > 0) stop("Duplicate NPI/year/source records -- resolve before mapping.")
-
-  # Distance (km, haversine_km() from R/lib/work_site_topology.R) -- used to
-  # catch city-name SPELLING variants (SAINT PAUL vs ST PAUL, GEORGETOWN vs
-  # GEORGE TOWN) that geocode to the identical building but fail a
-  # string-equality city test. Found by inspecting this map's own output:
-  # 5.2% of string-different-city pairs geocode within 0.5 km of each other
-  # -- including the single largest flow in an early draft of this map
-  # (LARGO -> UPPER MARLBORO, n=8, verified identical coordinates).
-  # Classifying by distance instead of city-string equality is only
-  # possible here because this script has actual coordinates; the main
-  # comparison pipeline (compare_dac_openpayments_to_nppes_address.R) is
-  # string-only by necessity -- it never geocodes -- so its city-level
-  # agreement numbers are NOT corrected by this and may undercount
-  # agreement by a similar margin. Not fixed there as part of this map.
-  SAME_PLACE_KM <- 1  # same tolerance R/lib/geocode_conflicts.R uses for "same rooftop, different precision"
-
-  comparable <- rows %>%
-    filter(!is.na(nppes_lon), !is.na(nppes_lat), !is.na(comparison_lon), !is.na(comparison_lat),
-          nzchar(nppes_city), nzchar(comparison_city), nzchar(nppes_state), nzchar(comparison_state),
-          between(nppes_lon, -180, 180), between(comparison_lon, -180, 180),
-          between(nppes_lat, -90, 90), between(comparison_lat, -90, 90)) %>%
-    mutate(
-      dist_km = haversine_km(nppes_lat, nppes_lon, comparison_lat, comparison_lon),
-      mismatch_type = case_when(
-        dist_km < SAME_PLACE_KM ~ "Same city",
-        nppes_state != comparison_state ~ "Different state",
-        nppes_city != comparison_city ~ "Different city, same state",
-        TRUE ~ "Same city"
-      ))
+  comparable <- valid_coordinate_rows(rows) %>%
+    mutate(mismatch_type = classify_mismatch(nppes_lat, nppes_lon, nppes_city, nppes_state,
+                                             comparison_lat, comparison_lon, comparison_city, comparison_state))
   cli_alert_info("Geocoded comparable records: {nrow(comparable)}")
-  cli_alert_info("Reclassified as same place despite differing city string (<{SAME_PLACE_KM}km apart): {sum(comparable$dist_km < SAME_PLACE_KM & comparable$nppes_city != comparable$comparison_city)}")
 
   mismatches <- comparable %>% filter(mismatch_type != "Same city")
   if (colorado_only) mismatches <- mismatches %>% filter(nppes_state == "CO" | comparison_state == "CO")
   if (nrow(mismatches) == 0) stop("No geographic mismatches to display")
   cli_alert_info("Different-city/state records: {nrow(mismatches)}")
 
-  # A city-pair is a flow, not an individual practitioner -- aggregating here
-  # is also what makes min_flow_n an effective disclosure control below.
-  flow_pairs <- mismatches %>%
-    group_by(source, nppes_state, nppes_city, comparison_state, comparison_city, mismatch_type) %>%
-    summarise(n_midwives = n_distinct(npi),
-             origin_lon = median(nppes_lon), origin_lat = median(nppes_lat),
-             destination_lon = median(comparison_lon), destination_lat = median(comparison_lat),
-             .groups = "drop")
+  flows <- aggregate_flows(mismatches, min_flow_n)
+  flow_pairs <- flows$all
+  mapped_flows <- flows$displayed
   cli_alert_info("Distinct city-to-city flows: {nrow(flow_pairs)}")
-
-  mapped_flows <- flow_pairs %>% filter(n_midwives >= min_flow_n)
   cli_alert_info("Flows surviving min_flow_n={min_flow_n}: {nrow(mapped_flows)}")
   if (nrow(mapped_flows) == 0) stop("No flows meet min_flow_n -- inspect the flow table first.")
 
