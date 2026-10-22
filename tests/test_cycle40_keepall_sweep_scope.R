@@ -130,14 +130,26 @@ cat("\n-- SEMANTIC --\n")
 # widened sweep (tests/test_cycle5_key_resolution.R's own BASELINE, 110L)
 # already tolerates up to 110, so this was never a silent regression, only
 # this file's own stricter exact-match copy of the number going stale.
+#
+# Recounted again 2026-10-22 on the fuzzy-surname-matching-removal branch:
+# true count is 106, not 105. The one new site is
+# match_amcb_to_npi.R's vendored rank_one_to_one() (added this branch to
+# replace a cross-repo source() of the same, pre-existing function; see
+# tests/test_fuzzy_surname_removal_saboteur.R) -- `best %>%
+# dplyr::distinct(!!id, npi, .keep_all = TRUE)`. Its order IS established by
+# a real arrange() (method_priority, score_total_adj, confidence_score, id),
+# just 18 lines earlier rather than within the sweep's 4-line lookback --
+# exactly the heuristic blind spot T40-6/T40-10 already document, not a new
+# order-dependent conflict. A false positive from vendoring pre-existing
+# code into a new file, not new debt.
 {
   root <- "."
   files <- c(
     list.files(file.path(root, "R"), pattern = "\\.R$", recursive = TRUE, full.names = TRUE),
     list.files(root, pattern = "\\.R$", recursive = FALSE, full.names = TRUE))
   n <- length(detect_offenders(files))
-  chk(n == 105L,
-      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 105)", n))
+  chk(n == 106L,
+      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 106)", n))
 }
 
 # T40-6. DOCUMENTED LIMITATION, not fixed this cycle: the detection regex
