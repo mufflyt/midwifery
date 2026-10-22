@@ -443,5 +443,123 @@ MUTATIONS <- list(
                 "clean-looking URL is admitted, and an eligible source with",
                 "'boardwalk' in its URL is refused."),
     killers = c("tests/test_truth_set_infrastructure.R")
+  ),
+
+  # ---- address flow map (R/lib/address_flow_helpers.R) ---------------------
+  list(
+    id = "flowhelper-classify-distance-check-removed",
+    file = "R/lib/address_flow_helpers.R",
+    find = paste0('    dist_km < same_place_km ~ "Same city",\n',
+                  '    nppes_state != comparison_state ~ "Different state",'),
+    repl = '    nppes_state != comparison_state ~ "Different state",',
+    why = paste("Reintroduces the exact bug this map's own first draft had:",
+                "without the distance override, a city-name SPELLING variant",
+                "(SAINT PAUL vs ST PAUL) that geocodes to the identical",
+                "building is classified as a real geographic mismatch."),
+    killers = c("tests/test_address_flow_helpers_saboteur.R")
+  ),
+  list(
+    id = "flowhelper-classify-operator-flipped",
+    file = "R/lib/address_flow_helpers.R",
+    find = '    dist_km < same_place_km ~ "Same city",',
+    repl = '    dist_km > same_place_km ~ "Same city",',
+    why = paste("Inverts the distance test. Points far apart now classify as",
+                "Same city, and points essentially on top of each other fall",
+                "through to the string-equality branches -- exactly",
+                "backwards."),
+    killers = c("tests/test_address_flow_helpers_saboteur.R")
+  ),
+  list(
+    id = "flowhelper-classify-priority-inverted",
+    file = "R/lib/address_flow_helpers.R",
+    find = paste0('    nppes_state != comparison_state ~ "Different state",\n',
+                  '    nppes_city != comparison_city ~ "Different city, same state",'),
+    repl = paste0('    nppes_city != comparison_city ~ "Different city, same state",\n',
+                  '    nppes_state != comparison_state ~ "Different state",'),
+    why = paste("Lets a city-string mismatch win before a state mismatch is",
+                "checked, so a pair in two different states (which also, as",
+                "nearly all cross-state pairs do, have different city names)",
+                "is mislabeled 'Different city, same state' -- the state",
+                "disagreement, the more serious one, disappears from the",
+                "map's legend entirely."),
+    killers = c("tests/test_address_flow_helpers_saboteur.R")
+  ),
+  list(
+    id = "flowhelper-aggregate-disclosure-filter-removed",
+    file = "R/lib/address_flow_helpers.R",
+    find = "  list(all = flow_pairs, displayed = dplyr::filter(flow_pairs, .data$n_midwives >= min_flow_n))",
+    repl = "  list(all = flow_pairs, displayed = flow_pairs)",
+    why = paste("Removes the min_flow_n disclosure control. Every city-to-city",
+                "flow gets drawn, including ones shared by a single midwife --",
+                "naming that one person's two addresses on a public map."),
+    killers = c("tests/test_address_flow_helpers_saboteur.R")
+  ),
+  list(
+    id = "flowhelper-aggregate-median-to-mean",
+    file = "R/lib/address_flow_helpers.R",
+    find = "                     origin_lon = stats::median(.data$nppes_lon), origin_lat = stats::median(.data$nppes_lat),",
+    repl = "                     origin_lon = base::mean(.data$nppes_lon), origin_lat = base::mean(.data$nppes_lat),",
+    why = paste("Swaps the robust center (median) for the mean. One wrongly",
+                "geocoded address inside an otherwise-tight cluster drags that",
+                "flow's displayed origin toward the bad point instead of being",
+                "outvoted by the rest of the cluster."),
+    killers = c("tests/test_address_flow_helpers_saboteur.R")
+  ),
+  list(
+    id = "flowhelper-duplicate-guard-removed",
+    file = "R/lib/address_flow_helpers.R",
+    find = '  if (nrow(dupes) > 0) stop("Duplicate NPI/year/source records -- resolve before mapping.")',
+    repl = '  if (FALSE) stop("Duplicate NPI/year/source records -- resolve before mapping.")',
+    why = paste("A midwife with two rows for the same NPI/year/source no",
+                "longer stops the pipeline. She silently either double-counts",
+                "across whichever flows her two rows disagree on, or loses",
+                "one row to whatever later code happens to collapse on."),
+    killers = c("tests/test_address_flow_helpers_saboteur.R")
+  ),
+  list(
+    id = "flowhelper-required-columns-no-op",
+    file = "R/lib/address_flow_helpers.R",
+    find = '  if (length(missing_cols) > 0) stop("Missing columns: ", paste(missing_cols, collapse = ", "))',
+    repl = '  if (FALSE) stop("Missing columns: ", paste(missing_cols, collapse = ", "))',
+    why = paste("An address_pairs table missing a required column (a renamed",
+                "field, a failed join) no longer fails loudly at the start --",
+                "it fails confusingly wherever the missing column is first",
+                "used, several calls downstream."),
+    killers = c("tests/test_address_flow_helpers_saboteur.R")
+  ),
+  list(
+    id = "flowhelper-coordinate-bounds-removed",
+    file = "R/lib/address_flow_helpers.R",
+    find = paste0('    dplyr::between(.data$nppes_lon, -180, 180), dplyr::between(.data$comparison_lon, -180, 180),\n',
+                  '    dplyr::between(.data$nppes_lat, -90, 90), dplyr::between(.data$comparison_lat, -90, 90))'),
+    repl = "    TRUE, TRUE, TRUE, TRUE)",
+    why = paste("A corrupted coordinate (a parsing artifact, a swapped",
+                "census-tract ID mistaken for a longitude) is no longer",
+                "filtered out before it reaches the map."),
+    killers = c("tests/test_address_flow_helpers_saboteur.R")
+  ),
+  list(
+    id = "flowhelper-census-match-filter-removed",
+    file = "R/lib/address_flow_helpers.R",
+    find = '  d <- dplyr::filter(d, .data$match_status == "Match")',
+    repl = "  d <- d",
+    why = paste("Keeps No_Match and Tie rows from the Census batch geocoder.",
+                "Those carry no usable coordinate, so a midwife from one of",
+                "them joins the flow map with a phantom or NA location",
+                "instead of being correctly excluded."),
+    killers = c("tests/test_address_flow_helpers_saboteur.R")
+  ),
+  list(
+    id = "flowhelper-census-lonlat-swapped",
+    file = "R/lib/address_flow_helpers.R",
+    find = '  d <- tidyr::separate(d, .data$coords, into = c("lon", "lat"), sep = ",", convert = TRUE)',
+    repl = '  d <- tidyr::separate(d, .data$coords, into = c("lat", "lon"), sep = ",", convert = TRUE)',
+    why = paste("The Census API returns coordinates as \"lon,lat\", in that",
+                "order. Swapping the destructuring order silently flips every",
+                "parsed coordinate's lon and lat -- the single most common",
+                "spatial bug there is, and the same defect class",
+                "coordinate-lon-lat-swap already guards against in a",
+                "different file."),
+    killers = c("tests/test_address_flow_helpers_saboteur.R")
   )
 )

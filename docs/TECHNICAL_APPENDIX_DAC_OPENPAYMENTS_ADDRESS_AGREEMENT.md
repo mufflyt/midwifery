@@ -1,7 +1,7 @@
 # Technical Appendix: DAC and Open Payments Against NPPES's Self-Reported Address
 
 **Repository**: `midwifery`
-**Primary scripts**: [`extract_dac_midwives.R`](../extract_dac_midwives.R), [`match_open_payments_general_payments.py`](../match_open_payments_general_payments.py), [`compare_dac_openpayments_to_nppes_address.R`](../compare_dac_openpayments_to_nppes_address.R), [`make_address_agreement_figure.R`](../make_address_agreement_figure.R), [`make_address_agreement_additional_figures.R`](../make_address_agreement_additional_figures.R)
+**Primary scripts**: [`extract_dac_midwives.R`](../extract_dac_midwives.R), [`match_open_payments_general_payments.py`](../match_open_payments_general_payments.py), [`compare_dac_openpayments_to_nppes_address.R`](../compare_dac_openpayments_to_nppes_address.R), [`make_address_agreement_figure.R`](../make_address_agreement_figure.R), [`make_address_agreement_additional_figures.R`](../make_address_agreement_additional_figures.R), [`build_dac_nppes_address_flow_pairs.R`](../build_dac_nppes_address_flow_pairs.R), [`make_dac_nppes_address_flow_map.R`](../make_dac_nppes_address_flow_map.R)
 **Related**: [`TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md`](TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md) (the question this was raised to help answer — can an NPPES-measured move be independently confirmed), [`OPEN_PAYMENTS_LINKAGE_COMPARISON.md`](OPEN_PAYMENTS_LINKAGE_COMPARISON.md) (two prior, disagreeing Open Payments employer-linkage builds — a different question from this one)
 **Investigation date**: 2026-10-20 to 2026-10-22
 **Status**: measurement complete. One comparison, every row of it year-matched: DAC or Open Payments against NPPES, same provider, same year. Two other comparisons were built and removed — see §4.
@@ -275,3 +275,135 @@ professional-board data, not NPPES *addresses* against a second
 administrative source the way this appendix does. That specific comparison
 appears to be a gap this appendix fills rather than a replication of
 established practice.
+
+## 9. Where specifically do NPPES and DAC disagree?
+
+§3's numbers say *how often* DAC and NPPES disagree. They say nothing about
+*where* -- a nationwide scatter of short local mix-ups reads very
+differently from a few hundred midwives whose two sources place them
+hundreds of kilometers apart. [`build_dac_nppes_address_flow_pairs.R`](../build_dac_nppes_address_flow_pairs.R)
+and [`make_dac_nppes_address_flow_map.R`](../make_dac_nppes_address_flow_map.R)
+answer that, for DAC vs. NPPES (2026) only.
+
+**Scope, deliberately narrow.** This needed real geocoding -- DAC and NPPES
+addresses were never coordinates anywhere in this project before now, and
+the shared geocoding cache this repo's other pipelines reuse
+(`~/isochrones/data/geocoding_cache.duckdb`) turned out to have essentially
+no coverage for this cohort's DAC/Open-Payments/historical-NPPES addresses
+(measured directly: 0.1-0.5% exact-key hit rate). Building this map meant
+submitting ~11,000 addresses (DAC's 5,680 plus the matching NPPES-2026
+addresses) to the Census Bureau's public batch geocoder
+(`benchmark=Public_AR_Current`, the same one `census_geocode_enhanced.R`
+uses) -- a real, one-time cost, not a reuse of existing work. A full
+Open-Payments-vs-NPPES panel across all three pulled years would need
+roughly 25,000-30,000 more addresses geocoded the same way; scoped out
+until this smaller panel is validated. Match rate: 4,690/5,680 (82.6%) DAC
+addresses, 5,044/5,576 (90.5%) NPPES-2026 addresses; 4,316 NPIs geocoded on
+both sides. **CONUS only**: Alaska, Hawaii, and Puerto Rico are excluded
+from both the map and the distance analysis below, not only from the
+basemap display -- 52 of the 4,316 geocoded pairs involved one of these
+and are dropped before any mismatch is classified, leaving 4,264 CONUS
+comparable pairs. (Excluding them removed one striking but off-scope
+outlier: a 4,343-mile Anchorage-AK-vs-Florida pair that traced to a likely
+DAC source-data error, not a geocoding bug -- see git history for the
+earlier, non-CONUS-filtered version of this analysis.)
+
+![Where NPPES and DAC disagree on practice location](figures/dac_vs_nppes_address_flows_national_2026.png)
+
+Each curve connects a midwife's NPPES city to her DAC city for the same NPI
+the same year. Only city-level-or-greater disagreements are drawn (exact
+street-address mismatches within one city would be dense, overlapping, and
+not add signal); only flows shared by **2 or more midwives** are shown --
+a legibility threshold and a disclosure control together, since a flow of
+n=1 would name one specific midwife's two addresses on a public map. (An
+n≥5 national draft shown earlier was too sparse to be useful -- only 12 of
+1,402 distinct city-pairs repeat that often -- so the threshold was lowered
+to match the Colorado view's n≥2; a flow of exactly 2 is a weaker privacy
+bar than n≥5, a real tradeoff made deliberately here, not a default.) Of
+4,264 CONUS-comparable pairs, 1,631 disagree at city-level-or-coarser; those
+collapse into 1,402 distinct city-to-city flows, of which 138 clear the n≥2
+threshold nationally (367 midwives -- 134 different-city/same-state, 4 different-state)
+and 4 within Colorado (12 midwives, same n≥2 threshold).
+
+![Colorado-focused view](figures/dac_vs_nppes_address_flows_colorado_2026.png)
+
+**A real methodology correction, found while building this.** The first
+draft of this map classified `mismatch_type` by city-*string* equality --
+the same approach §3's aggregate table uses, because that table is
+string-only (it never geocodes). That draft's single largest flow was
+LARGO → UPPER MARLBORO, MD (n=8) -- and its origin and destination
+coordinates were *identical*. Checking further: **5.2% of all
+string-different-city pairs geocode within 0.5 km of each other** --
+SAINT PAUL/ST PAUL, GEORGETOWN/GEORGE TOWN, ST AUGUSTINE/SAINT AUGUSTINE,
+ALTAMONTE SPRINGS/ALTAMONTE SPG -- the same kind of abbreviation gap
+`norm_street()` already closes for street types, just never applied to the
+city field. This map corrects for it (reclassifies any pair within 1 km --
+the same tolerance `R/lib/geocode_conflicts.R` uses for "same rooftop,
+different precision" -- as the same city regardless of spelling), dropping
+92 of 1,740 raw city-string mismatches.
+
+**This means §3's city-level agreement number (55.6%, DAC vs. NPPES) is
+very likely a modest undercount** of true agreement -- it's string-only and
+was never checked against coordinates before this map existed. Not
+corrected in §3 itself: fixing it there would mean geocoding the full
+DAC + Open Payments(×3 years) + NPPES(×4 years) address set §4 priced out
+at ~25,000-30,000 addresses, to re-derive every percentage in this
+document. Flagged here as an open, quantified caveat instead of a silent
+footnote: the true gap between DAC and NPPES on city-level agreement is
+probably smaller than 55.6% suggests, by something in the neighborhood of
+a few percentage points, not by a few tenths of one.
+
+**What the map does and doesn't show.** At n≥2 it is legible and covers
+every state with a recurring disagreement, not just a dozen. Most flows are
+still visually short -- recurring disagreements remain mostly nearby-suburb
+mix-ups (Gilbert/Chandler AZ; St. Louis Park/Bloomington MN, the largest
+single flow at 13 midwives; Providence/Warwick RI) rather than long-distance
+relocations, and all 4 of the different-*state* flows that clear n≥2 are
+short cross-border hops too (Clarkston WA/Lewiston ID are twin cities split
+by a river; Elmer NJ/Philadelphia PA, Brooklyn NY/Lakewood NJ, and New York
+NY/Jersey City NJ are all commuting-distance metro-area pairs) -- not the kind
+of long-distance relocation Spokane → Gig Harbor, WA (a same-state flow,
+visibly curved at the state's full width) represents. This map still
+cannot speak to the roughly 1,264 one-off, idiosyncratic disagreements
+shared by exactly one midwife -- those remain below even the n≥2 threshold
+and are exactly what min_flow_n exists
+to keep off a public map.
+
+**How far apart, in miles, for every single disparate pair -- not just the
+ones shown on the map.** The flow map only draws recurring city-pairs
+(n≥2); it can't speak to how far apart a typical disagreement actually is.
+Straight-line (haversine) distance, computed for all 1,631 CONUS
+city-level-or-coarser mismatches, tracked in
+`artifacts/dac_vs_nppes_address_distance_summary.csv`:
+
+| n | min | p25 | median | p75 | p90 | max | mean |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 1,631 | 0.7 mi | 10.5 mi | 23.7 mi | 68.2 mi | 503.2 mi | 2,572.2 mi | 166.9 mi |
+
+![How far apart are NPPES and DAC when they disagree?](figures/dac_vs_nppes_address_distance_distribution.png)
+
+The distribution is clearly bimodal, and the two modes line up with the two
+`mismatch_type` categories almost exactly: a cluster at 6-60 mi (teal,
+"different city, same state" -- consistent with the nearby-suburb mix-ups
+described above) and a separate cluster at 300-2,600 mi (orange,
+"different state" -- genuine cross-country disagreements, not a long tail
+off the first cluster). The mean (167 mi) is far above the median (24 mi)
+because of that second cluster, not because of a handful of extreme
+outliers -- the 90th percentile alone is already 503 mi.
+
+With AK/HI/PR excluded (above), the top of the distribution is no longer an
+anomaly needing a flag: the single largest distance (2,572 mi) is San
+Francisco CA ↔ Bronxville NY, and the next several (Redwood City CA ↔
+Mount Kisco NY; New York ↔ San Francisco; several more California ↔ New
+York pairs) show the same pattern -- all plausible, real disagreements
+between two major-metro coasts, no internal source-data inconsistency like
+the excluded Anchorage/Cookeville pair had.
+
+```sh
+# Requires the two inputs compare_dac_openpayments_to_nppes_address.R
+# already needs (dac_midwives.csv, midwife_panel.csv) plus a network
+# connection to the Census Bureau's batch geocoder -- several minutes per
+# ~5,600-address batch.
+Rscript build_dac_nppes_address_flow_pairs.R
+Rscript make_dac_nppes_address_flow_map.R
+```
