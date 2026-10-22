@@ -313,17 +313,20 @@ earlier, non-CONUS-filtered version of this analysis.)
 Each curve connects a midwife's NPPES city to her DAC city for the same NPI
 the same year. Only city-level-or-greater disagreements are drawn (exact
 street-address mismatches within one city would be dense, overlapping, and
-not add signal); only flows shared by **2 or more midwives** are shown --
-a legibility threshold and a disclosure control together, since a flow of
-n=1 would name one specific midwife's two addresses on a public map. (An
-n≥5 national draft shown earlier was too sparse to be useful -- only 12 of
-1,402 distinct city-pairs repeat that often -- so the threshold was lowered
-to match the Colorado view's n≥2; a flow of exactly 2 is a weaker privacy
-bar than n≥5, a real tradeoff made deliberately here, not a default.) Of
-4,264 CONUS-comparable pairs, 1,631 disagree at city-level-or-coarser; those
-collapse into 1,402 distinct city-to-city flows, of which 138 clear the n≥2
-threshold nationally (367 midwives -- 134 different-city/same-state, 4 different-state)
-and 4 within Colorado (12 midwives, same n≥2 threshold).
+not add signal). **Every flow is shown, down to n=1** (2026-10-22, at the
+repo owner's request) -- both sources are public CMS data, and this
+project's own standing policy treats NPI-level provider data as not
+person-level-sensitive, so a flow of n=1 names a public provider's two
+publicly-reported addresses rather than exposing anything private. Earlier
+drafts of this map used min_flow_n=2 or 5 as a legibility/disclosure
+threshold; `min_flow_n` is still a parameter (default 1 now) so a future
+caller can raise it again if the map needs to be legible at a glance rather
+than exhaustive. Each map's subtitle reports the straight-line distance
+(median ± SD, in miles) for exactly the mismatches it draws. Of 4,264
+CONUS-comparable pairs, 1,631 disagree at city-level-or-coarser (median
+23.7 mi ± 411.9 mi SD) and collapse into 1,402 distinct city-to-city flows,
+all 1,402 of them drawn nationally; the Colorado view shows all 61
+CO-involving mismatches (median 44.3 mi ± 523 mi SD) as 53 distinct flows.
 
 ![Colorado-focused view](figures/dac_vs_nppes_address_flows_colorado_2026.png)
 
@@ -353,28 +356,27 @@ footnote: the true gap between DAC and NPPES on city-level agreement is
 probably smaller than 55.6% suggests, by something in the neighborhood of
 a few percentage points, not by a few tenths of one.
 
-**What the map does and doesn't show.** At n≥2 it is legible and covers
-every state with a recurring disagreement, not just a dozen. Most flows are
-still visually short -- recurring disagreements remain mostly nearby-suburb
-mix-ups (Gilbert/Chandler AZ; St. Louis Park/Bloomington MN, the largest
-single flow at 13 midwives; Providence/Warwick RI) rather than long-distance
-relocations, and all 4 of the different-*state* flows that clear n≥2 are
-short cross-border hops too (Clarkston WA/Lewiston ID are twin cities split
-by a river; Elmer NJ/Philadelphia PA, Brooklyn NY/Lakewood NJ, and New York
-NY/Jersey City NJ are all commuting-distance metro-area pairs) -- not the kind
-of long-distance relocation Spokane → Gig Harbor, WA (a same-state flow,
-visibly curved at the state's full width) represents. This map still
-cannot speak to the roughly 1,264 one-off, idiosyncratic disagreements
-shared by exactly one midwife -- those remain below even the n≥2 threshold
-and are exactly what min_flow_n exists
-to keep off a public map.
+**What the map does and doesn't show.** At min_flow_n=1 every single
+city-level-or-coarser mismatch is drawn -- dense, but exhaustive rather
+than a curated sample. The thick, short, teal clusters are the recurring
+nearby-suburb mix-ups described above (Gilbert/Chandler AZ; St. Louis Park/
+Bloomington MN, the largest single flow at 13 midwives; Providence/Warwick
+RI); the fine mesh of long orange lines crossing the whole country is the
+roughly 1,264 one-off, idiosyncratic different-*state* disagreements that
+an n≥2 threshold used to keep off the map entirely -- individual pairs like
+San Francisco ↔ Bronxville NY (§9's largest CONUS distance, 2,572 mi) are
+now visibly present as their own thin n=1 flows, not just a row in the
+distance table below. Spokane → Gig Harbor, WA remains the clearest
+same-state long-distance outlier, visibly curved at the state's full width.
 
-**How far apart, in miles, for every single disparate pair -- not just the
-ones shown on the map.** The flow map only draws recurring city-pairs
-(n≥2); it can't speak to how far apart a typical disagreement actually is.
-Straight-line (haversine) distance, computed for all 1,631 CONUS
-city-level-or-coarser mismatches, tracked in
-`artifacts/dac_vs_nppes_address_distance_summary.csv`:
+**How far apart, in miles, for every single disparate pair.** Each map's
+own subtitle already reports median ± SD for exactly the mismatches it
+draws (23.7 mi ± 411.9 mi SD nationally; 44.3 mi ± 523 mi SD for Colorado)
+-- SD this large relative to the median is itself informative: it's what a
+genuinely bimodal distribution (see the histogram below) produces, not a
+useful "typical spread" the way it would be for a unimodal one. Full
+distribution, computed for all 1,631 CONUS city-level-or-coarser
+mismatches, tracked in `artifacts/dac_vs_nppes_address_distance_summary.csv`:
 
 | n | min | p25 | median | p75 | p90 | max | mean |
 |---|---:|---:|---:|---:|---:|---:|---:|
