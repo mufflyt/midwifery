@@ -1,2 +1,2 @@
-n,min_km,p25_km,median_km,p75_km,p90_km,max_km,mean_km
-1647,1.2,17,38.8,112.2,838.6,6988.9,285.4
+n,min_mi,p25_mi,median_mi,p75_mi,p90_mi,max_mi,mean_mi
+1647,0.7,10.6,24.1,69.7,521.1,4342.7,177.3

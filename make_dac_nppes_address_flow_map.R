@@ -191,29 +191,34 @@ if (sys.nframe() == 0) {
   # national scope, not Colorado-restricted. Individual distances stay in
   # memory/the gitignored mismatches table (person-level, same treatment as
   # address_pairs.csv); only the distribution's quantiles are tracked.
-  d <- national$mismatches$dist_km
+  # Reported in miles (1 km = 0.621371 mi) -- haversine_km() itself stays in
+  # km, the unit R/lib/geocode_conflicts.R's own tolerances use; this is a
+  # display-only conversion at the point this script reports the numbers.
+  KM_TO_MI <- 0.621371
+  national$mismatches$dist_mi <- national$mismatches$dist_km * KM_TO_MI
+  d <- national$mismatches$dist_mi
   dist_summary <- tibble::tibble(
-    n = length(d), min_km = min(d), p25_km = quantile(d, 0.25, names = FALSE),
-    median_km = median(d), p75_km = quantile(d, 0.75, names = FALSE),
-    p90_km = quantile(d, 0.90, names = FALSE), max_km = max(d), mean_km = mean(d)) %>%
+    n = length(d), min_mi = min(d), p25_mi = quantile(d, 0.25, names = FALSE),
+    median_mi = median(d), p75_mi = quantile(d, 0.75, names = FALSE),
+    p90_mi = quantile(d, 0.90, names = FALSE), max_mi = max(d), mean_mi = mean(d)) %>%
     mutate(across(-n, ~ round(.x, 1)))
-  cli_alert_info("Straight-line distance, all {nrow(national$mismatches)} disparate pairs (national, km):")
+  cli_alert_info("Straight-line distance, all {nrow(national$mismatches)} disparate pairs (national, miles):")
   print(as.data.frame(dist_summary))
   write_with_provenance(dist_summary, "artifacts/dac_vs_nppes_address_distance_summary.csv",
                         inputs = "artifacts/dac_vs_nppes_address_pairs.csv")
 
-  dist_plot <- ggplot(national$mismatches, aes(x = dist_km, fill = mismatch_type)) +
+  dist_plot <- ggplot(national$mismatches, aes(x = dist_mi, fill = mismatch_type)) +
     geom_histogram(bins = 40, alpha = 0.8, position = "identity") +
-    scale_x_log10(labels = scales::label_comma(), breaks = c(1, 10, 100, 1000, 5000)) +
+    scale_x_log10(labels = scales::label_comma(), breaks = c(1, 10, 100, 1000, 3000)) +
     scale_fill_manual(values = c("Different city, same state" = "#0D9488", "Different state" = "#E76F51"),
                       name = "Type of mismatch") +
     labs(title = "How far apart are NPPES and DAC when they disagree?",
         subtitle = sprintf("Straight-line distance, all %s city-level-or-coarser mismatches (2026, DAC vs. NPPES)",
                            format(nrow(national$mismatches), big.mark = ",")),
-        x = "Distance between NPPES and DAC addresses (km, log scale)", y = "Number of midwives",
+        x = "Distance between NPPES and DAC addresses (miles, log scale)", y = "Number of midwives",
         caption = paste0(
-          "Median ", round(dist_summary$median_km, 1), " km; 90th percentile ",
-          round(dist_summary$p90_km, 1), " km; max ", round(dist_summary$max_km, 0), " km.\n",
+          "Median ", round(dist_summary$median_mi, 1), " mi; 90th percentile ",
+          round(dist_summary$p90_mi, 1), " mi; max ", round(dist_summary$max_mi, 0), " mi.\n",
           "Every disparate pair is included here, not only the ", nrow(tracked),
           " flows shared by 2+ midwives drawn on the map.")) +
     theme_minimal(base_size = 12)
