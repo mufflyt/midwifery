@@ -120,18 +120,23 @@ plot_midwife_address_flows <- function(address_pairs, study_year = 2026L, min_fl
 
   p <- ggplot() +
     geom_sf(data = display_states, fill = "#F4F6F8", color = "#CBD5E1", linewidth = 0.25) +
-    geom_sf(data = flow_map, aes(color = mismatch_type, linewidth = n_midwives), alpha = 0.48, lineend = "round") +
+    geom_sf(data = flow_map, aes(color = mismatch_type, linewidth = n_midwives), alpha = 0.48, lineend = "round",
+           arrow = grid::arrow(length = unit(0.09, "inches"), type = "closed", ends = "last")) +
     geom_sf(data = origin_points, color = "#1D4ED8", size = 0.6, alpha = 0.5) +
     geom_sf(data = dest_points, color = "#111827", size = 0.6, alpha = 0.5) +
     facet_wrap(vars(source), ncol = 1) +
     scale_color_manual(values = c("Different city, same state" = "#0D9488", "Different state" = "#E76F51"),
                        name = "Type of mismatch") +
-    scale_linewidth_continuous(range = c(0.25, 2.2), name = "Midwives per flow") +
+    # Whole-number breaks: n_midwives is a count, "2.5 midwives" on the
+    # legend is nonsensical. scale_linewidth_continuous's default
+    # extended_breaks() doesn't know that, so round and dedupe its picks.
+    scale_linewidth_continuous(range = c(0.25, 2.2), name = "Midwives per flow",
+                               breaks = function(lims) sort(unique(round(scales::extended_breaks(n = 5)(lims))))) +
     coord_sf(datum = NA) +
     labs(title = "Where NPPES and DAC disagree on practice location",
         subtitle = paste0("NPPES practice address vs. DAC (PECOS-derived), ", study_year, " -- both sources year-matched"),
         caption = paste0(
-          "Each curve connects a reported NPPES city to DAC's city for the same NPI, same year.\n",
+          "Each curve connects a reported NPPES city to DAC's city for the same NPI, same year -- the arrow points FROM NPPES TO DAC.\n",
           "Only flows involving at least ", min_flow_n, " midwives are drawn (also a disclosure control).\n",
           "Same-city/exact-address disagreements are excluded here; see docs/TECHNICAL_APPENDIX_DAC_OPENPAYMENTS_ADDRESS_AGREEMENT.md.")) +
     theme_void(base_size = 11) +
