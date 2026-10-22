@@ -1,6 +1,6 @@
 {
   "artifact": "dac_openpayments_vs_nppes_address_agreement.csv",
-  "written_utc": "2026-10-21 02:14:58 UTC",
+  "written_utc": "2026-10-22 13:03:23 UTC",
   "inputs": [
     {
       "path": "dac_midwives.csv",
@@ -23,7 +23,7 @@
       "sha256": "40290afbf208e5b20b279e8f1a6e99ed061bf2efa27814570f4b105b94388ca7"
     }
   ],
-  "code_sha256": "9dc899b83fc4b722df5c32150cc45fcd235d2b0f99e7e7e99746fec499e94722",
+  "code_sha256": "503b73803e233780612a01338e6915a70993eb68fe01a5a00ca48c6476d2703a",
   "code": [
     {
       "path": "compare_dac_openpayments_to_nppes_address.R",
@@ -43,7 +43,7 @@
     },
     {
       "path": "R/lib/trilliant_org_bridge.R",
-      "sha256": "f35a969cb1cd30b0e36f86521c75623e1d946a7b1a347ab18c1d4f1c0c26c901"
+      "sha256": "801a9b30195f4d83bb2e1256d4b56e11108974eb576a0906288c3531b4481b47"
     },
     {
       "path": "R/safe_divide.R",

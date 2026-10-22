@@ -29,7 +29,7 @@ suppressPackageStartupMessages({
 STREET_ABBREV <- c(
   street = "st", avenue = "ave", boulevard = "blvd", drive = "dr", road = "rd",
   lane = "ln", parkway = "pkwy", highway = "hwy", place = "pl", court = "ct",
-  circle = "cir", terrace = "ter", square = "sq", plaza = "plz",
+  circle = "cir", terrace = "ter", square = "sq", plaza = "plz", center = "ctr",
   expressway = "expy", freeway = "fwy", northeast = "ne", northwest = "nw",
   southeast = "se", southwest = "sw", north = "n", south = "s", east = "e",
   west = "w", route = "rte", "state rte" = "rte", "us hwy" = "hwy", "state hwy" = "hwy"
@@ -50,7 +50,7 @@ STREET_ABBREV <- c(
 #' @return character vector, lower case, squished; `""` where the input is NA.
 norm_street <- function(s) {
   s <- str_to_lower(coalesce(s, ""))
-  s <- str_remove(s, "\\s*(,|\\s)\\s*(ste|suite|unit|apt|fl|floor|rm|room|bldg|building|dept|#)\\b.*$")
+  s <- str_remove(s, "\\s*(,|\\s)\\s*([0-9]+(st|nd|rd|th)?\\s+)?(ste|suite|unit|apt|fl|floor|rm|room|bldg|building|dept|#)\\b.*$")
   s <- str_replace_all(s, "[^a-z0-9 ]", " ")
   for (w in names(STREET_ABBREV)) {
     s <- str_replace_all(s, paste0("\\b", w, "\\b"), STREET_ABBREV[[w]])
