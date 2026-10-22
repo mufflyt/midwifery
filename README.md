@@ -761,6 +761,46 @@ and prints every candidate with its coordinate coverage. The build is also
 deterministic — two runs off the same inputs are byte-identical — so the hash in
 the sidecar verifies something.
 
+### Reference crosswalk: the 2026-10-22 re-freeze — fuzzy surname matching removed
+
+Class-4 (fuzzy/Levenshtein-distance surname) matching was removed from
+`match_amcb_to_npi.R` by explicit decision: an edit distance of 1-2 on a
+surname is too easy to satisfy for a reason that has nothing to do with
+shared identity — two different real people whose surnames happen to differ
+by one or two characters got the same name evidence as someone whose surname
+is a deliberately recorded variant. Class 5 (surname-component/fragment
+match) is a different, non-fuzzy mechanism — an exact token match on one
+half of a compound surname — and is unaffected. Full narrative, including
+why re-running the matcher also required vendoring four small functions out
+of a private sibling repo whose shared script had since been deleted, in
+`artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json`.
+
+| | rows | cols | cohort members | class-5 held out |
+|---|---:|---:|---:|---:|
+| `1a7bd6a8…` — outgoing, `amcb_npi_linkage_FROZEN_2026-10-22.csv` | 22,357 | 60 | 17,028 | 153 |
+| **`9f224007…` — `amcb_npi_linkage_FROZEN.csv`** | 22,357 | 60 | **16,775** | **163** |
+
+Same row and column count — this is a reclassification, not a schema or
+roster change. Restricted to the 15,328 ACTIVE certificants (the population
+every chart built on this freeze reports):
+
+| outcome | before | after |
+|---|---:|---:|
+| `primary_midwifery` | 12,192 | 12,170 |
+| `sensitivity_nursing` | 889 | 821 |
+| `sensitivity_name_component` (excluded) | 95 | 101 |
+| quarantined — resolved by absence | 5 | 5 |
+| quarantined — contested | 40 | 38 |
+| quarantined — tied | 1,476 | 1,400 |
+| unmatched | 631 | 793 |
+
+The ~166 ACTIVE certificants who were previously accepted or tied *only* via
+a class-4 candidate lose that candidate outright: most (162) end up with no
+candidate at all, a handful surface a previously-dominated class-5 candidate
+instead. Both A/B arms (`…years-2007-2026.csv` and `…years-through-2017.csv`)
+were regenerated with the same fix before reconciling, each archived at its
+own `_2026-10-22` sidecar before being overwritten.
+
 ## Attribute layers: what we know about each midwife
 
 Identity and geography answer *who* and *where*. Four further layers answer
