@@ -25,6 +25,14 @@ tests/artifacts/
 nppes_candidates.csv
 nppes_api_cache.jsonl
 
+# Flow-map geocoding: batch-geocoder inputs/outputs and the person-level
+# address_pairs join are exact coordinates tied to an NPI -- gitignored like
+# every other person-level file in this repo (dac_midwives.csv,
+# midwife_panel.csv, the Open Payments cohort CSVs, below). Only the
+# aggregated, disclosure-controlled flow table gets tracked.
+artifacts/flowmap_geocoding/
+artifacts/dac_vs_nppes_address_pairs.csv
+
 # Name-parser cache written by the isochrones parser
 .cache/
 data/cache/

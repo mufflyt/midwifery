@@ -1,0 +1,29 @@
+{
+  "artifact": "dac_vs_nppes_address_flows.csv",
+  "written_utc": "2026-10-22 19:43:54 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/dac_vs_nppes_address_pairs.csv",
+      "sha256": "e114608df4a7246d28ed7dd068af74a1bb3e106062e190fd1c188c850be2e7b3"
+    }
+  ],
+  "code_sha256": "11dac3a6f1180500e279d32d91e8e8586933151be397d6dd7ef7c94410a6a53a",
+  "code": [
+    {
+      "path": "make_dac_nppes_address_flow_map.R",
+      "sha256": "a5ccdcc650a0e7cf19ef453a00a8c2725e80c509bd46a1314b3edb54e8a9e6e4"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/lib/work_site_topology.R",
+      "sha256": "45f1c85cfe7bfce47eddc2a7998758e3fdf3e30a1630ff0add270fdbc7bcb848"
+    }
+  ]
+}
