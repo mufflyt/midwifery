@@ -3,9 +3,12 @@
 # Figure: how DAC, Open Payments and NPPES agree and disagree on address
 # =============================================================================
 # Reads the tracked aggregate compare_dac_openpayments_to_nppes_address.R
-# writes; draws no new numbers itself. Three panels, one per comparison_type:
-# each source vs NPPES (same year), Open Payments against itself year over
-# year, and DAC directly against Open Payments.
+# writes; draws no new numbers itself. Two panels, one per comparison_type:
+# each source vs NPPES (same year), and Open Payments against itself year
+# over year. (A third panel, DAC directly against Open Payments, was
+# removed 2026-10-22 -- DAC has one public vintage, 2026, so that pairing
+# was never year-matched. "Every analysis needs to be year matched" is a
+# hard rule in this project.)
 #
 # Input : artifacts/dac_openpayments_vs_nppes_address_agreement.csv (tracked)
 # Output: docs/figures/dac_openpayments_vs_nppes_agreement.png
@@ -22,16 +25,14 @@ d <- read_csv(IN, show_col_types = FALSE)
 d$level <- factor(d$level, levels = c("state", "city", "zip5", "street"),
                   labels = c("State", "City", "ZIP5", "Street"))
 d$panel <- factor(d$comparison_type,
-  levels = c("vs_nppes_same_year", "open_payments_yoy", "dac_vs_open_payments"),
+  levels = c("vs_nppes_same_year", "open_payments_yoy"),
   labels = c("Each source vs. NPPES\n(same year)",
-            "Open Payments vs. itself\n(different years, same person)",
-            "DAC (2026) vs. Open Payments\n(different years)"))
+            "Open Payments vs. itself\n(different years, same person)"))
 
-# Shorten legend labels: drop the repeated "vs NPPES"/"DAC (2026) vs " text,
-# panel titles already say what's being compared.
+# Shorten legend labels: drop the repeated "vs NPPES" text, panel titles
+# already say what's being compared.
 d$series <- d$source_pair
 d$series <- str_remove(d$series, " vs NPPES$")
-d$series <- str_remove(d$series, "^DAC \\(2026\\) vs ")
 d$series <- str_replace(d$series, "^Open Payments ", "")
 
 pal <- c("DAC" = "#c0392b",
@@ -46,13 +47,13 @@ p <- ggplot(d, aes(x = level, y = agree_pct, fill = series)) +
   scale_fill_manual(values = pal) +
   scale_y_continuous(limits = c(0, 100), expand = expansion(mult = c(0, 0.1))) +
   labs(
-    title = "Three ways to check a midwife's address, and how often they agree",
-    subtitle = "DAC (PECOS-derived) has one vintage (2026). Open Payments is year-matched where it says \"same year\";\nits recipient address is partly NPPES-sourced, so its high agreement there is not fully independent.",
+    title = "Two ways to check a midwife's address, and how often they agree",
+    subtitle = "Both panels are year-matched -- DAC vs NPPES compares the same 2026 vintage; each Open Payments year\ncompares against NPPES's snapshot for that same year. Open Payments' address is partly NPPES-sourced,\nso its high agreement there is not fully independent confirmation.",
     x = NULL, y = "Agreement (%)", fill = NULL,
     caption = paste(
       "n: DAC vs NPPES 5,576. Open Payments vs NPPES 3,210-4,020/year. Open Payments year-over-year 2,175-2,500.",
-      "DAC vs Open Payments 1,577-2,019 (smaller: requires a midwife present in both DAC and that OP year).",
-      "No street field in the public Open Payments file before this session's fix; now captured for 2022-2024.",
+      "A DAC-vs-Open-Payments panel was removed: DAC has one public vintage (2026, no CMS archive),",
+      "so that pairing could never be year-matched to Open Payments' 2022-2024. See the technical appendix.",
       "See docs/TECHNICAL_APPENDIX_DAC_OPENPAYMENTS_ADDRESS_AGREEMENT.md.",
       sep = "\n")
   ) +

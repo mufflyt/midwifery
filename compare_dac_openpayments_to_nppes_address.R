@@ -2,7 +2,7 @@
 # =============================================================================
 # How well do DAC, Open Payments and NPPES agree on a midwife's address?
 # =============================================================================
-# Three comparisons, each a different question:
+# Two comparisons, each a different question -- both genuinely year-matched:
 #
 #   vs_nppes_same_year    DAC or Open Payments against NPPES's OWN panel for
 #                         THE SAME YEAR the other source is dated to -- not
@@ -13,10 +13,15 @@
 #                         Payments reported for her change year to year? This
 #                         is the one genuinely same-source longitudinal check
 #                         this repo currently has.
-#   dac_vs_open_payments  Two different sources, nearest available years (DAC
-#                         has one vintage, 2026; Open Payments has whichever
-#                         years are in artifacts/) -- a real year gap, stated
-#                         per row, not concealed by calling it "current".
+#
+# There is deliberately no "DAC vs Open Payments" comparison here. DAC has
+# exactly one public vintage (2026, CMS does not archive past ones -- checked
+# directly against their metastore API) and Open Payments is 2022-2024, so
+# any DAC-vs-Open-Payments pairing spans a real, unclosable 2-4 year gap.
+# An earlier version of this script included it anyway, labeled with the
+# year gap rather than concealing it -- but "every analysis needs to be
+# year matched" is a hard rule in this project, and a labeled mismatch is
+# still a mismatch. Removed 2026-10-22; see git history for the prior numbers.
 #
 # See docs/TECHNICAL_APPENDIX_DAC_OPENPAYMENTS_ADDRESS_AGREEMENT.md for what
 # each of these does and does not establish.
@@ -134,11 +139,6 @@ if (length(op_years) >= 2) {
       op[[p[1]]], op[[p[2]]], sprintf("Open Payments %s vs %s", p[1], p[2]),
       p[1], p[2], "open_payments_yoy")
 }
-
-# 3. DAC vs Open Payments directly, nearest available years (a real gap -- DAC is 2026-only)
-for (yr in op_years)
-  out[[paste0("dac_vs_op_", yr)]] <- compare_two(dac, op[[yr]], sprintf("DAC (2026) vs Open Payments (%s)", yr),
-                                                 "2026", yr, "dac_vs_open_payments")
 
 out <- bind_rows(out)
 print(as.data.frame(out), row.names = FALSE)

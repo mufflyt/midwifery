@@ -27,15 +27,3 @@ open_payments_yoy,Open Payments 2023 vs 2024,2023,2024,state,2500,2344,93.8
 open_payments_yoy,Open Payments 2023 vs 2024,2023,2024,city,2500,1968,78.7
 open_payments_yoy,Open Payments 2023 vs 2024,2023,2024,zip5,2500,1835,73.4
 open_payments_yoy,Open Payments 2023 vs 2024,2023,2024,street,2500,1712,68.5
-dac_vs_open_payments,DAC (2026) vs Open Payments (2022),2026,2022,state,1577,1332,84.5
-dac_vs_open_payments,DAC (2026) vs Open Payments (2022),2026,2022,city,1577,702,44.5
-dac_vs_open_payments,DAC (2026) vs Open Payments (2022),2026,2022,zip5,1577,546,34.6
-dac_vs_open_payments,DAC (2026) vs Open Payments (2022),2026,2022,street,1577,348,22.1
-dac_vs_open_payments,DAC (2026) vs Open Payments (2023),2026,2023,state,1707,1465,85.8
-dac_vs_open_payments,DAC (2026) vs Open Payments (2023),2026,2023,city,1707,828,48.5
-dac_vs_open_payments,DAC (2026) vs Open Payments (2023),2026,2023,zip5,1707,663,38.8
-dac_vs_open_payments,DAC (2026) vs Open Payments (2023),2026,2023,street,1707,471,27.6
-dac_vs_open_payments,DAC (2026) vs Open Payments (2024),2026,2024,state,2019,1796,89
-dac_vs_open_payments,DAC (2026) vs Open Payments (2024),2026,2024,city,2019,1056,52.3
-dac_vs_open_payments,DAC (2026) vs Open Payments (2024),2026,2024,zip5,2019,885,43.8
-dac_vs_open_payments,DAC (2026) vs Open Payments (2024),2026,2024,street,2019,617,30.6
