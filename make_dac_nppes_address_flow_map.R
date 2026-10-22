@@ -162,7 +162,7 @@ if (sys.nframe() == 0) {
   stopifnot(file.exists(IN))
   address_pairs <- read_csv(IN, show_col_types = FALSE)
 
-  national <- plot_midwife_address_flows(address_pairs, study_year = 2026L, min_flow_n = 5L, colorado_only = FALSE)
+  national <- plot_midwife_address_flows(address_pairs, study_year = 2026L, min_flow_n = 2L, colorado_only = FALSE)
   print(as.data.frame(national$summary))
   colorado <- plot_midwife_address_flows(address_pairs, study_year = 2026L, min_flow_n = 2L, colorado_only = TRUE)
   print(as.data.frame(colorado$summary))
@@ -171,7 +171,7 @@ if (sys.nframe() == 0) {
   # individual coordinates, min_flow_n already applied in national$flows'
   # upstream filter is NOT applied here, so re-derive at the same threshold
   # used for the national map before writing.
-  tracked <- national$flows %>% dplyr::filter(n_midwives >= 5L)
+  tracked <- national$flows %>% dplyr::filter(n_midwives >= 2L)
   write_with_provenance(tracked, "artifacts/dac_vs_nppes_address_flows.csv",
                         inputs = "artifacts/dac_vs_nppes_address_pairs.csv")
 }

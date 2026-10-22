@@ -306,13 +306,17 @@ both sides.
 Each curve connects a midwife's NPPES city to her DAC city for the same NPI
 the same year. Only city-level-or-greater disagreements are drawn (exact
 street-address mismatches within one city would be dense, overlapping, and
-not add signal); only flows shared by **5 or more midwives** are shown --
+not add signal); only flows shared by **2 or more midwives** are shown --
 a legibility threshold and a disclosure control together, since a flow of
-n=1 would name one specific midwife's two addresses on a public map. Of
+n=1 would name one specific midwife's two addresses on a public map. (An
+n≥5 national draft shown earlier was too sparse to be useful -- only 12 of
+1,418 distinct city-pairs repeat that often -- so the threshold was lowered
+to match the Colorado view's n≥2; a flow of exactly 2 is a weaker privacy
+bar than n≥5, a real tradeoff made deliberately here, not a default.) Of
 4,316 geocoded pairs, 1,647 disagree at city-level-or-coarser; those collapse
-into 1,418 distinct city-to-city flows, of which 12 clear the n≥5 threshold
-nationally (80 midwives) and 4 within Colorado (12 midwives, n≥2 threshold
-for that exploratory view).
+into 1,418 distinct city-to-city flows, of which 138 clear the n≥2 threshold
+nationally (367 midwives -- 134 different-city/same-state, 4 different-state)
+and 4 within Colorado (12 midwives, same n≥2 threshold).
 
 ![Colorado-focused view](figures/dac_vs_nppes_address_flows_colorado_2026.png)
 
@@ -342,16 +346,21 @@ footnote: the true gap between DAC and NPPES on city-level agreement is
 probably smaller than 55.6% suggests, by something in the neighborhood of
 a few percentage points, not by a few tenths of one.
 
-**What the map does and doesn't show.** It is legible but sparse by
-design -- 12 flows nationally, most of them visually short because most
-*recurring* (n≥5) city-level disagreements turn out to be nearby-suburb
-mix-ups (Gilbert/Chandler AZ; St. Louis Park/Bloomington MN;
-Providence/Warwick RI) rather than long-distance relocations. The one
-clear exception is Spokane → Gig Harbor, WA, visibly curved at the
-state's full width. This map cannot speak to the much larger number of
-one-off, idiosyncratic disagreements below the n≥5 threshold -- those are
-the majority of the 1,418 distinct flows and are exactly what min_flow_n
-exists to keep off a public map.
+**What the map does and doesn't show.** At n≥2 it is legible and covers
+every state with a recurring disagreement, not just a dozen. Most flows are
+still visually short -- recurring disagreements remain mostly nearby-suburb
+mix-ups (Gilbert/Chandler AZ; St. Louis Park/Bloomington MN, the largest
+single flow at 13 midwives; Providence/Warwick RI) rather than long-distance
+relocations, and all 4 of the different-*state* flows that clear n≥2 are
+short cross-border hops too (Clarkston WA/Lewiston ID are twin cities split
+by a river; Elmer NJ/Philadelphia PA, Brooklyn NY/Lakewood NJ, and New York
+NY/Jersey City NJ are all commuting-distance metro-area pairs) -- not the kind
+of long-distance relocation Spokane → Gig Harbor, WA (a same-state flow,
+visibly curved at the state's full width) represents. This map still
+cannot speak to the roughly 1,280 one-off, idiosyncratic disagreements
+shared by exactly one midwife -- those remain below even the n≥2 threshold
+and are exactly what min_flow_n exists
+to keep off a public map.
 
 ```sh
 # Requires the two inputs compare_dac_openpayments_to_nppes_address.R
