@@ -561,5 +561,27 @@ MUTATIONS <- list(
                 "coordinate-lon-lat-swap already guards against in a",
                 "different file."),
     killers = c("tests/test_address_flow_helpers_saboteur.R")
+  ),
+
+  # ---- fuzzy-surname-matching removal (2026-10-22) -------------------------
+  # SCOPE NOTE: match_amcb_to_npi.R is one of the "numbered pipeline scripts"
+  # this catalogue otherwise avoids mutating (see the file header) because
+  # they need person-level inputs absent on a runner. This one entry is safe
+  # anyway: its killer is tests/test_fuzzy_surname_removal_saboteur.R's T7a,
+  # a pure text-inspection check on the script's OWN SOURCE that needs no
+  # data at all -- it would fail identically on a runner or a laptop.
+  list(
+    id = "fuzzy-match-class4-reintroduced",
+    file = "match_amcb_to_npi.R",
+    find = "      component_last == 1L                                   ~ 5L),",
+    repl = paste0("      component_last == 1L                                   ~ 5L,\n",
+                  "      TRUE                                                   ~ 4L),"),
+    why = paste("Re-adds the catch-all that used to assign evidence class 4 to",
+                "any surname within Levenshtein distance 2 -- the exact rule",
+                "this freeze removed by decision because an edit-distance",
+                "surname match is too easy to satisfy for a reason unrelated",
+                "to shared identity. A silent revert would be invisible in",
+                "any run that doesn't specifically check for it."),
+    killers = c("tests/test_fuzzy_surname_removal_saboteur.R")
   )
 )
