@@ -2,21 +2,25 @@
 # =============================================================================
 # How well do DAC, Open Payments and NPPES agree on a midwife's address?
 # =============================================================================
-# Three comparisons, each a different question:
+# One comparison, genuinely year-matched:
 #
 #   vs_nppes_same_year    DAC or Open Payments against NPPES's OWN panel for
 #                         THE SAME YEAR the other source is dated to -- not
 #                         today's address, which would conflate disagreement
 #                         with any move that happened since.
-#   open_payments_yoy     The SAME source (Open Payments), two different
-#                         program years, same person: did the address Open
-#                         Payments reported for her change year to year? This
-#                         is the one genuinely same-source longitudinal check
-#                         this repo currently has.
-#   dac_vs_open_payments  Two different sources, nearest available years (DAC
-#                         has one vintage, 2026; Open Payments has whichever
-#                         years are in artifacts/) -- a real year gap, stated
-#                         per row, not concealed by calling it "current".
+#
+# An Open-Payments-vs-itself (year-over-year) comparison and a DAC-vs-Open-
+# Payments comparison were both built and removed (2026-10-22); see git
+# history for the prior numbers.
+#
+# There is deliberately no "DAC vs Open Payments" comparison here. DAC has
+# exactly one public vintage (2026, CMS does not archive past ones -- checked
+# directly against their metastore API) and Open Payments is 2022-2024, so
+# any DAC-vs-Open-Payments pairing spans a real, unclosable 2-4 year gap.
+# An earlier version of this script included it anyway, labeled with the
+# year gap rather than concealing it -- but "every analysis needs to be
+# year matched" is a hard rule in this project, and a labeled mismatch is
+# still a mismatch. Removed 2026-10-22; see git history for the prior numbers.
 #
 # See docs/TECHNICAL_APPENDIX_DAC_OPENPAYMENTS_ADDRESS_AGREEMENT.md for what
 # each of these does and does not establish.
@@ -119,26 +123,13 @@ compare_two <- function(a, b, label, year_a, year_b, comparison_type, levels = c
 
 out <- list()
 
-# 1. vs NPPES, same year each source is dated to
-out[["dac_vs_nppes"]] <- compare_two(dac, nppes("2026"), "DAC vs NPPES", "2026", "2026", "vs_nppes_same_year")
+# vs NPPES, same year each source is dated to. source_pair spells out BOTH
+# sides' years (not just the non-NPPES side's) so it's unambiguous on sight
+# that NPPES is pulled from the matching year, not "current" NPPES.
+out[["dac_vs_nppes"]] <- compare_two(dac, nppes("2026"), "DAC (2026) vs NPPES (2026)", "2026", "2026", "vs_nppes_same_year")
 for (yr in op_years)
-  out[[paste0("op_vs_nppes_", yr)]] <- compare_two(op[[yr]], nppes(yr), sprintf("Open Payments (%s) vs NPPES", yr),
+  out[[paste0("op_vs_nppes_", yr)]] <- compare_two(op[[yr]], nppes(yr), sprintf("Open Payments (%s) vs NPPES (%s)", yr, yr),
                                                    yr, yr, "vs_nppes_same_year")
-
-# 2. Open Payments year-over-year: same source, same person, different program years
-# (street included: all op_years now carry recipient_address -- see match_open_payments_general_payments.py)
-if (length(op_years) >= 2) {
-  pairs <- combn(sort(op_years), 2, simplify = FALSE)
-  for (p in pairs)
-    out[[paste0("op_yoy_", p[1], "_", p[2])]] <- compare_two(
-      op[[p[1]]], op[[p[2]]], sprintf("Open Payments %s vs %s", p[1], p[2]),
-      p[1], p[2], "open_payments_yoy")
-}
-
-# 3. DAC vs Open Payments directly, nearest available years (a real gap -- DAC is 2026-only)
-for (yr in op_years)
-  out[[paste0("dac_vs_op_", yr)]] <- compare_two(dac, op[[yr]], sprintf("DAC (2026) vs Open Payments (%s)", yr),
-                                                 "2026", yr, "dac_vs_open_payments")
 
 out <- bind_rows(out)
 print(as.data.frame(out), row.names = FALSE)
