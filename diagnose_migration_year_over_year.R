@@ -17,12 +17,24 @@
 # tested and what remains unexplained. This script reproduces only the
 # measurement; it does not resolve the mechanism.
 #
+# Two noise tests, answering two different questions:
+#   blip        did a one-year change REVERT the very next year (A,B,A)?
+#               Already near-zero everywhere (incl. 2024), so round-trip
+#               flicker was already ruled out before this cycle.
+#   confirmed   did a one-year change PERSIST for at least a year on both
+#               sides (A,A,B,B) -- the repo owner's bar, added this cycle.
+#               A move that never reverts can still be a one-off artifact if
+#               it doesn't hold; this is a strictly stronger requirement than
+#               "not a blip", and the one that actually tests whether 2018/
+#               2024's elevated rate is durable mobility or noise that
+#               happens not to round-trip.
+#
 # Input : midwife_panel.csv (NPPES annual snapshots; gitignored, person-level)
 #         artifacts/amcb_npi_linkage_FROZEN.csv (cohort_member flag)
 #         artifacts/zcta_county_crosswalk.csv (dominant-county-per-ZCTA)
-# Output: prints the year-by-year table and the one-year "blip" rate (a
-#         round-trip revert test) to stdout; writes neither by default, since
-#         this is a diagnostic, not a tracked result.
+# Output: prints the year-by-year table, the one-year "blip" rate, and the
+#         A,A,B,B confirmed-move rate to stdout; writes neither by default,
+#         since this is a diagnostic, not a tracked result.
 #
 # @family diagnostics
 # @author Tyler Muffly, MD + Claude Code
@@ -128,3 +140,67 @@ print(blips, row.names = FALSE)
 cat(sprintf("\nBlip rate centered on 2024 (the reshaped-format year): %.2f%%, vs. %.2f%% median across every other year.\n",
             blips$pct_blip[blips$year_mid == 2024],
             median(blips$pct_blip[blips$year_mid != 2024])))
+
+# ---- confirmed-move test: does the new address hold for a year on each side? ----
+# Stricter than the blip test above. For transition year_from->year_to to
+# count as a CONFIRMED move, practice_state must be stable for the year
+# immediately BEFORE year_from (state_pre = state_from) and stable for the
+# year immediately AFTER year_to (state_to = state_post) -- i.e. the pattern
+# is A,A,B,B, not just A,B. Needs 4 consecutive annual snapshots per NPI, so
+# transitions touching the first or last year of the panel (2007->2008,
+# 2025->2026) cannot be confirmed at all and are reported as NA, not 0 --
+# unconfirmable is not the same claim as unconfirmed. n_quads is the
+# SAME denominator for both raw_pct and confirmed_pct in a given row, so the
+# two percentages are directly comparable (confirmed is never computed on a
+# different population than raw within a row).
+confirmed <- dbGetQuery(con, sprintf("
+  WITH cohort AS (
+    SELECT DISTINCT npi FROM read_csv_auto('%s', ignore_errors=true)
+    WHERE cohort_member = true AND npi IS NOT NULL
+  ),
+  panel AS (
+    SELECT p.npi, p.snapshot_year, p.practice_state
+    FROM read_csv_auto('%s', ignore_errors=true) p
+    JOIN cohort c USING (npi)
+    WHERE p.practice_state IS NOT NULL
+  ),
+  dedup AS (
+    SELECT npi, snapshot_year, arg_max(practice_state, 1) AS practice_state
+    FROM panel GROUP BY npi, snapshot_year
+  ),
+  quads AS (
+    SELECT b.snapshot_year AS year_from, c.snapshot_year AS year_to,
+           pre.practice_state AS state_pre, b.practice_state AS state_from,
+           c.practice_state AS state_to, post.practice_state AS state_post
+    FROM dedup b
+    JOIN dedup pre  ON pre.npi  = b.npi AND pre.snapshot_year  = b.snapshot_year - 1
+    JOIN dedup c    ON c.npi    = b.npi AND c.snapshot_year    = b.snapshot_year + 1
+    JOIN dedup post ON post.npi = b.npi AND post.snapshot_year = b.snapshot_year + 2
+  )
+  SELECT year_from, year_to, COUNT(*) AS n_quads,
+         ROUND(100.0 * SUM(CASE WHEN state_from <> state_to THEN 1 ELSE 0 END) / COUNT(*), 2) AS raw_pct,
+         ROUND(100.0 * SUM(CASE WHEN state_pre = state_from AND state_from <> state_to
+                                 AND state_to = state_post THEN 1 ELSE 0 END) / COUNT(*), 2) AS confirmed_pct
+  FROM quads GROUP BY year_from, year_to ORDER BY year_from", FROZEN, PANEL))
+
+# The pair years this cohort can't confirm (no year-before or year-after
+# snapshot to check) -- reported explicitly rather than silently absent.
+unconfirmable <- setdiff(paste(by_year$year_from, by_year$year_to),
+                          paste(confirmed$year_from, confirmed$year_to))
+
+cat("\n== confirmed-move rate (A,A,B,B), vs. raw, same n per row ==\n")
+print(confirmed, row.names = FALSE)
+if (length(unconfirmable))
+  cat(sprintf("Unconfirmable (no year-before or year-after snapshot exists): %s\n",
+              paste(unconfirmable, collapse = "; ")))
+
+flagged_c <- confirmed$year_to %in% FORMAT_CHANGE_YEARS
+cat(sprintf(paste0("\nFormat-change transitions (ending %s): raw %.2f%% -> confirmed %.2f%% ",
+                   "(%.0f%% of the raw rate survives confirmation).\n"),
+            paste(FORMAT_CHANGE_YEARS, collapse = ", "),
+            mean(confirmed$raw_pct[flagged_c]), mean(confirmed$confirmed_pct[flagged_c]),
+            100 * mean(confirmed$confirmed_pct[flagged_c]) / mean(confirmed$raw_pct[flagged_c])))
+cat(sprintf(paste0("Every other transition: raw %.2f%% -> confirmed %.2f%% ",
+                   "(%.0f%% of the raw rate survives confirmation).\n"),
+            mean(confirmed$raw_pct[!flagged_c]), mean(confirmed$confirmed_pct[!flagged_c]),
+            100 * mean(confirmed$confirmed_pct[!flagged_c]) / mean(confirmed$raw_pct[!flagged_c])))

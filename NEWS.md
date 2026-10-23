@@ -20,6 +20,70 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-22 — Fuzzy surname matching (class 4) removed; a doc-freshness pass
+
+### Removed — class 4, fuzzy/Levenshtein-distance surname matching
+
+An edit distance of 1–2 on a surname is too easy to satisfy for a reason
+that has nothing to do with shared identity: two different real people
+whose surnames happen to differ by one or two characters got the same name
+evidence as someone whose surname is a deliberately recorded variant.
+Strategy `s3` (the `stringdist()`-based join in `match_amcb_to_npi.R` that
+generated class 4) was deleted outright, not demoted or reassigned. Class 5
+(surname-component/fragment match) is a different, non-fuzzy mechanism — an
+exact token match on one half of a compound surname — and is unaffected.
+
+Both A/B arms were regenerated with the fix applied. Restricted to the
+15,328 ACTIVE certificants (the population every chart artifact reports):
+
+| outcome | before | after |
+|---|---:|---:|
+| `primary_midwifery` | 12,192 | 12,170 |
+| `sensitivity_nursing` | 889 | 821 |
+| `sensitivity_name_component` (excluded) | 95 | 101 |
+| quarantined — resolved by absence | 5 | 5 |
+| quarantined — contested | 40 | 38 |
+| quarantined — tied | 1,476 | 1,400 |
+| unmatched | 631 | 793 |
+
+Whole-roster `cohort_members` moved **17,028 → 16,775**;
+`class5_candidates_held_out` moved 153 → 163. Full decision, sha256 lineage
+and both arms' provenance: `artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json`,
+run `reconcile_ab_20261022T134500_remove_fuzzy_surname_matching`.
+
+Re-running the matcher also required vendoring `norm_name()`, `rank_one_to_one()`
+and `safe_pct()` directly into `match_amcb_to_npi.R`: the private sibling repo
+it used to live-`source()` these from had deleted its copy in an unrelated
+cleanup. `rank_one_to_one()` is copied verbatim from the last revision of
+that repo compatible with the `mysterynpi` version this project pins in CI.
+10 saboteur tests (`tests/test_fuzzy_surname_removal_saboteur.R`) cover the
+vendored functions and guard against class 4 silently resurfacing.
+
+### Changed — documentation brought current with the removal above
+
+- **README.md**: the top-of-file headline figures (the mermaid diagram and
+  summary table) still read the pre-removal 12,192/79.5%/17,028 — fixed to
+  12,170/79.4%/16,775, matching the "2026-10-22 re-freeze" section already
+  present further down the same file.
+- **`docs/TECHNICAL_APPENDIX_RECORD_LINKAGE.md`**: §4's evidence-class table
+  and discussion described class 4 in the present tense as a live, scored
+  class. Added a staleness note (matching this file's existing §2/§6/§9
+  caveat) marking §4 as historical design rationale rather than a
+  description of the current matcher, and annotated the class-4 table row
+  as retired. §5's tied-record count (3,044) predates the removal and is
+  flagged, not recomputed.
+- **`docs/TECHNICAL_APPENDIX_SPLINK_EVALUATION.md`**: added a staleness
+  note — its 2026-09-06 agreement-by-class figures are unchanged but no
+  longer describe the current matcher's class set.
+- Not fixed this pass: README's Figure 10 upset-plot caption (line ~194)
+  and the whole-roster "Where the 22,357 go" table's `+ fuzzy tier` row
+  (line ~601) are both tied to artifacts/figures a pipeline script would
+  need to regenerate, not numbers a doc pass can safely hand-edit.
+  `docs/TECHNICAL_APPENDIX_NAME_MATCHING_MODES.md`'s "class 4" references
+  are a different script (`link_theses_to_amcb.R`, thesis-to-AMCB linkage)
+  with its own independent evidence-class scheme and are unaffected by this
+  change.
+
 ## [Unreleased] — 2026-10-20 — The panel's missing 2023 vintage, a column-count bug it exposed, and a 25-doc staleness pass
 
 ### Fixed
