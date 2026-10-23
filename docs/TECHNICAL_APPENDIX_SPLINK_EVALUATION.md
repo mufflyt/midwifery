@@ -6,6 +6,15 @@
 **Investigation date**: 2026-09-06
 **Status**: prototype code discarded after evaluation; nothing from this investigation is in the production pipeline. Findings below are read from the actual prototype run, not asserted from general knowledge of the tool.
 
+> **Update 2026-10-22: class 4 ("fuzzy surname, edit distance ≤ 2" in §4's
+> table) was removed from the production matcher this was tested against.**
+> The 2026-09-06 agreement figures below describe the matcher as it stood
+> then and are unchanged; they are no longer evidence about the current
+> matcher, which now has four live classes (1, 2, 3, 5 — 4 retired, not
+> renumbered). See
+> [`TECHNICAL_APPENDIX_RECORD_LINKAGE.md`](TECHNICAL_APPENDIX_RECORD_LINKAGE.md)'s
+> 2026-10-22 note for the removal decision.
+
 ---
 
 ## 1. Why Splink was considered
