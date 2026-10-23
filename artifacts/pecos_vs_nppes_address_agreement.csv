@@ -1,0 +1,4 @@
+comparison_type,source_pair,year_a,year_b,level,comparable_n,agree_n,agree_pct
+vs_nppes_same_year,PECOS/DAC (2026) vs NPPES (2026),2026,2026,state,5576,5009,89.8
+vs_nppes_same_year,PECOS/DAC (2026) vs NPPES (2026),2026,2026,city,5576,3100,55.6
+vs_nppes_same_year,PECOS/DAC (2026) vs NPPES (2026),2026,2026,zip5,5576,2624,47.1
