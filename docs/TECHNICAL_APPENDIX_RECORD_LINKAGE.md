@@ -18,6 +18,21 @@
 > the dependent counts from the current artifact rather than hand-editing the
 > numbers in place.
 
+> **Update 2026-10-22: class 4 (fuzzy/Levenshtein-distance surname matching,
+> §4) was removed from `match_amcb_to_npi.R`.** Two different real people
+> whose surnames happened to differ by one or two characters were getting the
+> same name evidence as someone whose surname is a deliberately recorded
+> variant — strategy `s3` (the `stringdist()` join that generated class 4) was
+> deleted outright, not demoted, and class 4 is retired rather than
+> reassigned. Class 5 is unaffected — it is an exact token match on one
+> surname component, not a distance metric. §4's table and discussion below
+> describe the pre-removal design and are kept for the historical rationale
+> (why class 4 was ordered where it was), not as a description of the current
+> matcher; §5's tied-record count (3,044) predates the removal and has not
+> been recounted against the new freeze. Full decision and before/after
+> counts: README's "2026-10-22 re-freeze" section and
+> `artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json`.
+
 ---
 
 ## 1. The problem
@@ -125,7 +140,7 @@ exactly one candidate occupies its strongest available class**.
 | 1 | exact surname + exact given name, **corroborating middle name** | `s1`/`s2` + middle agreement | 1.00 |
 | 2 | exact surname + exact given name, no useful middle information | `s1` | 0.90 |
 | 3 | exact surname + **first initial only**; the given names differ | `s2` | 0.70 |
-| 4 | surname within edit distance 2, **exact given name** | `s3` | 0.50 |
+| 4 *(retired 2026-10-22, see note above)* | surname within edit distance 2, **exact given name** | `s3` (deleted) | 0.50 |
 | 5 | shared surname component, exact given name | `s5` | 0.35 |
 
 **Class 3 is a first-initial rule, not a nickname dictionary.** An earlier

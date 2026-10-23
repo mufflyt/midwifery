@@ -23,7 +23,7 @@ source at all.*
 
 ```mermaid
 flowchart LR
-  A["AMCB roster: 22,357 certificants"] --> B["NPPES linkage: 12,192 of 15,328 ACTIVE matched"]
+  A["AMCB roster: 22,357 certificants"] --> B["NPPES linkage: 12,170 of 15,328 ACTIVE matched"]
   B --> C["Practice geography: county, tract, district"]
   B --> D["State board licensure: WA, CO, TX open data"]
   C --> F["Interactive map: tracked roster, 40 states"]
@@ -32,8 +32,8 @@ flowchart LR
 | Stage / Dimension | Result & Coverage | Source |
 |---|---|---|
 | AMCB roster (live directory scrape, 2026-09-02) | 22,357 certificants; 15,328 ACTIVE | `artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json` (`artifact_rows`); `artifacts/linkage_completeness_by_status.csv` |
-| ACTIVE certificants matched to an NPPES midwifery record | 12,192 of 15,328 (79.5%) | `artifacts/linkage_completeness_by_status.csv`, disposition `matched` |
-| Analytic cohort (all AMCB statuses) | 17,028 | FROZEN manifest, `cohort_members` |
+| ACTIVE certificants matched to an NPPES midwifery record | 12,170 of 15,328 (79.4%) | `artifacts/linkage_completeness_by_status.csv`, disposition `matched` |
+| Analytic cohort (all AMCB statuses) | 16,775 | FROZEN manifest, `cohort_members` |
 | Table 1 cohort (ACTIVE, primary-linked) | 12,171 | `artifacts/table1_provenance.csv` |
 | State boards queried for licensure | 3: WA DOH, Colorado DORA, Texas BON (open data, matched by name). Illinois IDFPR open data was also queried, for licence issue dates in age calibration only. | `harvest_live_{wa,co,tx}_bon_from_tracked_roster.py`; `artifacts/state_nursing_license_ages_provenance.csv` (`states_queried`) |
 | Licences a board returned | 1,353: WA 369, CO 486, TX 498 (any status the board reported) | `docs/figures/board_licensure_observed_counts.csv` |
