@@ -145,3 +145,47 @@ artifacts/nppes_license_concordance.csv
 # part of the tracked roster above) is independently public. Produced by
 # draw_nursys_qa_sample.py against this project's own WA/CO/TX board pulls.
 artifacts/nursys_qa_sample.csv
+
+# Live Illinois IDFPR "ADV PRACTICE NURSE" cross-reference: IL-state midwives
+# from the tracked roster, matched against data.illinois.gov's public Socrata
+# API (dataset pzzh-kp68) by name -- 18 VERIFIED_LIVE_BON, 362 AMBIGUOUS, 54
+# UNMATCHED. IDFPR has no CNM-specific filter (unlike WA/CO/TX), so the whole
+# "ADV PRACTICE NURSE" population (~82,500 records) is pulled and matched by
+# name alone; the low VERIFIED/high AMBIGUOUS split is expected from that, not
+# a defect (see harvest_live_il_bon_from_tracked_roster.py's own header).
+# "MIDWIFERY BOARD" (the NARM/CPM credential) is deliberately excluded.
+# Reviewed and accepted by Tyler Muffly, 2026-10-23, same reasoning as the
+# WA/CO/TX board entries above: every underlying field (AMCB name/
+# certification number, NPI, IDFPR's own published license fields) is
+# independently public. Produced by harvest_live_il_bon_from_tracked_roster.py
+# against artifacts/tracked_roster_active_primary_linked.csv.
+artifacts/live_illinois_bon_ingested_midwives_from_tracked_roster.csv
+
+# Live Connecticut DPH "Advanced Practice Registered Nurse" cross-reference:
+# CT-state midwives from the tracked roster, matched against data.ct.gov's
+# public Socrata API (dataset f4xa-y96m) by name -- 28 VERIFIED_LIVE_BON, 180
+# UNMATCHED, 0 AMBIGUOUS. CT DPH has no CNM-specific filter either (same
+# situation as Illinois); the high UNMATCHED rate was spot-checked by hand
+# against a live targeted query and confirmed to be genuine data absence, not
+# a name-parsing bug (see harvest_live_ct_bon_from_tracked_roster.py's own
+# header).
+# Reviewed and accepted by Tyler Muffly, 2026-10-23, same reasoning as the
+# WA/CO/TX board entries above: every underlying field (AMCB name/
+# certification number, NPI, CT DPH's own published license fields) is
+# independently public. Produced by harvest_live_ct_bon_from_tracked_roster.py
+# against artifacts/tracked_roster_active_primary_linked.csv.
+artifacts/live_connecticut_bon_ingested_midwives_from_tracked_roster.csv
+
+# Live Delaware Division of Professional Regulation "Certified Nurse Midwife"
+# cross-reference: 0 DE-state midwives in the tracked cohort as of this run,
+# matched against data.delaware.gov's public Socrata API (dataset pjnv-eaih,
+# profession_id=Nursing license_type=Certified Nurse Midwife -- an exact CNM
+# filter, unlike IL/CT). Tracked anyway, as an empty result with its own
+# provenance sidecar, so Delaware is already wired up the moment a
+# DE-practicing midwife enters the cohort (see
+# harvest_live_de_bon_from_tracked_roster.py's own header).
+# Reviewed and accepted by Tyler Muffly, 2026-10-23, same reasoning as the
+# WA/CO/TX board entries above: every underlying field is independently
+# public. Produced by harvest_live_de_bon_from_tracked_roster.py against
+# artifacts/tracked_roster_active_primary_linked.csv.
+artifacts/live_delaware_bon_ingested_midwives_from_tracked_roster.csv
