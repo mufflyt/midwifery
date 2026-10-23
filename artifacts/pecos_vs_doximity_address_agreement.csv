@@ -1,0 +1,4 @@
+comparison_type,source_pair,year_a,year_b,level,comparable_n,agree_n,agree_pct
+vs_doximity_name_matched,"PECOS/DAC (2026) vs Doximity (name-matched, undated)",2026,undated,state,1822,1652,90.7
+vs_doximity_name_matched,"PECOS/DAC (2026) vs Doximity (name-matched, undated)",2026,undated,city,1822,1054,57.8
+vs_doximity_name_matched,"PECOS/DAC (2026) vs Doximity (name-matched, undated)",2026,undated,zip5,1822,897,49.2

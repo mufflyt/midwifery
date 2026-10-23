@@ -1,0 +1,4 @@
+comparison_type,source_pair,year_a,year_b,level,comparable_n,agree_n,agree_pct
+vs_nppes_same_year,Healthgrades (scraped) vs NPPES (2026),scraped,2026,state,120,113,94.2
+vs_nppes_same_year,Healthgrades (scraped) vs NPPES (2026),scraped,2026,city,120,83,69.2
+vs_nppes_same_year,Healthgrades (scraped) vs NPPES (2026),scraped,2026,zip5,120,73,60.8

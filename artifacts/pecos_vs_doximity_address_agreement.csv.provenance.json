@@ -1,0 +1,41 @@
+{
+  "artifact": "pecos_vs_doximity_address_agreement.csv",
+  "written_utc": "2026-10-23 17:55:47 UTC",
+  "inputs": [
+    {
+      "path": "dac_midwives.csv",
+      "sha256": "446a935a516a9decc5da253e97a0f22dcdf92be86ea031d0399d7b8ebc23cc7e"
+    },
+    {
+      "path": "artifacts/doximity_public_matched.csv",
+      "sha256": "ced41df14a21d40625d0ae5c5fb0b99f04783cd3065d0f5d0dc362cfa28db0fe"
+    },
+    {
+      "path": "artifacts/tracked_roster_active_primary_linked.csv",
+      "sha256": "e2a2bba34b895d66bad03e5422bbdcc4933a8abbe4f4dc315d7af072676203dc"
+    }
+  ],
+  "code_sha256": "4f9108133812f43226f78d9200288dd4c3e4240010fd1a4a23947db8c5b3c632",
+  "code": [
+    {
+      "path": "compare_pecos_to_doximity_address.R",
+      "sha256": "ea7f11b5fc15f7843897885224c6a8972328591b0a7958c38035cc778ceeb14e"
+    },
+    {
+      "path": "R/join_safety.R",
+      "sha256": "96a2eeeef8b9821178abed57d90213e299c9539f4358b4f6ed47c9fc2b8c0280"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/safe_divide.R",
+      "sha256": "9676b960bacb210a2167e7751dd84c5b9c80a0bf5442425e0b0f322b25aa04bc"
+    }
+  ]
+}
