@@ -26,6 +26,14 @@
 # Name matching is imperfect (misses a hyphenated or maiden-name mismatch,
 # can over-match a common name); this script reports what it found as its own
 # result, not a confirmation of AMCB/NPPES identity.
+#
+# ADDRESS FIELDS (added 2026-10-23). The API response was already carrying
+# city/state/mailzipcode on every row this script has always fetched; nothing
+# downstream was reading them. DORA's own field name is "mailzipcode" --
+# board-reported MAILING address, not necessarily where the CNM practices
+# (the same caveat Henderson 2015 raised about the AMA Masterfile's
+# self-selected "preferred mailing address" field). Captured and labeled as
+# such, not silently treated as a practice address.
 # =============================================================================
 import csv
 import json
@@ -95,6 +103,9 @@ with open(roster_file, "r", encoding="utf-8", errors="ignore") as f:
             out["live_bon_status"] = co_info.get("licensestatusdescription", "")
             out["live_bon_exp_date"] = co_info.get("licenseexpirationdate", "")
             out["live_bon_specialty"] = co_info.get("specialty", "")
+            out["live_bon_mail_city"] = co_info.get("city", "")
+            out["live_bon_mail_state"] = co_info.get("state", "")
+            out["live_bon_mail_zip"] = co_info.get("mailzipcode", "")
             out["live_bon_match_status"] = "VERIFIED_LIVE_BON"
             matched_co.append(out)
         else:
@@ -106,6 +117,9 @@ with open(roster_file, "r", encoding="utf-8", errors="ignore") as f:
             out["live_bon_status"] = "UNMATCHED_BON" if not candidates else "AMBIGUOUS_BON"
             out["live_bon_exp_date"] = "NA"
             out["live_bon_specialty"] = "NA"
+            out["live_bon_mail_city"] = "NA"
+            out["live_bon_mail_state"] = "NA"
+            out["live_bon_mail_zip"] = "NA"
             out["live_bon_match_status"] = "UNMATCHED" if not candidates else "AMBIGUOUS"
             unmatched_co.append(out)
 
@@ -134,6 +148,7 @@ if rows:
         cohort_matched_rows=len(matched_co),
         match_key="last_name + first_name (upper, trimmed); ambiguous names reported unmatched",
         verification_portal="https://apps.colorado.gov/dora/licensing/Lookup/LicenseLookup.aspx",
+        address_fields="live_bon_mail_city/state/zip, from DORA's own city/state/mailzipcode -- MAILING address, not confirmed to be the practice location",
     )
     print(f"  Provenance: {out_csv}.provenance.json")
 
