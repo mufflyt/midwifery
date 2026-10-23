@@ -11,3 +11,6 @@ vs_bon_same_year,PECOS/DAC (2026) vs CT BON (board-reported),2026,live,zip5,14,1
 vs_bon_same_year,PECOS/DAC (2026) vs DE BON (board-reported),2026,live,state,0,0,NA
 vs_bon_same_year,PECOS/DAC (2026) vs DE BON (board-reported),2026,live,city,0,0,NA
 vs_bon_same_year,PECOS/DAC (2026) vs DE BON (board-reported),2026,live,zip5,0,0,NA
+vs_bon_same_year_pooled,PECOS/DAC (2026) vs BON (CO+IL+CT+DE pooled),2026,live,state,181,165,91.2
+vs_bon_same_year_pooled,PECOS/DAC (2026) vs BON (CO+IL+CT+DE pooled),2026,live,city,181,43,23.8
+vs_bon_same_year_pooled,PECOS/DAC (2026) vs BON (CO+IL+CT+DE pooled),2026,live,zip5,181,12,6.6

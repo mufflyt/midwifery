@@ -21,15 +21,19 @@
 #     (2026-10-23). EXCLUDED rather than regex-parsed.
 #   - CO, IL, CT, DE all carry a structured city/state/zip. INCLUDED.
 #
-# EACH STATE'S ADDRESS IS A DIFFERENT KIND OF "BON address," NOT POOLED INTO
-# ONE NUMBER. Colorado's fields are explicitly DORA's own "mailzipcode" --
-# a board-reported MAILING address (see harvest_live_co_bon_from_tracked_
-# roster.py's own header). Illinois/Connecticut/Delaware document no
-# mailing-vs-practice distinction at all. Reporting one row per state (not
-# one pooled PECOS-vs-"BON" row) keeps that heterogeneity visible instead of
-# averaging it away. Delaware is included for completeness even though it
-# currently contributes 0 rows (0 DE midwives in the tracked cohort as of
-# this run; see that script's own header) -- an honest zero, not an error.
+# EACH STATE'S ADDRESS IS A DIFFERENT KIND OF "BON address." Colorado's
+# fields are explicitly DORA's own "mailzipcode" -- a board-reported MAILING
+# address (see harvest_live_co_bon_from_tracked_roster.py's own header).
+# Illinois/Connecticut/Delaware document no mailing-vs-practice distinction
+# at all. Both the per-state rows AND one pooled "all states combined" row
+# are reported below -- the per-state rows keep that heterogeneity visible,
+# the pooled row answers "PECOS vs. state BON data overall" directly. The
+# pooled row is a real join over the union of all four states' verified
+# matches, not an average of the per-state percentages (averaging percentages
+# would weight a 1-record state the same as a 166-record one). Delaware is
+# included for completeness even though it currently contributes 0 rows (0
+# DE midwives in the tracked cohort as of this run; see that script's own
+# header) -- an honest zero, not an error.
 #
 # Inputs : dac_midwives.csv (person-level, gitignored; extract_dac_midwives.R)
 #          artifacts/live_colorado_bon_ingested_midwives_from_tracked_roster.csv
@@ -95,14 +99,29 @@ compare_two <- function(a, b, label, year_a, year_b, comparison_type, levels = c
   })
 }
 
+# Shape every state once; reused for both the per-state rows and the pooled one.
+bon_by_state <- map(BON_STATES, function(spec) {
+  bon <- shape_bon(spec)
+  assert_unique_keys(bon, "npi", label = basename(spec$path), dedupe = TRUE)
+})
+
 # One compare_two() call per state -- not one pooled join -- so each state's
 # own n and address "kind" stays attached to its own rows.
-out <- map_dfr(BON_STATES, function(spec) {
-  bon <- shape_bon(spec)
-  bon <- assert_unique_keys(bon, "npi", label = basename(spec$path), dedupe = TRUE)
+per_state <- map2_dfr(BON_STATES, bon_by_state, function(spec, bon) {
   compare_two(dac, bon, sprintf("PECOS/DAC (2026) vs %s", spec$label),
               "2026", "live", "vs_bon_same_year")
 })
+
+# One pooled row: every state's verified matches unioned into a single NPI
+# key before joining to DAC. assert_unique_keys catches it if the same NPI
+# ever turned up VERIFIED in two different states' pulls (shouldn't happen --
+# nppes_state is stable per NPI -- but this would stop the run rather than
+# silently keep one and drop the other).
+bon_all <- assert_unique_keys(bind_rows(bon_by_state), "npi", label = "pooled BON (CO+IL+CT+DE)", dedupe = TRUE)
+pooled <- compare_two(dac, bon_all, "PECOS/DAC (2026) vs BON (CO+IL+CT+DE pooled)",
+                       "2026", "live", "vs_bon_same_year_pooled")
+
+out <- bind_rows(per_state, pooled)
 print(as.data.frame(out), row.names = FALSE)
 
 write_with_provenance(out, OUT, inputs = c("dac_midwives.csv", map_chr(BON_STATES, "path")))
