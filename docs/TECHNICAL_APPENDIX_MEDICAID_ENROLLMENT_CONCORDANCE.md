@@ -147,6 +147,54 @@ minutes for ~85,000 rows across tens of thousands of mostly-tiny groups,
 almost entirely per-group overhead; the vectorised version does the same
 check on 60,000 synthetic rows / 20,000 groups in 0.06s).
 
+### 3.6 A national NPI-completeness gradient, not a two-state anomaly
+
+S10 originally reported Oregon and New Mexico's 0% NPI population as an
+isolated anomaly. **It is the extreme end of a gradient that touches every
+state's numbers, including the ones the headline results rest on.**
+`analyze_medicaid_npi_completeness_by_state.R` measures `NPI` completeness
+against the raw warehouse directly (no cohort filtering, no status/provider-
+type filtering -- every one of the 65,970,112 rows):
+
+| State | % NPI populated | State | % NPI populated | State | % NPI populated |
+|---|---:|---|---:|---|---:|
+| OR | 0.0 | WY | 53.9 | CT | 94.3 |
+| NM | 0.0 | NE | 58.9 | NY | 94.6 |
+| IL | 28.4 | TX | 65.3 | PA | 96.5 |
+| MN | 33.7 | ME | 67.6 | MO | 96.5 |
+| MI | 42.6 | **CO** | **71.9** | ND | 96.8 |
+| WI | 44.3 | IN | 72.1 | NJ | 96.9 |
+| AR | 49.0 | TN | 72.5 | GA | 97.4 |
+| CA | 49.9 | AZ | 75.2 | UT, MA | 98.3 |
+| WA | 52.4 | ID | 77.8 | ... | 98.6-99.9 |
+| | | | | SD | 100.0 |
+
+Full table: `artifacts/medicaid_npi_completeness_by_state.csv`. **19 of 54
+states/territories (35%) are below 80% NPI-populated; only South Dakota
+reaches 100%.** Colorado -- the single largest state in this cohort by
+volume (Figure 1) -- is itself only 71.9% NPI-populated; Texas 65.3%.
+
+**What this means for every percentage in S6-S8**: a blank-NPI row is a
+REAL enrollment segment (real dates, real status, real state) that cannot
+be joined to any provider, cohort member or not. It is indistinguishable,
+from inside this pipeline, from a cohort member who genuinely had no
+Medicaid enrollment that year -- both land in "Not observed." This means:
+
+- **"Not observed" is a mixture of two different things**: genuine absence
+  of Medicaid enrollment, and enrollment that exists but is unlinkable.
+  This analysis cannot separate them.
+- **Cross-state concordance comparisons (Figure 1, the by-state table) are
+  confounded by state-level linkage completeness**, not purely by midwife
+  behavior. A state with worse NPI population will mechanically show more
+  "Not observed" and fewer comparable rows -- that is a data-completeness
+  signal, not necessarily a workforce-participation one.
+- **Every concordance percentage in this appendix (S6.2's 81.9%, the
+  state-pair matrix, the over-time series) is a lower bound on the
+  comparable denominator that happened to survive this gradient**, not a
+  population estimate corrected for it. There is no information inside
+  this dataset to correct for it -- the blank-NPI rows carry nothing that
+  could identify which provider they belong to (S10).
+
 ## 4. Longitudinal enrollment construction
 
 Analytical key: `NPI x state x enrollment interval`. Overlapping and
@@ -255,7 +303,12 @@ Among the 32,952 NPI-years with both sources comparable:
 | Discordant | 5,644 | 17.1% |
 | Multistate discordant | 1,337 | 4.1% |
 
-**Combined concordant (Concordant + Multistate concordant): 81.9%.**
+**Combined concordant (Concordant + Multistate concordant): 81.9%.** Read
+this as a lower bound on the comparable subset, not a population estimate
+-- S3.6 measures a national NPI-linkage-completeness gradient (19 of 54
+states below 80%, Colorado itself at 71.9%) that this 81.9% figure cannot
+be corrected for.
+
 **Multistate practice is common**: 23.1% of comparable NPI-years show 2+
 Medicaid-enrolled states, and in 82.5% of those (6,259 of 7,596) NPPES's
 state is among them.
@@ -408,6 +461,19 @@ state reporting are all real, legitimate reasons for the two to diverge.
   should be read as "no data," not "no agreement"; CA's rate should be read
   as roughly halved by a national linkage-completeness gradient that varies
   continuously by state, not as a CA-specific finding.**
+- **The NPI-completeness gradient is not an OR/NM/CA problem -- it is a
+  whole-dataset problem (S3.6), added 2026-10-23.** 19 of 54 states are
+  below 80% NPI-populated, including Colorado (71.9%) and Texas (65.3%),
+  the two largest states in this cohort by row volume. Every blank-NPI row
+  anywhere in the warehouse is a real enrollment segment this pipeline
+  cannot attribute to a provider -- it lands in "Not observed"
+  indistinguishably from genuine non-enrollment. Every percentage reported
+  in S6-S8 (81.9% concordant-or-multistate, the state-pair matrix, the
+  over-time series) is a lower bound on whatever subset of rows happened to
+  survive each state's own linkage-completeness rate that year, not a
+  corrected population estimate -- there is nothing inside this dataset
+  that could perform that correction, since a blank-NPI row carries no
+  other identifying information (S10, OR/NM entry above) to recover it by.
 - **Rurality stratification**: not built (S8).
 - **FFS vs. managed care**: not answerable from this dataset (S3.2).
 
@@ -418,6 +484,7 @@ state reporting are all real, legitimate reasons for the two to diverge.
 # download_medicaid_provider_enrollment_segments.py if a refresh is needed.
 
 Rscript diagnose_medicaid_classification_disagreement.R   # S5 diagnostic
+Rscript analyze_medicaid_npi_completeness_by_state.R       # S3.6 gradient
 Rscript analyze_medicaid_enrollment_concordance.R          # S6-S8 main analysis
 Rscript analyze_medicaid_2023_2024_transition_support.R    # S7 migration validation
 Rscript make_medicaid_enrollment_concordance_figures.R     # all 4 figures
