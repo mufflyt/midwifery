@@ -18,7 +18,15 @@
 #          artifacts/healthgrades_vs_nppes_address_agreement.csv (compare_healthgrades_to_nppes_address.R)
 #          artifacts/healthgrades_vs_pecos_address_agreement.csv (compare_healthgrades_to_pecos_address.R)
 #          artifacts/pecos_vs_doximity_address_agreement.csv     (compare_pecos_to_doximity_address.R)
+#          artifacts/pecos_vs_bon_address_agreement.csv          (compare_pecos_to_bon_address.R)
 # Outputs: docs/figures/address_agreement_heatmap.png
+#
+# MIN_N = 5: two of compare_pecos_to_bon_address.R's rows are dropped here,
+# not in that script's own artifact -- IL (n=1) and DE (n=0, no DE midwives
+# currently in the tracked cohort) aren't usable as a percentage. The full
+# numbers, including those two, stay in artifacts/pecos_vs_bon_address_
+# agreement.csv; this is a display-only cut, named in the caption below
+# rather than silently vanishing two of six states.
 #
 # @family data-quality
 # @author Tyler Muffly, MD + Claude Code
@@ -31,17 +39,21 @@ INPUTS <- c(
   "artifacts/pecos_vs_nppes_address_agreement.csv",
   "artifacts/healthgrades_vs_nppes_address_agreement.csv",
   "artifacts/healthgrades_vs_pecos_address_agreement.csv",
-  "artifacts/pecos_vs_doximity_address_agreement.csv"
+  "artifacts/pecos_vs_doximity_address_agreement.csv",
+  "artifacts/pecos_vs_bon_address_agreement.csv"
 )
 stopifnot(all(file.exists(INPUTS)))
 
 dir.create("docs/figures", showWarnings = FALSE, recursive = TRUE)
 
+MIN_N <- 5
 d <- map_dfr(INPUTS, read_csv, col_types = cols(.default = "c")) %>%
   filter(level != "street") %>%
   mutate(level = factor(level, levels = c("state", "city", "zip5"),
                          labels = c("State", "City", "ZIP5")),
-         agree_pct = as.numeric(agree_pct))
+         agree_pct = as.numeric(agree_pct),
+         comparable_n = as.numeric(comparable_n)) %>%
+  filter(comparable_n >= MIN_N)
 
 heat <- ggplot(d, aes(x = level, y = source_pair, fill = agree_pct)) +
   geom_tile(color = "white", linewidth = 0.6) +
@@ -53,11 +65,11 @@ heat <- ggplot(d, aes(x = level, y = source_pair, fill = agree_pct)) +
   labs(title = "Address agreement across every source pair this project has checked",
        subtitle = "ZIP5 (outlined, bold) is the metric this project treats as primary. Street dropped -- never reliable.",
        x = NULL, y = NULL,
-       caption = "n per cell: see artifacts/*_address_agreement.csv") +
+       caption = sprintf("n per cell: see artifacts/*_address_agreement.csv. Rows with n < %d omitted here (IL BON n=1, DE BON n=0) -- see artifacts/pecos_vs_bon_address_agreement.csv for those numbers.", MIN_N)) +
   theme_minimal(base_size = 11) +
   theme(panel.grid = element_blank(),
         axis.text.y = element_text(size = 8),
-        plot.caption = element_text(hjust = 0))
+        plot.caption = element_text(hjust = 0, size = 7.5))
 
-ggsave("docs/figures/address_agreement_heatmap.png", heat, width = 10.5, height = 5, dpi = 200)
+ggsave("docs/figures/address_agreement_heatmap.png", heat, width = 11.5, height = 6.5, dpi = 200)
 cli::cli_alert_success("wrote docs/figures/address_agreement_heatmap.png")

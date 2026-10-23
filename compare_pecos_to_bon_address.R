@@ -1,0 +1,109 @@
+#!/usr/bin/env Rscript
+# =============================================================================
+# How well does PECOS agree with each state Board of Nursing's address?
+# =============================================================================
+# Sibling of compare_pecos_to_nppes_address.R: same DAC-as-PECOS stand-in
+# (see that script's header for why), same cascading-grain method
+# (state/city/zip5, inner join by NPI -- every live BON artifact already
+# carries npi directly, read from the tracked roster it was built against,
+# so no crosswalk hop is needed here the way the Doximity comparison needed
+# one).
+#
+# ONLY FOUR OF THE SIX LIVE BON PULLS HAVE A COMPARABLE ADDRESS AT ALL:
+#   - WA (harvest_live_wa_bon_from_tracked_roster.py) has no address field
+#     whatsoever -- credential number, status and expiration date only.
+#     EXCLUDED.
+#   - TX (harvest_live_tx_bon_from_tracked_roster.py) has
+#     live_bon_place_of_employment, a free-text employer string ("OpenLoop
+#     Healthcare 317 6th Ave Ste 400 Des Moines IA") with no component
+#     street/city/state/zip fields -- the same kind of free text that got
+#     street dropped from every other comparison in this project
+#     (2026-10-23). EXCLUDED rather than regex-parsed.
+#   - CO, IL, CT, DE all carry a structured city/state/zip. INCLUDED.
+#
+# EACH STATE'S ADDRESS IS A DIFFERENT KIND OF "BON address," NOT POOLED INTO
+# ONE NUMBER. Colorado's fields are explicitly DORA's own "mailzipcode" --
+# a board-reported MAILING address (see harvest_live_co_bon_from_tracked_
+# roster.py's own header). Illinois/Connecticut/Delaware document no
+# mailing-vs-practice distinction at all. Reporting one row per state (not
+# one pooled PECOS-vs-"BON" row) keeps that heterogeneity visible instead of
+# averaging it away. Delaware is included for completeness even though it
+# currently contributes 0 rows (0 DE midwives in the tracked cohort as of
+# this run; see that script's own header) -- an honest zero, not an error.
+#
+# Inputs : dac_midwives.csv (person-level, gitignored; extract_dac_midwives.R)
+#          artifacts/live_colorado_bon_ingested_midwives_from_tracked_roster.csv
+#          artifacts/live_illinois_bon_ingested_midwives_from_tracked_roster.csv
+#          artifacts/live_connecticut_bon_ingested_midwives_from_tracked_roster.csv
+#          artifacts/live_delaware_bon_ingested_midwives_from_tracked_roster.csv
+# Outputs: artifacts/pecos_vs_bon_address_agreement.csv (aggregate, tracked)
+#
+# @family data-quality
+# @author Tyler Muffly, MD + Claude Code
+# =============================================================================
+suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr); library(purrr); library(cli)})
+source(file.path("R", "lib", "artifact_provenance.R"))
+source(file.path("R", "join_safety.R"))  # assert_unique_keys(dedupe = TRUE)
+
+OUT <- "artifacts/pecos_vs_bon_address_agreement.csv"
+
+# path, city/state/zip column names, a short label for this state's own
+# address "kind" (goes straight into source_pair, so it's visible on sight).
+BON_STATES <- list(
+  list(path = "artifacts/live_colorado_bon_ingested_midwives_from_tracked_roster.csv",
+       city = "live_bon_mail_city", state = "live_bon_mail_state", zip = "live_bon_mail_zip",
+       label = "CO BON (mailing address)"),
+  list(path = "artifacts/live_illinois_bon_ingested_midwives_from_tracked_roster.csv",
+       city = "live_bon_city", state = "live_bon_state", zip = "live_bon_zip",
+       label = "IL BON (board-reported)"),
+  list(path = "artifacts/live_connecticut_bon_ingested_midwives_from_tracked_roster.csv",
+       city = "live_bon_city", state = "live_bon_state", zip = "live_bon_zip",
+       label = "CT BON (board-reported)"),
+  list(path = "artifacts/live_delaware_bon_ingested_midwives_from_tracked_roster.csv",
+       city = "live_bon_city", state = "live_bon_state", zip = "live_bon_zip",
+       label = "DE BON (board-reported)")
+)
+
+stopifnot(file.exists("dac_midwives.csv"), all(file.exists(map_chr(BON_STATES, "path"))))
+
+dac <- read_csv("dac_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+  transmute(npi, state = str_to_upper(str_squish(practice_state)),
+            city = str_to_upper(str_squish(practice_city)),
+            zip5 = str_sub(practice_zip, 1, 5))
+
+# Verified-match rows only (live_bon_match_status == "VERIFIED_LIVE_BON"):
+# UNMATCHED/AMBIGUOUS rows carry no board address to compare at all (see
+# each harvest script's own header for that three-way split).
+shape_bon <- function(spec) {
+  read_csv(spec$path, col_types = cols(.default = "c"), progress = FALSE) %>%
+    filter(live_bon_match_status == "VERIFIED_LIVE_BON", nzchar(npi)) %>%
+    transmute(npi, state = str_to_upper(str_squish(.data[[spec$state]])),
+              city = str_to_upper(str_squish(.data[[spec$city]])),
+              zip5 = str_sub(.data[[spec$zip]], 1, 5))
+}
+
+compare_two <- function(a, b, label, year_a, year_b, comparison_type, levels = c("state", "city", "zip5")) {
+  joined <- inner_join(a, b, by = "npi", suffix = c("_a", "_b"))
+  map_dfr(levels, function(lv) {
+    x <- joined[[paste0(lv, "_a")]]; y <- joined[[paste0(lv, "_b")]]
+    comparable <- sum(nzchar(x) & nzchar(y), na.rm = TRUE)
+    agree <- sum(nzchar(x) & nzchar(y) & x == y, na.rm = TRUE)
+    tibble(comparison_type = comparison_type, source_pair = label,
+           year_a = year_a, year_b = year_b, level = lv,
+           comparable_n = comparable, agree_n = agree,
+           agree_pct = if (comparable > 0) round(100 * agree / comparable, 1) else NA_real_)
+  })
+}
+
+# One compare_two() call per state -- not one pooled join -- so each state's
+# own n and address "kind" stays attached to its own rows.
+out <- map_dfr(BON_STATES, function(spec) {
+  bon <- shape_bon(spec)
+  bon <- assert_unique_keys(bon, "npi", label = basename(spec$path), dedupe = TRUE)
+  compare_two(dac, bon, sprintf("PECOS/DAC (2026) vs %s", spec$label),
+              "2026", "live", "vs_bon_same_year")
+})
+print(as.data.frame(out), row.names = FALSE)
+
+write_with_provenance(out, OUT, inputs = c("dac_midwives.csv", map_chr(BON_STATES, "path")))
+cli::cli_alert_success("wrote {OUT}")
