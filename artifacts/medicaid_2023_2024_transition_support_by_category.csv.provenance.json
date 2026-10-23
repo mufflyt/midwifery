@@ -1,6 +1,6 @@
 {
   "artifact": "medicaid_2023_2024_transition_support_by_category.csv",
-  "written_utc": "2026-10-22 21:15:36 UTC",
+  "written_utc": "2026-10-23 16:55:00 UTC",
   "inputs": [
     {
       "path": "midwife_panel.csv",
@@ -15,11 +15,11 @@
       "sha256": "900db6fbe72e3b5cb55447079d3bbac39550dc93853353a8b9357ec160a2a49b"
     }
   ],
-  "code_sha256": "e6e6040258214253d5c148b5ee4191d7a8a4f0a9e333e67d3cdb3fdbe1b2e70d",
+  "code_sha256": "a085d090f9ccdd23ef9568f903ebb71cdd2441ef9e78d8e85e12fac229f3c9b1",
   "code": [
     {
       "path": "analyze_medicaid_2023_2024_transition_support.R",
-      "sha256": "ca3a91a557b1d702ce79d9f686ac6a1101f48e734c69df702f32f1843ed8d729"
+      "sha256": "7404d8c971b06d31f85d55cb2c4fbc2a0ec99c2dad67f33b4c866bdd5c92261b"
     },
     {
       "path": "R/lib/artifact_provenance.R",
@@ -31,7 +31,7 @@
     },
     {
       "path": "R/lib/medicaid_enrollment_intervals.R",
-      "sha256": "64965095c36253158d390a197c6e9844a27230e149f8fc9045f5ce168699f6d6"
+      "sha256": "5c592ca406aaa4698bf5176c693ab09fd86a3a31afddd5504cb85bbd4d4ecc62"
     },
     {
       "path": "R/lib/medicaid_state_concordance.R",

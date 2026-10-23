@@ -62,13 +62,6 @@ cohort_npi <- tibble::tibble(npi = unique(canon$npi)) |>
 base::message(sprintf("Canonical, NPI-valid cohort: %d NPIs.", nrow(cohort_npi)))
 
 # ---- NPPES 2023 and 2024 practice state, deduped --------------------------
-normalize_snapshot_date <- function(x) {
-  eight_digit <- grepl("^[0-9]{8}$", x)
-  reformatted <- ifelse(eight_digit,
-                        paste(substr(x, 1, 4), substr(x, 5, 6), substr(x, 7, 8), sep = "-"),
-                        x)
-  suppressWarnings(as.Date(reformatted))
-}
 panel_raw <- readr::read_csv(PANEL, col_types = readr::cols(.default = "c"), progress = FALSE) |>
   dplyr::semi_join(cohort_npi, by = "npi") |>
   dplyr::filter(.data$snapshot_year %in% c("2023", "2024"),

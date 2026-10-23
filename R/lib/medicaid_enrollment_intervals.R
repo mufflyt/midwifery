@@ -272,3 +272,23 @@ detect_contradictory_segments <- function(segments) {
                  start_b = b$start[keep], end_b = b$end[keep],
                  status_family_b = b$status_family[keep])
 }
+
+#' Normalise `midwife_panel.csv`'s inconsistently formatted snapshot_date
+#'
+#' Observed directly across panel builds: "2020-10-11" alongside bare
+#' "20201011" (no separators) for the same column. A plain `as.Date()`
+#' silently returns NA for the eight-digit form rather than erroring, which
+#' would make every NPI-year from whichever build years used that form
+#' quietly drop out of anything keyed on this date -- reformat the
+#' eight-digit case to ISO before parsing rather than let that happen.
+#'
+#' @param x [character] raw `snapshot_date` values.
+#' @return [Date], one per input value; `NA` only for genuinely unparseable
+#'   input, never for the eight-digit form.
+normalize_snapshot_date <- function(x) {
+  eight_digit <- grepl("^[0-9]{8}$", x)
+  reformatted <- ifelse(eight_digit,
+                        paste(substr(x, 1, 4), substr(x, 5, 6), substr(x, 7, 8), sep = "-"),
+                        x)
+  suppressWarnings(as.Date(reformatted))
+}

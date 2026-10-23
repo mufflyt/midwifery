@@ -185,16 +185,6 @@ panel_raw <- readr::read_csv(
   PANEL, col_types = readr::cols(.default = "c"), progress = FALSE) |>
   dplyr::semi_join(cohort_valid, by = "npi")
 
-# snapshot_date is inconsistently formatted across panel builds (observed
-# directly: "2020-10-11" alongside bare "20201011", no separators).
-normalize_snapshot_date <- function(x) {
-  eight_digit <- grepl("^[0-9]{8}$", x)
-  reformatted <- ifelse(eight_digit,
-                        paste(substr(x, 1, 4), substr(x, 5, 6), substr(x, 7, 8), sep = "-"),
-                        x)
-  suppressWarnings(as.Date(reformatted))
-}
-
 nppes_year <- panel_raw |>
   dplyr::filter(!is.na(.data$practice_state), nzchar(.data$practice_state),
                !is.na(.data$snapshot_date), nzchar(.data$snapshot_date)) |>
