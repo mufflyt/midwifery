@@ -1,0 +1,3 @@
+definition,n_cohort_npi,n_cohort_npi_years,n_with_nppes_state,n_with_medicaid_evidence,n_comparable_both_sources
+snapshot_date_primary,12170,85190,66292,32952,32952
+any_time_in_year_secondary,12170,85190,66292,35569,34516
