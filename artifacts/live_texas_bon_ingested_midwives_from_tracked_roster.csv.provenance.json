@@ -1,18 +1,18 @@
 {
-  "artifact": "artifacts/live_texas_bon_ingested_midwives_from_tracked_roster.csv",
+  "artifact": "live_texas_bon_ingested_midwives_from_tracked_roster.csv",
   "source_url": "https://data.texas.gov/resource/jnzg-cr4w.json?apn_category=NURSE+MIDWIFE&%24limit=5000",
-  "accessed_utc": "2026-09-17T15:46:27Z",
-  "accessed_utc_basis": "Restated from this sidecar's own `retrieved_utc` (\"2026-09-17 15:46:27 UTC\"), which is already UTC. Written under the name the gate reads (#230); `source_api` and `retrieved_utc` are kept as aliases.",
-  "sha256": "8439d02fd12ebb93f6aad6822c3a70a114891c5b98cd0b6cbee5fea35230867a",
-  "byte_size": 57204,
+  "accessed_utc": "2026-10-23T17:01:30Z",
+  "sha256": "7bae4c6bead2133f1ee9983ca9ce9d462084e47a5c95275597b269387b075abd",
+  "byte_size": 83611,
   "source_api": "https://data.texas.gov/resource/jnzg-cr4w.json?apn_category=NURSE+MIDWIFE&%24limit=5000",
+  "retrieved_utc": "2026-10-23 17:01:30 UTC",
   "source_dataset": "Texas Board of Nursing, APRN-Active (data.texas.gov jnzg-cr4w)",
-  "retrieved_utc": "2026-09-17 15:46:27 UTC",
-  "records_retrieved": 754,
+  "records_retrieved": 755,
   "cohort": "artifacts/tracked_roster_active_primary_linked.csv",
   "cohort_sha256": "e2a2bba34b895d66bad03e5422bbdcc4933a8abbe4f4dc315d7af072676203dc",
   "cohort_rows_tx": 536,
-  "cohort_matched_rows": 469,
+  "cohort_matched_rows": 467,
   "match_key": "last_name + first_name (upper, trimmed); ambiguous names reported unmatched",
-  "verification_portal": "https://www.bon.texas.gov/licensure_verification.asp"
+  "verification_portal": "https://www.bon.texas.gov/licensure_verification.asp",
+  "address_fields": "live_bon_place_of_employment, raw free text from the board's own field -- employer name plus street/city/state, not parsed, not confirmed to be in Texas"
 }

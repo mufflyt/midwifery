@@ -44,6 +44,18 @@
 # data.texas.gov; this falls back to certifi's bundle. It briefly used
 # CERT_NONE instead, which turns off certificate and hostname checking
 # altogether and would accept any server answering for that name.
+#
+# PLACE_OF_EMPLOYMENT (added 2026-10-23). The API has always returned this
+# free-text field -- an employer name plus street address plus city plus
+# state, e.g. "OpenLoop Healthcare 317 6th Ave Ste 400 Des Moines IA" --
+# nothing downstream was reading it. Unlike Colorado's mailing ZIP, this is
+# self-attested as the nurse's WORKPLACE, closer to NPPES's own
+# practice_address than a mailing address is -- but it is free text, no
+# component fields (no separate street/city/state/zip), may name an employer
+# the licensee no longer works for if TX BON data lags a job change, and may
+# be in ANY state (the example above is Iowa, for a Texas license), not
+# necessarily Texas. Captured raw here; parsing it into comparable
+# street/city/state components is a separate step, not done in this script.
 # =============================================================================
 import csv
 import hashlib
@@ -141,6 +153,7 @@ with open(roster_file, "r", encoding="utf-8", errors="ignore") as f:
             out["live_rxn_authority_number"] = tx_info.get("apn_prescriptive_authority_number", "")
             out["live_rxn_authority_status"] = tx_info.get("apn_prescriptive_authority_status", "")
             out["live_rxn_authority_exp_date"] = tx_info.get("apn_prescriptive_authority_expiration_date", "")
+            out["live_bon_place_of_employment"] = tx_info.get("place_of_employment", "")
             out["live_bon_match_status"] = "VERIFIED_LIVE_BON"
             matched_tx.append(out)
         else:
@@ -153,6 +166,7 @@ with open(roster_file, "r", encoding="utf-8", errors="ignore") as f:
             out["live_rxn_authority_number"] = "NA"
             out["live_rxn_authority_status"] = "NA"
             out["live_rxn_authority_exp_date"] = "NA"
+            out["live_bon_place_of_employment"] = "NA"
             out["live_bon_match_status"] = "UNMATCHED" if not candidates else "AMBIGUOUS"
             unmatched_tx.append(out)
 
@@ -191,6 +205,7 @@ if rows:
         cohort_matched_rows=len(matched_tx),
         match_key="last_name + first_name (upper, trimmed); ambiguous names reported unmatched",
         verification_portal="https://www.bon.texas.gov/licensure_verification.asp",
+        address_fields="live_bon_place_of_employment, raw free text from the board's own field -- employer name plus street/city/state, not parsed, not confirmed to be in Texas",
     )
 
 n_total = len(matched_tx) + len(unmatched_tx)
