@@ -45,8 +45,9 @@
 # @family data-quality
 # @author Tyler Muffly, MD + Claude Code
 # =============================================================================
-suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr); library(purrr); library(cli)})
+suppressPackageStartupMessages({library(dplyr); library(readr); library(purrr); library(cli)})
 source(file.path("R", "lib", "artifact_provenance.R"))
+source(file.path("R", "lib", "address_agreement_compare.R"))  # shape_address(), compare_two()
 source(file.path("R", "join_safety.R"))  # assert_unique_keys(dedupe = TRUE)
 
 OUT <- "artifacts/pecos_vs_bon_address_agreement.csv"
@@ -68,40 +69,20 @@ BON_STATES <- list(
        label = "DE BON (board-reported)")
 )
 
-stopifnot(file.exists("dac_midwives.csv"), all(file.exists(map_chr(BON_STATES, "path"))))
+BON_PATHS <- map_chr(BON_STATES, "path")
+stopifnot(file.exists("dac_midwives.csv"), all(file.exists(BON_PATHS)))
 
 dac <- read_csv("dac_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
-  transmute(npi, state = str_to_upper(str_squish(practice_state)),
-            city = str_to_upper(str_squish(practice_city)),
-            zip5 = str_sub(practice_zip, 1, 5))
+  shape_address("npi", "practice_state", "practice_city", "practice_zip")
 
-# Verified-match rows only (live_bon_match_status == "VERIFIED_LIVE_BON"):
+# Shape every state once; reused for both the per-state rows and the pooled
+# one. Verified-match rows only (live_bon_match_status == "VERIFIED_LIVE_BON"):
 # UNMATCHED/AMBIGUOUS rows carry no board address to compare at all (see
 # each harvest script's own header for that three-way split).
-shape_bon <- function(spec) {
-  read_csv(spec$path, col_types = cols(.default = "c"), progress = FALSE) %>%
-    filter(live_bon_match_status == "VERIFIED_LIVE_BON", nzchar(npi)) %>%
-    transmute(npi, state = str_to_upper(str_squish(.data[[spec$state]])),
-              city = str_to_upper(str_squish(.data[[spec$city]])),
-              zip5 = str_sub(.data[[spec$zip]], 1, 5))
-}
-
-compare_two <- function(a, b, label, year_a, year_b, comparison_type, levels = c("state", "city", "zip5")) {
-  joined <- inner_join(a, b, by = "npi", suffix = c("_a", "_b"))
-  map_dfr(levels, function(lv) {
-    x <- joined[[paste0(lv, "_a")]]; y <- joined[[paste0(lv, "_b")]]
-    comparable <- sum(nzchar(x) & nzchar(y), na.rm = TRUE)
-    agree <- sum(nzchar(x) & nzchar(y) & x == y, na.rm = TRUE)
-    tibble(comparison_type = comparison_type, source_pair = label,
-           year_a = year_a, year_b = year_b, level = lv,
-           comparable_n = comparable, agree_n = agree,
-           agree_pct = if (comparable > 0) round(100 * agree / comparable, 1) else NA_real_)
-  })
-}
-
-# Shape every state once; reused for both the per-state rows and the pooled one.
 bon_by_state <- map(BON_STATES, function(spec) {
-  bon <- shape_bon(spec)
+  bon <- read_csv(spec$path, col_types = cols(.default = "c"), progress = FALSE) %>%
+    filter(live_bon_match_status == "VERIFIED_LIVE_BON", nzchar(npi)) %>%
+    shape_address("npi", spec$state, spec$city, spec$zip)
   assert_unique_keys(bon, "npi", label = basename(spec$path), dedupe = TRUE)
 })
 
@@ -124,5 +105,5 @@ pooled <- compare_two(dac, bon_all, "PECOS/DAC (2026) vs BON (CO+IL+CT+DE pooled
 out <- bind_rows(per_state, pooled)
 print(as.data.frame(out), row.names = FALSE)
 
-write_with_provenance(out, OUT, inputs = c("dac_midwives.csv", map_chr(BON_STATES, "path")))
+write_with_provenance(out, OUT, inputs = c("dac_midwives.csv", BON_PATHS))
 cli::cli_alert_success("wrote {OUT}")
