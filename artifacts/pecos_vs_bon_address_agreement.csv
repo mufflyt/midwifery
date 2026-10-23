@@ -1,7 +1,7 @@
 comparison_type,source_pair,year_a,year_b,level,comparable_n,agree_n,agree_pct
-vs_bon_same_year,PECOS/DAC (2026) vs CO BON (mailing address),2026,live,state,166,152,91.6
-vs_bon_same_year,PECOS/DAC (2026) vs CO BON (mailing address),2026,live,city,166,40,24.1
-vs_bon_same_year,PECOS/DAC (2026) vs CO BON (mailing address),2026,live,zip5,166,11,6.6
+vs_bon_same_year,"PECOS/DAC (2026) vs CA BON (board-reported, no state/ZIP field on this source)",2026,live,state,0,0,NA
+vs_bon_same_year,"PECOS/DAC (2026) vs CA BON (board-reported, no state/ZIP field on this source)",2026,live,city,223,55,24.7
+vs_bon_same_year,"PECOS/DAC (2026) vs CA BON (board-reported, no state/ZIP field on this source)",2026,live,zip5,0,0,NA
 vs_bon_same_year,PECOS/DAC (2026) vs IL BON (board-reported),2026,live,state,1,0,0
 vs_bon_same_year,PECOS/DAC (2026) vs IL BON (board-reported),2026,live,city,1,0,0
 vs_bon_same_year,PECOS/DAC (2026) vs IL BON (board-reported),2026,live,zip5,1,0,0
@@ -11,6 +11,6 @@ vs_bon_same_year,PECOS/DAC (2026) vs CT BON (board-reported),2026,live,zip5,14,1
 vs_bon_same_year,PECOS/DAC (2026) vs DE BON (board-reported),2026,live,state,0,0,NA
 vs_bon_same_year,PECOS/DAC (2026) vs DE BON (board-reported),2026,live,city,0,0,NA
 vs_bon_same_year,PECOS/DAC (2026) vs DE BON (board-reported),2026,live,zip5,0,0,NA
-vs_bon_same_year_pooled,PECOS/DAC (2026) vs BON (CO+IL+CT+DE pooled),2026,live,state,181,165,91.2
-vs_bon_same_year_pooled,PECOS/DAC (2026) vs BON (CO+IL+CT+DE pooled),2026,live,city,181,43,23.8
-vs_bon_same_year_pooled,PECOS/DAC (2026) vs BON (CO+IL+CT+DE pooled),2026,live,zip5,181,12,6.6
+vs_bon_same_year_pooled,PECOS/DAC (2026) vs BON (CA+IL+CT+DE pooled),2026,live,state,15,13,86.7
+vs_bon_same_year_pooled,PECOS/DAC (2026) vs BON (CA+IL+CT+DE pooled),2026,live,city,238,58,24.4
+vs_bon_same_year_pooled,PECOS/DAC (2026) vs BON (CA+IL+CT+DE pooled),2026,live,zip5,15,1,6.7

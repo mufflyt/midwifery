@@ -189,3 +189,19 @@ artifacts/live_connecticut_bon_ingested_midwives_from_tracked_roster.csv
 # public. Produced by harvest_live_de_bon_from_tracked_roster.py against
 # artifacts/tracked_roster_active_primary_linked.csv.
 artifacts/live_delaware_bon_ingested_midwives_from_tracked_roster.csv
+
+# Live California DCA Board of Registered Nursing "Nurse Midwife" cross-
+# reference: 1,342 CA-state midwives matched against the CA Department of
+# Consumer Affairs' public, no-login Box-hosted BRN roster (License Type =
+# "Nurse Midwife", distinct from "Nurse Midwife Furnishing"), matched by
+# last+first name against the tracked FROZEN cohort -- neither an NPI nor
+# an AMCB identifier is shared with this source. The largest BON sample in
+# this project by a wide margin. 15 saboteur tests cover file-shape
+# validation and the matching join's edge cases
+# (tests/test_harvest_live_california_bon_from_tracked_roster.py).
+# Reviewed and accepted by Tyler Muffly, 2026-10-23, same reasoning as the
+# WA/CO/TX/IL/CT/DE board entries above: every underlying field (AMCB
+# name/certification number, NPI, CA DCA's own published license fields)
+# is independently public. Produced by
+# harvest_live_california_bon_from_tracked_roster.py.
+artifacts/live_california_bon_ingested_midwives_from_tracked_roster.csv
