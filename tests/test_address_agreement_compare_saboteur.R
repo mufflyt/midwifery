@@ -31,7 +31,7 @@ chk <- function(cond, m) {
   if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
   else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
 }
-errors <- function(expr) inherits(tryCatch(expr, error = function(e) e), "error")
+error <- function(expr) inherits(tryCatch(expr, error = function(e) e), "error")
 
 # -----------------------------------------------------------------------------
 # shape_address(): column normalization
@@ -70,19 +70,31 @@ chk(shaped$city[1] == "DENVER" && shaped$city[2] == "DENVER",
 
 # aac-npi-col-ignored
 raw_altnpi <- tibble(hg_npi = "9999999999", st_col = "CO", ct_col = "DENVER", zip_col = "80227")
-chk(!errors(shape_address(raw_altnpi, "hg_npi", "st_col", "ct_col", "zip_col")),
+chk(!error(shape_address(raw_altnpi, "hg_npi", "st_col", "ct_col", "zip_col")),
     "A6 npi_col names which column holds the NPI -- works for a non-\"npi\"-named column")
 chk(shape_address(raw_altnpi, "hg_npi", "st_col", "ct_col", "zip_col")$npi == "9999999999",
     "A7 ... and reads the actual value from that column, not a hardcoded \"npi\" column")
 
 # aac-match-arg-removed, aac-zip-mode-default-swapped
-chk(!errors(shape_address(raw, "id_col", "st_col", "ct_col", "zip_col")),
+chk(!error(shape_address(raw, "id_col", "st_col", "ct_col", "zip_col")),
     "A8 (control) omitting zip_mode doesn't error")
 chk(shape_address(raw, "id_col", "st_col", "ct_col", "zip_col")$zip5[1] == "80227",
     "A9 omitting zip_mode defaults to \"substr\" (first 5 chars), not \"trailing5\"")
 
+# aac-zip-col-null-not-handled (a source with no zip field at all, e.g.
+# California's BRN roster: license number, status, city, county -- no zip)
+no_zip <- shape_address(raw, "id_col", "st_col", "ct_col", zip_col = NULL)
+chk(!error(no_zip) && all(is.na(no_zip$zip5)),
+    "A10 zip_col = NULL produces zip5 = NA for every row, not an error or a blank string")
+
+# aac-state-col-null-not-handled (CA's source has no independent state
+# field either -- every row is already scoped to CA by construction)
+no_state <- shape_address(raw, "id_col", state_col = NULL, "ct_col")
+chk(!error(no_state) && all(is.na(no_state$state)),
+    "A11 state_col = NULL produces state = NA for every row, not an error")
+
 # -----------------------------------------------------------------------------
-# compare_two(): cascading-grain agreement
+# compare_address_pair(): cascading-grain agreement
 # -----------------------------------------------------------------------------
 # Row 1: city agrees (DENVER/DENVER), zip agrees (80202/80202).
 # Row 2: city disagrees (DENVER/BOULDER), zip disagrees (80202/80302).
@@ -97,7 +109,7 @@ a <- tibble(npi = c("1", "2", "3", "4"), state = rep("CO", 4),
 b <- tibble(npi = c("1", "2", "3", "4"), state = rep("CO", 4),
            city = c("DENVER", "BOULDER", "AURORA", "80011"),
            zip5 = c("80202", "80302", "80011", "80010"))
-out <- compare_two(a, b, "test", "2026", "2026", "test_type")
+out <- compare_address_pair(a, b, "test", "2026", "2026", "test_type")
 city_row <- out[out$level == "city", ]
 zip_row <- out[out$level == "zip5", ]
 
@@ -118,7 +130,7 @@ chk(city_row$comparable_n == 3,
 # Here it's reversed: a's value is real, b's is blank.
 y_blank_a <- tibble(npi = "7", state = "CO", city = "DENVER", zip5 = "80202")
 y_blank_b <- tibble(npi = "7", state = "CO", city = "", zip5 = "80202")
-y_blank_out <- compare_two(y_blank_a, y_blank_b, "test", "2026", "2026", "test_type")
+y_blank_out <- compare_address_pair(y_blank_a, y_blank_b, "test", "2026", "2026", "test_type")
 chk(y_blank_out[y_blank_out$level == "city", "comparable_n"][[1]] == 0,
     "B3 a blank city on side B (not side A) is still excluded from comparable_n")
 
@@ -131,7 +143,7 @@ blank_a <- tibble(npi = c("9", "10"), state = c("CO", "CO"),
                   city = c("DENVER", ""), zip5 = c("80202", "80202"))
 blank_b <- tibble(npi = c("9", "10"), state = c("CO", "CO"),
                   city = c("BOULDER", ""), zip5 = c("80302", "80203"))
-blank_out <- compare_two(blank_a, blank_b, "test", "2026", "2026", "test_type")
+blank_out <- compare_address_pair(blank_a, blank_b, "test", "2026", "2026", "test_type")
 blank_city <- blank_out[blank_out$level == "city", ]
 chk(blank_city$comparable_n == 1 && blank_city$agree_pct == 0,
     "B4 a blank-vs-blank city pair contributes to neither comparable_n nor agree_n (the one real, disagreeing row scores 0%, not inflated by the blank pair)")
@@ -142,7 +154,7 @@ chk(city_row$agree_pct == round(100 * 2 / 3, 1),
 
 # aac-na-guard-removed
 empty_a <- tibble(npi = character(0), state = character(0), city = character(0), zip5 = character(0))
-empty_out <- compare_two(a, empty_a, "test", "2026", "2026", "test_type")
+empty_out <- compare_address_pair(a, empty_a, "test", "2026", "2026", "test_type")
 pct <- empty_out[empty_out$level == "state", "agree_pct"][[1]]
 chk(is.na(pct) && !is.nan(pct),
     "B6 zero comparable records reports a clean NA, not NaN (0/0)")
@@ -156,7 +168,7 @@ chk(city_row$agree_pct == 66.7 && city_row$agree_pct != round(66.7),
 # paired with a real value on side B.
 na_a <- tibble(npi = "8", state = "CO", city = NA_character_, zip5 = "80202")
 na_b <- tibble(npi = "8", state = "CO", city = "DENVER", zip5 = "80202")
-na_out <- compare_two(na_a, na_b, "test", "2026", "2026", "test_type")
+na_out <- compare_address_pair(na_a, na_b, "test", "2026", "2026", "test_type")
 chk(na_out[na_out$level == "city", "comparable_n"][[1]] == 0,
     "B8 a genuinely missing (NA) city on side A is excluded from comparable_n, same as a blank string")
 
@@ -165,12 +177,12 @@ chk(na_out[na_out$level == "city", "comparable_n"][[1]] == 0,
 # own (still-present) coercion already excludes that row either way.
 na_a2 <- tibble(npi = "11", state = "CO", city = "DENVER", zip5 = "80202")
 na_b2 <- tibble(npi = "11", state = "CO", city = NA_character_, zip5 = "80202")
-na_out2 <- compare_two(na_a2, na_b2, "test", "2026", "2026", "test_type")
+na_out2 <- compare_address_pair(na_a2, na_b2, "test", "2026", "2026", "test_type")
 chk(na_out2[na_out2$level == "city", "comparable_n"][[1]] == 0,
     "B9 a genuinely missing (NA) city on side B is excluded from comparable_n, same as a blank string")
 
 # aac-levels-default-missing-zip5
-default_out <- compare_two(a, b, "test", "2026", "2026", "test_type")
+default_out <- compare_address_pair(a, b, "test", "2026", "2026", "test_type")
 chk("zip5" %in% default_out$level,
     "B10 the default levels argument (used by every compare_*_address.R caller without passing levels explicitly) still includes zip5")
 

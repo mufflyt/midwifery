@@ -3,8 +3,11 @@
 # Build the PECOS/DAC-vs-BON address_pairs table for the mismatch flow map
 # =============================================================================
 # Sibling of build_dac_nppes_address_flow_pairs.R, for compare_pecos_to_bon_
-# address.R's CO+CT data instead of NPPES. IL (n=1) and DE (n=0) are
-# excluded, same MIN_N=5 cut the address-agreement heatmap applies.
+# address.R's data instead of NPPES. CT is the only state included: CO was
+# removed from that comparison entirely (2026-10-23, its field is a MAILING
+# address, not a practice address -- see compare_pecos_to_bon_address.R's
+# own header), and IL (n=1) and DE (n=0) are excluded here, same MIN_N=5 cut
+# the address-agreement heatmap applies.
 #
 # ZIP5-CENTROID, NOT STREET-LEVEL. The DAC/NPPES map geocodes full street
 # addresses via the Census batch geocoder. State BON data here only carries
@@ -26,7 +29,6 @@
 # scheme.
 #
 # Inputs : dac_midwives.csv (person-level, gitignored; extract_dac_midwives.R)
-#          artifacts/live_colorado_bon_ingested_midwives_from_tracked_roster.csv
 #          artifacts/live_connecticut_bon_ingested_midwives_from_tracked_roster.csv
 #          data/us_zip_centroids.csv (gitignored reference; zip,latitude,longitude)
 # Output : artifacts/pecos_vs_bon_address_pairs.csv (person-level, gitignored)
@@ -45,8 +47,6 @@ centroids <- read_csv(ZIP_CENTROIDS, col_types = cols(zip = "c", latitude = "d",
 centroids <- assert_unique_keys(centroids, "zip", label = ZIP_CENTROIDS, dedupe = TRUE)
 
 BON_STATES <- list(
-  list(path = "artifacts/live_colorado_bon_ingested_midwives_from_tracked_roster.csv",
-       city = "live_bon_mail_city", state = "live_bon_mail_state", zip = "live_bon_mail_zip"),
   list(path = "artifacts/live_connecticut_bon_ingested_midwives_from_tracked_roster.csv",
        city = "live_bon_city", state = "live_bon_state", zip = "live_bon_zip")
 )
@@ -72,7 +72,7 @@ bon <- bind_rows(lapply(BON_STATES, function(spec) {
   inner_join(centroids, by = c("zip5" = "zip")) %>%
   rename(comparison_lon = longitude, comparison_lat = latitude) %>%
   select(-zip5)
-bon <- assert_unique_keys(bon, "npi", label = "pooled CO+CT BON", dedupe = TRUE)
+bon <- assert_unique_keys(bon, "npi", label = "CT BON", dedupe = TRUE)
 
 pairs <- inner_join(dac, bon, by = "npi") %>%
   mutate(year = 2026L, source = "BON") %>%

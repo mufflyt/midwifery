@@ -40,7 +40,7 @@
 # =============================================================================
 suppressPackageStartupMessages({library(dplyr); library(readr); library(cli)})
 source(file.path("R", "lib", "artifact_provenance.R"))
-source(file.path("R", "lib", "address_agreement_compare.R"))  # shape_address(), compare_two()
+source(file.path("R", "lib", "address_agreement_compare.R"))  # shape_address(), compare_address_pair()
 source(file.path("R", "join_safety.R"))  # assert_unique_keys(dedupe = TRUE)
 
 OUT <- "artifacts/healthgrades_vs_nppes_address_agreement.csv"
@@ -60,7 +60,7 @@ nppes <- assert_unique_keys(nppes, "npi", label = "midwife_panel.csv", dedupe = 
 # source_pair spells out both sides plainly: "scraped" (no fixed vintage) vs
 # NPPES's 2026 snapshot, so it's unambiguous on sight that these are not
 # year-matched the way the PECOS/DAC comparison is.
-out <- compare_two(healthgrades, nppes, "Healthgrades (scraped) vs NPPES (2026)", "scraped", "2026", "vs_nppes_same_year")
+out <- compare_address_pair(healthgrades, nppes, "Healthgrades (scraped) vs NPPES (2026)", "scraped", "2026", "vs_nppes_same_year")
 print(as.data.frame(out), row.names = FALSE)
 
 write_with_provenance(out, OUT, inputs = c("healthgrades_midwives.csv", "midwife_panel.csv"))

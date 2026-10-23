@@ -2,18 +2,22 @@
 # =============================================================================
 # Geographic mismatch flow map: PECOS/DAC practice address vs. state BON
 # =============================================================================
-# Sibling of make_dac_nppes_address_flow_map.R, for the CO+CT state-board
-# data compare_pecos_to_bon_address.R found a 7% ZIP5 agreement on. Curved
+# Sibling of make_dac_nppes_address_flow_map.R, for the CT state-board data
+# compare_pecos_to_bon_address.R found a 7.1% ZIP5 agreement on. Curved
 # origin-destination lines from each midwife's PECOS/DAC-reported practice
 # city to her BON-reported city, for the NPIs where the two disagree at city
 # level or coarser.
+#
+# CT ONLY -- CO removed 2026-10-23 (its field is DORA's own MAILING address,
+# not a practice address; see compare_pecos_to_bon_address.R's own header).
+# Removing CO didn't rescue the number: CT alone was already 7.1% ZIP5
+# agreement before CO was in the mix at all.
 #
 # ZIP5-CENTROID, NOT STREET-LEVEL -- see build_pecos_bon_address_flow_pairs.R
 # for why. Flows here are coarser than the DAC/NPPES map's as a result.
 #
 # One map only (not a national + Colorado-zoomed pair like the DAC/NPPES
-# script): CO and CT are the only two states in this data, so a Colorado-
-# zoomed view and the national view would show nearly the same thing.
+# script): this is one state's worth of flows.
 #
 # min_flow_n=1: same public-data basis as make_dac_nppes_address_flow_map.R
 # -- NPI is a public identifier and state board license data is public, so a
@@ -86,10 +90,12 @@ geometries <- lapply(seq_len(nrow(mapped_flows)), function(i)
   make_curve(origin_xy[i, 1], origin_xy[i, 2], dest_xy[i, 1], dest_xy[i, 2]))
 flow_map <- st_sf(mapped_flows, geometry = st_sfc(geometries, crs = 5070))
 
-cli_alert_info("Preparing state boundary basemap (CO/CT + neighbors)")
+# National extent, not a CT-region crop: CT's own mismatches aren't
+# confined to New England (a DAC/PECOS-enrolled organization can be
+# anywhere), same pattern the full CO+CT map showed before CO was removed.
+cli_alert_info("Preparing state boundary basemap (CONUS)")
 states <- tigris::states(cb = TRUE, year = 2023, class = "sf", progress_bar = FALSE) %>%
-  filter(STUSPS %in% c("CO", "WY", "UT", "NM", "AZ", "KS", "NE", "OK",
-                       "CT", "NY", "MA", "RI")) %>%
+  filter(!STUSPS %in% c("AK", "HI", "PR", "VI", "GU", "MP", "AS")) %>%
   st_transform(5070)
 
 origin_points <- st_transform(st_as_sf(mapped_flows, coords = c("origin_lon", "origin_lat"), crs = 4326), 5070)
@@ -107,8 +113,8 @@ p <- ggplot() +
                              breaks = function(lims) sort(unique(round(scales::extended_breaks(n = 5)(lims))))) +
   coord_sf(datum = NA) +
   labs(title = "Where PECOS/DAC and state Boards of Nursing disagree on practice location",
-      subtitle = paste0("PECOS/DAC practice address vs. CO+CT BON address, 2026 -- ZIP5-centroid, not street-level\n",
-                        "n=", nrow(mismatches), " mismatches, CO's field is DORA's own mailing address (not practice)"),
+      subtitle = paste0("PECOS/DAC practice address vs. CT BON address, 2026 -- ZIP5-centroid, not street-level\n",
+                        "n=", nrow(mismatches), " mismatches (CO excluded: its field is a mailing address, not practice)"),
       caption = paste0(
         "Each curve connects PECOS/DAC's reported city to the state board's city for the same NPI -- arrow points FROM PECOS/DAC TO BON.\n",
         "Same-city/exact-ZIP5 disagreements are excluded. See artifacts/pecos_vs_bon_address_agreement.csv for the underlying percentages.")) +

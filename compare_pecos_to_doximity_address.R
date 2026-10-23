@@ -51,7 +51,7 @@
 # =============================================================================
 suppressPackageStartupMessages({library(dplyr); library(readr); library(cli)})
 source(file.path("R", "lib", "artifact_provenance.R"))
-source(file.path("R", "lib", "address_agreement_compare.R"))  # shape_address(), compare_two()
+source(file.path("R", "lib", "address_agreement_compare.R"))  # shape_address(), compare_address_pair()
 source(file.path("R", "join_safety.R"))  # assert_unique_keys(dedupe = TRUE)
 
 OUT <- "artifacts/pecos_vs_doximity_address_agreement.csv"
@@ -78,7 +78,7 @@ doximity <- read_csv("artifacts/doximity_public_matched.csv", col_types = cols(.
   shape_address("npi", "state", "city", "city_zip", zip_mode = "trailing5")
 doximity <- assert_unique_keys(doximity, "npi", label = "doximity_public_matched.csv", dedupe = TRUE)
 
-out <- compare_two(dac, doximity, "PECOS/DAC (2026) vs Doximity (name-matched, undated)", "2026", "undated", "vs_doximity_name_matched")
+out <- compare_address_pair(dac, doximity, "PECOS/DAC (2026) vs Doximity (name-matched, undated)", "2026", "undated", "vs_doximity_name_matched")
 print(as.data.frame(out), row.names = FALSE)
 
 write_with_provenance(out, OUT, inputs = c("dac_midwives.csv", "artifacts/doximity_public_matched.csv", ROSTER_FILE))

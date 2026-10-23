@@ -40,7 +40,7 @@
 # =============================================================================
 suppressPackageStartupMessages({library(dplyr); library(readr); library(cli)})
 source(file.path("R", "lib", "artifact_provenance.R"))
-source(file.path("R", "lib", "address_agreement_compare.R"))  # shape_address(), compare_two()
+source(file.path("R", "lib", "address_agreement_compare.R"))  # shape_address(), compare_address_pair()
 source(file.path("R", "join_safety.R"))  # assert_unique_keys(dedupe = TRUE)
 
 OUT <- "artifacts/pecos_vs_nppes_address_agreement.csv"
@@ -57,7 +57,7 @@ nppes <- assert_unique_keys(nppes, "npi", label = "midwife_panel.csv", dedupe = 
 
 # source_pair spells out BOTH sides' years so it's unambiguous on sight that
 # NPPES is pulled from the matching year, not "current" NPPES.
-out <- compare_two(dac, nppes, "PECOS/DAC (2026) vs NPPES (2026)", "2026", "2026", "vs_nppes_same_year")
+out <- compare_address_pair(dac, nppes, "PECOS/DAC (2026) vs NPPES (2026)", "2026", "2026", "vs_nppes_same_year")
 print(as.data.frame(out), row.names = FALSE)
 
 write_with_provenance(out, OUT, inputs = c("dac_midwives.csv", "midwife_panel.csv"))

@@ -1,14 +1,14 @@
 {
   "artifact": "pecos_vs_bon_address_agreement.csv",
-  "written_utc": "2026-10-23 18:41:45 UTC",
+  "written_utc": "2026-10-23 19:16:07 UTC",
   "inputs": [
     {
       "path": "dac_midwives.csv",
       "sha256": "446a935a516a9decc5da253e97a0f22dcdf92be86ea031d0399d7b8ebc23cc7e"
     },
     {
-      "path": "artifacts/live_colorado_bon_ingested_midwives_from_tracked_roster.csv",
-      "sha256": "11f338403099d584125c201fb126f4c788f6efce2c48ed4d4402c1edf6969936"
+      "path": "artifacts/live_california_bon_ingested_midwives_from_tracked_roster.csv",
+      "sha256": "d5ce5effb0a756869685c9abbdb6449778cb79d3d876209ab39adf69e11ea98a"
     },
     {
       "path": "artifacts/live_illinois_bon_ingested_midwives_from_tracked_roster.csv",
@@ -23,11 +23,11 @@
       "sha256": "c7a2427bc1a3592630a4ff9dc0d93fde9c3821d78ca34872e96a0164fa2460d8"
     }
   ],
-  "code_sha256": "fc5eeca1b74b373c70e5ad63e52d7a854f025ddebb4cad904fd32550a747f56d",
+  "code_sha256": "654640e2a87644df40a8e140d96e9a443f7b1aad199fc9914aa0ebb2709fb3d2",
   "code": [
     {
       "path": "compare_pecos_to_bon_address.R",
-      "sha256": "2527d8d42d6df818f16983c03b21adec1ad5b24405abb207755fef1d81855630"
+      "sha256": "62f889f3d61724bd3c6d02ae979efc2f5a5c745d649d886b551ae053521cd62f"
     },
     {
       "path": "R/join_safety.R",
@@ -35,7 +35,7 @@
     },
     {
       "path": "R/lib/address_agreement_compare.R",
-      "sha256": "40e7d8bf275824af2bd63d22e95cc5cbf5b6a7a880e49a0eed43d424b25e2ea3"
+      "sha256": "d58d3ea8184d3efd5365b6962929937fb60097101e1b60f076e1a771d5b15c04"
     },
     {
       "path": "R/lib/artifact_provenance.R",

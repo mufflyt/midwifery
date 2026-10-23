@@ -27,7 +27,7 @@
 # =============================================================================
 suppressPackageStartupMessages({library(dplyr); library(readr); library(cli)})
 source(file.path("R", "lib", "artifact_provenance.R"))
-source(file.path("R", "lib", "address_agreement_compare.R"))  # shape_address(), compare_two()
+source(file.path("R", "lib", "address_agreement_compare.R"))  # shape_address(), compare_address_pair()
 source(file.path("R", "join_safety.R"))  # assert_unique_keys(dedupe = TRUE)
 
 OUT <- "artifacts/healthgrades_vs_pecos_address_agreement.csv"
@@ -45,7 +45,7 @@ dac <- read_csv("dac_midwives.csv", col_types = cols(.default = "c"), progress =
 # source_pair spells out both sides plainly: "scraped" (no fixed vintage) vs
 # DAC/PECOS's 2026 vintage, same unambiguous-on-sight convention as the
 # NPPES sibling.
-out <- compare_two(healthgrades, dac, "Healthgrades (scraped) vs PECOS/DAC (2026)", "scraped", "2026", "vs_pecos_same_year")
+out <- compare_address_pair(healthgrades, dac, "Healthgrades (scraped) vs PECOS/DAC (2026)", "scraped", "2026", "vs_pecos_same_year")
 print(as.data.frame(out), row.names = FALSE)
 
 write_with_provenance(out, OUT, inputs = c("healthgrades_midwives.csv", "dac_midwives.csv"))

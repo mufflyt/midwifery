@@ -19,31 +19,46 @@ suppressPackageStartupMessages({library(dplyr); library(stringr); library(purrr)
 #'
 #' @param df A data frame with character columns (read with
 #'   col_types = cols(.default = "c") upstream -- this does not coerce).
-#' @param npi_col,state_col,city_col,zip_col Column names in `df` to read.
+#' @param npi_col,city_col Column names in `df` to read.
+#' @param state_col,zip_col Column name to read state/zip5 from, or NULL
+#'   when the source has no such field at all -- e.g. California's BRN
+#'   roster carries a city and county but no zip, AND no independent state
+#'   field (every row is already scoped to CA by construction of the source
+#'   itself, so reusing some other state value would be circular, not a
+#'   genuine board-reported comparison). NULL produces NA for every row at
+#'   that field, which compare_address_pair()'s nzchar() check already
+#'   excludes from comparable_n at that level (the same NA path fixed
+#'   2026-10-23 for the "genuinely missing, not merely blank" case) -- a
+#'   source missing one field still contributes real rows at the others.
 #' @param zip_mode "substr" (default): zip5 is the first 5 characters of
 #'   zip_col -- what every source except Doximity provides (a standalone
 #'   zip/zip+4 column). "trailing5": zip5 is the last 5 digits of zip_col --
 #'   for Doximity's combined "City, ST ZIP5" city_zip field, which carries no
-#'   standalone zip column at all.
+#'   standalone zip column at all. Ignored when zip_col is NULL.
 #' @return tibble(npi, state, city, zip5) -- state/city upper-cased and
 #'   whitespace-squished; zip5 not validated as numeric (NA/short input
-#'   passes through, caught downstream by compare_two()'s nzchar() check).
-shape_address <- function(df, npi_col, state_col, city_col, zip_col,
+#'   passes through, caught downstream by compare_address_pair()'s nzchar() check).
+shape_address <- function(df, npi_col, state_col = NULL, city_col, zip_col = NULL,
                           zip_mode = c("substr", "trailing5")) {
   zip_mode <- match.arg(zip_mode)
-  # Trimmed once, shared by both branches below -- state/city already go
-  # through str_squish(); zip_col didn't, until this line (2026-10-23): a
-  # leading/trailing space would have shifted a substr(1,5) extraction by
-  # one character. No source currently has that whitespace (checked
-  # directly), so this is a defensive hardening, not a correction.
-  zip_col_trimmed <- str_trim(df[[zip_col]])
-  zip5 <- if (zip_mode == "substr") {
-    str_sub(zip_col_trimmed, 1, 5)
+  if (is.null(zip_col)) {
+    zip5 <- rep(NA_character_, nrow(df))
   } else {
-    str_extract(zip_col_trimmed, "[0-9]{5}$")
+    # Trimmed once, shared by both branches below -- state/city already go
+    # through str_squish(); zip_col didn't, until this line (2026-10-23): a
+    # leading/trailing space would have shifted a substr(1,5) extraction by
+    # one character. No source currently has that whitespace (checked
+    # directly), so this is a defensive hardening, not a correction.
+    zip_col_trimmed <- str_trim(df[[zip_col]])
+    zip5 <- if (zip_mode == "substr") {
+      str_sub(zip_col_trimmed, 1, 5)
+    } else {
+      str_extract(zip_col_trimmed, "[0-9]{5}$")
+    }
   }
+  state <- if (is.null(state_col)) rep(NA_character_, nrow(df)) else str_to_upper(str_squish(df[[state_col]]))
   tibble(npi = df[[npi_col]],
-        state = str_to_upper(str_squish(df[[state_col]])),
+        state = state,
         city = str_to_upper(str_squish(df[[city_col]])),
         zip5 = zip5)
 }
@@ -70,7 +85,7 @@ shape_address <- function(df, npi_col, state_col, city_col, zip_col,
 #' @return tibble, one row per `levels` entry: comparison_type, source_pair,
 #'   year_a, year_b, level, comparable_n, agree_n, agree_pct (NA when
 #'   comparable_n is 0, never NaN).
-compare_two <- function(a, b, label, year_a, year_b, comparison_type,
+compare_address_pair <- function(a, b, label, year_a, year_b, comparison_type,
                         levels = c("state", "city", "zip5")) {
   joined <- inner_join(a, b, by = "npi", suffix = c("_a", "_b"))
   map_dfr(levels, function(lv) {

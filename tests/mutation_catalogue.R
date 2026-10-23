@@ -590,7 +590,8 @@ MUTATIONS <- list(
   # (PECOS/DAC-vs-NPPES, Healthgrades-vs-NPPES, Healthgrades-vs-PECOS,
   # PECOS-vs-Doximity, PECOS-vs-BON). Those five scripts themselves stay out
   # of this catalogue (person-level, gitignored inputs; see the file header),
-  # but the shared shape_address()/compare_two() helpers need no data at all.
+  # but the shared shape_address()/compare_address_pair() helpers need no
+  # data at all.
 
   list(
     id = "aac-zip-trim-removed",
@@ -607,16 +608,16 @@ MUTATIONS <- list(
   list(
     id = "aac-zipmode-branches-swapped",
     file = "R/lib/address_agreement_compare.R",
-    find = paste0("  zip5 <- if (zip_mode == \"substr\") {\n",
-                  "    str_sub(zip_col_trimmed, 1, 5)\n",
-                  "  } else {\n",
-                  "    str_extract(zip_col_trimmed, \"[0-9]{5}$\")\n",
-                  "  }"),
-    repl = paste0("  zip5 <- if (zip_mode == \"substr\") {\n",
-                  "    str_extract(zip_col_trimmed, \"[0-9]{5}$\")\n",
-                  "  } else {\n",
-                  "    str_sub(zip_col_trimmed, 1, 5)\n",
-                  "  }"),
+    find = paste0("    zip5 <- if (zip_mode == \"substr\") {\n",
+                  "      str_sub(zip_col_trimmed, 1, 5)\n",
+                  "    } else {\n",
+                  "      str_extract(zip_col_trimmed, \"[0-9]{5}$\")\n",
+                  "    }"),
+    repl = paste0("    zip5 <- if (zip_mode == \"substr\") {\n",
+                  "      str_extract(zip_col_trimmed, \"[0-9]{5}$\")\n",
+                  "    } else {\n",
+                  "      str_sub(zip_col_trimmed, 1, 5)\n",
+                  "    }"),
     why = paste("Swaps which extraction method each zip_mode uses. Every",
                 "caller except compare_pecos_to_doximity_address.R relies on",
                 "the default \"substr\" mode for a standalone zip column; this",
@@ -648,8 +649,8 @@ MUTATIONS <- list(
   list(
     id = "aac-state-upper-removed",
     file = "R/lib/address_agreement_compare.R",
-    find = "state = str_to_upper(str_squish(df[[state_col]])),",
-    repl = "state = str_squish(df[[state_col]]),",
+    find = "state <- if (is.null(state_col)) rep(NA_character_, nrow(df)) else str_to_upper(str_squish(df[[state_col]]))",
+    repl = "state <- if (is.null(state_col)) rep(NA_character_, nrow(df)) else str_squish(df[[state_col]])",
     why = paste("Drops case-folding on state. \"CO\" from one source and \"co\"",
                 "from another would wrongly disagree at the coarsest grain",
                 "this comparison reports."),
@@ -814,11 +815,39 @@ MUTATIONS <- list(
     file = "R/lib/address_agreement_compare.R",
     find = "levels = c(\"state\", \"city\", \"zip5\")",
     repl = "levels = c(\"state\", \"city\")",
-    why = paste("Every compare_*_address.R script calls compare_two() without",
-                "passing levels explicitly -- all five rely on this default.",
+    why = paste("Every compare_*_address.R script calls compare_address_pair()",
+                "without passing levels explicitly -- all five rely on this default.",
                 "Dropping zip5 from it would silently stop reporting the one",
                 "grain this project treats as its primary metric, in every",
                 "comparison, at once."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-zip-col-null-mishandled",
+    file = "R/lib/address_agreement_compare.R",
+    find = "zip5 <- rep(NA_character_, nrow(df))",
+    repl = "zip5 <- rep(\"\", nrow(df))",
+    why = paste("A source with no zip field at all (California's BRN roster:",
+                "license number, status, city, county -- no zip) should",
+                "produce zip5 = NA, not empty string. Both currently get",
+                "excluded from comparable_n the same way, but NA is the",
+                "honest signal for \"this source never had a zip field,\"",
+                "while \"\" would be indistinguishable from a source that HAD",
+                "a zip column with a blank value in it."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-state-col-null-mishandled",
+    file = "R/lib/address_agreement_compare.R",
+    find = "state <- if (is.null(state_col)) rep(NA_character_, nrow(df)) else str_to_upper(str_squish(df[[state_col]]))",
+    repl = "state <- if (is.null(state_col)) rep(\"\", nrow(df)) else str_to_upper(str_squish(df[[state_col]]))",
+    why = paste("Same defect as aac-zip-col-null-mishandled for state instead",
+                "of zip: a source with no independent state field (California's",
+                "BRN roster) should produce state = NA, not empty string -- NA",
+                "is the honest signal for \"this source never had a state",
+                "field,\" distinct from a source that had one and left it blank."),
     killers = c("tests/test_address_agreement_compare_saboteur.R")
   ),
 

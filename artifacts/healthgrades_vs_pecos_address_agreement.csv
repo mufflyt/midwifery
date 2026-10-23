@@ -1,4 +1,4 @@
 comparison_type,source_pair,year_a,year_b,level,comparable_n,agree_n,agree_pct
-vs_pecos_same_year,Healthgrades (scraped) vs PECOS/DAC (2026),scraped,2026,state,148,141,95.3
-vs_pecos_same_year,Healthgrades (scraped) vs PECOS/DAC (2026),scraped,2026,city,148,82,55.4
-vs_pecos_same_year,Healthgrades (scraped) vs PECOS/DAC (2026),scraped,2026,zip5,148,74,50
+vs_pecos_same_year,Healthgrades (scraped) vs PECOS/DAC (2026),scraped,2026,state,175,166,94.9
+vs_pecos_same_year,Healthgrades (scraped) vs PECOS/DAC (2026),scraped,2026,city,175,97,55.4
+vs_pecos_same_year,Healthgrades (scraped) vs PECOS/DAC (2026),scraped,2026,zip5,175,88,50.3

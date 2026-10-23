@@ -1,4 +1,4 @@
 comparison_type,source_pair,year_a,year_b,level,comparable_n,agree_n,agree_pct
-vs_nppes_same_year,Healthgrades (scraped) vs NPPES (2026),scraped,2026,state,417,397,95.2
-vs_nppes_same_year,Healthgrades (scraped) vs NPPES (2026),scraped,2026,city,417,284,68.1
-vs_nppes_same_year,Healthgrades (scraped) vs NPPES (2026),scraped,2026,zip5,417,265,63.5
+vs_nppes_same_year,Healthgrades (scraped) vs NPPES (2026),scraped,2026,state,540,510,94.4
+vs_nppes_same_year,Healthgrades (scraped) vs NPPES (2026),scraped,2026,city,540,360,66.7
+vs_nppes_same_year,Healthgrades (scraped) vs NPPES (2026),scraped,2026,zip5,540,333,61.7
