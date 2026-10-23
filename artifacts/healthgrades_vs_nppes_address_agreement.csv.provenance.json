@@ -1,25 +1,29 @@
 {
   "artifact": "healthgrades_vs_nppes_address_agreement.csv",
-  "written_utc": "2026-10-23 17:55:45 UTC",
+  "written_utc": "2026-10-23 18:47:04 UTC",
   "inputs": [
     {
       "path": "healthgrades_midwives.csv",
-      "sha256": "e5792fbae4f0c40311a88efecff6d4f0876231757b49cd1f85ea865a77d14471"
+      "sha256": "51f66ad5a9a389aca67ffdcb064f540062329a1fe5b9a06d7f1f779544deefab"
     },
     {
       "path": "midwife_panel.csv",
       "sha256": "40c45ce1161f2ebe238aa3770988724ae7b1099df045ea981cfd6ccd41339386"
     }
   ],
-  "code_sha256": "ff24a9f84728e665007c9974138630395ccbee58543b25194fbda93e8a116feb",
+  "code_sha256": "8dc90661456d94bf9cba5ea2e32ec0532c9e6b46e03a277535c5e6117f300770",
   "code": [
     {
       "path": "compare_healthgrades_to_nppes_address.R",
-      "sha256": "689eb93e8c13c72df5c0f42988d126a21eaa094f0e5ae450fb2e537cbec08ca7"
+      "sha256": "2545d8930f29de2fad00caf8ca7eb678e3fc24ebc0d783c039b4118aea8ab76c"
     },
     {
       "path": "R/join_safety.R",
       "sha256": "96a2eeeef8b9821178abed57d90213e299c9539f4358b4f6ed47c9fc2b8c0280"
+    },
+    {
+      "path": "R/lib/address_agreement_compare.R",
+      "sha256": "27311915aa8a714e2eab17bd78ebba51f6caead981816208519691cc3327273c"
     },
     {
       "path": "R/lib/artifact_provenance.R",

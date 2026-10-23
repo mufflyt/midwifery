@@ -583,5 +583,257 @@ MUTATIONS <- list(
                 "to shared identity. A silent revert would be invisible in",
                 "any run that doesn't specifically check for it."),
     killers = c("tests/test_fuzzy_surname_removal_saboteur.R")
+  ),
+
+  # ---- R/lib/address_agreement_compare.R (2026-10-23) -----------------------
+  # Extracted from five near-identical copies inside compare_*_address.R
+  # (PECOS/DAC-vs-NPPES, Healthgrades-vs-NPPES, Healthgrades-vs-PECOS,
+  # PECOS-vs-Doximity, PECOS-vs-BON). Those five scripts themselves stay out
+  # of this catalogue (person-level, gitignored inputs; see the file header),
+  # but the shared shape_address()/compare_two() helpers need no data at all.
+
+  list(
+    id = "aac-zip-trim-removed",
+    file = "R/lib/address_agreement_compare.R",
+    find = "zip_col_trimmed <- str_trim(df[[zip_col]])",
+    repl = "zip_col_trimmed <- df[[zip_col]]",
+    why = paste("A leading/trailing space on a zip column (none currently has",
+                "one, but state/city both get str_squish() -- zip didn't until",
+                "this line) would shift a substr(1,5) extraction by one",
+                "character, truncating a real digit."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-zipmode-branches-swapped",
+    file = "R/lib/address_agreement_compare.R",
+    find = paste0("  zip5 <- if (zip_mode == \"substr\") {\n",
+                  "    str_sub(zip_col_trimmed, 1, 5)\n",
+                  "  } else {\n",
+                  "    str_extract(zip_col_trimmed, \"[0-9]{5}$\")\n",
+                  "  }"),
+    repl = paste0("  zip5 <- if (zip_mode == \"substr\") {\n",
+                  "    str_extract(zip_col_trimmed, \"[0-9]{5}$\")\n",
+                  "  } else {\n",
+                  "    str_sub(zip_col_trimmed, 1, 5)\n",
+                  "  }"),
+    why = paste("Swaps which extraction method each zip_mode uses. Every",
+                "caller except compare_pecos_to_doximity_address.R relies on",
+                "the default \"substr\" mode for a standalone zip column; this",
+                "would silently apply the wrong extraction to all of them."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-zip5-substr-truncated",
+    file = "R/lib/address_agreement_compare.R",
+    find = "str_sub(zip_col_trimmed, 1, 5)",
+    repl = "str_sub(zip_col_trimmed, 1, 4)",
+    why = paste("Truncates zip5 to 4 digits for every \"substr\"-mode source",
+                "(all but Doximity). Two genuinely different ZIPs sharing a",
+                "first-4-digit prefix (80238 vs 80231) would wrongly agree."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-trailing5-regex-truncated",
+    file = "R/lib/address_agreement_compare.R",
+    find = "str_extract(zip_col_trimmed, \"[0-9]{5}$\")",
+    repl = "str_extract(zip_col_trimmed, \"[0-9]{4}$\")",
+    why = paste("Same truncation as aac-zip5-substr-truncated, for Doximity's",
+                "\"trailing5\" mode specifically -- the only caller that uses it."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-state-upper-removed",
+    file = "R/lib/address_agreement_compare.R",
+    find = "state = str_to_upper(str_squish(df[[state_col]])),",
+    repl = "state = str_squish(df[[state_col]]),",
+    why = paste("Drops case-folding on state. \"CO\" from one source and \"co\"",
+                "from another would wrongly disagree at the coarsest grain",
+                "this comparison reports."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-city-squish-removed",
+    file = "R/lib/address_agreement_compare.R",
+    find = "city = str_to_upper(str_squish(df[[city_col]])),",
+    repl = "city = str_to_upper(df[[city_col]]),",
+    why = paste("Drops whitespace-squishing on city. \"DENVER \" (trailing",
+                "space) from one source and \"DENVER\" from another would",
+                "wrongly disagree."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-npi-col-ignored",
+    file = "R/lib/address_agreement_compare.R",
+    find = "npi = df[[npi_col]],",
+    repl = "npi = df[[\"npi\"]],",
+    why = paste("Ignores the npi_col parameter and hardcodes \"npi\" instead.",
+                "Breaks every caller that reads a differently-named NPI column",
+                "(Healthgrades passes \"hg_npi\") with a column-not-found error",
+                "instead of using the one the caller actually asked for."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-match-arg-removed",
+    file = "R/lib/address_agreement_compare.R",
+    find = "zip_mode <- match.arg(zip_mode)",
+    repl = "invisible(NULL)  # match.arg removed",
+    why = paste("Without match.arg(), a caller that omits zip_mode (every",
+                "caller except the Doximity script) gets the raw two-element",
+                "default c(\"substr\",\"trailing5\") instead of \"substr\" alone --",
+                "the zip_mode==\"substr\" check downstream no longer resolves",
+                "to a single TRUE/FALSE the way a scalar argument would."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-zip-mode-default-swapped",
+    file = "R/lib/address_agreement_compare.R",
+    find = "zip_mode = c(\"substr\", \"trailing5\")",
+    repl = "zip_mode = c(\"trailing5\", \"substr\")",
+    why = paste("match.arg() resolves an unspecified argument to the FIRST",
+                "listed value. Swapping the order flips every caller that",
+                "doesn't pass zip_mode explicitly (all but Doximity) from",
+                "substr to trailing5 extraction."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-agree-equality-flipped",
+    file = "R/lib/address_agreement_compare.R",
+    find = "agree <- sum(nzchar(x) & nzchar(y) & x == y, na.rm = TRUE)",
+    repl = "agree <- sum(nzchar(x) & nzchar(y) & x != y, na.rm = TRUE)",
+    why = paste("Inverts the agreement check. Every comparison's agree_pct",
+                "would report roughly its own disagreement rate instead --",
+                "wrong in the single most consequential way this function",
+                "could be wrong."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-comparable-drops-y-check",
+    file = "R/lib/address_agreement_compare.R",
+    find = "comparable <- sum(nzchar(x) & nzchar(y), na.rm = TRUE)",
+    repl = "comparable <- sum(nzchar(x), na.rm = TRUE)",
+    why = paste("Stops checking whether the SECOND side has a value at all.",
+                "A row where only side A has data would wrongly count toward",
+                "comparable_n, inflating the denominator and understating",
+                "agree_pct."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-comparable-drops-x-check",
+    file = "R/lib/address_agreement_compare.R",
+    find = "comparable <- sum(nzchar(x) & nzchar(y), na.rm = TRUE)",
+    repl = "comparable <- sum(nzchar(y), na.rm = TRUE)",
+    why = paste("Same defect as aac-comparable-drops-y-check, mirrored: stops",
+                "checking whether the FIRST side has a value."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-agree-ignores-blanks",
+    file = "R/lib/address_agreement_compare.R",
+    find = "agree <- sum(nzchar(x) & nzchar(y) & x == y, na.rm = TRUE)",
+    repl = "agree <- sum(x == y, na.rm = TRUE)",
+    why = paste("Drops the blank-value guard from the numerator only (the",
+                "denominator still has it). Two blank (\"\") values on both",
+                "sides -- which should be excluded entirely as non-comparable",
+                "-- would instead count as an agreement, since \"\" == \"\" is",
+                "TRUE."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-denominator-wrong-base",
+    file = "R/lib/address_agreement_compare.R",
+    find = "round(100 * agree / comparable, 1)",
+    repl = "round(100 * agree / nrow(joined), 1)",
+    why = paste("Divides by the total joined row count instead of the",
+                "comparable count. Whenever any row has a blank value on",
+                "either side (comparable < nrow(joined)), agree_pct is",
+                "silently understated."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-na-guard-removed",
+    file = "R/lib/address_agreement_compare.R",
+    find = "if (comparable > 0) round(100 * agree / comparable, 1) else NA_real_",
+    repl = "round(100 * agree / comparable, 1)",
+    why = paste("Without the guard, a comparison with zero comparable records",
+                "(e.g. Delaware's BON pull before any DE midwife enters the",
+                "cohort) divides 0/0 and reports NaN instead of a clean NA --",
+                "a different value that downstream code and plots may not",
+                "handle the same way."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-rounding-digits-dropped",
+    file = "R/lib/address_agreement_compare.R",
+    find = "round(100 * agree / comparable, 1)",
+    repl = "round(100 * agree / comparable)",
+    why = paste("Drops to zero decimal places. Every agree_pct this project",
+                "has published (47.1%, 6.6%, etc.) is reported to one decimal",
+                "-- this would silently coarsen all of them."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-na-coercion-x-removed",
+    file = "R/lib/address_agreement_compare.R",
+    find = "x[is.na(x)] <- \"\"; y[is.na(y)] <- \"\"",
+    repl = "y[is.na(y)] <- \"\"",
+    why = paste("Re-exposes nzchar(NA)==TRUE on side A only (see this line's",
+                "own comment). A genuinely missing value on side A paired",
+                "with a real value on side B would wrongly count toward",
+                "comparable_n."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-na-coercion-y-removed",
+    file = "R/lib/address_agreement_compare.R",
+    find = "x[is.na(x)] <- \"\"; y[is.na(y)] <- \"\"",
+    repl = "x[is.na(x)] <- \"\"",
+    why = paste("Mirror of aac-na-coercion-x-removed: re-exposes",
+                "nzchar(NA)==TRUE on side B only."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-levels-default-missing-zip5",
+    file = "R/lib/address_agreement_compare.R",
+    find = "levels = c(\"state\", \"city\", \"zip5\")",
+    repl = "levels = c(\"state\", \"city\")",
+    why = paste("Every compare_*_address.R script calls compare_two() without",
+                "passing levels explicitly -- all five rely on this default.",
+                "Dropping zip5 from it would silently stop reporting the one",
+                "grain this project treats as its primary metric, in every",
+                "comparison, at once."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  list(
+    id = "aac-join-key-overspecified",
+    file = "R/lib/address_agreement_compare.R",
+    find = "by = \"npi\"",
+    repl = "by = c(\"npi\", \"state\", \"city\", \"zip5\")",
+    why = paste("Joins on every shared column name, not just npi -- dplyr",
+                "silently accepts this since both sides share those column",
+                "names. A row only survives the join if state/city/zip5",
+                "ALREADY match going in, so every disagreement this function",
+                "exists to measure would vanish from the joined table before",
+                "comparison even runs, instead of being counted as a",
+                "disagreement."),
+    killers = c("tests/test_address_agreement_compare_saboteur.R")
   )
 )

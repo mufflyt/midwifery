@@ -1,6 +1,6 @@
 {
   "artifact": "pecos_vs_doximity_address_agreement.csv",
-  "written_utc": "2026-10-23 17:55:47 UTC",
+  "written_utc": "2026-10-23 18:46:56 UTC",
   "inputs": [
     {
       "path": "dac_midwives.csv",
@@ -15,15 +15,19 @@
       "sha256": "e2a2bba34b895d66bad03e5422bbdcc4933a8abbe4f4dc315d7af072676203dc"
     }
   ],
-  "code_sha256": "4f9108133812f43226f78d9200288dd4c3e4240010fd1a4a23947db8c5b3c632",
+  "code_sha256": "c28bbd9f3733cfa37f7f598bbeee99a3bbb1a3c84e50e27e8a600826ae16861a",
   "code": [
     {
       "path": "compare_pecos_to_doximity_address.R",
-      "sha256": "ea7f11b5fc15f7843897885224c6a8972328591b0a7958c38035cc778ceeb14e"
+      "sha256": "3f55c47836b4bcce1a46b8234fe412b912a97ca7812d6447e27c72bb1072d792"
     },
     {
       "path": "R/join_safety.R",
       "sha256": "96a2eeeef8b9821178abed57d90213e299c9539f4358b4f6ed47c9fc2b8c0280"
+    },
+    {
+      "path": "R/lib/address_agreement_compare.R",
+      "sha256": "27311915aa8a714e2eab17bd78ebba51f6caead981816208519691cc3327273c"
     },
     {
       "path": "R/lib/artifact_provenance.R",
