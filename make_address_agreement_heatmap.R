@@ -14,8 +14,9 @@
 # metric -- its tile is outlined to mark that, not because the other two
 # levels don't matter.
 #
-# Inputs : artifacts/pecos_vs_nppes_address_agreement.csv       (compare_pecos_to_nppes_address.R)
+# Inputs : artifacts/pecos_vs_nppes_address_agreement.csv        (compare_pecos_to_nppes_address.R)
 #          artifacts/healthgrades_vs_nppes_address_agreement.csv (compare_healthgrades_to_nppes_address.R)
+#          artifacts/healthgrades_vs_pecos_address_agreement.csv (compare_healthgrades_to_pecos_address.R)
 #          artifacts/pecos_vs_doximity_address_agreement.csv     (compare_pecos_to_doximity_address.R)
 # Outputs: docs/figures/address_agreement_heatmap.png
 #
@@ -29,6 +30,7 @@ suppressPackageStartupMessages({
 INPUTS <- c(
   "artifacts/pecos_vs_nppes_address_agreement.csv",
   "artifacts/healthgrades_vs_nppes_address_agreement.csv",
+  "artifacts/healthgrades_vs_pecos_address_agreement.csv",
   "artifacts/pecos_vs_doximity_address_agreement.csv"
 )
 stopifnot(all(file.exists(INPUTS)))
@@ -57,5 +59,5 @@ heat <- ggplot(d, aes(x = level, y = source_pair, fill = agree_pct)) +
         axis.text.y = element_text(size = 8),
         plot.caption = element_text(hjust = 0))
 
-ggsave("docs/figures/address_agreement_heatmap.png", heat, width = 10.5, height = 4.2, dpi = 200)
+ggsave("docs/figures/address_agreement_heatmap.png", heat, width = 10.5, height = 5, dpi = 200)
 cli::cli_alert_success("wrote docs/figures/address_agreement_heatmap.png")
