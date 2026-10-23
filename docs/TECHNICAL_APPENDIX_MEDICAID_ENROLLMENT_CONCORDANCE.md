@@ -280,7 +280,11 @@ The diagonal (same-state agreement) dominates for every state shown. A few
 off-diagonal cells are large enough to be structural rather than noise --
 e.g. GA-registered midwives showing substantial FL Medicaid enrollment
 (1,082 pairs) -- plausibly real cross-border practice given FL/GA's shared
-metro areas, not inspected further here.
+metro areas, not inspected further here. OR and NM do not appear in this
+matrix's top-20 states at all, not because their midwives disagree with
+Medicaid but because neither state's submission to this warehouse carries
+an NPI on any row -- see S10 for the national NPI-completeness gradient
+this traces back to.
 
 ![Geographic disagreement flow map](figures/medicaid_disagreement_flow_map.png)
 
@@ -381,21 +385,29 @@ state reporting are all real, legitimate reasons for the two to diverge.
   status. Whether this represents ongoing enrollment that should be treated
   as open-ended, or a genuine state-level reporting gap, is not resolved
   here -- excluding these rows is the conservative choice, not a corrected one.
-- **California and Oregon show near-total non-concordance, and it is not
-  yet root-caused.** CA: 6 Concordant of 5,642 comparable NPI-years (0.1%).
-  OR: **0** Concordant and **0** Multistate concordant of 834+1,062
-  comparable-or-observed NPI-years -- literally zero in either direction,
-  across the full 2018-2024 series, under the corrected canonical cohort
-  (this was checked specifically to rule out a cohort-definition artifact;
-  it is not one). CA's gap is plausibly consistent with CA's own severe
-  under-representation in the national warehouse generally (Colorado alone
-  contributes more national rows than California, despite CA's much larger
-  population) -- a documented-adjacent T-MSIS state-reporting-completeness
-  pattern, not unique to midwives. Oregon's EXACT zero, specifically never
-  matching even once, is unexplained and should be treated as a hard
-  exclusion from any state-level claim until investigated further -- a
-  State-code mapping issue specific to Oregon's T-MSIS submission has not
-  been ruled out.
+- **California and Oregon show near-total non-concordance -- ROOT-CAUSED,
+  2026-10-23.** Not a midwife-specific, cohort-specific, or pipeline
+  defect: `STATE_CD = 'OR'` rows in the warehouse have an **NPI column that
+  is NULL for 100% of all 498,412 Oregon rows nationally**, across every
+  provider type (453,356 INDIVIDUAL rows alone, correctly coded, all with a
+  blank NPI). `STATE_CD = 'NM'` (New Mexico, 278,994 rows) shows the
+  identical 0.0% NPI-population pattern, and New Mexico's cohort NPI-years
+  independently reproduce the same signature as Oregon's: 0 Concordant, 0
+  Multistate concordant, only Discordant (333) / Multistate discordant
+  (156) / Not observed (602). Two states, same pattern, same mechanism:
+  **an NPI-keyed join cannot link to a state whose submission never
+  populates NPI at all** -- there is nothing a matching rule could do about
+  it, and the earlier "unexplained, possible state-code mapping issue"
+  framing was wrong; there is no code-mapping bug, there is no NPI to map.
+  California is the same mechanism at lower severity: CA's NPI-population
+  rate is 49.9% nationally (vs. 71.9% for Colorado, 65.3% for Texas),
+  against a national gradient ranging from 0% (OR, NM) to >70% (CO, IN) --
+  CA's low concordance is the expected consequence of roughly half its
+  Medicaid rows being structurally unlinkable by NPI, not a midwife- or
+  cohort-specific anomaly. **Any state-level concordance claim for OR or NM
+  should be read as "no data," not "no agreement"; CA's rate should be read
+  as roughly halved by a national linkage-completeness gradient that varies
+  continuously by state, not as a CA-specific finding.**
 - **Rurality stratification**: not built (S8).
 - **FFS vs. managed care**: not answerable from this dataset (S3.2).
 
