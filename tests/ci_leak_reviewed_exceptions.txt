@@ -205,3 +205,26 @@ artifacts/live_delaware_bon_ingested_midwives_from_tracked_roster.csv
 # is independently public. Produced by
 # harvest_live_california_bon_from_tracked_roster.py.
 artifacts/live_california_bon_ingested_midwives_from_tracked_roster.csv
+
+# Live Pennsylvania Licensing System (PALS) "Certified Registered Nurse
+# Practitioner" cross-reference: PA-state midwives from the tracked roster,
+# matched against pals.pa.gov's public, no-login JSON API (ProfessionID=43
+# State Board of Nursing, LicenseTypeId=321 CRNP) by name -- 96
+# VERIFIED_LIVE_BON, 361 UNMATCHED, 4 AMBIGUOUS. No "Certified Nurse
+# Midwife" license type exists anywhere in PA's Board of Nursing system
+# (confirmed directly from the PALS search form's own license-type
+# dropdown); this pulls the whole CRNP population (30,800 records across
+# the 135 last-name prefixes the PA cohort needed) and relies on name
+# matching alone, same situation as the IL/CT entries above -- the high
+# UNMATCHED rate is expected from that, not a defect. The live API hard-
+# caps any single query at 500 results; 5 of 135 queried prefixes (RO, SC,
+# ST, WA, WI) hit that cap and are therefore incomplete for common
+# surnames starting with those two letters (see
+# harvest_live_pennsylvania_bon_from_tracked_roster.py's own header and its
+# runtime WARNING output for exactly which).
+# Reviewed and accepted by Tyler Muffly, 2026-10-25, same reasoning as the
+# WA/CO/TX/IL/CT/DE/CA board entries above: every underlying field (AMCB
+# name/certification number, NPI, PALS's own published license fields) is
+# independently public. Produced by
+# harvest_live_pennsylvania_bon_from_tracked_roster.py.
+artifacts/live_pennsylvania_bon_ingested_midwives_from_tracked_roster.csv
