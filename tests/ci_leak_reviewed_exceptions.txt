@@ -205,3 +205,28 @@ artifacts/live_delaware_bon_ingested_midwives_from_tracked_roster.csv
 # is independently public. Produced by
 # harvest_live_california_bon_from_tracked_roster.py.
 artifacts/live_california_bon_ingested_midwives_from_tracked_roster.csv
+
+# Live Pennsylvania Licensing System (PALS) "Nurse-Midwife" cross-reference:
+# PA-state midwives matched against pals.pa.gov's public, no-login JSON API
+# -- ProfessionID=37 (STATE BOARD OF MEDICINE, not Nursing: PA regulates
+# nurse-midwives under Medicine, confirmed by reading both boards' License
+# Type lists directly off the live PALS search form), LicenseTypeId=234
+# "Nurse-Midwife" -- CNM-specific by construction, unlike the IL/CT/
+# Pennsylvania-Nursing entries above. 500 current licensees, paged 50 at a
+# time, no CAPTCHA enforcement on the endpoint itself (confirmed directly:
+# a bare curl with no cookies or session succeeds). Matched by last+first
+# name against the 642 PA-state rows in artifacts/amcb_npi_linkage_
+# FROZEN.csv -- 87 VERIFIED_LIVE_BON (13.6%), spot-checked by hand (Abdul-
+# Haqq and Bennett both verified correct, not a matching bug) and
+# independently re-run and reproduced byte-for-byte before this entry was
+# added. A prior, methodologically weaker version of this same file
+# (Board of Nursing's broad "Certified Registered Nurse Practitioner"
+# pool, no CNM-specific filter, name-matched against thousands of
+# unrelated nurse practitioners) was committed and then reverted in favor
+# of this one -- see git history.
+# Reviewed and accepted by Tyler Muffly, 2026-10-25, same reasoning as the
+# WA/CO/TX/IL/CT/DE/CA board entries above: every underlying field (AMCB
+# name/certification number, NPI, PALS's own published license fields) is
+# independently public. Produced by
+# harvest_live_pennsylvania_bon_from_tracked_roster.py.
+artifacts/live_pennsylvania_bon_ingested_midwives_from_tracked_roster.csv
