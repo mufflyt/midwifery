@@ -3,8 +3,8 @@
 **Repository**: `midwifery`
 **Primary scripts**: [`compare_pecos_to_nppes_address.R`](../compare_pecos_to_nppes_address.R), [`compare_healthgrades_to_nppes_address.R`](../compare_healthgrades_to_nppes_address.R), [`compare_healthgrades_to_pecos_address.R`](../compare_healthgrades_to_pecos_address.R), [`compare_pecos_to_doximity_address.R`](../compare_pecos_to_doximity_address.R), [`compare_pecos_to_bon_address.R`](../compare_pecos_to_bon_address.R), [`make_address_agreement_heatmap.R`](../make_address_agreement_heatmap.R), [`build_pecos_bon_address_flow_pairs.R`](../build_pecos_bon_address_flow_pairs.R), [`make_pecos_bon_address_flow_map.R`](../make_pecos_bon_address_flow_map.R)
 **Shared logic**: [`R/lib/address_agreement_compare.R`](../R/lib/address_agreement_compare.R) (`shape_address()`, `compare_address_pair()`), mutation-tested by [`tests/test_address_agreement_compare_saboteur.R`](../tests/test_address_agreement_compare_saboteur.R) against [`tests/mutation_catalogue.R`](../tests/mutation_catalogue.R)
-**Investigation date**: 2026-10-23
-**Status**: five comparisons, all NPI-joined, all year-labeled on sight. Street was tried and dropped from every one of them (§2). One state-board input (Colorado) was removed outright, not caveated; a second (California) was added with no state or ZIP field at all (§4).
+**Investigation date**: 2026-10-23; updated 2026-10-26 (Florida added)
+**Status**: five comparisons, all NPI-joined, all year-labeled on sight. Street was tried and dropped from every one of them (§2). One state-board input (Colorado) was removed outright, not caveated; California was added with no state or ZIP field at all; Florida was added with full city/state/zip and is now the state-board comparison's largest single contributor at every level (§4).
 
 ---
 
@@ -21,9 +21,9 @@ they give the same answer, and at what level of geographic precision does
 that stop being true?**
 
 The honest answer, stated up front: **state-level agreement is high
-everywhere (86.7-95%). City and ZIP5 agreement collapse everywhere, and by
-how much depends on what kind of address is actually being compared, not
-on how "good" any one source is.**
+everywhere (89.8-95.3%). City and ZIP5 agreement drop well below that
+everywhere, and by how much depends on what kind of address is actually
+being compared, not on how "good" any one source is.**
 
 ## 2. Method, shared across all five comparisons
 
@@ -69,7 +69,7 @@ script's own header for exactly how.
 | PECOS/DAC (2026) vs Doximity (name-matched, undated) | 90.7% | 57.8% | 49.2% | 1,822 |
 | Healthgrades (scraped) vs PECOS/DAC (2026) | 95.3% | 55.4% | 50.0% | 148 |
 | Healthgrades (scraped) vs NPPES (2026) | 94-95% | 67-68% | 62-64% | 400-540\* |
-| PECOS/DAC (2026) vs BON (CA+IL+CT+DE pooled) | 86.7% (n=15) | 24.4% (n=238) | 6.7% (n=15) | — |
+| PECOS/DAC (2026) vs BON (CA+IL+CT+DE+FL pooled) | 92.5% (n=239) | 35.5% (n=462) | 35.6% (n=239) | — |
 
 \*Healthgrades' underlying scrape is still running in another session as
 of this writing; its n (and the percentages built on it) will keep
@@ -80,13 +80,15 @@ ZIP5 is the headline grain this project treats as primary (outlined/bold
 in the figure). It ranges from 47-64% among the four comparisons where
 both sides are asking the same underlying question ("where does this
 person practice") — genuinely substantial disagreement even there — and
-collapses to 6.7% for the one comparison that isn't (§4).
+sits at 35.6% for the state-board comparison (§4), now a real,
+well-powered number (n=239) rather than the n=15 curiosity it was before
+Florida was added, though still below the other four comparisons' band.
 
 ## 4. The state-board comparison: uneven coverage, one removed, n varies by level
 
-Seven states have a live Board-of-Nursing harvest script in this project
-(WA, CO, TX, CA, IL, CT, DE). **Three never had usable address data at
-all, one was removed on purpose, and the four that remain don't even
+Eight states have a live Board-of-Nursing harvest script in this project
+(WA, CO, TX, CA, IL, CT, DE, FL). **Three never had usable address data at
+all, one was removed on purpose, and the five that remain don't even
 report the same `n` across state/city/ZIP5** — each state's board
 publishes a different subset of fields, and `shape_address()` (§2) now
 reports NA, not a fabricated value, for whichever fields a given state
@@ -136,25 +138,60 @@ simply doesn't have.
   no documented mailing-vs-practice distinction. Of those: **DE
   contributes 0 rows** (no DE-practicing midwife is in the tracked cohort
   yet — an honest zero, not an error) and **IL contributes 1** (not a
-  usable percentage). **CT contributes 14**, and together with CA carries
-  the entire comparison: CT alone at state and ZIP5 (CA has neither
-  field), CA dominating city (223 of 238 pooled city-comparable records).
+  usable percentage). **CT contributes 14** — a meaningful share before
+  Florida was added, now a small piece of a much larger picture.
+- **FL was added 2026-10-26, and is this comparison's largest single
+  contributor at every level.** Florida has no CNM-specific profession
+  category at all — nurse-midwives, nurse practitioners, CRNAs and
+  clinical nurse specialists all share one "Advanced Practice Registered
+  Nurse" license type — so
+  `harvest_live_florida_bon_from_tracked_roster.py` accepts a name match
+  only when the license's own Qualifications field lists "Certified Nurse
+  Midwife": 813 of 1,035 FL-state cohort members verified this way, 81
+  APRN name matches correctly excluded as NOT CNM-qualified (a match
+  under the right name that isn't actually a midwife), 0 ambiguous. Of
+  those 813, 224 also have a PECOS/DAC NPI to compare against — by itself
+  more comparable rows than every other state-board source in this
+  project combined. The harvester's first committed version only captured
+  the detail page's street line; the real city/state/zip line sits two
+  `<dt>/<dd>` pairs later in the HTML and was silently dropped. Fixed and
+  the full cohort re-harvested before this update — confirmed live
+  against several real records, including the "no address on file" case
+  (a disclaimer paragraph precedes the real address block there, which
+  the fix had to parse around rather than mistake for the address).
 
-Removing CO did not rescue the ZIP5 number: CT alone, on its own, was
-already 7.1% before CO was ever in the mix (6.7% once pooled with IL/DE's
-negligible contribution). Adding CA did not move it either — CA has no
-ZIP field to contribute. What CA *did* do is turn the city-level number
-from a 15-record curiosity into a 238-record one, and the percentage
-barely moved (20.0% → 24.4%) — evidence the small-sample city number
-wasn't a fluke, not a different finding.
+Adding Florida also exposed a separate, pre-existing bug: the filter that
+excludes non-matched rows before pooling used `nzchar(npi)` alone, which
+does not exclude `NA` — the same `nzchar(NA) == TRUE` behavior already
+documented and guarded against inside `compare_address_pair()` itself,
+just not here. A VERIFIED_LIVE_BON row whose cohort member has no linked
+NPI reads as a blank CSV cell, which becomes `NA` after `read_csv()`, and
+`nzchar(NA)` doesn't filter it out. With only CA/IL/CT/DE pooled this
+never collided; adding FL's own NA-npi row made two such rows land on the
+same `NA` "key" with different cities, and `assert_unique_keys()`
+correctly refused to silently resolve the conflict. Fixed by filtering
+`!is.na(npi)` before `nzchar(npi)`, not after.
+
+Removing CO did not rescue the ZIP5 number on its own: CT alone was still
+only 7.1% before Florida entered the mix. Florida is what actually moved
+it — pooled ZIP5 agreement went from 6.7% (n=15, effectively CT alone) to
+35.6% (n=239, FL carrying 224 of those rows), and pooled city agreement
+from 24.4% (n=238) to 35.5% (n=462). This is still below the 47-64% band
+the four practice-vs-practice comparisons in §3 occupy, but it's no
+longer a sample too small to say anything with — it's a real number built
+on the largest BON-side comparable sample in this project.
 
 ![Where PECOS/DAC and state Boards of Nursing disagree on practice location](figures/pecos_vs_bon_address_flows_2026.png)
 
-This map covers Connecticut only — CA has no ZIP field, and the ZIP5-
+This map still covers Connecticut only — it predates Florida's addition
+and has not yet been extended to it. CA has no ZIP field, and the ZIP5-
 centroid geocoding method this map uses (§6) has no equivalent for a
 city-only source; mapping CA's mismatches would need a city-centroid
-lookup this project doesn't currently have. 11 of CT's 14 comparable
-records disagree at city level or coarser — a dense local cluster around
+lookup this project doesn't currently have. Florida has no such
+limitation (it carries a real ZIP5) and, at n=224, would be by far the
+largest flow this map could show — extending it is a natural next step,
+not done as part of this update. 11 of CT's 14 comparable records
+disagree at city level or coarser — a dense local cluster around
 Hartford/New Haven plus one out-of-state flow (Danbury CT → Tamarac FL).
 
 ## 5. What this does and does not establish
@@ -168,7 +205,7 @@ Hartford/New Haven plus one out-of-state flow (Danbury CT → Tamarac FL).
   Healthgrades is a scraped directory listing; state boards are sometimes
   a mailing address, sometimes a practice address, and don't always say
   which.
-- **State-level agreement is consistently high (86.7-95%) across every
+- **State-level agreement is consistently high (89.8-95.3%) across every
   comparison.** Nobody disagrees about which *state* a midwife practices
   in. The disagreement is entirely a finer-grain phenomenon.
 - **ZIP5 agreement among the four practice-vs-practice comparisons sits in
@@ -177,16 +214,20 @@ Hartford/New Haven plus one out-of-state flow (Danbury CT → Tamarac FL).
   the best of the four at 63.5%; none of the four exceeds two-thirds
   agreement.
 - **The state-board comparison measures something structurally different**
-  from the other four — coverage (2 of 7 states have no usable address
+  from the other four — coverage (2 of 8 states have no usable address
   field at all), address type (Colorado's was a mailing address; removed
   rather than caveated), field availability (California has city but no
-  state or ZIP), and sample size (ZIP5 still rests on Connecticut alone,
-  n=14) all limit what it can say. City-level agreement is better-powered
-  now (n=238, CA+CT), and the two states' independent numbers agree with
-  each other (24.7% CA, 21.4% CT) — some real signal, not just noise, even
-  though it still can't speak to ZIP5. It should not be read as "state
-  board data disagrees with PECOS" in general — only as what the specific
-  states with usable data actually show.
+  state or ZIP), and scope (Florida's CNM identification depends on a
+  Qualifications-field screen this project had to build, not a clean
+  profession-code filter) all limit what it can say. ZIP5 is now
+  well-powered (n=239, driven mostly by Florida's 224) rather than resting
+  on Connecticut alone, and city-level agreement (n=462) is powered by
+  three independent sources agreeing within a similar range (24.7% CA,
+  21.4% CT, 47.3% FL) — real signal, not noise, though FL's own number
+  sits noticeably higher than CA's and CT's, worth keeping in mind rather
+  than averaging away. It should not be read as "state board data
+  disagrees with PECOS" in general — only as what the specific states with
+  usable data actually show.
 - **It does not identify which source is "right."** Nothing here
   establishes a ground truth to measure the others against; it measures
   mutual agreement only.
@@ -204,7 +245,7 @@ Rscript compare_healthgrades_to_pecos_address.R
 # PECOS/DAC vs Doximity (two-hop join: certification_number -> npi)
 Rscript compare_pecos_to_doximity_address.R
 
-# PECOS/DAC vs state Boards of Nursing (CA/IL/CT/DE; per-state + pooled rows)
+# PECOS/DAC vs state Boards of Nursing (CA/IL/CT/DE/FL; per-state + pooled rows)
 Rscript compare_pecos_to_bon_address.R
 
 # Combined heatmap (all five artifacts above)

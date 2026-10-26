@@ -11,6 +11,9 @@ vs_bon_same_year,PECOS/DAC (2026) vs CT BON (board-reported),2026,live,zip5,14,1
 vs_bon_same_year,PECOS/DAC (2026) vs DE BON (board-reported),2026,live,state,0,0,NA
 vs_bon_same_year,PECOS/DAC (2026) vs DE BON (board-reported),2026,live,city,0,0,NA
 vs_bon_same_year,PECOS/DAC (2026) vs DE BON (board-reported),2026,live,zip5,0,0,NA
-vs_bon_same_year_pooled,PECOS/DAC (2026) vs BON (CA+IL+CT+DE pooled),2026,live,state,15,13,86.7
-vs_bon_same_year_pooled,PECOS/DAC (2026) vs BON (CA+IL+CT+DE pooled),2026,live,city,238,58,24.4
-vs_bon_same_year_pooled,PECOS/DAC (2026) vs BON (CA+IL+CT+DE pooled),2026,live,zip5,15,1,6.7
+vs_bon_same_year,PECOS/DAC (2026) vs FL BON (board-reported; APRN match CNM-qualification-screened),2026,live,state,224,208,92.9
+vs_bon_same_year,PECOS/DAC (2026) vs FL BON (board-reported; APRN match CNM-qualification-screened),2026,live,city,224,106,47.3
+vs_bon_same_year,PECOS/DAC (2026) vs FL BON (board-reported; APRN match CNM-qualification-screened),2026,live,zip5,224,84,37.5
+vs_bon_same_year_pooled,PECOS/DAC (2026) vs BON (CA+IL+CT+DE+FL pooled),2026,live,state,239,221,92.5
+vs_bon_same_year_pooled,PECOS/DAC (2026) vs BON (CA+IL+CT+DE+FL pooled),2026,live,city,462,164,35.5
+vs_bon_same_year_pooled,PECOS/DAC (2026) vs BON (CA+IL+CT+DE+FL pooled),2026,live,zip5,239,85,35.6

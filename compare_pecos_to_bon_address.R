@@ -9,7 +9,7 @@
 # so no crosswalk hop is needed here the way the Doximity comparison needed
 # one).
 #
-# FOUR OF THE SEVEN LIVE BON PULLS GO IN (CA added 2026-10-23):
+# FIVE OF THE EIGHT LIVE BON PULLS GO IN (FL added 2026-10-26):
 #   - WA (harvest_live_wa_bon_from_tracked_roster.py) has no address field
 #     whatsoever -- credential number, status and expiration date only.
 #     EXCLUDED. Confirmed by querying data.wa.gov's live API directly
@@ -49,6 +49,20 @@
 #     AGREEMENT.md for the full picture across every comparison.
 #   - IL, CT, DE all carry a structured, board-reported (not explicitly
 #     mailing) city/state/zip. INCLUDED.
+#   - FL (harvest_live_florida_bon_from_tracked_roster.py) has full
+#     city/state/zip -- but the harvester's first committed version
+#     (2026-10-23) only captured the street line; the detail page actually
+#     renders FOUR <dt>/<dd> pairs (street, two blank spacer lines, then
+#     "CITY, ST ZIP"), and the original regex stopped at the first one.
+#     Fixed and the full 1,035-row FL cohort re-harvested 2026-10-26 --
+#     confirmed live against multiple real records (including the
+#     no-address-on-file "NOT PRACTICING" case, which renders an extra
+#     disclaimer paragraph ahead of the real address block) before trusting
+#     it. INCLUDED. Florida also has no CNM-specific profession category at
+#     all (APRN covers NPs, CRNAs and CNMs alike); a match here additionally
+#     requires the license's own Qualifications field to list "Certified
+#     Nurse Midwife" -- see that script's own header for the full
+#     disambiguation logic.
 #
 # Both the per-state rows AND one pooled "all states combined" row are
 # reported below -- the per-state rows keep each state's own n visible, the
@@ -67,6 +81,7 @@
 #          artifacts/live_illinois_bon_ingested_midwives_from_tracked_roster.csv
 #          artifacts/live_connecticut_bon_ingested_midwives_from_tracked_roster.csv
 #          artifacts/live_delaware_bon_ingested_midwives_from_tracked_roster.csv
+#          artifacts/live_florida_bon_ingested_midwives_from_tracked_roster.csv
 # Outputs: artifacts/pecos_vs_bon_address_agreement.csv (aggregate, tracked)
 #
 # @family data-quality
@@ -93,7 +108,10 @@ BON_STATES <- list(
        label = "CT BON (board-reported)"),
   list(path = "artifacts/live_delaware_bon_ingested_midwives_from_tracked_roster.csv",
        city = "live_bon_city", state = "live_bon_state", zip = "live_bon_zip",
-       label = "DE BON (board-reported)")
+       label = "DE BON (board-reported)"),
+  list(path = "artifacts/live_florida_bon_ingested_midwives_from_tracked_roster.csv",
+       city = "live_bon_city", state = "live_bon_state", zip = "live_bon_zip",
+       label = "FL BON (board-reported; APRN match CNM-qualification-screened)")
 )
 
 BON_PATHS <- map_chr(BON_STATES, "path")
@@ -106,9 +124,20 @@ dac <- read_csv("dac_midwives.csv", col_types = cols(.default = "c"), progress =
 # one. Verified-match rows only (live_bon_match_status == "VERIFIED_LIVE_BON"):
 # UNMATCHED/AMBIGUOUS rows carry no board address to compare at all (see
 # each harvest script's own header for that three-way split).
+#
+# !is.na(npi) BEFORE nzchar(npi) -- not nzchar(npi) alone. nzchar(NA) is
+# TRUE, not FALSE (the same gotcha R/lib/address_agreement_compare.R's own
+# compare_address_pair() already guards against, see its comments) -- a
+# VERIFIED_LIVE_BON row whose cohort member has no linked NPI reads as a
+# blank cell, which read_csv() turns into NA, which nzchar() alone treats
+# as "has a value". Left unguarded, every such row across every state
+# collapses onto the same NA "npi" key once pooled, and
+# assert_unique_keys() correctly refuses to silently pick one when they
+# disagree on other columns -- caught live 2026-10-26 when adding Florida
+# made a second NA-npi row collide with one CA already had.
 bon_by_state <- map(BON_STATES, function(spec) {
   bon <- read_csv(spec$path, col_types = cols(.default = "c"), progress = FALSE) %>%
-    filter(live_bon_match_status == "VERIFIED_LIVE_BON", nzchar(npi)) %>%
+    filter(live_bon_match_status == "VERIFIED_LIVE_BON", !is.na(npi), nzchar(npi)) %>%
     shape_address("npi", spec$state, spec$city, spec$zip)
   assert_unique_keys(bon, "npi", label = basename(spec$path), dedupe = TRUE)
 })
@@ -125,8 +154,8 @@ per_state <- map2_dfr(BON_STATES, bon_by_state, function(spec, bon) {
 # ever turned up VERIFIED in two different states' pulls (shouldn't happen --
 # nppes_state is stable per NPI -- but this would stop the run rather than
 # silently keep one and drop the other).
-bon_all <- assert_unique_keys(bind_rows(bon_by_state), "npi", label = "pooled BON (CA+IL+CT+DE)", dedupe = TRUE)
-pooled <- compare_address_pair(dac, bon_all, "PECOS/DAC (2026) vs BON (CA+IL+CT+DE pooled)",
+bon_all <- assert_unique_keys(bind_rows(bon_by_state), "npi", label = "pooled BON (CA+IL+CT+DE+FL)", dedupe = TRUE)
+pooled <- compare_address_pair(dac, bon_all, "PECOS/DAC (2026) vs BON (CA+IL+CT+DE+FL pooled)",
                        "2026", "live", "vs_bon_same_year_pooled")
 
 out <- bind_rows(per_state, pooled)

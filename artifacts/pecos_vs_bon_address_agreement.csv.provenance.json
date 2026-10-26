@@ -1,6 +1,6 @@
 {
   "artifact": "pecos_vs_bon_address_agreement.csv",
-  "written_utc": "2026-10-23 19:16:07 UTC",
+  "written_utc": "2026-10-26 17:12:07 UTC",
   "inputs": [
     {
       "path": "dac_midwives.csv",
@@ -21,13 +21,17 @@
     {
       "path": "artifacts/live_delaware_bon_ingested_midwives_from_tracked_roster.csv",
       "sha256": "c7a2427bc1a3592630a4ff9dc0d93fde9c3821d78ca34872e96a0164fa2460d8"
+    },
+    {
+      "path": "artifacts/live_florida_bon_ingested_midwives_from_tracked_roster.csv",
+      "sha256": "08c373919fba44f6674165744e3e1f6f0b0f2885c2023090f71d21bf66e6abdb"
     }
   ],
-  "code_sha256": "654640e2a87644df40a8e140d96e9a443f7b1aad199fc9914aa0ebb2709fb3d2",
+  "code_sha256": "cf4b8bc2a3959668794d533ba2155edd09299ec72a3a74d5f40a10ef2712807b",
   "code": [
     {
       "path": "compare_pecos_to_bon_address.R",
-      "sha256": "62f889f3d61724bd3c6d02ae979efc2f5a5c745d649d886b551ae053521cd62f"
+      "sha256": "4935aec05bf774cc15f9a01c5f5929a10121d57659d7f5e25abb4543cf1625ed"
     },
     {
       "path": "R/join_safety.R",

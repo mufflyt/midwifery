@@ -21,17 +21,17 @@
 #          artifacts/pecos_vs_bon_address_agreement.csv          (compare_pecos_to_bon_address.R)
 # Outputs: docs/figures/address_agreement_heatmap.png
 #
-# BON: the POOLED row only (vs_bon_same_year_pooled), not the four
+# BON: the POOLED row only (vs_bon_same_year_pooled), not the five
 # per-state rows compare_pecos_to_bon_address.R also writes -- one tile per
 # source pair here, same as every other comparison. CA (added 2026-10-23)
 # has no independent state or zip field at all, so the pooled row's n is
-# NOT uniform across levels: state/ZIP5 are n=15 (CT=14, IL=1 -- CA and DE
-# contribute 0 at both), city is n=238 (CA=223, CT=14, IL=1). The ZIP5
-# tile -- this project's headline metric -- is unaffected by CA's addition;
-# the city tile's n grew roughly 16x and its percentage barely moved
-# (20.0% -> 24.4%), which is itself informative: the earlier n=15 city
-# number wasn't a small-sample fluke. See docs/TECHNICAL_APPENDIX_MULTI_
-# SOURCE_ADDRESS_AGREEMENT.md SS4 for why CO isn't in this pool at all
+# NOT uniform across levels. FL (added 2026-10-26) is this pool's first
+# state-sized contributor: 224 comparable rows at state/ZIP5 and city, by
+# far the largest single contributor at those levels (CT, the previous
+# largest, carries 14) -- pooled n went from state/ZIP5=15, city=238 to
+# state/ZIP5=239, city=462, and pooled ZIP5 agreement moved from 6.7% to
+# 35.6%. See docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md SS4
+# for the full per-state breakdown and for why CO isn't in this pool at all
 # (removed, not pooled: its field is a mailing address, not a practice
 # address). The per-state breakdown stays in artifacts/pecos_vs_bon_
 # address_agreement.csv for anyone who wants it.
@@ -71,11 +71,11 @@ heat <- ggplot(d, aes(x = level, y = source_pair, fill = agree_pct)) +
   labs(title = "Address agreement across every source pair this project has checked",
        subtitle = "ZIP5 (outlined, bold) is the metric this project treats as primary. Street dropped -- never reliable.",
        x = NULL, y = NULL,
-       caption = "n per cell: see artifacts/*_address_agreement.csv. BON row is CA+IL+CT+DE pooled -- n is NOT uniform (state/ZIP5 n=15, city n=238: CA has no state/zip field) -- see artifacts/pecos_vs_bon_address_agreement.csv for the per-state breakdown.") +
+       caption = "n per cell: see artifacts/*_address_agreement.csv. BON row is CA+IL+CT+DE+FL pooled -- n is NOT uniform (state/ZIP5 n=239, city n=462: CA has no state/zip field) -- see artifacts/pecos_vs_bon_address_agreement.csv for the per-state breakdown.") +
   theme_minimal(base_size = 11) +
   theme(panel.grid = element_blank(),
         axis.text.y = element_text(size = 8),
         plot.caption = element_text(hjust = 0, size = 7))
 
-ggsave("docs/figures/address_agreement_heatmap.png", heat, width = 13, height = 5.5, dpi = 200)
+ggsave("docs/figures/address_agreement_heatmap.png", heat, width = 14, height = 5.5, dpi = 200)
 cli::cli_alert_success("wrote docs/figures/address_agreement_heatmap.png")
