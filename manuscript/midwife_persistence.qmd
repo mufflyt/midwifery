@@ -369,6 +369,26 @@ and inflate significance with a denominator in the hundreds of millions,
 answering a different and less meaningful question than whether the two
 groups of *states* differ.
 
+## Medicaid procedure-billing activity
+
+As a second secondary analysis, cohort NPIs were matched to HHS's Medicaid
+Provider Spending by HCPCS and Medicaid Provider Enrollment Segments releases
+(opendata.hhs.gov, first published February 2026; outpatient and professional
+claim lines and T-MSIS-derived enrollment segments respectively, January
+2018--December 2024) on the servicing-provider NPI field, restricted to four
+procedures requiring in-person attendance: a screening pap test (HCPCS Q0091,
+G0101), urodynamics (CPT 51725--51729, 51736, 51741, 51784, 51785, 51797,
+51798), IUD insertion or removal (CPT 58300, 58301), and vaginal delivery
+(CPT 59400, 59409, 59410, and the VBAC-specific 59610, 59612, 59614). The HHS
+release suppresses any NPI-HCPCS-month cell with fewer than 12 claim lines
+and fewer than 12 beneficiaries, so a provider's absence from this record is
+uninformative about whether she accepted Medicaid patients for a given
+procedure; presence is read as a floor on real billing activity, not an
+estimate of it. Enrollment and spending were crossed into a three-level
+variable -- enrolled and billed, enrolled only, or neither -- since Medicaid
+enrollment is an administrative relationship with a state program and does
+not itself establish that a claim was ever submitted.
+
 ## Statistical analysis
 
 Proportions carry 95% Wilson score intervals, chosen over the normal
@@ -605,6 +625,40 @@ providers through the ArcGIS tier restores the gradient. Two methods with
 unrelated failure modes agree, and the third disagrees for a reason that is
 understood.
 
+## Medicaid procedure-billing activity
+
+Of `r mw_n("medicaid.midwife_cohort_n")` cohort midwives,
+`r mw_n("medicaid.midwife_vd_n")`
+(`r mw_safe_stat("medicaid.midwife_vd_pct", "%.1f")`%) billed Medicaid for a
+vaginal delivery under their own servicing NPI at least once between 2018 and
+2024, `r mw_safe_stat("medicaid.midwife_pap_pct", "%.1f")`% for a pap test,
+`r mw_safe_stat("medicaid.midwife_iud_pct", "%.1f")`% for IUD insertion or
+removal, and `r mw_safe_stat("medicaid.midwife_urodynamics_pct", "%.1f")`%
+for urodynamics. These figures are a floor, not an estimate, of Medicaid
+participation: across the entire national release, only
+`r mw_n("medicaid.national_vd_npi_ceiling")` distinct NPIs of any provider
+type ever appear as servicing provider for a vaginal-delivery code in seven
+years, so the cell-suppression threshold -- not clinical practice -- is the
+more likely explanation for most providers' absence.
+
+Crossing Medicaid enrollment against billing activity across all four
+procedures gives
+`r mw_safe_stat("medicaid.midwife_enrolled_and_billed_pct", "%.1f")`% of
+cohort midwives both enrolled and confirmed billing,
+`r mw_safe_stat("medicaid.midwife_enrolled_only_pct", "%.1f")`% enrolled with
+no confirmed billing activity in this record, and
+`r mw_safe_stat("medicaid.midwife_neither_pct", "%.1f")`% with neither
+signal. The number of distinct midwives billing for a vaginal delivery rose
+from `r mw_n("medicaid.midwife_vd_2018")` in 2018 to
+`r mw_n("medicaid.midwife_vd_2023")` in 2023 before falling to
+`r mw_n("medicaid.midwife_vd_2024")` in 2024, a decline attributable to
+incomplete state submissions in the final two months of the release rather
+than a real change in practice.
+`r mw_safe_stat("medicaid.top_state", "%s")` had the largest number of
+midwives billing Medicaid for vaginal delivery
+(`r mw_n("medicaid.top_state_n")` of `r mw_n("medicaid.top_state_cohort_n")`
+cohort midwives practicing in the state).
+
 # Discussion
 
 In a national cohort of certified midwives followed across
@@ -723,6 +777,17 @@ restricted to midwives certified by a single certifying body; midwifery care
 delivered by certified professional midwives and state-licensed direct-entry
 midwives is not represented, so midwifery access is understated, and unevenly
 so across states[@NetworkPHL2023directentry].
+
+The Medicaid procedure-billing analysis carries three further limitations of
+its own. First, the HHS release's cell-suppression threshold means absence
+from the record is read as a floor on billing activity, not an estimate of
+it; a true non-participation rate cannot be recovered from this data.
+Second, matching was performed on NPI alone, with no verification that a
+midwife's billed procedure was rendered in a midwifery scope of practice
+rather than, for example, a collaborating-physician claim billed under a
+shared group NPI. Third, the OB-GYN comparators are presented as context for
+interpreting scale, not as this paper's population; no claim is made that
+they are a matched or representative comparison group.
 
 ## Conclusion
 
