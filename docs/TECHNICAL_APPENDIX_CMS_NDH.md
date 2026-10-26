@@ -442,3 +442,87 @@ identical to before PECOS was added). The cross-check is retained because it
 corroborates one existing flag and establishes the DuckDB table and matching
 script for any future, higher-yield use, not because it changes today's
 published numbers.
+
+## 10. A third source, by name rather than NPI: the FDA Debarment List (Drug Product Applications)
+
+Both sources above are NPI-keyed: CMS publishes them with the same
+identifier this project already joins on everywhere else. FDA's debarment
+list is not — it carries no NPI, no license number, no identifier of any
+kind other than a name — so this source is a name match, which carries a
+different failure mode than a join: a common name can collide, in either
+direction (one FDA name with several candidate cohort NPIs, or two
+same-named people in either file). The matching script treats any such
+collision as unresolved, not a match; see below.
+
+**Where to find the current file.** FDA republishes this list in place, so
+the direct download URL changes (it is served from `fda.gov/media/<numeric
+id>`, and that id is reassigned on each republish — do not reuse an old
+direct link). To get the current file:
+
+1. Open FDA's debarment list page:
+   `https://www.fda.gov/inspections-compliance-enforcement-and-criminal-investigations/compliance-actions-and-activities/fda-debarment-list-drug-product-applications`
+2. Under "Debarments (Drug Applications)," follow the **Single Page Data
+   Format** link — an `.xlsx` export of the same table shown on the page.
+3. Save it and point `FDA_DEBARMENT_XLSX` at it, or leave it at
+   [`load_fda_debarment_to_duckdb.R`](../load_fda_debarment_to_duckdb.R)'s
+   default path (`~/Downloads/fda_debarment_drug_applications.xlsx`).
+
+This snapshot — "Data Format-Drug Applications (Oct 2, 2026).xlsx," 158
+rows, downloaded 2026-10-26 — lists only individuals; the page's FIRMS
+section reported "None as of this date." Columns: last name, first & middle
+names (one combined field), effective date, term of debarment, and the
+Federal Register citation. The file is **not clean**: effective dates are a
+mix of Excel date serials and typed strings like `01/04/2021` in the same
+column, and at least one row carries a malformed year (`10/5/20111`) —
+FDA's own data-entry defect, not a parsing bug here. The loader keeps every
+date field as the raw text FDA published rather than guessing a single
+format and silently reformatting or dropping what doesn't parse.
+
+**Built by [`match_fda_debarment.R`](../match_fda_debarment.R)** against
+`artifacts/fda_debarment_match_cohort.csv`, checked over the same
+16,775-NPI analytic cohort the other two sources cover (`cohort_member ==
+TRUE`), loaded into the DuckDB warehouse by
+[`load_fda_debarment_to_duckdb.R`](../load_fda_debarment_to_duckdb.R). Last
+and first names on both sides are normalized with the same function that
+built `amcb_npi_linkage_FROZEN.csv`'s own `normalized_last_name`/
+`normalized_first_name` columns — `mysterynpi::blank_na(x, fold_hyphens =
+TRUE)` — so the two sides are not two independently-invented normalizers
+quietly disagreeing. The FDA file's combined "First & Middle Names" field is
+compared on its first token only (no splitter exists for this format the
+way `amcb_split_first()` exists for AMCB's own data), which costs a match
+only for someone FDA published under a middle name alone.
+
+A name key is flagged `fda_debarred = TRUE` **only** when it is a singleton
+on both sides — exactly one FDA debarment row and exactly one cohort NPI
+share that last+first key. Any collision is reported as `AMBIGUOUS` and left
+unflagged; `NONE` means no FDA row shares that name at all. This is stricter
+than the state-board-of-nursing scripts' VERIFIED/AMBIGUOUS/UNMATCHED
+convention (`harvest_live_*_bon_from_tracked_roster.py`): there, a missed
+tie only loses a credential fact, but here a wrongly-applied flag would mean
+excluding the wrong person of the same name from the published cohort — the
+higher bar is deliberate.
+
+**Result: exactly 1 of 16,775 cohort NPIs matches** — NPI `1891824926`,
+cohort name "Lisa Jo Sharp" (`status` `LAPSED`), against FDA's "Sharp, Lisa
+Jean," permanently debarred effective 2012-08-23 (77 FR 56647). The middle
+name differs (Jo vs. Jean) and is not part of the match key, so **this is a
+name match only, not a confirmed identity match** — the same caveat this
+project already attaches to the CMS NDH flag in section 5, and worded the
+same way in `federal_adverse_action_flags.csv`'s `federal_adverse_action_
+source` column ("FDA debarment, drug product applications (name match,
+unverified, see appendix)").
+
+**Net effect on the published cohort: zero**, for the same reason as the
+PECOS source in section 9 — her roster `status` is `LAPSED`, not `ACTIVE`,
+so she is outside the `ACTIVE` + `primary_midwifery`-linked population the
+federal adverse-action exclusion step in `make_cohort_exclusion_flow_
+figure.R` evaluates, regardless of this flag. Every count in `docs/figures/
+cohort_exclusion_flow_counts.csv` is unchanged (12,170 matched, 77 excluded
+for federal adverse action, 12,093 surviving — identical to before FDA was
+added).
+
+**DEA is not wired in.** Unlike CMS and FDA, DEA does not publish a bulk
+file of revoked or surrendered registrants — only a single-registrant
+verification lookup. There is no dataset to download or match against, so
+this is not a gap to close later; it is the entire public surface DEA
+offers.

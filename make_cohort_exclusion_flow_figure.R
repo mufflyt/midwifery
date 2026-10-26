@@ -68,8 +68,10 @@ cohort_rule <- tryCatch(.mw_get("exclusion.cohort_rule", .mw_catalog),
 on_membership_rule <- identical(cohort_rule, "canonical_active_primary")
 
 # C17: NPI-linked federal adverse actions. The flags file is optional so the
-# frozen figure remains reproducible before the first DEA/FDA/CMS refresh; when
+# frozen figure remains reproducible before the first CMS/FDA refresh; when
 # present, only active, cohort-eligible NPIs are eligible for this exclusion.
+# DEA has no bulk list to refresh from (docs/TECHNICAL_APPENDIX_CMS_NDH.md
+# s10) -- not merely unwired yet.
 ACTION_FLAGS <- file.path("artifacts", "federal_adverse_action_flags.csv")
 adverse_n <- 0L
 adverse_geocoded_n <- 0L
@@ -279,7 +281,7 @@ fc <- as_fc(
   fc_filter(
     N = matched_after_adverse_n, label = "No federal adverse action",
     text_pattern = "{label}\nN = {n} ({perc}%)",
-    show_exc = TRUE, label_exc = "Federal adverse action (CMS NDH flag; Medicare revocation)",
+    show_exc = TRUE, label_exc = "Federal adverse action (CMS NDH flag;\nMedicare revocation; FDA debarment)",
     text_pattern_exc = paste0("{label}\nN = {n} ({perc}%)\n", adverse_lines)
   ) %>%
   fc_filter(

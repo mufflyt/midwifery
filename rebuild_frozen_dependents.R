@@ -185,6 +185,15 @@ REBUILD_ORDER <- list(
                    # make_cohort_exclusion_flow_figure.R within the layer,
                    # which reads that flags file.
                    "match_cms_pecos_revocations.R",
+                   # Added 2026-10-26, same reason and same gate as
+                   # match_cms_pecos_revocations.R immediately above: reads
+                   # amcb_npi_linkage_FROZEN directly for the analytic-cohort
+                   # NPI/name population and writes
+                   # fda_debarment_match_cohort.csv, which
+                   # build_federal_adverse_action_flags.R folds in as a third
+                   # source. Must also precede make_cohort_exclusion_flow_
+                   # figure.R within the layer.
+                   "match_fda_debarment.R",
                    "make_cohort_exclusion_flow_figure.R",
                    "build_exclusion_flow_person_level.R",
                    # Added 2026-08-28, by the same completeness gate (T5) and for

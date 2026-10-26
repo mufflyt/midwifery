@@ -1,6 +1,6 @@
 {
   "artifact": "federal_adverse_action_flags.csv",
-  "written_utc": "2026-10-26 17:50:46 UTC",
+  "written_utc": "2026-10-26 20:15:10 UTC",
   "inputs": [
     {
       "path": "artifacts/cms_ndh_midwives.csv",
@@ -9,13 +9,17 @@
     {
       "path": "artifacts/cms_pecos_revoked_providers_cohort.csv",
       "sha256": "0935653574bf85937cc6f2a31957d7b843ac3bcc5b43d8719b5d6da5440b146d"
+    },
+    {
+      "path": "artifacts/fda_debarment_match_cohort.csv",
+      "sha256": "19d112c58b5ca6a73327b37361462d86624667e26364cfbc6d7c5c87d800f1da"
     }
   ],
-  "code_sha256": "530dff1c2281ffa9607c192404a76e7bedcb5d007a48aab027d6e639029500f4",
+  "code_sha256": "c49bf956be58f20a615a8184ec3954462104641c96509217cf66dce4158adac1",
   "code": [
     {
       "path": "build_federal_adverse_action_flags.R",
-      "sha256": "a3aff5868977127d7c888fffe906e0ede4d742070440a5b99735ba08d0a016ed"
+      "sha256": "d1e8fd1df472b0fbd6340de2b2d9e1e95e5d3a6a8e02a3c0f1f8ca77dd1e82bb"
     },
     {
       "path": "R/federal_adverse_action_exclusions.R",
