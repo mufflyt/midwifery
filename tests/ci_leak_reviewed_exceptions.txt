@@ -171,3 +171,14 @@ artifacts/cms_ndh_bulk_national_cnm.csv
 # s5 for why the underlying ndh_hhs_exclusion_list flag is documented as
 # unverified rather than authoritative.
 artifacts/federal_adverse_action_flags.csv
+
+# CMS PECOS Medicare revocation cross-reference, 2026-10-26: npi plus a
+# boolean flag, a revocation reason, and two dates (no names). CMS's own
+# public "Revoked Medicare Providers and Suppliers" file (opendata.hhs.gov),
+# NPI-keyed -- same standing as the NPI Registry/NDH entries above: CMS
+# publishes this exact list for anyone to query without authentication.
+# Reviewed and accepted by Tyler Muffly, 2026-10-26. Produced by
+# match_cms_pecos_revocations.R against the DuckDB table
+# load_cms_pecos_revocations_to_duckdb.R loads from the raw CMS file (not
+# itself tracked -- only this cohort-scoped, name-free derivative is).
+artifacts/cms_pecos_revoked_providers_cohort.csv

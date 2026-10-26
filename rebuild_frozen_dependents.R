@@ -173,6 +173,18 @@ REBUILD_ORDER <- list(
                    # person-level CSVs describing the previous cohort while
                    # reporting success. Placed after build_geography_by_amcb_
                    # status.R, which both depend on.
+                   #
+                   # Added 2026-10-26, by T5 in the pull request that
+                   # introduced it. Reads amcb_npi_linkage_FROZEN directly for
+                   # the analytic-cohort NPI population and writes
+                   # cms_pecos_revoked_providers_cohort.csv, which
+                   # build_federal_adverse_action_flags.R (not itself a FROZEN
+                   # consumer -- it only reads that derived file and
+                   # cms_ndh_midwives.csv) folds into
+                   # artifacts/federal_adverse_action_flags.csv. Must precede
+                   # make_cohort_exclusion_flow_figure.R within the layer,
+                   # which reads that flags file.
+                   "match_cms_pecos_revocations.R",
                    "make_cohort_exclusion_flow_figure.R",
                    "build_exclusion_flow_person_level.R",
                    # Added 2026-08-28, by the same completeness gate (T5) and for

@@ -1,6 +1,6 @@
 {
   "artifact": "cohort_exclusion_flow_counts.csv",
-  "written_utc": "2026-10-26 16:50:32 UTC",
+  "written_utc": "2026-10-26 17:52:03 UTC",
   "inputs": [
     {
       "path": "artifacts/linkage_completeness_by_status.csv",

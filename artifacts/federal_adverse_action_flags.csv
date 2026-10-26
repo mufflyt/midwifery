@@ -57,7 +57,7 @@ npi,federal_adverse_action_excluded,federal_adverse_action_source
 1346306529,TRUE,"CMS NDH exclusion flag (unverified, see appendix)"
 1356438485,TRUE,"CMS NDH exclusion flag (unverified, see appendix)"
 1366402224,TRUE,"CMS NDH exclusion flag (unverified, see appendix)"
-1366580714,TRUE,"CMS NDH exclusion flag (unverified, see appendix)"
+1366580714,TRUE,"CMS NDH exclusion flag (unverified, see appendix); CMS PECOS Medicare revocation (reenrollment barred)"
 1366694564,TRUE,"CMS NDH exclusion flag (unverified, see appendix)"
 1366697971,TRUE,"CMS NDH exclusion flag (unverified, see appendix)"
 1366748394,TRUE,"CMS NDH exclusion flag (unverified, see appendix)"

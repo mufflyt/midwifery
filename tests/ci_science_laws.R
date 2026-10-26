@@ -92,7 +92,17 @@ LAW_COHORTS <- c(
   # verified independently by recomputing status=="ACTIVE" &
   # linkage_tier=="primary_midwifery" directly against that file (12,171).
   # 12129 stays registered as the vintage before this rebuild.
-  "12171" = "ACTIVE, primary-linked (Table 1), table1_provenance.csv 2026-09-11 vintage"
+  "12171" = "ACTIVE, primary-linked (Table 1), table1_provenance.csv 2026-09-11 vintage",
+  # Added 2026-10-26, PR #276: table1_provenance.csv's own cohort_n corrected
+  # from 12171 to 12170 after rebuilding Table 1. #233 (pre-existing, tracked):
+  # Table 1's inline filter (status=="ACTIVE", linkage_tier=="primary_midwifery")
+  # did not also require an NPI the way canonical_active_primary() does, so it
+  # counted one certificant with no usable NPI that the #222-ruling membership
+  # rule excludes. 12171 stays registered -- it describes what the artifact
+  # said before this fix, not a stale vintage -- and 12170 is the corrected
+  # count the same artifact now declares, verified independently against
+  # canonical_active_primary() on the current amcb_npi_linkage_FROZEN.csv.
+  "12170" = "ACTIVE, primary-linked (Table 1), table1_provenance.csv 2026-10-26 NPI-presence fix"
 )
 
 # KNOWN, AWAITING A DECISION -- not forgiven.

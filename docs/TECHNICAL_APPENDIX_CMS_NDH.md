@@ -392,3 +392,53 @@ now fails loudly (by design) whenever `cms_ndh_bulk_national_cnm.csv` or
 `cms_ndh_bulk_cohort.csv` contains a row over 100 addresses, naming the NPI,
 so this class of CMS-side defect cannot flow silently into a future merge
 with the cohort.
+
+## 9. A second, independently-verified source: CMS PECOS Medicare revocation
+
+Section 5 above documents that the NDH `hhs_in_exclusion_list` flag was only
+verifiable against the real public HHS-OIG LEIE for 10 of 153 flagged NPIs
+(6.5%) — the rest have no traceable connection to the public exclusion list
+by NPI. CMS's separate "Revoked Medicare Providers and Suppliers" file
+(opendata.hhs.gov, PECOS re-enrollment bars, snapshot updated 2026-03-02) is
+a different kind of evidence: it is CMS's own administrative-action record,
+NPI-keyed, naming a specific revocation reason and a specific reinstatement
+date — not a name-matched list with an unclear denominator.
+
+**Built by [`match_cms_pecos_revocations.R`](../match_cms_pecos_revocations.R)**
+against `artifacts/cms_pecos_revoked_providers_cohort.csv`, checked over the
+same 16,775-NPI analytic cohort `cms_ndh_midwives.csv` covers (`cohort_member
+== TRUE`), loaded into the project's DuckDB warehouse by
+[`load_cms_pecos_revocations_to_duckdb.R`](../load_cms_pecos_revocations_to_duckdb.R)
+from the raw CMS file (7,547 rows, 6,451 distinct NPIs; not itself tracked —
+only the cohort-scoped, name-free derivative is).
+
+**Result: exactly 1 of 16,775 cohort NPIs matches** — NPI `1366580714`, Sue
+Schlegelmilch (UT), PROVIDER_TYPE_DESC "CERTIFIED NURSE MIDWIFE (CNM)" (a
+genuine CNM match, not a business entity or a different discipline),
+revoked 2020-04-14 for noncompliance/failure-to-report (424.535(A)(1) and
+(A)(9)), re-enrollment barred through 2026-08-07.
+
+**This is the same NPI the CMS NDH exclusion flag already named** — one of
+the 10/153 independently confirmed against the real LEIE in section 5. Two
+separately-sourced, separately-built federal administrative records agreeing
+on the same person is exactly the kind of corroboration that distinguishes a
+real finding from the NDH flag's 93.5% noise rate; `artifacts/
+federal_adverse_action_flags.csv`'s `federal_adverse_action_source` column for
+this NPI now reads both sources, built by
+[`build_federal_adverse_action_flags.R`](../build_federal_adverse_action_flags.R)
+via `R/federal_adverse_action_exclusions.R::build_federal_adverse_action_flags()`,
+which already dedupes by NPI and concatenates sources rather than requiring a
+single list to own every exclusion.
+
+**Net effect on the published cohort: zero.** Her roster `status` is
+`LAPSED`, not `ACTIVE`, so `canonical_active_primary()` already excludes her
+from the analytic cohort for an unrelated reason — the federal
+adverse-action exclusion step in `make_cohort_exclusion_flow_figure.R` only
+evaluates NPIs that are both `ACTIVE` and `primary_midwifery`-linked, and she
+is outside that population regardless of either flag. Every count in
+`docs/figures/cohort_exclusion_flow_counts.csv` is unchanged by this source
+(12,170 matched, 77 excluded for federal adverse action, 12,093 surviving —
+identical to before PECOS was added). The cross-check is retained because it
+corroborates one existing flag and establishes the DuckDB table and matching
+script for any future, higher-yield use, not because it changes today's
+published numbers.
