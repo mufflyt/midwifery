@@ -230,3 +230,18 @@ artifacts/live_california_bon_ingested_midwives_from_tracked_roster.csv
 # independently public. Produced by
 # harvest_live_pennsylvania_bon_from_tracked_roster.py.
 artifacts/live_pennsylvania_bon_ingested_midwives_from_tracked_roster.csv
+
+# Michigan direct-entry (Certified Professional Midwife) license list,
+# scraped live from the state's own public MiPLUS license-verification
+# system (license_number, first_name, last_name, status, expiration,
+# county -- every field independently public). NOT a tracked-roster
+# cross-reference: tested against the full national cohort
+# (amcb_npi_linkage_FROZEN.csv) and found essentially no overlap (1/22,357
+# exact-name matches, coincidental) -- this is Michigan's separate direct-
+# entry/non-nurse midwife population, not AMCB-certified nurse-midwives.
+# Reviewed and accepted by Tyler Muffly, 2026-10-26: same reasoning as
+# every other board-sourced file above (all fields independently public
+# license-verification data), kept as a standalone state-regulation
+# reference dataset, not linked to any individual in this project's cohort.
+# Produced by harvest_live_michigan_direct_entry_midwives.py.
+artifacts/live_michigan_direct_entry_midwives.csv
