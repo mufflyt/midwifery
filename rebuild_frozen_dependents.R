@@ -293,7 +293,18 @@ REBUILD_ORDER <- list(
                    # REFUSED to rebuild until it was placed. That is the gate
                    # doing its job -- undeclared, it would have been left
                    # holding the old cohort with the rebuild reporting success.
-                   "match_medicare_partb_partd.R")),
+                   "match_medicare_partb_partd.R",
+                   # Added 2026-10-26, by T5 in the pull request that fixed the
+                   # scanner's network regex: an unbounded "rvest" match inside
+                   # this script's own comments ("harvest", "harvested") had
+                   # misclassified it as scraping since before this order was
+                   # first declared, so T5 never saw it as a consumer to flag.
+                   # Reads amcb_npi_linkage_FROZEN plus midwives.csv and an
+                   # ACME authors file, writes the gitignored
+                   # artifacts/amcb_training_institution.csv, which nothing
+                   # else in this repo reads -- a leaf, same shape as the other
+                   # scripts in this layer. Order within the layer is free.
+                   "link_theses_to_amcb.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        # export_amcb_npi_geography.R writes the tracked state aggregate and
        # the gitignored person-level export, both of which read the crosswalk
