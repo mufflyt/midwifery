@@ -255,6 +255,12 @@ docs/table1_midwives_PARTIAL.md
 docs/table1_midwives_PARTIAL.html
 !docs/table1_midwives_gt.html
 
+# An interactive companion to TECHNICAL_APPENDIX_CMS_NDH.md s7.4 (the
+# 15,941-nationally/3,237-not-in-cohort NDH finding): self-contained, data
+# embedded at generation time, ~1 MB -- same reasoning as the Table 1 renders
+# above, not the multi-megabyte map output the blanket rule targets.
+!docs/midwife_haystack.html
+
 # The GitHub Pages landing page. Same reasoning as the Table 1 renders: the
 # blanket rule is aimed at multi-megabyte map output, and this is 6 KB of hand
 # written index over files that are already tracked. Without the exemption

@@ -43,7 +43,7 @@ flowchart LR
 <summary><strong>Contents</strong> (click to expand)</summary>
 
 **Findings**
-- [Key Visualizations & Data Gallery](#key-visualizations--data-gallery) — the 16 numbered figures
+- [Key Visualizations & Data Gallery](#key-visualizations--data-gallery) — the 20 numbered figures
 - [Objective, rationale and aims](#objective-rationale-and-aims)
 - [Table 1](#table-1)
 
@@ -302,6 +302,33 @@ the namesakes every other candidate represents. The likelihood ratios behind
 this (9.4 within a year, 0.05 beyond ten) are in
 `artifacts/trilliant_identity_evidence_dbcc76f4.csv`. Source:
 `artifacts/trilliant_identity_grad_year_agreement_dbcc76f4.csv`.*
+
+### 19. From the AMCB roster to the final analytic cohort
+![Cohort exclusion flow: AMCB roster to the final analytic cohort](docs/figures/cohort_exclusion_flow.png)
+*Figure 19: 22,357 AMCB certificants, step by step, to the **12,022**
+certificants (99.87% of those NPI-matched) in the final analytic cohort:
+7,029 deceased/inactive; 3,158 with no confident NPI match; 77 excluded for a
+federal adverse action; 55 with no geocodable address; 16 overseas/territory
+addresses with no ACOG district. The federal adverse-action step checks
+three independent sources — the CMS National Provider Directory's HHS
+exclusion-list flag (unverified: only 10 of 153 flagged NPIs confirmed
+against the real public LEIE), CMS PECOS Medicare revocation (a
+re-enrollment bar, CMS's own administrative record), and the FDA Debarment
+List (Drug Product Applications, matched by name since it carries no NPI) —
+and excludes an NPI only once, concatenating sources when more than one
+agrees. DEA is not included: it has no bulk list to check against, only a
+single-registrant lookup. Every NPI any source has flagged so far is already
+excluded from the cohort for an unrelated reason (deceased/lapsed/retired
+certification), so this step's net effect on the published cohort count is
+currently zero — it is retained for the sources it establishes and the
+corroboration it already shows (two independently-sourced federal records
+agreeing on the same person), not because it changes today's numbers.
+Source: `docs/figures/cohort_exclusion_flow_counts.csv`
+([`make_cohort_exclusion_flow_figure.R`](make_cohort_exclusion_flow_figure.R)).
+Full write-up, including where to find each source and how the name-matching
+in the FDA cross-check is kept conservative:
+[docs/TECHNICAL_APPENDIX_CMS_NDH.md](docs/TECHNICAL_APPENDIX_CMS_NDH.md),
+sections 5 and 9–10.*
 
 ### Three more you build yourself
 
@@ -1491,7 +1518,9 @@ reproducibility gap stated rather than hidden.
 |---|---|---|---|
 | **Healthgrades** profiles | practice addresses for AMCB certificants with *no NPI at all*, via schema.org JSON-LD blocks; profile attributes | not recorded; checkpoints timestamped **2026-08-09** | [`scrape_healthgrades_midwives.R`](scrape_healthgrades_midwives.R), [`enrich_healthgrades_profiles.R`](enrich_healthgrades_profiles.R), [`sweep_healthgrades_enrichment.R`](sweep_healthgrades_enrichment.R) |
 | **Doximity** public CNM directory | maiden names and a specialty label; **no NPI** — the UUID is Doximity-internal | not recorded | [`scrape_doximity_public_cnm.R`](scrape_doximity_public_cnm.R), [`enrich_doximity_cnm_ages.R`](enrich_doximity_cnm_ages.R) |
-| **CMS National Provider Directory (NDH)** — public, no-auth FHIR R4 gateway at `directory.cms.gov/fhir` | multi-location practice addresses/phones, state license numbers, Medicare-enrollment and HHS-exclusion-list flags, and (uniquely here) an accepting-new-patients signal per organization affiliation | first full-cohort run started **2026-10-23** (see [technical appendix](docs/TECHNICAL_APPENDIX_CMS_NDH.md) for current counts) | [`harvest_cms_national_provider_directory.py`](harvest_cms_national_provider_directory.py) |
+| **CMS National Provider Directory (NDH)** — public, no-auth FHIR R4 gateway at `directory.cms.gov/fhir` | multi-location practice addresses/phones, state license numbers, Medicare-enrollment and HHS-exclusion-list flags, and (uniquely here) an accepting-new-patients signal per organization affiliation | full-cohort run completed **2026-10-23**: 16,361 of 16,775 (97.5%) found, cross-checked against an independent bulk-export pass that landed on the identical figure (see [technical appendix](docs/TECHNICAL_APPENDIX_CMS_NDH.md)) | [`harvest_cms_national_provider_directory.py`](harvest_cms_national_provider_directory.py), [`download_cms_ndh_bulk.py`](download_cms_ndh_bulk.py) + [`clean_cms_ndh_bulk.py`](clean_cms_ndh_bulk.py) |
+| **CMS PECOS Medicare revocation** — "Revoked Medicare Providers and Suppliers" (opendata.hhs.gov), NPI-keyed | a re-enrollment bar, CMS's own administrative-action record — a second, independently-sourced federal-adverse-action check alongside the NDH exclusion flag above (Figure 19) | snapshot updated 2026-03-02; checked **2026-10-26** | [`load_cms_pecos_revocations_to_duckdb.R`](load_cms_pecos_revocations_to_duckdb.R), [`match_cms_pecos_revocations.R`](match_cms_pecos_revocations.R) |
+| **FDA Debarment List** (Drug Product Applications) — name-only, no NPI | a third federal-adverse-action check, matched by normalized last+first name; flagged only on an unambiguous one-to-one match (any name collision is reported, never flagged) | snapshot dated 2026-10-02; checked **2026-10-26** | [`load_fda_debarment_to_duckdb.R`](load_fda_debarment_to_duckdb.R), [`match_fda_debarment.R`](match_fda_debarment.R) |
 | **State Boards of Nursing** — open data only: WA DOH (`qxh8-f4bd`), Illinois IDFPR (`pzzh-kp68`), Colorado DORA (`7s5z-vewr`), Texas BON (`jnzg-cr4w`). The "~40 portals" once listed here were never queried; their licence numbers were synthesized (see [the defect note](docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md)). | WA/IL: licence issue dates → age-at-certification calibration. WA/CO/TX: licence number and status (Figure 1) | WA/IL 2026-08-10 (`artifacts/state_nursing_license_ages_provenance.csv`); CO 2026-09-11; TX 2026-09-12; WA re-queried 2026-09-13 | [`enrich_state_nursing_license_ages.R`](enrich_state_nursing_license_ages.R), [`harvest_live_wa_bon_from_tracked_roster.py`](harvest_live_wa_bon_from_tracked_roster.py), [`harvest_live_co_bon_from_tracked_roster.py`](harvest_live_co_bon_from_tracked_roster.py), [`harvest_live_tx_bon_from_tracked_roster.py`](harvest_live_tx_bon_from_tracked_roster.py) |
 | **Florida and Ohio voter files** | date of birth for age validation, under a three-tier disambiguation that **excludes ambiguous collisions rather than guessing** | not recorded | [`match_florida_voter_ages.R`](match_florida_voter_ages.R), [`match_ohio_voter_ages.R`](match_ohio_voter_ages.R), [`parse_ohio_voter_file.py`](parse_ohio_voter_file.py) |
 | **AABC / CABC birth centres** | accredited birth-centre addresses → birth-centre midwife identification | not recorded | [`harvest_aabc_accredited_centers.py`](harvest_aabc_accredited_centers.py), [`extract_all_cabc_birth_centers.py`](extract_all_cabc_birth_centers.py), [`identify_birth_center_midwives.R`](identify_birth_center_midwives.R) |
