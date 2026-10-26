@@ -61,11 +61,19 @@ not_geocoded_n <- stat_num("exclusion.not_geocoded_n")
 acog_excluded_n <- stat_num("exclusion.acog_excluded_n")
 final_cohort_n  <- stat_num("exclusion.final_cohort_n")
 
+# Read here, not only further below, because the adverse-action block right
+# after this needs to know which rule is in force -- see its own comment.
+cohort_rule <- tryCatch(.mw_get("exclusion.cohort_rule", .mw_catalog),
+                        error = function(e) NA_character_)
+on_membership_rule <- identical(cohort_rule, "canonical_active_primary")
+
 # C17: NPI-linked federal adverse actions. The flags file is optional so the
 # frozen figure remains reproducible before the first DEA/FDA/CMS refresh; when
-# present, only active primary-linked NPIs are eligible for this exclusion.
+# present, only active, cohort-eligible NPIs are eligible for this exclusion.
 ACTION_FLAGS <- file.path("artifacts", "federal_adverse_action_flags.csv")
 adverse_n <- 0L
+adverse_geocoded_n <- 0L
+adverse_acog_mapped_n <- 0L
 adverse_lines <- "No NPI-linked federal adverse-action flags supplied"
 if (file.exists(ACTION_FLAGS)) {
   af <- read.csv(ACTION_FLAGS, stringsAsFactors = FALSE, check.names = FALSE)
@@ -78,19 +86,69 @@ if (file.exists(ACTION_FLAGS)) {
   linkage_for_actions <- read.csv(
     file.path("artifacts", "amcb_npi_linkage_FROZEN.csv"),
     stringsAsFactors = FALSE, check.names = FALSE)
-  active_primary_npi <- as.character(linkage_for_actions$npi[
-    linkage_for_actions$status == "ACTIVE" &
-      linkage_for_actions$match_status == "primary"])
+  # SAME POPULATION AS matched_n, not unconditionally match_status ==
+  # "primary" -- caught live the same way as build_stats_catalog.R's
+  # active_matched_by_tier: under the membership rule, 89 "primary" NPIs are
+  # held out as class-5 and are not part of matched_n, so they cannot be
+  # eligible for this exclusion either or matched_after_adverse_n stops being
+  # a subset of matched_n.
+  cohort_eligible <- if (on_membership_rule)
+    linkage_for_actions$linkage_tier %in% "primary_midwifery" &
+      !is.na(linkage_for_actions$npi) &
+      nzchar(trimws(as.character(linkage_for_actions$npi)))
+  else
+    linkage_for_actions$match_status == "primary"
+  eligible_rows <- linkage_for_actions[linkage_for_actions$status == "ACTIVE" & cohort_eligible, ]
+  active_primary_npi <- as.character(eligible_rows$npi)
   adverse_n <- sum(active_primary_npi %in% flagged_npi, na.rm = TRUE)
+
+  # geocoded_n/not_geocoded_n (from geography_by_amcb_status.csv) describe the
+  # FULL matched population and have no knowledge of this exclusion.
+  # fc_filter(matched_after_adverse_n) -> fc_filter(geocoded_n) is only valid
+  # if geocoded_n is itself drawn from matched_after_adverse_n's population --
+  # so the excluded NPIs' own geocoding outcome is looked up here and
+  # subtracted from both counts before the ladder uses them. Without this,
+  # geocoded_n can exceed matched_after_adverse_n and fc_filter() errors
+  # outright (caught live) rather than silently drawing a wrong ladder.
+  GEO_FROZEN <- file.path("artifacts", "midwives_geography_FROZEN.csv")
+  if (adverse_n > 0 && file.exists(GEO_FROZEN)) {
+    geo <- read.csv(GEO_FROZEN, stringsAsFactors = FALSE, check.names = FALSE)
+    excluded_certs <- eligible_rows$certification_number[active_primary_npi %in% flagged_npi]
+    excluded_geo <- geo[geo$certification_number %in% excluded_certs, ]
+    adverse_geocoded_n <- sum(!is.na(excluded_geo$county_best))
+    # Same cascade one stage further: final_cohort_n/acog_excluded_n are ALSO
+    # drawn from geography_by_amcb_status.csv's unadjusted population, so the
+    # excluded-and-geocoded subset's own ACOG-mappability is looked up too --
+    # same ACOG_UNMAPPED state list as build_exclusion_flow_person_level.R,
+    # duplicated rather than sourced since it is a five-line literal, not a
+    # shared dependency either file otherwise has.
+    ACOG_UNMAPPED <- c("AA", "AE", "AP", "GU", "PR", "VI", "AS", "MP", "FM", "PW", "MH")
+    excluded_eligible <- eligible_rows[active_primary_npi %in% flagged_npi, ]
+    excluded_merged <- merge(excluded_eligible, excluded_geo, by = "certification_number")
+    adverse_acog_mapped_n <- sum(!is.na(excluded_merged$county_best) &
+                                  !(excluded_merged$nppes_state %in% ACOG_UNMAPPED))
+  }
   if ("federal_adverse_action_source" %in% names(af)) {
-    src <- table(af$federal_adverse_action_source[
-      tolower(trimws(as.character(af$federal_adverse_action_excluded))) %in%
-        c("true", "t", "yes", "y", "1")])
+    # Restricted to the SAME population as adverse_n (flagged AND eligible at
+    # this exact ladder position), not every row the source file carries. A
+    # source can flag someone who already left the ladder earlier (deceased,
+    # no NPI match) -- counting them here would make this box's own
+    # breakdown sum to more than its own header, which is the "one stated
+    # fact, two counts" failure this project's #246 already named once.
+    flagged_mask <- tolower(trimws(as.character(af$federal_adverse_action_excluded))) %in%
+      c("true", "t", "yes", "y", "1")
+    eligible_flagged_mask <- flagged_mask & as.character(af$npi) %in% active_primary_npi
+    src <- table(af$federal_adverse_action_source[eligible_flagged_mask])
     adverse_lines <- paste(sprintf("%s, N = %s", names(src), fmt(as.integer(src))),
                            collapse = "\n")
+    stopifnot(sum(src) == adverse_n)
   }
 }
 matched_after_adverse_n <- matched_n - adverse_n
+geocoded_n     <- geocoded_n - adverse_geocoded_n
+not_geocoded_n <- not_geocoded_n - (adverse_n - adverse_geocoded_n)
+final_cohort_n  <- final_cohort_n - adverse_acog_mapped_n
+acog_excluded_n <- acog_excluded_n - (adverse_geocoded_n - adverse_acog_mapped_n)
 
 # WHICH POPULATION THIS LADDER DESCRIBES. Ruled 2026-09-18 (#222): the analytic
 # cohort, i.e. canonical_active_primary(). The ladder cannot switch on its own,
@@ -99,11 +157,8 @@ matched_after_adverse_n <- matched_n - adverse_n
 # is rebuilt the ladder stays on match_status == "primary" -- internally
 # consistent, and 83 people wider than Table 1 -- and says so on the figure and
 # on stderr rather than leaving a reader to find it by diffing two artifacts.
-cohort_rule <- tryCatch(.mw_get("exclusion.cohort_rule", .mw_catalog),
-                        error = function(e) NA_character_)
 held_out_class5_n <- stat_num("exclusion.held_out_class5_n")
 membership_n <- stat_num("exclusion.active_membership_n")
-on_membership_rule <- identical(cohort_rule, "canonical_active_primary")
 
 if (is.na(geocoded_n) || is.na(not_geocoded_n)) {
   stop(paste0(
@@ -131,7 +186,8 @@ if (is.na(acog_excluded_n) || is.na(final_cohort_n)) {
 stopifnot(
   active_n + inactive_n == roster_n,
   matched_n + unmatched_n == active_n,
-  geocoded_n + not_geocoded_n == matched_n,
+  matched_n == matched_after_adverse_n + adverse_n,
+  geocoded_n + not_geocoded_n == matched_after_adverse_n,
   final_cohort_n + acog_excluded_n == geocoded_n
 )
 
@@ -311,7 +367,8 @@ if (!on_membership_rule) {
 
 message(sprintf("roster reconciles:   %s = %s + %s", fmt(roster_n), fmt(active_n), fmt(inactive_n)))
 message(sprintf("active reconciles:   %s = %s + %s", fmt(active_n), fmt(matched_n), fmt(unmatched_n)))
-message(sprintf("matched reconciles:  %s = %s + %s", fmt(matched_n), fmt(geocoded_n), fmt(not_geocoded_n)))
+message(sprintf("matched reconciles:  %s = %s + %s", fmt(matched_n), fmt(matched_after_adverse_n), fmt(adverse_n)))
+message(sprintf("post-adverse reconciles: %s = %s + %s", fmt(matched_after_adverse_n), fmt(geocoded_n), fmt(not_geocoded_n)))
 message(sprintf("geocoded reconciles: %s = %s + %s", fmt(geocoded_n), fmt(final_cohort_n), fmt(acog_excluded_n)))
 for (f in c("cohort_exclusion_flow.png", "cohort_exclusion_flow.pdf")) {
   p <- file.path(out_dir, f)

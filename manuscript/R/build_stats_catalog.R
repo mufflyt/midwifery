@@ -331,11 +331,20 @@ mw_build_catalog <- function(root = ".") {
       # Match evidence tiers among ACTIVE, PRIMARY-matched midwives only, from
       # the frozen linkage's ordered name_evidence_class (1-5; see the tier
       # comment above s5 in match_amcb_to_npi.R for the exact definitions).
-      # Restricting to match_status == "primary" here (not the looser
-      # npi_match_status-based bucket) keeps this consistent with
-      # active_matched_n above -- otherwise the tier counts would sum to a
-      # different total than the box they're itemising.
-      primary_rows <- active_rows[active_rows$match_status == "primary", ]
+      #
+      # MUST FOLLOW THE SAME RULE AS active_matched_n, not always
+      # match_status == "primary". Those were the same 12,259-row population
+      # for as long as geography_by_amcb_status.csv predated #222 and the
+      # ladder fell back to match_status_primary -- so filtering on
+      # match_status == "primary" here happened to agree with active_matched_n
+      # above. The moment geography_by_amcb_status.csv was rebuilt carrying
+      # cohort_rule == "canonical_active_primary", active_matched_n dropped to
+      # 12,170 (the 89 held-out class-5 matches leave the box) while this
+      # filter stayed at 12,259 -- caught live by sum(active_matched_by_tier)
+      # == active_matched_n failing the first time that branch actually ran.
+      primary_rows <- if (exclusion_cohort_rule == "canonical_active_primary")
+        active_rows[membership, ] else
+        active_rows[active_rows$match_status == "primary", ]
       tier_n <- table(factor(primary_rows$name_evidence_class, levels = 1:5))
       active_matched_by_tier <- setNames(
         as.integer(tier_n),

@@ -1,0 +1,15 @@
+{
+  "artifact": "cms_ndh_midwives.csv",
+  "source_url": "https://directory.cms.gov/fhir/Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|<NPI>",
+  "accessed_utc": "2026-10-23T18:06:42Z",
+  "sha256": "6a439987fd5bf78474dd15e097f579d7871fd67210fd14a33ac99f68c1bb1b7e",
+  "byte_size": 6135387,
+  "source_dataset": "CMS National Directory of Healthcare Providers and Services (NDH) FHIR R4 API",
+  "endpoint_base": "https://directory.cms.gov/fhir",
+  "cohort": "artifacts/amcb_npi_linkage_FROZEN.csv",
+  "cohort_sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716",
+  "cohort_npis": 16775,
+  "npis_found_in_ndh": 16361,
+  "npis_with_org_accepting_new_patients": 9760,
+  "raw_bundle_dir": "artifacts/cms_ndh_raw"
+}

@@ -1,2 +1,2 @@
-built_at,scrape_rows,scrape_certificants,cohort_n,hg_ambiguous_cohort
-2026-09-14T22:12:09,NA,NA,12171,0
+built_at,scrape_rows,scrape_certificants,cohort_n,hg_ambiguous_cohort,build_status,missing_inputs,table1_csv,table1_md
+2026-10-25T19:03:57,30705,22357,12170,163,PARTIAL,artifacts/nppes_sex_enumeration.csv;artifacts/dac_cnm_education.csv;artifacts/hpsa_status.csv;artifacts/medicare_participation.csv;$ISOCHRONES_HOME/R/acog_districts.R,artifacts/table1_midwives_PARTIAL.csv,docs/table1_midwives_PARTIAL.md

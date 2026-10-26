@@ -173,6 +173,18 @@ REBUILD_ORDER <- list(
                    # person-level CSVs describing the previous cohort while
                    # reporting success. Placed after build_geography_by_amcb_
                    # status.R, which both depend on.
+                   #
+                   # Added 2026-10-26, by T5 in the pull request that
+                   # introduced it. Reads amcb_npi_linkage_FROZEN directly for
+                   # the analytic-cohort NPI population and writes
+                   # cms_pecos_revoked_providers_cohort.csv, which
+                   # build_federal_adverse_action_flags.R (not itself a FROZEN
+                   # consumer -- it only reads that derived file and
+                   # cms_ndh_midwives.csv) folds into
+                   # artifacts/federal_adverse_action_flags.csv. Must precede
+                   # make_cohort_exclusion_flow_figure.R within the layer,
+                   # which reads that flags file.
+                   "match_cms_pecos_revocations.R",
                    "make_cohort_exclusion_flow_figure.R",
                    "build_exclusion_flow_person_level.R",
                    # Added 2026-08-28, by the same completeness gate (T5) and for
@@ -293,7 +305,18 @@ REBUILD_ORDER <- list(
                    # REFUSED to rebuild until it was placed. That is the gate
                    # doing its job -- undeclared, it would have been left
                    # holding the old cohort with the rebuild reporting success.
-                   "match_medicare_partb_partd.R")),
+                   "match_medicare_partb_partd.R",
+                   # Added 2026-10-26, by T5 in the pull request that fixed the
+                   # scanner's network regex: an unbounded "rvest" match inside
+                   # this script's own comments ("harvest", "harvested") had
+                   # misclassified it as scraping since before this order was
+                   # first declared, so T5 never saw it as a consumer to flag.
+                   # Reads amcb_npi_linkage_FROZEN plus midwives.csv and an
+                   # ACME authors file, writes the gitignored
+                   # artifacts/amcb_training_institution.csv, which nothing
+                   # else in this repo reads -- a leaf, same shape as the other
+                   # scripts in this layer. Order within the layer is free.
+                   "link_theses_to_amcb.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        # export_amcb_npi_geography.R writes the tracked state aggregate and
        # the gitignored person-level export, both of which read the crosswalk
