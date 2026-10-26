@@ -94,6 +94,127 @@ traffic (always failed) — and there is no known way to tell which a new
 state is without trying it. Recorded as a basis for treating further
 blind state-by-state expansion as a low-probability bet going forward.
 
+## [Unreleased] — 2026-10-26 — CMS NDH harvest; a federal adverse-action exclusion step, checked against three independent sources
+
+### Added — CMS National Provider Directory (NDH) lookup
+
+The full write-up is
+[docs/TECHNICAL_APPENDIX_CMS_NDH.md](docs/TECHNICAL_APPENDIX_CMS_NDH.md); this
+entry is the summary. CMS runs a public, no-auth FHIR R4 gateway
+(`directory.cms.gov/fhir`) blending NPPES/PECOS enrollment with payer-reported
+network data — evaluated as a substitute starting point for a planned
+five-payer integration after one query against it returned richer data than a
+specialty-filtered query against any single payer endpoint found by hand.
+
+- **[`harvest_cms_national_provider_directory.py`](harvest_cms_national_provider_directory.py)**
+  — per-NPI live-gateway harvest. Full run against all 16,775 cohort NPIs,
+  2026-10-23, 4h17m: **16,361/16,775 (97.5%) found**, 9,760 with at least one
+  organization accepting new patients. Output: `artifacts/cms_ndh_midwives.csv`.
+- **[`download_cms_ndh_bulk.py`](download_cms_ndh_bulk.py) +
+  [`clean_cms_ndh_bulk.py`](clean_cms_ndh_bulk.py)** — an independent
+  cross-check against CMS's periodic bulk NDJSON export (7,481,907
+  `Practitioner` + 11,218,772 `PractitionerRole` lines nationally, under 2.5
+  minutes end-to-end once downloaded, never decompressed to disk). Found the
+  **identical 16,361/16,775** figure as the per-NPI harvest — two different
+  acquisition methods against the same CMS snapshot agreeing is the strongest
+  evidence available that neither has a systematic bug. Also surfaced
+  **15,941** NDH-tagged CNMs nationally, of which **3,237** are not in this
+  project's AMCB-to-NPPES cohort (not claimed as "midwives AMCB missed"
+  without further work — see appendix §7.4).
+  - Caught and fixed live: the bulk export codes NPI/taxonomy under different
+    FHIR system URIs than the live gateway for identical facts — the first
+    run matched **zero** national `Practitioner` rows, including a cohort
+    member confirmed present in the raw file by direct `grep`. Fixed by
+    accepting both URIs (§7.3).
+  - **A single-NPI defect in CMS's own export**, caught by the national
+    discovery file and traced to CMS's own data, not this project's code: one
+    NPI's garbled name (not matching the live NPPES registry) was `names[0]`
+    in a FHIR resource whose other four name entries were correct, and the
+    same resource's `367A00000X` (midwife) taxonomy coding carried her real
+    Massachusetts *medical* license as its identifier — a taxonomy/license
+    mismatch inside CMS's own build. 153 addresses on that one record (vs. a
+    cohort-wide max of 52) is real but explained by a legitimate
+    telehealth-hospitalist pattern, confirmed against DAC. Not in the cohort,
+    zero impact on any published figure. `tests/test_cms_ndh_address_count_sanity.py`
+    now fails loudly if any future row exceeds 100 addresses (§8).
+- **`ndh_hhs_exclusion_list` is unverified — checked, not assumed.** 153 of
+  16,775 cohort NPIs carry this flag; checked against the real public LEIE
+  (84,093 records, by exact NPI): only **10 (6.5%) actually appear in it**.
+  The other 143 (93.5%) are false positives against the authoritative source,
+  investigated further (§5) rather than left as an unexplained number — not
+  stale reinstatement, and for most not even a name collision. Not wired into
+  Table 1 or anything else; this field's absence-handling is unchanged.
+
+### Added — a federal adverse-action exclusion step, checked against three sources
+
+`make_cohort_exclusion_flow_figure.R` now excludes an NPI-matched cohort
+member who carries a flagged federal/administrative action, and the result is
+published as a new figure (Figure 19 in the README):
+`docs/figures/cohort_exclusion_flow.png`. Three independent, NPI/name-linked
+sources feed it through `build_federal_adverse_action_flags.R` (which already
+dedupes by NPI and concatenates sources when more than one agrees):
+
+1. CMS NDH's `hhs_in_exclusion_list` flag (unverified — see above).
+2. **CMS PECOS Medicare revocation** — "Revoked Medicare Providers and
+   Suppliers" (opendata.hhs.gov), a re-enrollment bar, NPI-keyed, CMS's own
+   administrative-action record rather than a derived flag
+   (`load_cms_pecos_revocations_to_duckdb.R`, `match_cms_pecos_revocations.R`).
+3. **FDA Debarment List** (Drug Product Applications) — name-only, no NPI, so
+   matched by normalized last+first name (the same normalizer that built the
+   FROZEN linkage's own name-key columns) and flagged **only** on an
+   unambiguous one-to-one match; any name collision on either side is
+   reported `AMBIGUOUS` and left unflagged, since a wrongly-applied exclusion
+   is worse than a missed one (`load_fda_debarment_to_duckdb.R`,
+   `match_fda_debarment.R`). Where to find the current file next time it's
+   needed is documented in the appendix, since the direct download link's id
+   changes on every FDA republish (§10).
+
+**Net effect on the published cohort: zero**, for all three sources. Every
+NPI any of them flags is already `LAPSED` and excluded from the analytic
+cohort for an unrelated reason — the exclusion step only evaluates `ACTIVE`,
+`primary_midwifery`-linked NPIs. Every count in
+`docs/figures/cohort_exclusion_flow_counts.csv` is identical regardless: of
+12,170 matched, 77 are excluded for federal adverse action, 12,093 survive,
+and 12,022 (99.87%) reach the final analytic cohort after geocoding and
+ACOG-district exclusions. The exclusion-flow figure's header reads "Federal
+adverse action (CMS NDH flag; Medicare revocation; FDA debarment)" — a
+rename from a forward-looking placeholder, "(DEA/FDA/Medicare)", that no
+longer matched what was actually wired in. **DEA is deliberately not
+included**: unlike CMS and FDA, DEA publishes no bulk list of revoked or
+surrendered registrants, only a single-registrant lookup — there is nothing
+to download or match against.
+
+### Added — 34 borrowed saboteur tests for the name parser
+
+[`tests/test_borrowed_isochrones_name_parser_saboteurs.R`](tests/test_borrowed_isochrones_name_parser_saboteurs.R)
+ports 34 adversarial test cases from the `isochrones` sibling repository's
+own name-parser regression suite, run against this project's live-sourced
+`parse_physician_name_enhanced()`: comma-format names, last-first ordering,
+all-caps "DO" ambiguity, and double-credential strings. All 34 pass against
+the current parser.
+
+### Fixed — three CI infrastructure bugs the NDH work surfaced
+
+- **`R/frozen_dependency_graph.R`'s network-script scanner** matched `rvest`
+  as an unbounded substring, so any script merely containing the word
+  "harvest" in a comment was misclassified as doing live scraping. Fixed with
+  `\b` word-boundary matching. Fixing it exposed a second, pre-existing gap:
+  `link_theses_to_amcb.R` had been silently excluded from the rebuild-order
+  completeness check since before the order was first declared, for the same
+  reason — now properly declared in `rebuild_frozen_dependents.R` with its
+  real dependencies documented.
+- **`tests/ci_data_regression_guard.R`'s D10** assumed every provenance
+  sidecar followed the R `write_with_provenance()` schema, failing on the
+  Python-producer schema `tools/provenance.py` has used since issue #230 (two
+  genuinely different, both legitimate, vocabularies for two languages' own
+  producers). Fixed to accept either schema.
+- **`tests/ci_science_laws.R`'s `LAW_COHORTS` registry** didn't know about
+  `table1_provenance.csv`'s corrected `cohort_n = 12170` vintage (the
+  NPI-presence fix from issue #233), so the science-law coverage harness
+  failed with "declares a cohort_n which is not registered." Registered,
+  dated, with the reason — the registry is a hand-maintained list by design
+  ("a registry someone must edit on purpose cannot drift"), not a heuristic.
+
 ## [Unreleased] — 2026-10-22 — Fuzzy surname matching (class 4) removed; a doc-freshness pass
 
 ### Removed — class 4, fuzzy/Levenshtein-distance surname matching

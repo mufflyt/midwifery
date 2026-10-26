@@ -182,3 +182,21 @@ artifacts/federal_adverse_action_flags.csv
 # load_cms_pecos_revocations_to_duckdb.R loads from the raw CMS file (not
 # itself tracked -- only this cohort-scoped, name-free derivative is).
 artifacts/cms_pecos_revoked_providers_cohort.csv
+
+# FDA Debarment List (Drug Product Applications) name-match cross-reference,
+# 2026-10-26: npi plus a boolean flag, a match-status label, and the
+# debarment term/date as FDA published them (no names). FDA's own public
+# debarment list -- same standing as the CMS entries above: FDA publishes
+# this exact list for anyone to download, unauthenticated, from
+# fda.gov/inspections-compliance-enforcement-and-criminal-investigations/
+# compliance-actions-and-activities/fda-debarment-list-drug-product-
+# applications (docs/TECHNICAL_APPENDIX_CMS_NDH.md s10 documents the current
+# download link, since it changes on each FDA republish).
+# Reviewed and accepted by Tyler Muffly, 2026-10-26. Produced by
+# match_fda_debarment.R against the DuckDB table
+# load_fda_debarment_to_duckdb.R loads from the raw FDA file (not itself
+# tracked -- only this cohort-scoped, name-free derivative is). Unlike the
+# CMS sources, this is a NAME match, not an NPI join -- fda_debarred is TRUE
+# only for a clean, unambiguous one-to-one name match; see that script's own
+# header for why a name collision on either side is reported, not guessed.
+artifacts/fda_debarment_match_cohort.csv

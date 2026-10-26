@@ -134,6 +134,7 @@ npi,federal_adverse_action_excluded,federal_adverse_action_source
 1881938892,TRUE,"CMS NDH exclusion flag (unverified, see appendix)"
 1881996510,TRUE,"CMS NDH exclusion flag (unverified, see appendix)"
 1891252185,TRUE,"CMS NDH exclusion flag (unverified, see appendix)"
+1891824926,TRUE,"FDA debarment, drug product applications (name match, unverified, see appendix)"
 1891864187,TRUE,"CMS NDH exclusion flag (unverified, see appendix)"
 1902198708,TRUE,"CMS NDH exclusion flag (unverified, see appendix)"
 1912272576,TRUE,"CMS NDH exclusion flag (unverified, see appendix)"
