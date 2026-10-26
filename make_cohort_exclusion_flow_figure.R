@@ -279,7 +279,7 @@ fc <- as_fc(
   fc_filter(
     N = matched_after_adverse_n, label = "No federal adverse action",
     text_pattern = "{label}\nN = {n} ({perc}%)",
-    show_exc = TRUE, label_exc = "Federal adverse action (DEA/FDA/Medicare)",
+    show_exc = TRUE, label_exc = "Federal adverse action (CMS NDH flag; Medicare revocation)",
     text_pattern_exc = paste0("{label}\nN = {n} ({perc}%)\n", adverse_lines)
   ) %>%
   fc_filter(
