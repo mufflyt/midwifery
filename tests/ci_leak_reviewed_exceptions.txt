@@ -245,3 +245,25 @@ artifacts/live_pennsylvania_bon_ingested_midwives_from_tracked_roster.csv
 # reference dataset, not linked to any individual in this project's cohort.
 # Produced by harvest_live_michigan_direct_entry_midwives.py.
 artifacts/live_michigan_direct_entry_midwives.csv
+
+# Live Florida DOH Division of Medical Quality Assurance APRN cross-
+# reference: 1,035 FL-state midwives from the tracked FROZEN linkage,
+# matched by name under the Advanced Practice Registered Nurse profession
+# (Florida has no CNM-specific profession category), accepted as a real
+# match only when the license's own Qualifications field lists "Certified
+# Nurse Midwife" -- 813 confirmed VERIFIED_LIVE_BON, 81 APRN name matches
+# that are NOT CNM-qualified (correctly excluded, not counted), 0
+# ambiguous. Carries license number, status, street address, and (for 622
+# of 813) city/state/zip -- fixed 2026-10-26 after discovering the first
+# committed version of this harvester only captured the street line; the
+# detail page's real city/state/zip line is two <dt>/<dd> pairs later in
+# the HTML and was being silently dropped. Re-harvested in full after the
+# fix; the 191 records still missing city/state/zip are all genuine
+# no-address-on-file cases (a disclaimer message, "NOT PRACTICING", or a
+# confidential-address-program marker), not parsing gaps.
+# Reviewed and accepted by Tyler Muffly, 2026-10-26, same reasoning as the
+# WA/CO/TX/IL/CT/DE/CA/PA board entries above: every underlying field
+# (AMCB name/certification number, NPI, the DOH's own published license
+# fields) is independently public. Produced by
+# harvest_live_florida_bon_from_tracked_roster.py.
+artifacts/live_florida_bon_ingested_midwives_from_tracked_roster.csv

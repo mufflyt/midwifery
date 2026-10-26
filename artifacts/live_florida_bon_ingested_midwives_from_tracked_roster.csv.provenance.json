@@ -1,0 +1,14 @@
+{
+  "artifact": "live_florida_bon_ingested_midwives_from_tracked_roster.csv",
+  "source_url": "https://mqa-internet.doh.state.fl.us/MQASearchServices/HealthCareProviders (Profession=1711 'Advanced Practice Registered Nurse'; matches accepted only when the license's Qualifications list includes 'Certified Nurse Midwife')",
+  "accessed_utc": "2026-10-26T16:38:58Z",
+  "sha256": "08c373919fba44f6674165744e3e1f6f0b0f2885c2023090f71d21bf66e6abdb",
+  "byte_size": 128594,
+  "source_dataset": "Florida DOH Division of Medical Quality Assurance, License Verification (mqa-internet.doh.state.fl.us)",
+  "cohort": "artifacts/amcb_npi_linkage_FROZEN.csv",
+  "cohort_sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716",
+  "cohort_rows_fl": 1035,
+  "cohort_matched_rows": 813,
+  "match_method": "last_name + first_name search under the APRN profession code; Florida has no separate CNM profession category, so a match is accepted only when the license's own Qualifications field lists 'Certified Nurse Midwife' -- an APRN name match that is NOT so qualified is reported NOT_CNM_QUALIFIED, not counted as a midwife; more than one CNM-qualified candidate sharing a name is AMBIGUOUS",
+  "verification_portal": "https://mqa-internet.doh.state.fl.us/MQASearchServices/HealthCareProviders"
+}
