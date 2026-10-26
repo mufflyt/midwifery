@@ -1,0 +1,33 @@
+{
+  "artifact": "federal_adverse_action_flags.csv",
+  "written_utc": "2026-10-26 17:50:46 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/cms_ndh_midwives.csv",
+      "sha256": "6a439987fd5bf78474dd15e097f579d7871fd67210fd14a33ac99f68c1bb1b7e"
+    },
+    {
+      "path": "artifacts/cms_pecos_revoked_providers_cohort.csv",
+      "sha256": "0935653574bf85937cc6f2a31957d7b843ac3bcc5b43d8719b5d6da5440b146d"
+    }
+  ],
+  "code_sha256": "530dff1c2281ffa9607c192404a76e7bedcb5d007a48aab027d6e639029500f4",
+  "code": [
+    {
+      "path": "build_federal_adverse_action_flags.R",
+      "sha256": "a3aff5868977127d7c888fffe906e0ede4d742070440a5b99735ba08d0a016ed"
+    },
+    {
+      "path": "R/federal_adverse_action_exclusions.R",
+      "sha256": "17b823e90385db3fbfac3db258ff0c9b237b802b758d95ae15d4792e49d39fe7"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}
