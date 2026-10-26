@@ -1,0 +1,41 @@
+{
+  "artifact": "medicaid_billing_year_trend.csv",
+  "written_utc": "2026-10-26 19:53:54 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716"
+    },
+    {
+      "path": "/Volumes/MufflySamsung/DuckDB/medicaid_provider_spending_verified.duckdb",
+      "sha256": "dd120407de781c180d022824d4b9bbfb114b8b7b82bad92791064169580f5b38"
+    }
+  ],
+  "code_sha256": "f04d1a7e685b8d1af6ad14c826000322d110548aefc32fdabace67f0e74feafd",
+  "code": [
+    {
+      "path": "analyze_medicaid_billing_year_trend.R",
+      "sha256": "aa2b30bd47a26c5c7e64f58596505cf2e283a9532df418b9c4da4f372e691cae"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/cohort_definitions.R",
+      "sha256": "15b1a0d8b5f1973e29a5258fc1e7d97df437b09208f367f38c78984a8dfd7dc5"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/ob_midwife_cohort.R",
+      "sha256": "e633d85ea1fae03a70c270e380ea99b1bdbf971ba3c2347e59390530c708179c"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}

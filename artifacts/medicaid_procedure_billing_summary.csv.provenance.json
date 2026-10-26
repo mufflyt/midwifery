@@ -1,0 +1,49 @@
+{
+  "artifact": "medicaid_procedure_billing_summary.csv",
+  "written_utc": "2026-10-26 19:48:51 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716"
+    },
+    {
+      "path": "/Users/tmuffly/isochrones/artifacts/cohort_tracking_archive/20261012_182448_90267847/abog_inputs/canonical_abog_npi_LATEST.csv",
+      "sha256": "551ab2f1a71e17a1040f750f0e1d4ef03752472398c7b2cc2ac145b154b01bc5"
+    },
+    {
+      "path": "/Users/tmuffly/isochrones/artifacts/isochrones/step_2.5_final_cohort.rds",
+      "sha256": "5f6fe125fba04806216f91e5b80f2a8708b64c4daf809462950682148ca59529"
+    },
+    {
+      "path": "/Volumes/MufflySamsung/DuckDB/medicaid_provider_spending_verified.duckdb",
+      "sha256": "dd120407de781c180d022824d4b9bbfb114b8b7b82bad92791064169580f5b38"
+    }
+  ],
+  "code_sha256": "059e344bb1707f81f5d298cdaa25cebb675b747b20f148c08d57a7ead781224d",
+  "code": [
+    {
+      "path": "analyze_medicaid_procedure_billing_ob_midwife.R",
+      "sha256": "1d459231e7f0965267b36047a025e1bd39805d9c7adeae49b02ce5f1cc523b18"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/cohort_definitions.R",
+      "sha256": "15b1a0d8b5f1973e29a5258fc1e7d97df437b09208f367f38c78984a8dfd7dc5"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/ob_midwife_cohort.R",
+      "sha256": "e633d85ea1fae03a70c270e380ea99b1bdbf971ba3c2347e59390530c708179c"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}
