@@ -1,6 +1,6 @@
 {
   "artifact": "cohort_exclusion_flow_evidence_tiers.csv",
-  "written_utc": "2026-10-26 20:16:16 UTC",
+  "written_utc": "2026-10-26 20:31:59 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",

@@ -1,6 +1,6 @@
 {
   "artifact": "federal_adverse_action_flags.csv",
-  "written_utc": "2026-10-26 20:15:10 UTC",
+  "written_utc": "2026-10-26 20:31:55 UTC",
   "inputs": [
     {
       "path": "artifacts/cms_ndh_midwives.csv",

@@ -1,17 +1,17 @@
 {
   "artifact": "fda_debarment_match_cohort.csv",
-  "written_utc": "2026-10-26 20:14:04 UTC",
+  "written_utc": "2026-10-26 20:31:47 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
       "sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716"
     }
   ],
-  "code_sha256": "26ea7997975485f436d71caf1209200b804b05c4d2b83865c37aa1e1df3c7330",
+  "code_sha256": "06aaa3bb28cd1ea5e3768abbd7fc9eadb550c8b734339555dcd1f91a356188ae",
   "code": [
     {
       "path": "match_fda_debarment.R",
-      "sha256": "0a65c5d213e26950f9f7ec24d8f75fe9e9068487191699a3aea61cbdc584cb40"
+      "sha256": "3a935a759643cb70bca4babb5bbefa74508cd5c920497b365d7124de1bc1212f"
     },
     {
       "path": "R/join_safety.R",

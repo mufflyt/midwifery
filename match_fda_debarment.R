@@ -52,7 +52,11 @@ coh_raw <- read_csv(FROZEN, col_types = cols(.default = "c"), show_col_types = F
   filter(cohort_member == "TRUE") %>%
   mutate(npi = as.character(npi)) %>%
   filter(!is.na(npi), nzchar(npi)) %>%
-  distinct(npi, .keep_all = TRUE) %>%
+  # No distinct(npi) needed: canonical_active_primary() already collapses a
+  # certification number carrying one NPI twice to a single row (S18 in
+  # tests/test_exclusion_flow_saboteurs.R), so cohort_member == TRUE rows are
+  # already one-to-one with npi -- confirmed on this FROZEN snapshot (16,775
+  # rows, 16,775 distinct NPIs).
   transmute(npi,
             last_key  = normalized_last_name,
             first_key = normalized_first_name)
