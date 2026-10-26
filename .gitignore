@@ -32,6 +32,7 @@ nppes_api_cache.jsonl
 # aggregated, disclosure-controlled flow table gets tracked.
 artifacts/flowmap_geocoding/
 artifacts/dac_vs_nppes_address_pairs.csv
+artifacts/pecos_vs_bon_address_pairs.csv
 
 # Name-parser cache written by the isochrones parser
 .cache/
