@@ -334,7 +334,10 @@ Re-run after the fix, against all 16,775 cohort NPIs plus the full national
   taxonomy tagging is payer/PECOS-sourced and may include CMs, retired or
   inactive NPIs, or taxonomy mis-tags the same way NPPES itself does — but
   the list is now a concrete, inspectable set for that question rather than
-  a hypothetical.
+  a hypothetical. **[The Midwife Haystack](midwife_haystack.html)** is an
+  interactive breakdown of this exact finding: the 15,941 against the
+  7,481,907-practitioner directory, and the 3,237 not-yet-linked by
+  specialty.
 
 **Related references:**
 - [Health Tech Ecosystem Data Release Specifications](https://github.com/CMS-Enterprise/HTE_data_release_specifications)
