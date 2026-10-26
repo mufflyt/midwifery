@@ -16,7 +16,12 @@ publishes it as open data and this project queried it: **Washington, Colorado
 and Texas** (Figure 1). Every other state-board figure this repository once
 reported was synthesized and is retracted (Figure 4); so were a Medicare
 "delivery claims" layer and a collaborative-practice (CPA) layer, which had no
-source at all.*
+source at all. Separately, for a cross-source address-agreement check (not
+Figure 1's licensure count), five more boards were queried live — California,
+Illinois, Connecticut, Delaware and Florida — and a further 8 states were
+checked and found to have no usable public search at all (CAPTCHA, WAF or
+bot-manager walls, or an explicit no-scraping policy); see
+[docs/TECHNICAL_APPENDIX_BON_PORTAL_AVAILABILITY.md](docs/TECHNICAL_APPENDIX_BON_PORTAL_AVAILABILITY.md).*
 
 **[→ Interactive CNM Workforce Map](docs/cnm_national_leaflet_map.html)**
 &nbsp;·&nbsp; [Pipeline Architecture](ARCHITECTURE.md) &nbsp;·&nbsp; [Dataset Metadata](metadata.json)
@@ -38,6 +43,7 @@ flowchart LR
 | State boards queried for licensure | 3: WA DOH, Colorado DORA, Texas BON (open data, matched by name). Illinois IDFPR open data was also queried, for licence issue dates in age calibration only. | `harvest_live_{wa,co,tx}_bon_from_tracked_roster.py`; `artifacts/state_nursing_license_ages_provenance.csv` (`states_queried`) |
 | Licences a board returned | 1,353: WA 369, CO 486, TX 498 (any status the board reported) | `docs/figures/board_licensure_observed_counts.csv` |
 | Delivery attendance | not observable: public Medicare Part B has no delivery-code rows for any provider, 2013–2023 | `artifacts/medicare_delivery_code_observability.csv` |
+| PECOS/DAC vs state-board address agreement (5 pairs total; CA+IL+CT+DE+FL pooled) | State 92.5% (n=239); city 35.5% (n=462); ZIP5 35.6% (n=239) | [docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md](docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md) |
 
 <details>
 <summary><strong>Contents</strong> (click to expand)</summary>
@@ -97,7 +103,10 @@ BON — and, for the midwives each query covered, what the board returned:
 **369 of 443** in Washington, **486 of 557** in Colorado, **498 of 736** in
 Texas, each with the status the board reported (Expired included). Matched by
 name; the three bars cover different rosters, as the subtitle says. No other
-board was queried, so no other state appears. Counts:
+board feeds *this* figure — five more (CA, IL, CT, DE, FL) were queried later
+for the address-agreement work instead, not for a licensure count; see
+[docs/TECHNICAL_APPENDIX_BON_PORTAL_AVAILABILITY.md](docs/TECHNICAL_APPENDIX_BON_PORTAL_AVAILABILITY.md).
+Counts:
 [`docs/figures/board_licensure_observed_counts.csv`](docs/figures/board_licensure_observed_counts.csv),
 built by [`make_board_licensure_figure.R`](make_board_licensure_figure.R). This
 replaces a chart of per-state row counts from a synthetic "20-state scrape"; see
@@ -1491,10 +1500,27 @@ reproducibility gap stated rather than hidden.
 |---|---|---|---|
 | **Healthgrades** profiles | practice addresses for AMCB certificants with *no NPI at all*, via schema.org JSON-LD blocks; profile attributes | not recorded; checkpoints timestamped **2026-08-09** | [`scrape_healthgrades_midwives.R`](scrape_healthgrades_midwives.R), [`enrich_healthgrades_profiles.R`](enrich_healthgrades_profiles.R), [`sweep_healthgrades_enrichment.R`](sweep_healthgrades_enrichment.R) |
 | **Doximity** public CNM directory | maiden names and a specialty label; **no NPI** — the UUID is Doximity-internal | not recorded | [`scrape_doximity_public_cnm.R`](scrape_doximity_public_cnm.R), [`enrich_doximity_cnm_ages.R`](enrich_doximity_cnm_ages.R) |
-| **State Boards of Nursing** — open data only: WA DOH (`qxh8-f4bd`), Illinois IDFPR (`pzzh-kp68`), Colorado DORA (`7s5z-vewr`), Texas BON (`jnzg-cr4w`). The "~40 portals" once listed here were never queried; their licence numbers were synthesized (see [the defect note](docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md)). | WA/IL: licence issue dates → age-at-certification calibration. WA/CO/TX: licence number and status (Figure 1) | WA/IL 2026-08-10 (`artifacts/state_nursing_license_ages_provenance.csv`); CO 2026-09-11; TX 2026-09-12; WA re-queried 2026-09-13 | [`enrich_state_nursing_license_ages.R`](enrich_state_nursing_license_ages.R), [`harvest_live_wa_bon_from_tracked_roster.py`](harvest_live_wa_bon_from_tracked_roster.py), [`harvest_live_co_bon_from_tracked_roster.py`](harvest_live_co_bon_from_tracked_roster.py), [`harvest_live_tx_bon_from_tracked_roster.py`](harvest_live_tx_bon_from_tracked_roster.py) |
+| **State Boards of Nursing** — open data or unprotected search only: WA DOH (`qxh8-f4bd`), Illinois IDFPR (`pzzh-kp68`), Colorado DORA (`7s5z-vewr`), Texas BON (`jnzg-cr4w`), California DCA (Box-hosted roster), Delaware DELPROS, Connecticut eLicense, Florida DOH License Verification, Pennsylvania PALS. The "~40 portals" once listed here were never queried; their licence numbers were synthesized (see [the defect note](docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md)). 8 further states (NC, OH, GA, MN, AZ, TN, WI, OR) were checked and found to have no usable public search — see [the portal-availability survey](docs/TECHNICAL_APPENDIX_BON_PORTAL_AVAILABILITY.md). | WA/IL: licence issue dates → age-at-certification calibration. WA/CO/TX: licence number and status (Figure 1). CA/IL/CT/DE/FL: address agreement against PECOS/DAC (below); PA: licence number/status, a CNM-specific category by construction | WA/IL 2026-08-10 (`artifacts/state_nursing_license_ages_provenance.csv`); CO 2026-09-11; TX 2026-09-12; WA re-queried 2026-09-13; CA/IL/CT/DE 2026-10-23; FL 2026-10-26; PA 2026-10-23 | [`enrich_state_nursing_license_ages.R`](enrich_state_nursing_license_ages.R), [`harvest_live_wa_bon_from_tracked_roster.py`](harvest_live_wa_bon_from_tracked_roster.py), [`harvest_live_co_bon_from_tracked_roster.py`](harvest_live_co_bon_from_tracked_roster.py), [`harvest_live_tx_bon_from_tracked_roster.py`](harvest_live_tx_bon_from_tracked_roster.py), [`compare_pecos_to_bon_address.R`](compare_pecos_to_bon_address.R) |
 | **Florida and Ohio voter files** | date of birth for age validation, under a three-tier disambiguation that **excludes ambiguous collisions rather than guessing** | not recorded | [`match_florida_voter_ages.R`](match_florida_voter_ages.R), [`match_ohio_voter_ages.R`](match_ohio_voter_ages.R), [`parse_ohio_voter_file.py`](parse_ohio_voter_file.py) |
 | **AABC / CABC birth centres** | accredited birth-centre addresses → birth-centre midwife identification | not recorded | [`harvest_aabc_accredited_centers.py`](harvest_aabc_accredited_centers.py), [`extract_all_cabc_birth_centers.py`](extract_all_cabc_birth_centers.py), [`identify_birth_center_midwives.R`](identify_birth_center_midwives.R) |
 | **WebMD, Vitals** | explored as address sources | exploratory only | [`explore_webmd_midwives.py`](explore_webmd_midwives.py), [`explore_vitals_midwives.py`](explore_vitals_midwives.py) |
+
+#### Cross-source address agreement
+
+![Address agreement across every source pair this project has checked](docs/figures/address_agreement_heatmap.png)
+
+If two independent sources are asked where the same provider practices, how
+often do they agree, and at what geographic grain does that stop being true?
+Five pairings — PECOS/DAC vs NPPES, vs Doximity, vs state Boards of Nursing;
+Healthgrades vs both NPPES and PECOS/DAC — answer the same question five
+ways: state-level agreement is high everywhere (**89.8–95.3%**); city and
+ZIP5 agreement drop well below that (47–64% among the four practice-vs-
+practice pairs, 35.5–35.6% for the state-board pair, which measures
+something structurally different — board data is sometimes a mailing
+address, sometimes a practice address, and coverage is uneven state to
+state). Street-level comparison was tried on every pair and dropped
+entirely — never usable, lowest 21.7%. Full method, per-pair numbers, and
+every caveat: [docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md](docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md).
 
 ### Tier G — cross-repository and generated
 

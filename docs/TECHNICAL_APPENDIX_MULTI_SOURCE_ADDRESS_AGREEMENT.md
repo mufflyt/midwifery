@@ -94,6 +94,11 @@ publishes a different subset of fields, and `shape_address()` (§2) now
 reports NA, not a fabricated value, for whichever fields a given state
 simply doesn't have.
 
+(For the broader survey of *which* states have a usable portal at all —
+including the 8 states checked and rejected after FL, none of which
+produced a usable dataset — see
+[`docs/TECHNICAL_APPENDIX_BON_PORTAL_AVAILABILITY.md`](TECHNICAL_APPENDIX_BON_PORTAL_AVAILABILITY.md).)
+
 - **WA has no address field at all**, confirmed by querying
   `data.wa.gov`'s live API directly (2026-10-23), not assumed from the
   harvest script's existing columns: the full field list is

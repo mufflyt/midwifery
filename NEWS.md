@@ -20,6 +20,80 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-26 — Address agreement measured across five source pairs; a state-BON portal survey hits a wall
+
+### Added — multi-source address agreement (`compare_*_address.R`, `make_address_agreement_heatmap.R`)
+
+One question asked five ways: if two independent sources are asked where
+the same provider practices, how often do they give the same answer, and
+at what geographic grain does that stop being true? PECOS/DAC vs NPPES,
+PECOS/DAC vs Doximity, Healthgrades vs PECOS/DAC, Healthgrades vs NPPES,
+and PECOS/DAC vs state Boards of Nursing. State-level agreement is high
+everywhere (89.8–95.3%); city and ZIP5 agreement drop well below that
+(47–64% among the four practice-vs-practice pairs; 35.5–35.6% for the
+state-board pair, which measures something structurally different — see
+below). Street-level comparison was tried on every pair and dropped
+entirely: lowest was 21.7% (PECOS vs Doximity), driven partly by
+Doximity's scraped `address_line` smashing suite text onto the street with
+no separator — no normalizer reliably untangles that. ZIP5 is now the
+finest grain any comparison in this project reports.
+`R/lib/address_agreement_compare.R` (`shape_address()`,
+`compare_address_pair()`) is shared across all five, mutation-tested by 22
+saboteur cases. Full write-up:
+[`docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md`](docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md).
+
+### Added — California and Florida state-board data; Colorado removed
+
+California's DCA Board of Registered Nursing roster was added (1,342 of
+1,501 CA-state cohort members matched by name, 89.4% — the largest BON
+sample in this project) with no state or ZIP field at all, only city
+(24.7% agreement, n=223). Florida was added (813 of 1,035 matched, 78.6%,
+screened by the license's own Qualifications field since Florida folds
+CNMs into a generic APRN category with no CNM-specific profession code)
+with a full city/state/zip, becoming this comparison's largest single
+contributor at every level and moving pooled ZIP5 agreement from 6.7%
+(n=15, effectively Connecticut alone) to 35.6% (n=239). Colorado was
+**removed outright, not caveated**: its DORA field is an explicit
+*mailing* address, not a practice address, and pooling it against
+practice-address sources on the other side of every other comparison
+measured the wrong kind of disagreement.
+
+### Fixed
+
+- Florida's harvester (`harvest_live_florida_bon_from_tracked_roster.py`)
+  originally captured only the street line of each detail page's address
+  block; the real city/state/zip line sits two `<dt>/<dd>` pairs later in
+  the HTML and was silently dropped. Re-harvested the full cohort after
+  the fix, including the "no address on file" disclaimer-paragraph case.
+- `compare_pecos_to_bon_address.R`'s pre-pool filter used `nzchar(npi)`
+  alone, which does not exclude `NA` (`nzchar(NA)` is `TRUE` in R — the
+  same gotcha already guarded against inside `compare_address_pair()`
+  itself, just not here). A VERIFIED_LIVE_BON row with no linked NPI read
+  as `NA` after `read_csv()` and was wrongly pooled; adding Florida's own
+  such row collided with an existing one under the same `NA` "key," which
+  `assert_unique_keys()` correctly refused to resolve silently. Fixed by
+  filtering `!is.na(npi)` before `nzchar(npi)`, not after.
+
+### Added — `docs/TECHNICAL_APPENDIX_BON_PORTAL_AVAILABILITY.md`
+
+A full ledger of all 18 states individually checked for a live BON
+cross-reference, not just the ones that worked. 10 produced a working
+harvester or dataset (WA, CO, TX, CA, IL, CT, DE, FL, PA — plus Michigan,
+which turned out to be a different, non-AMCB credential, not CNM/BON data
+at all). The next 8 states checked in one continuous pass — North
+Carolina, Ohio, Georgia, Minnesota, Arizona, Tennessee, Wisconsin, Oregon —
+produced **zero** new usable datasets: reCAPTCHA, a generic WAF, Cloudflare
+bot-fingerprinting, Radware+hCaptcha, an explicit "please don't scrape us"
+policy, no address field at all, and (Wisconsin) a genuinely dead domain
+confirmed via two independent public DNS resolvers. None of these walls
+were worked around. The appendix's conclusion: the deciding factor across
+every state checked is whether the state treats its license lookup as
+public open data (Socrata/plain API — always worked, 0 defenses
+encountered) versus a service actively defended against automated
+traffic (always failed) — and there is no known way to tell which a new
+state is without trying it. Recorded as a basis for treating further
+blind state-by-state expansion as a low-probability bet going forward.
+
 ## [Unreleased] — 2026-10-22 — Fuzzy surname matching (class 4) removed; a doc-freshness pass
 
 ### Removed — class 4, fuzzy/Levenshtein-distance surname matching
