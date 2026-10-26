@@ -145,3 +145,29 @@ artifacts/nppes_license_concordance.csv
 # part of the tracked roster above) is independently public. Produced by
 # draw_nursys_qa_sample.py against this project's own WA/CO/TX board pulls.
 artifacts/nursys_qa_sample.csv
+
+# CMS National Provider Directory (NDH) harvest, 2026-10-23/26: npi, name
+# (ndh_given/ndh_family), practice addresses/phones, and state license
+# numbers, pulled from CMS's own public, no-auth NDH FHIR gateway and bulk
+# NDJSON export (directory.cms.gov/fhir and /downloads) -- see
+# docs/TECHNICAL_APPENDIX_CMS_NDH.md. Every field is independently public:
+# CMS publishes this exact directory for anyone to query without
+# authentication, same standing as the NPI Registry entries above.
+# Reviewed and accepted by Tyler Muffly, 2026-10-26, same reasoning as the
+# nppes_license_concordance.csv entry above -- public-registry-sourced
+# NPI/name/address data is not person-level-sensitive by this project's own
+# standing policy (see also the exclusion of new NPI/name CSVs from
+# pattern-based gitignoring). Produced by
+# harvest_cms_national_provider_directory.py (per-NPI) and
+# download_cms_ndh_bulk.py + clean_cms_ndh_bulk.py (bulk cross-check).
+artifacts/cms_ndh_midwives.csv
+artifacts/cms_ndh_bulk_cohort.csv
+artifacts/cms_ndh_bulk_national_cnm.csv
+
+# Companion exclusion-flag input, same harvest and same date/reasoning as
+# the three CMS NDH files above: npi plus a boolean flag and a short source
+# label (no names). Feeds the federal-adverse-action exclusion stage in
+# make_cohort_exclusion_flow_figure.R -- see docs/TECHNICAL_APPENDIX_CMS_NDH.md
+# s5 for why the underlying ndh_hhs_exclusion_list flag is documented as
+# unverified rather than authoritative.
+artifacts/federal_adverse_action_flags.csv
