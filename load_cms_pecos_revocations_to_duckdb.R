@@ -23,8 +23,7 @@ source(file.path("R", "lib", "medicare_duckdb.R"))
 DB <- Sys.getenv("PECOS_DB", "")
 if (!nzchar(DB)) DB <- resolve_midwifery_duckdb()
 
-SRC <- path.expand(Sys.getenv("CMS_PECOS_REVOKED_CSV",
-                               "~/Downloads/medicare-revoked-providers-and-suppliers.csv"))
+SRC <- path.expand(Sys.getenv("CMS_PECOS_REVOKED_CSV", "~/Downloads/medicare-revoked-providers-and-suppliers.csv"))
 if (!file.exists(SRC)) {
   stop(sprintf("CMS PECOS revocation file not found at %s.\n  Set CMS_PECOS_REVOKED_CSV to its path.",
                SRC), call. = FALSE)
