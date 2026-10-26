@@ -1,0 +1,11 @@
+{
+  "artifact": "federal_adverse_action_flags.csv",
+  "source_url": "https://directory.cms.gov/fhir (hhs_in_exclusion_list extension, via artifacts/cms_ndh_midwives.csv)",
+  "accessed_utc": "2026-10-23T18:06:42Z",
+  "sha256": "03fe43980e31bcc4370ced1f17c3277fff93bae4685683c11c489e063f62dffe",
+  "byte_size": 10624,
+  "source_dataset": "CMS NDH hhs_in_exclusion_list flag, reshaped into the federal_adverse_action_flags.csv contract",
+  "cohort_source": "artifacts/cms_ndh_midwives.csv",
+  "cohort_source_sha256": "6a439987fd5bf78474dd15e097f579d7871fd67210fd14a33ac99f68c1bb1b7e",
+  "caveat": "UNVERIFIED: only 10/153 (6.5%) of flagged NPIs confirmed against the real public LEIE by NPI. See docs/TECHNICAL_APPENDIX_CMS_NDH.md s5."
+}
