@@ -32,6 +32,7 @@ nppes_api_cache.jsonl
 # aggregated, disclosure-controlled flow table gets tracked.
 artifacts/flowmap_geocoding/
 artifacts/dac_vs_nppes_address_pairs.csv
+artifacts/pecos_vs_bon_address_pairs.csv
 
 # Name-parser cache written by the isochrones parser
 .cache/
@@ -262,6 +263,12 @@ artifacts/table1_midwives_PARTIAL.csv.provenance.json
 docs/table1_midwives_PARTIAL.md
 docs/table1_midwives_PARTIAL.html
 !docs/table1_midwives_gt.html
+
+# An interactive companion to TECHNICAL_APPENDIX_CMS_NDH.md s7.4 (the
+# 15,941-nationally/3,237-not-in-cohort NDH finding): self-contained, data
+# embedded at generation time, ~1 MB -- same reasoning as the Table 1 renders
+# above, not the multi-megabyte map output the blanket rule targets.
+!docs/midwife_haystack.html
 
 # The GitHub Pages landing page. Same reasoning as the Table 1 renders: the
 # blanket rule is aimed at multi-megabyte map output, and this is 6 KB of hand
@@ -751,6 +758,7 @@ artifacts/cms_physician_compare/
 artifacts/ipeds/
 artifacts/live_florida_bon_ingested_midwives.csv*
 artifacts/live_oregon_bon_ingested_midwives.csv*
+artifacts/live_california_bon_ingested_midwives_from_tracked_roster.csv*
 
 # State-board drafts are retained locally until their tracked-output tests can
 # run from a fresh checkout without requiring pre-generated person-level data.

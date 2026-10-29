@@ -71,7 +71,8 @@ TABLE1_ENRICHMENT <- data.frame(
     "artifacts/dac_hospital_affiliation_person.csv",
     "artifacts/medicare_participation.csv",
     "healthgrades_midwives.csv",
-    "healthgrades_profile_attrs.csv"),
+    "healthgrades_profile_attrs.csv",
+    "artifacts/cms_ndh_midwives.csv"),
   blocks = c(
     "Sex",
     "Primary NPPES Specialty Taxonomy; Practice vs. Mailing State Concordance",
@@ -82,7 +83,8 @@ TABLE1_ENRICHMENT <- data.frame(
     "Hospital affiliation; Number of affiliated hospitals; Affiliated hospital type; Affiliated hospital ownership; Birthing-friendly designation",
     "Medicare Part B; Medicare Part D",
     "Language floor; Accepts new patients; Offers telehealth",
-    "Language floor; Accepts new patients; Offers telehealth"),
+    "Language floor; Accepts new patients; Offers telehealth",
+    "Accepts new patients (coalesced with Healthgrades); Medicare enrollment (coalesced with CMS DAC)"),
   stringsAsFactors = FALSE
 )
 ALLOW_PARTIAL_TABLE1 <- nzchar(Sys.getenv("ALLOW_PARTIAL_TABLE1"))
@@ -526,6 +528,24 @@ if (file.exists("artifacts/dac_cnm_education.csv")) {
 }
 if (!"in_dac" %in% names(coh)) coh$in_dac <- FALSE
 
+# --- CMS National Provider Directory (NDH) ------------------------------------
+# Produced by harvest_cms_national_provider_directory.py against the live
+# directory.cms.gov/fhir gateway, one row per cohort NPI (see
+# docs/TECHNICAL_APPENDIX_CMS_NDH.md). Joined the same way as DAC above: by
+# npi, one-to-one, with a FALSE/NA fallback when the file is absent so the
+# coalesced columns built below degrade to "neither source" rather than
+# erroring.
+if (file.exists("artifacts/cms_ndh_midwives.csv")) {
+  ndhx <- read_csv("artifacts/cms_ndh_midwives.csv", show_col_types = FALSE,
+                   progress = FALSE) %>%
+    mutate(npi = as.character(npi)) %>%
+    select(npi, ndh_found, ndh_accepting_new_patients, ndh_medicare_enrollment) %>%
+    assert_unique_keys("npi", label = "CMS NDH per-NPI harvest", dedupe = TRUE)
+  coh <- coh %>%
+    left_join(ndhx, by = "npi", relationship = "one-to-one")
+}
+if (!"ndh_found" %in% names(coh)) coh$ndh_found <- NA
+
 # --- Training institution (DAC + Healthgrades) --------------------------------
 # Requested to support work on where midwives trained. Built from BOTH sources
 # because they barely overlap -- 44 people -- so combining nearly doubles
@@ -915,6 +935,42 @@ if (T1_PARTIAL) {
 T1_CSV <- if (T1_PARTIAL) "artifacts/table1_midwives_PARTIAL.csv" else "artifacts/table1_midwives.csv"
 T1_MD  <- if (T1_PARTIAL) "docs/table1_midwives_PARTIAL.md" else "docs/table1_midwives.md"
 
+# --- Coalesced CMS NDH + Healthgrades / CMS DAC blocks ------------------------
+# Built here, after hg_link and the NDH join are both final, rather than
+# inline at either source's own section above.
+#
+# "%in% TRUE" everywhere below, not "== TRUE" or isTRUE(): isTRUE() is
+# scalar-only and would error on a vector; "== TRUE" propagates NA (NA ==
+# TRUE is NA, not FALSE), which would make an unlisted NPI contaminate the
+# case_when() below with NA instead of simply not contributing a Yes.
+# "%in%" is NA-safe and vectorised: NA %in% TRUE is FALSE, exactly "this
+# source has no Yes to offer," never "unknown, so refuse to combine."
+hg_anp <- if (!is.null(hg_link)) {
+  hg_link %>% distinct(certification_number, hg_accepts_new_patients)
+} else {
+  tibble(certification_number = character(0), hg_accepts_new_patients = logical(0))
+}
+
+coh <- coh %>%
+  left_join(hg_anp, by = "certification_number") %>%
+  mutate(
+    .hg_anp_yes   = hg_eligible & (hg_accepts_new_patients %in% TRUE),
+    .hg_anp_known = hg_eligible & !is.na(hg_accepts_new_patients),
+    .ndh_anp_yes   = ndh_accepting_new_patients %in% TRUE,
+    .ndh_anp_known = (ndh_found %in% TRUE) & !is.na(ndh_accepting_new_patients),
+    accepts_new_patients_combined = dplyr::case_when(
+      .hg_anp_yes | .ndh_anp_yes ~ "Yes (Healthgrades and/or CMS NDH)",
+      .hg_anp_known | .ndh_anp_known ~
+        "Not flagged by either source (absence is not a confirmed refusal)",
+      TRUE ~ NA_character_),
+    medicare_enrollment_combined = dplyr::case_when(
+      in_dac ~ "Enrolled in Medicare (CMS DAC)",
+      ndh_medicare_enrollment %in% TRUE ~
+        "Enrolled in Medicare (CMS NDH only; absent from CMS DAC)",
+      TRUE ~ NA_character_)
+  ) %>%
+  select(-starts_with(".hg_anp"), -starts_with(".ndh_anp"))
+
 t1 <- bind_rows(
   tibble(characteristic = "ACTIVE, primary-linked midwives", n = N,
          percent = 100, category = "Cohort"),
@@ -1020,6 +1076,24 @@ t1 <- bind_rows(
         lvls = MEDICARE_ASSIGNMENT_LEVELS,
         unknown_label = "Absent from the CMS DAC enrolment extract"),
 
+  # COALESCED, NOT MERGED INTO THE BLOCKS ABOVE. #246 is the reason: two
+  # Medicare-derived blocks once both read "Not enrolled (absent from CMS
+  # DAC)" and disagreed by 114 people because they came from different DAC
+  # pulls, and the fix was to name which extract each absence means rather
+  # than let one "not enrolled" label describe two different facts. This is
+  # a NEW, additional block for the one binary fact DAC and NDH both carry
+  # independently (enrolled in Medicare, yes or no) -- it does not touch
+  # dac_practice_size/dac_practice_sites/dac_assignment above, which stay
+  # exactly as DAC-only and DAC-labelled as before. Where NDH finds
+  # enrollment DAC did not, that is its own named row, not folded silently
+  # into "enrolled."
+  if ("medicare_enrollment_combined" %in% names(coh))
+    blk(coh, "medicare_enrollment_combined",
+        "Medicare enrollment (CMS DAC + CMS NDH)",
+        lvls = c("Enrolled in Medicare (CMS DAC)",
+                 "Enrolled in Medicare (CMS NDH only; absent from CMS DAC)"),
+        unknown_label = "Not enrolled in Medicare per CMS DAC or CMS NDH"),
+
   if ("hpsa_status" %in% names(coh))
     blk(coh, "hpsa_status", "Primary-care shortage area (HRSA HPSA)",
         lvls = c("Designated geographic primary-care HPSA",
@@ -1110,9 +1184,19 @@ t1 <- bind_rows(
     tibble(characteristic = "Not collected by NPPES, CMS DAC or the Healthgrades scrape",
            n = N, percent = NA_real_, category = "Language"),
 
-  # Healthgrades-derived person-level characteristics
-  blk_hg("hg_accepts_new_patients", "Accepts new patients",
-          binary_yes = c("TRUE", "true", "Yes", "yes", TRUE)),
+  # COALESCED with CMS NDH (see accepts_new_patients_combined, built above),
+  # not the Healthgrades-only version this used to be. Both sources are
+  # presence-only evidence -- Healthgrades' acceptsNewPatients is
+  # sponsor-supplied (scrape_healthgrades_midwives.R: "never read NA/FALSE as
+  # a refusal") and NDH's is populated only when an org affiliation carries
+  # the FHIR acceptingPatients extension -- so the rule is Yes if EITHER
+  # source says Yes; neither source's absence or FALSE asserts a No.
+  if ("accepts_new_patients_combined" %in% names(coh))
+    blk(coh, "accepts_new_patients_combined",
+        "Accepts new patients (Healthgrades + CMS NDH)",
+        lvls = c("Yes (Healthgrades and/or CMS NDH)",
+                 "Not flagged by either source (absence is not a confirmed refusal)"),
+        unknown_label = "No Healthgrades profile and not found in CMS NDH"),
   blk_hg("hg_has_telehealth", "Offers telehealth",
           binary_yes = c("TRUE", "true", "Yes", "yes", TRUE)),
 

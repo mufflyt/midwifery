@@ -38,10 +38,19 @@ build_federal_adverse_action_flags <- function(sources) {
     if (is.null(src) || !length(src) ||
         all(is.na(src) | !nzchar(trimws(src)))) src <- "Federal adverse action"
     src <- rep(src, length.out = nrow(x))
+    keep <- valid_npi & listed
+    # rep(TRUE, sum(keep)), not a bare TRUE: when a source has zero rows
+    # that are both a valid 10-digit NPI and listed (e.g. every NPI in it is
+    # malformed, or none are currently listed), npi[keep] is length 0 and
+    # data.frame() refuses to recycle a length-1 TRUE against it --
+    # "arguments imply differing number of rows" -- rather than returning an
+    # empty frame for that source. Caught live by a saboteur test
+    # (tests/test_exclusion_flow_saboteurs.R, S3) that a source could be
+    # entirely malformed NPIs.
     data.frame(
-      npi = npi[valid_npi & listed],
-      federal_adverse_action_excluded = TRUE,
-      federal_adverse_action_source = trimws(src[valid_npi & listed]),
+      npi = npi[keep],
+      federal_adverse_action_excluded = rep(TRUE, sum(keep)),
+      federal_adverse_action_source = trimws(src[keep]),
       stringsAsFactors = FALSE)
   })
 

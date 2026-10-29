@@ -20,6 +20,201 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-10-26 — Address agreement measured across five source pairs; a state-BON portal survey hits a wall
+
+### Added — multi-source address agreement (`compare_*_address.R`, `make_address_agreement_heatmap.R`)
+
+One question asked five ways: if two independent sources are asked where
+the same provider practices, how often do they give the same answer, and
+at what geographic grain does that stop being true? PECOS/DAC vs NPPES,
+PECOS/DAC vs Doximity, Healthgrades vs PECOS/DAC, Healthgrades vs NPPES,
+and PECOS/DAC vs state Boards of Nursing. State-level agreement is high
+everywhere (89.8–95.3%); city and ZIP5 agreement drop well below that
+(47–64% among the four practice-vs-practice pairs; 35.5–35.6% for the
+state-board pair, which measures something structurally different — see
+below). Street-level comparison was tried on every pair and dropped
+entirely: lowest was 21.7% (PECOS vs Doximity), driven partly by
+Doximity's scraped `address_line` smashing suite text onto the street with
+no separator — no normalizer reliably untangles that. ZIP5 is now the
+finest grain any comparison in this project reports.
+`R/lib/address_agreement_compare.R` (`shape_address()`,
+`compare_address_pair()`) is shared across all five, mutation-tested by 22
+saboteur cases. Full write-up:
+[`docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md`](docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md).
+
+### Added — California and Florida state-board data; Colorado removed
+
+California's DCA Board of Registered Nursing roster was added (1,342 of
+1,501 CA-state cohort members matched by name, 89.4% — the largest BON
+sample in this project) with no state or ZIP field at all, only city
+(24.7% agreement, n=223). Florida was added (813 of 1,035 matched, 78.6%,
+screened by the license's own Qualifications field since Florida folds
+CNMs into a generic APRN category with no CNM-specific profession code)
+with a full city/state/zip, becoming this comparison's largest single
+contributor at every level and moving pooled ZIP5 agreement from 6.7%
+(n=15, effectively Connecticut alone) to 35.6% (n=239). Colorado was
+**removed outright, not caveated**: its DORA field is an explicit
+*mailing* address, not a practice address, and pooling it against
+practice-address sources on the other side of every other comparison
+measured the wrong kind of disagreement.
+
+### Fixed
+
+- Florida's harvester (`harvest_live_florida_bon_from_tracked_roster.py`)
+  originally captured only the street line of each detail page's address
+  block; the real city/state/zip line sits two `<dt>/<dd>` pairs later in
+  the HTML and was silently dropped. Re-harvested the full cohort after
+  the fix, including the "no address on file" disclaimer-paragraph case.
+- `compare_pecos_to_bon_address.R`'s pre-pool filter used `nzchar(npi)`
+  alone, which does not exclude `NA` (`nzchar(NA)` is `TRUE` in R — the
+  same gotcha already guarded against inside `compare_address_pair()`
+  itself, just not here). A VERIFIED_LIVE_BON row with no linked NPI read
+  as `NA` after `read_csv()` and was wrongly pooled; adding Florida's own
+  such row collided with an existing one under the same `NA` "key," which
+  `assert_unique_keys()` correctly refused to resolve silently. Fixed by
+  filtering `!is.na(npi)` before `nzchar(npi)`, not after.
+
+### Added — `docs/TECHNICAL_APPENDIX_BON_PORTAL_AVAILABILITY.md`
+
+A full ledger of all 18 states individually checked for a live BON
+cross-reference, not just the ones that worked. 10 produced a working
+harvester or dataset (WA, CO, TX, CA, IL, CT, DE, FL, PA — plus Michigan,
+which turned out to be a different, non-AMCB credential, not CNM/BON data
+at all). The next 8 states checked in one continuous pass — North
+Carolina, Ohio, Georgia, Minnesota, Arizona, Tennessee, Wisconsin, Oregon —
+produced **zero** new usable datasets: reCAPTCHA, a generic WAF, Cloudflare
+bot-fingerprinting, Radware+hCaptcha, an explicit "please don't scrape us"
+policy, no address field at all, and (Wisconsin) a genuinely dead domain
+confirmed via two independent public DNS resolvers. None of these walls
+were worked around. The appendix's conclusion: the deciding factor across
+every state checked is whether the state treats its license lookup as
+public open data (Socrata/plain API — always worked, 0 defenses
+encountered) versus a service actively defended against automated
+traffic (always failed) — and there is no known way to tell which a new
+state is without trying it. Recorded as a basis for treating further
+blind state-by-state expansion as a low-probability bet going forward.
+
+## [Unreleased] — 2026-10-26 — CMS NDH harvest; a federal adverse-action exclusion step, checked against three independent sources
+
+### Added — CMS National Provider Directory (NDH) lookup
+
+The full write-up is
+[docs/TECHNICAL_APPENDIX_CMS_NDH.md](docs/TECHNICAL_APPENDIX_CMS_NDH.md); this
+entry is the summary. CMS runs a public, no-auth FHIR R4 gateway
+(`directory.cms.gov/fhir`) blending NPPES/PECOS enrollment with payer-reported
+network data — evaluated as a substitute starting point for a planned
+five-payer integration after one query against it returned richer data than a
+specialty-filtered query against any single payer endpoint found by hand.
+
+- **[`harvest_cms_national_provider_directory.py`](harvest_cms_national_provider_directory.py)**
+  — per-NPI live-gateway harvest. Full run against all 16,775 cohort NPIs,
+  2026-10-23, 4h17m: **16,361/16,775 (97.5%) found**, 9,760 with at least one
+  organization accepting new patients. Output: `artifacts/cms_ndh_midwives.csv`.
+- **[`download_cms_ndh_bulk.py`](download_cms_ndh_bulk.py) +
+  [`clean_cms_ndh_bulk.py`](clean_cms_ndh_bulk.py)** — an independent
+  cross-check against CMS's periodic bulk NDJSON export (7,481,907
+  `Practitioner` + 11,218,772 `PractitionerRole` lines nationally, under 2.5
+  minutes end-to-end once downloaded, never decompressed to disk). Found the
+  **identical 16,361/16,775** figure as the per-NPI harvest — two different
+  acquisition methods against the same CMS snapshot agreeing is the strongest
+  evidence available that neither has a systematic bug. Also surfaced
+  **15,941** NDH-tagged CNMs nationally, of which **3,237** are not in this
+  project's AMCB-to-NPPES cohort (not claimed as "midwives AMCB missed"
+  without further work — see appendix §7.4).
+  - Caught and fixed live: the bulk export codes NPI/taxonomy under different
+    FHIR system URIs than the live gateway for identical facts — the first
+    run matched **zero** national `Practitioner` rows, including a cohort
+    member confirmed present in the raw file by direct `grep`. Fixed by
+    accepting both URIs (§7.3).
+  - **A single-NPI defect in CMS's own export**, caught by the national
+    discovery file and traced to CMS's own data, not this project's code: one
+    NPI's garbled name (not matching the live NPPES registry) was `names[0]`
+    in a FHIR resource whose other four name entries were correct, and the
+    same resource's `367A00000X` (midwife) taxonomy coding carried her real
+    Massachusetts *medical* license as its identifier — a taxonomy/license
+    mismatch inside CMS's own build. 153 addresses on that one record (vs. a
+    cohort-wide max of 52) is real but explained by a legitimate
+    telehealth-hospitalist pattern, confirmed against DAC. Not in the cohort,
+    zero impact on any published figure. `tests/test_cms_ndh_address_count_sanity.py`
+    now fails loudly if any future row exceeds 100 addresses (§8).
+- **`ndh_hhs_exclusion_list` is unverified — checked, not assumed.** 153 of
+  16,775 cohort NPIs carry this flag; checked against the real public LEIE
+  (84,093 records, by exact NPI): only **10 (6.5%) actually appear in it**.
+  The other 143 (93.5%) are false positives against the authoritative source,
+  investigated further (§5) rather than left as an unexplained number — not
+  stale reinstatement, and for most not even a name collision. Not wired into
+  Table 1 or anything else; this field's absence-handling is unchanged.
+
+### Added — a federal adverse-action exclusion step, checked against three sources
+
+`make_cohort_exclusion_flow_figure.R` now excludes an NPI-matched cohort
+member who carries a flagged federal/administrative action, and the result is
+published as a new figure (Figure 19 in the README):
+`docs/figures/cohort_exclusion_flow.png`. Three independent, NPI/name-linked
+sources feed it through `build_federal_adverse_action_flags.R` (which already
+dedupes by NPI and concatenates sources when more than one agrees):
+
+1. CMS NDH's `hhs_in_exclusion_list` flag (unverified — see above).
+2. **CMS PECOS Medicare revocation** — "Revoked Medicare Providers and
+   Suppliers" (opendata.hhs.gov), a re-enrollment bar, NPI-keyed, CMS's own
+   administrative-action record rather than a derived flag
+   (`load_cms_pecos_revocations_to_duckdb.R`, `match_cms_pecos_revocations.R`).
+3. **FDA Debarment List** (Drug Product Applications) — name-only, no NPI, so
+   matched by normalized last+first name (the same normalizer that built the
+   FROZEN linkage's own name-key columns) and flagged **only** on an
+   unambiguous one-to-one match; any name collision on either side is
+   reported `AMBIGUOUS` and left unflagged, since a wrongly-applied exclusion
+   is worse than a missed one (`load_fda_debarment_to_duckdb.R`,
+   `match_fda_debarment.R`). Where to find the current file next time it's
+   needed is documented in the appendix, since the direct download link's id
+   changes on every FDA republish (§10).
+
+**Net effect on the published cohort: zero**, for all three sources. Every
+NPI any of them flags is already `LAPSED` and excluded from the analytic
+cohort for an unrelated reason — the exclusion step only evaluates `ACTIVE`,
+`primary_midwifery`-linked NPIs. Every count in
+`docs/figures/cohort_exclusion_flow_counts.csv` is identical regardless: of
+12,170 matched, 77 are excluded for federal adverse action, 12,093 survive,
+and 12,022 (99.87%) reach the final analytic cohort after geocoding and
+ACOG-district exclusions. The exclusion-flow figure's header reads "Federal
+adverse action (CMS NDH flag; Medicare revocation; FDA debarment)" — a
+rename from a forward-looking placeholder, "(DEA/FDA/Medicare)", that no
+longer matched what was actually wired in. **DEA is deliberately not
+included**: unlike CMS and FDA, DEA publishes no bulk list of revoked or
+surrendered registrants, only a single-registrant lookup — there is nothing
+to download or match against.
+
+### Added — 34 borrowed saboteur tests for the name parser
+
+[`tests/test_borrowed_isochrones_name_parser_saboteurs.R`](tests/test_borrowed_isochrones_name_parser_saboteurs.R)
+ports 34 adversarial test cases from the `isochrones` sibling repository's
+own name-parser regression suite, run against this project's live-sourced
+`parse_physician_name_enhanced()`: comma-format names, last-first ordering,
+all-caps "DO" ambiguity, and double-credential strings. All 34 pass against
+the current parser.
+
+### Fixed — three CI infrastructure bugs the NDH work surfaced
+
+- **`R/frozen_dependency_graph.R`'s network-script scanner** matched `rvest`
+  as an unbounded substring, so any script merely containing the word
+  "harvest" in a comment was misclassified as doing live scraping. Fixed with
+  `\b` word-boundary matching. Fixing it exposed a second, pre-existing gap:
+  `link_theses_to_amcb.R` had been silently excluded from the rebuild-order
+  completeness check since before the order was first declared, for the same
+  reason — now properly declared in `rebuild_frozen_dependents.R` with its
+  real dependencies documented.
+- **`tests/ci_data_regression_guard.R`'s D10** assumed every provenance
+  sidecar followed the R `write_with_provenance()` schema, failing on the
+  Python-producer schema `tools/provenance.py` has used since issue #230 (two
+  genuinely different, both legitimate, vocabularies for two languages' own
+  producers). Fixed to accept either schema.
+- **`tests/ci_science_laws.R`'s `LAW_COHORTS` registry** didn't know about
+  `table1_provenance.csv`'s corrected `cohort_n = 12170` vintage (the
+  NPI-presence fix from issue #233), so the science-law coverage harness
+  failed with "declares a cohort_n which is not registered." Registered,
+  dated, with the reason — the registry is a hand-maintained list by design
+  ("a registry someone must edit on purpose cannot drift"), not a heuristic.
+
 ## [Unreleased] — 2026-10-22 — Fuzzy surname matching (class 4) removed; a doc-freshness pass
 
 ### Removed — class 4, fuzzy/Levenshtein-distance surname matching

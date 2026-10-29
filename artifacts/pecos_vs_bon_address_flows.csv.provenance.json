@@ -1,0 +1,33 @@
+{
+  "artifact": "pecos_vs_bon_address_flows.csv",
+  "written_utc": "2026-10-23 19:07:53 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/pecos_vs_bon_address_pairs.csv",
+      "sha256": "e63956b7c9fe600cee4e1640e10fb2264718b9696a392ff4bdea67dc47fe81e5"
+    }
+  ],
+  "code_sha256": "b246edfafb0a196b8c3f7621833edd5775389ae8665fed9ea0c751e9247f1325",
+  "code": [
+    {
+      "path": "make_pecos_bon_address_flow_map.R",
+      "sha256": "b55b53cd07aed1fa9b5f4b051fc26318ece836113a515ef2396707edfeccb909"
+    },
+    {
+      "path": "R/lib/address_flow_helpers.R",
+      "sha256": "c530efdc631196c8c03e08ca4c3a73b4b1f2591f2ca62a8f6c9f63463a949731"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/lib/work_site_topology.R",
+      "sha256": "45f1c85cfe7bfce47eddc2a7998758e3fdf3e30a1630ff0add270fdbc7bcb848"
+    }
+  ]
+}

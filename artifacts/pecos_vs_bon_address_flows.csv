@@ -1,0 +1,12 @@
+source,nppes_state,nppes_city,comparison_state,comparison_city,mismatch_type,n_midwives,origin_lon,origin_lat,destination_lon,destination_lat
+BON,CT,DANBURY,CT,NORTH HAVEN,"Different city, same state",1,-72.91199,41.430879,-72.856371,41.381465
+BON,CT,DANBURY,CT,WETHERSFIELD,"Different city, same state",1,-72.525608,41.761415,-72.669301,41.702484
+BON,CT,DANBURY,FL,TAMARAC,Different state,1,-72.198446,41.772955,-80.225802,26.181382
+BON,CT,HARTFORD,CT,AVON,"Different city, same state",1,-72.696006,41.748587,-72.85398,41.79404
+BON,CT,HARTFORD,CT,WOLCOTT,"Different city, same state",1,-72.704433,41.773262,-72.968514,41.59503
+BON,CT,MIDDLETOWN,CT,MADISON,"Different city, same state",1,-72.657501,41.544209,-72.624543,41.344479
+BON,CT,NEW HAVEN,CT,EAST HAVEN,"Different city, same state",1,-72.926373,41.31727,-72.875251,41.278267
+BON,CT,NEW HAVEN,CT,HAMDEN,"Different city, same state",1,-72.932102,41.293122,-72.942752,41.376803
+BON,CT,NEW HAVEN,CT,WOODBURY,"Different city, same state",1,-72.926373,41.31727,-73.206096,41.561632
+BON,CT,NORWALK,CT,NEW CANAAN,"Different city, same state",1,-73.445264,41.127423,-73.500124,41.160393
+BON,CT,SOUTH WINDSOR,CT,TOLLAND,"Different city, same state",1,-72.577836,41.83809,-72.358869,41.883019
