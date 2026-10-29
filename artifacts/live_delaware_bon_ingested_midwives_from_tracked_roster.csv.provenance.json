@@ -1,0 +1,16 @@
+{
+  "artifact": "live_delaware_bon_ingested_midwives_from_tracked_roster.csv",
+  "source_url": "https://data.delaware.gov/resource/pjnv-eaih.json?profession_id=Nursing&license_type=Certified+Nurse+Midwife&%24limit=5000",
+  "accessed_utc": "2026-10-23T17:22:10Z",
+  "sha256": "c7a2427bc1a3592630a4ff9dc0d93fde9c3821d78ca34872e96a0164fa2460d8",
+  "byte_size": 163,
+  "source_dataset": "Delaware Division of Professional Regulation, Professional and Occupational Licensing (data.delaware.gov pjnv-eaih), profession_id=Nursing license_type=Certified Nurse Midwife",
+  "records_retrieved": 186,
+  "cohort": "artifacts/tracked_roster_active_primary_linked.csv",
+  "cohort_sha256": "e2a2bba34b895d66bad03e5422bbdcc4933a8abbe4f4dc315d7af072676203dc",
+  "cohort_rows_de": 0,
+  "cohort_matched_rows": 0,
+  "match_key": "last_name + first_name (upper, trimmed); ambiguous names reported unmatched",
+  "verification_portal": "https://dpr.delaware.gov/boards/nursing/verification/",
+  "note": "0 DE rows in the tracked cohort as of this run -- expected, not an error"
+}
