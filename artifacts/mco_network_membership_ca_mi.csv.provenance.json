@@ -1,0 +1,12 @@
+{
+  "artifact": "mco_network_membership_ca_mi.csv",
+  "source_url": "https://fhir.iehp.org/provider-directory/ (CA) and https://api.interopstation.com/mdhhs/fhir/ (MI), both public, no-auth FHIR R4 Practitioner search by NPI identifier",
+  "accessed_utc": "2026-10-26T00:00:00Z",
+  "sha256": "e542a4d6fe08c27bc4aaa6d3c34324600d37f2e251ef945c67571dfcd2e53986",
+  "byte_size": 687678,
+  "source_dataset": "IEHP (CA) and BCBS Michigan / Blue Cross Complete of Michigan Provider Directories, queried live per-NPI",
+  "cohort": "artifacts/ca_mi_cohort_for_mco_check.csv",
+  "cohort_sha256": "671bfff512637faa6aaa0f9b45d1f904d38f55fec8741d10a5f848b3fe71b8fd",
+  "cohort_rows": 8036,
+  "match_method": "direct NPI lookup against each plan own FHIR Practitioner search -- listed/not_listed/query_error per NPI, crossed against the enrollment/spending confidence tier at harvest time to label billing_tier; see this script own header for the IEHP county-scope caveat and the 4 of 6 candidate MCO endpoints that turned out not to be queryable"
+}

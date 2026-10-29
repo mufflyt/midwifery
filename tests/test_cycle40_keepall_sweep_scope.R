@@ -142,14 +142,31 @@ cat("\n-- SEMANTIC --\n")
 # exactly the heuristic blind spot T40-6/T40-10 already document, not a new
 # order-dependent conflict. A false positive from vendoring pre-existing
 # code into a new file, not new debt.
+#
+# Recounted again 2026-10-29 bringing in Medicaid billing/MCO analysis work
+# that existed only uncommitted in a worktree: true count is 108, not 106.
+# The 2 new sites are both in R/lib/ob_midwife_cohort.R's
+# build_ob_midwife_cohort() -- `abog_canonical %>% ... dplyr::distinct(npi,
+# .keep_all = TRUE)` for the Generalist OB-GYN group, and `abog_sub %>% ...
+# dplyr::distinct(npi, .keep_all = TRUE)` for MFM. UNLIKE the 2026-10-22 site
+# above, neither has an arrange() establishing row order anywhere in the
+# function -- this is a genuine, undetermined risk, not confirmed benign.
+# Not fixed here: this project did not author build_ob_midwife_cohort() (it
+# was committed as pre-existing uncommitted work from another session) and
+# its three source files (amcb_npi_linkage_FROZEN.csv and two paths under
+# ~/isochrones) are private/gitignored and unavailable in this environment,
+# so whether abog_canonical or abog_sub actually carry duplicate NPIs --
+# and if so, which duplicate .keep_all=TRUE silently keeps -- could not be
+# verified. Recorded as real, unverified debt for whoever can run against
+# the private source data, not silently waved through as a false positive.
 {
   root <- "."
   files <- c(
     list.files(file.path(root, "R"), pattern = "\\.R$", recursive = TRUE, full.names = TRUE),
     list.files(root, pattern = "\\.R$", recursive = FALSE, full.names = TRUE))
   n <- length(detect_offenders(files))
-  chk(n == 106L,
-      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 106)", n))
+  chk(n == 108L,
+      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 108)", n))
 }
 
 # T40-6. DOCUMENTED LIMITATION, not fixed this cycle: the detection regex

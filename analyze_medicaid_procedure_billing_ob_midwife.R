@@ -109,7 +109,9 @@ cat(sprintf("[cohort] combined distinct NPI (dual-group NPI excluded): %s\n", nr
 if (nrow(dual_group_excluded) > 0) {
   cat(sprintf("[cohort] %d NPI excluded as ambiguous (appear in >1 provider_group):\n", nrow(dual_group_excluded) / 2))
   print(dual_group_excluded, n = Inf)
-  write_csv(dual_group_excluded, "artifacts/medicaid_procedure_billing_dual_group_npi_excluded.csv")
+  write_with_provenance(dual_group_excluded,
+                         "artifacts/medicaid_procedure_billing_dual_group_npi_excluded.csv",
+                         inputs = unlist(OB_MIDWIFE_COHORT_SOURCES, use.names = FALSE))
 }
 
 # -- Connect to the spending warehouse ------------------------------------------

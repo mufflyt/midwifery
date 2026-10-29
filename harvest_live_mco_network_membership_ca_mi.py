@@ -56,6 +56,9 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools"))
+from provenance import sha256_file, utc_now, write_provenance  # noqa: E402
+
 print("=== Live Medicaid MCO network-membership check: IEHP (CA) + BCBS Michigan (MI) ===")
 
 NPI_SYSTEM = "http://hl7.org/fhir/sid/us-npi"
@@ -173,6 +176,26 @@ def main():
     with open(OUT_CSV, "r", encoding="utf-8", errors="ignore") as f:
         results = list(csv.DictReader(f))
     print(f"\n{OUT_CSV}: {len(results):,} rows total")
+
+    write_provenance(
+        OUT_CSV,
+        source_url="https://fhir.iehp.org/provider-directory/ (CA) and "
+                    "https://api.interopstation.com/mdhhs/fhir/ (MI), both public, "
+                    "no-auth FHIR R4 Practitioner search by NPI identifier",
+        accessed_utc=utc_now(),
+        source_dataset="IEHP (CA) and BCBS Michigan / Blue Cross Complete of Michigan "
+                        "Provider Directories, queried live per-NPI",
+        cohort=COHORT_CSV,
+        cohort_sha256=sha256_file(COHORT_CSV),
+        cohort_rows=len(cohort_rows),
+        match_method="direct NPI lookup against each plan's own FHIR Practitioner "
+                      "search -- listed/not_listed/query_error per NPI, crossed "
+                      "against the enrollment/spending confidence tier at harvest "
+                      "time to label billing_tier; see this script's own header "
+                      "for the IEHP county-scope caveat and the 4 of 6 candidate "
+                      "MCO endpoints that turned out not to be queryable",
+    )
+    print(f"  Provenance: {OUT_CSV}.provenance.json")
 
     print("=========================================================================")
     for state, cfg in PLAN_CONFIG.items():
