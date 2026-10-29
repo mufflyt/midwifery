@@ -186,6 +186,14 @@ data/cd119/
 # Machine-specific env (paths, API keys) - never commit
 .Renviron
 
+# Medicaid enrollment-concordance diagnostic sample: NPI + state + exact
+# dates, person-level. The aggregate crosstab/summary CSVs beside it are not
+# gitignored -- only this one, which exists purely for manual review of
+# disagreeing cases while building diagnose_medicaid_classification_disagreement.R.
+artifacts/medicaid_classification_disagreement_sample.csv
+# Working NPI-only extract of the canonical cohort, scratch by definition.
+scratch/canonical_cohort_npi_only.csv
+
 # Census API pulls from patch_missing_state_census_data.R: reproducible via
 # the Census API (CENSUS_API_KEY in .Renviron), same treatment as every other
 # regenerable download in this file.

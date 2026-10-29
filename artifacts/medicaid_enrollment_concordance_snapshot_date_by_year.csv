@@ -1,0 +1,43 @@
+year,classification,n
+2018,Concordant,2519
+2018,Discordant,665
+2018,Indeterminate,4288
+2018,Multistate concordant,726
+2018,Multistate discordant,142
+2018,Not observed,3830
+2019,Concordant,2692
+2019,Discordant,700
+2019,Indeterminate,3715
+2019,Multistate concordant,877
+2019,Multistate discordant,165
+2019,Not observed,4021
+2020,Concordant,2821
+2020,Discordant,773
+2020,Indeterminate,3258
+2020,Multistate concordant,905
+2020,Multistate discordant,185
+2020,Not observed,4228
+2021,Concordant,2942
+2021,Discordant,763
+2021,Indeterminate,2864
+2021,Multistate concordant,953
+2021,Multistate discordant,198
+2021,Not observed,4450
+2022,Concordant,2960
+2022,Discordant,832
+2022,Indeterminate,2379
+2022,Multistate concordant,989
+2022,Multistate discordant,212
+2022,Not observed,4798
+2023,Concordant,3004
+2023,Discordant,904
+2023,Indeterminate,1742
+2023,Multistate concordant,1021
+2023,Multistate discordant,232
+2023,Not observed,5267
+2024,Concordant,2774
+2024,Discordant,1007
+2024,Indeterminate,652
+2024,Multistate concordant,788
+2024,Multistate discordant,203
+2024,Not observed,6746

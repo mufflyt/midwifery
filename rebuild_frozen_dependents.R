@@ -340,9 +340,25 @@ REBUILD_ORDER <- list(
        # but writes nothing tracked -- it is a read-only diagnostic (prints
        # its table to stdout). It belongs last regardless, same reasoning as
        # every other script in this layer: it reads everything above.
+       #
+       # analyze_medicaid_enrollment_concordance.R, analyze_medicaid_2023_
+       # 2024_transition_support.R and diagnose_medicaid_classification_
+       # disagreement.R (added with the Medicaid enrollment concordance
+       # analysis) each read the freeze plus the panel plus the external
+       # Medicaid warehouse, and write tracked aggregate artifacts -- but
+       # nothing else in this registry reads THOSE artifacts back in, so
+       # they are leaves of the dependency graph, same as everything else
+       # in this layer, and their own order among themselves is free (none
+       # depends on another's output; make_medicaid_enrollment_concordance_
+       # figures.R reads their outputs but is a plotting script, not a
+       # frozen-cohort consumer, so it is intentionally not in this registry
+       # at all -- same treatment as every other make_*_figure.R script).
        scripts = c("build_table1_midwives.R", "export_amcb_npi_geography.R",
                    "validate_training_institution_against_acme.R",
-                   "provenance_manifest.R", "diagnose_migration_year_over_year.R"))
+                   "provenance_manifest.R", "diagnose_migration_year_over_year.R",
+                   "analyze_medicaid_enrollment_concordance.R",
+                   "analyze_medicaid_2023_2024_transition_support.R",
+                   "diagnose_medicaid_classification_disagreement.R"))
 )
 declared <- unlist(lapply(REBUILD_ORDER, `[[`, "scripts"))
 
