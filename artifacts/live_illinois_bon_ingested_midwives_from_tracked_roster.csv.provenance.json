@@ -1,0 +1,17 @@
+{
+  "artifact": "live_illinois_bon_ingested_midwives_from_tracked_roster.csv",
+  "source_url": "https://data.illinois.gov/resource/pzzh-kp68.json?license_type=ADV+PRACTICE+NURSE&%24limit=100000",
+  "accessed_utc": "2026-10-23T17:01:40Z",
+  "sha256": "308e940253f4485b6a09e5ac13d64cb9c2b3e3bd0ffa8e86894482ac772c21cb",
+  "byte_size": 36047,
+  "source_dataset": "Illinois IDFPR, Professional Licensing (data.illinois.gov pzzh-kp68), license_type=ADV PRACTICE NURSE -- not CNM-specific, no API-level specialty filter exists",
+  "records_retrieved": 82545,
+  "cohort": "artifacts/tracked_roster_active_primary_linked.csv",
+  "cohort_sha256": "e2a2bba34b895d66bad03e5422bbdcc4933a8abbe4f4dc315d7af072676203dc",
+  "cohort_rows_il": 434,
+  "cohort_matched_rows": 18,
+  "match_key": "last_name + first_name (upper, trimmed); ambiguous names reported unmatched",
+  "verification_portal": "https://online-dfpr.micropact.com/lookup/licenselookup.aspx",
+  "address_fields": "live_bon_city/state/zip/county, board-reported -- IDFPR does not document whether this is mailing or practice address",
+  "excluded": "license_type=MIDWIFERY BOARD (Certified Professional Midwife, a NARM/CPM credential, not AMCB/CNM)"
+}
