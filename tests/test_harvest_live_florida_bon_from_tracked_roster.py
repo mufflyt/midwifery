@@ -13,8 +13,23 @@ import harvest_live_florida_bon_from_tracked_roster as fl
 
 
 def _detail_html(license_number="APRN1234567", status="Clear/Active",
-                  address="123 Main St", qualifications=("Certified Nurse Midwife",)):
+                  address="123 Main St", city_state_zip="",
+                  qualifications=("Certified Nurse Midwife",), no_address_on_file=False):
     qual_html = "".join(f"<dd>{q}</dd>\n" for q in qualifications) if qualifications else ""
+    # Real pages render the address as FOUR <dt>/<dd> pairs: street, two
+    # blank spacer lines, then "CITY, ST ZIP" -- see parse_detail_page()'s
+    # own comment for why. A record with no address on file additionally
+    # carries a leading disclaimer paragraph under a FIRST "Address of
+    # Record" label before the real four-line block.
+    disclaimer = ("<dt>Address of Record</dt><dd><p>This practitioner does not have an "
+                  "address of record on file.</p></dd>\n" if no_address_on_file else "")
+    address_block = (
+        f"{disclaimer}"
+        f"<dt>Address of Record</dt><dd>{address}</dd>"
+        f"<dt></dt><dd></dd>"
+        f"<dt></dt><dd></dd>"
+        f"<dt></dt><dd>{city_state_zip}</dd>"
+    )
     return f"""
     <h3>JANE DOE </h3>
     <h3>License Number: {license_number} </h3>
@@ -23,7 +38,7 @@ def _detail_html(license_number="APRN1234567", status="Clear/Active",
     <dt>License Status</dt><dd>{status}</dd>
     <dt>Qualifications</dt>
     {qual_html}<dt>License Expiration Date</dt><dd>4/30/2028</dd>
-    <dt>Address of Record</dt><dd>{address}</dd>
+    {address_block}
     """
 
 
@@ -246,3 +261,74 @@ def test_resolve_ambiguous_when_multiple_candidates_both_cnm_qualified():
 def test_parse_detail_page_unescapes_html_entities_in_address():
     d = fl.parse_detail_page(_detail_html(address="123 O&#39;Brien Ave"))
     assert d["address"] == "123 O'Brien Ave"
+
+
+# -- parse_detail_page: city/state/zip (added 2026-10-26 after discovering --
+# -- the original parser only captured the street line) ----------------------
+
+# 19. The "CITY, ST ZIP" line (the fourth <dd> after "Address of Record")
+#     is split into separate city/state/zip fields.
+def test_parse_detail_page_extracts_city_state_zip():
+    d = fl.parse_detail_page(_detail_html(address="15255 Max Leggett Parkway",
+                                           city_state_zip="JACKSONVILLE, FL 32218"))
+    assert d["city"] == "JACKSONVILLE"
+    assert d["state"] == "FL"
+    assert d["zip"] == "32218"
+
+
+# 20. A ZIP+4 is truncated to its first five digits, matching this
+#     project's zip5 convention everywhere else.
+def test_parse_detail_page_truncates_zip_plus_four():
+    d = fl.parse_detail_page(_detail_html(city_state_zip="NAPLES, FL 34114-1234"))
+    assert d["zip"] == "34114"
+
+
+# 21. A record with no address on file (the page renders a disclaimer
+#     paragraph under a FIRST "Address of Record" label before the real
+#     four-line block) still parses the real block correctly -- the
+#     disclaimer's <p>-wrapped <dd> must not be mistaken for the address.
+def test_parse_detail_page_skips_no_address_disclaimer_to_find_real_block():
+    d = fl.parse_detail_page(_detail_html(address="NOT PRACTICING", city_state_zip="",
+                                           no_address_on_file=True))
+    assert d["address"] == "NOT PRACTICING"
+    assert d["city"] == "" and d["state"] == "" and d["zip"] == ""
+
+
+# 22. A blank city/state/zip line (no address on file at all, not even
+#     "NOT PRACTICING") yields blank city/state/zip, not a crash or a
+#     fabricated value.
+def test_parse_detail_page_blank_city_state_zip_is_blank_not_fabricated():
+    d = fl.parse_detail_page(_detail_html(address="", city_state_zip=""))
+    assert d["city"] == "" and d["state"] == "" and d["zip"] == ""
+
+
+# -- resolve_cnm_match: city/state/zip carried through ------------------------
+
+# 23. A unique CNM-qualified match carries city/state/zip through to the
+#     caller, not just license_number/status/address.
+def test_resolve_carries_city_state_zip_through_for_unique_match():
+    opener = _FakeOpener([_detail_html(qualifications=["Certified Nurse Midwife"],
+                                        city_state_zip="NAPLES, FL 34114")])
+    out = fl.resolve_cnm_match("Adamczyk", "Lisa", "tok", opener)
+    assert out["city"] == "NAPLES"
+    assert out["state"] == "FL"
+    assert out["zip"] == "34114"
+
+
+# 24. The CNM-qualified candidate picked out of an ambiguous list also
+#     carries its own city/state/zip through, not the other candidate's.
+def test_resolve_carries_city_state_zip_through_for_picked_candidate():
+    opener = _FakeOpener([
+        _list_html([
+            ("1", "APRN1", "DOE, JANE", "CITYA", "Clear/Active"),
+            ("2", "APRN2", "DOE, JANE", "CITYB", "Clear/Active"),
+        ]),
+        _detail_html(license_number="APRN1", qualifications=["Nurse Practitioner"],
+                     city_state_zip="TAMPA, FL 33601"),
+        _detail_html(license_number="APRN2", qualifications=["Certified Nurse Midwife"],
+                     city_state_zip="ORLANDO, FL 32801"),
+    ])
+    out = fl.resolve_cnm_match("Doe", "Jane", "tok", opener)
+    assert out["license_number"] == "APRN2"
+    assert out["city"] == "ORLANDO"
+    assert out["zip"] == "32801"

@@ -110,8 +110,28 @@ def parse_detail_page(body):
     m_status = re.search(r"License Status\s*</dt>\s*<dd>\s*([^<]+?)\s*</dd>", body, re.S)
     status = _unescape(m_status.group(1)) if m_status else ""
 
-    m_addr = re.search(r"Address of Record\s*</dt>\s*<dd>\s*([^<]+?)\s*</dd>", body, re.S)
+    # The detail page renders the address as FOUR <dt>/<dd> pairs after the
+    # "Address of Record" label: street, two blank spacer lines, then
+    # "CITY, ST ZIP" -- confirmed directly off the live HTML (2026-10-26),
+    # not assumed. A practitioner with no address on file instead gets a
+    # leading disclaimer paragraph wrapped in its own <dd><p>...</p></dd>
+    # under a FIRST "Address of Record" label, with the real (four-line)
+    # block repeated right after it; the lazy, zero-width first capture
+    # group below can't match through that <p> tag, so re.search already
+    # skips past the disclaimer copy to the real block without special
+    # casing it.
+    m_addr = re.search(
+        r"Address of Record\s*</dt>\s*<dd>\s*([^<]*?)\s*</dd>\s*"
+        r"<dt>\s*</dt>\s*<dd>\s*([^<]*?)\s*</dd>\s*"
+        r"<dt>\s*</dt>\s*<dd>\s*([^<]*?)\s*</dd>\s*"
+        r"<dt>\s*</dt>\s*<dd>\s*([^<]*?)\s*</dd>",
+        body, re.S)
     address = _unescape(m_addr.group(1)) if m_addr else ""
+    city_state_zip = _unescape(m_addr.group(4)) if m_addr else ""
+    m_csz = re.match(r"^([^,]+),\s*([A-Z]{2})\s+(\d{5})(?:-\d{4})?$", city_state_zip)
+    city = m_csz.group(1).strip() if m_csz else ""
+    state = m_csz.group(2) if m_csz else ""
+    zip5 = m_csz.group(3) if m_csz else ""
 
     m_qual_block = re.search(
         r"Qualifications\s*</dt>\s*((?:<dd>[^<]*</dd>\s*)+)", body, re.S)
@@ -120,7 +140,7 @@ def parse_detail_page(body):
         qualifications = [_unescape(q) for q in re.findall(r"<dd>([^<]*)</dd>", m_qual_block.group(1))]
 
     return {"license_number": license_number, "status": status, "address": address,
-            "qualifications": qualifications}
+            "city": city, "state": state, "zip": zip5, "qualifications": qualifications}
 
 
 def parse_list_page(body):
@@ -193,6 +213,9 @@ def resolve_cnm_match(last_name, first_name, token, opener):
             "license_number": result["license_number"],
             "status": result["status"],
             "address": result["address"],
+            "city": result["city"],
+            "state": result["state"],
+            "zip": result["zip"],
             "qualifications": "; ".join(result["qualifications"]),
         }
 
@@ -208,6 +231,7 @@ def resolve_cnm_match(last_name, first_name, token, opener):
         d = cnm_candidates[0]
         return {"match_status": "VERIFIED_LIVE_BON", "license_number": d["license_number"],
                 "status": d["status"], "address": d["address"],
+                "city": d["city"], "state": d["state"], "zip": d["zip"],
                 "qualifications": "; ".join(d["qualifications"])}
     if len(cnm_candidates) == 0:
         return {"match_status": "NOT_CNM_QUALIFIED"}
@@ -248,6 +272,9 @@ def main():
             out["live_bon_license_number"] = "NA"
             out["live_bon_status"] = "NA"
             out["live_bon_address"] = "NA"
+            out["live_bon_city"] = "NA"
+            out["live_bon_state"] = "NA"
+            out["live_bon_zip"] = "NA"
             unmatched.append(out)
             continue
 
@@ -261,6 +288,9 @@ def main():
         out["live_bon_license_number"] = resolved.get("license_number", "NA")
         out["live_bon_status"] = resolved.get("status", "NA")
         out["live_bon_address"] = resolved.get("address", "NA")
+        out["live_bon_city"] = resolved.get("city", "NA")
+        out["live_bon_state"] = resolved.get("state", "NA")
+        out["live_bon_zip"] = resolved.get("zip", "NA")
 
         (matched if resolved["match_status"] == "VERIFIED_LIVE_BON" else unmatched).append(out)
 
