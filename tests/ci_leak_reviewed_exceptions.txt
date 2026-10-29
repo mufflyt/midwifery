@@ -301,3 +301,59 @@ artifacts/live_pennsylvania_bon_ingested_midwives_from_tracked_roster.csv
 # reference dataset, not linked to any individual in this project's cohort.
 # Produced by harvest_live_michigan_direct_entry_midwives.py.
 artifacts/live_michigan_direct_entry_midwives.csv
+
+# Medicaid enrollment x spending confidence tier, per-NPI (56,258 rows):
+# npi, provider_group, display_name, and the enrolled/billed booleans behind
+# the enrolled_and_billed/enrolled_only/neither tier already summarized in
+# artifacts/medicaid_enrollment_spending_tier_summary.csv. Both source
+# warehouses (CMS/HHS Enrollment Segments and Provider Spending by HCPCS,
+# opendata.hhs.gov) are public, no-auth bulk downloads, verified by SHA-256
+# before load -- same standing as the CMS/FDA entries above.
+# Reviewed and accepted by Tyler Muffly, 2026-10-25. Produced by
+# analyze_medicaid_enrollment_spending_tier.R against
+# hhs_opendata_csv_pipeline.py's verified DuckDB loads; see
+# docs/TECHNICAL_APPENDIX_MEDICAID_PROCEDURE_BILLING.md.
+artifacts/medicaid_enrollment_spending_tier_by_npi.csv
+
+# Medicaid procedure-level billing, per-NPI (225,032 rows): npi,
+# procedure_category, provider_group, display_name, and claim-line/paid
+# totals for the four target OB/midwife procedure codes, 2018-2024 -- the
+# per-NPI detail behind artifacts/medicaid_procedure_billing_summary.csv.
+# Same source and verification standing as the enrollment-tier file above.
+# Reviewed and accepted by Tyler Muffly, 2026-10-25. Produced by
+# analyze_medicaid_procedure_billing_ob_midwife.R; see
+# docs/TECHNICAL_APPENDIX_MEDICAID_PROCEDURE_BILLING.md.
+artifacts/medicaid_procedure_billing_by_npi.csv
+
+# 8 NPIs excluded from the procedure-billing analysis above for appearing in
+# both the midwife and OB-GYN provider groups (an ambiguous dual
+# classification this project's standing policy is to exclude rather than
+# guess): npi, provider_group, display_name, state.
+# Reviewed and accepted by Tyler Muffly, 2026-10-25, same reasoning as the
+# file above. Produced by analyze_medicaid_procedure_billing_ob_midwife.R.
+artifacts/medicaid_procedure_billing_dual_group_npi_excluded.csv
+
+# CA/MI cohort input for the live MCO network-membership check below (8,036
+# rows): npi, provider_group, display_name, state -- a plain extract of this
+# project's own already-public cohort, scoped to the two states with a
+# queryable open-access MCO FHIR provider directory.
+# Reviewed and accepted by Tyler Muffly, 2026-10-26, same reasoning as every
+# other NPI/name-keyed file above. Produced by
+# harvest_live_mco_network_membership_ca_mi.py's own input-prep step; see
+# that script's header for the directory-endpoint audit.
+artifacts/ca_mi_cohort_for_mco_check.csv
+
+# Live Medicaid MCO network-membership check, IEHP (CA) + BCBS Michigan (MI)
+# (8,036 rows): npi, state, plan_name, provider_group, display_name,
+# network_status, billing_tier -- queried live against each plan's own
+# public, no-auth FHIR R4 Provider Directory (zero auth required; see the
+# harvester's own header for which 4 of 6 candidate MCO endpoints turned out
+# not to be queryable). Crossed against the enrollment/spending tier above
+# to flag "listed but not confirmed billing" vs. "billing but not listed"
+# mismatches -- neither is proof of a ghost network on its own, see
+# docs/TECHNICAL_APPENDIX_MEDICAID_PROCEDURE_BILLING.md S7.
+# Reviewed and accepted by Tyler Muffly, 2026-10-26, same reasoning as every
+# other NPI/name-keyed board or registry file above: every underlying field
+# is independently public. Produced by
+# harvest_live_mco_network_membership_ca_mi.py.
+artifacts/mco_network_membership_ca_mi.csv
