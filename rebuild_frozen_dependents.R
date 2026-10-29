@@ -353,12 +353,29 @@ REBUILD_ORDER <- list(
        # figures.R reads their outputs but is a plotting script, not a
        # frozen-cohort consumer, so it is intentionally not in this registry
        # at all -- same treatment as every other make_*_figure.R script).
+       #
+       # analyze_medicaid_billing_by_state.R, analyze_medicaid_billing_year_
+       # trend.R and analyze_medicaid_enrollment_spending_tier.R (added with
+       # the Medicaid procedure-billing / MCO network-membership work) each
+       # read the freeze (via R/lib/ob_midwife_cohort.R's
+       # build_ob_midwife_cohort()) plus the external Medicaid spending/
+       # enrollment warehouses, and write tracked summary artifacts -- same
+       # leaf shape as the three scripts above, order among themselves free.
+       # analyze_medicaid_procedure_billing_ob_midwife.R, their sibling in
+       # the same cohort helper, is deliberately NOT declared here: its only
+       # textual mention of amcb_npi_linkage_FROZEN.csv is a header comment
+       # (see T3 above -- a comment-only mention is not a discovered
+       # consumer), so the scanner never flagged it as missing in the first
+       # place.
        scripts = c("build_table1_midwives.R", "export_amcb_npi_geography.R",
                    "validate_training_institution_against_acme.R",
                    "provenance_manifest.R", "diagnose_migration_year_over_year.R",
                    "analyze_medicaid_enrollment_concordance.R",
                    "analyze_medicaid_2023_2024_transition_support.R",
-                   "diagnose_medicaid_classification_disagreement.R"))
+                   "diagnose_medicaid_classification_disagreement.R",
+                   "analyze_medicaid_billing_by_state.R",
+                   "analyze_medicaid_billing_year_trend.R",
+                   "analyze_medicaid_enrollment_spending_tier.R"))
 )
 declared <- unlist(lapply(REBUILD_ORDER, `[[`, "scripts"))
 
