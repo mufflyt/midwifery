@@ -331,11 +331,20 @@ mw_build_catalog <- function(root = ".") {
       # Match evidence tiers among ACTIVE, PRIMARY-matched midwives only, from
       # the frozen linkage's ordered name_evidence_class (1-5; see the tier
       # comment above s5 in match_amcb_to_npi.R for the exact definitions).
-      # Restricting to match_status == "primary" here (not the looser
-      # npi_match_status-based bucket) keeps this consistent with
-      # active_matched_n above -- otherwise the tier counts would sum to a
-      # different total than the box they're itemising.
-      primary_rows <- active_rows[active_rows$match_status == "primary", ]
+      #
+      # MUST FOLLOW THE SAME RULE AS active_matched_n, not always
+      # match_status == "primary". Those were the same 12,259-row population
+      # for as long as geography_by_amcb_status.csv predated #222 and the
+      # ladder fell back to match_status_primary -- so filtering on
+      # match_status == "primary" here happened to agree with active_matched_n
+      # above. The moment geography_by_amcb_status.csv was rebuilt carrying
+      # cohort_rule == "canonical_active_primary", active_matched_n dropped to
+      # 12,170 (the 89 held-out class-5 matches leave the box) while this
+      # filter stayed at 12,259 -- caught live by sum(active_matched_by_tier)
+      # == active_matched_n failing the first time that branch actually ran.
+      primary_rows <- if (exclusion_cohort_rule == "canonical_active_primary")
+        active_rows[membership, ] else
+        active_rows[active_rows$match_status == "primary", ]
       tier_n <- table(factor(primary_rows$name_evidence_class, levels = 1:5))
       active_matched_by_tier <- setNames(
         as.integer(tier_n),
@@ -687,6 +696,122 @@ mw_build_catalog <- function(root = ".") {
     census_only_loss_pct = 22.1
   )
   cat_$geo$sens_gradient <- cat_$geo$sens_metro - cat_$geo$sens_remote
+
+  # --- Medicaid procedure-billing activity ------------------------------------
+  # A SEPARATE question from everything above: not where a midwife practices or
+  # how long she stays, but whether she bills Medicaid for care that actually
+  # requires attending a patient in person -- a pap test, urodynamics, an IUD
+  # insertion/removal, or a vaginal delivery. Built by
+  # analyze_medicaid_procedure_billing_ob_midwife.R (separate repo,
+  # midwifery-medicaid-spending) against HHS's Medicaid Provider Spending by
+  # HCPCS release (opendata.hhs.gov, Feb 2026; T-MSIS-derived claim-line
+  # aggregates, Jan 2018-Dec 2024) and the Medicaid Provider Enrollment
+  # Segments release (same platform), joined on NPI to the SAME canonical
+  # cohort this manuscript uses (canonical_active_primary()) plus an ABOG
+  # Generalist/MFM OB-GYN comparator cohort carried for context, not as this
+  # paper's population.
+  #
+  # WHAT "BILLED" DOES NOT MEAN. The HHS release suppresses any NPI/HCPCS/
+  # month cell with fewer than 12 claim lines AND fewer than 12 beneficiaries.
+  # A midwife attending a real, sustained Medicaid caseload -- 2-4 deliveries a
+  # month, say -- never crosses that floor and is published as having billed
+  # nothing. Confirmed against the denominator: across the ENTIRE national
+  # release, only 3,442 distinct NPIs ever appear as servicing provider for
+  # CPT 59409 (vaginal delivery) in seven years, of every Medicaid provider in
+  # the country. So `pct_billed` below is read as a FLOOR -- real activity the
+  # suppression threshold did not hide -- never as an estimate of true
+  # Medicaid participation. Absence is close to uninformative; presence is a
+  # real, high-precision positive.
+  #
+  # enrolled_and_billed / enrolled_only / neither is the companion
+  # classification: enrollment is an administrative relationship with a state
+  # program ("an enrolled NPI may never submit a claim"), billing is the
+  # stronger of the two signals, and crossing them gives a defensible 3-level
+  # variable rather than treating either source alone as "accepts Medicaid".
+  mpb <- rd(file.path(MW_ART, "medicaid_procedure_billing_summary.csv"))
+  mst <- rd(file.path(MW_ART, "medicaid_enrollment_spending_tier_summary.csv"))
+  myt <- rd(file.path(MW_ART, "medicaid_billing_year_trend.csv"))
+  mbs <- rd(file.path(MW_ART, "medicaid_billing_by_state.csv"))
+
+  if (!is.null(mpb)) {
+    pick_mpb <- function(grp, proc, col) {
+      r <- mpb[mpb$provider_group == grp & mpb$procedure_category == proc, ]
+      if (nrow(r)) r[[col]][1] else NA_real_
+    }
+    cat_$medicaid <- list(
+      midwife_cohort_n       = pick_mpb("midwife", "vaginal_delivery", "n_cohort"),
+      midwife_vd_n            = pick_mpb("midwife", "vaginal_delivery", "n_billed"),
+      midwife_vd_pct          = pick_mpb("midwife", "vaginal_delivery", "pct_billed"),
+      midwife_pap_n            = pick_mpb("midwife", "pap_test", "n_billed"),
+      midwife_pap_pct          = pick_mpb("midwife", "pap_test", "pct_billed"),
+      midwife_iud_n            = pick_mpb("midwife", "iud", "n_billed"),
+      midwife_iud_pct          = pick_mpb("midwife", "iud", "pct_billed"),
+      midwife_urodynamics_n    = pick_mpb("midwife", "urodynamics", "n_billed"),
+      midwife_urodynamics_pct  = pick_mpb("midwife", "urodynamics", "pct_billed"),
+      # OB-GYN comparators, carried for context only -- see
+      # load_obstetric_providers.R for why Generalist + MFM are the valid
+      # intrapartum-care comparators to a midwife cohort and the other five
+      # ABOG subspecialties are not.
+      obgyn_gen_vd_n   = pick_mpb("ob_gyn_generalist", "vaginal_delivery", "n_billed"),
+      obgyn_gen_vd_pct = pick_mpb("ob_gyn_generalist", "vaginal_delivery", "pct_billed"),
+      obgyn_mfm_vd_n   = pick_mpb("ob_gyn_mfm", "vaginal_delivery", "n_billed"),
+      obgyn_mfm_vd_pct = pick_mpb("ob_gyn_mfm", "vaginal_delivery", "pct_billed"),
+      national_vd_npi_ceiling = 3442L,
+      national_vd_years       = "2018-2024",
+      cell_suppression_floor  = "12 claim lines AND 12 beneficiaries per NPI/HCPCS/month cell"
+    )
+  }
+
+  if (!is.null(mst)) {
+    pick_tier <- function(grp, t) {
+      r <- mst[mst$provider_group == grp & mst$tier == t, ]
+      if (nrow(r)) r$pct[1] else NA_real_
+    }
+    pick_tier_n <- function(grp, t) {
+      r <- mst[mst$provider_group == grp & mst$tier == t, ]
+      if (nrow(r)) r$n[1] else NA_real_
+    }
+    cat_$medicaid$midwife_enrolled_and_billed_pct <- pick_tier("midwife", "enrolled_and_billed")
+    cat_$medicaid$midwife_enrolled_only_pct       <- pick_tier("midwife", "enrolled_only")
+    cat_$medicaid$midwife_neither_pct             <- pick_tier("midwife", "neither")
+    cat_$medicaid$midwife_tier_n                  <- sum(pick_tier_n("midwife", "enrolled_and_billed"),
+                                                          pick_tier_n("midwife", "enrolled_only"),
+                                                          pick_tier_n("midwife", "neither"))
+    # The tier table's own denominator must equal Table 1's cohort-building
+    # count for the SAME reason every other stopifnot() in this file exists:
+    # a quiet mismatch here would mean the Medicaid prose and Table 1 describe
+    # two different cohorts without saying so.
+    if (!is.null(cat_$medicaid$midwife_cohort_n) && !is.na(cat_$medicaid$midwife_cohort_n))
+      stopifnot(cat_$medicaid$midwife_tier_n == cat_$medicaid$midwife_cohort_n)
+  }
+
+  if (!is.null(myt)) {
+    yr <- function(grp, y) {
+      r <- myt[myt$provider_group == grp & myt$procedure_category == "vaginal_delivery" &
+                myt$claim_year == y, ]
+      if (nrow(r)) r$n_distinct_npi_billing[1] else NA_real_
+    }
+    # 2024 is the last FULL calendar year in the release, but Nov-Dec 2024 are
+    # under-reported relative to prior months across the whole HCPCS release
+    # (incomplete state submissions, per Milliman's published analysis of this
+    # same HHS release) -- the 2024 dip below is a reporting artifact, not
+    # read as a real decline, and the prose says so rather than letting a
+    # reader draw the obvious wrong conclusion from a declining final bar.
+    cat_$medicaid$midwife_vd_2018 <- yr("midwife", "2018")
+    cat_$medicaid$midwife_vd_2023 <- yr("midwife", "2023")
+    cat_$medicaid$midwife_vd_2024 <- yr("midwife", "2024")
+  }
+
+  if (!is.null(mbs)) {
+    vdm <- mbs[mbs$provider_group == "midwife" & mbs$procedure_category == "vaginal_delivery", ]
+    if (nrow(vdm)) {
+      top <- vdm[order(-vdm$n_distinct_npi_billing), ][1, ]
+      cat_$medicaid$top_state             <- top$practice_state
+      cat_$medicaid$top_state_n           <- top$n_distinct_npi_billing
+      cat_$medicaid$top_state_cohort_n    <- top$n_cohort
+      cat_$medicaid$top_state_pct         <- top$pct_billing
+    }
+  }
 
   # --- Table 1 ---------------------------------------------------------------
   t1 <- rd(file.path(MW_ART, "table1_midwives.csv"))

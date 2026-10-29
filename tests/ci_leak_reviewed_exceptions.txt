@@ -162,3 +162,58 @@ artifacts/nursys_qa_sample.csv
 # person-level, and not practically regenerable on a machine without the
 # private linkage inputs.
 artifacts/live_florida_bon_ingested_midwives_from_tracked_roster.csv
+
+# CMS National Provider Directory (NDH) harvest, 2026-10-23/26: npi, name
+# (ndh_given/ndh_family), practice addresses/phones, and state license
+# numbers, pulled from CMS's own public, no-auth NDH FHIR gateway and bulk
+# NDJSON export (directory.cms.gov/fhir and /downloads) -- see
+# docs/TECHNICAL_APPENDIX_CMS_NDH.md. Every field is independently public:
+# CMS publishes this exact directory for anyone to query without
+# authentication, same standing as the NPI Registry entries above.
+# Reviewed and accepted by Tyler Muffly, 2026-10-26, same reasoning as the
+# nppes_license_concordance.csv entry above -- public-registry-sourced
+# NPI/name/address data is not person-level-sensitive by this project's own
+# standing policy (see also the exclusion of new NPI/name CSVs from
+# pattern-based gitignoring). Produced by
+# harvest_cms_national_provider_directory.py (per-NPI) and
+# download_cms_ndh_bulk.py + clean_cms_ndh_bulk.py (bulk cross-check).
+artifacts/cms_ndh_midwives.csv
+artifacts/cms_ndh_bulk_cohort.csv
+artifacts/cms_ndh_bulk_national_cnm.csv
+
+# Companion exclusion-flag input, same harvest and same date/reasoning as
+# the three CMS NDH files above: npi plus a boolean flag and a short source
+# label (no names). Feeds the federal-adverse-action exclusion stage in
+# make_cohort_exclusion_flow_figure.R -- see docs/TECHNICAL_APPENDIX_CMS_NDH.md
+# s5 for why the underlying ndh_hhs_exclusion_list flag is documented as
+# unverified rather than authoritative.
+artifacts/federal_adverse_action_flags.csv
+
+# CMS PECOS Medicare revocation cross-reference, 2026-10-26: npi plus a
+# boolean flag, a revocation reason, and two dates (no names). CMS's own
+# public "Revoked Medicare Providers and Suppliers" file (opendata.hhs.gov),
+# NPI-keyed -- same standing as the NPI Registry/NDH entries above: CMS
+# publishes this exact list for anyone to query without authentication.
+# Reviewed and accepted by Tyler Muffly, 2026-10-26. Produced by
+# match_cms_pecos_revocations.R against the DuckDB table
+# load_cms_pecos_revocations_to_duckdb.R loads from the raw CMS file (not
+# itself tracked -- only this cohort-scoped, name-free derivative is).
+artifacts/cms_pecos_revoked_providers_cohort.csv
+
+# FDA Debarment List (Drug Product Applications) name-match cross-reference,
+# 2026-10-26: npi plus a boolean flag, a match-status label, and the
+# debarment term/date as FDA published them (no names). FDA's own public
+# debarment list -- same standing as the CMS entries above: FDA publishes
+# this exact list for anyone to download, unauthenticated, from
+# fda.gov/inspections-compliance-enforcement-and-criminal-investigations/
+# compliance-actions-and-activities/fda-debarment-list-drug-product-
+# applications (docs/TECHNICAL_APPENDIX_CMS_NDH.md s10 documents the current
+# download link, since it changes on each FDA republish).
+# Reviewed and accepted by Tyler Muffly, 2026-10-26. Produced by
+# match_fda_debarment.R against the DuckDB table
+# load_fda_debarment_to_duckdb.R loads from the raw FDA file (not itself
+# tracked -- only this cohort-scoped, name-free derivative is). Unlike the
+# CMS sources, this is a NAME match, not an NPI join -- fda_debarred is TRUE
+# only for a clean, unambiguous one-to-one name match; see that script's own
+# header for why a name collision on either side is reported, not guessed.
+artifacts/fda_debarment_match_cohort.csv
