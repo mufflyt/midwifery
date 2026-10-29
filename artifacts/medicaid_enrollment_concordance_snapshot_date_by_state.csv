@@ -1,0 +1,267 @@
+nppes_state,classification,n
+AA,Not observed,6
+AE,Discordant,5
+AE,Multistate discordant,1
+AE,Not observed,38
+AK,Concordant,87
+AK,Discordant,50
+AK,Multistate concordant,18
+AK,Multistate discordant,3
+AK,Not observed,400
+AL,Concordant,77
+AL,Discordant,15
+AL,Multistate concordant,15
+AL,Multistate discordant,5
+AL,Not observed,23
+AP,Multistate discordant,1
+AP,Not observed,65
+AR,Concordant,14
+AR,Discordant,27
+AR,Multistate concordant,25
+AR,Multistate discordant,12
+AR,Not observed,68
+AS,Not observed,6
+AZ,Concordant,286
+AZ,Discordant,99
+AZ,Multistate concordant,20
+AZ,Multistate discordant,11
+AZ,Not observed,887
+CA,Concordant,6
+CA,Discordant,303
+CA,Multistate discordant,62
+CA,Not observed,5271
+CO,Concordant,1656
+CO,Discordant,25
+CO,Multistate concordant,555
+CO,Multistate discordant,7
+CO,Not observed,175
+CT,Concordant,163
+CT,Discordant,286
+CT,Multistate concordant,87
+CT,Multistate discordant,38
+CT,Not observed,602
+DC,Concordant,61
+DC,Discordant,86
+DC,Multistate concordant,99
+DC,Multistate discordant,51
+DC,Not observed,91
+DE,Concordant,162
+DE,Discordant,5
+DE,Multistate concordant,79
+DE,Not observed,17
+FL,Concordant,2661
+FL,Discordant,35
+FL,Multistate concordant,448
+FL,Multistate discordant,4
+FL,Not observed,440
+GA,Concordant,956
+GA,Discordant,130
+GA,Multistate concordant,126
+GA,Multistate discordant,18
+GA,Not observed,1457
+GERMANY,Not observed,3
+GU,Concordant,25
+GU,Discordant,3
+GU,Multistate concordant,1
+GU,Multistate discordant,8
+GU,Not observed,15
+HI,Concordant,19
+HI,Discordant,5
+HI,Multistate concordant,7
+HI,Multistate discordant,1
+HI,Not observed,212
+IA,Concordant,343
+IA,Discordant,25
+IA,Multistate concordant,123
+IA,Multistate discordant,14
+IA,Not observed,102
+ID,Concordant,167
+ID,Discordant,11
+ID,Multistate concordant,61
+ID,Multistate discordant,8
+ID,Not observed,120
+IL,Concordant,314
+IL,Discordant,203
+IL,Multistate concordant,84
+IL,Multistate discordant,22
+IL,Not observed,1866
+IN,Concordant,116
+IN,Discordant,114
+IN,Multistate concordant,32
+IN,Multistate discordant,13
+IN,Not observed,772
+KS,Concordant,83
+KS,Discordant,68
+KS,Multistate concordant,76
+KS,Multistate discordant,30
+KS,Not observed,188
+KY,Concordant,331
+KY,Discordant,41
+KY,Multistate concordant,101
+KY,Multistate discordant,3
+KY,Not observed,150
+LA,Concordant,13
+LA,Discordant,77
+LA,Multistate concordant,46
+LA,Multistate discordant,15
+LA,Not observed,103
+MA,Concordant,511
+MA,Discordant,425
+MA,Multistate concordant,235
+MA,Multistate discordant,53
+MA,Not observed,1121
+MD,Concordant,329
+MD,Discordant,284
+MD,Multistate concordant,207
+MD,Multistate discordant,54
+MD,Not observed,824
+ME,Concordant,5
+ME,Discordant,52
+ME,Multistate concordant,7
+ME,Multistate discordant,15
+ME,Not observed,409
+MI,Concordant,599
+MI,Discordant,77
+MI,Multistate concordant,39
+MI,Multistate discordant,15
+MI,Not observed,1489
+MN,Concordant,1297
+MN,Discordant,14
+MN,Multistate concordant,614
+MN,Multistate discordant,1
+MN,Not observed,67
+MO,Concordant,297
+MO,Discordant,18
+MO,Multistate concordant,204
+MO,Multistate discordant,14
+MO,Not observed,127
+MP,Not observed,9
+MS,Concordant,25
+MS,Discordant,2
+MS,Multistate concordant,68
+MS,Not observed,27
+MT,Concordant,111
+MT,Discordant,14
+MT,Multistate concordant,42
+MT,Multistate discordant,3
+MT,Not observed,89
+NC,Concordant,522
+NC,Discordant,246
+NC,Multistate concordant,134
+NC,Multistate discordant,68
+NC,Not observed,1547
+ND,Concordant,8
+ND,Discordant,9
+ND,Multistate concordant,108
+ND,Multistate discordant,8
+ND,Not observed,8
+NE,Concordant,96
+NE,Multistate concordant,153
+NE,Not observed,19
+NH,Concordant,61
+NH,Discordant,131
+NH,Multistate concordant,57
+NH,Multistate discordant,60
+NH,Not observed,351
+NJ,Concordant,95
+NJ,Discordant,255
+NJ,Multistate concordant,13
+NJ,Multistate discordant,46
+NJ,Not observed,1129
+NM,Discordant,333
+NM,Multistate discordant,156
+NM,Not observed,602
+NV,Concordant,196
+NV,Discordant,19
+NV,Multistate concordant,55
+NV,Multistate discordant,1
+NV,Not observed,85
+NY,Concordant,620
+NY,Discordant,353
+NY,Multistate concordant,92
+NY,Multistate discordant,71
+NY,Not observed,4676
+OH,Concordant,248
+OH,Discordant,283
+OH,Multistate concordant,60
+OH,Multistate discordant,55
+OH,Not observed,1566
+OK,Concordant,196
+OK,Discordant,5
+OK,Multistate concordant,36
+OK,Multistate discordant,2
+OK,Not observed,64
+OKINAWA PREFECTURE,Not observed,5
+OR,Discordant,735
+OR,Multistate discordant,99
+OR,Not observed,1062
+PA,Concordant,1415
+PA,Discordant,120
+PA,Multistate concordant,254
+PA,Multistate discordant,26
+PA,Not observed,864
+PR,Not observed,27
+RHINELAND-PFALZ,Not observed,1
+RI,Concordant,261
+RI,Multistate concordant,124
+RI,Not observed,11
+SC,Concordant,22
+SC,Discordant,49
+SC,Multistate concordant,1
+SC,Multistate discordant,23
+SC,Not observed,394
+SD,Concordant,27
+SD,Discordant,8
+SD,Multistate concordant,87
+SD,Multistate discordant,21
+SD,Not observed,32
+TN,Concordant,453
+TN,Discordant,49
+TN,Multistate concordant,643
+TN,Multistate discordant,18
+TN,Not observed,163
+TX,Concordant,1676
+TX,Discordant,63
+TX,Multistate concordant,182
+TX,Multistate discordant,15
+TX,Not observed,935
+UT,Concordant,413
+UT,Discordant,8
+UT,Multistate concordant,328
+UT,Multistate discordant,2
+UT,Not observed,96
+VA,Concordant,330
+VA,Discordant,97
+VA,Multistate concordant,69
+VA,Multistate discordant,12
+VA,Not observed,1105
+VI,Concordant,4
+VI,Discordant,3
+VI,Multistate concordant,6
+VI,Multistate discordant,3
+VI,Not observed,30
+VT,Concordant,143
+VT,Discordant,20
+VT,Multistate concordant,40
+VT,Multistate discordant,2
+VT,Not observed,98
+WA,Concordant,1988
+WA,Discordant,29
+WA,Multistate concordant,258
+WA,Multistate discordant,3
+WA,Not observed,305
+WI,Concordant,185
+WI,Discordant,206
+WI,Multistate concordant,122
+WI,Multistate discordant,96
+WI,Not observed,720
+WV,Concordant,5
+WV,Discordant,106
+WV,Multistate concordant,2
+WV,Multistate discordant,61
+WV,Not observed,186
+WY,Concordant,34
+WY,Discordant,18
+WY,Multistate concordant,16
+WY,Multistate discordant,7
+WY,Not observed,20
