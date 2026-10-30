@@ -83,6 +83,13 @@ artifacts/panel_geocode_queue.csv
 .both_done
 .geocode_done
 artifacts/panel_geocode_results.csv
+# Full historical-panel geocode queue/results (build_results_geographic_
+# persistence_canonical.R's input) -- same standing as the two entries
+# above: a large, regenerable, address-level working file, not a committed
+# artifact. The script's own small aggregate outputs
+# (geographic_persistence_canonical_*.csv) are what's tracked.
+artifacts/panel_geocode_queue_full_history.csv
+artifacts/panel_geocode_results_full_history.csv
 artifacts/geocode_rerun_results.csv
 artifacts/geocode_rerun_queue.csv
 artifacts/geocode_provenance_gap.csv
