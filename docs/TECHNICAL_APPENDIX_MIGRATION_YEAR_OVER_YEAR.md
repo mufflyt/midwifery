@@ -3,7 +3,16 @@
 **Repository**: `midwifery`
 **Primary script**: [`diagnose_migration_year_over_year.R`](../diagnose_migration_year_over_year.R)
 **Related**: [`docs/RESULTS_geographic_persistence.md`](RESULTS_geographic_persistence.md) (pooled annual/career persistence rates), [`docs/TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md`](TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md) (the format-change validation this appendix extends)
-**Investigation date**: 2026-10-19 to 2026-10-22
+**Investigation date**: 2026-10-19 to 2026-10-22; refreshed 2026-10-30 against
+the current 16,775-member cohort (previously 16,892; see
+[`docs/RESULTS_geographic_persistence.md`](RESULTS_geographic_persistence.md)
+for the re-pin this followed). The conclusion is unchanged — same spikes,
+same 92% survival rate under confirmation for both the format-change and
+ordinary transitions — which is itself evidence the finding isn't an
+artifact of the specific cohort vintage. Also added 2026-10-30: three new
+hypothesis tests (§4b) — destination/origin clustering, byte-level encoding
+corruption, and move-distance distribution — all rejected, extending rather
+than resolving the open question in §5.
 **Status**: the measurement is settled; the mechanism behind two spikes is not.
 
 ---
@@ -11,7 +20,7 @@
 ## 1. What this measures
 
 `RESULTS_geographic_persistence.md` reports one pooled year-to-year
-persistence rate across the whole 2007-2026 NPPES panel (97.9% same state).
+persistence rate across the whole 2007-2026 NPPES panel (98.0% same state).
 That number hides year-to-year variation. This appendix disaggregates it: for
 each consecutive pair of annual snapshots, among FROZEN-cohort midwives
 observed in both years, what share changed practice state, county, or ZIP5.
@@ -20,27 +29,27 @@ observed in both years, what share changed practice state, county, or ZIP5.
 
 | year→year | n pairs | moved state | moved county | moved ZIP |
 |---|---:|---:|---:|---:|
-| 2007→2008 | 6,046 | 0.93% | 1.68% | 2.94% |
-| 2008→2009 | 6,306 | 1.47% | 3.02% | 4.63% |
-| 2009→2010 | 6,834 | 1.01% | 1.83% | 2.60% |
-| 2010→2011 | 7,096 | 2.35% | 4.20% | 6.55% |
-| 2011→2012 | 7,628 | 1.99% | 4.09% | 6.54% |
-| 2012→2013 | 8,036 | 2.22% | 4.56% | 6.79% |
-| 2013→2014 | 8,500 | 2.07% | 4.34% | 6.39% |
-| 2014→2015 | 9,052 | 2.57% | 5.10% | 7.28% |
-| 2015→2016 | 9,717 | 2.11% | 4.10% | 5.88% |
-| 2016→2017 | 10,287 | 2.11% | 3.98% | 5.85% |
-| **2017→2018** | 10,865 | **3.03%** | 5.56% | 7.42% |
-| 2018→2019 | 11,897 | 2.23% | 3.91% | 5.45% |
-| 2019→2020 | 12,547 | 1.44% | 2.63% | 3.84% |
-| 2020→2021 | 13,029 | 1.75% | 3.11% | 4.21% |
-| 2021→2022 | 13,451 | 1.64% | 3.13% | 4.14% |
-| 2022→2023 | 13,966 | 2.32% | 4.65% | 6.27% |
-| **2023→2024** | 14,602 | **3.62%** | 6.98% | 9.75% |
-| 2024→2025 | 15,812 | 1.16% | 2.32% | 3.20% |
-| 2025→2026 | 16,066 | 1.56% | 3.04% | 4.23% |
+| 2007→2008 | 5,946 | 0.91% | 1.66% | 2.94% |
+| 2008→2009 | 6,202 | 1.48% | 3.05% | 4.66% |
+| 2009→2010 | 6,725 | 1.03% | 1.86% | 2.65% |
+| 2010→2011 | 6,982 | 2.36% | 4.22% | 6.62% |
+| 2011→2012 | 7,505 | 2.03% | 4.14% | 6.61% |
+| 2012→2013 | 7,909 | 2.25% | 4.61% | 6.88% |
+| 2013→2014 | 8,368 | 2.08% | 4.34% | 6.42% |
+| 2014→2015 | 8,916 | 2.60% | 5.17% | 7.34% |
+| 2015→2016 | 9,567 | 2.14% | 4.16% | 5.96% |
+| 2016→2017 | 10,128 | 2.11% | 4.02% | 5.90% |
+| **2017→2018** | 10,700 | **3.06%** | 5.62% | 7.50% |
+| 2018→2019 | 11,717 | 2.26% | 3.96% | 5.50% |
+| 2019→2020 | 12,361 | 1.46% | 2.66% | 3.88% |
+| 2020→2021 | 12,841 | 1.77% | 3.14% | 4.24% |
+| 2021→2022 | 13,255 | 1.64% | 3.15% | 4.17% |
+| 2022→2023 | 13,767 | 2.33% | 4.68% | 6.30% |
+| **2023→2024** | 14,390 | **3.68%** | 7.05% | 9.81% |
+| 2024→2025 | 15,593 | 1.16% | 2.34% | 3.21% |
+| 2025→2026 | 15,840 | 1.58% | 3.07% | 4.26% |
 
-Two transitions stand out: **2017→2018 (3.03%)** and **2023→2024 (3.62%,
+Two transitions stand out: **2017→2018 (3.06%)** and **2023→2024 (3.68%,
 the highest in the series)**. No other transition exceeds 2.6%.
 
 ## 3. The correlation with known format changes
@@ -49,8 +58,8 @@ Both spike years coincide with a documented NPPES file-format transition:
 
 | transition | % moved state | known format event |
 |---|---:|---|
-| 2017→2018 | 3.03% | NPPES encoding switch, Latin-1 → UTF-8 |
-| 2023→2024 | 3.62% | December 2024 NPPES "reshaped" file-structure change |
+| 2017→2018 | 3.06% | NPPES encoding switch, Latin-1 → UTF-8 |
+| 2023→2024 | 3.68% | December 2024 NPPES "reshaped" file-structure change |
 
 No other year in the series lands near either event. This is suggestive —
 exactly the pattern you'd expect if a format change corrupted or re-derived
@@ -105,10 +114,13 @@ December 2024 snapshot, but only for row count, `tax_class`, and
 `last_name` — never the address fields this spike lives in. Extended here:
 `practice_address`, `practice_state`, and `practice_zip` were extracted from
 the real December 2024 snapshot both ways (the classic `npidata_pfile` and
-the reshaped `byvar/` export) for all 17,028 cohort NPIs. **Zero
-mismatches** on every field, for every NPI with a non-null value in either
-path; the null set agreed exactly (969 NPIs, identical on both sides). **This
-hypothesis is rejected.**
+the reshaped `byvar/` export) for all 17,028 cohort NPIs (the vintage at the
+time this test ran; not re-run at the current 16,775 vintage, since it needs
+the raw December 2024 NPPES source files on the external volume this test
+originally used, extracted by hand, not re-derivable from this repo alone).
+**Zero mismatches** on every field, for every NPI with a non-null value in
+either path; the null set agreed exactly (969 NPIs, identical on both
+sides). **This hypothesis is rejected.**
 
 **Hypothesis: the spike is an artifact of the panel's 2023 data-completeness
 gap** (see `TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md`, the undocumented
@@ -119,6 +131,69 @@ requires a non-null value in both years), so they cannot manufacture a
 spurious move. Re-running the full series after that fix reproduced
 identical 2022→2023 and 2023→2024 move rates (2.32%, 3.62%) to before it.
 **This hypothesis is rejected.**
+
+## 4b. Three more hypotheses tested 2026-10-30, after the 16,775 re-pin
+
+All three are new tests, not re-runs of the four above, aimed specifically
+at mechanisms the original investigation hadn't checked. All three come back
+negative — further evidence against an artifact, not new evidence for one.
+
+**Hypothesis: a fallback/default value gets inserted when parsing fails,
+landing many providers on the identical address.** If a parser error
+produced a placeholder address, many unrelated movers would land on exactly
+the same new (or old) address. Checked directly: among the 327 state-movers
+in 2017→2018 and 530 in 2023→2024, the single most common destination is
+shared by at most 6-8 providers (AURORA CO 80045 — UCHealth's main campus;
+NASHVILLE TN 37232 — Vanderbilt), and the most common origin by at most 3-8
+(ATLANTA GA 30322 — Emory). These are large real hospital/academic medical
+centers, exactly what you'd expect from genuine employer-driven clustering
+among a workforce concentrated in health systems, not a parser artifact —
+a bug would not systematically prefer real major employers' street
+addresses. **This hypothesis is rejected.**
+
+**Hypothesis: the Latin-1→UTF-8 switch (2017→2018) corrupts bytes into
+mojibake that happens to read as a different, valid-looking US address.**
+Not previously tested directly — §4's parser-agreement test only checked
+the 2024 reshape, not the 2017/2018 encoding transition. Checked directly:
+scanned every mover's old and new `practice_address` for any byte outside
+printable ASCII, in both spike transitions and four control transitions
+(2016→2017, 2018→2019, 2022→2023, 2024→2025). **Zero non-ASCII characters
+in any address field, spike or control.** US practice addresses are
+overwhelmingly ASCII to begin with, so this doesn't rule out encoding
+trouble elsewhere in the file, but it directly rules out mojibake as the
+mechanism behind these specific state-level address changes. **This
+hypothesis is rejected.**
+
+**Hypothesis: spike-year moves are geographically different from ordinary
+moves** — either suspiciously short (a formatting glitch within one metro
+area misread as a state change) or suspiciously scattered (random
+corruption rather than a real relocation). Checked directly: great-circle
+distance between each mover's old and new state's population-weighted
+centroid.
+
+| transition | n movers | median distance | % under 300 mi |
+|---|---:|---:|---:|
+| control 2016→2017 | 214 | 618 mi | 25.6% |
+| **spike 2017→2018** | 327 | 584 mi | 29.1% |
+| control 2018→2019 | 265 | 596 mi | 30.5% |
+| control 2022→2023 | 321 | 721 mi | 32.6% |
+| **spike 2023→2024** | 530 | 622 mi | 30.7% |
+| control 2024→2025 | 181 | 493 mi | 34.5% |
+
+Both spike transitions sit squarely inside the control range on both
+measures — no shift toward short glitch-sized moves, none toward
+scattered/random ones. The distance *distribution* of spike-year moves is
+statistically indistinguishable from ordinary-year moves; there are simply
+more of them. **This hypothesis is rejected.**
+
+These three results extend, rather than replace, §4's "92% survival rate,
+identical in spike and ordinary years" finding: three independent,
+unrelated angles (destination clustering, byte-level corruption, move
+distance) all land on the same conclusion — spike-year address changes look
+exactly like ordinary-year address changes, just more frequent. Nothing
+found here identifies the mechanism; it continues to point at a real,
+deliberate value change (CMS/NBER re-deriving addresses as part of the
+format migration) rather than at a flaw in how this project reads the file.
 
 ## 5. What remains open
 

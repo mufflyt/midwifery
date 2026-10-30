@@ -614,36 +614,39 @@ mw_build_catalog <- function(root = ".") {
   }
 
   # --- Persistence -----------------------------------------------------------
-  # PINNED, and flagged as such. These come from the 2007-2025 provider panel
-  # (midwife_panel.csv, ~493 MB, gitignored and person-level) and from the
-  # geocoding cascade, neither of which can be re-derived inside a render. They
-  # are entered once, here, with the artifact that produced them named -- not
-  # scattered through the prose, which is the failure this catalog exists to
-  # prevent. Regenerating them is R/05-stage-progression.R plus the persistence
-  # analysis in docs/RESULTS_geographic_persistence.md.
+  # PINNED, and flagged as such. These come from the 2007-2026 provider panel
+  # (midwife_panel.csv, ~455 MB, gitignored and person-level) via the
+  # ZCTA-crosswalk county join, neither of which can be re-derived inside a
+  # render. They are entered once, here, with the artifact that produced them
+  # named -- not scattered through the prose, which is the failure this
+  # catalog exists to prevent. Regenerating them is
+  # build_results_geographic_persistence.R (the rebuild script this pass
+  # added -- the previous version of this block had none to name).
   #
   # cohort_n_at_panel_build IS NOT "the analytic cohort". It is the cohort as it
   # stood when the provider panel was built, and it is the correct denominator
   # for `observed`, `provider_years` and `median_years`, which were all computed
   # against exactly those members. The live cohort is linkage.cohort_n, derived
-  # below from the linkage table. The two disagreed by 6 from the 2026-08-10
-  # re-freeze until 2026-08-31 while this key was called `cohort_n` and read as
-  # the live figure by the cohort flow figure. Do NOT resolve that by editing
-  # the number here: bumping it to the live value would leave `observed` at
-  # 16,891 of a cohort those 16,891 were never counted against. It is corrected
-  # by rebuilding the panel, which is repin_frozen_cohort.R plus a panel run.
+  # below from the linkage table. REBUILT 2026-10-30 against the 16,775-member
+  # re-pin (reconcile_ab_20261022T134500_remove_fuzzy_surname_matching),
+  # closing a gap that had stood since the 2026-09-11 17,028 re-pin was never
+  # followed by a panel run (see docs/RESULTS_geographic_persistence.md's own
+  # rebuild note). `observed` now equals `cohort_n_at_panel_build` exactly --
+  # every cohort member's NPI appears in the panel at least once, closing the
+  # 3-person gap (never-geocoded cohort members) that blocked the re-pin
+  # itself; see build_midwives_geography_guarded.R's row-count check.
   cat_$panel <- list(
-    snapshots = 19L, year_min = 2007L, year_max = 2025L,
-    cohort_n_at_panel_build = 16892L, observed = 16891L, provider_years = 200873L,
-    median_years = 12L, pairs_total = 183949L,
-    pairs_used = 180436L, providers_used = 15605L, median_span = 13L,
-    .source = "midwife_panel.csv x artifacts/amcb_npi_linkage_FROZEN.csv"
+    snapshots = 20L, year_min = 2007L, year_max = 2026L,
+    cohort_n_at_panel_build = 16775L, observed = 16775L, provider_years = 215535L,
+    median_years = 13L, pairs_total = 198760L,
+    pairs_used = 195080L, providers_used = 16328L, median_span = 13L,
+    .source = "midwife_panel.csv x artifacts/amcb_npi_linkage_FROZEN.csv (build_results_geographic_persistence.R, 2026-10-30)"
   )
 
   cat_$persist <- list(
-    annual_county = 95.9, annual_zip = 94.2, annual_state = 97.9,
-    career_county = 67.5, career_zip = 55.3, career_state = 82.1,
-    .source = "docs/RESULTS_geographic_persistence.md"
+    annual_county = 96.1, annual_zip = 94.5, annual_state = 98.0,
+    career_county = 68.1, career_zip = 56.3, career_state = 82.5,
+    .source = "docs/RESULTS_geographic_persistence.md (rebuilt 2026-10-30)"
   )
   ci <- mw_wilson(round(cat_$panel$pairs_used * cat_$persist$annual_county / 100),
                   cat_$panel$pairs_used)
@@ -651,12 +654,13 @@ mw_build_catalog <- function(root = ".") {
   cat_$persist$annual_county_hi <- ci[2]
 
   # --- Rurality gradient, computed from counts -------------------------------
+  # REBUILT 2026-10-30, same vintage as cat_$panel/cat_$persist above.
   strata <- tibble::tibble(
     origin = c("Metropolitan (RUCC 1-3)",
                "Nonmetropolitan, adjacent (RUCC 4-6)",
                "Nonmetropolitan, remote (RUCC 7-9)"),
-    n   = c(13646, 1160, 520),
-    pct = c(68.1, 63.3, 61.9)
+    n   = c(14021, 1190, 544),
+    pct = c(68.6, 64.2, 62.8)
   ) %>% dplyr::mutate(x = round(.data$n * .data$pct / 100))
 
   cis <- t(mapply(mw_wilson, strata$x, strata$n))
@@ -667,13 +671,14 @@ mw_build_catalog <- function(root = ".") {
   cat_$rural <- list(
     table = strata, trend_z = tr$z, trend_p = tr$p,
     diff = df[1], diff_lo = df[2], diff_hi = df[3],
-    annual_metro_move = 4.0, annual_remote_move = 5.0,
+    annual_metro_move = 3.8, annual_remote_move = 4.7,
     career_remote_move = 100 - strata$pct[3],
-    .source = "docs/RESULTS_geographic_persistence.md, origin-stratified"
+    .source = "docs/RESULTS_geographic_persistence.md, origin-stratified (rebuilt 2026-10-30)"
   )
 
   # --- Movers ----------------------------------------------------------------
-  mv <- matrix(c(3868, 301, 136, 339, 48, 38, 125, 36, 37), nrow = 3, byrow = TRUE,
+  # REBUILT 2026-10-30, same vintage as above.
+  mv <- matrix(c(3882, 302, 137, 335, 49, 38, 124, 42, 35), nrow = 3, byrow = TRUE,
                dimnames = list(c("Metropolitan", "Nonmetro adjacent", "Nonmetro remote"),
                                c("To metropolitan", "To nonmetro adjacent", "To nonmetro remote")))
   cat_$movers <- list(
@@ -686,12 +691,29 @@ mw_build_catalog <- function(root = ".") {
   )
 
   # --- Geographic assignment and sensitivity ---------------------------------
+  # REBUILT 2026-10-30, same vintage as cat_$panel/persist/rural/movers above.
+  # The "3-tier cascade + TIGER PIP" canonical-method cross-validation: all
+  # 15,258 distinct historical practice addresses for the current 16,775
+  # cohort, geocoded live via the real geocode_queue_cascade.R (not
+  # reimplemented), fanned out across the full panel by
+  # build_results_geographic_persistence_canonical.R. Source:
+  # docs/RESULTS_geographic_persistence.md's "Three methods" section and
+  # artifacts/geographic_persistence_method_comparison.csv.
+  #
+  # sens_* were 95.9/67.3/67.9/63.2/61.0 at the 16,892 vintage; the two
+  # methods now agree even more closely at 16,775 (annual matches to 2
+  # decimal places). census_only_* are NOT rebuilt -- they isolate the
+  # ArcGIS tier's specific value via a Census-only ablation this pass
+  # didn't re-run (the canonical cascade above always uses the full
+  # Census->ArcGIS->centroid chain together); they still describe the
+  # 16,892 vintage and are kept only to illustrate why the ArcGIS tier
+  # matters, not as a current number.
   cat_$geo <- list(
     zctas = 33791L, span_multi_pct = 30.1, arbitrary_zctas = 1629L,
-    py_matched_pct = 98.2, cascade_pct = 98.1, cascade_addresses = 12722L,
-    pip_pct = 100.0, pip_points = 66302L,
-    sens_annual = 95.9, sens_career = 67.3,
-    sens_metro = 67.9, sens_adj = 63.2, sens_remote = 61.0,
+    py_matched_pct = 98.2, cascade_pct = 98.1, cascade_addresses = 15258L,
+    pip_pct = 100.0, pip_points = 14972L,
+    sens_annual = 96.10, sens_career = 68.04,
+    sens_metro = 68.59, sens_adj = 63.74, sens_remote = 62.55,
     census_only_metro = 69.4, census_only_adj = 65.6, census_only_remote = 66.2,
     census_only_loss_pct = 22.1
   )

@@ -1,10 +1,10 @@
 {
   "artifact": "linkage_selection_bounds.csv",
-  "written_utc": "2026-09-11 21:58:03.552 UTC",
+  "written_utc": "2026-10-30 00:23:55 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
-      "sha256": "1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2"
+      "sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716"
     },
     {
       "path": "artifacts/frozen_stage2/midwives_with_nppes.csv",
@@ -12,7 +12,7 @@
     },
     {
       "path": "artifacts/frozen_cohort/analytic_cohort.csv",
-      "sha256": "2bd7ee7ebf646ceedf80df367dff33b3a68830081b73cdbca75dc514b65a5520"
+      "sha256": "d66d9287a0fd657cd65ffaaaaeb04ab5a30d0aca7e731fd91428caafa9ec6dc1"
     },
     {
       "path": "data/zcta_county_2020.txt",
@@ -23,7 +23,7 @@
       "sha256": "72e6acb856728843e4a8ec54cdac2642841a931d523cc07ed8942b3f1988ca5f"
     }
   ],
-  "code_sha256": "160ff8f96be2ee105fcc4350fb92b8bda515756b5045f135028c4198f5b16f79",
+  "code_sha256": "59ab6cf052ce00c0857dc2448bc5a8b1a1466403261444f81c908b25cd4398eb",
   "code": [
     {
       "path": "analyze_linkage_selection_bias.R",
@@ -51,7 +51,7 @@
     },
     {
       "path": "R/lib/table1_bands.R",
-      "sha256": "71ec6199151cd15ffc4454fe5973375f90324204d7015139dcea047ab65a9c62"
+      "sha256": "312b7504d0fed8ae986eadae6c55b0efd6f1099a613e4589f772387a2db115e1"
     },
     {
       "path": "R/lib/zip_county_crosswalk.R",

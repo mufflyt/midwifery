@@ -367,9 +367,26 @@ REBUILD_ORDER <- list(
        # (see T3 above -- a comment-only mention is not a discovered
        # consumer), so the scanner never flagged it as missing in the first
        # place.
+       #
+       # build_results_geographic_persistence.R (added 2026-10-29/30, the
+       # 16,775 re-pin) reads the freeze plus midwife_panel.csv -- same
+       # family as diagnose_migration_year_over_year.R just above -- and
+       # writes 4 tracked geographic_persistence_*.csv summary artifacts
+       # that nothing else in this registry reads back in: a leaf.
+       #
+       # build_results_geographic_persistence_canonical.R (added 2026-10-30,
+       # same session) reads the same freeze plus midwife_panel.csv, for the
+       # canonical 3-tier-cascade county-resolution method rather than the
+       # ZCTA crosswalk -- same leaf shape, its own 5 tracked output
+       # artifacts (4 summaries plus the method-comparison table), order
+       # free relative to its ZCTA-crosswalk sibling (reads that sibling's
+       # OUTPUT artifact for the comparison, not the frozen linkage a second
+       # time in a way this registry would need to order).
        scripts = c("build_table1_midwives.R", "export_amcb_npi_geography.R",
                    "validate_training_institution_against_acme.R",
                    "provenance_manifest.R", "diagnose_migration_year_over_year.R",
+                   "build_results_geographic_persistence.R",
+                   "build_results_geographic_persistence_canonical.R",
                    "analyze_medicaid_enrollment_concordance.R",
                    "analyze_medicaid_2023_2024_transition_support.R",
                    "diagnose_medicaid_classification_disagreement.R",
