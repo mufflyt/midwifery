@@ -81,12 +81,20 @@ cbase <- read_csv(CBASE, show_col_types = FALSE)
 rucc_lookup <- build_rucc_lookup(cbase$GEOID, cbase$rucc_2023)
 
 py <- panel %>%
+  # many-to-one: geocoded has exactly one row per distinct address (it was
+  # built from a distinct(practice_address, ...) queue and deduplicated
+  # again by geocode_queue_cascade.R itself; verified directly -- 15,258
+  # rows, 15,258 distinct address combos, 0 duplicates), many provider-years
+  # share an address.
   left_join(geocoded, by = c("practice_address" = "geocode_address_1",
                              "practice_city" = "geocode_city",
                              "practice_state" = "geocode_state",
-                             "practice_zip" = "geocode_zip")) %>%
+                             "practice_zip" = "geocode_zip"),
+            relationship = "many-to-one") %>%
   rename(county_fips = county_geoid_5char) %>%
-  left_join(rucc_lookup, by = c("county_fips" = "county")) %>%
+  # many-to-one: see build_results_geographic_persistence.R's identical join
+  # for why rucc_lookup is one row per county.
+  left_join(rucc_lookup, by = c("county_fips" = "county"), relationship = "many-to-one") %>%
   mutate(rucc_cat = band_rurality(rucc, RURALITY_LABELS_SHORT))
 
 cat(sprintf("provider-years: %s; county resolved: %s (%.1f%%)\n",

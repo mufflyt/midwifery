@@ -84,7 +84,10 @@ compute_geographic_persistence_stats <- function(py) {
   )
 
   origin_annual <- pairs %>%
-    dplyr::left_join(career_pairs %>% dplyr::select(npi, first_rucc), by = "npi") %>%
+    # many-to-one: career_pairs is one row per npi (grouped + summarised by
+    # npi), many year-pairs share an npi.
+    dplyr::left_join(career_pairs %>% dplyr::select(npi, first_rucc), by = "npi",
+                     relationship = "many-to-one") %>%
     dplyr::filter(!is.na(first_rucc)) %>%
     dplyr::group_by(origin = first_rucc) %>%
     dplyr::summarise(providers = dplyr::n_distinct(npi),
@@ -100,7 +103,10 @@ compute_geographic_persistence_stats <- function(py) {
 
   rurality <- origin_annual %>%
     dplyr::select(origin, providers, annual_same_county) %>%
-    dplyr::left_join(origin_career %>% dplyr::select(origin, career_same_county), by = "origin") %>%
+    # one-to-one: both sides are grouped + summarised by origin (at most 3
+    # RUCC strata), so each carries exactly one row per origin value.
+    dplyr::left_join(origin_career %>% dplyr::select(origin, career_same_county), by = "origin",
+                     relationship = "one-to-one") %>%
     dplyr::mutate(origin = factor(origin, levels = RURALITY_LABELS_SHORT)) %>%
     dplyr::arrange(origin)
 
@@ -113,7 +119,12 @@ compute_geographic_persistence_stats <- function(py) {
 
   movers <- career_pairs %>%
     dplyr::filter(county_resolved, !same_county, !is.na(first_rucc)) %>%
-    dplyr::left_join(dest_rucc, by = c("last_county" = "county_fips")) %>%
+    # many-to-one: dest_rucc is one row per distinct county_fips (rucc_cat
+    # is a deterministic function of county_fips, so distinct() on the pair
+    # cannot produce more than one row per county), many movers share a
+    # destination county.
+    dplyr::left_join(dest_rucc, by = c("last_county" = "county_fips"),
+                     relationship = "many-to-one") %>%
     dplyr::rename(destination = rucc_cat) %>%
     dplyr::filter(!is.na(destination)) %>%
     dplyr::count(origin = first_rucc, destination) %>%

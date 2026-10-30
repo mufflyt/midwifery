@@ -83,8 +83,12 @@ rucc_lookup <- build_rucc_lookup(cbase$GEOID, cbase$rucc_2023)
 
 py <- panel %>%
   mutate(practice_zip = substr(trimws(practice_zip), 1, 5)) %>%
-  left_join(zcta, by = c("practice_zip" = "zcta5")) %>%
-  left_join(rucc_lookup, by = c("county_fips" = "county")) %>%
+  # many-to-one: zip_county_dominant() guarantees exactly one row per zcta5
+  # (assert_no_na_key() on its output), many provider-years share a ZIP.
+  left_join(zcta, by = c("practice_zip" = "zcta5"), relationship = "many-to-one") %>%
+  # many-to-one: build_rucc_lookup() guarantees exactly one row per county
+  # FIPS (stops on a conflicting duplicate), many provider-years share a county.
+  left_join(rucc_lookup, by = c("county_fips" = "county"), relationship = "many-to-one") %>%
   mutate(rucc_cat = band_rurality(rucc, RURALITY_LABELS_SHORT))
 
 cat(sprintf("provider-years: %s; county resolved: %s (%.1f%%)\n",
