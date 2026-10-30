@@ -102,7 +102,19 @@ LAW_COHORTS <- c(
   # said before this fix, not a stale vintage -- and 12170 is the corrected
   # count the same artifact now declares, verified independently against
   # canonical_active_primary() on the current amcb_npi_linkage_FROZEN.csv.
-  "12170" = "ACTIVE, primary-linked (Table 1), table1_provenance.csv 2026-10-26 NPI-presence fix"
+  "12170" = "ACTIVE, primary-linked (Table 1), table1_provenance.csv 2026-10-26 NPI-presence fix",
+  # Added 2026-10-29, moving the geographic persistence study forward: the
+  # linkage-eligible set (is_cohort_member()) against
+  # reconcile_ab_20261022T134500_remove_fuzzy_surname_matching, once
+  # artifacts/frozen_cohort/ was re-pinned (repin_frozen_cohort.R,
+  # REPIN_APPLY=1) to that freeze -- same analytic-cohort definition as
+  # 16892/17028 above, which stay registered as the vintages before this
+  # repin, not stale. Closing 3 cohort members' missing geography (never
+  # previously geocoded; see midwives_panel_geocoded_enhanced.csv) was a
+  # precondition: build_midwives_geography_guarded.R refuses to pin a source
+  # whose row count disagrees with the frozen linkage's own cohort_member
+  # count, and the gap was exactly 3 before they were geocoded.
+  "16775" = "linkage-eligible set (frozen_cohort/analytic_cohort.csv), 2026-10-29 repin vintage, reconcile_ab_20261022T134500_remove_fuzzy_surname_matching"
 )
 
 # KNOWN, AWAITING A DECISION -- not forgiven.

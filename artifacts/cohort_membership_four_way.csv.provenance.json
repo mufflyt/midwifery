@@ -1,6 +1,6 @@
 {
   "artifact": "cohort_membership_four_way.csv",
-  "written_utc": "2026-09-11 21:57:50.212 UTC",
+  "written_utc": "2026-10-30 00:22:59 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",
@@ -12,22 +12,22 @@
     },
     {
       "path": "artifacts/frozen_cohort/analytic_cohort.csv",
-      "sha256": "2bd7ee7ebf646ceedf80df367dff33b3a68830081b73cdbca75dc514b65a5520"
+      "sha256": "d66d9287a0fd657cd65ffaaaaeb04ab5a30d0aca7e731fd91428caafa9ec6dc1"
     },
     {
       "path": "artifacts/frozen_cohort/midwives_geography_guarded.csv",
-      "sha256": "4bf50e11aa5d126330cc0d81d2e6a37121bd53e01eafd24232c2cdeb8533918f"
+      "sha256": "f806350961ced6e0ba0bd4679c2bfa0ea811c94c8594c03fab52c1435c5e8c4f"
     },
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
-      "sha256": "1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2"
+      "sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716"
     },
     {
       "path": "artifacts/frozen_stage2/midwives_with_nppes.csv",
       "sha256": "5336b5f51917d8392e854f593233abde8732f866b9a9f8d743a460506f712adf"
     }
   ],
-  "code_sha256": "7e1c0c295e52dd403a278e08044c809bc8a0a916ecdcf368aff20400b67e3e0a",
+  "code_sha256": "9ca041860cc58143b6dda24bc20efb76129b791c15ea0a03aec30b5547a6ec67",
   "code": [
     {
       "path": "R/07-cohort-composition.R",
@@ -51,7 +51,7 @@
     },
     {
       "path": "R/lib/table1_bands.R",
-      "sha256": "71ec6199151cd15ffc4454fe5973375f90324204d7015139dcea047ab65a9c62"
+      "sha256": "312b7504d0fed8ae986eadae6c55b0efd6f1099a613e4589f772387a2db115e1"
     },
     {
       "path": "R/lib/zip_county_crosswalk.R",
