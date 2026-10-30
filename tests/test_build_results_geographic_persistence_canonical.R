@@ -32,7 +32,6 @@ chk <- function(cond, m) {
   if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
   else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
 }
-near <- function(x, y, tol = 0.01) !is.na(x) && !is.na(y) && abs(x - y) < tol
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
 tmp <- tempfile("geo_persist_canonical_test_")
@@ -120,7 +119,7 @@ if (file.exists(out_rates)) {
   annual <- r[r$horizon == "year_to_year", ]
   # Resolved pairs: 2001's two (same county, fans out correctly) + 2002's one
   # (different county) = 3 resolved, 2 same -> 66.7%
-  chk(near(annual$same_county_pct, 200 / 3),
+  chk(abs(annual$same_county_pct - 200 / 3) < 0.01,
       sprintf("annual same-county 66.7%% of 3 resolved pairs (got %s) -- confirms the fan-out: 2001's repeated address resolves to the SAME county every year", annual$same_county_pct))
 }
 
@@ -137,7 +136,7 @@ if (file.exists(out_comparison)) {
   chk(setequal(cmp$method, c("zcta_crosswalk", "canonical_cascade")),
       sprintf("comparison carries both methods (got %s)", paste(unique(cmp$method), collapse = ",")))
   zc <- cmp[cmp$method == "zcta_crosswalk" & cmp$horizon == "year_to_year", ]
-  chk(nrow(zc) == 1L && near(zc$same_county_pct[1], 55.5),
+  chk(nrow(zc) == 1L && abs(zc$same_county_pct[1] - 55.5) < 0.01,
       "the ZCTA row in the comparison carries the fixture's own 55.5%, not the canonical run's number")
 }
 
