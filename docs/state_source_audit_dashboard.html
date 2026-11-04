@@ -1,0 +1,1072 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Static snapshot, committed 2026-11-04, of the interactive dashboard published at
+     https://claude.ai/code/artifact/f15dbee6-9266-4ccc-8316-3011af560b79 .
+     Built by build_state_source_audit.R / build_state_source_pairwise_audit.R /
+     build_cross_source_comparison.R. See docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md
+     for the full write-up this page visualizes. The Sankey diagram in Section 5 needs
+     the mermaid.js include below to render when this file is opened directly; it renders
+     natively, without this include, inside the Claude Artifacts viewer. -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+<title>State Source Audit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF2F0; --surface:#FFFFFF; --surface-sunken:#E3EAE6;
+  --ink:#142420; --ink-soft:#4F615B; --ink-faint:#8A9790;
+  --border:#CDD8D2;
+  --accent:#1E6E63; --accent-ink:#0F4B43; --accent-soft:#D3E9E4;
+  --good:#3C8B5C; --good-soft:#D3E9DA;
+  --warn:#B9792E; --warn-soft:#F2DEC3;
+  --bad:#AE4A40; --bad-soft:#F1D5D0;
+  --neutral:#8B8F86; --neutral-soft:#E4E4DC;
+  --track:#D7E1DC;
+  --mono:'IBM Plex Mono',ui-monospace,'SF Mono',monospace;
+  --body:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+  --display:'Spectral',Georgia,serif;
+  --shadow: 0 1px 2px rgba(15,40,35,0.06), 0 6px 20px rgba(15,40,35,0.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1613; --surface:#152019; --surface-sunken:#1B2721;
+    --ink:#E6EEE9; --ink-soft:#A7B7AF; --ink-faint:#6B7A72;
+    --border:#28372F;
+    --accent:#56BBA9; --accent-ink:#8FDAC9; --accent-soft:#1E3732;
+    --good:#6FC08C; --good-soft:#1F3627;
+    --warn:#E0A75C; --warn-soft:#3A2E1A;
+    --bad:#E08A7D; --bad-soft:#3A241F;
+    --neutral:#919C93; --neutral-soft:#242F28;
+    --track:#223029;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 20px rgba(0,0,0,0.3);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1613; --surface:#152019; --surface-sunken:#1B2721;
+  --ink:#E6EEE9; --ink-soft:#A7B7AF; --ink-faint:#6B7A72;
+  --border:#28372F;
+  --accent:#56BBA9; --accent-ink:#8FDAC9; --accent-soft:#1E3732;
+  --good:#6FC08C; --good-soft:#1F3627;
+  --warn:#E0A75C; --warn-soft:#3A2E1A;
+  --bad:#E08A7D; --bad-soft:#3A241F;
+  --neutral:#919C93; --neutral-soft:#242F28;
+  --track:#223029;
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 20px rgba(0,0,0,0.3);
+}
+
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--body); font-size:16px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+@media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
+
+a{color:var(--accent-ink);}
+.wrap{max-width:1040px; margin:0 auto; padding:0 28px 100px;}
+
+/* ---------- masthead ---------- */
+.masthead{padding:64px 0 40px; border-bottom:1px solid var(--border); margin-bottom:44px;}
+.eyebrow{
+  font-family:var(--mono); font-size:12.5px; letter-spacing:0.08em; text-transform:uppercase;
+  color:var(--accent-ink); margin:0 0 14px;
+}
+h1{
+  font-family:var(--display); font-weight:600; font-size:clamp(2.3rem,5vw,3.4rem);
+  line-height:1.05; margin:0 0 18px; text-wrap:balance; color:var(--ink);
+}
+.dek{
+  font-size:1.14rem; color:var(--ink-soft); max-width:640px; margin:0; text-wrap:pretty;
+}
+.dek em{font-style:italic; color:var(--ink);}
+
+/* ---------- stat strip ---------- */
+.stats{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:1px;
+  background:var(--border); border:1px solid var(--border); border-radius:10px;
+  overflow:hidden; margin-bottom:56px; box-shadow:var(--shadow);
+}
+.stat{background:var(--surface); padding:22px 20px;}
+.stat .figure{
+  font-family:var(--mono); font-weight:500; font-size:1.5rem; color:var(--accent-ink);
+  font-variant-numeric:tabular-nums; letter-spacing:-0.01em; white-space:nowrap;
+}
+.stat .label{font-size:0.86rem; color:var(--ink-soft); margin-top:6px; line-height:1.4;}
+@media (max-width:760px){ .stats{grid-template-columns:repeat(2,1fr);} }
+
+/* ---------- sections ---------- */
+section{margin-bottom:64px; scroll-margin-top:62px;}
+
+/* ---------- sticky section nav ---------- */
+.site-nav{position:sticky; top:0; z-index:50; background:var(--surface); border-bottom:1px solid var(--border); backdrop-filter:blur(8px);}
+.site-nav-inner{max-width:1040px; margin:0 auto; padding:10px 28px; display:flex; gap:4px; overflow-x:auto; -webkit-overflow-scrolling:touch;}
+.site-nav a{
+  flex-shrink:0; font-family:var(--mono); font-size:0.72rem; letter-spacing:0.02em;
+  color:var(--ink-soft); text-decoration:none; padding:6px 11px; border-radius:6px; white-space:nowrap;
+}
+.site-nav a:hover{background:var(--accent-soft); color:var(--accent-ink);}
+.site-nav a:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+.site-nav a .num{color:var(--ink-faint); margin-right:4px;}
+.site-nav a:hover .num{color:var(--accent-ink);}
+.section-head{margin-bottom:22px; max-width:680px;}
+.kicker{
+  font-family:var(--mono); font-size:12px; letter-spacing:0.07em; text-transform:uppercase;
+  color:var(--ink-faint); margin:0 0 8px;
+}
+h2{font-family:var(--display); font-size:1.65rem; font-weight:600; margin:0 0 10px; text-wrap:balance;}
+.section-note{color:var(--ink-soft); font-size:0.97rem; margin:0;}
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:28px 30px; box-shadow:var(--shadow);
+}
+
+/* ---------- coverage timeline ---------- */
+.timeline-axis{
+  display:grid; grid-template-columns:168px 1fr; gap:0 18px; margin-bottom:6px;
+}
+.timeline-axis .years{
+  position:relative; height:20px; font-family:var(--mono); font-size:11px; color:var(--ink-faint);
+}
+.timeline-axis .years span{position:absolute; transform:translateX(-50%);}
+.tl-row{
+  display:grid; grid-template-columns:168px 1fr; gap:0 18px; align-items:center;
+  padding:10px 0; border-top:1px solid var(--border);
+}
+.tl-row:first-of-type{border-top:none;}
+.tl-label{font-size:0.86rem;}
+.tl-label .name{font-weight:600; color:var(--ink); display:block;}
+.tl-label .sub{color:var(--ink-faint); font-size:0.76rem; font-family:var(--mono);}
+.tl-track{position:relative; height:28px;}
+.tl-track .baseline{position:absolute; left:0; right:0; top:50%; height:2px; background:var(--track); transform:translateY(-50%); border-radius:2px;}
+.tl-track .span{position:absolute; top:50%; height:2px; background:var(--accent); opacity:0.55; transform:translateY(-50%); border-radius:2px;}
+.tl-track .span.dashed{background:none; border-top:2px dashed var(--accent); opacity:0.45;}
+.tl-track .backbone{position:absolute; left:0; right:0; top:50%; height:7px; background:var(--accent); opacity:0.9; transform:translateY(-50%); border-radius:4px;}
+.marker{
+  position:absolute; top:50%; border-radius:50%; background:var(--accent);
+  transform:translate(-50%,-50%); border:1.5px solid var(--surface);
+}
+.marker.snapshot{background:var(--surface); border:2px solid var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
+.marker.diamond{border-radius:3px; transform:translate(-50%,-50%) rotate(45deg); background:var(--warn); border:1.5px solid var(--surface);}
+.legend{display:flex; gap:22px; flex-wrap:wrap; margin-top:22px; padding-top:18px; border-top:1px solid var(--border); font-size:0.82rem; color:var(--ink-soft);}
+.legend .item{display:flex; align-items:center; gap:7px;}
+.legend .dot{width:9px; height:9px; border-radius:50%; background:var(--accent); flex-shrink:0;}
+.legend .dot.trace{opacity:0.25; width:5px; height:5px;}
+.legend .dot.snap{background:var(--surface); border:2px solid var(--accent);}
+.legend .dot.med{background:var(--warn); border-radius:2px; transform:rotate(45deg);}
+
+/* ---------- agreement chart ---------- */
+.chart-grid{display:grid; grid-template-columns:1.4fr 1fr; gap:24px;}
+@media (max-width:820px){ .chart-grid{grid-template-columns:1fr;} }
+.chart-card h3, .bars-card h3{
+  font-family:var(--body); font-weight:600; font-size:0.98rem; margin:0 0 4px; color:var(--ink);
+}
+.chart-sub{font-size:0.82rem; color:var(--ink-faint); margin:0 0 16px;}
+svg text{font-family:var(--mono); fill:var(--ink-faint);}
+.series-label{font-family:var(--mono); font-size:11px; font-weight:500;}
+.chart-legend{display:flex; gap:18px; flex-wrap:wrap; margin-top:14px; font-size:0.8rem;}
+.chart-legend .item{display:flex; align-items:center; gap:7px; color:var(--ink-soft);}
+.chart-legend .swatch{width:16px; height:3px; border-radius:2px;}
+
+/* ---------- volume + agreement combo panels ---------- */
+.combo-panels{display:flex; flex-direction:column; gap:30px;}
+.combo-row + .combo-row{padding-top:26px; border-top:1px solid var(--border);}
+.combo-head{display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:8px; flex-wrap:wrap;}
+.combo-name{font-weight:600; font-size:0.92rem;}
+.combo-range{font-family:var(--mono); font-size:0.76rem; color:var(--ink-faint);}
+
+/* snapshot bars */
+.bars{display:flex; flex-direction:column; gap:14px;}
+.bar-row{display:grid; grid-template-columns:118px 1fr 46px; gap:12px; align-items:center;}
+.bar-row .name{font-size:0.84rem; color:var(--ink);}
+.bar-track{position:relative; height:10px; background:var(--surface-sunken); border-radius:6px; overflow:hidden;}
+.bar-fill{position:absolute; left:0; top:0; height:100%; background:var(--accent); border-radius:6px;}
+.bar-row .pct{font-family:var(--mono); font-size:0.84rem; text-align:right; font-variant-numeric:tabular-nums; color:var(--ink);}
+
+/* ---------- pairwise (non-NPPES) agreement ---------- */
+.pw-bars{display:flex; flex-direction:column; gap:10px;}
+.pw-row{display:grid; grid-template-columns:190px 1fr 54px; gap:12px; align-items:center;}
+.pw-row .name{font-size:0.82rem; color:var(--ink); line-height:1.3;}
+.pw-row .name .n{display:block; font-family:var(--mono); font-size:0.72rem; color:var(--ink-faint);}
+.pw-row .bar-track{height:9px;}
+.pw-row .bar-fill.good{background:var(--good);}
+.pw-row .bar-fill.warn{background:var(--warn);}
+.pw-row .bar-fill.bad{background:var(--bad);}
+.pw-row .pct{font-family:var(--mono); font-size:0.82rem; text-align:right; font-variant-numeric:tabular-nums; color:var(--ink);}
+.pw-legend{display:flex; gap:18px; flex-wrap:wrap; margin-top:16px; padding-top:16px; border-top:1px solid var(--border); font-size:0.8rem; color:var(--ink-soft);}
+.pw-legend .item{display:flex; align-items:center; gap:7px;}
+.pw-legend .dot{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
+
+/* ---------- medicaid stacked bars ---------- */
+.medicaid-chart{display:flex; align-items:flex-end; gap:22px; height:300px; padding-top:10px;}
+.mc-col{display:flex; flex-direction:column; align-items:center; flex:1; height:100%;}
+.mc-stack{
+  width:100%; max-width:52px; height:260px; display:flex; flex-direction:column-reverse;
+  border-radius:6px; overflow:hidden; box-shadow:0 0 0 1px var(--border);
+}
+.mc-seg{width:100%;}
+.mc-year{font-family:var(--mono); font-size:12px; color:var(--ink-soft); margin-top:10px;}
+.mc-top{font-family:var(--mono); font-size:11px; color:var(--ink-faint); margin-top:2px; font-variant-numeric:tabular-nums;}
+.medicaid-legend{display:grid; grid-template-columns:repeat(3,1fr); gap:8px 20px; margin-top:24px; padding-top:18px; border-top:1px solid var(--border); font-size:0.82rem;}
+@media (max-width:620px){ .medicaid-legend{grid-template-columns:1fr 1fr;} }
+.medicaid-legend .item{display:flex; align-items:center; gap:8px; color:var(--ink-soft);}
+.medicaid-legend .swatch{width:11px; height:11px; border-radius:2px; flex-shrink:0;}
+.medicaid-note{margin-top:18px; font-size:0.9rem; color:var(--ink-soft); max-width:640px;}
+
+/* ---------- consensus chips + multiplicity bars ---------- */
+.consensus-chips{display:flex; gap:1px; flex-wrap:wrap; margin:18px 0 6px; background:var(--border); border:1px solid var(--border); border-radius:10px; overflow:hidden;}
+.chip{flex:1; min-width:150px; padding:16px 18px; background:var(--surface);}
+.chip .n{font-family:var(--mono); font-size:1.25rem; font-weight:500; color:var(--ink);}
+.chip .lbl{font-size:0.8rem; color:var(--ink-soft); margin-top:4px; line-height:1.35;}
+.mult-bars{display:flex; align-items:flex-end; gap:10px; height:150px; margin-top:22px;}
+.mult-col{display:flex; flex-direction:column; align-items:center; justify-content:flex-end; flex:1; height:100%;}
+.mult-pct{font-family:var(--mono); font-size:0.68rem; color:var(--ink-soft); margin-bottom:5px;}
+.mult-bar{width:100%; max-width:36px; background:var(--accent); border-radius:4px 4px 0 0;}
+.mult-label{font-family:var(--mono); font-size:0.72rem; color:var(--ink-faint); margin-top:7px; text-align:center; line-height:1.3;}
+
+/* ---------- figure captions ---------- */
+.fig-caption{margin:16px 0 4px; padding-top:14px; border-top:1px dashed var(--border);}
+.fig-caption p{margin:0; font-size:0.84rem; color:var(--ink-soft); line-height:1.58;}
+.fig-caption .fig-num{font-family:var(--mono); font-size:0.78rem; color:var(--accent-ink); font-weight:600; margin-right:3px; white-space:nowrap;}
+.fig-caption strong{color:var(--ink); font-weight:600;}
+.fig-caption code{font-size:0.82em;}
+
+/* ---------- sankey / mermaid ---------- */
+.sankey-scroll{overflow-x:auto; padding-bottom:4px;}
+.sankey-scroll svg{max-width:none !important; width:2600px !important;}
+.sankey-card pre.mermaid{background:transparent; margin:0;}
+.sankey-note{font-size:0.9rem; color:var(--ink-soft); max-width:680px; margin:16px 0 0;}
+
+/* ---------- limits ---------- */
+.limits{display:grid; gap:14px;}
+.limit{
+  display:grid; grid-template-columns:28px 1fr; gap:14px; padding:16px 18px;
+  background:var(--surface); border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow);
+}
+.limit .mark{font-family:var(--mono); color:var(--warn); font-weight:500; font-size:0.95rem;}
+.limit p{margin:0; font-size:0.93rem; color:var(--ink-soft);}
+.limit strong{color:var(--ink); font-weight:600;}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--border); padding-top:34px; color:var(--ink-faint); font-size:0.85rem;}
+footer h3{font-family:var(--body); font-size:0.92rem; color:var(--ink-soft); font-weight:600; margin:0 0 12px;}
+pre{
+  background:var(--surface-sunken); border:1px solid var(--border); border-radius:8px;
+  padding:16px 18px; font-family:var(--mono); font-size:0.8rem; color:var(--ink);
+  overflow-x:auto; line-height:1.6; margin:0 0 20px;
+}
+footer .sources{color:var(--ink-faint);}
+
+/* ---------- abbreviations glossary ---------- */
+.glossary{
+  display:grid; grid-template-columns:repeat(2,1fr); gap:6px 28px;
+  margin:0 0 28px; padding:18px 20px; background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; font-size:0.84rem;
+}
+@media (max-width:620px){ .glossary{grid-template-columns:1fr;} }
+.glossary dt{font-family:var(--mono); font-weight:600; color:var(--accent-ink); display:inline;}
+.glossary dd{display:inline; margin:0 0 0 6px; color:var(--ink-soft);}
+.glossary .entry{padding:3px 0;}
+</style>
+
+<nav class="site-nav" aria-label="Section navigation">
+  <div class="site-nav-inner">
+    <a href="#coverage"><span class="num">1</span>Coverage</a>
+    <a href="#agreement"><span class="num">2</span>Agreement</a>
+    <a href="#volume-agreement"><span class="num">3</span>Volume</a>
+    <a href="#pairwise"><span class="num">4</span>Pairwise</a>
+    <a href="#flow"><span class="num">5</span>Flow</a>
+    <a href="#medicaid"><span class="num">6</span>Medicaid</a>
+    <a href="#limits"><span class="num">7</span>Limits</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Midwifery NPI Cohort · Practice-State Reconciliation</p>
+    <h1>State Source Audit</h1>
+    <p class="dek">Ten independent records of where a certified midwife practices, compared year by year from 2013 to 2026. <em>None of them is the correct answer</em> — NPPES is only the anchor because every other source links to the cohort through it.</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="figure">10 sources</div>
+      <div class="label">NPPES, DAC/Physician&nbsp;Compare, Open&nbsp;Payments, PECOS revalidation, Facility Affiliation, Medicaid, CMS&nbsp;NDH, Healthgrades, Doximity, State BONs</div>
+    </div>
+    <div class="stat">
+      <div class="figure">91.8–95.1%</div>
+      <div class="label">DAC agreement with NPPES holds in this band every year 2013–2025, then drops to 89.8% in 2026 — the newest year, not a trend</div>
+    </div>
+    <div class="stat">
+      <div class="figure">87.8–88.7%</div>
+      <div class="label">PECOS revalidation — the lowest agreement of any source, flat across all six of its years</div>
+    </div>
+    <div class="stat">
+      <div class="figure">79.8% → 75.3%</div>
+      <div class="label">Medicaid concordance, 2018 → 2024, as the unobserved share nearly doubles</div>
+    </div>
+  </div>
+
+  <section id="coverage">
+    <div class="section-head">
+      <p class="kicker">Section 1</p>
+      <h2>Which years each source actually has</h2>
+      <p class="section-note">NPPES and DAC (Doctors and Clinicians)/Physician Compare are the only sources that run every year, 2013–2026. Open Payments, PECOS (Provider Enrollment, Chain, and Ownership System) revalidation, and Facility Affiliation each cover a real multi-year run with a gap somewhere in it; everything else is a single current snapshot — shown here as a ring instead of a line, so it's never mistaken for a time series.</p>
+    </div>
+    <div class="card">
+      <div class="timeline-axis">
+        <div></div>
+        <div class="years">
+          <span style="left:0%">2007</span>
+          <span style="left:15.79%">2010</span>
+          <span style="left:31.58%">2013</span>
+          <span style="left:47.37%">2016</span>
+          <span style="left:63.16%">2019</span>
+          <span style="left:78.95%">2022</span>
+          <span style="left:100%;transform:translateX(-100%)">2026</span>
+        </div>
+      </div>
+
+      <div class="tl-row">
+        <div class="tl-label"><span class="name">NPPES</span><span class="sub">every year, 92k → 426k</span></div>
+        <div class="tl-track"><div class="backbone"></div></div>
+      </div>
+
+      <div class="tl-row">
+        <div class="tl-label"><span class="name">DAC / Physician Compare</span><span class="sub">2.5k–5.7k NPIs / year, every year</span></div>
+        <div class="tl-track">
+          <div class="baseline"></div>
+          <div class="span" style="left:31.58%; width:68.42%;"></div>
+          <div class="marker" style="left:31.58%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:36.84%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:42.11%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:47.37%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:52.63%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:57.89%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:63.16%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:68.42%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:73.68%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:78.95%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:84.21%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:89.47%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:94.74%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:100%; width:11px; height:11px;"></div>
+        </div>
+      </div>
+
+      <div class="tl-row">
+        <div class="tl-label"><span class="name">Open Payments</span><span class="sub">trace through 2020, then 2.4k–4.4k 2021–2025</span></div>
+        <div class="tl-track">
+          <div class="baseline"></div>
+          <div class="marker" style="left:42.11%; width:4px; height:4px; opacity:0.3;"></div>
+          <div class="marker" style="left:47.37%; width:4px; height:4px; opacity:0.3;"></div>
+          <div class="marker" style="left:57.89%; width:4px; height:4px; opacity:0.3;"></div>
+          <div class="marker" style="left:63.16%; width:4px; height:4px; opacity:0.3;"></div>
+          <div class="marker" style="left:68.42%; width:4px; height:4px; opacity:0.3;"></div>
+          <div class="span" style="left:73.68%; width:21.05%;"></div>
+          <div class="marker" style="left:73.68%; width:10px; height:10px;"></div>
+          <div class="marker" style="left:78.95%; width:10px; height:10px;"></div>
+          <div class="marker" style="left:84.21%; width:10px; height:10px;"></div>
+          <div class="marker" style="left:89.47%; width:10px; height:10px;"></div>
+          <div class="marker" style="left:94.74%; width:11px; height:11px;"></div>
+        </div>
+      </div>
+
+      <div class="tl-row">
+        <div class="tl-label"><span class="name">PECOS revalidation</span><span class="sub">8.2k–10.3k NPIs / year</span></div>
+        <div class="tl-track">
+          <div class="baseline"></div>
+          <div class="span" style="left:73.68%; width:26.32%;"></div>
+          <div class="marker" style="left:73.68%; width:10px; height:10px;"></div>
+          <div class="marker" style="left:78.95%; width:10px; height:10px;"></div>
+          <div class="marker" style="left:84.21%; width:10px; height:10px;"></div>
+          <div class="marker" style="left:89.47%; width:10px; height:10px;"></div>
+          <div class="marker" style="left:94.74%; width:10px; height:10px;"></div>
+          <div class="marker" style="left:100%; width:10px; height:10px;"></div>
+        </div>
+      </div>
+
+      <div class="tl-row">
+        <div class="tl-label"><span class="name">Medicaid (T-MSIS)</span><span class="sub">classified, not counted — §3</span></div>
+        <div class="tl-track">
+          <div class="baseline"></div>
+          <div class="span" style="left:57.89%; width:31.58%; background:var(--warn); opacity:0.5;"></div>
+          <div class="marker diamond" style="left:57.89%; width:8px; height:8px;"></div>
+          <div class="marker diamond" style="left:63.16%; width:8px; height:8px;"></div>
+          <div class="marker diamond" style="left:68.42%; width:8px; height:8px;"></div>
+          <div class="marker diamond" style="left:73.68%; width:8px; height:8px;"></div>
+          <div class="marker diamond" style="left:78.95%; width:8px; height:8px;"></div>
+          <div class="marker diamond" style="left:84.21%; width:8px; height:8px;"></div>
+          <div class="marker diamond" style="left:89.47%; width:8px; height:8px;"></div>
+        </div>
+      </div>
+
+      <div class="tl-row">
+        <div class="tl-label"><span class="name">CMS NDH (FHIR)</span><span class="sub">15,444 NPIs, 2026 only</span></div>
+        <div class="tl-track"><div class="baseline"></div><div class="marker snapshot" style="left:100%; width:14px; height:14px;"></div></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label"><span class="name">Facility Affiliation (CCN)</span><span class="sub">0.7k–1.9k NPIs 2013–22, then 2026</span></div>
+        <div class="tl-track">
+          <div class="baseline"></div>
+          <div class="span" style="left:31.58%; width:47.37%;"></div>
+          <div class="span dashed" style="left:78.95%; width:21.05%;"></div>
+          <div class="marker" style="left:31.58%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:36.84%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:42.11%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:47.37%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:52.63%; width:8px; height:8px;"></div>
+          <div class="marker" style="left:57.89%; width:6px; height:6px;"></div>
+          <div class="marker" style="left:63.16%; width:6px; height:6px;"></div>
+          <div class="marker" style="left:68.42%; width:6px; height:6px;"></div>
+          <div class="marker" style="left:73.68%; width:6px; height:6px;"></div>
+          <div class="marker" style="left:78.95%; width:6px; height:6px;"></div>
+          <div class="marker" style="left:100%; width:11px; height:11px;"></div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label"><span class="name">Healthgrades</span><span class="sub">9,360 NPIs, scraped once</span></div>
+        <div class="tl-track"><div class="baseline"></div><div class="marker snapshot" style="left:100%; width:14px; height:14px;"></div></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label"><span class="name">Doximity</span><span class="sub">4,712 NPIs, 2026 only</span></div>
+        <div class="tl-track"><div class="baseline"></div><div class="marker snapshot" style="left:100%; width:14px; height:14px;"></div></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label"><span class="name">State Boards of Nursing</span><span class="sub">2,268 NPIs, 7 states only</span></div>
+        <div class="tl-track"><div class="baseline"></div><div class="marker snapshot" style="left:100%; width:14px; height:14px;"></div></div>
+      </div>
+
+      <div class="legend">
+        <div class="item"><span class="dot" style="width:10px;height:10px;"></span> real year (dot size ≈ cohort size)</div>
+        <div class="item"><span class="dot trace"></span> trace coverage (1–29 NPIs, below reportability)</div>
+        <div class="item"><span class="dot med"></span> Medicaid classification year (§3, not a simple count)</div>
+        <div class="item"><span class="dot snap"></span> single current snapshot — not a time series</div>
+      </div>
+      <div class="fig-caption"><p><span class="fig-num">Figure 1.</span> <strong>Per-source year coverage, 2007–2026.</strong> A horizontal timeline, one row per source, on a shared x-axis. The National Plan and Provider Enumeration System (NPPES) — the panel backbone — is drawn as a solid filled bar since it has a row every year, 92,042 to 425,990 provider-years. DAC/Physician Compare, Open Payments, PECOS revalidation, and Facility Affiliation are drawn as a thin baseline with circular markers only at the years they actually have data; marker size scales with that year's matched-NPI count. Facility Affiliation's 2013–2022 run comes from CCNs embedded directly in the historical DAC files, not from the Centers for Medicare &amp; Medicaid Services' (CMS) current Facility Affiliation product (which is itself a single always-current snapshot) — CMS dropped the field from the DAC file starting 2023, hence the dashed gap into its 2026 point. The small, faint markers on Open Payments 2015–2020 mark "trace" coverage (1–29 NPIs) — below CMS's own reportability threshold for Certified Nurse-Midwives (CNMs) before the SUPPORT Act (Substance Use-Disorder Prevention that Promotes Opioid Recovery and Treatment for Patients and Communities Act) expansion hit program year 2021. Medicaid uses diamond markers rather than circles because it is classified (Concordant / Discordant / etc., see Figure 10) rather than counted the same way as the others. The four single-snapshot sources — Healthgrades, Doximity, State Boards of Nursing, CMS NDH — are drawn as open rings at 2026 only, a deliberate shape distinction so a one-time scrape is never mistaken for a time series. Source: <code>artifacts/state_source_audit_coverage.csv</code>, built by <code>build_state_source_audit.R</code>.</p></div>
+    </div>
+  </section>
+
+  <section id="agreement">
+    <div class="section-head">
+      <p class="kicker">Section 2</p>
+      <h2>Agreement with NPPES, where a source repeats</h2>
+      <p class="section-note">DAC is the longest-running source besides NPPES itself: a tight 91.8–95.1% band for thirteen straight years, then a single lower year in 2026 — not a trend, at least not yet. Open Payments stays high across its real years; PECOS revalidation stays flat and distinctly lower than everything else, every one of its six years; Facility Affiliation — newly extended back to 2013 from CCNs embedded in the historical DAC files — sits consistently highest of all four, 92.7–96.0%, with its own real gap, 2023–2025.</p>
+    </div>
+    <div class="chart-grid">
+      <div class="card chart-card">
+        <h3>Multi-year sources</h3>
+        <p class="chart-sub">% of comparable NPI-years where state matches NPPES in the same year — shaded band is the 95% Wilson confidence interval, so a bigger year (more comparable NPI-years) draws a visibly tighter band</p>
+        <svg viewBox="0 0 900 350" width="100%" style="overflow:visible">
+          <!-- gridlines -->
+          <g stroke="var(--border)" stroke-width="1">
+            <line x1="50" y1="20" x2="880" y2="20"/>
+            <line x1="50" y1="87.5" x2="880" y2="87.5"/>
+            <line x1="50" y1="155" x2="880" y2="155"/>
+            <line x1="50" y1="222.5" x2="880" y2="222.5"/>
+            <line x1="50" y1="290" x2="880" y2="290"/>
+          </g>
+          <g font-size="11">
+            <text x="42" y="24" text-anchor="end">100%</text>
+            <text x="42" y="91.5" text-anchor="end">95%</text>
+            <text x="42" y="159" text-anchor="end">90%</text>
+            <text x="42" y="226.5" text-anchor="end">85%</text>
+            <text x="42" y="294" text-anchor="end">80%</text>
+          </g>
+          <g font-size="11">
+            <text x="50" y="312" text-anchor="middle">2013</text>
+            <text x="112.3" y="312" text-anchor="middle">14</text>
+            <text x="174.6" y="312" text-anchor="middle">15</text>
+            <text x="236.9" y="312" text-anchor="middle">16</text>
+            <text x="299.2" y="312" text-anchor="middle">17</text>
+            <text x="361.5" y="312" text-anchor="middle">18</text>
+            <text x="423.8" y="312" text-anchor="middle">19</text>
+            <text x="486.1" y="312" text-anchor="middle">20</text>
+            <text x="548.4" y="312" text-anchor="middle">21</text>
+            <text x="610.7" y="312" text-anchor="middle">22</text>
+            <text x="673.0" y="312" text-anchor="middle">23</text>
+            <text x="735.3" y="312" text-anchor="middle">24</text>
+            <text x="797.6" y="312" text-anchor="middle">25</text>
+            <text x="859.9" y="312" text-anchor="middle">2026</text>
+          </g>
+
+          <!-- DAC 95% CI ribbon -->
+          <polygon points="50,80.75 112.3,83.45 174.6,90.2 236.9,96.95 299.2,121.25 361.5,95.6 423.8,109.1 486.1,90.2 548.4,105.05 610.7,114.5 673.0,111.8 735.3,121.25 797.6,110.45 859.9,146.9 859.9,168.5 797.6,129.35 735.3,141.5 673.0,132.05 610.7,133.4 548.4,123.95 486.1,109.1 423.8,129.35 361.5,111.8 299.2,138.8 236.9,113.15 174.6,105.05 112.3,98.3 50,91.55" fill="var(--bad)" opacity="0.13" stroke="none"/>
+          <!-- Open Payments 95% CI ribbon -->
+          <polygon points="548.4,67.25 610.7,64.55 673.0,69.95 735.3,51.05 797.6,69.95 797.6,76.7 735.3,56.45 673.0,76.7 610.7,71.3 548.4,76.7" fill="var(--good)" opacity="0.14" stroke="none"/>
+          <!-- PECOS 95% CI ribbon -->
+          <polygon points="548.4,163.1 610.7,171.2 673.0,175.25 735.3,167.15 797.6,169.85 859.9,172.55 859.9,190.1 797.6,187.4 735.3,184.7 673.0,194.15 610.7,190.1 548.4,182" fill="var(--accent)" opacity="0.13" stroke="none"/>
+          <!-- Facility Affiliation 95% CI ribbon (2013-2022 only; 2026 is an isolated point, no ribbon) -->
+          <polygon points="50,80.75 112.3,60.5 174.6,69.95 236.9,71.3 299.2,88.85 361.5,69.95 423.8,78.05 486.1,72.65 548.4,83.45 610.7,84.8 610.7,128.0 548.4,125.3 486.1,119.9 423.8,125.3 361.5,109.1 299.2,122.6 236.9,103.7 174.6,103.7 112.3,91.55 50,109.1" fill="var(--warn)" opacity="0.13" stroke="none"/>
+
+          <!-- DAC -->
+          <polyline points="50,86.2 112.3,90.2 174.6,97.0 236.9,103.7 299.2,129.4 361.5,103.7 423.8,119.9 486.1,98.3 548.4,114.5 610.7,124.0 673.0,121.3 735.3,130.7 797.6,119.9 859.9,157.7" fill="none" stroke="var(--bad)" stroke-width="2.5"/>
+          <g fill="var(--bad)">
+            <circle cx="50" cy="86.2" r="4.5"/><circle cx="112.3" cy="90.2" r="3.5"/>
+            <circle cx="174.6" cy="97.0" r="3.5"/><circle cx="236.9" cy="103.7" r="3.5"/>
+            <circle cx="299.2" cy="129.4" r="3.5"/><circle cx="361.5" cy="103.7" r="3.5"/>
+            <circle cx="423.8" cy="119.9" r="3.5"/><circle cx="486.1" cy="98.3" r="3.5"/>
+            <circle cx="548.4" cy="114.5" r="3.5"/><circle cx="610.7" cy="124.0" r="3.5"/>
+            <circle cx="673.0" cy="121.3" r="3.5"/><circle cx="735.3" cy="130.7" r="3.5"/>
+            <circle cx="797.6" cy="119.9" r="3.5"/><circle cx="859.9" cy="157.7" r="4.5"/>
+          </g>
+          <text x="56" y="76" class="series-label" fill="var(--bad)">DAC / Physician Compare</text>
+
+          <!-- Open Payments -->
+          <polyline points="548.4,71.3 610.7,67.3 673.0,72.7 735.3,53.8 797.6,72.7" fill="none" stroke="var(--good)" stroke-width="2.5"/>
+          <g fill="var(--good)">
+            <circle cx="548.4" cy="71.3" r="3.5"/><circle cx="610.7" cy="67.3" r="3.5"/>
+            <circle cx="673.0" cy="72.7" r="3.5"/><circle cx="735.3" cy="53.8" r="3.5"/>
+            <circle cx="797.6" cy="72.7" r="4.5"/>
+          </g>
+          <text x="740" y="49" class="series-label" fill="var(--good)">Open Payments</text>
+
+          <!-- PECOS -->
+          <polyline points="548.4,172.6 610.7,180.7 673.0,184.7 735.3,175.3 797.6,178.0 859.9,182.0" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+          <g fill="var(--accent)">
+            <circle cx="548.4" cy="172.6" r="3.5"/><circle cx="610.7" cy="180.7" r="3.5"/>
+            <circle cx="673.0" cy="184.7" r="3.5"/><circle cx="735.3" cy="175.3" r="3.5"/>
+            <circle cx="797.6" cy="178.0" r="3.5"/><circle cx="859.9" cy="182.0" r="4.5"/>
+          </g>
+          <text x="548" y="196" class="series-label" fill="var(--accent)">PECOS revalidation</text>
+
+          <!-- Facility Affiliation -->
+          <polyline points="50,94.25 112.3,74.0 174.6,84.8 236.9,84.8 299.2,105.05 361.5,87.5 423.8,98.3 486.1,92.9 548.4,102.35 610.7,103.7" fill="none" stroke="var(--warn)" stroke-width="2.5"/>
+          <line x1="610.7" y1="103.7" x2="859.9" y2="118.55" stroke="var(--warn)" stroke-width="2" stroke-dasharray="2 5" opacity="0.6"/>
+          <g fill="var(--warn)">
+            <circle cx="50" cy="94.25" r="4.5"/><circle cx="112.3" cy="74.0" r="3.5"/>
+            <circle cx="174.6" cy="84.8" r="3.5"/><circle cx="236.9" cy="84.8" r="3.5"/>
+            <circle cx="299.2" cy="105.05" r="3.5"/><circle cx="361.5" cy="87.5" r="3.5"/>
+            <circle cx="423.8" cy="98.3" r="3.5"/><circle cx="486.1" cy="92.9" r="3.5"/>
+            <circle cx="548.4" cy="102.35" r="3.5"/><circle cx="610.7" cy="103.7" r="3.5"/>
+            <circle cx="859.9" cy="118.55" r="4.5"/>
+          </g>
+          <text x="420" y="66" class="series-label" fill="var(--warn)">Facility Affiliation</text>
+        </svg>
+        <div class="chart-legend">
+          <div class="item"><span class="swatch" style="background:var(--bad)"></span>DAC — flat band 2013–2025, lower only in 2026</div>
+          <div class="item"><span class="swatch" style="background:var(--good)"></span>Open Payments — consistently highest of the continuous runs</div>
+          <div class="item"><span class="swatch" style="background:var(--accent)"></span>PECOS revalidation — flat, consistently lowest</div>
+          <div class="item"><span class="swatch" style="background:var(--warn)"></span>Facility Affiliation — highest overall, real gap 2023–2025</div>
+        </div>
+        <div class="fig-caption"><p><span class="fig-num">Figure 2.</span> <strong>Agreement with NPPES, multi-year sources, with 95% confidence bands.</strong> Four lines plot the % of same-year comparable NPI-records whose state matches NPPES that year, for the sources with enough years to trend: DAC/Physician Compare (2013–2026, 14 points), Open Payments (2021–2025, 5 points — 2015–2020 excluded as too small to plot meaningfully, see Figure 1), PECOS revalidation (2021–2026, 6 points), and Facility Affiliation (2013–2022 solid, then a dashed jump to an isolated 2026 point — CMS dropped the embedded CCN field from the DAC file in 2023, see Figure 1). Y-axis runs 80–100%. Each continuous line carries a shaded 95% Wilson confidence interval computed from that year's exact (n_agree, n_comparable) pair — Wilson rather than a normal approximation because several of these proportions sit close enough to 100% that a normal interval would overshoot it; Facility Affiliation's isolated 2026 point carries no ribbon, since a confidence band implies a trend this single point isn't part of. Band width tracks sample size directly: Open Payments' ribbon (n≈14,000–22,000/year) is barely visible, while DAC's and Facility Affiliation's thinner years (n≈700–6,500) show a perceptibly thicker band. Source: <code>artifacts/state_source_audit_agreement_with_ci.csv</code>.</p></div>
+      </div>
+
+      <div class="card bars-card">
+        <h3>Single-snapshot sources</h3>
+        <p class="chart-sub">2026 only — not a time series, compared once against current NPPES</p>
+        <div class="bars">
+          <div class="bar-row"><span class="name">State Boards of Nursing</span><div class="bar-track"><div class="bar-fill" style="width:96.1%"></div></div><span class="pct">96.1%</span></div>
+          <div class="bar-row"><span class="name">Doximity</span><div class="bar-track"><div class="bar-fill" style="width:95.9%"></div></div><span class="pct">95.9%</span></div>
+          <div class="bar-row"><span class="name">Healthgrades</span><div class="bar-track"><div class="bar-fill" style="width:91.8%"></div></div><span class="pct">91.8%</span></div>
+          <div class="bar-row"><span class="name">CMS NDH (FHIR)</span><div class="bar-track"><div class="bar-fill" style="width:89.9%"></div></div><span class="pct">89.9%</span></div>
+        </div>
+        <div class="fig-caption"><p><span class="fig-num">Figure 3.</span> <strong>Agreement with NPPES, single-snapshot sources.</strong> Four horizontal bars, one per source with only a current (2026) state value and no usable history: State Boards of Nursing (96.1%, n=665, limited to the 7 states with a verified live-board match), Doximity (95.9%, n=4,701), Healthgrades (91.8%, n=17,772 — the largest n here because it's counted at the record level, so one provider can appear more than once), and CMS NDH/FHIR (89.9%, n=15,340, also the single most recent data of any source in this audit, pulled 2026-10). Facility Affiliation moved out of this figure and into Figure 2 once its 2013–2022 history (embedded in the historical DAC files) was extracted — it is no longer a single-snapshot source. Each remaining bar is one same-snapshot-year comparison against NPPES's current state — there is exactly one data point per source, not a trend. Source: the <code>comparison_basis == "current_only"</code> rows of the same agreement table as Figure 2.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="volume-agreement">
+    <div class="section-head">
+      <p class="kicker">Section 3</p>
+      <h2>How much data each source contributes, and whether it agrees</h2>
+      <p class="section-note">A high agreement rate from four comparable NPI-years means something different from one off a thousand. Bars are NPI-years actually compared that year (one shared 0–20,000 scale across all three panels, so the heights are comparable); the line is % agreeing with NPPES that same year, on each source's own scale — the three sources never overlap in range, so a shared scale there would flatten all of them to near-flat lines.</p>
+    </div>
+    <div class="card">
+      <div class="combo-panels">
+
+        <div class="combo-row">
+          <div class="combo-head">
+            <span class="combo-name" style="color:var(--bad)">DAC / Physician Compare</span>
+            <span class="combo-range">4,483–10,844 NPI-years/yr · agreement 89.8–95.1%</span>
+          </div>
+          <svg viewBox="0 0 900 150" width="100%" style="overflow:visible">
+            <line x1="50" y1="14" x2="880" y2="14" stroke="var(--border)" stroke-dasharray="2 4"/>
+            <line x1="50" y1="120" x2="880" y2="120" stroke="var(--border)"/>
+            <text x="45" y="18" text-anchor="end" font-size="10">25,000</text>
+            <text x="45" y="124" text-anchor="end" font-size="10">0</text>
+            <text x="885" y="18" text-anchor="start" font-size="10" fill="var(--bad)">96%</text>
+            <text x="885" y="124" text-anchor="start" font-size="10" fill="var(--bad)">89%</text>
+            <g fill="var(--bad)" opacity="0.22">
+              <rect x="37" y="74.0" width="26" height="46.0"/>
+              <rect x="99.3" y="93.7" width="26" height="26.3"/>
+              <rect x="161.6" y="92.5" width="26" height="27.5"/>
+              <rect x="223.9" y="93.6" width="26" height="26.4"/>
+              <rect x="286.2" y="92.2" width="26" height="27.8"/>
+              <rect x="348.5" y="93.9" width="26" height="26.1"/>
+              <rect x="410.8" y="100.4" width="26" height="19.6"/>
+              <rect x="473.1" y="101.0" width="26" height="19.0"/>
+              <rect x="535.4" y="98.7" width="26" height="21.3"/>
+              <rect x="597.7" y="98.5" width="26" height="21.5"/>
+              <rect x="660.0" y="98.8" width="26" height="21.2"/>
+              <rect x="722.3" y="97.3" width="26" height="22.7"/>
+              <rect x="784.6" y="97.6" width="26" height="22.4"/>
+              <rect x="846.9" y="96.4" width="26" height="23.6"/>
+            </g>
+            <polyline points="50,27.6 112.3,32.2 174.6,39.7 236.9,47.3 299.2,76.1 361.5,47.3 423.8,65.5 486.1,41.3 548.4,59.4 610.7,70.0 673.0,67.0 735.3,77.6 797.6,65.5 859.9,107.9" fill="none" stroke="var(--bad)" stroke-width="2.5"/>
+            <g fill="var(--bad)">
+              <circle cx="50" cy="27.6" r="4"/><circle cx="112.3" cy="32.2" r="3.5"/>
+              <circle cx="174.6" cy="39.7" r="3.5"/><circle cx="236.9" cy="47.3" r="3.5"/>
+              <circle cx="299.2" cy="76.1" r="3.5"/><circle cx="361.5" cy="47.3" r="3.5"/>
+              <circle cx="423.8" cy="65.5" r="3.5"/><circle cx="486.1" cy="41.3" r="3.5"/>
+              <circle cx="548.4" cy="59.4" r="3.5"/><circle cx="610.7" cy="70.0" r="3.5"/>
+              <circle cx="673.0" cy="67.0" r="3.5"/><circle cx="735.3" cy="77.6" r="3.5"/>
+              <circle cx="797.6" cy="65.5" r="3.5"/><circle cx="859.9" cy="107.9" r="4"/>
+            </g>
+            <g font-size="11">
+              <text x="50" y="140" text-anchor="middle">2013</text>
+              <text x="112.3" y="140" text-anchor="middle">14</text>
+              <text x="174.6" y="140" text-anchor="middle">15</text>
+              <text x="236.9" y="140" text-anchor="middle">16</text>
+              <text x="299.2" y="140" text-anchor="middle">17</text>
+              <text x="361.5" y="140" text-anchor="middle">18</text>
+              <text x="423.8" y="140" text-anchor="middle">19</text>
+              <text x="486.1" y="140" text-anchor="middle">20</text>
+              <text x="548.4" y="140" text-anchor="middle">21</text>
+              <text x="610.7" y="140" text-anchor="middle">22</text>
+              <text x="673.0" y="140" text-anchor="middle">23</text>
+              <text x="735.3" y="140" text-anchor="middle">24</text>
+              <text x="797.6" y="140" text-anchor="middle">25</text>
+              <text x="859.9" y="140" text-anchor="middle">2026</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="combo-row">
+          <div class="combo-head">
+            <span class="combo-name" style="color:var(--good)">Open Payments</span>
+            <span class="combo-range">14,441–21,731 NPI-years/yr · agreement 96.1–97.5%</span>
+          </div>
+          <svg viewBox="0 0 900 150" width="100%" style="overflow:visible">
+            <line x1="50" y1="14" x2="880" y2="14" stroke="var(--border)" stroke-dasharray="2 4"/>
+            <line x1="50" y1="120" x2="880" y2="120" stroke="var(--border)"/>
+            <text x="885" y="18" text-anchor="start" font-size="10" fill="var(--good)">98%</text>
+            <text x="885" y="124" text-anchor="start" font-size="10" fill="var(--good)">95%</text>
+            <g fill="var(--good)" opacity="0.22">
+              <rect x="535.4" y="58.8" width="26" height="61.2"/>
+              <rect x="597.7" y="38.0" width="26" height="82.0"/>
+              <rect x="660.0" y="38.3" width="26" height="81.7"/>
+              <rect x="722.3" y="40.6" width="26" height="79.4"/>
+              <rect x="784.6" y="27.9" width="26" height="92.1"/>
+            </g>
+            <polyline points="548.4,77.6 610.7,67.0 673.0,81.1 735.3,31.7 797.6,81.1" fill="none" stroke="var(--good)" stroke-width="2.5"/>
+            <g fill="var(--good)">
+              <circle cx="548.4" cy="77.6" r="3.5"/><circle cx="610.7" cy="67.0" r="3.5"/>
+              <circle cx="673.0" cy="81.1" r="3.5"/><circle cx="735.3" cy="31.7" r="3.5"/>
+              <circle cx="797.6" cy="81.1" r="4"/>
+            </g>
+            <g font-size="11">
+              <text x="548.4" y="140" text-anchor="middle">2021</text>
+              <text x="610.7" y="140" text-anchor="middle">22</text>
+              <text x="673.0" y="140" text-anchor="middle">23</text>
+              <text x="735.3" y="140" text-anchor="middle">24</text>
+              <text x="797.6" y="140" text-anchor="middle">25</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="combo-row">
+          <div class="combo-head">
+            <span class="combo-name" style="color:var(--accent)">PECOS revalidation</span>
+            <span class="combo-range">7,979–10,096 NPI-years/yr · agreement 87.8–88.7%</span>
+          </div>
+          <svg viewBox="0 0 900 150" width="100%" style="overflow:visible">
+            <line x1="50" y1="14" x2="880" y2="14" stroke="var(--border)" stroke-dasharray="2 4"/>
+            <line x1="50" y1="120" x2="880" y2="120" stroke="var(--border)"/>
+            <text x="885" y="18" text-anchor="start" font-size="10" fill="var(--accent)">89%</text>
+            <text x="885" y="124" text-anchor="start" font-size="10" fill="var(--accent)">87%</text>
+            <g fill="var(--accent)" opacity="0.22">
+              <rect x="535.4" y="86.2" width="26" height="33.8"/>
+              <rect x="597.7" y="83.6" width="26" height="36.4"/>
+              <rect x="660.0" y="81.5" width="26" height="38.5"/>
+              <rect x="722.3" y="79.0" width="26" height="41.0"/>
+              <rect x="784.6" y="77.2" width="26" height="42.8"/>
+              <rect x="846.9" y="78.7" width="26" height="41.3"/>
+            </g>
+            <polyline points="548.4,29.9 610.7,61.7 673.0,77.6 735.3,40.5 797.6,51.1 859.9,67.0" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+            <g fill="var(--accent)">
+              <circle cx="548.4" cy="29.9" r="3.5"/><circle cx="610.7" cy="61.7" r="3.5"/>
+              <circle cx="673.0" cy="77.6" r="3.5"/><circle cx="735.3" cy="40.5" r="3.5"/>
+              <circle cx="797.6" cy="51.1" r="3.5"/><circle cx="859.9" cy="67.0" r="3.5"/>
+            </g>
+            <g font-size="11">
+              <text x="548.4" y="140" text-anchor="middle">2021</text>
+              <text x="610.7" y="140" text-anchor="middle">22</text>
+              <text x="673.0" y="140" text-anchor="middle">23</text>
+              <text x="735.3" y="140" text-anchor="middle">24</text>
+              <text x="797.6" y="140" text-anchor="middle">25</text>
+              <text x="859.9" y="140" text-anchor="middle">2026</text>
+            </g>
+          </svg>
+        </div>
+
+      </div>
+      <div class="chart-legend">
+        <div class="item"><span class="swatch" style="background:var(--ink-faint); opacity:0.4; height:8px;"></span>bars: NPI-years compared (shared 0–25,000 scale)</div>
+        <div class="item"><span class="swatch" style="background:var(--ink-faint);"></span>line: % agreeing with NPPES (each source's own scale — see range above each panel)</div>
+      </div>
+      <div class="fig-caption"><p><span class="fig-num">Figure 4.</span> <strong>Comparable volume and agreement rate together, three panels.</strong> Three stacked mini-panels — DAC/Physician Compare, Open Payments, PECOS revalidation — each pairing a bar chart (translucent columns, left axis, shared 0–25,000 scale across all three panels so bar heights are directly comparable between sources) with a line chart (its own right-axis % scale per panel, since the three sources occupy non-overlapping agreement ranges and a shared percentage scale would flatten all three toward horizontal). Bars repeat each year's n_comparable from Figure 1; the lines repeat the % agreement from Figure 2. The point of pairing them: a given year's agreement percentage means something different coming from 4,483 comparable records (DAC 2020) than from 21,731 (Open Payments 2025), and this figure makes that denominator visible instead of leaving it implicit in a percentage alone. Source: <code>artifacts/state_source_audit_coverage.csv</code> + <code>artifacts/state_source_audit_agreement.csv</code>.</p></div>
+      <p class="medicaid-note">Open Payments contributes noticeably more comparable volume than DAC or PECOS in most years, which is part of why its agreement line (§2) looks more stable — the same few percentage points of disagreement move around less in a bigger denominator. DAC's volume itself halves from 2013 to the late 2010s as the cohort-matching base shrank, then partly recovers — without a matching swing in its agreement rate, so the two aren't mechanically linked here. PECOS revalidation's volume climbs steadily 2021→2025 then dips slightly in 2026, while its agreement rate barely moves at all — the flat line in §2 isn't a sign of a small or shrinking cohort.</p>
+    </div>
+  </section>
+
+  <section id="pairwise">
+    <div class="section-head">
+      <p class="kicker">Section 4</p>
+      <h2>Do the other sources agree with each other, not just with NPPES?</h2>
+      <p class="section-note">Every number so far is a source compared against NPPES — never against each other, the gap this audit originally flagged. Run through <code>mysteryroster::attribute_agreement()</code> (same-year matches only, every pair at once instead of one fixed anchor), 36 non-NPPES pairs clear the 30-NPI-year trace bar: three multi-year pairs where DAC, Open Payments, and PECOS revalidation overlap 2021–2026, plus every same-year pairing among the six 2026-only sources (21 pairs; PECOS × State Boards of Nursing shares zero NPIs in this cohort and isn't shown).</p>
+    </div>
+
+    <div class="card">
+      <h3 style="font-family:var(--body); font-weight:600; font-size:0.98rem; margin:0 0 4px; color:var(--ink);">The three sources that overlap across years</h3>
+      <p class="chart-sub">% agreement between each pair, same NPI-year — not against NPPES</p>
+      <svg viewBox="0 0 900 350" width="100%" style="overflow:visible">
+        <g stroke="var(--border)" stroke-width="1">
+          <line x1="500" y1="20" x2="880" y2="20"/>
+          <line x1="500" y1="87.5" x2="880" y2="87.5"/>
+          <line x1="500" y1="155" x2="880" y2="155"/>
+          <line x1="500" y1="222.5" x2="880" y2="222.5"/>
+          <line x1="500" y1="290" x2="880" y2="290"/>
+        </g>
+        <g font-size="11">
+          <text x="492" y="24" text-anchor="end">100%</text>
+          <text x="492" y="91.5" text-anchor="end">95%</text>
+          <text x="492" y="159" text-anchor="end">90%</text>
+          <text x="492" y="226.5" text-anchor="end">85%</text>
+          <text x="492" y="294" text-anchor="end">80%</text>
+        </g>
+        <g font-size="11">
+          <text x="548.4" y="312" text-anchor="middle">2021</text>
+          <text x="610.7" y="312" text-anchor="middle">22</text>
+          <text x="673.0" y="312" text-anchor="middle">23</text>
+          <text x="735.3" y="312" text-anchor="middle">24</text>
+          <text x="797.6" y="312" text-anchor="middle">25</text>
+          <text x="859.9" y="312" text-anchor="middle">2026</text>
+        </g>
+
+        <!-- DAC x Open Payments -->
+        <polyline points="548.4,123.95 610.7,115.85 673.0,121.25 735.3,109.1 797.6,141.5" fill="none" stroke="var(--bad)" stroke-width="2.5"/>
+        <g fill="var(--bad)">
+          <circle cx="548.4" cy="123.95" r="3.5"/><circle cx="610.7" cy="115.85" r="3.5"/>
+          <circle cx="673.0" cy="121.25" r="3.5"/><circle cx="735.3" cy="109.1" r="3.5"/>
+          <circle cx="797.6" cy="141.5" r="4"/>
+        </g>
+        <text x="548" y="105" class="series-label" fill="var(--bad)">DAC × Open Payments</text>
+
+        <!-- DAC x PECOS -->
+        <polyline points="548.4,117.2 610.7,129.35 673.0,106.4 735.3,110.45 797.6,110.45 859.9,149.6" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+        <g fill="var(--accent)">
+          <circle cx="548.4" cy="117.2" r="3.5"/><circle cx="610.7" cy="129.35" r="3.5"/>
+          <circle cx="673.0" cy="106.4" r="3.5"/><circle cx="735.3" cy="110.45" r="3.5"/>
+          <circle cx="797.6" cy="110.45" r="3.5"/><circle cx="859.9" cy="149.6" r="4.5"/>
+        </g>
+        <text x="548" y="196" class="series-label" fill="var(--accent)">DAC × PECOS revalidation</text>
+
+        <!-- Open Payments x PECOS -->
+        <polyline points="548.4,138.8 610.7,140.15 673.0,132.05 735.3,119.9 797.6,148.25" fill="none" stroke="var(--good)" stroke-width="2.5"/>
+        <g fill="var(--good)">
+          <circle cx="548.4" cy="138.8" r="3.5"/><circle cx="610.7" cy="140.15" r="3.5"/>
+          <circle cx="673.0" cy="132.05" r="3.5"/><circle cx="735.3" cy="119.9" r="3.5"/>
+          <circle cx="797.6" cy="148.25" r="4"/>
+        </g>
+        <text x="700" y="245" class="series-label" fill="var(--good)">Open Payments × PECOS</text>
+      </svg>
+      <div class="chart-legend">
+        <div class="item"><span class="swatch" style="background:var(--bad)"></span>DAC × Open Payments — 91.0–93.4%</div>
+        <div class="item"><span class="swatch" style="background:var(--accent)"></span>DAC × PECOS — 90.4–93.6%</div>
+        <div class="item"><span class="swatch" style="background:var(--good)"></span>Open Payments × PECOS — 90.5–92.6%</div>
+      </div>
+      <div class="fig-caption"><p><span class="fig-num">Figure 5.</span> <strong>Pairwise agreement among the three multi-year sources, 2021–2026.</strong> Three lines — DAC×Open Payments, DAC×PECOS revalidation, Open Payments×PECOS revalidation — each plotting the % of same-NPI-year records where the two named sources agree with each other, not with NPPES. Computed via <code>mysteryroster::attribute_agreement()</code>, which merges every pair by (npi, year) rather than anchoring to one fixed source, so this is a genuinely symmetric comparison in both directions. All three series sit in a 90–94% band across all six years. The reading that matters: PECOS revalidation's NPPES-anchored agreement is 87.8–88.7% (Figure 2), the lowest of any source — but compared directly against DAC and Open Payments here, it performs in the same band they occupy with each other. NPPES-anchoring made PECOS look uniquely discordant; pairwise, it isn't one. Source: <code>artifacts/state_source_audit_pairwise_agreement.csv</code>, built by <code>build_state_source_pairwise_audit.R</code>.</p></div>
+      <p class="medicaid-note">All three sit in the same 90–94% band NPPES-anchored DAC and Open Payments already occupy in §2 — but PECOS's own NPPES-anchored agreement is 87.8–88.7% (§2), noticeably lower. Compared directly, PECOS agrees with DAC and Open Payments about as well as they agree with each other, not worse — anchoring everything to NPPES made PECOS look like the outlier; pairwise, it isn't one.</p>
+
+      <h3 style="font-family:var(--body); font-weight:600; font-size:0.98rem; margin:28px 0 4px; color:var(--ink); padding-top:24px; border-top:1px solid var(--border);">The six 2026-only sources, every pair</h3>
+      <p class="chart-sub">Same-year 2026 agreement, ranked low to high — DAC and PECOS revalidation included since both have a real 2026 row</p>
+      <div class="pw-bars">
+        <div class="pw-row"><span class="name">DAC × CMS&nbsp;NDH<span class="n">n=5,012</span></span><div class="bar-track"><div class="bar-fill bad" style="width:86.3%"></div></div><span class="pct">86.3%</span></div>
+        <div class="pw-row"><span class="name">Doximity × CMS&nbsp;NDH<span class="n">n=4,518</span></span><div class="bar-track"><div class="bar-fill bad" style="width:86.7%"></div></div><span class="pct">86.7%</span></div>
+        <div class="pw-row"><span class="name">PECOS × CMS&nbsp;NDH<span class="n">n=9,740</span></span><div class="bar-track"><div class="bar-fill bad" style="width:87.2%"></div></div><span class="pct">87.2%</span></div>
+        <div class="pw-row"><span class="name">PECOS × Doximity<span class="n">n=3,565</span></span><div class="bar-track"><div class="bar-fill bad" style="width:87.5%"></div></div><span class="pct">87.5%</span></div>
+        <div class="pw-row"><span class="name">Healthgrades × CMS&nbsp;NDH<span class="n">n=15,915</span></span><div class="bar-track"><div class="bar-fill bad" style="width:87.9%"></div></div><span class="pct">87.9%</span></div>
+        <div class="pw-row"><span class="name">Facility&nbsp;Affiliation × CMS&nbsp;NDH<span class="n">n=1,673</span></span><div class="bar-track"><div class="bar-fill warn" style="width:88.5%"></div></div><span class="pct">88.5%</span></div>
+        <div class="pw-row"><span class="name">PECOS × Healthgrades<span class="n">n=11,928</span></span><div class="bar-track"><div class="bar-fill warn" style="width:88.8%"></div></div><span class="pct">88.8%</span></div>
+        <div class="pw-row"><span class="name">Healthgrades × Doximity<span class="n">n=6,127</span></span><div class="bar-track"><div class="bar-fill warn" style="width:89.9%"></div></div><span class="pct">89.9%</span></div>
+        <div class="pw-row"><span class="name">DAC × Doximity<span class="n">n=2,014</span></span><div class="bar-track"><div class="bar-fill warn" style="width:89.9%"></div></div><span class="pct">89.9%</span></div>
+        <div class="pw-row"><span class="name">State&nbsp;Boards × CMS&nbsp;NDH<span class="n">n=646</span></span><div class="bar-track"><div class="bar-fill warn" style="width:90.2%"></div></div><span class="pct">90.2%</span></div>
+        <div class="pw-row"><span class="name">DAC × PECOS (2026)<span class="n">n=5,019</span></span><div class="bar-track"><div class="bar-fill warn" style="width:90.4%"></div></div><span class="pct">90.4%</span></div>
+        <div class="pw-row"><span class="name">Healthgrades × State&nbsp;Boards<span class="n">n=608</span></span><div class="bar-track"><div class="bar-fill warn" style="width:91.1%"></div></div><span class="pct">91.1%</span></div>
+        <div class="pw-row"><span class="name">DAC × Healthgrades<span class="n">n=7,882</span></span><div class="bar-track"><div class="bar-fill warn" style="width:91.3%"></div></div><span class="pct">91.3%</span></div>
+        <div class="pw-row"><span class="name">Facility&nbsp;Affiliation × Doximity<span class="n">n=658</span></span><div class="bar-track"><div class="bar-fill warn" style="width:92.1%"></div></div><span class="pct">92.1%</span></div>
+        <div class="pw-row"><span class="name">DAC × State&nbsp;Boards<span class="n">n=239</span></span><div class="bar-track"><div class="bar-fill warn" style="width:92.5%"></div></div><span class="pct">92.5%</span></div>
+        <div class="pw-row"><span class="name">PECOS × Facility&nbsp;Affiliation<span class="n">n=1,672</span></span><div class="bar-track"><div class="bar-fill good" style="width:93.2%"></div></div><span class="pct">93.2%</span></div>
+        <div class="pw-row"><span class="name">Facility&nbsp;Affiliation × Healthgrades<span class="n">n=2,367</span></span><div class="bar-track"><div class="bar-fill good" style="width:93.4%"></div></div><span class="pct">93.4%</span></div>
+        <div class="pw-row"><span class="name">Doximity × State&nbsp;Boards<span class="n">n=234</span></span><div class="bar-track"><div class="bar-fill good" style="width:95.3%"></div></div><span class="pct">95.3%</span></div>
+        <div class="pw-row"><span class="name">Facility&nbsp;Affiliation × State&nbsp;Boards<span class="n">n=37 — small</span></span><div class="bar-track"><div class="bar-fill good" style="width:97.3%"></div></div><span class="pct">97.3%</span></div>
+        <div class="pw-row"><span class="name">DAC × Facility&nbsp;Affiliation<span class="n">n=1,536</span></span><div class="bar-track"><div class="bar-fill good" style="width:97.5%"></div></div><span class="pct">97.5%</span></div>
+      </div>
+      <div class="pw-legend">
+        <div class="item"><span class="dot" style="background:var(--bad)"></span>&lt;89%</div>
+        <div class="item"><span class="dot" style="background:var(--warn)"></span>89–93%</div>
+        <div class="item"><span class="dot" style="background:var(--good)"></span>≥93%</div>
+      </div>
+      <div class="fig-caption"><p><span class="fig-num">Figure 6.</span> <strong>Pairwise agreement, same-year-2026, among eight sources.</strong> A ranked horizontal bar list, lowest to highest agreement (86.3% to 97.5%), covering every pair that clears a 30-comparable-NPI floor among the eight sources with a real 2026 row: CMS NDH, Doximity, Healthgrades, Facility Affiliation, and State Boards of Nursing (all current-only), plus DAC and PECOS revalidation's own 2026 snapshot — their other years appear only in Figures 2 and 5. One pair, PECOS × State Boards of Nursing, shares zero NPIs in this cohort and is omitted rather than shown as an undefined value. The "DAC × PECOS (2026)" bar here is the identical comparison as the rightmost point of Figure 5's "DAC × PECOS revalidation" line — it is repeated intentionally, once as one point in a six-year trend and once ranked among all 2026 pairs, not a different number recomputed differently. Bars are color-coded by tier (red &lt;89%, amber 89–93%, green ≥93%) with each pair's n printed under its label. Source: <code>artifacts/state_source_audit_pairwise_agreement.csv</code>.</p></div>
+      <p class="medicaid-note">CMS NDH is the common thread at the bottom — it disagrees most with four different sources (DAC, Doximity, Healthgrades, PECOS), not just one, which points at NDH itself rather than any single counterpart. The top of the list is almost entirely Facility Affiliation and State Boards of Nursing pairings: both are small, curated, administratively-verified sets, and small curated sets agreeing tightly with each other is a different finding from them agreeing with the truth. Full 36-pair table: <code>artifacts/state_source_audit_pairwise_agreement.csv</code>.</p>
+
+      <h3 style="font-family:var(--body); font-weight:600; font-size:0.98rem; margin:28px 0 4px; color:var(--ink); padding-top:24px; border-top:1px solid var(--border);">Per-NPI consensus, current snapshot</h3>
+      <p class="chart-sub">A different cut of the same question: instead of one pair at a time, for every cohort NPI with ≥2 sources reporting a current state (n=16,939), what share of those sources agree with the majority?</p>
+      <div class="consensus-chips">
+        <div class="chip"><div class="n" style="color:var(--good)">84.5%</div><div class="lbl">Unanimous — every reporting source agrees (14,314 NPIs)</div></div>
+        <div class="chip"><div class="n" style="color:var(--warn)">7.2%</div><div class="lbl">Majority — most sources agree, at least one doesn't (1,214 NPIs)</div></div>
+        <div class="chip"><div class="n" style="color:var(--bad)">8.3%</div><div class="lbl">Split — no clear majority state (1,411 NPIs)</div></div>
+      </div>
+      <p class="chart-sub" style="margin-top:22px;">Unanimous rate by how many sources are actually available for that NPI — requiring more sources to agree makes unanimity structurally harder, which is exactly what shows up below, not a sign the data got worse:</p>
+      <div class="mult-bars">
+        <div class="mult-col"><div class="mult-pct">94%</div><div class="mult-bar" style="height:132px"></div><div class="mult-label">2 sources<br>n=3,311</div></div>
+        <div class="mult-col"><div class="mult-pct">89%</div><div class="mult-bar" style="height:124px"></div><div class="mult-label">3<br>n=4,284</div></div>
+        <div class="mult-col"><div class="mult-pct">82%</div><div class="mult-bar" style="height:115px"></div><div class="mult-label">4<br>n=2,866</div></div>
+        <div class="mult-col"><div class="mult-pct">79%</div><div class="mult-bar" style="height:111px"></div><div class="mult-label">5<br>n=2,928</div></div>
+        <div class="mult-col"><div class="mult-pct">76%</div><div class="mult-bar" style="height:107px"></div><div class="mult-label">6<br>n=2,276</div></div>
+        <div class="mult-col"><div class="mult-pct">76%</div><div class="mult-bar" style="height:107px"></div><div class="mult-label">7<br>n=1,066</div></div>
+        <div class="mult-col"><div class="mult-pct">86%</div><div class="mult-bar" style="height:121px; opacity:0.6"></div><div class="mult-label">8<br>n=205</div></div>
+        <div class="mult-col"><div class="mult-pct">100%</div><div class="mult-bar" style="height:140px; opacity:0.35"></div><div class="mult-label">9<br>n=3 ⚠</div></div>
+      </div>
+      <div class="fig-caption"><p><span class="fig-num">Figure 7.</span> <strong>Per-NPI consensus across all current sources, two panels.</strong> Panel A (three stat chips) summarizes, for every cohort NPI with a current state from ≥2 sources (n=16,939): 84.5% Unanimous — every reporting source agrees — (14,314 NPIs), 7.2% Majority — most agree, at least one dissents — (1,214 NPIs), 8.3% Split — no clear majority — (1,411 NPIs). This is computed independently of Figures 5–6's pairwise matrix, one row per NPI across all sources at once rather than pair by pair, and arrives at the same headline from a different method. Panel B (bar chart) breaks the unanimous rate down by how many sources were actually available for that NPI, 2 through 9: it declines from 94% (n=3,311 NPIs with exactly 2 sources) to a low of 76% (6–7 sources, n=2,276 and n=1,066), then ticks up at 8–9 sources — flagged with reduced opacity and, at n=3, a warning triangle, because that uptick is a small-sample artifact, not a real reversal. The declining trend through most of the range is the expected statistical effect of requiring more independent sources to all agree simultaneously, not evidence that the data gets worse at higher source counts. Source: <code>artifacts/cross_source_consensus_scores.csv</code> and <code>artifacts/cross_source_consensus_distribution.csv</code>, built by <code>build_cross_source_comparison.R</code>.</p></div>
+      <p class="medicaid-note" style="margin-top:18px;">Computed independently of the pairwise matrix above (one row per NPI across all current sources at once, not pair by pair) — see <code>artifacts/cross_source_consensus_scores.csv</code>. The two agree on the headline: most disagreement is concentrated in a minority of NPIs, not spread evenly across the cohort.</p>
+
+      <h3 style="font-family:var(--body); font-weight:600; font-size:0.98rem; margin:28px 0 4px; color:var(--ink); padding-top:24px; border-top:1px solid var(--border);">Does license status predict disagreement?</h3>
+      <p class="chart-sub">A direct test of a question this audit had only been able to flag as unresolved, every time it came up: is cross-source disagreement a sign of genuine multi-state practice, or a data-quality problem indistinguishable from one? CMS's Open Payments provider-profile registry — <code>data/CMS_Open_Payments_Profile_Supplement.csv</code>, already in the repo but previously used only for its name/address fields — carries which states each provider is licensed in, independent of every source already in this audit. Joined against the Figure 7 consensus tiers for the 8,312 NPIs with both a consensus score and a license-state profile:</p>
+      <div class="medicaid-chart" style="justify-content:center; gap:60px;">
+        <div class="mc-col" style="flex:0 0 160px;">
+          <div class="mc-stack">
+            <div class="mc-seg" style="flex-grow:5055; background:var(--good)"></div>
+            <div class="mc-seg" style="flex-grow:283; background:var(--warn); border-top:1px solid var(--surface)"></div>
+            <div class="mc-seg" style="flex-grow:134; background:var(--bad); border-top:1px solid var(--surface)"></div>
+          </div>
+          <div class="mc-year">Single-state licensed</div>
+          <div class="mc-top">n=5,472</div>
+        </div>
+        <div class="mc-col" style="flex:0 0 160px;">
+          <div class="mc-stack">
+            <div class="mc-seg" style="flex-grow:1701; background:var(--good)"></div>
+            <div class="mc-seg" style="flex-grow:511; background:var(--warn); border-top:1px solid var(--surface)"></div>
+            <div class="mc-seg" style="flex-grow:628; background:var(--bad); border-top:1px solid var(--surface)"></div>
+          </div>
+          <div class="mc-year">Multi-state licensed</div>
+          <div class="mc-top">n=2,840</div>
+        </div>
+      </div>
+      <div class="medicaid-legend" style="grid-template-columns:repeat(3,auto); justify-content:center;">
+        <div class="item"><span class="swatch" style="background:var(--good)"></span>Unanimous</div>
+        <div class="item"><span class="swatch" style="background:var(--warn)"></span>Majority</div>
+        <div class="item"><span class="swatch" style="background:var(--bad)"></span>Split</div>
+      </div>
+      <div class="fig-caption"><p><span class="fig-num">Figure 8.</span> <strong>Consensus tier by license status.</strong> Two stacked bars, same Unanimous/Majority/Split tiers and colors as Figure 7, split by whether the provider's Open Payments profile lists one state license (left, n=5,472 — a negligible number with zero recorded license states are lumped in here rather than dropped) or two or more (right, n=2,840; 34.2% of the matched set). Segment heights use flex-grow on raw counts, same technique as Figure 10's Medicaid bars. Source: <code>artifacts/cohort_midwives_open_payments_profile_supplement.csv</code> joined to <code>artifacts/cross_source_consensus_scores.csv</code>, built by <code>extract_open_payments_profile_supplement.R</code>.</p></div>
+      <p class="medicaid-note">Single-state-licensed midwives are 92.4% Unanimous and 2.4% Split. Multi-state-licensed midwives are 59.9% Unanimous and <strong style="color:var(--ink)">22.1% Split — roughly nine times the single-state rate</strong>. The association is not subtle: χ²(2, n=8,312) = 1,353.1, p &lt; 2.2×10⁻¹⁶. This doesn't prove any one individual disagreement is a real multi-state practice rather than a data error — it's a population-level association, not a per-NPI adjudication — but it strongly supports genuine multi-state practice as the dominant driver of cross-source disagreement, not an edge case this audit could previously only gesture at.</p>
+    </div>
+  </section>
+
+  <section id="flow">
+    <div class="section-head">
+      <p class="kicker">Section 5</p>
+      <h2>Does disagreement persist, or resolve?</h2>
+      <p class="section-note">A single cross-section can't say whether a disagreement is a stable, repeated pattern or a one-year blip that clears up. For the 184 NPIs with all four longitudinal sources (NPPES, DAC, Open Payments, PECOS) present in <em>every</em> year 2021–2025 — a demanding filter, which is why n is small — each NPI-year was classified Unanimous / Majority / Split across those four sources, then tracked year to year.</p>
+    </div>
+    <div class="card sankey-card">
+      <div class="sankey-scroll">
+      <pre class="mermaid">
+%%{init: {"sankey": {"width": 2600, "height": 640, "nodeAlignment": "justify", "linkColor": "gradient", "useMaxWidth": false}}}%%
+sankey-beta
+
+2021 Unanimous,2022 Unanimous,164
+2021 Unanimous,2022 Majority,4
+2021 Unanimous,2022 Split,1
+2021 Majority,2022 Majority,6
+2021 Majority,2022 Split,2
+2021 Majority,2022 Unanimous,3
+2021 Split,2022 Majority,1
+2021 Split,2022 Split,3
+2022 Unanimous,2023 Unanimous,165
+2022 Unanimous,2023 Majority,1
+2022 Unanimous,2023 Split,1
+2022 Majority,2023 Majority,7
+2022 Majority,2023 Split,2
+2022 Majority,2023 Unanimous,2
+2022 Split,2023 Split,4
+2022 Split,2023 Unanimous,2
+2023 Unanimous,2024 Unanimous,165
+2023 Unanimous,2024 Majority,2
+2023 Unanimous,2024 Split,2
+2023 Majority,2024 Majority,3
+2023 Majority,2024 Split,1
+2023 Majority,2024 Unanimous,4
+2023 Split,2024 Majority,1
+2023 Split,2024 Split,4
+2023 Split,2024 Unanimous,2
+2024 Unanimous,2025 Unanimous,169
+2024 Unanimous,2025 Majority,2
+2024 Majority,2025 Majority,5
+2024 Majority,2025 Split,1
+2024 Split,2025 Majority,3
+2024 Split,2025 Split,4
+      </pre>
+      </div>
+      <div class="fig-caption"><p><span class="fig-num">Figure 9.</span> <strong>Longitudinal consensus-tier flow, 2021–2025.</strong> A five-stage Sankey diagram tracking the same 184 NPIs — those with NPPES, DAC, Open Payments, and PECOS revalidation all present in every one of the five years 2021–2025, a demanding filter and why n is this small relative to the full panel — through a per-year Unanimous / Majority / Split classification across those four sources (the same three-tier scheme as Figure 7, but recomputed year by year for a fixed four-source set rather than a variable current set). Each node is one tier in one year (e.g. "2023 Majority"); each link's width is the number of NPIs making that exact tier-to-tier transition between adjacent years. Rendered at a forced 2,600px internal width inside a horizontally-scrolling container — Mermaid's default sizing otherwise compresses five stages of node labels into illegible overlap. Source: <code>artifacts/cross_source_consensus_tier_flow.csv</code>.</p></div>
+      <p class="sankey-note">Mostly answers "persists": the thick band running Unanimous→Unanimous→Unanimous→Unanimous→Unanimous (164 of 184 NPIs start there and ~165–169 stay there each step) is by far the dominant flow — unanimity is sticky, not a coin flip each year. The thinner bands show real but modest churn: a handful of NPIs move Unanimous→Split or Split→Unanimous every transition, consistent with genuine events (an address or employer change one source picked up before the others) rather than random noise, since the churn rate stays roughly constant rather than accumulating. Data: <code>artifacts/cross_source_consensus_tier_flow.csv</code>.</p>
+    </div>
+  </section>
+
+  <section id="medicaid">
+    <div class="section-head">
+      <p class="kicker">Section 6</p>
+      <h2>Medicaid: classified, not collapsed to a percentage</h2>
+      <p class="section-note">T-MSIS enrollment is the one source with its own disagreement classification (<code>classify_state_concordance()</code>), built before this audit and folded in as-is. The concordant share erodes while the unobserved share grows — most likely recent-year reporting lag, not midwives leaving Medicaid panels.</p>
+    </div>
+    <div class="card">
+      <div class="medicaid-chart">
+        <div class="mc-col">
+          <div class="mc-stack">
+            <div class="mc-seg" style="flex-grow:2565; background:var(--good)"></div>
+            <div class="mc-seg" style="flex-grow:813; background:var(--good-soft); border-top:1px solid var(--surface)"></div>
+            <div class="mc-seg" style="flex-grow:692; background:var(--bad)"></div>
+            <div class="mc-seg" style="flex-grow:161; background:var(--bad-soft); border-top:1px solid var(--surface)"></div>
+            <div class="mc-seg" style="flex-grow:4288; background:var(--neutral-soft)"></div>
+            <div class="mc-seg" style="flex-grow:3651; background:var(--neutral)"></div>
+          </div>
+          <div class="mc-year">2018</div>
+        </div>
+        <div class="mc-col">
+          <div class="mc-stack">
+            <div class="mc-seg" style="flex-grow:2731; background:var(--good)"></div>
+            <div class="mc-seg" style="flex-grow:947; background:var(--good-soft); border-top:1px solid var(--surface)"></div>
+            <div class="mc-seg" style="flex-grow:715; background:var(--bad)"></div>
+            <div class="mc-seg" style="flex-grow:175; background:var(--bad-soft); border-top:1px solid var(--surface)"></div>
+            <div class="mc-seg" style="flex-grow:3715; background:var(--neutral-soft)"></div>
+            <div class="mc-seg" style="flex-grow:3887; background:var(--neutral)"></div>
+          </div>
+          <div class="mc-year">2019</div>
+        </div>
+        <div class="mc-col">
+          <div class="mc-stack">
+            <div class="mc-seg" style="flex-grow:2849; background:var(--good)"></div>
+            <div class="mc-seg" style="flex-grow:1004; background:var(--good-soft); border-top:1px solid var(--surface)"></div>
+            <div class="mc-seg" style="flex-grow:772; background:var(--bad)"></div>
+            <div class="mc-seg" style="flex-grow:208; background:var(--bad-soft); border-top:1px solid var(--surface)"></div>
+            <div class="mc-seg" style="flex-grow:3258; background:var(--neutral-soft)"></div>
+            <div class="mc-seg" style="flex-grow:4079; background:var(--neutral)"></div>
+          </div>
+          <div class="mc-year">2020</div>
+        </div>
+        <div class="mc-col">
+          <div class="mc-stack">
+            <div class="mc-seg" style="flex-grow:2982; background:var(--good)"></div>
+            <div class="mc-seg" style="flex-grow:1054; background:var(--good-soft); border-top:1px solid var(--surface)"></div>
+            <div class="mc-seg" style="flex-grow:786; background:var(--bad)"></div>
+            <div class="mc-seg" style="flex-grow:222; background:var(--bad-soft); border-top:1px solid var(--surface)"></div>
+            <div class="mc-seg" style="flex-grow:2864; background:var(--neutral-soft)"></div>
+            <div class="mc-seg" style="flex-grow:4262; background:var(--neutral)"></div>
+          </div>
+          <div class="mc-year">2021</div>
+        </div>
+        <div class="mc-col">
+          <div class="mc-stack">
+            <div class="mc-seg" style="flex-grow:2988; background:var(--good)"></div>
+            <div class="mc-seg" style="flex-grow:1105; background:var(--good-soft); border-top:1px solid var(--surface)"></div>
+            <div class="mc-seg" style="flex-grow:865; background:var(--bad)"></div>
+            <div class="mc-seg" style="flex-grow:242; background:var(--bad-soft); border-top:1px solid var(--surface)"></div>
+            <div class="mc-seg" style="flex-grow:2379; background:var(--neutral-soft)"></div>
+            <div class="mc-seg" style="flex-grow:4591; background:var(--neutral)"></div>
+          </div>
+          <div class="mc-year">2022</div>
+        </div>
+        <div class="mc-col">
+          <div class="mc-stack">
+            <div class="mc-seg" style="flex-grow:3063; background:var(--good)"></div>
+            <div class="mc-seg" style="flex-grow:1124; background:var(--good-soft); border-top:1px solid var(--surface)"></div>
+            <div class="mc-seg" style="flex-grow:945; background:var(--bad)"></div>
+            <div class="mc-seg" style="flex-grow:261; background:var(--bad-soft); border-top:1px solid var(--surface)"></div>
+            <div class="mc-seg" style="flex-grow:1742; background:var(--neutral-soft)"></div>
+            <div class="mc-seg" style="flex-grow:5035; background:var(--neutral)"></div>
+          </div>
+          <div class="mc-year">2023</div>
+        </div>
+        <div class="mc-col">
+          <div class="mc-stack">
+            <div class="mc-seg" style="flex-grow:2947; background:var(--good)"></div>
+            <div class="mc-seg" style="flex-grow:1003; background:var(--good-soft); border-top:1px solid var(--surface)"></div>
+            <div class="mc-seg" style="flex-grow:1035; background:var(--bad)"></div>
+            <div class="mc-seg" style="flex-grow:262; background:var(--bad-soft); border-top:1px solid var(--surface)"></div>
+            <div class="mc-seg" style="flex-grow:652; background:var(--neutral-soft)"></div>
+            <div class="mc-seg" style="flex-grow:6271; background:var(--neutral)"></div>
+          </div>
+          <div class="mc-year">2024</div>
+        </div>
+      </div>
+      <div class="medicaid-legend">
+        <div class="item"><span class="swatch" style="background:var(--good)"></span>Concordant</div>
+        <div class="item"><span class="swatch" style="background:var(--good-soft)"></span>Multistate concordant</div>
+        <div class="item"><span class="swatch" style="background:var(--bad)"></span>Discordant</div>
+        <div class="item"><span class="swatch" style="background:var(--bad-soft)"></span>Multistate discordant</div>
+        <div class="item"><span class="swatch" style="background:var(--neutral-soft)"></span>Indeterminate</div>
+        <div class="item"><span class="swatch" style="background:var(--neutral)"></span>Not observed</div>
+      </div>
+      <div class="fig-caption"><p><span class="fig-num">Figure 10.</span> <strong>Medicaid enrollment-state classification by year, 2018–2024.</strong> Seven stacked bars, one per year, each divided into six categories from <code>R/lib/medicaid_state_concordance.R</code>'s <code>classify_state_concordance()</code>: Concordant and Multistate concordant (both green — the practice state matches NPPES, either in one state or across a documented multi-state enrollment), Discordant and Multistate discordant (both terracotta — does not match), Indeterminate (light grey, not resolvable), and Not observed (dark grey, no Medicaid enrollment record exists for that NPI-year at all). Unlike every other figure in this audit, these bars are not a simple binary agree/disagree with NPPES — this richer classification was built independently, before this audit, specifically because a flat percentage would lose the multi-state and indeterminate cases. Bar segment heights use CSS flex-grow set to each category's raw count, so segment height is directly proportional to count within each year's bar — segments are not independently scaled. Source: <code>artifacts/medicaid_enrollment_concordance_any_time_by_year.csv</code>.</p></div>
+      <p class="medicaid-note">Of NPI-years where a comparison is actually possible, simple concordance runs <strong style="color:var(--ink)">79.8% (2018) → 75.3% (2024)</strong>, dipping to 77.6% in 2023 first. Meanwhile "Not observed" — Medicaid has no record at all for that NPI-year — grows from 3,651 to 6,271, the single largest-moving segment on the chart.</p>
+    </div>
+  </section>
+
+  <section id="limits">
+    <div class="section-head">
+      <p class="kicker">Section 7</p>
+      <h2>What this does not establish</h2>
+    </div>
+    <div class="limits">
+      <div class="limit"><span class="mark">01</span><p><strong>Pairwise still means pairwise, not against truth.</strong> §4 adds 36 non-NPPES pairs (every pair with ≥30 comparable NPI-years, via <code>mysteryroster::attribute_agreement()</code>), but a few pairs still have no comparison at all — PECOS revalidation and State Boards of Nursing share zero NPIs in this cohort — and no pair here, NPPES-anchored or not, tells you which side of a disagreement is correct.</p></div>
+      <div class="limit"><span class="mark">02</span><p><strong>State Boards of Nursing cover 7 states</strong> — Colorado, Connecticut, Florida, Illinois, Pennsylvania, Texas, Washington — not a 50-state audit for that source.</p></div>
+      <div class="limit"><span class="mark">03</span><p><strong>NPPES's own staleness isn't classified.</strong> <code>last_update_date</code> exists in the raw NPPES files but isn't yet extracted into <code>midwife_panel.csv</code>, so a disagreement here could be NPPES being stale, the other source being stale, or a genuine multi-state practice — this audit can't tell which.</p></div>
+      <div class="limit"><span class="mark">04</span><p><strong>Healthgrades and the BON data are single, non-reproducible scrapes.</strong> Re-running next year shows whether the scrape changed, not whether the underlying record did.</p></div>
+      <div class="limit"><span class="mark">05</span><p><strong>Open Payments' N counts payment transactions, not NPI-years.</strong> A provider with five payments in one year contributes up to five comparison rows in §2 and §4 alike — consistent with how this audit has always counted Open Payments, but a different unit than every other source's one-row-per-NPI-year.</p></div>
+      <div class="limit"><span class="mark">06</span><p><strong>§5's 5-year flow cohort is 184 NPIs</strong> out of a ~5,000–10,000/year panel — requiring all four longitudinal sources present every single year from 2021–2025 is a demanding filter, and that 184 is not necessarily representative of midwives who only appear in some years or some sources.</p></div>
+      <div class="limit"><span class="mark">07</span><p><strong>Medicaid is excluded from §4's consensus score too</strong>, same reason as the pairwise matrix above: its source here is a pre-built Concordant/Discordant classification, not a raw per-NPI-year state value.</p></div>
+      <div class="limit"><span class="mark">08</span><p><strong>Facility Affiliation's 2013–2022 state is an arbitrary tie-break, not a collapse rule.</strong> A midwife with CCNs resolving to hospitals in two different states in the same year gets whichever CCN appeared first in the source file, not a documented "primary" affiliation — CMS gives no rank or admission volume to break the tie honestly. <code>n_ccns_resolved</code> is kept in the underlying data so the multiplicity stays visible even though the audit's state comparison collapses it to one value.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <h3>Abbreviations</h3>
+    <dl class="glossary">
+      <div class="entry"><dt>NPPES</dt><dd>National Plan and Provider Enumeration System — the CMS registry that issues NPIs; this audit's comparison anchor</dd></div>
+      <div class="entry"><dt>NPI</dt><dd>National Provider Identifier — the 10-digit ID every source in this audit is matched on</dd></div>
+      <div class="entry"><dt>DAC</dt><dd>Doctors and Clinicians — CMS's current provider-directory file, the successor to "Physician Compare"</dd></div>
+      <div class="entry"><dt>PECOS</dt><dd>Provider Enrollment, Chain, and Ownership System — CMS's Medicare enrollment system</dd></div>
+      <div class="entry"><dt>CMS</dt><dd>Centers for Medicare &amp; Medicaid Services — publisher of NPPES, DAC, PECOS, Open Payments, Facility Affiliation, and NDH</dd></div>
+      <div class="entry"><dt>CCN</dt><dd>CMS Certification Number — the identifier a hospital is keyed by in Facility Affiliation</dd></div>
+      <div class="entry"><dt>NDH</dt><dd>National Directory of Healthcare Providers and Services — CMS's newer FHIR-based provider directory</dd></div>
+      <div class="entry"><dt>FHIR</dt><dd>Fast Healthcare Interoperability Resources — the data standard CMS NDH publishes in</dd></div>
+      <div class="entry"><dt>BON</dt><dd>Board of Nursing — the state regulatory body behind the State Boards of Nursing source</dd></div>
+      <div class="entry"><dt>T-MSIS</dt><dd>Transformed Medicaid Statistical Information System — the federal Medicaid enrollment data behind §6</dd></div>
+      <div class="entry"><dt>CNM</dt><dd>Certified Nurse-Midwife — the credential defining this audit's cohort</dd></div>
+      <div class="entry"><dt>SUPPORT Act</dt><dd>Substance Use-Disorder Prevention that Promotes Opioid Recovery and Treatment for Patients and Communities Act — the 2018 law that made CNMs Open-Payments-reportable starting program year 2021</dd></div>
+      <div class="entry"><dt>NBER</dt><dd>National Bureau of Economic Research — mirrors the pre-2017 historical DAC/Physician Compare files CMS no longer serves</dd></div>
+    </dl>
+    <h3>Reproduce</h3>
+    <pre>Rscript extract_physician_compare_historical_midwives.R   # DAC 2013-2025: NBER (2013-16) + nber_my_duckdb.duckdb (2017-25)
+Rscript extract_open_payments_address_history.R            # Open Payments, 2015-2021 (2022-24 existed)
+Rscript extract_open_payments_2025.R                        # Open Payments, 2025 -- direct CMS download
+Rscript extract_pecos_revalidation_state_history.R         # PECOS revalidation, 2021-2026
+Rscript extract_historical_facility_affiliation.R           # Facility Affiliation, 2013-2022, from CCNs embedded in the historical DAC files
+Rscript build_state_source_audit.R                          # coverage + agreement tables, this page's data
+Rscript build_state_source_pairwise_audit.R                 # §4 pairwise bars, via mysteryroster::attribute_agreement()
+Rscript build_cross_source_comparison.R                      # §4 consensus score, §5 longitudinal flow, §2 confidence bands
+Rscript extract_open_payments_profile_supplement.R           # §4 Figure 8: license-state + specialty-taxonomy, from data/CMS_Open_Payments_Profile_Supplement.csv</pre>
+    <p class="sources">Full write-up: <code>docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md</code> · data: <code>artifacts/state_source_audit_coverage.csv</code>, <code>artifacts/state_source_audit_agreement_with_ci.csv</code>, <code>artifacts/state_source_audit_pairwise_agreement.csv</code>, <code>artifacts/cross_source_consensus_scores.csv</code>, <code>artifacts/cross_source_consensus_tier_flow.csv</code>, <code>artifacts/cohort_midwives_open_payments_profile_supplement.csv</code>, <code>artifacts/historical_facility_affiliation_cohort_state_by_year.csv</code>, <code>artifacts/medicaid_enrollment_concordance_any_time_by_year.csv</code> · midwifery repo, 2026-11-04.</p>
+  </footer>
+
+</div><script>mermaid.initialize({ startOnLoad: true, theme: "base" });</script>
+</body>
+</html>

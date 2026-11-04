@@ -20,6 +20,161 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-01 — A reusable credential-exclusion filter, wired into DAC extraction ([#283](https://github.com/mufflyt/midwifery/pull/283))
+
+### Added — `R/lib/credential_filter.R`
+
+`exclude_by_credential(credential, exclude = c("MD", "DO"))` — a word-
+boundary, case-insensitive filter generalized out of logic previously
+written inline for one script, now shared. `extract_dac_midwives.R` wired
+to it: rows whose credential field matches `MD`/`DO` anywhere (e.g. a
+secondary-specialty mention) are dropped from the midwife extract, with a
+drop-count logged. This is the inverse of the physician-only filter
+`mufflyt/isochrones` already runs
+(`R/C-filter_physician_compare_physicians_only.R`); future improvements to
+either should be ported to the other, since they are the same filter run
+in opposite directions on the same source files.
+
+## [Unreleased] — 2026-11-04 — State source audit: 10 sources, 2007–2026, pairwise instead of NPPES-only; a nine-year DAC "hole" that wasn't one
+
+### Added — practice-state coverage and cross-source agreement, 10 sources
+
+Full write-up:
+[docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md](docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md).
+Interactive dashboard, committed as a static snapshot:
+[docs/state_source_audit_dashboard.html](docs/state_source_audit_dashboard.html).
+**There is no gold standard for a midwife's practice state** — every number
+below is one source compared against another, never against the truth.
+
+- **DAC/Physician Compare extended from five disconnected vintages to full
+  annual coverage, 2013–2026** (`extract_physician_compare_historical_midwives.R`).
+  2013–2016 come from NBER's archival mirror, as before. 2017–2025 do **not**
+  come from a new download — they were already sitting in
+  `/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb`
+  (`physician_compare_<year>_Q2` tables plus a 2017 archive table), a
+  warehouse this project already uses for other sources, just never checked
+  for DAC specifically. An earlier pass of this same audit had reported
+  2017–2025 as a genuine nine-year hole and NBER as the only possible
+  source; that conclusion was wrong, caught the same day by re-checking
+  rather than reusing it. With the hole closed, DAC's agreement with NPPES
+  does **not** decline smoothly as the earlier 5-point version suggested —
+  it holds in a 91.8–95.1% band for thirteen straight years (2013–2025) and
+  only drops to 89.8% in the single most recent year, 2026.
+- **Open Payments extended from 2021–2024 to 2015–2025**
+  (`extract_open_payments_2025.R`, `extract_open_payments_address_history.R`).
+  2015–2020 is trace-only (1–29 NPIs/year — CNMs were not Open-Payments-
+  reportable until the SUPPORT Act expansion hit program year 2021). PY2025
+  (9.2GB, `OP_DTL_GNRL_PGYR2025_P06302026_06032026.csv`) was downloaded
+  directly from `data.cms.gov`, which an earlier pass of this audit had
+  reported as fully blocked from this sandbox; re-tested on request, both
+  `openpaymentsdata.cms.gov`'s metastore API and `download.cms.gov` answer
+  normally. Whether the earlier block was a real, now-resolved restriction
+  or a transient/session-specific issue is unresolved — worth re-checking
+  directly in a future session rather than assuming either way.
+- **Facility Affiliation extended from a single 2026 snapshot to
+  2013–2022 + 2026** (`extract_historical_facility_affiliation.R`). CMS's
+  current Facility Affiliation product is genuinely current-only — verified
+  against its own metastore API (one dataset, no year in the title) rather
+  than assumed — but the historical DAC files already carry hospital-
+  affiliation CCNs embedded in the file itself, unused for this purpose
+  until now. 11,102 NPI-year rows, 92.0% resolved to a named hospital; CCN
+  fill rate declines from 83.2% (2013) to ~26–31% (2019–2022), reported as
+  observed and not explained further. Facility Affiliation now has the
+  highest agreement with NPPES of any multi-year source in this audit,
+  92.7–96.0%.
+- **PECOS revalidation/reassignment** (`extract_pecos_revalidation_state_history.R`)
+  — a new source, 40 monthly CMS releases, 2021-12 through 2026-09,
+  enrollment-derived practice state independent of NPPES self-report.
+  87.8–88.7% agreement with NPPES, flat across all six years and the
+  lowest of any source — but see the pairwise finding below.
+- **Pairwise agreement, not just vs. NPPES** (`build_state_source_pairwise_audit.R`,
+  via `mysteryroster::attribute_agreement()`, which merges every pair by
+  `(npi, year)` rather than anchoring to one source). 36 non-NPPES pairs.
+  PECOS revalidation agrees with DAC and Open Payments about as well as
+  they agree with each other (90–94% band either way) — anchoring
+  everything to NPPES made it look like the one discordant source; pairwise,
+  it isn't. CMS NDH is the actual common denominator at the bottom: mean
+  pairwise agreement 88.2% across all 8 other sources, confirming its
+  89.9%-vs-NPPES score was not an NPPES-anchor artifact.
+- **Per-NPI consensus score and longitudinal tier flow**
+  (`build_cross_source_comparison.R`). 84.5% of cohort NPIs with ≥2 current
+  sources reporting are Unanimous (14,314 of 16,939); the unanimous rate
+  declines from 94% (2 sources) to ~76% (6–7 sources) as more independent
+  sources are required to agree at once — the statistical effect of raising
+  the bar, not evidence the data degrades at higher source counts. For the
+  184 NPIs with NPPES, DAC, Open Payments and PECOS all present every year
+  2021–2025, unanimity is sticky: 164 of 184 start Unanimous and
+  165–171 stay there every subsequent year.
+- **95% Wilson confidence intervals** added to every per-year agreement
+  percentage already published by this audit (`build_cross_source_comparison.R`).
+- **Open Payments provider-profile license-state field, previously
+  unused** (`extract_open_payments_profile_supplement.R`). CMS's Open
+  Payments Covered Recipient Profile Supplement
+  (`data/CMS_Open_Payments_Profile_Supplement.csv`, 1.69M rows) was already
+  read by `harvest_open_payments_profile.py` / `classify_residual_disagreements.R`,
+  but only for its name/address fields. Its
+  `Covered_Recipient_Profile_License_State_Code_1..5` columns — which
+  states a provider is *licensed* in, independent of every practice-address
+  source in this project — had never been extracted. 8,411 of 16,775
+  cohort midwives (50.1%) have a profile; 2,865 (34.1%) show licenses in
+  two or more states. **This is the finding of the whole audit**: joined
+  against the per-NPI consensus tiers, single-state-licensed midwives are
+  92.4% Unanimous / 2.4% Split; multi-state-licensed midwives are 59.9%
+  Unanimous / **22.1% Split — roughly nine times the single-state rate**
+  (chi-squared(2, n=8,312) = 1,353.1, p < 2.2e-16). Not a per-NPI
+  adjudication, but strong population-level evidence that most
+  cross-source address disagreement in this cohort is genuine multi-state
+  practice, not a data-quality problem — a question this audit could
+  previously only flag as unresolved, every time it came up.
+
+### Added — multi-state license status in Table 1 (`build_table1_midwives.R`)
+
+A new block, "Multi-state license status (Open Payments provider profile)",
+following the same file-existence gate and unknown-labeling convention as
+every other Table 1 block (a missing enrichment input refuses the whole
+build rather than silently emitting an empty category). Verified in
+isolation against the live 12,170-person cohort — sums exactly to N: 4,628
+single-state, 2,492 multi-state, 5,050 with no Open Payments provider
+profile. **Not yet in a published Table 1 render** — this machine is
+missing five other, unrelated enrichment inputs
+(`artifacts/nppes_sex_enumeration.csv`, `artifacts/dac_cnm_education.csv`,
+`artifacts/hpsa_status.csv`, `artifacts/medicare_participation.csv`, the
+ACOG crosswalk), so the build correctly refused to publish rather than
+overwrite the real table with five empty blocks (the exact failure mode
+#233 describes). The new block was not the blocking input.
+
+## [Unreleased] — 2026-11-04 — Lead–lag and NPPES record-freshness diagnostics (parallel session)
+
+### Added — `analyze_address_lead_lag_and_freshness.R`
+
+Built in a separate, parallel working session on this same repository; not
+authored in the session that wrote the entry above, summarized here from
+its diffs rather than from first-hand derivation. Uses
+`mysteryroster::attribute_spell_age()`, `attribute_lead_lag_matrix()`,
+`attribute_agreement_by_spell_age()`, and `enrollment_move_lead_lag()` to
+resolve, rather than merely flag, which side of an NPPES/Open-Payments
+disagreement moved first. Tracking consecutive provider-year transitions
+2021–2025: when NPPES and Open Payments agreed in year *t* and diverged in
+*t+1*, Open Payments broke concordance first at both the state and street
+level, split into two distinct mechanisms — genuine relocation lead
+(manufacturer sales reps logging a new address in their CRM before the
+midwife updates NPPES) and multi-site/vendor-CRM modal switching (different
+manufacturers' CRMs disagreeing about which of a midwife's sites is
+primary). A second analysis reconstructed each provider's empirical NPPES
+address-spell age across the full 2007–2026 panel and found a pronounced
+staleness decay curve in DAC-vs-NPPES concordance — highest 1–2 years after
+an NPPES update, dipping in the update year itself while PECOS reassignment
+catches up, then declining steadily as spell age increases — while Open
+Payments-vs-NPPES agreement showed **no** such decay, consistent with CMS
+documentation that Open Payments draws recipient profile data directly from
+NPPES. A third analysis linked NPPES interstate moves to date-stamped state
+Medicaid enrollment intervals and found a sharp administrative asymmetry:
+on arrival, Medicaid enrollment usually precedes or coincides with the
+NPPES state change; on departure, Medicaid termination usually lags well
+behind it. Wired into the manuscript (`manuscript/midwife_persistence.qmd`,
+`manuscript/R/build_stats_catalog.R`) and into
+[docs/TECHNICAL_APPENDIX_DAC_OPENPAYMENTS_ADDRESS_AGREEMENT.md](docs/TECHNICAL_APPENDIX_DAC_OPENPAYMENTS_ADDRESS_AGREEMENT.md).
+
 ## [Unreleased] — 2026-10-26 — Address agreement measured across five source pairs; a state-BON portal survey hits a wall
 
 ### Added — multi-source address agreement (`compare_*_address.R`, `make_address_agreement_heatmap.R`)

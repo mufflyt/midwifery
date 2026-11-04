@@ -1356,6 +1356,30 @@ deliberate:
   it: not NPPES in either layout, not the CMS Doctors & Clinicians file, and not
   the Healthgrades scrape.
 
+**Multi-state license status, wired in but not yet in a published render
+(2026-11-04).** `extract_open_payments_profile_supplement.R` pulls
+`Covered_Recipient_Profile_License_State_Code_1..5` — which states a
+provider is *licensed* in, from CMS's Open Payments provider-profile
+registry, independent of every other source this project holds — and
+`build_table1_midwives.R` now has a block for it: **"Licensed in 2+ states
+(Open Payments profile)"** vs. **"Licensed in 1 state"**, with **"No Open
+Payments provider profile"** as its own named unknown (only a provider ever
+reported in Open Payments gets a profile at all). Run in isolation against
+the current 12,170-person cohort: 4,628 single-state, 2,492 multi-state
+(35.0% of the 7,120 with a profile), summing exactly to cohort N. It has not
+yet appeared in a full Table 1 build — the published run still needs
+`artifacts/nppes_sex_enumeration.csv`, `artifacts/dac_cnm_education.csv`,
+`artifacts/hpsa_status.csv`, `artifacts/medicare_participation.csv` and the
+ACOG crosswalk, none of which this addition touches or depends on. See
+[the state-source audit appendix, §5](docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md)
+for why this variable exists: joined against per-NPI cross-source consensus,
+multi-state-licensed midwives land in the "Split" (no-majority) disagreement
+tier at roughly nine times the rate of single-state-licensed ones
+(22.1% vs. 2.4%, chi-squared(2, n=8,312) = 1,353.1, p < 2.2e-16) —
+the first direct evidence in this project that most cross-source address
+disagreement reflects genuine multi-state practice rather than a
+data-quality problem.
+
 ## Data sources
 
 Nothing in this repository is scraped from behind a paywall or a login, and no
@@ -1490,12 +1514,13 @@ measured — see [Absence is not zero](#absence-is-not-zero-in-four-different-so
 
 | Source | Vintage used | Exact file | Supplies | Consumed by |
 |---|---|---|---|---|
-| **CMS Doctors & Clinicians (DAC)** | **June 2026** | `DAC_NationalDownloadableFile_2026-06.csv` | practice-address corroboration, group practice, medical/midwifery school (14.3% coverage), graduation year, CCN facility affiliations | [`extract_dac_midwives.R`](extract_dac_midwives.R), [`extract_dac_cnm_education.R`](extract_dac_cnm_education.R), [`extract_dac_facility_affiliations.R`](extract_dac_facility_affiliations.R) |
+| **CMS Doctors & Clinicians (DAC)** | **June 2026** for Table 1/attribute use; **full annual history, 2013–2026**, for the state-source audit (2013–2016 from NBER's mirror, 2017–2025 from tables already sitting in an external DuckDB warehouse, 2026 the live pull) | `DAC_NationalDownloadableFile_2026-06.csv`; historical vintages via [`extract_physician_compare_historical_midwives.R`](extract_physician_compare_historical_midwives.R) | practice-address corroboration, group practice, medical/midwifery school (14.3% coverage), graduation year, CCN facility affiliations (2013–2022 only — CMS dropped the field from the file itself starting 2023, see [`extract_historical_facility_affiliation.R`](extract_historical_facility_affiliation.R)) | [`extract_dac_midwives.R`](extract_dac_midwives.R), [`extract_dac_cnm_education.R`](extract_dac_cnm_education.R), [`extract_dac_facility_affiliations.R`](extract_dac_facility_affiliations.R) |
 | **Medicare Physician & Other Practitioners (Part B)** and **Part D Prescribers** | **2013–2023**, one row per provider-year | `nber_my_duckdb.duckdb` (external volume). Part D 2022–2023 exist twice — the `_standardized` series is used and the raw duplicates ignored | Part B 19.5% / Part D 47.1% participation | [`match_medicare_partb_partd.R`](match_medicare_partb_partd.R) |
 | **HCRIS hospital cost reports** | **FY2023** (`HCRIS_FY`, overridable) | `/Volumes/MufflySamsung*/HCRIS/hosp10/fy2023/` | newborn/nursery volume at affiliated hospitals — **reported by only 37.7% of hospitals** | [`extract_hcris_affiliated_hospitals.R`](extract_hcris_affiliated_hospitals.R) |
 | **HRSA HPSA — primary care** | the file is named `..._CUR_...` (**current at download**); **the download date is not recorded anywhere in the repo** — a reproducibility gap | `HPSA_CMPPC_SHP_DET_CUR_VX.shp` | shortage-area status by point-in-polygon, 98.4% of geocoded | [`assign_hpsa_status.R`](assign_hpsa_status.R) |
-| **Open Payments — general payments** | **program year 2024**, published extract `P06302026_06032026` | `OP_DTL_GNRL_PGYR2024_P06302026_06032026.csv` | recent practice addresses and Type-2 organization candidates. **Never used for any payment-behaviour claim** | [`harvest_open_payments_profile.py`](harvest_open_payments_profile.py), [`link_open_payments_type2_bulk.R`](link_open_payments_type2_bulk.R) |
-| **Open Payments — covered recipient profile supplement** | same extract | `OP_CVRD_RCPNT_PRFL_SPLMTL_P06302026_06032026.csv` | the recipient profile keyed to NPI | same, plus [`resolve_org_ambiguity.R`](resolve_org_ambiguity.R) |
+| **Open Payments — general payments** | **program year 2025** (direct CMS download, confirmed reachable 2026-11-04 after an earlier session wrongly reported CMS as blocked) for the most recent year; **2015–2025** for the state-source audit (2015–2020 is trace-only, 1–29 NPIs/year — CNMs were not Open-Payments-reportable until the SUPPORT Act expansion hit program year 2021) | `PGYR2025_P06302026_06032026/OP_DTL_GNRL_PGYR2025_P06302026_06032026.csv` | recent practice addresses and Type-2 organization candidates. **Never used for any payment-behaviour claim** | [`harvest_open_payments_profile.py`](harvest_open_payments_profile.py), [`link_open_payments_type2_bulk.R`](link_open_payments_type2_bulk.R), [`extract_open_payments_2025.R`](extract_open_payments_2025.R), [`extract_open_payments_address_history.R`](extract_open_payments_address_history.R) |
+| **Open Payments — covered recipient profile supplement** | same extract (`data/CMS_Open_Payments_Profile_Supplement.csv`, 1.69M rows, every CMS Open Payments profile nationally) | `OP_CVRD_RCPNT_PRFL_SPLMTL_P06302026_06032026.csv` | the recipient profile keyed to NPI; as of 2026-11-04 also license-state (`License_State_Code_1..5`, multi-state flag) and a second independent specialty-taxonomy field — see [Table 1](#table-1) above and the [state-source audit appendix](docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md) | same, plus [`resolve_org_ambiguity.R`](resolve_org_ambiguity.R), [`extract_open_payments_profile_supplement.R`](extract_open_payments_profile_supplement.R) |
+| **CMS PECOS revalidation/reassignment** | monthly releases, **2021-12 through 2026-09** (40 vintages) | `revalidation_reassignment` table, external DuckDB warehouse | enrollment-derived practice state per NPI-year, independent of NPPES self-report; the lowest-agreeing source against NPPES of any in the state-source audit (87.8–88.7%, flat across all six years) but not an outlier once compared pairwise against other sources instead of NPPES alone | [`extract_pecos_revalidation_state_history.R`](extract_pecos_revalidation_state_history.R) |
 | **Trilliant provider & organization directory** (licensed) | directory snapshot **2026-06-25**, DuckLake `20260721` | `hpt_prices/trilliant/20260721/lake` (external volume) | claims-derived main practice site, visit share, number of sites, `active_provider`, patient-panel composition; organization geocodes, types and taxonomies. **No clinician-level claims** | [`build_trilliant_work_sites.R`](build_trilliant_work_sites.R), [`analyze_trilliant_activity_flag.R`](analyze_trilliant_activity_flag.R), [`R/inventory_trilliant_research_fields.R`](R/inventory_trilliant_research_fields.R) |
 
 ### Tier E — training institution
@@ -1551,6 +1576,76 @@ address, sometimes a practice address, and coverage is uneven state to
 state). Street-level comparison was tried on every pair and dropped
 entirely — never usable, lowest 21.7%. Full method, per-pair numbers, and
 every caveat: [docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md](docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md).
+
+#### State source audit — practice-state coverage, 10 sources, 2007–2026
+
+The address-agreement work above answers "how often do two sources agree";
+this is the companion question at state granularity, at full scale, and
+asked a harder way — **there is no gold standard for a midwife's practice
+state**, so every number below is comparisons between sources, never a
+score against the truth. Ten sources: NPPES (backbone, every year
+2007–2026), DAC/Physician Compare (every year 2013–2026), Open Payments
+(2015–2025, real from 2021), PECOS revalidation (2021–2026), Facility
+Affiliation (2013–2022 + 2026), Medicaid/T-MSIS (2018–2024, its own
+Concordant/Discordant classification, not folded into a flat percentage),
+and five single-current-snapshot sources (Healthgrades, Doximity, State
+Boards of Nursing, CMS NDH, plus the Open Payments provider-profile
+registry's license-state field).
+
+- **DAC holds in a 91.8–95.1% band against NPPES for thirteen straight
+  years (2013–2025)**, then drops to 89.8% in 2026 — the newest year, not
+  a confirmed trend. An earlier pass of this audit reported DAC as five
+  disconnected vintages with a nine-year hole, 2017–2025; the hole turned
+  out not to exist — those years were already sitting in an external
+  DuckDB warehouse this project already uses elsewhere, just never
+  checked for DAC specifically.
+- **PECOS revalidation is the lowest-agreeing source against NPPES of any
+  in this audit (87.8–88.7%, flat across all six years) — but is not an
+  outlier once compared directly against other sources instead of
+  NPPES alone.** Pairwise (`build_state_source_pairwise_audit.R`, via
+  `mysteryroster::attribute_agreement()`), PECOS agrees with DAC and Open
+  Payments about as well as they agree with each other. Anchoring
+  everything to NPPES made PECOS look uniquely discordant; pairwise, it
+  isn't one.
+- **CMS NDH is the one source that disagrees with everyone, not just
+  NPPES** — mean pairwise agreement 88.2% across all 8 other sources,
+  the lowest of any, confirming its 89.9%-vs-NPPES score wasn't an
+  NPPES-anchor artifact.
+- **Most cross-source disagreement is genuine multi-state practice, not
+  noise.** Joining per-NPI consensus tiers against the Open Payments
+  license-state field: midwives licensed in one state are 92.4%
+  Unanimous and 2.4% Split; midwives licensed in two or more states are
+  59.9% Unanimous and 22.1% Split — roughly nine times the single-state
+  rate (chi-squared(2, n=8,312) = 1,353.1, p < 2.2e-16).
+- **84.5% of cohort NPIs with ≥2 current sources reporting are
+  Unanimous** (14,314 of 16,939); the unanimous rate declines from 94%
+  (2 sources) to ~76% (6–7 sources) as more independent sources are
+  required to agree simultaneously — the expected statistical effect of
+  raising the bar, not evidence the data degrades at higher source
+  counts.
+
+Full write-up, every coverage/agreement table, the pairwise matrix, the
+longitudinal consensus-tier flow, and every scope limitation (no full
+N×N pairwise matrix for every pair; State Boards of Nursing cover 7
+states; NPPES's own staleness isn't classified; Healthgrades and the BON
+data are single non-reproducible scrapes):
+[docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md](docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md).
+An interactive dashboard (coverage timeline, agreement charts with 95%
+Wilson confidence bands, the pairwise heatmap, a consensus-flow Sankey
+diagram) is at
+[docs/state_source_audit_dashboard.html](docs/state_source_audit_dashboard.html).
+
+```bash
+Rscript extract_physician_compare_historical_midwives.R   # DAC, full history
+Rscript extract_historical_facility_affiliation.R          # Facility Affiliation, 2013-2022
+Rscript extract_open_payments_address_history.R             # Open Payments, 2015-2021
+Rscript extract_open_payments_2025.R                         # Open Payments, 2025
+Rscript extract_pecos_revalidation_state_history.R          # PECOS revalidation
+Rscript extract_open_payments_profile_supplement.R          # license-state + taxonomy
+Rscript build_state_source_audit.R                           # coverage + agreement tables
+Rscript build_state_source_pairwise_audit.R                  # every non-NPPES pair
+Rscript build_cross_source_comparison.R                       # consensus score, longitudinal flow, confidence bands
+```
 
 ### Tier G — cross-repository and generated
 

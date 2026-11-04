@@ -257,6 +257,43 @@ artifacts/hpsa_status.csv
 artifacts/dac_cnm_education.csv
 artifacts/dac_cnm_locations.csv
 
+# Historical CMS "Physician Compare" / DAC midwife extracts, 2013-2025
+# (2013/2013/2014/2015/2016 from the NBER mirror, 2017-2025 from tables
+# already sitting in /Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb --
+# see extract_physician_compare_historical_midwives.R); same standing as
+# dac_cnm_education.csv above. The raw National Downloadable Files the NBER
+# years come from are already covered by the data/raw/cms_physician_compare/
+# rule further down.
+artifacts/physician_compare_historical_midwives.csv
+
+# PECOS revalidation/reassignment state history, person-level (NPI-year-state).
+artifacts/pecos_revalidation_cohort_state_by_year.csv
+
+# Historical Facility Affiliation, 2013-2022, from CCNs embedded in the
+# historical DAC files (extract_historical_facility_affiliation.R); same
+# standing as physician_compare_historical_midwives.csv above.
+artifacts/historical_facility_affiliation_ccn_level.csv
+artifacts/historical_facility_affiliation_cohort_state_by_year.csv
+
+# State-source audit cross-source analyses (build_state_source_audit.R,
+# build_state_source_pairwise_audit.R, build_cross_source_comparison.R) --
+# derived, rebuildable from already-tracked inputs, same standing as the
+# other per-source extracts above.
+artifacts/state_source_audit_coverage.csv
+artifacts/state_source_audit_agreement.csv
+artifacts/state_source_audit_agreement_with_ci.csv
+artifacts/state_source_audit_pairwise_agreement.csv
+artifacts/state_source_audit_medicaid_classification_by_year.csv
+artifacts/cross_source_pairwise_matrix.csv
+artifacts/cross_source_consensus_scores.csv
+
+# Open Payments Covered Recipient Profile Supplement, license-state +
+# taxonomy columns, cohort-filtered (extract_open_payments_profile_supplement.R).
+artifacts/cohort_midwives_open_payments_profile_supplement.csv
+artifacts/cross_source_consensus_distribution.csv
+artifacts/cross_source_consensus_overall.csv
+artifacts/cross_source_consensus_tier_flow.csv
+
 # The blanket *.html above exists to keep multi-megabyte map renders out of the
 # repo. Table 1's renders are 16-37 KB and are the readable form of a published
 # table, so they are exempted. Added after discovering they had never been
@@ -283,6 +320,12 @@ docs/table1_midwives_PARTIAL.html
 # `git add docs/index.html` fails with "paths are ignored" -- which is exactly
 # how the Table 1 renders went missing, and it happened again here.
 !docs/index.html
+
+# A static snapshot of the state-source-audit interactive dashboard (the live
+# version is published to Claude Artifacts, not GitHub Pages). Same reasoning
+# as the Table 1 renders: ~90 KB, not the multi-megabyte map output the
+# blanket rule targets.
+!docs/state_source_audit_dashboard.html
 
 # Facility-attribution intermediates. The chain is
 #   update_final_facility_classification.R      -> _final_v2

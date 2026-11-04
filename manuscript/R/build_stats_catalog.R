@@ -905,6 +905,116 @@ mw_build_catalog <- function(root = ".") {
     )
   }
 
+  # --- Address Lead-Lag, Freshness Decay, and Medicaid Timing ----------------
+  ll_tab <- rd(file.path(MW_ART, "address_lead_lag_openpayments_nppes.csv"))
+  fr_tab <- rd(file.path(MW_ART, "address_agreement_by_nppes_freshness.csv"))
+  md_tab <- rd(file.path(MW_ART, "address_lead_lag_medicaid_nppes_moves.csv"))
+  if (!is.null(ll_tab) && !is.null(fr_tab) && !is.null(md_tab)) {
+    attr_col <- if ("attribute" %in% names(ll_tab)) "attribute" else "level"
+    ll_r <- function(lv) ll_tab[ll_tab[[attr_col]] == lv, , drop = FALSE]
+    get_v <- function(df, g_nm, l_nm) if (g_nm %in% names(df)) df[[g_nm]][1] else df[[l_nm]][1]
+
+    st_r <- ll_r("state"); ct_r <- ll_r("city"); zp_r <- ll_r("zip5"); sr_r <- ll_r("street")
+    st_a_brk <- get_v(st_r, "a_breaks_concordance_first", "op_breaks_concordance_first")
+    st_b_brk <- get_v(st_r, "b_breaks_concordance_first", "nppes_breaks_concordance_first")
+    sr_a_brk <- get_v(sr_r, "a_breaks_concordance_first", "op_breaks_concordance_first")
+    sr_b_brk <- get_v(sr_r, "b_breaks_concordance_first", "nppes_breaks_concordance_first")
+
+    f_dac <- fr_tab[fr_tab$comparison == "DAC (2026) vs NPPES (2026)" &
+                    fr_tab$stratification == "nppes_street_spell_age", , drop = FALSE]
+    f_op  <- fr_tab[grepl("Open Payments", fr_tab$comparison), , drop = FALSE]
+    f_car <- fr_tab[fr_tab$stratification == "amcb_career_tenure", , drop = FALSE]
+
+    d0  <- f_dac[grepl("^0 yrs", f_dac$stratum), , drop = FALSE]
+    d12 <- f_dac[f_dac$stratum == "1-2 yrs", , drop = FALSE]
+    d11 <- f_dac[grepl("^11\\+ yrs", f_dac$stratum), , drop = FALSE]
+    op0 <- f_op[grepl("^0 yrs", f_op$stratum), , drop = FALSE]
+    op11 <- f_op[grepl("^11\\+ yrs", f_op$stratum), , drop = FALSE]
+    c35 <- f_car[grepl("^3-5 yrs", f_car$stratum), , drop = FALSE]
+    c1120 <- f_car[grepl("^11-20 yrs", f_car$stratum), , drop = FALSE]
+    c21 <- f_car[grepl("^21\\+ yrs", f_car$stratum), , drop = FALSE]
+
+    m_dest <- md_tab[md_tab$direction_type == "destination_arrival_timing", , drop = FALSE]
+    m_orig <- md_tab[md_tab$direction_type == "origin_departure_termination_timing", , drop = FALSE]
+    n_med_lead_12 <- sum(m_dest$n[grepl("led by [12] yr", m_dest$category) & !grepl("Panel|NPPES", m_dest$category)])
+    n_same_yr     <- sum(m_dest$n[grepl("Same calendar year", m_dest$category)])
+    n_nppes_lead  <- sum(m_dest$n[grepl("(Panel|NPPES) led by", m_dest$category)])
+    n_acute       <- n_med_lead_12 + n_same_yr + n_nppes_lead
+    orig_before   <- m_orig[grepl("BEFORE", m_orig$category), , drop = FALSE]
+    orig_same     <- m_orig[grepl("SAME", m_orig$category), , drop = FALSE]
+    orig_after    <- m_orig[grepl("AFTER", m_orig$category), , drop = FALSE]
+
+    n_tot_moves <- if ("total_panel_moves" %in% names(m_dest)) {
+      m_dest$total_panel_moves[1]
+    } else if ("total_nppes_moves" %in% names(m_dest)) {
+      m_dest$total_nppes_moves[1]
+    } else {
+      2672L
+    }
+
+    cat_$leadlag <- list(
+      n_transitions          = st_r$n_paired_transitions[1],
+      state_a_breaks_n       = st_a_brk,
+      state_b_breaks_n       = st_b_brk,
+      state_break_ratio      = st_a_brk / pmax(1, st_b_brk),
+      street_a_breaks_n      = sr_a_brk,
+      street_b_breaks_n      = sr_b_brk,
+      street_break_ratio     = sr_a_brk / pmax(1, sr_b_brk),
+      state_disc_2022_n      = get_v(st_r, "disc_base_n", "disc_2022_n"),
+      state_b_adopts_n       = get_v(st_r, "b_adopts_a_multi_n", "nppes_adopts_op2022_by_2026_n"),
+      state_b_adopts_pct     = get_v(st_r, "b_adopts_a_multi_pct", "nppes_adopts_op2022_by_2026_pct"),
+      street_disc_2022_n     = get_v(sr_r, "disc_base_n", "disc_2022_n"),
+      street_b_adopts_n      = get_v(sr_r, "b_adopts_a_multi_n", "nppes_adopts_op2022_by_2026_n"),
+      street_b_adopts_pct    = get_v(sr_r, "b_adopts_a_multi_pct", "nppes_adopts_op2022_by_2026_pct"),
+      city_a_reverts_pct     = get_v(ct_r, "a_reverts_b_multi_pct", "op_reverts_np2022_by_2025_pct"),
+      zip_a_reverts_pct      = get_v(zp_r, "a_reverts_b_multi_pct", "op_reverts_np2022_by_2025_pct"),
+      street_a_reverts_pct   = get_v(sr_r, "a_reverts_b_multi_pct", "op_reverts_np2022_by_2025_pct"),
+      dac_street_disc_n      = get_v(sr_r, "cross_section_disc_n", "dac2026_disc_n"),
+      dac_street_prior_n     = get_v(sr_r, "cross_section_in_prior_b_n", "dac2026_in_prior_nppes_n"),
+      dac_street_prior_pct   = get_v(sr_r, "cross_section_in_prior_b_pct", "dac2026_in_prior_nppes_pct"),
+      dac_zip_disc_n         = get_v(zp_r, "cross_section_disc_n", "dac2026_disc_n"),
+      dac_zip_prior_n        = get_v(zp_r, "cross_section_in_prior_b_n", "dac2026_in_prior_nppes_n"),
+      dac_zip_prior_pct      = get_v(zp_r, "cross_section_in_prior_b_pct", "dac2026_in_prior_nppes_pct"),
+      dac_total_n            = sum(f_dac$n),
+      dac_12yr_n             = d12$n[1],
+      dac_12yr_state_pct     = d12$state_agree_pct[1],
+      dac_12yr_city_pct      = d12$city_agree_pct[1],
+      dac_12yr_zip_pct       = d12$zip5_agree_pct[1],
+      dac_12yr_street_pct    = d12$street_agree_pct[1],
+      dac_0yr_n              = d0$n[1],
+      dac_0yr_state_pct      = d0$state_agree_pct[1],
+      dac_0yr_street_pct     = d0$street_agree_pct[1],
+      dac_11yr_n             = d11$n[1],
+      dac_11yr_city_pct      = d11$city_agree_pct[1],
+      dac_11yr_zip_pct       = d11$zip5_agree_pct[1],
+      dac_11yr_street_pct    = d11$street_agree_pct[1],
+      car_35_street_pct      = c35$street_agree_pct[1],
+      car_1120_street_pct    = c1120$street_agree_pct[1],
+      car_21_street_pct      = c21$street_agree_pct[1],
+      op_total_n             = sum(f_op$n),
+      op_0yr_street_pct      = op0$street_agree_pct[1],
+      op_11yr_street_pct     = op11$street_agree_pct[1],
+      med_total_moves_n      = n_tot_moves,
+      med_dest_matched_n     = m_dest$total_matched_moves[1],
+      med_preexisting_3yr_n  = sum(m_dest$n[grepl("3\\+ yrs", m_dest$category)]),
+      med_acute_n            = n_acute,
+      med_lead_12yr_n        = n_med_lead_12,
+      med_lead_12yr_pct      = 100 * n_med_lead_12 / n_acute,
+      med_same_yr_n          = n_same_yr,
+      med_same_yr_pct        = 100 * n_same_yr / n_acute,
+      med_nppes_lead_n       = n_nppes_lead,
+      med_nppes_lead_pct     = 100 * n_nppes_lead / n_acute,
+      med_lead_ratio         = n_med_lead_12 / pmax(1, n_nppes_lead),
+      med_orig_matched_n     = m_orig$total_matched_moves[1],
+      med_orig_after_n       = orig_after$n[1],
+      med_orig_after_pct     = orig_after$pct_of_matched[1],
+      med_orig_same_n        = orig_same$n[1],
+      med_orig_same_pct      = orig_same$pct_of_matched[1],
+      med_orig_before_n      = orig_before$n[1],
+      med_orig_before_pct    = orig_before$pct_of_matched[1]
+    )
+  }
+
   cat_$meta <- list(built = format(Sys.time(), "%Y-%m-%d %H:%M %Z"),
                     r_version = paste(R.version$major, R.version$minor, sep = "."))
   cat_
