@@ -67,11 +67,7 @@ rows <- dbGetQuery(con, sql, params = list(SUPPLEMENT))
 cat(sprintf("Matched profile rows: %s (%s distinct NPIs)\n",
             format(nrow(rows), big.mark = ","), format(length(unique(rows$npi)), big.mark = ",")))
 
-VALID_STATES <- c(state.abb, "DC", "PR", "VI", "GU", "AS", "MP")
-clean_state <- function(x) {
-  x <- toupper(trimws(x))
-  ifelse(x %in% VALID_STATES, x, NA_character_)
-}
+source(file.path("R", "lib", "clean_state.R"))
 
 out <- rows %>%
   rowwise() %>%

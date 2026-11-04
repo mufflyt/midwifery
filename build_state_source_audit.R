@@ -35,12 +35,7 @@
 # =============================================================================
 suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr); library(tidyr)})
 
-VALID_STATES <- c(state.abb, "DC", "PR", "VI", "GU", "AS", "MP")
-clean_state <- function(x) {
-  x <- toupper(trimws(x))
-  out <- ifelse(x %in% VALID_STATES, x, NA_character_)
-  as.character(out)
-}
+source(file.path("R", "lib", "clean_state.R"))
 
 # --- NPPES: the comparison anchor --------------------------------------------
 nppes <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%

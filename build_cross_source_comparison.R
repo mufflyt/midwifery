@@ -35,11 +35,7 @@
 # =============================================================================
 suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr); library(tidyr)})
 
-VALID_STATES <- c(state.abb, "DC", "PR", "VI", "GU", "AS", "MP")
-clean_state <- function(x) {
-  x <- toupper(trimws(x))
-  as.character(ifelse(x %in% VALID_STATES, x, NA_character_))
-}
+source(file.path("R", "lib", "clean_state.R"))
 dedupe_one_per_npi <- function(df) {
   df %>% filter(!is.na(npi), !is.na(state)) %>% group_by(npi) %>% slice(1) %>% ungroup()
 }
@@ -167,7 +163,9 @@ four_long <- bind_rows(
   dac_all %>% filter(year %in% YEARS_4WAY) %>% mutate(source = "dac"),
   op_all %>% filter(year %in% YEARS_4WAY) %>% mutate(source = "open_payments"),
   pecos %>% filter(year %in% YEARS_4WAY) %>% mutate(source = "pecos")
-) %>% filter(!is.na(state)) %>% distinct(npi, year, source, .keep_all = TRUE)
+) %>% filter(!is.na(state)) %>%
+  arrange(npi, year, source, state) %>%
+  distinct(npi, year, source, .keep_all = TRUE)
 
 tiers <- four_long %>%
   group_by(npi, year) %>%

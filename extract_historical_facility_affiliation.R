@@ -62,6 +62,7 @@ hosp <- dbGetQuery(con, "
          meets_criteria_for_birthing_friendly_designation AS birthing_friendly
     FROM cms_hospital_info") %>%
   mutate(ccn = pad_ccn(facility_id)) %>%
+  arrange(ccn, facility_name) %>%
   distinct(ccn, .keep_all = TRUE)
 
 ccn_level <- long_ccn %>% left_join(hosp, by = "ccn")

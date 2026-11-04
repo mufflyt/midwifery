@@ -14,7 +14,7 @@ BROWSER_UA <- paste("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
                     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36")
 NBER_BASE <- "https://data.nber.org/compare/physician"
 
-list_directory <- function(url) {
+list_directory_months <- function(url) {
   response <- tryCatch(
     request(url) |> req_user_agent(BROWSER_UA) |> req_timeout(60) |> req_perform(),
     error = function(e) NULL)
@@ -23,7 +23,7 @@ list_directory <- function(url) {
   hrefs[!stringr::str_detect(hrefs, "^[?/]")]
 }
 
-probe_month <- function(year, month) {
+probe_year_month <- function(year, month) {
   url <- sprintf("%s/%d/%s/National_Downloadable_File.csv", NBER_BASE, year, month)
   handle <- curl::new_handle(useragent = BROWSER_UA, connecttimeout = 30)
   connection <- curl::curl(url, open = "", handle = handle)
@@ -43,13 +43,13 @@ probe_month <- function(year, month) {
 }
 
 for (y in 2014:2020) {
-  dirs <- list_directory(paste0(NBER_BASE, "/", y, "/")) |>
+  dirs <- list_directory_months(paste0(NBER_BASE, "/", y, "/")) |>
     (\(x) x[stringr::str_detect(x, "^[0-9]{2}/$")])() |>
     stringr::str_remove("/$") |> sort()
   cat(sprintf("\n%d: advertised months: %s\n", y,
               if (length(dirs)) paste(dirs, collapse = ", ") else "(none)"))
   if (!length(dirs)) next
-  probes <- purrr::map_dfr(dirs, ~probe_month(y, .x))
+  probes <- purrr::map_dfr(dirs, ~probe_year_month(y, .x))
   ok <- probes |> filter(header_ok)
   cat(sprintf("%d: REAL files at: %s\n", y,
               if (nrow(ok)) paste(ok$month, collapse = ", ") else "(none)"))
