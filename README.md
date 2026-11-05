@@ -1592,6 +1592,12 @@ and five single-current-snapshot sources (Healthgrades, Doximity, State
 Boards of Nursing, CMS NDH, plus the Open Payments provider-profile
 registry's license-state field).
 
+For a narrative walk through these findings — why averaging across
+disagreeing sources would be wrong here, why PECOS looked like the outlier
+and wasn't, and what the multi-state-licensure result actually means — see
+[`docs/VIGNETTE_STATE_SOURCE_AUDIT_2026-11-04.md`](docs/VIGNETTE_STATE_SOURCE_AUDIT_2026-11-04.md).
+The full numbers are in [`docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md`](docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md).
+
 - **DAC holds in a 91.8–95.1% band against NPPES for thirteen straight
   years (2013–2025)**, then drops to 89.8% in 2026 — the newest year, not
   a confirmed trend. An earlier pass of this audit reported DAC as five
