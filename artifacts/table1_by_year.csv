@@ -9,6 +9,13 @@ source,year,n,eligible_n,pct
 "Hospital affiliation (CCN, historical DAC)",2020,530,9107,5.8
 "Hospital affiliation (CCN, historical DAC)",2021,742,9730,7.6
 "Hospital affiliation (CCN, historical DAC)",2022,767,10401,7.4
+"Medicaid billing activity (T-MSIS, HHS DOGE release)",2018,2307,8050,28.7
+"Medicaid billing activity (T-MSIS, HHS DOGE release)",2019,2648,8589,30.8
+"Medicaid billing activity (T-MSIS, HHS DOGE release)",2020,3097,9107,34
+"Medicaid billing activity (T-MSIS, HHS DOGE release)",2021,3496,9730,35.9
+"Medicaid billing activity (T-MSIS, HHS DOGE release)",2022,3771,10401,36.3
+"Medicaid billing activity (T-MSIS, HHS DOGE release)",2023,4082,11029,37
+"Medicaid billing activity (T-MSIS, HHS DOGE release)",2024,3951,11642,33.9
 "Medicaid enrollment (any classification, % of fixed cohort N -- not eligibility-restricted)",2018,8519,12170,70
 "Medicaid enrollment (any classification, % of fixed cohort N -- not eligibility-restricted)",2019,8283,12170,68.1
 "Medicaid enrollment (any classification, % of fixed cohort N -- not eligibility-restricted)",2020,8091,12170,66.5

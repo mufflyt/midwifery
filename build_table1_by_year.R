@@ -27,13 +27,15 @@
 # the sole exception -- its input is pre-aggregated and cannot be restricted
 # this way, and is labelled accordingly.
 #
-# EIGHT SOURCES, EIGHT DIFFERENT WINDOWS, NONE OF THEM REDUCED TO ONE. (First
+# NINE SOURCES, NINE DIFFERENT WINDOWS, NONE OF THEM REDUCED TO ONE. (First
 # built with three; the state-source audit's own per-year extracts for Open
 # Payments, PECOS and Medicaid were already sitting in artifacts/ and simply
 # not checked for on the first pass; PPEF (Public Provider Enrollment Files,
 # CMS's Medicare enrollment roster, distinct from the revalidation extract
 # already in use) was found on the external drive and extracted the same
-# day -- both additions 2026-11-05.)
+# day; T-MSIS Medicaid billing (HHS DOGE's 2026-02 provider-spending
+# release) was found the same way shortly after -- all three additions
+# 2026-11-05.)
 #   - NPPES annual panel presence, 2007-2026 (every year the backbone source
 #     has run) -- is this midwife's NPI present in that year's NPPES
 #     snapshot. A presence measure, not a clinical-activity measure, same
@@ -61,7 +63,16 @@
 #     section, already a per-year classification aggregate against this
 #     exact fixed cohort -- verified below rather than assumed). "Not
 #     observed" is its own classification; any other one means an enrollment
-#     record exists that year, concordant with NPPES or not.
+#     record exists that year, concordant with NPPES or not. The ONE source
+#     not restricted to the eligibility window (pre-aggregated input).
+#   - Medicaid billing activity, 2018-2024, from HHS DOGE's T-MSIS provider-
+#     spending release (extract_tmsis_medicaid_spending_history.R) --
+#     genuinely person-level and month-level, unlike the enrollment block
+#     above, so IS eligibility-restricted. Matched on SERVICING_PROVIDER_
+#     NPI_NUM (rendering provider); TOTAL_PAID carries a documented national
+#     data-quality problem (implausible trillion-dollar rows elsewhere in
+#     the release) that the extraction script verified does not reach this
+#     cohort's rows, with a defensive plausibility bound applied anyway.
 #   - Medicare enrollment, CUMULATIVE, from PPEF (extract_ppef_enrollment_
 #     history.R). The one line on a different footing from every other
 #     source here: PPEF is a single current snapshot with no year series of
@@ -76,6 +87,7 @@
 #          artifacts/cohort_midwives_open_payments_general_2015..2025.csv
 #          artifacts/pecos_revalidation_cohort_state_by_year.csv
 #          artifacts/state_source_audit_medicaid_classification_by_year.csv
+#          artifacts/tmsis_medicaid_spending_cohort_by_year.csv
 #          artifacts/ppef_cohort_enrollment_year.csv
 #          /Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb (Medicare Part B/D)
 # Outputs: artifacts/table1_by_year.csv
@@ -347,7 +359,33 @@ if (file.exists(medicaid_f)) {
   cat("Medicaid classification by year: absent, skipped\n")
 }
 
-# --- 7. Medicare enrollment, cumulative, from PPEF ---------------------------
+# --- 7. Medicaid billing activity, 2018-2024, from HHS DOGE's T-MSIS release -
+# extract_tmsis_medicaid_spending_history.R. Unlike the Medicaid block above
+# (a pre-aggregated enrollment classification this script cannot restrict
+# person-by-person), this source is genuinely person-level and month-level --
+# SERVICING_PROVIDER_NPI_NUM (rendering provider; BILLING_PROVIDER_NPI_NUM
+# matches 10x fewer cohort NPIs, same rendering-vs-billing asymmetry already
+# documented for Medicare Part B) -- so it CAN be eligibility-restricted like
+# every other real source here. Presence = at least one claim-line row that
+# NPI-year; dollar amounts, if ever surfaced from this file elsewhere, should
+# keep the same plausibility bound the extraction script already applies.
+tmsis_f <- "artifacts/tmsis_medicaid_spending_cohort_by_year.csv"
+if (file.exists(tmsis_f)) {
+  tmsis_raw <- read_csv(tmsis_f, show_col_types = FALSE, progress = FALSE,
+                        col_types = cols(.default = "c")) %>%
+    transmute(npi, year = as.integer(year))
+  tmsis_years <- sort(unique(tmsis_raw$year))
+  tmsis <- tmsis_raw %>% filter(npi %in% coh$npi)
+  by_year <- restrict_to_eligible(tmsis, all_years = tmsis_years)
+  rows[["tmsis_medicaid_billing"]] <- by_year %>%
+    transmute(source = "Medicaid billing activity (T-MSIS, HHS DOGE release)", year, n, eligible_n, pct)
+  cat(sprintf("T-MSIS Medicaid billing: %d years, %d-%d\n", nrow(by_year),
+              min(by_year$year), max(by_year$year)))
+} else {
+  cat("T-MSIS Medicaid billing by year: absent, skipped\n")
+}
+
+# --- 8. Medicare enrollment, cumulative, from PPEF ---------------------------
 # A DIFFERENT KIND OF LINE FROM EVERY OTHER SOURCE ABOVE. Every source so far
 # measures repeated observability: is this person present in THAT year's
 # snapshot. PPEF (extract_ppef_enrollment_history.R) is one current file with

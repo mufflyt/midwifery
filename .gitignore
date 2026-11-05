@@ -273,6 +273,10 @@ artifacts/pecos_revalidation_cohort_state_by_year.csv
 # person-level (NPI, first enrollment year, enrollment count).
 artifacts/ppef_cohort_enrollment_year.csv
 
+# T-MSIS Medicaid spending (HHS DOGE release), person-level (NPI-year
+# billing activity: claim lines, patients, bounded total paid).
+artifacts/tmsis_medicaid_spending_cohort_by_year.csv
+
 # Historical Facility Affiliation, 2013-2022, from CCNs embedded in the
 # historical DAC files (extract_historical_facility_affiliation.R); same
 # standing as physician_compare_historical_midwives.csv above.

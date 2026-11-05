@@ -14,6 +14,13 @@ Identity set: the same **12,170** ACTIVE, primary-tier-linked midwives Table 1 d
 | Hospital affiliation (CCN, historical DAC) | 2020 | 530 | 9,107 | 5.8 |
 | Hospital affiliation (CCN, historical DAC) | 2021 | 742 | 9,730 | 7.6 |
 | Hospital affiliation (CCN, historical DAC) | 2022 | 767 | 10,401 | 7.4 |
+| Medicaid billing activity (T-MSIS, HHS DOGE release) | 2018 | 2,307 | 8,050 | 28.7 |
+| Medicaid billing activity (T-MSIS, HHS DOGE release) | 2019 | 2,648 | 8,589 | 30.8 |
+| Medicaid billing activity (T-MSIS, HHS DOGE release) | 2020 | 3,097 | 9,107 | 34.0 |
+| Medicaid billing activity (T-MSIS, HHS DOGE release) | 2021 | 3,496 | 9,730 | 35.9 |
+| Medicaid billing activity (T-MSIS, HHS DOGE release) | 2022 | 3,771 | 10,401 | 36.3 |
+| Medicaid billing activity (T-MSIS, HHS DOGE release) | 2023 | 4,082 | 11,029 | 37.0 |
+| Medicaid billing activity (T-MSIS, HHS DOGE release) | 2024 | 3,951 | 11,642 | 33.9 |
 | Medicaid enrollment (any classification, % of fixed cohort N -- not eligibility-restricted) | 2018 | 8,519 | 12,170 | 70.0 |
 | Medicaid enrollment (any classification, % of fixed cohort N -- not eligibility-restricted) | 2019 | 8,283 | 12,170 | 68.1 |
 | Medicaid enrollment (any classification, % of fixed cohort N -- not eligibility-restricted) | 2020 | 8,091 | 12,170 | 66.5 |

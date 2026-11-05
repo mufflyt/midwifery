@@ -1,17 +1,17 @@
 {
   "artifact": "table1_by_year.csv",
-  "written_utc": "2026-11-05 21:07:06 UTC",
+  "written_utc": "2026-11-05 21:22:44 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
       "sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716"
     }
   ],
-  "code_sha256": "b684c615ac9ad49a74be10d4d270ec26a19d6389bc0162a426d48c4fb2986d6a",
+  "code_sha256": "24b7aa11a97df90db29aa12e73b9b552b19fc2755bf525cdbc413d0242f817c6",
   "code": [
     {
       "path": "build_table1_by_year.R",
-      "sha256": "7d19c21bf9fbf7fb7b38f5b817004ee074fe1b6bc4821da7eb83d041d53a9306"
+      "sha256": "a9f09e487c11736218d836a21c9299c37b321620a17922d561895435ee0c12a4"
     },
     {
       "path": "R/join_safety.R",

@@ -1454,6 +1454,21 @@ subset each year changes more than the early numbers:
   person-level table this script can intersect against the eligibility
   window — and remains rated against the fixed cohort N, labelled as such.
   It is also still the one clear decliner: 70.0% (2018) to 48.5% (2024).
+- **Medicaid billing activity, a separate and genuinely person-level
+  Medicaid source** (`extract_tmsis_medicaid_spending_history.R`), from HHS
+  DOGE's 2026-02 Transformed Medicaid Statistical Information System
+  (T-MSIS) provider-spending release — the largest public Medicaid claims
+  dataset HHS has published, no application or data-use agreement required
+  for the first time. Matched 6,472 of 12,170 cohort NPIs (53.2%) via
+  `SERVICING_PROVIDER_NPI_NUM` (the rendering provider; `BILLING_PROVIDER_
+  NPI_NUM` matches 10× fewer, the same rendering-vs-billing asymmetry
+  already documented for Medicare Part B). Unlike the enrollment
+  classification above, this IS eligibility-restricted: 28.7% (2018) rising
+  to 37.0% (2023). The raw national release has a documented data-quality
+  problem (`TOTAL_PAID` contains implausible trillion-dollar rows elsewhere
+  in the file); verified this cohort's own matched rows are clean (max
+  $305,181 per provider-month, zero rows over $1M) before using it, with a
+  defensive plausibility bound applied anyway.
 - **PPEF**, CMS's Public Provider Enrollment File (distinct from the
   revalidation extract already in use, found on the external drive and
   extracted for the first time this session), stands apart from every other

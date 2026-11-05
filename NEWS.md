@@ -20,7 +20,7 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — 2026-11-05 — Table 1, by year: eight sources, restricted to each year's certification-eligible subset
+## [Unreleased] — 2026-11-05 — Table 1, by year: nine sources, restricted to each year's certification-eligible subset
 
 ### Added
 
@@ -48,8 +48,27 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     embeds a one-time historical fact, the provider's original enrollment
     date, reaching back to **2003**, earlier than any other source here.
     Plotted as a running cumulative share, labelled and dashed in the chart
-    artifact so it isn't read as directly comparable to the seven
-    repeated-presence lines.
+    artifact so it isn't read as directly comparable to the repeated-
+    presence lines.
+  - **`extract_tmsis_medicaid_spending_history.R`** →
+    `artifacts/tmsis_medicaid_spending_cohort_by_year.csv`. HHS's DOGE team
+    released the largest public Medicaid claims dataset in department
+    history on 2026-02-13 — the Transformed Medicaid Statistical
+    Information System (T-MSIS) provider-spending file, 238M rows, no
+    application or data-use agreement required for the first time (prior
+    access needed a ResDAC-mediated T-MSIS DUA). Already ingested on the
+    external drive and never read by this project before now. Distinct
+    from the Medicaid enrollment classification above: this is genuinely
+    person-level and month-level, so it IS eligibility-restricted, unlike
+    that source. Matched via `SERVICING_PROVIDER_NPI_NUM` (6,472 of 12,170
+    cohort NPIs, 53.2% — `BILLING_PROVIDER_NPI_NUM` matches 10× fewer, same
+    rendering-vs-billing asymmetry already documented for Medicare Part B).
+    The raw national release has a documented `TOTAL_PAID` corruption
+    problem (implausible trillion-dollar provider-month rows reported
+    elsewhere); verified this cohort's own matched rows are clean (487,846
+    rows, max $305,181, zero over $1M) before using the file at all, with a
+    defensive plausibility bound applied in the extraction script anyway.
+    Billing-activity presence rises 28.7% (2018) to 37.0% (2023).
 
 ### Fixed
 
@@ -85,9 +104,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Medicaid enrollment cannot be restricted this way** — its input is a
     pre-aggregated classification count, not a person-level table this
     script can intersect against the eligibility window — and remains rated
-    against the fixed cohort N, labelled explicitly as the one exception.
-    Still the clearest decliner of all eight sources: 70.0% (2018) to 48.5%
-    (2024).
+    against the fixed cohort N, labelled explicitly as the one exception
+    (the T-MSIS billing-activity source added above it is person-level and
+    was built eligibility-restricted from the start, so it needed no fix).
+    Medicaid enrollment is still the clearest decliner of all nine sources:
+    70.0% (2018) to 48.5% (2024).
   - `eligible_n` is now a column in `artifacts/table1_by_year.csv` and shown
     in `docs/table1_by_year.md` alongside every row's `n`, so the per-year
     denominator is never left implicit.
