@@ -20,6 +20,47 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-05 — Independent corroboration of the two NPPES migration spikes, and why spike-vs-control framing alone is misleading
+
+### Added
+
+- **`audit_migration_corroboration_by_transition.R`** and
+  **`docs/TECHNICAL_APPENDIX_MIGRATION_CORROBORATION.md`**. Extends
+  `docs/TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md`'s open question (no
+  external source had been checked against the specific NPIs that moved in
+  the 2017→2018 / 2023→2024 spikes) rather than re-deriving anything that
+  appendix already settled. For every cohort NPI with a state change in the
+  two spikes plus the same four control transitions that appendix's own
+  §4b already used (2016→2017, 2018→2019, 2022→2023, 2024→2025), checks
+  DAC, PECOS revalidation, and Open Payments for exact-year corroboration,
+  plus Medicaid enrollment-interval lead/lag via the existing
+  `mysteryroster::enrollment_move_lead_lag()`. Result: pooled spike (12.6%)
+  vs. pooled control (10.1%) any-source corroboration isn't significant
+  (p=0.11), but pooling hides the real pattern — corroboration coverage is
+  an order of magnitude denser in 2022-2025 (17.8-19.6% across spike *and*
+  control) than in 2016-2019 (0.4-2.8%, again spike and control alike).
+  **Neither spike is an outlier within its own coverage era.** Genuinely
+  independent (non-DAC/PECOS-only, since DAC's address field is itself
+  CMS-derived from PECOS enrollment) corroboration never exceeds 0.8% in
+  any transition — the current source set cannot independently verify
+  where a confirmed mover went, for any year, not just the spike years.
+  New figure: `docs/figures/migration_corroboration_by_transition.png`.
+
+### Fixed
+
+- Two bugs caught by an external review of this feature's first-draft
+  version (`audit_nppes_discontinuity_corroboration.R`, a 100-NPI sampled
+  predecessor, retired the same day this full-population version shipped):
+  (1) a source's conflicting states for one (NPI, year) were resolved by
+  picking the first row, which is order-dependent, not evidence-based —
+  fixed by `R/lib/corroboration_lookup.R::lookup_state()`, which now
+  leaves such cases uncovered rather than arbitrarily resolved (affected
+  413/44,682 DAC and 874/17,734 Open Payments NPI-years in this cohort);
+  (2) DAC and PECOS were being treated as two independent confirmations
+  when they share CMS/PECOS enrollment lineage — fixed by
+  `is_independent_source_set()`. Both covered by
+  `tests/test_corroboration_lookup.R`.
+
 ## [Unreleased] — 2026-11-05 — What "ACTIVE" doesn't mean: a Trilliant claims-based cross-check, in the chart and the manuscript
 
 ### Added

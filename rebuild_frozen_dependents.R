@@ -365,7 +365,25 @@ REBUILD_ORDER <- list(
                    # cohort_by_year.csv, which build_table1_by_year.R (layer
                    # 6, below) reads for its Medicaid billing-activity line
                    # -- same ordering reasoning as the PPEF extract above it.
-                   "extract_tmsis_medicaid_spending_history.R")),
+                   "extract_tmsis_medicaid_spending_history.R",
+                   # Added 2026-11-05, by T5 in the pull request that
+                   # introduced it, SUPERSEDING audit_nppes_discontinuity_
+                   # corroboration.R (a 100-NPI sampled version of the same
+                   # check, retired the same day once this full-population
+                   # version replaced it). Reads amcb_npi_linkage_FROZEN plus
+                   # already-cached per-source state extracts (midwife_panel.csv,
+                   # DAC historical+current, and artifacts/pecos_revalidation_
+                   # cohort_state_by_year.csv -- written by extract_pecos_
+                   # revalidation_state_history.R above it in this same layer,
+                   # so it must follow that script -- plus the Open Payments
+                   # cohort extracts, plus the external Medicaid enrollment-
+                   # segment DuckDB warehouse, read-only, no network). A
+                   # standalone corroboration check with no downstream
+                   # readers, so unlike every other script in this layer it
+                   # does not need to precede anything in layer 6; placed
+                   # here only because it reads FROZEN directly and depends
+                   # on the PECOS extract.
+                   "audit_migration_corroboration_by_transition.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        # export_amcb_npi_geography.R writes the tracked state aggregate and
        # the gitignored person-level export, both of which read the crosswalk

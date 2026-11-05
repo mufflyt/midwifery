@@ -277,6 +277,13 @@ artifacts/ppef_cohort_enrollment_year.csv
 # billing activity: claim lines, patients, bounded total paid).
 artifacts/tmsis_medicaid_spending_cohort_by_year.csv
 
+# Migration corroboration adjudication, person-level (NPI, transition,
+# states, per-source corroboration flags). The rolled-up summary/spike-vs-
+# control/Medicaid-lead-lag CSVs the same script writes are aggregates and
+# stay tracked.
+artifacts/migration_corroboration_adjudication.csv
+artifacts/migration_corroboration_adjudication.csv.provenance.json
+
 # Historical Facility Affiliation, 2013-2022, from CCNs embedded in the
 # historical DAC files (extract_historical_facility_affiliation.R); same
 # standing as physician_compare_historical_midwives.csv above.
