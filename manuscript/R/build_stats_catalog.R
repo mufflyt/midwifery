@@ -918,36 +918,43 @@ mw_build_catalog <- function(root = ".") {
   # file.path(root, ...) before Sys.glob(): a bare pattern glob()s against the
   # process's cwd, which is not necessarily `root` when the manuscript renders
   # from a different working directory than the repository root.
-  trl_val_files <- Sys.glob(file.path(root, MW_ART, "trilliant_demographics_validation_*.csv"))
+  trl_val_files <- sort(Sys.glob(file.path(root, MW_ART, "trilliant_demographics_validation_*.csv")))
   if (length(trl_val_files)) {
-    # MOST RECENTLY WRITTEN wins, not the last one alphabetically. The
-    # filename's suffix is a freeze SHA256 prefix, not a date -- sorting by
-    # filename sorts by hash, which has no relationship to recency (confirmed
-    # 2026-11-05: a freshly-written file sorted into the MIDDLE of three
-    # committed ones). Multiple hash-named files accumulate here across
-    # freezes, same as this project's other hash-named artifact families.
-    trl_val <- suppressWarnings(readr::read_csv(
-      trl_val_files[order(file.info(trl_val_files)$mtime, decreasing = TRUE)][1],
-      show_col_types = FALSE, progress = FALSE))
-    act_row   <- trl_val[trl_val$field == "activity" &
-                          trl_val$check == "Trilliant active_provider == TRUE", , drop = FALSE]
-    inact_row <- trl_val[trl_val$field == "activity" &
-                          trl_val$check == "Trilliant active_provider == FALSE despite ACTIVE AMCB certification", , drop = FALSE]
-    if (nrow(act_row) == 1L && nrow(inact_row) == 1L) {
-      n_cohort <- act_row$n[1]
-      n_inactive <- inact_row$value[1]
-      cat_$trilliant <- list(
-        n_cohort                     = n_cohort,
-        n_active                     = act_row$value[1],
-        n_inactive_despite_certified = n_inactive,
-        pct_inactive_despite_certified = 100 * n_inactive / n_cohort,
-        # as.character(), not the bare column: readr::read_csv() auto-parses
-        # a column that looks like an ISO date into a Date, and mw_stat()
-        # with no fmt returns it raw -- a Date prints as its day-count
-        # integer (confirmed: "2026-06-25" became 20629) wherever the
-        # manuscript calls mw_stat() without a %s/date format.
-        snapshot                     = as.character(trl_val$trilliant_snapshot[1])
-      )
+    # SELECT BY CONTENT, NOT BY FILE METADATA. Multiple hash-named files
+    # accumulate here across freezes (the suffix is a freeze SHA256 prefix,
+    # not a date), and NEITHER filename order NOR file modification time
+    # reliably picks the one with the "activity" rows this section needs:
+    # alphabetical order has no relationship to when a row was added, and
+    # mtime is WORSE on a fresh CI checkout -- git sets every file's mtime to
+    # roughly the checkout moment, not its commit history, so "most recently
+    # modified" is close to arbitrary there (confirmed 2026-11-05: this exact
+    # bug shipped once already, picking a pre-2026-11-05 file with no
+    # "activity" rows and silently producing no cat_$trilliant section on
+    # CI). Instead, read every candidate and use the first one that actually
+    # contains both rows this section needs.
+    for (f in trl_val_files) {
+      trl_val <- suppressWarnings(readr::read_csv(f, show_col_types = FALSE, progress = FALSE))
+      act_row   <- trl_val[trl_val$field == "activity" &
+                            trl_val$check == "Trilliant active_provider == TRUE", , drop = FALSE]
+      inact_row <- trl_val[trl_val$field == "activity" &
+                            trl_val$check == "Trilliant active_provider == FALSE despite ACTIVE AMCB certification", , drop = FALSE]
+      if (nrow(act_row) == 1L && nrow(inact_row) == 1L) {
+        n_cohort <- act_row$n[1]
+        n_inactive <- inact_row$value[1]
+        cat_$trilliant <- list(
+          n_cohort                     = n_cohort,
+          n_active                     = act_row$value[1],
+          n_inactive_despite_certified = n_inactive,
+          pct_inactive_despite_certified = 100 * n_inactive / n_cohort,
+          # as.character(), not the bare column: readr::read_csv() auto-parses
+          # a column that looks like an ISO date into a Date, and mw_stat()
+          # with no fmt returns it raw -- a Date prints as its day-count
+          # integer (confirmed: "2026-06-25" became 20629) wherever the
+          # manuscript calls mw_stat() without a %s/date format.
+          snapshot                     = as.character(trl_val$trilliant_snapshot[1])
+        )
+        break
+      }
     }
   }
 
