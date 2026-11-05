@@ -1426,9 +1426,14 @@ since a population fixed to today's cohort is left-censored the further back
 you look. More informative: Medicare Part D presence within that same fixed
 population nearly doubles over a decade, 13.5% (2013) to 24.6% (2023), Part B
 follows the same direction (4.3% to 7.5%), and Open Payments general-payment
-presence rises from trace-only (pre-2021, before CNMs were Open-Payments-
-reportable) to 36.0% by 2025 — three independent sources all trending the same
-direction, a real increase in this population's federal claims footprint. CCN
+presence (filtered to `payment_amount > 0`) rises from trace-only to 36.0% by
+2025 — three independent sources all trending the same direction, a real
+increase in this population's federal claims footprint. The 2015–2020
+Open Payments rows are small and real dollar amounts, but most likely
+NPI-matching noise rather than genuine midwife payments: CNMs were not
+Open-Payments-reportable until the SUPPORT Act (Pub. L. 115-271 §6111) took
+effect for program year 2021, so a real match before that window is the less
+likely explanation. CCN
 hospital affiliation (2013–2022) is non-monotonic instead, consistent with the
 declining CCN fill rate documented in the state-source audit, and PECOS
 revalidation rises 56.4% (2021) to 75.2% (2025) before dipping to 73.3% (2026,

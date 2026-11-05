@@ -175,11 +175,23 @@ if (file.exists(fa)) {
 # --- 4. Open Payments general payments, 2015-2025 ----------------------------
 # One file per program year (extract_open_payments_2025.R and its siblings),
 # payment-level rows -- several per provider per year is normal and expected,
-# so presence is distinct(npi, year), not a row count. 2015-2020 is real but
-# trace-only (1-29 cohort NPIs/year): CNMs were not Open-Payments-reportable
-# until the SUPPORT Act expansion hit program year 2021. Included anyway,
-# rather than suppressed, so the trace years are visible as what they are
-# instead of silently absent.
+# so presence is distinct(npi, year), not a row count. Filtered to
+# payment_amount > 0 explicitly -- every row in the current extracts already
+# is (verified 2026-11-05: zero $0/NA rows in any year), but the filter is
+# written anyway rather than relied on as an implicit property of the input,
+# so a future re-extraction that picks up a $0 placeholder or corrected-to-
+# zero row doesn't silently count as "received a payment."
+#
+# 2015-2020 is trace-only (1-29 cohort NPIs/year). CNMs were not
+# Open-Payments-reportable until the SUPPORT Act (Pub. L. 115-271 Sec. 6111)
+# expanded covered-recipient types effective program year 2021 -- confirmed
+# against CMS's own program-year documentation, not merely inferred from the
+# count jump. That makes the 2015-2020 rows, small and real as the dollar
+# amounts are, PROBABLY NPI-matching noise rather than genuine midwife
+# Open Payments events: the reporting requirement did not exist yet for this
+# provider type, so a real match in that window is the less likely
+# explanation. Kept and labelled rather than dropped (no silent
+# truncation), but read as a data-quality flag, not a finding.
 op_years <- 2015:2025
 op_rows <- list()
 for (y in op_years) {
@@ -187,7 +199,8 @@ for (y in op_years) {
   if (!file.exists(f)) next
   op <- read_csv(f, show_col_types = FALSE, progress = FALSE,
                  col_types = cols(.default = "c")) %>%
-    filter(npi %in% coh$npi)
+    mutate(payment_amount = suppressWarnings(as.numeric(payment_amount))) %>%
+    filter(npi %in% coh$npi, !is.na(payment_amount), payment_amount > 0)
   op_rows[[as.character(y)]] <- tibble(year = y, n = n_distinct(op$npi))
 }
 if (length(op_rows)) {
