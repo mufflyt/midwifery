@@ -20,68 +20,77 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — 2026-11-05 — An eighth source for Table 1 by year, found on the external drive: PPEF
-
-### Added
-
-- **`extract_ppef_enrollment_history.R`** → `artifacts/ppef_cohort_enrollment_year.csv`,
-  wired into `build_table1_by_year.R` as an eighth source. PPEF (Public
-  Provider Enrollment Files) is CMS's Medicare enrollment roster — distinct
-  from the "Revalidation Group Practice Reassignment" extract already in use
-  (`extract_pecos_revalidation_state_history.R`), which tracks when a
-  provider's periodic revalidation falls due, not their original enrollment.
-  Found on the external drive (`nppes_historical_downloads/pecos/PPEF_
-  Enrollment_Extract_2026.07.17.csv`, ~2.98M rows nationally) and never
-  extracted for this project before now. One current snapshot, not a year
-  series — but each `ENRLMT_ID` embeds the provider's original enrollment
-  date (format `I<YYYYMMDD><sequence>`), a one-time historical fact. 9,667
-  of 16,775 cohort-member NPIs have a parseable enrollment date, earliest
-  enrollment taken per NPI, reaching back to **2003** — earlier than any
-  other source in `table1_by_year.csv`. Plotted as a running cumulative
-  share rather than a repeated year-by-year presence measure (labelled as
-  such, dashed in the chart artifact, so it isn't read as directly
-  comparable to the other seven): 0.1% (2003) climbing steadily to 72.4% of
-  the fixed Table 1 cohort by 2026.
-
-## [Unreleased] — 2026-11-05 — Table 1, by year: a trend view for the seven sources that carry real year-level history
+## [Unreleased] — 2026-11-05 — Table 1, by year: eight sources, restricted to each year's certification-eligible subset
 
 ### Added
 
 - **`build_table1_by_year.R`** → `artifacts/table1_by_year.csv`,
   `docs/table1_by_year.md`. Table 1 proper is cross-sectional — most of its
   variables (sex, age, ACOG district, rurality, Healthgrades, CMS NDH, HPSA)
-  are single current snapshots, and the AMCB status field this project holds
-  is a current value, not a historical register, so there is no sound way to
-  reconstruct "who was ACTIVE as of year Y". What this script does instead:
-  take the SAME fixed cohort Table 1 uses and measure, for every source that
-  carries real per-year history, how often that cohort appears each year.
-  First built with three sources; Open Payments, PECOS and Medicaid per-year
-  extracts were already sitting in `artifacts/` from the state-source audit
-  and simply not checked for on the first pass, added the same day once a
-  reader asked where they were.
-  - NPPES annual panel presence rises 24.1% (2007) to 99.2% (2026) — expected
-    left-censoring in a population fixed to today's cohort, not a finding.
-  - Medicare Part D presence nearly doubles over a decade (13.5% → 24.6%,
-    2013-2023); Part B follows the same direction (4.3% → 7.5%); Open
-    Payments general-payment presence rises from trace-only (pre-2021,
-    before CNMs were Open-Payments-reportable) to 36.0% by 2025 — three
-    independent federal-claims sources, same direction, a real trend.
-  - CCN hospital affiliation (2013-2022, from the historical DAC vintages'
-    embedded CCN columns) is non-monotonic, consistent with the declining
-    CCN fill rate already documented in the state-source audit.
-  - PECOS revalidation rises 56.4% (2021) to 75.2% (2025), then dips to
-    73.3% (2026, a vintage not yet complete for the year).
-  - **Medicaid enrollment is the one source moving the other way**: presence
-    falls from 70.0% (2018) to 48.5% (2024) — the only genuine decline among
-    all seven sources, not yet explained. Verified against the same fixed
-    cohort before use (every year's total in the underlying classification
-    file sums to exactly N; the script warns and skips rather than publish a
-    mismatched denominator if that ever stops being true).
+  are single current snapshots. This tracks the SAME fixed, today-ACTIVE
+  cohort Table 1 uses, never reconstructed year to year, across every source
+  that carries real per-year history — three on the first pass; Open
+  Payments, PECOS and Medicaid per-year extracts were already sitting in
+  `artifacts/` from the state-source audit and simply not checked for;
+  **PPEF** (Public Provider Enrollment Files, CMS's Medicare enrollment
+  roster — distinct from the "Revalidation Group Practice Reassignment"
+  extract already in use, which tracks when a provider's periodic
+  revalidation falls due, not her original enrollment) was found on the
+  external drive (`nppes_historical_downloads/pecos/PPEF_Enrollment_Extract_
+  2026.07.17.csv`, ~2.98M rows nationally) and extracted for the first time
+  via `extract_ppef_enrollment_history.R`, 9,667 of 16,775 cohort-member
+  NPIs matched by its embedded original-enrollment date.
+  - Medicare Part B/D queries the Medicare DuckDB warehouse's raw per-year
+    tables directly (the same ones `match_medicare_partb_partd.R` reads),
+    re-run per year rather than collapsed to an any-year flag; does not
+    modify that script or its output.
+  - PPEF is one current snapshot, not a year series — but each `ENRLMT_ID`
+    embeds a one-time historical fact, the provider's original enrollment
+    date, reaching back to **2003**, earlier than any other source here.
+    Plotted as a running cumulative share, labelled and dashed in the chart
+    artifact so it isn't read as directly comparable to the seven
+    repeated-presence lines.
 
-  Medicare Part B/D queries the Medicare DuckDB warehouse's raw per-year
-  tables directly (the same ones `match_medicare_partb_partd.R` reads),
-  re-run per year rather than collapsed to an any-year flag; does not modify
-  that script or its output.
+### Fixed
+
+- **Every count is now restricted to that year's certification-eligible
+  subset of the fixed cohort, not the full fixed N.** A cohort member counts
+  toward year Y's numerator *and denominator* only if her AMCB certification
+  actually covered year Y (`certification_date <= Y <= expiration_date` —
+  real historical facts on the linkage record, not the current `status`
+  snapshot, which this project has never claimed to hold historically). The
+  first version of this table divided every year by the full fixed N,
+  so a midwife certified in 2024 silently dragged down 2007's rate just by
+  not existing yet. That changed more than the early numbers:
+  - **NPPES annual panel presence no longer looks left-censored**: 79.1%
+    (2007) rather than 24.1%, climbing to 99.2% by 2026 — consistently high
+    observability throughout, not a rise from near-zero.
+  - **Medicare Part D, previously reported as "nearly doubling," is
+    essentially flat**: 28.8% (2013) to 27.0% (2023), a ~2-point *decline*,
+    not the 13.5%→24.6% rise the uncorrected denominator produced. Part B is
+    similarly flat (9.0%→8.2%, 2013-2023, peaking at 10.8% in 2019). The
+    earlier "three independent sources, a real increase in this population's
+    federal claims footprint" claim did not survive this correction for Part
+    B/D and has been withdrawn for them.
+  - **CCN hospital affiliation's decline is confirmed, and sharper than
+    first reported**: 21.7% (2013) down to a 5.8-8.3% band by 2018-2022 —
+    restricting the denominator strengthened this finding, consistent with
+    the declining CCN fill rate already documented in the state-source
+    audit, rather than explaining it away.
+  - **Open Payments** still shows a real post-2021 rise once restricted:
+    24.4% to 36.1% through 2025 — the one federal-claims source where "a
+    real increase" still holds.
+  - **PECOS revalidation** sits higher and flatter: 70.2% (2021) to 75.4%
+    (2025), dipping to 73.3% (2026, a vintage not yet complete for the year).
+  - **Medicaid enrollment cannot be restricted this way** — its input is a
+    pre-aggregated classification count, not a person-level table this
+    script can intersect against the eligibility window — and remains rated
+    against the fixed cohort N, labelled explicitly as the one exception.
+    Still the clearest decliner of all eight sources: 70.0% (2018) to 48.5%
+    (2024).
+  - `eligible_n` is now a column in `artifacts/table1_by_year.csv` and shown
+    in `docs/table1_by_year.md` alongside every row's `n`, so the per-year
+    denominator is never left implicit.
 
 ## [Unreleased] — 2026-11-05 — Checked Table 1 against AMCB's own published workforce data
 
