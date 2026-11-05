@@ -14,6 +14,13 @@ Fixed cohort: the same **12,170** ACTIVE, primary-tier-linked midwives Table 1 d
 | Hospital affiliation (CCN, historical DAC) | 2020 | 531 | 4.4 |
 | Hospital affiliation (CCN, historical DAC) | 2021 | 742 | 6.1 |
 | Hospital affiliation (CCN, historical DAC) | 2022 | 768 | 6.3 |
+| Medicaid enrollment (any classification) | 2018 | 8,519 | 70.0 |
+| Medicaid enrollment (any classification) | 2019 | 8,283 | 68.1 |
+| Medicaid enrollment (any classification) | 2020 | 8,091 | 66.5 |
+| Medicaid enrollment (any classification) | 2021 | 7,908 | 65.0 |
+| Medicaid enrollment (any classification) | 2022 | 7,579 | 62.3 |
+| Medicaid enrollment (any classification) | 2023 | 7,135 | 58.6 |
+| Medicaid enrollment (any classification) | 2024 | 5,899 | 48.5 |
 | Medicare Part B (rendering NPI) | 2013 | 521 | 4.3 |
 | Medicare Part B (rendering NPI) | 2014 | 589 | 4.8 |
 | Medicare Part B (rendering NPI) | 2015 | 645 | 5.3 |
@@ -56,3 +63,20 @@ Fixed cohort: the same **12,170** ACTIVE, primary-tier-linked midwives Table 1 d
 | NPPES annual panel | 2024 | 11,375 | 93.5 |
 | NPPES annual panel | 2025 | 11,663 | 95.8 |
 | NPPES annual panel | 2026 | 12,075 | 99.2 |
+| Open Payments general payments | 2015 | 15 | 0.1 |
+| Open Payments general payments | 2016 | 3 | 0.0 |
+| Open Payments general payments | 2017 | 0 | 0.0 |
+| Open Payments general payments | 2018 | 1 | 0.0 |
+| Open Payments general payments | 2019 | 2 | 0.0 |
+| Open Payments general payments | 2020 | 3 | 0.0 |
+| Open Payments general payments | 2021 | 2,391 | 19.6 |
+| Open Payments general payments | 2022 | 3,342 | 27.5 |
+| Open Payments general payments | 2023 | 3,556 | 29.2 |
+| Open Payments general payments | 2024 | 4,041 | 33.2 |
+| Open Payments general payments | 2025 | 4,382 | 36.0 |
+| PECOS revalidation/reassignment | 2021 | 6,866 | 56.4 |
+| PECOS revalidation/reassignment | 2022 | 7,453 | 61.2 |
+| PECOS revalidation/reassignment | 2023 | 8,062 | 66.2 |
+| PECOS revalidation/reassignment | 2024 | 8,581 | 70.5 |
+| PECOS revalidation/reassignment | 2025 | 9,157 | 75.2 |
+| PECOS revalidation/reassignment | 2026 | 8,923 | 73.3 |
