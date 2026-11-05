@@ -20,7 +20,10 @@
 # each year. This is a trend in OBSERVABILITY within a stable population, not
 # a reconstruction of the workforce's past composition.
 #
-# THREE SOURCES, THREE DIFFERENT WINDOWS, NONE OF THEM REDUCED TO ONE:
+# SIX SOURCES, SIX DIFFERENT WINDOWS, NONE OF THEM REDUCED TO ONE. (First
+# built with three; the state-source audit's own per-year extracts for Open
+# Payments, PECOS and Medicaid were already sitting in artifacts/ and simply
+# not checked for on the first pass -- added 2026-11-05.)
 #   - NPPES annual panel presence, 2007-2026 (every year the backbone source
 #     has run) -- is this midwife's NPI present in that year's NPPES
 #     snapshot. A presence measure, not a clinical-activity measure, same
@@ -36,10 +39,26 @@
 #     embedded CCN columns (extract_historical_facility_affiliation.R). CMS
 #     dropped this field from the file itself starting 2023, so the window
 #     ends there structurally, not from a gap in this project's extraction.
+#   - Open Payments general payments, 2015-2025 (extract_open_payments_2025.R
+#     and its siblings, one file per program year). 2015-2020 is real but
+#     trace-only -- CNMs were not Open-Payments-reportable until the SUPPORT
+#     Act expansion hit program year 2021 -- shown as measured, not
+#     suppressed, so the trace years read as what they are.
+#   - PECOS revalidation/reassignment, 2021-2026 (40 monthly CMS releases,
+#     one row per NPI per year-end vintage, extract_pecos_revalidation_
+#     state_history.R). Enrollment-derived, independent of NPPES self-report.
+#   - Medicaid enrollment, 2018-2024 (build_state_source_audit.R's Medicaid
+#     section, already a per-year classification aggregate against this
+#     exact fixed cohort -- verified below rather than assumed). "Not
+#     observed" is its own classification; any other one means an enrollment
+#     record exists that year, concordant with NPPES or not.
 #
 # Inputs : artifacts/amcb_npi_linkage_FROZEN.csv
 #          artifacts/midwife_panel_midwifeonly.csv
 #          artifacts/historical_facility_affiliation_cohort_state_by_year.csv
+#          artifacts/cohort_midwives_open_payments_general_2015..2025.csv
+#          artifacts/pecos_revalidation_cohort_state_by_year.csv
+#          artifacts/state_source_audit_medicaid_classification_by_year.csv
 #          /Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb (Medicare Part B/D)
 # Outputs: artifacts/table1_by_year.csv
 #          docs/table1_by_year.md
@@ -138,6 +157,84 @@ if (file.exists(fa)) {
               min(by_year$year), max(by_year$year)))
 } else {
   cat("Hospital affiliation (CCN) by year: absent, skipped\n")
+}
+
+# --- 4. Open Payments general payments, 2015-2025 ----------------------------
+# One file per program year (extract_open_payments_2025.R and its siblings),
+# payment-level rows -- several per provider per year is normal and expected,
+# so presence is distinct(npi, year), not a row count. 2015-2020 is real but
+# trace-only (1-29 cohort NPIs/year): CNMs were not Open-Payments-reportable
+# until the SUPPORT Act expansion hit program year 2021. Included anyway,
+# rather than suppressed, so the trace years are visible as what they are
+# instead of silently absent.
+op_years <- 2015:2025
+op_rows <- list()
+for (y in op_years) {
+  f <- sprintf("artifacts/cohort_midwives_open_payments_general_%d.csv", y)
+  if (!file.exists(f)) next
+  op <- read_csv(f, show_col_types = FALSE, progress = FALSE,
+                 col_types = cols(.default = "c")) %>%
+    filter(npi %in% coh$npi)
+  op_rows[[as.character(y)]] <- tibble(year = y, n = n_distinct(op$npi))
+}
+if (length(op_rows)) {
+  by_year <- bind_rows(op_rows)
+  rows[["open_payments"]] <- by_year %>%
+    transmute(source = "Open Payments general payments", year, n,
+              pct = round(100 * n / N, 1))
+  cat(sprintf("Open Payments: %d years, %d-%d\n", nrow(by_year),
+              min(by_year$year), max(by_year$year)))
+} else {
+  cat("Open Payments by-year files: absent, skipped\n")
+}
+
+# --- 5. PECOS revalidation/reassignment, 2021-2026 ---------------------------
+pecos_f <- "artifacts/pecos_revalidation_cohort_state_by_year.csv"
+if (file.exists(pecos_f)) {
+  pecos <- read_csv(pecos_f, show_col_types = FALSE, progress = FALSE,
+                    col_types = cols(.default = "c")) %>%
+    mutate(year = as.integer(year)) %>%
+    filter(npi %in% coh$npi)
+  by_year <- pecos %>% distinct(npi, year) %>% count(year, name = "n")
+  rows[["pecos"]] <- by_year %>%
+    transmute(source = "PECOS revalidation/reassignment", year, n,
+              pct = round(100 * n / N, 1))
+  cat(sprintf("PECOS revalidation: %d years, %d-%d\n", nrow(by_year),
+              min(by_year$year), max(by_year$year)))
+} else {
+  cat("PECOS revalidation by year: absent, skipped\n")
+}
+
+# --- 6. Medicaid enrollment, 2018-2024 ---------------------------------------
+# Already a per-year aggregate, not person-level -- built by
+# build_state_source_audit.R's Medicaid section (see
+# docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md Section 4) against
+# this exact fixed cohort (every year's total is exactly N, verified below).
+# "Not observed" is its own classification, not folded into the others; any
+# OTHER classification means a Medicaid enrollment record exists that year,
+# regardless of whether it's concordant with NPPES.
+medicaid_f <- "artifacts/state_source_audit_medicaid_classification_by_year.csv"
+if (file.exists(medicaid_f)) {
+  mcaid <- read_csv(medicaid_f, show_col_types = FALSE, progress = FALSE,
+                    col_types = cols(.default = "c")) %>%
+    mutate(year = as.integer(year), n = as.integer(n))
+  totals <- mcaid %>% group_by(year) %>% summarise(total = sum(n), .groups = "drop")
+  if (!all(totals$total == N))
+    warning(sprintf(
+      "state_source_audit_medicaid_classification_by_year.csv's yearly totals do not all equal N=%d -- it may describe a different cohort than this script's fixed cohort. Skipping rather than publishing a mismatched denominator.",
+      N), call. = FALSE)
+  else {
+    by_year <- mcaid %>%
+      filter(classification != "Not observed") %>%
+      group_by(year) %>% summarise(n = sum(n), .groups = "drop")
+    rows[["medicaid"]] <- by_year %>%
+      transmute(source = "Medicaid enrollment (any classification)", year, n,
+                pct = round(100 * n / N, 1))
+    cat(sprintf("Medicaid enrollment: %d years, %d-%d\n", nrow(by_year),
+                min(by_year$year), max(by_year$year)))
+  }
+} else {
+  cat("Medicaid classification by year: absent, skipped\n")
 }
 
 if (!length(rows))
