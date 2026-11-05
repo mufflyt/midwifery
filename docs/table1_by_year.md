@@ -43,6 +43,30 @@ Fixed cohort: the same **12,170** ACTIVE, primary-tier-linked midwives Table 1 d
 | Medicare Part D (prescriber NPI) | 2021 | 2,705 | 22.2 |
 | Medicare Part D (prescriber NPI) | 2022 | 2,802 | 23.0 |
 | Medicare Part D (prescriber NPI) | 2023 | 2,994 | 24.6 |
+| Medicare enrollment, cumulative (PPEF) | 2003 | 17 | 0.1 |
+| Medicare enrollment, cumulative (PPEF) | 2004 | 240 | 2.0 |
+| Medicare enrollment, cumulative (PPEF) | 2005 | 455 | 3.7 |
+| Medicare enrollment, cumulative (PPEF) | 2006 | 577 | 4.7 |
+| Medicare enrollment, cumulative (PPEF) | 2007 | 778 | 6.4 |
+| Medicare enrollment, cumulative (PPEF) | 2008 | 945 | 7.8 |
+| Medicare enrollment, cumulative (PPEF) | 2009 | 1,125 | 9.2 |
+| Medicare enrollment, cumulative (PPEF) | 2010 | 1,343 | 11.0 |
+| Medicare enrollment, cumulative (PPEF) | 2011 | 1,600 | 13.1 |
+| Medicare enrollment, cumulative (PPEF) | 2012 | 1,847 | 15.2 |
+| Medicare enrollment, cumulative (PPEF) | 2013 | 2,085 | 17.1 |
+| Medicare enrollment, cumulative (PPEF) | 2014 | 2,422 | 19.9 |
+| Medicare enrollment, cumulative (PPEF) | 2015 | 2,795 | 23.0 |
+| Medicare enrollment, cumulative (PPEF) | 2016 | 3,232 | 26.6 |
+| Medicare enrollment, cumulative (PPEF) | 2017 | 3,686 | 30.3 |
+| Medicare enrollment, cumulative (PPEF) | 2018 | 4,155 | 34.1 |
+| Medicare enrollment, cumulative (PPEF) | 2019 | 4,675 | 38.4 |
+| Medicare enrollment, cumulative (PPEF) | 2020 | 5,164 | 42.4 |
+| Medicare enrollment, cumulative (PPEF) | 2021 | 5,706 | 46.9 |
+| Medicare enrollment, cumulative (PPEF) | 2022 | 6,359 | 52.3 |
+| Medicare enrollment, cumulative (PPEF) | 2023 | 7,075 | 58.1 |
+| Medicare enrollment, cumulative (PPEF) | 2024 | 7,831 | 64.3 |
+| Medicare enrollment, cumulative (PPEF) | 2025 | 8,541 | 70.2 |
+| Medicare enrollment, cumulative (PPEF) | 2026 | 8,808 | 72.4 |
 | NPPES annual panel | 2007 | 2,932 | 24.1 |
 | NPPES annual panel | 2008 | 3,081 | 25.3 |
 | NPPES annual panel | 2009 | 3,394 | 27.9 |

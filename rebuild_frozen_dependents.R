@@ -345,7 +345,18 @@ REBUILD_ORDER <- list(
                    # multi-state-license block -- being in this layer, which
                    # fully precedes layer 6, satisfies that ordering without
                    # needing to interleave it into the publication layer.
-                   "extract_open_payments_profile_supplement.R")),
+                   "extract_open_payments_profile_supplement.R",
+                   # Added 2026-11-05, by T5 in the pull request that
+                   # introduced it. Reads amcb_npi_linkage_FROZEN plus the
+                   # CMS Public Provider Enrollment File (PPEF, a single
+                   # current snapshot on the external drive, no network) and
+                   # writes artifacts/ppef_cohort_enrollment_year.csv, which
+                   # build_table1_by_year.R (layer 6, below) reads for its
+                   # cumulative Medicare-enrollment line -- being in this
+                   # layer, which fully precedes layer 6, satisfies that
+                   # ordering the same way the two extract_* scripts above it
+                   # do for their own layer-6 readers.
+                   "extract_ppef_enrollment_history.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        # export_amcb_npi_geography.R writes the tracked state aggregate and
        # the gitignored person-level export, both of which read the crosswalk

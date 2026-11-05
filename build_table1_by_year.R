@@ -20,10 +20,13 @@
 # each year. This is a trend in OBSERVABILITY within a stable population, not
 # a reconstruction of the workforce's past composition.
 #
-# SIX SOURCES, SIX DIFFERENT WINDOWS, NONE OF THEM REDUCED TO ONE. (First
+# EIGHT SOURCES, EIGHT DIFFERENT WINDOWS, NONE OF THEM REDUCED TO ONE. (First
 # built with three; the state-source audit's own per-year extracts for Open
 # Payments, PECOS and Medicaid were already sitting in artifacts/ and simply
-# not checked for on the first pass -- added 2026-11-05.)
+# not checked for on the first pass; PPEF (Public Provider Enrollment Files,
+# CMS's Medicare enrollment roster, distinct from the revalidation extract
+# already in use) was found on the external drive and extracted the same
+# day -- both additions 2026-11-05.)
 #   - NPPES annual panel presence, 2007-2026 (every year the backbone source
 #     has run) -- is this midwife's NPI present in that year's NPPES
 #     snapshot. A presence measure, not a clinical-activity measure, same
@@ -52,6 +55,13 @@
 #     exact fixed cohort -- verified below rather than assumed). "Not
 #     observed" is its own classification; any other one means an enrollment
 #     record exists that year, concordant with NPPES or not.
+#   - Medicare enrollment, CUMULATIVE, from PPEF (extract_ppef_enrollment_
+#     history.R). The one line on a different footing from every other
+#     source here: PPEF is a single current snapshot with no year series of
+#     its own, but each enrollment ID embeds the provider's original
+#     enrollment date, a one-time historical fact going back to 2003 --
+#     earlier than any other source in this file. Plotted as a running
+#     cumulative share, not a repeated-presence measure, and labelled as such.
 #
 # Inputs : artifacts/amcb_npi_linkage_FROZEN.csv
 #          artifacts/midwife_panel_midwifeonly.csv
@@ -59,10 +69,13 @@
 #          artifacts/cohort_midwives_open_payments_general_2015..2025.csv
 #          artifacts/pecos_revalidation_cohort_state_by_year.csv
 #          artifacts/state_source_audit_medicaid_classification_by_year.csv
+#          artifacts/ppef_cohort_enrollment_year.csv
 #          /Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb (Medicare Part B/D)
 # Outputs: artifacts/table1_by_year.csv
 #          docs/table1_by_year.md
 # =============================================================================
+REF_YEAR <- 2026   # matches build_table1_midwives.R's own reference year
+
 suppressPackageStartupMessages({
   library(DBI); library(duckdb); library(dplyr); library(readr)
 })
@@ -235,6 +248,38 @@ if (file.exists(medicaid_f)) {
   }
 } else {
   cat("Medicaid classification by year: absent, skipped\n")
+}
+
+# --- 7. Medicare enrollment, cumulative, from PPEF ---------------------------
+# A DIFFERENT KIND OF LINE FROM EVERY OTHER SOURCE ABOVE. Every source so far
+# measures repeated observability: is this person present in THAT year's
+# snapshot. PPEF (extract_ppef_enrollment_history.R) is one current file with
+# no year series of its own -- what it carries instead is each provider's
+# ORIGINAL Medicare enrollment date, parsed from ENRLMT_ID, a one-time
+# historical fact. The only honest way to put that on a year axis is
+# CUMULATIVE: the running share of the fixed cohort whose earliest Medicare
+# enrollment falls on or before year Y. It is not comparable point-for-point
+# to the presence lines above it, and is labelled "cumulative" so a reader
+# does not read it as one.
+ppef_f <- "artifacts/ppef_cohort_enrollment_year.csv"
+if (file.exists(ppef_f)) {
+  ppef <- read_csv(ppef_f, show_col_types = FALSE, progress = FALSE,
+                   col_types = cols(.default = "c")) %>%
+    mutate(first_enrlmt_year = as.integer(first_enrlmt_year)) %>%
+    filter(npi %in% coh$npi)
+  yr_range <- seq(min(ppef$first_enrlmt_year), REF_YEAR)
+  by_year <- tibble(year = yr_range) %>%
+    rowwise() %>%
+    mutate(n = sum(ppef$first_enrlmt_year <= year)) %>%
+    ungroup()
+  rows[["ppef_cumulative"]] <- by_year %>%
+    transmute(source = "Medicare enrollment, cumulative (PPEF)", year, n,
+              pct = round(100 * n / N, 1))
+  cat(sprintf("PPEF cumulative enrollment: %d years, %d-%d, ceiling %.1f%%\n",
+              nrow(by_year), min(by_year$year), max(by_year$year),
+              max(by_year$n) / N * 100))
+} else {
+  cat("PPEF enrollment history: absent, skipped\n")
 }
 
 if (!length(rows))

@@ -1415,24 +1415,33 @@ Healthgrades, CMS NDH, HPSA) are single current snapshots with no year
 dimension at all, and there is no sound way to reconstruct "who was ACTIVE as
 of year Y" from a status field that only ever holds today's value. What *can*
 be asked: how often does the SAME fixed, today-ACTIVE cohort show up in each
-year, for the **seven** sources that carry real per-year history (three on
+year, for the **eight** sources that carry real per-year history (three on
 first pass; Open Payments, PECOS and Medicaid were already sitting in
 `artifacts/` from the state-source audit and added the same day once checked
-for). NPPES annual panel presence rises from 24.1% (2007) to 99.2% (2026) —
-expected, since a population fixed to today's cohort is left-censored the
-further back you look. More informative: Medicare Part D presence within that
-same fixed population nearly doubles over a decade, 13.5% (2013) to 24.6%
-(2023), Part B follows the same direction (4.3% to 7.5%), and Open Payments
-general-payment presence rises from trace-only (pre-2021, before CNMs were
-Open-Payments-reportable) to 36.0% by 2025 — three independent sources all
-trending the same direction, a real increase in this population's federal
-claims footprint. CCN hospital affiliation (2013–2022) is non-monotonic
-instead, consistent with the declining CCN fill rate documented in the
-state-source audit, and PECOS revalidation rises 56.4% (2021) to 75.2% (2025)
-before dipping to 73.3% (2026, a vintage not yet complete for the year).
-**Medicaid enrollment is the one source moving the other way** — presence
-within the fixed cohort falls from 70.0% (2018) to 48.5% (2024), the only
-genuine decline among all seven sources, not yet explained. Full table:
+for; PPEF — CMS's Public Provider Enrollment File, the Medicare enrollment
+roster, distinct from the revalidation extract already in use — was found on
+the external drive the same day and extracted for the first time). NPPES
+annual panel presence rises from 24.1% (2007) to 99.2% (2026) — expected,
+since a population fixed to today's cohort is left-censored the further back
+you look. More informative: Medicare Part D presence within that same fixed
+population nearly doubles over a decade, 13.5% (2013) to 24.6% (2023), Part B
+follows the same direction (4.3% to 7.5%), and Open Payments general-payment
+presence rises from trace-only (pre-2021, before CNMs were Open-Payments-
+reportable) to 36.0% by 2025 — three independent sources all trending the same
+direction, a real increase in this population's federal claims footprint. CCN
+hospital affiliation (2013–2022) is non-monotonic instead, consistent with the
+declining CCN fill rate documented in the state-source audit, and PECOS
+revalidation rises 56.4% (2021) to 75.2% (2025) before dipping to 73.3% (2026,
+a vintage not yet complete for the year). **Medicaid enrollment is the one
+source moving the other way** — presence within the fixed cohort falls from
+70.0% (2018) to 48.5% (2024), the only genuine decline among the seven
+presence-based sources, not yet explained. PPEF stands apart from the other
+seven: it is a single current snapshot with no year series of its own, but
+each enrollment ID embeds the provider's *original* Medicare enrollment date
+— a one-time historical fact reaching back to **2003**, earlier than any other
+source here — so it is plotted as a cumulative share rather than a repeated
+presence measure: 72.4% of the fixed cohort has a Medicare enrollment on
+record by 2026, climbing steadily since. Full table:
 [`docs/table1_by_year.md`](docs/table1_by_year.md).
 
 ## Data sources

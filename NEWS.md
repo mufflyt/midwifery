@@ -20,6 +20,29 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-05 — An eighth source for Table 1 by year, found on the external drive: PPEF
+
+### Added
+
+- **`extract_ppef_enrollment_history.R`** → `artifacts/ppef_cohort_enrollment_year.csv`,
+  wired into `build_table1_by_year.R` as an eighth source. PPEF (Public
+  Provider Enrollment Files) is CMS's Medicare enrollment roster — distinct
+  from the "Revalidation Group Practice Reassignment" extract already in use
+  (`extract_pecos_revalidation_state_history.R`), which tracks when a
+  provider's periodic revalidation falls due, not their original enrollment.
+  Found on the external drive (`nppes_historical_downloads/pecos/PPEF_
+  Enrollment_Extract_2026.07.17.csv`, ~2.98M rows nationally) and never
+  extracted for this project before now. One current snapshot, not a year
+  series — but each `ENRLMT_ID` embeds the provider's original enrollment
+  date (format `I<YYYYMMDD><sequence>`), a one-time historical fact. 9,667
+  of 16,775 cohort-member NPIs have a parseable enrollment date, earliest
+  enrollment taken per NPI, reaching back to **2003** — earlier than any
+  other source in `table1_by_year.csv`. Plotted as a running cumulative
+  share rather than a repeated year-by-year presence measure (labelled as
+  such, dashed in the chart artifact, so it isn't read as directly
+  comparable to the other seven): 0.1% (2003) climbing steadily to 72.4% of
+  the fixed Table 1 cohort by 2026.
+
 ## [Unreleased] — 2026-11-05 — Table 1, by year: a trend view for the seven sources that carry real year-level history
 
 ### Added
