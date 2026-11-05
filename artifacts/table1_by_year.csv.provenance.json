@@ -1,0 +1,41 @@
+{
+  "artifact": "table1_by_year.csv",
+  "written_utc": "2026-11-05 19:58:12 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716"
+    }
+  ],
+  "code_sha256": "cfe79a513cdff1e0527a8a7a2f49991112a228f9ef2808c755a0d1ad8bd4a165",
+  "code": [
+    {
+      "path": "build_table1_by_year.R",
+      "sha256": "f37758ccfb93b5deb7581f98b09568de39f1d94bf8f046073e509999cf370f44"
+    },
+    {
+      "path": "R/join_safety.R",
+      "sha256": "96a2eeeef8b9821178abed57d90213e299c9539f4358b4f6ed47c9fc2b8c0280"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/cohort_definitions.R",
+      "sha256": "15b1a0d8b5f1973e29a5258fc1e7d97df437b09208f367f38c78984a8dfd7dc5"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/safe_divide.R",
+      "sha256": "9676b960bacb210a2167e7751dd84c5b9c80a0bf5442425e0b0f322b25aa04bc"
+    }
+  ]
+}

@@ -424,6 +424,15 @@ REBUILD_ORDER <- list(
        # tracked address_lead_lag_*.csv / address_agreement_by_nppes_
        # freshness.csv leaves -- same shape as the analyze_medicaid_* leaves
        # above, order free.
+       # build_table1_by_year.R (added 2026-11-05) reads the freeze for the
+       # same fixed cohort build_table1_midwives.R uses, plus midwife_panel_
+       # midwifeonly.csv, the historical facility-affiliation by-year
+       # artifact, and the Medicare DuckDB warehouse directly (not through
+       # match_medicare_partb_partd.R or its output). Writes
+       # artifacts/table1_by_year.csv, a leaf nothing else in this registry
+       # reads back in. No dependency on build_table1_midwives.R itself --
+       # it does not read that script's output -- so order between them is
+       # free; placed beside it because they describe the same cohort.
        scripts = c("build_table1_midwives.R", "export_amcb_npi_geography.R",
                    "validate_training_institution_against_acme.R",
                    "provenance_manifest.R", "diagnose_migration_year_over_year.R",
@@ -438,7 +447,8 @@ REBUILD_ORDER <- list(
                    "build_state_source_audit.R",
                    "build_state_source_pairwise_audit.R",
                    "build_cross_source_comparison.R",
-                   "analyze_address_lead_lag_and_freshness.R"))
+                   "analyze_address_lead_lag_and_freshness.R",
+                   "build_table1_by_year.R"))
 )
 declared <- unlist(lapply(REBUILD_ORDER, `[[`, "scripts"))
 
