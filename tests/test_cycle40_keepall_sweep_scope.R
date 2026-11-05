@@ -173,14 +173,26 @@ cat("\n-- SEMANTIC --\n")
 # new site alone, while the established pattern it was modeled on stays
 # bare, would not remove the underlying risk, just move where in the file
 # it's named. 108 + 1 = 109.
+#
+# Recounted again 2026-11-05: true count is 110, not 109. One site landed --
+# build_table1_midwives.R's restored `.aff %>% distinct(certification_number,
+# .keep_all = TRUE)` (the CMS hospital-affiliation block, accidentally
+# deleted in a3d40139 and restored verbatim). Left bare, same reasoning as
+# the `opsup`/`mcare` sites immediately above it in this count: the source
+# file (artifacts/dac_hospital_affiliation_person.csv) is already guaranteed
+# one row per certification_number by its own producer
+# (extract_dac_facility_affiliations.R's `group_by(certification_number) %>%
+# summarise(...)`), so the distinct() is a defensive no-op, not a real
+# order-dependent risk -- a third instance of the file's own established
+# idiom, not a new one. 109 + 1 = 110.
 {
   root <- "."
   files <- c(
     list.files(file.path(root, "R"), pattern = "\\.R$", recursive = TRUE, full.names = TRUE),
     list.files(root, pattern = "\\.R$", recursive = FALSE, full.names = TRUE))
   n <- length(detect_offenders(files))
-  chk(n == 109L,
-      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 109)", n))
+  chk(n == 110L,
+      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 110)", n))
 }
 
 # T40-6. DOCUMENTED LIMITATION, not fixed this cycle: the detection regex
