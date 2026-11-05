@@ -1409,6 +1409,23 @@ overcounted by 12%. Full comparison, including the state-level table and the
 age-model benchmarking opportunity AMCB's data makes possible:
 [docs/TECHNICAL_APPENDIX_AMCB_DEMOGRAPHIC_COMPARISON.md](docs/TECHNICAL_APPENDIX_AMCB_DEMOGRAPHIC_COMPARISON.md).
 
+**Table 1, by year (`build_table1_by_year.R`, 2026-11-05).** Table 1 proper is
+cross-sectional — most of its variables (sex, age, ACOG district, rurality,
+Healthgrades, CMS NDH, HPSA) are single current snapshots with no year
+dimension at all, and there is no sound way to reconstruct "who was ACTIVE as
+of year Y" from a status field that only ever holds today's value. What *can*
+be asked: how often does the SAME fixed, today-ACTIVE cohort show up in each
+year, for the three sources that carry real per-year history. NPPES annual
+panel presence rises from 24.1% (2007) to 99.2% (2026) — expected, since a
+population fixed to today's cohort is left-censored the further back you look.
+More informative: Medicare Part D presence within that same fixed population
+nearly doubles over a decade, 13.5% (2013) to 24.6% (2023), and Part B follows
+the same direction (4.3% to 7.5%) — a real trend in this population's Medicare
+billing footprint, not an artifact of cohort composition changing. CCN hospital
+affiliation (2013–2022) is non-monotonic instead of trending, consistent with
+the declining CCN fill rate documented in the state-source audit. Full table:
+[`docs/table1_by_year.md`](docs/table1_by_year.md).
+
 ## Data sources
 
 Nothing in this repository is scraped from behind a paywall or a login, and no

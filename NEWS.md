@@ -20,6 +20,31 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-05 — Table 1, by year: a trend view for the three sources that carry real year-level history
+
+### Added
+
+- **`build_table1_by_year.R`** → `artifacts/table1_by_year.csv`,
+  `docs/table1_by_year.md`. Table 1 proper is cross-sectional — most of its
+  variables (sex, age, ACOG district, rurality, Healthgrades, CMS NDH, HPSA)
+  are single current snapshots, and the AMCB status field this project holds
+  is a current value, not a historical register, so there is no sound way to
+  reconstruct "who was ACTIVE as of year Y". What this script does instead:
+  take the SAME fixed cohort Table 1 uses and measure, for the three sources
+  that carry real per-year history, how often that cohort appears each year.
+  NPPES annual panel presence rises 24.1% (2007) to 99.2% (2026) — expected
+  left-censoring in a population fixed to today's cohort, not a finding.
+  Medicare Part D presence within that same fixed population nearly doubles
+  over a decade (13.5% → 24.6%, 2013-2023); Part B follows the same direction
+  (4.3% → 7.5%) — a real trend in Medicare billing footprint. CCN hospital
+  affiliation (2013-2022, from the historical DAC vintages' embedded CCN
+  columns) is non-monotonic rather than trending, consistent with the
+  declining CCN fill rate already documented in the state-source audit.
+  Queries the Medicare DuckDB warehouse's raw per-year tables directly (the
+  same ones `match_medicare_partb_partd.R` reads), re-run per year rather
+  than collapsed to an any-year flag; does not modify that script or its
+  output.
+
 ## [Unreleased] — 2026-11-05 — Checked Table 1 against AMCB's own published workforce data
 
 ### Added
