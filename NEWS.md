@@ -20,6 +20,39 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-05 — Table 1's hospital-affiliation block was silently dead; a free second specialty source
+
+### Fixed
+
+- **Restored the CMS hospital-affiliation (CCN) block** (`build_table1_midwives.R`).
+  `artifacts/dac_hospital_affiliation_person.csv` was still a *required*
+  TABLE1_ENRICHMENT input — a build missing it refuses to publish — but the
+  join code that turned it into the five Table 1 rows it feeds (hospital
+  privilege, count, type, ownership, birthing-friendly designation) was
+  accidentally deleted when the Trilliant work-site block was added in its
+  place, leaving the file required while contributing zero rows. The two
+  sources are complementary (Medicare privilege via CCN vs. claims-derived
+  work-site classification), not redundant, so both now run side by side.
+  Verified in isolation against the 12,170-person cohort: 1,683 with a
+  recorded hospital privilege, correctly banded by count/type/ownership/
+  birthing-friendly status.
+
+### Added
+
+- **Primary specialty (Open Payments provider profile)** (`build_table1_midwives.R`).
+  The same Open Payments provider-profile file already read for multi-state
+  license status also carries a second, independent specialty/credential
+  field per provider (`primary_specialty`, a pipe-delimited CMS taxonomy
+  string) that had never been extracted — no new data source needed. Banded
+  to its most specific segment: Advanced Practice Midwife vs. Other
+  classification, corroborating the existing NPPES taxonomy block from a
+  wholly separate source. A blank specialty string (profile exists, CMS's
+  field is empty) and no profile at all are two non-responses this source
+  gives no way to distinguish, so both share one named unknown rather than
+  inventing a distinction the data doesn't support. Verified in isolation:
+  5,799 Advanced Practice Midwife, 592 Other, 5,779 unknown, summing exactly
+  to the 12,170 cohort.
+
 ## [Unreleased] — 2026-11-01 — A reusable credential-exclusion filter, wired into DAC extraction ([#283](https://github.com/mufflyt/midwifery/pull/283))
 
 ### Added — `R/lib/credential_filter.R`
