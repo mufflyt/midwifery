@@ -812,13 +812,36 @@ if (file.exists("artifacts/cohort_midwives_open_payments_profile_supplement.csv"
                     show_col_types = FALSE, progress = FALSE) %>%
     distinct(certification_number, .keep_all = TRUE)
   coh <- coh %>% left_join(
-    opsup %>% select(certification_number, n_license_states),
+    opsup %>% select(certification_number, n_license_states, primary_specialty),
     by = "certification_number", relationship = "one-to-one") %>%
     mutate(
       multistate_licensed_band = dplyr::case_when(
         is.na(n_license_states)   ~ NA_character_,
         n_license_states >= 2L    ~ "Licensed in 2+ states (Open Payments profile)",
-        TRUE                      ~ "Licensed in 1 state (Open Payments profile)"))
+        TRUE                      ~ "Licensed in 1 state (Open Payments profile)"),
+      # Primary specialty (Open Payments provider profile) -- a second,
+      # independent credential/specialty field per provider, already sitting
+      # in the same file read immediately above for license status and never
+      # otherwise used. The raw string is CMS's own pipe-delimited taxonomy
+      # hierarchy ("Physician Assistants & Advanced Practice Nursing
+      # Providers|Nurse Practitioner|Women's Health"); only the LAST segment
+      # -- the most specific classification -- is kept. Corroborates (or not)
+      # the NPPES taxonomy block above from an entirely separate source.
+      # TWO DIFFERENT NON-RESPONSES, ONE LABEL. A blank string (779 of 8,411
+      # matched profiles on the 2026-11-05 build) means "has an Open Payments
+      # profile, but CMS's own specialty field is empty" -- not the same fact
+      # as no profile at all, but Table 1 has no third category to spend on a
+      # distinction this source itself does not explain, so both read as
+      # "no usable classification" and the unknown label says both.
+      .ops_specialty_last = vapply(
+        strsplit(primary_specialty, "|", fixed = TRUE),
+        function(v) if (length(v)) v[length(v)] else NA_character_, character(1)),
+      ops_specialty_band = dplyr::case_when(
+        is.na(.ops_specialty_last) | !nzchar(.ops_specialty_last) ~ NA_character_,
+        .ops_specialty_last == "Advanced Practice Midwife" ~
+          "Advanced Practice Midwife (Open Payments profile)",
+        TRUE ~ "Other classification (Open Payments profile)")) %>%
+    select(-.ops_specialty_last)
 }
 
 # --- Healthgrades banded columns ----------------------------------------------
@@ -1248,6 +1271,12 @@ t1 <- bind_rows(
         lvls = c("Licensed in 2+ states (Open Payments profile)",
                  "Licensed in 1 state (Open Payments profile)"),
         unknown_label = "No Open Payments provider profile"),
+  if ("ops_specialty_band" %in% names(coh))
+    blk(coh, "ops_specialty_band",
+        "Primary specialty (Open Payments provider profile)",
+        lvls = c("Advanced Practice Midwife (Open Payments profile)",
+                 "Other classification (Open Payments profile)"),
+        unknown_label = "No Open Payments profile, or profile present with no specialty recorded"),
 
   # Language: use Healthgrades data when available; otherwise note it is absent.
   # LANGUAGE IS A FLOOR, NOT A PROPORTION.
