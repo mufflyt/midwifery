@@ -1412,28 +1412,92 @@ age-model benchmarking opportunity AMCB's data makes possible:
 **Table 1, by year (`build_table1_by_year.R`, 2026-11-05).** Table 1 proper is
 cross-sectional — most of its variables (sex, age, ACOG district, rurality,
 Healthgrades, CMS NDH, HPSA) are single current snapshots with no year
-dimension at all, and there is no sound way to reconstruct "who was ACTIVE as
-of year Y" from a status field that only ever holds today's value. What *can*
-be asked: how often does the SAME fixed, today-ACTIVE cohort show up in each
-year, for the **seven** sources that carry real per-year history (three on
-first pass; Open Payments, PECOS and Medicaid were already sitting in
-`artifacts/` from the state-source audit and added the same day once checked
-for). NPPES annual panel presence rises from 24.1% (2007) to 99.2% (2026) —
-expected, since a population fixed to today's cohort is left-censored the
-further back you look. More informative: Medicare Part D presence within that
-same fixed population nearly doubles over a decade, 13.5% (2013) to 24.6%
-(2023), Part B follows the same direction (4.3% to 7.5%), and Open Payments
-general-payment presence rises from trace-only (pre-2021, before CNMs were
-Open-Payments-reportable) to 36.0% by 2025 — three independent sources all
-trending the same direction, a real increase in this population's federal
-claims footprint. CCN hospital affiliation (2013–2022) is non-monotonic
-instead, consistent with the declining CCN fill rate documented in the
-state-source audit, and PECOS revalidation rises 56.4% (2021) to 75.2% (2025)
-before dipping to 73.3% (2026, a vintage not yet complete for the year).
-**Medicaid enrollment is the one source moving the other way** — presence
-within the fixed cohort falls from 70.0% (2018) to 48.5% (2024), the only
-genuine decline among all seven sources, not yet explained. Full table:
-[`docs/table1_by_year.md`](docs/table1_by_year.md).
+dimension at all. The identity set tracked here is the same fixed,
+today-ACTIVE cohort Table 1 uses — never reconstructed year to year — but a
+cohort member now counts toward year Y's numerator *and denominator* only if
+her AMCB certification actually covered year Y (`certification_date <= Y <=
+expiration_date`, real historical facts on the linkage record, not the
+current `status` snapshot). Every earlier version of this table divided by
+the full fixed N regardless of year, so a midwife certified in 2024 silently
+dragged down 2007's rate just by not existing yet — real left-censoring, but
+it made several early-year rates read as a behavior trend when they were
+actually a composition artifact. Restricting to the certification-eligible
+subset each year changes more than the early numbers:
+
+- **NPPES annual panel presence** no longer looks left-censored at all once
+  restricted to who could plausibly have appeared: 79.1% (2007) rather than
+  24.1%, climbing to 99.2% by 2026 — consistently high observability
+  throughout, not a rise from near-zero.
+- **Medicare Part D presence, previously reported as "nearly doubling," is
+  essentially flat**: 28.8% (2013) to 27.0% (2023), a ~2-point *decline*, not
+  the 13.5%→24.6% rise the uncorrected denominator produced. Part B is
+  similarly flat, 9.0% (2013) to 8.2% (2023), peaking mid-cycle at 10.8%
+  (2019). The earlier "real increase in this population's Medicare
+  footprint" claim did not survive this correction and has been withdrawn.
+- **CCN hospital affiliation's decline is confirmed, and sharper than first
+  reported**: 21.7% (2013) down to a 5.8–8.3% band by 2018–2022, consistent
+  with the declining CCN fill rate already documented in the state-source
+  audit — restricting the denominator strengthened this finding rather than
+  explaining it away.
+- **Open Payments general-payment presence** (filtered to `payment_amount >
+  0`) still shows a real post-2021 rise — 24.4% to 36.1% through 2025 — the
+  one federal-claims source where "a real increase" still holds. The
+  2015–2020 rows remain small, real dollar amounts, but most likely
+  NPI-matching noise rather than genuine midwife payments: CNMs were not
+  Open-Payments-reportable until the SUPPORT Act (Pub. L. 115-271 §6111) took
+  effect for program year 2021.
+- **PECOS revalidation** sits higher and flatter once restricted: 70.2%
+  (2021) to 75.4% (2025), dipping to 73.3% (2026, a vintage not yet complete
+  for the year).
+- **Medicaid enrollment is the one source that cannot be restricted this
+  way** — its input is a pre-aggregated classification count, not a
+  person-level table this script can intersect against the eligibility
+  window — and remains rated against the fixed cohort N, labelled as such.
+  It is also still the one clear decliner: 70.0% (2018) to 48.5% (2024).
+- **Medicaid billing activity, a separate and genuinely person-level
+  Medicaid source** (`extract_tmsis_medicaid_spending_history.R`), from HHS
+  DOGE's 2026-02 Transformed Medicaid Statistical Information System
+  (T-MSIS) provider-spending release — the largest public Medicaid claims
+  dataset HHS has published, no application or data-use agreement required
+  for the first time. Matched 6,472 of 12,170 cohort NPIs (53.2%) via
+  `SERVICING_PROVIDER_NPI_NUM` (the rendering provider; `BILLING_PROVIDER_
+  NPI_NUM` matches 10× fewer, the same rendering-vs-billing asymmetry
+  already documented for Medicare Part B). Unlike the enrollment
+  classification above, this IS eligibility-restricted: 28.7% (2018) rising
+  to 37.0% (2023). The raw national release has a documented data-quality
+  problem (`TOTAL_PAID` contains implausible trillion-dollar rows elsewhere
+  in the file); verified this cohort's own matched rows are clean (max
+  $305,181 per provider-month, zero rows over $1M) before using it, with a
+  defensive plausibility bound applied anyway.
+- **PPEF**, CMS's Public Provider Enrollment File (distinct from the
+  revalidation extract already in use, found on the external drive and
+  extracted for the first time this session), stands apart from every other
+  source: a single current snapshot with no year series of its own, but each
+  enrollment ID embeds the provider's *original* Medicare enrollment date —
+  a one-time historical fact reaching back to **2003**, earlier than any
+  other source here — plotted as a cumulative share, restricted to the same
+  eligibility window: 0.6% (2003) climbing to 72.4% of the eligible cohort
+  with a Medicare enrollment on record by 2026.
+
+Full table, with each row's `eligible_n` denominator shown alongside its
+count: [`docs/table1_by_year.md`](docs/table1_by_year.md).
+
+**What "ACTIVE" doesn't mean.** Every line above restricts to the subset
+whose AMCB certification is ACTIVE for that year — an administrative status,
+not a measure of current clinical practice. Trilliant Health's independent,
+claims-derived `active_provider` flag (already enriched into this project via
+`enrich_trilliant_demographics.R`) makes the gap concrete: of the 12,170
+ACTIVE, primary-linked cohort members, **1,304 (10.7%) show no current
+provider activity** in Trilliant's directory (snapshot 2026-06-25) despite
+holding an active certification. Trilliant carries no year history of its
+own — a single current snapshot, unlike every source above — so this is a
+point-in-time cross-check, not a tenth trend line, and a lower bound: the
+claims-based signal has its own coverage gaps and cannot itself distinguish a
+true exit from an undercount. The same figure, generated from the tracked
+`artifacts/trilliant_demographics_validation_<freeze sha8>.csv` aggregate via
+the manuscript's stats catalog (never typed in by hand), appears in
+[`manuscript/midwife_persistence.qmd`](manuscript/midwife_persistence.qmd)'s
+Strengths and limitations section.
 
 ## Data sources
 

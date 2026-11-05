@@ -738,6 +738,19 @@ workforce are under-represented, and persistence among those we observe is not
 persistence among all certificants. The direction of this bias is toward
 overstating persistence.
 
+ACTIVE is itself an administrative status, not a measure of clinical
+practice: it reflects AMCB certification standing, not whether a certificant
+is currently seeing patients. An independent, claims-derived signal
+illustrates the gap directly. Among the `r mw_n("trilliant.n_cohort")`
+ACTIVE, primary-linked cohort members, `r mw_n("trilliant.n_inactive_despite_certified")`
+(`r mw_safe_stat("trilliant.pct_inactive_despite_certified", "%.1f")`%) show
+no current provider activity in a commercial claims directory
+(Trilliant Health, snapshot `r mw_safe_stat("trilliant.snapshot")`) despite
+holding an active certification -- a lower bound on how far "ACTIVE" departs
+from "currently practicing," since the claims-based signal has its own
+coverage gaps and cannot itself distinguish a true exit from an
+undercount.
+
 Two selection rates appear in this paper and they answer different questions.
 The figures above are cohort resolution. Ascertainment -- whether a certificant
 was found in the provider registry at all, including matches to a nursing-only

@@ -1,77 +1,108 @@
-source,year,n,pct
-"Hospital affiliation (CCN, historical DAC)",2013,1203,9.9
-"Hospital affiliation (CCN, historical DAC)",2014,707,5.8
-"Hospital affiliation (CCN, historical DAC)",2015,823,6.8
-"Hospital affiliation (CCN, historical DAC)",2016,894,7.3
-"Hospital affiliation (CCN, historical DAC)",2017,1051,8.6
-"Hospital affiliation (CCN, historical DAC)",2018,673,5.5
-"Hospital affiliation (CCN, historical DAC)",2019,540,4.4
-"Hospital affiliation (CCN, historical DAC)",2020,531,4.4
-"Hospital affiliation (CCN, historical DAC)",2021,742,6.1
-"Hospital affiliation (CCN, historical DAC)",2022,768,6.3
-Medicaid enrollment (any classification),2018,8519,70
-Medicaid enrollment (any classification),2019,8283,68.1
-Medicaid enrollment (any classification),2020,8091,66.5
-Medicaid enrollment (any classification),2021,7908,65
-Medicaid enrollment (any classification),2022,7579,62.3
-Medicaid enrollment (any classification),2023,7135,58.6
-Medicaid enrollment (any classification),2024,5899,48.5
-Medicare Part B (rendering NPI),2013,521,4.3
-Medicare Part B (rendering NPI),2014,589,4.8
-Medicare Part B (rendering NPI),2015,645,5.3
-Medicare Part B (rendering NPI),2016,738,6.1
-Medicare Part B (rendering NPI),2017,817,6.7
-Medicare Part B (rendering NPI),2018,871,7.2
-Medicare Part B (rendering NPI),2019,946,7.8
-Medicare Part B (rendering NPI),2020,802,6.6
-Medicare Part B (rendering NPI),2021,909,7.5
-Medicare Part B (rendering NPI),2022,882,7.2
-Medicare Part B (rendering NPI),2023,914,7.5
-Medicare Part D (prescriber NPI),2013,1644,13.5
-Medicare Part D (prescriber NPI),2014,1770,14.5
-Medicare Part D (prescriber NPI),2015,1907,15.7
-Medicare Part D (prescriber NPI),2016,2049,16.8
-Medicare Part D (prescriber NPI),2017,2170,17.8
-Medicare Part D (prescriber NPI),2018,2333,19.2
-Medicare Part D (prescriber NPI),2019,2473,20.3
-Medicare Part D (prescriber NPI),2020,2595,21.3
-Medicare Part D (prescriber NPI),2021,2705,22.2
-Medicare Part D (prescriber NPI),2022,2802,23
-Medicare Part D (prescriber NPI),2023,2994,24.6
-NPPES annual panel,2007,2932,24.1
-NPPES annual panel,2008,3081,25.3
-NPPES annual panel,2009,3394,27.9
-NPPES annual panel,2010,3592,29.5
-NPPES annual panel,2011,3962,32.6
-NPPES annual panel,2012,4276,35.1
-NPPES annual panel,2013,4671,38.4
-NPPES annual panel,2014,5120,42.1
-NPPES annual panel,2015,5666,46.6
-NPPES annual panel,2016,6148,50.5
-NPPES annual panel,2017,6688,55
-NPPES annual panel,2018,7600,62.4
-NPPES annual panel,2019,8182,67.2
-NPPES annual panel,2020,8631,70.9
-NPPES annual panel,2021,9032,74.2
-NPPES annual panel,2022,9535,78.3
-NPPES annual panel,2023,10188,83.7
-NPPES annual panel,2024,11375,93.5
-NPPES annual panel,2025,11663,95.8
-NPPES annual panel,2026,12075,99.2
-Open Payments general payments,2015,15,0.1
-Open Payments general payments,2016,3,0
-Open Payments general payments,2017,0,0
-Open Payments general payments,2018,1,0
-Open Payments general payments,2019,2,0
-Open Payments general payments,2020,3,0
-Open Payments general payments,2021,2391,19.6
-Open Payments general payments,2022,3342,27.5
-Open Payments general payments,2023,3556,29.2
-Open Payments general payments,2024,4041,33.2
-Open Payments general payments,2025,4382,36
-PECOS revalidation/reassignment,2021,6866,56.4
-PECOS revalidation/reassignment,2022,7453,61.2
-PECOS revalidation/reassignment,2023,8062,66.2
-PECOS revalidation/reassignment,2024,8581,70.5
-PECOS revalidation/reassignment,2025,9157,75.2
-PECOS revalidation/reassignment,2026,8923,73.3
+source,year,n,eligible_n,pct
+"Hospital affiliation (CCN, historical DAC)",2013,1199,5537,21.7
+"Hospital affiliation (CCN, historical DAC)",2014,705,5975,11.8
+"Hospital affiliation (CCN, historical DAC)",2015,821,6421,12.8
+"Hospital affiliation (CCN, historical DAC)",2016,893,6957,12.8
+"Hospital affiliation (CCN, historical DAC)",2017,1050,7517,14
+"Hospital affiliation (CCN, historical DAC)",2018,672,8050,8.3
+"Hospital affiliation (CCN, historical DAC)",2019,540,8589,6.3
+"Hospital affiliation (CCN, historical DAC)",2020,530,9107,5.8
+"Hospital affiliation (CCN, historical DAC)",2021,742,9730,7.6
+"Hospital affiliation (CCN, historical DAC)",2022,767,10401,7.4
+"Medicaid billing activity (T-MSIS, HHS DOGE release)",2018,2307,8050,28.7
+"Medicaid billing activity (T-MSIS, HHS DOGE release)",2019,2648,8589,30.8
+"Medicaid billing activity (T-MSIS, HHS DOGE release)",2020,3097,9107,34
+"Medicaid billing activity (T-MSIS, HHS DOGE release)",2021,3496,9730,35.9
+"Medicaid billing activity (T-MSIS, HHS DOGE release)",2022,3771,10401,36.3
+"Medicaid billing activity (T-MSIS, HHS DOGE release)",2023,4082,11029,37
+"Medicaid billing activity (T-MSIS, HHS DOGE release)",2024,3951,11642,33.9
+"Medicaid enrollment (any classification, % of fixed cohort N -- not eligibility-restricted)",2018,8519,12170,70
+"Medicaid enrollment (any classification, % of fixed cohort N -- not eligibility-restricted)",2019,8283,12170,68.1
+"Medicaid enrollment (any classification, % of fixed cohort N -- not eligibility-restricted)",2020,8091,12170,66.5
+"Medicaid enrollment (any classification, % of fixed cohort N -- not eligibility-restricted)",2021,7908,12170,65
+"Medicaid enrollment (any classification, % of fixed cohort N -- not eligibility-restricted)",2022,7579,12170,62.3
+"Medicaid enrollment (any classification, % of fixed cohort N -- not eligibility-restricted)",2023,7135,12170,58.6
+"Medicaid enrollment (any classification, % of fixed cohort N -- not eligibility-restricted)",2024,5899,12170,48.5
+Medicare Part B (rendering NPI),2013,499,5537,9
+Medicare Part B (rendering NPI),2014,560,5975,9.4
+Medicare Part B (rendering NPI),2015,612,6421,9.5
+Medicare Part B (rendering NPI),2016,703,6957,10.1
+Medicare Part B (rendering NPI),2017,786,7517,10.5
+Medicare Part B (rendering NPI),2018,844,8050,10.5
+Medicare Part B (rendering NPI),2019,924,8589,10.8
+Medicare Part B (rendering NPI),2020,789,9107,8.7
+Medicare Part B (rendering NPI),2021,899,9730,9.2
+Medicare Part B (rendering NPI),2022,873,10401,8.4
+Medicare Part B (rendering NPI),2023,902,11029,8.2
+Medicare Part D (prescriber NPI),2013,1592,5537,28.8
+Medicare Part D (prescriber NPI),2014,1707,5975,28.6
+Medicare Part D (prescriber NPI),2015,1846,6421,28.7
+Medicare Part D (prescriber NPI),2016,1990,6957,28.6
+Medicare Part D (prescriber NPI),2017,2119,7517,28.2
+Medicare Part D (prescriber NPI),2018,2279,8050,28.3
+Medicare Part D (prescriber NPI),2019,2427,8589,28.3
+Medicare Part D (prescriber NPI),2020,2556,9107,28.1
+Medicare Part D (prescriber NPI),2021,2671,9730,27.5
+Medicare Part D (prescriber NPI),2022,2780,10401,26.7
+Medicare Part D (prescriber NPI),2023,2973,11029,27
+"Medicare enrollment, cumulative (PPEF)",2003,16,2844,0.6
+"Medicare enrollment, cumulative (PPEF)",2004,236,3070,7.7
+"Medicare enrollment, cumulative (PPEF)",2005,446,3268,13.6
+"Medicare enrollment, cumulative (PPEF)",2006,569,3473,16.4
+"Medicare enrollment, cumulative (PPEF)",2007,767,3682,20.8
+"Medicare enrollment, cumulative (PPEF)",2008,930,3921,23.7
+"Medicare enrollment, cumulative (PPEF)",2009,1108,4154,26.7
+"Medicare enrollment, cumulative (PPEF)",2010,1322,4430,29.8
+"Medicare enrollment, cumulative (PPEF)",2011,1579,4751,33.2
+"Medicare enrollment, cumulative (PPEF)",2012,1824,5137,35.5
+"Medicare enrollment, cumulative (PPEF)",2013,2053,5537,37.1
+"Medicare enrollment, cumulative (PPEF)",2014,2381,5975,39.8
+"Medicare enrollment, cumulative (PPEF)",2015,2753,6421,42.9
+"Medicare enrollment, cumulative (PPEF)",2016,3181,6957,45.7
+"Medicare enrollment, cumulative (PPEF)",2017,3638,7517,48.4
+"Medicare enrollment, cumulative (PPEF)",2018,4104,8050,51
+"Medicare enrollment, cumulative (PPEF)",2019,4625,8589,53.8
+"Medicare enrollment, cumulative (PPEF)",2020,5123,9107,56.3
+"Medicare enrollment, cumulative (PPEF)",2021,5671,9730,58.3
+"Medicare enrollment, cumulative (PPEF)",2022,6333,10401,60.9
+"Medicare enrollment, cumulative (PPEF)",2023,7055,11029,64
+"Medicare enrollment, cumulative (PPEF)",2024,7821,11642,67.2
+"Medicare enrollment, cumulative (PPEF)",2025,8541,12140,70.4
+"Medicare enrollment, cumulative (PPEF)",2026,8808,12170,72.4
+NPPES annual panel,2007,2912,3682,79.1
+NPPES annual panel,2008,3058,3921,78
+NPPES annual panel,2009,3364,4154,81
+NPPES annual panel,2010,3560,4430,80.4
+NPPES annual panel,2011,3927,4751,82.7
+NPPES annual panel,2012,4243,5137,82.6
+NPPES annual panel,2013,4632,5537,83.7
+NPPES annual panel,2014,5076,5975,85
+NPPES annual panel,2015,5619,6421,87.5
+NPPES annual panel,2016,6102,6957,87.7
+NPPES annual panel,2017,6641,7517,88.3
+NPPES annual panel,2018,7548,8050,93.8
+NPPES annual panel,2019,8130,8589,94.7
+NPPES annual panel,2020,8588,9107,94.3
+NPPES annual panel,2021,8991,9730,92.4
+NPPES annual panel,2022,9505,10401,91.4
+NPPES annual panel,2023,10166,11029,92.2
+NPPES annual panel,2024,11350,11642,97.5
+NPPES annual panel,2025,11653,12140,96
+NPPES annual panel,2026,12075,12170,99.2
+Open Payments general payments,2015,14,6421,0.2
+Open Payments general payments,2016,3,6957,0
+Open Payments general payments,2017,0,7517,0
+Open Payments general payments,2018,1,8050,0
+Open Payments general payments,2019,2,8589,0
+Open Payments general payments,2020,3,9107,0
+Open Payments general payments,2021,2372,9730,24.4
+Open Payments general payments,2022,3318,10401,31.9
+Open Payments general payments,2023,3541,11029,32.1
+Open Payments general payments,2024,4032,11642,34.6
+Open Payments general payments,2025,4381,12140,36.1
+PECOS revalidation/reassignment,2021,6829,9730,70.2
+PECOS revalidation/reassignment,2022,7426,10401,71.4
+PECOS revalidation/reassignment,2023,8038,11029,72.9
+PECOS revalidation/reassignment,2024,8571,11642,73.6
+PECOS revalidation/reassignment,2025,9157,12140,75.4
+PECOS revalidation/reassignment,2026,8923,12170,73.3

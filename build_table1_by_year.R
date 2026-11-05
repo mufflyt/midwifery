@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# Table 1, by year -- how often the FIXED cohort shows up in each year-level
-# source, 2007-2026 where available
+# Table 1, by year -- how often ELIGIBLE members of the fixed cohort show up
+# in each year-level source, 2003-2026 where available
 # =============================================================================
 # Run as: Rscript build_table1_by_year.R
 #
@@ -9,21 +9,33 @@
 # is cross-sectional: one row per midwife, characteristics as of today. Most
 # of its variables have no year dimension at all -- sex, age, ACOG district,
 # rurality, Healthgrades, CMS NDH and HPSA status are all single, current
-# snapshots, because that is all their sources ever offer. This script does
-# NOT attempt to reconstruct "who was ACTIVE as of year Y" -- the AMCB status
-# field this project holds is a current snapshot, not a historical register,
-# so there is no sound way to ask that question with the data in hand.
+# snapshots, because that is all their sources ever offer.
 #
-# What it DOES do: take the SAME fixed cohort Table 1 uses (today's ACTIVE,
-# primary-tier-linked midwives) and ask, for the three sources that carry
-# real per-year history, how often that same fixed population appears in
-# each year. This is a trend in OBSERVABILITY within a stable population, not
-# a reconstruction of the workforce's past composition.
+# WHO COUNTS TOWARD YEAR Y. The identity set is fixed -- today's ACTIVE,
+# primary-tier-linked cohort, same as Table 1 proper, never reconstructed
+# year to year. But a cohort member counts toward year Y's numerator AND
+# denominator only if her AMCB certification covered year Y: cert_year <= Y
+# <= expir_year, from certification_date/expiration_date (real historical
+# facts on the linkage record, not the current `status` snapshot -- see the
+# ELIGIBILITY WINDOW section below for why that distinction matters and what
+# it does and does not claim to reconstruct). Before this restriction
+# (versions of this file prior to 2026-11-05), every line divided by the
+# full fixed N regardless of year, so a midwife certified in 2024 silently
+# dragged down 2007's rate just by not existing yet -- real left-censoring,
+# but it made early-year numbers read as a behavior measure when they were
+# actually a composition artifact. One source (Medicaid, see section 6) is
+# the sole exception -- its input is pre-aggregated and cannot be restricted
+# this way, and is labelled accordingly.
 #
-# SIX SOURCES, SIX DIFFERENT WINDOWS, NONE OF THEM REDUCED TO ONE. (First
+# NINE SOURCES, NINE DIFFERENT WINDOWS, NONE OF THEM REDUCED TO ONE. (First
 # built with three; the state-source audit's own per-year extracts for Open
 # Payments, PECOS and Medicaid were already sitting in artifacts/ and simply
-# not checked for on the first pass -- added 2026-11-05.)
+# not checked for on the first pass; PPEF (Public Provider Enrollment Files,
+# CMS's Medicare enrollment roster, distinct from the revalidation extract
+# already in use) was found on the external drive and extracted the same
+# day; T-MSIS Medicaid billing (HHS DOGE's 2026-02 provider-spending
+# release) was found the same way shortly after -- all three additions
+# 2026-11-05.)
 #   - NPPES annual panel presence, 2007-2026 (every year the backbone source
 #     has run) -- is this midwife's NPI present in that year's NPPES
 #     snapshot. A presence measure, not a clinical-activity measure, same
@@ -51,7 +63,23 @@
 #     section, already a per-year classification aggregate against this
 #     exact fixed cohort -- verified below rather than assumed). "Not
 #     observed" is its own classification; any other one means an enrollment
-#     record exists that year, concordant with NPPES or not.
+#     record exists that year, concordant with NPPES or not. The ONE source
+#     not restricted to the eligibility window (pre-aggregated input).
+#   - Medicaid billing activity, 2018-2024, from HHS DOGE's T-MSIS provider-
+#     spending release (extract_tmsis_medicaid_spending_history.R) --
+#     genuinely person-level and month-level, unlike the enrollment block
+#     above, so IS eligibility-restricted. Matched on SERVICING_PROVIDER_
+#     NPI_NUM (rendering provider); TOTAL_PAID carries a documented national
+#     data-quality problem (implausible trillion-dollar rows elsewhere in
+#     the release) that the extraction script verified does not reach this
+#     cohort's rows, with a defensive plausibility bound applied anyway.
+#   - Medicare enrollment, CUMULATIVE, from PPEF (extract_ppef_enrollment_
+#     history.R). The one line on a different footing from every other
+#     source here: PPEF is a single current snapshot with no year series of
+#     its own, but each enrollment ID embeds the provider's original
+#     enrollment date, a one-time historical fact going back to 2003 --
+#     earlier than any other source in this file. Plotted as a running
+#     cumulative share, not a repeated-presence measure, and labelled as such.
 #
 # Inputs : artifacts/amcb_npi_linkage_FROZEN.csv
 #          artifacts/midwife_panel_midwifeonly.csv
@@ -59,10 +87,14 @@
 #          artifacts/cohort_midwives_open_payments_general_2015..2025.csv
 #          artifacts/pecos_revalidation_cohort_state_by_year.csv
 #          artifacts/state_source_audit_medicaid_classification_by_year.csv
+#          artifacts/tmsis_medicaid_spending_cohort_by_year.csv
+#          artifacts/ppef_cohort_enrollment_year.csv
 #          /Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb (Medicare Part B/D)
 # Outputs: artifacts/table1_by_year.csv
 #          docs/table1_by_year.md
 # =============================================================================
+REF_YEAR <- 2026   # matches build_table1_midwives.R's own reference year
+
 suppressPackageStartupMessages({
   library(DBI); library(duckdb); library(dplyr); library(readr)
 })
@@ -82,21 +114,89 @@ coh <- link %>%
 N <- nrow(coh)
 cat(sprintf("fixed cohort: %s ACTIVE primary-linked midwives with an NPI\n", format(N, big.mark = ",")))
 
+# =============================================================================
+# PER-YEAR ELIGIBILITY WINDOW, from certification_date/expiration_date
+# =============================================================================
+# Every line below now counts a cohort member toward year Y only if her AMCB
+# certification covered year Y -- not just "is she in today's fixed cohort."
+# This project does NOT hold a historical AMCB status register (the `status`
+# field is a current value), but it does hold two real, fixed historical
+# facts for every certificant: certification_date (when she was first
+# certified) and expiration_date (when that certification's current window
+# runs out -- for everyone in today's ACTIVE cohort this is a FUTURE date,
+# her next recertification deadline; for someone who later lapsed it would be
+# the date she stopped being in good standing). A person cannot sensibly
+# count toward a year before her first certification, so that is the
+# restriction applied -- without claiming to reconstruct full historical
+# ACTIVE/INACTIVE status, which this data does not support.
+#
+# WHY THIS MATTERS. Before this restriction, "24.1% of the cohort" in NPPES'
+# 2007 panel was computed against the FULL 12,170, including midwives
+# certified decades later who could not possibly have appeared in 2007 data
+# -- real left-censoring, but it makes the early-year rate uninterpretable as
+# a behavior measure. Restricting the denominator to midwives who were
+# actually certification-eligible that year turns "how many show up" into a
+# real participation rate among people who could plausibly have shown up.
+#
+# certification_date / expiration_date are "MM/YYYY" strings (confirmed
+# 2026-11-05: all 12,170 cohort members parse cleanly).
+elig_base <- coh %>%
+  transmute(npi, certification_number,
+            cert_year = as.integer(substr(certification_date, 4, 7)),
+            expir_year = as.integer(substr(expiration_date, 4, 7)))
+if (any(is.na(elig_base$cert_year) | is.na(elig_base$expir_year)))
+  stop("certification_date/expiration_date failed to parse for some cohort members; fix before trusting the eligibility window.", call. = FALSE)
+
+ELIG_YEARS <- 2003:REF_YEAR   # covers every source's span, earliest (PPEF) to REF_YEAR
+elig_long <- elig_base %>%
+  tidyr::crossing(year = ELIG_YEARS) %>%
+  filter(year >= cert_year, year <= expir_year) %>%
+  select(npi, certification_number, year)
+eligible_n_by_year <- elig_long %>% distinct(npi, year) %>% count(year, name = "eligible_n")
+cat(sprintf("Eligibility window: %d-%d; eligible_n ranges %s-%s across the span\n",
+            min(ELIG_YEARS), max(ELIG_YEARS),
+            format(min(eligible_n_by_year$eligible_n), big.mark = ","),
+            format(max(eligible_n_by_year$eligible_n), big.mark = ",")))
+
+#' Restrict a (npi, year) presence table to certification-eligible pairs and
+#' rate it against that year's eligible_n, not the fixed cohort N.
+#'
+#' @param all_years Optional: every year this source was actually checked
+#'   (e.g. every program year a file exists for). A year with real zero
+#'   matches is completed in as n = 0, eligible_n looked up, pct = 0 --
+#'   count(year) on its own silently DROPS a year with no matching rows,
+#'   which reads as "not checked" rather than "checked, found nothing." A
+#'   genuinely absent year (no file, no table) should never be in all_years
+#'   in the first place, so this never invents a year the source didn't run.
+restrict_to_eligible <- function(presence_df, all_years = NULL) {
+  out <- presence_df %>%
+    distinct(npi, year) %>%
+    inner_join(elig_long %>% distinct(npi, year), by = c("npi", "year")) %>%
+    count(year, name = "n")
+  if (!is.null(all_years))
+    out <- tibble(year = all_years) %>% left_join(out, by = "year") %>%
+      mutate(n = coalesce(n, 0L))
+  out %>%
+    left_join(eligible_n_by_year, by = "year") %>%
+    mutate(pct = round(100 * n / eligible_n, 1))
+}
+
 rows <- list()
 
 # --- 1. NPPES annual panel presence, 2007-2026 -------------------------------
 pnl <- "artifacts/midwife_panel_midwifeonly.csv"
 if (file.exists(pnl)) {
-  panel <- read_csv(pnl, show_col_types = FALSE, progress = FALSE,
-                    col_types = cols(.default = "c")) %>%
-    filter(!is.na(snapshot_year), npi %in% coh$npi) %>%
-    mutate(snapshot_year = as.integer(snapshot_year))
-  by_year <- panel %>% distinct(npi, snapshot_year) %>% count(snapshot_year, name = "n")
+  panel_raw <- read_csv(pnl, show_col_types = FALSE, progress = FALSE,
+                        col_types = cols(.default = "c")) %>%
+    filter(!is.na(snapshot_year))
+  panel_years <- sort(unique(as.integer(panel_raw$snapshot_year)))
+  panel <- panel_raw %>% filter(npi %in% coh$npi) %>%
+    transmute(npi, year = as.integer(snapshot_year))
+  by_year <- restrict_to_eligible(panel, all_years = panel_years)
   rows[["nppes_panel"]] <- by_year %>%
-    transmute(source = "NPPES annual panel", year = snapshot_year, n,
-              pct = round(100 * n / N, 1))
+    transmute(source = "NPPES annual panel", year, n, eligible_n, pct)
   cat(sprintf("NPPES panel: %d years, %d-%d\n", nrow(by_year),
-              min(by_year$snapshot_year), max(by_year$snapshot_year)))
+              min(by_year$year), max(by_year$year)))
 } else {
   cat("NPPES panel: absent, skipped\n")
 }
@@ -119,7 +219,7 @@ if (file.exists(DB)) {
   scan_year <- function(tbl, npicol) {
     y <- yr_of(tbl)
     dbGetQuery(con, sprintf(
-      "SELECT c.certification_number, %d AS year
+      "SELECT c.npi, %d AS year
          FROM cohort_npi_by_year c
          INNER JOIN (SELECT DISTINCT CAST(%s AS VARCHAR) AS npi
                        FROM %s WHERE %s IS NOT NULL) t
@@ -128,12 +228,12 @@ if (file.exists(DB)) {
   if (length(pb) && length(pd)) {
     b <- bind_rows(lapply(pb, scan_year, npicol = "Rndrng_NPI"))
     d <- bind_rows(lapply(pd, scan_year, npicol = "npi_char"))
-    b_by_year <- b %>% distinct(certification_number, year) %>% count(year, name = "n")
-    d_by_year <- d %>% distinct(certification_number, year) %>% count(year, name = "n")
+    b_by_year <- restrict_to_eligible(b, all_years = yr_of(pb))
+    d_by_year <- restrict_to_eligible(d, all_years = yr_of(pd))
     rows[["part_b"]] <- b_by_year %>%
-      transmute(source = "Medicare Part B (rendering NPI)", year, n, pct = round(100 * n / N, 1))
+      transmute(source = "Medicare Part B (rendering NPI)", year, n, eligible_n, pct)
     rows[["part_d"]] <- d_by_year %>%
-      transmute(source = "Medicare Part D (prescriber NPI)", year, n, pct = round(100 * n / N, 1))
+      transmute(source = "Medicare Part D (prescriber NPI)", year, n, eligible_n, pct)
     cat(sprintf("Medicare: Part B %d years, Part D %d years\n", nrow(b_by_year), nrow(d_by_year)))
   } else {
     cat("Medicare: no per-year tables found in the warehouse, skipped\n")
@@ -145,14 +245,14 @@ if (file.exists(DB)) {
 # --- 3. CCN hospital affiliation, 2013-2022 ----------------------------------
 fa <- "artifacts/historical_facility_affiliation_cohort_state_by_year.csv"
 if (file.exists(fa)) {
-  aff <- read_csv(fa, show_col_types = FALSE, progress = FALSE,
-                  col_types = cols(.default = "c")) %>%
-    mutate(year = as.integer(year)) %>%
-    filter(npi %in% coh$npi)
-  by_year <- aff %>% distinct(npi, year) %>% count(year, name = "n")
+  aff_raw <- read_csv(fa, show_col_types = FALSE, progress = FALSE,
+                      col_types = cols(.default = "c")) %>%
+    transmute(npi, year = as.integer(year))
+  aff_years <- sort(unique(aff_raw$year))
+  aff <- aff_raw %>% filter(npi %in% coh$npi)
+  by_year <- restrict_to_eligible(aff, all_years = aff_years)
   rows[["hospital_ccn"]] <- by_year %>%
-    transmute(source = "Hospital affiliation (CCN, historical DAC)", year, n,
-              pct = round(100 * n / N, 1))
+    transmute(source = "Hospital affiliation (CCN, historical DAC)", year, n, eligible_n, pct)
   cat(sprintf("Hospital affiliation (CCN): %d years, %d-%d\n", nrow(by_year),
               min(by_year$year), max(by_year$year)))
 } else {
@@ -162,26 +262,40 @@ if (file.exists(fa)) {
 # --- 4. Open Payments general payments, 2015-2025 ----------------------------
 # One file per program year (extract_open_payments_2025.R and its siblings),
 # payment-level rows -- several per provider per year is normal and expected,
-# so presence is distinct(npi, year), not a row count. 2015-2020 is real but
-# trace-only (1-29 cohort NPIs/year): CNMs were not Open-Payments-reportable
-# until the SUPPORT Act expansion hit program year 2021. Included anyway,
-# rather than suppressed, so the trace years are visible as what they are
-# instead of silently absent.
+# so presence is distinct(npi, year), not a row count. Filtered to
+# payment_amount > 0 explicitly -- every row in the current extracts already
+# is (verified 2026-11-05: zero $0/NA rows in any year), but the filter is
+# written anyway rather than relied on as an implicit property of the input,
+# so a future re-extraction that picks up a $0 placeholder or corrected-to-
+# zero row doesn't silently count as "received a payment."
+#
+# 2015-2020 is trace-only (1-29 cohort NPIs/year). CNMs were not
+# Open-Payments-reportable until the SUPPORT Act (Pub. L. 115-271 Sec. 6111)
+# expanded covered-recipient types effective program year 2021 -- confirmed
+# against CMS's own program-year documentation, not merely inferred from the
+# count jump. That makes the 2015-2020 rows, small and real as the dollar
+# amounts are, PROBABLY NPI-matching noise rather than genuine midwife
+# Open Payments events: the reporting requirement did not exist yet for this
+# provider type, so a real match in that window is the less likely
+# explanation. Kept and labelled rather than dropped (no silent
+# truncation), but read as a data-quality flag, not a finding.
 op_years <- 2015:2025
 op_rows <- list()
+op_years_checked <- integer(0)
 for (y in op_years) {
   f <- sprintf("artifacts/cohort_midwives_open_payments_general_%d.csv", y)
   if (!file.exists(f)) next
+  op_years_checked <- c(op_years_checked, y)
   op <- read_csv(f, show_col_types = FALSE, progress = FALSE,
                  col_types = cols(.default = "c")) %>%
-    filter(npi %in% coh$npi)
-  op_rows[[as.character(y)]] <- tibble(year = y, n = n_distinct(op$npi))
+    mutate(payment_amount = suppressWarnings(as.numeric(payment_amount))) %>%
+    filter(npi %in% coh$npi, !is.na(payment_amount), payment_amount > 0)
+  op_rows[[as.character(y)]] <- tibble(npi = op$npi, year = y)
 }
 if (length(op_rows)) {
-  by_year <- bind_rows(op_rows)
+  by_year <- restrict_to_eligible(bind_rows(op_rows), all_years = op_years_checked)
   rows[["open_payments"]] <- by_year %>%
-    transmute(source = "Open Payments general payments", year, n,
-              pct = round(100 * n / N, 1))
+    transmute(source = "Open Payments general payments", year, n, eligible_n, pct)
   cat(sprintf("Open Payments: %d years, %d-%d\n", nrow(by_year),
               min(by_year$year), max(by_year$year)))
 } else {
@@ -191,14 +305,14 @@ if (length(op_rows)) {
 # --- 5. PECOS revalidation/reassignment, 2021-2026 ---------------------------
 pecos_f <- "artifacts/pecos_revalidation_cohort_state_by_year.csv"
 if (file.exists(pecos_f)) {
-  pecos <- read_csv(pecos_f, show_col_types = FALSE, progress = FALSE,
-                    col_types = cols(.default = "c")) %>%
-    mutate(year = as.integer(year)) %>%
-    filter(npi %in% coh$npi)
-  by_year <- pecos %>% distinct(npi, year) %>% count(year, name = "n")
+  pecos_raw <- read_csv(pecos_f, show_col_types = FALSE, progress = FALSE,
+                        col_types = cols(.default = "c")) %>%
+    transmute(npi, year = as.integer(year))
+  pecos_years <- sort(unique(pecos_raw$year))
+  pecos <- pecos_raw %>% filter(npi %in% coh$npi)
+  by_year <- restrict_to_eligible(pecos, all_years = pecos_years)
   rows[["pecos"]] <- by_year %>%
-    transmute(source = "PECOS revalidation/reassignment", year, n,
-              pct = round(100 * n / N, 1))
+    transmute(source = "PECOS revalidation/reassignment", year, n, eligible_n, pct)
   cat(sprintf("PECOS revalidation: %d years, %d-%d\n", nrow(by_year),
               min(by_year$year), max(by_year$year)))
 } else {
@@ -213,6 +327,14 @@ if (file.exists(pecos_f)) {
 # "Not observed" is its own classification, not folded into the others; any
 # OTHER classification means a Medicaid enrollment record exists that year,
 # regardless of whether it's concordant with NPPES.
+#
+# THE ONE SOURCE NOT RESTRICTED TO THE ELIGIBILITY WINDOW. Every other block
+# above restricts to cohort members certification-eligible that year
+# (restrict_to_eligible()); this one can't, because the input is already a
+# per-classification COUNT, not a person-level (npi, year) table this script
+# can intersect against elig_long. Rated against the fixed cohort N, same as
+# every line was before 2026-11-05 -- named explicitly in the source label so
+# this isn't read as consistent with the other seven.
 medicaid_f <- "artifacts/state_source_audit_medicaid_classification_by_year.csv"
 if (file.exists(medicaid_f)) {
   mcaid <- read_csv(medicaid_f, show_col_types = FALSE, progress = FALSE,
@@ -228,13 +350,76 @@ if (file.exists(medicaid_f)) {
       filter(classification != "Not observed") %>%
       group_by(year) %>% summarise(n = sum(n), .groups = "drop")
     rows[["medicaid"]] <- by_year %>%
-      transmute(source = "Medicaid enrollment (any classification)", year, n,
-                pct = round(100 * n / N, 1))
-    cat(sprintf("Medicaid enrollment: %d years, %d-%d\n", nrow(by_year),
-                min(by_year$year), max(by_year$year)))
+      transmute(source = "Medicaid enrollment (any classification, % of fixed cohort N -- not eligibility-restricted)",
+                year, n, eligible_n = N, pct = round(100 * n / N, 1))
+    cat(sprintf("Medicaid enrollment: %d years, %d-%d (fixed-N denominator, not eligibility-restricted)\n",
+                nrow(by_year), min(by_year$year), max(by_year$year)))
   }
 } else {
   cat("Medicaid classification by year: absent, skipped\n")
+}
+
+# --- 7. Medicaid billing activity, 2018-2024, from HHS DOGE's T-MSIS release -
+# extract_tmsis_medicaid_spending_history.R. Unlike the Medicaid block above
+# (a pre-aggregated enrollment classification this script cannot restrict
+# person-by-person), this source is genuinely person-level and month-level --
+# SERVICING_PROVIDER_NPI_NUM (rendering provider; BILLING_PROVIDER_NPI_NUM
+# matches 10x fewer cohort NPIs, same rendering-vs-billing asymmetry already
+# documented for Medicare Part B) -- so it CAN be eligibility-restricted like
+# every other real source here. Presence = at least one claim-line row that
+# NPI-year; dollar amounts, if ever surfaced from this file elsewhere, should
+# keep the same plausibility bound the extraction script already applies.
+tmsis_f <- "artifacts/tmsis_medicaid_spending_cohort_by_year.csv"
+if (file.exists(tmsis_f)) {
+  tmsis_raw <- read_csv(tmsis_f, show_col_types = FALSE, progress = FALSE,
+                        col_types = cols(.default = "c")) %>%
+    transmute(npi, year = as.integer(year))
+  tmsis_years <- sort(unique(tmsis_raw$year))
+  tmsis <- tmsis_raw %>% filter(npi %in% coh$npi)
+  by_year <- restrict_to_eligible(tmsis, all_years = tmsis_years)
+  rows[["tmsis_medicaid_billing"]] <- by_year %>%
+    transmute(source = "Medicaid billing activity (T-MSIS, HHS DOGE release)", year, n, eligible_n, pct)
+  cat(sprintf("T-MSIS Medicaid billing: %d years, %d-%d\n", nrow(by_year),
+              min(by_year$year), max(by_year$year)))
+} else {
+  cat("T-MSIS Medicaid billing by year: absent, skipped\n")
+}
+
+# --- 8. Medicare enrollment, cumulative, from PPEF ---------------------------
+# A DIFFERENT KIND OF LINE FROM EVERY OTHER SOURCE ABOVE. Every source so far
+# measures repeated observability: is this person present in THAT year's
+# snapshot. PPEF (extract_ppef_enrollment_history.R) is one current file with
+# no year series of its own -- what it carries instead is each provider's
+# ORIGINAL Medicare enrollment date, parsed from ENRLMT_ID, a one-time
+# historical fact. The only honest way to put that on a year axis is
+# CUMULATIVE: the running share of the fixed cohort whose earliest Medicare
+# enrollment falls on or before year Y. It is not comparable point-for-point
+# to the presence lines above it, and is labelled "cumulative" so a reader
+# does not read it as one.
+ppef_f <- "artifacts/ppef_cohort_enrollment_year.csv"
+if (file.exists(ppef_f)) {
+  ppef <- read_csv(ppef_f, show_col_types = FALSE, progress = FALSE,
+                   col_types = cols(.default = "c")) %>%
+    mutate(first_enrlmt_year = as.integer(first_enrlmt_year)) %>%
+    filter(npi %in% coh$npi)
+  # Cumulative, so restrict_to_eligible() (built for a presence-per-year
+  # table) doesn't apply directly -- for each year Y, the numerator is
+  # eligible-in-Y npis whose Medicare enrollment began on or before Y, the
+  # denominator is the same eligible_n(Y) every other line uses.
+  yr_range <- seq(min(ppef$first_enrlmt_year), REF_YEAR)
+  by_year <- lapply(yr_range, function(y) {
+    elig_npis_y <- elig_long %>% filter(year == y) %>% pull(npi) %>% unique()
+    n_enrolled <- sum(ppef$npi[ppef$first_enrlmt_year <= y] %in% elig_npis_y)
+    tibble(year = y, n = n_enrolled, eligible_n = length(elig_npis_y))
+  }) %>% bind_rows() %>%
+    mutate(pct = round(100 * n / eligible_n, 1))
+  rows[["ppef_cumulative"]] <- by_year %>%
+    transmute(source = "Medicare enrollment, cumulative (PPEF)", year, n, eligible_n, pct)
+  cat(sprintf("PPEF cumulative enrollment: %d years, %d-%d, ceiling %.1f%%\n",
+              nrow(by_year), min(by_year$year), max(by_year$year),
+              max(by_year$pct)))
+} else {
+  cat("PPEF enrollment history: absent, skipped\n")
 }
 
 if (!length(rows))
@@ -247,19 +432,26 @@ write_with_provenance(by_year_tbl, "artifacts/table1_by_year.csv", inputs = LINK
 # --- markdown render ----------------------------------------------------------
 md <- c("# Table 1, by year",
         "",
-        sprintf(paste0("Fixed cohort: the same **%s** ACTIVE, primary-tier-linked midwives ",
-                       "Table 1 describes -- not a reconstruction of who was ACTIVE in each ",
-                       "past year. Each row below is how many of THIS cohort appear in that ",
-                       "year's data, for every source that carries real year-level history. ",
-                       "Percentages are against the fixed cohort N, not a per-year denominator."),
-                format(N, big.mark = ",")),
+        sprintf(paste0("Identity set: the same **%s** ACTIVE, primary-tier-linked midwives ",
+                       "Table 1 describes -- never reconstructed year to year. But a cohort ",
+                       "member counts toward year Y's numerator AND denominator only if her ",
+                       "AMCB certification covered year Y (certification_date <= Y <= ",
+                       "expiration_date, both real historical facts on the linkage record, ",
+                       "not the current `status` snapshot). `eligible_n` is that year's ",
+                       "denominator; percentages are against it, not the fixed %s. One source ",
+                       "(Medicaid) is the exception -- its input is a pre-aggregated ",
+                       "classification count this script cannot restrict person-by-person, so ",
+                       "it is rated against the fixed %s and labelled as such."),
+                format(N, big.mark = ","), format(N, big.mark = ","), format(N, big.mark = ",")),
         "",
-        "| Source | Year | n | % of fixed cohort |",
-        "|---|---:|---:|---:|")
+        "| Source | Year | n | eligible_n | % |",
+        "|---|---:|---:|---:|---:|")
 for (i in seq_len(nrow(by_year_tbl)))
-  md <- c(md, sprintf("| %s | %d | %s | %s |",
+  md <- c(md, sprintf("| %s | %d | %s | %s | %s |",
                       by_year_tbl$source[i], by_year_tbl$year[i],
-                      format(by_year_tbl$n[i], big.mark = ","), sprintf("%.1f", by_year_tbl$pct[i])))
+                      format(by_year_tbl$n[i], big.mark = ","),
+                      format(by_year_tbl$eligible_n[i], big.mark = ","),
+                      sprintf("%.1f", by_year_tbl$pct[i])))
 dir.create("docs", showWarnings = FALSE)
 writeLines(md, "docs/table1_by_year.md")
 

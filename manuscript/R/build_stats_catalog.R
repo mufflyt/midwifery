@@ -905,6 +905,59 @@ mw_build_catalog <- function(root = ".") {
     )
   }
 
+  # --- Trilliant: an independent, claims-based check on "ACTIVE" -------------
+  # "ACTIVE" throughout this manuscript means AMCB certification standing, an
+  # administrative status -- never claimed to mean currently practicing.
+  # Trilliant's directory_provider carries its own independent, claims-derived
+  # active_provider flag (enrich_trilliant_demographics.R), which this project
+  # has never used to ask the obvious question: for the cohort certification
+  # already calls ACTIVE, how many show no independent claims-based activity
+  # signal at all? The TRACKED aggregate (trilliant_demographics_validation_
+  # <freeze sha8>.csv) is read here, not the gitignored person-level file, so
+  # this number is reproducible from what the repository actually ships.
+  # file.path(root, ...) before Sys.glob(): a bare pattern glob()s against the
+  # process's cwd, which is not necessarily `root` when the manuscript renders
+  # from a different working directory than the repository root.
+  trl_val_files <- sort(Sys.glob(file.path(root, MW_ART, "trilliant_demographics_validation_*.csv")))
+  if (length(trl_val_files)) {
+    # SELECT BY CONTENT, NOT BY FILE METADATA. Multiple hash-named files
+    # accumulate here across freezes (the suffix is a freeze SHA256 prefix,
+    # not a date), and NEITHER filename order NOR file modification time
+    # reliably picks the one with the "activity" rows this section needs:
+    # alphabetical order has no relationship to when a row was added, and
+    # mtime is WORSE on a fresh CI checkout -- git sets every file's mtime to
+    # roughly the checkout moment, not its commit history, so "most recently
+    # modified" is close to arbitrary there (confirmed 2026-11-05: this exact
+    # bug shipped once already, picking a pre-2026-11-05 file with no
+    # "activity" rows and silently producing no cat_$trilliant section on
+    # CI). Instead, read every candidate and use the first one that actually
+    # contains both rows this section needs.
+    for (f in trl_val_files) {
+      trl_val <- suppressWarnings(readr::read_csv(f, show_col_types = FALSE, progress = FALSE))
+      act_row   <- trl_val[trl_val$field == "activity" &
+                            trl_val$check == "Trilliant active_provider == TRUE", , drop = FALSE]
+      inact_row <- trl_val[trl_val$field == "activity" &
+                            trl_val$check == "Trilliant active_provider == FALSE despite ACTIVE AMCB certification", , drop = FALSE]
+      if (nrow(act_row) == 1L && nrow(inact_row) == 1L) {
+        n_cohort <- act_row$n[1]
+        n_inactive <- inact_row$value[1]
+        cat_$trilliant <- list(
+          n_cohort                     = n_cohort,
+          n_active                     = act_row$value[1],
+          n_inactive_despite_certified = n_inactive,
+          pct_inactive_despite_certified = 100 * n_inactive / n_cohort,
+          # as.character(), not the bare column: readr::read_csv() auto-parses
+          # a column that looks like an ISO date into a Date, and mw_stat()
+          # with no fmt returns it raw -- a Date prints as its day-count
+          # integer (confirmed: "2026-06-25" became 20629) wherever the
+          # manuscript calls mw_stat() without a %s/date format.
+          snapshot                     = as.character(trl_val$trilliant_snapshot[1])
+        )
+        break
+      }
+    }
+  }
+
   # --- Address Lead-Lag, Freshness Decay, and Medicaid Timing ----------------
   ll_tab <- rd(file.path(MW_ART, "address_lead_lag_openpayments_nppes.csv"))
   fr_tab <- rd(file.path(MW_ART, "address_agreement_by_nppes_freshness.csv"))
