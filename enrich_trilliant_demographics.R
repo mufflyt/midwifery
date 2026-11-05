@@ -103,6 +103,17 @@ check_absent <- function(field, file) check_row(field, "not checked", NA, NA, pa
 checks <- list(check_row("all", "cohort (ACTIVE, primary-linked)", nrow(coh), nrow(coh)),
                check_row("all", "in the Trilliant directory", nrow(coh), sum(coh$trl_in_directory)))
 
+# "ACTIVE" is AMCB certification standing, an administrative status --
+# Trilliant's active_provider is an independent, claims-derived signal of
+# whether a provider shows current clinical activity in their data at all.
+# The two measuring different things is the point: this reports how often
+# they disagree, not which one is right. Denominator is the full cohort
+# (including the handful with no Trilliant record, trl_active_provider NA),
+# consistent with every other "all"/"activity" row above dividing by nrow(coh).
+checks <- c(checks, list(
+  check_row("activity", "Trilliant active_provider == TRUE", nrow(coh), sum(coh$trl_active_provider %in% TRUE)),
+  check_row("activity", "Trilliant active_provider == FALSE despite ACTIVE AMCB certification", nrow(coh), sum(coh$trl_active_provider %in% FALSE))))
+
 # Sex, against NPPES.
 f <- file.path(ART, "nppes_sex_enumeration.csv")
 checks <- c(checks, list(check_row("sex", "Trilliant gives F or M", nrow(coh), sum(!is.na(coh$trl_sex_code)))))

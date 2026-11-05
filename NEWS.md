@@ -20,6 +20,45 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-05 — What "ACTIVE" doesn't mean: a Trilliant claims-based cross-check, in the chart and the manuscript
+
+### Added
+
+- **`cat_$trilliant`** in `manuscript/R/build_stats_catalog.R`, and a new
+  paragraph in `manuscript/midwife_persistence.qmd`'s Strengths and
+  limitations section (generated entirely from the catalog, per this
+  manuscript's standing no-typed-literals rule — `tests/ci_manuscript_
+  numbers.R` verified clean). "ACTIVE" throughout this project means AMCB
+  certification standing, never clinical practice, but nothing before now
+  quantified the gap. Trilliant Health's independent, claims-derived
+  `active_provider` flag (already enriched via `enrich_trilliant_
+  demographics.R`, just never used for this comparison) makes it concrete:
+  of 12,170 ACTIVE, primary-linked cohort members, **1,304 (10.7%) show no
+  current provider activity** in Trilliant's directory (snapshot
+  2026-06-25) despite holding an active certification. Two new check rows
+  (`field = "activity"`) added to `enrich_trilliant_demographics.R`'s
+  tracked validation output so the figure is reproducible from a committed
+  aggregate, never from the gitignored person-level file.
+- The same finding as a callout on the Table 1 by-year chart artifact,
+  clearly marked as a point-in-time cross-check (Trilliant has no year
+  history of its own) rather than a tenth trend line, and as a lower bound
+  (the claims signal has its own coverage gaps).
+
+### Fixed
+
+- **`build_stats_catalog.R` picked the wrong hash-named Trilliant validation
+  file when more than one was tracked.** The lookup sorted candidate
+  filenames alphabetically and took the last one, but the filename suffix
+  is a freeze SHA256 prefix, not a date — alphabetical order has no
+  relationship to recency, and a freshly-written file sorted into the
+  *middle* of the three already committed. Now picks by file modification
+  time. Caught while adding the activity check above, before it shipped a
+  stale number.
+- A `readr`-auto-parsed Date column (`trilliant_snapshot`, which looks like
+  an ISO date) printed as a raw day-count integer (`20629`) wherever the
+  manuscript called `mw_stat()` on it without an explicit format. Cast to
+  character in the catalog instead.
+
 ## [Unreleased] — 2026-11-05 — Table 1, by year: nine sources, restricted to each year's certification-eligible subset
 
 ### Added

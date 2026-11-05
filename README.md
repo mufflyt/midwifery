@@ -1482,6 +1482,23 @@ subset each year changes more than the early numbers:
 Full table, with each row's `eligible_n` denominator shown alongside its
 count: [`docs/table1_by_year.md`](docs/table1_by_year.md).
 
+**What "ACTIVE" doesn't mean.** Every line above restricts to the subset
+whose AMCB certification is ACTIVE for that year — an administrative status,
+not a measure of current clinical practice. Trilliant Health's independent,
+claims-derived `active_provider` flag (already enriched into this project via
+`enrich_trilliant_demographics.R`) makes the gap concrete: of the 12,170
+ACTIVE, primary-linked cohort members, **1,304 (10.7%) show no current
+provider activity** in Trilliant's directory (snapshot 2026-06-25) despite
+holding an active certification. Trilliant carries no year history of its
+own — a single current snapshot, unlike every source above — so this is a
+point-in-time cross-check, not a tenth trend line, and a lower bound: the
+claims-based signal has its own coverage gaps and cannot itself distinguish a
+true exit from an undercount. The same figure, generated from the tracked
+`artifacts/trilliant_demographics_validation_<freeze sha8>.csv` aggregate via
+the manuscript's stats catalog (never typed in by hand), appears in
+[`manuscript/midwife_persistence.qmd`](manuscript/midwife_persistence.qmd)'s
+Strengths and limitations section.
+
 ## Data sources
 
 Nothing in this repository is scraped from behind a paywall or a login, and no

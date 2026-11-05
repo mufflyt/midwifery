@@ -1,0 +1,26 @@
+field,check,n,value,note,frozen_sha256,trilliant_snapshot
+all,"cohort (ACTIVE, primary-linked)",12170,12170,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+all,in the Trilliant directory,12170,12170,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+activity,Trilliant active_provider == TRUE,12170,10866,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+activity,Trilliant active_provider == FALSE despite ACTIVE AMCB certification,12170,1304,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+sex,Trilliant gives F or M,12170,12153,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+sex,not checked,,,nppes_sex_enumeration.csv not found,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+school,Trilliant names a school,12170,1093,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+school,not checked,,,dac_cnm_education.csv not found,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+age,Trilliant gives an age,12170,7783,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+age,share with the modal age + graduation year,7783,1,modal sum 2052; derived from graduation year: TRUE,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+age,"Trilliant minus measured age, mean (years)",0,,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+age,"Trilliant vs measured age, mean absolute error (years)",0,,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+age,"calibration vs measured age, mean absolute error (years)",0,,same people; the calibration is what a Trilliant age would replace,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+age,imputed ages Trilliant could fill,12170,7783,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+age,admitted as a backup (1 = yes),0,0,trl_age_admission(): not derived AND closer to measured age than the calibration,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+panel,coherent patient panel,12170,10876,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+panel,"panel median patient age, median",10876,32,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+panel,"panel median patient age, 25th percentile",10876,30,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+panel,"panel median patient age, 75th percentile",10876,35,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+panel,"share of patients female (%), median across midwives",10876,99.6774,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+panel,"share of patients aged 0-19 (%), mean across midwives",10876,2.4523,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+panel,"share of patients aged 20-44 (%), mean across midwives",10876,82.6967,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+panel,"share of patients aged 45-64 (%), mean across midwives",10876,10.8128,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+panel,"share of patients aged 65-84 (%), mean across midwives",10876,3.774,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
+panel,"share of patients aged 85-plus (%), mean across midwives",10876,0.2642,,9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716,2026-06-25
