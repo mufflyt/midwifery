@@ -88,7 +88,7 @@ TABLE1_ENRICHMENT <- data.frame(
     "Language floor; Accepts new patients; Offers telehealth",
     "Language floor; Accepts new patients; Offers telehealth",
     "Accepts new patients (coalesced with Healthgrades); Medicare enrollment (coalesced with CMS DAC)",
-    "Multi-state license status (Open Payments provider profile)"),
+    "Multi-state license status; Primary specialty (Open Payments provider profile)"),
   stringsAsFactors = FALSE
 )
 ALLOW_PARTIAL_TABLE1 <- nzchar(Sys.getenv("ALLOW_PARTIAL_TABLE1"))
@@ -684,6 +684,69 @@ if (file.exists("artifacts/hpsa_status.csv")) {
       TRUE                   ~ "Not in a primary-care HPSA"))
 }
 
+# --- Hospital affiliation via CCN (CMS facility-affiliation file) ------------
+# Produced by extract_dac_facility_affiliations.R. CMS publishes a facility
+# affiliation file alongside the DAC, keyed NPI -> CCN, and the CCN is a key
+# into cms_hospital_info -- so an affiliation becomes a named hospital with a
+# type, an owner and a birthing-friendly designation, rather than a free-text
+# employer string.
+#
+# THREE STATES, NOT TWO. Only Medicare-enrolled clinicians appear in the DAC at
+# all, so a blank here means one of two different things, and collapsing them
+# would read as "does not work at a hospital":
+#   - not enrolled in Medicare (absent from the DAC entirely); or
+#   - enrolled, but with no hospital privilege recorded by CMS.
+# in_dac separates them. Vintage is asserted upstream: the affiliation file and
+# the DAC must come from the same monthly CMS release. Matching 2026-06 to
+# 2026-06 rather than reusing an April-2025 copy moved coverage from 7.3% to
+# 14.0%, so the vintage is not a formality.
+#
+# MULTI-HOSPITAL MIDWIVES ARE NOT REDUCED TO A "PRIMARY" HOSPITAL. CMS supplies
+# no rank, volume or FTE, so picking one would be arbitrary and would then set
+# a percentage. The rows below are any-flags, which are well defined however
+# many hospitals a midwife holds privileges at.
+#
+# Restored 2026-11-05: this block was accidentally deleted when the Trilliant
+# work-site block (trilliant_any_hospital_site / trilliant_primary_site_setting,
+# above) was added in its place -- but TABLE1_ENRICHMENT kept requiring
+# dac_hospital_affiliation_person.csv, and the five Table 1 blocks below
+# (Hospital affiliation / Number of affiliated hospitals / Affiliated hospital
+# type / Affiliated hospital ownership / Birthing-friendly designation) kept
+# their `if (col %in% names(coh))` guards, which silently skip rather than
+# error, so the file stayed a required input while contributing zero rows.
+# The two sources are complementary, not redundant -- this is Medicare
+# privilege data via CCN; the Trilliant block is claims-derived work-site
+# classification -- so both are restored side by side.
+if (file.exists("artifacts/dac_hospital_affiliation_person.csv")) {
+  .aff <- read_csv("artifacts/dac_hospital_affiliation_person.csv",
+                   show_col_types = FALSE, progress = FALSE) %>%
+    distinct(certification_number, .keep_all = TRUE) %>%
+    select(certification_number, has_hospital, n_hospitals,
+           any_critical_access, any_birth_friendly, ownership)
+  coh <- coh %>%
+    left_join(.aff, by = "certification_number", relationship = "one-to-one") %>%
+    mutate(
+      has_hospital = coalesce(has_hospital, FALSE),
+      hospital_affiliation = dplyr::case_when(
+        has_hospital                      ~ "Hospital privilege recorded in Medicare",
+        !in_dac                           ~ NA_character_,
+        TRUE                              ~ "Enrolled in Medicare, no hospital privilege recorded"),
+      hospital_count = dplyr::case_when(
+        !has_hospital     ~ NA_character_,
+        n_hospitals == 1L ~ "1 hospital",
+        n_hospitals == 2L ~ "2 hospitals",
+        n_hospitals >= 3L ~ ">=3 hospitals"),
+      hospital_type_band = dplyr::case_when(
+        !has_hospital        ~ NA_character_,
+        any_critical_access  ~ "Any critical-access hospital",
+        TRUE                 ~ "Acute care hospital(s) only"),
+      birthing_friendly_band = dplyr::case_when(
+        !has_hospital       ~ NA_character_,
+        any_birth_friendly  ~ "Affiliated with a birthing-friendly hospital",
+        TRUE                ~ "No birthing-friendly designation among affiliations"),
+      hospital_ownership_band = dplyr::if_else(has_hospital, ownership, NA_character_))
+}
+
 # --- Medicare participation (Part B and Part D, 2013-2023) --------------------
 # Produced by match_medicare_partb_partd.R against the CMS Physician & Other
 # Practitioners file and the Part D Prescribers file, one row per provider per
@@ -749,13 +812,36 @@ if (file.exists("artifacts/cohort_midwives_open_payments_profile_supplement.csv"
                     show_col_types = FALSE, progress = FALSE) %>%
     distinct(certification_number, .keep_all = TRUE)
   coh <- coh %>% left_join(
-    opsup %>% select(certification_number, n_license_states),
+    opsup %>% select(certification_number, n_license_states, primary_specialty),
     by = "certification_number", relationship = "one-to-one") %>%
     mutate(
       multistate_licensed_band = dplyr::case_when(
         is.na(n_license_states)   ~ NA_character_,
         n_license_states >= 2L    ~ "Licensed in 2+ states (Open Payments profile)",
-        TRUE                      ~ "Licensed in 1 state (Open Payments profile)"))
+        TRUE                      ~ "Licensed in 1 state (Open Payments profile)"),
+      # Primary specialty (Open Payments provider profile) -- a second,
+      # independent credential/specialty field per provider, already sitting
+      # in the same file read immediately above for license status and never
+      # otherwise used. The raw string is CMS's own pipe-delimited taxonomy
+      # hierarchy ("Physician Assistants & Advanced Practice Nursing
+      # Providers|Nurse Practitioner|Women's Health"); only the LAST segment
+      # -- the most specific classification -- is kept. Corroborates (or not)
+      # the NPPES taxonomy block above from an entirely separate source.
+      # TWO DIFFERENT NON-RESPONSES, ONE LABEL. A blank string (779 of 8,411
+      # matched profiles on the 2026-11-05 build) means "has an Open Payments
+      # profile, but CMS's own specialty field is empty" -- not the same fact
+      # as no profile at all, but Table 1 has no third category to spend on a
+      # distinction this source itself does not explain, so both read as
+      # "no usable classification" and the unknown label says both.
+      .ops_specialty_last = vapply(
+        strsplit(primary_specialty, "|", fixed = TRUE),
+        function(v) if (length(v)) v[length(v)] else NA_character_, character(1)),
+      ops_specialty_band = dplyr::case_when(
+        is.na(.ops_specialty_last) | !nzchar(.ops_specialty_last) ~ NA_character_,
+        .ops_specialty_last == "Advanced Practice Midwife" ~
+          "Advanced Practice Midwife (Open Payments profile)",
+        TRUE ~ "Other classification (Open Payments profile)")) %>%
+    select(-.ops_specialty_last)
 }
 
 # --- Healthgrades banded columns ----------------------------------------------
@@ -1185,6 +1271,12 @@ t1 <- bind_rows(
         lvls = c("Licensed in 2+ states (Open Payments profile)",
                  "Licensed in 1 state (Open Payments profile)"),
         unknown_label = "No Open Payments provider profile"),
+  if ("ops_specialty_band" %in% names(coh))
+    blk(coh, "ops_specialty_band",
+        "Primary specialty (Open Payments provider profile)",
+        lvls = c("Advanced Practice Midwife (Open Payments profile)",
+                 "Other classification (Open Payments profile)"),
+        unknown_label = "No Open Payments profile, or profile present with no specialty recorded"),
 
   # Language: use Healthgrades data when available; otherwise note it is absent.
   # LANGUAGE IS A FLOOR, NOT A PROPORTION.

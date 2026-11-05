@@ -1380,6 +1380,22 @@ the first direct evidence in this project that most cross-source address
 disagreement reflects genuine multi-state practice rather than a
 data-quality problem.
 
+**Two more fixes to the same build (2026-11-05).** The CMS hospital-affiliation
+block (hospital privilege via CCN, hospital count, type, ownership and
+birthing-friendly designation — five Table 1 rows) had gone silently dead:
+`artifacts/dac_hospital_affiliation_person.csv` was still a *required*
+enrichment input, but the join code that turned it into columns was
+accidentally deleted when the Trilliant work-site block was added in its
+place, so the required file stopped contributing anything. Restored; verified
+in isolation, 1,683 of the 12,170 cohort get a recorded hospital privilege.
+Separately, the same Open Payments provider-profile file already read for
+multi-state license status also carries a second, independent
+specialty/credential field (`primary_specialty`) that had never been used —
+now a new block, **"Advanced Practice Midwife (Open Payments profile)"** vs.
+**"Other classification"**, corroborating the NPPES taxonomy block from a
+wholly separate source. 5,799 Advanced Practice Midwife, 592 Other, 5,779 with
+no usable classification, summing exactly to N.
+
 ## Data sources
 
 Nothing in this repository is scraped from behind a paywall or a login, and no
