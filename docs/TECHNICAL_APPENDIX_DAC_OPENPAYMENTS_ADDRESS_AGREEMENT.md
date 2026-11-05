@@ -141,6 +141,9 @@ numbers for both.
   weaker signal than the removed DAC-vs-Open-Payments / three-way
   comparison would have given — that one is gone for the year-matching
   reason in §4, not because it was uninformative.
+- **Longitudinal lead–lag analysis (`analyze_address_lead_lag_and_freshness.R`) resolves what happens when Open Payments (`Recipient_Primary_Business_Street_Address_Line1`) and NPPES disagree in year $t$:**
+  - **Genuine relocation lead (63.2% of state disagreements, ~40% of street disagreements):** Manufacturer sales reps on the ground log the midwife's new `Recipient_Primary_Business_Street_Address` in their CRM 1–4 years before the midwife logs into NPPES to update her self-reported `practice_address`.
+  - **Multi-site / vendor-CRM modal switching (~45–47% of street/ZIP disagreements):** Different manufacturers submitting payments in year $t$ vs. $t+1$ have different clinic locations (or VPL/NPPES vs. local clinic address) in their CRM for the same midwife's primary business address. (Note: Open Payments extracts `Recipient_Primary_Business_Street_Address_Line1`, `Recipient_City`, `Recipient_State`, and `Recipient_Zip_Code` — the midwife's reported primary business address, not the travel/event destination fields `City_of_Travel`/`State_of_Travel` and not a residential home address.)
 - **It gives a real, measured, year-matched answer to "how much do
   independent address sources disagree," at four geographic grains** —
   useful context for interpreting any NPPES-based result, including the

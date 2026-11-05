@@ -1,0 +1,5 @@
+level,n_paired_transitions,n_concordant_at_t,op_breaks_concordance_first,nppes_breaks_concordance_first,both_move_together_at_t1,n_discordant_at_t,nppes_adopts_op_at_t1_n,nppes_adopts_op_at_t1_pct,op_reverts_to_nppes_at_t1_n,op_reverts_to_nppes_at_t1_pct,persistent_discordant_at_t1_pct,disc_2022_n,nppes_adopts_op2022_by_2026_n,nppes_adopts_op2022_by_2026_pct,op_reverts_np2022_by_2025_n,op_reverts_np2022_by_2025_pct,dac2026_disc_n,dac2026_in_prior_nppes_n,dac2026_in_prior_nppes_pct
+state,9047,8726,245,15,85,321,126,39.3,155,48.3,12.5,152,96,63.2,52,45.6,567,64,11.3
+city,9047,7804,831,34,182,1243,325,26.1,599,48.2,13.7,511,232,45.4,181,47.1,2476,190,7.7
+zip5,9047,7513,1007,32,217,1534,376,24.5,725,47.3,13,600,263,43.8,205,45.5,2952,173,5.9
+street,9047,7234,1124,32,235,1813,409,22.6,851,46.9,12,681,271,39.8,225,43.4,3708,121,3.3

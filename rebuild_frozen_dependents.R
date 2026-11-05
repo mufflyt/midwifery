@@ -325,7 +325,27 @@ REBUILD_ORDER <- list(
                    # artifacts/amcb_training_institution.csv, which nothing
                    # else in this repo reads -- a leaf, same shape as the other
                    # scripts in this layer. Order within the layer is free.
-                   "link_theses_to_amcb.R")),
+                   "link_theses_to_amcb.R",
+                   # Added 2026-11-04, by T5 in the pull request that introduced
+                   # it. Reads amcb_npi_linkage_FROZEN plus a cached CMS PECOS
+                   # revalidation/reassignment download (no network -- 40
+                   # already-downloaded monthly CSVs) and writes
+                   # artifacts/pecos_revalidation_cohort_state_by_year.csv,
+                   # which build_state_source_audit.R, build_state_source_
+                   # pairwise_audit.R and build_cross_source_comparison.R (all
+                   # layer 6, below) read back in -- must precede all three.
+                   "extract_pecos_revalidation_state_history.R",
+                   # Added 2026-11-04, by T5 in the pull request that introduced
+                   # it. Reads amcb_npi_linkage_FROZEN plus the already-cached
+                   # CMS Open Payments Covered Recipient Profile Supplement
+                   # (data/CMS_Open_Payments_Profile_Supplement.csv, no
+                   # network) and writes artifacts/cohort_midwives_open_
+                   # payments_profile_supplement.csv, which build_table1_
+                   # midwives.R (layer 6, first script below) reads for its
+                   # multi-state-license block -- being in this layer, which
+                   # fully precedes layer 6, satisfies that ordering without
+                   # needing to interleave it into the publication layer.
+                   "extract_open_payments_profile_supplement.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        # export_amcb_npi_geography.R writes the tracked state aggregate and
        # the gitignored person-level export, both of which read the crosswalk
@@ -382,6 +402,28 @@ REBUILD_ORDER <- list(
        # free relative to its ZCTA-crosswalk sibling (reads that sibling's
        # OUTPUT artifact for the comparison, not the frozen linkage a second
        # time in a way this registry would need to order).
+       #
+       # build_state_source_audit.R (added 2026-11-04) reads the freeze plus
+       # the layer-5 PECOS extract above, DAC/Facility-Affiliation/Doximity/
+       # NDH/Medicaid artifacts, and writes artifacts/state_source_audit_
+       # agreement.csv, which build_cross_source_comparison.R below reads
+       # back in -- must precede it within this layer.
+       # build_state_source_pairwise_audit.R (added 2026-11-04) reads the
+       # freeze, midwife_panel.csv and the same layer-5 PECOS extract, and
+       # writes artifacts/state_source_audit_pairwise_agreement.csv, which
+       # nothing else in this registry reads back in -- a leaf, order free
+       # relative to its two siblings.
+       # build_cross_source_comparison.R (added 2026-11-04) reads the freeze,
+       # midwife_panel.csv, the layer-5 PECOS extract, and build_state_
+       # source_audit.R's agreement table immediately above -- must follow
+       # it. Writes several tracked cross_source_consensus_*.csv leaves that
+       # nothing else in this registry reads back in.
+       # analyze_address_lead_lag_and_freshness.R (added from a parallel
+       # session, 2026-11-04) reads the freeze, midwife_panel.csv and DAC/
+       # Medicaid/Open-Payments address-history artifacts, and writes
+       # tracked address_lead_lag_*.csv / address_agreement_by_nppes_
+       # freshness.csv leaves -- same shape as the analyze_medicaid_* leaves
+       # above, order free.
        scripts = c("build_table1_midwives.R", "export_amcb_npi_geography.R",
                    "validate_training_institution_against_acme.R",
                    "provenance_manifest.R", "diagnose_migration_year_over_year.R",
@@ -392,7 +434,11 @@ REBUILD_ORDER <- list(
                    "diagnose_medicaid_classification_disagreement.R",
                    "analyze_medicaid_billing_by_state.R",
                    "analyze_medicaid_billing_year_trend.R",
-                   "analyze_medicaid_enrollment_spending_tier.R"))
+                   "analyze_medicaid_enrollment_spending_tier.R",
+                   "build_state_source_audit.R",
+                   "build_state_source_pairwise_audit.R",
+                   "build_cross_source_comparison.R",
+                   "analyze_address_lead_lag_and_freshness.R"))
 )
 declared <- unlist(lapply(REBUILD_ORDER, `[[`, "scripts"))
 

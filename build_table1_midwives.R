@@ -29,6 +29,8 @@
 #          artifacts/midwife_panel_midwifeonly.csv
 #          data/rucc_2023.xlsx
 #          ~/isochrones/config/acog_districts.yml  (canonical ACOG mapping)
+#          artifacts/cohort_midwives_open_payments_profile_supplement.csv
+#            (extract_open_payments_profile_supplement.R; multi-state license status)
 # Outputs: artifacts/table1_midwives.csv
 #          docs/table1_midwives.md
 # =============================================================================
@@ -72,7 +74,8 @@ TABLE1_ENRICHMENT <- data.frame(
     "artifacts/medicare_participation.csv",
     "healthgrades_midwives.csv",
     "healthgrades_profile_attrs.csv",
-    "artifacts/cms_ndh_midwives.csv"),
+    "artifacts/cms_ndh_midwives.csv",
+    "artifacts/cohort_midwives_open_payments_profile_supplement.csv"),
   blocks = c(
     "Sex",
     "Primary NPPES Specialty Taxonomy; Practice vs. Mailing State Concordance",
@@ -84,7 +87,8 @@ TABLE1_ENRICHMENT <- data.frame(
     "Medicare Part B; Medicare Part D",
     "Language floor; Accepts new patients; Offers telehealth",
     "Language floor; Accepts new patients; Offers telehealth",
-    "Accepts new patients (coalesced with Healthgrades); Medicare enrollment (coalesced with CMS DAC)"),
+    "Accepts new patients (coalesced with Healthgrades); Medicare enrollment (coalesced with CMS DAC)",
+    "Multi-state license status (Open Payments provider profile)"),
   stringsAsFactors = FALSE
 )
 ALLOW_PARTIAL_TABLE1 <- nzchar(Sys.getenv("ALLOW_PARTIAL_TABLE1"))
@@ -729,6 +733,31 @@ if (file.exists("artifacts/medicare_participation.csv")) {
         TRUE                      ~ "Neither (billed under another NPI, <11 beneficiaries, or none)"))
 }
 
+# --- Multi-state license status (Open Payments provider profile) -------------
+# From CMS's Open Payments Covered Recipient Profile Supplement
+# (data/CMS_Open_Payments_Profile_Supplement.csv, extracted to the cohort by
+# extract_open_payments_profile_supplement.R). Only a provider who has ever
+# appeared in Open Payments gets a profile row at all -- 50.1% of the cohort
+# on the 2026-11-04 build, same SUPPORT-Act-era reportability floor as the
+# Medicare Part B/D blocks above, not a data-quality gap in this extraction.
+# "No Open Payments provider profile" is therefore its own named unknown, not
+# folded into "licensed in 1 state" -- a provider never reported to Open
+# Payments is not evidence she holds exactly one license, only that this
+# source has no opinion.
+if (file.exists("artifacts/cohort_midwives_open_payments_profile_supplement.csv")) {
+  opsup <- read_csv("artifacts/cohort_midwives_open_payments_profile_supplement.csv",
+                    show_col_types = FALSE, progress = FALSE) %>%
+    distinct(certification_number, .keep_all = TRUE)
+  coh <- coh %>% left_join(
+    opsup %>% select(certification_number, n_license_states),
+    by = "certification_number", relationship = "one-to-one") %>%
+    mutate(
+      multistate_licensed_band = dplyr::case_when(
+        is.na(n_license_states)   ~ NA_character_,
+        n_license_states >= 2L    ~ "Licensed in 2+ states (Open Payments profile)",
+        TRUE                      ~ "Licensed in 1 state (Open Payments profile)"))
+}
+
 # --- Healthgrades banded columns ----------------------------------------------
 if (!is.null(hg_link)) {
   hg_link <- hg_link %>%
@@ -1150,6 +1179,12 @@ t1 <- bind_rows(
                  "Part D only (prescribes, no rendering-NPI claim)",
                  "Part B only (rendering-NPI claim, no prescriptions)",
                  "Neither (billed under another NPI, <11 beneficiaries, or none)")),
+  if ("multistate_licensed_band" %in% names(coh))
+    blk(coh, "multistate_licensed_band",
+        "Multi-state license status (Open Payments provider profile)",
+        lvls = c("Licensed in 2+ states (Open Payments profile)",
+                 "Licensed in 1 state (Open Payments profile)"),
+        unknown_label = "No Open Payments provider profile"),
 
   # Language: use Healthgrades data when available; otherwise note it is absent.
   # LANGUAGE IS A FLOOR, NOT A PROPORTION.

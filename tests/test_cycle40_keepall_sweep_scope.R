@@ -159,14 +159,28 @@ cat("\n-- SEMANTIC --\n")
 # and if so, which duplicate .keep_all=TRUE silently keeps -- could not be
 # verified. Recorded as real, unverified debt for whoever can run against
 # the private source data, not silently waved through as a false positive.
+# Recounted again 2026-11-04 bringing in the state-source audit work: true
+# count is 109, not 108. Three new sites landed with that work --
+# build_cross_source_comparison.R's `four_long %>% distinct(npi, year,
+# source, .keep_all = TRUE)` and extract_historical_facility_affiliation.R's
+# `hosp %>% distinct(ccn, .keep_all = TRUE)` were both given a real
+# arrange() tie-break (npi/year/source/state and ccn/facility_name
+# respectively) rather than left as debt, so neither counts. The third,
+# build_table1_midwives.R's `opsup %>% distinct(certification_number,
+# .keep_all = TRUE)`, was left unfixed: it mirrors the exact same bare
+# pattern the file's own pre-existing `mcare` block already uses two blocks
+# above it (also in this count, also unfixed) -- adding an arrange() to the
+# new site alone, while the established pattern it was modeled on stays
+# bare, would not remove the underlying risk, just move where in the file
+# it's named. 108 + 1 = 109.
 {
   root <- "."
   files <- c(
     list.files(file.path(root, "R"), pattern = "\\.R$", recursive = TRUE, full.names = TRUE),
     list.files(root, pattern = "\\.R$", recursive = FALSE, full.names = TRUE))
   n <- length(detect_offenders(files))
-  chk(n == 108L,
-      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 108)", n))
+  chk(n == 109L,
+      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 109)", n))
 }
 
 # T40-6. DOCUMENTED LIMITATION, not fixed this cycle: the detection regex
