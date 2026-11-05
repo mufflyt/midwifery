@@ -41,6 +41,8 @@ in opposite directions on the same source files.
 
 Full write-up:
 [docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md](docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md).
+Narrative companion, same findings told as a story rather than a table:
+[docs/VIGNETTE_STATE_SOURCE_AUDIT_2026-11-04.md](docs/VIGNETTE_STATE_SOURCE_AUDIT_2026-11-04.md).
 Interactive dashboard, committed as a static snapshot:
 [docs/state_source_audit_dashboard.html](docs/state_source_audit_dashboard.html).
 **There is no gold standard for a midwife's practice state** — every number
