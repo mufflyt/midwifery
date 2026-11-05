@@ -20,6 +20,31 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-05 — Checked Table 1 against AMCB's own published workforce data
+
+### Added
+
+- **`docs/TECHNICAL_APPENDIX_AMCB_DEMOGRAPHIC_COMPARISON.md`** and
+  `compare_table1_amcb_state_counts.R`. AMCB certifies the roster this entire
+  project is built on, and publishes its own self-reported demographic report
+  and state-by-state count, independent of every source this project uses —
+  a real external check on the NPPES/AMCB linkage, not another internal
+  cross-reference. Credential split (99.0%/1.0% here vs. AMCB's 99.05%/0.95%)
+  and sex distribution (99.5% vs. 98.9% female) corroborate the linkage
+  closely. AMCB collects race, ethnicity, primary language, employment status
+  and salary that no source this project holds captures at all — Table 1's
+  own `Language` block already says as much ("not collected by NPPES, CMS
+  DAC or the Healthgrades scrape"); AMCB had the answer the whole time, just
+  not accessible to this project. State-by-state comparison (AMCB's Aug 2026
+  sheet vs. this project's NPPES-derived `primary_midwifery` distribution)
+  surfaces a real, unresolved discrepancy: several large states undercounted
+  13-22% here (Georgia, Michigan, North Carolina, Virginia, Tennessee), New
+  York overcounted by 12%, aggregate gap -4.5% — concentrated, not random
+  scatter, and not yet explained. Also flags a benchmarking opportunity this
+  project has never used: AMCB's published age-band distribution, from real
+  self-reported birthdates, against this project's own OLS-imputed
+  calibration model, which has no birthdate source at all.
+
 ## [Unreleased] — 2026-11-05 — Table 1's hospital-affiliation block was silently dead; a free second specialty source
 
 ### Fixed

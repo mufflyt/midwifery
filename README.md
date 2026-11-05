@@ -1396,6 +1396,19 @@ now a new block, **"Advanced Practice Midwife (Open Payments profile)"** vs.
 wholly separate source. 5,799 Advanced Practice Midwife, 592 Other, 5,779 with
 no usable classification, summing exactly to N.
 
+**Checked against AMCB's own published workforce data (2026-11-05).** AMCB
+publishes a self-reported demographic report and a state-by-state count,
+independent of every source this project uses. The CNM/CM split and sex
+distribution corroborate this project's NPPES/AMCB linkage closely (99.0%/1.0%
+and 99.5% female here vs. AMCB's 99.05%/0.95% and 98.9%); AMCB collects race,
+ethnicity, language, employment status and salary that no source here holds at
+all; and a state-by-state comparison surfaces a real, unresolved discrepancy —
+several large states undercounted 13–22% in this project's NPPES-derived
+distribution (Georgia, Michigan, North Carolina, Virginia, Tennessee), New York
+overcounted by 12%. Full comparison, including the state-level table and the
+age-model benchmarking opportunity AMCB's data makes possible:
+[docs/TECHNICAL_APPENDIX_AMCB_DEMOGRAPHIC_COMPARISON.md](docs/TECHNICAL_APPENDIX_AMCB_DEMOGRAPHIC_COMPARISON.md).
+
 ## Data sources
 
 Nothing in this repository is scraped from behind a paywall or a login, and no
