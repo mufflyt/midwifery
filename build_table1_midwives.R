@@ -88,7 +88,7 @@ TABLE1_ENRICHMENT <- data.frame(
     "Language floor; Accepts new patients; Offers telehealth",
     "Language floor; Accepts new patients; Offers telehealth",
     "Accepts new patients (coalesced with Healthgrades); Medicare enrollment (coalesced with CMS DAC)",
-    "Multi-state license status (Open Payments provider profile)"),
+    "Multi-state license status; Primary specialty (Open Payments provider profile)"),
   stringsAsFactors = FALSE
 )
 ALLOW_PARTIAL_TABLE1 <- nzchar(Sys.getenv("ALLOW_PARTIAL_TABLE1"))
