@@ -1,0 +1,25 @@
+{
+  "artifact": "table1_amcb_state_comparison.csv",
+  "written_utc": "2026-11-05 17:59:24 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_geography_by_state.csv",
+      "sha256": "8bf945fd3548763ebbd213a9195ab992808bc4bc9940b0429e0daecabdb1e8b0"
+    }
+  ],
+  "code_sha256": "a9baefdc41d16ab360f99fe9c0e89b2cb1a7a23932f8631e3cee6b02f081e80b",
+  "code": [
+    {
+      "path": "compare_table1_amcb_state_counts.R",
+      "sha256": "a81a7f2b8928ece1f83af9e7cb21a07adec32d53ec26ca1b9cc015917db135be"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}
