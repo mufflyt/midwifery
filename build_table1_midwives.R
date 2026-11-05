@@ -684,6 +684,69 @@ if (file.exists("artifacts/hpsa_status.csv")) {
       TRUE                   ~ "Not in a primary-care HPSA"))
 }
 
+# --- Hospital affiliation via CCN (CMS facility-affiliation file) ------------
+# Produced by extract_dac_facility_affiliations.R. CMS publishes a facility
+# affiliation file alongside the DAC, keyed NPI -> CCN, and the CCN is a key
+# into cms_hospital_info -- so an affiliation becomes a named hospital with a
+# type, an owner and a birthing-friendly designation, rather than a free-text
+# employer string.
+#
+# THREE STATES, NOT TWO. Only Medicare-enrolled clinicians appear in the DAC at
+# all, so a blank here means one of two different things, and collapsing them
+# would read as "does not work at a hospital":
+#   - not enrolled in Medicare (absent from the DAC entirely); or
+#   - enrolled, but with no hospital privilege recorded by CMS.
+# in_dac separates them. Vintage is asserted upstream: the affiliation file and
+# the DAC must come from the same monthly CMS release. Matching 2026-06 to
+# 2026-06 rather than reusing an April-2025 copy moved coverage from 7.3% to
+# 14.0%, so the vintage is not a formality.
+#
+# MULTI-HOSPITAL MIDWIVES ARE NOT REDUCED TO A "PRIMARY" HOSPITAL. CMS supplies
+# no rank, volume or FTE, so picking one would be arbitrary and would then set
+# a percentage. The rows below are any-flags, which are well defined however
+# many hospitals a midwife holds privileges at.
+#
+# Restored 2026-11-05: this block was accidentally deleted when the Trilliant
+# work-site block (trilliant_any_hospital_site / trilliant_primary_site_setting,
+# above) was added in its place -- but TABLE1_ENRICHMENT kept requiring
+# dac_hospital_affiliation_person.csv, and the five Table 1 blocks below
+# (Hospital affiliation / Number of affiliated hospitals / Affiliated hospital
+# type / Affiliated hospital ownership / Birthing-friendly designation) kept
+# their `if (col %in% names(coh))` guards, which silently skip rather than
+# error, so the file stayed a required input while contributing zero rows.
+# The two sources are complementary, not redundant -- this is Medicare
+# privilege data via CCN; the Trilliant block is claims-derived work-site
+# classification -- so both are restored side by side.
+if (file.exists("artifacts/dac_hospital_affiliation_person.csv")) {
+  .aff <- read_csv("artifacts/dac_hospital_affiliation_person.csv",
+                   show_col_types = FALSE, progress = FALSE) %>%
+    distinct(certification_number, .keep_all = TRUE) %>%
+    select(certification_number, has_hospital, n_hospitals,
+           any_critical_access, any_birth_friendly, ownership)
+  coh <- coh %>%
+    left_join(.aff, by = "certification_number", relationship = "one-to-one") %>%
+    mutate(
+      has_hospital = coalesce(has_hospital, FALSE),
+      hospital_affiliation = dplyr::case_when(
+        has_hospital                      ~ "Hospital privilege recorded in Medicare",
+        !in_dac                           ~ NA_character_,
+        TRUE                              ~ "Enrolled in Medicare, no hospital privilege recorded"),
+      hospital_count = dplyr::case_when(
+        !has_hospital     ~ NA_character_,
+        n_hospitals == 1L ~ "1 hospital",
+        n_hospitals == 2L ~ "2 hospitals",
+        n_hospitals >= 3L ~ ">=3 hospitals"),
+      hospital_type_band = dplyr::case_when(
+        !has_hospital        ~ NA_character_,
+        any_critical_access  ~ "Any critical-access hospital",
+        TRUE                 ~ "Acute care hospital(s) only"),
+      birthing_friendly_band = dplyr::case_when(
+        !has_hospital       ~ NA_character_,
+        any_birth_friendly  ~ "Affiliated with a birthing-friendly hospital",
+        TRUE                ~ "No birthing-friendly designation among affiliations"),
+      hospital_ownership_band = dplyr::if_else(has_hospital, ownership, NA_character_))
+}
+
 # --- Medicare participation (Part B and Part D, 2013-2023) --------------------
 # Produced by match_medicare_partb_partd.R against the CMS Physician & Other
 # Practitioners file and the Part D Prescribers file, one row per provider per
