@@ -123,7 +123,12 @@ cat(sprintf("Pairwise matrix: %d source pairs -> artifacts/cross_source_pairwise
 # 2. CONSENSUS SCORE per NPI, current snapshot, sources with >=2 reporting
 # =============================================================================
 long_current <- bind_rows(lapply(src_names, function(s) current_states[[s]] %>% mutate(source = s) %>% select(npi, source, state)))
-consensus <- long_current %>%
+# Reports how OFTEN sources agree, never which state is "right" -- SCI6: Open
+# Payments, Healthgrades and Doximity agreed on 0 of 5 overlapping cases, so a
+# picked "majority_state" would assert a winner the sources themselves don't
+# support. n_agree_with_largest_group is only ever used for the concordance
+# rate, and the largest-group state value itself is never materialized.
+agreement <- long_current %>%
   group_by(npi) %>%
   filter(n() >= 2) %>%
   mutate(n_reporting = n()) %>%
@@ -132,25 +137,25 @@ consensus <- long_current %>%
   group_by(npi) %>%
   summarise(n_reporting = first(n_reporting),
             n_sources_listed = paste(sort(unique(source)), collapse = "|"),
-            majority_state = state[which.max(n_for_this_state)][1],
-            n_agree_with_majority = max(n_for_this_state),
+            n_distinct_states = n_distinct(state),
+            n_agree_with_largest_group = max(n_for_this_state),
             .groups = "drop") %>%
-  mutate(concordance_pct = round(100 * n_agree_with_majority / n_reporting, 1))
-write_csv(consensus, "artifacts/cross_source_consensus_scores.csv")
+  mutate(concordance_pct = round(100 * n_agree_with_largest_group / n_reporting, 1))
+write_csv(agreement, "artifacts/cross_source_consensus_scores.csv")
 
-dist <- consensus %>%
+dist <- agreement %>%
   mutate(tier = case_when(
     concordance_pct == 100 ~ "Unanimous (all sources agree)",
-    concordance_pct >= 67  ~ "Majority (most sources agree)",
-    TRUE                   ~ "Split (no clear majority)"
+    concordance_pct >= 67  ~ "Agree (most sources agree)",
+    TRUE                   ~ "Split (no agreeing majority)"
   )) %>%
   count(n_reporting, tier, name = "n_npis") %>%
   arrange(n_reporting, tier)
 write_csv(dist, "artifacts/cross_source_consensus_distribution.csv")
-overall <- consensus %>% mutate(tier = case_when(
-    concordance_pct == 100 ~ "Unanimous", concordance_pct >= 67 ~ "Majority", TRUE ~ "Split")) %>%
+overall <- agreement %>% mutate(tier = case_when(
+    concordance_pct == 100 ~ "Unanimous", concordance_pct >= 67 ~ "Agree", TRUE ~ "Split")) %>%
   count(tier) %>% mutate(pct = round(100 * n / sum(n), 1))
-cat("Consensus (all NPIs with >=2 current sources, n=", nrow(consensus), "):\n", sep = "")
+cat("Agreement rate (all NPIs with >=2 current sources, n=", nrow(agreement), "):\n", sep = "")
 print(as.data.frame(overall))
 write_csv(overall, "artifacts/cross_source_consensus_overall.csv")
 

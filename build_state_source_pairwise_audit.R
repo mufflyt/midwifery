@@ -34,8 +34,7 @@
 #   trace (TRUE if n_compared < 30, mysteryroster's own "below reportability"
 #   bar, matching this audit's existing legend).
 # =============================================================================
-suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr)})
-devtools::load_all("~/Documents/GitHub/mysteryroster", quiet = TRUE)
+suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr); library(mysteryroster)})
 
 source(file.path("R", "lib", "clean_state.R"))
 
