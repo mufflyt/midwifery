@@ -168,7 +168,8 @@ differently.** With NPPES entirely excluded from both the claims and the move-ra
   identically in every variant). Neither confirmed nor investigated here — flagged as the clearest
   open question this build surfaces, not resolved.
 
-Full table: `artifacts/truth_fusion_leave_one_out_sensitivity.csv`.
+Full table: `artifacts/truth_fusion_leave_one_out_sensitivity.csv`. Figure:
+`docs/figures/leave_one_out_spike_sensitivity.png`.
 
 ## 5. Full-panel view: most methods reproduce NPPES's own temporal shape
 
@@ -270,7 +271,9 @@ source to a different, smaller cohort instead. Two structurally different tests,
 (though overlapping) analysis units, pointing the same direction on the same question: **the
 2017-18 spike is weakly corroborated by evidence outside NPPES; the 2023-24 spike is comparatively
 well-corroborated.** Neither test alone would be conclusive; agreement by two independent routes is
-stronger evidence than either on its own. That session's facility-affiliation finding is also worth
+stronger evidence than either on its own. Figure:
+`docs/figures/collaborative_convergence.png` plots both tests side by side. That session's
+facility-affiliation finding is also worth
 carrying over directly: its 1,806-case cohort's 6 transitions only touch 2016-2019 and 2022-2025,
 never 2026 — the only year `facility_affiliation` is dated to — so it contributed zero claims
 there. A year-range mismatch for that specific cohort, not evidence the source is useless; this
@@ -289,6 +292,7 @@ vote equally, so a low-weight dissenting source can create a tie `majority` can'
 barely moving a reliability-weighted posterior. A genuinely independent 4th source, even a noisy
 one, lets a weighted method synthesize more and lean on NPPES less, even as it makes naive vote-
 counting worse. Both readings are real and belong side by side, not resolved into one number.
+Figure: `docs/figures/weighted_vs_majority_tmsis.png`.
 
 ## 7. What this does and does not establish
 
