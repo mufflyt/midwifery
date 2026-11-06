@@ -269,6 +269,9 @@ artifacts/physician_compare_historical_midwives.csv
 # PECOS revalidation/reassignment state history, person-level (NPI-year-state).
 artifacts/pecos_revalidation_cohort_state_by_year.csv
 
+# Same source, uncollapsed monthly panel (NPI-vintage-state), person-level.
+artifacts/pecos_revalidation_cohort_state_monthly.csv
+
 # PPEF (Public Provider Enrollment Files) Medicare enrollment year,
 # person-level (NPI, first enrollment year, enrollment count).
 artifacts/ppef_cohort_enrollment_year.csv
@@ -276,6 +279,29 @@ artifacts/ppef_cohort_enrollment_year.csv
 # T-MSIS Medicaid spending (HHS DOGE release), person-level (NPI-year
 # billing activity: claim lines, patients, bounded total paid).
 artifacts/tmsis_medicaid_spending_cohort_by_year.csv
+
+# T-MSIS Medicaid ENROLLMENT state, by year (distinct from the billing
+# file above), person-level (NPI, year, enrolled state). A truth-fusion
+# source for build_truth_fusion_predictions.R.
+artifacts/tmsis_medicaid_enrollment_state_by_year.csv
+
+# Sub-annual NPPES practice-state panel (NPI, vintage, address), person-level.
+artifacts/nppes_subannual_panel.csv
+
+# Migration corroboration adjudication, person-level (NPI, transition,
+# states, per-source corroboration flags). The rolled-up summary/spike-vs-
+# control/Medicaid-lead-lag CSVs the same script writes are aggregates and
+# stay tracked.
+artifacts/migration_corroboration_adjudication.csv
+artifacts/migration_corroboration_adjudication.csv.provenance.json
+
+# Truth-fusion predictions, person-level (NPI, year, predicted state per
+# method). artifacts/truth_fusion_model_diagnostics.csv,
+# artifacts/migration_rate_by_method.csv, and artifacts/truth_fusion_
+# leave_one_out_sensitivity.csv (same script family) are aggregates and
+# stay tracked.
+artifacts/truth_fusion_predictions_*.csv
+artifacts/truth_fusion_predictions_*.csv.provenance.json
 
 # Historical Facility Affiliation, 2013-2022, from CCNs embedded in the
 # historical DAC files (extract_historical_facility_affiliation.R); same

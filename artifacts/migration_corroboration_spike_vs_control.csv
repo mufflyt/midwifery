@@ -1,0 +1,4 @@
+metric,n_spike,x_spike,n_control,x_control,pct_spike,pct_control,p_value
+any_corroboration,840,106,966,98,12.6,10.1,0.11359309617195369
+independent_corroboration,840,4,966,2,0.5,0.2,0.5608870991596113
+confirmed_of_confirmable,744,690,849,777,92.7,91.5,0.4185474430589592
