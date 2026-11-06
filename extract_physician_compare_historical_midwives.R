@@ -48,6 +48,15 @@
 # row and distinct-NPI counts) rather than a true split -- one picked
 # arbitrarily, no UNION ALL needed.
 #
+# Three more added 2026-11-06, same investigation for the 2023-24 spike
+# (previously only had a mid-year 2023-06/2024-06 vintage): 2022-12, 2023-12
+# and 2024-05. All three came in as full-duplicate pairs in the same
+# warehouse, same pattern as 2020-12/2021-12 -- one table picked arbitrarily
+# from each pair. This exhausts every monthly DAC/"Doctors and Clinicians"
+# table actually present in the warehouse (checked exhaustively by listing
+# every table matching doctors_and_clinicians/doc_archive/physician_compare
+# in information_schema.tables) -- no further vintage is sitting unused.
+#
 # Same two-layer filter as extract_dac_midwives.R: specialty text match, then
 # exclude_by_credential() drops anyone credentialed MD/DO who slipped through
 # on a secondary-specialty mention.
@@ -81,7 +90,10 @@ WAREHOUSE_VINTAGES <- list(
   list(vintage = "2021-06", table = "physician_compare_2021_Q2"),
   list(vintage = "2021-12", table = "doctors_and_clinicians_12_2021_DAC_NationalDownloadableFile_csv_5"),
   list(vintage = "2022-06", table = "physician_compare_2022_Q2"),
+  list(vintage = "2022-12", table = "doctors_and_clinicians_12_2022_DAC_NationalDownloadableFile_csv_6"),
   list(vintage = "2023-06", table = "physician_compare_2023_Q2"),
+  list(vintage = "2023-12", table = "doctors_and_clinicians_12_2023_DAC_NationalDownloadableFile_csv_7"),
+  list(vintage = "2024-05", table = "doctors_and_clinicians_05_2024_DAC_NationalDownloadableFile_csv_4"),
   list(vintage = "2024-06", table = "physician_compare_2024_Q2"),
   list(vintage = "2025-06", table = "physician_compare_2025_Q2")
 )

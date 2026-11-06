@@ -10,11 +10,14 @@ spike** — substantially NPPES-specific (§4), independently confirmed by a sec
 now a third: it was measured across a 20-month snapshot gap nearly double the typical year, and
 disappears into the ordinary range once re-measured over a clean 12 months (§7). **2023→2024 is a
 real, if more modest than originally reported, elevation** — holds up without NPPES (§4, §6) and
-re-measures at 2.37% rather than 3.68% once time-normalized (§7). Removing NPPES also surfaces a
-new high-rate transition (2020→2021) nothing upstream of this build had flagged — not visible in
-NPPES's own data at all, and now narrowed by sub-annual DAC and PECOS checks to H2 2021-H1 2022
-specifically, not the 2020→2021 boundary the label implies (§7). No mechanism identified for either
-2023-24's residual elevation or the 2020-21 signal.
+re-measures at 2.37% rather than 3.68% once time-normalized (§7) — though a sub-annual DAC/PECOS
+check finds no elevation anywhere inside the 2023-24 window itself (§7), unlike what the same check
+finds for 2020-21. Removing NPPES also surfaces a new high-rate transition (2020→2021) nothing
+upstream of this build had flagged — not visible in NPPES's own data at all, and now narrowed by a
+sub-annual DAC check to H2 2021-H1 2022 specifically, not the 2020→2021 boundary the label implies
+(§7) — PECOS does not corroborate this one either once a dedup-determinism bug is fixed (§7), so it
+now rests on DAC alone. No mechanism identified for either 2023-24's residual elevation or the
+2020-21 signal.
 
 ---
 
@@ -350,13 +353,12 @@ Two further checks from the same scripts:
   that the 2020-21 signal only appears once NPPES is *excluded* from the vote: it is not something
   NPPES itself was ever recording, confirmed directly rather than inferred from its absence.
 
-**The 2020-21 signal itself narrows to H2 2021-H1 2022, not the 2020→2021 boundary, once DAC and
-PECOS are checked at the same sub-annual resolution.** Two more DAC vintages (2020-12, 2021-12,
-same warehouse, CMS's own "Physician Compare" → "Doctors and Clinicians" rename around then) and
-PECOS's revalidation/reassignment warehouse -- already holding 40 real monthly vintages,
-2021-12 through 2026-09, entirely unused until now (`extract_pecos_revalidation_state_history.R`,
-which also writes a new uncollapsed monthly panel, `artifacts/pecos_revalidation_cohort_state_monthly.csv`) --
-make this checkable without any new download:
+**The 2020-21 signal narrows to a DAC-only finding, H2 2021-H1 2022, not the 2020→2021 boundary --
+and the PECOS corroboration originally reported here on 2026-11-06 has since been retracted as a
+measurement artifact (see correction below).** Two more DAC vintages (2020-12, 2021-12, same
+warehouse, CMS's own "Physician Compare" → "Doctors and Clinicians" rename around then) and PECOS's
+revalidation/reassignment warehouse -- holding 41 real monthly vintages as of 2026-11-06, 2021-12
+through 2026-11 -- make this checkable without any new download:
 
 | source | window | move rate |
 |---|---|---:|
@@ -364,37 +366,105 @@ make this checkable without any new download:
 | DAC | 2020-12→2021-06 | 2.92% |
 | DAC | **2021-06→2021-12** | **4.57%** |
 | DAC | 2021-12→2022-06 | 4.06% |
-| PECOS | 2021-12→2022-03 | 3.73% |
-| PECOS | 2022-03→2022-05 | 3.47% |
-| PECOS | 2022-05→2022-07 | 4.51% |
-| PECOS | 2022-07→2022-08 | 3.94% |
-| PECOS | 2022-08→2022-10 | 4.88% |
-| PECOS | 2022-10→2022-11 | 4.44% |
+| PECOS | 2021-12→2022-03 | 0.41% |
+| PECOS | 2022-03→2022-05 | 0.50% |
+| PECOS | 2022-05→2022-07 | 0.66% |
+| PECOS | 2022-07→2022-08 | 0.29% |
+| PECOS | 2022-08→2022-10 | 0.05% |
+| PECOS | 2022-10→2022-11 | 0.55% |
 
 DAC's own 2016-2020 baseline (the table two sections up) runs 2.05%-4.27%. **2020-12→2021-06
 (2.92%) sits inside that ordinary range, not above it** -- the move is not happening right at the
 2020→2021 boundary the signal's name implies. **2021-06→2021-12 (4.57%) is the single highest rate
 in DAC's entire measured series**, and 2021-12→2022-06 (4.06%) stays near the top of the ordinary
-range. PECOS has no pre-2021-12 vintage of its own to set a baseline against, so its 3.5%-4.9% run
-cannot be independently called "elevated" -- but it is at minimum consistent with, not
-contradicting, DAC's finding that the real elevation continues through essentially all of 2022, not
-a single sharp month.
+range. PECOS, once correctly measured (below), shows **no elevation anywhere in this window at
+all** -- 0.05%-0.66%, which lines up closely with NPPES's own quiet 0.13%-1.06% sub-annual range for
+this same era noted above, not with DAC's. The 2020-21 signal therefore now rests on DAC alone.
 
-A genuine bug surfaced and was fixed while building the PECOS check, worth recording directly: the
-first pass gave an implausible 15-17% move rate. Traced to ~10% of (NPI, vintage) rows carrying
-multiple *simultaneous* states -- one person enrolled under several group practices in different
-states in the same month (e.g. one NPI showing ME, VT, and NH all within one vintage) -- which is a
-multi-affiliation data shape, not a move. `extract_pecos_revalidation_state_history.R`'s existing
-year-level output already handled this correctly (`group_by(npi, vintage) %>% slice(1)`, the same
-arbitrary-but-deterministic pick used for ties elsewhere in this repo); the new monthly block had
-simply not reused it. Fixed by applying the identical pick -- the 3.5%-4.9% figures above are
-post-fix.
+**Correction (2026-11-06, same day): the PECOS figures first reported in this section (3.5%-4.9%)
+were themselves a measurement artifact, not a real elevation, and have been replaced above.** Two
+compounding bugs, both now fixed:
 
-**Net: two independent, non-NPPES sources now agree the real action sits in H2 2021 through H1
-2022, not the 2020→2021 boundary the signal's name suggests** -- the same "annual label points at a
-coarser window than the real transition" pattern §7 already found for 2017-18 and 2023-24. No
-mechanism is identified; a COVID-era practice-disruption story fits the timing loosely but was not
-tested against anything here.
+1. `extract_pecos_revalidation_state_history.R` hardcoded the warehouse path as
+   `/Volumes/MufflySamsung/DuckDB/cms_revalidation.duckdb`. The actual warehouse
+   `archive_revalidation_reassignment.R` maintains lives at the volume root,
+   `/Volumes/MufflySamsung/cms_revalidation.duckdb` (resolved via `samsung_volume_path()`, same as
+   `build_reassignment_panel.R` already does) -- the `/DuckDB/` copy was a stale one-time duplicate
+   that had silently fallen behind. Re-pointing at the live warehouse surfaced the second bug:
+2. The ~10% of (NPI, vintage) rows with multiple *simultaneous* states (one person enrolled under
+   several group practices in different states in the same month, e.g. one NPI showing ME, VT, and
+   NH all within one vintage) were deduped with `group_by(npi, vintage) %>% slice(1)` -- described
+   at the time as an "arbitrary-but-deterministic pick," but it was only deterministic *within one
+   fixed warehouse copy*, because `slice(1)` picks whichever row SQL happens to return first, which
+   depends on physical row order, not row content. Two warehouse copies holding byte-for-byte
+   equivalent logical data returned those multi-affiliation rows in different orders, so the "pick"
+   silently differed between them. Confirmed directly: one example NPI stably enrolled under
+   ME/NH/VT across all 41 vintages got a *different* state selected depending on which warehouse
+   copy was queried, producing a spurious "move" every time the ordering flipped, even though the
+   person's real affiliations never changed across the whole span. Fixed by sorting
+   (`arrange(pecos_state)`) before `slice(1)`, making the pick deterministic by content rather than
+   by incidental row order. The corrected PECOS move rate for this window drops from 3.5%-4.9% to
+   0.05%-0.66%.
+
+**Net: DAC alone shows the 2020-21 signal, sharpened to H2 2021-H1 2022** -- the same "annual label
+points at a coarser window than the real transition" pattern §7 already found for 2017-18 and
+2023-24. PECOS, now correctly measured, does not corroborate it; if anything, an independent source
+measuring the same population over the same window seeing nothing is mild evidence against this
+being population-wide migration, as opposed to something specific to DAC's own file (CMS's
+"Physician Compare" → "Doctors and Clinicians" rename lands almost exactly on this window, §7's
+table two sections up). No mechanism is identified; a COVID-era practice-disruption story fits the
+timing loosely but was not tested against anything here, and the DAC-renaming coincidence above was
+not tested either.
+
+**Unlike 2020-21, the 2023-24 window gets no DAC/PECOS corroboration at all once checked at the
+same sub-annual resolution -- if anything, both sources point away from it.** Three more DAC
+vintages (2022-12, 2023-12, 2024-05) exhaust every monthly "Doctors and Clinicians" table actually
+sitting in the warehouse (checked exhaustively against `information_schema.tables`, not assumed
+complete), and PECOS's monthly panel already reaches through 2024-12 for this window with zero new
+extraction. (PECOS figures below are post-correction -- see the dedup-determinism bug fixed
+immediately above, which this window's numbers are also subject to.)
+
+| source | window | move rate |
+|---|---|---:|
+| DAC | 2022-06→2022-12 | **4.54%** |
+| DAC | 2022-12→2023-06 | 3.23% |
+| DAC | 2023-06→2023-12 | 3.74% |
+| DAC | 2023-12→2024-05 | 3.16% |
+| DAC | 2024-05→2024-06 | 2.43% |
+| PECOS | 2023-02→2023-05 | 0.51% |
+| PECOS | 2023-05→2023-06 | 0.61% |
+| PECOS | 2023-06→2023-07 | 0.23% |
+| PECOS | 2023-07→2023-08 | 0.26% |
+| PECOS | 2023-08→2023-09 | 0.14% |
+| PECOS | 2023-09→2023-10 | 0.31% |
+| PECOS | 2023-10→2023-11 | 0.10% |
+| PECOS | 2023-11→2023-12 | 0.28% |
+| PECOS | 2023-12→2024-01 | 0.33% |
+| PECOS | 2024-01→2024-03 | 0.44% |
+| PECOS | 2024-03→2024-08 | 0.00% |
+| PECOS | 2024-08→2024-12 | 2.50% |
+
+Every DAC sub-window that actually falls *inside* the nominal 2023→2024 transition --
+2023-06→2023-12 (3.74%), 2023-12→2024-05 (3.16%), 2024-05→2024-06 (2.43%) -- sits inside DAC's own
+2.05%-4.27% ordinary range, several of them well inside it. The one elevated DAC window nearby,
+2022-06→2022-12 at 4.54%, falls in the *preceding* half-year, and is the tail end of the same
+2021-06-2022-12 elevated stretch already attributed to the 2020-21 signal two paragraphs up, not a
+separate 2023-24 phenomenon. **DAC's own sub-annual data does not show elevation anywhere inside
+the 2023-24 window at all** -- by DAC's account, whatever elevation existed nearby had already
+subsided by mid-2023. PECOS, now correctly measured, is almost silent across nearly the entire
+2023-2024 span (0.00%-0.61%) -- consistent with NPPES's own quiet baseline, not with DAC's -- with
+one exception: **2024-08→2024-12 jumps to 2.50%**, clearly above every other PECOS window in this
+table though still below DAC's own ordinary ceiling. That one window sits right at the far end of
+the nominal 2023-24 transition and was not investigated further here.
+
+This does not reverse §4's and §6's annual-resolution findings that 2023-24 holds up under
+leave-one-out and under the parallel T-MSIS-addition test -- those results stand. It does mean
+neither source checked here at finer-than-annual resolution corroborates it, which is the opposite
+of what happened for 2020-21 (where DAC alone still shows a clear elevation). The most honest
+reading: an elevation diffuse enough to survive annual-resolution, multi-source voting but
+invisible in both DAC's and PECOS's own finest available breakdowns is a materially weaker claim
+than "a spike has been located," even one already softened to "a real, modest elevation" by the
+time-normalization above.
 
 Figures: none yet for this section -- `diagnose_subannual_migration_timing.R` is a read-only
 diagnostic (prints to stdout, same convention as `diagnose_migration_year_over_year.R`), not
@@ -413,11 +483,15 @@ published rate was measured across a 20-month window, nearly double the typical 
 disappears into the ordinary range once re-measured over a clean 12 months. 2023→2024 holds up
 across all of these — the full-panel view (§5), the leave-one-out test (§4), the parallel T-MSIS
 test (§6), and §7's time-normalized re-measurement all agree it is the more defensible of the two,
-though §7 tempers "a spike" to "a real, modest elevation." Removing NPPES surfaces a transition,
+though §7 tempers "a spike" to "a real, modest elevation" -- and §7's DAC/PECOS sub-annual check,
+checked at finer-than-annual resolution, finds no elevation anywhere inside the nominal window at
+all, the opposite of what the same check found for 2020-21. Removing NPPES surfaces a transition,
 2020→2021, that ranks *higher* than either historical spike once NPPES is out of the vote — a
 genuinely new finding, not previously flagged anywhere in this repo's migration work, not visible
-in NPPES's own data at all, and (per §7's DAC/PECOS sub-annual breakdown) better described as
-H2 2021-H1 2022 than the 2020→2021 boundary its label implies.
+in NPPES's own data at all, and (per §7's sub-annual breakdown) better described as H2 2021-H1 2022
+than the 2020→2021 boundary its label implies -- on DAC alone, though; §7 also documents and fixes
+a dedup-determinism bug that retracts PECOS's initially-reported corroboration of this window as a
+measurement artifact.
 
 **It does not establish a mechanism** for the 2023-24 elevation or the 2020-21 signal — this build
 measures whether patterns survive across evidence sources, inference methods, and (as of §7)
@@ -467,7 +541,9 @@ Reads `midwife_panel.csv` and `artifacts/amcb_npi_linkage_FROZEN.csv` (gitignore
 both must be present locally), the DAC/PECOS/Open Payments cohort extracts,
 `/Volumes/MufflySamsung/DuckDB/medicaid_provider_enrollment_segments.duckdb`,
 `/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb`,
-`/Volumes/MufflySamsung/DuckDB/cms_revalidation.duckdb` (PECOS's 40 monthly vintages), and
+`/Volumes/MufflySamsung/cms_revalidation.duckdb` (PECOS's 41 monthly vintages as of 2026-11-06,
+resolved via `samsung_volume_path()`, not the stale `/DuckDB/`-subfolder copy §7 found and
+retracted), and
 `/Volumes/MufflySamsung/nppes_historical_downloads/NPPES_Data_Dissemination_*.zip` (all external
 volume). The per-method person-level prediction CSVs (`artifacts/truth_fusion_predictions_*.csv`),
 the sub-annual NPPES panel (`artifacts/nppes_subannual_panel.csv`), and the PECOS monthly panel

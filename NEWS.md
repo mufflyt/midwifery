@@ -20,7 +20,7 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — 2026-11-06 — Multi-source truth fusion on the migration spikes: 2017-18 is not real, 2023-24 is real but smaller than reported, and a third, unflagged transition shows up once NPPES is removed
+## [Unreleased] — 2026-11-06 — Multi-source truth fusion on the migration spikes: 2017-18 is not real, 2023-24 holds up at annual resolution but gets no sub-annual DAC/PECOS corroboration, and a third, unflagged transition (2020-21, now dated to H2 2021-H1 2022) shows up once NPPES is removed
 
 ### Added
 
@@ -82,23 +82,57 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   not something NPPES itself was ever recording.
 - **2 more DAC vintages (2020-12, 2021-12) and a new PECOS monthly panel**
   (`extract_pecos_revalidation_state_history.R` now also writes
-  `artifacts/pecos_revalidation_cohort_state_monthly.csv`, uncollapsed --
-  the warehouse already had 40 real monthly PECOS vintages, 2021-12
-  through 2026-09, sitting unused) narrow the 2020-21 signal itself:
-  DAC's 2020-12->2021-06 rate (2.92%) sits inside its own ordinary
-  2.05%-4.27% range -- the move is not at the 2020->2021 boundary the
-  name implies. **DAC's 2021-06->2021-12 rate, 4.57%, is the highest in
-  its entire measured series**, staying elevated (4.06%) through
-  2022-06; PECOS (no earlier vintage to baseline against) runs a
-  consistent 3.5%-4.9% from 2021-12 through late 2022, consistent with
-  the same window. Two independent non-NPPES sources now agree: the real
-  action is H2 2021-H1 2022, not the 2020->2021 boundary. A bug was
-  caught and fixed building this: ~10% of PECOS (NPI, vintage) rows
-  carried multiple simultaneous states (one person enrolled under
-  several group practices in different states at once), inflating a
-  first-pass move rate to an implausible 15-17% until deduped the same
-  way the script's existing year-level output already did. Still no
-  mechanism identified for this transition.
+  `artifacts/pecos_revalidation_cohort_state_monthly.csv`, uncollapsed)
+  narrow the 2020-21 signal itself: DAC's 2020-12->2021-06 rate (2.92%)
+  sits inside its own ordinary 2.05%-4.27% range -- the move is not at
+  the 2020->2021 boundary the name implies. **DAC's 2021-06->2021-12
+  rate, 4.57%, is the highest in its entire measured series**, staying
+  elevated (4.06%) through 2022-06. The signal now rests on DAC alone --
+  PECOS, once correctly measured (below), shows nothing (0.05%-0.66%
+  for this window), matching NPPES's own quiet baseline rather than
+  DAC's. Still no mechanism identified for this transition.
+- **3 more DAC vintages (2022-12, 2023-12, 2024-05) -- exhausting every
+  monthly "Doctors and Clinicians" table actually sitting in the
+  warehouse -- find the OPPOSITE result for 2023-24: no corroboration at
+  all.** Every DAC sub-window actually inside the nominal 2023->2024
+  transition (2023-06->2023-12: 3.74%, 2023-12->2024-05: 3.16%,
+  2024-05->2024-06: 2.43%) sits inside DAC's own ordinary 2.05%-4.27%
+  range. The one elevated DAC window nearby, 2022-06->2022-12 at 4.54%,
+  falls in the *preceding* half-year and is the tail of the same
+  2021-06-2022-12 stretch already attributed to the 2020-21 signal
+  above, not a separate 2023-24 event. PECOS (corrected, below) is
+  nearly silent across the whole span too (0.00%-0.61%, one later
+  exception at 2.50%). This doesn't reverse the leave-one-out or
+  T-MSIS-addition results (those are annual-resolution, multi-source,
+  and still stand) -- it means neither source checked here at
+  finer-than-annual resolution corroborates 2023-24, the opposite of
+  what the same check found for 2020-21.
+- **Correction, same day: PECOS's first-reported figures above (3.5%-4.9%
+  for 2020-21, 2.8%-5.7% for 2023-24) were a measurement artifact from
+  two compounding bugs, both now fixed.** (1)
+  `extract_pecos_revalidation_state_history.R` hardcoded the warehouse
+  path as `/Volumes/MufflySamsung/DuckDB/cms_revalidation.duckdb` -- a
+  stale one-time copy, 2 months and 1 vintage behind the live warehouse
+  `archive_revalidation_reassignment.R` actually maintains at the volume
+  root. Fixed to resolve it the same way `build_reassignment_panel.R`
+  already does, via `samsung_volume_path()`. (2) Re-pointing at the live
+  warehouse surfaced a second, subtler bug: the ~10% of (NPI, vintage)
+  rows with multiple simultaneous group-practice states were deduped
+  with `group_by(npi, vintage) %>% slice(1)`, previously described as an
+  "arbitrary-but-deterministic pick" -- but `slice(1)` picks whichever
+  row SQL returns first, which depends on physical row order, not
+  content, so the same logical data gave a *different* pick across two
+  warehouse copies. Confirmed directly on an NPI stably enrolled under
+  ME/NH/VT across all 41 vintages: it got a different state picked
+  depending on which copy was queried, producing a spurious "move" every
+  time the ordering flipped, despite the person's affiliations never
+  actually changing. Fixed with `arrange(pecos_state)` before
+  `slice(1)`, making the pick deterministic by content. Corrected PECOS
+  move rates: 0.05%-0.66% for the 2020-21 window (not 3.5%-4.9%),
+  0.00%-0.61% (one exception, 2.50%) for 2023-24 (not 2.8%-5.7%). Both
+  now land close to NPPES's own quiet 0.13%-1.06% sub-annual baseline,
+  not DAC's. The 2020-21 signal now rests on DAC alone, uncorroborated by
+  PECOS; 2023-24 gets no sub-annual corroboration from either source.
 
 ## [Unreleased] — 2026-11-05 — Independent corroboration of the two NPPES migration spikes, and why spike-vs-control framing alone is misleading
 

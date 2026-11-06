@@ -4,11 +4,17 @@
 # =============================================================================
 # archive_revalidation_reassignment.R already discovers and ingests every
 # monthly "Revalidation Group Practice Reassignment" release CMS publishes
-# into /Volumes/MufflySamsung/DuckDB/cms_revalidation.duckdb
+# into cms_revalidation.duckdb, at the volume root (resolved via
+# samsung_volume_path(), same as build_reassignment_panel.R -- a hardcoded
+# /DuckDB/ subfolder here previously pointed at a stale one-time copy that
+# had silently fallen 2 months and 1 vintage behind the live warehouse;
+# fixed 2026-11-06)
 # (revalidation_reassignment table: individual_npi, individual_state,
-# individual_specialty, vintage "YYYY-MM"). 40 monthly vintages exist,
-# 2021-12 through 2026-09 -- this is PECOS enrollment state, independent of
-# NPPES self-report, genuinely spanning 5 real years, not a single snapshot.
+# individual_specialty, vintage "YYYY-MM"). 41 monthly vintages exist as of
+# 2026-11-06, 2021-12 through 2026-11 (grows monthly as CMS publishes more
+# releases and the archiver is re-run) -- this is PECOS enrollment state,
+# independent of NPPES self-report, genuinely spanning 5 real years, not a
+# single snapshot.
 #
 # One row per (npi, year): the LAST vintage within that year (a year-end
 # snapshot), joined to the cohort by NPI rather than by re-filtering
@@ -26,9 +32,10 @@
 # confirm/deny whether elevation continues or concentrates from 2021-12 on.
 # =============================================================================
 suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); library(readr)})
+source(file.path("R", "lib", "medicare_duckdb.R"))
 
-WAREHOUSE <- "/Volumes/MufflySamsung/DuckDB/cms_revalidation.duckdb"
-stopifnot(file.exists(WAREHOUSE))
+WAREHOUSE <- Sys.getenv("REVAL_DB", "")
+if (!nzchar(WAREHOUSE)) WAREHOUSE <- samsung_volume_path("cms_revalidation.duckdb")
 
 link <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv", col_types = cols(.default = "c"),
                   progress = FALSE)
@@ -54,6 +61,7 @@ rows$year <- as.integer(substr(rows$vintage, 1, 4))
 by_year <- rows %>%
   group_by(npi, year) %>%
   filter(vintage == max(vintage)) %>%
+  arrange(pecos_state) %>%
   slice(1) %>%
   ungroup() %>%
   select(npi, year, pecos_state, vintage)
@@ -66,9 +74,14 @@ cat(sprintf("wrote %s NPI-year rows (%s distinct NPIs, years %d-%d) -> artifacts
 # same arbitrary-but-deterministic pick as by_year above -- ~10% of
 # npi-vintage combos carry multiple simultaneous group-practice states
 # (e.g. ME/VT/NH in the same month), not real moves; one state per
-# (npi, vintage) is required for a move-rate computation to mean anything
+# (npi, vintage) is required for a move-rate computation to mean anything.
+# arrange(pecos_state) before slice(1) makes the pick deterministic BY
+# CONTENT rather than by incidental SQL row order -- the latter was found
+# 2026-11-06 to differ between warehouse copies/re-ingests of the identical
+# underlying data, silently shifting which arbitrary state "won" for ~10%
+# of rows and moving published move rates by a point or more between runs.
 monthly <- rows %>% select(npi, vintage, pecos_state) %>% distinct() %>%
-  group_by(npi, vintage) %>% slice(1) %>% ungroup()
+  group_by(npi, vintage) %>% arrange(pecos_state) %>% slice(1) %>% ungroup()
 write_csv(monthly, "artifacts/pecos_revalidation_cohort_state_monthly.csv", na = "")
 cat(sprintf("wrote %s NPI-vintage rows (%s distinct NPIs, %d vintages) -> artifacts/pecos_revalidation_cohort_state_monthly.csv\n",
             format(nrow(monthly), big.mark = ","), length(unique(monthly$npi)), length(unique(monthly$vintage))))
