@@ -80,6 +80,25 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   NPPES's own sub-annual series shows nothing unusual around 2020-2021
   either -- confirming that signal is specific to the non-NPPES sources,
   not something NPPES itself was ever recording.
+- **2 more DAC vintages (2020-12, 2021-12) and a new PECOS monthly panel**
+  (`extract_pecos_revalidation_state_history.R` now also writes
+  `artifacts/pecos_revalidation_cohort_state_monthly.csv`, uncollapsed --
+  the warehouse already had 40 real monthly PECOS vintages, 2021-12
+  through 2026-09, sitting unused) narrow the 2020-21 signal itself:
+  DAC's 2020-12->2021-06 rate (2.92%) sits inside its own ordinary
+  2.05%-4.27% range -- the move is not at the 2020->2021 boundary the
+  name implies. **DAC's 2021-06->2021-12 rate, 4.57%, is the highest in
+  its entire measured series**, staying elevated (4.06%) through
+  2022-06; PECOS (no earlier vintage to baseline against) runs a
+  consistent 3.5%-4.9% from 2021-12 through late 2022, consistent with
+  the same window. Two independent non-NPPES sources now agree: the real
+  action is H2 2021-H1 2022, not the 2020->2021 boundary. A bug was
+  caught and fixed building this: ~10% of PECOS (NPI, vintage) rows
+  carried multiple simultaneous states (one person enrolled under
+  several group practices in different states at once), inflating a
+  first-pass move rate to an implausible 15-17% until deduped the same
+  way the script's existing year-level output already did. Still no
+  mechanism identified for this transition.
 
 ## [Unreleased] — 2026-11-05 — Independent corroboration of the two NPPES migration spikes, and why spike-vs-control framing alone is misleading
 

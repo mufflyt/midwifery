@@ -11,8 +11,10 @@ now a third: it was measured across a 20-month snapshot gap nearly double the ty
 disappears into the ordinary range once re-measured over a clean 12 months (§7). **2023→2024 is a
 real, if more modest than originally reported, elevation** — holds up without NPPES (§4, §6) and
 re-measures at 2.37% rather than 3.68% once time-normalized (§7). Removing NPPES also surfaces a
-new, unexplained high-rate transition (2020→2021) nothing upstream of this build had flagged, and
-not visible in NPPES's own data at all (§7).
+new high-rate transition (2020→2021) nothing upstream of this build had flagged — not visible in
+NPPES's own data at all, and now narrowed by sub-annual DAC and PECOS checks to H2 2021-H1 2022
+specifically, not the 2020→2021 boundary the label implies (§7). No mechanism identified for either
+2023-24's residual elevation or the 2020-21 signal.
 
 ---
 
@@ -348,6 +350,52 @@ Two further checks from the same scripts:
   that the 2020-21 signal only appears once NPPES is *excluded* from the vote: it is not something
   NPPES itself was ever recording, confirmed directly rather than inferred from its absence.
 
+**The 2020-21 signal itself narrows to H2 2021-H1 2022, not the 2020→2021 boundary, once DAC and
+PECOS are checked at the same sub-annual resolution.** Two more DAC vintages (2020-12, 2021-12,
+same warehouse, CMS's own "Physician Compare" → "Doctors and Clinicians" rename around then) and
+PECOS's revalidation/reassignment warehouse -- already holding 40 real monthly vintages,
+2021-12 through 2026-09, entirely unused until now (`extract_pecos_revalidation_state_history.R`,
+which also writes a new uncollapsed monthly panel, `artifacts/pecos_revalidation_cohort_state_monthly.csv`) --
+make this checkable without any new download:
+
+| source | window | move rate |
+|---|---|---:|
+| DAC | 2020-06→2020-12 | 3.36% |
+| DAC | 2020-12→2021-06 | 2.92% |
+| DAC | **2021-06→2021-12** | **4.57%** |
+| DAC | 2021-12→2022-06 | 4.06% |
+| PECOS | 2021-12→2022-03 | 3.73% |
+| PECOS | 2022-03→2022-05 | 3.47% |
+| PECOS | 2022-05→2022-07 | 4.51% |
+| PECOS | 2022-07→2022-08 | 3.94% |
+| PECOS | 2022-08→2022-10 | 4.88% |
+| PECOS | 2022-10→2022-11 | 4.44% |
+
+DAC's own 2016-2020 baseline (the table two sections up) runs 2.05%-4.27%. **2020-12→2021-06
+(2.92%) sits inside that ordinary range, not above it** -- the move is not happening right at the
+2020→2021 boundary the signal's name implies. **2021-06→2021-12 (4.57%) is the single highest rate
+in DAC's entire measured series**, and 2021-12→2022-06 (4.06%) stays near the top of the ordinary
+range. PECOS has no pre-2021-12 vintage of its own to set a baseline against, so its 3.5%-4.9% run
+cannot be independently called "elevated" -- but it is at minimum consistent with, not
+contradicting, DAC's finding that the real elevation continues through essentially all of 2022, not
+a single sharp month.
+
+A genuine bug surfaced and was fixed while building the PECOS check, worth recording directly: the
+first pass gave an implausible 15-17% move rate. Traced to ~10% of (NPI, vintage) rows carrying
+multiple *simultaneous* states -- one person enrolled under several group practices in different
+states in the same month (e.g. one NPI showing ME, VT, and NH all within one vintage) -- which is a
+multi-affiliation data shape, not a move. `extract_pecos_revalidation_state_history.R`'s existing
+year-level output already handled this correctly (`group_by(npi, vintage) %>% slice(1)`, the same
+arbitrary-but-deterministic pick used for ties elsewhere in this repo); the new monthly block had
+simply not reused it. Fixed by applying the identical pick -- the 3.5%-4.9% figures above are
+post-fix.
+
+**Net: two independent, non-NPPES sources now agree the real action sits in H2 2021 through H1
+2022, not the 2020→2021 boundary the signal's name suggests** -- the same "annual label points at a
+coarser window than the real transition" pattern §7 already found for 2017-18 and 2023-24. No
+mechanism is identified; a COVID-era practice-disruption story fits the timing loosely but was not
+tested against anything here.
+
 Figures: none yet for this section -- `diagnose_subannual_migration_timing.R` is a read-only
 diagnostic (prints to stdout, same convention as `diagnose_migration_year_over_year.R`), not
 formalized into a tracked artifact or chart.
@@ -367,8 +415,9 @@ across all of these — the full-panel view (§5), the leave-one-out test (§4),
 test (§6), and §7's time-normalized re-measurement all agree it is the more defensible of the two,
 though §7 tempers "a spike" to "a real, modest elevation." Removing NPPES surfaces a transition,
 2020→2021, that ranks *higher* than either historical spike once NPPES is out of the vote — a
-genuinely new finding, not previously flagged anywhere in this repo's migration work, and (per §7)
-not visible in NPPES's own data at all.
+genuinely new finding, not previously flagged anywhere in this repo's migration work, not visible
+in NPPES's own data at all, and (per §7's DAC/PECOS sub-annual breakdown) better described as
+H2 2021-H1 2022 than the 2020→2021 boundary its label implies.
 
 **It does not establish a mechanism** for the 2023-24 elevation or the 2020-21 signal — this build
 measures whether patterns survive across evidence sources, inference methods, and (as of §7)
@@ -408,6 +457,7 @@ Rscript extract_physician_compare_historical_midwives.R
 # outside the original session.
 # <run that foreground extraction loop here>
 Rscript extract_nppes_subannual_panel.R
+Rscript extract_pecos_revalidation_state_history.R
 Rscript diagnose_subannual_migration_timing.R
 Rscript tests/test_truth_fusion_claims.R
 Rscript tests/test_migration_rate.R
@@ -416,12 +466,14 @@ Rscript tests/test_migration_rate.R
 Reads `midwife_panel.csv` and `artifacts/amcb_npi_linkage_FROZEN.csv` (gitignored, person-level;
 both must be present locally), the DAC/PECOS/Open Payments cohort extracts,
 `/Volumes/MufflySamsung/DuckDB/medicaid_provider_enrollment_segments.duckdb`,
-`/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb`, and
+`/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb`,
+`/Volumes/MufflySamsung/DuckDB/cms_revalidation.duckdb` (PECOS's 40 monthly vintages), and
 `/Volumes/MufflySamsung/nppes_historical_downloads/NPPES_Data_Dissemination_*.zip` (all external
-volume). The per-method person-level prediction CSVs (`artifacts/truth_fusion_predictions_*.csv`)
-and the sub-annual NPPES panel (`artifacts/nppes_subannual_panel.csv`) are gitignored; the
-model-diagnostics, migration-rate-by-method, and leave-one-out-sensitivity CSVs are tracked
-aggregates. Each `build_truth_fusion_predictions.R` pass took 38-98 minutes on the full panel —
+volume). The per-method person-level prediction CSVs (`artifacts/truth_fusion_predictions_*.csv`),
+the sub-annual NPPES panel (`artifacts/nppes_subannual_panel.csv`), and the PECOS monthly panel
+(`artifacts/pecos_revalidation_cohort_state_monthly.csv`) are gitignored; the model-diagnostics,
+migration-rate-by-method, and leave-one-out-sensitivity CSVs are tracked aggregates. Each
+`build_truth_fusion_predictions.R` pass took 38-98 minutes on the full panel —
 `attribute_truth_fusion()`'s R-native `majority` implementation (`split()` over ~220K distinct
 entity-year groups) is the slower of the two backends' first steps, not the Python backends
 themselves.

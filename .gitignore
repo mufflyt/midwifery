@@ -269,6 +269,9 @@ artifacts/physician_compare_historical_midwives.csv
 # PECOS revalidation/reassignment state history, person-level (NPI-year-state).
 artifacts/pecos_revalidation_cohort_state_by_year.csv
 
+# Same source, uncollapsed monthly panel (NPI-vintage-state), person-level.
+artifacts/pecos_revalidation_cohort_state_monthly.csv
+
 # PPEF (Public Provider Enrollment Files) Medicare enrollment year,
 # person-level (NPI, first enrollment year, enrollment count).
 artifacts/ppef_cohort_enrollment_year.csv

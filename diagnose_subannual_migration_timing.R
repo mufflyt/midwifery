@@ -6,12 +6,12 @@
 # annual resolution only -- it cannot say whether a year's elevated rate is
 # concentrated in a few months or spread evenly. artifacts/nppes_subannual_
 # panel.csv (33 vintages, 2007-2026, built from archives already on the
-# external drive -- see extract_nppes_subannual_panel.R) and the 3 new DAC
+# external drive -- see extract_nppes_subannual_panel.R) and the 5 new DAC
 # vintages in artifacts/physician_compare_historical_midwives.csv (2017-04,
-# 2018-12, 2019-12) let that be checked directly, for the two historical
-# spikes (2017-18, 2023-24) and the 2020-21 signal docs/TECHNICAL_APPENDIX_
-# TRUTH_FUSION_MIGRATION.md S4 surfaced when NPPES was removed from the
-# truth-fusion vote.
+# 2018-12, 2019-12, 2020-12, 2021-12) let that be checked directly, for the
+# two historical spikes (2017-18, 2023-24) and the 2020-21 signal docs/
+# TECHNICAL_APPENDIX_TRUTH_FUSION_MIGRATION.md S4 surfaced when NPPES was
+# removed from the truth-fusion vote.
 #
 # Read-only diagnostic: prints to stdout, writes nothing tracked, same
 # convention as diagnose_migration_year_over_year.R.
@@ -56,5 +56,22 @@ dac_window <- sort(unique(dac_hist$vintage[dac_hist$vintage %in% c("2016-04", "2
 cat(sprintf("\n=== DAC, independent cross-check, same window (%s) ===\n", paste(dac_window, collapse = ", ")))
 dac_rates <- compute_consecutive_rates(dac_hist, dac_window)
 print(as.data.frame(dac_rates), row.names = FALSE)
+
+# --- DAC, sub-annual breakdown of the 2020-21 signal -----------------------
+dac_2021_window <- sort(unique(dac_hist$vintage[dac_hist$vintage %in% c("2020-06", "2020-12", "2021-06", "2021-12", "2022-06")]))
+cat(sprintf("\n=== DAC, sub-annual breakdown of the 2020-21 signal (%s) ===\n", paste(dac_2021_window, collapse = ", ")))
+dac_2021_rates <- compute_consecutive_rates(dac_hist, dac_2021_window)
+print(as.data.frame(dac_2021_rates), row.names = FALSE)
+
+# --- PECOS, monthly breakdown of the 2020-21 signal -------------------------
+# warehouse vintages start 2021-12 -- cannot see 2020 or most of 2021, only
+# whether elevation continues/concentrates from 2021-12 onward.
+pecos_monthly <- read_csv("artifacts/pecos_revalidation_cohort_state_monthly.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+  transmute(npi = trimws(npi), vintage, state = clean_state(pecos_state)) %>%
+  filter(!is.na(npi), !is.na(state), npi %in% link$npi) %>% distinct(npi, vintage, state)
+pecos_vintages <- sort(unique(pecos_monthly$vintage[pecos_monthly$vintage <= "2022-12"]))
+cat(sprintf("\n=== PECOS, monthly breakdown from warehouse start through 2022-12 (%s) ===\n", paste(pecos_vintages, collapse = ", ")))
+pecos_rates <- compute_consecutive_rates(pecos_monthly, pecos_vintages)
+print(as.data.frame(pecos_rates), row.names = FALSE)
 
 cat("\nDone.\n")

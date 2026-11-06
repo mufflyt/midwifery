@@ -40,6 +40,14 @@
 # other vintage here already needs for its own within-vintage multi-row
 # NPIs from multiple org/group affiliations).
 #
+# Two more added 2026-11-06, investigating the 2020-21 signal that
+# docs/TECHNICAL_APPENDIX_TRUTH_FUSION_MIGRATION.md S4 surfaced once NPPES
+# is removed from the vote: 2020-12 and 2021-12 (CMS renamed "Physician
+# Compare" to "Doctors and Clinicians" around then, hence the different
+# table-name prefix). Each came in as two FULL duplicate tables (identical
+# row and distinct-NPI counts) rather than a true split -- one picked
+# arbitrarily, no UNION ALL needed.
+#
 # Same two-layer filter as extract_dac_midwives.R: specialty text match, then
 # exclude_by_credential() drops anyone credentialed MD/DO who slipped through
 # on a secondary-specialty mention.
@@ -69,7 +77,9 @@ WAREHOUSE_VINTAGES <- list(
   list(vintage = "2019-12", tables = c("doc_archive_12_2019_Physician_Compare_National_Downloadable_File_201912_csv_3",
                                         "doc_archive_12_2019_Physician_Compare_National_Downloadable_File_201912_csv_5")),
   list(vintage = "2020-06", table = "physician_compare_2020_Q2"),
+  list(vintage = "2020-12", table = "doctors_and_clinicians_archive_12_2020_mj5m_pzi6_csv_8"),
   list(vintage = "2021-06", table = "physician_compare_2021_Q2"),
+  list(vintage = "2021-12", table = "doctors_and_clinicians_12_2021_DAC_NationalDownloadableFile_csv_5"),
   list(vintage = "2022-06", table = "physician_compare_2022_Q2"),
   list(vintage = "2023-06", table = "physician_compare_2023_Q2"),
   list(vintage = "2024-06", table = "physician_compare_2024_Q2"),

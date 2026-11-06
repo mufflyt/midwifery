@@ -17,6 +17,13 @@
 # Output: artifacts/pecos_revalidation_cohort_state_by_year.csv (person-level
 # NPI-year-state; same standing as the other per-source extracts this
 # session, see .gitignore).
+#
+# Also writes the UNCOLLAPSED monthly panel (artifacts/pecos_revalidation_
+# cohort_state_monthly.csv, one row per NPI-vintage) -- added 2026-11-06 to
+# let the 2020-21 truth-fusion signal (docs/TECHNICAL_APPENDIX_TRUTH_FUSION_
+# MIGRATION.md S4) be checked at monthly resolution. The warehouse's own
+# vintages start 2021-12, so this cannot see 2020 or most of 2021, only
+# confirm/deny whether elevation continues or concentrates from 2021-12 on.
 # =============================================================================
 suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); library(readr)})
 
@@ -55,3 +62,13 @@ write_csv(by_year, "artifacts/pecos_revalidation_cohort_state_by_year.csv", na =
 cat(sprintf("wrote %s NPI-year rows (%s distinct NPIs, years %d-%d) -> artifacts/pecos_revalidation_cohort_state_by_year.csv\n",
             format(nrow(by_year), big.mark = ","), length(unique(by_year$npi)),
             min(by_year$year), max(by_year$year)))
+
+# same arbitrary-but-deterministic pick as by_year above -- ~10% of
+# npi-vintage combos carry multiple simultaneous group-practice states
+# (e.g. ME/VT/NH in the same month), not real moves; one state per
+# (npi, vintage) is required for a move-rate computation to mean anything
+monthly <- rows %>% select(npi, vintage, pecos_state) %>% distinct() %>%
+  group_by(npi, vintage) %>% slice(1) %>% ungroup()
+write_csv(monthly, "artifacts/pecos_revalidation_cohort_state_monthly.csv", na = "")
+cat(sprintf("wrote %s NPI-vintage rows (%s distinct NPIs, %d vintages) -> artifacts/pecos_revalidation_cohort_state_monthly.csv\n",
+            format(nrow(monthly), big.mark = ","), length(unique(monthly$npi)), length(unique(monthly$vintage))))
