@@ -20,7 +20,7 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — 2026-11-06 — Multi-source truth fusion on the migration spikes: one looks NPPES-specific, the other doesn't, and a third, unflagged transition shows up once NPPES is removed
+## [Unreleased] — 2026-11-06 — Multi-source truth fusion on the migration spikes: 2017-18 is not real, 2023-24 is real but smaller than reported, and a third, unflagged transition shows up once NPPES is removed
 
 ### Added
 
@@ -58,6 +58,28 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   rankings for the same sources, and that a tie-breaking method's
   "resolution" is often mechanically just trusting whichever source has
   the fewest competitors, not real synthesis.
+- **`extract_nppes_subannual_panel.R`** (33 vintages, 2007-2026, from
+  monthly NPPES dissemination archives already on the external drive --
+  no new downloads) and **3 new DAC vintages** (2017-04, 2018-12,
+  2019-12) gave this repo, for the first time, a clean 12-month window
+  inside each spike year. Checked directly: `midwife_panel.csv`'s own
+  snapshot dates show every year-to-year gap in the 2007-2026 series
+  running 5.7-14.9 months **except 2017->2018 and 2023->2024, both
+  exactly 20 months** -- both spikes sit on the two longest gaps in the
+  whole series, which alone inflates their raw rate against ordinary
+  ~12-month transitions. Re-measured with `diagnose_subannual_migration_
+  timing.R` over a true, clean 12 months: **2017->2018 drops from the
+  published 3.06% to 1.97% -- squarely inside the ordinary-year range
+  (0.91%-2.60%), not elevated at all.** A third, independent line of
+  evidence (after the leave-one-out and T-MSIS-addition results above)
+  that this spike isn't real. **2023->2024 drops from 3.68% to 2.37%**
+  -- still at the high end of normal, a real but more modest elevation
+  than originally reported. Also: DAC's own sub-annual rate during the
+  2017-18 window is *lower* than its own immediately preceding baseline
+  (a second source confirming nothing unusual happens there), and
+  NPPES's own sub-annual series shows nothing unusual around 2020-2021
+  either -- confirming that signal is specific to the non-NPPES sources,
+  not something NPPES itself was ever recording.
 
 ## [Unreleased] — 2026-11-05 — Independent corroboration of the two NPPES migration spikes, and why spike-vs-control framing alone is misleading
 

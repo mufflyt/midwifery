@@ -47,5 +47,23 @@ states_with_gap <- tribble(~npi, ~year, ~state, "1", 2020L, "CO")  # no 2021 row
 empty_transition <- compute_migration_rates(states_with_gap, 2020:2021)
 chk(nrow(empty_transition) == 0, "a transition with zero valid pairs is dropped, not reported as NA/0")
 
+cat("\n-- compute_consecutive_rates() --\n")
+# npi 1: CO at "2017-04", CO at "2017-12", TX at "2018-12" -- moves once,
+# between the SECOND and THIRD vintage (not calendar-year spaced).
+sub <- tribble(
+  ~npi, ~vintage, ~state,
+  "1", "2017-04", "CO",
+  "1", "2017-12", "CO",
+  "1", "2018-12", "TX",
+  "2", "2017-04", "NY",
+  "2", "2018-12", "NY"  # no "2017-12" row -- excluded from that specific pair only
+)
+sub_rates <- compute_consecutive_rates(sub, c("2017-04", "2017-12", "2018-12"))
+chk(nrow(sub_rates) == 2, "2 transitions from 3 ordered labels")
+s1 <- sub_rates[sub_rates$period_from == "2017-04", ]
+chk(s1$n_pairs == 1 && s1$n_moved == 0, "2017-04->2017-12: npi 2 has no 2017-12 row, excluded -- only npi 1 counted, no move")
+s2 <- sub_rates[sub_rates$period_from == "2017-12", ]
+chk(s2$n_pairs == 1 && s2$n_moved == 1, "2017-12->2018-12: npi 2 missing the 2017-12 row, excluded -- only npi 1 counted")
+
 cat(sprintf("\n%s\n", if (fails == 0L) "ALL PASS" else sprintf("%d FAILED", fails)))
 if (fails > 0L) quit(status = 1L, save = "no")

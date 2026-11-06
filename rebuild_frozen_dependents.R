@@ -403,9 +403,17 @@ REBUILD_ORDER <- list(
                    # .csv / nppes_body_<vintage>.csv per vintage; this script
                    # is only Stage 2 (pure R file I/O, combines those files
                    # plus 4 vintages queried directly from nber_my_duckdb
-                   # .duckdb). Writes artifacts/nppes_subannual_panel.csv, a
-                   # leaf nothing else in this registry reads back in yet.
+                   # .duckdb). Writes artifacts/nppes_subannual_panel.csv,
+                   # which diagnose_subannual_migration_timing.R (just
+                   # below) reads back in -- must precede it.
                    "extract_nppes_subannual_panel.R",
+                   # Added 2026-11-06, by T5. Reads amcb_npi_linkage_FROZEN
+                   # plus artifacts/nppes_subannual_panel.csv (the script
+                   # above) and the extended artifacts/physician_compare_
+                   # historical_midwives.csv. Read-only diagnostic (prints
+                   # to stdout, same convention as diagnose_migration_
+                   # year_over_year.R), writes nothing tracked.
+                   "diagnose_subannual_migration_timing.R",
                    # Added 2026-11-05, by T5 in the pull request that
                    # introduced it. Reads amcb_npi_linkage_FROZEN plus the
                    # same cached per-source state extracts as the script

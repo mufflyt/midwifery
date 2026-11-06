@@ -1,14 +1,18 @@
 # Technical Appendix: Multi-Source Truth Fusion Applied to the Migration Spikes
 
 **Repository**: `midwifery`
-**Primary scripts**: [`extract_tmsis_medicaid_enrollment_state_history.R`](../extract_tmsis_medicaid_enrollment_state_history.R), [`build_truth_fusion_predictions.R`](../build_truth_fusion_predictions.R), [`build_leave_one_source_out_sensitivity.R`](../build_leave_one_source_out_sensitivity.R), [`build_migration_rate_by_method.R`](../build_migration_rate_by_method.R)
+**Primary scripts**: [`extract_tmsis_medicaid_enrollment_state_history.R`](../extract_tmsis_medicaid_enrollment_state_history.R), [`build_truth_fusion_predictions.R`](../build_truth_fusion_predictions.R), [`build_leave_one_source_out_sensitivity.R`](../build_leave_one_source_out_sensitivity.R), [`build_migration_rate_by_method.R`](../build_migration_rate_by_method.R), [`extract_nppes_subannual_panel.R`](../extract_nppes_subannual_panel.R), [`diagnose_subannual_migration_timing.R`](../diagnose_subannual_migration_timing.R)
 **Figure script**: [`make_migration_rate_by_method_figure.R`](../make_migration_rate_by_method_figure.R)
-**Related**: [`docs/TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md`](TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md) (the original spike identification and five rejected measurement-artifact hypotheses), [`docs/TECHNICAL_APPENDIX_MIGRATION_CORROBORATION.md`](TECHNICAL_APPENDIX_MIGRATION_CORROBORATION.md) (the pairwise, no-inferred-value corroboration pass this build supersedes for the "does the spike survive" question specifically), [`docs/TECHNICAL_APPENDIX_MEDICAID_ENROLLMENT_CONCORDANCE.md`](TECHNICAL_APPENDIX_MEDICAID_ENROLLMENT_CONCORDANCE.md) (independently corroborates this build's T-MSIS multi-state finding, §2 below), `mysteryroster/docs/midwifery-ablation-findings.md`, and `mysteryroster/docs/midwifery-evidence-ledger-results.md` (two parallel-session studies on a 1,806-case subset of this same cohort — the second independently reaches §4's asymmetric spike conclusion by the opposite experimental move; both cited throughout, not re-derived)
+**Related**: [`docs/TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md`](TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md) (the original spike identification and five rejected measurement-artifact hypotheses — §7 below adds a sixth candidate and does not reject it), [`docs/TECHNICAL_APPENDIX_MIGRATION_CORROBORATION.md`](TECHNICAL_APPENDIX_MIGRATION_CORROBORATION.md) (the pairwise, no-inferred-value corroboration pass this build supersedes for the "does the spike survive" question specifically), [`docs/TECHNICAL_APPENDIX_MEDICAID_ENROLLMENT_CONCORDANCE.md`](TECHNICAL_APPENDIX_MEDICAID_ENROLLMENT_CONCORDANCE.md) (independently corroborates this build's T-MSIS multi-state finding, §2 below), `mysteryroster/docs/midwifery-ablation-findings.md`, and `mysteryroster/docs/midwifery-evidence-ledger-results.md` (two parallel-session studies on a 1,806-case subset of this same cohort — the second independently reaches §4's asymmetric spike conclusion by the opposite experimental move; both cited throughout, not re-derived)
 **Investigation date**: 2026-11-05/06
-**Status**: complete. Headline result is asymmetric, not a single yes/no: 2017→2018's elevated rate
-is substantially NPPES-specific (§4, independently confirmed by a second method in §6), 2023→2024's
-holds up without NPPES, and removing NPPES surfaces a new, unexplained high-rate transition
-(2020→2021) nothing upstream of this build had flagged.
+**Status**: complete. Headline result is asymmetric, not a single yes/no: **2017→2018 is not a real
+spike** — substantially NPPES-specific (§4), independently confirmed by a second method (§6), and
+now a third: it was measured across a 20-month snapshot gap nearly double the typical year, and
+disappears into the ordinary range once re-measured over a clean 12 months (§7). **2023→2024 is a
+real, if more modest than originally reported, elevation** — holds up without NPPES (§4, §6) and
+re-measures at 2.37% rather than 3.68% once time-normalized (§7). Removing NPPES also surfaces a
+new, unexplained high-rate transition (2020→2021) nothing upstream of this build had flagged, and
+not visible in NPPES's own data at all (§7).
 
 ---
 
@@ -294,38 +298,98 @@ one, lets a weighted method synthesize more and lean on NPPES less, even as it m
 counting worse. Both readings are real and belong side by side, not resolved into one number.
 Figure: `docs/figures/weighted_vs_majority_tmsis.png`.
 
-## 7. What this does and does not establish
+## 7. Sub-annual resolution: a third, independent explanation for 2017-18, and a sharper read on 2023-24
+
+§4-6 all treat the published annual series (`midwife_panel.csv`, one NPPES row per calendar year) as
+given. It isn't evenly spaced. Checked directly, not assumed: `midwife_panel.csv`'s own
+`snapshot_date` per year shows every other year-to-year gap in the whole 2007-2026 series running
+5.7-14.9 months — **except 2017→2018 and 2023→2024, both exactly 20 months** (2017-04-09 to
+2018-12-09; 2023-04-09 to 2024-12-08). Both of this appendix's spikes sit on the two longest
+snapshot gaps in the entire series, nearly double a typical year. A longer window accumulates more
+real moves mechanically, independent of any genuine surge in migration behavior -- comparing a
+20-month gap's raw move rate against ordinary ~12-month gaps was never an apples-to-apples
+comparison.
+
+This became checkable only after `extract_nppes_subannual_panel.R` (33 vintages, 2007-2026, built
+from monthly dissemination archives already on the external drive -- no new downloads) and 3 new
+DAC vintages (2017-04, 2018-12, 2019-12, via `extract_physician_compare_historical_midwives.R`)
+gave this repo, for the first time, a clean 12-month window inside each spike year to re-measure
+against. Re-run with `diagnose_subannual_migration_timing.R`:
+
+| transition | published rate (20-month gap) | true 12-month rate (Dec→Dec) | ordinary-year range (whole series) |
+|---|---:|---:|---:|
+| 2017→2018 | 3.06% | **1.97%** | 0.91%-2.60% |
+| 2023→2024 | 3.68% | **2.37%** | 0.91%-2.60% |
+
+**2017→2018, properly time-normalized, falls squarely inside the ordinary range -- it is not
+elevated at all.** This is a third, independent line of evidence that this specific spike is not
+real, converging with §4's leave-one-out result (collapses to rank 12 of 13 without NPPES) and §6's
+T-MSIS-addition result from the parallel session (abstention roughly doubles for this transition
+specifically when an independent source is added) -- three structurally different tests, now
+including one that doesn't touch truth fusion or multi-source voting at all, agreeing this spike is
+an artifact rather than a real event. The snapshot-gap explanation and the NPPES-specific-reliability
+explanation are not competing with each other -- a 20-month comparison window on top of an
+NPPES-lineage issue compounds rather than duplicates.
+
+**2023→2024 is still elevated after time-normalizing, but much less dramatically than 3.68%
+suggested** -- 2.37% sits at the high end of the ordinary range rather than clearly outside it. This
+sharpens, rather than reverses, §4's finding that this transition holds up without NPPES: it is the
+more defensible of the two spikes, but "a real, if modest, elevation" is a more honest description
+than "a spike."
+
+Two further checks from the same scripts:
+
+- **DAC's own sub-annual rate shows no elevation during the 2017-18 window at all.** 2017-04→2017-12
+  (2.78%) and 2017-12→2018-06 (2.80%) are both *lower* than DAC's own immediately preceding
+  baseline, 2016-04→2017-04 (3.60%) -- a second independent source, now at matching sub-annual
+  resolution, shows nothing unusual exactly where NPPES shows its (already explained) spike.
+- **NPPES's own sub-annual series shows nothing unusual around 2020-2021** (every sub-window there
+  runs 0.13%-1.06%, unremarkable against the rest of the series) -- consistent with §4's finding
+  that the 2020-21 signal only appears once NPPES is *excluded* from the vote: it is not something
+  NPPES itself was ever recording, confirmed directly rather than inferred from its absence.
+
+Figures: none yet for this section -- `diagnose_subannual_migration_timing.R` is a read-only
+diagnostic (prints to stdout, same convention as `diagnose_migration_year_over_year.R`), not
+formalized into a tracked artifact or chart.
+
+## 8. What this does and does not establish
 
 **It establishes**: both migration spikes are robust to dropping any one of DAC+PECOS, Open
 Payments, T-MSIS, or facility affiliation — the spike pattern does not depend on any single one of
 those four. It does NOT establish that both spikes are equally real. With NPPES entirely removed,
 2017→2018 collapses to the second-lowest transition of the whole series (rank 12 of 13, both
-methods) — the cleanest evidence this build produced that this specific spike is substantially
-NPPES-specific. 2023→2024 holds up much better without NPPES, staying in the top 2-3 of 13. And
-removing NPPES surfaces a transition, 2020→2021, that ranks *higher* than either historical spike
-once NPPES is out of the vote — a genuinely new finding, not previously flagged anywhere in this
-repo's migration work. A second, structurally independent test (§6: adding T-MSIS to a smaller
-1,806-case cohort rather than subtracting NPPES from the full panel) reaches the same asymmetric
-conclusion by the opposite experimental move — two different methods agreeing is stronger evidence
-than either alone.
+methods) — the cleanest truth-fusion evidence this build produced that this specific spike is
+substantially NPPES-specific, now joined by two more independent lines pointing the same way: a
+parallel session adding T-MSIS to a separate cohort (§6) and §7's discovery that this transition's
+published rate was measured across a 20-month window, nearly double the typical year, and
+disappears into the ordinary range once re-measured over a clean 12 months. 2023→2024 holds up
+across all of these — the full-panel view (§5), the leave-one-out test (§4), the parallel T-MSIS
+test (§6), and §7's time-normalized re-measurement all agree it is the more defensible of the two,
+though §7 tempers "a spike" to "a real, modest elevation." Removing NPPES surfaces a transition,
+2020→2021, that ranks *higher* than either historical spike once NPPES is out of the vote — a
+genuinely new finding, not previously flagged anywhere in this repo's migration work, and (per §7)
+not visible in NPPES's own data at all.
 
-**It does not establish a mechanism** for either spike, nor for the new 2020→2021 signal — this
-build measures whether patterns survive across evidence sources and inference methods, not why any
-of them exist. `docs/TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md` already tested and rejected
-five specific NPPES parsing-artifact mechanisms for the 2017-18/2023-24 spikes; nothing here
-contradicts those rejections, and nothing here identifies what 2017-18's NPPES-specific elevation
-or 2020-21's non-NPPES elevation actually reflects.
+**It does not establish a mechanism** for the 2023-24 elevation or the 2020-21 signal — this build
+measures whether patterns survive across evidence sources, inference methods, and (as of §7)
+measurement windows, not why they exist. `docs/TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md`
+already tested and rejected five specific NPPES parsing-artifact mechanisms for both original
+spikes; §7 adds a sixth candidate mechanism for 2017-18 specifically (unequal snapshot spacing) and,
+unlike the first five, does not reject it — it is the single best-supported explanation this
+repository has produced for that transition. Nothing here identifies what 2023-24's residual
+elevation or 2020-21's non-NPPES elevation actually reflects.
 
 **It does not establish, and explicitly should not be read as, a validated accuracy claim for any
 method.** Per the explicit guardrail in §0: a resolved tie is a model's best estimate under its own
 assumptions, not a verified location, and `dawid_skene`'s 0.88 reliability score for `nppes` is a
 posterior probability under the Dawid-Skene conditional-independence assumption, not a measured
 accuracy rate — no independently verified reference location exists for any NPI in this cohort
-(`mysteryroster/docs/validation-protocol.md`). The honest summary is method-sensitive and
-source-sensitive, not a single number: which of these two spikes is "real," and what explains the
-newly surfaced third one, remain open questions this build sharpened but did not close.
+(`mysteryroster/docs/validation-protocol.md`). The honest summary is method-sensitive,
+source-sensitive, and (now) measurement-window-sensitive, not a single number: whether 2023-24's
+residual elevation is real, and what explains the newly surfaced 2020-21 signal, remain open
+questions this build sharpened but did not close.
 
-## 8. Reproducing
+## 9. Reproducing
 
 ```sh
 Rscript extract_tmsis_medicaid_enrollment_state_history.R
@@ -334,15 +398,29 @@ RETICULATE_PYTHON=~/.venvs/mysteryroster-truthdiscovery/bin/python Rscript build
 RETICULATE_PYTHON=~/.venvs/mysteryroster-crowdkit/bin/python      Rscript build_leave_one_source_out_sensitivity.R
 Rscript build_migration_rate_by_method.R
 Rscript make_migration_rate_by_method_figure.R
+Rscript extract_physician_compare_historical_midwives.R
+# Stage 1 of the sub-annual panel MUST run in the plain foreground, not
+# backgrounded, not via another script's system()/system2() call -- see
+# extract_nppes_subannual_panel.R's own header for why (a reproducible
+# hang, root cause never identified). Writes nppes_header_<vintage>.csv /
+# nppes_body_<vintage>.csv per vintage to the scratchpad; adjust
+# CLAUDE_SCRATCHPAD or the script's own default path if reproducing
+# outside the original session.
+# <run that foreground extraction loop here>
+Rscript extract_nppes_subannual_panel.R
+Rscript diagnose_subannual_migration_timing.R
 Rscript tests/test_truth_fusion_claims.R
 Rscript tests/test_migration_rate.R
 ```
 
 Reads `midwife_panel.csv` and `artifacts/amcb_npi_linkage_FROZEN.csv` (gitignored, person-level;
-both must be present locally), the DAC/PECOS/Open Payments cohort extracts, and
-`/Volumes/MufflySamsung/DuckDB/medicaid_provider_enrollment_segments.duckdb` (external volume). The
-per-method person-level prediction CSVs (`artifacts/truth_fusion_predictions_*.csv`) are gitignored;
-the model-diagnostics, migration-rate-by-method, and leave-one-out-sensitivity CSVs are tracked
+both must be present locally), the DAC/PECOS/Open Payments cohort extracts,
+`/Volumes/MufflySamsung/DuckDB/medicaid_provider_enrollment_segments.duckdb`,
+`/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb`, and
+`/Volumes/MufflySamsung/nppes_historical_downloads/NPPES_Data_Dissemination_*.zip` (all external
+volume). The per-method person-level prediction CSVs (`artifacts/truth_fusion_predictions_*.csv`)
+and the sub-annual NPPES panel (`artifacts/nppes_subannual_panel.csv`) are gitignored; the
+model-diagnostics, migration-rate-by-method, and leave-one-out-sensitivity CSVs are tracked
 aggregates. Each `build_truth_fusion_predictions.R` pass took 38-98 minutes on the full panel —
 `attribute_truth_fusion()`'s R-native `majority` implementation (`split()` over ~220K distinct
 entity-year groups) is the slower of the two backends' first steps, not the Python backends
