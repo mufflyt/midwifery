@@ -1,0 +1,9 @@
+method,n_entity_years,n_abstained,pct_abstained,converged,n_disconnected_components,elapsed_sec,run_at
+dawid_skene,219536,217,0.1,TRUE,1,1082.9,2026-11-06 00:28:06.087902
+one_coin_dawid_skene,219536,217,0.1,TRUE,1,1074.2,2026-11-06 00:46:01.649612
+majority,219536,9911,4.51,TRUE,NA,259.1,2026-11-06 00:51:38.339029
+sums,219536,217,0.1,TRUE,1,1148.3,2026-11-06 01:10:48.063461
+average_log,219536,217,0.1,TRUE,1,1109.1,2026-11-06 01:29:18.562942
+investment,219536,15655,7.13,TRUE,1,1105.9,2026-11-06 01:47:45.824332
+pooled_investment,219536,217,0.1,TRUE,1,1103.8,2026-11-06 02:06:11.000541
+truthfinder,219536,217,0.1,TRUE,1,1105.4,2026-11-06 02:24:37.708662

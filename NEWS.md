@@ -20,6 +20,45 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-06 — Multi-source truth fusion on the migration spikes: one looks NPPES-specific, the other doesn't, and a third, unflagged transition shows up once NPPES is removed
+
+### Added
+
+- **`docs/TECHNICAL_APPENDIX_TRUTH_FUSION_MIGRATION.md`**, using
+  `mysteryroster::attribute_truth_fusion()` directly (not a hand-rolled
+  reimplementation — an earlier prototype was retired the same day a
+  stale local package install turned out to be behind the real,
+  already-built truth-fusion module on GitHub). All 8 implemented
+  methods (majority, dawid_skene, one_coin_dawid_skene via a Crowd-Kit
+  Python venv; sums, average_log, investment, pooled_investment,
+  truthfinder via a second, separate truthdiscovery Python venv — the
+  two backends need incompatible Python versions) run on the full
+  2013-2026, 219,536-entity-year cohort panel across 5 sources: NPPES,
+  DAC+PECOS-combined, Open Payments, T-MSIS Medicaid enrollment state
+  (`extract_tmsis_medicaid_enrollment_state_history.R`, new), and
+  facility/hospital affiliation via NPI-CCN (added after this build's
+  first draft wrongly excluded it on the premise that a single current
+  snapshot carries no usable information — it does, for that one year).
+  Leave-one-source-out sensitivity (6 variants) is the actual test of
+  whether either spike is an NPPES artifact, not the full-panel fit
+  (which mostly echoes NPPES's own shape whenever NPPES is included,
+  since it's learned as the highest-reliability source, 0.88 of 1.0).
+  Result, and it is asymmetric: with NPPES entirely removed from both
+  the claims and the move-rate calculation, **2017->2018 collapses to
+  the second-lowest transition of the whole 13-transition series** (rank
+  12 of 13, both methods) -- the cleanest evidence yet that this spike
+  is substantially NPPES-specific. **2023->2024 holds up much better**,
+  staying in the top 2-3 of 13 even without NPPES. And removing NPPES
+  surfaces **a transition nothing in this repo had flagged before,
+  2020->2021**, as the single highest-rate transition of the entire
+  series under both methods -- a genuinely new, unexplained finding, not
+  investigated further here. Also documents (citing, not re-deriving) a
+  parallel `mysteryroster`-side source-ablation study finding that
+  different truth-fusion methods learn contradictory reliability
+  rankings for the same sources, and that a tie-breaking method's
+  "resolution" is often mechanically just trusting whichever source has
+  the fewest competitors, not real synthesis.
+
 ## [Unreleased] — 2026-11-05 — Independent corroboration of the two NPPES migration spikes, and why spike-vs-control framing alone is misleading
 
 ### Added
