@@ -20,6 +20,62 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-06 — Full-panel migration move classifier: confirmed / possible / likely administrative artifact / indeterminate, across all 13 transitions
+
+### Added
+
+- **`classify_migration_moves_full_panel.R`** and **`R/lib/migration_move_classification.R`**
+  generalize the spike-specific sub-annual checks above into a rule-based,
+  auditable classifier run over every apparent interstate move in the full
+  2013-2026 cohort panel (13 transitions, 16,775-NPI cohort), not just
+  2017-18 and 2023-24. Built from a user-supplied specification whose
+  central requirement is that agreement among sources must never be read
+  as accuracy -- DAC's address field is CMS-derived from PECOS directly,
+  and NPPES agreeing with itself is not independent confirmation of
+  itself. 7 rule IDs (`CONF-2FAM`, `CONF-2FAM-NOHOLD`, `ART-CONTRA`,
+  `ART-GAP`, `MIXED-SPLIT`, `POSS-SINGLE`, `POSS-NONE`, plus
+  `IND-ABSTAIN`), each with an auditable `reason` string, roll up to 4
+  user-facing categories (`confirmed`, `possible`,
+  `administrative_artifact`, `indeterminate`) plus a distinct,
+  never-silently-merged `confirmed_not_held_out` bucket.
+- **Candidate moves are defined on the fused (`dawid_skene`) truth-fusion
+  prediction, not raw NPPES**, per the specification. This makes a naive
+  "does another source's claim match" corroboration check circular --
+  any matching source necessarily voted for that same value in the
+  fusion. Resolved by extending `build_truth_fusion_predictions.R` and
+  `build_leave_one_source_out_sensitivity.R` (both additive, no existing
+  output changed) to persist data they already compute every run and
+  previously discarded: the claims table, each method's candidate-value
+  vote breakdown, and -- the key piece -- the per-NPI predicted state
+  under each of the 6 existing leave-one-out variants. A move only
+  counts as `confirmed` if it **survives refitting the model with each
+  of its >=2 supporting source families individually excluded**, not
+  just if those families' raw claims happen to match.
+- **Correction to the originating specification's cohort description**:
+  it cited "12,170 NPI-matched individuals" as a subset of the
+  16,775-NPI cohort. Verified directly against
+  `artifacts/amcb_npi_linkage_FROZEN.csv` and
+  `R/lib/cohort_definitions.R`: all 16,775 already have an NPI; 12,170 is
+  an unrelated, stricter AMCB clinical-status filter
+  (`canonical_active_primary()`: ACTIVE + primary-tier linkage), not an
+  NPI-match rate. This build uses the 16,775-NPI cohort, matching the
+  existing truth-fusion build.
+- **`docs/TECHNICAL_APPENDIX_MIGRATION_MOVE_CLASSIFICATION.md`** and
+  **`tests/test_migration_move_classification.R`** (30 passing
+  assertions: every rule ID plus all 20 adversarial "saboteur" cases
+  designed to make the classifier produce a wrong verdict or silently
+  misbehave -- fake independence via duplicate rows, NPPES
+  self-corroboration, shallow held-out checks, ambiguous claims coded as
+  support/contradict, rule-evaluation-order exploits, missing/mistyped
+  leave-one-out variants defaulting to approve instead of deny, and
+  more). Also documents what's explicitly deferred to a follow-on pass:
+  the full 10-scenario sensitivity suite, 3 temporal-window variants,
+  diagnostic figures, and re-extracting NPPES's `Last Update Date` /
+  Open Payments' `Date_of_Payment` (both already exist in the raw data,
+  unused) to upgrade their date precision -- DAC, PECOS, and facility
+  affiliation have no per-record date available at all, so no amount of
+  re-extraction can fix those three.
+
 ## [Unreleased] — 2026-11-06 — Multi-source truth fusion on the migration spikes: 2017-18 is not real, 2023-24 holds up at annual resolution but gets no sub-annual DAC/PECOS corroboration, and a third, unflagged transition (2020-21, now dated to H2 2021-H1 2022) shows up once NPPES is removed
 
 ### Added

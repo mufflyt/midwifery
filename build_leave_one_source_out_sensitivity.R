@@ -27,6 +27,9 @@
 #
 # Input : same sources as build_truth_fusion_predictions.R
 # Output: artifacts/truth_fusion_leave_one_out_sensitivity.csv (tracked, aggregate)
+#         artifacts/truth_fusion_leave_one_out_predictions.csv (person-level,
+#           gitignored, NPI x year x variant x method predicted state;
+#           added 2026-11-06 for classify_migration_moves_full_panel.R)
 # =============================================================================
 suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr); library(mysteryroster)})
 source(file.path("R", "lib", "clean_state.R"))
@@ -84,6 +87,14 @@ VARIANTS <- list(
 YEARS <- 2013:2026
 
 results <- list()
+# Per-NPI predicted state per (variant, method) -- added 2026-11-06 for
+# classify_migration_moves_full_panel.R's held-out confirmation check:
+# "does this move survive refitting the model with a supporting source's
+# family excluded", not just the aggregate move-rate compute_migration_
+# rates() below already reports. pred_states below was already computed
+# per iteration and discarded once handed to compute_migration_rates();
+# this just also keeps it.
+pred_states_all <- list()
 for (variant_name in names(VARIANTS)) {
   cat(sprintf("\n========== variant: %s (sources: %s) ==========\n", variant_name, paste(names(VARIANTS[[variant_name]]), collapse = ", ")))
   claims <- build_truth_fusion_claims(VARIANTS[[variant_name]], npi_filter = link$npi)
@@ -97,6 +108,7 @@ for (variant_name in names(VARIANTS)) {
       mutate(variant = variant_name, method = m,
              is_spike_transition = (year_from == 2017 & year_to == 2018) | (year_from == 2023 & year_to == 2024))
     results[[paste(variant_name, m)]] <- rates
+    pred_states_all[[paste(variant_name, m)]] <- pred_states %>% mutate(variant = variant_name, method = m)
   }
 }
 
@@ -104,6 +116,11 @@ all_results <- bind_rows(results)
 write_with_provenance(all_results, "artifacts/truth_fusion_leave_one_out_sensitivity.csv",
                        inputs = c("artifacts/amcb_npi_linkage_FROZEN.csv", "midwife_panel.csv", op_files))
 cat(sprintf("\n-> artifacts/truth_fusion_leave_one_out_sensitivity.csv (%d rows)\n", nrow(all_results)))
+
+all_pred_states <- bind_rows(pred_states_all)
+write_with_provenance(all_pred_states, "artifacts/truth_fusion_leave_one_out_predictions.csv",
+                       inputs = c("artifacts/amcb_npi_linkage_FROZEN.csv", "midwife_panel.csv", op_files))
+cat(sprintf("-> artifacts/truth_fusion_leave_one_out_predictions.csv (%d rows)\n", nrow(all_pred_states)))
 
 cat("\n=== Spike transitions (2017-18, 2023-24) vs. every other transition's mean, by variant x method ===\n")
 summ <- all_results %>% group_by(variant, method, is_spike_transition) %>%

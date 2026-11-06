@@ -48,6 +48,12 @@
 # Outputs: artifacts/truth_fusion_predictions_<method>.csv (person-level, gitignored)
 #          artifacts/truth_fusion_model_diagnostics.csv (tracked; appended
 #            across runs, keyed by method)
+#          artifacts/truth_fusion_claims.csv (person-level, gitignored,
+#            method-independent; added 2026-11-06 for
+#            classify_migration_moves_full_panel.R)
+#          artifacts/truth_fusion_candidate_scores_<method>.csv (person-
+#            level, gitignored, per-candidate-value vote breakdown; added
+#            2026-11-06, same consumer)
 # =============================================================================
 suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr); library(mysteryroster)})
 source(file.path("R", "lib", "clean_state.R"))
@@ -109,6 +115,11 @@ claims <- build_truth_fusion_claims(
   npi_filter = link$npi
 )
 cat(sprintf("Claims built: %d rows, %d distinct npi-years\n", nrow(claims), nrow(distinct(claims, entity_id, reference_year))))
+# Persisted 2026-11-06 for classify_migration_moves_full_panel.R -- method-
+# independent (build_truth_fusion_claims() output doesn't vary by method),
+# so written once here rather than inside the per-method loop below.
+write_with_provenance(claims, "artifacts/truth_fusion_claims.csv",
+                       inputs = c("artifacts/amcb_npi_linkage_FROZEN.csv", "midwife_panel.csv", op_files))
 
 validated <- attribute_claims_validate(claims)
 cat("\n=== attribute_claims_validate() report ===\n")
@@ -139,6 +150,12 @@ for (m in methods_to_run) {
   write_with_provenance(pred_out, out_path, inputs = c("artifacts/amcb_npi_linkage_FROZEN.csv", "midwife_panel.csv", op_files))
   cat(sprintf("%s: n=%d, abstained=%d (%.1f%%), elapsed=%.1fs -> %s\n",
               m, nrow(pred_out), sum(pred_out$abstained), 100 * mean(pred_out$abstained), elapsed, out_path))
+  # Persisted 2026-11-06 for classify_migration_moves_full_panel.R -- the
+  # per-candidate-value vote breakdown attribute_truth_fusion() already
+  # computes every run, previously discarded once pred_out was extracted.
+  cscores_path <- sprintf("artifacts/truth_fusion_candidate_scores_%s.csv", m)
+  write_with_provenance(res$candidate_scores, cscores_path,
+                         inputs = c("artifacts/amcb_npi_linkage_FROZEN.csv", "midwife_panel.csv", op_files))
   md <- res$model_diagnostics
   diag_rows[[m]] <- tibble::tibble(
     method = m, n_entity_years = nrow(pred_out), n_abstained = sum(pred_out$abstained),

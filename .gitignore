@@ -303,6 +303,35 @@ artifacts/migration_corroboration_adjudication.csv.provenance.json
 artifacts/truth_fusion_predictions_*.csv
 artifacts/truth_fusion_predictions_*.csv.provenance.json
 
+# Truth-fusion claims (person-level, method-independent) and per-method
+# candidate-value vote breakdowns -- added 2026-11-06, both previously
+# computed in-memory by build_truth_fusion_predictions.R and discarded;
+# now persisted for classify_migration_moves_full_panel.R.
+artifacts/truth_fusion_claims.csv
+artifacts/truth_fusion_claims.csv.provenance.json
+artifacts/truth_fusion_candidate_scores_*.csv
+artifacts/truth_fusion_candidate_scores_*.csv.provenance.json
+
+# Leave-one-source-out per-NPI predicted states (person-level, by variant
+# and method) -- added 2026-11-06 for classify_migration_moves_full_panel.R's
+# held-out confirmation check. artifacts/truth_fusion_leave_one_out_
+# sensitivity.csv (the aggregate the same script already wrote) stays tracked.
+artifacts/truth_fusion_leave_one_out_predictions.csv
+artifacts/truth_fusion_leave_one_out_predictions.csv.provenance.json
+
+# Migration move classification, person-level (NPI, transition, states,
+# classification, rule_id, supporting/contradicting families) -- added
+# 2026-11-06. artifacts/migration_move_classification_summary_by_transition.csv
+# (same script) is an aggregate and stays tracked.
+artifacts/migration_move_classification_full_panel.csv
+artifacts/migration_move_classification_full_panel.csv.provenance.json
+
+# Migration move evidence table (Deliverable A), person-level (NPI, source
+# family, year, claimed value, evidence status) -- added 2026-11-06, same
+# script and standing as the classification output above.
+artifacts/migration_move_evidence_table.csv
+artifacts/migration_move_evidence_table.csv.provenance.json
+
 # Historical Facility Affiliation, 2013-2022, from CCNs embedded in the
 # historical DAC files (extract_historical_facility_affiliation.R); same
 # standing as physician_compare_historical_midwives.csv above.

@@ -1,6 +1,6 @@
 {
   "artifact": "truth_fusion_leave_one_out_sensitivity.csv",
-  "written_utc": "2026-11-06 04:20:14 UTC",
+  "written_utc": "2026-11-06 23:14:38 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
@@ -55,11 +55,11 @@
       "sha256": "6f92cd03cabda71819f9393cb9fd67505824d1fc9ebaa4a587d5f35a1a3b4143"
     }
   ],
-  "code_sha256": "0f564567a5183f2ec1959b6128fcc4e2b8df5ce3bffffb6840662a047e4d5260",
+  "code_sha256": "8f798716b69e91740722a3988e39e392e66c57d8608718649e6509b30bafc780",
   "code": [
     {
       "path": "build_leave_one_source_out_sensitivity.R",
-      "sha256": "18c03ddce213dc0a68764f50b9682f26fdc7b32d7fed6c24d5d103031708f466"
+      "sha256": "aa6d8793c81958f6cb8fa175730284fdc05f085726bc7f626f7caa806c572bab"
     },
     {
       "path": "R/lib/artifact_provenance.R",
@@ -71,7 +71,7 @@
     },
     {
       "path": "R/lib/migration_rate.R",
-      "sha256": "4cb2f707b360a9c7bc0d840834badd44515019504172835ce40f034509834942"
+      "sha256": "d1f3d1e5dba88551a2d290401089e28dd6d8cf96008b1f27146e18c8a34751eb"
     },
     {
       "path": "R/lib/provenance.R",
