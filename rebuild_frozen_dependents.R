@@ -393,6 +393,19 @@ REBUILD_ORDER <- list(
                    # predictions.R (just below) and build_leave_one_source_
                    # out_sensitivity.R both read back in -- must precede both.
                    "extract_tmsis_medicaid_enrollment_state_history.R",
+                   # Added 2026-11-06, by T5. Reads amcb_npi_linkage_FROZEN.
+                   # CANNOT be run by REBUILD_APPLY=1 alone, same shape of
+                   # limitation as build_truth_fusion_predictions.R below but
+                   # for a different reason: it needs a Stage 1 pass run
+                   # directly in the foreground first (not via this runner,
+                   # not backgrounded at all -- see the script's own header
+                   # for why), which writes scratchpad/nppes_header_<vintage>
+                   # .csv / nppes_body_<vintage>.csv per vintage; this script
+                   # is only Stage 2 (pure R file I/O, combines those files
+                   # plus 4 vintages queried directly from nber_my_duckdb
+                   # .duckdb). Writes artifacts/nppes_subannual_panel.csv, a
+                   # leaf nothing else in this registry reads back in yet.
+                   "extract_nppes_subannual_panel.R",
                    # Added 2026-11-05, by T5 in the pull request that
                    # introduced it. Reads amcb_npi_linkage_FROZEN plus the
                    # same cached per-source state extracts as the script

@@ -282,6 +282,9 @@ artifacts/tmsis_medicaid_spending_cohort_by_year.csv
 # source for build_truth_fusion_predictions.R.
 artifacts/tmsis_medicaid_enrollment_state_by_year.csv
 
+# Sub-annual NPPES practice-state panel (NPI, vintage, address), person-level.
+artifacts/nppes_subannual_panel.csv
+
 # Migration corroboration adjudication, person-level (NPI, transition,
 # states, per-source corroboration flags). The rolled-up summary/spike-vs-
 # control/Medicaid-lead-lag CSVs the same script writes are aggregates and
