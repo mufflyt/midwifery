@@ -271,5 +271,38 @@ v_gapcontra <- classify_apparent_move(fidx_gapcontra, list(), "32", 2023L, 2024L
 chk(identical(v_gapcontra$rule_id, "ART-CONTRA") && v_gapcontra$reason != v_gap$reason,
     "#20: a real contradiction on 2023->2024 (a known gap) resolves to ART-CONTRA specifically, with a reason string distinguishable from ART-GAP's")
 
+cat("\n-- lookup_family_windowed() / temporal-sensitivity windowing --\n")
+
+idx_win <- list(dac_pecos_combined = build_family_index(
+  claims_df(list("40", "dac_pecos_combined", 2018, "CO"), list("40", "dac_pecos_combined", 2022, "CO")), "dac_pecos_combined"))
+chk(identical(lookup_family_windowed(idx_win, "dac_pecos_combined", "40", 2018L, window = 3L)$window_used, 0L),
+    "exact year present -> window_used is 0 even when window>0 -- the exact year always wins, never overridden by a nearby one")
+w_backfill <- lookup_family_windowed(idx_win, "dac_pecos_combined", "40", 2019L, window = 2L)
+chk(identical(w_backfill$state, "CO") && identical(w_backfill$status, "usable") && w_backfill$window_used == 2L,
+    "missing exact year, consistent state within window -> backfilled as usable, window_used recorded")
+chk(identical(lookup_family_windowed(idx_win, "dac_pecos_combined", "40", 2020L, window = 1L)$status, "unavailable"),
+    "missing exact year, nothing within a NARROWER window -> still unavailable, not a wider backfill than asked for")
+
+idx_win2 <- list(dac_pecos_combined = build_family_index(
+  claims_df(list("41", "dac_pecos_combined", 2018, "CO"), list("41", "dac_pecos_combined", 2020, "NM")), "dac_pecos_combined"))
+w_disagree <- lookup_family_windowed(idx_win2, "dac_pecos_combined", "41", 2019L, window = 2L)
+chk(identical(w_disagree$status, "ambiguous") && is.na(w_disagree$state),
+    "missing exact year, nearby years disagree (CO in 2018, NM in 2020) -> ambiguous, never arbitrarily picked one of them")
+
+claims_tmsis_win <- claims_df(list("42", "tmsis_medicaid", 2018, "CO"), list("42", "tmsis_medicaid", 2022, "CO"))
+fidx_tmsis_win <- setNames(lapply(FAMILIES, function(f) build_family_index(claims_tmsis_win, f)), FAMILIES)
+v_tmsis_win <- classify_apparent_move(fidx_tmsis_win, list(), "42", 2019L, 2022L, "CO", "NM", window = 3L)
+chk(!("tmsis_medicaid" %in% v_tmsis_win$windowed_families_used) && length(v_tmsis_win$support) == 0 && length(v_tmsis_win$contradict) == 0,
+    "tmsis_medicaid is never windowed even when window>0 -- it already has real intervals, checked at exact-year resolution upstream")
+
+claims_dacwin_classify <- claims_df(list("43", "dac_pecos_combined", 2018, "CO"), list("43", "dac_pecos_combined", 2022, "NM"))
+fidx_dacwin_classify <- setNames(lapply(FAMILIES, function(f) build_family_index(claims_dacwin_classify, f)), FAMILIES)
+v_dacwin_strict <- classify_apparent_move(fidx_dacwin_classify, list(), "43", 2019L, 2021L, "CO", "NM", window = 0L)
+v_dacwin_loose <- classify_apparent_move(fidx_dacwin_classify, list(), "43", 2019L, 2021L, "CO", "NM", window = 2L)
+chk(length(v_dacwin_strict$support) == 0 && identical(v_dacwin_strict$rule_id, "POSS-NONE"),
+    "window=0 (strict): dac_pecos_combined has no exact-year claim for 2019 or 2021 -> no support, POSS-NONE")
+chk(length(v_dacwin_loose$support) == 1 && "dac_pecos_combined" %in% v_dacwin_loose$windowed_families_used,
+    "window=2: the same family now backfills from 2018 (dist 1) and 2022 (dist 1) and supports the move, correctly flagged as windowed, not exact")
+
 cat(sprintf("\n%s\n", if (fails == 0L) "ALL PASS" else sprintf("%d FAILED", fails)))
 if (fails > 0L) quit(status = 1L, save = "no")

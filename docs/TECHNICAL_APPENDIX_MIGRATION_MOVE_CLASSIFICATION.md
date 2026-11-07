@@ -220,22 +220,90 @@ history in this cohort (consistent with the guardrail already stated in
 sensitivity/specificity estimate for the classifier itself, only as what the available,
 non-circular evidence does and does not support.
 
-Source-dependence (specification §6/Table 2, joining this classification against the already-
-persisted `artifacts/truth_fusion_leave_one_out_sensitivity.csv`) and temporal-sensitivity
-(specification §9, strict/moderate/permissive proximity windows) analyses are follow-on work, not
-yet run as of this writing -- see §8 below.
+Source-dependence (specification §6/Table 2) is now done -- see §7a below. Temporal-sensitivity
+(specification §9, strict/moderate/permissive proximity windows) is still follow-on work, not yet
+run as of this writing -- see §8.
+
+## 7a. Source-family sensitivity (Table 2)
+
+`audit_migration_source_sensitivity.R` compares each of the 5 "drop one family" leave-one-out
+variants against the "full" baseline (`dawid_skene` only, the classifier's primary method), two
+ways -- both reusing data `build_leave_one_source_out_sensitivity.R` already computed and
+persisted, no new ~90-minute refit:
+
+| excluded family | npi-years changed value | % changed (of comparable) | npi-years losing coverage entirely | mean \|Δ rate\| (pts) | largest single-transition Δ |
+|---|---:|---:|---:|---:|---|
+| nppes | 10,494 | 9.49% | 108,731 | 1.280 | 2020→2021 (+4.98 pts) |
+| dac_pecos_combined | 2,333 | 1.07% | 771 | 0.466 | 2020→2021 (−0.98 pts) |
+| tmsis_medicaid | 2,108 | 0.97% | 2,656 | 0.585 | 2020→2021 (−0.98 pts) |
+| open_payments | 625 | 0.29% | 162 | 0.095 | 2024→2025 (−0.36 pts) |
+| facility_affiliation | 78 | 0.04% | 0 | 0.031 | 2025→2026 (−0.31 pts) |
+
+**NPPES dominates by roughly an order of magnitude over every other source**, both in how many
+predicted values change when it's removed and especially in coverage: dropping NPPES leaves
+108,731 of 219,336 npi-years (49.6%) without any usable prediction at all. The fused model's
+resolved states are therefore overwhelmingly anchored to NPPES whenever NPPES is present --
+worth stating plainly, since it bears directly on how much genuinely independent signal the other
+4 sources can realistically contribute to any single npi-year's prediction.
+
+**2020→2021 is the single most source-sensitive transition in the whole panel for 3 of the 5
+families** (nppes, dac_pecos_combined, tmsis_medicaid each show their own largest rate-swing
+exactly there) -- a third, independent line of evidence (after the sub-annual DAC check and this
+classifier's own per-move results) that this transition is where the sources disagree with each
+other most sharply. The *direction* is informative too: dropping NPPES SWINGS THE RATE UP
+(+4.98 pts, `mean_signed_rate_change_pts` positive) -- consistent with this session's repeated
+finding that 2020-21's elevated signal "only appears once NPPES is excluded from the vote" --
+while dropping DAC/PECOS or T-MSIS swings it DOWN (both negative), consistent with those two
+sources being the ones *pushing the rate up* when included, matching DAC's own repeatedly-elevated
+sub-annual readings for this window.
+
+**Not done here** (a materially bigger task, not a quick add-on): re-running
+`classify_migration_moves_full_panel.R`'s rule set under each drop-variant's own candidate moves
+and evidence, to see how the 5-way classification counts themselves shift -- this script answers
+how much dropping a family changes the fused *predictions* and the raw *move rate*, not how much
+it changes the *classification*. The classifier's own held-out check already uses these same
+leave-one-out variants for a different purpose (confirming a specific move survives a refit); a
+full per-variant re-classification is a separate design question.
+
+## 7b. Temporal sensitivity (strict / moderate / permissive proximity windows)
+
+`audit_migration_temporal_sensitivity.R` re-classifies the SAME 4,592 apparent moves under 4
+proximity-window settings (0 = strict/today's standing behavior, 1, 2, 3 years), using
+`lookup_family_windowed()` (`R/lib/migration_move_classification.R`) in place of the exact-year-
+only `lookup_family()`. Windowing applies **only** to `dac_pecos_combined` and `open_payments` --
+year/vintage-level sources with no more informative effective interval -- never to
+`tmsis_medicaid` (already has real `interval_start`/`interval_end` dates, checked at exact-year
+resolution upstream; widening its search would make its answer *less* precise) or
+`facility_affiliation` (stays excluded from the tally regardless of window). The exact year
+always wins if the family has any observation there at all; a window only backfills a genuinely
+*missing* year, and if nearby years disagree with each other the result is still `"ambiguous"`,
+never arbitrarily picked -- the same no-inference discipline as the strict run, just widened.
+
+**12 of the 13 transitions are robust**: their dominant (plurality) classification doesn't change
+under any window tested, 0 through 3 years. **Exactly one is not: 2025→2026.** Its dominant
+classification is `possible` at window 0-1 (324 and 197 possible vs. 79 and 195 artifact) but
+flips to `administrative_artifact` at window 2-3 (190 and 183 possible vs. 197 and 192 artifact).
+This directly answers specification §8's explicit instruction to investigate 2025-2026 "given the
+separately observed change in DAC state agreement... do not assume that the DAC agreement change
+represents a real increase in migration": **it does not** -- under more permissive temporal-
+matching assumptions, *more* of this transition's apparent moves look like administrative
+artifacts, not fewer. If anything this points away from a real migration increase, not toward one.
+
+**A consistent pattern across nearly every transition**: widening the window shifts mass from
+`possible` into `administrative_artifact`, not into `confirmed`. Giving a sparse source more
+benefit of the doubt about matching a nearby year mostly surfaces *more* evidence that the origin
+state was still there shortly before/after the transition (a stale-record signature), not more
+independent corroboration of the move. `confirmed` counts stay essentially flat across all 4
+windows everywhere in the panel (2023→2024's 5→6→5→5 is the largest movement observed) --
+reassuring: the already-rare confirmed bucket is not an artifact of how strict the exact-year
+matching is.
 
 ## 8. Deferred to a follow-on pass
 
 Named explicitly so nothing from the originating specification is silently dropped:
 
-- The full 10-scenario sensitivity suite (specification §12) beyond what leave-one-out already
-  gives for free (NPPES/DAC-PECOS/Open-Payments/T-MSIS/facility-affiliation exclusion).
-- The 3 temporal-window sensitivity scenarios (specification §6.2: strict/moderate/permissive
-  1-3-year proximity). Today's claims table is strict no-inference only; adding windowed backfill
-  is a deliberate new capability with its own risk — reintroducing exactly the kind of
-  inferred-value problem this project has consistently avoided elsewhere — and deserves its own
-  discussion, not a quick add-on.
+- The full 10-scenario sensitivity suite (specification §12) beyond what leave-one-out and the
+  temporal-window analysis above already give for free.
 - Diagnostic figures (specification §13D) — build once the underlying tables exist and are
   validated against real data.
 - Re-extracting NPPES's `Last Update Date` (hook: `build_midwife_panel.R`'s column-pick list) and

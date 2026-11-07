@@ -61,6 +61,48 @@ lookup_family <- function(family_idx, family, npi_val, year_val) {
   list(state = unname(family_idx[[family]]$state[key]), status = unname(st))
 }
 
+#' Proximity-window fallback lookup -- ONLY for sources that lack a more
+#' informative effective interval (dac_pecos_combined, open_payments; never
+#' tmsis_medicaid, which already has real interval_start/interval_end dates
+#' and is checked at exact-year resolution via `expand_intervals_to_year_
+#' claims()` upstream -- windowing it would make its answer LESS precise,
+#' not more; never facility_affiliation, which stays descriptive-only
+#' regardless of window).
+#'
+#' The exact year always wins if the source has ANY observation there
+#' (usable or ambiguous) -- a window is a backfill for a MISSING year, never
+#' an override for an existing one. When the exact year has nothing, nearby
+#' years within `window` are searched; if they disagree with each other (or
+#' any of them is itself ambiguous), the result is `"ambiguous"`, never
+#' arbitrarily picked -- windowing is a sensitivity ASSUMPTION about how
+#' long a value stays valid, and disagreement within the window is itself
+#' evidence a change happened sometime in that span, not noise to average
+#' away.
+#'
+#' @param window Integer years of proximity to search when the exact year
+#'   is missing (0 = no fallback, identical to `lookup_family()`).
+#' @return `list(state, status, window_used)` -- `window_used` is `0L` when
+#'   the exact year answered directly, otherwise the window size that was
+#'   actually searched (for auditing which classifications depend on a
+#'   backfilled, less-precise observation).
+lookup_family_windowed <- function(family_idx, family, npi_val, year_val, window = 0L) {
+  exact <- lookup_family(family_idx, family, npi_val, year_val)
+  if (exact$status != "unavailable" || window <= 0L) return(c(exact, list(window_used = 0L)))
+  nearby_years <- setdiff(seq(year_val - window, year_val + window), year_val)
+  found_states <- character(0); any_ambiguous <- FALSE
+  for (y in nearby_years) {
+    r <- lookup_family(family_idx, family, npi_val, y)
+    if (r$status == "ambiguous") any_ambiguous <- TRUE
+    else if (r$status == "usable") found_states <- c(found_states, r$state)
+  }
+  distinct_states <- unique(found_states)
+  if (any_ambiguous || length(distinct_states) > 1)
+    return(list(state = NA_character_, status = "ambiguous", window_used = window))
+  if (length(distinct_states) == 1)
+    return(list(state = distinct_states, status = "usable", window_used = window))
+  list(state = NA_character_, status = "unavailable", window_used = window)
+}
+
 #' Build a leave-one-out held-out index for one method: variant -> npi|year -> state
 #'
 #' @param loo `data.frame` with `npi`, `year`, `state`, `variant`, `method`
@@ -107,6 +149,12 @@ classify_row_type <- function(abstain_from, abstain_to, state_from, state_to) {
   )
 }
 
+#' Sources windowing is allowed to backfill for -- only those lacking a
+#' more informative effective interval. tmsis_medicaid already has real
+#' interval_start/interval_end dates (checked at exact-year resolution
+#' upstream); windowing it would make its answer less precise, not more.
+WINDOWED_FAMILIES <- c("dac_pecos_combined", "open_payments")
+
 #' Classify ONE apparent move (never called for abstained or stable pairs)
 #'
 #' Rule IDs, in evaluation order (evidence-based rules are checked before
@@ -116,13 +164,28 @@ classify_row_type <- function(abstain_from, abstain_to, state_from, state_to) {
 #' or contradicting witness -- only `families` (default `FAMILIES`, i.e.
 #' the 3 usable non-NPPES, non-facility_affiliation sources) are checked.
 #'
-#' @return `list(classification, rule_id, reason, support, contradict, ambiguous)`.
+#' @param window Proximity-window years for the temporal-sensitivity
+#'   analysis (default `0L` = today's strict, exact-year-only behavior,
+#'   identical to every call site and test predating this parameter).
+#'   Applied only to `WINDOWED_FAMILIES` -- see `lookup_family_windowed()`.
+#' @return `list(classification, rule_id, reason, support, contradict,
+#'   ambiguous, windowed_families_used)` -- the last element names which
+#'   families' support/contradict verdict actually came from a backfilled
+#'   nearby year rather than the exact one, for auditing temporal
+#'   sensitivity (empty when `window == 0`).
 classify_apparent_move <- function(family_idx, loo_idx, npi_val, year_from, year_to,
-                                    state_from, state_to, families = FAMILIES) {
+                                    state_from, state_to, families = FAMILIES, window = 0L) {
   support <- character(0); contradict <- character(0); ambiguous <- character(0)
+  windowed_used <- character(0)
   for (fam in families) {
-    a <- lookup_family(family_idx, fam, npi_val, year_from)
-    b <- lookup_family(family_idx, fam, npi_val, year_to)
+    if (window > 0L && fam %in% WINDOWED_FAMILIES) {
+      a <- lookup_family_windowed(family_idx, fam, npi_val, year_from, window)
+      b <- lookup_family_windowed(family_idx, fam, npi_val, year_to, window)
+      if (a$window_used > 0L || b$window_used > 0L) windowed_used <- c(windowed_used, fam)
+    } else {
+      a <- lookup_family(family_idx, fam, npi_val, year_from)
+      b <- lookup_family(family_idx, fam, npi_val, year_to)
+    }
     if (a$status == "ambiguous" || b$status == "ambiguous") { ambiguous <- c(ambiguous, fam); next }
     if (a$status == "unavailable" || b$status == "unavailable") next
     if (identical(a$state, state_from) && identical(b$state, state_to)) support <- c(support, fam)
@@ -137,33 +200,40 @@ classify_apparent_move <- function(family_idx, loo_idx, npi_val, year_from, year
     if (held_out) {
       return(list(classification = "confirmed", rule_id = "CONF-2FAM",
                   reason = ">=2 independent families directly observe both endpoint states, and the move survives leave-one-out refits excluding each of them",
-                  support = support, contradict = contradict, ambiguous = ambiguous))
+                  support = support, contradict = contradict, ambiguous = ambiguous,
+                windowed_families_used = windowed_used))
     }
     return(list(classification = "confirmed_not_held_out", rule_id = "CONF-2FAM-NOHOLD",
                 reason = ">=2 independent families support the move, but it does not survive a leave-one-out refit excluding at least one of them -- not genuinely held-out confirmation",
-                support = support, contradict = contradict, ambiguous = ambiguous))
+                support = support, contradict = contradict, ambiguous = ambiguous,
+                windowed_families_used = windowed_used))
   }
   if (n_contradict >= 1 && n_support == 0) {
     return(list(classification = "administrative_artifact", rule_id = "ART-CONTRA",
                 reason = "an independent family shows the origin state persisting through the destination year",
-                support = support, contradict = contradict, ambiguous = ambiguous))
+                support = support, contradict = contradict, ambiguous = ambiguous,
+                windowed_families_used = windowed_used))
   }
   if (gap && n_support == 0 && n_contradict == 0) {
     return(list(classification = "administrative_artifact", rule_id = "ART-GAP",
                 reason = "measured across a known >=20-month NPPES snapshot gap, mechanically inflating apparent-move counts -- a transition-level mechanism, not NPI-specific evidence",
-                support = support, contradict = contradict, ambiguous = ambiguous))
+                support = support, contradict = contradict, ambiguous = ambiguous,
+                windowed_families_used = windowed_used))
   }
   if (n_support >= 1 && n_contradict >= 1) {
     return(list(classification = "indeterminate", rule_id = "MIXED-SPLIT",
                 reason = "independent families disagree with each other, not just with NPPES -- an unexplained disagreement is not automatically an artifact",
-                support = support, contradict = contradict, ambiguous = ambiguous))
+                support = support, contradict = contradict, ambiguous = ambiguous,
+                windowed_families_used = windowed_used))
   }
   if (n_support == 1 && n_contradict == 0) {
     return(list(classification = "possible", rule_id = "POSS-SINGLE",
                 reason = "supported by exactly one independent family -- insufficient for independent confirmation",
-                support = support, contradict = contradict, ambiguous = ambiguous))
+                support = support, contradict = contradict, ambiguous = ambiguous,
+                windowed_families_used = windowed_used))
   }
   list(classification = "possible", rule_id = "POSS-NONE",
        reason = "no other source has any direct observation of either endpoint year for this NPI",
-       support = support, contradict = contradict, ambiguous = ambiguous)
+       support = support, contradict = contradict, ambiguous = ambiguous,
+       windowed_families_used = windowed_used)
 }

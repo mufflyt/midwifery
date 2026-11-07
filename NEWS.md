@@ -24,6 +24,54 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Full-panel run**: of 161,547 eligible NPI-year pairs (2013-2026), 97.0%
+  are stable and 2.84% (4,592) are apparent interstate moves. Of those,
+  only 0.2% (7) are `confirmed` by >=2 independent source families
+  surviving a held-out leave-one-out refit; a further 0.2% (7) meet the
+  same support bar but fail the refit; 32.4% land on administrative-
+  artifact rules (`ART-CONTRA` 835 + `ART-GAP` 653); the remaining 64.4%
+  + 2.9% stay unconfirmed or indeterminate for lack of evidence -- a
+  coverage limitation, not a finding that they're false. 2017-18 and
+  2023-24 (the known snapshot-gap transitions) carry both the highest
+  artifact share and nearly every genuinely confirmed move in the panel;
+  2020-21 gets zero confirmed moves, consistent with its signal resting
+  on a single source family.
+- **`audit_migration_source_sensitivity.R`**: how much each source family
+  moves the needle, reusing the leave-one-out artifacts above with no new
+  refit. **NPPES dominates by roughly an order of magnitude** over every
+  other source -- dropping it changes 9.49% of comparable predicted
+  values and leaves 49.6% of the panel (108,731 of 219,336 npi-years)
+  without any usable prediction at all, versus 0.04%-1.07% changed and
+  0-2,656 lost for the other 4 families. **2020-21 is the single most
+  source-sensitive transition for 3 of the 5 families** (nppes,
+  dac_pecos_combined, tmsis_medicaid each show their own largest
+  rate-swing exactly there) -- a third independent line of evidence (after
+  the sub-annual DAC check and the classifier's own per-move results)
+  that this is where the sources disagree most. Direction is informative:
+  dropping NPPES swings the rate UP (+4.98 pts at 2020-21); dropping
+  DAC/PECOS or T-MSIS swings it DOWN -- consistent with DAC/T-MSIS being
+  the sources pushing that window's rate up when included, and NPPES
+  being the one suppressing it.
+- **`audit_migration_temporal_sensitivity.R`** and a new
+  `lookup_family_windowed()` in `R/lib/migration_move_classification.R`
+  re-classify the same 4,592 apparent moves under strict (0yr, today's
+  standing behavior) / moderate (1yr) / permissive (2yr, 3yr) proximity
+  windows -- applied only to dac_pecos_combined and open_payments (no
+  more informative interval available); tmsis_medicaid is never widened
+  (already has real interval dates) and facility_affiliation stays
+  excluded regardless. **12 of 13 transitions are robust** -- their
+  dominant classification doesn't change at any window. **2025-2026 is
+  the one exception**: its dominant classification flips from `possible`
+  to `administrative_artifact` as the window widens, directly answering
+  the open question about DAC's 2026 agreement-rate dip -- **the data
+  points away from a real migration increase, not toward one.** A
+  consistent pattern elsewhere: widening the window shifts mass from
+  `possible` into `administrative_artifact`, not into `confirmed` --
+  giving a sparse source more benefit of the doubt mostly surfaces more
+  evidence the origin state was still there nearby (a stale-record
+  signature), not more corroboration. `confirmed` counts stay essentially
+  flat across all 4 windows everywhere in the panel.
+
 - **`classify_migration_moves_full_panel.R`** and **`R/lib/migration_move_classification.R`**
   generalize the spike-specific sub-annual checks above into a rule-based,
   auditable classifier run over every apparent interstate move in the full
