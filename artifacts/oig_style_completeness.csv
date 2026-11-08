@@ -1,0 +1,13 @@
+source,vintage,attribute,n_frame,n_record_present,n_record_absent,n_field_blank,n_field_malformed,n_usable,n_multiple_values,pct_record_present,pct_usable_of_present
+nppes,NPPES 2026 pull,practice_state,11920,11920,0,8,22,11890,0,100,99.7
+nppes,NPPES 2026 pull,practice_zip5,11920,11920,0,8,0,11912,0,100,99.9
+pecos,PECOS organization affiliations (current artifact),practice_state,11920,5559,6361,0,0,5559,341,46.6,100
+pecos,PECOS organization affiliations (current artifact),practice_zip5,11920,5559,6361,0,0,5559,1633,46.6,100
+dac,DAC 2026 pull,practice_state,11920,4870,7050,0,0,4870,174,40.9,100
+dac,DAC 2026 pull,practice_zip5,11920,4870,7050,0,0,4870,1138,40.9,100
+open_payments,Open Payments program year 2024,practice_state,11920,3996,7924,0,0,3996,168,33.5,100
+open_payments,Open Payments program year 2024,practice_zip5,11920,3996,7924,0,0,3996,1001,33.5,100
+doximity,Doximity 2026 scrape,practice_state,11920,4655,7265,2,6,4647,0,39.1,99.8
+doximity,Doximity 2026 scrape,practice_zip5,11920,4655,7265,2,0,4653,0,39.1,100
+healthgrades,Healthgrades 2026 scrape,practice_state,11920,5995,5925,0,0,5995,624,50.3,100
+healthgrades,Healthgrades 2026 scrape,practice_zip5,11920,5995,5925,0,0,5995,3063,50.3,100

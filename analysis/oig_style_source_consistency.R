@@ -24,8 +24,8 @@
 # the lead-lag timing work (docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md).
 # Those replace OIG's two-snapshot timing check.
 #
-# One cross-section, mixed vintages: Open Payments is program year 2024, the
-# other five are 2026 pulls. Each source's vintage is in the completeness
+# One cross-section, mixed vintages: Open Payments is program year 2024, NPPES
+# is the 2025-11-09 bulk file, the rest are 2026 pulls. Vintages are in the completeness
 # table, and every pair involving Open Payments carries that gap.
 #
 # ERROR FLOOR. If two sources disagree for a midwife, at least one of them is
@@ -85,7 +85,7 @@ INPUTS <- c(
   healthgrades  = "healthgrades_midwives.csv"
 )
 VINTAGE <- c(
-  nppes = "NPPES 2026 pull", pecos = "PECOS organization affiliations (current artifact)",
+  nppes = "NPPES bulk file 2025-11-09", pecos = "PECOS organization affiliations (current artifact)",
   dac = "DAC 2026 pull", open_payments = "Open Payments program year 2024",
   doximity = "Doximity 2026 scrape", healthgrades = "Healthgrades 2026 scrape"
 )
