@@ -121,8 +121,19 @@ via_crosswalk <- function(df) {
 # column; `state`/`zip5` keep only well-formed values (clean_state(), five
 # digits), so a populated-but-malformed field is visible as the gap between
 # the two.
+# A ZIP stored as a number loses its leading zero: PECOS affiliations carry
+# four- and eight-digit ZIPs, and the first five characters of an eight-digit
+# ZIP+4 are not its ZIP5. Restore the zero before shape_address() takes ZIP5.
+pad_zip_digits <- function(x) {
+  d <- gsub("[^0-9]", "", x)
+  w <- ifelse(nchar(d) %in% 3:4, 5L, ifelse(nchar(d) %in% 6:8, 9L, nchar(d)))
+  out <- paste0(strrep("0", pmax(0L, w - nchar(d))), d)
+  ifelse(is.na(x) | !nzchar(d), x, out)
+}
+
 load_source <- function(df, npi_col, state_col, city_col, zip_col, zip_mode = "substr") {
   raw_pop <- function(col) { v <- trimws(df[[col]]); !is.na(v) & nzchar(v) }
+  if (zip_mode == "substr") df[[zip_col]] <- pad_zip_digits(df[[zip_col]])
   s <- shape_address(df, npi_col = npi_col, state_col = state_col, city_col = city_col,
                      zip_col = zip_col, zip_mode = zip_mode)
   s %>%
@@ -137,9 +148,10 @@ load_source <- function(df, npi_col, state_col, city_col, zip_col, zip_mode = "s
 }
 
 hg_raw <- rd("healthgrades")
-# A Healthgrades row with no profile URL is a search that found nobody, not a
-# record with blank fields.
-if ("hg_url" %in% names(hg_raw)) hg_raw <- hg_raw[!is.na(hg_raw$hg_url) & nzchar(trimws(hg_raw$hg_url)), ]
+# Only hg_status == "ok" is a matched profile. "no_search_hit" found nobody and
+# "rejected_name_or_credential" found the wrong person; both are an absent
+# record, not a record with blank fields.
+hg_raw <- hg_raw[hg_raw$hg_status %in% "ok", ]
 
 dac_raw <- rd("dac")
 dac_raw <- dac_raw[order(dac_raw$NPI, suppressWarnings(as.integer(dac_raw$location_rank))), ]
