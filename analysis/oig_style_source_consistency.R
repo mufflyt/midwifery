@@ -286,16 +286,16 @@ pairwise <- bind_rows(lapply(c(ATTRIBUTES, "practice_state_and_zip5"), function(
 
 ci_any  <- wilson_ci(pairwise$n_any_shared, pairwise$n_usable_both)
 ci_same <- wilson_ci(pairwise$n_same_set, pairwise$n_usable_both)
-pct <- function(x, n) ifelse(n > 0, round(100 * x / n, 1), NA_real_)
+pct_of <- function(x, n) ifelse(n > 0, round(100 * x / n, 1), NA_real_)
 pairwise <- pairwise %>%
-  mutate(pct_any_shared = pct(n_any_shared, n_usable_both),
+  mutate(pct_any_shared = pct_of(n_any_shared, n_usable_both),
          any_shared_ci_low = round(100 * ci_any$ci_low, 1),
          any_shared_ci_high = round(100 * ci_any$ci_high, 1),
-         pct_same_set = pct(n_same_set, n_usable_both),
+         pct_same_set = pct_of(n_same_set, n_usable_both),
          same_set_ci_low = round(100 * ci_same$ci_low, 1),
          same_set_ci_high = round(100 * ci_same$ci_high, 1),
          n_disagree = n_usable_both - n_any_shared,
-         pct_disagree = pct(n_disagree, n_usable_both),
+         pct_disagree = pct_of(n_disagree, n_usable_both),
          # floor on the worse source's error among the compared midwives,
          # and the same floor taken from the lower end of the disagreement CI
          error_floor_pct = round(pct_disagree / 2, 1),
