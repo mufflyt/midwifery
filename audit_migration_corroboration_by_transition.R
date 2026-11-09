@@ -60,6 +60,7 @@ source(file.path("R", "lib", "corroboration_lookup.R"))
 source(file.path("R", "lib", "medicare_duckdb.R"))
 source(file.path("R", "lib", "medicaid_enrollment_intervals.R"))
 source(file.path("R", "lib", "artifact_provenance.R"))
+source(file.path("R", "lib", "wilson_interval.R"))  # wilson_ci()
 
 MEDICAID_DB <- Sys.getenv("MEDICAID_ENROLLMENT_DB",
                            "/Volumes/MufflySamsung/DuckDB/medicaid_provider_enrollment_segments.duckdb")
@@ -206,12 +207,6 @@ cat(sprintf("Person-level adjudication (gitignored) -> artifacts/migration_corro
             nrow(adjudication)))
 
 # --- Wilson 95% CI, same formula build_cross_source_comparison.R already uses ---
-wilson_ci <- function(x, n, conf = 0.95) {
-  z <- qnorm(1 - (1 - conf) / 2); p <- x / n; denom <- 1 + z^2 / n
-  center <- (p + z^2 / (2 * n)) / denom
-  halfwidth <- (z / denom) * sqrt(p * (1 - p) / n + z^2 / (4 * n^2))
-  tibble(ci_low = round(100 * pmax(0, center - halfwidth), 1), ci_high = round(100 * pmin(1, center + halfwidth), 1))
-}
 
 summary_by_transition <- adjudication %>%
   group_by(year_from, year_to, group) %>%

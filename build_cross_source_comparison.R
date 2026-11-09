@@ -36,6 +36,7 @@
 suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr); library(tidyr)})
 
 source(file.path("R", "lib", "clean_state.R"))
+source(file.path("R", "lib", "wilson_interval.R"))  # wilson_ci()
 dedupe_one_per_npi <- function(df) {
   df %>% filter(!is.na(npi), !is.na(state)) %>% group_by(npi) %>% slice(1) %>% ungroup()
 }
@@ -202,15 +203,6 @@ print(as.data.frame(tiers_cohort %>% count(year, tier)))
 # =============================================================================
 # 4. WILSON CONFIDENCE INTERVALS on existing agreement-vs-NPPES percentages
 # =============================================================================
-wilson_ci <- function(x, n, conf = 0.95) {
-  z <- qnorm(1 - (1 - conf) / 2)
-  p <- x / n
-  denom <- 1 + z^2 / n
-  center <- (p + z^2 / (2 * n)) / denom
-  halfwidth <- (z / denom) * sqrt(p * (1 - p) / n + z^2 / (4 * n^2))
-  tibble(ci_low = round(100 * pmax(0, center - halfwidth), 1),
-         ci_high = round(100 * pmin(1, center + halfwidth), 1))
-}
 agr <- read_csv("artifacts/state_source_audit_agreement.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
   mutate(n_comparable = as.integer(n_comparable), n_agree = as.integer(n_agree), pct_agree = as.numeric(pct_agree))
 ci <- wilson_ci(agr$n_agree, agr$n_comparable)

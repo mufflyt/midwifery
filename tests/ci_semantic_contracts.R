@@ -120,6 +120,19 @@ ci_section("S3 no NEW percent column arrives on a proportion scale")
 # proportion-scale columns; fail on anything else.
 PROPORTION_SCALE <- c("pct_rural", "pct_low_birth_weight", "chr_pct_uninsured")
 
+# A percentage can be genuinely below 1%. pct_confirmed is the share of
+# apparent movers whose move a second source confirms, and confirmation is
+# rare: it maxes at 0.99%. Its siblings in the same file max at 88.31 and
+# 95.84 and the four-column family sums to 100.0 per row, so that file's
+# scale is percent and this column is simply small.
+#
+# PINNED APART FROM PROPORTION_SCALE ON PURPOSE. Those columns really are
+# proportions and a reader must multiply them. This one must not be
+# multiplied, so filing it there would plant the unit bug the gate exists to
+# catch. The max-below-1 heuristic cannot separate the two cases from one
+# column alone, which is why each exception is named by hand.
+SMALL_PERCENT_SCALE <- c("pct_confirmed")
+
 suspect <- character(0); checked <- 0L
 for (f in ci_tracked("artifacts/*.csv")) {
   p <- file.path(root, f)
@@ -132,7 +145,7 @@ for (f in ci_tracked("artifacts/*.csv")) {
     v <- suppressWarnings(as.numeric(d[[nm]])); v <- v[is.finite(v)]
     if (length(v) < 20L) next
     checked <- checked + 1L
-    if (max(v) <= 1 && !tolower(nm) %in% PROPORTION_SCALE)
+    if (max(v) <= 1 && !tolower(nm) %in% c(PROPORTION_SCALE, SMALL_PERCENT_SCALE))
       suspect <- c(suspect, sprintf("%s :: %s (max %.4f -- proportion on a pct name)", f, nm, max(v)))
     if (max(v) > 100.5)
       suspect <- c(suspect, sprintf("%s :: %s (max %.1f -- above 100)", f, nm, max(v)))
@@ -142,8 +155,8 @@ if (length(suspect)) {
   ci_fail("S3: %d percent column(s) on an unexpected scale:\n%s",
           length(suspect), paste(sprintf("       %s", suspect), collapse = "\n"))
 } else {
-  ci_ok("%d percent columns are on their expected scale (%d pinned as proportions)",
-        checked, length(PROPORTION_SCALE))
+  ci_ok("%d percent columns are on their expected scale (%d pinned as proportions, %d as small percents)",
+        checked, length(PROPORTION_SCALE), length(SMALL_PERCENT_SCALE))
 }
 
 ci_section("S4 a geographic id is uniform in width and all digits")

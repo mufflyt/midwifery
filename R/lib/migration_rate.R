@@ -2,23 +2,7 @@
 #' build_migration_rate_by_method.R and build_leave_one_source_out_
 #' sensitivity.R (previously duplicated in both; factored out here).
 
-#' Wilson 95% confidence interval for a proportion
-#'
-#' Same formula build_cross_source_comparison.R and
-#' audit_migration_corroboration_by_transition.R already use.
-#'
-#' @param x,n Successes and trials, same length (vectorized).
-#' @param conf Confidence level, default 0.95.
-#' @return `tibble` with `ci_low`, `ci_high` (percentages, 0-100).
-wilson_ci <- function(x, n, conf = 0.95) {
-  z <- stats::qnorm(1 - (1 - conf) / 2)
-  p <- x / n
-  denom <- 1 + z^2 / n
-  center <- (p + z^2 / (2 * n)) / denom
-  halfwidth <- (z / denom) * sqrt(p * (1 - p) / n + z^2 / (4 * n^2))
-  tibble::tibble(ci_low = round(100 * pmax(0, center - halfwidth), 1),
-                 ci_high = round(100 * pmin(1, center + halfwidth), 1))
-}
+source(file.path("R", "lib", "wilson_interval.R"))  # wilson_ci()
 
 #' Year-over-year move rate for one (npi, year, state) panel
 #'

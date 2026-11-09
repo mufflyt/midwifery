@@ -46,15 +46,23 @@
 #            (written by the foreground extraction pass -- rerun that
 #            pass, see docs/TECHNICAL_APPENDIX_TRUTH_FUSION_MIGRATION.md,
 #            before re-running this script from a clean checkout)
-#          /Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb (4 vintages)
+#          the NBER warehouse, 4 NPPES vintages -- located by
+#            resolve_midwifery_duckdb(), never by a hardcoded mount path
 # Output : artifacts/nppes_subannual_panel.csv (person-level, gitignored)
 # =============================================================================
 suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr); library(DBI); library(duckdb)})
 source(file.path("R", "lib", "clean_state.R"))
+source(file.path("R", "lib", "medicare_duckdb.R"))  # resolve_midwifery_duckdb()
 
-TMP_DIR <- Sys.getenv("CLAUDE_SCRATCHPAD",
-                       "/private/tmp/claude-501/-Users-tmuffly-midwifery/256ea951-7544-4ed5-b0ec-edd5104f0d91/scratchpad")
-WAREHOUSE <- "/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb"
+# The header/body CSVs the foreground pass writes. Default is repo-relative:
+# the previous default was one session's /private/tmp scratchpad on another
+# machine, so a clean checkout read an empty directory and silently produced a
+# short panel instead of stopping.
+TMP_DIR <- Sys.getenv("CLAUDE_SCRATCHPAD", "scratchpad")
+# Resolved, not hardcoded: /Volumes/MufflySamsung is /Volumes/MufflySamsung 1
+# after an unclean unmount, and this script names 4 warehouse tables that only
+# exist in the real 92 GB database (see R/lib/medicare_duckdb.R).
+WAREHOUSE <- resolve_midwifery_duckdb()
 WAREHOUSE_VINTAGES <- list(
   list(vintage = "2020-07", table = "NPPES_Data_Dissemination_July_2020_npidata_pfile_20050523_20200712_csv"),
   list(vintage = "2021-04", table = "NPPES_Data_Disseminat_April_2021_npidata_pfile_20050523_20210411_csv"),

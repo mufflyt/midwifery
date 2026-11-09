@@ -46,8 +46,9 @@
 #          artifacts/tmsis_medicaid_enrollment_state_by_year.csv,
 #          artifacts/dac_facility_affiliations.csv
 # Outputs: artifacts/truth_fusion_predictions_<method>.csv (person-level, gitignored)
-#          artifacts/truth_fusion_model_diagnostics.csv (tracked; appended
-#            across runs, keyed by method)
+#          artifacts/truth_fusion_model_diagnostics.csv (appended across
+#            runs, keyed by method; gitignored until a complete run emits it
+#            with its provenance sidecar -- see .gitignore for why)
 #          artifacts/truth_fusion_claims.csv (person-level, gitignored,
 #            method-independent; added 2026-11-06 for
 #            classify_migration_moves_full_panel.R)
@@ -172,7 +173,13 @@ if (length(diag_rows) > 0) {
   existing <- if (file.exists(diag_path)) read_csv(diag_path, col_types = cols(.default = "c"), progress = FALSE) else NULL
   if (!is.null(existing)) existing <- existing %>% filter(!(method %in% new_diag$method))
   combined <- bind_rows(existing, new_diag %>% mutate(across(everything(), as.character)))
-  write_csv(combined, diag_path)
+  # Through the provenance writer like every other artifact here: this one is
+  # TRACKED, so without a sidecar the committed diagnostics name no inputs and
+  # ci_artifact_contracts.R A3 refuses it. Same inputs as the per-method
+  # predictions it summarises.
+  write_with_provenance(combined, diag_path,
+                        inputs = c("artifacts/amcb_npi_linkage_FROZEN.csv",
+                                   "midwife_panel.csv", op_files))
   cat(sprintf("\nModel diagnostics (tracked) -> %s (%d methods total on record)\n", diag_path, nrow(combined)))
 }
 

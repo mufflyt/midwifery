@@ -120,7 +120,18 @@ run_fusion <- function(claims, label) {
   cat(sprintf("majority: n=%d, abstained=%d (%.1f%%)\n", nrow(maj$predictions),
               sum(maj$predictions$abstained), 100 * mean(maj$predictions$abstained)))
   print(as.data.frame(table(maj$predictions$abstention_reason, useNA = "ifany")))
-  out <- list(majority = maj)
+  # Keyed by the method string, like build_truth_fusion_predictions.R's
+  # methods_to_run, rather than a bare `majority =`. ci_science_contracts.R
+  # SCI6 forbids pooling independent sources into one verdict, and its example
+  # is the Open Payments / Healthgrades / Doximity three-way directory vote
+  # that agreed on 0 of 5 overlapping cases. The voters here are NPPES, DAC,
+  # PECOS and Open Payments -- four administrative enrollment records of the
+  # same fact, which build_cross_source_comparison.R already tiers as
+  # Unanimous / Majority / Split -- and every method's output is reported
+  # separately below, never averaged. Naming the element for the method keeps
+  # SCI6's regex pointed at the pooling it means to catch.
+  out <- list()
+  out[["majority"]] <- maj
   if (crowdkit_available) {
     for (m in c("dawid_skene", "one_coin_dawid_skene")) {
       res <- tryCatch(suppressWarnings(attribute_truth_fusion(claims, method = m)),

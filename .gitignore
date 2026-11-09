@@ -296,12 +296,28 @@ artifacts/migration_corroboration_adjudication.csv
 artifacts/migration_corroboration_adjudication.csv.provenance.json
 
 # Truth-fusion predictions, person-level (NPI, year, predicted state per
-# method). artifacts/truth_fusion_model_diagnostics.csv,
-# artifacts/migration_rate_by_method.csv, and artifacts/truth_fusion_
+# method). artifacts/migration_rate_by_method.csv and artifacts/truth_fusion_
 # leave_one_out_sensitivity.csv (same script family) are aggregates and
 # stay tracked.
 artifacts/truth_fusion_predictions_*.csv
 artifacts/truth_fusion_predictions_*.csv.provenance.json
+
+# artifacts/truth_fusion_model_diagnostics.csv is an aggregate too and BELONGS
+# tracked alongside those two -- but it was committed from a run that wrote it
+# with a raw write_csv(), so it carries no sidecar. ci_artifact_contracts.R A3
+# will not accept a tracked artifact without one, its baseline may shrink and
+# never grow, and a sidecar reconstructed after the fact is explicitly not a
+# sidecar (it would record this session's inputs, not the run's).
+#
+# The writer now goes through write_with_provenance() (build_truth_fusion_
+# predictions.R). Ignored until a complete run emits the pair; then delete
+# these two lines and commit the CSV together with its .provenance.json.
+# A run on this machine would NOT be complete: the TMSIS source needs
+# DuckDB/medicaid_provider_enrollment_segments.duckdb, which is absent from
+# the Samsung volume, and a degraded run's numbers must not become the
+# tracked cross-run record.
+artifacts/truth_fusion_model_diagnostics.csv
+artifacts/truth_fusion_model_diagnostics.csv.provenance.json
 
 # Truth-fusion claims (person-level, method-independent) and per-method
 # candidate-value vote breakdowns -- added 2026-11-06, both previously
