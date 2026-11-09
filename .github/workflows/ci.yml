@@ -137,15 +137,6 @@ jobs:
       - name: Freeze rule contract
         run: Rscript tests/test_freeze_cohort.R
 
-      # This file has existed since cycle 21 and has never run in CI, which is
-      # the same failure it was written to catch: a provenance mechanism nothing
-      # exercises is documentation. It passes as-is, and T221a/b now pin the
-      # sha256_of() memo -- a cache on a content hash is a correctness surface,
-      # not a speed one, because serving a stale digest records provenance for
-      # bytes that no longer exist.
-      - name: Provenance wiring and hash memo
-        run: Rscript tests/test_cycle21_provenance_wiring.R
-
       # Base R only, same as above. 58.6% of the coordinates behind every
       # access map and the rurality stratifier carry a label naming the batch
       # they arrived in rather than the geocoder that produced them (#225).
@@ -380,6 +371,16 @@ jobs:
       # only this job installs. Placed in r-checks it failed with "there is no
       # package called 'dplyr'", which reads as a broken test rather than a
       # step in the wrong tier.
+      # HERE AND NOT IN r-checks, for the reason the comment above gives: this
+      # file needs dplyr, readr and digest, and r-checks is the stringr-only
+      # tier. It has existed since cycle 21 and had never run in CI, which is
+      # the same failure it was written to catch -- a provenance mechanism
+      # nothing exercises is documentation. It passes as-is; T221a/b were added
+      # to it for the sha256_of() memo, where the cache key is a correctness
+      # surface and not a speed one.
+      - name: Provenance wiring and hash memo
+        run: Rscript tests/test_cycle21_provenance_wiring.R
+
       - name: Science invariants (defects that actually occurred)
         run: Rscript tests/test_science_invariants.R
 
