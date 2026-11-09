@@ -1,0 +1,13 @@
+source,attribute,definition,location_role,normalizer,comparison,requirement,requirement_reference,specification_date,lineage
+dac,practice_state,Two-letter practice state (clean_state()),practice,state_abb,any_shared_value,unreviewed,NA,NA,cms_enrollment
+dac,practice_zip5,First five digits of the practice ZIP,practice,zip5,any_shared_value,unreviewed,NA,NA,cms_enrollment
+doximity,practice_state,Two-letter practice state (clean_state()),practice,state_abb,any_shared_value,unreviewed,NA,NA,doximity
+doximity,practice_zip5,First five digits of the practice ZIP,practice,zip5,any_shared_value,unreviewed,NA,NA,doximity
+healthgrades,practice_state,Two-letter practice state (clean_state()),practice,state_abb,any_shared_value,unreviewed,NA,NA,healthgrades
+healthgrades,practice_zip5,First five digits of the practice ZIP,practice,zip5,any_shared_value,unreviewed,NA,NA,healthgrades
+nppes,practice_state,Two-letter practice state (clean_state()),practice,state_abb,any_shared_value,unreviewed,NA,NA,nppes
+nppes,practice_zip5,First five digits of the practice ZIP,practice,zip5,any_shared_value,unreviewed,NA,NA,nppes
+open_payments,practice_state,Two-letter practice state (clean_state()),practice,state_abb,any_shared_value,unreviewed,NA,NA,open_payments
+open_payments,practice_zip5,First five digits of the practice ZIP,practice,zip5,any_shared_value,unreviewed,NA,NA,open_payments
+pecos,practice_state,Two-letter practice state (clean_state()),practice,state_abb,any_shared_value,unreviewed,NA,NA,cms_enrollment
+pecos,practice_zip5,First five digits of the practice ZIP,practice,zip5,any_shared_value,unreviewed,NA,NA,cms_enrollment

@@ -1,0 +1,65 @@
+{
+  "artifact": "oig_style_field_dictionary.csv",
+  "written_utc": "2026-11-09 00:45:33 UTC",
+  "inputs": [
+    {
+      "path": "/Users/tylermuffly/midwifery/artifacts/cohort_midwives_tier1_tier2_bon_validated.csv",
+      "sha256": "949a39cc47f93f184cd83d25f567b226c11b2b0daec199ae9d6fcb5490b61b94"
+    },
+    {
+      "path": "/Users/tylermuffly/midwifery/artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
+    },
+    {
+      "path": "/Users/tylermuffly/midwifery/artifacts/amcb_npi_geography.csv",
+      "sha256": "ee248e64fbd44a1234da2f42a308e4dd8d8b48a635d15c6615a356b630d896b5"
+    },
+    {
+      "path": "/Users/tylermuffly/midwifery/artifacts/midwife_pecos_organization_affiliations.csv",
+      "sha256": "5e44da7a6f0da60d84005dc9f5c7e3d04f9df4ace0cb557ecd35e9d698fd2723"
+    },
+    {
+      "path": "/Users/tylermuffly/midwifery/artifacts/dac_cnm_locations.csv",
+      "sha256": "8a8d74bca5bc084740c639bcd3542c012da0aba5d648779145bba6c9478654ce"
+    },
+    {
+      "path": "/Users/tylermuffly/midwifery/artifacts/cohort_midwives_open_payments_general_2024.csv",
+      "sha256": "1c83b0b3d0810d4d27a2b8b98ccab8580612c97b7543592f29760672f8f0b822"
+    },
+    {
+      "path": "/Users/tylermuffly/midwifery/artifacts/doximity_public_matched.csv",
+      "sha256": "9a87edaecc280e464f6a2a3c5f47a264ff8ba78d55940c9db6ae910aa1b59f65"
+    },
+    {
+      "path": "/Users/tylermuffly/midwifery/healthgrades_midwives.csv",
+      "sha256": "373faf68085febd9cd34c74c2a39ecaaf8a2378fa36c7b060db7481001cadbb5"
+    }
+  ],
+  "code_sha256": "95e2d674643ec284ac109cc799365187b4e453a075e4f885ef86dbd8d0a4b009",
+  "code": [
+    {
+      "path": "analysis/oig_style_source_consistency.R",
+      "sha256": "9f34f1eac10a76c32a824d0a97f54319af0d8751e368c781cbe5a71a8311623b"
+    },
+    {
+      "path": "R/analysis_args.R",
+      "sha256": "47f9fe65907257d135e91121eefd162bfe8bd6751a9bf980677d26ee8fc1dcdc"
+    },
+    {
+      "path": "R/lib/address_agreement_compare.R",
+      "sha256": "d58d3ea8184d3efd5365b6962929937fb60097101e1b60f076e1a771d5b15c04"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/clean_state.R",
+      "sha256": "188cee53abd5b2e7afb2c6bffbc7ea27a16029189fb97ca8be1865d5ab0c2c23"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}
