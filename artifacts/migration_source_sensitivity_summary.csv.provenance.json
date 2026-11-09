@@ -1,0 +1,29 @@
+{
+  "artifact": "migration_source_sensitivity_summary.csv",
+  "written_utc": "2026-11-06 23:50:41 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/truth_fusion_leave_one_out_predictions.csv",
+      "sha256": "27f197fcb2a90079df876652f43d8ae9187e34e4087cc68609c649b9ac3ab786"
+    },
+    {
+      "path": "artifacts/truth_fusion_leave_one_out_sensitivity.csv",
+      "sha256": "cca2bdcec30943e4209b16b080869465cd72125d23d6ff39f168c5bed22efd2c"
+    }
+  ],
+  "code_sha256": "01d6d94ff23efcf3faa7dffe3fab1c486ff20de432a424b6cd44a6b1b136c560",
+  "code": [
+    {
+      "path": "audit_migration_source_sensitivity.R",
+      "sha256": "a70ba298b071978858ba2574ae50acc3f5e9db84b9e27fae74aaee412034ccbb"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}

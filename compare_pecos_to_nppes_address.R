@@ -19,10 +19,18 @@
 # data pipeline (docs/TECHNICAL_APPENDIX_DAC_OPENPAYMENTS_ADDRESS_AGREEMENT.md
 # §8), so an Open-Payments-vs-NPPES agreement number was never a check
 # against an independent source -- it was partly NPPES checking itself. See
-# git history for the prior Open Payments numbers and
-# make_address_agreement_additional_figures.R (also removed, same date: its
-# three figures existed to compare multiple sources/years at once and became
-# redundant once only one source remained).
+# git history for the prior Open Payments numbers.
+#
+# THIS COMMENT USED TO SAY make_address_agreement_additional_figures.R was
+# "also removed, same date". It was not, and still is not: it is a live
+# script, named three times as a primary script by
+# docs/TECHNICAL_APPENDIX_DAC_OPENPAYMENTS_ADDRESS_AGREEMENT.md (which gives
+# a Rscript command for it in §7), and two of its figures are tracked and
+# embedded in that appendix. Acting on the removal this comment asserted
+# would have deleted a script the published appendix depends on. Corrected
+# 2026-11-08. What WAS redundant was its heatmap, which collided with
+# make_address_agreement_heatmap.R over one filename; that block is gone and
+# the reasoning lives in that script.
 #
 # An Open-Payments-vs-itself (year-over-year) comparison and a DAC-vs-Open-
 # Payments comparison were also built and removed earlier (2026-10-22); see
