@@ -32,7 +32,7 @@
 # confirm/deny whether elevation continues or concentrates from 2021-12 on.
 # =============================================================================
 suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); library(readr)})
-source(file.path("R", "lib", "medicare_duckdb.R"))
+source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-ingestion bootstrap
 
 WAREHOUSE <- Sys.getenv("REVAL_DB", "")
 if (!nzchar(WAREHOUSE)) WAREHOUSE <- samsung_volume_path("cms_revalidation.duckdb")
@@ -43,7 +43,7 @@ coh <- link %>% filter(cohort_member == "TRUE") %>% transmute(npi = trimws(npi))
   filter(!is.na(npi), nzchar(npi)) %>% distinct()
 cat(sprintf("Cohort NPIs: %s\n", format(nrow(coh), big.mark = ",")))
 
-con <- dbConnect(duckdb(), WAREHOUSE, read_only = TRUE)
+con <- duckdb_connect(WAREHOUSE, read_only = TRUE)
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 dbWriteTable(con, "cohort_npis", coh, overwrite = TRUE, temporary = TRUE)
 
