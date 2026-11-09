@@ -174,14 +174,30 @@ source_vintage_table <- function(data_root = Sys.getenv("MIDWIFERY_DATA_ROOT", "
                                 error = function(e) NA_character_)
   dr <- function(...) file.path(data_root, ...)
   rows <- list()
+  # `files` NAMES THE FILES THE DATE CAME FROM, semicolon-joined into the row.
+  # An inventory that asserts a vintage without saying which file it read is
+  # unfalsifiable -- and the audit that writes this table needs those paths to
+  # record their SHA-256 in its provenance sidecar. Empty is a legitimate answer
+  # for a row dated from DIRECTORY names (facility affiliation) rather than file
+  # contents; it is not the same as unknown, and it is not mtime.
   add <- function(source, kind, used, quality, detail,
                   period_start = NA, period_end = NA, available = NA_character_,
-                  n_available = NA_integer_, closest_available = NA_character_) {
+                  n_available = NA_integer_, closest_available = NA_character_,
+                  files = character(0)) {
+    files <- unique(files[!is.na(files) & nzchar(files)])
+    # RECORDED REPO-RELATIVE. These paths are built with dr(), so an absolute
+    # data_root would write "/Users/<someone>/midwifery/midwife_panel.csv" into
+    # a TRACKED csv -- a machine-specific path in a shared artifact, and one
+    # that is wrong on every other checkout. Paths outside the repo (the Samsung
+    # volume) stay absolute, which is correct: they are absolute facts.
+    if (nzchar(data_root) && !identical(data_root, "."))
+      files <- sub(paste0("^", sub("/+$", "", data_root), "/"), "", files)
     rows[[length(rows) + 1L]] <<- tibble::tibble(
       source = source, time_kind = kind,
       vintage_used = as.Date(used), period_start = as.Date(period_start),
       period_end = as.Date(period_end), vintage_quality = quality,
       n_vintages_available = n_available, closest_unused = closest_available,
+      source_files = paste(files, collapse = ";"),
       detail = detail)
   }
 
@@ -204,7 +220,8 @@ source_vintage_table <- function(data_root = Sys.getenv("MIDWIFERY_DATA_ROOT", "
         sprintf("panel holds %d snapshots, %s..%s", length(dts),
                 format(min(dts)), format(used)),
         n_available = length(av),
-        closest_available = if (length(newer)) format(min(newer)) else NA_character_)
+        closest_available = if (length(newer)) format(min(newer)) else NA_character_,
+        files = dr("midwife_panel.csv"))
   }
 
   # --- DAC / Physician Compare, current snapshot -------------------------------
@@ -220,7 +237,8 @@ source_vintage_table <- function(data_root = Sys.getenv("MIDWIFERY_DATA_ROOT", "
     add("dac_physician_compare", "snapshot", used, "filename",
         sprintf("files on disk: %s", paste(basename(dac_c), collapse = ", ")),
         n_available = length(av),
-        closest_available = if (length(newer)) format(max(newer)) else NA_character_)
+        closest_available = if (length(newer)) format(max(newer)) else NA_character_,
+        files = dac_c[parse_vintage(dac_c) == used])
   }
 
   # --- Open Payments: INTERVAL, a program year is not a publication date -------
@@ -238,7 +256,12 @@ source_vintage_table <- function(data_root = Sys.getenv("MIDWIFERY_DATA_ROOT", "
           sprintf("program years %d..%d; PY%d spans the calendar year and CMS published it ~%d-06",
                   min(yrs), py, py, py + 1L),
           period_start = sprintf("%d-01-01", py), period_end = sprintf("%d-12-31", py),
-          n_available = length(yrs))
+          # NOT files = opdb. The program year comes from the TABLE NAME, the
+          # same way facility affiliation's comes from a directory name, so the
+          # warehouse's contents are not what dated this row -- and it is 23 GB
+          # on an external volume, which would mean re-hashing 23 GB on every
+          # audit to learn something the catalog already said.
+          n_available = length(yrs), files = character(0))
     }
   }
 
@@ -251,7 +274,10 @@ source_vintage_table <- function(data_root = Sys.getenv("MIDWIFERY_DATA_ROOT", "
       add("pecos_revalidation", "snapshot", max(av), "filename",
           sprintf("%d MONTHLY vintages %s..%s -- the audit uses year resolution, discarding the month",
                   length(av), format(min(av)), format(max(av))),
-          n_available = length(av))
+          n_available = length(av),
+          # The newest of the 39, not all 39: it is the one that set the vintage,
+          # and hashing the whole monthly archive on every audit buys nothing.
+          files = f[!is.na(parse_vintage(f)) & parse_vintage(f) == max(av)])
   }
 
   # --- Facility affiliation: one snapshot --------------------------------------
@@ -262,7 +288,8 @@ source_vintage_table <- function(data_root = Sys.getenv("MIDWIFERY_DATA_ROOT", "
     if (length(av))
       add("facility_affiliation_ccn", "snapshot", max(av), "filename",
           sprintf("CMS does not archive this product; %d snapshot(s) held", length(av)),
-          n_available = length(av))
+          # Dated from DIRECTORY names, so there is no file to hash here.
+          n_available = length(av), files = character(0))
   }
 
   # --- Medicaid enrollment segments (DOGE) -------------------------------------
@@ -273,7 +300,7 @@ source_vintage_table <- function(data_root = Sys.getenv("MIDWIFERY_DATA_ROOT", "
     if (length(av))
       add("medicaid_enrollment", "snapshot", max(av), "filename",
           "dated enrollment intervals; published as one extract",
-          n_available = length(av))
+          n_available = length(av), files = d[file.exists(d) & !dir.exists(d)])
   }
 
   # --- Scrape / third-party sources: mtime is all there is ---------------------
@@ -290,9 +317,11 @@ source_vintage_table <- function(data_root = Sys.getenv("MIDWIFERY_DATA_ROOT", "
       add("doximity", "snapshot", max(dm, na.rm = TRUE), "record (date_modified)",
           sprintf("per-record date_modified, %s..%s across %s rows",
                   format(min(dm, na.rm = TRUE)), format(max(dm, na.rm = TRUE)),
-                  format(sum(!is.na(dm)), big.mark = ",")))
+                  format(sum(!is.na(dm)), big.mark = ",")),
+          files = dr("artifacts/doximity_public_matched.csv"))
     else
-      add("doximity", "snapshot", NA, "unrecorded", "date_modified present but unparseable")
+      add("doximity", "snapshot", NA, "unrecorded", "date_modified present but unparseable",
+          files = dr("artifacts/doximity_public_matched.csv"))
   }
   # CMS NDH carries no date in its filename or its records, and the bulk
   # manifest.json (which would hold the real release date) is not on disk. Its
@@ -302,10 +331,12 @@ source_vintage_table <- function(data_root = Sys.getenv("MIDWIFERY_DATA_ROOT", "
     if (!is.na(g))
       add("cms_ndh_fhir", "snapshot", g, "git commit (UPPER bound on the vintage)",
           paste("no date in filename or records, and the CMS bulk manifest.json is absent;",
-                "harvest landed on or before this commit"))
+                "harvest landed on or before this commit"),
+          files = dr("artifacts/cms_ndh_midwives.csv"))
     else
       add("cms_ndh_fhir", "snapshot", NA, "unrecorded",
-          "untracked and undated: no filename date, no record date, no commit")
+          "untracked and undated: no filename date, no record date, no commit",
+          files = dr("artifacts/cms_ndh_midwives.csv"))
   }
 
   # STATE BOARDS ARE NOT ONE SNAPSHOT. Eight states were scraped across seven
@@ -321,10 +352,11 @@ source_vintage_table <- function(data_root = Sys.getenv("MIDWIFERY_DATA_ROOT", "
           "git commit dates per state (UPPER bound)",
           sprintf("%d states scraped across %s..%s (%.0f days apart), not one snapshot",
                   length(bon), format(lo), format(hi), as.numeric(hi - lo)),
-          period_start = lo, period_end = hi)
+          period_start = lo, period_end = hi, files = bon)
     } else {
       add("state_boards_of_nursing", "snapshot", NA, "unrecorded",
-          sprintf("%d state scrape files, none carrying a scrape date", length(bon)))
+          sprintf("%d state scrape files, none carrying a scrape date", length(bon)),
+          files = bon)
     }
   }
 
@@ -332,7 +364,8 @@ source_vintage_table <- function(data_root = Sys.getenv("MIDWIFERY_DATA_ROOT", "
   # no commit. There is genuinely nothing to read, and mtime is not a vintage.
   if (file.exists(dr("healthgrades_midwives.csv")))
     add("healthgrades", "snapshot", NA, "unrecorded",
-        "untracked scrape with no date in filename or records; nothing recorded it")
+        "untracked scrape with no date in filename or records; nothing recorded it",
+        files = dr("healthgrades_midwives.csv"))
 
 
   out <- dplyr::arrange(dplyr::bind_rows(rows), dplyr::desc(vintage_used))

@@ -1,0 +1,45 @@
+{
+  "artifact": "nppes_vs_dac_field_agreement.csv",
+  "written_utc": "2026-11-09 19:38:02 UTC",
+  "inputs": [
+    {
+      "path": "/Volumes/MufflySamsung/nppes_historical_downloads/extracted_2026/npidata_pfile_20050523-20260809.csv",
+      "sha256": "fa037d5a3a50083be5d9b7e6404cf9dcc5917be893fdca8ce48a6d6c37a248c0"
+    },
+    {
+      "path": "DAC_NationalDownloadableFile_2026-07.csv",
+      "sha256": "56996a2de21da047d416a4d44c2cbaa116f601e4f69ff314639018316b6c49c0"
+    },
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
+    }
+  ],
+  "code_sha256": "0671a4a33fdb833410bc8e63f9488b894c8d318367051fb8375abf55fea9ddfd",
+  "code": [
+    {
+      "path": "compare_nppes_to_dac_demographics.R",
+      "sha256": "1f9d37e2cf79d4488c2a761135c670460c59a656e75d1bb5308b126652f357b2"
+    },
+    {
+      "path": "credential_compatibility.R",
+      "sha256": "f1594711aa60882fee035ec0691e6705a88246a0f3a120351b7f902d2d7d2f4c"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/common_helpers.R",
+      "sha256": "55c6b894798e2740f538b1262391e58e8fe9bea84f072b80708e59aea3197067"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "1e1ee8e4dba97bd4f5f514dc25ae37d1a0cb89eb1496b44c1c721c05d7750234"
+    }
+  ]
+}

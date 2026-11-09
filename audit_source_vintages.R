@@ -48,6 +48,7 @@ suppressPackageStartupMessages({
 source(file.path("R", "lib", "source_vintage.R"))
 suppressPackageStartupMessages(library(tibble))
 source(file.path("R", "lib", "medicare_duckdb.R"))
+source(file.path("R", "lib", "artifact_provenance.R"))  # write_with_provenance()
 
 MAX_GAP_MONTHS <- as.numeric(Sys.getenv("MAX_GAP_MONTHS", "6"))
 vol <- function(rel) tryCatch(samsung_volume_path(rel, must_exist = FALSE),
@@ -61,7 +62,26 @@ print(as.data.frame(inv %>% select(source, time_kind, vintage_used, vintage_qual
 cat("\n")
 for (i in seq_len(nrow(inv)))
   cat(sprintf("  %-26s %s\n", inv$source[i], inv$detail[i]))
-write_csv(inv, "artifacts/source_vintage_inventory.csv", na = "")
+# The INPUTS here are the dated files themselves, so the sidecar records the
+# sha256 of every source whose vintage this inventory asserts. A source that
+# is re-released without the inventory being rebuilt then shows as stale,
+# which is the whole point: a vintage table that has gone out of date is
+# worse than none, because everything downstream trusts its dates.
+# source_files is recorded repo-relative (see R/lib/source_vintage.R). The
+# sidecar needs paths this run can actually open, and it should RECORD the
+# relative form -- an absolute /Users/<someone>/ path in a tracked sidecar is
+# true on one machine. So: use the relative path wherever it resolves from here,
+# fall back to data_root only when it does not, and leave absolute paths (the
+# Samsung volume) alone. write_with_provenance() drops anything that still does
+# not exist, so a missing input is omitted rather than recorded with no hash.
+DATA_ROOT <- Sys.getenv("MIDWIFERY_DATA_ROOT", ".")
+prov_files <- function(df) {
+  f <- unique(unlist(strsplit(
+    df$source_files[!is.na(df$source_files) & nzchar(df$source_files)], ";", fixed = TRUE)))
+  ifelse(file.exists(f), f, file.path(DATA_ROOT, f))
+}
+write_with_provenance(inv, "artifacts/source_vintage_inventory.csv",
+                      inputs = prov_files(inv), na = "")
 
 # --- the pairwise gap matrix the comparison output is missing -----------------
 dated <- inv %>% filter(!is.na(vintage_used))
@@ -75,7 +95,8 @@ gm <- expand_grid(a = dated$source, b = dated$source) %>%
   select(source_a = a, vintage_a = va, source_b = b, vintage_b = vb,
          gap_months, over_limit) %>%
   arrange(desc(gap_months))
-write_csv(gm, "artifacts/source_vintage_gap_matrix.csv", na = "")
+write_with_provenance(gm, "artifacts/source_vintage_gap_matrix.csv",
+                      inputs = prov_files(dated), na = "")
 
 cat(sprintf("\n=== PAIRWISE VINTAGE GAPS (%d pairs; limit %.1f months) ===\n",
             nrow(gm), MAX_GAP_MONTHS))

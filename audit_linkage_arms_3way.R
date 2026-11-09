@@ -33,6 +33,7 @@
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(digest); library(tidyr)
 })
+source(file.path("R", "lib", "artifact_provenance.R"))  # write_with_provenance()
 
 ART <- Sys.getenv("ARMS_ART_DIR", "artifacts")
 BASE_ART <- Sys.getenv("BASELINE_ART_DIR", ART)
@@ -126,9 +127,14 @@ if (all(c("A_baseline_frozen", "C_logic_plus_vintage") %in% tab$arm)) {
 # Two tables, two files. Cross-joining the per-arm rows onto the per-comparison
 # rows would emit arms x comparisons rows of nonsense -- they are different
 # units of observation and belong apart.
-write_csv(tab, "artifacts/linkage_arms_3way_audit.csv", na = "")
+# Inputs are whichever arms were PRESENT, not the three this script knows
+# about: it reports a partial run rather than failing, so the sidecar has to
+# say which arms the numbers actually came from.
+write_with_provenance(tab, "artifacts/linkage_arms_3way_audit.csv",
+                      inputs = unlist(arms, use.names = FALSE), na = "")
 cat("\nwrote artifacts/linkage_arms_3way_audit.csv (one row per arm)\n")
 if (nrow(d)) {
-  write_csv(d, "artifacts/linkage_arms_3way_deltas.csv", na = "")
+  write_with_provenance(d, "artifacts/linkage_arms_3way_deltas.csv",
+                        inputs = unlist(arms, use.names = FALSE), na = "")
   cat("wrote artifacts/linkage_arms_3way_deltas.csv (one row per comparison)\n")
 }

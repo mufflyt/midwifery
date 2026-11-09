@@ -94,6 +94,7 @@ suppressPackageStartupMessages({
 source(file.path("R", "lib", "common_helpers.R"))
 source(file.path("R", "lib", "medicare_duckdb.R"))
 source("credential_compatibility.R")   # normalize_credential_class(): the canonical one
+source(file.path("R", "lib", "artifact_provenance.R"))  # write_with_provenance()
 
 MAX_GAP_MONTHS <- as.numeric(Sys.getenv("MAX_GAP_MONTHS", "6"))
 
@@ -379,9 +380,14 @@ summ <- bind_rows(
          dac_vintage = format(dac_v, "%Y-%m"),
          vintage_gap_months = round(gap_months, 1))
 print(as.data.frame(summ), row.names = FALSE)
-write_csv(summ, "artifacts/nppes_vs_dac_field_agreement.csv", na = "")
+# All three tracked outputs record the SAME three inputs -- the two source
+# files and the cohort -- because every rate below is a statement about that
+# triple. Swap any one of them and the numbers are about something else.
+PROV_INPUTS <- c(NPPES, DAC, COHORT)
+write_with_provenance(summ, "artifacts/nppes_vs_dac_field_agreement.csv",
+                      inputs = PROV_INPUTS, na = "")
 
-write_csv(data.frame(
+write_with_provenance(data.frame(
   source = c("NPPES", "DAC"),
   file = c(basename(NPPES), basename(DAC)),
   vintage = c(format(nppes_v, "%Y-%m-%d"), format(dac_v, "%Y-%m")),
@@ -393,7 +399,8 @@ write_csv(data.frame(
                                        "if later than it, cannot confirm it"), NA),
   file_mtime = format(c(file.mtime(NPPES), file.mtime(DAC)), "%Y-%m-%d"),
   gap_months = round(gap_months, 1),
-  stringsAsFactors = FALSE), "artifacts/nppes_vs_dac_vintage.csv", na = "")
+  stringsAsFactors = FALSE), "artifacts/nppes_vs_dac_vintage.csv",
+  inputs = PROV_INPUTS, na = "")
 
 # Disagreement banded by how stale the NPPES record is. If the gradient is flat,
 # staleness is not driving disagreement; if it climbs, much of the "conflict" is
@@ -414,7 +421,8 @@ bands <- both %>%
             .groups = "drop")
 cat("\nagreement by NPPES record age (staleness of the self-reported side):\n")
 print(as.data.frame(bands), row.names = FALSE)
-write_csv(bands, "artifacts/nppes_vs_dac_agreement_by_record_age.csv", na = "")
+write_with_provenance(bands, "artifacts/nppes_vs_dac_agreement_by_record_age.csv",
+                      inputs = PROV_INPUTS, na = "")
 
 disagree <- both %>%
   mutate(sex_disagrees = !is.na(sex_nppes_v) & !is.na(sex_dac_v) & sex_nppes_v != sex_dac_v,

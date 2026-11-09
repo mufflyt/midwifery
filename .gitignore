@@ -41,6 +41,12 @@ artifacts/pecos_vs_bon_address_pairs.csv
 # Rebuild with compare_nppes_to_dac_demographics.R.
 artifacts/nppes_vs_dac_field_disagreements.csv
 
+# DuckDB spill directory. R's per-session tempdir() is removed when the session
+# that made it exits, and a long CSV scan that outlives it dies mid-query with
+# "Failed to create directory .../duckdb/temp" -- so the scan gets a temp
+# directory of its own, under the working tree, and it is not committable.
+.duckdb_temp/
+
 # Name-parser cache written by the isochrones parser
 .cache/
 data/cache/

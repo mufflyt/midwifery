@@ -1,0 +1,53 @@
+{
+  "artifact": "source_vintage_inventory.csv",
+  "written_utc": "2026-11-09 19:22:39 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/live_washington_bon_ingested_midwives_from_tracked_roster.csv",
+      "sha256": "b6754ad5da54263624e823bc1e1ae2d1d4cb2ffd715cdd192ae2094fba2d7d82"
+    },
+    {
+      "path": "artifacts/doximity_public_matched.csv",
+      "sha256": "9a87edaecc280e464f6a2a3c5f47a264ff8ba78d55940c9db6ae910aa1b59f65"
+    },
+    {
+      "path": "midwife_panel.csv",
+      "sha256": "6b9696ce891949d07e37fb768ae48095838ba74a9600ffe84e599cf03835f4d3"
+    },
+    {
+      "path": "/Volumes/MufflySamsung/cms_revalidation_raw/revalidation_reassignment_2026-08.csv",
+      "sha256": "865f1a6b2eedb33f10f90abbb186939647ae7b447315c0c773db956b6541711d"
+    },
+    {
+      "path": "DAC_NationalDownloadableFile_2026-06.csv",
+      "sha256": "8448857a9edf81eee70754e98967be06b3e24c8d3d30e15371f117ec116d063c"
+    },
+    {
+      "path": "healthgrades_midwives.csv",
+      "sha256": "373faf68085febd9cd34c74c2a39ecaaf8a2378fa36c7b060db7481001cadbb5"
+    }
+  ],
+  "code_sha256": "898599a1301d0c3e7c9fef557f602ea3dbd0da8516b9428fb5e3854eb3d3ed2e",
+  "code": [
+    {
+      "path": "audit_source_vintages.R",
+      "sha256": "453149311b7a91d6e3ffb9d4c212ccf69fb7a9798c542c6c7d741152ce202526"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/lib/source_vintage.R",
+      "sha256": "527689647444b5d99bf328bf529e33c9655def52cd820cff032285ea180dd736"
+    }
+  ]
+}
