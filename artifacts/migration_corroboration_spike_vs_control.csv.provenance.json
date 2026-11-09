@@ -1,0 +1,41 @@
+{
+  "artifact": "migration_corroboration_spike_vs_control.csv",
+  "written_utc": "2026-11-05 22:29:04 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/migration_corroboration_adjudication.csv",
+      "sha256": "fbc0f92163519a8121059ae909c2c8c57b82246232149c8d6e108d9e238346ae"
+    }
+  ],
+  "code_sha256": "a1f8498abc7333d3597a4eedaab965268eaa8b276515b225c3663b07bd3a9530",
+  "code": [
+    {
+      "path": "audit_migration_corroboration_by_transition.R",
+      "sha256": "e666620a6dff94eeae00b799ca648dc3936395ea5d3e76d5b2015f7470bd2df3"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/clean_state.R",
+      "sha256": "188cee53abd5b2e7afb2c6bffbc7ea27a16029189fb97ca8be1865d5ab0c2c23"
+    },
+    {
+      "path": "R/lib/corroboration_lookup.R",
+      "sha256": "091427a9fa8ec370aae5534818a0fe1bfb5fcbf6273eae870f314e4350a0daa6"
+    },
+    {
+      "path": "R/lib/medicaid_enrollment_intervals.R",
+      "sha256": "5c592ca406aaa4698bf5176c693ab09fd86a3a31afddd5504cb85bbd4d4ecc62"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}

@@ -278,9 +278,15 @@ with_case_dir(function(root_dir, out_dir) {
 # =============================================================================
 
 suppressPackageStartupMessages({library(duckdb); library(DBI)})
+# These four connections read CSVs this test itself just wrote, so there is no
+# encoding hazard to bootstrap against -- but they go through the chokepoint
+# anyway rather than taking four exception-registry entries. duckdb_connect()
+# only loads the encodings extension; it does not relax CSV strictness, which
+# is exactly what the strict-parse assertions below depend on.
+source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect()
 
 write_parquet_fixture <- function(path, df) {
-  con <- DBI::dbConnect(duckdb::duckdb())
+  con <- duckdb_connect()
   on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
   duckdb::duckdb_register(con, "tmp_df", df)
   DBI::dbExecute(con, sprintf("COPY tmp_df TO '%s' (FORMAT PARQUET)", path))
@@ -334,7 +340,7 @@ with_case_dir(function(root_dir, out_dir) {
   r2 <- run_case(root_dir, out_dir)   # a plain resume, not PANEL_REBUILD=1
   chk(r2$status == 0L, "Case 11 resume build exits 0")
   panel <- file.path(out_dir, "midwife_panel.csv")
-  con <- DBI::dbConnect(duckdb::duckdb())
+  con <- duckdb_connect()
   on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
   # Strict, no ignore_errors: a column-count mismatch between the two appended
   # blocks throws here instead of silently dropping the second block.
@@ -356,7 +362,7 @@ with_case_dir(function(root_dir, out_dir) {
   r2 <- run_case(root_dir, out_dir)
   chk(r2$status == 0L, "Case 12 reshaped resume build exits 0")
   panel <- file.path(out_dir, "midwife_panel.csv")
-  con <- DBI::dbConnect(duckdb::duckdb())
+  con <- duckdb_connect()
   on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
   n <- tryCatch(DBI::dbGetQuery(con, sprintf("SELECT COUNT(*) n FROM read_csv_auto('%s')", panel))$n,
                error = function(e) NA_integer_)
@@ -621,7 +627,7 @@ with_case_dir(function(root_dir, out_dir) {
   r <- run_case(root_dir, out_dir)
   chk(r$status == 0L, "Case 27 exits 0 across all three source kinds in one run")
   panel <- file.path(out_dir, "midwife_panel.csv")
-  con <- DBI::dbConnect(duckdb::duckdb())
+  con <- duckdb_connect()
   on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
   n <- tryCatch(DBI::dbGetQuery(con, sprintf("SELECT COUNT(*) n FROM read_csv_auto('%s')", panel))$n,
                error = function(e) NA_integer_)

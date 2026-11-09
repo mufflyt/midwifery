@@ -365,7 +365,109 @@ REBUILD_ORDER <- list(
                    # cohort_by_year.csv, which build_table1_by_year.R (layer
                    # 6, below) reads for its Medicaid billing-activity line
                    # -- same ordering reasoning as the PPEF extract above it.
-                   "extract_tmsis_medicaid_spending_history.R")),
+                   "extract_tmsis_medicaid_spending_history.R",
+                   # Added 2026-11-05, by T5 in the pull request that
+                   # introduced it, SUPERSEDING audit_nppes_discontinuity_
+                   # corroboration.R (a 100-NPI sampled version of the same
+                   # check, retired the same day once this full-population
+                   # version replaced it). Reads amcb_npi_linkage_FROZEN plus
+                   # already-cached per-source state extracts (midwife_panel.csv,
+                   # DAC historical+current, and artifacts/pecos_revalidation_
+                   # cohort_state_by_year.csv -- written by extract_pecos_
+                   # revalidation_state_history.R above it in this same layer,
+                   # so it must follow that script -- plus the Open Payments
+                   # cohort extracts, plus the external Medicaid enrollment-
+                   # segment DuckDB warehouse, read-only, no network). A
+                   # standalone corroboration check with no downstream
+                   # readers, so unlike every other script in this layer it
+                   # does not need to precede anything in layer 6; placed
+                   # here only because it reads FROZEN directly and depends
+                   # on the PECOS extract.
+                   "audit_migration_corroboration_by_transition.R",
+                   # Added 2026-11-05, by T5, same pull request as the
+                   # truth-fusion build below -- it is that build's 4th
+                   # source. Reads amcb_npi_linkage_FROZEN plus the external
+                   # Medicaid enrollment-segment DuckDB warehouse (read-only,
+                   # no network), writes artifacts/tmsis_medicaid_
+                   # enrollment_state_by_year.csv, which build_truth_fusion_
+                   # predictions.R (just below) and build_leave_one_source_
+                   # out_sensitivity.R both read back in -- must precede both.
+                   "extract_tmsis_medicaid_enrollment_state_history.R",
+                   # Added 2026-11-06, by T5. Reads amcb_npi_linkage_FROZEN.
+                   # CANNOT be run by REBUILD_APPLY=1 alone, same shape of
+                   # limitation as build_truth_fusion_predictions.R below but
+                   # for a different reason: it needs a Stage 1 pass run
+                   # directly in the foreground first (not via this runner,
+                   # not backgrounded at all -- see the script's own header
+                   # for why), which writes scratchpad/nppes_header_<vintage>
+                   # .csv / nppes_body_<vintage>.csv per vintage; this script
+                   # is only Stage 2 (pure R file I/O, combines those files
+                   # plus 4 vintages queried directly from nber_my_duckdb
+                   # .duckdb). Writes artifacts/nppes_subannual_panel.csv,
+                   # which diagnose_subannual_migration_timing.R (just
+                   # below) reads back in -- must precede it.
+                   "extract_nppes_subannual_panel.R",
+                   # Added 2026-11-06, by T5. Reads amcb_npi_linkage_FROZEN
+                   # plus artifacts/nppes_subannual_panel.csv (the script
+                   # above) and the extended artifacts/physician_compare_
+                   # historical_midwives.csv. Read-only diagnostic (prints
+                   # to stdout, same convention as diagnose_migration_
+                   # year_over_year.R), writes nothing tracked.
+                   "diagnose_subannual_migration_timing.R",
+                   # Added 2026-11-05, by T5 in the pull request that
+                   # introduced it. Reads amcb_npi_linkage_FROZEN plus the
+                   # same cached per-source state extracts as the script
+                   # above. CANNOT be fully automated by REBUILD_APPLY=1
+                   # the way every other script in this file can: it calls
+                   # mysteryroster::attribute_truth_fusion(), whose
+                   # Crowd-Kit and truthdiscovery Python backends need two
+                   # mutually incompatible Python environments (reticulate
+                   # binds one per R process), so a human must run it
+                   # TWICE by hand with RETICULATE_PYTHON pointed at each
+                   # venv in turn (see the script's own header for both
+                   # paths) -- the same shape of limitation as a script
+                   # needing an external DuckDB volume mounted, just for a
+                   # Python interpreter instead of a disk. Declared here so
+                   # T5 can still verify it was not silently forgotten;
+                   # VERIFY_ONLY can confirm its outputs are fresh, APPLY
+                   # will run it but can only ever complete ONE of the two
+                   # backend passes in a single invocation.
+                   "build_truth_fusion_predictions.R",
+                   # Added 2026-11-05, by T5, same pull request. Reads
+                   # amcb_npi_linkage_FROZEN plus every artifacts/truth_
+                   # fusion_predictions_*.csv the script above writes -- so
+                   # it must follow that script, and inherits the same
+                   # both-backend-passes caveat (results are only complete
+                   # once both passes have been run by hand).
+                   "build_migration_rate_by_method.R",
+                   # Added 2026-11-05, by T5, same pull request. Reads
+                   # amcb_npi_linkage_FROZEN directly (not the prediction
+                   # CSVs above -- it reruns attribute_truth_fusion() itself
+                   # on 4 leave-one-source-out variants). Needs the
+                   # Crowd-Kit Python venv specifically (majority +
+                   # dawid_skene only, by design -- see the script's own
+                   # header for why the full method sweep was judged not
+                   # worth it here); same manual-Python-switch caveat as
+                   # build_truth_fusion_predictions.R.
+                   "build_leave_one_source_out_sensitivity.R",
+                   # Added 2026-11-08, by T5 -- which only reached this check
+                   # once the absolute-path failure above it was fixed, so the
+                   # job had been stopping before completeness ran at all.
+                   #
+                   # Both read amcb_npi_linkage_FROZEN plus truth_fusion_
+                   # claims.csv and truth_fusion_predictions_<method>.csv
+                   # (build_truth_fusion_predictions.R) and truth_fusion_
+                   # leave_one_out_predictions.csv (the script just above), so
+                   # both must follow all three and inherit the same manual-
+                   # Python-switch caveat: METHOD is dawid_skene, which needs
+                   # the Crowd-Kit venv.
+                   #
+                   # classify first: audit_migration_temporal_sensitivity.R
+                   # names migration_move_classification_full_panel.csv among
+                   # its provenance inputs, so running it first would record a
+                   # sha256 for the previous cohort's classification.
+                   "classify_migration_moves_full_panel.R",
+                   "audit_migration_temporal_sensitivity.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        # export_amcb_npi_geography.R writes the tracked state aggregate and
        # the gitignored person-level export, both of which read the crosswalk
@@ -444,6 +546,14 @@ REBUILD_ORDER <- list(
        # tracked address_lead_lag_*.csv / address_agreement_by_nppes_
        # freshness.csv leaves -- same shape as the analyze_medicaid_* leaves
        # above, order free.
+       # diagnose_truth_fusion_migration_states.R (added 2026-11-05) reads
+       # the freeze and the panel, same shape as diagnose_migration_year_
+       # over_year.R above: a read-only diagnostic prototype, writes
+       # nothing tracked. Needs the Crowd-Kit Python venv to exercise its
+       # dawid_skene/one_coin_dawid_skene branches (majority always runs);
+       # same manual-Python-switch caveat as build_truth_fusion_
+       # predictions.R in layer 5, just without any tracked output to
+       # verify freshness on.
        # build_table1_by_year.R (added 2026-11-05) reads the freeze for the
        # same fixed cohort build_table1_midwives.R uses, plus midwife_panel_
        # midwifeonly.csv, the historical facility-affiliation by-year
@@ -468,7 +578,7 @@ REBUILD_ORDER <- list(
                    "build_state_source_pairwise_audit.R",
                    "build_cross_source_comparison.R",
                    "analyze_address_lead_lag_and_freshness.R",
-                   "build_table1_by_year.R"))
+                   "build_table1_by_year.R", "diagnose_truth_fusion_migration_states.R"))
 )
 declared <- unlist(lapply(REBUILD_ORDER, `[[`, "scripts"))
 

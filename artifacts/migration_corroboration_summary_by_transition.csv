@@ -1,0 +1,7 @@
+year_from,year_to,group,n_raw_movers,n_confirmable,n_confirmed,n_any_corroboration,n_independent_corroboration,n_valid_pairs,raw_move_pct,confirmed_pct_of_confirmable,any_corrob_pct_of_movers,independent_corrob_pct_of_movers,any_corrob_ci_low,any_corrob_ci_high
+2016,2017,control,213,189,173,6,0,10107,2.11,91.5,2.8,0,1.3,6
+2017,2018,spike,324,285,259,5,0,10677,3.03,90.9,1.5,0,0.7,3.6
+2018,2019,control,260,218,195,1,0,11691,2.22,89.4,0.4,0,0.1,2.1
+2022,2023,control,314,287,263,56,1,13738,2.29,91.6,17.8,0.3,14,22.4
+2023,2024,spike,516,459,431,101,4,14357,3.59,93.9,19.6,0.8,16.4,23.2
+2024,2025,control,179,155,146,35,1,15566,1.15,94.2,19.6,0.6,14.4,26

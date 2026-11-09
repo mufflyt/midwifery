@@ -35,3 +35,37 @@ wilson <- function(x, n, conf = 0.95) {
   c((p + z^2/(2*n) - z*sqrt((p*(1-p) + z^2/(4*n))/n))/d,
     (p + z^2/(2*n) + z*sqrt((p*(1-p) + z^2/(4*n))/n))/d)
 }
+
+#' Wilson score interval, vectorised, as percentage bounds in a tibble
+#'
+#' Same interval as [wilson()] above, in the shape the reporting scripts
+#' consume: `x` and `n` are vectors (one row per stratum), and the bounds come
+#' back as percentages rounded to one decimal, clamped to [0, 100].
+#'
+#' TWO FUNCTIONS, ONE FORMULA, ON PURPOSE. [wilson()] is scalar -- its
+#' `n == 0` guard is an `if`, which sees only the first element of a vector --
+#' and returns proportions, because its callers print one interval per
+#' adjudicated stratum. This one is vectorised and returns percentages,
+#' because its callers `bind_cols()` it onto a whole summary table. Collapsing
+#' them would mean one of the two call sites doing its own rounding or its own
+#' recycling, which is how the three separate copies this replaces arose
+#' (R/lib/migration_rate.R, audit_migration_corroboration_by_transition.R and
+#' build_cross_source_comparison.R each had one; tests/ci_hygiene.R's H4
+#' refuses that).
+#'
+#' Note `n == 0` here yields `NaN` bounds rather than [wilson()]'s `NA`: the
+#' callers filter empty strata before summarising, and a silent 0-wide
+#' interval at 0/0 would read as a real measurement.
+#'
+#' @param x,n Successes and trials, same length (vectorised).
+#' @param conf Confidence level, default 0.95.
+#' @return `tibble` with `ci_low`, `ci_high` (percentages, 0-100).
+wilson_ci <- function(x, n, conf = 0.95) {
+  z <- stats::qnorm(1 - (1 - conf) / 2)
+  p <- x / n
+  denom <- 1 + z^2 / n
+  center <- (p + z^2 / (2 * n)) / denom
+  halfwidth <- (z / denom) * sqrt(p * (1 - p) / n + z^2 / (4 * n^2))
+  tibble::tibble(ci_low = round(100 * pmax(0, center - halfwidth), 1),
+                 ci_high = round(100 * pmin(1, center + halfwidth), 1))
+}

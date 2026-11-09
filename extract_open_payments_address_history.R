@@ -25,6 +25,7 @@
 # see .gitignore).
 # =============================================================================
 suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); library(readr)})
+source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-ingestion bootstrap
 
 YEARS <- as.integer(strsplit(Sys.getenv("YEARS", "2015,2016,2017,2018,2019,2020,2021"), ",")[[1]])
 
@@ -47,7 +48,7 @@ coh <- cw %>%
 cat(sprintf("Loaded %s active cohort midwives from %s\n",
             format(nrow(coh), big.mark = ","), basename(MIDWIVES_FILE)))
 
-con <- dbConnect(duckdb(), WAREHOUSE, read_only = TRUE)
+con <- duckdb_connect(WAREHOUSE, read_only = TRUE)
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 dbWriteTable(con, "cohort_npis", coh, overwrite = TRUE, temporary = TRUE)
 

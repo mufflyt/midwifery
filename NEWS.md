@@ -20,6 +20,280 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-09 — Diagnostic figures for the full-panel migration classifier
+
+### Added
+
+- **3 of the originating specification's 4 diagnostic figures**, each reading only the
+  already-tracked, transition/family-level aggregate CSVs (no person-level data in any figure):
+  `make_migration_classification_national_trends_figure.R` (apparent movers, held-out-confirmed,
+  and indeterminate as parallel % of eligible pairs, 2013-2026, snapshot-gap transitions shaded),
+  `make_migration_classification_composition_figure.R` (the 5-way classification breakdown as %
+  of apparent movers), and `make_migration_source_sensitivity_figure.R` (the source-sensitivity
+  table as a two-panel chart, ordered so NPPES's order-of-magnitude dominance is immediately
+  visible). Figure 4 (individual evidence timelines) is not built -- it needs a per-NPI,
+  per-source, date-aware lookup tool that doesn't exist yet, a separate piece of work from
+  rendering already-computed aggregate tables.
+
+## [Unreleased] — 2026-11-06 — Full-panel migration move classifier: confirmed / possible / likely administrative artifact / indeterminate, across all 13 transitions
+
+### Added
+
+- **Full-panel run**: of 161,547 eligible NPI-year pairs (2013-2026), 97.0%
+  are stable and 2.84% (4,592) are apparent interstate moves. Of those,
+  only 0.2% (7) are `confirmed` by >=2 independent source families
+  surviving a held-out leave-one-out refit; a further 0.2% (7) meet the
+  same support bar but fail the refit; 32.4% land on administrative-
+  artifact rules (`ART-CONTRA` 835 + `ART-GAP` 653); the remaining 64.4%
+  + 2.9% stay unconfirmed or indeterminate for lack of evidence -- a
+  coverage limitation, not a finding that they're false. 2017-18 and
+  2023-24 (the known snapshot-gap transitions) carry both the highest
+  artifact share and nearly every genuinely confirmed move in the panel;
+  2020-21 gets zero confirmed moves, consistent with its signal resting
+  on a single source family.
+- **`audit_migration_source_sensitivity.R`**: how much each source family
+  moves the needle, reusing the leave-one-out artifacts above with no new
+  refit. **NPPES dominates by roughly an order of magnitude** over every
+  other source -- dropping it changes 9.49% of comparable predicted
+  values and leaves 49.6% of the panel (108,731 of 219,336 npi-years)
+  without any usable prediction at all, versus 0.04%-1.07% changed and
+  0-2,656 lost for the other 4 families. **2020-21 is the single most
+  source-sensitive transition for 3 of the 5 families** (nppes,
+  dac_pecos_combined, tmsis_medicaid each show their own largest
+  rate-swing exactly there) -- a third independent line of evidence (after
+  the sub-annual DAC check and the classifier's own per-move results)
+  that this is where the sources disagree most. Direction is informative:
+  dropping NPPES swings the rate UP (+4.98 pts at 2020-21); dropping
+  DAC/PECOS or T-MSIS swings it DOWN -- consistent with DAC/T-MSIS being
+  the sources pushing that window's rate up when included, and NPPES
+  being the one suppressing it.
+- **`audit_migration_temporal_sensitivity.R`** and a new
+  `lookup_family_windowed()` in `R/lib/migration_move_classification.R`
+  re-classify the same 4,592 apparent moves under strict (0yr, today's
+  standing behavior) / moderate (1yr) / permissive (2yr, 3yr) proximity
+  windows -- applied only to dac_pecos_combined and open_payments (no
+  more informative interval available); tmsis_medicaid is never widened
+  (already has real interval dates) and facility_affiliation stays
+  excluded regardless. **12 of 13 transitions are robust** -- their
+  dominant classification doesn't change at any window. **2025-2026 is
+  the one exception**: its dominant classification flips from `possible`
+  to `administrative_artifact` as the window widens, directly answering
+  the open question about DAC's 2026 agreement-rate dip -- **the data
+  points away from a real migration increase, not toward one.** A
+  consistent pattern elsewhere: widening the window shifts mass from
+  `possible` into `administrative_artifact`, not into `confirmed` --
+  giving a sparse source more benefit of the doubt mostly surfaces more
+  evidence the origin state was still there nearby (a stale-record
+  signature), not more corroboration. `confirmed` counts stay essentially
+  flat across all 4 windows everywhere in the panel.
+
+- **`classify_migration_moves_full_panel.R`** and **`R/lib/migration_move_classification.R`**
+  generalize the spike-specific sub-annual checks above into a rule-based,
+  auditable classifier run over every apparent interstate move in the full
+  2013-2026 cohort panel (13 transitions, 16,775-NPI cohort), not just
+  2017-18 and 2023-24. Built from a user-supplied specification whose
+  central requirement is that agreement among sources must never be read
+  as accuracy -- DAC's address field is CMS-derived from PECOS directly,
+  and NPPES agreeing with itself is not independent confirmation of
+  itself. 7 rule IDs (`CONF-2FAM`, `CONF-2FAM-NOHOLD`, `ART-CONTRA`,
+  `ART-GAP`, `MIXED-SPLIT`, `POSS-SINGLE`, `POSS-NONE`, plus
+  `IND-ABSTAIN`), each with an auditable `reason` string, roll up to 4
+  user-facing categories (`confirmed`, `possible`,
+  `administrative_artifact`, `indeterminate`) plus a distinct,
+  never-silently-merged `confirmed_not_held_out` bucket.
+- **Candidate moves are defined on the fused (`dawid_skene`) truth-fusion
+  prediction, not raw NPPES**, per the specification. This makes a naive
+  "does another source's claim match" corroboration check circular --
+  any matching source necessarily voted for that same value in the
+  fusion. Resolved by extending `build_truth_fusion_predictions.R` and
+  `build_leave_one_source_out_sensitivity.R` (both additive, no existing
+  output changed) to persist data they already compute every run and
+  previously discarded: the claims table, each method's candidate-value
+  vote breakdown, and -- the key piece -- the per-NPI predicted state
+  under each of the 6 existing leave-one-out variants. A move only
+  counts as `confirmed` if it **survives refitting the model with each
+  of its >=2 supporting source families individually excluded**, not
+  just if those families' raw claims happen to match.
+- **Correction to the originating specification's cohort description**:
+  it cited "12,170 NPI-matched individuals" as a subset of the
+  16,775-NPI cohort. Verified directly against
+  `artifacts/amcb_npi_linkage_FROZEN.csv` and
+  `R/lib/cohort_definitions.R`: all 16,775 already have an NPI; 12,170 is
+  an unrelated, stricter AMCB clinical-status filter
+  (`canonical_active_primary()`: ACTIVE + primary-tier linkage), not an
+  NPI-match rate. This build uses the 16,775-NPI cohort, matching the
+  existing truth-fusion build.
+- **`docs/TECHNICAL_APPENDIX_MIGRATION_MOVE_CLASSIFICATION.md`** and
+  **`tests/test_migration_move_classification.R`** (30 passing
+  assertions: every rule ID plus all 20 adversarial "saboteur" cases
+  designed to make the classifier produce a wrong verdict or silently
+  misbehave -- fake independence via duplicate rows, NPPES
+  self-corroboration, shallow held-out checks, ambiguous claims coded as
+  support/contradict, rule-evaluation-order exploits, missing/mistyped
+  leave-one-out variants defaulting to approve instead of deny, and
+  more). Also documents what's explicitly deferred to a follow-on pass:
+  the full 10-scenario sensitivity suite, 3 temporal-window variants,
+  diagnostic figures, and re-extracting NPPES's `Last Update Date` /
+  Open Payments' `Date_of_Payment` (both already exist in the raw data,
+  unused) to upgrade their date precision -- DAC, PECOS, and facility
+  affiliation have no per-record date available at all, so no amount of
+  re-extraction can fix those three.
+
+## [Unreleased] — 2026-11-06 — Multi-source truth fusion on the migration spikes: 2017-18 is not real, 2023-24 holds up at annual resolution but gets no sub-annual DAC/PECOS corroboration, and a third, unflagged transition (2020-21, now dated to H2 2021-H1 2022) shows up once NPPES is removed
+
+### Added
+
+- **`docs/TECHNICAL_APPENDIX_TRUTH_FUSION_MIGRATION.md`**, using
+  `mysteryroster::attribute_truth_fusion()` directly (not a hand-rolled
+  reimplementation — an earlier prototype was retired the same day a
+  stale local package install turned out to be behind the real,
+  already-built truth-fusion module on GitHub). All 8 implemented
+  methods (majority, dawid_skene, one_coin_dawid_skene via a Crowd-Kit
+  Python venv; sums, average_log, investment, pooled_investment,
+  truthfinder via a second, separate truthdiscovery Python venv — the
+  two backends need incompatible Python versions) run on the full
+  2013-2026, 219,536-entity-year cohort panel across 5 sources: NPPES,
+  DAC+PECOS-combined, Open Payments, T-MSIS Medicaid enrollment state
+  (`extract_tmsis_medicaid_enrollment_state_history.R`, new), and
+  facility/hospital affiliation via NPI-CCN (added after this build's
+  first draft wrongly excluded it on the premise that a single current
+  snapshot carries no usable information — it does, for that one year).
+  Leave-one-source-out sensitivity (6 variants) is the actual test of
+  whether either spike is an NPPES artifact, not the full-panel fit
+  (which mostly echoes NPPES's own shape whenever NPPES is included,
+  since it's learned as the highest-reliability source, 0.88 of 1.0).
+  Result, and it is asymmetric: with NPPES entirely removed from both
+  the claims and the move-rate calculation, **2017->2018 collapses to
+  the second-lowest transition of the whole 13-transition series** (rank
+  12 of 13, both methods) -- the cleanest evidence yet that this spike
+  is substantially NPPES-specific. **2023->2024 holds up much better**,
+  staying in the top 2-3 of 13 even without NPPES. And removing NPPES
+  surfaces **a transition nothing in this repo had flagged before,
+  2020->2021**, as the single highest-rate transition of the entire
+  series under both methods -- a genuinely new, unexplained finding, not
+  investigated further here. Also documents (citing, not re-deriving) a
+  parallel `mysteryroster`-side source-ablation study finding that
+  different truth-fusion methods learn contradictory reliability
+  rankings for the same sources, and that a tie-breaking method's
+  "resolution" is often mechanically just trusting whichever source has
+  the fewest competitors, not real synthesis.
+- **`extract_nppes_subannual_panel.R`** (33 vintages, 2007-2026, from
+  monthly NPPES dissemination archives already on the external drive --
+  no new downloads) and **3 new DAC vintages** (2017-04, 2018-12,
+  2019-12) gave this repo, for the first time, a clean 12-month window
+  inside each spike year. Checked directly: `midwife_panel.csv`'s own
+  snapshot dates show every year-to-year gap in the 2007-2026 series
+  running 5.7-14.9 months **except 2017->2018 and 2023->2024, both
+  exactly 20 months** -- both spikes sit on the two longest gaps in the
+  whole series, which alone inflates their raw rate against ordinary
+  ~12-month transitions. Re-measured with `diagnose_subannual_migration_
+  timing.R` over a true, clean 12 months: **2017->2018 drops from the
+  published 3.06% to 1.97% -- squarely inside the ordinary-year range
+  (0.91%-2.60%), not elevated at all.** A third, independent line of
+  evidence (after the leave-one-out and T-MSIS-addition results above)
+  that this spike isn't real. **2023->2024 drops from 3.68% to 2.37%**
+  -- still at the high end of normal, a real but more modest elevation
+  than originally reported. Also: DAC's own sub-annual rate during the
+  2017-18 window is *lower* than its own immediately preceding baseline
+  (a second source confirming nothing unusual happens there), and
+  NPPES's own sub-annual series shows nothing unusual around 2020-2021
+  either -- confirming that signal is specific to the non-NPPES sources,
+  not something NPPES itself was ever recording.
+- **2 more DAC vintages (2020-12, 2021-12) and a new PECOS monthly panel**
+  (`extract_pecos_revalidation_state_history.R` now also writes
+  `artifacts/pecos_revalidation_cohort_state_monthly.csv`, uncollapsed)
+  narrow the 2020-21 signal itself: DAC's 2020-12->2021-06 rate (2.92%)
+  sits inside its own ordinary 2.05%-4.27% range -- the move is not at
+  the 2020->2021 boundary the name implies. **DAC's 2021-06->2021-12
+  rate, 4.57%, is the highest in its entire measured series**, staying
+  elevated (4.06%) through 2022-06. The signal now rests on DAC alone --
+  PECOS, once correctly measured (below), shows nothing (0.05%-0.66%
+  for this window), matching NPPES's own quiet baseline rather than
+  DAC's. Still no mechanism identified for this transition.
+- **3 more DAC vintages (2022-12, 2023-12, 2024-05) -- exhausting every
+  monthly "Doctors and Clinicians" table actually sitting in the
+  warehouse -- find the OPPOSITE result for 2023-24: no corroboration at
+  all.** Every DAC sub-window actually inside the nominal 2023->2024
+  transition (2023-06->2023-12: 3.74%, 2023-12->2024-05: 3.16%,
+  2024-05->2024-06: 2.43%) sits inside DAC's own ordinary 2.05%-4.27%
+  range. The one elevated DAC window nearby, 2022-06->2022-12 at 4.54%,
+  falls in the *preceding* half-year and is the tail of the same
+  2021-06-2022-12 stretch already attributed to the 2020-21 signal
+  above, not a separate 2023-24 event. PECOS (corrected, below) is
+  nearly silent across the whole span too (0.00%-0.61%, one later
+  exception at 2.50%). This doesn't reverse the leave-one-out or
+  T-MSIS-addition results (those are annual-resolution, multi-source,
+  and still stand) -- it means neither source checked here at
+  finer-than-annual resolution corroborates 2023-24, the opposite of
+  what the same check found for 2020-21.
+- **Correction, same day: PECOS's first-reported figures above (3.5%-4.9%
+  for 2020-21, 2.8%-5.7% for 2023-24) were a measurement artifact from
+  two compounding bugs, both now fixed.** (1)
+  `extract_pecos_revalidation_state_history.R` hardcoded the warehouse
+  path as `/Volumes/MufflySamsung/DuckDB/cms_revalidation.duckdb` -- a
+  stale one-time copy, 2 months and 1 vintage behind the live warehouse
+  `archive_revalidation_reassignment.R` actually maintains at the volume
+  root. Fixed to resolve it the same way `build_reassignment_panel.R`
+  already does, via `samsung_volume_path()`. (2) Re-pointing at the live
+  warehouse surfaced a second, subtler bug: the ~10% of (NPI, vintage)
+  rows with multiple simultaneous group-practice states were deduped
+  with `group_by(npi, vintage) %>% slice(1)`, previously described as an
+  "arbitrary-but-deterministic pick" -- but `slice(1)` picks whichever
+  row SQL returns first, which depends on physical row order, not
+  content, so the same logical data gave a *different* pick across two
+  warehouse copies. Confirmed directly on an NPI stably enrolled under
+  ME/NH/VT across all 41 vintages: it got a different state picked
+  depending on which copy was queried, producing a spurious "move" every
+  time the ordering flipped, despite the person's affiliations never
+  actually changing. Fixed with `arrange(pecos_state)` before
+  `slice(1)`, making the pick deterministic by content. Corrected PECOS
+  move rates: 0.05%-0.66% for the 2020-21 window (not 3.5%-4.9%),
+  0.00%-0.61% (one exception, 2.50%) for 2023-24 (not 2.8%-5.7%). Both
+  now land close to NPPES's own quiet 0.13%-1.06% sub-annual baseline,
+  not DAC's. The 2020-21 signal now rests on DAC alone, uncorroborated by
+  PECOS; 2023-24 gets no sub-annual corroboration from either source.
+
+## [Unreleased] — 2026-11-05 — Independent corroboration of the two NPPES migration spikes, and why spike-vs-control framing alone is misleading
+
+### Added
+
+- **`audit_migration_corroboration_by_transition.R`** and
+  **`docs/TECHNICAL_APPENDIX_MIGRATION_CORROBORATION.md`**. Extends
+  `docs/TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md`'s open question (no
+  external source had been checked against the specific NPIs that moved in
+  the 2017→2018 / 2023→2024 spikes) rather than re-deriving anything that
+  appendix already settled. For every cohort NPI with a state change in the
+  two spikes plus the same four control transitions that appendix's own
+  §4b already used (2016→2017, 2018→2019, 2022→2023, 2024→2025), checks
+  DAC, PECOS revalidation, and Open Payments for exact-year corroboration,
+  plus Medicaid enrollment-interval lead/lag via the existing
+  `mysteryroster::enrollment_move_lead_lag()`. Result: pooled spike (12.6%)
+  vs. pooled control (10.1%) any-source corroboration isn't significant
+  (p=0.11), but pooling hides the real pattern — corroboration coverage is
+  an order of magnitude denser in 2022-2025 (17.8-19.6% across spike *and*
+  control) than in 2016-2019 (0.4-2.8%, again spike and control alike).
+  **Neither spike is an outlier within its own coverage era.** Genuinely
+  independent (non-DAC/PECOS-only, since DAC's address field is itself
+  CMS-derived from PECOS enrollment) corroboration never exceeds 0.8% in
+  any transition — the current source set cannot independently verify
+  where a confirmed mover went, for any year, not just the spike years.
+  New figure: `docs/figures/migration_corroboration_by_transition.png`.
+
+### Fixed
+
+- Two bugs caught by an external review of this feature's first-draft
+  version (`audit_nppes_discontinuity_corroboration.R`, a 100-NPI sampled
+  predecessor, retired the same day this full-population version shipped):
+  (1) a source's conflicting states for one (NPI, year) were resolved by
+  picking the first row, which is order-dependent, not evidence-based —
+  fixed by `R/lib/corroboration_lookup.R::lookup_state()`, which now
+  leaves such cases uncovered rather than arbitrarily resolved (affected
+  413/44,682 DAC and 874/17,734 Open Payments NPI-years in this cohort);
+  (2) DAC and PECOS were being treated as two independent confirmations
+  when they share CMS/PECOS enrollment lineage — fixed by
+  `is_independent_source_set()`. Both covered by
+  `tests/test_corroboration_lookup.R`.
+
 ## [Unreleased] — 2026-11-05 — What "ACTIVE" doesn't mean: a Trilliant claims-based cross-check, in the chart and the manuscript
 
 ### Added
