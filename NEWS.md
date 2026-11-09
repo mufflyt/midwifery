@@ -20,6 +20,21 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-09 — Diagnostic figures for the full-panel migration classifier
+
+### Added
+
+- **3 of the originating specification's 4 diagnostic figures**, each reading only the
+  already-tracked, transition/family-level aggregate CSVs (no person-level data in any figure):
+  `make_migration_classification_national_trends_figure.R` (apparent movers, held-out-confirmed,
+  and indeterminate as parallel % of eligible pairs, 2013-2026, snapshot-gap transitions shaded),
+  `make_migration_classification_composition_figure.R` (the 5-way classification breakdown as %
+  of apparent movers), and `make_migration_source_sensitivity_figure.R` (the source-sensitivity
+  table as a two-panel chart, ordered so NPPES's order-of-magnitude dominance is immediately
+  visible). Figure 4 (individual evidence timelines) is not built -- it needs a per-NPI,
+  per-source, date-aware lookup tool that doesn't exist yet, a separate piece of work from
+  rendering already-computed aggregate tables.
+
 ## [Unreleased] — 2026-11-06 — Full-panel migration move classifier: confirmed / possible / likely administrative artifact / indeterminate, across all 13 transitions
 
 ### Added
