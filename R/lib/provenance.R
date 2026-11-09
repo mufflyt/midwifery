@@ -22,33 +22,22 @@
 #' @param path [character(1)]: path to an existing file.
 #' @return [character(1)] lowercase hex digest.
 #' @family provenance
-# Within-run memo, keyed on the file's IDENTITY rather than its name: path,
-# size and mtime together. Keying on the path alone would be wrong -- a script
-# that writes an artifact and then hashes it again as an input to the next step
-# would get the stale hash -- and keying on nothing at all is what this cache
-# exists to fix: write_with_provenance() hashes its inputs once per artifact, so
-# three artifacts sharing one 10.8 GB NPPES dissemination re-read 32 GB over
-# USB to compute the same digest three times. Not persisted; a new session
-# hashes afresh, which is the only safe default for provenance.
-.sha256_memo <- new.env(parent = emptyenv())
-
+# NOT MEMOISED, DELIBERATELY. An earlier version of this cached digests within
+# a run, keyed on path + size + mtime, to stop write_with_provenance() from
+# re-reading one 10.8 GB NPPES dissemination once per artifact that shares it.
+# The cache was wrong, and not in an edge case: ANY copy that preserves
+# timestamps -- cp -p, rsync -a, tar -x, touch -r, a restore from backup --
+# produces a same-size, same-mtime file with different bytes, and the cache
+# would hand back the previous digest. Provenance would then record, and
+# check_provenance() would then verify, a hash for bytes that are gone. That is
+# the exact failure the sidecars exist to catch, so the cache could silence the
+# mechanism it was speeding up. Re-reading the file is the cheap half of that
+# trade.
 sha256_of <- function(path) {
   if (length(path) != 1L || is.na(path) || !file.exists(path)) {
     stop(sprintf("sha256_of: no such file: %s",
                  if (length(path) == 1L) path else "<not a single path>"),
          call. = FALSE)
   }
-  fi <- file.info(path)
-  # FRACTIONAL mtime, deliberately. format(mtime, "%s") is whole seconds, and a
-  # file rewritten to the same size within the same second then produces an
-  # identical key -- the cache would serve the digest of bytes that are gone.
-  # file.info() carries sub-second resolution on this filesystem, and the test
-  # for exactly that case is T221b in tests/test_cycle21_provenance_wiring.R.
-  key <- paste(normalizePath(path, mustWork = FALSE), fi$size,
-               sprintf("%.6f", as.numeric(fi$mtime)), sep = "|")
-  hit <- .sha256_memo[[key]]
-  if (!is.null(hit)) return(hit)
-  out <- sub(" .*$", "", system2("shasum", c("-a", "256", shQuote(path)), stdout = TRUE)[1])
-  assign(key, out, envir = .sha256_memo)
-  out
+  sub(" .*$", "", system2("shasum", c("-a", "256", shQuote(path)), stdout = TRUE)[1])
 }

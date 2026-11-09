@@ -142,7 +142,15 @@ if (unresolved > 0)
   cat(sprintf("  %s CCN(s) not in cms_hospital_info -- reported as affiliated but unattributed\n",
               format(unresolved, big.mark = ",")))
 
-write_csv(hospital_rows, "artifacts/dac_facility_affiliations.csv", na = "")
+# THROUGH write_with_provenance(), like its summary neighbour below, because
+# the INPUT RELEASE is the one fact about this artifact nothing else records.
+# CMS does not archive this product and the path above is named explicitly, so
+# once the directory on the volume is replaced there is no way to recover which
+# release these rows were cut from -- and R/lib/source_vintage.R was dating
+# them from the newest directory on the volume instead, a four-month error.
+# The sidecar is now that statement, and the registry reads it.
+write_with_provenance(hospital_rows, "artifacts/dac_facility_affiliations.csv",
+                      inputs = c(FA, LINKAGE), na = "")
 cat("written: artifacts/dac_facility_affiliations.csv\n")
 
 # --- one row per midwife -----------------------------------------------------

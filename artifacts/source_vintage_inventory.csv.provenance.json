@@ -1,13 +1,13 @@
 {
   "artifact": "source_vintage_inventory.csv",
-  "written_utc": "2026-11-09 19:22:39 UTC",
+  "written_utc": "2026-11-09 19:53:25 UTC",
   "inputs": [
     {
       "path": "artifacts/live_washington_bon_ingested_midwives_from_tracked_roster.csv",
       "sha256": "b6754ad5da54263624e823bc1e1ae2d1d4cb2ffd715cdd192ae2094fba2d7d82"
     },
     {
-      "path": "artifacts/doximity_public_matched.csv",
+      "path": "/Users/tylermuffly/midwifery/artifacts/doximity_public_matched.csv",
       "sha256": "9a87edaecc280e464f6a2a3c5f47a264ff8ba78d55940c9db6ae910aa1b59f65"
     },
     {
@@ -27,7 +27,7 @@
       "sha256": "373faf68085febd9cd34c74c2a39ecaaf8a2378fa36c7b060db7481001cadbb5"
     }
   ],
-  "code_sha256": "898599a1301d0c3e7c9fef557f602ea3dbd0da8516b9428fb5e3854eb3d3ed2e",
+  "code_sha256": "f74d4439c90e52f277ed7302c6d5f8e3be0fa5e7b86cef573f9380c2e094e63f",
   "code": [
     {
       "path": "audit_source_vintages.R",
@@ -43,11 +43,11 @@
     },
     {
       "path": "R/lib/provenance.R",
-      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
     },
     {
       "path": "R/lib/source_vintage.R",
-      "sha256": "527689647444b5d99bf328bf529e33c9655def52cd820cff032285ea180dd736"
+      "sha256": "92f60ec13974a5cdd46208e626d92650b6e62963ac52c2fb38241fa0589713e1"
     }
   ]
 }
