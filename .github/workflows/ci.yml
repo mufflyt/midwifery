@@ -124,6 +124,22 @@ jobs:
       - name: CCN -> state resolution contract
         run: Rscript tests/test_ccn_state.R
 
+      # Base R plus stringr. Every cross-source comparison pairs files published
+      # on different dates, and parse_vintage() is what knows those dates. Its
+      # dangerous failure is silent: a name it cannot read must return NA, never
+      # a plausible guess, or a comparison is dated wrongly by up to a year and
+      # nothing complains. These cases pin the conventions and the refusals.
+      - name: Source vintage contract
+        run: Rscript tests/test_source_vintage.R
+
+      # Base R. freeze_cohort.R reconstructs the producer of the frozen cohort,
+      # which had 77 readers and no writer. Its rule decides who is in the study,
+      # so an edit that moves membership must fail here rather than in a
+      # published number. Includes the NA case that was a real bug in the
+      # reconstruction: NA == "5" is NA, and ifelse(NA, a, b) returns NA.
+      - name: Freeze rule contract
+        run: Rscript tests/test_freeze_cohort.R
+
       # Base R only, same as above. 58.6% of the coordinates behind every
       # access map and the rurality stratifier carry a label naming the batch
       # they arrived in rather than the geocoder that produced them (#225).
@@ -358,6 +374,16 @@ jobs:
       # only this job installs. Placed in r-checks it failed with "there is no
       # package called 'dplyr'", which reads as a broken test rather than a
       # step in the wrong tier.
+      # HERE AND NOT IN r-checks, for the reason the comment above gives: this
+      # file needs dplyr, readr and digest, and r-checks is the stringr-only
+      # tier. It has existed since cycle 21 and had never run in CI, which is
+      # the same failure it was written to catch -- a provenance mechanism
+      # nothing exercises is documentation. It passes as-is; T221a/b were added
+      # to it for the sha256_of() memo, where the cache key is a correctness
+      # surface and not a speed one.
+      - name: Provenance wiring and hash memo
+        run: Rscript tests/test_cycle21_provenance_wiring.R
+
       - name: Science invariants (defects that actually occurred)
         run: Rscript tests/test_science_invariants.R
 

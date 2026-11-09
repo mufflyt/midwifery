@@ -1,0 +1,4 @@
+comparison,attributes_to,d_linked,d_members,d_class4,d_class5,d_no_class
+A_baseline_frozen -> B_logic_only_thru2025,matcher logic (class-4 retirement),-49,-218,-323,13,205
+B_logic_only_thru2025 -> C_logic_plus_vintage,NPPES vintage (2025-11-09 -> 2026-08-09),368,381,0,-13,-368
+A_baseline_frozen -> C_logic_plus_vintage,BOTH (what a naive before/after shows),319,163,-323,0,-163

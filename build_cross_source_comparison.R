@@ -76,6 +76,7 @@ suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr)
 source(file.path("R", "lib", "clean_state.R"))
 source(file.path("R", "lib", "medicare_duckdb.R"))  # samsung_volume_path(), duckdb_connect()
 source(file.path("R", "lib", "wilson_interval.R"))  # wilson_ci()
+source(file.path("R", "lib", "source_vintage.R"))     # source_vintage_table()
 
 MEDICAID_SEGMENTS_REL <- file.path(
   "doge_opendata", "medicaid_provider_enrollment_segments_2026_07_24",
@@ -224,8 +225,44 @@ for (i in seq_along(src_names)) {
       pct_agree = if (nrow(m)) round(100 * sum(m$state_a == m$state_b) / nrow(m), 1) else NA_real_)
   }
 }
+# EVERY PAIR CARRIES ITS VINTAGE GAP, because `filter(year == max(year))` above
+# takes each source at ITS OWN newest release, and those land on different
+# schedules. Freshest-per-source is not closest-to-each-other -- it is the
+# opposite, since independently maximising each date maximises the spread. This
+# matrix used to publish source_a, source_b and pct_agree with NO date column,
+# so a pairing 15 months apart (facility_affiliation_ccn 2026-10-01 vs
+# open_payments PY2025, centred 2025-07-02) appeared in the same units as one a
+# month apart. Measured 2026-11-09: 10 of 21 datable pairs exceeded six months,
+# median 4.3. The gap does not invalidate a comparison, but it has to travel
+# WITH it -- a midwife can legitimately have moved in between, and a reader
+# needs to see how much room there was for that.
+#
+# Sources whose vintage is not recorded anywhere (healthgrades, cms_ndh_fhir,
+# state_boards_of_nursing) get NA, not a guess. See R/lib/source_vintage.R.
+vint <- tryCatch(source_vintage_table(), error = function(e) {
+  warning(sprintf("source_vintage_table() failed (%s); pairwise matrix will carry no vintages.",
+                  conditionMessage(e)), call. = FALSE)
+  NULL
+})
 pairwise_df <- bind_rows(pairwise) %>% arrange(source_a, source_b)
-write_csv(pairwise_df, "artifacts/cross_source_pairwise_matrix.csv")
+if (!is.null(vint)) {
+  v <- vint %>% select(source, vintage_used)
+  pairwise_df <- pairwise_df %>%
+    left_join(v %>% rename(source_a = source, vintage_a = vintage_used), by = "source_a") %>%
+    left_join(v %>% rename(source_b = source, vintage_b = vintage_used), by = "source_b") %>%
+    mutate(vintage_gap_months = round(abs(vintage_gap_months(vintage_a, vintage_b)), 1))
+  miss <- setdiff(unique(c(pairwise_df$source_a, pairwise_df$source_b)), v$source)
+  if (length(miss))
+    warning(sprintf(paste0("these compared sources are absent from source_vintage_table(), so ",
+                           "their pairs carry no gap: %s.\n  Add them to the registry in ",
+                           "R/lib/source_vintage.R rather than leaving the gap blank."),
+                    paste(miss, collapse = ", ")), call. = FALSE)
+  n_over <- sum(pairwise_df$vintage_gap_months > 6, na.rm = TRUE)
+  cat(sprintf("Vintage gaps attached: %d/%d pairs dated, %d over 6 months, widest %.1f\n",
+              sum(!is.na(pairwise_df$vintage_gap_months)), nrow(pairwise_df), n_over,
+              suppressWarnings(max(pairwise_df$vintage_gap_months, na.rm = TRUE))))
+}
+write_csv(pairwise_df, "artifacts/cross_source_pairwise_matrix.csv", na = "")
 cat(sprintf("Pairwise matrix: %d source pairs -> artifacts/cross_source_pairwise_matrix.csv\n", nrow(pairwise_df)))
 
 # =============================================================================
