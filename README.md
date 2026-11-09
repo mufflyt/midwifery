@@ -1366,7 +1366,7 @@ routed midwife.
 and `artifacts/table1_midwives.csv`.
 
 Characteristics of the **11,920** ACTIVE, primary-linked midwives: certification
-(CNM 99.0% / CM 1.0%), sex as recorded in NPPES, ACOG district, rurality, years
+(CNM 99.0% / CM 1.0%), sex as recorded in NPPES, ACNM region, rurality, years
 since NPI enumeration, and years observed in NPPES. Long format
 (`characteristic` / `n` / `percent` / `category`) following the isochrones
 vignette `how-to-create-table-1.Rmd`.
@@ -1412,8 +1412,10 @@ the current 12,170-person cohort: 4,628 single-state, 2,492 multi-state
 (35.0% of the 7,120 with a profile), summing exactly to cohort N. It has not
 yet appeared in a full Table 1 build — the published run still needs
 `artifacts/nppes_sex_enumeration.csv`, `artifacts/dac_cnm_education.csv`,
-`artifacts/hpsa_status.csv`, `artifacts/medicare_participation.csv` and the
-ACOG crosswalk, none of which this addition touches or depends on. See
+`artifacts/hpsa_status.csv` and `artifacts/medicare_participation.csv`,
+none of which this addition touches or depends on. The ACOG crosswalk is no
+longer among them: Table 1's regional variable is now ACNM Board regions,
+mapped by the tracked `R/lib/acnm_regions.R` rather than an external file. See
 [the state-source audit appendix, §5](docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md)
 for why this variable exists: joined against per-NPI cross-source consensus,
 multi-state-licensed midwives land in the "Split" (no-majority) disagreement
@@ -1453,7 +1455,7 @@ age-model benchmarking opportunity AMCB's data makes possible:
 [docs/TECHNICAL_APPENDIX_AMCB_DEMOGRAPHIC_COMPARISON.md](docs/TECHNICAL_APPENDIX_AMCB_DEMOGRAPHIC_COMPARISON.md).
 
 **Table 1, by year (`build_table1_by_year.R`, 2026-11-05).** Table 1 proper is
-cross-sectional — most of its variables (sex, age, ACOG district, rurality,
+cross-sectional — most of its variables (sex, age, ACNM region, rurality,
 Healthgrades, CMS NDH, HPSA) are single current snapshots with no year
 dimension at all. The identity set tracked here is the same fixed,
 today-ACTIVE cohort Table 1 uses — never reconstructed year to year — but a

@@ -375,7 +375,7 @@ mw_build_catalog <- function(root = ".") {
           # a real, geocodable location that ACOG's district system has no
           # bucket for. Computed against THIS box's own population
           # (geocoded_n), not table1.n's narrower primary-linked-only
-          # population -- see table1.acog_excluded_n's own comment for why
+          # population -- see table1.acnm_unmapped_n's own comment for why
           # those two must never share a denominator.
           if ("n_acog_unmapped" %in% names(g_active)) {
             cat_$exclusion$acog_excluded_n <- g_active$n_acog_unmapped
@@ -842,16 +842,16 @@ mw_build_catalog <- function(root = ".") {
       r <- t1[grepl(rx, t1$characteristic, ignore.case = TRUE), ]
       if (nrow(r)) r$percent[1] else NA_real_
     }
-    # This row's own percent is NA by design (build_table1_midwives.R writes
-    # it that way): these people ARE included in the cohort and DO have a
-    # geocodable address, they just have no ACOG district to be a percentage
-    # OF, so the row carries a raw n, not a share. pick() reads $percent and
-    # would silently return NA for this one; read $n directly instead.
+    # This row's own percent is NA by design: these people remain in the
+    # Table 1 cohort but their state/jurisdiction is absent from the supplied
+    # ACNM region table. Read the raw n rather than asking pick() for percent.
     pickn <- function(rx) {
       r <- t1[grepl(rx, t1$characteristic, ignore.case = TRUE), ]
       if (nrow(r)) r$n[1] else NA_real_
     }
-    acog_excluded_n <- pickn("Overseas-military or US-territory address")
+    acnm_unmapped_n <- pickn(
+      "State/jurisdiction not mappable to an ACNM region"
+    )
     # t1$n[1] IS NOT NECESSARILY THE CANONICAL COHORT. The committed CSV is the
     # last COMPLETE build (2026-08-14, n = 11,920) while docs/table1_midwives.md
     # beside it states 12,171 -- a later render from a machine holding none of
@@ -900,8 +900,12 @@ mw_build_catalog <- function(root = ".") {
       # superseded by this count. #222 is settled: the figure uses the
       # membership rule (exclusion.active_membership_n), and
       # exclusion.active_match_status_n remains published beside it.
-      acog_excluded_n   = acog_excluded_n,
-      acog_excluded_pct = if (!is.na(acog_excluded_n)) 100 * acog_excluded_n / t1$n[1] else NA_real_
+      acnm_unmapped_n = acnm_unmapped_n,
+      acnm_unmapped_pct = if (!is.na(acnm_unmapped_n)) {
+        100 * acnm_unmapped_n / t1$n[1]
+      } else {
+        NA_real_
+      }
     )
   }
 

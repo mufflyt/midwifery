@@ -7,7 +7,7 @@
 #
 # WHAT THIS IS, AND WHAT IT IS NOT. Table 1 proper (build_table1_midwives.R)
 # is cross-sectional: one row per midwife, characteristics as of today. Most
-# of its variables have no year dimension at all -- sex, age, ACOG district,
+# of its variables have no year dimension at all -- sex, age, ACNM region,
 # rurality, Healthgrades, CMS NDH and HPSA status are all single, current
 # snapshots, because that is all their sources ever offer.
 #

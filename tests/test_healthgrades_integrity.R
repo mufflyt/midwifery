@@ -113,25 +113,42 @@ if (file.exists(mw_data_path("artifacts/table1_midwives.csv"))) {
   # Both facts are still checked, just the right way round: the note's number
   # must match the row that carries it, and every block must sum to N.
   t1md <- readLines("docs/table1_midwives.md", warn = FALSE)
-  note <- grep("ACOG district.*exclude", t1md, value = TRUE)[1]
-  chk(!is.na(note) && nzchar(note),
-      "Table 1 note about ACOG-district exclusions is still present")
-  acog_excl <- suppressWarnings(as.integer(gsub(",", "",
-    sub(".*exclude ([0-9,]+) midwi.*", "\\1", note))))
-  chk(!is.na(acog_excl),
-      sprintf("the excluded count parses out of the note [%s]", acog_excl))
-
   reg <- t1 %>% filter(!category %in% hg_cats, !is.na(n))
 
-  # PROSE AGAINST DATA: the number the note claims is excluded must equal the
-  # row that carries those people. This is the check the old grep was reaching
-  # for, and the one that actually catches the note and the block disagreeing.
-  excl_row <- reg$n[reg$category == "ACOG district" &
-                      grepl("no ACOG district|Overseas", reg$characteristic)]
-  chk(length(excl_row) == 1L && !is.na(acog_excl) && excl_row == acog_excl,
-      sprintf("the note's %s excluded matches the row carrying them (%s)",
-              format(acog_excl, big.mark = ","),
-              if (length(excl_row) == 1L) format(excl_row, big.mark = ",") else "no such row"))
+  # THE REGIONAL BLOCK IS ACOG IN THE COMMITTED TABLE AND ACNM IN THE CODE.
+  # build_table1_midwives.R now emits "ACNM region" (#262), but the committed
+  # CSV and .md are the last complete ACOG-era build and cannot be rebuilt on
+  # a checkout without the person-level enrichment inputs. So the prose-vs-data
+  # check runs against whichever block the table in hand actually carries, and
+  # neither variant silently skips it. ACNM has no excluded count to reconcile:
+  # overseas-military and territory addresses MAP (Uniformed Services and PR/GU
+  # /AS are real regions), and the few jurisdictions absent from the supplied
+  # table sit on an unmapped row inside the block -- so "every block sums to N"
+  # below is the whole check there.
+  if (any(reg$category == "ACOG district")) {
+    note <- grep("ACOG district.*exclude", t1md, value = TRUE)[1]
+    chk(!is.na(note) && nzchar(note),
+        "Table 1 note about ACOG-district exclusions is still present")
+    acog_excl <- suppressWarnings(as.integer(gsub(",", "",
+      sub(".*exclude ([0-9,]+) midwi.*", "\\1", note))))
+    chk(!is.na(acog_excl),
+        sprintf("the excluded count parses out of the note [%s]", acog_excl))
+
+    # PROSE AGAINST DATA: the number the note claims is excluded must equal the
+    # row that carries those people. This is the check the old grep was reaching
+    # for, and the one that actually catches the note and the block disagreeing.
+    excl_row <- reg$n[reg$category == "ACOG district" &
+                        grepl("no ACOG district|Overseas", reg$characteristic)]
+    chk(length(excl_row) == 1L && !is.na(acog_excl) && excl_row == acog_excl,
+        sprintf("the note's %s excluded matches the row carrying them (%s)",
+                format(acog_excl, big.mark = ","),
+                if (length(excl_row) == 1L) format(excl_row, big.mark = ",") else "no such row"))
+  } else {
+    chk(any(reg$category == "ACNM region"),
+        "Table 1 carries a regional block (ACOG district or ACNM region)")
+    chk(any(grepl("ACNM region", t1md)),
+        "Table 1 note describes the ACNM regional denominator")
+  }
 
   for (g in unique(reg$category)) {
     tot <- sum(reg$n[reg$category == g])
