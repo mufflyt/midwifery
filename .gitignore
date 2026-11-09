@@ -474,6 +474,13 @@ artifacts/midwife_hospital_matches.csv
 # Hospital affiliation, person level
 artifacts/dac_facility_affiliations.csv
 artifacts/dac_hospital_affiliation_person.csv
+# Its sidecar follows the artifact. It is small and carries no person-level
+# data, but a sidecar tracked without the file it describes is a dangling
+# claim: nothing in a clone can check the hashes it records. Note that
+# R/lib/source_vintage.R READS this sidecar for the affiliation vintage, so it
+# has to exist locally -- re-run extract_dac_facility_affiliations.R rather
+# than looking for it in the repo.
+artifacts/dac_facility_affiliations.csv.provenance.json
 
 # Open Payments business addresses -- 6,084 rows each
 artifacts/open_payments_business_address.csv

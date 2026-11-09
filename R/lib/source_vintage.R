@@ -280,16 +280,48 @@ source_vintage_table <- function(data_root = Sys.getenv("MIDWIFERY_DATA_ROOT", "
           files = f[!is.na(parse_vintage(f)) & parse_vintage(f) == max(av)])
   }
 
-  # --- Facility affiliation: one snapshot --------------------------------------
+  # --- Facility affiliation: dated from what the EXTRACT READ ------------------
+  # THE NEWEST DIRECTORY ON THE VOLUME IS NOT THIS SOURCE'S VINTAGE, and taking
+  # max() of them was a four-month error in a shipped artifact.
+  # extract_dac_facility_affiliations.R reads a path it names explicitly and
+  # ASSERTS the filename carries DAC_VINTAGE, so the derived artifact provably
+  # comes from one release -- but nothing downstream could see which. Measured
+  # 2026-11-09: the only directory on the volume is doctors_and_clinicians_2026_10
+  # while the extract reads .../doctors_and_clinicians_2026_06/, so this row said
+  # 2026-10 about rows cut from 2026-06, and the widest pair in the gap matrix
+  # (15.0 months) was built on that.
+  #
+  # The vintage now comes from the derived artifact's own provenance sidecar:
+  # the recorded input path carries the release in its name, which is the only
+  # written-down statement of what was actually read. With no sidecar there is
+  # nothing to read, so the row is UNRECORDED and drops out of the gap matrix --
+  # the same treatment healthgrades gets, and for the same reason. The newest
+  # directory still appears, as closest_unused, where an unused release belongs.
   fa <- vol("facility_affiliation")
   if (!is.na(fa) && dir.exists(fa)) {
     d <- list.dirs(fa, recursive = FALSE)
     av <- sort(parse_vintage(d))
-    if (length(av))
-      add("facility_affiliation_ccn", "snapshot", max(av), "filename",
-          sprintf("CMS does not archive this product; %d snapshot(s) held", length(av)),
-          # Dated from DIRECTORY names, so there is no file to hash here.
-          n_available = length(av), files = character(0))
+    newest <- if (length(av)) format(max(av)) else NA_character_
+    derived <- dr("artifacts/dac_facility_affiliations.csv")
+    side <- paste0(derived, ".provenance.json")
+    used <- NA
+    if (file.exists(side)) {
+      rec <- tryCatch(jsonlite::fromJSON(side)$inputs$path, error = function(e) NULL)
+      rec <- rec[grepl("Facility_Affiliation", rec, fixed = TRUE)]
+      cand <- sort(parse_vintage(rec))
+      if (length(cand)) used <- max(cand)
+    }
+    if (!is.na(used))
+      add("facility_affiliation_ccn", "snapshot", used,
+          "filename of the input its provenance sidecar records",
+          sprintf("CMS does not archive this product; %d directory(ies) on the volume", length(av)),
+          n_available = length(av), closest_available = newest, files = character(0))
+    else
+      add("facility_affiliation_ccn", "snapshot", NA, "unrecorded",
+          paste("artifacts/dac_facility_affiliations.csv has no provenance sidecar, so which",
+                "CMS release it was cut from is not written down anywhere;",
+                "re-run extract_dac_facility_affiliations.R to record it"),
+          n_available = length(av), closest_available = newest, files = character(0))
   }
 
   # --- Medicaid enrollment segments (DOGE) -------------------------------------

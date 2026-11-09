@@ -1,5 +1,4 @@
 source,time_kind,vintage_used,period_start,period_end,vintage_quality,n_vintages_available,closest_unused,source_files,detail
-facility_affiliation_ccn,snapshot,2026-10-01,,,filename,1,,,CMS does not archive this product; 1 snapshot(s) held
 state_boards_of_nursing,interval,2026-08-28,2026-08-28,2026-08-28,git commit dates per state (UPPER bound),,,artifacts/live_washington_bon_ingested_midwives_from_tracked_roster.csv,"1 states scraped across 2026-08-28..2026-08-28 (0 days apart), not one snapshot"
 doximity,snapshot,2026-08-11,,,record (date_modified),,,artifacts/doximity_public_matched.csv,"per-record date_modified, 2026-01-09..2026-08-11 across 4,655 rows"
 nppes,snapshot,2026-08-09,,,record (snapshot_date in midwife_panel.csv),27,,midwife_panel.csv,"panel holds 20 snapshots, 2007-11-12..2026-08-09"
@@ -7,4 +6,5 @@ pecos_revalidation,snapshot,2026-08-01,,,filename,39,,/Volumes/MufflySamsung/cms
 medicaid_enrollment,snapshot,2026-07-24,,,filename,1,,,dated enrollment intervals; published as one extract
 dac_physician_compare,snapshot,2026-06-01,,,filename,2,2026-07-01,DAC_NationalDownloadableFile_2026-06.csv,"files on disk: DAC_NationalDownloadableFile_2026-07.csv, DAC_NationalDownloadableFile_2026-06.csv"
 open_payments,interval,2025-07-02,2025-01-01,2025-12-31,program year (table name),13,,,program years 2013..2025; PY2025 spans the calendar year and CMS published it ~2026-06
+facility_affiliation_ccn,snapshot,,,,unrecorded,1,2026-10-01,,"artifacts/dac_facility_affiliations.csv has no provenance sidecar, so which CMS release it was cut from is not written down anywhere; re-run extract_dac_facility_affiliations.R to record it"
 healthgrades,snapshot,,,,unrecorded,,,healthgrades_midwives.csv,untracked scrape with no date in filename or records; nothing recorded it
