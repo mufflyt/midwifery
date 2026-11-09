@@ -10,15 +10,53 @@
 # filtering, same clean_state()), reloaded here rather than sourced, to keep
 # this a self-contained script like every other extract_*.R in this repo.
 #
-# Medicaid is NOT included -- this audit's Medicaid source is a pre-built
-# Concordant/Discordant/... classification (R/lib/medicaid_state_concordance.R),
-# not raw per-NPI-year state values, so it cannot feed a pairwise state
-# comparison or a consensus score without rebuilding it from T-MSIS
-# enrollment intervals from scratch. Out of scope for this pass; the gap is
-# real and stated here rather than silently dropped.
+# MEDICAID IS NOW INCLUDED, AND THE GAP THAT KEPT IT OUT IS CLOSED. This
+# header used to read: "Medicaid is NOT included -- this audit's Medicaid
+# source is a pre-built Concordant/Discordant/... classification
+# (R/lib/medicaid_state_concordance.R), not raw per-NPI-year state values, so
+# it cannot feed a pairwise state comparison or a consensus score without
+# rebuilding it from T-MSIS enrollment intervals from scratch."
+#
+# HHS's DOGE team published those intervals on 2026-07-24 as Medicaid Provider
+# Enrollment Segments (opendata.hhs.gov): 65,970,112 segments, 4,416,627 NPIs,
+# 54 states, each row an NPI with a STATE_CD and dated start/end. No data-use
+# agreement. That is the raw per-NPI-year state the gap was about. Measured on
+# this cohort it reaches 9,901 NPIs in 2018 rising to 12,995 in 2024 (77.5%),
+# which makes it the second-widest per-year state source in the audit after
+# NPPES itself -- wider than PECOS, DAC or Open Payments.
+#
+# IT IS ALSO THE ONLY SOURCE THAT REFUSES TO NAME ONE STATE, and that is not a
+# defect to be deduped away. Cohort midwives average 1.64 Medicaid states each
+# in 2024. Asked "is she enrolled in the state CMS NDH lists?" Medicaid says
+# yes 90.5% of the time, flat, whether she holds one state or five; asked "is
+# her LARGEST Medicaid state that state?" the same records answer 33.4% at
+# five states. Running her through dedupe_one_per_npi() -- slice(1), i.e.
+# whichever row sorted first -- would pick one of several true answers at
+# random and book the rest as disagreement.
+#
+# So Medicaid enters twice, under two names that cannot be confused:
+#
+#   medicaid_enrollment   the MODAL state (most segments; ties broken
+#                         alphabetically so a rerun is reproducible). One
+#                         state per NPI, so it joins the pairwise matrix and
+#                         the consensus score on the same terms as every
+#                         other source.
+#   containment diagnostic  artifacts/cross_source_medicaid_containment.csv:
+#                         for each other source, how often THAT source's state
+#                         falls anywhere inside her Medicaid footprint. This
+#                         is the number that does not collapse her, and the
+#                         distance between the two is the finding, not noise.
+#
+# Medicaid is on an external volume, so unlike every other input here it is
+# resolved through samsung_volume_path() and its absence SKIPS it loudly
+# rather than killing a run that can still compare the other nine sources.
 #
 # 1. PAIRWISE MATRIX: every source's CURRENT state vs. every other source's
 #    (not just vs. NPPES) -- artifacts/cross_source_pairwise_matrix.csv
+# 1b. MEDICAID CONTAINMENT: for each other source, how often its state falls
+#    anywhere in the midwife's Medicaid footprint, beside how often it equals
+#    her modal Medicaid state -- artifacts/cross_source_medicaid_containment.csv
+#    (written only when the Medicaid volume is mounted)
 # 2. CONSENSUS SCORE: for each cohort NPI with >=2 sources reporting a
 #    current state, what fraction of those sources agree with the majority
 #    -- artifacts/cross_source_consensus_scores.csv (NPI-level) and
@@ -36,6 +74,68 @@
 suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr); library(tidyr)})
 
 source(file.path("R", "lib", "clean_state.R"))
+source(file.path("R", "lib", "medicare_duckdb.R"))  # samsung_volume_path(), duckdb_connect()
+
+MEDICAID_SEGMENTS_REL <- file.path(
+  "doge_opendata", "medicaid_provider_enrollment_segments_2026_07_24",
+  "medicaid-provider-enrollment-segments.parquet")
+
+#' Per-NPI Medicaid state footprint from the DOGE T-MSIS enrollment segments
+#'
+#' @param npis [character] the NPIs to keep. The published file covers
+#'   4,416,627 providers and ~7M NPI-state pairs; pulling all of that into R
+#'   to then inner-join it away made this the slowest step in the script by a
+#'   wide margin. The filter and both aggregations now run in DuckDB and only
+#'   the cohort's rows ever cross into R.
+#' @return list with `modal` (one row per NPI: the state with the most
+#'   segments, ties broken alphabetically so a rerun is identical) and
+#'   `footprint` (every distinct NPI/state pair). NULL when the volume is
+#'   not mounted.
+load_medicaid_states <- function(npis) {
+  path <- samsung_volume_path(MEDICAID_SEGMENTS_REL, must_exist = FALSE)
+  if (is.na(path)) {
+    cat("Medicaid enrollment segments NOT FOUND under any /Volumes/MufflySamsung*",
+        "mount.\n  Skipping Medicaid; the other nine sources are unaffected.\n",
+        "  Expected:", MEDICAID_SEGMENTS_REL, "\n")
+    return(NULL)
+  }
+  npis <- unique(trimws(npis[!is.na(npis) & nzchar(trimws(npis))]))
+  if (!length(npis)) return(NULL)
+
+  con <- duckdb_connect()
+  on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+  DBI::dbWriteTable(con, "wanted_npis", data.frame(npi = npis), overwrite = TRUE)
+
+  # STATE_CD is already a 2-letter postal code. clean_state() still decides
+  # what a state is -- one normalizer for every source in this file -- but it
+  # is applied to the handful of DISTINCT codes, not to millions of rows.
+  pairs <- DBI::dbGetQuery(con, sprintf(
+    "SELECT trim(s.NPI) AS npi, s.STATE_CD AS state, count(*) AS n_segments
+       FROM read_parquet(%s) s
+       JOIN wanted_npis w ON w.npi = trim(s.NPI)
+      WHERE s.STATE_CD IS NOT NULL
+      GROUP BY 1, 2", DBI::dbQuoteString(con, path)))
+  if (!nrow(pairs)) return(NULL)
+
+  lut <- tibble::tibble(state = unique(pairs$state)) %>%
+    dplyr::mutate(clean = clean_state(state))
+  pairs <- pairs %>%
+    dplyr::inner_join(lut, by = "state") %>%
+    dplyr::filter(!is.na(clean)) %>%
+    dplyr::select(npi, state = clean, n_segments) %>%
+    dplyr::group_by(npi, state) %>%
+    dplyr::summarise(n_segments = sum(n_segments), .groups = "drop")
+
+  modal <- pairs %>%
+    dplyr::arrange(npi, dplyr::desc(n_segments), state) %>%
+    dplyr::group_by(npi) %>% dplyr::slice(1) %>% dplyr::ungroup() %>%
+    dplyr::select(npi, state)
+  cat(sprintf("Medicaid enrollment segments: %s of %s requested NPIs, %s NPI-state pairs (%.2f states/NPI)\n",
+              format(nrow(modal), big.mark = ","), format(length(npis), big.mark = ","),
+              format(nrow(pairs), big.mark = ","), nrow(pairs) / max(nrow(modal), 1)))
+  list(modal = modal, footprint = pairs %>% dplyr::select(npi, state))
+}
+
 dedupe_one_per_npi <- function(df) {
   df %>% filter(!is.na(npi), !is.na(state)) %>% group_by(npi) %>% slice(1) %>% ungroup()
 }
@@ -83,6 +183,10 @@ ndh <- read_csv("artifacts/cms_ndh_midwives.csv", col_types = cols(.default = "c
   mutate(state = clean_state(str_match(ndh_addresses, "\\b([A-Z]{2})\\s+\\d{5}")[, 2])) %>%
   transmute(npi = trimws(npi), state) %>% dedupe_one_per_npi()
 
+# Every other source here is already cohort-scoped; Medicaid is national, so
+# it is given the cohort explicitly rather than filtered after the fact.
+medicaid <- load_medicaid_states(link$npi)
+
 cat("Sources reloaded.\n")
 
 # =============================================================================
@@ -99,6 +203,10 @@ current_states <- list(
   state_boards_of_nursing  = bon,
   cms_ndh_fhir              = ndh
 )
+# Appended rather than placed inline so the nine pre-existing sources keep
+# their order, and so a run without the volume produces the same matrix it
+# always did rather than a differently-shaped one.
+if (!is.null(medicaid)) current_states$medicaid_enrollment <- medicaid$modal
 cat("Current-snapshot NPI counts: ", paste(sprintf("%s=%d", names(current_states), vapply(current_states, nrow, 1L)), collapse = ", "), "\n")
 
 src_names <- names(current_states)
@@ -118,6 +226,36 @@ for (i in seq_along(src_names)) {
 pairwise_df <- bind_rows(pairwise) %>% arrange(source_a, source_b)
 write_csv(pairwise_df, "artifacts/cross_source_pairwise_matrix.csv")
 cat(sprintf("Pairwise matrix: %d source pairs -> artifacts/cross_source_pairwise_matrix.csv\n", nrow(pairwise_df)))
+
+# =============================================================================
+# 1b. MEDICAID CONTAINMENT -- the comparison that does not collapse her
+# =============================================================================
+# Every number in the matrix above asks "do these two sources name the same
+# state?". For a midwife enrolled in three state Medicaid programmes that
+# question has no single right answer, and pct_agree against
+# medicaid_enrollment is therefore a floor, not a measurement of error.
+#
+# This asks the other question: is the state the OTHER source names anywhere
+# in her Medicaid footprint? Same NPIs, same day, no state discarded. Report
+# both or neither -- the modal number alone reads as Medicaid disagreeing,
+# which is precisely the misreading this file exists to prevent.
+if (!is.null(medicaid)) {
+  containment <- bind_rows(lapply(setdiff(names(current_states), "medicaid_enrollment"), function(s) {
+    other <- current_states[[s]] %>% select(npi, state)
+    comparable <- other %>% semi_join(distinct(medicaid$footprint, npi), by = "npi")
+    hits <- comparable %>% inner_join(medicaid$footprint, by = c("npi", "state")) %>% distinct(npi)
+    modal_hits <- comparable %>% inner_join(medicaid$modal, by = c("npi", "state")) %>% distinct(npi)
+    tibble(source = s,
+           n_comparable = nrow(comparable),
+           n_in_medicaid_footprint = nrow(hits),
+           pct_in_medicaid_footprint = if (nrow(comparable)) round(100 * nrow(hits) / nrow(comparable), 1) else NA_real_,
+           n_equals_modal_state = nrow(modal_hits),
+           pct_equals_modal_state = if (nrow(comparable)) round(100 * nrow(modal_hits) / nrow(comparable), 1) else NA_real_)
+  })) %>% arrange(desc(n_comparable))
+  write_csv(containment, "artifacts/cross_source_medicaid_containment.csv")
+  cat("Medicaid containment (is the other source's state anywhere in her Medicaid footprint?):\n")
+  print(as.data.frame(containment))
+}
 
 # =============================================================================
 # 2. CONSENSUS SCORE per NPI, current snapshot, sources with >=2 reporting
