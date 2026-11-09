@@ -1,6 +1,6 @@
 {
   "artifact": "oig_style_field_dictionary.csv",
-  "written_utc": "2026-11-09 00:33:06 UTC",
+  "written_utc": "2026-11-09 00:45:33 UTC",
   "inputs": [
     {
       "path": "/Users/tylermuffly/midwifery/artifacts/cohort_midwives_tier1_tier2_bon_validated.csv",
@@ -35,11 +35,11 @@
       "sha256": "373faf68085febd9cd34c74c2a39ecaaf8a2378fa36c7b060db7481001cadbb5"
     }
   ],
-  "code_sha256": "93ee2272e519004299f48e33b6323b164f423ac01a2e8231ca021f98d5d80038",
+  "code_sha256": "95e2d674643ec284ac109cc799365187b4e453a075e4f885ef86dbd8d0a4b009",
   "code": [
     {
       "path": "analysis/oig_style_source_consistency.R",
-      "sha256": "51237543adc208c7927c9728fc2afff009dd2e8840c42a0971cdc64e0125acff"
+      "sha256": "9f34f1eac10a76c32a824d0a97f54319af0d8751e368c781cbe5a71a8311623b"
     },
     {
       "path": "R/analysis_args.R",
