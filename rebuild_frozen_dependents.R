@@ -449,7 +449,25 @@ REBUILD_ORDER <- list(
                    # header for why the full method sweep was judged not
                    # worth it here); same manual-Python-switch caveat as
                    # build_truth_fusion_predictions.R.
-                   "build_leave_one_source_out_sensitivity.R")),
+                   "build_leave_one_source_out_sensitivity.R",
+                   # Added 2026-11-08, by T5 -- which only reached this check
+                   # once the absolute-path failure above it was fixed, so the
+                   # job had been stopping before completeness ran at all.
+                   #
+                   # Both read amcb_npi_linkage_FROZEN plus truth_fusion_
+                   # claims.csv and truth_fusion_predictions_<method>.csv
+                   # (build_truth_fusion_predictions.R) and truth_fusion_
+                   # leave_one_out_predictions.csv (the script just above), so
+                   # both must follow all three and inherit the same manual-
+                   # Python-switch caveat: METHOD is dawid_skene, which needs
+                   # the Crowd-Kit venv.
+                   #
+                   # classify first: audit_migration_temporal_sensitivity.R
+                   # names migration_move_classification_full_panel.csv among
+                   # its provenance inputs, so running it first would record a
+                   # sha256 for the previous cohort's classification.
+                   "classify_migration_moves_full_panel.R",
+                   "audit_migration_temporal_sensitivity.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        # export_amcb_npi_geography.R writes the tracked state aggregate and
        # the gitignored person-level export, both of which read the crosswalk
