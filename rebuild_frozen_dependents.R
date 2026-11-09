@@ -491,7 +491,17 @@ REBUILD_ORDER <- list(
                    # its provenance inputs, so running it first would record a
                    # sha256 for the previous cohort's classification.
                    "classify_migration_moves_full_panel.R",
-                   "audit_migration_temporal_sensitivity.R")),
+                   "audit_migration_temporal_sensitivity.R",
+                   # Added 2026-11-09, by T5. Reads amcb_npi_linkage_FROZEN
+                   # directly plus truth_fusion_predictions_dawid_skene.csv and
+                   # truth_fusion_claims.csv (both from build_truth_fusion_
+                   # predictions.R above) -- it does NOT read classify_
+                   # migration_moves_full_panel.R's output, but is placed after
+                   # it here since both are part of the same migration-
+                   # classifier audit cluster and the ordering requirement
+                   # (after build_truth_fusion_predictions.R) is already
+                   # satisfied at this position.
+                   "audit_migration_stable_vs_mover_corroboration.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        # export_amcb_npi_geography.R writes the tracked state aggregate and
        # the gitignored person-level export, both of which read the crosswalk
