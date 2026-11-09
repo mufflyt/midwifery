@@ -161,17 +161,25 @@ numbers for both.
   `OPEN_PAYMENTS_YEAR=2017 python3 match_open_payments_general_payments.py`)
   and re-running `compare_dac_openpayments_to_nppes_address.R`.
 
-## 6. Three more views
+## 6. Two more views
 
 [`make_address_agreement_additional_figures.R`](../make_address_agreement_additional_figures.R)
-re-plots the table in §3 from three different angles — no new numbers of its
+re-plots the table in §3 from two different angles — no new numbers of its
 own.
+
+This section used to open with the heatmap below and credit it to that
+script. It does not come from that script. `docs/figures/address_agreement_heatmap.png`
+is written by [`make_address_agreement_heatmap.R`](../make_address_agreement_heatmap.R),
+which draws all five comparison artifacts rather than this appendix's two
+sources — and the additional-figures script used to write the same filename
+from the narrower data, so whichever ran last decided what was committed. The
+heatmap now has one writer; the §7 commands below no longer overwrite it.
 
 ![Every source, every geographic level, one view](figures/address_agreement_heatmap.png)
 
-- **Heatmap** (`docs/figures/address_agreement_heatmap.png`): every
-  source/level cell in §3 in one grid. Fastest way to see that the DAC row
-  runs noticeably warmer (lower agreement) than every Open Payments row.
+- **Heatmap** (`docs/figures/address_agreement_heatmap.png`, from
+  `make_address_agreement_heatmap.R`): every source/level cell across all five
+  comparisons in one grid, not only the two in §3.
 
 ![Agreement falls apart at finer geography](figures/address_agreement_cascade.png)
 
@@ -203,8 +211,11 @@ OPEN_PAYMENTS_YEAR=2024 python3 match_open_payments_general_payments.py
 Rscript compare_dac_openpayments_to_nppes_address.R
 Rscript make_address_agreement_figure.R
 
-# Three more views (heatmap, cascade, power check)
+# Two more views (cascade, power check)
 Rscript make_address_agreement_additional_figures.R
+
+# The heatmap across all five comparison artifacts (its only writer)
+Rscript make_address_agreement_heatmap.R
 ```
 
 Requires `midwife_panel.csv` (NPPES annual snapshots, gitignored,

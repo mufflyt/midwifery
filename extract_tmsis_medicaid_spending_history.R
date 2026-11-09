@@ -46,6 +46,7 @@
 # Output : artifacts/tmsis_medicaid_spending_cohort_by_year.csv (person-level, gitignored)
 # =============================================================================
 suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); library(readr)})
+source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-ingestion bootstrap
 
 SPEND_DB <- "/Volumes/MufflySamsung/DuckDB/medicaid_provider_spending_verified.duckdb"
 if (!file.exists(SPEND_DB))
@@ -59,7 +60,7 @@ coh <- link %>% filter(cohort_member == "TRUE") %>% transmute(npi = trimws(npi))
   filter(!is.na(npi), nzchar(npi)) %>% distinct()
 cat(sprintf("Cohort NPIs: %s\n", format(nrow(coh), big.mark = ",")))
 
-con <- dbConnect(duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 dbWriteTable(con, "cohort_npis", coh, overwrite = TRUE)
 dbExecute(con, sprintf("ATTACH '%s' AS spend_db (READ_ONLY)", SPEND_DB))

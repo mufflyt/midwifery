@@ -33,6 +33,7 @@
 # Output : artifacts/ppef_cohort_enrollment_year.csv (person-level, gitignored)
 # =============================================================================
 suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); library(readr); library(stringr)})
+source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-ingestion bootstrap
 
 PPEF <- "/Volumes/MufflySamsung/nppes_historical_downloads/pecos/PPEF_Enrollment_Extract_2026.07.17.csv"
 if (!file.exists(PPEF))
@@ -44,7 +45,7 @@ coh <- link %>% filter(cohort_member == "TRUE") %>% transmute(npi = trimws(npi))
   filter(!is.na(npi), nzchar(npi)) %>% distinct()
 cat(sprintf("Cohort NPIs: %s\n", format(nrow(coh), big.mark = ",")))
 
-con <- dbConnect(duckdb(), dbdir = ":memory:")
+con <- duckdb_connect(dbdir = ":memory:")
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 dbWriteTable(con, "cohort_npis", coh, overwrite = TRUE)
 

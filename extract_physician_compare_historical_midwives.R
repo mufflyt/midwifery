@@ -31,6 +31,7 @@
 # (NPI, vintage), person-level (same standing as dac_midwives.csv).
 # =============================================================================
 suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); library(readr)})
+source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-ingestion bootstrap
 source(file.path("R", "lib", "credential_filter.R"))
 
 VINTAGES <- list(
@@ -54,7 +55,7 @@ WAREHOUSE_VINTAGES <- list(
   list(vintage = "2025-06", table = "physician_compare_2025_Q2")
 )
 
-con <- dbConnect(duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
 # pattern-based column resolution for the warehouse tables, whose exact

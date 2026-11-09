@@ -22,6 +22,7 @@
 # Output: artifacts/cohort_midwives_open_payments_general_2025.csv
 # =============================================================================
 suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); library(readr)})
+source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-ingestion bootstrap
 
 RAW_FILE <- "/Volumes/MufflySamsung/open_payments_data/2025/unzipped_files/OP_DTL_GNRL_PGYR2025_P06302026_06032026.csv"
 stopifnot(file.exists(RAW_FILE))
@@ -39,11 +40,33 @@ coh <- cw %>%
 cat(sprintf("Loaded %s active cohort midwives from %s\n",
             format(nrow(coh), big.mark = ","), basename(MIDWIVES_FILE)))
 
-con <- dbConnect(duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 dbWriteTable(con, "cohort_npis", coh, overwrite = TRUE, temporary = TRUE)
 
-src <- sprintf("read_csv_auto(%s, all_varchar = TRUE, sample_size = -1, ignore_errors = true)",
+# strict_mode = false rather than ignore_errors = true. NO DATA WAS BEING
+# LOST HERE -- that was checked before changing it, and the check is the
+# point of this comment.
+#
+# CMS's PY2025 file is not valid CSV: line 3123 carries
+# Contextual_Information = "2025 Summary""", an odd number of quotes. A TYPED
+# read (explicit `columns = {...}`) aborts on it outright. This script's read
+# does not, because `all_varchar = TRUE` puts the sniffer on a path that
+# tolerates the stray quote: measured on the full 9.2 GB file, the old
+# `ignore_errors = true` and `strict_mode = false` BOTH return 16,131,856
+# rows, and the offending record is present and correct either way
+# (NPI 1447493820, $192.12, PY2025).
+#
+# The flag changed anyway because the two are not interchangeable in general.
+# `ignore_errors = true` suppresses EVERY row-level failure -- wrong column
+# count, undecodable bytes -- by dropping the row and reporting success. That
+# is how a PECOS extract silently lost 10 real enrolment records, including
+# two with accented names, before duckdb_connect() existed (see
+# medicare_duckdb.R and docs/TECHNICAL_APPENDIX_CSV_INGESTION_ENCODING.md).
+# `strict_mode = false` relaxes only RFC-4180 quoting and still fails loudly
+# on everything else, so it buys the tolerance this file actually needs
+# without buying blanket silence.
+src <- sprintf("read_csv_auto(%s, all_varchar = TRUE, sample_size = -1, strict_mode = false)",
                dbQuoteString(con, RAW_FILE))
 
 sql <- sprintf(r"(
