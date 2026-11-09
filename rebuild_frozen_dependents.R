@@ -141,7 +141,31 @@ REBUILD_ORDER <- list(
                    #
                    # Layer 1: it describes the crosswalk and feeds nothing
                    # downstream. Order within the layer is free.
-                   "report_linkage_veto_strata.R")),
+                   "report_linkage_veto_strata.R",
+                   # Added 2026-11-09, by T5 in the pull request that
+                   # introduced them -- which is now the sixth time this gate
+                   # has caught a new reader of the freeze before it shipped.
+                   #
+                   # compare_nppes_to_dac_demographics.R measures the cohort's
+                   # NPPES record against CMS's own DAC on sex, credential and
+                   # telephone. Every number it reports is a statement about
+                   # THESE NPIs, so left holding the previous freeze it would
+                   # publish agreement rates for a population the study no
+                   # longer has. It picks the NPPES vintage nearest the DAC's
+                   # and refuses a gap over MAX_GAP_MONTHS, so a rebuild cannot
+                   # silently widen the comparison window either.
+                   #
+                   # audit_linkage_arms_3way.R exists to keep a vintage change
+                   # and a logic change from being read as one effect: it
+                   # compares the frozen cohort against arms rebuilt with the
+                   # current matcher and with the newer panel. Arm A IS the
+                   # freeze, so a rebuild must re-describe it; the other arms
+                   # are Stage-1 files that may be absent, and it reports which
+                   # arms it found rather than failing. Both audit the crosswalk
+                   # and feed nothing downstream, so order within the layer is
+                   # free.
+                   "compare_nppes_to_dac_demographics.R",
+                   "audit_linkage_arms_3way.R")),
   list(layer = "2-cohort-structure", why = "cohort flow/composition/progression read FROZEN directly",
        scripts = c("R/05-stage-progression.R", "R/06-cohort-flow.R",
                    "R/07-cohort-composition.R")),
