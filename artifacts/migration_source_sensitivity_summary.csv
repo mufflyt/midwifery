@@ -1,0 +1,6 @@
+excluded_family,n_npi_years_variant,n_comparable_to_full,n_changed_value,pct_changed_value,n_lost_coverage,n_gained_coverage,mean_abs_rate_change_pts,max_abs_rate_change_pts,max_abs_rate_change_transition,mean_signed_rate_change_pts
+nppes,110605,110605,10494,9.49,108731,0,1.28,4.98,2020->2021,1.182
+dac_pecos_combined,218565,218565,2333,1.07,771,0,0.466,0.98,2020->2021,-0.466
+tmsis_medicaid,216680,216680,2108,0.97,2656,0,0.585,0.98,2020->2021,-0.585
+open_payments,219174,219174,625,0.29,162,0,0.095,0.36,2024->2025,-0.045
+facility_affiliation,219336,219336,78,0.04,0,0,0.031,0.31,2025->2026,-0.026

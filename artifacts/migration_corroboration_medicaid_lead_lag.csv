@@ -1,0 +1,55 @@
+direction_type,category,n,total_panel_moves,total_matched_moves,pct_of_matched,year_from,year_to,group
+destination_arrival_timing,Enrollment led by 3+ yrs (pre-existing / long panel lag),16,213,125,12.8,2016,2017,control
+destination_arrival_timing,Enrollment led by 2 yrs (panel lagged 2 yrs),13,213,125,10.4,2016,2017,control
+destination_arrival_timing,Enrollment led by 1 yr (panel lagged 1 yr),50,213,125,40,2016,2017,control
+destination_arrival_timing,Same calendar year (0 yr lag),24,213,125,19.2,2016,2017,control
+destination_arrival_timing,Panel led by 1 yr (enrollment lagged 1 yr),13,213,125,10.4,2016,2017,control
+destination_arrival_timing,Panel led by 2+ yrs (enrollment lagged 2+ yrs),9,213,125,7.2,2016,2017,control
+origin_departure_termination_timing,Terminated BEFORE panel move year (panel lagged departure),0,213,55,0,2016,2017,control
+origin_departure_termination_timing,Terminated in SAME calendar year as panel move,0,213,55,0,2016,2017,control
+origin_departure_termination_timing,Terminated AFTER panel move year or still open-ended (enrollment lagged departure),55,213,55,100,2016,2017,control
+destination_arrival_timing,Enrollment led by 3+ yrs (pre-existing / long panel lag),27,324,195,13.8,2017,2018,spike
+destination_arrival_timing,Enrollment led by 2 yrs (panel lagged 2 yrs),12,324,195,6.2,2017,2018,spike
+destination_arrival_timing,Enrollment led by 1 yr (panel lagged 1 yr),63,324,195,32.3,2017,2018,spike
+destination_arrival_timing,Same calendar year (0 yr lag),69,324,195,35.4,2017,2018,spike
+destination_arrival_timing,Panel led by 1 yr (enrollment lagged 1 yr),13,324,195,6.7,2017,2018,spike
+destination_arrival_timing,Panel led by 2+ yrs (enrollment lagged 2+ yrs),11,324,195,5.6,2017,2018,spike
+origin_departure_termination_timing,Terminated BEFORE panel move year (panel lagged departure),0,324,130,0,2017,2018,spike
+origin_departure_termination_timing,Terminated in SAME calendar year as panel move,25,324,130,19.2,2017,2018,spike
+origin_departure_termination_timing,Terminated AFTER panel move year or still open-ended (enrollment lagged departure),105,324,130,80.8,2017,2018,spike
+destination_arrival_timing,Enrollment led by 3+ yrs (pre-existing / long panel lag),31,260,155,20,2018,2019,control
+destination_arrival_timing,Enrollment led by 2 yrs (panel lagged 2 yrs),7,260,155,4.5,2018,2019,control
+destination_arrival_timing,Enrollment led by 1 yr (panel lagged 1 yr),26,260,155,16.8,2018,2019,control
+destination_arrival_timing,Same calendar year (0 yr lag),75,260,155,48.4,2018,2019,control
+destination_arrival_timing,Panel led by 1 yr (enrollment lagged 1 yr),4,260,155,2.6,2018,2019,control
+destination_arrival_timing,Panel led by 2+ yrs (enrollment lagged 2+ yrs),12,260,155,7.7,2018,2019,control
+origin_departure_termination_timing,Terminated BEFORE panel move year (panel lagged departure),12,260,119,10.1,2018,2019,control
+origin_departure_termination_timing,Terminated in SAME calendar year as panel move,15,260,119,12.6,2018,2019,control
+origin_departure_termination_timing,Terminated AFTER panel move year or still open-ended (enrollment lagged departure),92,260,119,77.3,2018,2019,control
+destination_arrival_timing,Enrollment led by 3+ yrs (pre-existing / long panel lag),38,314,140,27.1,2022,2023,control
+destination_arrival_timing,Enrollment led by 2 yrs (panel lagged 2 yrs),12,314,140,8.6,2022,2023,control
+destination_arrival_timing,Enrollment led by 1 yr (panel lagged 1 yr),51,314,140,36.4,2022,2023,control
+destination_arrival_timing,Same calendar year (0 yr lag),22,314,140,15.7,2022,2023,control
+destination_arrival_timing,Panel led by 1 yr (enrollment lagged 1 yr),17,314,140,12.1,2022,2023,control
+destination_arrival_timing,Panel led by 2+ yrs (enrollment lagged 2+ yrs),0,314,140,0,2022,2023,control
+origin_departure_termination_timing,Terminated BEFORE panel move year (panel lagged departure),37,314,172,21.5,2022,2023,control
+origin_departure_termination_timing,Terminated in SAME calendar year as panel move,25,314,172,14.5,2022,2023,control
+origin_departure_termination_timing,Terminated AFTER panel move year or still open-ended (enrollment lagged departure),110,314,172,64,2022,2023,control
+destination_arrival_timing,Enrollment led by 3+ yrs (pre-existing / long panel lag),75,516,203,36.9,2023,2024,spike
+destination_arrival_timing,Enrollment led by 2 yrs (panel lagged 2 yrs),25,516,203,12.3,2023,2024,spike
+destination_arrival_timing,Enrollment led by 1 yr (panel lagged 1 yr),53,516,203,26.1,2023,2024,spike
+destination_arrival_timing,Same calendar year (0 yr lag),50,516,203,24.6,2023,2024,spike
+destination_arrival_timing,Panel led by 1 yr (enrollment lagged 1 yr),0,516,203,0,2023,2024,spike
+destination_arrival_timing,Panel led by 2+ yrs (enrollment lagged 2+ yrs),0,516,203,0,2023,2024,spike
+origin_departure_termination_timing,Terminated BEFORE panel move year (panel lagged departure),72,516,274,26.3,2023,2024,spike
+origin_departure_termination_timing,Terminated in SAME calendar year as panel move,46,516,274,16.8,2023,2024,spike
+origin_departure_termination_timing,Terminated AFTER panel move year or still open-ended (enrollment lagged departure),156,516,274,56.9,2023,2024,spike
+destination_arrival_timing,Enrollment led by 3+ yrs (pre-existing / long panel lag),18,179,27,66.7,2024,2025,control
+destination_arrival_timing,Enrollment led by 2 yrs (panel lagged 2 yrs),1,179,27,3.7,2024,2025,control
+destination_arrival_timing,Enrollment led by 1 yr (panel lagged 1 yr),8,179,27,29.6,2024,2025,control
+destination_arrival_timing,Same calendar year (0 yr lag),0,179,27,0,2024,2025,control
+destination_arrival_timing,Panel led by 1 yr (enrollment lagged 1 yr),0,179,27,0,2024,2025,control
+destination_arrival_timing,Panel led by 2+ yrs (enrollment lagged 2+ yrs),0,179,27,0,2024,2025,control
+origin_departure_termination_timing,Terminated BEFORE panel move year (panel lagged departure),39,179,98,39.8,2024,2025,control
+origin_departure_termination_timing,Terminated in SAME calendar year as panel move,24,179,98,24.5,2024,2025,control
+origin_departure_termination_timing,Terminated AFTER panel move year or still open-ended (enrollment lagged departure),35,179,98,35.7,2024,2025,control
