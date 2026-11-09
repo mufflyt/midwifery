@@ -33,6 +33,13 @@ nppes_api_cache.jsonl
 artifacts/flowmap_geocoding/
 artifacts/dac_vs_nppes_address_pairs.csv
 artifacts/pecos_vs_bon_address_pairs.csv
+# The row-level NPPES-vs-DAC demographic disagreements, for the same reason: one
+# row per cohort NPI carrying both sources' telephone and credential strings.
+# The agreement rates, the cross-tabs and the staleness bands derived from it
+# are tracked (artifacts/nppes_vs_dac_field_agreement.csv and
+# artifacts/nppes_vs_dac_agreement_by_record_age.csv); the join is not.
+# Rebuild with compare_nppes_to_dac_demographics.R.
+artifacts/nppes_vs_dac_field_disagreements.csv
 
 # Name-parser cache written by the isochrones parser
 .cache/
@@ -45,6 +52,12 @@ DAC_NationalDownloadableFile*.csv
 *.lock
 midwife_panel.csv
 midwife_panel.csv.lock
+# Single-year panel slices written while appending a new vintage, and the
+# pre-promotion copy kept beside it. Both are person-level NPPES at the same
+# scale as the panel itself (~500 MB each) and both are intermediates: the
+# promoted midwife_panel.csv is the only one anything reads.
+midwife_panel_[0-9][0-9][0-9][0-9].csv
+midwife_panel.csv.*backup
 # The taxonomy-scope sensitivity panels (PANEL_TAX_SCOPE=wide). Person-level
 # NPPES, 750-869 MB, and NOT covered by the line above -- they were staged once.
 midwife_panel_wide*.csv
