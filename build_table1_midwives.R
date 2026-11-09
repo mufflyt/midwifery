@@ -46,7 +46,7 @@ REF_YEAR <- 2026   # "years since" are measured to this study year, not Sys.Date
 # Every enrichment below is optional at its own call site -- absent file, block
 # fills with NA, script carries on. That is right per block and wrong in
 # aggregate: on 2026-09-11 this script ran on a machine holding none of them
-# and wrote a table with Sex 100% "not recorded", the regional block nearly
+# and wrote a table with Sex 100% "not recorded", the regional block 99.7%
 # "not mappable", and Language / Accepts new patients / Offers telehealth as
 # three empty rows -- 8 categories against the full table's 24 -- under the
 # SAME two filenames. docs/table1_midwives.md still carries that render, while
