@@ -162,9 +162,13 @@ files: reassignment affiliations here, revalidation enrollment state there.
 
 ## 4. The error floor
 
-If two sources disagree for a midwife, at least one of them is wrong for her. So with a
-disagreement rate \(d\) among the compared midwives, the worse of the two sources is
-wrong for at least \(d/2\) of them. `error_floor_pct` is that bound;
+Here a source is "wrong" for a midwife when its listed locations are not her full set
+of practice locations. Under that definition, two sources whose location sets share
+nothing cannot both be right, so with a disagreement rate \(d\) among the compared
+midwives, the worse of the two sources is wrong for at least \(d/2\) of them. Under a
+looser definition, where a source is right if every location it lists is real, the
+bound does not hold: a midwife who works at two sites, listed at one site in one source
+and at the other in the second, has neither source wrong, only both incomplete. `error_floor_pct` is that bound;
 `error_floor_ci_low` takes it from the lower end of the disagreement rate's Wilson
 interval. It needs no truth, but it is only a floor: it says nothing about which source
 is the worse one, and two sources that agree can both be wrong. Under the any-match rule
