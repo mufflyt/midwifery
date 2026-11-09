@@ -1,12 +1,14 @@
 # Technical Appendix: Full-Panel Migration Move Classification
 
 **Repository**: `midwifery`
-**Primary scripts**: [`classify_migration_moves_full_panel.R`](../classify_migration_moves_full_panel.R), [`R/lib/migration_move_classification.R`](../R/lib/migration_move_classification.R), [`build_truth_fusion_predictions.R`](../build_truth_fusion_predictions.R) (extended), [`build_leave_one_source_out_sensitivity.R`](../build_leave_one_source_out_sensitivity.R) (extended)
-**Tests**: [`tests/test_migration_move_classification.R`](../tests/test_migration_move_classification.R) (30 assertions: all 7 rule IDs + all 20 adversarial "saboteur" cases below)
+**Primary scripts**: [`classify_migration_moves_full_panel.R`](../classify_migration_moves_full_panel.R), [`R/lib/migration_move_classification.R`](../R/lib/migration_move_classification.R), [`build_truth_fusion_predictions.R`](../build_truth_fusion_predictions.R) (extended), [`build_leave_one_source_out_sensitivity.R`](../build_leave_one_source_out_sensitivity.R) (extended), [`audit_migration_source_sensitivity.R`](../audit_migration_source_sensitivity.R), [`audit_migration_temporal_sensitivity.R`](../audit_migration_temporal_sensitivity.R)
+**Figure scripts**: [`make_migration_classification_national_trends_figure.R`](../make_migration_classification_national_trends_figure.R), [`make_migration_classification_composition_figure.R`](../make_migration_classification_composition_figure.R), [`make_migration_source_sensitivity_figure.R`](../make_migration_source_sensitivity_figure.R)
+**Tests**: [`tests/test_migration_move_classification.R`](../tests/test_migration_move_classification.R) (37 assertions: all 7 rule IDs, all 20 adversarial "saboteur" cases below, and the proximity-window lookup logic in §7b)
 **Related**: [`docs/TECHNICAL_APPENDIX_TRUTH_FUSION_MIGRATION.md`](TECHNICAL_APPENDIX_TRUTH_FUSION_MIGRATION.md) (the 5-source model and spike-specific sub-annual findings this build generalizes to the whole panel), [`docs/TECHNICAL_APPENDIX_MIGRATION_CORROBORATION.md`](TECHNICAL_APPENDIX_MIGRATION_CORROBORATION.md) (the prior, 6-transition, 3-source pairwise corroboration pass this build extends to all 13 transitions and the full 5-source claims table)
-**Investigation date**: 2026-11-06
-**Status**: core classifier + full-panel run complete. Several items from the originating
-specification are explicitly deferred to a follow-on pass (§6 below) — not silently dropped.
+**Investigation date**: 2026-11-06/09
+**Status**: core classifier, full-panel run, source-family sensitivity, temporal sensitivity, and
+3 of 4 diagnostic figures complete. Several items from the originating specification are
+explicitly deferred to a follow-on pass (§8 below) — not silently dropped.
 
 ---
 
@@ -298,14 +300,36 @@ windows everywhere in the panel (2023→2024's 5→6→5→5 is the largest move
 reassuring: the already-rare confirmed bucket is not an artifact of how strict the exact-year
 matching is.
 
+## 7c. Diagnostic figures
+
+Three of the specification's four figures (§13D) are built, each reading only the tracked,
+transition/family-level aggregate CSVs above -- no person-level data in any figure:
+
+- **`docs/figures/migration_classification_national_trends.{pdf,png,svg}`**
+  (`make_migration_classification_national_trends_figure.R`) -- apparent movers, confirmed
+  (held-out), and indeterminate as parallel % of eligible pairs, 2013-2026, with the two known
+  snapshot-gap transitions shaded.
+- **`docs/figures/migration_classification_composition.{pdf,png,svg}`**
+  (`make_migration_classification_composition_figure.R`) -- the 5-way classification breakdown as
+  % of apparent movers specifically, per transition.
+- **`docs/figures/migration_source_sensitivity.{pdf,png,svg}`**
+  (`make_migration_source_sensitivity_figure.R`) -- the §7a table rendered as a two-panel chart,
+  ordered by prediction-change magnitude so NPPES's outsized role is immediately visible.
+
+**Figure 4 (individual evidence timelines) is not built** -- it needs a per-NPI, per-source,
+date-aware lookup tool that doesn't exist yet (discussed but not built as of this writing: given
+an NPI and a target date, print each source's nearest claim with its actual date and precision).
+That tool is a separate, self-contained piece of work from rendering aggregate tables, and is
+listed below rather than bundled in here.
+
 ## 8. Deferred to a follow-on pass
 
 Named explicitly so nothing from the originating specification is silently dropped:
 
 - The full 10-scenario sensitivity suite (specification §12) beyond what leave-one-out and the
   temporal-window analysis above already give for free.
-- Diagnostic figures (specification §13D) — build once the underlying tables exist and are
-  validated against real data.
+- Figure 4, individual evidence timelines (specification §13D) -- needs the per-NPI cross-source
+  date-aware lookup tool described in §7c above.
 - Re-extracting NPPES's `Last Update Date` (hook: `build_midwife_panel.R`'s column-pick list) and
   Open Payments' `Date_of_Payment`/`Payment_Publication_Date` (hook:
   `extract_open_payments_address_history.R`'s SQL) to upgrade those two sources' `date_precision`
