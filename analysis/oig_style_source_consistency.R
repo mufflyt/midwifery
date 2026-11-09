@@ -28,10 +28,14 @@
 # is the 2025-11-09 bulk file, the rest are 2026 pulls. Vintages are in the completeness
 # table, and every pair involving Open Payments carries that gap.
 #
-# ERROR FLOOR. If two sources disagree for a midwife, at least one of them is
-# wrong for her. With disagreement rate d among n compared midwives, the worse
-# of the two is wrong for at least d/2 of those n. That needs no truth, but it
-# is only a floor: two sources can agree and both be wrong.
+# ERROR FLOOR. Error here means a source's listed locations are not the
+# midwife's full set of practice locations. Two disjoint sets then cannot both
+# be right, so with disagreement rate d among n compared midwives, the worse of
+# the two is wrong for at least d/2 of those n. That needs no truth, but it is
+# only a floor (two sources can agree and both be wrong), and it does not hold
+# for the looser definition "every listed location is real": a multi-site
+# midwife listed at site X in one source and site Y in the other may have
+# neither source wrong in that sense, only both incomplete.
 #
 # LINEAGE. DAC is built from PECOS enrollment, so DAC-PECOS agreement is not
 # two independent votes (flag `shared_lineage_cms_enrollment`), and the
@@ -124,11 +128,13 @@ via_crosswalk <- function(df) {
 # A ZIP stored as a number loses its leading zero: PECOS affiliations carry
 # four- and eight-digit ZIPs, and the first five characters of an eight-digit
 # ZIP+4 are not its ZIP5. Restore the zero before shape_address() takes ZIP5.
+# Only all-digit values are padded; anything else ("12A34") passes through
+# unchanged and is classified malformed downstream.
 pad_zip_digits <- function(x) {
-  d <- gsub("[^0-9]", "", x)
+  d <- trimws(x)
+  digits <- !is.na(d) & grepl("^[0-9]+$", d)
   w <- ifelse(nchar(d) %in% 3:4, 5L, ifelse(nchar(d) %in% 6:8, 9L, nchar(d)))
-  out <- paste0(strrep("0", pmax(0L, w - nchar(d))), d)
-  ifelse(is.na(x) | !nzchar(d), x, out)
+  ifelse(digits, paste0(strrep("0", pmax(0L, w - nchar(d))), d), x)
 }
 
 load_source <- function(df, npi_col, state_col, city_col, zip_col, zip_mode = "substr") {
