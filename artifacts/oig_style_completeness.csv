@@ -1,6 +1,6 @@
 source,vintage,attribute,n_frame,n_record_present,n_record_absent,n_field_blank,n_field_malformed,n_usable,n_multiple_values,pct_record_present,pct_usable_of_present
-nppes,NPPES 2026 pull,practice_state,11920,11920,0,8,22,11890,0,100,99.7
-nppes,NPPES 2026 pull,practice_zip5,11920,11920,0,8,0,11912,0,100,99.9
+nppes,NPPES bulk file 2025-11-09,practice_state,11920,11920,0,8,22,11890,0,100,99.7
+nppes,NPPES bulk file 2025-11-09,practice_zip5,11920,11920,0,8,0,11912,0,100,99.9
 pecos,PECOS organization affiliations (current artifact),practice_state,11920,5559,6361,0,0,5559,341,46.6,100
 pecos,PECOS organization affiliations (current artifact),practice_zip5,11920,5559,6361,0,0,5559,1633,46.6,100
 dac,DAC 2026 pull,practice_state,11920,4870,7050,0,0,4870,174,40.9,100

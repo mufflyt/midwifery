@@ -58,8 +58,8 @@ than one distinct usable value in that source.
 
 | Source | Vintage | Field | Records present (% of 11,920) | Blank | Malformed | Usable | >1 value |
 |---|---|---|---:|---:|---:|---:|---:|
-| nppes | NPPES 2026 pull | practice_state | 11,920 (100.0%) | 8 | 22 | 11,890 | 0 |
-| nppes | NPPES 2026 pull | practice_zip5 | 11,920 (100.0%) | 8 | 0 | 11,912 | 0 |
+| nppes | NPPES bulk file 2025-11-09 | practice_state | 11,920 (100.0%) | 8 | 22 | 11,890 | 0 |
+| nppes | NPPES bulk file 2025-11-09 | practice_zip5 | 11,920 (100.0%) | 8 | 0 | 11,912 | 0 |
 | pecos | PECOS organization affiliations (current artifact) | practice_state | 5,559 (46.6%) | 0 | 0 | 5,559 | 341 |
 | pecos | PECOS organization affiliations (current artifact) | practice_zip5 | 5,559 (46.6%) | 0 | 0 | 5,559 | 1,633 |
 | dac | DAC 2026 pull | practice_state | 4,870 (40.9%) | 0 | 0 | 4,870 | 174 |
