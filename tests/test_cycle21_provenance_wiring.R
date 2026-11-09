@@ -207,5 +207,27 @@ cat("\n-- ADVERSARIAL --\n")
               length(sidecars)))
 }
 
+# sha256_of() memoises within a run, because write_with_provenance() hashes its
+# inputs once per artifact and three artifacts sharing one 10.8 GB NPPES
+# dissemination otherwise re-read 32 GB to compute the same digest three times.
+# A cache keyed on the PATH ALONE would be a correctness bug, not an
+# optimisation: a script that writes an artifact and then hashes it as the next
+# step's input would record the hash of the bytes it replaced. The key is path,
+# size and mtime together, and these two cases are the whole contract.
+{
+  f <- tempfile(fileext = ".txt")
+  writeLines("first", f)
+  h1 <- sha256_of(f)
+  chk(identical(h1, sha256_of(f)), "T221a a repeated hash of an unchanged file is stable")
+  # Same byte length, same second, on purpose. This is the case a key built from
+  # path + size + WHOLE-SECOND mtime gets wrong, and it is not hypothetical: a
+  # script that writes an artifact and immediately hashes it as the next step's
+  # input does exactly this.
+  writeLines("secnd", f)
+  chk(!identical(h1, sha256_of(f)),
+      "T221b a file rewritten to the SAME SIZE is re-hashed, not served from cache")
+  unlink(f)
+}
+
 cat(sprintf("\n%s (%d failures)\n", if (fails == 0L) "PASS" else "FAIL", fails))
 quit(status = if (fails == 0L) 0L else 1L)
