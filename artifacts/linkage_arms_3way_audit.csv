@@ -1,0 +1,4 @@
+arm,artifact,sha256,certificants,linked_identities,distinct_npis,members_by_rule,class1,class2,class3,class4,class5,no_class,class5_candidates_preserved,abstention_rate_pct,match_rate_pct
+A_baseline_frozen,amcb_npi_linkage_FROZEN.csv,dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b,22309,16898,16898,16898,9411,6483,681,323,156,5255,156,24.25,75.75
+B_logic_only_thru2025,amcb_npi_linkage_panel-midwifery-plus-nursing_years-through-2025.csv,dc214e6777afe4b31b6e39c3d9c621e8023b08f7bf6141875a8293b84416b095,22309,16849,16849,16680,9510,6500,670,0,169,5460,8,24.47,75.53
+C_logic_plus_vintage,amcb_npi_linkage_panel-midwifery-plus-nursing_years-2007-2026.csv,853470e7d9b8e9e69f1fc8980a3314a892f1eaec21845972160d9ee8d8f15cd4,22309,17217,17217,17061,9782,6663,616,0,156,5092,9,22.82,77.18
