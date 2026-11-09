@@ -1,10 +1,29 @@
 {
   "artifact": "midwife_organization_panel_summary.csv",
-  "written_utc": "2026-08-16 15:26:56 UTC",
+  "written_utc": "2026-10-19 19:49:53.521 UTC",
   "inputs": [
     {
       "path": "artifacts/midwife_organization_panel.csv",
-      "sha256": "c5d5f29935b5c00887ea8afca9101b45447c5670c829471cec215f0b7367c8cb"
+      "sha256": "8b856adf8759d619e1ad640072526160df94a64a5aadfd5f8282012273ae94a5"
+    }
+  ],
+  "code_sha256": "6f3395a5906863c3b3664f68cf0c7580fcf9e28d10cfe743ab9fa09bfac314a6",
+  "code": [
+    {
+      "path": "build_care_compare_organization_panel.R",
+      "sha256": "1ef64ec9c14ac514a570d48b90e72707442563f1a3c5d682250c47ed7abba30a"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
     }
   ]
 }

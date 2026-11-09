@@ -20,10 +20,15 @@ identifier, not licensure identifiers.
 **Consequently, prior claims of 9,037 or 11,355 independently board-verified
 midwives, and of broad multi-state BON coverage, should not be used.**
 
-The currently verified observed BON evidence consists of **374 Washington
-records** obtained from the Washington State Department of Health, carrying WA
-DOH `credentialnumber` values. That figure is independently corroborated by the
-Washington ingestion summary.
+**Update 2026-09-13: the evidence base below has grown since this draft was
+first written** (originally just the 374 Washington records). The currently
+verified observed BON evidence is **1,353 licences returned across three
+states, each queried from the board's own open data**: Washington DOH (369 of
+443 midwives matched by name, superseding the original 374-record figure once
+the roster was de-duplicated to 368 people), Colorado DORA (486 of 557), and
+the Texas BON (498 of 736). See README Figure 1 and
+`docs/figures/board_licensure_observed_counts.csv`. No other state has been
+queried.
 
 **This issue did not affect AMCB-to-NPI identity linkage, accepted NPIs, or
 downstream geographic or organizational assignments**, because those pipelines
@@ -34,8 +39,9 @@ recomputation.
 
 What requires correction is the claim of independent board confirmation and any
 coverage percentage derived from it. Specifically, a statement of the form
-"X midwives verified across N state boards" should be replaced with the observed
-figure of 374 in one state, or the claim withdrawn.
+"X midwives verified across N state boards" should be replaced with the
+observed figures above — 1,353 licences across Washington, Colorado and Texas —
+or the claim withdrawn.
 
 We are treating this as a data-provenance defect. No conclusion about intent is
 drawn or implied.

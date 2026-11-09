@@ -3,7 +3,7 @@ title: "Geographic Persistence of the Certified Nurse-Midwife and Certified Midw
 running-head: "Geographic Persistence of US Midwives"
 author:
   - name: Tyler Muffly, MD
-  - name: Elisabeth B. Thumm, PhD, CNM
+  - name: E. Brie Thumm, PhD, CNM, RN, MBA, FACNM
 date: today
 format:
   docx:
@@ -54,6 +54,10 @@ if (isTRUE(params$dev_mode)) {
 # build_stats_catalog.R for the three-vintages-of-one-number problem this
 # solves. If an input artifact has moved, this manuscript moves with it.
 K <- mw_init_stats(root)
+
+style_manuscript_table <- function(x, ..., align = NULL) {
+  knitr::kable(x, row.names = FALSE, align = align, ...)
+}
 ```
 
 ::: {.callout-note appearance="simple"}
@@ -365,6 +369,26 @@ and inflate significance with a denominator in the hundreds of millions,
 answering a different and less meaningful question than whether the two
 groups of *states* differ.
 
+## Medicaid procedure-billing activity
+
+As a second secondary analysis, cohort NPIs were matched to HHS's Medicaid
+Provider Spending by HCPCS and Medicaid Provider Enrollment Segments releases
+(opendata.hhs.gov, first published February 2026; outpatient and professional
+claim lines and T-MSIS-derived enrollment segments respectively, January
+2018--December 2024) on the servicing-provider NPI field, restricted to four
+procedures requiring in-person attendance: a screening pap test (HCPCS Q0091,
+G0101), urodynamics (CPT 51725--51729, 51736, 51741, 51784, 51785, 51797,
+51798), IUD insertion or removal (CPT 58300, 58301), and vaginal delivery
+(CPT 59400, 59409, 59410, and the VBAC-specific 59610, 59612, 59614). The HHS
+release suppresses any NPI-HCPCS-month cell with fewer than 12 claim lines
+and fewer than 12 beneficiaries, so a provider's absence from this record is
+uninformative about whether she accepted Medicaid patients for a given
+procedure; presence is read as a floor on real billing activity, not an
+estimate of it. Enrollment and spending were crossed into a three-level
+variable -- enrolled and billed, enrolled only, or neither -- since Medicaid
+enrollment is an administrative relationship with a state program and does
+not itself establish that a claim was ever submitted.
+
 ## Statistical analysis
 
 Proportions carry 95% Wilson score intervals, chosen over the normal
@@ -601,6 +625,40 @@ providers through the ArcGIS tier restores the gradient. Two methods with
 unrelated failure modes agree, and the third disagrees for a reason that is
 understood.
 
+## Medicaid procedure-billing activity
+
+Of `r mw_n("medicaid.midwife_cohort_n")` cohort midwives,
+`r mw_n("medicaid.midwife_vd_n")`
+(`r mw_safe_stat("medicaid.midwife_vd_pct", "%.1f")`%) billed Medicaid for a
+vaginal delivery under their own servicing NPI at least once between 2018 and
+2024, `r mw_safe_stat("medicaid.midwife_pap_pct", "%.1f")`% for a pap test,
+`r mw_safe_stat("medicaid.midwife_iud_pct", "%.1f")`% for IUD insertion or
+removal, and `r mw_safe_stat("medicaid.midwife_urodynamics_pct", "%.1f")`%
+for urodynamics. These figures are a floor, not an estimate, of Medicaid
+participation: across the entire national release, only
+`r mw_n("medicaid.national_vd_npi_ceiling")` distinct NPIs of any provider
+type ever appear as servicing provider for a vaginal-delivery code in seven
+years, so the cell-suppression threshold -- not clinical practice -- is the
+more likely explanation for most providers' absence.
+
+Crossing Medicaid enrollment against billing activity across all four
+procedures gives
+`r mw_safe_stat("medicaid.midwife_enrolled_and_billed_pct", "%.1f")`% of
+cohort midwives both enrolled and confirmed billing,
+`r mw_safe_stat("medicaid.midwife_enrolled_only_pct", "%.1f")`% enrolled with
+no confirmed billing activity in this record, and
+`r mw_safe_stat("medicaid.midwife_neither_pct", "%.1f")`% with neither
+signal. The number of distinct midwives billing for a vaginal delivery rose
+from `r mw_n("medicaid.midwife_vd_2018")` in 2018 to
+`r mw_n("medicaid.midwife_vd_2023")` in 2023 before falling to
+`r mw_n("medicaid.midwife_vd_2024")` in 2024, a decline attributable to
+incomplete state submissions in the final two months of the release rather
+than a real change in practice.
+`r mw_safe_stat("medicaid.top_state", "%s")` had the largest number of
+midwives billing Medicaid for vaginal delivery
+(`r mw_n("medicaid.top_state_n")` of `r mw_n("medicaid.top_state_cohort_n")`
+cohort midwives practicing in the state).
+
 # Discussion
 
 In a national cohort of certified midwives followed across
@@ -680,6 +738,19 @@ workforce are under-represented, and persistence among those we observe is not
 persistence among all certificants. The direction of this bias is toward
 overstating persistence.
 
+ACTIVE is itself an administrative status, not a measure of clinical
+practice: it reflects AMCB certification standing, not whether a certificant
+is currently seeing patients. An independent, claims-derived signal
+illustrates the gap directly. Among the `r mw_n("trilliant.n_cohort")`
+ACTIVE, primary-linked cohort members, `r mw_n("trilliant.n_inactive_despite_certified")`
+(`r mw_safe_stat("trilliant.pct_inactive_despite_certified", "%.1f")`%) show
+no current provider activity in a commercial claims directory
+(Trilliant Health, snapshot `r mw_safe_stat("trilliant.snapshot")`) despite
+holding an active certification -- a lower bound on how far "ACTIVE" departs
+from "currently practicing," since the claims-based signal has its own
+coverage gaps and cannot itself distinguish a true exit from an
+undercount.
+
 Two selection rates appear in this paper and they answer different questions.
 The figures above are cohort resolution. Ascertainment -- whether a certificant
 was found in the provider registry at all, including matches to a nursing-only
@@ -709,6 +780,12 @@ rurality conclusion survives.
 Second, practice address in the provider registry is the address a provider
 maintains for enumeration, which may lag an actual relocation or reflect an
 administrative rather than clinical site; both would bias persistence upward.
+Because the American Midwifery Certification Board roster carries no practice or residential address, cross-sectional disagreement between two external registries in a single year ($A_t \neq B_t$) cannot by itself establish which source is stale. To resolve directionality without a ground-truth registry, we tracked `r mw_n("leadlag.n_transitions")` consecutive provider-year transitions (2021--2025) linking the National Plan and Provider Enumeration System (NPPES) annual snapshots to CMS Open Payments (`Recipient_Primary_Business_Street_Address_Line1`, the recipient's reported primary practice location rather than a travel or event site). When the two sources agreed in year $t$ and diverged in year $t+1$, Open Payments broke concordance first `r mw_safe_stat("leadlag.state_break_ratio", "%.1f")`-fold more often than NPPES at the state level (`r mw_n("leadlag.state_a_breaks_n")` vs. `r mw_n("leadlag.state_b_breaks_n")` transitions) and `r mw_safe_stat("leadlag.street_break_ratio", "%.1f")`-fold more often at the street level (`r mw_n("leadlag.street_a_breaks_n")` vs. `r mw_n("leadlag.street_b_breaks_n")` transitions). Tracking 2022 discordances forward through 2026 separated these divergences into two distinct mechanisms: (1) *genuine relocation lead* (`r mw_safe_stat("leadlag.state_b_adopts_pct", "%.1f")`% [`r mw_n("leadlag.state_b_adopts_n")`/`r mw_n("leadlag.state_disc_2022_n")`] of state disagreements and `r mw_safe_stat("leadlag.street_b_adopts_pct", "%.1f")`% [`r mw_n("leadlag.street_b_adopts_n")`/`r mw_n("leadlag.street_disc_2022_n")`] of street disagreements), in which manufacturer field representatives logged the midwife's new primary business address in their customer-relationship management (CRM) system 1 to 4 years before the midwife updated her self-reported `practice_address` in NPPES; and (2) *multi-site or vendor-CRM modal switching* (`r mw_safe_stat("leadlag.city_a_reverts_pct", "%.1f")`% of city, `r mw_safe_stat("leadlag.zip_a_reverts_pct", "%.1f")`% of ZIP, and `r mw_safe_stat("leadlag.street_a_reverts_pct", "%.1f")`% of street disagreements), in which different manufacturers submitting payments in year $t$ versus $t+1$ recorded different clinic sites (or the CMS Validated List/NPPES address versus a local satellite clinic) for the same midwife. Conversely, back-checking 2026 CMS Doctors and Clinicians (DAC/PECOS) discordances against all historical NPPES snapshots (2007--2025) showed that only `r mw_safe_stat("leadlag.dac_street_prior_pct", "%.1f")`% (`r mw_n("leadlag.dac_street_prior_n")`/`r mw_n("leadlag.dac_street_disc_n")`) of discordant DAC street addresses and `r mw_safe_stat("leadlag.dac_zip_prior_pct", "%.1f")`% (`r mw_n("leadlag.dac_zip_prior_n")`/`r mw_n("leadlag.dac_zip_disc_n")`) of discordant DAC ZIP codes ever appeared in an earlier NPPES file, confirming that DAC--NPPES disagreement is not driven by DAC retaining outdated NPPES addresses.
+
+To test whether cross-database disagreement reflects accumulated staleness in self-reported NPPES records, we reconstructed each provider's empirical NPPES address-spell age across the 20-year panel (2007--2026)---defined as the number of consecutive years the provider's 2026 NPPES street address had remained unchanged---and stratified year-matched 2026 DAC-versus-NPPES concordance across `r mw_n("leadlag.dac_total_n")` linked midwives. Concordance followed a pronounced staleness decay curve: agreement peaked among midwives whose NPPES address had been updated 1 to 2 years earlier (`r mw_safe_stat("leadlag.dac_12yr_state_pct", "%.1f")`% state, `r mw_safe_stat("leadlag.dac_12yr_city_pct", "%.1f")`% city, `r mw_safe_stat("leadlag.dac_12yr_zip_pct", "%.1f")`% ZIP, and `r mw_safe_stat("leadlag.dac_12yr_street_pct", "%.1f")`% street; $n=`r mw_n("leadlag.dac_12yr_n")`$), dipped in the immediate year of an NPPES update (`r mw_safe_stat("leadlag.dac_0yr_state_pct", "%.1f")`% state and `r mw_safe_stat("leadlag.dac_0yr_street_pct", "%.1f")`% street at 0 years; $n=`r mw_n("leadlag.dac_0yr_n")`$) while Medicare PECOS reassignment caught up, and decayed steadily as uninterrupted NPPES spell age increased, falling to `r mw_safe_stat("leadlag.dac_11yr_city_pct", "%.1f")`% for city, `r mw_safe_stat("leadlag.dac_11yr_zip_pct", "%.1f")`% for ZIP, and `r mw_safe_stat("leadlag.dac_11yr_street_pct", "%.1f")`% for street among records untouched for 11 or more years ($n=`r mw_n("leadlag.dac_11yr_n")`$ ). A parallel gradient appeared across career stage, with street-level DAC concordance declining from `r mw_safe_stat("leadlag.car_35_street_pct", "%.1f")`% among midwives 3 to 5 years post-AMCB certification to `r mw_safe_stat("leadlag.car_1120_street_pct", "%.1f")`%--`r mw_safe_stat("leadlag.car_21_street_pct", "%.1f")`% among midwives more than 10 years post-certification. By contrast, when the same freshness stratification was applied to Open Payments versus NPPES (2022--2025; $n=`r mw_n("leadlag.op_total_n")`$ provider-years), street agreement showed no decay with NPPES record age (`r mw_safe_stat("leadlag.op_0yr_street_pct", "%.1f")`% at 0 years vs. `r mw_safe_stat("leadlag.op_11yr_street_pct", "%.1f")`% at $\ge 11$ years), corroborating CMS documentation that manufacturer reporting pipelines draw recipient profile data directly from NPPES and therefore echo longstanding un-updated NPPES addresses.
+
+Finally, we evaluated exact administrative lead and lag times around interstate relocations by linking all `r mw_n("leadlag.med_total_moves_n")` consecutive-year NPPES state transitions in the canonical cohort (2016--2026) to date-stamped state Medicaid provider enrollment intervals (`ENRL_START_DT` and `ENRL_END_DT`). Among the `r mw_n("leadlag.med_dest_matched_n")` NPPES interstate moves with an observed destination-state Medicaid enrollment segment, arrival and departure exhibited sharp administrative asymmetry. On arrival, destination-state Medicaid enrollment preceded or coincided with the NPPES state change in the vast majority of moves: excluding pre-existing multistate enrollments ($\ge 3$ years prior; $n=`r mw_n("leadlag.med_preexisting_3yr_n")`$) to focus on the acute window around the transition ($n=`r mw_n("leadlag.med_acute_n")`$), `r mw_safe_stat("leadlag.med_lead_12yr_pct", "%.1f")`% ($n=`r mw_n("leadlag.med_lead_12yr_n")`$) of midwives enrolled in their destination state's Medicaid program 1 to 2 years *before* their NPPES practice state changed and `r mw_safe_stat("leadlag.med_same_yr_pct", "%.1f")`% ($n=`r mw_n("leadlag.med_same_yr_n")`$) enrolled in the same calendar year, whereas only `r mw_safe_stat("leadlag.med_nppes_lead_pct", "%.1f")`% ($n=`r mw_n("leadlag.med_nppes_lead_n")`$) updated NPPES prior to Medicaid enrollment (a `r mw_safe_stat("leadlag.med_lead_ratio", "%.1f")`-to-1 lead ratio in favor of Medicaid). On departure, however, Medicaid termination lagged substantially behind NPPES: among `r mw_n("leadlag.med_orig_matched_n")` moves with prior origin-state Medicaid enrollment, `r mw_safe_stat("leadlag.med_orig_after_pct", "%.1f")`% ($n=`r mw_n("leadlag.med_orig_after_n")`$) remained open-ended or terminated 1 or more years *after* the midwife had already relocated her primary practice state in NPPES, compared with `r mw_safe_stat("leadlag.med_orig_same_pct", "%.1f")`% ($n=`r mw_n("leadlag.med_orig_same_n")`$) terminating in the move year and `r mw_safe_stat("leadlag.med_orig_before_pct", "%.1f")`% ($n=`r mw_n("leadlag.med_orig_before_n")`$) terminating beforehand.
+
 Third, `r mw_n("linkage.ambiguous")` records were deliberately left unresolved,
 and if indistinguishable names are not distributed at random with respect to
 mobility, the cohort is not representative of the roster. Fourth, county
@@ -719,6 +796,17 @@ restricted to midwives certified by a single certifying body; midwifery care
 delivered by certified professional midwives and state-licensed direct-entry
 midwives is not represented, so midwifery access is understated, and unevenly
 so across states[@NetworkPHL2023directentry].
+
+The Medicaid procedure-billing analysis carries three further limitations of
+its own. First, the HHS release's cell-suppression threshold means absence
+from the record is read as a floor on billing activity, not an estimate of
+it; a true non-participation rate cannot be recovered from this data.
+Second, matching was performed on NPI alone, with no verification that a
+midwife's billed procedure was rendered in a midwifery scope of practice
+rather than, for example, a collaborating-physician claim billed under a
+shared group NPI. Third, the OB-GYN comparators are presented as context for
+interpreting scale, not as this paper's population; no claim is made that
+they are a matched or representative comparison group.
 
 ## Conclusion
 
@@ -741,13 +829,20 @@ least able to replace one.
 # blocks, several of which (Medicare practice group size, telehealth, training
 # institution) belong to other papers. The blocks named here are the ones a
 # reader of a MOBILITY paper needs in order to judge who moved: credential,
-# sex, age, time since certification, and the rurality the persistence analysis
-# stratifies on. Named explicitly so adding a block to the artifact cannot
-# silently lengthen Table 1.
+# sex, clinician age, time since certification, panel observability, patient
+# age when Trilliant is available, work-setting context, and the
+# rurality the persistence analysis stratifies on. Named explicitly so adding a
+# block to the artifact cannot silently lengthen Table 1.
 BLOCKS <- c("Certification",
             "Sex",
             "Calibrated Age (100% Cohort Coverage)",
             "Years Since AMCB Initial Certification",
+            "Years Observed in NPPES Panel",
+            "Median age of the midwife's patients",
+            "Medicare practice group size (CMS DAC)",
+            "Number of practice locations (CMS DAC)",
+            "Any observed hospital work site",
+            "Primary claims-site setting",
             "Rurality (RUCC 2023)")
 
 t1src <- readr::read_csv(file.path(root, "artifacts", "table1_midwives.csv"),
@@ -765,7 +860,8 @@ for (b in BLOCKS) {
     rows[[length(rows) + 1]] <- data.frame(
       Characteristic = paste0("\u00a0\u00a0", blk$characteristic[i]),
       `n (%)` = if (is.na(pct)) {
-        sprintf("%s (not recorded)", formatC(blk$n[i], format = "d", big.mark = ","))
+        sprintf("%s (not recorded/unresolved/not applicable)",
+                formatC(blk$n[i], format = "d", big.mark = ","))
       } else {
         sprintf("%s (%.1f)", formatC(blk$n[i], format = "d", big.mark = ","), pct)
       },
@@ -774,8 +870,8 @@ for (b in BLOCKS) {
 }
 t1out <- do.call(rbind, rows)
 
-knitr::kable(t1out, row.names = FALSE, align = "lr",
-  caption = sprintf("Table 1. Characteristics of the %s actively certified, primary-linked midwives. Values are n (%%) unless noted. Percentages within a block are computed on the members of that block with the characteristic recorded, so a block containing a not-recorded row does not sum to 100.",
+style_manuscript_table(t1out, align = "lr",
+  caption = sprintf("Table 1. Characteristics of the %s actively certified, primary-linked midwives. Values are n (%%) unless noted. Percentages exclude rows labelled not recorded/unresolved/not applicable; those rows are shown to preserve cohort accounting.",
                     formatC(t1src$n[1], format = "d", big.mark = ",")))
 ```
 
@@ -786,7 +882,7 @@ t2 <- data.frame(
   `Same ZIP code` = sprintf("%.1f", c(K$persist$annual_zip, K$persist$career_zip)),
   `Same state` = sprintf("%.1f", c(K$persist$annual_state, K$persist$career_state)),
   check.names = FALSE)
-knitr::kable(t2, row.names = FALSE, align = "lrrr",
+style_manuscript_table(t2, align = "lrrr",
   caption = "Table 2. Persistence at two horizons, by geographic unit. Values are percentages.")
 ```
 
@@ -798,7 +894,7 @@ t3 <- data.frame(
   `Same county, %` = sprintf("%.1f", r$pct),
   `95% CI` = sprintf("%.1f-%.1f", r$lo, r$hi),
   check.names = FALSE)
-knitr::kable(t3, row.names = FALSE, align = "lrrr",
+style_manuscript_table(t3, align = "lrrr",
   caption = sprintf("Table 3. Career same-county persistence by rurality of the county of first observed practice. %s for trend; metropolitan minus remote %.1f percentage points (95%% CI %.1f-%.1f).",
                     gsub("\\*", "", mw_pval(K$rural$trend_p)),
                     K$rural$diff, K$rural$diff_lo, K$rural$diff_hi))
@@ -807,9 +903,13 @@ knitr::kable(t3, row.names = FALSE, align = "lrrr",
 ```{r tbl4}
 m <- K$movers$table
 t4 <- data.frame(`Origin stratum` = rownames(m), check.names = FALSE)
-for (cn in colnames(m)) t4[[cn]] <- formatC(m[, cn], format = "d", big.mark = ",")
-knitr::kable(t4, row.names = FALSE, align = "lrrr",
-  caption = sprintf("Table 4. Destination stratum of providers who changed county over their career. Net flow: %s nonmetropolitan-origin providers ended metropolitan; %s metropolitan-origin providers ended nonmetropolitan.",
+row_totals <- rowSums(m)
+for (cn in colnames(m)) {
+  pct <- ifelse(row_totals > 0, 100 * m[, cn] / row_totals, NA_real_)
+  t4[[cn]] <- sprintf("%s (%.1f)", formatC(m[, cn], format = "d", big.mark = ","), pct)
+}
+style_manuscript_table(t4, align = "lrrr",
+  caption = sprintf("Table 4. Destination stratum of providers who changed county over their career. Values are n (%%). Percentages are row percentages within origin stratum. Net flow: %s nonmetropolitan-origin providers ended metropolitan; %s metropolitan-origin providers ended nonmetropolitan.",
                     formatC(K$movers$out_of_nonmetro, format = "d", big.mark = ","),
                     formatC(K$movers$into_nonmetro, format = "d", big.mark = ",")))
 ```

@@ -3,20 +3,23 @@
 # AMCB certified midwives -> NPI, using the existing isochrones machinery
 # =============================================================================
 #
-# This deliberately does NOT introduce another fuzzy matcher. It reuses the
-# stable pipeline logic from:
+# This deliberately does NOT introduce another fuzzy matcher. It reuses
+# matching-pipeline logic vendored from the isochrones repo (see "VENDORED,
+# NOT SOURCED LIVE" below) rather than reimplementing it:
 #
-#   scripts/match_enthealth_to_npi.R   -- itself adapted from
-#   R/canonical_abog_npi_pipeline_STABLE.R
-#
-# Specifically reused, not reimplemented:
-#   norm_name(), first_initial()   name normalisation
-#   compute_match_score()          NOT used: it collapses categorical identity
-#                                  evidence into one number, and this cohort has
-#                                  no location/DOB to make a finer scale mean
-#                                  anything. Ordered evidence classes instead.
+#   norm_name()                     name normalisation (mysterynpi-backed)
 #   rank_one_to_one()              greedy bijection with deterministic tiebreak
 #   safe_pct()                     reporting helper
+#
+# compute_match_score() is NOT reused: this pipeline's own comment always
+# said so (it collapses categorical identity evidence into one number, and
+# this cohort has no location/DOB to make a finer scale mean anything --
+# ordered evidence classes instead), so it is no longer required to exist.
+# first_initial() is likewise dropped (2026-10-22): nothing here ever called
+# it bare (AMCB's own first-initial logic is the differently-named
+# amcb_first_initial(), used throughout the strategies below), and a second
+# top-level first_initial() duplicated the one already defined in
+# amcb_license_bridge.R -- see tests/ci_hygiene.R's H4 check.
 #
 # ENTHealth is the right precedent: a scrape with names but no NPI, matched
 # against an NPPES pool. AMCB is the harder case of the same shape, because it
@@ -36,49 +39,188 @@
 # =============================================================================
 
 suppressPackageStartupMessages({
-  library(dplyr); library(readr); library(tibble); library(stringdist); library(tidyr)
+  library(dplyr); library(readr); library(tibble); library(tidyr)
   library(digest); library(jsonlite)
 })
 
-# Resolved before anything sources a sibling file: the ENT script below does a
-# setwd() into the isochrones root, so a path relative to getwd() taken after
-# that point would resolve into the wrong repository.
 root_dir <- {
   a <- grep("--file=", commandArgs(), value = TRUE)
   if (length(a)) normalizePath(dirname(sub("--file=", "", a[1]))) else normalizePath(".")
 }
 
-ISO <- Sys.getenv("ISOCHRONES_DIR", path.expand("~/isochrones"))
-Sys.setenv(PIPELINE_LOAD_ONLY = "1")   # suppress the script's auto-main()
-ent_script <- file.path(ISO, "scripts", "match_enthealth_to_npi.R")
-if (!file.exists(ent_script)) {
-  stop(sprintf("Cannot find %s -- set ISOCHRONES_DIR", ent_script), call. = FALSE)
+# --- VENDORED, NOT SOURCED LIVE (2026-10-22) ---------------------------------
+# This used to setwd() into a private sibling repo (~/isochrones) and
+# source() scripts/match_enthealth_to_npi.R live, picking up norm_name(),
+# first_initial(), compute_match_score(), rank_one_to_one() and safe_pct()
+# by side effect (first_initial() and compute_match_score() are no longer
+# reused at all -- see above). That file was deleted upstream in an unrelated cleanup
+# (isochrones commit 484d7405d, "remove the ENT side lane"), which is exactly
+# the risk a live cross-repo source() always carries: this same mechanism had
+# ALREADY caused three separate documented bugs here before it broke outright
+# -- the accent-preserving norm_name (see below), a method_priority LUT
+# mismatch, and an id_col default that silently changed underneath this
+# pipeline. Vendoring the functions actually needed removes that whole
+# failure class, at the cost of staying in sync by hand if upstream logic
+# changes again.
+#
+# rank_one_to_one() below is copied verbatim from isochrones commit
+# 56471c3f5^ (R/npi_resolution.R) -- the revision immediately BEFORE that
+# repo's rank_one_to_one() was refactored to require mysterynpi >= 0.8.0
+# (mysterynpi::resolve_one_to_one()). This project pins mysterynpi at
+# ac42561b (see ci.yml / nightly.yml), which predates that function, so the
+# current isochrones version cannot run here; this older, fully
+# self-contained version can, and is what has actually been producing this
+# pipeline's output. norm_name() now calls mysterynpi directly rather than
+# going through isochrones' own thin wrapper around the same package.
+norm_name <- function(x) mysterynpi::name_key(x)
+safe_pct <- function(n, d) {
+  if (length(d) != 1L || is.na(d) || d == 0) return(0)
+  if (length(n) != 1L) return(0)
+  100 * n / d
 }
-# The script guards that here::here() resolves to the isochrones root, because
-# every source() inside it depends on that. Sourcing from another repo trips the
-# guard, so source it from its own root and come straight back. (here caches the
-# root it resolves; nothing here calls here() afterwards.)
-local({
-  owd <- setwd(ISO)
-  on.exit(setwd(owd), add = TRUE)
-  suppressWarnings(suppressMessages(source(file.path("scripts",
-                                                     "match_enthealth_to_npi.R"))))
-})
-for (fn in c("norm_name", "first_initial", "compute_match_score",
-             "rank_one_to_one", "safe_pct")) {
-  if (!exists(fn)) stop(sprintf("%s() not available from %s", fn, ent_script),
-                        call. = FALSE)
+rank_one_to_one <- function(candidates, id_col = "abog_id") {
+  if (!is.character(id_col) || length(id_col) != 1L) {
+    stop("rank_one_to_one: id_col must be a length-1 character string", call. = FALSE)
+  }
+  if (nrow(candidates) > 0 && !id_col %in% names(candidates)) {
+    stop(sprintf("rank_one_to_one: id column '%s' not found in candidates.", id_col),
+         call. = FALSE)
+  }
+  id <- rlang::sym(id_col)
+  if (nrow(candidates) == 0) {
+    return(candidates)
+  }
+  # BUG FIX (2026-02-16): is_ambiguous_op is created by Strategy 4 (Open Payments).
+  # In TEST_MODE or when Strategy 4 has no matches, the column may not exist.
+  # Default to FALSE (no ambiguous OP matches) when column is absent.
+  if (!"is_ambiguous_op" %in% names(candidates)) {
+    candidates$is_ambiguous_op <- FALSE
+  }
+  # HARDENING (2026-06-07, backported from canonical_abog_npi_pipeline_STABLE.R
+  # commit e6056a22c): match_method may not exist in test data or when
+  # strategies produce candidates without method labeling. Without this the
+  # left_join below silently fails to create method_priority, surfacing as a
+  # cryptic "object 'method_priority' not found" in the mutate(). Default to a
+  # high priority value so these candidates rank low but don't crash.
+  if (!"match_method" %in% names(candidates)) {
+    candidates$match_method <- "unknown_method"
+  }
+  # If the caller already supplies method_priority there is nothing to look up.
+  # This also lets the resolver be tested standalone, without loading a pipeline
+  # that cannot source on its own (pre-existing is_truthy dependency).
+  if ("method_priority" %in% names(candidates) &&
+      !all(is.na(candidates$method_priority))) {
+    method_lut <- NULL
+  } else if (exists("build_method_priority_lut", mode = "function")) {
+    method_lut <- build_method_priority_lut()
+  } else {
+    stop("rank_one_to_one: no method_priority column and build_method_priority_lut() is unavailable.",
+         call. = FALSE)
+  }
+  # HARDENING: Row-count guard + warn on unknown match methods
+  n_before_lut <- nrow(candidates)
+  ranked <- if (is.null(method_lut)) candidates else candidates %>%
+    dplyr::left_join(method_lut, by = "match_method", relationship = "many-to-one")
+  if (nrow(ranked) != n_before_lut) {
+    stop(sprintf(
+      "[JOIN GUARD] method_lut join changed row count: %s -> %s (duplicate match_method keys?)",
+      format(n_before_lut, big.mark = ","), format(nrow(ranked), big.mark = ",")
+    ), call. = FALSE)
+  }
+  n_unknown_methods <- sum(is.na(ranked$method_priority))
+  if (n_unknown_methods > 0) {
+    unknown_methods <- unique(ranked$match_method[is.na(ranked$method_priority)])
+    warning(sprintf(
+      "[HARDENING] %s rows have unknown match_method (not in method_lut): %s\n  These will get priority=99, which is below every ordinary strategy but ABOVE the `unmatched` sentinel at 999 -- not the lowest, despite what this message used to say. Update build_method_priority_lut() if these are valid strategies.",
+      format(n_unknown_methods, big.mark = ","),
+      paste(head(unknown_methods, 5), collapse = ", ")
+    ))
+  }
+  ranked <- ranked %>%
+    dplyr::mutate(
+      method_priority = dplyr::coalesce(method_priority, 99L),
+      score_total = dplyr::coalesce(score_total, 0),
+      confidence_score = dplyr::coalesce(confidence_score, 0),
+      is_ambiguous_op = dplyr::coalesce(is_ambiguous_op, FALSE),
+      score_total_adj = dplyr::if_else(
+        is_ambiguous_op,
+        score_total - 20L,
+        score_total
+      ),
+      method_priority = dplyr::if_else(
+        is_ambiguous_op,
+        method_priority + 1L,
+        method_priority
+      )
+    ) %>%
+    dplyr::arrange(
+      method_priority,
+      dplyr::desc(score_total_adj),
+      dplyr::desc(confidence_score),
+      !!id
+    )
+
+  # PHASE A: resolve each roster person INDEPENDENTLY of any other person's
+  # claim (a person is not "identified" merely because a rival candidate was
+  # already consumed by someone else), using the three ranking keys as a
+  # LEXICOGRAPHIC precedence order (best priority, then best score within
+  # that, then best confidence within that -- not three independent filters).
+  best <- ranked %>%
+    dplyr::group_by(!!id) %>%
+    dplyr::filter(method_priority == min(method_priority, na.rm = TRUE)) %>%
+    dplyr::filter(score_total_adj == max(score_total_adj, na.rm = TRUE)) %>%
+    dplyr::filter(confidence_score == max(confidence_score, na.rm = TRUE)) %>%
+    dplyr::ungroup()
+  best <- best %>% dplyr::distinct(!!id, npi, .keep_all = TRUE)
+
+  tie_counts <- best %>%
+    dplyr::distinct(!!id, npi) %>%
+    dplyr::count(!!id, name = "n_best")
+  best <- best %>% dplyr::left_join(tie_counts, by = id_col)
+  tied <- best %>% dplyr::filter(n_best > 1L)
+  provisional <- best %>% dplyr::filter(n_best == 1L)
+
+  # PHASE B: enforce one NPI <-> one person, AFTER independent resolution.
+  # NA is not a real NPI to contest -- excluded from the contest count so two
+  # independently-unmatched people are never treated as fighting each other.
+  contested_npis <- provisional %>%
+    dplyr::filter(!is.na(npi)) %>%
+    dplyr::distinct(!!id, npi) %>%
+    dplyr::count(npi, name = "n_claimants") %>%
+    dplyr::filter(n_claimants > 1L)
+  contested <- provisional %>% dplyr::semi_join(contested_npis, by = "npi")
+  resolved  <- provisional %>% dplyr::anti_join(contested_npis, by = "npi")
+
+  quarantine <- dplyr::bind_rows(
+    dplyr::mutate(tied, resolution_status = "ambiguous_tied_evidence"),
+    dplyr::mutate(contested, resolution_status = "ambiguous_contested_npi")
+  )
+  out <- resolved %>%
+    dplyr::mutate(resolution_status = "resolved") %>%
+    dplyr::select(-dplyr::any_of("n_best")) %>%
+    dplyr::arrange(!!id, npi)
+  attr(out, "quarantine") <- quarantine %>%
+    dplyr::select(-dplyr::any_of("n_best")) %>%
+    dplyr::arrange(!!id, npi)
+  attr(out, "n_ambiguous_tied_evidence") <- dplyr::n_distinct(tied[[id_col]])
+  attr(out, "n_ambiguous_contested_npi") <- dplyr::n_distinct(contested[[id_col]])
+
+  stopifnot(!any(duplicated(out[[id_col]])), !any(duplicated(out$npi)))
+  out
 }
-cat("reusing:", paste(c("rank_one_to_one", "safe_pct"), collapse = ", "), "\n")
+for (fn in c("norm_name", "rank_one_to_one", "safe_pct")) {
+  if (!exists(fn)) stop(sprintf("%s() not available", fn), call. = FALSE)
+}
+cat("reusing (vendored):", paste(c("rank_one_to_one", "safe_pct"), collapse = ", "), "\n")
 
 # NAME NORMALISATION IS NOT TAKEN FROM THE ENT SCRIPT (2026-08-10).
 #
-# norm_name() and first_initial() are still sourced above -- rank_one_to_one()
-# and the ENT script's own internals rely on them -- but this pipeline must NOT
-# use them for AMCB. norm_name() is toupper(trimws(...)) and nothing more, so
-# it PRESERVES accents rather than transliterating them:
+# norm_name() is still defined above -- rank_one_to_one() and the ENT
+# script's own internals rely on it -- but this pipeline must NOT use it for
+# AMCB. The OLD norm_name() was toupper(trimws(...)) and nothing more, so
+# it PRESERVED accents rather than transliterating them:
 #
-#   norm_name("Álvarez") -> "ÁLVAREZ"   first_initial(...) -> "Á"
+#   norm_name("Álvarez") -> "ÁLVAREZ"
 #
 # Every strategy below joins on exact first name or exact first initial, so an
 # accented roster name could not reach its unaccented NPPES spelling by any
@@ -386,16 +528,26 @@ s2 <- amcb_named %>%
          nppes_matched_last = last_clean, nppes_matched_first = nppes_first_clean) %>%
   base_flags(2L, "exact_last_first_initial")
 
-s3 <- amcb_named %>%
-  inner_join(identities, by = c("first_clean" = "nppes_first_clean"),
-             relationship = "many-to-many") %>%
-  mutate(lv_last = stringdist(last_clean, nppes_last_clean, method = "lv")) %>%
-  filter(lv_last > 0, lv_last <= 2, nchar(last_clean) >= 5) %>%
-  # Given name is the join key; the surname is fuzzy, so the NPPES spelling of
-  # it is exactly what a reviewer needs to see to judge the match.
-  mutate(exact_last = 0L, exact_first = 1L, first_init_ok = 1L,
-         nppes_matched_last = nppes_last_clean, nppes_matched_first = first_clean) %>%
-  base_flags(3L, "fuzzy_last_exact_first")
+# --- Strategy 3 (fuzzy surname, evidence class 4) RETIRED (2026-10-22) ------
+# This strategy joined on exact given name and accepted any surname within
+# Levenshtein distance <= 2 (stringdist(last_clean, nppes_last_clean,
+# method = "lv")) as a candidate:
+#
+#   s3 <- amcb_named %>%
+#     inner_join(identities, by = c("first_clean" = "nppes_first_clean"), ...) %>%
+#     mutate(lv_last = stringdist(last_clean, nppes_last_clean, method = "lv")) %>%
+#     filter(lv_last > 0, lv_last <= 2, nchar(last_clean) >= 5) %>%
+#     ...
+#
+# Removed by decision: edit-distance similarity is too easy to satisfy for a
+# reason that has nothing to do with shared identity -- two different real
+# people whose surnames happen to differ by one or two characters got the
+# same name evidence as someone whose surname is a deliberately recorded
+# variant. The strategy-5 component match below is kept: it is NOT a
+# distance metric, it requires an exact token match on one half of a
+# compound surname, a different and more auditable kind of partial evidence.
+# Evidence class 4 is retired along with it, not reassigned -- see the
+# evidence-class comment block below bind_rows().
 
 # --- Strategy 5: shared surname COMPONENT + exact given name -----------------
 # THE GAP THIS CLOSES (2026-08-10). AMCB and NPPES disagree about how compound
@@ -454,12 +606,14 @@ cat(sprintf("strategy 5 candidate pairs: %s\n", format(nrow(s5), big.mark = ",")
 #   1  exact first + last + compatible middle
 #   2  exact first + last, no useful middle information
 #   3  exact last + first initial
-#   4  fuzzy last + exact first
 #   5  surname component + exact first (WEAKEST -- see strategy 5 above)
 #
-# Class 5 sorts BELOW 4 numerically because resolution takes min(class) as the
-# strongest evidence; a partial surname must never outrank a whole one.
-candidates_prefilter <- bind_rows(s1, s2, s3, s5) %>%
+# Class 4 (fuzzy/Levenshtein surname match) is retired (2026-10-22, see
+# strategy 3's removal above) -- the number is not reused, so "4" never means
+# something different than it used to in any historical export. Resolution
+# still takes min(class) as the strongest evidence; a partial surname (5)
+# must never outrank a whole one.
+candidates_prefilter <- bind_rows(s1, s2, s5) %>%
   mutate(
     component_last = coalesce(component_last, 0L),
     # TOKEN SETS, NOT POSITION 1. See amcb_middle_agreement() in
@@ -476,8 +630,7 @@ candidates_prefilter <- bind_rows(s1, s2, s3, s5) %>%
       exact_last == 1L & exact_first == 1L & mid_match == 1L ~ 1L,
       exact_last == 1L & exact_first == 1L                   ~ 2L,
       exact_last == 1L & first_init_ok == 1L                 ~ 3L,
-      component_last == 1L                                   ~ 5L,
-      TRUE                                                   ~ 4L),
+      component_last == 1L                                   ~ 5L),
     taxonomy_axis = npi_tax_class)
 candidates <- candidates_prefilter %>%
   filter(mid_conflict == 0L)   # a recorded middle-initial conflict still vetoes

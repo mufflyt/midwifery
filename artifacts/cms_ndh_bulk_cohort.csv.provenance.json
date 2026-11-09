@@ -1,0 +1,20 @@
+{
+  "artifact": "cms_ndh_bulk_cohort.csv",
+  "source_url": "https://directory.cms.gov/downloads",
+  "accessed_utc": "2026-10-23T18:46:24Z",
+  "sha256": "7d4ea2ab0c7c78fc3dd1e94b9cd55db560f5eb865e5cdd74bdd787f7a8f0d379",
+  "byte_size": 6115500,
+  "source_dataset": "CMS National Directory of Healthcare Providers and Services (NDH), bulk NDJSON release",
+  "source_files": {
+    "practitioner": "06-Practitioner.ndjson.zst",
+    "role": "07-PractitionerRole.ndjson.zst"
+  },
+  "source_file_sha256": {
+    "06-Practitioner.ndjson.zst": "d0117e6e346ff74bf6d3fe160aa24e1330e889330a0116d83ebc397b2f7d5982",
+    "07-PractitionerRole.ndjson.zst": "a2f1c30a0107815f8f2c7471e24bb80747a0ec8efd1ad9115376720822d954a1"
+  },
+  "cohort": "artifacts/amcb_npi_linkage_FROZEN.csv",
+  "cohort_sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716",
+  "cohort_npis": 16775,
+  "rows": 16361
+}

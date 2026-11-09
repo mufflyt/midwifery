@@ -140,6 +140,47 @@ def test_bucket_over_cap_but_unsplittable_gives_up(fake_session):
     assert col.bucket(long_pattern) == []
 
 
+# --- Session.connect (HTML fixture, no network) ------------------------------
+
+_HOME_PAGE_FIXTURE = """
+<html><body>
+<input type="hidden" name="p_instance" value="4821093" />
+<script>apex.widget.report.paginate('117800', {});</script>
+</body></html>
+"""
+
+
+def _session_with_home_page(monkeypatch, html):
+    """A Session whose bootstrap request returns `html`, with no real I/O:
+    build_opener()/HTTPCookieProcessor() just build local objects, so only
+    the _get() the constructor makes needs stubbing."""
+    monkeypatch.setattr(scrape.Session, "_get", lambda self, url, body=None: html)
+    return scrape.Session()
+
+
+def test_connect_extracts_instance_and_region_from_home_page(monkeypatch):
+    session = _session_with_home_page(monkeypatch, _HOME_PAGE_FIXTURE)
+    assert session.instance == "4821093"
+    assert session.region == "117800"
+
+
+def test_connect_raises_a_clear_error_when_p_instance_markup_shifts(monkeypatch):
+    # The same fixture with the p_instance input removed, as if APEX changed
+    # its markup. Before this fix this raised a bare AttributeError on
+    # `.group(1)` of a failed match -- opaque, with no hint what broke.
+    perturbed = _HOME_PAGE_FIXTURE.replace(
+        '<input type="hidden" name="p_instance" value="4821093" />', "")
+    with pytest.raises(RuntimeError, match="p_instance"):
+        _session_with_home_page(monkeypatch, perturbed)
+
+
+def test_connect_raises_a_clear_error_when_region_markup_shifts(monkeypatch):
+    perturbed = _HOME_PAGE_FIXTURE.replace(
+        "apex.widget.report.paginate('117800', {});", "")
+    with pytest.raises(RuntimeError, match="region"):
+        _session_with_home_page(monkeypatch, perturbed)
+
+
 def test_bucket_under_cap_collects_and_dedups_on_cert_and_number(fake_session):
     rows = [
         {"certification": "CNM", "certification_number": "CNM1"},

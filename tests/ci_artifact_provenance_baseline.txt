@@ -28,12 +28,30 @@
 # reporting the gain on every run ("delete these line(s) from the baseline to
 # hold the gain") without anything holding it, so a sidecar could have been
 # lost again and the ratchet would not have noticed.
+#
+# ADDED 2026-10-29, 2 lines, both from Medicaid billing/MCO work that existed
+# only as uncommitted work in a worktree:
+#   artifacts/ca_mi_cohort_for_mco_check.csv -- written by an ad-hoc R
+#   snippet calling build_ob_midwife_cohort(include_state=TRUE) that was run
+#   interactively and never saved as a script (see
+#   harvest_live_mco_network_membership_ca_mi.py's own header, which
+#   documents this explicitly rather than re-deriving it). No producer
+#   script exists to attach a sidecar to.
+#   artifacts/medicaid_procedure_billing_dual_group_npi_excluded.csv -- its
+#   producer, analyze_medicaid_procedure_billing_ob_midwife.R, was fixed this
+#   same commit (write_csv -> write_with_provenance), but this specific
+#   8-row file was already committed from an earlier run, and regenerating
+#   its sidecar needs artifacts/amcb_npi_linkage_FROZEN.csv, a gitignored
+#   person-level file not present in this environment. The NEXT run of the
+#   now-fixed script will produce a properly provenanced replacement, which
+#   clears this line -- same shrink-only path as every other entry here.
 artifacts/.county_agreement_by_precision.csv
 artifacts/acme_dnp_authors.csv
 artifacts/acme_institution_audit.csv
 artifacts/acme_repository_registry.csv
 artifacts/amcb_age_calibration_provenance.csv
 artifacts/bon_contamination_inventory.csv
+artifacts/ca_mi_cohort_for_mco_check.csv
 artifacts/cabc_accredited_birth_centers_master.csv
 artifacts/cabc_birth_centers_master_clean.csv
 artifacts/cabc_birth_centers_master_perfect.csv
@@ -64,6 +82,7 @@ artifacts/isochrone_representation_by_state.csv
 artifacts/linkage_completeness_by_status.csv
 artifacts/linkage_identity_changes.csv
 artifacts/live_colorado_rxn_prescriptive_authority.csv
+artifacts/medicaid_procedure_billing_dual_group_npi_excluded.csv
 artifacts/medicare_participation_summary.csv
 artifacts/midwifery_theses_oai.csv
 artifacts/oai_source_concentration.csv

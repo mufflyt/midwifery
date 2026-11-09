@@ -1,0 +1,11 @@
+name_evidence_class,evidence,taxonomy,n
+1,"Exact surname and given name, middle name agrees",Midwifery taxonomy,8959
+1,"Exact surname and given name, middle name agrees",Nursing taxonomy,620
+2,"Exact surname and given name, no usable middle name",Midwifery taxonomy,5888
+2,"Exact surname and given name, no usable middle name",Nursing taxonomy,664
+3,"Exact surname, FIRST INITIAL only (given names differ)",Midwifery taxonomy,112
+3,"Exact surname, FIRST INITIAL only (given names differ)",Nursing taxonomy,536
+4,"Surname within 2 edits, exact given name",Midwifery taxonomy,31
+4,"Surname within 2 edits, exact given name",Nursing taxonomy,218
+5,"Shared surname component, exact given name",Midwifery taxonomy,123
+5,"Shared surname component, exact given name",Nursing taxonomy,30

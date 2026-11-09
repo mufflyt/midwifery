@@ -7,6 +7,15 @@
 **Gate**: G8 in [`tests/test_amcb_gates.R`](../tests/test_amcb_gates.R)
 **Investigation date**: 2026-08-30
 
+> **Note: the frozen cohort cited below (16,892) has since moved to 17,028**
+> (`DEBT.md` D10; see
+> [`TECHNICAL_APPENDIX_COHORT_VINTAGE.md`](TECHNICAL_APPENDIX_COHORT_VINTAGE.md)
+> for that history). The live `linkage_manifest.json` now reports
+> `ambiguous_contested_npi = 121`, not the 123 this investigation shipped with
+> — expected drift from the re-pin and added NPPES panel years, not a new
+> defect. The mechanism this appendix documents (`strict_dominance` vs.
+> `greedy`, the one-to-one constraint) is unaffected.
+
 ---
 
 ## 1. What a contested NPI is

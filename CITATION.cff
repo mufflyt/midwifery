@@ -12,8 +12,11 @@ authors:
     affiliation: "Department of Obstetrics and Gynecology, Denver Health and Hospital Authority, Denver, Colorado, USA"
     # TODO: orcid: "https://orcid.org/XXXX-XXXX-XXXX-XXXX"
   - family-names: "Thumm"
-    given-names: "Elisabeth B."
-    affiliation: "Denver Health and Hospital Authority, Denver, Colorado, USA"
+    given-names: "E. Brie"
+    # Full credentials (PhD, CNM, RN, MBA, FACNM) have no CFF field to carry
+    # them; recorded here as a comment rather than appended to given-names,
+    # which citation tools render verbatim into author name lists.
+    affiliation: "College of Nursing, University of Colorado Anschutz Medical Campus, Aurora, Colorado, USA"
     # TODO: orcid: "https://orcid.org/XXXX-XXXX-XXXX-XXXX"
 title: "National Certified Nurse-Midwife (CNM) 50-State & DC Workforce Registry Dataset"
 # "Board of Nursing Registry" dropped from the title 2026-09-11: only Washington

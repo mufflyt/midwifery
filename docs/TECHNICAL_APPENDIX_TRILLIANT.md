@@ -62,16 +62,16 @@ counts, and category values such as organization types.
 
 ![Which studies the asset can support](figures/trilliant_feasibility.png)
 
-`artifacts/trilliant_research_question_feasibility.csv` marks twelve research
+`artifacts/trilliant_research_question_feasibility.csv` marks eleven research
 questions. The identifiability columns are computed from the inventory and
 from checks that the other sources exist, not asserted:
 
 - **Fully identifiable:** current main work setting, multi-site practice,
   current rurality.
 - **Partially identifiable:** hospital + birth-center blended practice (CABC
-  covers accredited centers only; DAC covers Medicare billers only), DNP versus
-  MSN as an exposure, current clinical inactivity, exit timing, practice
-  longevity, rural retention and mobility.
+  covers accredited centers only; DAC covers Medicare billers only), current
+  clinical inactivity, exit timing, practice longevity, rural retention and
+  mobility.
 - **Not identifiable:** birth attendance and deliveries per month. No table
   holds a clinician NPI, a service date and procedure codes together.
 
@@ -403,6 +403,36 @@ address-keyed rule. What would answer that question is a source that names the
 Transparency in Coverage extraction is the candidate, once it covers more than
 one state.
 
+### 6.6 Headline counts for sections 5 and 6, as of this rebase (2026-10-20)
+
+`build_trilliant_work_sites.R` has run against the current freeze (sha256
+`1a7bd6a8…`, cohort 12,171) and committed `artifacts/midwife_work_setting_summary.csv`.
+Every dimension there partitions the cohort, so the published-numbers gate can
+check it. Headline counts, all out of 12,171:
+
+| Dimension (§) | Top categories |
+|---|---|
+| Main site type (§5.1) | hospital 6,527; clinic/practice 2,605; no Trilliant site 2,026; FQHC/CHC 651; birth center 169; other facility 151; unclassified 42 |
+| Work-setting combination (§5) | hospital 3,652; hospital + clinic/practice 3,058; clinic/practice 2,324; no classified site 996; hospital + FQHC/CHC 506; FQHC/CHC 486 (remaining combinations each under 265) |
+| Main-site rurality (§6.2) | Metro 9,169; no Trilliant site 2,026; Nonmetro adjacent 665; Nonmetro remote 311 |
+| Rurality mix across a midwife's sites (§6.3) | single band, Metro 10,225; mixed bands 1,041; Nonmetro adjacent 447; no site 199; Nonmetro remote 210; unknown 49 |
+| NPPES address vs. claims-site rurality (§6.5) | see the detailed breakdown above |
+
+Full detail is in the CSV itself. The build refuses any other freeze unless
+one is named on purpose with `ALLOW_FREEZE_SHA256`; development runs against
+the 2026-08-10 freeze were never committed.
+
+**Not included above, on purpose: distinct work sites per midwife (§6.3) and
+blended hospital + birth-center practice (§6.4).** Both are mid-audit. A
+same-night merge-conflict review found this artifact's committed numbers for
+these two dimensions disagreed across versions by more than a rebuild-noise
+margin, root-caused it to two missing source files (now restored and
+regenerated) plus one still-missing external reference bundle (hospital CCN
+crosswalk, absent on this machine), and could not yet produce a fully
+verified number for either dimension. See
+[docs/HANDOFF_worksite_merge_conflict_audit.md](HANDOFF_worksite_merge_conflict_audit.md)
+before citing either dimension.
+
 ## 7. A backup source for demographics
 
 The directory also carries a gender, a "medical school" with a graduation year,
@@ -501,7 +531,7 @@ Rscript make_trilliant_figures.R
 declared in `rebuild_frozen_dependents.R`, so a re-freeze re-runs them. The
 demographics enricher runs before the age calibration, which reads it.
 
-## 10. Limitations
+## 9. Limitations
 
 - **One snapshot.** The directory has no history, so it cannot show where a
   midwife started or when they stopped.

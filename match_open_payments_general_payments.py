@@ -2,17 +2,57 @@
 # =============================================================================
 # CMS Open Payments General Payment Data (Sunshine Act) Employer & Hospital Harvester
 # =============================================================================
+# One program year per run, OPEN_PAYMENTS_YEAR (default 2024). The download
+# URL is looked up live from CMS's own metastore catalog rather than
+# hardcoded -- the publication-date segment in the URL
+# ("PGYR2024_P06302026_06032026") is not predictable release to release, and
+# archive_revalidation_reassignment.R already hit exactly this failure mode
+# once this month when CMS restructured a different catalog the same way.
 import requests
 import csv
 import os
 import sys
 
-OP_GNRL_2024_URL = "https://download.cms.gov/openpayments/PGYR2024_P06302026_06032026/OP_DTL_GNRL_PGYR2024_P06302026_06032026.csv"
-MIDWIVES_FILE = "artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv"
-LOCAL_CSV = "data/CMS_Open_Payments_General_2024.csv"
-OUT_MATCHES = "artifacts/cohort_midwives_open_payments_general_2024.csv"
+PROGRAM_YEAR = os.environ.get("OPEN_PAYMENTS_YEAR", "2024")
+# Glob rather than a pinned filename: the crosswalk's own name carries the
+# years it covers ("...years-2007-2026.csv"), which changes as the cohort is
+# re-pinned. Newest by mtime, same convention build_organization_affiliation_resolver.R uses.
+import glob
+_crosswalk_candidates = sorted(
+    glob.glob("artifacts/amcb_npi_crosswalk_*panel*.csv"), key=os.path.getmtime, reverse=True)
+if not _crosswalk_candidates:
+    sys.exit("no artifacts/amcb_npi_crosswalk_*panel*.csv found")
+MIDWIVES_FILE = _crosswalk_candidates[0]
+LOCAL_CSV = f"data/CMS_Open_Payments_General_{PROGRAM_YEAR}.csv"
+OUT_MATCHES = f"artifacts/cohort_midwives_open_payments_general_{PROGRAM_YEAR}.csv"
 
-print("=== CMS Open Payments General Payments Employer & Hospital Harvester ===")
+print(f"=== CMS Open Payments General Payments Employer & Hospital Harvester ({PROGRAM_YEAR}) ===")
+
+
+def find_general_payments_url(year):
+    """Look up this program year's "General Payment Data" download URL from
+    CMS's own metastore catalog, rather than guessing the publication-date
+    segment of the URL."""
+    catalog = requests.get(
+        "https://openpaymentsdata.cms.gov/api/1/metastore/schemas/dataset/items",
+        timeout=30).json()
+    target_title = f"{year} General Payment Data"
+    hits = [d for d in catalog if d.get("title") == target_title]
+    if not hits:
+        sys.exit(f"'{target_title}' not found in the Open Payments catalog. "
+                  "Refusing to guess a URL rather than warehouse nothing and "
+                  "report success.")
+    item = requests.get(
+        f"https://openpaymentsdata.cms.gov/api/1/metastore/schemas/dataset/items/{hits[0]['identifier']}",
+        timeout=30).json()
+    for dist in item.get("distribution", []):
+        url = (dist.get("data", {}) or {}).get("downloadURL") or dist.get("downloadURL")
+        if url and url.lower().endswith(".csv") and "DTL_GNRL" in url:
+            return url
+    sys.exit(f"No General Payment Data CSV distribution found for {year}.")
+
+
+OP_GNRL_URL = find_general_payments_url(PROGRAM_YEAR)
 
 # 1. Load Active Cohort Midwives
 coh_npis = {}
@@ -31,13 +71,13 @@ N_cohort = len(coh_npis)
 print(f"Loaded {N_cohort} active cohort midwives.")
 
 # 2. Stream Open Payments General Payment Data
-print(f"Streaming and filtering CMS Open Payments 2024 General Payments from:\n  {OP_GNRL_2024_URL}")
+print(f"Streaming and filtering CMS Open Payments {PROGRAM_YEAR} General Payments from:\n  {OP_GNRL_URL}")
 
-r = requests.get(OP_GNRL_2024_URL, stream=True, timeout=60)
+r = requests.get(OP_GNRL_URL, stream=True, timeout=60)
 print(f"  HTTP Status: {r.status_code}")
 
 if r.status_code != 200:
-    sys.exit(f"Failed to stream Open Payments 2024 file (Status {r.status_code}).")
+    sys.exit(f"Failed to stream Open Payments {PROGRAM_YEAR} file (Status {r.status_code}).")
 
 matched_records = []
 line_count = 0
@@ -73,6 +113,7 @@ for row in reader:
             "nppes_state": mw["state"],
             "teaching_hospital_name": hosp_name,
             "principal_practice_business_name": biz_name,
+            "recipient_address": addr1,
             "recipient_city": city,
             "recipient_state": state,
             "recipient_zip": zip_code,
@@ -81,7 +122,7 @@ for row in reader:
         })
 
 print(f"\n=========================================================")
-print(f"  OPEN PAYMENTS 2024 MATCHES FOUND: {len(matched_records)} records")
+print(f"  OPEN PAYMENTS {PROGRAM_YEAR} MATCHES FOUND: {len(matched_records)} records")
 print(f"  UNIQUE MIDWIVES LINKED TO EMPLOYERS/HOSPITALS: {len(set(r['npi'] for r in matched_records))} / {N_cohort}")
 print(f"=========================================================")
 
@@ -92,7 +133,7 @@ with open(OUT_MATCHES, "w", newline="", encoding="utf-8") as f:
         writer.writeheader()
         writer.writerows(matched_records)
 
-print(f"\nSaved Open Payments 2024 matches to: {OUT_MATCHES}")
+print(f"\nSaved Open Payments {PROGRAM_YEAR} matches to: {OUT_MATCHES}")
 
 print("\nSample Open Payments Midwife Employer & Hospital Matches:")
 for rec in matched_records[:15]:

@@ -1,6 +1,6 @@
 {
   "artifact": "stage_progression_like_for_like.csv",
-  "written_utc": "2026-09-11 21:57:41.835 UTC",
+  "written_utc": "2026-10-30 00:22:52 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",
@@ -15,7 +15,7 @@
       "sha256": "5336b5f51917d8392e854f593233abde8732f866b9a9f8d743a460506f712adf"
     }
   ],
-  "code_sha256": "57d639c4af2038e55fa7bfb938980f737d12f7a836241f309b5cccf96be4aa9e",
+  "code_sha256": "e59499cf41be1e4f60219f425c3a8aa4629e907120e4c8d52e0b72f6a918b74d",
   "code": [
     {
       "path": "R/05-stage-progression.R",
@@ -35,7 +35,7 @@
     },
     {
       "path": "R/lib/table1_bands.R",
-      "sha256": "71ec6199151cd15ffc4454fe5973375f90324204d7015139dcea047ab65a9c62"
+      "sha256": "312b7504d0fed8ae986eadae6c55b0efd6f1099a613e4589f772387a2db115e1"
     },
     {
       "path": "R/lib/zip_county_crosswalk.R",

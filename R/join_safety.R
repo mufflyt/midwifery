@@ -1116,7 +1116,13 @@ safe_inner_join <- function(left, right, by, expect_unique_both = TRUE,
                            suffix = c(".x", ".y"),
                            write_report = TRUE,
                            report_prefix = "join_inner",
-                           use_enhanced_metrics = TRUE) {
+                           # Matches safe_left_join's resolved default (see its
+                           # own CYCLE 9 comment): R/join_metrics.R does not
+                           # exist in this repo, so a default of TRUE made
+                           # every call either error, or (before this fix)
+                           # silently ignore agree_on/agree_map/
+                           # max_right_dup_keys while claiming to honor them.
+                           use_enhanced_metrics = FALSE) {
   # ── Parameter validation (parity with safe_left_join) ────────────────────
   checkmate::assert_data_frame(left)
   checkmate::assert_data_frame(right)
@@ -1145,6 +1151,27 @@ safe_inner_join <- function(left, right, by, expect_unique_both = TRUE,
   # Validate agree_on and agree_map
   checkmate::assert_character(agree_on, null.ok = TRUE)
   checkmate::assert_list(agree_map, null.ok = TRUE)
+
+  # BUG FIX: agree_on/agree_map/use_enhanced_metrics=TRUE all require the
+  # enhanced metrics module (R/join_metrics.R), which DOES NOT EXIST in this
+  # repo -- same fact safe_left_join already hard-stops on. Previously these
+  # three parameters were accepted and validated but silently had no effect,
+  # which is a documented contract with nothing behind it: a caller asking
+  # for agreement checking got no error and no checking.
+  if (isTRUE(use_enhanced_metrics) || !is.null(agree_on) || !is.null(agree_map)) {
+    if (!exists("safe_inner_join_with_metrics", mode = "function")) {
+      stop(
+        "safe_inner_join: enhanced join metrics requested (use_enhanced_metrics=TRUE, ",
+        "or agree_on/agree_map supplied) but not available.\n",
+        "safe_inner_join_with_metrics() function not found.\n\n",
+        "R/join_metrics.R DOES NOT EXIST in the midwifery repo -- this is not a\n",
+        "module-loading problem, the file was never added here. Drop ",
+        "use_enhanced_metrics/agree_on/agree_map (basic validation still runs: ",
+        "coverage, max_duplication, max_right_dup_keys) or port the module.",
+        call. = FALSE
+      )
+    }
+  }
 
   # Validate join key columns exist in both tables
   by_left_cols <- if (is.character(by) && !is.null(names(by))) names(by) else by
@@ -1230,17 +1257,36 @@ safe_inner_join <- function(left, right, by, expect_unique_both = TRUE,
     max_duplication <- NULL
   }
 
+  # BUG FIX (2026-01-28): Bug 62 - Use correct column names for each table.
+  # For named vectors like c("npi" = "provider_npi"):
+  #   - Left table uses names(by) = "npi"
+  #   - Right table uses unname(by) = "provider_npi"
+  # For unnamed vectors, both use the same column names.
+  by_left_cols <- if (is.character(by) && is.null(names(by))) by else names(by)
+  by_right_cols <- if (is.character(by) && is.null(names(by))) by else unname(by)
+
   # Assert uniqueness on both sides if declared
   if (isTRUE(expect_unique_both)) {
-    # BUG FIX (2026-01-28): Bug 62 - Use correct column names for each table.
-    # For named vectors like c("npi" = "provider_npi"):
-    #   - Left table uses names(by) = "npi"
-    #   - Right table uses unname(by) = "provider_npi"
-    # For unnamed vectors, both use the same column names.
-    by_left_cols <- if (is.character(by) && is.null(names(by))) by else names(by)
-    by_right_cols <- if (is.character(by) && is.null(names(by))) by else unname(by)
     assert_unique_keys(left, by_left_cols, "inner left (keys)")
     assert_unique_keys(right, by_right_cols, "inner right (keys)")
+  }
+
+  # Enforce max_right_dup_keys regardless of expect_unique_both: the assert
+  # above only covers the all-or-nothing expect_unique_both=TRUE case. A
+  # caller passing expect_unique_both=FALSE with a finite max_right_dup_keys
+  # previously got silent no-op protection -- this parameter was validated
+  # and documented but never actually checked (the comment it replaces said
+  # so outright: "parameter now enforced via join metrics", a module that
+  # does not exist in this repo).
+  if (is.finite(max_right_dup_keys)) {
+    right_key_counts <- dplyr::count(right, dplyr::across(dplyr::all_of(by_right_cols)))
+    n_right_dup_keys <- sum(right_key_counts$n > 1L)
+    if (n_right_dup_keys > max_right_dup_keys) {
+      stop(sprintf(
+        "safe_inner_join: %d right-side key group(s) are duplicated, exceeding max_right_dup_keys=%s. %s -> %s on %s.",
+        n_right_dup_keys, max_right_dup_keys, label_left, label_right, format_by_columns(by)
+      ), call. = FALSE)
+    }
   }
 
   left_n <- nrow(left)
@@ -1257,9 +1303,6 @@ safe_inner_join <- function(left, right, by, expect_unique_both = TRUE,
   # Coverage should measure "what fraction of left rows appear in output."
   matched_left_rows <- nrow(dplyr::semi_join(left, right, by = by, na_matches = "never"))
   join_coverage_report(left_n, matched_left_rows, label_left, label_right, min_coverage)
-
-  # BUG FIX (2026-01-27): Bug 30 - Enforce max_right_dup_keys like safe_left_join
-  # (Code removed - parameter now enforced via join metrics)
 
   # BUG FIX (2026-01-27): Bug 30 - Enforce max_duplication like safe_left_join
   if (!is.null(max_duplication) && left_n > 0) {

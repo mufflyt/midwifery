@@ -1,21 +1,21 @@
 {
   "artifact": "cohort_exclusion_flow_evidence_tiers.csv",
-  "written_utc": "2026-09-18 17:49:07 UTC",
+  "written_utc": "2026-10-26 20:31:59 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
-      "sha256": "1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2"
+      "sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716"
     }
   ],
-  "code_sha256": "1ed778591266673b03806ec10a6b7cfc9e8c3bf88fa5336217c4d897c3603855",
+  "code_sha256": "75c33e90c31d0f139f7eecb4737d1ae10f685e0beaeb314ba99ccccd5d5e4b4a",
   "code": [
     {
       "path": "make_cohort_exclusion_flow_figure.R",
-      "sha256": "0cd8fb0110c0d6205b8b9139877fcf793a6df1256bb8e44d369b1609434d022a"
+      "sha256": "76fd25d68b429c82445aba384d0f77a444700739965263b76fef02629564adf2"
     },
     {
       "path": "manuscript/R/build_stats_catalog.R",
-      "sha256": "b0ab6e8400682fb99a402d95b6d0640f8b0a2d5d5dfd1ad78b1a7b2531f9036c"
+      "sha256": "5a1806ce71bd0090a3d88a5a290b1d55e43305b46a8bb5cc511515796145deef"
     },
     {
       "path": "manuscript/R/inline_stats.R",

@@ -1,0 +1,29 @@
+{
+  "artifact": "midwife_reassignment_panel_summary.csv",
+  "written_utc": "2026-10-19 19:35:27.973 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/midwife_reassignment_panel.csv",
+      "sha256": "67d8592688395b319c1b0cb352f9faf5628c1c896aca0288ec38848a3d120c58"
+    }
+  ],
+  "code_sha256": "d0a62baf300d8a92fcf0de48f5b413501b80d46c71d104023619363d4735e0e8",
+  "code": [
+    {
+      "path": "build_reassignment_panel.R",
+      "sha256": "f18ce5a3d3d74551d65d3ec9b65712d672048d657d1c1a6306249b5ad86871cd"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}

@@ -30,6 +30,8 @@ suppressPackageStartupMessages({library(DBI); library(duckdb)})
 dac <- Sys.getenv("DAC_FILE", "")
 if (!nzchar(dac)) {
   candidates <- c("DAC_NationalDownloadableFile_2026-06.csv",
+                  "DAC_NationalDownloadableFile.csv",
+                  "data/CMS_DAC_NationalDownloadableFile.csv",
                   path.expand(paste0("~/Documents/Documents - TMuff/",
                                      "doctors_and_clinicians_current_data/",
                                      "DAC_NationalDownloadableFile.csv")))
@@ -39,6 +41,7 @@ stopifnot(!is.na(dac), file.exists(dac))
 cat("DAC source: ", basename(dac), "\n", sep = "")
 
 source(file.path("R", "lib", "medicare_duckdb.R"))
+source(file.path("R", "lib", "credential_filter.R"))
 con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
@@ -92,6 +95,16 @@ sql <- sprintf(r"(
 
 cat("Scanning DAC national file...\n")
 rows <- dbGetQuery(con, sql)
+
+# The specialty-text match above can still catch a physician whose secondary
+# specialty mentions midwifery (e.g. supervising OB); drop anyone credentialed
+# MD/DO so this file stays midwife-only, not midwife-or-physician.
+n_before <- nrow(rows)
+rows <- rows[exclude_by_credential(rows$credential), ]
+if (nrow(rows) < n_before) {
+  cat(sprintf("  dropped %s row(s) credentialed MD/DO\n", n_before - nrow(rows)))
+}
+
 cat(sprintf("  %s midwife rows, %s distinct NPIs\n",
             format(nrow(rows), big.mark = ","),
             format(length(unique(rows$npi)), big.mark = ",")))

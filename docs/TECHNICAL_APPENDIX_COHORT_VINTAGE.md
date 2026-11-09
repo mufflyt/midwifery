@@ -118,9 +118,21 @@ V3  frozen_cohort/INPUT_FINGERPRINT.json  == the freeze
 V4  composition_rucc_cat.csv              == the freeze
 ```
 
-V3 and V4 fail today, correctly. The test is **deliberately not wired into
-CI**: a gate that is red on arrival teaches people to ignore gates. It is wired
-in when the re-pin lands, and DEBT.md D10 records that as the decision needed.
+V3 and V4 failed at the time this appendix was written, correctly. **Update
+2026-09-11 (DEBT.md D10):** the re-pin landed. Running the test today, all
+four agree:
+
+```
+ok   V1 manifest declares cohort_members [17,028]
+ok   V2 linkage table's cohort == the freeze [17,028 vs 17,028]
+ok   V3 pinned geography snapshot == the freeze [17,028 vs 17,028]
+ok   V4 composition table's cohort == the freeze [17,028 vs 17,028]
+PASS (0 failures)
+```
+
+The test remains **deliberately not wired into CI** — not because it still
+fails (it doesn't), but for the reason D10 restates: CI has no person-level
+data to run it against at all.
 
 ## 6. The pin that was misnamed
 

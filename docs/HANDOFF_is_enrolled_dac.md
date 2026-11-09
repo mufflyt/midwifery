@@ -1,5 +1,12 @@
 # Handoff: live semantic defect in `is_enrolled_dac`
 
+> **Resolved 2026-08-16.** See `DEBT.md` D4 and the `# SEMANTIC DEFECT FIXED
+> 2026-08-16` comment in `R/lib/match_npi_to_hospitals.R` (lines 337-355). The
+> measured affected count was **4,266**, not the 3,319 estimated below — all
+> four producing scripts now pass the DAC national register explicitly. This
+> doc is kept as the handoff record of how the defect was first found and
+> described; everything below describes the pre-fix state.
+
 For the session that owns `R/lib/match_npi_to_hospitals.R`. Written here
 because the two sessions cannot message each other directly.
 

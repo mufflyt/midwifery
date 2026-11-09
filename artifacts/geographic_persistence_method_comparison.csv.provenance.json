@@ -1,0 +1,37 @@
+{
+  "artifact": "geographic_persistence_method_comparison.csv",
+  "written_utc": "2026-10-30 02:44:43 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/geographic_persistence_rates.csv",
+      "sha256": "c181933f74af0355fa2d87ddf1aa1ba93484ef508caeb55ddf0f195785c38442"
+    },
+    {
+      "path": "artifacts/geographic_persistence_canonical_rates.csv",
+      "sha256": "8549722d6c132f980ddda9091fe68a3bc7140874a384ef514c7ff4f0a27b5a18"
+    }
+  ],
+  "code_sha256": "de85f50f8b4009e13b921c58473bf6c4819fc0cdfafd70740ca9557c714c7675",
+  "code": [
+    {
+      "path": "build_results_geographic_persistence_canonical.R",
+      "sha256": "0a54fd1d71fc2b93c9d5cba0982e95a0e8e634b2427336e7f717eaa289ff2a0e"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/geographic_persistence_stats.R",
+      "sha256": "41700437bcecd84b7c6d2ca62a67d130be66a442d585a67ec7687a0325e4e6de"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/lib/table1_bands.R",
+      "sha256": "312b7504d0fed8ae986eadae6c55b0efd6f1099a613e4589f772387a2db115e1"
+    }
+  ]
+}

@@ -16,14 +16,19 @@ publishes it as open data and this project queried it: **Washington, Colorado
 and Texas** (Figure 1). Every other state-board figure this repository once
 reported was synthesized and is retracted (Figure 4); so were a Medicare
 "delivery claims" layer and a collaborative-practice (CPA) layer, which had no
-source at all.*
+source at all. Separately, for a cross-source address-agreement check (not
+Figure 1's licensure count), five more boards were queried live — California,
+Illinois, Connecticut, Delaware and Florida — and a further 8 states were
+checked and found to have no usable public search at all (CAPTCHA, WAF or
+bot-manager walls, or an explicit no-scraping policy); see
+[docs/TECHNICAL_APPENDIX_BON_PORTAL_AVAILABILITY.md](docs/TECHNICAL_APPENDIX_BON_PORTAL_AVAILABILITY.md).*
 
 **[→ Interactive CNM Workforce Map](docs/cnm_national_leaflet_map.html)**
 &nbsp;·&nbsp; [Pipeline Architecture](ARCHITECTURE.md) &nbsp;·&nbsp; [Dataset Metadata](metadata.json)
 
 ```mermaid
 flowchart LR
-  A["AMCB roster: 22,357 certificants"] --> B["NPPES linkage: 12,192 of 15,328 ACTIVE matched"]
+  A["AMCB roster: 22,357 certificants"] --> B["NPPES linkage: 12,170 of 15,328 ACTIVE matched"]
   B --> C["Practice geography: county, tract, district"]
   B --> D["State board licensure: WA, CO, TX open data"]
   C --> F["Interactive map: tracked roster, 40 states"]
@@ -32,12 +37,48 @@ flowchart LR
 | Stage / Dimension | Result & Coverage | Source |
 |---|---|---|
 | AMCB roster (live directory scrape, 2026-09-02) | 22,357 certificants; 15,328 ACTIVE | `artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json` (`artifact_rows`); `artifacts/linkage_completeness_by_status.csv` |
-| ACTIVE certificants matched to an NPPES midwifery record | 12,192 of 15,328 (79.5%) | `artifacts/linkage_completeness_by_status.csv`, disposition `matched` |
-| Analytic cohort (all AMCB statuses) | 17,028 | FROZEN manifest, `cohort_members` |
+| ACTIVE certificants matched to an NPPES midwifery record | 12,170 of 15,328 (79.4%) | `artifacts/linkage_completeness_by_status.csv`, disposition `matched` |
+| Analytic cohort (all AMCB statuses) | 16,775 | FROZEN manifest, `cohort_members` |
 | Table 1 cohort (ACTIVE, primary-linked) | 12,171 | `artifacts/table1_provenance.csv` |
 | State boards queried for licensure | 3: WA DOH, Colorado DORA, Texas BON (open data, matched by name). Illinois IDFPR open data was also queried, for licence issue dates in age calibration only. | `harvest_live_{wa,co,tx}_bon_from_tracked_roster.py`; `artifacts/state_nursing_license_ages_provenance.csv` (`states_queried`) |
 | Licences a board returned | 1,353: WA 369, CO 486, TX 498 (any status the board reported) | `docs/figures/board_licensure_observed_counts.csv` |
 | Delivery attendance | not observable: public Medicare Part B has no delivery-code rows for any provider, 2013–2023 | `artifacts/medicare_delivery_code_observability.csv` |
+| PECOS/DAC vs state-board address agreement (5 pairs total; CA+IL+CT+DE+FL pooled) | State 92.5% (n=239); city 35.5% (n=462); ZIP5 35.6% (n=239) | [docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md](docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md) |
+
+<details>
+<summary><strong>Contents</strong> (click to expand)</summary>
+
+**Findings**
+- [Key Visualizations & Data Gallery](#key-visualizations--data-gallery) — the 20 numbered figures
+- [Objective, rationale and aims](#objective-rationale-and-aims)
+- [Table 1](#table-1)
+
+**Methods**
+- [From a midwife's name to a county on a map](#from-a-midwifes-name-to-a-county-on-a-map) — the linkage pipeline
+- [Attribute layers: what we know about each midwife](#attribute-layers-what-we-know-about-each-midwife)
+- [Where midwives work: the Trilliant claims directory](#where-midwives-work-the-trilliant-claims-directory)
+- [Maps](#maps)
+- [Isochrone reuse: a negative validation result](#isochrone-reuse-a-negative-validation-result)
+- [Existing-isochrone recovery search](#existing-isochrone-recovery-search)
+
+**Reproducing this**
+- [Data sources](#data-sources)
+- [Repository layout](#repository-layout)
+- [Model architecture](#model-architecture)
+- [Usage](#usage)
+- [How it works](#how-it-works)
+- [Location data](#location-data)
+- [Output columns](#output-columns)
+- [Continuous integration](#continuous-integration)
+- [Automated CI Testing Suite](#automated-ci-testing-suite)
+
+**Reference**
+- [Changelog](#changelog)
+- [Citation](#citation)
+- [License](#license)
+- [Dataset Metadata & Specifications](#dataset-metadata--specifications)
+
+</details>
 
 ## Key Visualizations & Data Gallery
 
@@ -62,7 +103,10 @@ BON — and, for the midwives each query covered, what the board returned:
 **369 of 443** in Washington, **486 of 557** in Colorado, **498 of 736** in
 Texas, each with the status the board reported (Expired included). Matched by
 name; the three bars cover different rosters, as the subtitle says. No other
-board was queried, so no other state appears. Counts:
+board feeds *this* figure — five more (CA, IL, CT, DE, FL) were queried later
+for the address-agreement work instead, not for a licensure count; see
+[docs/TECHNICAL_APPENDIX_BON_PORTAL_AVAILABILITY.md](docs/TECHNICAL_APPENDIX_BON_PORTAL_AVAILABILITY.md).
+Counts:
 [`docs/figures/board_licensure_observed_counts.csv`](docs/figures/board_licensure_observed_counts.csv),
 built by [`make_board_licensure_figure.R`](make_board_licensure_figure.R). This
 replaces a chart of per-state row counts from a synthetic "20-state scrape"; see
@@ -222,9 +266,9 @@ canonical cohort against the current freeze is the registered 12,171.
 cohort, the board-validation subset (WA, CO, TX) and the CMS-observed subset
 apart. Source: `artifacts/trilliant_cohort_reconciliation_reasons.csv`.*
 
-### 15. Does Trilliant's `active_provider` flag mean a midwife is practising?
+### 16. Does Trilliant's `active_provider` flag mean a midwife is practising?
 ![active_provider against AMCB status and Medicare billing](docs/figures/trilliant_activity_validation.png)
-*Figure 15: Tested against the AMCB roster and Medicare billing. **A:**
+*Figure 16: Tested against the AMCB roster and Medicare billing. **A:**
 deceased and retired certificants are rarely flagged active. **B:** among
 retirees the flag decays with years since the certification expired, so it lags
 a stop in practice. **C:** among ACTIVE certificants it tracks how recently
@@ -267,6 +311,33 @@ the namesakes every other candidate represents. The likelihood ratios behind
 this (9.4 within a year, 0.05 beyond ten) are in
 `artifacts/trilliant_identity_evidence_dbcc76f4.csv`. Source:
 `artifacts/trilliant_identity_grad_year_agreement_dbcc76f4.csv`.*
+
+### 19. From the AMCB roster to the final analytic cohort
+![Cohort exclusion flow: AMCB roster to the final analytic cohort](docs/figures/cohort_exclusion_flow.png)
+*Figure 19: 22,357 AMCB certificants, step by step, to the **12,022**
+certificants (99.87% of those NPI-matched) in the final analytic cohort:
+7,029 deceased/inactive; 3,158 with no confident NPI match; 77 excluded for a
+federal adverse action; 55 with no geocodable address; 16 overseas/territory
+addresses with no ACOG district. The federal adverse-action step checks
+three independent sources — the CMS National Provider Directory's HHS
+exclusion-list flag (unverified: only 10 of 153 flagged NPIs confirmed
+against the real public LEIE), CMS PECOS Medicare revocation (a
+re-enrollment bar, CMS's own administrative record), and the FDA Debarment
+List (Drug Product Applications, matched by name since it carries no NPI) —
+and excludes an NPI only once, concatenating sources when more than one
+agrees. DEA is not included: it has no bulk list to check against, only a
+single-registrant lookup. Every NPI any source has flagged so far is already
+excluded from the cohort for an unrelated reason (deceased/lapsed/retired
+certification), so this step's net effect on the published cohort count is
+currently zero — it is retained for the sources it establishes and the
+corroboration it already shows (two independently-sourced federal records
+agreeing on the same person), not because it changes today's numbers.
+Source: `docs/figures/cohort_exclusion_flow_counts.csv`
+([`make_cohort_exclusion_flow_figure.R`](make_cohort_exclusion_flow_figure.R)).
+Full write-up, including where to find each source and how the name-matching
+in the FDA cross-check is kept conservative:
+[docs/TECHNICAL_APPENDIX_CMS_NDH.md](docs/TECHNICAL_APPENDIX_CMS_NDH.md),
+sections 5 and 9–10.*
 
 ### Three more you build yourself
 
@@ -725,6 +796,46 @@ in this README. `R/03` now refuses to guess: with `STAGE3_COORDS` unset it stops
 and prints every candidate with its coordinate coverage. The build is also
 deterministic — two runs off the same inputs are byte-identical — so the hash in
 the sidecar verifies something.
+
+### Reference crosswalk: the 2026-10-22 re-freeze — fuzzy surname matching removed
+
+Class-4 (fuzzy/Levenshtein-distance surname) matching was removed from
+`match_amcb_to_npi.R` by explicit decision: an edit distance of 1-2 on a
+surname is too easy to satisfy for a reason that has nothing to do with
+shared identity — two different real people whose surnames happen to differ
+by one or two characters got the same name evidence as someone whose surname
+is a deliberately recorded variant. Class 5 (surname-component/fragment
+match) is a different, non-fuzzy mechanism — an exact token match on one
+half of a compound surname — and is unaffected. Full narrative, including
+why re-running the matcher also required vendoring four small functions out
+of a private sibling repo whose shared script had since been deleted, in
+`artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json`.
+
+| | rows | cols | cohort members | class-5 held out |
+|---|---:|---:|---:|---:|
+| `1a7bd6a8…` — outgoing, `amcb_npi_linkage_FROZEN_2026-10-22.csv` | 22,357 | 60 | 17,028 | 153 |
+| **`9f224007…` — `amcb_npi_linkage_FROZEN.csv`** | 22,357 | 60 | **16,775** | **163** |
+
+Same row and column count — this is a reclassification, not a schema or
+roster change. Restricted to the 15,328 ACTIVE certificants (the population
+every chart built on this freeze reports):
+
+| outcome | before | after |
+|---|---:|---:|
+| `primary_midwifery` | 12,192 | 12,170 |
+| `sensitivity_nursing` | 889 | 821 |
+| `sensitivity_name_component` (excluded) | 95 | 101 |
+| quarantined — resolved by absence | 5 | 5 |
+| quarantined — contested | 40 | 38 |
+| quarantined — tied | 1,476 | 1,400 |
+| unmatched | 631 | 793 |
+
+The ~166 ACTIVE certificants who were previously accepted or tied *only* via
+a class-4 candidate lose that candidate outright: most (162) end up with no
+candidate at all, a handful surface a previously-dominated class-5 candidate
+instead. Both A/B arms (`…years-2007-2026.csv` and `…years-through-2017.csv`)
+were regenerated with the same fix before reconciling, each archived at its
+own `_2026-10-22` sidecar before being overwritten.
 
 ## Attribute layers: what we know about each midwife
 
@@ -1245,6 +1356,149 @@ deliberate:
   it: not NPPES in either layout, not the CMS Doctors & Clinicians file, and not
   the Healthgrades scrape.
 
+**Multi-state license status, wired in but not yet in a published render
+(2026-11-04).** `extract_open_payments_profile_supplement.R` pulls
+`Covered_Recipient_Profile_License_State_Code_1..5` — which states a
+provider is *licensed* in, from CMS's Open Payments provider-profile
+registry, independent of every other source this project holds — and
+`build_table1_midwives.R` now has a block for it: **"Licensed in 2+ states
+(Open Payments profile)"** vs. **"Licensed in 1 state"**, with **"No Open
+Payments provider profile"** as its own named unknown (only a provider ever
+reported in Open Payments gets a profile at all). Run in isolation against
+the current 12,170-person cohort: 4,628 single-state, 2,492 multi-state
+(35.0% of the 7,120 with a profile), summing exactly to cohort N. It has not
+yet appeared in a full Table 1 build — the published run still needs
+`artifacts/nppes_sex_enumeration.csv`, `artifacts/dac_cnm_education.csv`,
+`artifacts/hpsa_status.csv`, `artifacts/medicare_participation.csv` and the
+ACOG crosswalk, none of which this addition touches or depends on. See
+[the state-source audit appendix, §5](docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md)
+for why this variable exists: joined against per-NPI cross-source consensus,
+multi-state-licensed midwives land in the "Split" (no-majority) disagreement
+tier at roughly nine times the rate of single-state-licensed ones
+(22.1% vs. 2.4%, chi-squared(2, n=8,312) = 1,353.1, p < 2.2e-16) —
+the first direct evidence in this project that most cross-source address
+disagreement reflects genuine multi-state practice rather than a
+data-quality problem.
+
+**Two more fixes to the same build (2026-11-05).** The CMS hospital-affiliation
+block (hospital privilege via CCN, hospital count, type, ownership and
+birthing-friendly designation — five Table 1 rows) had gone silently dead:
+`artifacts/dac_hospital_affiliation_person.csv` was still a *required*
+enrichment input, but the join code that turned it into columns was
+accidentally deleted when the Trilliant work-site block was added in its
+place, so the required file stopped contributing anything. Restored; verified
+in isolation, 1,683 of the 12,170 cohort get a recorded hospital privilege.
+Separately, the same Open Payments provider-profile file already read for
+multi-state license status also carries a second, independent
+specialty/credential field (`primary_specialty`) that had never been used —
+now a new block, **"Advanced Practice Midwife (Open Payments profile)"** vs.
+**"Other classification"**, corroborating the NPPES taxonomy block from a
+wholly separate source. 5,799 Advanced Practice Midwife, 592 Other, 5,779 with
+no usable classification, summing exactly to N.
+
+**Checked against AMCB's own published workforce data (2026-11-05).** AMCB
+publishes a self-reported demographic report and a state-by-state count,
+independent of every source this project uses. The CNM/CM split and sex
+distribution corroborate this project's NPPES/AMCB linkage closely (99.0%/1.0%
+and 99.5% female here vs. AMCB's 99.05%/0.95% and 98.9%); AMCB collects race,
+ethnicity, language, employment status and salary that no source here holds at
+all; and a state-by-state comparison surfaces a real, unresolved discrepancy —
+several large states undercounted 13–22% in this project's NPPES-derived
+distribution (Georgia, Michigan, North Carolina, Virginia, Tennessee), New York
+overcounted by 12%. Full comparison, including the state-level table and the
+age-model benchmarking opportunity AMCB's data makes possible:
+[docs/TECHNICAL_APPENDIX_AMCB_DEMOGRAPHIC_COMPARISON.md](docs/TECHNICAL_APPENDIX_AMCB_DEMOGRAPHIC_COMPARISON.md).
+
+**Table 1, by year (`build_table1_by_year.R`, 2026-11-05).** Table 1 proper is
+cross-sectional — most of its variables (sex, age, ACOG district, rurality,
+Healthgrades, CMS NDH, HPSA) are single current snapshots with no year
+dimension at all. The identity set tracked here is the same fixed,
+today-ACTIVE cohort Table 1 uses — never reconstructed year to year — but a
+cohort member now counts toward year Y's numerator *and denominator* only if
+her AMCB certification actually covered year Y (`certification_date <= Y <=
+expiration_date`, real historical facts on the linkage record, not the
+current `status` snapshot). Every earlier version of this table divided by
+the full fixed N regardless of year, so a midwife certified in 2024 silently
+dragged down 2007's rate just by not existing yet — real left-censoring, but
+it made several early-year rates read as a behavior trend when they were
+actually a composition artifact. Restricting to the certification-eligible
+subset each year changes more than the early numbers:
+
+- **NPPES annual panel presence** no longer looks left-censored at all once
+  restricted to who could plausibly have appeared: 79.1% (2007) rather than
+  24.1%, climbing to 99.2% by 2026 — consistently high observability
+  throughout, not a rise from near-zero.
+- **Medicare Part D presence, previously reported as "nearly doubling," is
+  essentially flat**: 28.8% (2013) to 27.0% (2023), a ~2-point *decline*, not
+  the 13.5%→24.6% rise the uncorrected denominator produced. Part B is
+  similarly flat, 9.0% (2013) to 8.2% (2023), peaking mid-cycle at 10.8%
+  (2019). The earlier "real increase in this population's Medicare
+  footprint" claim did not survive this correction and has been withdrawn.
+- **CCN hospital affiliation's decline is confirmed, and sharper than first
+  reported**: 21.7% (2013) down to a 5.8–8.3% band by 2018–2022, consistent
+  with the declining CCN fill rate already documented in the state-source
+  audit — restricting the denominator strengthened this finding rather than
+  explaining it away.
+- **Open Payments general-payment presence** (filtered to `payment_amount >
+  0`) still shows a real post-2021 rise — 24.4% to 36.1% through 2025 — the
+  one federal-claims source where "a real increase" still holds. The
+  2015–2020 rows remain small, real dollar amounts, but most likely
+  NPI-matching noise rather than genuine midwife payments: CNMs were not
+  Open-Payments-reportable until the SUPPORT Act (Pub. L. 115-271 §6111) took
+  effect for program year 2021.
+- **PECOS revalidation** sits higher and flatter once restricted: 70.2%
+  (2021) to 75.4% (2025), dipping to 73.3% (2026, a vintage not yet complete
+  for the year).
+- **Medicaid enrollment is the one source that cannot be restricted this
+  way** — its input is a pre-aggregated classification count, not a
+  person-level table this script can intersect against the eligibility
+  window — and remains rated against the fixed cohort N, labelled as such.
+  It is also still the one clear decliner: 70.0% (2018) to 48.5% (2024).
+- **Medicaid billing activity, a separate and genuinely person-level
+  Medicaid source** (`extract_tmsis_medicaid_spending_history.R`), from HHS
+  DOGE's 2026-02 Transformed Medicaid Statistical Information System
+  (T-MSIS) provider-spending release — the largest public Medicaid claims
+  dataset HHS has published, no application or data-use agreement required
+  for the first time. Matched 6,472 of 12,170 cohort NPIs (53.2%) via
+  `SERVICING_PROVIDER_NPI_NUM` (the rendering provider; `BILLING_PROVIDER_
+  NPI_NUM` matches 10× fewer, the same rendering-vs-billing asymmetry
+  already documented for Medicare Part B). Unlike the enrollment
+  classification above, this IS eligibility-restricted: 28.7% (2018) rising
+  to 37.0% (2023). The raw national release has a documented data-quality
+  problem (`TOTAL_PAID` contains implausible trillion-dollar rows elsewhere
+  in the file); verified this cohort's own matched rows are clean (max
+  $305,181 per provider-month, zero rows over $1M) before using it, with a
+  defensive plausibility bound applied anyway.
+- **PPEF**, CMS's Public Provider Enrollment File (distinct from the
+  revalidation extract already in use, found on the external drive and
+  extracted for the first time this session), stands apart from every other
+  source: a single current snapshot with no year series of its own, but each
+  enrollment ID embeds the provider's *original* Medicare enrollment date —
+  a one-time historical fact reaching back to **2003**, earlier than any
+  other source here — plotted as a cumulative share, restricted to the same
+  eligibility window: 0.6% (2003) climbing to 72.4% of the eligible cohort
+  with a Medicare enrollment on record by 2026.
+
+Full table, with each row's `eligible_n` denominator shown alongside its
+count: [`docs/table1_by_year.md`](docs/table1_by_year.md).
+
+**What "ACTIVE" doesn't mean.** Every line above restricts to the subset
+whose AMCB certification is ACTIVE for that year — an administrative status,
+not a measure of current clinical practice. Trilliant Health's independent,
+claims-derived `active_provider` flag (already enriched into this project via
+`enrich_trilliant_demographics.R`) makes the gap concrete: of the 12,170
+ACTIVE, primary-linked cohort members, **1,304 (10.7%) show no current
+provider activity** in Trilliant's directory (snapshot 2026-06-25) despite
+holding an active certification. Trilliant carries no year history of its
+own — a single current snapshot, unlike every source above — so this is a
+point-in-time cross-check, not a tenth trend line, and a lower bound: the
+claims-based signal has its own coverage gaps and cannot itself distinguish a
+true exit from an undercount. The same figure, generated from the tracked
+`artifacts/trilliant_demographics_validation_<freeze sha8>.csv` aggregate via
+the manuscript's stats catalog (never typed in by hand), appears in
+[`manuscript/midwife_persistence.qmd`](manuscript/midwife_persistence.qmd)'s
+Strengths and limitations section.
+
 ## Data sources
 
 Nothing in this repository is scraped from behind a paywall or a login, and no
@@ -1307,13 +1561,20 @@ repaired later.
 > **The NPPES file format changed in December 2024**, and `build_midwife_panel.R`
 > gained a second parsing path to read it. The two paths were validated to
 > produce byte-identical output on the December 2024 snapshot (393,409 rows,
-> zero mismatches), and ten adversarial schema/concurrency fixtures spanning
-> the 2007–2026 file history — an accented name under an ASCII header, a
-> missing column, a lowercase taxonomy code, a live lock file — are now a
-> permanent test (`tests/test_build_midwife_panel.R`). The same investigation
-> found that AMCB's `certification_date` is a renewal date rather than an
-> original-certification date for **0.9%** of linked ACTIVE certificants,
-> which understates "years since certification" for that subset. See
+> zero mismatches). A third path was added 2026-10-19 for the panel's 2023
+> vintage, which turned out to have no classic `npidata_` file on record at
+> all — the real source was an undocumented third NBER distribution (an
+> `npi_<Month>_<Year>.parquet` + `ptax_<Month>_<Year>.parquet` pair), and
+> nothing had ever read it; 542 cohort members' practice addresses had
+> silently gone missing from that year's row as a result, now fixed. Thirty
+> adversarial schema/concurrency fixtures spanning the 2007–2026 file history
+> — an accented name under an ASCII header, a missing column, a lowercase
+> taxonomy code, a live lock file, an unmapped parquet vintage, a duplicated
+> join row — are now a permanent test (`tests/test_build_midwife_panel.R`).
+> The same investigation found that AMCB's `certification_date` is a renewal
+> date rather than an original-certification date for **0.9%** of linked
+> ACTIVE certificants, which understates "years since certification" for that
+> subset. See
 > [`docs/TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md`](docs/TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md).
 
 ### Tier B — geography and boundaries
@@ -1372,12 +1633,13 @@ measured — see [Absence is not zero](#absence-is-not-zero-in-four-different-so
 
 | Source | Vintage used | Exact file | Supplies | Consumed by |
 |---|---|---|---|---|
-| **CMS Doctors & Clinicians (DAC)** | **June 2026** | `DAC_NationalDownloadableFile_2026-06.csv` | practice-address corroboration, group practice, medical/midwifery school (14.3% coverage), graduation year, CCN facility affiliations | [`extract_dac_midwives.R`](extract_dac_midwives.R), [`extract_dac_cnm_education.R`](extract_dac_cnm_education.R), [`extract_dac_facility_affiliations.R`](extract_dac_facility_affiliations.R) |
+| **CMS Doctors & Clinicians (DAC)** | **June 2026** for Table 1/attribute use; **full annual history, 2013–2026**, for the state-source audit (2013–2016 from NBER's mirror, 2017–2025 from tables already sitting in an external DuckDB warehouse, 2026 the live pull) | `DAC_NationalDownloadableFile_2026-06.csv`; historical vintages via [`extract_physician_compare_historical_midwives.R`](extract_physician_compare_historical_midwives.R) | practice-address corroboration, group practice, medical/midwifery school (14.3% coverage), graduation year, CCN facility affiliations (2013–2022 only — CMS dropped the field from the file itself starting 2023, see [`extract_historical_facility_affiliation.R`](extract_historical_facility_affiliation.R)) | [`extract_dac_midwives.R`](extract_dac_midwives.R), [`extract_dac_cnm_education.R`](extract_dac_cnm_education.R), [`extract_dac_facility_affiliations.R`](extract_dac_facility_affiliations.R) |
 | **Medicare Physician & Other Practitioners (Part B)** and **Part D Prescribers** | **2013–2023**, one row per provider-year | `nber_my_duckdb.duckdb` (external volume). Part D 2022–2023 exist twice — the `_standardized` series is used and the raw duplicates ignored | Part B 19.5% / Part D 47.1% participation | [`match_medicare_partb_partd.R`](match_medicare_partb_partd.R) |
 | **HCRIS hospital cost reports** | **FY2023** (`HCRIS_FY`, overridable) | `/Volumes/MufflySamsung*/HCRIS/hosp10/fy2023/` | newborn/nursery volume at affiliated hospitals — **reported by only 37.7% of hospitals** | [`extract_hcris_affiliated_hospitals.R`](extract_hcris_affiliated_hospitals.R) |
 | **HRSA HPSA — primary care** | the file is named `..._CUR_...` (**current at download**); **the download date is not recorded anywhere in the repo** — a reproducibility gap | `HPSA_CMPPC_SHP_DET_CUR_VX.shp` | shortage-area status by point-in-polygon, 98.4% of geocoded | [`assign_hpsa_status.R`](assign_hpsa_status.R) |
-| **Open Payments — general payments** | **program year 2024**, published extract `P06302026_06032026` | `OP_DTL_GNRL_PGYR2024_P06302026_06032026.csv` | recent practice addresses and Type-2 organization candidates. **Never used for any payment-behaviour claim** | [`harvest_open_payments_profile.py`](harvest_open_payments_profile.py), [`link_open_payments_type2_bulk.R`](link_open_payments_type2_bulk.R) |
-| **Open Payments — covered recipient profile supplement** | same extract | `OP_CVRD_RCPNT_PRFL_SPLMTL_P06302026_06032026.csv` | the recipient profile keyed to NPI | same, plus [`resolve_org_ambiguity.R`](resolve_org_ambiguity.R) |
+| **Open Payments — general payments** | **program year 2025** (direct CMS download, confirmed reachable 2026-11-04 after an earlier session wrongly reported CMS as blocked) for the most recent year; **2015–2025** for the state-source audit (2015–2020 is trace-only, 1–29 NPIs/year — CNMs were not Open-Payments-reportable until the SUPPORT Act expansion hit program year 2021) | `PGYR2025_P06302026_06032026/OP_DTL_GNRL_PGYR2025_P06302026_06032026.csv` | recent practice addresses and Type-2 organization candidates. **Never used for any payment-behaviour claim** | [`harvest_open_payments_profile.py`](harvest_open_payments_profile.py), [`link_open_payments_type2_bulk.R`](link_open_payments_type2_bulk.R), [`extract_open_payments_2025.R`](extract_open_payments_2025.R), [`extract_open_payments_address_history.R`](extract_open_payments_address_history.R) |
+| **Open Payments — covered recipient profile supplement** | same extract (`data/CMS_Open_Payments_Profile_Supplement.csv`, 1.69M rows, every CMS Open Payments profile nationally) | `OP_CVRD_RCPNT_PRFL_SPLMTL_P06302026_06032026.csv` | the recipient profile keyed to NPI; as of 2026-11-04 also license-state (`License_State_Code_1..5`, multi-state flag) and a second independent specialty-taxonomy field — see [Table 1](#table-1) above and the [state-source audit appendix](docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md) | same, plus [`resolve_org_ambiguity.R`](resolve_org_ambiguity.R), [`extract_open_payments_profile_supplement.R`](extract_open_payments_profile_supplement.R) |
+| **CMS PECOS revalidation/reassignment** | monthly releases, **2021-12 through 2026-09** (40 vintages) | `revalidation_reassignment` table, external DuckDB warehouse | enrollment-derived practice state per NPI-year, independent of NPPES self-report; the lowest-agreeing source against NPPES of any in the state-source audit (87.8–88.7%, flat across all six years) but not an outlier once compared pairwise against other sources instead of NPPES alone | [`extract_pecos_revalidation_state_history.R`](extract_pecos_revalidation_state_history.R) |
 | **Trilliant provider & organization directory** (licensed) | directory snapshot **2026-06-25**, DuckLake `20260721` | `hpt_prices/trilliant/20260721/lake` (external volume) | claims-derived main practice site, visit share, number of sites, `active_provider`, patient-panel composition; organization geocodes, types and taxonomies. **No clinician-level claims** | [`build_trilliant_work_sites.R`](build_trilliant_work_sites.R), [`analyze_trilliant_activity_flag.R`](analyze_trilliant_activity_flag.R), [`R/inventory_trilliant_research_fields.R`](R/inventory_trilliant_research_fields.R) |
 
 ### Tier E — training institution
@@ -1409,10 +1671,106 @@ reproducibility gap stated rather than hidden.
 |---|---|---|---|
 | **Healthgrades** profiles | practice addresses for AMCB certificants with *no NPI at all*, via schema.org JSON-LD blocks; profile attributes | not recorded; checkpoints timestamped **2026-08-09** | [`scrape_healthgrades_midwives.R`](scrape_healthgrades_midwives.R), [`enrich_healthgrades_profiles.R`](enrich_healthgrades_profiles.R), [`sweep_healthgrades_enrichment.R`](sweep_healthgrades_enrichment.R) |
 | **Doximity** public CNM directory | maiden names and a specialty label; **no NPI** — the UUID is Doximity-internal | not recorded | [`scrape_doximity_public_cnm.R`](scrape_doximity_public_cnm.R), [`enrich_doximity_cnm_ages.R`](enrich_doximity_cnm_ages.R) |
-| **State Boards of Nursing** — open data only: WA DOH (`qxh8-f4bd`), Illinois IDFPR (`pzzh-kp68`), Colorado DORA (`7s5z-vewr`), Texas BON (`jnzg-cr4w`). The "~40 portals" once listed here were never queried; their licence numbers were synthesized (see [the defect note](docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md)). | WA/IL: licence issue dates → age-at-certification calibration. WA/CO/TX: licence number and status (Figure 1) | WA/IL 2026-08-10 (`artifacts/state_nursing_license_ages_provenance.csv`); CO 2026-09-11; TX 2026-09-12; WA re-queried 2026-09-13 | [`enrich_state_nursing_license_ages.R`](enrich_state_nursing_license_ages.R), [`harvest_live_wa_bon_from_tracked_roster.py`](harvest_live_wa_bon_from_tracked_roster.py), [`harvest_live_co_bon_from_tracked_roster.py`](harvest_live_co_bon_from_tracked_roster.py), [`harvest_live_tx_bon_from_tracked_roster.py`](harvest_live_tx_bon_from_tracked_roster.py) |
+| **CMS National Provider Directory (NDH)** — public, no-auth FHIR R4 gateway at `directory.cms.gov/fhir` | multi-location practice addresses/phones, state license numbers, Medicare-enrollment and HHS-exclusion-list flags, and (uniquely here) an accepting-new-patients signal per organization affiliation | full-cohort run completed **2026-10-23**: 16,361 of 16,775 (97.5%) found, cross-checked against an independent bulk-export pass that landed on the identical figure (see [technical appendix](docs/TECHNICAL_APPENDIX_CMS_NDH.md)) | [`harvest_cms_national_provider_directory.py`](harvest_cms_national_provider_directory.py), [`download_cms_ndh_bulk.py`](download_cms_ndh_bulk.py) + [`clean_cms_ndh_bulk.py`](clean_cms_ndh_bulk.py) |
+| **CMS PECOS Medicare revocation** — "Revoked Medicare Providers and Suppliers" (opendata.hhs.gov), NPI-keyed | a re-enrollment bar, CMS's own administrative-action record — a second, independently-sourced federal-adverse-action check alongside the NDH exclusion flag above (Figure 19) | snapshot updated 2026-03-02; checked **2026-10-26** | [`load_cms_pecos_revocations_to_duckdb.R`](load_cms_pecos_revocations_to_duckdb.R), [`match_cms_pecos_revocations.R`](match_cms_pecos_revocations.R) |
+| **FDA Debarment List** (Drug Product Applications) — name-only, no NPI | a third federal-adverse-action check, matched by normalized last+first name; flagged only on an unambiguous one-to-one match (any name collision is reported, never flagged) | snapshot dated 2026-10-02; checked **2026-10-26** | [`load_fda_debarment_to_duckdb.R`](load_fda_debarment_to_duckdb.R), [`match_fda_debarment.R`](match_fda_debarment.R) |
+| **State Boards of Nursing** — open data or unprotected search only: WA DOH (`qxh8-f4bd`), Illinois IDFPR (`pzzh-kp68`), Colorado DORA (`7s5z-vewr`), Texas BON (`jnzg-cr4w`), California DCA (Box-hosted roster), Delaware DELPROS, Connecticut eLicense, Florida DOH License Verification, Pennsylvania PALS. The "~40 portals" once listed here were never queried; their licence numbers were synthesized (see [the defect note](docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md)). 8 further states (NC, OH, GA, MN, AZ, TN, WI, OR) were checked and found to have no usable public search — see [the portal-availability survey](docs/TECHNICAL_APPENDIX_BON_PORTAL_AVAILABILITY.md). | WA/IL: licence issue dates → age-at-certification calibration. WA/CO/TX: licence number and status (Figure 1). CA/IL/CT/DE/FL: address agreement against PECOS/DAC (below); PA: licence number/status, a CNM-specific category by construction | WA/IL 2026-08-10 (`artifacts/state_nursing_license_ages_provenance.csv`); CO 2026-09-11; TX 2026-09-12; WA re-queried 2026-09-13; CA/IL/CT/DE 2026-10-23; FL 2026-10-26; PA 2026-10-23 | [`enrich_state_nursing_license_ages.R`](enrich_state_nursing_license_ages.R), [`harvest_live_wa_bon_from_tracked_roster.py`](harvest_live_wa_bon_from_tracked_roster.py), [`harvest_live_co_bon_from_tracked_roster.py`](harvest_live_co_bon_from_tracked_roster.py), [`harvest_live_tx_bon_from_tracked_roster.py`](harvest_live_tx_bon_from_tracked_roster.py), [`compare_pecos_to_bon_address.R`](compare_pecos_to_bon_address.R) |
 | **Florida and Ohio voter files** | date of birth for age validation, under a three-tier disambiguation that **excludes ambiguous collisions rather than guessing** | not recorded | [`match_florida_voter_ages.R`](match_florida_voter_ages.R), [`match_ohio_voter_ages.R`](match_ohio_voter_ages.R), [`parse_ohio_voter_file.py`](parse_ohio_voter_file.py) |
 | **AABC / CABC birth centres** | accredited birth-centre addresses → birth-centre midwife identification | not recorded | [`harvest_aabc_accredited_centers.py`](harvest_aabc_accredited_centers.py), [`extract_all_cabc_birth_centers.py`](extract_all_cabc_birth_centers.py), [`identify_birth_center_midwives.R`](identify_birth_center_midwives.R) |
 | **WebMD, Vitals** | explored as address sources | exploratory only | [`explore_webmd_midwives.py`](explore_webmd_midwives.py), [`explore_vitals_midwives.py`](explore_vitals_midwives.py) |
+
+#### Cross-source address agreement
+
+![Address agreement across every source pair this project has checked](docs/figures/address_agreement_heatmap.png)
+
+If two independent sources are asked where the same provider practices, how
+often do they agree, and at what geographic grain does that stop being true?
+Five pairings — PECOS/DAC vs NPPES, vs Doximity, vs state Boards of Nursing;
+Healthgrades vs both NPPES and PECOS/DAC — answer the same question five
+ways: state-level agreement is high everywhere (**89.8–95.3%**); city and
+ZIP5 agreement drop well below that (47–64% among the four practice-vs-
+practice pairs, 35.5–35.6% for the state-board pair, which measures
+something structurally different — board data is sometimes a mailing
+address, sometimes a practice address, and coverage is uneven state to
+state). Street-level comparison was tried on every pair and dropped
+entirely — never usable, lowest 21.7%. Full method, per-pair numbers, and
+every caveat: [docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md](docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md).
+
+#### State source audit — practice-state coverage, 10 sources, 2007–2026
+
+The address-agreement work above answers "how often do two sources agree";
+this is the companion question at state granularity, at full scale, and
+asked a harder way — **there is no gold standard for a midwife's practice
+state**, so every number below is comparisons between sources, never a
+score against the truth. Ten sources: NPPES (backbone, every year
+2007–2026), DAC/Physician Compare (every year 2013–2026), Open Payments
+(2015–2025, real from 2021), PECOS revalidation (2021–2026), Facility
+Affiliation (2013–2022 + 2026), Medicaid/T-MSIS (2018–2024, its own
+Concordant/Discordant classification, not folded into a flat percentage),
+and five single-current-snapshot sources (Healthgrades, Doximity, State
+Boards of Nursing, CMS NDH, plus the Open Payments provider-profile
+registry's license-state field).
+
+For a narrative walk through these findings — why averaging across
+disagreeing sources would be wrong here, why PECOS looked like the outlier
+and wasn't, and what the multi-state-licensure result actually means — see
+[`docs/VIGNETTE_STATE_SOURCE_AUDIT_2026-11-04.md`](docs/VIGNETTE_STATE_SOURCE_AUDIT_2026-11-04.md).
+The full numbers are in [`docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md`](docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md).
+
+- **DAC holds in a 91.8–95.1% band against NPPES for thirteen straight
+  years (2013–2025)**, then drops to 89.8% in 2026 — the newest year, not
+  a confirmed trend. An earlier pass of this audit reported DAC as five
+  disconnected vintages with a nine-year hole, 2017–2025; the hole turned
+  out not to exist — those years were already sitting in an external
+  DuckDB warehouse this project already uses elsewhere, just never
+  checked for DAC specifically.
+- **PECOS revalidation is the lowest-agreeing source against NPPES of any
+  in this audit (87.8–88.7%, flat across all six years) — but is not an
+  outlier once compared directly against other sources instead of
+  NPPES alone.** Pairwise (`build_state_source_pairwise_audit.R`, via
+  `mysteryroster::attribute_agreement()`), PECOS agrees with DAC and Open
+  Payments about as well as they agree with each other. Anchoring
+  everything to NPPES made PECOS look uniquely discordant; pairwise, it
+  isn't one.
+- **CMS NDH is the one source that disagrees with everyone, not just
+  NPPES** — mean pairwise agreement 88.2% across all 8 other sources,
+  the lowest of any, confirming its 89.9%-vs-NPPES score wasn't an
+  NPPES-anchor artifact.
+- **Most cross-source disagreement is genuine multi-state practice, not
+  noise.** Joining per-NPI consensus tiers against the Open Payments
+  license-state field: midwives licensed in one state are 92.4%
+  Unanimous and 2.4% Split; midwives licensed in two or more states are
+  59.9% Unanimous and 22.1% Split — roughly nine times the single-state
+  rate (chi-squared(2, n=8,312) = 1,353.1, p < 2.2e-16).
+- **84.5% of cohort NPIs with ≥2 current sources reporting are
+  Unanimous** (14,314 of 16,939); the unanimous rate declines from 94%
+  (2 sources) to ~76% (6–7 sources) as more independent sources are
+  required to agree simultaneously — the expected statistical effect of
+  raising the bar, not evidence the data degrades at higher source
+  counts.
+
+Full write-up, every coverage/agreement table, the pairwise matrix, the
+longitudinal consensus-tier flow, and every scope limitation (no full
+N×N pairwise matrix for every pair; State Boards of Nursing cover 7
+states; NPPES's own staleness isn't classified; Healthgrades and the BON
+data are single non-reproducible scrapes):
+[docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md](docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md).
+An interactive dashboard (coverage timeline, agreement charts with 95%
+Wilson confidence bands, the pairwise heatmap, a consensus-flow Sankey
+diagram) is at
+[docs/state_source_audit_dashboard.html](docs/state_source_audit_dashboard.html).
+
+```bash
+Rscript extract_physician_compare_historical_midwives.R   # DAC, full history
+Rscript extract_historical_facility_affiliation.R          # Facility Affiliation, 2013-2022
+Rscript extract_open_payments_address_history.R             # Open Payments, 2015-2021
+Rscript extract_open_payments_2025.R                         # Open Payments, 2025
+Rscript extract_pecos_revalidation_state_history.R          # PECOS revalidation
+Rscript extract_open_payments_profile_supplement.R          # license-state + taxonomy
+Rscript build_state_source_audit.R                           # coverage + agreement tables
+Rscript build_state_source_pairwise_audit.R                  # every non-NPPES pair
+Rscript build_cross_source_comparison.R                       # consensus score, longitudinal flow, confidence bands
+```
 
 ### Tier G — cross-repository and generated
 
@@ -1567,7 +1925,7 @@ python3 scrape.py
 
 # 2. Identity — candidates, then ranked-class resolution
 python3 fetch_npi_candidates.py        # live NPI Registry API
-Rscript  build_midwife_panel.R         # NPPES 2007-2025 -> midwife_panel.csv
+Rscript  build_midwife_panel.R         # NPPES 2007-2026 -> midwife_panel.csv
 Rscript  match_amcb_to_npi.R
 Rscript  reconcile_linkage.R           # -> artifacts/amcb_npi_linkage_FROZEN.csv
 Rscript  provenance_manifest.R         # -> artifacts/linkage_manifest.json
@@ -2082,34 +2440,36 @@ Version numbers there are retrospective groupings of 280 commits, not git tags.
 To reproduce a specific figure, use the commit SHA in that artifact's
 `.provenance.json` sidecar rather than a version string.
 
-## How to cite
+## Citation
 
-If you use this pipeline or the workforce estimates it produces, cite the
-software:
+If you use this dataset or pipeline, cite it as [`CITATION.cff`](CITATION.cff)
+does — GitHub renders it as a "Cite this repository" button. There is no DOI:
+the one printed here until 2026-09-13, 10.5281/zenodo.1054200, belongs to an
+unrelated 2016 Zenodo record, and the "Version 4.0.0" beside it was never
+tagged. The repository's only tag is `v0.7.0` (2026-08-13); for anything
+later, cite the commit SHA.
 
-> Muffly, T. (2026). *midwifery: linking the AMCB certification roster to NPI
-> identity and county geography* (Version 0.7.0) [Computer software].
-> https://github.com/mufflyt/midwifery
+**APA format:**
+> Muffly, T., & Thumm, E. B. (2026). *National Certified Nurse-Midwife (CNM)
+> 50-State & DC Workforce Registry Dataset* (Version 0.7.0) [Data set &
+> Software]. GitHub. https://github.com/mufflyt/midwifery
 
-BibTeX:
-
+**BibTeX:**
 ```bibtex
-@software{muffly_midwifery_2026,
-  author  = {Muffly, Tyler},
-  title   = {midwifery: linking the {AMCB} certification roster to
-             {NPI} identity and county geography},
-  year    = {2026},
-  version = {0.7.0},
-  url     = {https://github.com/mufflyt/midwifery},
-  license = {MIT}
+@misc{muffly2026midwifery,
+  author       = {Tyler Muffly and E. Brie Thumm},
+  title        = {National Certified Nurse-Midwife (CNM) 50-State \& DC Workforce Registry Dataset},
+  year         = {2026},
+  version      = {0.7.0},
+  publisher    = {GitHub},
+  url          = {https://github.com/mufflyt/midwifery}
 }
 ```
 
-[`CITATION.cff`](CITATION.cff) carries the same metadata in machine-readable
-form, plus structured citations for all twelve upstream data sources; GitHub
-renders it as a "Cite this repository" button. Two fields in it are marked
-`TODO` because they cannot be inferred — an ORCID, and a Zenodo DOI if you
-archive a release.
+`CITATION.cff` carries the same metadata in machine-readable form, plus
+structured citations for all twelve upstream data sources. Two fields in it
+are marked `TODO` because they cannot be inferred — an ORCID for each author,
+and a Zenodo DOI if you archive a release.
 
 **Cite the sources too, not just this repository.** The code is not the
 evidence. Any published estimate rests on the AMCB directory, NPPES, the CMS
@@ -2150,29 +2510,6 @@ Person-level derived tables — anything keyed to a certification number, an NPI
 a name, or a practice address for an identifiable midwife — are gitignored by
 design, are not distributed, and are rebuildable from the sources by anyone
 with the access described under [Access requirements](#access-requirements).
-
-## Citation
-
-If you use this dataset or pipeline, cite it as [`CITATION.cff`](CITATION.cff)
-does. There is no DOI: the one printed here until 2026-09-13,
-10.5281/zenodo.1054200, belongs to an unrelated 2016 Zenodo record, and the
-"Version 4.0.0" beside it was never tagged. The repository's only tag is
-`v0.7.0` (2026-08-13); for anything later, cite the commit SHA.
-
-### APA Format
-> Muffly, T., & Thumm, E. B. (2026). *National Certified Nurse-Midwife (CNM) 50-State & DC Workforce Registry Dataset* (Version 0.7.0) [Data set & Software]. GitHub. https://github.com/mufflyt/midwifery
-
-### BibTeX Format
-```bibtex
-@misc{muffly2026midwifery,
-  author       = {Tyler Muffly and Elisabeth B. Thumm},
-  title        = {National Certified Nurse-Midwife (CNM) 50-State \& DC Workforce Registry Dataset},
-  year         = {2026},
-  version      = {0.7.0},
-  publisher    = {GitHub},
-  url          = {https://github.com/mufflyt/midwifery}
-}
-```
 
 ## Dataset Metadata & Specifications
 

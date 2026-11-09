@@ -40,3 +40,8 @@ artifacts/florida_voter_license_ages_provenance.csv
 # Header only, zero rows. The columns are person-level; the file describes
 # nobody. Left tracked so the expected schema stays visible.
 artifacts/no_final_npi_provenance.csv
+
+# CMS's public FQHC enrollment file. Its NPI column is an ORGANIZATION NPI
+# (e.g. "TRENTON MEDICAL CENTER INC") -- a facility, not a person -- flagged
+# only on the column name.
+data/CMS_FQHC_Enrollments.csv

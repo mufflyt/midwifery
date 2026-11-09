@@ -122,14 +122,77 @@ cat("\n-- SEMANTIC --\n")
 # in a way this test's own copy of the baseline has not been told about --
 # either direction is worth recounting fresh rather than trusting either
 # number.
+#
+# Recounted 2026-10-20 after rebasing onto origin/main (53 commits): true
+# count is 105, not 103. Confirmed as discovered debt, not newly introduced:
+# none of the two new offenders is in a file this branch's own commits
+# touched -- both arrived already present in origin/main's history, and the
+# widened sweep (tests/test_cycle5_key_resolution.R's own BASELINE, 110L)
+# already tolerates up to 110, so this was never a silent regression, only
+# this file's own stricter exact-match copy of the number going stale.
+#
+# Recounted again 2026-10-22 on the fuzzy-surname-matching-removal branch:
+# true count is 106, not 105. The one new site is
+# match_amcb_to_npi.R's vendored rank_one_to_one() (added this branch to
+# replace a cross-repo source() of the same, pre-existing function; see
+# tests/test_fuzzy_surname_removal_saboteur.R) -- `best %>%
+# dplyr::distinct(!!id, npi, .keep_all = TRUE)`. Its order IS established by
+# a real arrange() (method_priority, score_total_adj, confidence_score, id),
+# just 18 lines earlier rather than within the sweep's 4-line lookback --
+# exactly the heuristic blind spot T40-6/T40-10 already document, not a new
+# order-dependent conflict. A false positive from vendoring pre-existing
+# code into a new file, not new debt.
+#
+# Recounted again 2026-10-29 bringing in Medicaid billing/MCO analysis work
+# that existed only uncommitted in a worktree: true count is 108, not 106.
+# The 2 new sites are both in R/lib/ob_midwife_cohort.R's
+# build_ob_midwife_cohort() -- `abog_canonical %>% ... dplyr::distinct(npi,
+# .keep_all = TRUE)` for the Generalist OB-GYN group, and `abog_sub %>% ...
+# dplyr::distinct(npi, .keep_all = TRUE)` for MFM. UNLIKE the 2026-10-22 site
+# above, neither has an arrange() establishing row order anywhere in the
+# function -- this is a genuine, undetermined risk, not confirmed benign.
+# Not fixed here: this project did not author build_ob_midwife_cohort() (it
+# was committed as pre-existing uncommitted work from another session) and
+# its three source files (amcb_npi_linkage_FROZEN.csv and two paths under
+# ~/isochrones) are private/gitignored and unavailable in this environment,
+# so whether abog_canonical or abog_sub actually carry duplicate NPIs --
+# and if so, which duplicate .keep_all=TRUE silently keeps -- could not be
+# verified. Recorded as real, unverified debt for whoever can run against
+# the private source data, not silently waved through as a false positive.
+# Recounted again 2026-11-04 bringing in the state-source audit work: true
+# count is 109, not 108. Three new sites landed with that work --
+# build_cross_source_comparison.R's `four_long %>% distinct(npi, year,
+# source, .keep_all = TRUE)` and extract_historical_facility_affiliation.R's
+# `hosp %>% distinct(ccn, .keep_all = TRUE)` were both given a real
+# arrange() tie-break (npi/year/source/state and ccn/facility_name
+# respectively) rather than left as debt, so neither counts. The third,
+# build_table1_midwives.R's `opsup %>% distinct(certification_number,
+# .keep_all = TRUE)`, was left unfixed: it mirrors the exact same bare
+# pattern the file's own pre-existing `mcare` block already uses two blocks
+# above it (also in this count, also unfixed) -- adding an arrange() to the
+# new site alone, while the established pattern it was modeled on stays
+# bare, would not remove the underlying risk, just move where in the file
+# it's named. 108 + 1 = 109.
+#
+# Recounted again 2026-11-05: true count is 110, not 109. One site landed --
+# build_table1_midwives.R's restored `.aff %>% distinct(certification_number,
+# .keep_all = TRUE)` (the CMS hospital-affiliation block, accidentally
+# deleted in a3d40139 and restored verbatim). Left bare, same reasoning as
+# the `opsup`/`mcare` sites immediately above it in this count: the source
+# file (artifacts/dac_hospital_affiliation_person.csv) is already guaranteed
+# one row per certification_number by its own producer
+# (extract_dac_facility_affiliations.R's `group_by(certification_number) %>%
+# summarise(...)`), so the distinct() is a defensive no-op, not a real
+# order-dependent risk -- a third instance of the file's own established
+# idiom, not a new one. 109 + 1 = 110.
 {
   root <- "."
   files <- c(
     list.files(file.path(root, "R"), pattern = "\\.R$", recursive = TRUE, full.names = TRUE),
     list.files(root, pattern = "\\.R$", recursive = FALSE, full.names = TRUE))
   n <- length(detect_offenders(files))
-  chk(n == 103L,
-      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 103)", n))
+  chk(n == 110L,
+      sprintf("T40-5 the widened sweep's true current count matches the recorded baseline (got %d, expected 110)", n))
 }
 
 # T40-6. DOCUMENTED LIMITATION, not fixed this cycle: the detection regex

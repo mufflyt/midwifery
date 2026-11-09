@@ -27,6 +27,9 @@
 #'   orgs <- refuse_if_large(dbGetQuery(con, big_query), "organization scan")
 #' }
 refuse_if_large <- function(d, what, limit = 1e6) {
+  if (!is.data.frame(d))
+    stop(sprintf("refuse_if_large(): %s is not a data frame (got class %s)",
+                 what, paste(class(d), collapse = "/")), call. = FALSE)
   if (nrow(d) > limit)
     stop(sprintf(paste("%s returned %s rows to R (limit %s).\n",
                        " Push this aggregation into DuckDB and return only the",

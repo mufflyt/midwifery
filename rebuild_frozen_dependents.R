@@ -173,6 +173,27 @@ REBUILD_ORDER <- list(
                    # person-level CSVs describing the previous cohort while
                    # reporting success. Placed after build_geography_by_amcb_
                    # status.R, which both depend on.
+                   #
+                   # Added 2026-10-26, by T5 in the pull request that
+                   # introduced it. Reads amcb_npi_linkage_FROZEN directly for
+                   # the analytic-cohort NPI population and writes
+                   # cms_pecos_revoked_providers_cohort.csv, which
+                   # build_federal_adverse_action_flags.R (not itself a FROZEN
+                   # consumer -- it only reads that derived file and
+                   # cms_ndh_midwives.csv) folds into
+                   # artifacts/federal_adverse_action_flags.csv. Must precede
+                   # make_cohort_exclusion_flow_figure.R within the layer,
+                   # which reads that flags file.
+                   "match_cms_pecos_revocations.R",
+                   # Added 2026-10-26, same reason and same gate as
+                   # match_cms_pecos_revocations.R immediately above: reads
+                   # amcb_npi_linkage_FROZEN directly for the analytic-cohort
+                   # NPI/name population and writes
+                   # fda_debarment_match_cohort.csv, which
+                   # build_federal_adverse_action_flags.R folds in as a third
+                   # source. Must also precede make_cohort_exclusion_flow_
+                   # figure.R within the layer.
+                   "match_fda_debarment.R",
                    "make_cohort_exclusion_flow_figure.R",
                    "build_exclusion_flow_person_level.R",
                    # Added 2026-08-28, by the same completeness gate (T5) and for
@@ -240,6 +261,17 @@ REBUILD_ORDER <- list(
                    # quietly -- it would stop. Needs the Trilliant lake and the
                    # hpt_prices references on the external volume.
                    "build_trilliant_work_sites.R",
+                   # Added 2026-10-20, discovered by this same completeness
+                   # gate (T5). Both read amcb_npi_linkage_FROZEN directly and
+                   # artifacts/midwife_work_sites_long.csv, which
+                   # build_trilliant_work_sites.R immediately above writes --
+                   # so they must follow it. Neither's output is read by any
+                   # other script in this order: build_worksite_address_
+                   # resolution.R writes worksite_address_resolution.csv (plus
+                   # its unresolved subset), and build_worksite_leaflet_map.R
+                   # writes an HTML map, both leaves.
+                   "build_worksite_address_resolution.R",
+                   "build_worksite_leaflet_map.R",
                    # Added 2026-09-13, by T5 in the pull request that introduced
                    # it. Reads amcb_npi_linkage_FROZEN for every primary-linked
                    # certificant and tests Trilliant's active_provider flag
@@ -283,11 +315,57 @@ REBUILD_ORDER <- list(
                    # doing its job -- undeclared, it would have been left
                    # holding the old cohort with the rebuild reporting success.
                    "match_medicare_partb_partd.R",
-                   # Added 2026-09-10, by the same completeness gate (T5).
-                   # Classifies each cohort member's self-reported degree
-                   # level from the NPPES credential field; reads FROZEN
-                   # directly and recomputes from that cached input alone.
-                   "classify_msn_dnp_credentials.R")),
+                   # Added 2026-10-26, by T5 in the pull request that fixed the
+                   # scanner's network regex: an unbounded "rvest" match inside
+                   # this script's own comments ("harvest", "harvested") had
+                   # misclassified it as scraping since before this order was
+                   # first declared, so T5 never saw it as a consumer to flag.
+                   # Reads amcb_npi_linkage_FROZEN plus midwives.csv and an
+                   # ACME authors file, writes the gitignored
+                   # artifacts/amcb_training_institution.csv, which nothing
+                   # else in this repo reads -- a leaf, same shape as the other
+                   # scripts in this layer. Order within the layer is free.
+                   "link_theses_to_amcb.R",
+                   # Added 2026-11-04, by T5 in the pull request that introduced
+                   # it. Reads amcb_npi_linkage_FROZEN plus a cached CMS PECOS
+                   # revalidation/reassignment download (no network -- 40
+                   # already-downloaded monthly CSVs) and writes
+                   # artifacts/pecos_revalidation_cohort_state_by_year.csv,
+                   # which build_state_source_audit.R, build_state_source_
+                   # pairwise_audit.R and build_cross_source_comparison.R (all
+                   # layer 6, below) read back in -- must precede all three.
+                   "extract_pecos_revalidation_state_history.R",
+                   # Added 2026-11-04, by T5 in the pull request that introduced
+                   # it. Reads amcb_npi_linkage_FROZEN plus the already-cached
+                   # CMS Open Payments Covered Recipient Profile Supplement
+                   # (data/CMS_Open_Payments_Profile_Supplement.csv, no
+                   # network) and writes artifacts/cohort_midwives_open_
+                   # payments_profile_supplement.csv, which build_table1_
+                   # midwives.R (layer 6, first script below) reads for its
+                   # multi-state-license block -- being in this layer, which
+                   # fully precedes layer 6, satisfies that ordering without
+                   # needing to interleave it into the publication layer.
+                   "extract_open_payments_profile_supplement.R",
+                   # Added 2026-11-05, by T5 in the pull request that
+                   # introduced it. Reads amcb_npi_linkage_FROZEN plus the
+                   # CMS Public Provider Enrollment File (PPEF, a single
+                   # current snapshot on the external drive, no network) and
+                   # writes artifacts/ppef_cohort_enrollment_year.csv, which
+                   # build_table1_by_year.R (layer 6, below) reads for its
+                   # cumulative Medicare-enrollment line -- being in this
+                   # layer, which fully precedes layer 6, satisfies that
+                   # ordering the same way the two extract_* scripts above it
+                   # do for their own layer-6 readers.
+                   "extract_ppef_enrollment_history.R",
+                   # Added 2026-11-05, by T5 in the pull request that
+                   # introduced it. Reads amcb_npi_linkage_FROZEN plus the
+                   # HHS DOGE T-MSIS Medicaid provider-spending warehouse (a
+                   # single ingested release on the external drive, no
+                   # network) and writes artifacts/tmsis_medicaid_spending_
+                   # cohort_by_year.csv, which build_table1_by_year.R (layer
+                   # 6, below) reads for its Medicaid billing-activity line
+                   # -- same ordering reasoning as the PPEF extract above it.
+                   "extract_tmsis_medicaid_spending_history.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        # export_amcb_npi_geography.R writes the tracked state aggregate and
        # the gitignored person-level export, both of which read the crosswalk
@@ -298,9 +376,99 @@ REBUILD_ORDER <- list(
        # It must follow build_table1_midwives.R within this layer: run before
        # it, the vintage check would compare the freeze against the PREVIOUS
        # table and report a staleness the rebuild is in the middle of fixing.
+       # diagnose_migration_year_over_year.R reads the freeze and the panel
+       # but writes nothing tracked -- it is a read-only diagnostic (prints
+       # its table to stdout). It belongs last regardless, same reasoning as
+       # every other script in this layer: it reads everything above.
+       #
+       # analyze_medicaid_enrollment_concordance.R, analyze_medicaid_2023_
+       # 2024_transition_support.R and diagnose_medicaid_classification_
+       # disagreement.R (added with the Medicaid enrollment concordance
+       # analysis) each read the freeze plus the panel plus the external
+       # Medicaid warehouse, and write tracked aggregate artifacts -- but
+       # nothing else in this registry reads THOSE artifacts back in, so
+       # they are leaves of the dependency graph, same as everything else
+       # in this layer, and their own order among themselves is free (none
+       # depends on another's output; make_medicaid_enrollment_concordance_
+       # figures.R reads their outputs but is a plotting script, not a
+       # frozen-cohort consumer, so it is intentionally not in this registry
+       # at all -- same treatment as every other make_*_figure.R script).
+       #
+       # analyze_medicaid_billing_by_state.R, analyze_medicaid_billing_year_
+       # trend.R and analyze_medicaid_enrollment_spending_tier.R (added with
+       # the Medicaid procedure-billing / MCO network-membership work) each
+       # read the freeze (via R/lib/ob_midwife_cohort.R's
+       # build_ob_midwife_cohort()) plus the external Medicaid spending/
+       # enrollment warehouses, and write tracked summary artifacts -- same
+       # leaf shape as the three scripts above, order among themselves free.
+       # analyze_medicaid_procedure_billing_ob_midwife.R, their sibling in
+       # the same cohort helper, is deliberately NOT declared here: its only
+       # textual mention of amcb_npi_linkage_FROZEN.csv is a header comment
+       # (see T3 above -- a comment-only mention is not a discovered
+       # consumer), so the scanner never flagged it as missing in the first
+       # place.
+       #
+       # build_results_geographic_persistence.R (added 2026-10-29/30, the
+       # 16,775 re-pin) reads the freeze plus midwife_panel.csv -- same
+       # family as diagnose_migration_year_over_year.R just above -- and
+       # writes 4 tracked geographic_persistence_*.csv summary artifacts
+       # that nothing else in this registry reads back in: a leaf.
+       #
+       # build_results_geographic_persistence_canonical.R (added 2026-10-30,
+       # same session) reads the same freeze plus midwife_panel.csv, for the
+       # canonical 3-tier-cascade county-resolution method rather than the
+       # ZCTA crosswalk -- same leaf shape, its own 5 tracked output
+       # artifacts (4 summaries plus the method-comparison table), order
+       # free relative to its ZCTA-crosswalk sibling (reads that sibling's
+       # OUTPUT artifact for the comparison, not the frozen linkage a second
+       # time in a way this registry would need to order).
+       #
+       # build_state_source_audit.R (added 2026-11-04) reads the freeze plus
+       # the layer-5 PECOS extract above, DAC/Facility-Affiliation/Doximity/
+       # NDH/Medicaid artifacts, and writes artifacts/state_source_audit_
+       # agreement.csv, which build_cross_source_comparison.R below reads
+       # back in -- must precede it within this layer.
+       # build_state_source_pairwise_audit.R (added 2026-11-04) reads the
+       # freeze, midwife_panel.csv and the same layer-5 PECOS extract, and
+       # writes artifacts/state_source_audit_pairwise_agreement.csv, which
+       # nothing else in this registry reads back in -- a leaf, order free
+       # relative to its two siblings.
+       # build_cross_source_comparison.R (added 2026-11-04) reads the freeze,
+       # midwife_panel.csv, the layer-5 PECOS extract, and build_state_
+       # source_audit.R's agreement table immediately above -- must follow
+       # it. Writes several tracked cross_source_consensus_*.csv leaves that
+       # nothing else in this registry reads back in.
+       # analyze_address_lead_lag_and_freshness.R (added from a parallel
+       # session, 2026-11-04) reads the freeze, midwife_panel.csv and DAC/
+       # Medicaid/Open-Payments address-history artifacts, and writes
+       # tracked address_lead_lag_*.csv / address_agreement_by_nppes_
+       # freshness.csv leaves -- same shape as the analyze_medicaid_* leaves
+       # above, order free.
+       # build_table1_by_year.R (added 2026-11-05) reads the freeze for the
+       # same fixed cohort build_table1_midwives.R uses, plus midwife_panel_
+       # midwifeonly.csv, the historical facility-affiliation by-year
+       # artifact, and the Medicare DuckDB warehouse directly (not through
+       # match_medicare_partb_partd.R or its output). Writes
+       # artifacts/table1_by_year.csv, a leaf nothing else in this registry
+       # reads back in. No dependency on build_table1_midwives.R itself --
+       # it does not read that script's output -- so order between them is
+       # free; placed beside it because they describe the same cohort.
        scripts = c("build_table1_midwives.R", "export_amcb_npi_geography.R",
                    "validate_training_institution_against_acme.R",
-                   "provenance_manifest.R"))
+                   "provenance_manifest.R", "diagnose_migration_year_over_year.R",
+                   "build_results_geographic_persistence.R",
+                   "build_results_geographic_persistence_canonical.R",
+                   "analyze_medicaid_enrollment_concordance.R",
+                   "analyze_medicaid_2023_2024_transition_support.R",
+                   "diagnose_medicaid_classification_disagreement.R",
+                   "analyze_medicaid_billing_by_state.R",
+                   "analyze_medicaid_billing_year_trend.R",
+                   "analyze_medicaid_enrollment_spending_tier.R",
+                   "build_state_source_audit.R",
+                   "build_state_source_pairwise_audit.R",
+                   "build_cross_source_comparison.R",
+                   "analyze_address_lead_lag_and_freshness.R",
+                   "build_table1_by_year.R"))
 )
 declared <- unlist(lapply(REBUILD_ORDER, `[[`, "scripts"))
 

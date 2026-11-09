@@ -26,8 +26,12 @@ AMCB certifies two credentials and no others:
 | **CM** — Certified Midwife | yes | 1.0% |
 
 Layered on top, the analytic cohort is further restricted to certificants with
-AMCB status **ACTIVE** and a **primary-tier NPI link** — 11,920 people, out of
-22,309 in the directory.
+AMCB status **ACTIVE** and a **primary-tier NPI link** — **12,171** people, out
+of **22,357** in the directory, per the currently registered cohort
+(`artifacts/table1_provenance.csv`). An earlier freeze (2026-08-10) reported
+11,920 of 22,309 under the same criteria; both numbers describe the identical
+estimand, and the earlier one still appears in some figures and analyses built
+before the 2026-09-02 re-scrape.
 
 So a statement from this dataset is a statement about *actively certified
 nurse-midwives and certified midwives who could be matched to an NPI*. It is
@@ -71,9 +75,18 @@ with the data.
 
 ---
 
-## Practice setting: built, but not in Table 1
+## Practice setting: now in Table 1 (D15, resolved 2026-09-28)
 
-Three layers describe *where* a midwife practises, and none appears in Table 1:
+**Update 2026-09-28.** D15 in `docs/DECISIONS_CONTRACT.md` ("Does practice
+setting belong in Table 1?") was Option A: a practice-setting block was added.
+Table 1 now carries an "Any observed hospital work site" row (7,685 of 12,171,
+64.4%, with at least one hospital work site observed) and a "Primary
+claims-site setting" breakdown (Hospital 6,527, 64.3%; Clinic/practice 2,605,
+25.7%; FQHC/community health 651, 6.4%; Birth center 169, 1.7%; remaining
+categories smaller), sourced from `artifacts/midwife_work_setting_summary.csv`
+via `build_trilliant_work_sites.R`. The rest of this section is kept as the
+record of what was true before that: three further layers describe *where* a
+midwife practises, and did not yet appear in Table 1:
 
 | layer | coverage |
 |---|---|
@@ -94,19 +107,17 @@ whose primary specialty is CNM: one row per practice location, 4,806 distinct
 midwives, and an enrollment attribute rather than a behaviour. Retracted
 2026-09-13.
 
-Table 1's 23 blocks cover certification, demographics, geography, hospital
-affiliation, Medicare participation and Healthgrades attributes. Practice
-setting is absent from all of them.
+Table 1 now adds hospital-work-site and primary-claims-setting blocks to its
+other certification, demographics, geography, hospital-affiliation, Medicare
+participation and Healthgrades blocks (see the Update above). The three layers
+in the table just above this paragraph (CABC accreditation, freestanding
+birth-center identification, building taxonomy) are still not in Table 1 —
+that remains the right call per D15's ruling below, since the claims-derived
+blocks already added carry the bulk of the signal and the three remaining
+layers have thinner, more uneven coverage.
 
-That may be the right call — coverage is thin, and hospital affiliation already
-carries part of the signal. But **it is not recorded as a decision anywhere**,
-so a reader cannot tell whether practice setting was considered and rejected or
-simply never assembled. For a midwifery workforce paper, where a midwife
-practises is close to the central descriptive variable, and its absence will be
-asked about.
-
-**This should become a ruled decision** alongside D10–D13 rather than remaining
-an omission.
+**Ruled**, D15 in `docs/DECISIONS_CONTRACT.md`, 2026-09-28: Option A, add a
+practice-setting block with coverage stated.
 
 ---
 

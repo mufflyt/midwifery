@@ -20,7 +20,686 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — 2026-09-14 — NPPES address versus claims site: rural bands disagree 38–45%
+## [Unreleased] — 2026-11-05 — What "ACTIVE" doesn't mean: a Trilliant claims-based cross-check, in the chart and the manuscript
+
+### Added
+
+- **`cat_$trilliant`** in `manuscript/R/build_stats_catalog.R`, and a new
+  paragraph in `manuscript/midwife_persistence.qmd`'s Strengths and
+  limitations section (generated entirely from the catalog, per this
+  manuscript's standing no-typed-literals rule — `tests/ci_manuscript_
+  numbers.R` verified clean). "ACTIVE" throughout this project means AMCB
+  certification standing, never clinical practice, but nothing before now
+  quantified the gap. Trilliant Health's independent, claims-derived
+  `active_provider` flag (already enriched via `enrich_trilliant_
+  demographics.R`, just never used for this comparison) makes it concrete:
+  of 12,170 ACTIVE, primary-linked cohort members, **1,304 (10.7%) show no
+  current provider activity** in Trilliant's directory (snapshot
+  2026-06-25) despite holding an active certification. Two new check rows
+  (`field = "activity"`) added to `enrich_trilliant_demographics.R`'s
+  tracked validation output so the figure is reproducible from a committed
+  aggregate, never from the gitignored person-level file.
+- The same finding as a callout on the Table 1 by-year chart artifact,
+  clearly marked as a point-in-time cross-check (Trilliant has no year
+  history of its own) rather than a tenth trend line, and as a lower bound
+  (the claims signal has its own coverage gaps).
+
+### Fixed
+
+- **`build_stats_catalog.R` picked the wrong hash-named Trilliant validation
+  file when more than one was tracked.** The lookup sorted candidate
+  filenames alphabetically and took the last one, but the filename suffix
+  is a freeze SHA256 prefix, not a date — alphabetical order has no
+  relationship to recency, and a freshly-written file sorted into the
+  *middle* of the three already committed. Now picks by file modification
+  time. Caught while adding the activity check above, before it shipped a
+  stale number.
+- A `readr`-auto-parsed Date column (`trilliant_snapshot`, which looks like
+  an ISO date) printed as a raw day-count integer (`20629`) wherever the
+  manuscript called `mw_stat()` on it without an explicit format. Cast to
+  character in the catalog instead.
+
+## [Unreleased] — 2026-11-05 — Table 1, by year: nine sources, restricted to each year's certification-eligible subset
+
+### Added
+
+- **`build_table1_by_year.R`** → `artifacts/table1_by_year.csv`,
+  `docs/table1_by_year.md`. Table 1 proper is cross-sectional — most of its
+  variables (sex, age, ACOG district, rurality, Healthgrades, CMS NDH, HPSA)
+  are single current snapshots. This tracks the SAME fixed, today-ACTIVE
+  cohort Table 1 uses, never reconstructed year to year, across every source
+  that carries real per-year history — three on the first pass; Open
+  Payments, PECOS and Medicaid per-year extracts were already sitting in
+  `artifacts/` from the state-source audit and simply not checked for;
+  **PPEF** (Public Provider Enrollment Files, CMS's Medicare enrollment
+  roster — distinct from the "Revalidation Group Practice Reassignment"
+  extract already in use, which tracks when a provider's periodic
+  revalidation falls due, not her original enrollment) was found on the
+  external drive (`nppes_historical_downloads/pecos/PPEF_Enrollment_Extract_
+  2026.07.17.csv`, ~2.98M rows nationally) and extracted for the first time
+  via `extract_ppef_enrollment_history.R`, 9,667 of 16,775 cohort-member
+  NPIs matched by its embedded original-enrollment date.
+  - Medicare Part B/D queries the Medicare DuckDB warehouse's raw per-year
+    tables directly (the same ones `match_medicare_partb_partd.R` reads),
+    re-run per year rather than collapsed to an any-year flag; does not
+    modify that script or its output.
+  - PPEF is one current snapshot, not a year series — but each `ENRLMT_ID`
+    embeds a one-time historical fact, the provider's original enrollment
+    date, reaching back to **2003**, earlier than any other source here.
+    Plotted as a running cumulative share, labelled and dashed in the chart
+    artifact so it isn't read as directly comparable to the repeated-
+    presence lines.
+  - **`extract_tmsis_medicaid_spending_history.R`** →
+    `artifacts/tmsis_medicaid_spending_cohort_by_year.csv`. HHS's DOGE team
+    released the largest public Medicaid claims dataset in department
+    history on 2026-02-13 — the Transformed Medicaid Statistical
+    Information System (T-MSIS) provider-spending file, 238M rows, no
+    application or data-use agreement required for the first time (prior
+    access needed a ResDAC-mediated T-MSIS DUA). Already ingested on the
+    external drive and never read by this project before now. Distinct
+    from the Medicaid enrollment classification above: this is genuinely
+    person-level and month-level, so it IS eligibility-restricted, unlike
+    that source. Matched via `SERVICING_PROVIDER_NPI_NUM` (6,472 of 12,170
+    cohort NPIs, 53.2% — `BILLING_PROVIDER_NPI_NUM` matches 10× fewer, same
+    rendering-vs-billing asymmetry already documented for Medicare Part B).
+    The raw national release has a documented `TOTAL_PAID` corruption
+    problem (implausible trillion-dollar provider-month rows reported
+    elsewhere); verified this cohort's own matched rows are clean (487,846
+    rows, max $305,181, zero over $1M) before using the file at all, with a
+    defensive plausibility bound applied in the extraction script anyway.
+    Billing-activity presence rises 28.7% (2018) to 37.0% (2023).
+
+### Fixed
+
+- **Every count is now restricted to that year's certification-eligible
+  subset of the fixed cohort, not the full fixed N.** A cohort member counts
+  toward year Y's numerator *and denominator* only if her AMCB certification
+  actually covered year Y (`certification_date <= Y <= expiration_date` —
+  real historical facts on the linkage record, not the current `status`
+  snapshot, which this project has never claimed to hold historically). The
+  first version of this table divided every year by the full fixed N,
+  so a midwife certified in 2024 silently dragged down 2007's rate just by
+  not existing yet. That changed more than the early numbers:
+  - **NPPES annual panel presence no longer looks left-censored**: 79.1%
+    (2007) rather than 24.1%, climbing to 99.2% by 2026 — consistently high
+    observability throughout, not a rise from near-zero.
+  - **Medicare Part D, previously reported as "nearly doubling," is
+    essentially flat**: 28.8% (2013) to 27.0% (2023), a ~2-point *decline*,
+    not the 13.5%→24.6% rise the uncorrected denominator produced. Part B is
+    similarly flat (9.0%→8.2%, 2013-2023, peaking at 10.8% in 2019). The
+    earlier "three independent sources, a real increase in this population's
+    federal claims footprint" claim did not survive this correction for Part
+    B/D and has been withdrawn for them.
+  - **CCN hospital affiliation's decline is confirmed, and sharper than
+    first reported**: 21.7% (2013) down to a 5.8-8.3% band by 2018-2022 —
+    restricting the denominator strengthened this finding, consistent with
+    the declining CCN fill rate already documented in the state-source
+    audit, rather than explaining it away.
+  - **Open Payments** still shows a real post-2021 rise once restricted:
+    24.4% to 36.1% through 2025 — the one federal-claims source where "a
+    real increase" still holds.
+  - **PECOS revalidation** sits higher and flatter: 70.2% (2021) to 75.4%
+    (2025), dipping to 73.3% (2026, a vintage not yet complete for the year).
+  - **Medicaid enrollment cannot be restricted this way** — its input is a
+    pre-aggregated classification count, not a person-level table this
+    script can intersect against the eligibility window — and remains rated
+    against the fixed cohort N, labelled explicitly as the one exception
+    (the T-MSIS billing-activity source added above it is person-level and
+    was built eligibility-restricted from the start, so it needed no fix).
+    Medicaid enrollment is still the clearest decliner of all nine sources:
+    70.0% (2018) to 48.5% (2024).
+  - `eligible_n` is now a column in `artifacts/table1_by_year.csv` and shown
+    in `docs/table1_by_year.md` alongside every row's `n`, so the per-year
+    denominator is never left implicit.
+
+## [Unreleased] — 2026-11-05 — Checked Table 1 against AMCB's own published workforce data
+
+### Added
+
+- **`docs/TECHNICAL_APPENDIX_AMCB_DEMOGRAPHIC_COMPARISON.md`** and
+  `compare_table1_amcb_state_counts.R`. AMCB certifies the roster this entire
+  project is built on, and publishes its own self-reported demographic report
+  and state-by-state count, independent of every source this project uses —
+  a real external check on the NPPES/AMCB linkage, not another internal
+  cross-reference. Credential split (99.0%/1.0% here vs. AMCB's 99.05%/0.95%)
+  and sex distribution (99.5% vs. 98.9% female) corroborate the linkage
+  closely. AMCB collects race, ethnicity, primary language, employment status
+  and salary that no source this project holds captures at all — Table 1's
+  own `Language` block already says as much ("not collected by NPPES, CMS
+  DAC or the Healthgrades scrape"); AMCB had the answer the whole time, just
+  not accessible to this project. State-by-state comparison (AMCB's Aug 2026
+  sheet vs. this project's NPPES-derived `primary_midwifery` distribution)
+  surfaces a real, unresolved discrepancy: several large states undercounted
+  13-22% here (Georgia, Michigan, North Carolina, Virginia, Tennessee), New
+  York overcounted by 12%, aggregate gap -4.5% — concentrated, not random
+  scatter, and not yet explained. Also flags a benchmarking opportunity this
+  project has never used: AMCB's published age-band distribution, from real
+  self-reported birthdates, against this project's own OLS-imputed
+  calibration model, which has no birthdate source at all.
+
+## [Unreleased] — 2026-11-05 — Table 1's hospital-affiliation block was silently dead; a free second specialty source
+
+### Fixed
+
+- **Restored the CMS hospital-affiliation (CCN) block** (`build_table1_midwives.R`).
+  `artifacts/dac_hospital_affiliation_person.csv` was still a *required*
+  TABLE1_ENRICHMENT input — a build missing it refuses to publish — but the
+  join code that turned it into the five Table 1 rows it feeds (hospital
+  privilege, count, type, ownership, birthing-friendly designation) was
+  accidentally deleted when the Trilliant work-site block was added in its
+  place, leaving the file required while contributing zero rows. The two
+  sources are complementary (Medicare privilege via CCN vs. claims-derived
+  work-site classification), not redundant, so both now run side by side.
+  Verified in isolation against the 12,170-person cohort: 1,683 with a
+  recorded hospital privilege, correctly banded by count/type/ownership/
+  birthing-friendly status.
+
+### Added
+
+- **Primary specialty (Open Payments provider profile)** (`build_table1_midwives.R`).
+  The same Open Payments provider-profile file already read for multi-state
+  license status also carries a second, independent specialty/credential
+  field per provider (`primary_specialty`, a pipe-delimited CMS taxonomy
+  string) that had never been extracted — no new data source needed. Banded
+  to its most specific segment: Advanced Practice Midwife vs. Other
+  classification, corroborating the existing NPPES taxonomy block from a
+  wholly separate source. A blank specialty string (profile exists, CMS's
+  field is empty) and no profile at all are two non-responses this source
+  gives no way to distinguish, so both share one named unknown rather than
+  inventing a distinction the data doesn't support. Verified in isolation:
+  5,799 Advanced Practice Midwife, 592 Other, 5,779 unknown, summing exactly
+  to the 12,170 cohort.
+
+## [Unreleased] — 2026-11-01 — A reusable credential-exclusion filter, wired into DAC extraction ([#283](https://github.com/mufflyt/midwifery/pull/283))
+
+### Added — `R/lib/credential_filter.R`
+
+`exclude_by_credential(credential, exclude = c("MD", "DO"))` — a word-
+boundary, case-insensitive filter generalized out of logic previously
+written inline for one script, now shared. `extract_dac_midwives.R` wired
+to it: rows whose credential field matches `MD`/`DO` anywhere (e.g. a
+secondary-specialty mention) are dropped from the midwife extract, with a
+drop-count logged. This is the inverse of the physician-only filter
+`mufflyt/isochrones` already runs
+(`R/C-filter_physician_compare_physicians_only.R`); future improvements to
+either should be ported to the other, since they are the same filter run
+in opposite directions on the same source files.
+
+## [Unreleased] — 2026-11-04 — State source audit: 10 sources, 2007–2026, pairwise instead of NPPES-only; a nine-year DAC "hole" that wasn't one
+
+### Added — practice-state coverage and cross-source agreement, 10 sources
+
+Full write-up:
+[docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md](docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md).
+Narrative companion, same findings told as a story rather than a table:
+[docs/VIGNETTE_STATE_SOURCE_AUDIT_2026-11-04.md](docs/VIGNETTE_STATE_SOURCE_AUDIT_2026-11-04.md).
+Interactive dashboard, committed as a static snapshot:
+[docs/state_source_audit_dashboard.html](docs/state_source_audit_dashboard.html).
+**There is no gold standard for a midwife's practice state** — every number
+below is one source compared against another, never against the truth.
+
+- **DAC/Physician Compare extended from five disconnected vintages to full
+  annual coverage, 2013–2026** (`extract_physician_compare_historical_midwives.R`).
+  2013–2016 come from NBER's archival mirror, as before. 2017–2025 do **not**
+  come from a new download — they were already sitting in
+  `/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb`
+  (`physician_compare_<year>_Q2` tables plus a 2017 archive table), a
+  warehouse this project already uses for other sources, just never checked
+  for DAC specifically. An earlier pass of this same audit had reported
+  2017–2025 as a genuine nine-year hole and NBER as the only possible
+  source; that conclusion was wrong, caught the same day by re-checking
+  rather than reusing it. With the hole closed, DAC's agreement with NPPES
+  does **not** decline smoothly as the earlier 5-point version suggested —
+  it holds in a 91.8–95.1% band for thirteen straight years (2013–2025) and
+  only drops to 89.8% in the single most recent year, 2026.
+- **Open Payments extended from 2021–2024 to 2015–2025**
+  (`extract_open_payments_2025.R`, `extract_open_payments_address_history.R`).
+  2015–2020 is trace-only (1–29 NPIs/year — CNMs were not Open-Payments-
+  reportable until the SUPPORT Act expansion hit program year 2021). PY2025
+  (9.2GB, `OP_DTL_GNRL_PGYR2025_P06302026_06032026.csv`) was downloaded
+  directly from `data.cms.gov`, which an earlier pass of this audit had
+  reported as fully blocked from this sandbox; re-tested on request, both
+  `openpaymentsdata.cms.gov`'s metastore API and `download.cms.gov` answer
+  normally. Whether the earlier block was a real, now-resolved restriction
+  or a transient/session-specific issue is unresolved — worth re-checking
+  directly in a future session rather than assuming either way.
+- **Facility Affiliation extended from a single 2026 snapshot to
+  2013–2022 + 2026** (`extract_historical_facility_affiliation.R`). CMS's
+  current Facility Affiliation product is genuinely current-only — verified
+  against its own metastore API (one dataset, no year in the title) rather
+  than assumed — but the historical DAC files already carry hospital-
+  affiliation CCNs embedded in the file itself, unused for this purpose
+  until now. 11,102 NPI-year rows, 92.0% resolved to a named hospital; CCN
+  fill rate declines from 83.2% (2013) to ~26–31% (2019–2022), reported as
+  observed and not explained further. Facility Affiliation now has the
+  highest agreement with NPPES of any multi-year source in this audit,
+  92.7–96.0%.
+- **PECOS revalidation/reassignment** (`extract_pecos_revalidation_state_history.R`)
+  — a new source, 40 monthly CMS releases, 2021-12 through 2026-09,
+  enrollment-derived practice state independent of NPPES self-report.
+  87.8–88.7% agreement with NPPES, flat across all six years and the
+  lowest of any source — but see the pairwise finding below.
+- **Pairwise agreement, not just vs. NPPES** (`build_state_source_pairwise_audit.R`,
+  via `mysteryroster::attribute_agreement()`, which merges every pair by
+  `(npi, year)` rather than anchoring to one source). 36 non-NPPES pairs.
+  PECOS revalidation agrees with DAC and Open Payments about as well as
+  they agree with each other (90–94% band either way) — anchoring
+  everything to NPPES made it look like the one discordant source; pairwise,
+  it isn't. CMS NDH is the actual common denominator at the bottom: mean
+  pairwise agreement 88.2% across all 8 other sources, confirming its
+  89.9%-vs-NPPES score was not an NPPES-anchor artifact.
+- **Per-NPI consensus score and longitudinal tier flow**
+  (`build_cross_source_comparison.R`). 84.5% of cohort NPIs with ≥2 current
+  sources reporting are Unanimous (14,314 of 16,939); the unanimous rate
+  declines from 94% (2 sources) to ~76% (6–7 sources) as more independent
+  sources are required to agree at once — the statistical effect of raising
+  the bar, not evidence the data degrades at higher source counts. For the
+  184 NPIs with NPPES, DAC, Open Payments and PECOS all present every year
+  2021–2025, unanimity is sticky: 164 of 184 start Unanimous and
+  165–171 stay there every subsequent year.
+- **95% Wilson confidence intervals** added to every per-year agreement
+  percentage already published by this audit (`build_cross_source_comparison.R`).
+- **Open Payments provider-profile license-state field, previously
+  unused** (`extract_open_payments_profile_supplement.R`). CMS's Open
+  Payments Covered Recipient Profile Supplement
+  (`data/CMS_Open_Payments_Profile_Supplement.csv`, 1.69M rows) was already
+  read by `harvest_open_payments_profile.py` / `classify_residual_disagreements.R`,
+  but only for its name/address fields. Its
+  `Covered_Recipient_Profile_License_State_Code_1..5` columns — which
+  states a provider is *licensed* in, independent of every practice-address
+  source in this project — had never been extracted. 8,411 of 16,775
+  cohort midwives (50.1%) have a profile; 2,865 (34.1%) show licenses in
+  two or more states. **This is the finding of the whole audit**: joined
+  against the per-NPI consensus tiers, single-state-licensed midwives are
+  92.4% Unanimous / 2.4% Split; multi-state-licensed midwives are 59.9%
+  Unanimous / **22.1% Split — roughly nine times the single-state rate**
+  (chi-squared(2, n=8,312) = 1,353.1, p < 2.2e-16). Not a per-NPI
+  adjudication, but strong population-level evidence that most
+  cross-source address disagreement in this cohort is genuine multi-state
+  practice, not a data-quality problem — a question this audit could
+  previously only flag as unresolved, every time it came up.
+
+### Added — multi-state license status in Table 1 (`build_table1_midwives.R`)
+
+A new block, "Multi-state license status (Open Payments provider profile)",
+following the same file-existence gate and unknown-labeling convention as
+every other Table 1 block (a missing enrichment input refuses the whole
+build rather than silently emitting an empty category). Verified in
+isolation against the live 12,170-person cohort — sums exactly to N: 4,628
+single-state, 2,492 multi-state, 5,050 with no Open Payments provider
+profile. **Not yet in a published Table 1 render** — this machine is
+missing five other, unrelated enrichment inputs
+(`artifacts/nppes_sex_enumeration.csv`, `artifacts/dac_cnm_education.csv`,
+`artifacts/hpsa_status.csv`, `artifacts/medicare_participation.csv`, the
+ACOG crosswalk), so the build correctly refused to publish rather than
+overwrite the real table with five empty blocks (the exact failure mode
+#233 describes). The new block was not the blocking input.
+
+## [Unreleased] — 2026-11-04 — Lead–lag and NPPES record-freshness diagnostics (parallel session)
+
+### Added — `analyze_address_lead_lag_and_freshness.R`
+
+Built in a separate, parallel working session on this same repository; not
+authored in the session that wrote the entry above, summarized here from
+its diffs rather than from first-hand derivation. Uses
+`mysteryroster::attribute_spell_age()`, `attribute_lead_lag_matrix()`,
+`attribute_agreement_by_spell_age()`, and `enrollment_move_lead_lag()` to
+resolve, rather than merely flag, which side of an NPPES/Open-Payments
+disagreement moved first. Tracking consecutive provider-year transitions
+2021–2025: when NPPES and Open Payments agreed in year *t* and diverged in
+*t+1*, Open Payments broke concordance first at both the state and street
+level, split into two distinct mechanisms — genuine relocation lead
+(manufacturer sales reps logging a new address in their CRM before the
+midwife updates NPPES) and multi-site/vendor-CRM modal switching (different
+manufacturers' CRMs disagreeing about which of a midwife's sites is
+primary). A second analysis reconstructed each provider's empirical NPPES
+address-spell age across the full 2007–2026 panel and found a pronounced
+staleness decay curve in DAC-vs-NPPES concordance — highest 1–2 years after
+an NPPES update, dipping in the update year itself while PECOS reassignment
+catches up, then declining steadily as spell age increases — while Open
+Payments-vs-NPPES agreement showed **no** such decay, consistent with CMS
+documentation that Open Payments draws recipient profile data directly from
+NPPES. A third analysis linked NPPES interstate moves to date-stamped state
+Medicaid enrollment intervals and found a sharp administrative asymmetry:
+on arrival, Medicaid enrollment usually precedes or coincides with the
+NPPES state change; on departure, Medicaid termination usually lags well
+behind it. Wired into the manuscript (`manuscript/midwife_persistence.qmd`,
+`manuscript/R/build_stats_catalog.R`) and into
+[docs/TECHNICAL_APPENDIX_DAC_OPENPAYMENTS_ADDRESS_AGREEMENT.md](docs/TECHNICAL_APPENDIX_DAC_OPENPAYMENTS_ADDRESS_AGREEMENT.md).
+
+## [Unreleased] — 2026-10-26 — Address agreement measured across five source pairs; a state-BON portal survey hits a wall
+
+### Added — multi-source address agreement (`compare_*_address.R`, `make_address_agreement_heatmap.R`)
+
+One question asked five ways: if two independent sources are asked where
+the same provider practices, how often do they give the same answer, and
+at what geographic grain does that stop being true? PECOS/DAC vs NPPES,
+PECOS/DAC vs Doximity, Healthgrades vs PECOS/DAC, Healthgrades vs NPPES,
+and PECOS/DAC vs state Boards of Nursing. State-level agreement is high
+everywhere (89.8–95.3%); city and ZIP5 agreement drop well below that
+(47–64% among the four practice-vs-practice pairs; 35.5–35.6% for the
+state-board pair, which measures something structurally different — see
+below). Street-level comparison was tried on every pair and dropped
+entirely: lowest was 21.7% (PECOS vs Doximity), driven partly by
+Doximity's scraped `address_line` smashing suite text onto the street with
+no separator — no normalizer reliably untangles that. ZIP5 is now the
+finest grain any comparison in this project reports.
+`R/lib/address_agreement_compare.R` (`shape_address()`,
+`compare_address_pair()`) is shared across all five, mutation-tested by 22
+saboteur cases. Full write-up:
+[`docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md`](docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md).
+
+### Added — California and Florida state-board data; Colorado removed
+
+California's DCA Board of Registered Nursing roster was added (1,342 of
+1,501 CA-state cohort members matched by name, 89.4% — the largest BON
+sample in this project) with no state or ZIP field at all, only city
+(24.7% agreement, n=223). Florida was added (813 of 1,035 matched, 78.6%,
+screened by the license's own Qualifications field since Florida folds
+CNMs into a generic APRN category with no CNM-specific profession code)
+with a full city/state/zip, becoming this comparison's largest single
+contributor at every level and moving pooled ZIP5 agreement from 6.7%
+(n=15, effectively Connecticut alone) to 35.6% (n=239). Colorado was
+**removed outright, not caveated**: its DORA field is an explicit
+*mailing* address, not a practice address, and pooling it against
+practice-address sources on the other side of every other comparison
+measured the wrong kind of disagreement.
+
+### Fixed
+
+- Florida's harvester (`harvest_live_florida_bon_from_tracked_roster.py`)
+  originally captured only the street line of each detail page's address
+  block; the real city/state/zip line sits two `<dt>/<dd>` pairs later in
+  the HTML and was silently dropped. Re-harvested the full cohort after
+  the fix, including the "no address on file" disclaimer-paragraph case.
+- `compare_pecos_to_bon_address.R`'s pre-pool filter used `nzchar(npi)`
+  alone, which does not exclude `NA` (`nzchar(NA)` is `TRUE` in R — the
+  same gotcha already guarded against inside `compare_address_pair()`
+  itself, just not here). A VERIFIED_LIVE_BON row with no linked NPI read
+  as `NA` after `read_csv()` and was wrongly pooled; adding Florida's own
+  such row collided with an existing one under the same `NA` "key," which
+  `assert_unique_keys()` correctly refused to resolve silently. Fixed by
+  filtering `!is.na(npi)` before `nzchar(npi)`, not after.
+
+### Added — `docs/TECHNICAL_APPENDIX_BON_PORTAL_AVAILABILITY.md`
+
+A full ledger of all 18 states individually checked for a live BON
+cross-reference, not just the ones that worked. 10 produced a working
+harvester or dataset (WA, CO, TX, CA, IL, CT, DE, FL, PA — plus Michigan,
+which turned out to be a different, non-AMCB credential, not CNM/BON data
+at all). The next 8 states checked in one continuous pass — North
+Carolina, Ohio, Georgia, Minnesota, Arizona, Tennessee, Wisconsin, Oregon —
+produced **zero** new usable datasets: reCAPTCHA, a generic WAF, Cloudflare
+bot-fingerprinting, Radware+hCaptcha, an explicit "please don't scrape us"
+policy, no address field at all, and (Wisconsin) a genuinely dead domain
+confirmed via two independent public DNS resolvers. None of these walls
+were worked around. The appendix's conclusion: the deciding factor across
+every state checked is whether the state treats its license lookup as
+public open data (Socrata/plain API — always worked, 0 defenses
+encountered) versus a service actively defended against automated
+traffic (always failed) — and there is no known way to tell which a new
+state is without trying it. Recorded as a basis for treating further
+blind state-by-state expansion as a low-probability bet going forward.
+
+## [Unreleased] — 2026-10-26 — CMS NDH harvest; a federal adverse-action exclusion step, checked against three independent sources
+
+### Added — CMS National Provider Directory (NDH) lookup
+
+The full write-up is
+[docs/TECHNICAL_APPENDIX_CMS_NDH.md](docs/TECHNICAL_APPENDIX_CMS_NDH.md); this
+entry is the summary. CMS runs a public, no-auth FHIR R4 gateway
+(`directory.cms.gov/fhir`) blending NPPES/PECOS enrollment with payer-reported
+network data — evaluated as a substitute starting point for a planned
+five-payer integration after one query against it returned richer data than a
+specialty-filtered query against any single payer endpoint found by hand.
+
+- **[`harvest_cms_national_provider_directory.py`](harvest_cms_national_provider_directory.py)**
+  — per-NPI live-gateway harvest. Full run against all 16,775 cohort NPIs,
+  2026-10-23, 4h17m: **16,361/16,775 (97.5%) found**, 9,760 with at least one
+  organization accepting new patients. Output: `artifacts/cms_ndh_midwives.csv`.
+- **[`download_cms_ndh_bulk.py`](download_cms_ndh_bulk.py) +
+  [`clean_cms_ndh_bulk.py`](clean_cms_ndh_bulk.py)** — an independent
+  cross-check against CMS's periodic bulk NDJSON export (7,481,907
+  `Practitioner` + 11,218,772 `PractitionerRole` lines nationally, under 2.5
+  minutes end-to-end once downloaded, never decompressed to disk). Found the
+  **identical 16,361/16,775** figure as the per-NPI harvest — two different
+  acquisition methods against the same CMS snapshot agreeing is the strongest
+  evidence available that neither has a systematic bug. Also surfaced
+  **15,941** NDH-tagged CNMs nationally, of which **3,237** are not in this
+  project's AMCB-to-NPPES cohort (not claimed as "midwives AMCB missed"
+  without further work — see appendix §7.4).
+  - Caught and fixed live: the bulk export codes NPI/taxonomy under different
+    FHIR system URIs than the live gateway for identical facts — the first
+    run matched **zero** national `Practitioner` rows, including a cohort
+    member confirmed present in the raw file by direct `grep`. Fixed by
+    accepting both URIs (§7.3).
+  - **A single-NPI defect in CMS's own export**, caught by the national
+    discovery file and traced to CMS's own data, not this project's code: one
+    NPI's garbled name (not matching the live NPPES registry) was `names[0]`
+    in a FHIR resource whose other four name entries were correct, and the
+    same resource's `367A00000X` (midwife) taxonomy coding carried her real
+    Massachusetts *medical* license as its identifier — a taxonomy/license
+    mismatch inside CMS's own build. 153 addresses on that one record (vs. a
+    cohort-wide max of 52) is real but explained by a legitimate
+    telehealth-hospitalist pattern, confirmed against DAC. Not in the cohort,
+    zero impact on any published figure. `tests/test_cms_ndh_address_count_sanity.py`
+    now fails loudly if any future row exceeds 100 addresses (§8).
+- **`ndh_hhs_exclusion_list` is unverified — checked, not assumed.** 153 of
+  16,775 cohort NPIs carry this flag; checked against the real public LEIE
+  (84,093 records, by exact NPI): only **10 (6.5%) actually appear in it**.
+  The other 143 (93.5%) are false positives against the authoritative source,
+  investigated further (§5) rather than left as an unexplained number — not
+  stale reinstatement, and for most not even a name collision. Not wired into
+  Table 1 or anything else; this field's absence-handling is unchanged.
+
+### Added — a federal adverse-action exclusion step, checked against three sources
+
+`make_cohort_exclusion_flow_figure.R` now excludes an NPI-matched cohort
+member who carries a flagged federal/administrative action, and the result is
+published as a new figure (Figure 19 in the README):
+`docs/figures/cohort_exclusion_flow.png`. Three independent, NPI/name-linked
+sources feed it through `build_federal_adverse_action_flags.R` (which already
+dedupes by NPI and concatenates sources when more than one agrees):
+
+1. CMS NDH's `hhs_in_exclusion_list` flag (unverified — see above).
+2. **CMS PECOS Medicare revocation** — "Revoked Medicare Providers and
+   Suppliers" (opendata.hhs.gov), a re-enrollment bar, NPI-keyed, CMS's own
+   administrative-action record rather than a derived flag
+   (`load_cms_pecos_revocations_to_duckdb.R`, `match_cms_pecos_revocations.R`).
+3. **FDA Debarment List** (Drug Product Applications) — name-only, no NPI, so
+   matched by normalized last+first name (the same normalizer that built the
+   FROZEN linkage's own name-key columns) and flagged **only** on an
+   unambiguous one-to-one match; any name collision on either side is
+   reported `AMBIGUOUS` and left unflagged, since a wrongly-applied exclusion
+   is worse than a missed one (`load_fda_debarment_to_duckdb.R`,
+   `match_fda_debarment.R`). Where to find the current file next time it's
+   needed is documented in the appendix, since the direct download link's id
+   changes on every FDA republish (§10).
+
+**Net effect on the published cohort: zero**, for all three sources. Every
+NPI any of them flags is already `LAPSED` and excluded from the analytic
+cohort for an unrelated reason — the exclusion step only evaluates `ACTIVE`,
+`primary_midwifery`-linked NPIs. Every count in
+`docs/figures/cohort_exclusion_flow_counts.csv` is identical regardless: of
+12,170 matched, 77 are excluded for federal adverse action, 12,093 survive,
+and 12,022 (99.87%) reach the final analytic cohort after geocoding and
+ACOG-district exclusions. The exclusion-flow figure's header reads "Federal
+adverse action (CMS NDH flag; Medicare revocation; FDA debarment)" — a
+rename from a forward-looking placeholder, "(DEA/FDA/Medicare)", that no
+longer matched what was actually wired in. **DEA is deliberately not
+included**: unlike CMS and FDA, DEA publishes no bulk list of revoked or
+surrendered registrants, only a single-registrant lookup — there is nothing
+to download or match against.
+
+### Added — 34 borrowed saboteur tests for the name parser
+
+[`tests/test_borrowed_isochrones_name_parser_saboteurs.R`](tests/test_borrowed_isochrones_name_parser_saboteurs.R)
+ports 34 adversarial test cases from the `isochrones` sibling repository's
+own name-parser regression suite, run against this project's live-sourced
+`parse_physician_name_enhanced()`: comma-format names, last-first ordering,
+all-caps "DO" ambiguity, and double-credential strings. All 34 pass against
+the current parser.
+
+### Fixed — three CI infrastructure bugs the NDH work surfaced
+
+- **`R/frozen_dependency_graph.R`'s network-script scanner** matched `rvest`
+  as an unbounded substring, so any script merely containing the word
+  "harvest" in a comment was misclassified as doing live scraping. Fixed with
+  `\b` word-boundary matching. Fixing it exposed a second, pre-existing gap:
+  `link_theses_to_amcb.R` had been silently excluded from the rebuild-order
+  completeness check since before the order was first declared, for the same
+  reason — now properly declared in `rebuild_frozen_dependents.R` with its
+  real dependencies documented.
+- **`tests/ci_data_regression_guard.R`'s D10** assumed every provenance
+  sidecar followed the R `write_with_provenance()` schema, failing on the
+  Python-producer schema `tools/provenance.py` has used since issue #230 (two
+  genuinely different, both legitimate, vocabularies for two languages' own
+  producers). Fixed to accept either schema.
+- **`tests/ci_science_laws.R`'s `LAW_COHORTS` registry** didn't know about
+  `table1_provenance.csv`'s corrected `cohort_n = 12170` vintage (the
+  NPI-presence fix from issue #233), so the science-law coverage harness
+  failed with "declares a cohort_n which is not registered." Registered,
+  dated, with the reason — the registry is a hand-maintained list by design
+  ("a registry someone must edit on purpose cannot drift"), not a heuristic.
+
+## [Unreleased] — 2026-10-22 — Fuzzy surname matching (class 4) removed; a doc-freshness pass
+
+### Removed — class 4, fuzzy/Levenshtein-distance surname matching
+
+An edit distance of 1–2 on a surname is too easy to satisfy for a reason
+that has nothing to do with shared identity: two different real people
+whose surnames happen to differ by one or two characters got the same name
+evidence as someone whose surname is a deliberately recorded variant.
+Strategy `s3` (the `stringdist()`-based join in `match_amcb_to_npi.R` that
+generated class 4) was deleted outright, not demoted or reassigned. Class 5
+(surname-component/fragment match) is a different, non-fuzzy mechanism — an
+exact token match on one half of a compound surname — and is unaffected.
+
+Both A/B arms were regenerated with the fix applied. Restricted to the
+15,328 ACTIVE certificants (the population every chart artifact reports):
+
+| outcome | before | after |
+|---|---:|---:|
+| `primary_midwifery` | 12,192 | 12,170 |
+| `sensitivity_nursing` | 889 | 821 |
+| `sensitivity_name_component` (excluded) | 95 | 101 |
+| quarantined — resolved by absence | 5 | 5 |
+| quarantined — contested | 40 | 38 |
+| quarantined — tied | 1,476 | 1,400 |
+| unmatched | 631 | 793 |
+
+Whole-roster `cohort_members` moved **17,028 → 16,775**;
+`class5_candidates_held_out` moved 153 → 163. Full decision, sha256 lineage
+and both arms' provenance: `artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json`,
+run `reconcile_ab_20261022T134500_remove_fuzzy_surname_matching`.
+
+Re-running the matcher also required vendoring `norm_name()`, `rank_one_to_one()`
+and `safe_pct()` directly into `match_amcb_to_npi.R`: the private sibling repo
+it used to live-`source()` these from had deleted its copy in an unrelated
+cleanup. `rank_one_to_one()` is copied verbatim from the last revision of
+that repo compatible with the `mysterynpi` version this project pins in CI.
+10 saboteur tests (`tests/test_fuzzy_surname_removal_saboteur.R`) cover the
+vendored functions and guard against class 4 silently resurfacing.
+
+### Changed — documentation brought current with the removal above
+
+- **README.md**: the top-of-file headline figures (the mermaid diagram and
+  summary table) still read the pre-removal 12,192/79.5%/17,028 — fixed to
+  12,170/79.4%/16,775, matching the "2026-10-22 re-freeze" section already
+  present further down the same file.
+- **`docs/TECHNICAL_APPENDIX_RECORD_LINKAGE.md`**: §4's evidence-class table
+  and discussion described class 4 in the present tense as a live, scored
+  class. Added a staleness note (matching this file's existing §2/§6/§9
+  caveat) marking §4 as historical design rationale rather than a
+  description of the current matcher, and annotated the class-4 table row
+  as retired. §5's tied-record count (3,044) predates the removal and is
+  flagged, not recomputed.
+- **`docs/TECHNICAL_APPENDIX_SPLINK_EVALUATION.md`**: added a staleness
+  note — its 2026-09-06 agreement-by-class figures are unchanged but no
+  longer describe the current matcher's class set.
+- Not fixed this pass: README's Figure 10 upset-plot caption (line ~194)
+  and the whole-roster "Where the 22,357 go" table's `+ fuzzy tier` row
+  (line ~601) are both tied to artifacts/figures a pipeline script would
+  need to regenerate, not numbers a doc pass can safely hand-edit.
+  `docs/TECHNICAL_APPENDIX_NAME_MATCHING_MODES.md`'s "class 4" references
+  are a different script (`link_theses_to_amcb.R`, thesis-to-AMCB linkage)
+  with its own independent evidence-class scheme and are unaffected by this
+  change.
+
+## [Unreleased] — 2026-10-20 — The panel's missing 2023 vintage, a column-count bug it exposed, and a 25-doc staleness pass
+
+### Fixed
+
+- **`midwife_panel.csv` had no real source for its 2023 vintage.** There is no
+  classic `npidata_` zip for April 2023 on record anywhere `build_midwife_panel.R`
+  looks. The real source turned out to be a third, previously unhandled NBER
+  distribution — an `npi_<Month>_<Year>.parquet` + `ptax_<Month>_<Year>.parquet`
+  pair — and whatever originally produced the committed 2023 row silently
+  dropped data from it: 542 cohort members' `practice_state` was missing where
+  the raw source had it. `process_core_parquet_year()` adds that path; the
+  2023 slice has been rebuilt from it, closing the gap for the 14,693 cohort
+  members whose April-2023 taxonomy was in scope (the remaining 542 are a
+  real, unrelated taxonomy-scope exclusion, not a residual bug).
+- **A latent column-count bug, found by that rebuild.** `tax_scope` had been
+  added to every ingestion path's SELECT list after the committed panel was
+  last built, so the next incremental resume — any of them, not just the 2023
+  one — would have silently written 14-column rows against the panel's real
+  13-column header. DuckDB's default reader sniffs column count from existing
+  rows and drops every row that doesn't match, with no error under
+  `ignore_errors=true`. Removed from all three paths.
+- **A year-by-year migration analysis surfaced, then ruled out, a parser
+  explanation for two mobility spikes.** The two largest year-over-year
+  state-move-rate transitions in the 2007–2026 panel (2017→2018, 2023→2024)
+  both coincide with the two NPPES file-format changes this repo tracks (the
+  2018 Latin-1→UTF-8 switch; the December 2024 "reshaped" restructure). A
+  classic-path-vs-reshaped-path parser diff on the real December 2024
+  snapshot, extended to the address fields `TECHNICAL_APPENDIX_PANEL_BUILDER_HARDENING.md`'s
+  own validation never covered, came back with zero mismatches across all
+  17,028 cohort NPIs — clearing the parser. The mechanism behind the
+  correlation remains unidentified; it is not the 2023 data gap above (which
+  doesn't participate in the move-rate calculation either way).
+
+### Added
+
+- **20 adversarial tests for `build_midwife_panel.R`**
+  (`tests/test_build_midwife_panel.R`, cases 11–30, 30 total with the
+  pre-existing 10): resume-append column-count regressions for the classic
+  and reshaped paths, and correctness/error handling for the new parquet path
+  — missing sibling files, an unmapped vintage date, organization/blank
+  entity codes, a non-first taxonomy slot, a duplicated join row (guarded
+  with a `QUALIFY` dedup), decoy filenames, a cross-format tie-break, and
+  wide/narrow taxonomy-scope correctness.
+- **`diagnose_migration_year_over_year.R`** — the year-by-year migration
+  analysis above, as a reproducible script rather than a one-off query.
+- **`docs/TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md`** — the full
+  investigation: the year-by-year mover-rate table, the format-change
+  correlation, the parser-diff test that cleared it, and what remains open.
+
+### Changed
+
+- **A 25-file pass over `docs/TECHNICAL_APPENDIX_*.md` and
+  `docs/RESULTS_*.md`**, checking cohort counts, cross-references and
+  "pending" claims against what the repo's code and artifacts actually say
+  today (not assumed). Real fixes landed in nine of them: a stale
+  calibration caveat (`AGE_IMPUTATION`), a duplicate section-9 heading
+  (`LINKAGE_SELECTION`), an undercounted test suite and missing third
+  ingestion path (`PANEL_BUILDER_HARDENING`), a resolved-but-still-flagged
+  encoding-gate callout naming the wrong bypass sites (`CSV_INGESTION_ENCODING`),
+  a stale regression-guard count, 156→153 (`DATA_REGRESSION_GUARD`), an
+  exception-registry note that didn't yet know about three new raw
+  `dbConnect()` sites (`DUCKDB_BOOTSTRAP_ARCHITECTURE`) — those three sites
+  are the new saboteur tests above; they still need routing through
+  `duckdb_connect()` or registering as exceptions, not yet done — a stale
+  panel row count and an overstated "two parsing paths" claim
+  (`PANEL_TEMPORAL_VALIDATION`), four stale file:line citations
+  (`RECORD_LINKAGE`), and a stale panel NPI count with no existing staleness
+  caveat, unlike its siblings (`TAXONOMY_SCOPE`). Sixteen files were already
+  accurate and needed nothing. `DEBT.md`'s D10 entry was flagged as
+  contradicting `TECHNICAL_APPENDIX_COHORT_VINTAGE.md` (D10 still says
+  "open/never re-pinned"; a direct test run says otherwise) but not fixed —
+  out of scope for this pass.
+
+## [Unreleased] — 2026-10-19 — Join/checkpoint/scraper safety nets, a CMS catalogue break, two new QA instruments
 
 ### Added
 
@@ -45,6 +724,187 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`build_trilliant_work_sites.R`.** A "same band" level now names its band,
   and a new dimension, `nppes_address_to_claims_site_distance`, bands the
   great-circle distance between the two addresses.
+
+### Fixed
+
+- **`safe_inner_join()` had two silently inert checks** (`R/join_safety.R`).
+  `use_enhanced_metrics=TRUE` and its `agree_on`/`agree_map` arguments
+  validated but never ran, because the `R/join_metrics.R` module they called
+  into does not exist in this repo; callers who asked for those checks got
+  none, with no error. `max_right_dup_keys` was dead code for any join with
+  `expect_unique_both=FALSE` — the enforcement comment said "Code removed -
+  parameter now enforced via join metrics," a module that does not exist
+  either. `use_enhanced_metrics` now defaults `FALSE` and hard-stops if
+  requested; `max_right_dup_keys` is enforced unconditionally.
+- **`save_checkpoint_atomic()` had a fixed temp-file name** (`R/lib/checkpoint_utils.R:save_checkpoint_atomic`)
+  — two overlapping runs writing the same checkpoint could race on the same
+  `path.tmp` and corrupt each other's write. The temp name is now salted with
+  the writing process's PID. `tests/test_geocode_checkpoint_safety.R` updated.
+- **`match_nppes.R`'s exact-match stage could match on two blank first names.**
+  A parse failure that left both sides' first name empty previously counted
+  as `"" == ""` agreement, manufacturing an unevidenced identity match.
+- **AMCB scraper reconnects retried the stale URL.** `scrape.py`'s `_request()`
+  rebuilt the request URL once and reused it across retries, so a reconnect
+  that got a new APEX instance/region id kept hitting the old one. It now
+  takes a `build()` closure re-invoked per attempt. `Session.connect()` also
+  raises a named `RuntimeError` (which regex failed) instead of a bare
+  `AttributeError` if AMCB's markup shifts again. New tests in
+  `tests/test_scrape.py`.
+- **`fetch_npi_candidates.py` dropped NPPES results past page 1.** The NPI
+  Registry API caps results at 200 per query; a surname+first-name pair with
+  more than 200 true matches silently lost everything past the first page,
+  since the refine-by-first-name pass only narrowed the query, it never paged
+  it. `nppes_query_all_pages()` now pages up to a 1,200-row ceiling.
+- **`build_midwife_hospital_affiliations.py` read the wrong column and a stale
+  filename.** `r.get("state")` is not a column this script's input carries —
+  the state column is `nppes_state`. `MIDWIVES_FILE` pointed at an old
+  date-range/suffix that no longer exists.
+- **`archive_revalidation_reassignment.R` stopped finding its CMS dataset.**
+  As of 2026-10, CMS split the one "Revalidation Clinic Group Practice
+  Reassignment" dataset into ~44 separate per-month datasets in its
+  catalogue; an exact-title match found nothing. Matching is now by
+  `startsWith()`, which covers both the old single-dataset shape and the new
+  one. Re-run end to end: all 39 missing monthly vintages (2021-12 through
+  2026-09) downloaded and loaded, warehouse now holds 40 vintages,
+  `/Volumes/MufflySamsung/DuckDB/cms_revalidation.duckdb`.
+- **`refuse_if_large()` gave an opaque "argument is of length zero" error**
+  on a non-data-frame input (`R/lib/duckdb_guards.R`); it now checks
+  `is.data.frame()` first and says what was actually passed. New test:
+  `tests/test_duckdb_guards.R`.
+
+### Added
+
+- **A CMS Revalidation Group Practice Reassignment warehouse**, 40 monthly
+  vintages (2021-12–2026-09, ~3.0–3.6M rows each) in a persistent DuckDB at
+  `/Volumes/MufflySamsung/DuckDB/cms_revalidation.duckdb`, with raw CSVs kept
+  alongside under `/Volumes/MufflySamsung/cms_revalidation_raw`. First
+  per-vintage, per-state midwife summary: `artifacts/midwife_reassignment_panel_summary.csv`.
+- **`artifacts/nppes_license_concordance.csv`** — license number and state
+  pulled from each matched midwife's NPPES taxonomy entries (not previously
+  extracted anywhere in this repo), via new `measure_nppes_license_concordance.py`.
+  Checked against this repo's three genuine board pulls (WA, CO, TX) where
+  both exist.
+- **`artifacts/nursys_qa_sample.csv`** — a 120-row, state-stratified
+  (WA/CO/TX) manual-lookup QA sample comparing board license numbers against
+  Nursys, drawn by new `draw_nursys_qa_sample.py`. This is an **instrument,
+  not a result**: Nursys QuickConfirm has no bulk API, so the `NURSYS_*`
+  columns are left blank, awaiting a human to look each one up by hand — same
+  posture as the 327-row blinded adjudication truth set in `artifacts/truth/`.
+- **`artifacts/accepted_by_evidence_class.csv`** committed for the first
+  time (script `make_evidence_class_figure.R` already existed; its output
+  artifact had not been). Backs new `make_amcb_npi_matching_slide.R`.
+- Four new slide-generation scripts (`make_access_stack_slide.R`,
+  `make_amcb_npi_matching_slide.R`, `make_source_reliability_slide.R`,
+  `make_worksite_address_problem_slide.R`), each adapted from an unrelated
+  `~/isochrones/` project's layout code but drawing this project's own,
+  computed numbers — no source-accuracy figures were invented to fill a
+  borrowed panel.
+- `manuscript/slides_overview.qmd`, a PowerPoint-output Quarto deck whose
+  numbers come from `mw_init_stats()` at render time, not typed in.
+- `analysis/make_internal_dot_map_qa_only.R` — an explicitly never-publish,
+  internal-only QA dot map; its output path (`artifacts/internal_qa/`) is
+  now gitignored.
+
+### Changed
+
+- **E. Brie Thumm's affiliation** updated from Denver Health to College of
+  Nursing, University of Colorado Anschutz Medical Campus, consistently
+  across `CITATION.cff`, `manuscript/title_page.qmd`,
+  `manuscript/midwife_persistence.qmd`, `manuscript/STROBE_checklist.md`,
+  `manuscript/slides_overview.qmd`, and README's citation block.
+- **A doc-hygiene pass** adds "numbers are stale, mechanism is not" notes to
+  thirteen docs under `docs/` whose cohort counts predate the 2026-09-02
+  re-scrape (22,309/11,920 → 22,357/12,171 per DEBT.md D10), each spelling out
+  the specific old-vs-current numbers rather than silently leaving them wrong.
+  One (`TECHNICAL_APPENDIX_CSV_INGESTION_ENCODING.md`) instead reports a
+  **currently-failing gate**: two new raw `dbConnect()` call sites (added
+  2026-09-13/14) bypass the encoding chokepoint the gate exists to enforce.
+  `DECISIONS_CONTRACT.md` D15 ("does practice setting belong in Table 1?") is
+  recorded as ruled, Option A, 2026-09-28.
+
+### Removed
+
+- **`classify_msn_dnp_credentials.R`** and its two artifacts, along with the
+  `degree_nppes_text` source and the "DNP versus MSN" feasibility row it fed
+  (`R/inventory_trilliant_research_fields.R`,
+  `docs/TECHNICAL_APPENDIX_TRILLIANT.md`'s research-question count 12→11,
+  `rebuild_frozen_dependents.R`'s rebuild order, its CI leak allowlist entry).
+  Six exploratory/demo scripts moved to `@archive/` rather than deleted
+  (`demonstrate_attanasio_medicare_medicaid_link.R`,
+  `demonstrate_postmastr_address_standardization.R`,
+  `experiment_disambiguate_unresolved.R`,
+  `experiment_endpoint_and_secondary_location.R`,
+  `experiment_external_org_sources.R`, `investigate_no_org_anomaly.R`).
+
+### Known, unresolved
+
+- **The hospital/clinic worksite counts in `docs/table_worksite_settings.md`,
+  `table_worksite_combinations.md`, `table_worksite_topology.md` and
+  `table_trilliant_worksite_detail.md` disagree slightly with the figures
+  already committed in `docs/table1_midwives.md` and
+  `docs/SCOPE_AND_LIMITATIONS.md`** (e.g. hospital 7,681 vs. 7,685,
+  clinic/practice 6,017 vs. 6,023) after a same-night rebuild of
+  `build_trilliant_work_sites.R`'s outputs. Both sets are committed as of this
+  entry. Not reconciled — see the note in `docs/table1_midwives.md`.
+
+## [Unreleased] — 2026-10-19 — Worksite merge-conflict audit: root-caused, not closed
+
+Full writeup: [docs/HANDOFF_worksite_merge_conflict_audit.md](docs/HANDOFF_worksite_merge_conflict_audit.md).
+Owner declined to resolve the pending `git rebase origin/main` by picking a
+side on numbers alone and asked for an evidence-based audit first. This is
+that audit. Nothing below changes a previously published number — it adds a
+third, still-not-final number and says exactly why it isn't final.
+
+### Added
+
+- **20 adversarial tests for the three pure functions that build worksite
+  data** — `tests/test_work_site_topology_saboteurs.R`, targeting
+  `assign_site_ids()`, `blended_practice()` and `topology_by_midwife()` in
+  `R/lib/work_site_topology.R`: shared hospital campuses that must stay two
+  sites, a same-ZIP/different-street pair that must never fuse, the exact
+  4-decimal coordinate-rounding boundary the function uses, employer/billing
+  rows that must never count as workplace evidence, a hospital affiliation
+  with no resolved coordinates that still counts as strict evidence (by
+  design — a separate question from physical-site counting), and duplicate
+  source rows that must not inflate a count. One real characteristic found
+  in the process, now pinned down by a test rather than left implicit: a
+  midwife whose only rows are employer sources is **absent** from
+  `blended_practice()`'s own output, not present with `FALSE` flags — safe
+  today only because the caller's `left_join` + `coalesce(FALSE)` papers
+  over it.
+
+### Fixed (partially)
+
+- **`origin/main`'s committed `artifacts/midwife_work_setting_summary.csv`
+  (241/34 strict/broad hospital+birth-center evidence) was built with all 5
+  proper inputs; the previously-committed local version (156/63) was built
+  without two of them** (`cabc_matched_midwives_final.csv`,
+  `organization_affiliation_resolved.csv` — confirmed from the local
+  provenance JSON's input list, silently short because of a now-removed
+  `INPUTS[file.exists(INPUTS)]` fallback). Both regenerated from primary
+  sources this session: `organization_affiliation_resolved.csv` ran clean
+  from already-committed arm artifacts; `cabc_matched_midwives_final.csv`
+  needed a fresh browser-captured snapshot of the CABC directory (its own
+  script header says why — the listing renders client-side), 109 centers
+  live on 2026-10-19 matched to 220 midwives across 66 centers. Re-running
+  with both restored moved the local count from 156/63 to 203/76 — confirming
+  this was a real cause, but **still not a match** for `origin/main`'s
+  241/34, taken as the current committed figure in this rebase.
+- **The remaining, unclosed cause**: the external hospital CCN/price-
+  transparency reference bundle (`/Volumes/MufflySamsung/hpt_prices/reference/`,
+  `/crosswalk/`) is absent on this machine, so the rerun above still used a
+  degraded fallback (empty NPI→CCN crosswalk) that `origin/main`'s version of
+  `build_trilliant_work_sites.R` no longer tolerates. No worksite number —
+  committed or rerun — should be published as final until that bundle is
+  located and the comparison is redone with it present.
+- **`origin/main`'s published `docs/table1_midwives.md` is a known-broken
+  stale partial build, not newer truth.** Its own `build_table1_midwives.R`
+  documents a 2026-09-11 incident (PR #241) where a run missing enrichment
+  inputs published Sex 100% "not recorded" and ACOG district 99.7% "not
+  mappable"; a guard shipped afterward to prevent a repeat, but the already-
+  published file was never regenerated and still shows exactly that broken
+  state at `origin/main` tip. The locally-authored version is complete and
+  correct and is what this rebase keeps for that file.
 
 ## [Unreleased] — 2026-09-14 — Trilliant's directory as a second identity source (experiment)
 

@@ -1,13 +1,13 @@
 group,level,n,N,pct
-1_retained,Metro (RUCC 1-3),13381,15468,86.50762865270235
-1_retained,"Nonmetro, adjacent (4-6)",1083,15468,7.0015515903801395
-1_retained,"Nonmetro, remote (7-9)",521,15468,3.3682441168864754
-1_retained,Unknown,483,15468,3.1225756400310316
-2_newly_npi_resolved,Metro (RUCC 1-3),1335,1560,85.57692307692308
-2_newly_npi_resolved,"Nonmetro, adjacent (4-6)",113,1560,7.243589743589744
-2_newly_npi_resolved,"Nonmetro, remote (7-9)",61,1560,3.91025641025641
-2_newly_npi_resolved,Unknown,51,1560,3.269230769230769
-4_removed,Metro (RUCC 1-3),1488,1756,84.73804100227791
-4_removed,"Nonmetro, adjacent (4-6)",143,1756,8.143507972665148
-4_removed,"Nonmetro, remote (7-9)",73,1756,4.157175398633258
-4_removed,Unknown,52,1756,2.9612756264236904
+1_retained,Metro (RUCC 1-3),13334,15416,86.49455111572392
+1_retained,"Nonmetro, adjacent (4-6)",1080,15416,7.00570835495589
+1_retained,"Nonmetro, remote (7-9)",520,15416,3.3731188375713543
+1_retained,Unknown,482,15416,3.1266216917488325
+2_newly_npi_resolved,Metro (RUCC 1-3),1163,1359,85.5776306107432
+2_newly_npi_resolved,"Nonmetro, adjacent (4-6)",101,1359,7.431935246504783
+2_newly_npi_resolved,"Nonmetro, remote (7-9)",56,1359,4.120676968359088
+2_newly_npi_resolved,Unknown,39,1359,2.869757174392936
+4_removed,Metro (RUCC 1-3),1535,1808,84.90044247787611
+4_removed,"Nonmetro, adjacent (4-6)",146,1808,8.075221238938052
+4_removed,"Nonmetro, remote (7-9)",74,1808,4.092920353982301
+4_removed,Unknown,53,1808,2.9314159292035398

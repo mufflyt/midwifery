@@ -4,6 +4,14 @@ A map of the codebase for someone seeing it for the first time. The
 [README](README.md) explains *why* the project works the way it does; this file
 explains *how the pieces fit together* and *how to run and test them*.
 
+## Reading order for a newcomer
+
+1. This file, then the [README](README.md) for the scraping/matching rationale.
+2. `scrape.py` — small, self-contained, and the source of the whole dataset.
+3. `credential_compatibility.R` — short, pure, and central to match precision.
+4. `match_nppes.R` — the matcher; start at `score_one()`, which is documented
+   with the two-stage (exact → fuzzy) contract.
+
 ## What this project does
 
 It builds a geolocated roster of every midwife certified by the American
@@ -171,11 +179,3 @@ tests reach the pure functions. The R components are likewise safe to `source()`
 (they define functions without running a pipeline), which is how the R tests
 reach them. See [TEST_COVERAGE.md](TEST_COVERAGE.md) for the current coverage
 and proposed next steps.
-
-## Reading order for a newcomer
-
-1. This file, then the [README](README.md) for the scraping/matching rationale.
-2. `scrape.py` — small, self-contained, and the source of the whole dataset.
-3. `credential_compatibility.R` — short, pure, and central to match precision.
-4. `match_nppes.R` — the matcher; start at `score_one()`, which is documented
-   with the two-stage (exact → fuzzy) contract.

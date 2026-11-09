@@ -1,0 +1,15 @@
+{
+  "artifact": "live_pennsylvania_bon_ingested_midwives_from_tracked_roster.csv",
+  "source_url": "https://www.pals.pa.gov/api/Search/SearchForPersonOrFacilty (ProfessionID=37 'State Board of Medicine', LicenseTypeId=234 'Nurse-Midwife')",
+  "accessed_utc": "2026-10-25T18:58:18Z",
+  "sha256": "b6e98fcd418851682c1f85074e4345aee1c7fcfe2fe880ff74665a57fb52f975",
+  "byte_size": 50325,
+  "source_dataset": "Pennsylvania Licensing System (PALS), www.pals.pa.gov",
+  "records_retrieved": 500,
+  "cohort": "artifacts/amcb_npi_linkage_FROZEN.csv",
+  "cohort_sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716",
+  "cohort_rows_pa": 642,
+  "cohort_matched_rows": 87,
+  "match_key": "last_name + first_name (upper, trimmed); ambiguous names reported unmatched",
+  "verification_portal": "https://www.pals.pa.gov/#!/page/search"
+}

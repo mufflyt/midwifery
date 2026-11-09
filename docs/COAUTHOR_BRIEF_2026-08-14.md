@@ -1,5 +1,12 @@
 # Co-author brief — Bree Thumm, 2026-08-14
 
+> **Note on the numbers below: as of 2026-08-14.** The directory has since been
+> rescraped (2026-09-02) and the cohort re-pinned (`DEBT.md` D10); current
+> figures are **22,357** certificants and a **17,028**-member analytic cohort
+> (**12,171** in Table 1), per README.md and `artifacts/table1_provenance.csv`.
+> The questions and decisions below are unaffected — only the specific counts
+> in §1 and §3 are from the earlier freeze.
+
 Prepared for a working discussion. Everything here is either a decision that
 needs clinical judgement, or a limitation that will need a sentence in the
 manuscript whether or not we like the number.

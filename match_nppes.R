@@ -382,7 +382,15 @@ score_one <- function(i) {
 
   # Stage 1a: deterministic exact match (exact first + last, no middle
   # conflict). Resolves the bulk of the roster before any fuzzy scoring.
-  exact <- which(pool$first_name == amcb$first_n[i] & pool$last_name == amcb$last_n[i])
+  # A blank first name on either side must never count as agreement: "" == ""
+  # is TRUE but is not evidence of anything, and would otherwise let a
+  # missing-name parse failure manufacture an unevidenced identity match.
+  exact <- if (nzchar(amcb$first_n[i])) {
+    which(pool$first_name == amcb$first_n[i] & nzchar(pool$first_name) &
+          pool$last_name == amcb$last_n[i])
+  } else {
+    integer(0)
+  }
   if (length(exact)) {
     mid_ok <- !vapply(pool$middle_name[exact], should_reject_middle_name_conflict,
                       logical(1), abog_middle = amcb$middle_n[i], USE.NAMES = FALSE)

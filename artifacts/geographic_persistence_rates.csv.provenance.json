@@ -1,0 +1,49 @@
+{
+  "artifact": "geographic_persistence_rates.csv",
+  "written_utc": "2026-10-30 02:44:24 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716"
+    },
+    {
+      "path": "midwife_panel.csv",
+      "sha256": "40c45ce1161f2ebe238aa3770988724ae7b1099df045ea981cfd6ccd41339386"
+    },
+    {
+      "path": "data/zcta_county_2020.txt",
+      "sha256": "3ed41278d637dc249e0323306f68be8a6c234e3090f4de88ef328dee71aeaaaf"
+    }
+  ],
+  "code_sha256": "6bf8846d8e31e68310ff0204f27a2a116d686434693896562a56d1791703be6a",
+  "code": [
+    {
+      "path": "build_results_geographic_persistence.R",
+      "sha256": "7d604af181b900b38637327c4c22583cb66d2eb38019b974a845a1dd59a05725"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/common_helpers.R",
+      "sha256": "55c6b894798e2740f538b1262391e58e8fe9bea84f072b80708e59aea3197067"
+    },
+    {
+      "path": "R/lib/geographic_persistence_stats.R",
+      "sha256": "41700437bcecd84b7c6d2ca62a67d130be66a442d585a67ec7687a0325e4e6de"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/lib/table1_bands.R",
+      "sha256": "312b7504d0fed8ae986eadae6c55b0efd6f1099a613e4589f772387a2db115e1"
+    },
+    {
+      "path": "R/lib/zip_county_crosswalk.R",
+      "sha256": "8b0fb8f7c9145c81ceda865e3ef0820ca3e832d460cf967ff40eb4c189899264"
+    }
+  ]
+}

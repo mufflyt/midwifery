@@ -386,12 +386,17 @@ if (!file.exists(cohort_path)) {
 # -----------------------------------------------------------------------------
 ci_section("D10 provenance sidecars: schema stays well-formed on a sample")
 
-# PUBLIC. write_with_provenance()'s own JSON contract (artifact, written_utc,
-# inputs[].{path,sha256}) -- a change to that function that drops a field or
-# writes a malformed hash would otherwise only surface the next time someone
-# happens to open a sidecar by eye. Sampled, not exhaustive (this repo tracks
-# 97+ sidecars and growing): a fixed, capped sample keeps this section fast
-# while still exercising real, currently-committed files every run.
+# PUBLIC. Two provenance vocabularies are legitimate here, not one.
+# write_with_provenance() (R/lib/artifact_provenance.R) writes {artifact,
+# written_utc, inputs[].{path,sha256}}. tools/provenance.py::write_provenance()
+# -- the vocabulary the Python harvesters use, documented in that file as the
+# fix for issue #230 ("three vocabularies for the same two facts" and a gate
+# that recognized only one) -- writes {artifact, source_url, accessed_utc}
+# instead. A sidecar is well-formed if it matches EITHER schema; requiring the
+# R shape from every tracked sidecar would be the exact issue #230 failure
+# mode again, just moved to this gate. Sampled, not exhaustive (this repo
+# tracks 97+ sidecars and growing): a fixed, capped sample keeps this section
+# fast while still exercising real, currently-committed files every run.
 sidecars <- ci_tracked("artifacts/*.provenance.json")
 if (length(sidecars) == 0) {
   ci_fail("D10: no artifacts/*.provenance.json tracked -- expected at least one")
@@ -405,13 +410,17 @@ if (length(sidecars) == 0) {
       bad <- c(bad, sprintf("%s: not valid JSON", f))
       next
     }
-    need <- c("artifact", "written_utc", "inputs")
-    missing <- setdiff(need, names(m))
-    if (length(missing)) {
-      bad <- c(bad, sprintf("%s: missing key(s) %s", f, paste(missing, collapse = ",")))
+    need_r  <- c("artifact", "written_utc", "inputs")
+    need_py <- c("artifact", "source_url", "accessed_utc")
+    missing_r  <- setdiff(need_r, names(m))
+    missing_py <- setdiff(need_py, names(m))
+    if (length(missing_r) && length(missing_py)) {
+      bad <- c(bad, sprintf(
+        "%s: matches neither schema -- R needs %s; Python needs %s",
+        f, paste(missing_r, collapse = ","), paste(missing_py, collapse = ",")))
       next
     }
-    if (length(m$inputs)) {
+    if (length(missing_r) == 0 && length(m$inputs)) {
       hashes <- if (is.data.frame(m$inputs)) m$inputs$sha256 else vapply(m$inputs, function(i) i$sha256, character(1))
       malformed <- hashes[!grepl("^[0-9a-f]{64}$", hashes)]
       if (length(malformed)) {

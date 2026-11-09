@@ -161,8 +161,22 @@ indexable/iterable and would otherwise crash the scanner on ordinary,
 unrelated code.
 
 Run against every tracked `.R` file by `tests/ci_duckdb_ingestion_bootstrap.R`
-(§1). Currently: **355 files scanned, 7 distinct raw-connection sites across
-5 files, 0 offenders outside the registry.**
+(§1). At architecture closure: **355 files scanned, 7 distinct raw-connection
+sites across 5 files, 0 offenders outside the registry.**
+
+> **Update: 4 new offenders since closure, not yet registered.**
+> `tests/test_build_midwife_panel.R` gained 4 raw `dbConnect(duckdb::duckdb(), ...)`
+> call sites (lines 282, 323, 348, 610) writing synthetic parquet fixtures for
+> the panel builder's saboteur tests — no CSV is read through them, the same
+> `synthetic-fixture` shape already granted `tests/test_cache_vintage_declared.R`
+> below. None is in `DUCKDB_RAW_CONNECTION_EXCEPTIONS`, so
+> `tests/ci_duckdb_ingestion_bootstrap.R` currently fails with 8 findings (2
+> patterns matched per call site) and the "0 offenders outside the registry" /
+> "Raw production DuckDB connection sites (outside registry): 0" claims below
+> no longer hold. See `docs/TECHNICAL_APPENDIX_CSV_INGESTION_ENCODING.md`'s
+> own update note for the same gap from the other document's angle. Needs
+> either registry entries (and `DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX` raised
+> past 7) or routing these four through `duckdb_connect()`.
 
 This scanner found two real, previously-unmigrated call sites live during
 this work — `analysis/audit_identity_flips.R` and

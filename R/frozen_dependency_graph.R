@@ -83,8 +83,11 @@ frozen_consumers <- function(root = ".") {
     data.frame(
       script = sub("^\\./", "", f),
       reads_frozen = grepl("amcb_npi_linkage_FROZEN", code, fixed = TRUE),
-      network = grepl("httr|curl|GET\\(|POST\\(|read_html|RSelenium|chromote|download\\.file|rvest",
-                      code),
+      # \\b-bounded: an unbounded "rvest" matched inside the plain word
+      # "harvest" (e.g. a comment naming harvest_cms_national_provider_
+      # directory.py), misclassifying its non-network caller as scraping.
+      network = grepl("\\bhttr\\b|\\bcurl\\b|\\bGET\\(|\\bPOST\\(|\\bread_html\\b|\\bRSelenium\\b|\\bchromote\\b|\\bdownload\\.file\\b|\\brvest\\b",
+                      code, perl = TRUE),
       n_write_calls = n_write_calls,
       outputs = paste(outs, collapse = "|"),
       n_unresolved_writes = max(0L, n_write_calls - length(outs)),

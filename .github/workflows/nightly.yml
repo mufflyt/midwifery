@@ -720,19 +720,32 @@ jobs:
 
       # FATAL: a test that is neither discovered nor registered is a test
       # nobody runs. This is the check that would have caught the original 21.
+      #
+      # The candidate list below is EVERY tests/*.R and tests/*.py file, minus
+      # known non-test support files -- never tests/test*.R / tests/test*.py,
+      # which is the discovery glob itself. Enumerating from the glob being
+      # checked made this tautological (every candidate already matched what
+      # it was being tested against, so it could never fail); see DEBT.md D10
+      # for the same "both sides derived from the same input" shape.
       - name: Every test is either run or registered
         run: |
           set -u
           sed -e 's/#.*$//' tests/ci_nightly_exceptions.txt \
             | awk 'NF {print $1}' > /tmp/exceptions.txt
           orphans=""
-          for t in tests/test*.R tests/test*.py; do
+          for t in tests/*.R tests/*.py; do
             [ -e "$t" ] || continue
             b=$(basename "$t")
-            case "$b" in helper-*) continue;; esac
+            case "$b" in
+              ci_*.R) continue;;    # policed separately, below
+              helper-*) continue;;
+              # Support files sourced by tests, never run standalone --
+              # the same category as helper-*.R.
+              lib_manuscript_numbers.R|mutation_catalogue.R) continue;;
+            esac
             grep -qxF "$t" /tmp/exceptions.txt && continue
-            # Discovered by the r-suite glob (*.R) or the pytest directory (*.py).
-            case "$t" in tests/*.R|tests/*.py) continue;; esac
+            # Discovered by the r-suite glob (test*.R) or pytest (test*.py).
+            case "$b" in test*.R|test*.py) continue;; esac
             orphans="$orphans $b"
           done
           [ -z "$orphans" ] || { echo "unrun and unregistered:$orphans"; exit 1; }

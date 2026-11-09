@@ -1,0 +1,10 @@
+group,transition_support,n
+mover,Contradictory enrollment evidence,89
+mover,No informative enrollment evidence,220
+mover,Partial administrative support,81
+mover,Preexisting destination enrollment,91
+mover,Strong administrative support,17
+stayer,No informative enrollment evidence,5919
+stayer,Partial administrative support,162
+stayer,Preexisting destination enrollment,3779
+stayer,Strong administrative support,57

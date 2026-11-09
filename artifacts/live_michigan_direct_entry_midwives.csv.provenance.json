@@ -1,0 +1,12 @@
+{
+  "artifact": "live_michigan_direct_entry_midwives.csv",
+  "source_url": "https://aca-prod.accela.com/MILARA/GeneralProperty/PropertyLookUp.aspx?isLicensee=Y&TabName=APO (License Type = Midwife; county from each record's LicenseeDetail.aspx page)",
+  "accessed_utc": "2026-10-26T16:22:12Z",
+  "sha256": "c0e86c4a62d97f86775a2623bf509a3fefdc483a7718fe768a5412c86fa9e992",
+  "byte_size": 7004,
+  "source_dataset": "Michigan LARA Bureau of Professional Licensing (MiPLUS/MILARA) -- direct-entry/Certified Professional Midwife license type, NOT CNM",
+  "records_retrieved": 119,
+  "cohort_matched": "NONE -- tested against the full national tracked cohort (amcb_npi_linkage_FROZEN.csv, 22,357 rows) and found only 1/22,357 exact last+first match, indistinguishable from coincidence; this license type is a different, non-AMCB population",
+  "address_granularity": "county only -- no city/state/zip field exists in this source",
+  "verification_portal": "https://aca-prod.accela.com/MILARA/GeneralProperty/PropertyLookUp.aspx?isLicensee=Y&TabName=APO"
+}

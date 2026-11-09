@@ -1,0 +1,10 @@
+direction_type,category,n,total_matched_moves,pct_of_matched
+destination_arrival_timing,Medicaid led by 3+ yrs (pre-existing / long NPPES lag),322,1229,26.2
+destination_arrival_timing,Medicaid led by 2 yrs (NPPES lagged 2 yrs),93,1229,7.6
+destination_arrival_timing,Medicaid led by 1 yr (NPPES lagged 1 yr),345,1229,28.1
+destination_arrival_timing,Same calendar year (0 yr lag),351,1229,28.6
+destination_arrival_timing,NPPES led by 1 yr (Medicaid lagged 1 yr),62,1229,5
+destination_arrival_timing,NPPES led by 2+ yrs (Medicaid lagged 2+ yrs),56,1229,4.6
+origin_departure_termination_timing,Terminated BEFORE NPPES move year (NPPES lagged departure),252,1274,19.8
+origin_departure_termination_timing,Terminated in SAME calendar year as NPPES move,203,1274,15.9
+origin_departure_termination_timing,Terminated AFTER NPPES move year or still open-ended (Medicaid lagged departure),819,1274,64.3

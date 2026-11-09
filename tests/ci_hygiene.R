@@ -111,11 +111,16 @@ cat("\n-- H4 no function defined at top level in two files --\n")
 # console plumbing around a subprocess, never a join key or a normalisation.
 # Its partner `survives` is not listed because it is not yet duplicated; add it
 # when it is, deliberately, rather than in anticipation.
+# `raises` and `err_msg` are the same category again: run an expression, say
+# whether/how it failed, used only inside standalone test files. `mk_cand` is
+# a synthetic test-fixture row builder (two independent test files each build
+# their own candidate rows for their own scenarios) -- not a join key or a
+# normalisation either, since it never touches real data.
 ALLOW <- c("chk", "xchk", "error", "pick", "f", "ok", "bad", "skip", "kills",
            "rd", "fmt", "mk", "sel",
            "main", "code", "as_lgl", "rate", "key_of", "nonascii", "fetch_one",
            "assign_cd", "centroid_counts", "assign_county_from_points",
-           "drop_zip", "disagree")
+           "drop_zip", "disagree", "raises", "err_msg", "mk_cand")
 defs <- list()
 for (f in r_files) {
   ln <- readLines(f, warn = FALSE)

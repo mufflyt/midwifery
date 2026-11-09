@@ -1,0 +1,10 @@
+provider_group,tier,n,pct
+midwife,enrolled_only,10040,82.5
+midwife,neither,1604,13.2
+midwife,enrolled_and_billed,522,4.3
+ob_gyn_generalist,enrolled_only,34170,82.4
+ob_gyn_generalist,enrolled_and_billed,3864,9.3
+ob_gyn_generalist,neither,3448,8.3
+ob_gyn_mfm,enrolled_only,2430,93.1
+ob_gyn_mfm,enrolled_and_billed,115,4.4
+ob_gyn_mfm,neither,65,2.5

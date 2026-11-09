@@ -1,10 +1,25 @@
 {
   "artifact": "pecos_missingness_comparison.csv",
-  "written_utc": "2026-08-16 19:18:38 UTC",
+  "written_utc": "2026-10-19 20:13:58.428 UTC",
   "inputs": [
     {
       "path": "artifacts/affiliation_coverage_matrix.csv",
-      "sha256": "e19bffdc4a81f09df55a68565d1e913b8d9912dc2d09d476297b9cd693410504"
+      "sha256": "8637d5bf0a25cbd2a190404293313754c5e5d9342b4b6081ea95c86a2c1ad8ee"
+    }
+  ],
+  "code_sha256": "e4ee1043c84768dda443a67b2ec25140820ac24b1fbc156f0576d78805a80069",
+  "code": [
+    {
+      "path": "build_affiliation_coverage_matrix.R",
+      "sha256": "c35267dd3d541620f484cb5fae4470769dda842ea9ce37505f6ae43266c6d558"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
     }
   ]
 }

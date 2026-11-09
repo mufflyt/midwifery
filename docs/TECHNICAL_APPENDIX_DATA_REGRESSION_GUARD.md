@@ -53,12 +53,12 @@ every other gate in the repository.
 
 | # | Check | Fires when |
 |---|---|---|
-| D1 | `linkage_manifest.json`'s 7 dispositions sum to its own `total_rows` (22,309) | The manifest was hand-edited, or regenerated without updating `total_rows` |
+| D1 | `linkage_manifest.json`'s 7 dispositions sum to its own `total_rows` (22,357) | The manifest was hand-edited, or regenerated without updating `total_rows` |
 | D2 | Those same 7 dispositions agree **exactly** with the independently-written `linkage_completeness_by_status.csv` | A rebuild of one script moved without the other — two artifacts describing different linkages under one shared name |
-| D3 | `amcb_npi_linkage_FROZEN.csv.manifest.json`'s `class5_candidates_held_out` (156) agrees with `linkage_manifest.json`'s count of the same disposition; `artifact_rows` stays in a 20,000–25,000 band | A refreeze silently dropped or duplicated the class-5 accounting, or produced an implausible roster size |
+| D3 | `amcb_npi_linkage_FROZEN.csv.manifest.json`'s `class5_candidates_held_out` (153) agrees with `linkage_manifest.json`'s count of the same disposition; `artifact_rows` stays in a 20,000–25,000 band | A refreeze silently dropped or duplicated the class-5 accounting, or produced an implausible roster size |
 | D4 | Every `composition_*.csv` group's `n` sums to its own `N`; `pct` closes to 100 | A code change drops a level, double-counts a row, or divides by the wrong denominator, generalized across all 5 composition files |
 | D5 | Every Manski bound triple in `linkage_selection_bounds.csv` is ordered lower ≤ observed ≤ upper | A swapped min/max, a flipped filter, or a wrong-direction denominator produces a numerically valid but logically inverted bound |
-| D6 | README.md's cited "22,309" roster count matches `linkage_manifest.json` | Doc-vs-data drift: the data moved and the prose did not |
+| D6 | README.md's cited "22,357" roster count matches `linkage_manifest.json` | Doc-vs-data drift: the data moved and the prose did not |
 | D7 | `INPUT_FINGERPRINT.json` and `amcb_npi_linkage_FROZEN.csv.manifest.json` each still declare their own vintage marker (`rows`/`frozen_at`, `cohort_members`/`run_id`) | Either file drops the field `tests/test_cohort_vintage.R` needs to compare them — see §5, this is deliberately **not** a check that the two counts agree or disagree |
 | D8 | *PRIVATE-OK.* `amcb_npi_linkage_FROZEN.csv`, if present: `certification_number` unique, `npi` values 10-digit | Only checked on a machine with the real person-level crosswalk |
 | D9 | *PRIVATE-OK.* `frozen_cohort/analytic_cohort.csv`, if present: plausible row count, no duplicate certificants | Same as D8 |

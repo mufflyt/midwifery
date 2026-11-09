@@ -1,0 +1,41 @@
+{
+  "artifact": "healthgrades_vs_pecos_address_agreement.csv",
+  "written_utc": "2026-10-23 19:07:50 UTC",
+  "inputs": [
+    {
+      "path": "healthgrades_midwives.csv",
+      "sha256": "bb13f5a7e3e9330db09a383321bf396ade04dd74c0693b07d2625d8aa25f627c"
+    },
+    {
+      "path": "dac_midwives.csv",
+      "sha256": "446a935a516a9decc5da253e97a0f22dcdf92be86ea031d0399d7b8ebc23cc7e"
+    }
+  ],
+  "code_sha256": "466fd18c4cd4b4be26add77c1e619ea97a76b3309f906caf5768423e9ffddf82",
+  "code": [
+    {
+      "path": "compare_healthgrades_to_pecos_address.R",
+      "sha256": "b8060fab3de937660ce07ed31fde0fb616f0e5ff81248c3deff8e4be40fa1dbd"
+    },
+    {
+      "path": "R/join_safety.R",
+      "sha256": "96a2eeeef8b9821178abed57d90213e299c9539f4358b4f6ed47c9fc2b8c0280"
+    },
+    {
+      "path": "R/lib/address_agreement_compare.R",
+      "sha256": "c12445f34a76333187795d750014de7319546d35758f1af9be1cafc00044894e"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    },
+    {
+      "path": "R/safe_divide.R",
+      "sha256": "9676b960bacb210a2167e7751dd84c5b9c80a0bf5442425e0b0f322b25aa04bc"
+    }
+  ]
+}

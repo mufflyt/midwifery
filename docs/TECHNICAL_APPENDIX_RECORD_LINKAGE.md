@@ -7,6 +7,32 @@
 **Investigation date**: 2026-08-29
 **Status**: every count below is read from a committed artifact and reproduced by the gates named in §8.
 
+> **Update 2026-09-12 (pending): the cohort-flow diagram and counts in §2/§6/§9
+> are behind the current freeze.** `artifacts/linkage_completeness_by_status.csv`
+> was regenerated 2026-09-11 against the current 22,357-certificant roster and
+> 17,028-member analytic cohort (`DEBT.md` D10; README Figure 3), not the
+> 22,309-roster / 16,892-cohort snapshot this appendix's §2 mermaid diagram and
+> §6/§9 prose still describe. The mechanism each section documents (why a
+> record lands in each bucket, the registry-boundary argument in §7) is
+> unaffected — only the specific counts are stale. Regenerate §2's diagram and
+> the dependent counts from the current artifact rather than hand-editing the
+> numbers in place.
+
+> **Update 2026-10-22: class 4 (fuzzy/Levenshtein-distance surname matching,
+> §4) was removed from `match_amcb_to_npi.R`.** Two different real people
+> whose surnames happened to differ by one or two characters were getting the
+> same name evidence as someone whose surname is a deliberately recorded
+> variant — strategy `s3` (the `stringdist()` join that generated class 4) was
+> deleted outright, not demoted, and class 4 is retired rather than
+> reassigned. Class 5 is unaffected — it is an exact token match on one
+> surname component, not a distance metric. §4's table and discussion below
+> describe the pre-removal design and are kept for the historical rationale
+> (why class 4 was ordered where it was), not as a description of the current
+> matcher; §5's tied-record count (3,044) predates the removal and has not
+> been recounted against the new freeze. Full decision and before/after
+> counts: README's "2026-10-22 re-freeze" section and
+> `artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json`.
+
 ---
 
 ## 1. The problem
@@ -93,10 +119,10 @@ download. Two consequences follow:
   surname change between certification and the present does not by itself
   prevent a match.
 
-[`match_amcb_to_npi.R:227`](../match_amcb_to_npi.R) —
+[`match_amcb_to_npi.R:252`](../match_amcb_to_npi.R) —
 *"one row per (NPI, name spelling) so every historical surname is matchable, not
 just the current one."* The second path,
-[`match_nppes.R:253-260`](../match_nppes.R), appends panel name-rows not already
+[`match_nppes.R:267-278`](../match_nppes.R), appends panel name-rows not already
 present in the live-API candidate file and reports how many NPIs it revived.
 
 **A former-name crosswalk therefore adds nothing.** Building one from the same
@@ -114,16 +140,16 @@ exactly one candidate occupies its strongest available class**.
 | 1 | exact surname + exact given name, **corroborating middle name** | `s1`/`s2` + middle agreement | 1.00 |
 | 2 | exact surname + exact given name, no useful middle information | `s1` | 0.90 |
 | 3 | exact surname + **first initial only**; the given names differ | `s2` | 0.70 |
-| 4 | surname within edit distance 2, **exact given name** | `s3` | 0.50 |
+| 4 *(retired 2026-10-22, see note above)* | surname within edit distance 2, **exact given name** | `s3` (deleted) | 0.50 |
 | 5 | shared surname component, exact given name | `s5` | 0.35 |
 
 **Class 3 is a first-initial rule, not a nickname dictionary.** An earlier
 version of this table said "given name equivalent via nickname dictionary". A
-nickname dictionary does exist in this repository — `create_nickname_dictionary()`
-in [`match_nppes.R:331`](../match_nppes.R) — but it belongs to the *other*
+nickname dictionary is called in this repository — `create_nickname_dictionary()`
+at [`match_nppes.R:342`](../match_nppes.R) — but it belongs to the *other*
 matcher and is not reachable from the code that produced the frozen linkage.
 What class 3 actually requires is
-[`match_amcb_to_npi.R:433`](../match_amcb_to_npi.R), `exact_last & first_init_ok`,
+[`match_amcb_to_npi.R:478`](../match_amcb_to_npi.R), `exact_last == 1L & first_init_ok == 1L`,
 fed by strategy `s2`, which joins on surname + first initial and then explicitly
 excludes exact given-name agreement. It is "same surname, same first letter,
 different given name" — SMITH and any S.

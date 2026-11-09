@@ -96,6 +96,19 @@ is_cohort_member <- function(npi, linkage_tier,
 #' @export
 cohort_membership_summary <- function(df, allowed = COHORT_MEMBERSHIP_TIERS) {
   stopifnot(all(c("npi", "linkage_tier") %in% names(df)))
+  if (!nrow(df)) {
+    # table(character(0)) drops the "tier" column entirely (as.data.frame()
+    # of a zero-extent table keeps only Freq), so names(tab)[2] <- "n" fails
+    # on a 1-column frame with an unrelated-looking error. An empty input is
+    # a real, reachable shape (every candidate for everyone quarantined, say)
+    # and deserves "0 of 0", not a crash.
+    return(list(
+      summary = data.frame(tier = character(0), n = integer(0),
+                           eligible_tier = logical(0), n_members = integer(0),
+                           n_candidates_excluded = integer(0),
+                           stringsAsFactors = FALSE),
+      n_members = 0L, n_with_npi = 0L, n_candidates_not_members = 0L))
+  }
   member <- is_cohort_member(df$npi, df$linkage_tier, allowed)
   tab <- as.data.frame(table(tier = df$linkage_tier), stringsAsFactors = FALSE)
   names(tab)[2] <- "n"

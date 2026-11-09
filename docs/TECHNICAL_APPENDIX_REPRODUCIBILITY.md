@@ -1,10 +1,21 @@
 # Technical Appendix: Why the Frozen Cohort Cannot Be Regenerated
 
 **Repository**: `midwifery`
-**Affected artifact**: `artifacts/amcb_npi_linkage_FROZEN.csv` — 22,309 rows, cohort of 16,892
+**Affected artifact**: `artifacts/amcb_npi_linkage_FROZEN.csv` — 22,309 rows, cohort of 16,892, as it stood at this investigation's 2026-08-30 date
 **External dependency**: `rank_one_to_one()` in `~/isochrones/R/npi_resolution.R`
 **Gate**: G7 in [`tests/test_amcb_gates.R`](../tests/test_amcb_gates.R)
 **Investigation date**: 2026-08-30
+
+> **Note 2026-09-12: this path has since been re-frozen to a different
+> vintage.** `artifacts/amcb_npi_linkage_FROZEN.csv` is a live path, re-pinned
+> since this investigation (most recently by `DEBT.md` D10's 2026-09-11
+> close-out): it now holds 22,357 rows and a 17,028-member cohort
+> (`artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json`), not the 22,309/16,892
+> described below. That re-pin does not reopen this appendix's finding —
+> §2's 249-row, two-cause decomposition is a property of the reproducibility
+> gap at the 2026-08-30 freeze specifically, not a live count — but a reader
+> comparing this doc against the current file by path alone will not find the
+> numbers below.
 
 ---
 

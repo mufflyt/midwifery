@@ -1,0 +1,17 @@
+comparison,stratification,stratum,n,state_agree_pct,city_agree_pct,zip5_agree_pct,street_agree_pct
+DAC (2026) vs NPPES (2026),nppes_street_spell_age,0 yrs (updated in snapshot yr),700,87.6,51.9,43.4,34
+DAC (2026) vs NPPES (2026),nppes_street_spell_age,1-2 yrs,1529,91.8,62.7,57.8,43.7
+DAC (2026) vs NPPES (2026),nppes_street_spell_age,3-5 yrs,1136,90.2,56.6,49.9,36.4
+DAC (2026) vs NPPES (2026),nppes_street_spell_age,6-10 yrs,1200,88.8,54.4,41.9,28.6
+DAC (2026) vs NPPES (2026),nppes_street_spell_age,11+ yrs (un-updated >=11 yrs),1011,89.1,47.7,36.3,20.4
+Open Payments (2022-2025 pooled) vs NPPES (same yr),nppes_street_spell_age,0 yrs (updated in snapshot yr),2192,95.3,81.6,77.8,75.4
+Open Payments (2022-2025 pooled) vs NPPES (same yr),nppes_street_spell_age,1-2 yrs,3576,95.2,83.7,79.6,77.5
+Open Payments (2022-2025 pooled) vs NPPES (same yr),nppes_street_spell_age,3-5 yrs,3446,95.6,83.9,79.8,77
+Open Payments (2022-2025 pooled) vs NPPES (same yr),nppes_street_spell_age,6-10 yrs,3429,96,84.8,80.7,78.1
+Open Payments (2022-2025 pooled) vs NPPES (same yr),nppes_street_spell_age,11+ yrs (un-updated >=11 yrs),2319,96.6,86.7,81.9,78.3
+DAC (2026) vs NPPES (2026),amcb_career_tenure,0-2 yrs post-AMCB cert,694,87.9,55,47.8,34.4
+DAC (2026) vs NPPES (2026),amcb_career_tenure,3-5 yrs post-AMCB cert,939,90,58.8,52.5,39.3
+DAC (2026) vs NPPES (2026),amcb_career_tenure,6-10 yrs post-AMCB cert,1157,89.2,57.7,50,36.6
+DAC (2026) vs NPPES (2026),amcb_career_tenure,11-20 yrs post-AMCB cert,1182,89.3,54.4,43.7,29.4
+DAC (2026) vs NPPES (2026),amcb_career_tenure,21+ yrs post-AMCB cert,953,91.6,54.4,45.1,30.3
+DAC (2026) vs NPPES (2026),amcb_career_tenure,Not in AMCB canonical cohort,651,91.1,51.8,42.1,30.7

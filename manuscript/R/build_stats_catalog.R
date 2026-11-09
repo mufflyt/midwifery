@@ -331,11 +331,20 @@ mw_build_catalog <- function(root = ".") {
       # Match evidence tiers among ACTIVE, PRIMARY-matched midwives only, from
       # the frozen linkage's ordered name_evidence_class (1-5; see the tier
       # comment above s5 in match_amcb_to_npi.R for the exact definitions).
-      # Restricting to match_status == "primary" here (not the looser
-      # npi_match_status-based bucket) keeps this consistent with
-      # active_matched_n above -- otherwise the tier counts would sum to a
-      # different total than the box they're itemising.
-      primary_rows <- active_rows[active_rows$match_status == "primary", ]
+      #
+      # MUST FOLLOW THE SAME RULE AS active_matched_n, not always
+      # match_status == "primary". Those were the same 12,259-row population
+      # for as long as geography_by_amcb_status.csv predated #222 and the
+      # ladder fell back to match_status_primary -- so filtering on
+      # match_status == "primary" here happened to agree with active_matched_n
+      # above. The moment geography_by_amcb_status.csv was rebuilt carrying
+      # cohort_rule == "canonical_active_primary", active_matched_n dropped to
+      # 12,170 (the 89 held-out class-5 matches leave the box) while this
+      # filter stayed at 12,259 -- caught live by sum(active_matched_by_tier)
+      # == active_matched_n failing the first time that branch actually ran.
+      primary_rows <- if (exclusion_cohort_rule == "canonical_active_primary")
+        active_rows[membership, ] else
+        active_rows[active_rows$match_status == "primary", ]
       tier_n <- table(factor(primary_rows$name_evidence_class, levels = 1:5))
       active_matched_by_tier <- setNames(
         as.integer(tier_n),
@@ -366,7 +375,7 @@ mw_build_catalog <- function(root = ".") {
           # a real, geocodable location that ACOG's district system has no
           # bucket for. Computed against THIS box's own population
           # (geocoded_n), not table1.n's narrower primary-linked-only
-          # population -- see table1.acog_excluded_n's own comment for why
+          # population -- see table1.acnm_unmapped_n's own comment for why
           # those two must never share a denominator.
           if ("n_acog_unmapped" %in% names(g_active)) {
             cat_$exclusion$acog_excluded_n <- g_active$n_acog_unmapped
@@ -605,36 +614,39 @@ mw_build_catalog <- function(root = ".") {
   }
 
   # --- Persistence -----------------------------------------------------------
-  # PINNED, and flagged as such. These come from the 2007-2025 provider panel
-  # (midwife_panel.csv, ~493 MB, gitignored and person-level) and from the
-  # geocoding cascade, neither of which can be re-derived inside a render. They
-  # are entered once, here, with the artifact that produced them named -- not
-  # scattered through the prose, which is the failure this catalog exists to
-  # prevent. Regenerating them is R/05-stage-progression.R plus the persistence
-  # analysis in docs/RESULTS_geographic_persistence.md.
+  # PINNED, and flagged as such. These come from the 2007-2026 provider panel
+  # (midwife_panel.csv, ~455 MB, gitignored and person-level) via the
+  # ZCTA-crosswalk county join, neither of which can be re-derived inside a
+  # render. They are entered once, here, with the artifact that produced them
+  # named -- not scattered through the prose, which is the failure this
+  # catalog exists to prevent. Regenerating them is
+  # build_results_geographic_persistence.R (the rebuild script this pass
+  # added -- the previous version of this block had none to name).
   #
   # cohort_n_at_panel_build IS NOT "the analytic cohort". It is the cohort as it
   # stood when the provider panel was built, and it is the correct denominator
   # for `observed`, `provider_years` and `median_years`, which were all computed
   # against exactly those members. The live cohort is linkage.cohort_n, derived
-  # below from the linkage table. The two disagreed by 6 from the 2026-08-10
-  # re-freeze until 2026-08-31 while this key was called `cohort_n` and read as
-  # the live figure by the cohort flow figure. Do NOT resolve that by editing
-  # the number here: bumping it to the live value would leave `observed` at
-  # 16,891 of a cohort those 16,891 were never counted against. It is corrected
-  # by rebuilding the panel, which is repin_frozen_cohort.R plus a panel run.
+  # below from the linkage table. REBUILT 2026-10-30 against the 16,775-member
+  # re-pin (reconcile_ab_20261022T134500_remove_fuzzy_surname_matching),
+  # closing a gap that had stood since the 2026-09-11 17,028 re-pin was never
+  # followed by a panel run (see docs/RESULTS_geographic_persistence.md's own
+  # rebuild note). `observed` now equals `cohort_n_at_panel_build` exactly --
+  # every cohort member's NPI appears in the panel at least once, closing the
+  # 3-person gap (never-geocoded cohort members) that blocked the re-pin
+  # itself; see build_midwives_geography_guarded.R's row-count check.
   cat_$panel <- list(
-    snapshots = 19L, year_min = 2007L, year_max = 2025L,
-    cohort_n_at_panel_build = 16892L, observed = 16891L, provider_years = 200873L,
-    median_years = 12L, pairs_total = 183949L,
-    pairs_used = 180436L, providers_used = 15605L, median_span = 13L,
-    .source = "midwife_panel.csv x artifacts/amcb_npi_linkage_FROZEN.csv"
+    snapshots = 20L, year_min = 2007L, year_max = 2026L,
+    cohort_n_at_panel_build = 16775L, observed = 16775L, provider_years = 215535L,
+    median_years = 13L, pairs_total = 198760L,
+    pairs_used = 195080L, providers_used = 16328L, median_span = 13L,
+    .source = "midwife_panel.csv x artifacts/amcb_npi_linkage_FROZEN.csv (build_results_geographic_persistence.R, 2026-10-30)"
   )
 
   cat_$persist <- list(
-    annual_county = 95.9, annual_zip = 94.2, annual_state = 97.9,
-    career_county = 67.5, career_zip = 55.3, career_state = 82.1,
-    .source = "docs/RESULTS_geographic_persistence.md"
+    annual_county = 96.1, annual_zip = 94.5, annual_state = 98.0,
+    career_county = 68.1, career_zip = 56.3, career_state = 82.5,
+    .source = "docs/RESULTS_geographic_persistence.md (rebuilt 2026-10-30)"
   )
   ci <- mw_wilson(round(cat_$panel$pairs_used * cat_$persist$annual_county / 100),
                   cat_$panel$pairs_used)
@@ -642,12 +654,13 @@ mw_build_catalog <- function(root = ".") {
   cat_$persist$annual_county_hi <- ci[2]
 
   # --- Rurality gradient, computed from counts -------------------------------
+  # REBUILT 2026-10-30, same vintage as cat_$panel/cat_$persist above.
   strata <- tibble::tibble(
     origin = c("Metropolitan (RUCC 1-3)",
                "Nonmetropolitan, adjacent (RUCC 4-6)",
                "Nonmetropolitan, remote (RUCC 7-9)"),
-    n   = c(13646, 1160, 520),
-    pct = c(68.1, 63.3, 61.9)
+    n   = c(14021, 1190, 544),
+    pct = c(68.6, 64.2, 62.8)
   ) %>% dplyr::mutate(x = round(.data$n * .data$pct / 100))
 
   cis <- t(mapply(mw_wilson, strata$x, strata$n))
@@ -658,13 +671,14 @@ mw_build_catalog <- function(root = ".") {
   cat_$rural <- list(
     table = strata, trend_z = tr$z, trend_p = tr$p,
     diff = df[1], diff_lo = df[2], diff_hi = df[3],
-    annual_metro_move = 4.0, annual_remote_move = 5.0,
+    annual_metro_move = 3.8, annual_remote_move = 4.7,
     career_remote_move = 100 - strata$pct[3],
-    .source = "docs/RESULTS_geographic_persistence.md, origin-stratified"
+    .source = "docs/RESULTS_geographic_persistence.md, origin-stratified (rebuilt 2026-10-30)"
   )
 
   # --- Movers ----------------------------------------------------------------
-  mv <- matrix(c(3868, 301, 136, 339, 48, 38, 125, 36, 37), nrow = 3, byrow = TRUE,
+  # REBUILT 2026-10-30, same vintage as above.
+  mv <- matrix(c(3882, 302, 137, 335, 49, 38, 124, 42, 35), nrow = 3, byrow = TRUE,
                dimnames = list(c("Metropolitan", "Nonmetro adjacent", "Nonmetro remote"),
                                c("To metropolitan", "To nonmetro adjacent", "To nonmetro remote")))
   cat_$movers <- list(
@@ -677,16 +691,149 @@ mw_build_catalog <- function(root = ".") {
   )
 
   # --- Geographic assignment and sensitivity ---------------------------------
+  # REBUILT 2026-10-30, same vintage as cat_$panel/persist/rural/movers above.
+  # The "3-tier cascade + TIGER PIP" canonical-method cross-validation: all
+  # 15,258 distinct historical practice addresses for the current 16,775
+  # cohort, geocoded live via the real geocode_queue_cascade.R (not
+  # reimplemented), fanned out across the full panel by
+  # build_results_geographic_persistence_canonical.R. Source:
+  # docs/RESULTS_geographic_persistence.md's "Three methods" section and
+  # artifacts/geographic_persistence_method_comparison.csv.
+  #
+  # sens_* were 95.9/67.3/67.9/63.2/61.0 at the 16,892 vintage; the two
+  # methods now agree even more closely at 16,775 (annual matches to 2
+  # decimal places). census_only_* are NOT rebuilt -- they isolate the
+  # ArcGIS tier's specific value via a Census-only ablation this pass
+  # didn't re-run (the canonical cascade above always uses the full
+  # Census->ArcGIS->centroid chain together); they still describe the
+  # 16,892 vintage and are kept only to illustrate why the ArcGIS tier
+  # matters, not as a current number.
   cat_$geo <- list(
     zctas = 33791L, span_multi_pct = 30.1, arbitrary_zctas = 1629L,
-    py_matched_pct = 98.2, cascade_pct = 98.1, cascade_addresses = 12722L,
-    pip_pct = 100.0, pip_points = 66302L,
-    sens_annual = 95.9, sens_career = 67.3,
-    sens_metro = 67.9, sens_adj = 63.2, sens_remote = 61.0,
+    py_matched_pct = 98.2, cascade_pct = 98.1, cascade_addresses = 15258L,
+    pip_pct = 100.0, pip_points = 14972L,
+    sens_annual = 96.10, sens_career = 68.04,
+    sens_metro = 68.59, sens_adj = 63.74, sens_remote = 62.55,
     census_only_metro = 69.4, census_only_adj = 65.6, census_only_remote = 66.2,
     census_only_loss_pct = 22.1
   )
   cat_$geo$sens_gradient <- cat_$geo$sens_metro - cat_$geo$sens_remote
+
+  # --- Medicaid procedure-billing activity ------------------------------------
+  # A SEPARATE question from everything above: not where a midwife practices or
+  # how long she stays, but whether she bills Medicaid for care that actually
+  # requires attending a patient in person -- a pap test, urodynamics, an IUD
+  # insertion/removal, or a vaginal delivery. Built by
+  # analyze_medicaid_procedure_billing_ob_midwife.R (separate repo,
+  # midwifery-medicaid-spending) against HHS's Medicaid Provider Spending by
+  # HCPCS release (opendata.hhs.gov, Feb 2026; T-MSIS-derived claim-line
+  # aggregates, Jan 2018-Dec 2024) and the Medicaid Provider Enrollment
+  # Segments release (same platform), joined on NPI to the SAME canonical
+  # cohort this manuscript uses (canonical_active_primary()) plus an ABOG
+  # Generalist/MFM OB-GYN comparator cohort carried for context, not as this
+  # paper's population.
+  #
+  # WHAT "BILLED" DOES NOT MEAN. The HHS release suppresses any NPI/HCPCS/
+  # month cell with fewer than 12 claim lines AND fewer than 12 beneficiaries.
+  # A midwife attending a real, sustained Medicaid caseload -- 2-4 deliveries a
+  # month, say -- never crosses that floor and is published as having billed
+  # nothing. Confirmed against the denominator: across the ENTIRE national
+  # release, only 3,442 distinct NPIs ever appear as servicing provider for
+  # CPT 59409 (vaginal delivery) in seven years, of every Medicaid provider in
+  # the country. So `pct_billed` below is read as a FLOOR -- real activity the
+  # suppression threshold did not hide -- never as an estimate of true
+  # Medicaid participation. Absence is close to uninformative; presence is a
+  # real, high-precision positive.
+  #
+  # enrolled_and_billed / enrolled_only / neither is the companion
+  # classification: enrollment is an administrative relationship with a state
+  # program ("an enrolled NPI may never submit a claim"), billing is the
+  # stronger of the two signals, and crossing them gives a defensible 3-level
+  # variable rather than treating either source alone as "accepts Medicaid".
+  mpb <- rd(file.path(MW_ART, "medicaid_procedure_billing_summary.csv"))
+  mst <- rd(file.path(MW_ART, "medicaid_enrollment_spending_tier_summary.csv"))
+  myt <- rd(file.path(MW_ART, "medicaid_billing_year_trend.csv"))
+  mbs <- rd(file.path(MW_ART, "medicaid_billing_by_state.csv"))
+
+  if (!is.null(mpb)) {
+    pick_mpb <- function(grp, proc, col) {
+      r <- mpb[mpb$provider_group == grp & mpb$procedure_category == proc, ]
+      if (nrow(r)) r[[col]][1] else NA_real_
+    }
+    cat_$medicaid <- list(
+      midwife_cohort_n       = pick_mpb("midwife", "vaginal_delivery", "n_cohort"),
+      midwife_vd_n            = pick_mpb("midwife", "vaginal_delivery", "n_billed"),
+      midwife_vd_pct          = pick_mpb("midwife", "vaginal_delivery", "pct_billed"),
+      midwife_pap_n            = pick_mpb("midwife", "pap_test", "n_billed"),
+      midwife_pap_pct          = pick_mpb("midwife", "pap_test", "pct_billed"),
+      midwife_iud_n            = pick_mpb("midwife", "iud", "n_billed"),
+      midwife_iud_pct          = pick_mpb("midwife", "iud", "pct_billed"),
+      midwife_urodynamics_n    = pick_mpb("midwife", "urodynamics", "n_billed"),
+      midwife_urodynamics_pct  = pick_mpb("midwife", "urodynamics", "pct_billed"),
+      # OB-GYN comparators, carried for context only -- see
+      # load_obstetric_providers.R for why Generalist + MFM are the valid
+      # intrapartum-care comparators to a midwife cohort and the other five
+      # ABOG subspecialties are not.
+      obgyn_gen_vd_n   = pick_mpb("ob_gyn_generalist", "vaginal_delivery", "n_billed"),
+      obgyn_gen_vd_pct = pick_mpb("ob_gyn_generalist", "vaginal_delivery", "pct_billed"),
+      obgyn_mfm_vd_n   = pick_mpb("ob_gyn_mfm", "vaginal_delivery", "n_billed"),
+      obgyn_mfm_vd_pct = pick_mpb("ob_gyn_mfm", "vaginal_delivery", "pct_billed"),
+      national_vd_npi_ceiling = 3442L,
+      national_vd_years       = "2018-2024",
+      cell_suppression_floor  = "12 claim lines AND 12 beneficiaries per NPI/HCPCS/month cell"
+    )
+  }
+
+  if (!is.null(mst)) {
+    pick_tier <- function(grp, t) {
+      r <- mst[mst$provider_group == grp & mst$tier == t, ]
+      if (nrow(r)) r$pct[1] else NA_real_
+    }
+    pick_tier_n <- function(grp, t) {
+      r <- mst[mst$provider_group == grp & mst$tier == t, ]
+      if (nrow(r)) r$n[1] else NA_real_
+    }
+    cat_$medicaid$midwife_enrolled_and_billed_pct <- pick_tier("midwife", "enrolled_and_billed")
+    cat_$medicaid$midwife_enrolled_only_pct       <- pick_tier("midwife", "enrolled_only")
+    cat_$medicaid$midwife_neither_pct             <- pick_tier("midwife", "neither")
+    cat_$medicaid$midwife_tier_n                  <- sum(pick_tier_n("midwife", "enrolled_and_billed"),
+                                                          pick_tier_n("midwife", "enrolled_only"),
+                                                          pick_tier_n("midwife", "neither"))
+    # The tier table's own denominator must equal Table 1's cohort-building
+    # count for the SAME reason every other stopifnot() in this file exists:
+    # a quiet mismatch here would mean the Medicaid prose and Table 1 describe
+    # two different cohorts without saying so.
+    if (!is.null(cat_$medicaid$midwife_cohort_n) && !is.na(cat_$medicaid$midwife_cohort_n))
+      stopifnot(cat_$medicaid$midwife_tier_n == cat_$medicaid$midwife_cohort_n)
+  }
+
+  if (!is.null(myt)) {
+    yr <- function(grp, y) {
+      r <- myt[myt$provider_group == grp & myt$procedure_category == "vaginal_delivery" &
+                myt$claim_year == y, ]
+      if (nrow(r)) r$n_distinct_npi_billing[1] else NA_real_
+    }
+    # 2024 is the last FULL calendar year in the release, but Nov-Dec 2024 are
+    # under-reported relative to prior months across the whole HCPCS release
+    # (incomplete state submissions, per Milliman's published analysis of this
+    # same HHS release) -- the 2024 dip below is a reporting artifact, not
+    # read as a real decline, and the prose says so rather than letting a
+    # reader draw the obvious wrong conclusion from a declining final bar.
+    cat_$medicaid$midwife_vd_2018 <- yr("midwife", "2018")
+    cat_$medicaid$midwife_vd_2023 <- yr("midwife", "2023")
+    cat_$medicaid$midwife_vd_2024 <- yr("midwife", "2024")
+  }
+
+  if (!is.null(mbs)) {
+    vdm <- mbs[mbs$provider_group == "midwife" & mbs$procedure_category == "vaginal_delivery", ]
+    if (nrow(vdm)) {
+      top <- vdm[order(-vdm$n_distinct_npi_billing), ][1, ]
+      cat_$medicaid$top_state             <- top$practice_state
+      cat_$medicaid$top_state_n           <- top$n_distinct_npi_billing
+      cat_$medicaid$top_state_cohort_n    <- top$n_cohort
+      cat_$medicaid$top_state_pct         <- top$pct_billing
+    }
+  }
 
   # --- Table 1 ---------------------------------------------------------------
   t1 <- rd(file.path(MW_ART, "table1_midwives.csv"))
@@ -759,6 +906,169 @@ mw_build_catalog <- function(root = ".") {
       } else {
         NA_real_
       }
+    )
+  }
+
+  # --- Trilliant: an independent, claims-based check on "ACTIVE" -------------
+  # "ACTIVE" throughout this manuscript means AMCB certification standing, an
+  # administrative status -- never claimed to mean currently practicing.
+  # Trilliant's directory_provider carries its own independent, claims-derived
+  # active_provider flag (enrich_trilliant_demographics.R), which this project
+  # has never used to ask the obvious question: for the cohort certification
+  # already calls ACTIVE, how many show no independent claims-based activity
+  # signal at all? The TRACKED aggregate (trilliant_demographics_validation_
+  # <freeze sha8>.csv) is read here, not the gitignored person-level file, so
+  # this number is reproducible from what the repository actually ships.
+  # file.path(root, ...) before Sys.glob(): a bare pattern glob()s against the
+  # process's cwd, which is not necessarily `root` when the manuscript renders
+  # from a different working directory than the repository root.
+  trl_val_files <- sort(Sys.glob(file.path(root, MW_ART, "trilliant_demographics_validation_*.csv")))
+  if (length(trl_val_files)) {
+    # SELECT BY CONTENT, NOT BY FILE METADATA. Multiple hash-named files
+    # accumulate here across freezes (the suffix is a freeze SHA256 prefix,
+    # not a date), and NEITHER filename order NOR file modification time
+    # reliably picks the one with the "activity" rows this section needs:
+    # alphabetical order has no relationship to when a row was added, and
+    # mtime is WORSE on a fresh CI checkout -- git sets every file's mtime to
+    # roughly the checkout moment, not its commit history, so "most recently
+    # modified" is close to arbitrary there (confirmed 2026-11-05: this exact
+    # bug shipped once already, picking a pre-2026-11-05 file with no
+    # "activity" rows and silently producing no cat_$trilliant section on
+    # CI). Instead, read every candidate and use the first one that actually
+    # contains both rows this section needs.
+    for (f in trl_val_files) {
+      trl_val <- suppressWarnings(readr::read_csv(f, show_col_types = FALSE, progress = FALSE))
+      act_row   <- trl_val[trl_val$field == "activity" &
+                            trl_val$check == "Trilliant active_provider == TRUE", , drop = FALSE]
+      inact_row <- trl_val[trl_val$field == "activity" &
+                            trl_val$check == "Trilliant active_provider == FALSE despite ACTIVE AMCB certification", , drop = FALSE]
+      if (nrow(act_row) == 1L && nrow(inact_row) == 1L) {
+        n_cohort <- act_row$n[1]
+        n_inactive <- inact_row$value[1]
+        cat_$trilliant <- list(
+          n_cohort                     = n_cohort,
+          n_active                     = act_row$value[1],
+          n_inactive_despite_certified = n_inactive,
+          pct_inactive_despite_certified = 100 * n_inactive / n_cohort,
+          # as.character(), not the bare column: readr::read_csv() auto-parses
+          # a column that looks like an ISO date into a Date, and mw_stat()
+          # with no fmt returns it raw -- a Date prints as its day-count
+          # integer (confirmed: "2026-06-25" became 20629) wherever the
+          # manuscript calls mw_stat() without a %s/date format.
+          snapshot                     = as.character(trl_val$trilliant_snapshot[1])
+        )
+        break
+      }
+    }
+  }
+
+  # --- Address Lead-Lag, Freshness Decay, and Medicaid Timing ----------------
+  ll_tab <- rd(file.path(MW_ART, "address_lead_lag_openpayments_nppes.csv"))
+  fr_tab <- rd(file.path(MW_ART, "address_agreement_by_nppes_freshness.csv"))
+  md_tab <- rd(file.path(MW_ART, "address_lead_lag_medicaid_nppes_moves.csv"))
+  if (!is.null(ll_tab) && !is.null(fr_tab) && !is.null(md_tab)) {
+    attr_col <- if ("attribute" %in% names(ll_tab)) "attribute" else "level"
+    ll_r <- function(lv) ll_tab[ll_tab[[attr_col]] == lv, , drop = FALSE]
+    get_v <- function(df, g_nm, l_nm) if (g_nm %in% names(df)) df[[g_nm]][1] else df[[l_nm]][1]
+
+    st_r <- ll_r("state"); ct_r <- ll_r("city"); zp_r <- ll_r("zip5"); sr_r <- ll_r("street")
+    st_a_brk <- get_v(st_r, "a_breaks_concordance_first", "op_breaks_concordance_first")
+    st_b_brk <- get_v(st_r, "b_breaks_concordance_first", "nppes_breaks_concordance_first")
+    sr_a_brk <- get_v(sr_r, "a_breaks_concordance_first", "op_breaks_concordance_first")
+    sr_b_brk <- get_v(sr_r, "b_breaks_concordance_first", "nppes_breaks_concordance_first")
+
+    f_dac <- fr_tab[fr_tab$comparison == "DAC (2026) vs NPPES (2026)" &
+                    fr_tab$stratification == "nppes_street_spell_age", , drop = FALSE]
+    f_op  <- fr_tab[grepl("Open Payments", fr_tab$comparison), , drop = FALSE]
+    f_car <- fr_tab[fr_tab$stratification == "amcb_career_tenure", , drop = FALSE]
+
+    d0  <- f_dac[grepl("^0 yrs", f_dac$stratum), , drop = FALSE]
+    d12 <- f_dac[f_dac$stratum == "1-2 yrs", , drop = FALSE]
+    d11 <- f_dac[grepl("^11\\+ yrs", f_dac$stratum), , drop = FALSE]
+    op0 <- f_op[grepl("^0 yrs", f_op$stratum), , drop = FALSE]
+    op11 <- f_op[grepl("^11\\+ yrs", f_op$stratum), , drop = FALSE]
+    c35 <- f_car[grepl("^3-5 yrs", f_car$stratum), , drop = FALSE]
+    c1120 <- f_car[grepl("^11-20 yrs", f_car$stratum), , drop = FALSE]
+    c21 <- f_car[grepl("^21\\+ yrs", f_car$stratum), , drop = FALSE]
+
+    m_dest <- md_tab[md_tab$direction_type == "destination_arrival_timing", , drop = FALSE]
+    m_orig <- md_tab[md_tab$direction_type == "origin_departure_termination_timing", , drop = FALSE]
+    n_med_lead_12 <- sum(m_dest$n[grepl("led by [12] yr", m_dest$category) & !grepl("Panel|NPPES", m_dest$category)])
+    n_same_yr     <- sum(m_dest$n[grepl("Same calendar year", m_dest$category)])
+    n_nppes_lead  <- sum(m_dest$n[grepl("(Panel|NPPES) led by", m_dest$category)])
+    n_acute       <- n_med_lead_12 + n_same_yr + n_nppes_lead
+    orig_before   <- m_orig[grepl("BEFORE", m_orig$category), , drop = FALSE]
+    orig_same     <- m_orig[grepl("SAME", m_orig$category), , drop = FALSE]
+    orig_after    <- m_orig[grepl("AFTER", m_orig$category), , drop = FALSE]
+
+    n_tot_moves <- if ("total_panel_moves" %in% names(m_dest)) {
+      m_dest$total_panel_moves[1]
+    } else if ("total_nppes_moves" %in% names(m_dest)) {
+      m_dest$total_nppes_moves[1]
+    } else {
+      2672L
+    }
+
+    cat_$leadlag <- list(
+      n_transitions          = st_r$n_paired_transitions[1],
+      state_a_breaks_n       = st_a_brk,
+      state_b_breaks_n       = st_b_brk,
+      state_break_ratio      = st_a_brk / pmax(1, st_b_brk),
+      street_a_breaks_n      = sr_a_brk,
+      street_b_breaks_n      = sr_b_brk,
+      street_break_ratio     = sr_a_brk / pmax(1, sr_b_brk),
+      state_disc_2022_n      = get_v(st_r, "disc_base_n", "disc_2022_n"),
+      state_b_adopts_n       = get_v(st_r, "b_adopts_a_multi_n", "nppes_adopts_op2022_by_2026_n"),
+      state_b_adopts_pct     = get_v(st_r, "b_adopts_a_multi_pct", "nppes_adopts_op2022_by_2026_pct"),
+      street_disc_2022_n     = get_v(sr_r, "disc_base_n", "disc_2022_n"),
+      street_b_adopts_n      = get_v(sr_r, "b_adopts_a_multi_n", "nppes_adopts_op2022_by_2026_n"),
+      street_b_adopts_pct    = get_v(sr_r, "b_adopts_a_multi_pct", "nppes_adopts_op2022_by_2026_pct"),
+      city_a_reverts_pct     = get_v(ct_r, "a_reverts_b_multi_pct", "op_reverts_np2022_by_2025_pct"),
+      zip_a_reverts_pct      = get_v(zp_r, "a_reverts_b_multi_pct", "op_reverts_np2022_by_2025_pct"),
+      street_a_reverts_pct   = get_v(sr_r, "a_reverts_b_multi_pct", "op_reverts_np2022_by_2025_pct"),
+      dac_street_disc_n      = get_v(sr_r, "cross_section_disc_n", "dac2026_disc_n"),
+      dac_street_prior_n     = get_v(sr_r, "cross_section_in_prior_b_n", "dac2026_in_prior_nppes_n"),
+      dac_street_prior_pct   = get_v(sr_r, "cross_section_in_prior_b_pct", "dac2026_in_prior_nppes_pct"),
+      dac_zip_disc_n         = get_v(zp_r, "cross_section_disc_n", "dac2026_disc_n"),
+      dac_zip_prior_n        = get_v(zp_r, "cross_section_in_prior_b_n", "dac2026_in_prior_nppes_n"),
+      dac_zip_prior_pct      = get_v(zp_r, "cross_section_in_prior_b_pct", "dac2026_in_prior_nppes_pct"),
+      dac_total_n            = sum(f_dac$n),
+      dac_12yr_n             = d12$n[1],
+      dac_12yr_state_pct     = d12$state_agree_pct[1],
+      dac_12yr_city_pct      = d12$city_agree_pct[1],
+      dac_12yr_zip_pct       = d12$zip5_agree_pct[1],
+      dac_12yr_street_pct    = d12$street_agree_pct[1],
+      dac_0yr_n              = d0$n[1],
+      dac_0yr_state_pct      = d0$state_agree_pct[1],
+      dac_0yr_street_pct     = d0$street_agree_pct[1],
+      dac_11yr_n             = d11$n[1],
+      dac_11yr_city_pct      = d11$city_agree_pct[1],
+      dac_11yr_zip_pct       = d11$zip5_agree_pct[1],
+      dac_11yr_street_pct    = d11$street_agree_pct[1],
+      car_35_street_pct      = c35$street_agree_pct[1],
+      car_1120_street_pct    = c1120$street_agree_pct[1],
+      car_21_street_pct      = c21$street_agree_pct[1],
+      op_total_n             = sum(f_op$n),
+      op_0yr_street_pct      = op0$street_agree_pct[1],
+      op_11yr_street_pct     = op11$street_agree_pct[1],
+      med_total_moves_n      = n_tot_moves,
+      med_dest_matched_n     = m_dest$total_matched_moves[1],
+      med_preexisting_3yr_n  = sum(m_dest$n[grepl("3\\+ yrs", m_dest$category)]),
+      med_acute_n            = n_acute,
+      med_lead_12yr_n        = n_med_lead_12,
+      med_lead_12yr_pct      = 100 * n_med_lead_12 / n_acute,
+      med_same_yr_n          = n_same_yr,
+      med_same_yr_pct        = 100 * n_same_yr / n_acute,
+      med_nppes_lead_n       = n_nppes_lead,
+      med_nppes_lead_pct     = 100 * n_nppes_lead / n_acute,
+      med_lead_ratio         = n_med_lead_12 / pmax(1, n_nppes_lead),
+      med_orig_matched_n     = m_orig$total_matched_moves[1],
+      med_orig_after_n       = orig_after$n[1],
+      med_orig_after_pct     = orig_after$pct_of_matched[1],
+      med_orig_same_n        = orig_same$n[1],
+      med_orig_same_pct      = orig_same$pct_of_matched[1],
+      med_orig_before_n      = orig_before$n[1],
+      med_orig_before_pct    = orig_before$pct_of_matched[1]
     )
   }
 

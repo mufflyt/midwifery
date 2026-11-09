@@ -7,6 +7,19 @@
 **Investigation date**: 2026-08-29
 **Status**: every number below is generated from a committed artifact and reproduced by the gates named above. Nothing here is typed.
 
+> **Update 2026-09-12 (pending): this doc is now behind its own artifacts.**
+> `artifacts/linkage_selection_bounds.csv` has since been regenerated against
+> the current 22,357-roster / 17,028-cohort freeze (`DEBT.md` D10) and now
+> reports `n_roster=22357` with a Metro zip-bound of **72.48% – 91.08%**, not
+> the 22,309 / 16,892 / **72.1% – 91.4%** this document's prose still cites in
+> §2, §4 and §10. The investigation and the mechanism it documents (one
+> quantity, three denominators) are unaffected — only the specific numbers
+> quoted from the artifact are stale. Re-deriving every cross-referenced
+> figure below by hand risks introducing exactly the kind of divergence this
+> appendix exists to catch; regenerate the prose from
+> `analyze_linkage_selection_bias.R`'s current output rather than hand-editing
+> the numbers in place.
+
 ---
 
 ## 1. Why this exists
@@ -271,7 +284,7 @@ checkout. Both are declared FROZEN consumers in
 cannot leave them holding a previous cohort. The artifacts they write are
 aggregate and carry provenance sidecars naming their inputs.
 
-## 9. Two joins that never happened
+## 10. Two joins that never happened
 
 Everything above was first written against a cohort in which **2,031 members had
 no assignable county**. That figure was three different things wearing one

@@ -57,3 +57,31 @@ data/svi_2022_county.csv
 data/wonder/D66_Defaults.xml
 data/wonder/natality_2016_2024_cnm_by_county.csv
 data/zcta_county_2020.txt
+# EIGHT ENTRIES ADDED 2026-10-20, SAME REASON AS THE TWO 2026-09-18 ABOVE.
+# All eight were already committed (a3d4013, "Add worksite crosswalk and
+# augmented Table 1 outputs") before this gate ever checked them together
+# with that commit's code in the same run; a rebase onto origin/main is what
+# put them in scope for the first time. Pre-existing debt, not new.
+# Six have a real, known source_url -- download_worksite_setting_sources.R
+# names the exact endpoint each was fetched from -- but no logged fetch
+# timestamp exists anywhere in this repository for any of them: the script's
+# own default behavior ("existing files are preserved... so a rebuild
+# remains tied to the local input vintage") means a fresh download cannot be
+# assumed to reproduce the committed bytes, the same unrecoverable situation
+# the Colorado/Washington BON entries above document. The script now stamps
+# accessed_utc at fetch time for any future re-download (FORCE_DOWNLOAD=1),
+# so this line comes off once that is actually re-run.
+# The other two are not downloads at all, same as the TEMPLATE files already
+# listed above: download_worksite_setting_sources.R authors both as blank,
+# locally-generated templates (additional_facility_lists.csv for national
+# directories with no stable source_url of their own; the state manifest for
+# per-state sources filled in by hand) -- there is no publisher or fetch
+# date to record for either.
+data/CMS_Dialysis_Facility_Listing.csv
+data/CMS_FQHC_Enrollments.csv
+data/CMS_POS_QIES.csv
+data/HIFLD_Urgent_Care_Facilities.csv
+data/IHS_facilities.xlsx
+data/SAMHSA_NSUMHSS_2024.zip
+data/additional_facility_lists.csv
+data/state_facility_source_manifest.csv

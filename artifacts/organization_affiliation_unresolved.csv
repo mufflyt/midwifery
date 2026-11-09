@@ -1,85 +1,104 @@
 practice_state,taxonomy_description,n_midwives,suppressed
-,,341,FALSE
-CA,Certified Nurse Midwife,259,FALSE
-NY,Certified Nurse Midwife,166,FALSE
-NY,Midwife,119,FALSE
-TX,Certified Nurse Midwife,96,FALSE
-GA,Certified Nurse Midwife,92,FALSE
-FL,Certified Nurse Midwife,90,FALSE
-IL,Certified Nurse Midwife,78,FALSE
-CO,Certified Nurse Midwife,75,FALSE
-OR,Certified Nurse Midwife,70,FALSE
-MA,Certified Nurse Midwife,68,FALSE
-CA,Midwife,67,FALSE
-WA,Certified Nurse Midwife,67,FALSE
-NC,Certified Nurse Midwife,57,FALSE
-OH,Certified Nurse Midwife,57,FALSE
-NY,Registered Nurse,53,FALSE
-MD,Certified Nurse Midwife,48,FALSE
-WI,Certified Nurse Midwife,45,FALSE
-MN,Certified Nurse Midwife,44,FALSE
-VA,Certified Nurse Midwife,42,FALSE
-PA,Certified Nurse Midwife,41,FALSE
+,,350,FALSE
+CA,Certified Nurse Midwife,319,FALSE
+NY,Certified Nurse Midwife,213,FALSE
+NY,Midwife,141,FALSE
+FL,Certified Nurse Midwife,140,FALSE
+TX,Certified Nurse Midwife,126,FALSE
+GA,Certified Nurse Midwife,123,FALSE
+WA,Certified Nurse Midwife,102,FALSE
+OR,Certified Nurse Midwife,97,FALSE
+CO,Certified Nurse Midwife,93,FALSE
+IL,Certified Nurse Midwife,92,FALSE
+NC,Certified Nurse Midwife,82,FALSE
+MA,Certified Nurse Midwife,80,FALSE
+CA,Midwife,76,FALSE
+MD,Certified Nurse Midwife,72,FALSE
+OH,Certified Nurse Midwife,72,FALSE
+NY,Registered Nurse,66,FALSE
+MI,Certified Nurse Midwife,62,FALSE
+PA,Certified Nurse Midwife,62,FALSE
+MN,Certified Nurse Midwife,56,FALSE
+AZ,Certified Nurse Midwife,55,FALSE
+VA,Certified Nurse Midwife,54,FALSE
+WI,Certified Nurse Midwife,54,FALSE
+NJ,Certified Nurse Midwife,50,FALSE
+NM,Certified Nurse Midwife,48,FALSE
+IN,Certified Nurse Midwife,46,FALSE
 CA,Registered Nurse,40,FALSE
-AZ,Certified Nurse Midwife,37,FALSE
-MI,Certified Nurse Midwife,37,FALSE
-OH,Registered Nurse,37,FALSE
-NM,Certified Nurse Midwife,34,FALSE
-NJ,Certified Nurse Midwife,30,FALSE
-IN,Certified Nurse Midwife,29,FALSE
-TN,Certified Nurse Midwife,26,FALSE
-MI,Registered Nurse,24,FALSE
-KY,Certified Nurse Midwife,23,FALSE
+OH,Registered Nurse,39,FALSE
+CT,Certified Nurse Midwife,33,FALSE
+TN,Certified Nurse Midwife,31,FALSE
+NH,Certified Nurse Midwife,29,FALSE
+NJ,Midwife,29,FALSE
+KY,Certified Nurse Midwife,28,FALSE
+MI,Registered Nurse,28,FALSE
+FL,"Nurse Practitioner, Obstetrics & Gynecology",26,FALSE
+ME,Certified Nurse Midwife,26,FALSE
+SC,Certified Nurse Midwife,24,FALSE
+MO,Certified Nurse Midwife,23,FALSE
+CO,Midwife,22,FALSE
 CO,Registered Nurse,22,FALSE
-NH,Certified Nurse Midwife,20,FALSE
-ME,Certified Nurse Midwife,19,FALSE
-OK,Certified Nurse Midwife,19,FALSE
-SC,Certified Nurse Midwife,19,FALSE
-MO,Certified Nurse Midwife,18,FALSE
-NJ,Midwife,18,FALSE
-WA,Registered Nurse,18,FALSE
-CT,Certified Nurse Midwife,17,FALSE
-FL,"Nurse Practitioner, Obstetrics & Gynecology",17,FALSE
-PA,Midwife,17,FALSE
-CA,Nurse Practitioner,16,FALSE
-HI,Certified Nurse Midwife,16,FALSE
-IA,Certified Nurse Midwife,16,FALSE
-KS,Certified Nurse Midwife,16,FALSE
-TX,Midwife,16,FALSE
-TX,Registered Nurse,16,FALSE
-UT,Certified Nurse Midwife,16,FALSE
-NM,Midwife,15,FALSE
-TN,Registered Nurse,15,FALSE
-AK,Certified Nurse Midwife,14,FALSE
-CO,Midwife,14,FALSE
-GA,Midwife,14,FALSE
-MA,Midwife,14,FALSE
-NC,Registered Nurse,14,FALSE
-AZ,Registered Nurse,13,FALSE
+IA,Certified Nurse Midwife,22,FALSE
+OK,Certified Nurse Midwife,22,FALSE
+TX,Midwife,22,FALSE
+HI,Certified Nurse Midwife,20,FALSE
+KS,Certified Nurse Midwife,20,FALSE
+MA,Midwife,20,FALSE
+NC,Midwife,20,FALSE
+NM,Midwife,20,FALSE
+WA,Registered Nurse,20,FALSE
+CA,Nurse Practitioner,19,FALSE
+GA,Midwife,19,FALSE
+PA,Midwife,19,FALSE
+UT,Certified Nurse Midwife,18,FALSE
+FL,Nurse Practitioner,17,FALSE
+NV,Certified Nurse Midwife,17,FALSE
+PA,Registered Nurse,17,FALSE
+TX,Registered Nurse,17,FALSE
+WA,Nurse Practitioner,17,FALSE
+AZ,Registered Nurse,16,FALSE
+TN,Registered Nurse,16,FALSE
+AK,Certified Nurse Midwife,15,FALSE
+CA,"Nurse Practitioner, Women's Health",14,FALSE
+GA,Registered Nurse,14,FALSE
+WA,"Nurse Practitioner, Obstetrics & Gynecology",14,FALSE
+CA,"Nurse Practitioner, Obstetrics & Gynecology",13,FALSE
 DC,Certified Nurse Midwife,13,FALSE
-NC,Midwife,13,FALSE
-GA,Registered Nurse,12,FALSE
-OH,Midwife,12,FALSE
-CA,"Nurse Practitioner, Women's Health",11,FALSE
-IL,Registered Nurse,11,FALSE
-PA,Registered Nurse,11,FALSE
-AE,Certified Nurse Midwife,,TRUE
+NC,Registered Nurse,13,FALSE
+OH,Midwife,13,FALSE
+VT,Certified Nurse Midwife,13,FALSE
+AL,Certified Nurse Midwife,12,FALSE
+FL,Midwife,12,FALSE
+FL,Registered Nurse,12,FALSE
+MA,Registered Nurse,12,FALSE
+MT,Certified Nurse Midwife,12,FALSE
+VA,Midwife,12,FALSE
+WA,Midwife,12,FALSE
+AE,Certified Nurse Midwife,11,FALSE
+AK,Registered Nurse,11,FALSE
+IL,Midwife,11,FALSE
+MN,Registered Nurse,11,FALSE
+NY,"Nurse Practitioner, Obstetrics & Gynecology",11,FALSE
+UT,Midwife,11,FALSE
+WA,"Nurse Practitioner, Women's Health",11,FALSE
+WV,Midwife,11,FALSE
 AE,Midwife,,TRUE
 AK,Midwife,,TRUE
 AK,Nurse Practitioner,,TRUE
+AK,"Nurse Practitioner, Adult Health",,TRUE
 AK,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 AK,"Nurse Practitioner, Women's Health",,TRUE
-AK,Registered Nurse,,TRUE
-AL,Certified Nurse Midwife,,TRUE
 AL,Certified Registered Nurse Anesthetist,,TRUE
 AL,Midwife,,TRUE
-AL,Nurse Practitioner,,TRUE
 AL,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 AL,Registered Nurse,,TRUE
 AP,Certified Nurse Midwife,,TRUE
 AP,"Nurse Practitioner, Women's Health",,TRUE
 AR,Certified Nurse Midwife,,TRUE
+AR,Midwife,,TRUE
 AR,Nurse Practitioner,,TRUE
+AR,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 AR,Registered Nurse,,TRUE
 AZ,Midwife,,TRUE
 AZ,Nurse Practitioner,,TRUE
@@ -88,9 +107,9 @@ AZ,"Nurse Practitioner, Women's Health",,TRUE
 CA,Certified Registered Nurse Anesthetist,,TRUE
 CA,"Clinical Nurse Specialist, Women's Health",,TRUE
 CA,"Nurse Practitioner, Adult Health",,TRUE
-CA,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 CA,"Registered Nurse, Women's Health",,TRUE
 CO,Certified Registered Nurse Anesthetist,,TRUE
+CO,"Clinical Nurse Specialist, Women's Health",,TRUE
 CO,Nurse Practitioner,,TRUE
 CO,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 CO,"Nurse Practitioner, Women's Health",,TRUE
@@ -100,7 +119,6 @@ CT,Nurse Practitioner,,TRUE
 CT,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 CT,"Nurse Practitioner, Women's Health",,TRUE
 CT,Registered Nurse,,TRUE
-CT,,,TRUE
 DC,Midwife,,TRUE
 DC,"Nurse Practitioner, Women's Health",,TRUE
 DC,Registered Nurse,,TRUE
@@ -110,16 +128,14 @@ DE,Midwife,,TRUE
 DE,Nurse Practitioner,,TRUE
 DE,Registered Nurse,,TRUE
 FL,Certified Registered Nurse Anesthetist,,TRUE
-FL,Midwife,,TRUE
-FL,Nurse Practitioner,,TRUE
 FL,"Nurse Practitioner, Adult Health",,TRUE
 FL,"Nurse Practitioner, Women's Health",,TRUE
-FL,Registered Nurse,,TRUE
 FL,"Registered Nurse, Women's Health",,TRUE
 FL,,,TRUE
 GA,Nurse Practitioner,,TRUE
 GA,"Nurse Practitioner, Adult Health",,TRUE
 GA,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
+GA,"Nurse Practitioner, Women's Health",,TRUE
 GA,,,TRUE
 GU,Certified Nurse Midwife,,TRUE
 GU,Midwife,,TRUE
@@ -131,26 +147,31 @@ HI,Registered Nurse,,TRUE
 IA,Midwife,,TRUE
 IA,Nurse Practitioner,,TRUE
 IA,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
+IA,"Nurse Practitioner, Women's Health",,TRUE
 IA,Registered Nurse,,TRUE
 ID,Certified Nurse Midwife,,TRUE
 ID,Midwife,,TRUE
+ID,Nurse Practitioner,,TRUE
 ID,"Nurse Practitioner, Women's Health",,TRUE
 ID,Registered Nurse,,TRUE
-IL,Midwife,,TRUE
 IL,Nurse Practitioner,,TRUE
 IL,"Nurse Practitioner, Adult Health",,TRUE
 IL,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 IL,"Nurse Practitioner, Women's Health",,TRUE
+IL,Registered Nurse,,TRUE
 IN,Midwife,,TRUE
 IN,Nurse Practitioner,,TRUE
 IN,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 IN,"Nurse Practitioner, Women's Health",,TRUE
+IN,Registered Nurse,,TRUE
 IN,,,TRUE
 KS,"Nurse Practitioner, Women's Health",,TRUE
 KS,Registered Nurse,,TRUE
 KS,,,TRUE
 KY,Certified Registered Nurse Anesthetist,,TRUE
 KY,Midwife,,TRUE
+KY,Nurse Practitioner,,TRUE
+KY,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 KY,"Nurse Practitioner, Women's Health",,TRUE
 KY,Registered Nurse,,TRUE
 LA,Certified Nurse Midwife,,TRUE
@@ -159,15 +180,16 @@ LA,"Nurse Practitioner, Adult Health",,TRUE
 LA,Registered Nurse,,TRUE
 LA,"Registered Nurse, Women's Health",,TRUE
 MA,Certified Registered Nurse Anesthetist,,TRUE
+MA,"Clinical Nurse Specialist, Women's Health",,TRUE
 MA,Nurse Practitioner,,TRUE
 MA,"Nurse Practitioner, Adult Health",,TRUE
 MA,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 MA,"Nurse Practitioner, Women's Health",,TRUE
-MA,Registered Nurse,,TRUE
 MA,,,TRUE
 MD,Certified Registered Nurse Anesthetist,,TRUE
 MD,Midwife,,TRUE
 MD,Nurse Practitioner,,TRUE
+MD,"Nurse Practitioner, Adult Health",,TRUE
 MD,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 MD,"Nurse Practitioner, Women's Health",,TRUE
 MD,Registered Nurse,,TRUE
@@ -175,6 +197,7 @@ ME,Midwife,,TRUE
 ME,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 ME,Registered Nurse,,TRUE
 MI,Certified Registered Nurse Anesthetist,,TRUE
+MI,"Clinical Nurse Specialist, Women's Health",,TRUE
 MI,Midwife,,TRUE
 MI,Nurse Practitioner,,TRUE
 MI,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
@@ -182,18 +205,20 @@ MI,"Nurse Practitioner, Women's Health",,TRUE
 MI,"Registered Nurse, Women's Health",,TRUE
 MN,Midwife,,TRUE
 MN,Nurse Practitioner,,TRUE
+MN,"Nurse Practitioner, Adult Health",,TRUE
+MN,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 MN,"Nurse Practitioner, Women's Health",,TRUE
-MN,Registered Nurse,,TRUE
 MO,Certified Registered Nurse Anesthetist,,TRUE
 MO,Midwife,,TRUE
+MO,"Nurse Practitioner, Adult Health",,TRUE
 MO,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 MO,"Nurse Practitioner, Women's Health",,TRUE
 MO,Registered Nurse,,TRUE
 MONTSERRADO,Certified Nurse Midwife,,TRUE
 MP,Certified Nurse Midwife,,TRUE
 MS,Certified Nurse Midwife,,TRUE
+MS,Nurse Practitioner,,TRUE
 MS,Registered Nurse,,TRUE
-MT,Certified Nurse Midwife,,TRUE
 MT,Midwife,,TRUE
 MT,Registered Nurse,,TRUE
 NC,Certified Registered Nurse Anesthetist,,TRUE
@@ -202,11 +227,16 @@ NC,"Nurse Practitioner, Adult Health",,TRUE
 NC,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 NC,"Registered Nurse, Women's Health",,TRUE
 ND,Certified Nurse Midwife,,TRUE
+ND,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 ND,Registered Nurse,,TRUE
 NE,Certified Nurse Midwife,,TRUE
 NE,Midwife,,TRUE
 NH,Midwife,,TRUE
 NH,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
+NH,Registered Nurse,,TRUE
+NJ,Nurse Practitioner,,TRUE
+NJ,"Nurse Practitioner, Adult Health",,TRUE
+NJ,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 NJ,"Nurse Practitioner, Women's Health",,TRUE
 NJ,Registered Nurse,,TRUE
 NJ,"Registered Nurse, Women's Health",,TRUE
@@ -214,30 +244,32 @@ NJ,,,TRUE
 NM,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 NM,Registered Nurse,,TRUE
 NM,,,TRUE
-NV,Certified Nurse Midwife,,TRUE
 NV,Certified Registered Nurse Anesthetist,,TRUE
 NV,Midwife,,TRUE
 NV,Registered Nurse,,TRUE
 NY,Nurse Practitioner,,TRUE
 NY,"Nurse Practitioner, Adult Health",,TRUE
-NY,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 NY,"Nurse Practitioner, Women's Health",,TRUE
 NY,"Registered Nurse, Women's Health",,TRUE
 NY,,,TRUE
 OH,Certified Registered Nurse Anesthetist,,TRUE
 OH,Nurse Practitioner,,TRUE
 OH,"Nurse Practitioner, Adult Health",,TRUE
+OH,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 OH,"Nurse Practitioner, Women's Health",,TRUE
 OH,"Registered Nurse, Women's Health",,TRUE
 OK,Midwife,,TRUE
+OK,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 OK,"Nurse Practitioner, Women's Health",,TRUE
 OK,Registered Nurse,,TRUE
 OR,Midwife,,TRUE
 OR,Nurse Practitioner,,TRUE
+OR,"Nurse Practitioner, Adult Health",,TRUE
 OR,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 OR,"Nurse Practitioner, Women's Health",,TRUE
 OR,Registered Nurse,,TRUE
 OR,"Registered Nurse, Women's Health",,TRUE
+OR,,,TRUE
 PA,Certified Registered Nurse Anesthetist,,TRUE
 PA,Nurse Practitioner,,TRUE
 PA,"Nurse Practitioner, Adult Health",,TRUE
@@ -257,10 +289,10 @@ SC,Nurse Practitioner,,TRUE
 SC,"Nurse Practitioner, Adult Health",,TRUE
 SC,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 SC,Registered Nurse,,TRUE
+SC,"Registered Nurse, Women's Health",,TRUE
 SD,Certified Nurse Midwife,,TRUE
 SD,Midwife,,TRUE
 SD,Registered Nurse,,TRUE
-SOUTHERN PROVINCE,Certified Nurse Midwife,,TRUE
 TN,Certified Registered Nurse Anesthetist,,TRUE
 TN,Midwife,,TRUE
 TN,Nurse Practitioner,,TRUE
@@ -270,30 +302,28 @@ TN,"Registered Nurse, Women's Health",,TRUE
 TX,Certified Registered Nurse Anesthetist,,TRUE
 TX,Nurse Practitioner,,TRUE
 TX,"Nurse Practitioner, Adult Health",,TRUE
+TX,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 TX,"Nurse Practitioner, Women's Health",,TRUE
 TX,"Registered Nurse, Women's Health",,TRUE
 TX,,,TRUE
-UT,Midwife,,TRUE
+UT,Nurse Practitioner,,TRUE
 UT,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 UT,"Nurse Practitioner, Women's Health",,TRUE
 UT,Registered Nurse,,TRUE
 UT,,,TRUE
-VA,Midwife,,TRUE
 VA,Nurse Practitioner,,TRUE
+VA,"Nurse Practitioner, Adult Health",,TRUE
 VA,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 VA,"Nurse Practitioner, Women's Health",,TRUE
 VA,Registered Nurse,,TRUE
 VA,"Registered Nurse, Women's Health",,TRUE
 VA,,,TRUE
 VI,Certified Nurse Midwife,,TRUE
-VT,Certified Nurse Midwife,,TRUE
+VI,Nurse Practitioner,,TRUE
+VT,Midwife,,TRUE
 VT,Nurse Practitioner,,TRUE
 VT,Registered Nurse,,TRUE
-WA,Midwife,,TRUE
-WA,Nurse Practitioner,,TRUE
 WA,"Nurse Practitioner, Adult Health",,TRUE
-WA,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
-WA,"Nurse Practitioner, Women's Health",,TRUE
 WA,"Registered Nurse, Women's Health",,TRUE
 WA,,,TRUE
 WI,Midwife,,TRUE
@@ -302,8 +332,9 @@ WI,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 WI,"Nurse Practitioner, Women's Health",,TRUE
 WI,Registered Nurse,,TRUE
 WV,Certified Nurse Midwife,,TRUE
-WV,Midwife,,TRUE
+WV,Nurse Practitioner,,TRUE
 WV,"Nurse Practitioner, Women's Health",,TRUE
 WV,Registered Nurse,,TRUE
 WY,Certified Nurse Midwife,,TRUE
+WY,"Nurse Practitioner, Obstetrics & Gynecology",,TRUE
 WY,Registered Nurse,,TRUE

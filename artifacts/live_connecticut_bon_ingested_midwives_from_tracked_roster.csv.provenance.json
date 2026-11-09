@@ -1,0 +1,16 @@
+{
+  "artifact": "live_connecticut_bon_ingested_midwives_from_tracked_roster.csv",
+  "source_url": "https://data.ct.gov/resource/f4xa-y96m.json?%24limit=50000",
+  "accessed_utc": "2026-10-23T17:02:01Z",
+  "sha256": "d87ddbbd4c8c3cf9f10ec61adf402bdaa082ea7e4d0ccf5a89f699903eca886c",
+  "byte_size": 17157,
+  "source_dataset": "Connecticut DPH, Advanced Practice Registered Nurse Licenses (data.ct.gov f4xa-y96m) -- not CNM-specific, no API-level specialty filter exists",
+  "records_retrieved": 20070,
+  "cohort": "artifacts/tracked_roster_active_primary_linked.csv",
+  "cohort_sha256": "e2a2bba34b895d66bad03e5422bbdcc4933a8abbe4f4dc315d7af072676203dc",
+  "cohort_rows_ct": 208,
+  "cohort_matched_rows": 28,
+  "match_key": "last_name + first_name, split from CT's single combined name field (upper, trimmed); ambiguous names reported unmatched",
+  "verification_portal": "https://www.elicense.ct.gov/Lookup/LicenseLookup.aspx",
+  "address_fields": "live_bon_city/state/zip, board-reported -- CT DPH does not document whether this is mailing or practice address, and at least one sampled record carries an out-of-state address"
+}

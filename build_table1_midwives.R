@@ -29,6 +29,8 @@
 #          artifacts/midwife_panel_midwifeonly.csv
 #          data/rucc_2023.xlsx
 #          R/lib/acnm_regions.R  (ACNM Board regional mapping)
+#          artifacts/cohort_midwives_open_payments_profile_supplement.csv
+#            (extract_open_payments_profile_supplement.R; multi-state license status)
 # Outputs: artifacts/table1_midwives.csv
 #          docs/table1_midwives.md
 # =============================================================================
@@ -71,7 +73,9 @@ TABLE1_ENRICHMENT <- data.frame(
     "artifacts/dac_hospital_affiliation_person.csv",
     "artifacts/medicare_participation.csv",
     "healthgrades_midwives.csv",
-    "healthgrades_profile_attrs.csv"),
+    "healthgrades_profile_attrs.csv",
+    "artifacts/cms_ndh_midwives.csv",
+    "artifacts/cohort_midwives_open_payments_profile_supplement.csv"),
   blocks = c(
     "Sex",
     "Primary NPPES Specialty Taxonomy; Practice vs. Mailing State Concordance",
@@ -82,7 +86,9 @@ TABLE1_ENRICHMENT <- data.frame(
     "Hospital affiliation; Number of affiliated hospitals; Affiliated hospital type; Affiliated hospital ownership; Birthing-friendly designation",
     "Medicare Part B; Medicare Part D",
     "Language floor; Accepts new patients; Offers telehealth",
-    "Language floor; Accepts new patients; Offers telehealth"),
+    "Language floor; Accepts new patients; Offers telehealth",
+    "Accepts new patients (coalesced with Healthgrades); Medicare enrollment (coalesced with CMS DAC)",
+    "Multi-state license status; Primary specialty (Open Payments provider profile)"),
   stringsAsFactors = FALSE
 )
 ALLOW_PARTIAL_TABLE1 <- nzchar(Sys.getenv("ALLOW_PARTIAL_TABLE1"))
@@ -112,7 +118,8 @@ link <- read_csv(link_path, show_col_types = FALSE, progress = FALSE)
 coh <- link %>%
   filter(status == "ACTIVE", linkage_tier == "primary_midwifery") %>%
   assert_unique_keys("certification_number",
-                     label = "Table 1 cohort linkage (ACTIVE primary_midwifery)", dedupe = TRUE)
+                     label = "Table 1 cohort linkage (ACTIVE primary_midwifery)", dedupe = TRUE) %>%
+  mutate(npi = as.character(npi))
 N <- nrow(coh)
 cat(sprintf("cohort: %s ACTIVE primary-linked midwives\n", format(N, big.mark = ",")))
 
@@ -301,7 +308,7 @@ if (!is.null(trl_demo)) {
 # bands sum to one. No other source describes a midwife's patients, so this is
 # the only one. One number per midwife -- the median age of HER patients -- so
 # the block describes midwives by the patients they see, not the patients.
-PANEL_CATEGORY <- "Median age of the midwife's patients (Trilliant claims panel)"
+PANEL_CATEGORY <- "Median age of the midwife's patients"
 if (!is.null(trl_demo)) {
   coh <- coh %>%
     left_join(select(trl_demo, certification_number, trl_panel_median_age),
@@ -309,6 +316,39 @@ if (!is.null(trl_demo)) {
     mutate(panel_median_age = suppressWarnings(as.numeric(trl_panel_median_age)),
            panel_age_band = band_panel_median_age(panel_median_age)) %>%
     select(-trl_panel_median_age)
+}
+
+# Trilliant work sites provide a multi-site practice-setting signal. It is
+# distinct from a CMS privilege record: a midwife is positive when any
+# classified work site is a hospital, regardless of which site is primary.
+TRILLIANT_HOSPITAL_CATEGORY <- "Any observed hospital work site"
+TRILLIANT_HOSPITAL_LEVELS <- c("At least one hospital work site observed",
+                               "No hospital work site among classified sites")
+TRILLIANT_PRIMARY_SITE_CATEGORY <- "Primary claims-site setting"
+TRILLIANT_PRIMARY_SITE_LEVELS <- c("Hospital", "Clinic/practice", "FQHC/community health",
+                                   "Birth center", "Other facility", "Unclassified")
+if (file.exists("artifacts/midwife_work_sites_summary.csv")) {
+  work_sites <- read_csv("artifacts/midwife_work_sites_summary.csv",
+                         show_col_types = FALSE, progress = FALSE) %>%
+    distinct(certification_number, .keep_all = TRUE) %>%
+    select(certification_number, any_hospital, n_distinct_sites,
+           top_site_facility_type)
+  coh <- coh %>%
+    left_join(work_sites, by = "certification_number", relationship = "one-to-one") %>%
+    mutate(trilliant_any_hospital_site = case_when(
+      any_hospital %in% TRUE ~ "At least one hospital work site observed",
+      !is.na(n_distinct_sites) & n_distinct_sites > 0 ~
+        "No hospital work site among classified sites",
+      TRUE ~ NA_character_),
+      trilliant_primary_site_setting = case_when(
+        top_site_facility_type == "hospital" ~ "Hospital",
+        top_site_facility_type == "clinic_practice" ~ "Clinic/practice",
+        top_site_facility_type == "fqhc_community_health" ~ "FQHC/community health",
+        top_site_facility_type == "birth_center" ~ "Birth center",
+        top_site_facility_type == "other_facility" ~ "Other facility",
+        top_site_facility_type == "unclassified" ~ "Unclassified",
+        TRUE ~ NA_character_)) %>%
+    select(-any_hospital, -n_distinct_sites, -top_site_facility_type)
 }
 coh <- coh %>%
   mutate(
@@ -461,6 +501,25 @@ if (file.exists("artifacts/dac_cnm_education.csv")) {
       dac_practice_sites  = band_practice_locations(n_locations),
       dac_assignment      = label_medicare_assignment(accepts_assignment))
 }
+if (!"in_dac" %in% names(coh)) coh$in_dac <- FALSE
+
+# --- CMS National Provider Directory (NDH) ------------------------------------
+# Produced by harvest_cms_national_provider_directory.py against the live
+# directory.cms.gov/fhir gateway, one row per cohort NPI (see
+# docs/TECHNICAL_APPENDIX_CMS_NDH.md). Joined the same way as DAC above: by
+# npi, one-to-one, with a FALSE/NA fallback when the file is absent so the
+# coalesced columns built below degrade to "neither source" rather than
+# erroring.
+if (file.exists("artifacts/cms_ndh_midwives.csv")) {
+  ndhx <- read_csv("artifacts/cms_ndh_midwives.csv", show_col_types = FALSE,
+                   progress = FALSE) %>%
+    mutate(npi = as.character(npi)) %>%
+    select(npi, ndh_found, ndh_accepting_new_patients, ndh_medicare_enrollment) %>%
+    assert_unique_keys("npi", label = "CMS NDH per-NPI harvest", dedupe = TRUE)
+  coh <- coh %>%
+    left_join(ndhx, by = "npi", relationship = "one-to-one")
+}
+if (!"ndh_found" %in% names(coh)) coh$ndh_found <- NA
 
 # --- Training institution (DAC + Healthgrades) --------------------------------
 # Requested to support work on where midwives trained. Built from BOTH sources
@@ -617,6 +676,18 @@ if (file.exists("artifacts/hpsa_status.csv")) {
 # no rank, volume or FTE, so picking one would be arbitrary and would then set
 # a percentage. The rows below are any-flags, which are well defined however
 # many hospitals a midwife holds privileges at.
+#
+# Restored 2026-11-05: this block was accidentally deleted when the Trilliant
+# work-site block (trilliant_any_hospital_site / trilliant_primary_site_setting,
+# above) was added in its place -- but TABLE1_ENRICHMENT kept requiring
+# dac_hospital_affiliation_person.csv, and the five Table 1 blocks below
+# (Hospital affiliation / Number of affiliated hospitals / Affiliated hospital
+# type / Affiliated hospital ownership / Birthing-friendly designation) kept
+# their `if (col %in% names(coh))` guards, which silently skip rather than
+# error, so the file stayed a required input while contributing zero rows.
+# The two sources are complementary, not redundant -- this is Medicare
+# privilege data via CCN; the Trilliant block is claims-derived work-site
+# classification -- so both are restored side by side.
 if (file.exists("artifacts/dac_hospital_affiliation_person.csv")) {
   .aff <- read_csv("artifacts/dac_hospital_affiliation_person.csv",
                    show_col_types = FALSE, progress = FALSE) %>%
@@ -694,6 +765,54 @@ if (file.exists("artifacts/medicare_participation.csv")) {
         !part_b_any & part_d_any  ~ "Part D only (prescribes, no rendering-NPI claim)",
         part_b_any & !part_d_any  ~ "Part B only (rendering-NPI claim, no prescriptions)",
         TRUE                      ~ "Neither (billed under another NPI, <11 beneficiaries, or none)"))
+}
+
+# --- Multi-state license status (Open Payments provider profile) -------------
+# From CMS's Open Payments Covered Recipient Profile Supplement
+# (data/CMS_Open_Payments_Profile_Supplement.csv, extracted to the cohort by
+# extract_open_payments_profile_supplement.R). Only a provider who has ever
+# appeared in Open Payments gets a profile row at all -- 50.1% of the cohort
+# on the 2026-11-04 build, same SUPPORT-Act-era reportability floor as the
+# Medicare Part B/D blocks above, not a data-quality gap in this extraction.
+# "No Open Payments provider profile" is therefore its own named unknown, not
+# folded into "licensed in 1 state" -- a provider never reported to Open
+# Payments is not evidence she holds exactly one license, only that this
+# source has no opinion.
+if (file.exists("artifacts/cohort_midwives_open_payments_profile_supplement.csv")) {
+  opsup <- read_csv("artifacts/cohort_midwives_open_payments_profile_supplement.csv",
+                    show_col_types = FALSE, progress = FALSE) %>%
+    distinct(certification_number, .keep_all = TRUE)
+  coh <- coh %>% left_join(
+    opsup %>% select(certification_number, n_license_states, primary_specialty),
+    by = "certification_number", relationship = "one-to-one") %>%
+    mutate(
+      multistate_licensed_band = dplyr::case_when(
+        is.na(n_license_states)   ~ NA_character_,
+        n_license_states >= 2L    ~ "Licensed in 2+ states (Open Payments profile)",
+        TRUE                      ~ "Licensed in 1 state (Open Payments profile)"),
+      # Primary specialty (Open Payments provider profile) -- a second,
+      # independent credential/specialty field per provider, already sitting
+      # in the same file read immediately above for license status and never
+      # otherwise used. The raw string is CMS's own pipe-delimited taxonomy
+      # hierarchy ("Physician Assistants & Advanced Practice Nursing
+      # Providers|Nurse Practitioner|Women's Health"); only the LAST segment
+      # -- the most specific classification -- is kept. Corroborates (or not)
+      # the NPPES taxonomy block above from an entirely separate source.
+      # TWO DIFFERENT NON-RESPONSES, ONE LABEL. A blank string (779 of 8,411
+      # matched profiles on the 2026-11-05 build) means "has an Open Payments
+      # profile, but CMS's own specialty field is empty" -- not the same fact
+      # as no profile at all, but Table 1 has no third category to spend on a
+      # distinction this source itself does not explain, so both read as
+      # "no usable classification" and the unknown label says both.
+      .ops_specialty_last = vapply(
+        strsplit(primary_specialty, "|", fixed = TRUE),
+        function(v) if (length(v)) v[length(v)] else NA_character_, character(1)),
+      ops_specialty_band = dplyr::case_when(
+        is.na(.ops_specialty_last) | !nzchar(.ops_specialty_last) ~ NA_character_,
+        .ops_specialty_last == "Advanced Practice Midwife" ~
+          "Advanced Practice Midwife (Open Payments profile)",
+        TRUE ~ "Other classification (Open Payments profile)")) %>%
+    select(-.ops_specialty_last)
 }
 
 # --- Healthgrades banded columns ----------------------------------------------
@@ -824,8 +943,11 @@ blk <- function(df, col, category, lvls = NULL,
 blk_hg <- function(col, category, lvls = NULL, binary_yes = NULL,
                    unknown_label = "No public Healthgrades profile") {
   if (is.null(hg_link) || !col %in% names(hg_link)) {
+    # n = N, not NA: A1 requires every block to sum to the cohort, with no
+    # exemptions. "Not available" is the whole cohort's remainder here, not
+    # an unknown count to be left out of the sum.
     return(tibble(characteristic = "Healthgrades data not available",
-                  n = NA_integer_, percent = NA_real_, category = category))
+                  n = N, percent = NA_real_, category = category))
   }
   N_hg <- N - length(hg_ambiguous)
   v <- hg_link[[col]]
@@ -890,6 +1012,42 @@ if (T1_PARTIAL) {
 T1_CSV <- if (T1_PARTIAL) "artifacts/table1_midwives_PARTIAL.csv" else "artifacts/table1_midwives.csv"
 T1_MD  <- if (T1_PARTIAL) "docs/table1_midwives_PARTIAL.md" else "docs/table1_midwives.md"
 
+# --- Coalesced CMS NDH + Healthgrades / CMS DAC blocks ------------------------
+# Built here, after hg_link and the NDH join are both final, rather than
+# inline at either source's own section above.
+#
+# "%in% TRUE" everywhere below, not "== TRUE" or isTRUE(): isTRUE() is
+# scalar-only and would error on a vector; "== TRUE" propagates NA (NA ==
+# TRUE is NA, not FALSE), which would make an unlisted NPI contaminate the
+# case_when() below with NA instead of simply not contributing a Yes.
+# "%in%" is NA-safe and vectorised: NA %in% TRUE is FALSE, exactly "this
+# source has no Yes to offer," never "unknown, so refuse to combine."
+hg_anp <- if (!is.null(hg_link)) {
+  hg_link %>% distinct(certification_number, hg_accepts_new_patients)
+} else {
+  tibble(certification_number = character(0), hg_accepts_new_patients = logical(0))
+}
+
+coh <- coh %>%
+  left_join(hg_anp, by = "certification_number") %>%
+  mutate(
+    .hg_anp_yes   = hg_eligible & (hg_accepts_new_patients %in% TRUE),
+    .hg_anp_known = hg_eligible & !is.na(hg_accepts_new_patients),
+    .ndh_anp_yes   = ndh_accepting_new_patients %in% TRUE,
+    .ndh_anp_known = (ndh_found %in% TRUE) & !is.na(ndh_accepting_new_patients),
+    accepts_new_patients_combined = dplyr::case_when(
+      .hg_anp_yes | .ndh_anp_yes ~ "Yes (Healthgrades and/or CMS NDH)",
+      .hg_anp_known | .ndh_anp_known ~
+        "Not flagged by either source (absence is not a confirmed refusal)",
+      TRUE ~ NA_character_),
+    medicare_enrollment_combined = dplyr::case_when(
+      in_dac ~ "Enrolled in Medicare (CMS DAC)",
+      ndh_medicare_enrollment %in% TRUE ~
+        "Enrolled in Medicare (CMS NDH only; absent from CMS DAC)",
+      TRUE ~ NA_character_)
+  ) %>%
+  select(-starts_with(".hg_anp"), -starts_with(".ndh_anp"))
+
 t1 <- bind_rows(
   tibble(characteristic = "ACTIVE, primary-linked midwives", n = N,
          percent = 100, category = "Cohort"),
@@ -916,6 +1074,10 @@ t1 <- bind_rows(
   if ("cert_year_band" %in% names(coh))
     blk(coh, "cert_year_band", "Years Since AMCB Initial Certification",
         lvls = c("<5 years", "5-9 years", "10-19 years", "20-29 years", ">=30 years")),
+  if ("active_band" %in% names(coh))
+    blk(coh, "active_band", "Years Observed in NPPES Panel",
+        lvls = c("<5 years", "5-9 years", "10-14 years", ">=15 years"),
+        unknown_label = "Not observed in the NPPES annual panel"),
   # The summary row has no count, so the block still sums to the cohort: the
   # bands plus the no-panel row are the partition, and the median (IQR) is over
   # the midwives in the bands.
@@ -925,7 +1087,7 @@ t1 <- bind_rows(
                                       table1_median_iqr(coh$panel_median_age[!is.na(coh$panel_age_band)])),
              n = NA_integer_, percent = NA_real_, category = PANEL_CATEGORY),
       blk(coh, "panel_age_band", PANEL_CATEGORY, lvls = PANEL_AGE_LEVELS,
-          unknown_label = "No claims panel in the Trilliant directory")),
+          unknown_label = "NA")),
   # ACNM percentages use the mappable regional denominator. Any state or
   # jurisdiction absent from the supplied ACNM table remains visible as an
   # unmapped row with no percentage, so the block still reconciles to N.
@@ -985,6 +1147,24 @@ t1 <- bind_rows(
         lvls = MEDICARE_ASSIGNMENT_LEVELS,
         unknown_label = "Absent from the CMS DAC enrolment extract"),
 
+  # COALESCED, NOT MERGED INTO THE BLOCKS ABOVE. #246 is the reason: two
+  # Medicare-derived blocks once both read "Not enrolled (absent from CMS
+  # DAC)" and disagreed by 114 people because they came from different DAC
+  # pulls, and the fix was to name which extract each absence means rather
+  # than let one "not enrolled" label describe two different facts. This is
+  # a NEW, additional block for the one binary fact DAC and NDH both carry
+  # independently (enrolled in Medicare, yes or no) -- it does not touch
+  # dac_practice_size/dac_practice_sites/dac_assignment above, which stay
+  # exactly as DAC-only and DAC-labelled as before. Where NDH finds
+  # enrollment DAC did not, that is its own named row, not folded silently
+  # into "enrolled."
+  if ("medicare_enrollment_combined" %in% names(coh))
+    blk(coh, "medicare_enrollment_combined",
+        "Medicare enrollment (CMS DAC + CMS NDH)",
+        lvls = c("Enrolled in Medicare (CMS DAC)",
+                 "Enrolled in Medicare (CMS NDH only; absent from CMS DAC)"),
+        unknown_label = "Not enrolled in Medicare per CMS DAC or CMS NDH"),
+
   if ("hpsa_status" %in% names(coh))
     blk(coh, "hpsa_status", "Primary-care shortage area (HRSA HPSA)",
         lvls = c("Designated geographic primary-care HPSA",
@@ -1018,6 +1198,14 @@ t1 <- bind_rows(
         lvls = c("Affiliated with a birthing-friendly hospital",
                  "No birthing-friendly designation among affiliations"),
         unknown_label = "No hospital privilege recorded"),
+  if ("trilliant_any_hospital_site" %in% names(coh))
+    blk(coh, "trilliant_any_hospital_site", TRILLIANT_HOSPITAL_CATEGORY,
+        lvls = TRILLIANT_HOSPITAL_LEVELS,
+        unknown_label = "NA"),
+  if ("trilliant_primary_site_setting" %in% names(coh))
+    blk(coh, "trilliant_primary_site_setting", TRILLIANT_PRIMARY_SITE_CATEGORY,
+        lvls = TRILLIANT_PRIMARY_SITE_LEVELS,
+        unknown_label = "NA"),
 
   if ("medicare_part_b" %in% names(coh))
     blk(coh, "medicare_part_b", "Medicare Part B, any year 2013-2023",
@@ -1033,6 +1221,18 @@ t1 <- bind_rows(
                  "Part D only (prescribes, no rendering-NPI claim)",
                  "Part B only (rendering-NPI claim, no prescriptions)",
                  "Neither (billed under another NPI, <11 beneficiaries, or none)")),
+  if ("multistate_licensed_band" %in% names(coh))
+    blk(coh, "multistate_licensed_band",
+        "Multi-state license status (Open Payments provider profile)",
+        lvls = c("Licensed in 2+ states (Open Payments profile)",
+                 "Licensed in 1 state (Open Payments profile)"),
+        unknown_label = "No Open Payments provider profile"),
+  if ("ops_specialty_band" %in% names(coh))
+    blk(coh, "ops_specialty_band",
+        "Primary specialty (Open Payments provider profile)",
+        lvls = c("Advanced Practice Midwife (Open Payments profile)",
+                 "Other classification (Open Payments profile)"),
+        unknown_label = "No Open Payments profile, or profile present with no specialty recorded"),
 
   # Language: use Healthgrades data when available; otherwise note it is absent.
   # LANGUAGE IS A FLOOR, NOT A PROPORTION.
@@ -1063,12 +1263,23 @@ t1 <- bind_rows(
         category = "Language (Healthgrades floor)")
     })
   else
+    # n = N, not NA: same A1 requirement as blk_hg()'s fallback above.
     tibble(characteristic = "Not collected by NPPES, CMS DAC or the Healthgrades scrape",
-           n = NA_integer_, percent = NA_real_, category = "Language"),
+           n = N, percent = NA_real_, category = "Language"),
 
-  # Healthgrades-derived person-level characteristics
-  blk_hg("hg_accepts_new_patients", "Accepts new patients",
-          binary_yes = c("TRUE", "true", "Yes", "yes", TRUE)),
+  # COALESCED with CMS NDH (see accepts_new_patients_combined, built above),
+  # not the Healthgrades-only version this used to be. Both sources are
+  # presence-only evidence -- Healthgrades' acceptsNewPatients is
+  # sponsor-supplied (scrape_healthgrades_midwives.R: "never read NA/FALSE as
+  # a refusal") and NDH's is populated only when an org affiliation carries
+  # the FHIR acceptingPatients extension -- so the rule is Yes if EITHER
+  # source says Yes; neither source's absence or FALSE asserts a No.
+  if ("accepts_new_patients_combined" %in% names(coh))
+    blk(coh, "accepts_new_patients_combined",
+        "Accepts new patients (Healthgrades + CMS NDH)",
+        lvls = c("Yes (Healthgrades and/or CMS NDH)",
+                 "Not flagged by either source (absence is not a confirmed refusal)"),
+        unknown_label = "No Healthgrades profile and not found in CMS NDH"),
   blk_hg("hg_has_telehealth", "Offers telehealth",
           binary_yes = c("TRUE", "true", "Yes", "yes", TRUE)),
 
@@ -1126,8 +1337,10 @@ md <- c("# Table 1. Characteristics of the ACTIVE certified-midwife cohort", "",
           "") else NULL,
         sprintf("Cohort: **%s** midwives with AMCB status ACTIVE and a primary-tier NPI link.",
                 format(N, big.mark = ",")),
-        "Percentages are within category and use the non-missing denominator;",
-        "unknowns are counted on their own row.", "",
+        paste0("Percentages are within category and use the non-missing denominator. ",
+               "Rows labelled not recorded, unresolved, or not applicable are shown ",
+               "so each block remains auditable, but they are not percentage ",
+               "denominators unless explicitly labelled as cohort rows."), "",
         sprintf(paste0("Registry-derived rows use the full cohort. Healthgrades-derived ",
                        "rows use a smaller denominator of **%s**: %s a Healthgrades ",
                        "profile with another certificant and cannot be attributed one. ",

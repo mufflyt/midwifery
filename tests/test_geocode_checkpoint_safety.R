@@ -24,7 +24,14 @@ source(file.path(root, "R", "lib", "checkpoint_utils.R"))
 
 work <- tempfile("checkpoint_safety_"); dir.create(work)
 ckpt <- file.path(work, "raw_result.rds")
-tmp  <- paste0(ckpt, ".tmp")
+
+# save_checkpoint_atomic() salts its staging file with this process's own
+# pid (R/lib/checkpoint_utils.R), so a test running IN that same process
+# reproduces the exact staging path the real function would write to.
+tmp_path <- function(path) {
+  file.path(dirname(path), sprintf(".%s.tmp%d", basename(path), Sys.getpid()))
+}
+tmp <- tmp_path(ckpt)
 
 is_error <- function(expr) inherits(tryCatch(expr, error = function(e) e), "error")
 
@@ -81,7 +88,7 @@ ci_section("Interruption during temporary/staging write")
 
 ## c1: no prior checkpoint at this path
 c1_path <- file.path(work, "c1.rds")
-c1_tmp <- paste0(c1_path, ".tmp")
+c1_tmp <- tmp_path(c1_path)
 writeBin(as.raw(c(0x00, 0x01, 0x02, 0xFF)), c1_tmp)  # garbage, mid-write simulation
 if (!file.exists(c1_path)) {
   ci_ok("garbage left in .tmp during staging never materializes at the final path (no prior checkpoint case)")
@@ -98,7 +105,7 @@ if (is_error(load_checkpoint(c1_path))) {
 c2_path <- file.path(work, "c2.rds")
 v1_c2 <- list(tag = "v1", n = 42L)
 save_checkpoint_atomic(v1_c2, c2_path)
-c2_tmp <- paste0(c2_path, ".tmp")
+c2_tmp <- tmp_path(c2_path)
 writeBin(as.raw(c(0xDE, 0xAD, 0xBE, 0xEF)), c2_tmp)  # simulated mid-write crash of a v2 attempt
 if (identical(load_checkpoint(c2_path), v1_c2)) {
   ci_ok("a prior good checkpoint survives a simulated mid-staging-write crash of a later attempt untouched")
@@ -113,7 +120,7 @@ ci_section("Interruption immediately before promotion/rename")
 
 ## d1: no prior checkpoint
 d1_path <- file.path(work, "d1.rds")
-d1_tmp <- paste0(d1_path, ".tmp")
+d1_tmp <- tmp_path(d1_path)
 new_obj_d1 <- data.frame(x = 1:3)
 saveRDS(new_obj_d1, d1_tmp)  # fully written .tmp, but file.rename() never runs
 if (!file.exists(d1_path)) {
@@ -126,7 +133,7 @@ if (!file.exists(d1_path)) {
 d2_path <- file.path(work, "d2.rds")
 v1_d2 <- list(tag = "v1", n = 7L)
 save_checkpoint_atomic(v1_d2, d2_path)
-d2_tmp <- paste0(d2_path, ".tmp")
+d2_tmp <- tmp_path(d2_path)
 new_obj_d2 <- list(tag = "v2_never_promoted", n = 999L)
 saveRDS(new_obj_d2, d2_tmp)  # complete write, promotion never happens
 if (identical(load_checkpoint(d2_path), v1_d2)) {
@@ -149,7 +156,7 @@ if (identical(load_checkpoint(d2_path), v3)) {
 } else {
   ci_fail("stale .tmp debris from a prior interrupted attempt blocked or corrupted a subsequent legitimate checkpoint")
 }
-if (!file.exists(paste0(d2_path, ".tmp"))) {
+if (!file.exists(tmp_path(d2_path))) {
   ci_ok("no .tmp debris remains after the restart's successful checkpoint")
 } else {
   ci_fail(".tmp debris still present after a successful restart checkpoint")
@@ -163,7 +170,7 @@ f_path <- file.path(work, "f.rds")
 v1_f <- data.frame(id = 1:10, val = letters[1:10], stringsAsFactors = FALSE)
 save_checkpoint_atomic(v1_f, f_path)
 # Simulate a failed v2 attempt: garbage mid-write, never promoted.
-f_tmp <- paste0(f_path, ".tmp")
+f_tmp <- tmp_path(f_path)
 writeBin(as.raw(sample(0:255, 16, replace = TRUE)), f_tmp)
 if (identical(load_checkpoint(f_path), v1_f)) {
   ci_ok("the last known-good checkpoint is byte-for-byte unchanged after a failed subsequent attempt")

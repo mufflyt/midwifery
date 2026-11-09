@@ -1,0 +1,13 @@
+provider_group,procedure_category,n_cohort,n_billed,pct_billed,total_claim_lines,total_patients_summed
+midwife,iud,12166,22,0.2,1007,776
+ob_gyn_generalist,iud,41482,224,0.5,81493,51483
+ob_gyn_mfm,iud,2610,0,0,0,0
+midwife,pap_test,12166,145,1.2,30767,29385
+ob_gyn_generalist,pap_test,41482,968,2.3,522505,489510
+ob_gyn_mfm,pap_test,2610,5,0.2,1132,1126
+midwife,urodynamics,12166,0,0,0,0
+ob_gyn_generalist,urodynamics,41482,100,0.2,41172,33512
+ob_gyn_mfm,urodynamics,2610,3,0.1,5931,4722
+midwife,vaginal_delivery,12166,366,3,28634,25295
+ob_gyn_generalist,vaginal_delivery,41482,2973,7.2,540739,505658
+ob_gyn_mfm,vaginal_delivery,2610,109,4.2,26141,24402

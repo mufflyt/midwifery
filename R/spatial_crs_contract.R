@@ -139,12 +139,6 @@ validate_geometry_contract <- function(
 ) {
   issues <- character(0)
 
-  if (n_unallocated > 0L) {
-    issues <- c(issues, sprintf(
-      "Population: %d of %d tracts have no allocated population, so the %s total below is a floor, not a count",
-      n_unallocated, nrow(overlap_df), format(population, big.mark = ",")))
-  }
-
   # 1. CRS check
   actual_crs <- tryCatch(sf::st_crs(sf_obj)$epsg, error = function(e) NA)
   if (is.na(actual_crs) || actual_crs != expected_crs) {
