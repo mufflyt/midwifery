@@ -1,0 +1,29 @@
+{
+  "artifact": "migration_move_classification_summary_by_transition.csv",
+  "written_utc": "2026-11-06 23:15:23 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/migration_move_classification_full_panel.csv",
+      "sha256": "c9d29015e56f648a3bcfddf5713af9d46c0cdeebd088c1052314859e5e21c18b"
+    }
+  ],
+  "code_sha256": "7c88f84896c2e45bd5a817de1721cca97d8843bf61747aaa70cd3ff13d82ff88",
+  "code": [
+    {
+      "path": "classify_migration_moves_full_panel.R",
+      "sha256": "28dfd379ec51b1517fd7fed3f91f7f830b57145869c8487a85066ac04a77b3c5"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/migration_move_classification.R",
+      "sha256": "a4daf9d2fd1efd20bfeafa7433c9a041b57ffdc7d4e026c2c383be330722ea1e"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+    }
+  ]
+}
