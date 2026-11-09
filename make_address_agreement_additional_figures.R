@@ -1,11 +1,12 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# Three more views of the DAC / Open Payments / NPPES address comparison
+# Two more views of the DAC / Open Payments / NPPES address comparison
 # =============================================================================
 # Re-plots the existing comparison artifact
 # (artifacts/dac_openpayments_vs_nppes_address_agreement.csv, written by
-# compare_dac_openpayments_to_nppes_address.R) from three different angles.
-# No new numbers of its own.
+# compare_dac_openpayments_to_nppes_address.R) from two different angles.
+# No new numbers of its own. The heatmap this script used to write moved to
+# make_address_agreement_heatmap.R -- see the note at that block for why.
 #
 # The tracked artifact now holds exactly one comparison_type
 # (vs_nppes_same_year) -- a three-way NPPES/DAC/Open-Payments concordance
@@ -19,8 +20,7 @@
 # docs/TECHNICAL_APPENDIX_DAC_OPENPAYMENTS_ADDRESS_AGREEMENT.md.
 #
 # Input : artifacts/dac_openpayments_vs_nppes_address_agreement.csv (tracked)
-# Outputs: docs/figures/address_agreement_heatmap.png
-#          docs/figures/address_agreement_cascade.png
+# Outputs: docs/figures/address_agreement_cascade.png
 #          docs/figures/address_agreement_power.png
 #
 # @family data-quality
@@ -52,20 +52,18 @@ d$series <- factor(d$series, levels = c("DAC (2026)", "Open Payments (2022)",
 pal <- c("DAC (2026)" = "#c0392b", "Open Payments (2022)" = "#aed6f1",
          "Open Payments (2023)" = "#5dade2", "Open Payments (2024)" = "#1b4f72")
 
-cli_alert_info("A. Heatmap: every source x every geographic level")
-heat <- ggplot(d, aes(x = level, y = source_pair, fill = agree_pct)) +
-  geom_tile(color = "white", linewidth = 0.6) +
-  geom_text(aes(label = sprintf("%.0f%%", agree_pct)), size = 3) +
-  scale_fill_distiller(palette = "RdYlBu", direction = 1, limits = c(0, 100), name = "Agreement %") +
-  labs(title = "Every source, every geographic level, one view",
-       subtitle = "DAC / Open Payments vs. NPPES address agreement (%), year-matched",
-       x = NULL, y = NULL,
-       caption = "See docs/TECHNICAL_APPENDIX_DAC_OPENPAYMENTS_ADDRESS_AGREEMENT.md for n per cell.") +
-  theme_minimal(base_size = 11) +
-  theme(panel.grid = element_blank())
-ggsave("docs/figures/address_agreement_heatmap.png", heat, width = 8, height = 4, dpi = 200)
-
-cli_alert_info("B. Cascade: agreement by geographic grain, every source")
+# THE HEATMAP USED TO BE HERE, AND IT WAS OVERWRITING A BETTER ONE.
+# make_address_agreement_heatmap.R (added 2026-10-23) writes the SAME path,
+# docs/figures/address_agreement_heatmap.png, from all five comparison
+# artifacts at 14x5.5in; the version here drew only this file's two sources at
+# 8x4in. Both were tracked under one filename, so the committed figure was
+# decided by whichever script ran last. The committed figure is 2800x1100 px,
+# i.e. the five-source one -- meaning running THIS script, exactly as
+# docs/TECHNICAL_APPENDIX_DAC_OPENPAYMENTS_ADDRESS_AGREEMENT.md s6 tells a
+# reader to, silently replaced it with the narrower view. One filename, one
+# writer: the heatmap belongs to make_address_agreement_heatmap.R, and this
+# script keeps the two figures that are genuinely its own.
+cli_alert_info("A. Cascade: agreement by geographic grain, every source")
 cascade <- ggplot(d, aes(x = level, y = agree_pct, group = series, color = series)) +
   geom_line(alpha = 0.9, linewidth = 0.9) +
   geom_point(size = 2) +
@@ -78,7 +76,7 @@ cascade <- ggplot(d, aes(x = level, y = agree_pct, group = series, color = serie
   theme(legend.position = "bottom")
 ggsave("docs/figures/address_agreement_cascade.png", cascade, width = 8, height = 6, dpi = 200)
 
-cli_alert_info("C. Power check: agreement vs. how many records it's based on")
+cli_alert_info("B. Power check: agreement vs. how many records it's based on")
 power <- ggplot(d, aes(x = comparable_n, y = agree_pct, color = level, size = comparable_n)) +
   geom_point(alpha = 0.75) +
   scale_x_log10(labels = comma) +

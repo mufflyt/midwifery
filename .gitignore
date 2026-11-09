@@ -269,6 +269,9 @@ artifacts/physician_compare_historical_midwives.csv
 # PECOS revalidation/reassignment state history, person-level (NPI-year-state).
 artifacts/pecos_revalidation_cohort_state_by_year.csv
 
+# Same source, uncollapsed monthly panel (NPI-vintage-state), person-level.
+artifacts/pecos_revalidation_cohort_state_monthly.csv
+
 # PPEF (Public Provider Enrollment Files) Medicare enrollment year,
 # person-level (NPI, first enrollment year, enrollment count).
 artifacts/ppef_cohort_enrollment_year.csv
@@ -276,6 +279,74 @@ artifacts/ppef_cohort_enrollment_year.csv
 # T-MSIS Medicaid spending (HHS DOGE release), person-level (NPI-year
 # billing activity: claim lines, patients, bounded total paid).
 artifacts/tmsis_medicaid_spending_cohort_by_year.csv
+
+# T-MSIS Medicaid ENROLLMENT state, by year (distinct from the billing
+# file above), person-level (NPI, year, enrolled state). A truth-fusion
+# source for build_truth_fusion_predictions.R.
+artifacts/tmsis_medicaid_enrollment_state_by_year.csv
+
+# Sub-annual NPPES practice-state panel (NPI, vintage, address), person-level.
+artifacts/nppes_subannual_panel.csv
+
+# Migration corroboration adjudication, person-level (NPI, transition,
+# states, per-source corroboration flags). The rolled-up summary/spike-vs-
+# control/Medicaid-lead-lag CSVs the same script writes are aggregates and
+# stay tracked.
+artifacts/migration_corroboration_adjudication.csv
+artifacts/migration_corroboration_adjudication.csv.provenance.json
+
+# Truth-fusion predictions, person-level (NPI, year, predicted state per
+# method). artifacts/migration_rate_by_method.csv and artifacts/truth_fusion_
+# leave_one_out_sensitivity.csv (same script family) are aggregates and
+# stay tracked.
+artifacts/truth_fusion_predictions_*.csv
+artifacts/truth_fusion_predictions_*.csv.provenance.json
+
+# artifacts/truth_fusion_model_diagnostics.csv is an aggregate too and BELONGS
+# tracked alongside those two -- but it was committed from a run that wrote it
+# with a raw write_csv(), so it carries no sidecar. ci_artifact_contracts.R A3
+# will not accept a tracked artifact without one, its baseline may shrink and
+# never grow, and a sidecar reconstructed after the fact is explicitly not a
+# sidecar (it would record this session's inputs, not the run's).
+#
+# The writer now goes through write_with_provenance() (build_truth_fusion_
+# predictions.R). Ignored until a complete run emits the pair; then delete
+# these two lines and commit the CSV together with its .provenance.json.
+# A run on this machine would NOT be complete: the TMSIS source needs
+# DuckDB/medicaid_provider_enrollment_segments.duckdb, which is absent from
+# the Samsung volume, and a degraded run's numbers must not become the
+# tracked cross-run record.
+artifacts/truth_fusion_model_diagnostics.csv
+artifacts/truth_fusion_model_diagnostics.csv.provenance.json
+
+# Truth-fusion claims (person-level, method-independent) and per-method
+# candidate-value vote breakdowns -- added 2026-11-06, both previously
+# computed in-memory by build_truth_fusion_predictions.R and discarded;
+# now persisted for classify_migration_moves_full_panel.R.
+artifacts/truth_fusion_claims.csv
+artifacts/truth_fusion_claims.csv.provenance.json
+artifacts/truth_fusion_candidate_scores_*.csv
+artifacts/truth_fusion_candidate_scores_*.csv.provenance.json
+
+# Leave-one-source-out per-NPI predicted states (person-level, by variant
+# and method) -- added 2026-11-06 for classify_migration_moves_full_panel.R's
+# held-out confirmation check. artifacts/truth_fusion_leave_one_out_
+# sensitivity.csv (the aggregate the same script already wrote) stays tracked.
+artifacts/truth_fusion_leave_one_out_predictions.csv
+artifacts/truth_fusion_leave_one_out_predictions.csv.provenance.json
+
+# Migration move classification, person-level (NPI, transition, states,
+# classification, rule_id, supporting/contradicting families) -- added
+# 2026-11-06. artifacts/migration_move_classification_summary_by_transition.csv
+# (same script) is an aggregate and stays tracked.
+artifacts/migration_move_classification_full_panel.csv
+artifacts/migration_move_classification_full_panel.csv.provenance.json
+
+# Migration move evidence table (Deliverable A), person-level (NPI, source
+# family, year, claimed value, evidence status) -- added 2026-11-06, same
+# script and standing as the classification output above.
+artifacts/migration_move_evidence_table.csv
+artifacts/migration_move_evidence_table.csv.provenance.json
 
 # Historical Facility Affiliation, 2013-2022, from CCNs embedded in the
 # historical DAC files (extract_historical_facility_affiliation.R); same

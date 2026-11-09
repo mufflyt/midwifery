@@ -33,6 +33,7 @@
 # Output: artifacts/cohort_midwives_open_payments_profile_supplement.csv
 # =============================================================================
 suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); library(readr); library(stringr)})
+source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-ingestion bootstrap
 source("R/lib/common_helpers.R")
 
 SUPPLEMENT <- "data/CMS_Open_Payments_Profile_Supplement.csv"
@@ -45,7 +46,7 @@ coh <- link %>%
   filter(!is.na(npi), nzchar(npi)) %>% distinct()
 cat(sprintf("Cohort NPIs: %s\n", format(nrow(coh), big.mark = ",")))
 
-con <- dbConnect(duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 dbWriteTable(con, "cohort_npis", coh, overwrite = TRUE, temporary = TRUE)
 

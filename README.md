@@ -339,6 +339,49 @@ in the FDA cross-check is kept conservative:
 [docs/TECHNICAL_APPENDIX_CMS_NDH.md](docs/TECHNICAL_APPENDIX_CMS_NDH.md),
 sections 5 and 9–10.*
 
+### Are the NPPES interstate-migration spikes real?
+
+![Apparent vs. confirmed vs. indeterminate interstate migration, 2013-2026](docs/figures/migration_classification_national_trends.png)
+
+*Multi-source truth fusion, then a rule-based classifier, applied to every
+apparent interstate practice-state move in the cohort, 2013–2026 (13
+annual transitions). Two spikes NPPES's own data had flagged — **2017→2018**
+and **2023→2024** — do not survive equally: 2017-18 collapses to the
+second-lowest transition of the whole series once NPPES is removed from the
+vote, substantially NPPES-specific; 2023-24 holds up better at annual,
+multi-source resolution but gets no sub-annual DAC/PECOS corroboration once
+checked. Removing NPPES also surfaces a transition nothing upstream had
+flagged, **2020→2021**, as the single highest-rate transition in the series —
+narrowed by sub-annual checks to H2 2021–H1 2022 specifically, resting on DAC
+alone (an apparent PECOS corroboration was itself retracted as a
+dedup-determinism bug, not a real finding).
+Full appendix:
+[docs/TECHNICAL_APPENDIX_TRUTH_FUSION_MIGRATION.md](docs/TECHNICAL_APPENDIX_TRUTH_FUSION_MIGRATION.md).*
+
+Generalized to every apparent move in the panel, not just the two flagged
+spikes: of 4,592 apparent interstate moves, only **0.2%** are confirmed by
+**≥2 independent source families surviving a held-out leave-one-out refit** —
+not merely agreeing, since agreement among sources must never be read as
+accuracy (DAC's own address field is CMS-derived directly from PECOS
+enrollment data, not an independent witness of it). **32.4%** land on
+administrative-artifact rules; the remaining **67.3%** stay unconfirmed for
+lack of corroborating evidence — a source-coverage limitation, not a finding
+that those moves are false.
+[`docs/figures/migration_classification_composition.png`](docs/figures/migration_classification_composition.png)
+breaks this down by transition. Source-family sensitivity
+([`docs/figures/migration_source_sensitivity.png`](docs/figures/migration_source_sensitivity.png))
+shows **NPPES dominates the fused model by roughly an order of magnitude**
+over every other source — dropping it changes 9.49% of comparable predicted
+values and strips coverage from 49.6% of the panel, versus 0.04%–1.07%
+changed for DAC+PECOS, T-MSIS Medicaid, Open Payments and facility
+affiliation. Temporal-window sensitivity (strict/1yr/2yr/3yr proximity
+matching) finds 12 of 13 transitions robust to that assumption; the one
+exception, 2025–2026, flips toward *more* administrative-artifact share as
+the window widens — evidence against, not for, a real migration increase
+behind that year's DAC agreement-rate dip. Full appendix, rule definitions,
+and 20 adversarial test cases:
+[docs/TECHNICAL_APPENDIX_MIGRATION_MOVE_CLASSIFICATION.md](docs/TECHNICAL_APPENDIX_MIGRATION_MOVE_CLASSIFICATION.md).
+
 ### Three more you build yourself
 
 These read the frozen crosswalk, which is person-level and gitignored, so they
