@@ -303,21 +303,6 @@ artifacts/cohort_midwives_part_b_state_by_year.csv.provenance.json
 artifacts/cohort_midwives_part_d_state_by_year.csv
 artifacts/cohort_midwives_part_d_state_by_year.csv.provenance.json
 
-# Temporal-separation results, one row per AMCB certificant (amcb_id plus
-# per-person candidate/survivor counts). Untracked 2026-11-09: it was
-# committed in d510f4a and ci_leak_guard L1 flags it, correctly. It carries no
-# name and no NPI (surviving_npi is NA on all 2,952 rows), so it is NOT a
-# baseline false positive either -- amcb_id is a live join key to
-# artifacts/tracked_roster_active_primary_linked.csv, which IS tracked (a
-# reviewed exception) and carries last_name, first_name, certification_number
-# and npi. One join re-identifies every row. If this file should be tracked
-# anyway, that is a reviewed-exception decision for a named person to make in
-# tests/ci_leak_reviewed_exceptions.txt, with a date and a reason -- not a
-# gitignore line. NOTE: the blob is already on the remote branch from d510f4a;
-# untracking stops it reaching main but does not remove it from branch history.
-artifacts/temporal_separation_by_pool.csv
-artifacts/temporal_separation_by_pool.csv.provenance.json
-
 # PPEF (Public Provider Enrollment Files) Medicare enrollment year,
 # person-level (NPI, first enrollment year, enrollment count).
 artifacts/ppef_cohort_enrollment_year.csv
