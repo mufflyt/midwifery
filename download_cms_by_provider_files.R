@@ -38,7 +38,8 @@
 #            so a rebuild is traceable to bytes rather than to a file date)
 # =============================================================================
 suppressPackageStartupMessages({library(jsonlite); library(digest)})
-source(file.path("R", "lib", "medicare_duckdb.R"))  # samsung_volume_path()
+source(file.path("R", "lib", "medicare_duckdb.R"))      # samsung_volume_path()
+source(file.path("R", "lib", "artifact_provenance.R"))  # write_with_provenance()
 
 CATALOG <- "https://data.cms.gov/data.json"
 # Which years this project wants. Part D 2022-2023 and Part B 2013-2023 are
@@ -140,7 +141,15 @@ if (sys.nframe() == 0L) {
   }
   man <- do.call(rbind, rows)
   dir.create("artifacts", showWarnings = FALSE)
-  utils::write.csv(man, "artifacts/cms_by_provider_download_manifest.csv", row.names = FALSE)
+  # No `inputs`: this artifact's inputs are a live CMS endpoint and the files
+  # it serves, neither of which is a repo path that sha256_of() could hash --
+  # and hashing 8 GB of downloaded CSV to restate what the manifest's own
+  # sha256 column already says would buy nothing. The provenance that matters
+  # here is IN the table: one row per file with its resolved URL and its
+  # sha256. It still goes through write_with_provenance() so the sidecar
+  # records the producing code by content, which is what the A3 ratchet in
+  # tests/ci_artifact_contracts.R checks for every tracked artifact.
+  write_with_provenance(man, "artifacts/cms_by_provider_download_manifest.csv")
   cat(sprintf("\n%d/%d ok -> artifacts/cms_by_provider_download_manifest.csv\n",
               sum(man$status == "ok"), nrow(man)))
   if (any(man$status != "ok")) quit(status = 1L)
