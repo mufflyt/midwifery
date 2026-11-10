@@ -1,14 +1,15 @@
 # Technical Appendix: Full-Panel Migration Move Classification
 
 **Repository**: `midwifery`
-**Primary scripts**: [`classify_migration_moves_full_panel.R`](../classify_migration_moves_full_panel.R), [`R/lib/migration_move_classification.R`](../R/lib/migration_move_classification.R), [`build_truth_fusion_predictions.R`](../build_truth_fusion_predictions.R) (extended), [`build_leave_one_source_out_sensitivity.R`](../build_leave_one_source_out_sensitivity.R) (extended), [`audit_migration_source_sensitivity.R`](../audit_migration_source_sensitivity.R), [`audit_migration_temporal_sensitivity.R`](../audit_migration_temporal_sensitivity.R)
-**Figure scripts**: [`make_migration_classification_national_trends_figure.R`](../make_migration_classification_national_trends_figure.R), [`make_migration_classification_composition_figure.R`](../make_migration_classification_composition_figure.R), [`make_migration_source_sensitivity_figure.R`](../make_migration_source_sensitivity_figure.R)
-**Tests**: [`tests/test_migration_move_classification.R`](../tests/test_migration_move_classification.R) (37 assertions: all 7 rule IDs, all 20 adversarial "saboteur" cases below, and the proximity-window lookup logic in §7b)
+**Primary scripts**: [`classify_migration_moves_full_panel.R`](../classify_migration_moves_full_panel.R), [`R/lib/migration_move_classification.R`](../R/lib/migration_move_classification.R), [`build_truth_fusion_predictions.R`](../build_truth_fusion_predictions.R) (extended), [`build_leave_one_source_out_sensitivity.R`](../build_leave_one_source_out_sensitivity.R) (extended), [`audit_migration_source_sensitivity.R`](../audit_migration_source_sensitivity.R), [`audit_migration_temporal_sensitivity.R`](../audit_migration_temporal_sensitivity.R), [`audit_migration_stable_vs_mover_corroboration.R`](../audit_migration_stable_vs_mover_corroboration.R)
+**Figure scripts**: [`make_migration_classification_national_trends_figure.R`](../make_migration_classification_national_trends_figure.R), [`make_migration_classification_composition_figure.R`](../make_migration_classification_composition_figure.R), [`make_migration_source_sensitivity_figure.R`](../make_migration_source_sensitivity_figure.R), [`make_migration_evidence_timeline_gallery.R`](../make_migration_evidence_timeline_gallery.R) (person-level, `qa/` only -- see §7c)
+**Tests**: [`tests/test_migration_move_classification.R`](../tests/test_migration_move_classification.R) (40 assertions: all 7 rule IDs, all 20 adversarial "saboteur" cases below, the proximity-window lookup logic in §7b, and the stable-pair control check in §7d)
 **Related**: [`docs/TECHNICAL_APPENDIX_TRUTH_FUSION_MIGRATION.md`](TECHNICAL_APPENDIX_TRUTH_FUSION_MIGRATION.md) (the 5-source model and spike-specific sub-annual findings this build generalizes to the whole panel), [`docs/TECHNICAL_APPENDIX_MIGRATION_CORROBORATION.md`](TECHNICAL_APPENDIX_MIGRATION_CORROBORATION.md) (the prior, 6-transition, 3-source pairwise corroboration pass this build extends to all 13 transitions and the full 5-source claims table)
 **Investigation date**: 2026-11-06/09
-**Status**: core classifier, full-panel run, source-family sensitivity, temporal sensitivity, and
-3 of 4 diagnostic figures complete. Several items from the originating specification are
-explicitly deferred to a follow-on pass (§8 below) — not silently dropped.
+**Status**: core classifier, full-panel run, source-family sensitivity, temporal sensitivity, all 4
+diagnostic figures, and the movers-vs-stable-controls check complete. Several items from the
+originating specification are explicitly deferred to a follow-on pass (§8 below) — not silently
+dropped.
 
 ---
 
@@ -316,20 +317,61 @@ transition/family-level aggregate CSVs above -- no person-level data in any figu
   (`make_migration_source_sensitivity_figure.R`) -- the §7a table rendered as a two-panel chart,
   ordered by prediction-change magnitude so NPPES's outsized role is immediately visible.
 
-**Figure 4 (individual evidence timelines) is not built** -- it needs a per-NPI, per-source,
-date-aware lookup tool that doesn't exist yet (discussed but not built as of this writing: given
-an NPI and a target date, print each source's nearest claim with its actual date and precision).
-That tool is a separate, self-contained piece of work from rendering aggregate tables, and is
-listed below rather than bundled in here.
+**Figure 4 (individual evidence timelines) is built**, but deliberately NOT public:
+`make_migration_evidence_timeline_gallery.R` picks one real example NPI per target classification
+(`CONF-2FAM`, `POSS-SINGLE`, `ART-CONTRA`, `MIXED-SPLIT`) and plots every source's directly-observed
+claim near that NPI's transition, so a reader can see why the classifier called it what it called
+it without trusting the label. Since this necessarily shows real NPIs and real per-source state
+claims, it follows `build_linkage_case_gallery.R`'s existing precedent exactly: writes only to
+`qa/` (gitignored, with a `stop()` guard against writing person-level output elsewhere), with a
+`--redact` flag (seed-keyed one-way hash) for a shareable-within-team copy that still stays in
+`qa/`, never promoted to `docs/figures/` or the README.
+
+## 7d. Movers vs. stable-state controls (specification scenario #10)
+
+A natural question about the classifier's headline 0.2% independent-confirmation rate for apparent
+movers (§7 above): is that unusually low *because migration is hard to verify*, or would the same
+>=2-independent-family evidence bar rarely clear for *any* pair, simply because the 3 usable
+source families are sparse in general? `audit_migration_stable_vs_mover_corroboration.R` answers
+this directly, reusing the identical family index and direct-observation lookup the mover-side
+classifier already uses -- `check_stability_support()` is its mirror image: a family **agrees**
+with stability if it directly observes the SAME state at both endpoint years; **disagrees** if it
+observes a *different* state at either year (the family itself detected a change the fused
+prediction's stability call didn't).
+
+Checked against all 156,684 stable pairs, 2013-2026 (not a sample -- the full population, ~7
+minutes to run):
+
+**13.33% of stable pairs (20,880 of 156,684) meet the exact same >=2-independent-family evidence
+bar `CONF-2FAM` requires for movers -- roughly 44x the 0.3% (14 of 4,592) rate for apparent
+movers.** This is strong evidence the low mover-confirmation rate reflects something real and
+specific to verifying migration, not merely generic source sparsity that would hit stable pairs
+just as hard. Intuitively this makes sense: for a pair to independently confirm *stability*, each
+of 2 families just needs any 2 overlapping observations that happen to show the same (already
+far more common) state; for a pair to independently confirm a *move*, each family needs
+observations that happen to bracket the move exactly AND agree with each other on both the before
+and after state -- a structurally higher bar.
+
+**A data-density artifact is visible and should not be over-read as a substantive finding about
+those specific years**: the bar-clearing rate jumps from ~5-8% (2013-2020) to ~24-25%
+(2021-2022 through 2024-2025), then back to 11.1% (2025-2026) -- `n_zero_evidence` mirrors this
+inversely. This lines up with PECOS's monthly-vintage density increasing sharply from 2021-12
+onward (§7 above) -- more PECOS coverage mechanically raises the bar-clearing rate for *every*
+pair in that era, movers and stable alike, independent of anything about migration specifically.
 
 ## 8. Deferred to a follow-on pass
 
 Named explicitly so nothing from the originating specification is silently dropped:
 
-- The full 10-scenario sensitivity suite (specification §12) beyond what leave-one-out and the
-  temporal-window analysis above already give for free.
-- Figure 4, individual evidence timelines (specification §13D) -- needs the per-NPI cross-source
-  date-aware lookup tool described in §7c above.
+- Of the 10-scenario sensitivity suite (specification §12), scenarios 1-5 (temporal windows,
+  NPPES/DAC-PECOS/Open-Payments/T-MSIS/facility-affiliation exclusion) and scenario 10 (movers vs.
+  stable-state controls) are done -- §7a, §7b, §7d above. Remaining: scenario 6 (separate
+  practice-state from enrollment-state claims specifically, rather than the combined `dac_pecos_
+  combined` family), scenario 7 (restrict to higher-quality dated observations), scenario 9
+  (independent-family corroboration vs. raw-source agreement -- partially moot in this pipeline's
+  architecture, since DAC and PECOS are already merged upstream at claims-construction time
+  specifically because they are not independent; re-splitting them just to demonstrate the problem
+  the merge already prevents would be circular, not a genuine new finding).
 - Re-extracting NPPES's `Last Update Date` (hook: `build_midwife_panel.R`'s column-pick list) and
   Open Payments' `Date_of_Payment`/`Payment_Publication_Date` (hook:
   `extract_open_payments_address_history.R`'s SQL) to upgrade those two sources' `date_precision`
@@ -346,6 +388,13 @@ Named explicitly so nothing from the originating specification is silently dropp
 RETICULATE_PYTHON=~/.venvs/mysteryroster-crowdkit/bin/python Rscript build_truth_fusion_predictions.R
 RETICULATE_PYTHON=~/.venvs/mysteryroster-crowdkit/bin/python Rscript build_leave_one_source_out_sensitivity.R
 Rscript classify_migration_moves_full_panel.R
+Rscript audit_migration_source_sensitivity.R
+Rscript audit_migration_temporal_sensitivity.R
+Rscript audit_migration_stable_vs_mover_corroboration.R
+Rscript make_migration_classification_national_trends_figure.R
+Rscript make_migration_classification_composition_figure.R
+Rscript make_migration_source_sensitivity_figure.R
+Rscript make_migration_evidence_timeline_gallery.R   # writes to qa/ only -- see S7c
 Rscript tests/test_migration_move_classification.R
 ```
 

@@ -20,6 +20,35 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-09 — Figure 4, and movers are ~44x harder to independently confirm than staying put
+
+### Added
+
+- **Figure 4 (individual evidence timelines)**, completing the originating specification's 4
+  diagnostic figures. `make_migration_evidence_timeline_gallery.R` picks one real example NPI per
+  target classification and plots every source's directly-observed claim near that NPI's
+  transition. Necessarily person-level (real NPIs, real per-source state claims), so it follows
+  `build_linkage_case_gallery.R`'s existing precedent exactly: writes only to `qa/` (gitignored,
+  `stop()`-guarded against writing elsewhere), with a `--redact` flag for a shareable-within-team
+  copy that still stays in `qa/`, never promoted to `docs/figures/` or the README. Also fixed a
+  real legibility issue found while building it: T-MSIS's documented multi-affiliation pattern (the
+  same mechanism behind the PECOS dedup-determinism bug found and fixed earlier this investigation)
+  means a source can carry >1 distinct claimed value for the same (family, year) -- collapsed into
+  one explicitly-"ambiguous" point rather than letting them silently overlap.
+- **`audit_migration_stable_vs_mover_corroboration.R`** (specification sensitivity scenario #10,
+  apparent movers vs. stable-state controls): is the classifier's 0.2% independent-confirmation
+  rate for apparent movers unusually low because migration is hard to verify, or would the same
+  evidence bar rarely clear for any pair? Checked against all 156,684 stable pairs, 2013-2026 (the
+  full population, not a sample). **13.33% of stable pairs (20,880) meet the exact same
+  >=2-independent-family evidence bar `CONF-2FAM` requires for movers -- roughly 44x the 0.3% (14
+  of 4,592) rate for apparent movers.** Strong evidence the low mover-confirmation rate reflects
+  something real and specific to verifying migration, not generic source sparsity (which would hit
+  stable pairs just as hard, and clearly doesn't to anywhere near the same degree). One caveat
+  flagged, not ignored: the bar-clearing rate itself jumps from ~5-8% (2013-2020) to ~24-25%
+  (2021-2022 through 2024-2025) purely from PECOS's monthly-coverage density increasing -- a
+  data-density artifact affecting movers and stable pairs alike, not a substantive finding about
+  those specific years.
+
 ## [Unreleased] — 2026-11-09 — Part D gets a state for every year; fourteen-source comparison; what each series actually is
 
 ### Added

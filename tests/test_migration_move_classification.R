@@ -304,5 +304,22 @@ chk(length(v_dacwin_strict$support) == 0 && identical(v_dacwin_strict$rule_id, "
 chk(length(v_dacwin_loose$support) == 1 && "dac_pecos_combined" %in% v_dacwin_loose$windowed_families_used,
     "window=2: the same family now backfills from 2018 (dist 1) and 2022 (dist 1) and supports the move, correctly flagged as windowed, not exact")
 
+cat("\n-- check_stability_support() (movers vs. stable-pair controls, scenario #10) --\n")
+claims_stable_agree <- claims_df(list("50", "dac_pecos_combined", 2019, "CO"), list("50", "dac_pecos_combined", 2020, "CO"))
+fidx_stable_agree <- setNames(lapply(FAMILIES, function(f) build_family_index(claims_stable_agree, f)), FAMILIES)
+v_stable_agree <- check_stability_support(fidx_stable_agree, "50", 2019L, 2020L, "CO")
+chk(v_stable_agree$n_agree == 1 && v_stable_agree$n_disagree == 0,
+    "a family observing the SAME state at both years of a stable pair -> agrees")
+
+claims_stable_disagree <- claims_df(list("51", "tmsis_medicaid", 2019, "CO"), list("51", "tmsis_medicaid", 2020, "NM"))
+fidx_stable_disagree <- setNames(lapply(FAMILIES, function(f) build_family_index(claims_stable_disagree, f)), FAMILIES)
+v_stable_disagree <- check_stability_support(fidx_stable_disagree, "51", 2019L, 2020L, "CO")
+chk(v_stable_disagree$n_agree == 0 && v_stable_disagree$n_disagree == 1,
+    "a family observing a DIFFERENT state at either year of a 'stable' pair -> disagrees (the family detected a change NPPES's stable call didn't)")
+
+v_stable_none <- check_stability_support(list(), "52", 2019L, 2020L, "CO")
+chk(v_stable_none$n_agree == 0 && v_stable_none$n_disagree == 0,
+    "no evidence from any family -> neither agrees nor disagrees, not silently counted as support")
+
 cat(sprintf("\n%s\n", if (fails == 0L) "ALL PASS" else sprintf("%d FAILED", fails)))
 if (fails > 0L) quit(status = 1L, save = "no")

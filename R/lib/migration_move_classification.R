@@ -237,3 +237,35 @@ classify_apparent_move <- function(family_idx, loo_idx, npi_val, year_from, year
        support = support, contradict = contradict, ambiguous = ambiguous,
        windowed_families_used = windowed_used)
 }
+
+#' Check independent-family agreement for a STABLE pair (state_from == state_to)
+#'
+#' The mirror image of classify_apparent_move(), built for specification
+#' scenario #10 (apparent movers vs. stable-state controls, docs/
+#' TECHNICAL_APPENDIX_MIGRATION_MOVE_CLASSIFICATION.md S7d): is the 0.2%
+#' independent-confirmation rate for apparent MOVERS unusually low, or does
+#' the same >=2-independent-family evidence bar also rarely clear for
+#' genuinely stable pairs -- i.e. is this about migration being hard to
+#' verify, or just about general source sparsity hitting every pair alike?
+#'
+#' A family **agrees** with stability if it directly observes the SAME
+#' state at both year_from and year_to. A family **disagrees** if it
+#' directly observes a DIFFERENT state at either year (the family itself
+#' detected something the fused prediction's stability call didn't) --
+#' same direct-observation-only, no-inference discipline as the mover side;
+#' never arbitrarily resolved.
+#'
+#' @return `list(n_agree, n_disagree, agreeing, disagreeing, ambiguous)`.
+check_stability_support <- function(family_idx, npi_val, year_from, year_to, state, families = FAMILIES) {
+  agree <- character(0); disagree <- character(0); ambiguous <- character(0)
+  for (fam in families) {
+    a <- lookup_family(family_idx, fam, npi_val, year_from)
+    b <- lookup_family(family_idx, fam, npi_val, year_to)
+    if (a$status == "ambiguous" || b$status == "ambiguous") { ambiguous <- c(ambiguous, fam); next }
+    if (a$status == "unavailable" || b$status == "unavailable") next
+    if (identical(a$state, state) && identical(b$state, state)) agree <- c(agree, fam)
+    else disagree <- c(disagree, fam)
+  }
+  list(n_agree = length(agree), n_disagree = length(disagree),
+       agreeing = agree, disagreeing = disagree, ambiguous = ambiguous)
+}
