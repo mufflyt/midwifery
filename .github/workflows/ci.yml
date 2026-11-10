@@ -496,6 +496,18 @@ jobs:
       - name: Panel builder hardening (NPPES schema drift, lock safety)
         run: Rscript tests/test_build_midwife_panel.R
 
+      # The temporal analyses are only readable as measurements if each year's
+      # value was observed in that year. This pins the properties
+      # docs/source-series-reconstruction.md asserts: the modal rule is
+      # deterministic with alphabetical ties, duplicates collapse while
+      # multiplicity stays visible, a foreign state code is dropped rather than
+      # mapped, a missing year stays missing instead of being carried forward,
+      # and no later observation can reach back and change an earlier year.
+      # pull_states() is lifted out of its script and run as shipped, so the
+      # test cannot drift from the function it is testing.
+      - name: Source-series reconstruction contract
+        run: Rscript tests/test_source_series_reconstruction.R
+
       # Semantic invariants ported from ~/isochrones/tests/testthat/, extended
       # with a real NPI Luhn check -- upstream validated only width and digits,
       # which accepts 1234567890. The arithmetic tests are hermetic; the ones

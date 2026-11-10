@@ -1,0 +1,13 @@
+source,tier,n_rows,n_npis,year_min,year_max
+nppes,longitudinal,216823,16885,2007,2026
+pecos_revalidation,longitudinal,56798,11633,2021,2026
+medicare_part_b,longitudinal,16463,3812,2013,2024
+medicare_part_d,longitudinal,39235,8147,2013,2024
+open_payments,longitudinal,3996,3996,2024,2024
+dac_physician_compare,snapshot,4953,4953,,
+facility_affiliation_ccn,snapshot,1663,1663,,
+healthgrades,snapshot,7471,7471,,
+doximity,snapshot,4647,4647,,
+state_boards_of_nursing,snapshot,648,648,,
+cms_ndh_fhir,snapshot,15127,15127,,
+medicaid_enrollment,snapshot,13622,13622,,

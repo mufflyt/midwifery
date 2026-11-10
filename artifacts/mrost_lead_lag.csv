@@ -1,0 +1,4 @@
+attribute,n_paired_transitions,n_concordant_at_t,a_breaks_concordance_first,b_breaks_concordance_first,both_move_together_at_t1,n_discordant_at_t,b_adopts_a_at_t1_n,b_adopts_a_at_t1_pct,a_reverts_to_b_at_t1_n,a_reverts_to_b_at_t1_pct,persistent_discordant_at_t1_pct,base_year,disc_base_n,b_adopts_a_multi_n,b_adopts_a_multi_pct,a_reverts_b_multi_n,a_reverts_b_multi_pct,cross_section_disc_n,cross_section_in_prior_b_n,cross_section_in_prior_b_pct,source_b
+state,43746,38482,332,569,220,5264,265,5,552,10.5,79.4,2021,939,141,15,248,26.5,,,,pecos_revalidation
+state,11046,10806,4,164,0,240,4,1.7,146,60.8,34.6,2013,21,1,4.8,21,100,,,,medicare_part_b
+state,27153,26376,6,472,0,777,7,0.9,468,60.2,35.1,2013,76,6,7.9,74,97.4,,,,medicare_part_d
