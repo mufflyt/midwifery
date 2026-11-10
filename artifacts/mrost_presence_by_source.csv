@@ -1,0 +1,15 @@
+source,n_npis,pct_of_cohort,tier
+nppes,16885,99.9,longitudinal
+cms_ndh_fhir,15127,89.5,snapshot
+medicaid_enrollment,13622,80.6,snapshot
+pecos_revalidation,11633,68.8,longitudinal
+medicare_part_d,8147,48.2,longitudinal
+healthgrades,7471,44.2,snapshot
+dac_physician_compare,4953,29.3,snapshot
+doximity,4647,27.5,snapshot
+open_payments,3996,23.6,longitudinal
+medicare_part_b,3812,22.6,longitudinal
+facility_affiliation_ccn,1663,9.8,snapshot
+medicaid_spending_prescriber,839,5,presence_only
+state_boards_of_nursing,648,3.8,snapshot
+medicaid_spending_biller,101,0.6,presence_only

@@ -1,0 +1,2 @@
+source,path,reason
+dac_physician_compare_history,artifacts/physician_compare_historical_midwives.csv,needs 5 local NBER CSVs under data/raw/cms_physician_compare/ that this clone lacks; DAC enters as its 2026 snapshot only

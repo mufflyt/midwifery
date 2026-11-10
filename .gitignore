@@ -291,6 +291,18 @@ artifacts/pecos_revalidation_cohort_state_by_year.csv
 # Same source, uncollapsed monthly panel (NPI-vintage-state), person-level.
 artifacts/pecos_revalidation_cohort_state_monthly.csv
 
+# Medicare Part B and Part D practice state by year, person-level
+# (NPI-year-state), the same class as the PECOS pair above. Added 2026-11-09
+# with extract_medicare_part_b_d_cohort_states.R. The provenance sidecars are
+# ignored alongside them: a sidecar names its artifact and its input hashes,
+# so committing one for a file the repo deliberately does not carry would
+# advertise a person-level artifact without carrying it. Every aggregate this
+# pipeline publishes -- the mrost_* tables -- IS committed.
+artifacts/cohort_midwives_part_b_state_by_year.csv
+artifacts/cohort_midwives_part_b_state_by_year.csv.provenance.json
+artifacts/cohort_midwives_part_d_state_by_year.csv
+artifacts/cohort_midwives_part_d_state_by_year.csv.provenance.json
+
 # PPEF (Public Provider Enrollment Files) Medicare enrollment year,
 # person-level (NPI, first enrollment year, enrollment count).
 artifacts/ppef_cohort_enrollment_year.csv

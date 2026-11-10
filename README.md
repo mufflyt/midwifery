@@ -901,7 +901,7 @@ flowchart LR
 
 | Layer | Producer | Coverage | Key |
 |---|---|---:|---|
-| Medicare Part B / Part D, 2013–2023 | `match_medicare_partb_partd.R` | 19.5% / 47.1% | NPI |
+| Medicare Part B / Part D, 2013–2024 | `match_medicare_partb_partd.R` | 19.5% / 47.1% | NPI |
 | Primary-care shortage area | `assign_hpsa_status.R` | 98.4% geocoded | point-in-polygon |
 | Hospital affiliation | `extract_dac_facility_affiliations.R` | 14.0% | CCN |
 | Newborn volume at those hospitals | `extract_hcris_affiliated_hospitals.R` | 75.8% of linked CCNs | CCN |
@@ -1679,7 +1679,7 @@ measured — see [Absence is not zero](#absence-is-not-zero-in-four-different-so
 | Source | Vintage used | Exact file | Supplies | Consumed by |
 |---|---|---|---|---|
 | **CMS Doctors & Clinicians (DAC)** | **June 2026** for Table 1/attribute use; **full annual history, 2013–2026**, for the state-source audit (2013–2016 from NBER's mirror, 2017–2025 from tables already sitting in an external DuckDB warehouse, 2026 the live pull) | `DAC_NationalDownloadableFile_2026-06.csv`; historical vintages via [`extract_physician_compare_historical_midwives.R`](extract_physician_compare_historical_midwives.R) | practice-address corroboration, group practice, medical/midwifery school (14.3% coverage), graduation year, CCN facility affiliations (2013–2022 only — CMS dropped the field from the file itself starting 2023, see [`extract_historical_facility_affiliation.R`](extract_historical_facility_affiliation.R)) | [`extract_dac_midwives.R`](extract_dac_midwives.R), [`extract_dac_cnm_education.R`](extract_dac_cnm_education.R), [`extract_dac_facility_affiliations.R`](extract_dac_facility_affiliations.R) |
-| **Medicare Physician & Other Practitioners (Part B)** and **Part D Prescribers** | **2013–2023**, one row per provider-year | `nber_my_duckdb.duckdb` (external volume). Part D 2022–2023 exist twice — the `_standardized` series is used and the raw duplicates ignored | Part B 19.5% / Part D 47.1% participation | [`match_medicare_partb_partd.R`](match_medicare_partb_partd.R) |
+| **Medicare Physician & Other Practitioners (Part B)** and **Part D Prescribers** | **2013–2024**, one row per provider-year, both with a practice state every year | `nber_my_duckdb.duckdb` (external volume) for Part B 2013–2023 and Part D 2022–2023; CMS by-provider CSVs on the external volume for Part D 2013–2021 + 2024 and Part B 2024, fetched by [`download_cms_by_provider_files.R`](download_cms_by_provider_files.R). **The warehouse holds Part D 2013–2021 only as the `_standardized` cut, which drops `Prscrbr_State_Abrvtn` entirely** — those eleven years were presence-only until 2026-11-09 | Part B 19.5% / Part D 47.1% participation; for the state series, Part B 3,812 NPIs / 16,463 NPI-years and Part D 8,147 / 39,235 | [`match_medicare_partb_partd.R`](match_medicare_partb_partd.R), [`extract_medicare_part_b_d_cohort_states.R`](extract_medicare_part_b_d_cohort_states.R) |
 | **HCRIS hospital cost reports** | **FY2023** (`HCRIS_FY`, overridable) | `/Volumes/MufflySamsung*/HCRIS/hosp10/fy2023/` | newborn/nursery volume at affiliated hospitals — **reported by only 37.7% of hospitals** | [`extract_hcris_affiliated_hospitals.R`](extract_hcris_affiliated_hospitals.R) |
 | **HRSA HPSA — primary care** | the file is named `..._CUR_...` (**current at download**); **the download date is not recorded anywhere in the repo** — a reproducibility gap | `HPSA_CMPPC_SHP_DET_CUR_VX.shp` | shortage-area status by point-in-polygon, 98.4% of geocoded | [`assign_hpsa_status.R`](assign_hpsa_status.R) |
 | **Open Payments — general payments** | **program year 2025** (direct CMS download, confirmed reachable 2026-11-04 after an earlier session wrongly reported CMS as blocked) for the most recent year; **2015–2025** for the state-source audit (2015–2020 is trace-only, 1–29 NPIs/year — CNMs were not Open-Payments-reportable until the SUPPORT Act expansion hit program year 2021) | `PGYR2025_P06302026_06032026/OP_DTL_GNRL_PGYR2025_P06302026_06032026.csv` | recent practice addresses and Type-2 organization candidates. **Never used for any payment-behaviour claim** | [`harvest_open_payments_profile.py`](harvest_open_payments_profile.py), [`link_open_payments_type2_bulk.R`](link_open_payments_type2_bulk.R), [`extract_open_payments_2025.R`](extract_open_payments_2025.R), [`extract_open_payments_address_history.R`](extract_open_payments_address_history.R) |
@@ -1761,6 +1761,29 @@ disagreeing sources would be wrong here, why PECOS looked like the outlier
 and wasn't, and what the multi-state-licensure result actually means — see
 [`docs/VIGNETTE_STATE_SOURCE_AUDIT_2026-11-04.md`](docs/VIGNETTE_STATE_SOURCE_AUDIT_2026-11-04.md).
 The full numbers are in [`docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md`](docs/TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md).
+
+**Superseded for the cross-source question on 2026-11-09**, though not for the
+pairwise-against-NPPES question it answers. A fourteen-source comparison with
+**no source treated as truth** now runs through the `mysteryroster` toolkit:
+[`docs/TECHNICAL_APPENDIX_SOURCE_COMPARISON_MYSTERYROSTER_2026-11-09.md`](docs/TECHNICAL_APPENDIX_SOURCE_COMPARISON_MYSTERYROSTER_2026-11-09.md).
+It adds Medicare Part B and Part D — **Part D carried a state for 2022–2023
+only until the CMS by-provider files for 2013–2021 were downloaded, because
+the warehouse holds those years as a cut that drops the state column** — plus
+the DOGE Medicaid *spending* file in both NPI roles. 16,887 of 16,898 midwives
+appear in at least one of the fourteen; 612 in exactly one.
+
+Read [`docs/source-series-reconstruction.md`](docs/source-series-reconstruction.md)
+before quoting any temporal number from either appendix. It records, per source,
+what was observed when, and separates reconstructed transitions from
+independently dated observations. Two consequences worth knowing up front:
+Part D's 28,357 transitions rest on **12** annual publications across 11
+intervals, not 28,357 independent measurements; and the **79.4% PECOS
+persistence figure rests on 5 transition intervals** and says nothing about
+2013–2020, where PECOS has no data at all. Neither series is
+pseudo-longitudinal — 27.1% of Part D midwives and 21.5% of Part B midwives
+have interior gaps, which carry-forward cannot produce — but the transition
+counts are not independent evidence, and the Wilson intervals computed over
+them are anticonservative.
 
 - **DAC holds in a 91.8–95.1% band against NPPES for thirteen straight
   years (2013–2025)**, then drops to 89.8% in 2026 — the newest year, not

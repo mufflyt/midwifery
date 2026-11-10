@@ -1,10 +1,10 @@
 {
   "artifact": "temporal_plausibility_summary.csv",
-  "written_utc": "2026-09-01 04:19:59 UTC",
+  "written_utc": "2026-09-01 06:39:48 UTC",
   "inputs": [
     {
-      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
-      "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
+      "path": "artifacts/amcb_npi_linkage_panel-midwifery-plus-nursing_years-2007-2025_rerun20260901.csv",
+      "sha256": "a957b0e4aa3dc8c648cf34930c3c30b037cb2d8aadbaf2f03bf35dc43f8a6d9d"
     },
     {
       "path": "midwife_panel.csv",

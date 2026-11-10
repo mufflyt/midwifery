@@ -1,0 +1,5 @@
+source,dated_source_artifacts,source_artifact_detail,distinct_years,year_min,year_max,distinct_npis,npi_years,adjacent_transitions,distinct_year_intervals,transitions_per_interval
+nppes,20,"NPPES dissemination files, one per year, 2007-11-12 to 2026-08-09",20,2007,2026,472327,4735546,4261806,19,224306
+pecos_revalidation,41,"monthly CMS Revalidation Reassignment releases, 2021-12 to 2026-11, collapsed to year-end",6,2021,2026,11633,56798,45044,5,9009
+medicare_part_b,12,"annual CMS Physician & Other Practitioners by-Provider publications, 2013-2024",12,2013,2024,3812,16463,11682,11,1062
+medicare_part_d,12,"annual CMS Part D Prescribers by-Provider publications, 2013-2024",12,2013,2024,8147,39235,28357,11,2578

@@ -1,0 +1,5 @@
+source,n_npis,n_with_interior_gap,pct_with_interior_gap
+nppes,472327,1408,0.3
+pecos_revalidation,11633,121,1
+medicare_part_b,3812,818,21.5
+medicare_part_d,8147,2209,27.1
