@@ -655,3 +655,54 @@ add a registry state that says what is actually true (*pipeline-derived, absent
 from version control*), so the skip stays counted and honestly labelled. The
 second is a fourth state in a three-state contract, which is a real cost;
 every state that permits a skip is a state a law can hide in.
+
+---
+
+## D13 — PECOS move rate was ~10x too high from a non-deterministic tie-break, not real churn
+
+- **status:** closed
+- **owner:** tyler
+- **raised:** 2026-11-06
+- **closed:** 2026-11-06
+- **resolution:** `extract_pecos_revalidation_state_history.R` now resolves its warehouse path via `samsung_volume_path("cms_revalidation.duckdb")` (matching `build_reassignment_panel.R`'s existing convention) instead of a hardcoded `/DuckDB/` subfolder, and both dedup blocks sort (`arrange(pecos_state)`) before `slice(1)`, making the pick deterministic by content rather than by incidental SQL row order
+
+Two compounding bugs, found while building the migration truth-fusion model's
+sub-annual PECOS checks (`docs/TECHNICAL_APPENDIX_TRUTH_FUSION_MIGRATION.md`
+§7). Neither was visible in isolation — each produced a plausible-looking
+number.
+
+**The warehouse path was stale.** `extract_pecos_revalidation_state_history.R`
+pointed at `/Volumes/MufflySamsung/DuckDB/cms_revalidation.duckdb`, a one-time
+copy that had silently fallen behind the real warehouse
+`archive_revalidation_reassignment.R` maintains at the volume root
+(`samsung_volume_path()` resolves there, same as `build_reassignment_panel.R`
+already did) — 2 months and 1 vintage out of date, with no error, since
+`dbConnect()` happily opens a stale-but-valid file.
+
+**Re-pointing at the live warehouse surfaced the second, worse bug.** ~10% of
+`(npi, vintage)` rows carry multiple simultaneous states (one person enrolled
+under several group practices in different states the same month — a
+documented multi-affiliation data shape, not a move). The existing dedup,
+`group_by(npi, vintage) %>% slice(1)`, was described as an
+"arbitrary-but-deterministic pick," but `slice(1)` returns whichever row SQL
+happens to return first, which depends on physical row order — not
+deterministic across two warehouse copies holding byte-for-byte identical
+logical data. **Measured directly**: one NPI stably enrolled under ME/NH/VT
+across all 41 vintages got a *different* state picked depending on which
+warehouse copy was queried, producing a spurious "move" every time the
+ordering flipped, though the person's real affiliations never changed. That
+noise, not genuine churn, was the dominant driver of PECOS's reported move
+rate for two already-published sub-annual windows: **3.5%–4.9% dropped to
+0.05%–0.66%** (2020-21 window) once both bugs were fixed — close to NPPES's
+own quiet 0.13%–1.06% baseline for the same era, which is what made the old
+figures implausible in hindsight.
+
+**Why this is worth keeping, not just fixing quietly.** The original fix for
+the cruder version of this bug (15–17% down to 3.5%–4.9%, same investigation,
+same day) was itself declared "fixed" and shipped to
+`TECHNICAL_APPENDIX_TRUTH_FUSION_MIGRATION.md` before this second layer was
+caught — only re-pointing to the correct warehouse, for an unrelated reason,
+exposed that the "fix" was incomplete. A dedup that is deterministic *within
+one warehouse instance* is not the same property as one that is deterministic
+*by content*, and the difference is invisible until something forces a second
+instance to be compared against the first.
