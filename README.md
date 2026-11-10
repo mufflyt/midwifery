@@ -382,6 +382,22 @@ behind that year's DAC agreement-rate dip. Full appendix, rule definitions,
 and 20 adversarial test cases:
 [docs/TECHNICAL_APPENDIX_MIGRATION_MOVE_CLASSIFICATION.md](docs/TECHNICAL_APPENDIX_MIGRATION_MOVE_CLASSIFICATION.md).
 
+Is 0.2% unusually low because migration is hard to verify, or would the same
+evidence bar rarely clear for *any* pair given how sparse the 3 usable source
+families are in general? Checked directly against all 156,684 genuinely
+stable pairs in the panel (not a sample): **13.33% of them meet the exact
+same ≥2-independent-family bar — roughly 44x the 0.3% rate for apparent
+movers.** That gap is itself the strongest evidence in this investigation
+that low mover-confirmation reflects something real about verifying
+migration, not generic sparsity, which would hit stable pairs just as hard.
+One individual-level figure exists but is intentionally not shown here — a
+per-NPI timeline of real cross-source evidence for one example each of a
+confirmed move, a possible move, a likely artifact, and an indeterminate
+transition. It is necessarily person-level (real NPIs, real state claims),
+so [`make_migration_evidence_timeline_gallery.R`](make_migration_evidence_timeline_gallery.R)
+writes only to gitignored `qa/`, `--redact` for a shareable copy — the same
+convention `build_linkage_case_gallery.R` already uses above.
+
 ### Three more you build yourself
 
 These read the frozen crosswalk, which is person-level and gitignored, so they
