@@ -49,6 +49,128 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   data-density artifact affecting movers and stable pairs alike, not a substantive finding about
   those specific years.
 
+## [Unreleased] — 2026-11-09 — Part D gets a state for every year; fourteen-source comparison; what each series actually is
+
+### Added
+
+- **Medicare Part D practice state for 2013–2021 and 2024**, closing an
+  eleven-year hole. The warehouse holds those years only as the
+  `*_standardized` cut, which drops `Prscrbr_State_Abrvtn` entirely, so Part D
+  entered every prior analysis with a state for **2022–2023 only** and the
+  other eleven years as presence. CMS publishes "Part D Prescribers - by
+  Provider" for 2013–2024 and every one of those files carries the state;
+  6.1 GB fetched. **Part D goes from 7,126 NPI-years over 4,349 NPIs to 39,235
+  over 8,147**, 2,747 (2013) climbing to 3,843 (2024), 100% carrying a state.
+  The standardized cut is the same universe, not a subset — 2021 standardized
+  holds 3,443 cohort NPIs and the 2021 by-provider file holds the same 3,443 —
+  so this added columns to rows the pipeline already had.
+- **Medicare Part B 2024** from the by-provider file (1,515 NPIs), replacing
+  `medicare_part_b_by_service_2024`, which is one row per HCPCS and needed a
+  modal reduction to answer what the by-provider file answers directly. Part B
+  is now 16,463 NPI-years over 3,812 NPIs, 2013–2024.
+- **`download_cms_by_provider_files.R`** — resolves download URLs from CMS's
+  DCAT catalog at `data.cms.gov/data.json` rather than hardcoding them. The
+  URLs embed a rotating UUID directory and a release-year code that differs
+  between vintages of the same data year (2013 currently ships as
+  `mup_dpr_ry21_...` under a 2026-08 directory, 2023 as `MUP_DPR_RY25_...`
+  under 2025-04), so a pinned list goes stale and 404s silently. Idempotent;
+  writes `artifacts/cms_by_provider_download_manifest.csv` with a sha256 per
+  file, so a rebuild is traceable to bytes rather than to a file date.
+- **`docs/source-series-reconstruction.md`** — for every source, what was
+  observed when. Four evidence classes (directly observed / retrospectively
+  reported / imputed / contemporary snapshot), per-source inventory with paths
+  and vintages, reconstruction algorithms with worked examples, a source-by-year
+  coverage table, the provenance-sidecar scheme, and seven flagged assumptions.
+- **`audit_source_series_independence.R`** → `artifacts/source_series_independence.csv`
+  and `artifacts/source_series_interior_gaps.csv`.
+- **`docs/TECHNICAL_APPENDIX_SOURCE_COMPARISON_MYSTERYROSTER_2026-11-09.md`** —
+  fourteen sources, no source treated as truth, via `mysteryroster` 0.3.0.
+  16,887 of 16,898 midwives appear in at least one source; 612 in exactly one;
+  649 overlap zones. Eight dimensions, thirteen `artifacts/mrost_*.csv` tables.
+- **`tests/test_source_series_reconstruction.R`** — 21 checks, wired into the
+  `r-unit-tests` CI job. It lifts `pull_states()` out of its script by parsing
+  the file and evaluating that one assignment, so the test cannot drift from
+  the shipped function. Covers determinism, alphabetical ties under both row
+  orders, duplicate collapse with multiplicity preserved, foreign state codes
+  dropped, missing years staying missing, and that a 2013 value is unchanged by
+  a 2014 observation existing.
+
+### Changed
+
+- **`medicare_part_d_presence` removed as a separate source.** It carried the
+  eleven Part D years with no state; now that they have one it would be the
+  same npi/year pairs under a second name, and the overlap, consensus and
+  fusion steps would count Part D twice.
+- **Part D agreement with NPPES is 96.6% on 37,832 NPI-years**, against 96.2%
+  on ~7,000 before. The figure barely moved under a five-fold increase in
+  evidence, which is the useful result: the earlier number was not an artifact
+  of two recently-refreshed years.
+- **`artifacts/temporal_separation_by_pool.csv` recorded as a reviewed
+  exception** in `tests/ci_leak_reviewed_exceptions.txt` rather than untracked.
+  `ci_leak_guard` L1 flags it correctly — `amcb_id` joins to a tracked file
+  carrying names, certification numbers and NPIs — but the underlying data is
+  public: AMCB's own verification directory, NPPES, and state BON lookups are
+  all public per-certificant. Re-identifiable is not the same as private.
+
+### Verified, not assumed
+
+- **No series in this project is pseudo-longitudinal.** Every year's value comes
+  from a file published in or for that year: NPPES is 20 dissemination files,
+  each year mapping to exactly one `snapshot_date` (2007-11-12 → 2026-08-09,
+  zero years carrying two); PECOS is 41 dated monthly CMS releases collapsed to
+  6 year-end values; Part B and Part D are 12 annual publications each. The data
+  shows it independently — **27.1% of Part D midwives and 21.5% of Part B
+  midwives have interior gaps**, years inside their own observed span with no
+  row, which carry-forward cannot produce.
+- **Transition counts are not independent evidence.** Part D's 28,357
+  transitions are 11 intervals × ≈2,578 recurring midwives; the independent
+  time points number **12**. The **79.4% PECOS–NPPES persistence rests on 5
+  transition intervals** and says nothing about 2013–2020, where PECOS has no
+  data at all.
+
+### Known limitations, flagged and NOT corrected
+
+The algorithms were not changed in order to describe them. All seven are in
+`docs/source-series-reconstruction.md` §8.
+
+- **NPPES snapshots are 6.0 to 19.1 months apart** (median 12.0; the 2024→2025
+  gap is 19.1). Churn and lead/lag treat every adjacent-year pair as one
+  period, so a "year-over-year" rate assumes a duration that does not exist,
+  and every source compared against NPPES inherits the irregularity.
+- **Wilson intervals over transition counts are anticonservative** — repeated
+  measurements of the same midwife are treated as independent; no clustering.
+- **`medicaid_enrollment` is still reduced to a single whole-file modal state**
+  though its source carries `ENRL_START_DT`/`ENRL_END_DT`. Date-range expansion
+  yields 119,527 cohort NPI-years, 2013–2024, and the modal state differs from
+  the year-specific state **14.4%** of the time — 30.5% in 2013, 5.7% in 2024,
+  with 34.9% of NPI-years genuinely multi-state. Its 0.166 odd-one-out rate and
+  77.5% fusion agreement are substantially artifacts of this reduction, not
+  evidence that the source is unreliable.
+- **Part B and Part D are one claims lineage counted as two votes** — 100.0%
+  agreement, now on **13,745 NPI-years against 2,423 before**, so the Part D
+  rebuild grew this inflation 5.7×. `attribute_claims_collapse_lineage()` is
+  not applied.
+- **PECOS's 2026 value is a November vintage** compared against December values
+  for 2021–2025; **Open Payments sits in the longitudinal tier with one year**
+  and yields zero transitions; **year is taken from the filename** for Open
+  Payments and the by-provider files, with no checksum tying contents to the
+  claimed year.
+
+### Unavailable, after direct testing
+
+- `data.cms.gov/provider-data/*` returns **403** (Akamai edge), both the
+  Physician_Compare archive and the metastore API. That is the only route to
+  monthly Facility Affiliation, so the CCN break in the state-source figure
+  cannot be closed. `data.cms.gov/data.json` and `/sites/default/files/*`
+  answer normally — that is how the 8.1 GB above arrived.
+- **PPEF 2020–2022 does not exist.** NBER's index runs `2016/ 2017/ 2018/
+  2019/` then jumps to `2023_2024Q2.zip`; CMS keeps only 2026 snapshots.
+  16 NBER PPEF vintages were fetched (10 monthly 2016-08 → 2019-04, plus 6
+  quarterly 2023-Q1 → 2024-Q2); 2016-08 alone holds 6,388 cohort midwives with
+  a state, five years before the PECOS revalidation series begins.
+- `openpaymentsdata.cms.gov`'s metastore now returns 403, though it answered on
+  2026-11-03.
+
 ## [Unreleased] — 2026-11-09 — Diagnostic figures for the full-panel migration classifier
 
 ### Added

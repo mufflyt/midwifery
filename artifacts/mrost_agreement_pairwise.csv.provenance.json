@@ -1,0 +1,33 @@
+{
+  "artifact": "mrost_agreement_pairwise.csv",
+  "written_utc": "2026-11-10 03:32:44 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
+    }
+  ],
+  "code_sha256": "5418e4fadb5ad8aae80527a66df823a85cc34feb90255ba9616bc848e0214c49",
+  "code": [
+    {
+      "path": "/private/tmp/claude-501/-Users-tylermuffly-midwifery/21970d20-42b4-4407-ab2d-fac972433e7d/scratchpad/cmp_frozen.R",
+      "sha256": "656e0ba1d65ca7d31923444fb8a4204ed107eb3670d5ba085e5e3928709dc393"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/clean_state.R",
+      "sha256": "188cee53abd5b2e7afb2c6bffbc7ea27a16029189fb97ca8be1865d5ab0c2c23"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ]
+}

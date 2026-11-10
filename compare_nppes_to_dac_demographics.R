@@ -90,6 +90,7 @@
 # =============================================================================
 suppressPackageStartupMessages({
   library(DBI); library(duckdb); library(dplyr); library(readr); library(stringr)
+  library(digest)   # cache key: the NPI set's identity, not its size
 })
 source(file.path("R", "lib", "common_helpers.R"))
 source(file.path("R", "lib", "medicare_duckdb.R"))
@@ -220,12 +221,20 @@ cat(sprintf("DAC   date-like columns: %s\n",
 
 # --- NPPES side: one row per NPI --------------------------------------------
 # Entity Type Code = 1 is an individual; organisations have no sex or credential.
-# THE COHORT PULL IS CACHED, keyed by NPPES vintage and cohort size. Scanning
-# 11.6 GB takes ~11 minutes, and a typo in a mutate() downstream should not cost
-# that twice. The key includes the vintage so a different NPPES file can never
-# be served from another one's cache.
-cache <- file.path(tmp_dir, sprintf("nppes_cohort_%s_n%d.parquet",
-                                    format(nppes_v, "%Y%m%d"), length(npis)))
+# THE COHORT PULL IS CACHED, keyed by NPPES vintage and by a digest of the NPI
+# SET ITSELF. Scanning 11.6 GB takes ~11 minutes and a typo in a mutate()
+# downstream should not cost that twice.
+#
+# THE KEY WAS length(npis), AND THAT WAS A BUG. A freeze that swaps one NPI for
+# another -- which is exactly what the 129 reassignments in
+# audit_linkage_arms_3way.R are -- leaves the COUNT unchanged, so the new run
+# would be served the old cohort's records: it would compare a member the
+# cohort no longer has and silently omit the one it gained. The count is not an
+# identity. The sorted, deduplicated NPI set hashed to 16 hex characters is,
+# and it costs one digest of a 17k-element vector.
+cache <- file.path(tmp_dir, sprintf("nppes_cohort_%s_n%d_%s.parquet",
+                                    format(nppes_v, "%Y%m%d"), length(npis),
+                                    substr(digest(sort(unique(npis)), algo = "sha256"), 1, 16)))
 if (file.exists(cache)) {
   nppes <- dbGetQuery(con, sprintf("SELECT * FROM read_parquet(%s)",
                                    dbQuoteString(con, cache)))

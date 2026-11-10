@@ -1,0 +1,13 @@
+source,n_eligible,n_odd_one_out,odd_rate
+medicaid_enrollment,13164,2185,0.166
+cms_ndh_fhir,14300,415,0.029
+pecos_revalidation,9738,212,0.022
+dac_physician_compare,4953,59,0.012
+open_payments,3990,43,0.011
+state_boards_of_nursing,641,7,0.011
+doximity,4585,41,0.009
+nppes,14694,129,0.009
+healthgrades,7405,62,0.008
+facility_affiliation_ccn,1663,3,0.002
+medicare_part_d,3833,4,0.001
+medicare_part_b,1514,0,0

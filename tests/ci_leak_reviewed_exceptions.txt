@@ -357,3 +357,24 @@ artifacts/ca_mi_cohort_for_mco_check.csv
 # is independently public. Produced by
 # harvest_live_mco_network_membership_ca_mi.py.
 artifacts/mco_network_membership_ca_mi.csv
+
+# Temporal-separation results, one row per AMCB certificant (2,952 rows):
+# amcb_id plus per-person candidate, survivor and censoring counts. It carries
+# no name and no NPI -- surviving_npi is NA on every row -- but amcb_id joins
+# to artifacts/tracked_roster_active_primary_linked.csv, tracked above, which
+# does carry last_name, first_name, certification_number and npi, so the guard
+# flags it as re-identifiable by linkage and is right to.
+#
+# Reviewed and accepted by Tyler Muffly, 2026-11-09, on the same ground as the
+# State Board of Nursing entry above: the underlying data is public. AMCB
+# certification status is published per-certificant through AMCB's own
+# verification directory, NPPES is a public registry, and state BON license
+# lookups are public record. Nothing here is private, and nothing is exposed
+# by this file that the public sources do not already publish per person.
+#
+# It was committed in d510f4a, then untracked in error by Claude on the same
+# day on a mechanical reading of L1, and restored here once the above was
+# stated. The file supports the temporal-plausibility findings and belongs
+# with them.
+artifacts/temporal_separation_by_pool.csv
+artifacts/temporal_separation_by_pool.csv.provenance.json

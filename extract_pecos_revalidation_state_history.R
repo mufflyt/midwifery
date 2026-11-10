@@ -57,6 +57,26 @@ cat(sprintf("Raw matched rows: %s across %s NPIs, %s vintages\n",
             format(nrow(rows), big.mark = ","), length(unique(rows$npi)),
             length(unique(rows$vintage))))
 
+# YEAR-END COLLAPSE: 41 monthly observations -> one value per (npi, year).
+# Documented rather than extracted into a function, because the algorithm is
+# not being changed -- see docs/source-series-reconstruction.md S3.2.
+#
+#   year        taken from the vintage string's own YYYY prefix, never from a
+#               data column and never assigned by position, so a year's value
+#               can only come from a release published inside that year. No
+#               future vintage can reach backwards.
+#   which row   the LAST vintage within the calendar year (max(vintage); the
+#               strings are "YYYY-MM" and sort lexically). For 2021 only
+#               2021-12 exists; for 2026 the last available release is
+#               2026-11, so the 2026 point is NOT month-comparable with the
+#               December points of 2021-2025.
+#   ties        ~10% of (npi, vintage) pairs carry several simultaneous
+#               group-practice states in the same month (e.g. ME/VT/NH).
+#               arrange(pecos_state) then slice(1) picks the alphabetically
+#               first, deterministically BY CONTENT -- see the note on the
+#               monthly panel below for the bug that forced this.
+#   missing     a year with no vintage produces no row. Nothing is carried
+#               forward, interpolated or back-filled.
 rows$year <- as.integer(substr(rows$vintage, 1, 4))
 by_year <- rows %>%
   group_by(npi, year) %>%

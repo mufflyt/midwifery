@@ -1,6 +1,6 @@
 {
   "artifact": "nppes_vs_dac_vintage.csv",
-  "written_utc": "2026-11-09 19:39:10 UTC",
+  "written_utc": "2026-11-09 20:15:28 UTC",
   "inputs": [
     {
       "path": "/Volumes/MufflySamsung/nppes_historical_downloads/extracted_2026/npidata_pfile_20050523-20260809.csv",
@@ -15,11 +15,11 @@
       "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
     }
   ],
-  "code_sha256": "0671a4a33fdb833410bc8e63f9488b894c8d318367051fb8375abf55fea9ddfd",
+  "code_sha256": "8fa07bbfc4b0e249ad27c8e9d5f68c76c6ec30e8aa86fc343b3787d3d78f3a25",
   "code": [
     {
       "path": "compare_nppes_to_dac_demographics.R",
-      "sha256": "1f9d37e2cf79d4488c2a761135c670460c59a656e75d1bb5308b126652f357b2"
+      "sha256": "5c992b7a397e8f7ba060c5c26a36a6f60d52ad41341ab5cc1415f631faf16107"
     },
     {
       "path": "credential_compatibility.R",
@@ -39,7 +39,7 @@
     },
     {
       "path": "R/lib/provenance.R",
-      "sha256": "1e1ee8e4dba97bd4f5f514dc25ae37d1a0cb89eb1496b44c1c721c05d7750234"
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
     }
   ]
 }

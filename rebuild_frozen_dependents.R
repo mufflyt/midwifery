@@ -165,7 +165,29 @@ REBUILD_ORDER <- list(
                    # and feed nothing downstream, so order within the layer is
                    # free.
                    "compare_nppes_to_dac_demographics.R",
-                   "audit_linkage_arms_3way.R")),
+                   "audit_linkage_arms_3way.R",
+                   # Added 2026-11-09 by T5 again, in the pull request that
+                   # added Medicare Part B and Part D to the source comparison
+                   # -- the seventh catch.
+                   #
+                   # extract_medicare_part_b_d_cohort_states.R takes the
+                   # cohort's NPIs straight from the freeze and asks the
+                   # Medicare claims warehouse what state each billed or
+                   # prescribed from. Left holding a previous freeze it would
+                   # extract Part B and Part D for NPIs the study no longer
+                   # has, and every downstream agreement rate would be
+                   # computed on that stale set.
+                   #
+                   # compare_all_sources_mysteryroster.R reads the freeze
+                   # twice over: once for the cohort it compares, and once
+                   # through the per-source extracts it loads. It reports
+                   # presence, agreement, churn and lead/lag for fifteen
+                   # sources, so a rebuild that skipped it would leave every
+                   # one of those numbers describing the old cohort. Both are
+                   # Layer 1: they describe the crosswalk and feed nothing
+                   # downstream, so order within the layer is free.
+                   "extract_medicare_part_b_d_cohort_states.R",
+                   "compare_all_sources_mysteryroster.R")),
   list(layer = "2-cohort-structure", why = "cohort flow/composition/progression read FROZEN directly",
        scripts = c("R/05-stage-progression.R", "R/06-cohort-flow.R",
                    "R/07-cohort-composition.R")),
