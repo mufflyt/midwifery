@@ -323,9 +323,16 @@ A *transition* is one midwife's adjacent-year pair. It is **not** an
 independent observation. The table below gives both numbers so no statistic in
 this project can be read as having more evidence behind it than it does.
 
+It is produced by [`audit_source_series_independence.R`](../audit_source_series_independence.R)
+into `artifacts/source_series_independence.csv` and
+`artifacts/source_series_interior_gaps.csv`, so it is rebuilt rather than
+retyped. The NPPES row counts every observation in the panel, including rows
+whose state is blank — this audit counts how many times a midwife was
+*observed*, and a missing value is still an observation.
+
 | Source | Dated source artifacts | Distinct years | Year intervals | NPI-years | Adjacent transitions | Transitions per interval |
 |---|---|---|---|---|---|---|
-| `nppes` | 20 files | 20 (2007–2026) | 19 | 4,735,519 | 4,261,779 | 224,304 |
+| `nppes` | 20 files | 20 (2007–2026) | 19 | 4,735,546 | 4,261,806 | 224,306 |
 | `pecos_revalidation` | 41 monthly releases → 6 year-end values | 6 (2021–2026) | **5** | 56,798 | 45,044 | 9,009 |
 | `medicare_part_d` | 12 annual publications | 12 (2013–2024) | 11 | 39,235 | 28,357 | 2,578 |
 | `medicare_part_b` | 12 annual publications | 12 (2013–2024) | 11 | 16,463 | 11,682 | 1,062 |

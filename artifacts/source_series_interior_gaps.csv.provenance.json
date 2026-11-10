@@ -1,0 +1,37 @@
+{
+  "artifact": "source_series_interior_gaps.csv",
+  "written_utc": "2026-11-10 04:21:15 UTC",
+  "inputs": {
+    "nppes": {
+      "path": "midwife_panel.csv",
+      "sha256": "6b9696ce891949d07e37fb768ae48095838ba74a9600ffe84e599cf03835f4d3"
+    },
+    "pecos_revalidation": {
+      "path": "artifacts/pecos_revalidation_cohort_state_by_year.csv",
+      "sha256": "e35286ed521c8eb5e45d33b1d6aa38507711493aaf2b339b24660d950db21d99"
+    },
+    "medicare_part_b": {
+      "path": "artifacts/cohort_midwives_part_b_state_by_year.csv",
+      "sha256": "4798f820df826a6e482f328bdbc0787d15d0e147d8f212a13f162e17beed8c32"
+    },
+    "medicare_part_d": {
+      "path": "artifacts/cohort_midwives_part_d_state_by_year.csv",
+      "sha256": "df98b751e33e85413f42b51939366b5c72b091879a4bf5fbc8d10cbef0745870"
+    }
+  },
+  "code_sha256": "88107b5be513f940976acdc736e202c40697b8b552f120c3983192689fa4bd35",
+  "code": [
+    {
+      "path": "audit_source_series_independence.R",
+      "sha256": "2e5de39e4f6cc39fbeebdd37b0e4843cddcd1a2261238202be1c7c1b8ad96bfe"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ]
+}

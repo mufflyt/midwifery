@@ -49,10 +49,10 @@ eval(exprs[[which(is_def)]])   # defines pull_states() against this `con`
 
 mk <- function(name, df) { dbWriteTable(con, name, as.data.frame(df), overwrite = TRUE); 
                            list(sql = dbQuoteIdentifier(con, name), label = name) }
-cohort <- function(npis) dbWriteTable(con, "cohort_npi", data.frame(npi = npis), overwrite = TRUE)
+stage_cohort <- function(npis) dbWriteTable(con, "cohort_npi", data.frame(npi = npis), overwrite = TRUE)
 
 # ---- [1] deterministic modal rule ------------------------------------------
-cohort(c("1000000001"))
+stage_cohort(c("1000000001"))
 src <- mk("t_modal", data.frame(
   NPI   = c("1000000001", "1000000001", "1000000001"),
   STATE = c("CO", "CO", "WY"), stringsAsFactors = FALSE))
@@ -64,7 +64,7 @@ r1b <- pull_states(src, "NPI", "STATE", 2013L)
 chk(identical(r1, r1b), "[1] rerun is identical (deterministic)")
 
 # ---- [2] ties broken alphabetically, both orderings ------------------------
-cohort(c("1000000002"))
+stage_cohort(c("1000000002"))
 a <- pull_states(mk("t_tie_a", data.frame(NPI = c("1000000002","1000000002"),
        STATE = c("WY","CO"), stringsAsFactors = FALSE)), "NPI", "STATE", 2014L)
 b <- pull_states(mk("t_tie_b", data.frame(NPI = c("1000000002","1000000002"),
@@ -73,7 +73,7 @@ chk(a$state == "CO" && b$state == "CO",
     "[2] a 1-1 tie resolves to the alphabetically first state, whatever the row order")
 
 # ---- [3] duplicates collapse to one row; multiplicity is reported ----------
-cohort(c("1000000003"))
+stage_cohort(c("1000000003"))
 r3 <- pull_states(mk("t_dup", data.frame(
   NPI = rep("1000000003", 5), STATE = c("CO","CO","CO","WY","NM"),
   stringsAsFactors = FALSE)), "NPI", "STATE", 2015L)
@@ -81,7 +81,7 @@ chk(nrow(r3) == 1L, "[3] five rows for one midwife-year collapse to one row")
 chk(r3$n_states_this_year == 3L, "[3] n_states_this_year reports all 3, so multiplicity is visible")
 
 # ---- [4] non-US states dropped, never coerced to a US state ----------------
-cohort(c("1000000004", "1000000005"))
+stage_cohort(c("1000000004", "1000000005"))
 r4 <- pull_states(mk("t_zz", data.frame(
   NPI   = c("1000000004", "1000000005"),
   STATE = c("ZZ", "CO"), stringsAsFactors = FALSE)), "NPI", "STATE", 2016L)
@@ -89,21 +89,21 @@ chk(nrow(r4) == 1L && r4$npi == "1000000005",
     "[4] a foreign state code (ZZ) is dropped, not mapped to a US state")
 
 # empty / whitespace states never become a row
-cohort(c("1000000006"))
+stage_cohort(c("1000000006"))
 r4b <- pull_states(mk("t_blank", data.frame(
   NPI = c("1000000006","1000000006"), STATE = c("", "   "),
   stringsAsFactors = FALSE)), "NPI", "STATE", 2016L)
 chk(is.null(r4b), "[4] a midwife with only blank states yields no row (not a blank state)")
 
 # ---- [5] missing years are left missing ------------------------------------
-cohort(c("1000000007"))
+stage_cohort(c("1000000007"))
 r5 <- pull_states(NULL, "NPI", "STATE", 2017L)
 chk(is.null(r5), "[5] an absent source returns NULL -- no placeholder row, no carry-forward")
 
 # ---- [6] no future information reaches an earlier year ---------------------
 # Same midwife, two years, different states. The 2013 answer must not change
 # because a 2014 file exists, and must never be filled from it.
-cohort(c("1000000008"))
+stage_cohort(c("1000000008"))
 s13 <- mk("t_y13", data.frame(NPI = "1000000008", STATE = "CO", stringsAsFactors = FALSE))
 s14 <- mk("t_y14", data.frame(NPI = "1000000008", STATE = "NM", stringsAsFactors = FALSE))
 y13_alone <- pull_states(s13, "NPI", "STATE", 2013L)
@@ -114,14 +114,14 @@ chk(identical(y13_alone, y13_after),
 chk(y13_after$state == "CO", "[6] and still holds its own year's state, not the later one")
 
 # a year with no row for this midwife stays empty rather than inheriting
-cohort(c("1000000009"))
+stage_cohort(c("1000000009"))
 s_only14 <- mk("t_only14", data.frame(NPI = "1000000009", STATE = "NM", stringsAsFactors = FALSE))
-cohort(c("1000000008"))   # a different midwife
+stage_cohort(c("1000000008"))   # a different midwife
 chk(is.null(pull_states(s_only14, "NPI", "STATE", 2014L)),
     "[6] a midwife absent from a year's file gets no row for that year")
 
 # ---- [7] original observations preserved: rerun is idempotent --------------
-cohort(c("1000000010"))
+stage_cohort(c("1000000010"))
 s7 <- mk("t_idem", data.frame(NPI = rep("1000000010", 3), STATE = c("CO","CO","WY"),
                               stringsAsFactors = FALSE))
 runs <- lapply(1:3, function(i) pull_states(s7, "NPI", "STATE", 2018L))
