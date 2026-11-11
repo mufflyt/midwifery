@@ -199,6 +199,21 @@ REBUILD_ORDER <- list(
                    # artifacts/ppef_cohort_coverage_by_vintage.csv moves, with
                    # nothing in the artifact itself to say why.
                    "extract_ppef_cohort_state_by_vintage.R",
+                   # Added 2026-11-10 by T5, the NINTH catch, in the pull
+                   # request that corrected the Medicaid reduction (spec A2)
+                   # and built Medicaid claim activity (spec C).
+                   #
+                   # extract_medicaid_enrollment_state_by_year.R expands the
+                   # T-MSIS enrolment segments into one state per cohort
+                   # NPI-year plus the full multi-state footprint;
+                   # extract_medicaid_activity_by_month.R reads the spending
+                   # file for dated claim months. Both take their NPI list
+                   # straight from the freeze, so a change to the freeze
+                   # silently moves every count in
+                   # medicaid_enrollment_coverage_by_year.csv and
+                   # medicaid_activity_coverage.csv.
+                   "extract_medicaid_enrollment_state_by_year.R",
+                   "extract_medicaid_activity_by_month.R",
                    "compare_all_sources_mysteryroster.R")),
   list(layer = "2-cohort-structure", why = "cohort flow/composition/progression read FROZEN directly",
        scripts = c("R/05-stage-progression.R", "R/06-cohort-flow.R",

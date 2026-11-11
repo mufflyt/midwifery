@@ -1,0 +1,11 @@
+quantity,value
+state memberships in the footprint,178907
+state memberships kept by the modal rule,119527
+memberships discarded before the fix,59380
+pct of memberships discarded,33.2
+"NPI-years (identical in both, by invariant)",119527
+"midwives (identical in both, by invariant)",13622
+comparable NPI-years vs NPPES,107386
+"agreement, equality with the modal pick (%)",74.7
+"agreement, membership of the enrolled set (%)",88.5
+NPI-years newly scored as agreeing,14815

@@ -1,0 +1,13 @@
+gap_len_band,clms_before_band,n_episodes,median_clms_before,pct_any_evidence_elsewhere
+1 year,11-15 (adjacent to floor),595,13,88.9
+1 year,16-30,549,20,91.6
+1 year,31-100,165,40,93.9
+1 year,100+,32,212.5,87.5
+2 years,11-15 (adjacent to floor),251,12,92.4
+2 years,16-30,235,20,91.9
+2 years,31-100,73,40,94.5
+2 years,100+,6,269.5,100
+3+ years,11-15 (adjacent to floor),390,13,93.3
+3+ years,16-30,325,20,92.6
+3+ years,31-100,94,41.5,93.6
+3+ years,100+,16,212,87.5

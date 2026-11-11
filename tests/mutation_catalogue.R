@@ -1188,5 +1188,61 @@ MUTATIONS <- list(
                 "interior-gap denominator all inflate together, and they",
                 "inflate consistently enough to look like real coverage."),
     killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  # ---- Medicaid date-range expansion (spec A2) ----------------------------
+
+  list(
+    id = "medicaid-open-segments-dropped",
+    file = "extract_medicaid_enrollment_state_by_year.R",
+    find = "coalesce(seg.d1, DATE '9999-12-31') >= make_date(g.y, 1, 1)",
+    repl = "seg.d1 >= make_date(g.y, 1, 1)",
+    why = paste("Drops the coalesce, so every OPEN enrolment -- NULL end",
+                "date, 18,849,576 rows nationally -- fails the overlap test",
+                "and vanishes. Open segments are the currently enrolled",
+                "providers, so the series would lose its most recent years",
+                "first and look like a collapse in Medicaid participation."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "medicaid-overlap-requires-full-year",
+    file = "extract_medicaid_enrollment_state_by_year.R",
+    find = "coalesce(seg.d1, DATE '9999-12-31') >= make_date(g.y, 1, 1)",
+    repl = "coalesce(seg.d1, DATE '9999-12-31') >= make_date(g.y, 12, 31)",
+    why = paste("Requires a segment to survive to 31 December before the",
+                "year counts, so any enrolment ending mid-year is erased.",
+                "The year a midwife left a state is exactly the year her",
+                "move happened, so this deletes the transitions the whole",
+                "comparison is built to observe."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "medicaid-start-bound-to-jan",
+    file = "extract_medicaid_enrollment_state_by_year.R",
+    find = "seg.d0 <= make_date(g.y, 12, 31)",
+    repl = "seg.d0 <= make_date(g.y, 1, 1)",
+    why = paste("Requires an enrolment to have begun before 1 January for",
+                "the year to count, so a midwife who enrolled in February is",
+                "absent from her first year. Mirror image of the previous",
+                "mutation: that one deletes exits, this one deletes entries,",
+                "and both leave a series that still looks complete."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "medicaid-footprint-collapsed",
+    file = "extract_medicaid_enrollment_state_by_year.R",
+    find = "    SELECT npi, year, state, COUNT(*) AS n_segments\n      FROM ex GROUP BY 1, 2, 3",
+    repl = "    SELECT npi, year, state, COUNT(*) AS n_segments\n      FROM ex GROUP BY 1, 2, 3\n     QUALIFY ROW_NUMBER() OVER (PARTITION BY year, npi ORDER BY state ASC) = 1",
+    why = paste("Reintroduces the original defect in the footprint itself:",
+                "one state per NPI-year instead of the set. 33.2% of",
+                "memberships disappear again and every comparison reverts to",
+                "testing equality with one pick. Measured consequence:",
+                "Medicaid's agreement with NPPES reads 74.7% instead of",
+                "88.5%, which is what made it look like the worst source in",
+                "the panel."),
+    killers = c("tests/test_source_series_reconstruction.R")
   )
 )

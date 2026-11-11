@@ -1,0 +1,25 @@
+metric,source,before,after,delta,explanation
+fusion_agreement_pct,medicare_part_b,98.4,98.3,-0.1,unchanged; A2 touched only medicaid_enrollment
+fusion_agreement_pct,medicare_part_d,98,98,0,unchanged; A2 touched only medicaid_enrollment
+fusion_agreement_pct,state_boards_of_nursing,97.5,97.5,0,unchanged; A2 touched only medicaid_enrollment
+fusion_agreement_pct,facility_affiliation_ccn,97.4,97.4,0,unchanged; A2 touched only medicaid_enrollment
+fusion_agreement_pct,nppes,97.3,97.3,0,unchanged; A2 touched only medicaid_enrollment
+fusion_agreement_pct,healthgrades,96.9,96.9,0,unchanged; A2 touched only medicaid_enrollment
+fusion_agreement_pct,doximity,96.2,96.1,-0.1,unchanged; A2 touched only medicaid_enrollment
+fusion_agreement_pct,dac_physician_compare,95.2,95.2,0,unchanged; A2 touched only medicaid_enrollment
+fusion_agreement_pct,open_payments,94.9,94.8,-0.1,unchanged; A2 touched only medicaid_enrollment
+fusion_agreement_pct,cms_ndh_fhir,93.3,93.3,0,unchanged; A2 touched only medicaid_enrollment
+fusion_agreement_pct,pecos_revalidation,92.9,92.9,0,unchanged; A2 touched only medicaid_enrollment
+fusion_agreement_pct,medicaid_enrollment,77.5,77.6,0.1,"A2 date-range expansion. Near-zero change: the reduction error is concentrated in 2013-2017 while this metric is computed on the current-snapshot slice, where the whole-file modal state and the year-specific state already agreed to within 5.7%."
+odd_one_out_rate,medicaid_enrollment,0.166,0.163,-0.003,"A2 date-range expansion. Near-zero change: the reduction error is concentrated in 2013-2017 while this metric is computed on the current-snapshot slice, where the whole-file modal state and the year-specific state already agreed to within 5.7%."
+odd_one_out_rate,cms_ndh_fhir,0.029,0.03,0.001,unchanged; A2 touched only medicaid_enrollment
+odd_one_out_rate,pecos_revalidation,0.022,0.021,-0.001,unchanged; A2 touched only medicaid_enrollment
+odd_one_out_rate,dac_physician_compare,0.012,0.012,0,unchanged; A2 touched only medicaid_enrollment
+odd_one_out_rate,open_payments,0.011,0.011,0,unchanged; A2 touched only medicaid_enrollment
+odd_one_out_rate,state_boards_of_nursing,0.011,0.009,-0.002,unchanged; A2 touched only medicaid_enrollment
+odd_one_out_rate,doximity,0.009,0.009,0,unchanged; A2 touched only medicaid_enrollment
+odd_one_out_rate,nppes,0.009,0.009,0,unchanged; A2 touched only medicaid_enrollment
+odd_one_out_rate,healthgrades,0.008,0.009,0.001,unchanged; A2 touched only medicaid_enrollment
+odd_one_out_rate,facility_affiliation_ccn,0.002,0.002,0,unchanged; A2 touched only medicaid_enrollment
+odd_one_out_rate,medicare_part_d,0.001,0.001,0,unchanged; A2 touched only medicaid_enrollment
+odd_one_out_rate,medicare_part_b,0,0,0,unchanged; A2 touched only medicaid_enrollment

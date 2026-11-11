@@ -1,7 +1,7 @@
 source,n_npis,pct_of_cohort,tier
 nppes,16885,99.9,longitudinal
 cms_ndh_fhir,15127,89.5,snapshot
-medicaid_enrollment,13622,80.6,snapshot
+medicaid_enrollment,13622,80.6,longitudinal
 pecos_revalidation,11633,68.8,longitudinal
 medicare_part_d,8147,48.2,longitudinal
 healthgrades,7471,44.2,snapshot

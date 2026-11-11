@@ -7,6 +7,42 @@
 **Companion**: [`source-series-reconstruction.md`](source-series-reconstruction.md) — what each series *is*, before any of it is compared
 **Predecessor**: [`TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md`](TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md) — ten sources, pairwise against NPPES
 
+> ## ⚠ CORRECTION 2026-11-10 — the Medicaid figures below are superseded
+>
+> Every `medicaid_enrollment` agreement statistic in this document was computed
+> by testing whether another source **equalled one arbitrarily chosen state**.
+> The T-MSIS enrolment file records every state a midwife is concurrently
+> enrolled in; the reduction kept one per NPI-year and discarded the rest —
+> **59,380 of 178,907 memberships, 33.2%**. A midwife enrolled in CO, NM and AZ
+> was recorded as AZ and scored as disagreeing with a source that said CO.
+>
+> Recomputed as **membership of the enrolled set**, on the same 107,386
+> comparable NPI-years:
+>
+> | | equality with the modal pick | membership of the set |
+> |---|---|---|
+> | agreement with NPPES | 74.7% | **88.5%** |
+> | 2024 alone | 74.6% | **91.4%** |
+>
+> **14,815 NPI-years were newly scored as agreeing.** No underlying record
+> changed; only the test did.
+>
+> Three statements in this document are therefore withdrawn:
+> the **0.166 odd-one-out rate**, the **77.5% / 77.6% fusion agreement**, and
+> the claim that Medicaid is **"five times the next worst source."** All three
+> measured the comparator. See
+> [`audit_medicaid_set_membership.R`](../audit_medicaid_set_membership.R) and
+> `artifacts/medicaid_set_membership_by_year.csv`.
+>
+> **No physician-location assignment changed.** Truth fusion consumes the
+> single-valued series, which was left intact; the footprint is a separate
+> artifact. Whether fusion *should* resolve a multi-state source toward
+> consensus is an open methodological decision, not something changed here.
+>
+> **88.5% agreement does not establish that either source names the midwife's
+> actual practice location.** It establishes that the two are consistent under
+> the corrected comparison.
+
 ## What this adds over the 2026-11-03 audit
 
 That audit asked, for ten sources, how often each agrees with NPPES. This one

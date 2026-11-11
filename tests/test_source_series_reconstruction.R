@@ -30,6 +30,8 @@
 #   S2   an absent warehouse table is reported absent ......... [15]
 #   S2.1 vintage labels are zero-padded and sortable .......... [16]
 #   S4   load_pairs() deduplicates before counting ............ [17]
+#   A2   REGRESSION: a dated source is not reduced to one state  [18]
+#   A3   REGRESSION: the enrolled-state SET is preserved ...... [19]
 # =============================================================================
 ok <- requireNamespace("duckdb", quietly = TRUE) && requireNamespace("DBI", quietly = TRUE)
 if (!ok) { cat("duckdb/DBI unavailable -- skipping\n"); quit(status = 0L) }
@@ -231,6 +233,128 @@ if (nzchar(Sys.which("zip")) && file.exists("extract_ppef_cohort_state_by_vintag
         "[11] the same lag is accepted for a quarterly member, whose CMS extract date is in its name")
   }
 } else cat("  skip [11] zip binary or PPEF script unavailable\n")
+
+# ---- [18] REGRESSION: a dated source must not be reduced to one state -----
+# The error this would have caught: compare_all_sources_mysteryroster.R
+# reduced the T-MSIS enrolment file -- which carries ENRL_START_DT and
+# ENRL_END_DT -- to ONE modal state per NPI and filed it under SNAPSHOT. A
+# career-long state was then compared against every other source's
+# contemporaneous value, and the resulting disagreement (0.166 odd-one-out,
+# five times the next source) was read as a property of Medicaid.
+#
+# Two assertions, because the bug had two halves: the reduction was wrong,
+# and the tier was wrong. Either alone would have let it through.
+if (file.exists("extract_medicaid_enrollment_state_by_year.R")) {
+  mexp <- parse("extract_medicaid_enrollment_state_by_year.R")
+  for (nm in c("expand_segments_to_years", "whole_file_modal_state")) {
+    hit <- vapply(mexp, function(e)
+      is.call(e) && identical(as.character(e[[1]]), "<-") &&
+        is.name(e[[2]]) && identical(as.character(e[[2]]), nm), logical(1))
+    chk(sum(hit) == 1L, sprintf("[18] %s() found once", nm))
+    if (sum(hit) == 1L) eval(mexp[[which(hit)]])
+  }
+  # A midwife who moved: Colorado 2015-2018, then New Mexico from 2019.
+  # One whole-file modal state cannot represent both.
+  DBI::dbWriteTable(con, "cohort_npi",
+                    data.frame(npi = c("4000000001", "4000000002",
+                                       "4000000003")),
+                    overwrite = TRUE)
+  segf <- file.path(tempdir(), "seg_fx.parquet")
+  DBI::dbExecute(con, sprintf("COPY (SELECT * FROM (VALUES
+      ('4000000001','CO', DATE '2015-01-01', DATE '2018-12-31'),
+      ('4000000001','NM', DATE '2019-01-01', NULL),
+      ('4000000002','TX', DATE '2013-01-01', DATE '2013-06-30'),
+      ('4000000003','AZ', DATE '2017-06-15', DATE '2017-12-31')
+    ) t(NPI, STATE_CD, ENRL_START_DT, ENRL_END_DT)) TO %s (FORMAT PARQUET)",
+    DBI::dbQuoteString(con, segf)))
+  ex <- expand_segments_to_years(con, segf, 2013L, 2020L)
+  gs <- function(n, y) ex$state[ex$npi == n & ex$year == y]
+  chk(identical(gs("4000000001", 2016L), "CO"),
+      "[18] 2016 resolves to the state enrolled in during 2016")
+  chk(identical(gs("4000000001", 2020L), "NM"),
+      "[18] 2020 resolves to the LATER state, not the career modal one")
+  chk(length(gs("4000000001", 2013L)) == 0L,
+      "[18] a year before any segment yields no row, not a guessed state")
+  chk(nrow(ex[ex$npi == "4000000002", ]) == 1L,
+      "[18] a six-month segment covers exactly the one year it overlaps")
+  # A segment that STARTS mid-year. Without this the overlap test could
+  # require a start on or before 1 January and nothing would notice -- the
+  # medicaid-start-bound-to-jan saboteur SURVIVED until this row existed,
+  # because every other fixture segment began on 1 January.
+  chk(identical(gs("4000000003", 2017L), "AZ"),
+      "[18] an enrolment beginning in June still covers that year")
+
+  md <- whole_file_modal_state(con, segf)
+  one <- md$modal_state[md$npi == "4000000001"]
+  chk(length(one) == 1L && one != gs("4000000001", 2020L),
+      "[18] the whole-file modal state DISAGREES with 2020 -- the original bug")
+
+  # The tier half. A source with date ranges belongs in `longi`, and
+  # one_per_npi() must never see it.
+  cmp_src <- readLines("compare_all_sources_mysteryroster.R", warn = FALSE)
+  chk(any(grepl("^longi\\$medicaid_enrollment", cmp_src)),
+      "[18] medicaid_enrollment is loaded into the LONGITUDINAL tier")
+  chk(!any(grepl("^snap\\$medicaid_enrollment", cmp_src)),
+      "[18] and is not loaded into the snapshot tier")
+}
+
+# ---- [19] REGRESSION: the enrolled-state SET is preserved, not discarded --
+# The defect: expand_segments_to_years() computed every (year, npi, state)
+# and kept one per NPI-year, discarding 33.2% of memberships with nothing
+# emitting them. Comparisons then tested equality with one pick instead of
+# membership of the set a midwife was actually enrolled in, which made
+# Medicaid look like the worst source in the panel (0.166 odd-one-out)
+# when its set-membership agreement with NPPES is 88.5%.
+if (file.exists("extract_medicaid_enrollment_state_by_year.R")) {
+  m2 <- parse("extract_medicaid_enrollment_state_by_year.R")
+  fh <- vapply(m2, function(e)
+    is.call(e) && identical(as.character(e[[1]]), "<-") &&
+      is.name(e[[2]]) &&
+      identical(as.character(e[[2]]), "expand_segments_to_footprint"),
+    logical(1))
+  chk(sum(fh) == 1L, "[19] expand_segments_to_footprint() found once")
+  mh <- vapply(m2, function(e)
+    is.call(e) && identical(as.character(e[[1]]), "<-") &&
+      is.name(e[[2]]) &&
+      identical(as.character(e[[2]]), "expand_segments_to_years"), logical(1))
+  if (sum(fh) == 1L && sum(mh) == 1L) {
+    eval(m2[[which(fh)]]); eval(m2[[which(mh)]])
+    DBI::dbWriteTable(con, "cohort_npi",
+                      data.frame(npi = c("5000000001", "5000000002")),
+                      overwrite = TRUE)
+    sf <- file.path(tempdir(), "seg_multi.parquet")
+    DBI::dbExecute(con, sprintf("COPY (SELECT * FROM (VALUES
+        ('5000000001','CO', DATE '2019-01-01', DATE '2021-12-31'),
+        ('5000000001','NM', DATE '2019-01-01', DATE '2021-12-31'),
+        ('5000000001','AZ', DATE '2019-01-01', DATE '2021-12-31'),
+        ('5000000002','TX', DATE '2019-01-01', DATE '2019-12-31')
+      ) t(NPI, STATE_CD, ENRL_START_DT, ENRL_END_DT)) TO %s (FORMAT PARQUET)",
+      DBI::dbQuoteString(con, sf)))
+    fp <- expand_segments_to_footprint(con, sf, 2019L, 2021L)
+    md <- expand_segments_to_years(con, sf, 2019L, 2021L)
+
+    f19 <- sort(fp$state[fp$npi == "5000000001" & fp$year == 2019L])
+    chk(identical(f19, c("AZ", "CO", "NM")),
+        "[19] all three concurrent enrolments survive in the footprint")
+    chk(sum(md$npi == "5000000001" & md$year == 2019L) == 1L,
+        "[19] the single-valued series still carries exactly one state")
+    chk(identical(md$state[md$npi == "5000000001" & md$year == 2019L], "AZ"),
+        "[19] and that one is the alphabetical tie-break, as before")
+
+    # The defect in one assertion: a source naming NM disagrees with the
+    # modal pick but IS a state she was enrolled in.
+    modal_19 <- md$state[md$npi == "5000000001" & md$year == 2019L]
+    chk(!identical(modal_19, "NM") && "NM" %in% f19,
+        "[19] a real enrolment can differ from the modal pick -- the defect")
+
+    # Invariant the correction must not break.
+    k_m <- unique(paste(md$npi, md$year)); k_f <- unique(paste(fp$npi, fp$year))
+    chk(setequal(k_m, k_f),
+        "[19] the footprint adds states only -- same NPI-years, same midwives")
+    chk(nrow(fp) > nrow(md),
+        "[19] and strictly more rows, or nothing was recovered")
+  }
+}
 
 # ---- [17] load_pairs() deduplicates before anything is counted ------------
 # A source that lists a midwife twice in one year -- two enrolments, two
