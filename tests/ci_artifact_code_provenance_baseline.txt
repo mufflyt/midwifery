@@ -1,0 +1,92 @@
+# =============================================================================
+# Artifacts whose sidecar does not name the code that produced it
+# =============================================================================
+# A3 proves a sidecar EXISTS. It does not prove the sidecar says anything.
+# A sidecar with code_sha256: null records the inputs but not the producer,
+# so the artifact cannot be regenerated and a change in the generating code
+# leaves no trace. That is most of what a sidecar is for.
+#
+# The usual cause is write_with_provenance() called from `Rscript -e`:
+# .code_closure() resolves the producer from the --file= entry of
+# commandArgs(), and an inline call has none. Writing the same code into a
+# script file and running that fixes it.
+#
+# Same rule as every other baseline here: this list MAY SHRINK AND MUST
+# NEVER GROW. A new artifact with null code provenance fails A3b.
+# Generated 2026-11-10 from the tracked tree.
+# =============================================================================
+artifacts/ab_middle_name/evidence_top2.csv.provenance.json
+artifacts/ab_middle_name/transitions_all.csv.provenance.json
+artifacts/ab_middle_name/transitions_exposed.csv.provenance.json
+artifacts/address_fuzzy_false_match_rate.csv.provenance.json
+artifacts/address_match_failure_taxonomy.csv.provenance.json
+artifacts/address_parser_reconciliation.csv.provenance.json
+artifacts/amcb_npi_geography_by_state.csv.provenance.json
+artifacts/bc_resolver/bc_transitions.csv.provenance.json
+artifacts/bc_resolver/contested_evidence.csv.provenance.json
+artifacts/bc_resolver/crosstab_counts.csv.provenance.json
+artifacts/bc_resolver/crosstab_row_pct.csv.provenance.json
+artifacts/bc_resolver/targeted_questions.csv.provenance.json
+artifacts/cd_obstetric_workforce.csv.provenance.json
+artifacts/cms_ndh_bulk_cohort.csv.provenance.json
+artifacts/cms_ndh_bulk_national_cnm.csv.provenance.json
+artifacts/cms_ndh_midwives.csv.provenance.json
+artifacts/cohort_additions_16743_to_17538.csv.provenance.json
+artifacts/cohort_additions_by_mechanism.csv.provenance.json
+artifacts/cohort_flow_16743_to_16892.csv.provenance.json
+artifacts/cohort_flow_bidirectional.csv.provenance.json
+artifacts/cohort_transitions.csv.provenance.json
+artifacts/county_profiles/county_birth_profiles.csv.provenance.json
+artifacts/county_profiles/county_sentences.csv.provenance.json
+artifacts/cross_state_diagnosis.csv.provenance.json
+artifacts/cross_state_partition.csv.provenance.json
+artifacts/district_profiles/district_profiles.csv.provenance.json
+artifacts/district_profiles/district_sentences.csv.provenance.json
+artifacts/embedded_org_name_yield.csv.provenance.json
+artifacts/endpoint_location_yield.csv.provenance.json
+artifacts/exclusion_ledger.csv.provenance.json
+artifacts/external_source_yield.csv.provenance.json
+artifacts/geocoding_completeness_by_stage.csv.provenance.json
+artifacts/geocoding_completeness_characteristics.csv.provenance.json
+artifacts/geocoding_completeness_rucc.csv.provenance.json
+artifacts/geocoding_completeness_state.csv.provenance.json
+artifacts/isochrone_representation_by_county.csv.provenance.json
+artifacts/linkage_coverage_floor.csv.provenance.json
+artifacts/live_colorado_bon_ingested_midwives_from_tracked_roster.csv.provenance.json
+artifacts/live_connecticut_bon_ingested_midwives_from_tracked_roster.csv.provenance.json
+artifacts/live_delaware_bon_ingested_midwives_from_tracked_roster.csv.provenance.json
+artifacts/live_florida_bon_ingested_midwives_from_tracked_roster.csv.provenance.json
+artifacts/live_illinois_bon_ingested_midwives_from_tracked_roster.csv.provenance.json
+artifacts/live_michigan_direct_entry_midwives.csv.provenance.json
+artifacts/live_pennsylvania_bon_ingested_midwives_from_tracked_roster.csv.provenance.json
+artifacts/live_texas_bon_ingested_midwives_from_tracked_roster.csv.provenance.json
+artifacts/live_wa_bon_summary_matrix.csv.provenance.json
+artifacts/live_washington_bon_ingested_midwives_from_tracked_roster.csv.provenance.json
+artifacts/mco_network_membership_ca_mi.csv.provenance.json
+artifacts/midwife_organization_affiliation_by_state.csv.provenance.json
+artifacts/midwife_pecos_organization_affiliations.csv.provenance.json
+artifacts/newly_resolved_by_prior_status.csv.provenance.json
+artifacts/no_org_anomaly_mechanism.csv.provenance.json
+artifacts/nppes_colocation_2025_summary.csv.provenance.json
+artifacts/nppes_license_concordance.csv.provenance.json
+artifacts/nursys_qa_sample.csv.provenance.json
+artifacts/ob_hospitals_geocoded.csv.provenance.json
+artifacts/organization_identity_bridge_provenance.csv.provenance.json
+artifacts/organization_identity_conflicts.csv.provenance.json
+artifacts/organization_identity_coverage.csv.provenance.json
+artifacts/organization_identity_transitions.csv.provenance.json
+artifacts/osmde_full_cohort_coverage_by_rucc.csv.provenance.json
+artifacts/osmde_full_cohort_coverage_by_state.csv.provenance.json
+artifacts/osmde_polygon_quality_by_rucc.csv.provenance.json
+artifacts/osmde_strict_containment_summary.csv.provenance.json
+artifacts/osmde_tolerance_provenance.csv.provenance.json
+artifacts/osmde_validation_table.csv.provenance.json
+artifacts/represented_subset_access_by_band.csv.provenance.json
+artifacts/represented_subset_access_by_band_rucc.csv.provenance.json
+artifacts/revalidation_vintage_manifest.csv.provenance.json
+artifacts/state_obstetric_workforce.csv.provenance.json
+artifacts/truth/evidence_source_eligibility_v1.csv.provenance.json
+artifacts/unresolved_affiliation_reasons_summary.csv.provenance.json
+artifacts/unresolved_disambiguation_yield.csv.provenance.json
+artifacts/unresolved_no_org_character.csv.provenance.json
+artifacts/zcta_county_crosswalk.csv.provenance.json

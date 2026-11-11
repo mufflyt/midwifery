@@ -22,6 +22,16 @@
 #   S3.1 original observations preserved under rerun ........ [7]
 #   S2   output schema is stable ............................ [8]
 #   S4   artifacts hold one row per (npi, year) ............. [9]
+#   S4   only ADJACENT years count as a transition ........... [10]
+#   S2.1 a vintage packaged before its period is refuted ..... [11]
+#   S2.1 PPEF reads the two-letter state, not the FIPS code ... [12]
+#   S3.1 a padded NPI still joins to the cohort .............. [13]
+#   S6   the resolver picks by-Provider, not by-Provider+Drug . [14]
+#   S2   an absent warehouse table is reported absent ......... [15]
+#   S2.1 vintage labels are zero-padded and sortable .......... [16]
+#   S4   load_pairs() deduplicates before counting ............ [17]
+#   A2   REGRESSION: a dated source is not reduced to one state  [18]
+#   A3   REGRESSION: the enrolled-state SET is preserved ...... [19]
 # =============================================================================
 ok <- requireNamespace("duckdb", quietly = TRUE) && requireNamespace("DBI", quietly = TRUE)
 if (!ok) { cat("duckdb/DBI unavailable -- skipping\n"); quit(status = 0L) }
@@ -145,6 +155,377 @@ for (f in c("artifacts/cohort_midwives_part_b_state_by_year.csv",
   chk(all(!is.na(suppressWarnings(as.integer(d$year)))),
       sprintf("[9] %s has an integer year on every row", basename(f)))
 }
+
+# ---- [10] only adjacent years count as a transition -----------------------
+# The independence audit's whole claim rests on this: a midwife seen in 2015
+# and again in 2019 did not make ONE transition over four years, she made an
+# unknown number, and counting the pair as a transition would invent a
+# measurement. Lifted from the shipped script for the same reason as above.
+if (requireNamespace("dplyr", quietly = TRUE)) {
+  suppressPackageStartupMessages(library(dplyr))
+  AUD <- "audit_source_series_independence.R"
+  aexp <- parse(AUD)
+  ais <- vapply(aexp, function(e)
+    is.call(e) && identical(as.character(e[[1]]), "<-") &&
+      is.name(e[[2]]) && identical(as.character(e[[2]]), "adjacent_transitions"),
+    logical(1))
+  chk(sum(ais) == 1L, sprintf("[10] adjacent_transitions() found once in %s", AUD))
+  if (sum(ais) == 1L) {
+    eval(aexp[[which(ais)]])
+    # DELIBERATELY SHUFFLED. A file read off disk arrives in whatever order
+    # the writer used, so adjacent_transitions() must sort before taking
+    # lead(). A fixture in sorted order would pass even if arrange() were
+    # deleted. B's 2019 sits one year before C's 2020 on purpose: without
+    # group_by(npi), lead() runs off the end of one midwife into the next
+    # and invents a transition between two different people.
+    d <- data.frame(
+      npi  = c("C",   "A",   "B",   "C",   "A",   "C",   "B",   "A",   "C"),
+      year = c(2023L, 2014L, 2019L, 2020L, 2013L, 2024L, 2015L, 2015L, 2021L),
+      stringsAsFactors = FALSE)
+    tr <- adjacent_transitions(d)
+    chk(nrow(tr) == 4L, "[10] 9 observations yield 4 adjacent transitions, not 6")
+    chk(!any(tr$npi == "B"), "[10] a 2015->2019 gap contributes no transition")
+    chk(identical(sort(tr$year[tr$npi == "C"]), c(2020L, 2023L)),
+        "[10] C's 2021->2023 gap is skipped; its two adjacent pairs are kept")
+    chk(nrow(adjacent_transitions(d[d$npi == "B", ])) == 0L,
+        "[10] a midwife with only non-adjacent years yields nothing")
+  }
+} else cat("  skip [10] dplyr unavailable\n")
+
+# ---- [11] a vintage packaged before its period is refuted -----------------
+# PPEF carries no in-file date, so the archive's stored mtime is the evidence.
+# It cannot confirm a vintage, but it can refute one: a file packaged before
+# the period it claims to describe is impossible.
+if (nzchar(Sys.which("zip")) && file.exists("extract_ppef_cohort_state_by_vintage.R")) {
+  pexp <- parse("extract_ppef_cohort_state_by_vintage.R")
+  pis <- vapply(pexp, function(e)
+    is.call(e) && identical(as.character(e[[1]]), "<-") &&
+      is.name(e[[2]]) && identical(as.character(e[[2]]), "validate_vintage"),
+    logical(1))
+  chk(sum(pis) == 1L, "[11] validate_vintage() found once")
+  if (sum(pis) == 1L) {
+    eval(pexp[[which(pis)]])
+    mkzip <- function(tag, mtime) {
+      d <- file.path(tempdir(), paste0("vz_", tag)); dir.create(d, showWarnings = FALSE)
+      f <- file.path(d, paste0("ppefenrol", tag, ".csv"))
+      writeLines("npi,state_cdstr", f); Sys.setFileTime(f, mtime)
+      z <- file.path(d, paste0("ppefenrol", tag, ".csv.zip"))
+      owd <- setwd(d); on.exit(setwd(owd), add = TRUE)
+      utils::zip(basename(z), basename(f), flags = "-qX")
+      file.path(d, basename(z))
+    }
+    zl <- mkzip("20168late", as.POSIXct("2016-11-18 12:00:00", tz = "UTC"))
+    r <- validate_vintage(zl, "\\.csv$", as.Date("2016-08-01"), "nber_monthly")
+    chk(identical(r$status, "verified_year"),
+        "[11] packaged 2016-11 for a 2016-08 claim is verified_year")
+
+    ze <- mkzip("20168early", as.POSIXct("2016-03-01 12:00:00", tz = "UTC"))
+    r2 <- validate_vintage(ze, "\\.csv$", as.Date("2016-08-01"), "nber_monthly")
+    chk(identical(r2$status, "refuted"),
+        "[11] packaged BEFORE the claimed month is refuted, not accepted")
+
+    zy <- mkzip("20168wrongyr", as.POSIXct("2018-02-01 12:00:00", tz = "UTC"))
+    r3 <- validate_vintage(zy, "\\.csv$", as.Date("2016-08-01"), "nber_monthly")
+    chk(identical(r3$status, "refuted"),
+        "[11] a monthly file packaged two years late is refuted")
+    r4 <- validate_vintage(zy, "\\.csv$", as.Date("2016-08-01"), "cms_quarterly")
+    chk(identical(r4$status, "verified_date"),
+        "[11] the same lag is accepted for a quarterly member, whose CMS extract date is in its name")
+  }
+} else cat("  skip [11] zip binary or PPEF script unavailable\n")
+
+# ---- [18] REGRESSION: a dated source must not be reduced to one state -----
+# The error this would have caught: compare_all_sources_mysteryroster.R
+# reduced the T-MSIS enrolment file -- which carries ENRL_START_DT and
+# ENRL_END_DT -- to ONE modal state per NPI and filed it under SNAPSHOT. A
+# career-long state was then compared against every other source's
+# contemporaneous value, and the resulting disagreement (0.166 odd-one-out,
+# five times the next source) was read as a property of Medicaid.
+#
+# Two assertions, because the bug had two halves: the reduction was wrong,
+# and the tier was wrong. Either alone would have let it through.
+if (file.exists("extract_medicaid_enrollment_state_by_year.R")) {
+  mexp <- parse("extract_medicaid_enrollment_state_by_year.R")
+  for (nm in c("expand_segments_to_years", "whole_file_modal_state")) {
+    hit <- vapply(mexp, function(e)
+      is.call(e) && identical(as.character(e[[1]]), "<-") &&
+        is.name(e[[2]]) && identical(as.character(e[[2]]), nm), logical(1))
+    chk(sum(hit) == 1L, sprintf("[18] %s() found once", nm))
+    if (sum(hit) == 1L) eval(mexp[[which(hit)]])
+  }
+  # A midwife who moved: Colorado 2015-2018, then New Mexico from 2019.
+  # One whole-file modal state cannot represent both.
+  DBI::dbWriteTable(con, "cohort_npi",
+                    data.frame(npi = c("4000000001", "4000000002",
+                                       "4000000003")),
+                    overwrite = TRUE)
+  segf <- file.path(tempdir(), "seg_fx.parquet")
+  DBI::dbExecute(con, sprintf("COPY (SELECT * FROM (VALUES
+      ('4000000001','CO', DATE '2015-01-01', DATE '2018-12-31'),
+      ('4000000001','NM', DATE '2019-01-01', NULL),
+      ('4000000002','TX', DATE '2013-01-01', DATE '2013-06-30'),
+      ('4000000003','AZ', DATE '2017-06-15', DATE '2017-12-31')
+    ) t(NPI, STATE_CD, ENRL_START_DT, ENRL_END_DT)) TO %s (FORMAT PARQUET)",
+    DBI::dbQuoteString(con, segf)))
+  ex <- expand_segments_to_years(con, segf, 2013L, 2020L)
+  gs <- function(n, y) ex$state[ex$npi == n & ex$year == y]
+  chk(identical(gs("4000000001", 2016L), "CO"),
+      "[18] 2016 resolves to the state enrolled in during 2016")
+  chk(identical(gs("4000000001", 2020L), "NM"),
+      "[18] 2020 resolves to the LATER state, not the career modal one")
+  chk(length(gs("4000000001", 2013L)) == 0L,
+      "[18] a year before any segment yields no row, not a guessed state")
+  chk(nrow(ex[ex$npi == "4000000002", ]) == 1L,
+      "[18] a six-month segment covers exactly the one year it overlaps")
+  # A segment that STARTS mid-year. Without this the overlap test could
+  # require a start on or before 1 January and nothing would notice -- the
+  # medicaid-start-bound-to-jan saboteur SURVIVED until this row existed,
+  # because every other fixture segment began on 1 January.
+  chk(identical(gs("4000000003", 2017L), "AZ"),
+      "[18] an enrolment beginning in June still covers that year")
+
+  md <- whole_file_modal_state(con, segf)
+  one <- md$modal_state[md$npi == "4000000001"]
+  chk(length(one) == 1L && one != gs("4000000001", 2020L),
+      "[18] the whole-file modal state DISAGREES with 2020 -- the original bug")
+
+  # The tier half. A source with date ranges belongs in `longi`, and
+  # one_per_npi() must never see it.
+  cmp_src <- readLines("compare_all_sources_mysteryroster.R", warn = FALSE)
+  chk(any(grepl("^longi\\$medicaid_enrollment", cmp_src)),
+      "[18] medicaid_enrollment is loaded into the LONGITUDINAL tier")
+  chk(!any(grepl("^snap\\$medicaid_enrollment", cmp_src)),
+      "[18] and is not loaded into the snapshot tier")
+}
+
+# ---- [19] REGRESSION: the enrolled-state SET is preserved, not discarded --
+# The defect: expand_segments_to_years() computed every (year, npi, state)
+# and kept one per NPI-year, discarding 33.2% of memberships with nothing
+# emitting them. Comparisons then tested equality with one pick instead of
+# membership of the set a midwife was actually enrolled in, which made
+# Medicaid look like the worst source in the panel (0.166 odd-one-out)
+# when its set-membership agreement with NPPES is 88.5%.
+if (file.exists("extract_medicaid_enrollment_state_by_year.R")) {
+  m2 <- parse("extract_medicaid_enrollment_state_by_year.R")
+  fh <- vapply(m2, function(e)
+    is.call(e) && identical(as.character(e[[1]]), "<-") &&
+      is.name(e[[2]]) &&
+      identical(as.character(e[[2]]), "expand_segments_to_footprint"),
+    logical(1))
+  chk(sum(fh) == 1L, "[19] expand_segments_to_footprint() found once")
+  mh <- vapply(m2, function(e)
+    is.call(e) && identical(as.character(e[[1]]), "<-") &&
+      is.name(e[[2]]) &&
+      identical(as.character(e[[2]]), "expand_segments_to_years"), logical(1))
+  if (sum(fh) == 1L && sum(mh) == 1L) {
+    eval(m2[[which(fh)]]); eval(m2[[which(mh)]])
+    DBI::dbWriteTable(con, "cohort_npi",
+                      data.frame(npi = c("5000000001", "5000000002")),
+                      overwrite = TRUE)
+    sf <- file.path(tempdir(), "seg_multi.parquet")
+    DBI::dbExecute(con, sprintf("COPY (SELECT * FROM (VALUES
+        ('5000000001','CO', DATE '2019-01-01', DATE '2021-12-31'),
+        ('5000000001','NM', DATE '2019-01-01', DATE '2021-12-31'),
+        ('5000000001','AZ', DATE '2019-01-01', DATE '2021-12-31'),
+        ('5000000002','TX', DATE '2019-01-01', DATE '2019-12-31')
+      ) t(NPI, STATE_CD, ENRL_START_DT, ENRL_END_DT)) TO %s (FORMAT PARQUET)",
+      DBI::dbQuoteString(con, sf)))
+    fp <- expand_segments_to_footprint(con, sf, 2019L, 2021L)
+    md <- expand_segments_to_years(con, sf, 2019L, 2021L)
+
+    f19 <- sort(fp$state[fp$npi == "5000000001" & fp$year == 2019L])
+    chk(identical(f19, c("AZ", "CO", "NM")),
+        "[19] all three concurrent enrolments survive in the footprint")
+    chk(sum(md$npi == "5000000001" & md$year == 2019L) == 1L,
+        "[19] the single-valued series still carries exactly one state")
+    chk(identical(md$state[md$npi == "5000000001" & md$year == 2019L], "AZ"),
+        "[19] and that one is the alphabetical tie-break, as before")
+
+    # The defect in one assertion: a source naming NM disagrees with the
+    # modal pick but IS a state she was enrolled in.
+    modal_19 <- md$state[md$npi == "5000000001" & md$year == 2019L]
+    chk(!identical(modal_19, "NM") && "NM" %in% f19,
+        "[19] a real enrolment can differ from the modal pick -- the defect")
+
+    # Invariant the correction must not break.
+    k_m <- unique(paste(md$npi, md$year)); k_f <- unique(paste(fp$npi, fp$year))
+    chk(setequal(k_m, k_f),
+        "[19] the footprint adds states only -- same NPI-years, same midwives")
+    chk(nrow(fp) > nrow(md),
+        "[19] and strictly more rows, or nothing was recovered")
+  }
+}
+
+# ---- [17] load_pairs() deduplicates before anything is counted ------------
+# A source that lists a midwife twice in one year -- two enrolments, two
+# billing rows -- must not contribute two observations. Everything the
+# independence audit reports is a count, so a duplicate here inflates
+# npi_years, transitions and the interior-gap denominator at once.
+if (requireNamespace("dplyr", quietly = TRUE) &&
+    requireNamespace("readr", quietly = TRUE)) {
+  aexp2 <- parse("audit_source_series_independence.R")
+  lis <- vapply(aexp2, function(e)
+    is.call(e) && identical(as.character(e[[1]]), "<-") &&
+      is.name(e[[2]]) && identical(as.character(e[[2]]), "load_pairs"),
+    logical(1))
+  chk(sum(lis) == 1L, "[17] load_pairs() found once")
+  if (sum(lis) == 1L) {
+    # load_pairs() calls read_csv()/cols() unqualified, as it may: its own
+    # script attaches readr at the top. Lifting the function out means
+    # reproducing that environment, not rewriting the function.
+    suppressPackageStartupMessages({library(readr); library(dplyr)})
+    eval(aexp2[[which(lis)]])
+    lf <- file.path(tempdir(), "lp_fixture.csv")
+    writeLines(c("npi,year",
+                 "3000000001,2019", "3000000001,2019", "3000000001,2019",
+                 "3000000001,2020", "3000000002,2019", ",2019",
+                 "3000000003,"), lf)
+    lp <- load_pairs(list(path = lf, year_col = "year"))
+    chk(nrow(lp) == 3L,
+        "[17] 7 rows with triplicates, a blank NPI and a blank year yield 3 pairs")
+    chk(sum(lp$npi == "3000000001") == 2L,
+        "[17] one midwife's three identical 2019 rows collapse to one")
+    chk(!any(is.na(lp$year)) && !any(!nzchar(lp$npi)),
+        "[17] rows with no NPI or no year are dropped, not kept as NA")
+  }
+}
+
+# ---- [14] the catalogue resolver picks the right PRODUCT and year ---------
+# data.cms.gov publishes two Part D products whose titles differ by three
+# words: "- by Provider :" (one row per prescriber) and "- by Provider and
+# Drug :" (one row per prescriber-drug, ~40x the rows, wrong grain entirely).
+# Both appear in the catalogue for every year. A regex that cannot tell them
+# apart downloads the wrong one, and it still parses, still has NPIs, still
+# has a state column.
+if (requireNamespace("jsonlite", quietly = TRUE) &&
+    file.exists("download_cms_by_provider_files.R")) {
+  dexp <- parse("download_cms_by_provider_files.R")
+  want <- c("TITLE_RE", "%||%", "resolve_by_provider_urls")
+  for (nm in want) {
+    hit <- vapply(dexp, function(e)
+      is.call(e) && identical(as.character(e[[1]]), "<-") &&
+        identical(deparse(e[[2]]), if (nm == "%||%") "`%||%`" else nm),
+      logical(1))
+    if (any(hit)) eval(dexp[[which(hit)[1]]])
+  }
+  fx <- list(dataset = list(
+    list(title = "Medicare Part D Prescribers - by Provider and Drug : 2013-12-31",
+         distribution = list(list(downloadURL = "https://x/WRONG_DY13_NPIBN.csv"))),
+    list(title = "Medicare Part D Prescribers - by Provider : 2013-12-03",
+         distribution = list(list(downloadURL = "https://x/right_dy13_npi.csv"))),
+    list(title = "Medicare Physician & Other Practitioners - by Provider : 2024-12-01",
+         distribution = list(list(downloadURL = "https://x/PHY_D24_Prov.csv"))),
+    list(title = "Some Unrelated CMS Dataset : 2024-01-01",
+         distribution = list(list(downloadURL = "https://x/unrelated.csv")))))
+  fj <- file.path(tempdir(), "cms_fixture.json")
+  jsonlite::write_json(fx, fj, auto_unbox = TRUE)
+  got <- resolve_by_provider_urls(fj)
+  chk(nrow(got) == 2L, "[14] only the two by-Provider datasets are resolved")
+  chk(!any(grepl("NPIBN", got$url)),
+      "[14] the by-Provider-and-Drug product is NOT mistaken for by-Provider")
+  chk(identical(got$year[got$source == "part_d"], 2013L),
+      "[14] the data year comes from the title, as an integer")
+  chk(identical(got$year[got$source == "part_b"], 2024L),
+      "[14] and Part B resolves its own year independently")
+} else cat("  skip [14] jsonlite or downloader unavailable\n")
+
+# ---- [15] an absent warehouse table is reported absent --------------------
+# has_table() is what stops a missing year becoming a silent zero. If it ever
+# answers TRUE for a table that is not there, the query runs against nothing
+# and the year vanishes without a log line.
+# has_table()/tbl_src() are lifted the same way pull_states() was: by name,
+# from the shipped file, so the test cannot drift from the function.
+for (nm in c("has_table", "tbl_src")) {
+  hit <- vapply(exprs, function(e)
+    is.call(e) && identical(as.character(e[[1]]), "<-") &&
+      is.name(e[[2]]) && identical(as.character(e[[2]]), nm), logical(1))
+  chk(sum(hit) == 1L, sprintf("[15] %s() found once in %s", nm, SCRIPT))
+  if (sum(hit) == 1L) eval(exprs[[which(hit)]])
+}
+chk(is.null(tbl_src("definitely_not_a_table_9f3a")),
+    "[15] tbl_src() returns NULL for a table the warehouse does not have")
+DBI::dbWriteTable(con, "really_here_9f3a", data.frame(x = 1L), overwrite = TRUE)
+chk(!is.null(tbl_src("really_here_9f3a")),
+    "[15] and returns a source expression for one it does")
+
+# ---- [16] vintage labels are zero-padded and sortable ---------------------
+# NBER does not zero-pad the month in PPEF filenames (ppefenrol20168, not
+# ...201608), which already cost one round of 404s. The label this builds
+# must pad, or "2016-8" sorts after "2016-10" and every join on vintage
+# misses.
+if (file.exists("extract_ppef_cohort_state_by_vintage.R")) {
+  vexp <- parse("extract_ppef_cohort_state_by_vintage.R")
+  vis <- vapply(vexp, function(e)
+    is.call(e) && identical(as.character(e[[1]]), "<-") &&
+      is.name(e[[2]]) && identical(as.character(e[[2]]), "ppef_vintages"),
+    logical(1))
+  if (any(vis)) {
+    eval(vexp[[which(vis)[1]]])
+    vd <- file.path(tempdir(), "vint", "201608"); dir.create(vd, recursive = TRUE, showWarnings = FALSE)
+    file.create(file.path(vd, "ppefenrol20168.csv.zip"))
+    vd2 <- file.path(tempdir(), "vint", "201710"); dir.create(vd2, recursive = TRUE, showWarnings = FALSE)
+    file.create(file.path(vd2, "ppefenrol201710.csv.zip"))
+    vv <- ppef_vintages(file.path(tempdir(), "vint"))
+    chk(!is.null(vv) && all(c("2016-08", "2017-10") %in% vv$vintage),
+        "[16] an unpadded filename month becomes a padded, sortable vintage")
+    chk(!is.null(vv) && identical(vv$vintage, sort(vv$vintage)),
+        "[16] vintages sort chronologically as strings")
+  }
+}
+
+# ---- [13] a padded NPI in the source still joins to the cohort ------------
+# Warehouse NPIs are clean, so a dropped trim() passes every warehouse year
+# and silently drops rows only in the downloaded CSVs -- a source-specific
+# undercount that looks like genuinely lower Part D participation.
+stage_cohort(c("1000000012"))
+r13 <- pull_states(mk("t_pad", data.frame(
+  NPI = c(" 1000000012", "1000000012 "), STATE = c("CO", "CO"),
+  stringsAsFactors = FALSE)), "NPI", "STATE", 2019L)
+chk(!is.null(r13) && nrow(r13) == 1L && r13$state == "CO",
+    "[13] NPIs padded with whitespace still match the cohort")
+
+# ---- [12] PPEF reads the two-letter state, not the FIPS code --------------
+# The monthly NBER layout carries BOTH state_cd (numeric FIPS: 6, 36, 48) and
+# state_cdstr (CA, NY, TX). The quarterly CMS layout carries only STATE_CD,
+# and there it IS the two-letter code. Reading the wrong one yields a state
+# series of integers. This is not hypothetical: it is the bug that was
+# written on 2026-11-10 and caught only because clean_state() refuses
+# anything that is not a US state.
+if (nzchar(Sys.which("zip")) && file.exists("extract_ppef_cohort_state_by_vintage.R")) {
+  pexp2 <- parse("extract_ppef_cohort_state_by_vintage.R")
+  pvs <- vapply(pexp2, function(e)
+    is.call(e) && identical(as.character(e[[1]]), "<-") &&
+      is.name(e[[2]]) && identical(as.character(e[[2]]), "pull_vintage"),
+    logical(1))
+  chk(sum(pvs) == 1L, "[12] pull_vintage() found once")
+  if (sum(pvs) == 1L) {
+    eval(pexp2[[which(pvs)]])
+    pd <- file.path(tempdir(), "ppef_fx"); dir.create(pd, showWarnings = FALSE)
+    fx <- file.path(pd, "ppefenrol209901.csv")
+    writeLines(c("npi,state_cd,state_cdstr",
+                 '"2000000001",6,"CA"',
+                 '"2000000002",36,"NY"',
+                 '"2000000002",8,"CO"'), fx)
+    zfx <- file.path(pd, "ppefenrol209901.csv.zip")
+    local({ owd <- setwd(pd); on.exit(setwd(owd), add = TRUE)
+            utils::zip(basename(zfx), basename(fx), flags = "-qX") })
+    DBI::dbWriteTable(con, "cohort_npi",
+                      data.frame(npi = c("2000000001", "2000000002")),
+                      overwrite = TRUE)
+    got <- pull_vintage(con, zfx, "\\.csv$", "2099-01")
+    chk(identical(got$state_col, "state_cdstr"),
+        "[12] state_cdstr is preferred over state_cd when both exist")
+    rr <- got$rows
+    chk(!is.null(rr) && all(rr$state %in% c("CA", "CO", "NY")),
+        "[12] states are two-letter codes, never FIPS integers")
+    chk(!is.null(rr) && rr$state[rr$npi == "2000000001"] == "CA",
+        "[12] a single-state midwife keeps her state")
+    chk(!is.null(rr) && rr$state[rr$npi == "2000000002"] == "CO",
+        "[12] simultaneous CO/NY enrolments resolve alphabetically to CO")
+    chk(!is.null(rr) && rr$n_states_this_vintage[rr$npi == "2000000002"] == 2L,
+        "[12] and the multiplicity is reported, not hidden")
+  }
+} else cat("  skip [12] zip binary or PPEF script unavailable\n")
 
 cat(sprintf("\n%s (%d failure%s)\n", if (fails == 0L) "PASS" else "FAILURES",
             fails, if (fails == 1L) "" else "s"))

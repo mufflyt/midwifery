@@ -1,0 +1,17 @@
+vintage,claimed_date,layout,validation_method,evidence_date,status,detail,archive,state_column
+2016-08,2016-08-01,nber_monthly,archive_mtime,2016-11-18,verified_year,packaged 109 day(s) after the claimed month began,ppefenrol20168.csv.zip,state_cdstr
+2017-01,2017-01-01,nber_monthly,archive_mtime,2017-02-07,verified_year,packaged 37 day(s) after the claimed month began,ppefenrol20171.csv.zip,state_cdstr
+2017-05,2017-05-01,nber_monthly,archive_mtime,2017-05-05,verified_year,packaged 4 day(s) after the claimed month began,ppefenrol20175.csv.zip,state_cdstr
+2017-07,2017-07-01,nber_monthly,archive_mtime,2017-07-19,verified_year,packaged 18 day(s) after the claimed month began,ppefenrol20177.csv.zip,state_cdstr
+2017-10,2017-10-01,nber_monthly,archive_mtime,2017-10-16,verified_year,packaged 15 day(s) after the claimed month began,ppefenrol201710.csv.zip,state_cdstr
+2018-01,2018-01-01,nber_monthly,archive_mtime,2018-02-08,verified_year,packaged 38 day(s) after the claimed month began,ppefenrol20181.csv.zip,state_cdstr
+2018-07,2018-07-01,nber_monthly,archive_mtime,2018-09-19,verified_year,packaged 80 day(s) after the claimed month began,ppefenrol20187.csv.zip,state_cdstr
+2018-11,2018-11-01,nber_monthly,archive_mtime,2018-11-02,verified_year,packaged 1 day(s) after the claimed month began,ppefenrol201811.csv.zip,state_cdstr
+2019-01,2019-01-01,nber_monthly,archive_mtime,2019-03-20,verified_year,packaged 78 day(s) after the claimed month began,ppefenrol20191.csv.zip,state_cdstr
+2019-04,2019-04-01,nber_monthly,archive_mtime,2019-04-15,verified_year,packaged 14 day(s) after the claimed month began,ppefenrol20194.csv.zip,state_cdstr
+2023-03,2023-03-31,cms_quarterly,member_filename+archive_mtime,2024-09-22,verified_date,CMS extract date in member name; archive bundled 2024-09-22,2023_2024Q2.zip,state_cd
+2023-07,2023-07-06,cms_quarterly,member_filename+archive_mtime,2024-09-22,verified_date,CMS extract date in member name; archive bundled 2024-09-22,2023_2024Q2.zip,state_cd
+2023-10,2023-10-02,cms_quarterly,member_filename+archive_mtime,2024-09-22,verified_date,CMS extract date in member name; archive bundled 2024-09-22,2023_2024Q2.zip,state_cd
+2024-01,2024-01-05,cms_quarterly,member_filename+archive_mtime,2024-09-22,verified_date,CMS extract date in member name; archive bundled 2024-09-22,2023_2024Q2.zip,state_cd
+2024-04,2024-04-01,cms_quarterly,member_filename+archive_mtime,2024-09-22,verified_date,CMS extract date in member name; archive bundled 2024-09-22,2023_2024Q2.zip,state_cd
+2024-07,2024-07-01,cms_quarterly,member_filename+archive_mtime,2024-09-22,verified_date,CMS extract date in member name; archive bundled 2024-09-22,2023_2024Q2.zip,state_cd

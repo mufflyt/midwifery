@@ -1,11 +1,16 @@
 source_a,source_b,n_comparable,n_agree,pct_agree
+nppes,medicaid_enrollment,107356,80195,74.7
 nppes,pecos_revalidation,55439,48755,87.9
 nppes,medicare_part_d,37832,36555,96.6
+pecos_revalidation,medicaid_enrollment,35403,26182,74
+medicare_part_d,medicaid_enrollment,34687,25206,72.7
 nppes,medicare_part_b,15709,15256,97.1
+medicare_part_b,medicaid_enrollment,14809,10612,71.7
 medicare_part_b,medicare_part_d,13745,13745,100
 pecos_revalidation,medicare_part_d,13065,11665,89.3
 pecos_revalidation,medicare_part_b,5807,5155,88.8
 nppes,open_payments,3898,3666,94
+open_payments,medicaid_enrollment,3799,2927,77
 pecos_revalidation,open_payments,3428,3093,90.2
 medicare_part_d,open_payments,1695,1597,94.2
 medicare_part_b,open_payments,578,547,94.6

@@ -9,6 +9,42 @@ DAC/Physician Compare extended from 5 vintages to full annual coverage,
 2013-2026, then Open Payments extended from 2021-2024 to 2021-2025 -- see
 revision notes below)
 
+> ## ⚠ CORRECTION 2026-11-10 — the Medicaid figures below are superseded
+>
+> Every `medicaid_enrollment` agreement statistic in this document was computed
+> by testing whether another source **equalled one arbitrarily chosen state**.
+> The T-MSIS enrolment file records every state a midwife is concurrently
+> enrolled in; the reduction kept one per NPI-year and discarded the rest —
+> **59,380 of 178,907 memberships, 33.2%**. A midwife enrolled in CO, NM and AZ
+> was recorded as AZ and scored as disagreeing with a source that said CO.
+>
+> Recomputed as **membership of the enrolled set**, on the same 107,386
+> comparable NPI-years:
+>
+> | | equality with the modal pick | membership of the set |
+> |---|---|---|
+> | agreement with NPPES | 74.7% | **88.5%** |
+> | 2024 alone | 74.6% | **91.4%** |
+>
+> **14,815 NPI-years were newly scored as agreeing.** No underlying record
+> changed; only the test did.
+>
+> Three statements in this document are therefore withdrawn:
+> the **0.166 odd-one-out rate**, the **77.5% / 77.6% fusion agreement**, and
+> the claim that Medicaid is **"five times the next worst source."** All three
+> measured the comparator. See
+> [`audit_medicaid_set_membership.R`](../audit_medicaid_set_membership.R) and
+> `artifacts/medicaid_set_membership_by_year.csv`.
+>
+> **No physician-location assignment changed.** Truth fusion consumes the
+> single-valued series, which was left intact; the footprint is a separate
+> artifact. Whether fusion *should* resolve a multi-state source toward
+> consensus is an open methodological decision, not something changed here.
+>
+> **88.5% agreement does not establish that either source names the midwife's
+> actual practice location.** It establishes that the two are consistent under
+> the corrected comparison.
+
 **Revision note 1 (2026-11-03)**: an earlier pass of this audit reported DAC/
 Physician Compare coverage as five discrete vintages (2013, 2014, 2015, 2016,
 2026) and described 2017-2025 as an inaccessible nine-year hole -- NBER's

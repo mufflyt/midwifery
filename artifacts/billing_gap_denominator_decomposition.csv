@@ -1,0 +1,12 @@
+quantity,n
+midwives in Part D,8147
+midwives in Part B or Part D,8461
+midwives added by Part B (never in Part D),314
+Part D midwives with an interior gap,2209
+Part B-or-D midwives with an interior gap,2232
+Part-B-only midwives with an interior gap,26
+Part D gaps FILLED by Part B activity,194
+single-year episodes (Part D),1341
+midwives with only one observed year (cannot have a gap),1682
+midwives ELIGIBLE for a gap (>=2 observed years),6465
+gap rate among eligible midwives (%),34.2

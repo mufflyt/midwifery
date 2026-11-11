@@ -231,6 +231,58 @@ if (length(arts) == 0) {
 }
 
 # -----------------------------------------------------------------------------
+ci_section("A3b a sidecar names the code that produced it")
+
+# A3 proves a sidecar EXISTS. It cannot tell a real one from an empty one.
+# An artifact written through write_with_provenance() from `Rscript -e` gets
+# a sidecar with code_sha256: null and code: [] -- inputs recorded, producer
+# not -- and A3 passes it. That happened on 2026-11-10 and was caught by
+# review, not by this file.
+#
+# Without the producing code, an artifact cannot be regenerated and a change
+# to the generating logic leaves no trace in the sidecar, which is most of
+# what the sidecar is for.
+#
+# Parsed with a regex rather than a JSON reader on purpose: this job installs
+# stringr and nothing else, and the two files under test are dependency-light
+# by design. The sidecars are machine-written by jsonlite, so the shape is
+# stable enough for a fixed pattern.
+CODE_BASELINE <- file.path(root, "tests",
+                           "ci_artifact_code_provenance_baseline.txt")
+sidecars_all <- suppressWarnings(system2("git",
+  c("ls-files", shQuote("artifacts/*.provenance.json")),
+  stdout = TRUE, stderr = FALSE))
+if (length(sidecars_all) == 0) {
+  ci_skip("no tracked sidecars; skipped")
+} else {
+  nameless <- Filter(function(f) {
+    txt <- tryCatch(paste(readLines(f, warn = FALSE), collapse = " "),
+                    error = function(e) "")
+    !grepl('"code_sha256"', txt, fixed = TRUE) ||
+      grepl('"code_sha256"[[:space:]]*:[[:space:]]*null', txt)
+  }, sidecars_all)
+
+  gf_code <- if (file.exists(CODE_BASELINE)) {
+    x <- trimws(readLines(CODE_BASELINE, warn = FALSE))
+    x[nzchar(x) & !startsWith(x, "#")]
+  } else character(0)
+
+  new_nameless <- setdiff(nameless, gf_code)
+  fixed_code <- setdiff(gf_code, nameless)
+
+  if (length(new_nameless)) {
+    ci_fail("A3b: %d sidecar(s) do not name their producing code and are not on the baseline. This happens when write_with_provenance() runs from `Rscript -e`; move the call into a script file and re-run it:\n       %s",
+            length(new_nameless),
+            paste(utils::head(new_nameless, 8), collapse = "\n       "))
+  } else if (length(fixed_code)) {
+    ci_ok(sprintf("A3b no NEW sidecar lacks code provenance (%d grandfathered; %d now fixed -- remove them from the baseline to hold the gain)",
+                  length(gf_code), length(fixed_code)))
+  } else {
+    ci_ok(sprintf("A3b no NEW sidecar lacks code provenance (%d grandfathered)",
+                  length(gf_code)))
+  }
+}
+
 ci_section("A4 geography never appears without an identity behind it")
 
 # The claim this project rests on is

@@ -1679,6 +1679,10 @@ measured — see [Absence is not zero](#absence-is-not-zero-in-four-different-so
 | Source | Vintage used | Exact file | Supplies | Consumed by |
 |---|---|---|---|---|
 | **CMS Doctors & Clinicians (DAC)** | **June 2026** for Table 1/attribute use; **full annual history, 2013–2026**, for the state-source audit (2013–2016 from NBER's mirror, 2017–2025 from tables already sitting in an external DuckDB warehouse, 2026 the live pull) | `DAC_NationalDownloadableFile_2026-06.csv`; historical vintages via [`extract_physician_compare_historical_midwives.R`](extract_physician_compare_historical_midwives.R) | practice-address corroboration, group practice, medical/midwifery school (14.3% coverage), graduation year, CCN facility affiliations (2013–2022 only — CMS dropped the field from the file itself starting 2023, see [`extract_historical_facility_affiliation.R`](extract_historical_facility_affiliation.R)) | [`extract_dac_midwives.R`](extract_dac_midwives.R), [`extract_dac_cnm_education.R`](extract_dac_cnm_education.R), [`extract_dac_facility_affiliations.R`](extract_dac_facility_affiliations.R) |
+| **Medicaid enrolment (DOGE T-MSIS segments)** | **2013–2024**, expanded from `ENRL_START_DT`/`ENRL_END_DT` by date-range overlap | `doge_opendata/medicaid_provider_enrollment_segments_2026_07_24/` (external volume) | 119,527 cohort NPI-years / 13,622 midwives, plus a 178,907-row multi-state footprint. **Agreement with NPPES is 88.5% under set membership** (91.4% in 2024); the 74.7% equality figure and the withdrawn 0.166 odd-one-out rate compared against one arbitrarily chosen state. Left-censored before 2018 — no segment that closed earlier is in the file | [`extract_medicaid_enrollment_state_by_year.R`](extract_medicaid_enrollment_state_by_year.R) |
+| **Medicaid spending by NDC (DOGE)** | **2018-01 – 2024-12**, 84 months — the file has nothing earlier | same volume, `medicaid_provider_spending_ndc_2026_07_24/` | 935 midwives with a dated claim; prescription drug claims only, so absence is weak evidence | [`extract_medicaid_activity_by_month.R`](extract_medicaid_activity_by_month.R) |
+| **PPEF / PECOS enrolment (NBER + CMS quarterly)** | **16 vintages, 2016-08 – 2024-07** (10 monthly, 6 quarterly). 2020–2022 does not exist at any source | `ppef_nber/` (external volume) | 127,372 rows / 11,931 midwives; 2016-08 alone holds 6,388 with a state, five years before the PECOS revalidation series starts | [`extract_ppef_cohort_state_by_vintage.R`](extract_ppef_cohort_state_by_vintage.R) |
+| **NPPES deactivation / reactivation** | events 2008-12-30 – 2026-02-05 | `credentials.nppes_status` in `nber_my_duckdb.duckdb` (6,464,366 rows) | 396 cohort deactivations, 10 reactivations. **Zero fall inside a Medicare billing gap** | [`audit_billing_gaps_vs_registry_status.R`](audit_billing_gaps_vs_registry_status.R) |
 | **Medicare Physician & Other Practitioners (Part B)** and **Part D Prescribers** | **2013–2024**, one row per provider-year, both with a practice state every year | `nber_my_duckdb.duckdb` (external volume) for Part B 2013–2023 and Part D 2022–2023; CMS by-provider CSVs on the external volume for Part D 2013–2021 + 2024 and Part B 2024, fetched by [`download_cms_by_provider_files.R`](download_cms_by_provider_files.R). **The warehouse holds Part D 2013–2021 only as the `_standardized` cut, which drops `Prscrbr_State_Abrvtn` entirely** — those eleven years were presence-only until 2026-11-09 | Part B 19.5% / Part D 47.1% participation; for the state series, Part B 3,812 NPIs / 16,463 NPI-years and Part D 8,147 / 39,235 | [`match_medicare_partb_partd.R`](match_medicare_partb_partd.R), [`extract_medicare_part_b_d_cohort_states.R`](extract_medicare_part_b_d_cohort_states.R) |
 | **HCRIS hospital cost reports** | **FY2023** (`HCRIS_FY`, overridable) | `/Volumes/MufflySamsung*/HCRIS/hosp10/fy2023/` | newborn/nursery volume at affiliated hospitals — **reported by only 37.7% of hospitals** | [`extract_hcris_affiliated_hospitals.R`](extract_hcris_affiliated_hospitals.R) |
 | **HRSA HPSA — primary care** | the file is named `..._CUR_...` (**current at download**); **the download date is not recorded anywhere in the repo** — a reproducibility gap | `HPSA_CMPPC_SHP_DET_CUR_VX.shp` | shortage-area status by point-in-polygon, 98.4% of geocoded | [`assign_hpsa_status.R`](assign_hpsa_status.R) |
@@ -1771,6 +1775,24 @@ only until the CMS by-provider files for 2013–2021 were downloaded, because
 the warehouse holds those years as a cut that drops the state column** — plus
 the DOGE Medicaid *spending* file in both NPI roles. 16,887 of 16,898 midwives
 appear in at least one of the fourteen; 612 in exactly one.
+
+**Medicare billing gaps are not workforce exit.** Among midwives whose observed
+Part D span covers ≥3 calendar years — the ones who could have an interior gap —
+**40.1%** have one (2,209 of 5,514). The older 27.1% divides by all 8,147
+prescribers, including 1,682 seen in a single year who cannot have a gap at all.
+Of 2,731 gap episodes, **10.4% carry confirmed dated billing elsewhere**, 81.4%
+carry Medicaid enrolment only (administrative presence, not care delivered), and
+8.2% carry nothing. Of 396 dated NPI deactivations, **zero** fall inside a gap.
+See [`docs/longitudinal-reconstruction-changelog.md`](docs/longitudinal-reconstruction-changelog.md).
+
+**Medicaid agreement figures published before 2026-11-10 are withdrawn.** They
+compared other sources against one arbitrarily chosen Medicaid state while
+discarding the other 33.2% of a midwife's concurrent enrolments. Recomputed as
+set membership on the same 107,386 NPI-years, agreement with NPPES is **88.5%**
+(91.4% in 2024), not 74.7% — so the 0.166 odd-one-out rate and the "five times
+the next worst source" claim are artifacts of the comparison, not properties of
+the data. No location assignment changed; truth fusion reads the unchanged
+single-valued series.
 
 Read [`docs/source-series-reconstruction.md`](docs/source-series-reconstruction.md)
 before quoting any temporal number from either appendix. It records, per source,
