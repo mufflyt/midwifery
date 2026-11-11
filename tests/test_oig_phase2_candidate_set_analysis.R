@@ -143,6 +143,18 @@ chk(
   "zero/single/multiple buckets, NA treated as zero (no linked location)"
 )
 
+cat("-- assert_one_row_per_id() [no silent arbitrary-row .keep_all pick] --\n")
+clean_df <- data.frame(npi = c("1", "2", "3"), v = c("a", "b", "c"))
+chk(
+  identical(assert_one_row_per_id(clean_df, "npi", "ctx"), clean_df),
+  "no duplicates -> returns data unchanged"
+)
+dup_df <- data.frame(npi = c("1", "1", "2"), v = c("a", "b", "c"))
+chk(
+  inherits(tryCatch(assert_one_row_per_id(dup_df, "npi", "ctx"), error = function(e) e), "error"),
+  "a duplicated id errors loudly instead of silently picking the first row"
+)
+
 cat("\n")
 if (fails == 0L) {
   cat("ALL PASS\n")

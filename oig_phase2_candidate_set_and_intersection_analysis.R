@@ -115,8 +115,8 @@ norm_str_zip5 <- function(x) {
 lnk_raw <- read_csv(FROZEN_PATH, col_types = cols(.default = "c"), progress = FALSE)
 cohort_active <- canonical_active_primary(lnk_raw) %>%
   mutate(npi = trimws(npi)) %>%
-  filter(!is.na(npi), nzchar(npi)) %>%
-  distinct(npi, .keep_all = TRUE)
+  filter(!is.na(npi), nzchar(npi))
+assert_one_row_per_id(cohort_active, "npi", "canonical_active_primary() cohort")
 base::message(sprintf("Canonical active primary-linked AMCB cohort: N = %d NPIs", nrow(cohort_active)))
 
 con <- open_medicare_duckdb(read_only = TRUE)
@@ -163,8 +163,8 @@ HAS_STREET_ADDRESS_FIELD <- FALSE
 nppes_2019_panel <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
   filter(snapshot_year == "2019") %>%
   mutate(npi = trimws(npi)) %>%
-  semi_join(cohort_active, by = "npi") %>%
-  distinct(npi, .keep_all = TRUE)
+  semi_join(cohort_active, by = "npi")
+assert_one_row_per_id(nppes_2019_panel, "npi", "midwife_panel.csv snapshot_year==2019")
 
 nppes_2019_st_zip <- nppes_2019_panel %>%
   transmute(

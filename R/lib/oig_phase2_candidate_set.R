@@ -80,6 +80,27 @@ classify_sequential_transition <- function(before_set, new_source_set) {
   "multiple_no_narrowing"
 }
 
+#' Assert a data frame has at most one row per `id_col` value; stop with a
+#' clear message naming the duplicates if not.
+#'
+#' ponytail: used in place of `distinct(id, .keep_all = TRUE)`, which
+#' silently keeps an arbitrary row (in whatever order the data happens to
+#' arrive) when duplicates exist -- the project's own debt-ceiling test
+#' (`tests/test_cycle5_key_resolution.R`, T44) flags new `.keep_all = TRUE`
+#' usage for exactly this reason: it is the same class of bug as the
+#' PECOS dedup-determinism issue (D13 in DEBT.md). This fails loudly instead.
+assert_one_row_per_id <- function(data, id_col, context) {
+  dup_ids <- data[[id_col]][duplicated(data[[id_col]])]
+  if (length(dup_ids) > 0L) {
+    stop(sprintf(
+      "%s: expected exactly one row per %s, found %d duplicated value(s): %s",
+      context, id_col, length(unique(dup_ids)),
+      paste(utils::head(unique(dup_ids), 5L), collapse = ", ")
+    ), call. = FALSE)
+  }
+  invisible(data)
+}
+
 #' Bucket a candidate-ZIP5-count into the Section 4.3 cardinality strata.
 #' @return ordered factor-free character label.
 classify_zip5_count_bucket <- function(n_zip5) {
