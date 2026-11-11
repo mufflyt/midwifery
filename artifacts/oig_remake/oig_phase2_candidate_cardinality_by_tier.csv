@@ -1,0 +1,7 @@
+specificity_tier,n_clinicians,pct_of_5897_enrolled,pct_of_5643_linked,mean_distinct_zip5,sd_distinct_zip5,median_distinct_zip5,p25_distinct_zip5,p75_distinct_zip5,n_single_address,n_multiple_zip5,n_interstate_candidates,mean_billing_orgs,mean_zip5_with_multiple_billing_orgs
+Tier 1: Direct Individual Practice Location (Attached to Individual Enrollment ID),26,0.44,0.46,9.27,22.31,1,1,3.75,16,10,2,0.65,0.12
+Tier 2: Unique Group-Associated Location (1 ZIP5 in 1 State via Billing Group),569,9.65,10.08,1,0,1,1,1,569,0,0,1.05,0.04
+Tier 3: Small Intrastate Multi-Site Group (2-5 Unique ZIP5s in 1 State),1015,17.21,17.99,3.27,1.05,3,2,4,0,1015,0,1.21,0.14
+Tier 4: Large Intrastate Multi-Site Group (>5 Unique ZIP5s in 1 State),3523,59.74,62.43,40.57,49.42,23,11,45,0,3523,0,1.47,1.61
+Tier 5: Multi-State / Interstate Billing Group Locations (>=2 States),510,8.65,9.04,42.92,42.37,30,13,59,0,510,510,2.22,2.38
+Tier 6: No Practice Location Linked in PECOS (Neither Direct Nor Group),254,4.31,NA,0,0,0,0,0,0,0,0,0,0

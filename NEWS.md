@@ -20,6 +20,24 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-10 — OIG remake Phase 2: only 68% of the "1,789 corroborated" matches are actually unique
+
+### Added
+
+- **`oig_phase2_candidate_set_and_intersection_analysis.R`** (OIG OEI-07-09-00440 remake, spec
+  Sections 4-5): fixes the existing audit's PECOS candidate-ZIP set, which was a tier-priority
+  pick (direct address if present, else group address) that silently dropped group-reassignment
+  ZIPs for the 8 clinicians who have both. The union-based fix correctly reclassifies 7 of those
+  8 from "single-ZIP" to multi-ZIP. Then reassesses the existing "1,789 three-source corroborated"
+  figure: the three-way PECOS/NPPES/Physician-Compare intersection is structurally
+  empty-or-singleton (NPPES contributes <=1 ZIP5/clinician), so its 99.5%-"exactly one" result is
+  mathematically guaranteed whenever a match exists at all. The honest test — the pairwise
+  PECOS-vs-Physician-Compare intersection, where both sources are genuinely multi-valued — finds
+  only **1,213 of the 1,789 (67.8%) are uniquely geographically resolved**; the remaining 576
+  (32.2%) share multiple ZIP5s, consistent with chance agreement from a large billing-group
+  address list rather than a pinpointed site. See
+  `docs/TECHNICAL_APPENDIX_OIG_PHASE2_CANDIDATE_SET_ANALYSIS.md`.
+
 ## [Unreleased] — 2026-11-09 — Figure 4, and movers are ~44x harder to independently confirm than staying put
 
 ### Added
