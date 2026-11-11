@@ -187,6 +187,18 @@ REBUILD_ORDER <- list(
                    # Layer 1: they describe the crosswalk and feed nothing
                    # downstream, so order within the layer is free.
                    "extract_medicare_part_b_d_cohort_states.R",
+                   # Added 2026-11-10 by T5, the EIGHTH catch, in the pull
+                   # request that recovered the NBER PPEF enrolment vintages.
+                   #
+                   # extract_ppef_cohort_state_by_vintage.R reads the cohort's
+                   # NPIs straight from the freeze and asks sixteen PPEF
+                   # archives (2016-08 through 2024-07) what state each midwife
+                   # was enrolled in at that vintage. It is a frozen consumer
+                   # for the same reason the two above are: change the freeze
+                   # and every per-vintage count in
+                   # artifacts/ppef_cohort_coverage_by_vintage.csv moves, with
+                   # nothing in the artifact itself to say why.
+                   "extract_ppef_cohort_state_by_vintage.R",
                    "compare_all_sources_mysteryroster.R")),
   list(layer = "2-cohort-structure", why = "cohort flow/composition/progression read FROZEN directly",
        scripts = c("R/05-stage-progression.R", "R/06-cohort-flow.R",

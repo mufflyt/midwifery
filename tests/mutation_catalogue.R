@@ -864,5 +864,329 @@ MUTATIONS <- list(
                 "comparison even runs, instead of being counted as a",
                 "disagreement."),
     killers = c("tests/test_address_agreement_compare_saboteur.R")
+  ),
+
+  # ---- source-series reconstruction ----------------------------------------
+  # THESE MUTATE PIPELINE SCRIPTS, which the scope note at the top of this file
+  # says not to do. The reason that note gives is that pipeline scripts need
+  # person-level inputs a runner does not have, so a mutation would "survive"
+  # for want of data rather than for want of a test -- a false hole.
+  #
+  # That does not apply here. tests/test_source_series_reconstruction.R parses
+  # these scripts, lifts out the single function under test, and runs it
+  # against synthetic in-memory fixtures. No freeze, no warehouse, no external
+  # volume. The mutations below are therefore genuinely killable on a bare
+  # runner, and if one survives it is a real hole.
+  #
+  # What they defend is narrow and worth stating: that a year's value was
+  # measured in that year, by a rule that gives the same answer twice. Every
+  # temporal statistic this project publishes rests on it.
+
+  list(
+    id = "partd-tiebreak-reversed",
+    file = "extract_medicare_part_b_d_cohort_states.R",
+    find = "ORDER BY n DESC, state ASC",
+    repl = "ORDER BY n DESC, state DESC",
+    why = paste("Reverses the tie-break for a midwife billing equally from",
+                "two states in one year. The rule still runs and still",
+                "returns one state per NPI-year, so nothing errors and the",
+                "row counts are unchanged -- the series just quietly names a",
+                "different state for every tied midwife, and the artifact's",
+                "hash changes without any input changing. Alphabetical order",
+                "is not cosmetic here; it is what makes a rerun",
+                "byte-identical under the provenance ratchet."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "partd-modal-inverted",
+    file = "extract_medicare_part_b_d_cohort_states.R",
+    find = "ORDER BY n DESC, state ASC",
+    repl = "ORDER BY n ASC, state ASC",
+    why = paste("Takes the LEAST common state for the year instead of the",
+                "most common. On a by-service file where a midwife has 40",
+                "rows in Colorado and 1 in Wyoming, the series records",
+                "Wyoming. Agreement with every other source collapses in a",
+                "way that reads as a finding about data quality rather than",
+                "as an inverted comparator."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "partd-multiplicity-hidden",
+    file = "extract_medicare_part_b_d_cohort_states.R",
+    find = "COUNT(DISTINCT t2.state)",
+    repl = "1",
+    why = paste("Hard-codes n_states_this_year to 1, so every midwife looks",
+                "singly-located. Multiplicity stops being a column a reader",
+                "can filter on and becomes invisible -- and multi-state",
+                "practice is precisely what the cross-source disagreement",
+                "analysis is trying to separate from error."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "partd-foreign-state-kept",
+    file = "extract_medicare_part_b_d_cohort_states.R",
+    find = "out <- out[!is.na(out$state), , drop = FALSE]",
+    repl = "out <- out",
+    why = paste("Keeps rows clean_state() rejected, so a foreign practice",
+                "location enters the series as a missing US state rather",
+                "than being dropped. The real case is NPI 1013060656,",
+                "prescribing from Dar Es Salaam under code ZZ in 2015 and",
+                "2016. An NA state then propagates into agreement",
+                "denominators as if it were an observation."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "partd-duplicates-not-collapsed",
+    file = "extract_medicare_part_b_d_cohort_states.R",
+    find = "QUALIFY ROW_NUMBER() OVER (PARTITION BY npi ORDER BY n DESC, state ASC) = 1",
+    repl = "QUALIFY ROW_NUMBER() OVER (PARTITION BY npi ORDER BY n DESC, state ASC) >= 1",
+    why = paste("Emits one row per state per midwife-year instead of one row",
+                "per midwife-year. Every downstream count of 'NPI-years'",
+                "inflates by the multi-state rate, transitions multiply, and",
+                "the independence audit reports more evidence than exists --",
+                "the exact overstatement this work was done to prevent."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "partd-year-off-by-one",
+    file = "extract_medicare_part_b_d_cohort_states.R",
+    find = "out$year <- as.integer(year)",
+    repl = "out$year <- as.integer(year) + 1L",
+    why = paste("Shifts every observation one year later. Nothing errors and",
+                "every row count is identical; the whole series is simply",
+                "misdated. Lead/lag against NPPES would then report Part D",
+                "as systematically lagging by a year, which is a publishable",
+                "sentence and completely false."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "independence-nonadjacent-counted",
+    file = "audit_source_series_independence.R",
+    find = "filter(!is.na(nxt), nxt == year + 1L)",
+    repl = "filter(!is.na(nxt))",
+    why = paste("Counts any consecutive pair of OBSERVATIONS as a year-to-year",
+                "transition, so a midwife seen in 2015 and again in 2019",
+                "contributes one transition across a four-year gap. Since",
+                "27.1% of Part D midwives have interior gaps, this inflates",
+                "the transition count materially -- and the artifact exists",
+                "specifically to stop transition counts being read as more",
+                "evidence than they are."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "ppef-refutation-disabled",
+    file = "extract_ppef_cohort_state_by_vintage.R",
+    find = "if (packed < claimed) {",
+    repl = "if (FALSE) {",
+    why = paste("Disables the one check that can falsify a claimed vintage.",
+                "PPEF has no in-file date, so the archive's stored mtime is",
+                "the only evidence, and its single usable property is that a",
+                "file cannot be packaged before the period it describes.",
+                "Without it a mislabelled archive is accepted and its",
+                "observations are dated by its filename alone -- which is",
+                "the failure docs/temporal-evidence-validation.md exists to",
+                "rule out."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  # ---- source-series reconstruction, second set ---------------------------
+  # The first set attacks the arithmetic. These attack the plumbing around
+  # it: ordering, grouping, which column is read, and which check is allowed
+  # to refuse a file. Each one leaves a series that is the right shape and
+  # the right size, and wrong.
+
+  list(
+    id = "independence-no-grouping",
+    file = "audit_source_series_independence.R",
+    find = "arrange(npi, year) %>% group_by(npi) %>%",
+    repl = "arrange(npi, year) %>%",
+    why = paste("Drops the grouping, so lead() runs off the end of one",
+                "midwife's rows into the next midwife's. Wherever one",
+                "person's last observed year is one less than the next",
+                "person's first, a transition is invented BETWEEN TWO",
+                "DIFFERENT PEOPLE. In a cohort sorted by NPI that happens",
+                "constantly, and it inflates exactly the count this",
+                "artifact exists to keep honest."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "independence-unsorted",
+    file = "audit_source_series_independence.R",
+    find = "arrange(npi, year) %>% group_by(npi) %>%",
+    repl = "group_by(npi) %>%",
+    why = paste("Takes lead() in whatever order the rows arrived from disk.",
+                "A file written in a different order silently yields a",
+                "different transition count from identical data, so the",
+                "audit stops being reproducible while still looking",
+                "plausible. Nothing errors; the number just moves."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "ppef-state-column-preference-flipped",
+    file = "extract_ppef_cohort_state_by_vintage.R",
+    find = 'if ("state_cdstr" %in% hdr) "state_cdstr" else "state_cd"',
+    repl = 'if ("state_cdstr" %in% hdr) "state_cd" else "state_cdstr"',
+    why = paste("Reads the numeric FIPS column from the monthly NBER files",
+                "instead of the two-letter one -- state 6 rather than CA.",
+                "THIS BUG WAS ACTUALLY WRITTEN, on 2026-11-10, and survived",
+                "only because clean_state() refuses anything that is not a",
+                "US state. A looser cleaner would have produced ten years",
+                "of integer 'states' agreeing with nothing, which reads as",
+                "a finding about PECOS rather than a column mix-up."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "ppef-tiebreak-reversed",
+    file = "extract_ppef_cohort_state_by_vintage.R",
+    find = "ORDER BY state ASC",
+    repl = "ORDER BY state DESC",
+    why = paste("About a tenth of enrolled midwives hold simultaneous",
+                "enrolments in several states -- concurrent registrations,",
+                "not moves. Reversing which one is picked changes the state",
+                "for roughly 1 in 10 rows in every vintage, so the",
+                "vintage-to-vintage 'move' rate changes with no underlying",
+                "data change at all."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "ppef-sameyear-check-removed",
+    file = "extract_ppef_cohort_state_by_vintage.R",
+    find = 'if (format(packed, "%Y") != format(claimed, "%Y")) {',
+    repl = "if (FALSE) {",
+    why = paste("Keeps the can't-be-packaged-earlier check but drops the",
+                "same-year one, so a monthly archive packaged years after",
+                "the month it claims is accepted. The weaker of the two",
+                "tests still passes, which is what makes this survivable to",
+                "the eye: validation appears to be happening."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "ppef-quarterly-exemption-widened",
+    file = "extract_ppef_cohort_state_by_vintage.R",
+    find = 'if (identical(layout, "cms_quarterly")) {',
+    repl = "if (TRUE) {",
+    why = paste("Extends the quarterly exemption to every layout. That",
+                "exemption is justified ONLY because the quarterly members",
+                "carry a CMS extract date in the filename; the monthly ones",
+                "have nothing but the archive mtime. Widened, every monthly",
+                "vintage is reported verified_date on evidence it does not",
+                "have -- a validation that always says yes."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "partd-npi-not-trimmed",
+    file = "extract_medicare_part_b_d_cohort_states.R",
+    find = "JOIN cohort_npi c ON trim(CAST(t.%s AS VARCHAR)) = c.npi",
+    repl = "JOIN cohort_npi c ON CAST(t.%s AS VARCHAR) = c.npi",
+    why = paste("Stops trimming the source NPI before the cohort join.",
+                "Warehouse NPIs are clean, so every warehouse year still",
+                "passes and only the downloaded CSVs lose rows -- a",
+                "source-specific and year-specific undercount that looks",
+                "like genuinely lower Part D participation in exactly the",
+                "years that were added on 2026-11-09."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  # ---- source-series reconstruction, third set ----------------------------
+  # Upstream of the arithmetic and the plumbing: which FILE gets downloaded,
+  # whether a missing table is noticed, how a vintage is labelled, and
+  # whether a duplicate row is counted twice. Nothing here touches a
+  # statistic directly; each one changes what the statistic is computed on.
+
+  list(
+    id = "download-product-regex-loosened",
+    file = "download_cms_by_provider_files.R",
+    find = 'part_d = "^Medicare Part D Prescribers - by Provider : (\\\\d{4})-",',
+    repl = 'part_d = "^Medicare Part D Prescribers - by Provider.* : (\\\\d{4})-",',
+    why = paste("CMS publishes two Part D products whose titles differ by",
+                "three words: '- by Provider :' is one row per prescriber,",
+                "'- by Provider and Drug :' is one row per prescriber-drug,",
+                "roughly forty times the rows. Both are in the catalogue for",
+                "every year. Loosened, the resolver matches both and may",
+                "download the drug-level file, which still parses, still has",
+                "NPIs and still has Prscrbr_State_Abrvtn -- so the modal",
+                "reduction silently reweights each midwife's state by how",
+                "many distinct drugs she prescribed there."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "download-year-from-whole-match",
+    file = "download_cms_by_provider_files.R",
+    find = "year = as.integer(m[2])",
+    repl = "year = as.integer(m[1])",
+    why = paste("Takes the whole regex match instead of the captured year,",
+                "so as.integer() gets a title and returns NA with a warning",
+                "no one reads. Every file then lands under a year of NA and",
+                "the manifest ties a 600 MB download to nothing."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "has-table-always-true",
+    file = "extract_medicare_part_b_d_cohort_states.R",
+    find = "dbQuoteString(con, tb)))) > 0L",
+    repl = "dbQuoteString(con, tb)))) >= 0L",
+    why = paste("has_table() becomes a function that always says yes, so a",
+                "year whose warehouse table is absent is queried anyway. The",
+                "query errors or returns nothing depending on the backend,",
+                "and the 'absent, skipped' log line that is supposed to make",
+                "a missing year visible never prints. A gap in the series",
+                "then looks like a year in which no midwife billed."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "ppef-vintage-month-not-padded",
+    file = "extract_ppef_cohort_state_by_vintage.R",
+    find = 'vintage = sprintf("%04d-%02d", yr, mo),',
+    repl = 'vintage = sprintf("%04d-%d", yr, mo),',
+    why = paste("Drops the zero pad, so August 2016 is labelled 2016-8 and",
+                "sorts AFTER 2016-10. NBER's own filenames are unpadded",
+                "(ppefenrol20168), which already cost a round of 404s, and",
+                "this reintroduces the same hazard one layer later: every",
+                "join on vintage misses, and min()/max() report the wrong",
+                "range for the series."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "ppef-vintage-year-offset",
+    file = "extract_ppef_cohort_state_by_vintage.R",
+    find = "yr <- as.integer(substr(ym, 1, 4))",
+    repl = "yr <- as.integer(substr(ym, 2, 5))",
+    why = paste("An off-by-one in the substring that reads the year out of",
+                "an unpadded filename. ppefenrol20168 yields year 168",
+                "instead of 2016. Plausible precisely because the filename",
+                "has no separator between year and month, which is what",
+                "makes positional parsing necessary in the first place."),
+    killers = c("tests/test_source_series_reconstruction.R")
+  ),
+
+  list(
+    id = "independence-duplicates-kept",
+    file = "audit_source_series_independence.R",
+    find = "filter(!is.na(npi), nzchar(npi), !is.na(year)) %>% distinct()",
+    repl = "filter(!is.na(npi), nzchar(npi), !is.na(year))",
+    why = paste("Stops deduplicating, so a midwife listed twice in one year",
+                "-- two enrolments, two billing rows -- counts as two",
+                "observations. Every figure in the independence artifact is",
+                "a count, so npi_years, adjacent transitions and the",
+                "interior-gap denominator all inflate together, and they",
+                "inflate consistently enough to look like real coverage."),
+    killers = c("tests/test_source_series_reconstruction.R")
   )
 )
