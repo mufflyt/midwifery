@@ -25,7 +25,7 @@ suppressPackageStartupMessages({
 
 OUT_DIR <- file.path("docs", "figures")
 
-save3 <- function(p, name, width = 8.5, height = 5.4) {
+save_longitudinal_fig <- function(p, name, width = 8.5, height = 5.4) {
   out <- file.path(OUT_DIR, name)
   ggsave(paste0(out, ".pdf"), p, width = width, height = height,
          device = if (capabilities("cairo")) cairo_pdf else pdf)
@@ -53,7 +53,7 @@ p1 <- ggplot(yearly, aes(x = year, y = pct_differs)) +
   ) +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold", size = 11), legend.position = "top")
-save3(p1, "longitudinal_medicaid_yearly_disagreement")
+save_longitudinal_fig(p1, "longitudinal_medicaid_yearly_disagreement")
 
 # -- Figure 2: the set-membership fix, three ways of scoring the same data ---
 membership <- tibble(
@@ -74,7 +74,7 @@ p2 <- ggplot(membership, aes(x = method, y = pct, fill = is_fix)) +
   ) +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold", size = 11))
-save3(p2, "longitudinal_medicaid_membership_fix")
+save_longitudinal_fig(p2, "longitudinal_medicaid_membership_fix")
 
 # -- Figure 3: where the 59,380 discarded memberships went -------------------
 discard <- tibble(
@@ -95,7 +95,7 @@ p3 <- ggplot(discard, aes(x = bucket, y = n, fill = bucket)) +
   ) +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold", size = 11))
-save3(p3, "longitudinal_medicaid_discarded_memberships")
+save_longitudinal_fig(p3, "longitudinal_medicaid_discarded_memberships")
 
 # -- Figure 4: billing gaps, naive rate vs the denominator that can show one -
 denom <- tibble(
@@ -116,7 +116,7 @@ p4 <- ggplot(denom, aes(x = frame, y = pct, fill = is_right_denominator)) +
   ) +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold", size = 11))
-save3(p4, "longitudinal_billing_gap_denominator")
+save_longitudinal_fig(p4, "longitudinal_billing_gap_denominator")
 
 # -- Figure 5: what corroborates a billing gap, and what doesn't -------------
 corrob <- tibble(
@@ -136,6 +136,6 @@ p5 <- ggplot(corrob, aes(x = evidence, y = pct, fill = evidence)) +
   ) +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold", size = 11))
-save3(p5, "longitudinal_billing_gap_corroboration")
+save_longitudinal_fig(p5, "longitudinal_billing_gap_corroboration")
 
 cat("Wrote 5 figures (pdf/png/svg) to", OUT_DIR, "\n")
