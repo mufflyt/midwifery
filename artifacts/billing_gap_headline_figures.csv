@@ -1,0 +1,15 @@
+measure,episodes,midwives,value,unit,pct_of_episodes
+All Part D midwives,,8147,27.1,% with a gap,
+Seen in >=2 years,,6465,34.2,% with a gap,
+Span covers >=3 calendar years,,5514,40.1,% with a gap,
+Midwives with an interior gap,2731,2209,,count,100
+Seen in exactly one year (cannot have a gap),,1682,,count,
+One-year episodes,1341,,,count,49.1
+Two-year episodes,565,,,count,20.7
+Three-or-more-year episodes,825,,,count,30.2
+Confirmed billing during the gap,285,266,,count,10.4
+Medicaid enrolment only,2223,1831,,count,81.4
+No corroborating evidence,223,195,,count,8.2
+Multi-year: confirmed billing in ANY missing year,166,,,count,6.1
+Multi-year: confirmed billing in EVERY missing year,29,,,count,1.1
+Gaps filled by Part B activity,194,186,,count,7.1

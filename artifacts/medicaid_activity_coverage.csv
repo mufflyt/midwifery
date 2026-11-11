@@ -1,0 +1,15 @@
+year,role,n_midwives,n_months_observed,pct_of_cohort
+2018,billing,56,12,0.33
+2018,prescribing,205,12,1.21
+2019,billing,61,12,0.36
+2019,prescribing,242,12,1.43
+2020,billing,63,12,0.37
+2020,prescribing,236,12,1.4
+2021,billing,17,12,0.1
+2021,prescribing,265,12,1.57
+2022,billing,18,12,0.11
+2022,prescribing,263,12,1.56
+2023,billing,8,12,0.05
+2023,prescribing,305,12,1.8
+2024,billing,7,11,0.04
+2024,prescribing,284,12,1.68

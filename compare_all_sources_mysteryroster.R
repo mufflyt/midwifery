@@ -22,12 +22,13 @@
 #   LONGITUDINAL  a state for an NPI in a given YEAR, so it can carry
 #                 agreement-over-time, lead/lag, churn and fusion:
 #                 nppes, pecos_revalidation, medicare_part_b, medicare_part_d,
+#                 medicaid_enrollment (moved out of SNAPSHOT 2026-11-10),
 #                 open_payments.
 #   SNAPSHOT      one state per NPI with no usable year, so it can only carry
 #                 presence and current-state agreement: dac_physician_compare,
 #                 facility_affiliation_ccn (the NPI -> CCN route),
 #                 healthgrades, doximity, state_boards_of_nursing,
-#                 cms_ndh_fhir, medicaid_enrollment (DOGE T-MSIS segments).
+#                 cms_ndh_fhir.
 #
 # Giving a snapshot a year it does not have would manufacture a time series,
 # and every lead/lag number computed from it would be an artifact of that
@@ -238,24 +239,38 @@ snap$cms_ndh_fhir <- read_if(file.path(ART, "cms_ndh_midwives.csv"), function()
     keep_cohort() %>% one_per_npi())
 
 # DOGE T-MSIS Medicaid enrollment segments (opendata.hhs.gov, 2026-07-24).
-MEDICAID_REL <- file.path("doge_opendata", "medicaid_provider_enrollment_segments_2026_07_24",
-                          "medicaid-provider-enrollment-segments.parquet")
-snap$medicaid_enrollment <- local({
-  p <- samsung_volume_path(MEDICAID_REL, must_exist = FALSE)
-  if (is.na(p)) { note_missing("medicaid_enrollment", MEDICAID_REL, "Samsung volume not mounted"); return(NULL) }
-  con <- duckdb_connect(); on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
-  DBI::dbWriteTable(con, "wanted", data.frame(npi = cohort_npis), overwrite = TRUE)
-  pairs <- DBI::dbGetQuery(con, sprintf(
-    "SELECT trim(s.NPI) AS npi, s.STATE_CD AS state, count(*) AS n
-       FROM read_parquet(%s) s JOIN wanted w ON w.npi = trim(s.NPI)
-      WHERE s.STATE_CD IS NOT NULL GROUP BY 1,2", DBI::dbQuoteString(con, p)))
-  if (!nrow(pairs)) return(NULL)
-  lut <- tibble(state = unique(pairs$state)) %>% mutate(clean = clean_state(state))
-  pairs %>% inner_join(lut, by = "state") %>% filter(!is.na(clean)) %>%
-    transmute(npi, state = clean, n) %>%
-    arrange(npi, desc(n), state) %>% group_by(npi) %>% slice(1) %>% ungroup() %>%
-    select(npi, state)
-})
+# MEDICAID ENROLMENT IS LONGITUDINAL, AND USED TO BE READ AS A SNAPSHOT.
+# Until 2026-11-10 this block reduced the whole T-MSIS segments file to one
+# modal state per NPI and put it in the SNAPSHOT tier, so a career-long state
+# was compared against every other source's contemporaneous value. The file
+# carries ENRL_START_DT and ENRL_END_DT; expanding by date-range overlap
+# yields 119,527 cohort NPI-years, 2013-2024.
+#
+# Measured, not assumed: the old modal state differs from the year-specific
+# state on 14.4% of NPI-years -- 30.5% in 2013 decaying monotonically to 5.7%
+# in 2024, which is the signature of comparing one fixed value against a
+# moving one. That is why medicaid_enrollment carried an odd-one-out rate of
+# 0.166, five times the next source, and the lowest fusion agreement of the
+# fourteen. See extract_medicaid_enrollment_state_by_year.R and
+# artifacts/medicaid_enrollment_modal_vs_yearly.csv.
+#
+# CLASS B, NOT CLASS A. One file published 2026-07-24 describing years of
+# history is retrospectively reported, not twelve independently dated
+# observations, and 2013-2017 is additionally left-censored: no segment that
+# closed before 2018-01-01 is in the file at all, so coverage in those years
+# is survivorship. The states are sound; the coverage trend is not.
+longi$medicaid_enrollment <- read_if(
+  file.path(ART, "medicaid_enrollment_cohort_state_by_year.csv"), function()
+  read_csv(file.path(ART, "medicaid_enrollment_cohort_state_by_year.csv"),
+           col_types = cols(.default = "c"), progress = FALSE) %>%
+    transmute(npi = trimws(npi), year = as.integer(year),
+              state = clean_state(state)) %>%
+    filter(!is.na(npi), !is.na(year), !is.na(state)) %>% keep_cohort() %>%
+    distinct())
+if (is.null(longi$medicaid_enrollment))
+  note_missing("medicaid_enrollment",
+               file.path(ART, "medicaid_enrollment_cohort_state_by_year.csv"),
+               "run extract_medicaid_enrollment_state_by_year.R first")
 
 snap <- snap[!vapply(snap, is.null, logical(1))]
 for (n in names(snap)) cat(sprintf("  %-26s %6s NPIs\n", n, format(nrow(snap[[n]]), big.mark = ",")))

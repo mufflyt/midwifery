@@ -38,6 +38,89 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   address list rather than a pinpointed site. See
   `docs/TECHNICAL_APPENDIX_OIG_PHASE2_CANDIDATE_SET_ANALYSIS.md`.
 
+## [Unreleased] — 2026-11-10 — Medicaid was never the unreliable source; the comparison was
+
+### Retracted
+
+- **`medicaid_enrollment`'s odd-one-out rate of 0.166, its 77.5% truth-fusion
+  agreement, and the claim that it is "five times the next worst source" are
+  withdrawn.** All three measured the comparator rather than the data.
+  `expand_segments_to_years()` computed every state a midwife was concurrently
+  enrolled in, kept one per NPI-year by modal rule, and emitted the rest
+  nowhere — **59,380 of 178,907 memberships, 33.2%**. Comparisons then tested
+  whether another source *equalled one arbitrary pick* instead of whether it
+  *named a state she was enrolled in*. A midwife enrolled in CO, NM and AZ was
+  recorded as AZ and scored as disagreeing with a source that said CO.
+  Recomputed as set membership on the same 107,386 comparable NPI-years:
+  **74.7% → 88.5%**, and **91.4%** in 2024, with 14,815 NPI-years newly scored
+  as agreeing. No underlying record changed; only the test did.
+  **No location assignment moved** — truth fusion reads the single-valued
+  series, which is unchanged. 88.5% shows the two sources are consistent under
+  the corrected comparison; it does not show either names the true practice
+  location.
+- **An earlier correction of mine was itself incomplete.** It attributed the
+  disagreement to multi-state practice being a multi-valued question — half
+  right, one step short of the discarded memberships. And before that I
+  predicted the A2 date-range expansion would resolve the outlier status; it
+  did not (0.166 → 0.163, 77.5% → 77.6%). The expansion was still correct; the
+  prediction was wrong.
+- **"27.1% of Part D midwives have a billing gap" is superseded as a headline.**
+  It divides by all 8,147, including 1,682 seen in a single year who cannot
+  have an interior gap. Among midwives whose span covers ≥3 calendar years —
+  the ones who could have one — the rate is **40.1%** (2,209 of 5,514). Two
+  *consecutive* observed years cannot contain a missing one, so "≥2 observed
+  years" (6,465, 34.2%) is not the eligible population either.
+- **"90–93% of billing gaps are corroborated" is withdrawn.** That counted
+  Medicaid *enrolment* as activity. Separating dated claims from administrative
+  presence: **confirmed billing 10.4%** (285 episodes, 266 midwives),
+  enrolment only 81.4%, no corroboration 8.2%. For multi-year gaps, confirmed
+  billing covers **any** missing year in 11.9% of episodes and **every**
+  missing year in **2.1%**.
+
+### Added
+
+- **Workstream C** — `extract_medicaid_activity_by_month.R`: dated Medicaid
+  claim activity, 8,497 NPI-month-role rows, 935 midwives, **2018-01 to
+  2024-12**. The spec asked for 2013–2024; `CLAIM_FROM_MONTH` starts 2018, so
+  the series is 2018–2024 and says so rather than emitting empty years. This is
+  the spending-**by-NDC** file — prescription drug claims only — so absence
+  from it is weak evidence of anything.
+- **Workstream E** — `audit_billing_gaps_vs_registry_status.R`: of 396 dated
+  NPI deactivations in this cohort, **zero** fall inside a billing gap, and
+  there are zero conflicting timelines. Registry exit explains none of the
+  intermittency. Recorded as BLOCKED in an earlier pass for want of a
+  deactivation file; the data was in the warehouse all along as
+  `credentials.nppes_status` (6,464,366 rows) under a schema never enumerated.
+- **`audit_billing_gap_mechanisms.R`** — CMS inclusion rules verified on the
+  files and found to **differ by program**: Part D admits on claims
+  (`Tot_Clms ≥ 11`), Part B on beneficiaries and services (`Tot_Benes ≥ 11`,
+  `Tot_Srvcs ≥ 11`). 35–41% of cohort Part D rows carry a suppressed
+  beneficiary cell — those providers are *in* the file with one field withheld,
+  a different mechanism from omission.
+- **Workstream D** — `R/lib/source_year.R`, `assert_source_year()`: five-level
+  evidence hierarchy (in-file date → release id → fingerprint → unverified →
+  refuted). A bare `YYYY` in a filename returns `unverified`, never a pass.
+  Implemented and tested; **not yet wired into any producer**.
+- **`docs/temporal-evidence-validation.md`**,
+  **`docs/longitudinal-reconstruction-changelog.md`**,
+  **`docs/spec-completion-matrix.md`**, **`docs/longitudinal-source-inventory.md`**.
+- **A3b provenance ratchet** in `tests/ci_artifact_contracts.R`: A3 proved a
+  sidecar *existed*; it could not tell a real one from an empty one. An
+  artifact written from `Rscript -e` gets `code_sha256: null` and passed. 75
+  tracked sidecars are grandfathered on a shrink-only baseline; any new one
+  fails. Verified by negative control.
+
+### Changed
+
+- `extract_medicaid_enrollment_state_by_year.R` now emits the full multi-state
+  footprint alongside the single-valued series: **178,907 rows vs 119,527**.
+  Separate artifact by design — silently widening the existing series would
+  move every statistic without anyone asking.
+- `gap_episodes()` extracted to `R/lib/billing_gaps.R` so the registry audit and
+  the mechanism analysis cannot drift about what a gap is.
+- T5 caught three more undeclared frozen consumers (the eighth and ninth
+  catches); all declared, 88/88.
+
 ## [Unreleased] — 2026-11-09 — Figure 4, and movers are ~44x harder to independently confirm than staying put
 
 ### Added

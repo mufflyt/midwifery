@@ -303,6 +303,36 @@ artifacts/cohort_midwives_part_b_state_by_year.csv.provenance.json
 artifacts/cohort_midwives_part_d_state_by_year.csv
 artifacts/cohort_midwives_part_d_state_by_year.csv.provenance.json
 
+# PPEF (NBER mirror of the CMS Public Provider Enrollment File) cohort
+# enrolment state, person-level (NPI-vintage-state), same class as the PECOS
+# pair above. Added 2026-11-10 with extract_ppef_cohort_state_by_vintage.R.
+# The two aggregate companions it writes -- ppef_vintage_validation.csv and
+# ppef_cohort_coverage_by_vintage.csv -- carry no NPI and ARE tracked.
+artifacts/ppef_cohort_state_by_vintage.csv
+artifacts/ppef_cohort_state_by_vintage.csv.provenance.json
+
+# Person-level outputs of the 2026-11-10 Medicaid and billing-gap work, same
+# class as the PECOS and Part B/D series above. Each carries an npi column;
+# every aggregate companion they produce (coverage, summary, sensitivity,
+# gradient, set-membership, modal-vs-yearly, headline figures) carries no NPI
+# and IS tracked.
+artifacts/medicaid_enrollment_cohort_state_by_year.csv
+artifacts/medicaid_enrollment_cohort_state_by_year.csv.provenance.json
+artifacts/medicaid_enrollment_cohort_state_footprint.csv
+artifacts/medicaid_enrollment_cohort_state_footprint.csv.provenance.json
+artifacts/medicaid_midwife_activity_by_month.csv
+artifacts/medicaid_midwife_activity_by_month.csv.provenance.json
+artifacts/medicaid_midwife_activity_by_year.csv
+artifacts/medicaid_midwife_activity_by_year.csv.provenance.json
+artifacts/part_d_cohort_volume_by_year.csv
+artifacts/part_d_cohort_volume_by_year.csv.provenance.json
+artifacts/billing_gap_mechanism.csv
+artifacts/billing_gap_mechanism.csv.provenance.json
+artifacts/billing_gap_registry_episodes.csv
+artifacts/billing_gap_registry_episodes.csv.provenance.json
+artifacts/billing_gap_registry_conflicts.csv
+artifacts/billing_gap_registry_conflicts.csv.provenance.json
+
 # PPEF (Public Provider Enrollment Files) Medicare enrollment year,
 # person-level (NPI, first enrollment year, enrollment count).
 artifacts/ppef_cohort_enrollment_year.csv
