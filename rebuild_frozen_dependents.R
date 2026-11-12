@@ -550,7 +550,12 @@ REBUILD_ORDER <- list(
                    # classifier audit cluster and the ordering requirement
                    # (after build_truth_fusion_predictions.R) is already
                    # satisfied at this position.
-                   "audit_migration_stable_vs_mover_corroboration.R")),
+                   "audit_migration_stable_vs_mover_corroboration.R",
+                   # Added 2026-11-10. Reads amcb_npi_linkage_FROZEN directly
+                   # via canonical_active_primary(); independent of the
+                   # migration-classifier cluster above, placed here only
+                   # because this is the last layer before publication.
+                   "oig_phase2_candidate_set_and_intersection_analysis.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        # export_amcb_npi_geography.R writes the tracked state aggregate and
        # the gitignored person-level export, both of which read the crosswalk
