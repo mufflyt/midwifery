@@ -1,0 +1,7 @@
+specificity_tier,n_midwives_in_tier,n_evaluated_in_2019_claims_directory,pct_evaluated_in_2019_claims_directory,n_pecos_zip5_corroborated_by_claims_dir,pct_pecos_corroborated_among_evaluated,ci95_low_corroborated_among_evaluated,ci95_high_corroborated_among_evaluated,n_all3_zip5_corroborated_pecos_nppes_pc,pct_all3_corroborated_of_tier,n_all3_corroborated_with_hospital_ccn,n_pinpoint_single_site_corroborated,pct_pinpoint_single_site_corroborated,sensitivity_bound_worst_case_pct,sensitivity_bound_best_case_pct
+Tier 1: Direct Individual Practice Location (Attached to Individual Enrollment ID),26,14,53.85,12,85.71,60.06,95.99,8,30.77,4,21,80.77,30.77,76.92
+Tier 2: Unique Group-Associated Location (1 ZIP5 in 1 State via Billing Group),569,226,39.72,217,96.02,92.61,97.89,157,27.59,48,442,77.68,27.59,76.98
+Tier 3: Small Intrastate Multi-Site Group (2-5 Unique ZIP5s in 1 State),1015,514,50.64,506,98.44,96.96,99.21,325,32.02,107,0,0,32.02,80.3
+Tier 4: Large Intrastate Multi-Site Group (>5 Unique ZIP5s in 1 State),3523,1892,53.7,1873,99,98.44,99.36,1158,32.87,372,0,0,32.87,87.71
+Tier 5: Multi-State / Interstate Billing Group Locations (>=2 States),510,285,55.88,279,97.89,95.48,99.03,141,27.65,42,0,0,27.65,86.67
+Tier 6: No Practice Location Linked in PECOS (Neither Direct Nor Group),254,6,2.36,0,0,0,39.03,0,0,0,0,0,0,0

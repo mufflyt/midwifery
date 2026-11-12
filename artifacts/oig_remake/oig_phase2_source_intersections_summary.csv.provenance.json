@@ -1,6 +1,6 @@
 {
   "artifact": "oig_phase2_source_intersections_summary.csv",
-  "written_utc": "2026-11-11 00:49:13 UTC",
+  "written_utc": "2026-11-12 22:45:26 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
@@ -15,11 +15,11 @@
       "sha256": "58ebc15f91f6e053c472c8a4d528e9d9ed850cdd6242017b3f15c2ab4ddfa50c"
     }
   ],
-  "code_sha256": "3ff6a1587233afaa7eb7c75df79791e6827d61a432a9082cd0fd9f5e67a30ee2",
+  "code_sha256": "36ba9b1f34d049853d16a6f43dba949427d253b7befb67aa435e2419a4d42e2b",
   "code": [
     {
       "path": "oig_phase2_candidate_set_and_intersection_analysis.R",
-      "sha256": "203197be77554e6e861fe93cd60be236867e73850321f415f91d1778ba089673"
+      "sha256": "898a8f0b23626e22743a0e47b5f2874b05bcb4bc561c3774a48cd435279b8cfb"
     },
     {
       "path": "R/lib/artifact_provenance.R",
@@ -40,6 +40,10 @@
     {
       "path": "R/lib/oig_phase2_candidate_set.R",
       "sha256": "2d9e313162024b96755cb52a0cfb3ee07904bcde88d8754b742bd9900709581f"
+    },
+    {
+      "path": "R/lib/oig_zip_normalizers.R",
+      "sha256": "571ec683eeab31de29ee758f45a13506edd3dcbca22f1c9c966014565c67c98b"
     },
     {
       "path": "R/lib/provenance.R",

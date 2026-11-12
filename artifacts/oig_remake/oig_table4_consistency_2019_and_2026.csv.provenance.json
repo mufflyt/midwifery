@@ -1,0 +1,97 @@
+{
+  "artifact": "oig_table4_consistency_2019_and_2026.csv",
+  "written_utc": "2026-11-12 22:56:58 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716"
+    },
+    {
+      "path": "dac_midwives.csv",
+      "sha256": "446a935a516a9decc5da253e97a0f22dcdf92be86ea031d0399d7b8ebc23cc7e"
+    },
+    {
+      "path": "midwife_panel.csv",
+      "sha256": "40c45ce1161f2ebe238aa3770988724ae7b1099df045ea981cfd6ccd41339386"
+    },
+    {
+      "path": "artifacts/physician_compare_historical_midwives.csv",
+      "sha256": "58ebc15f91f6e053c472c8a4d528e9d9ed850cdd6242017b3f15c2ab4ddfa50c"
+    },
+    {
+      "path": "artifacts/pecos_revalidation_cohort_state_by_year.csv",
+      "sha256": "9d2ecad4b31cd7357360b07534bcea93410b0aa2f34cb9c70ac0dbe2ffa837f9"
+    },
+    {
+      "path": "artifacts/tmsis_medicaid_enrollment_state_by_year.csv",
+      "sha256": "08332aae11b0274dcd54f430a2da214eb44b275ea3bd73aeaaefe78e48f77a04"
+    },
+    {
+      "path": "artifacts/address_lead_lag_medicaid_nppes_moves.csv",
+      "sha256": "3bee87a8b7235a00a11694cb6b90e9129b8e9d495e9c71d1417cd84c5747c795"
+    },
+    {
+      "path": "artifacts/live_colorado_bon_ingested_midwives_from_tracked_roster.csv",
+      "sha256": "78a5970885abbb1921642fa029c6f4a03a4c74f9d52173093046f53da9481b1e"
+    },
+    {
+      "path": "artifacts/live_connecticut_bon_ingested_midwives_from_tracked_roster.csv",
+      "sha256": "d87ddbbd4c8c3cf9f10ec61adf402bdaa082ea7e4d0ccf5a89f699903eca886c"
+    },
+    {
+      "path": "artifacts/live_florida_bon_ingested_midwives_from_tracked_roster.csv",
+      "sha256": "08c373919fba44f6674165744e3e1f6f0b0f2885c2023090f71d21bf66e6abdb"
+    },
+    {
+      "path": "artifacts/live_illinois_bon_ingested_midwives_from_tracked_roster.csv",
+      "sha256": "308e940253f4485b6a09e5ac13d64cb9c2b3e3bd0ffa8e86894482ac772c21cb"
+    },
+    {
+      "path": "artifacts/live_pennsylvania_bon_ingested_midwives_from_tracked_roster.csv",
+      "sha256": "b6e98fcd418851682c1f85074e4345aee1c7fcfe2fe880ff74665a57fb52f975"
+    },
+    {
+      "path": "artifacts/live_texas_bon_ingested_midwives_from_tracked_roster.csv",
+      "sha256": "8439d02fd12ebb93f6aad6822c3a70a114891c5b98cd0b6cbee5fea35230867a"
+    },
+    {
+      "path": "artifacts/live_washington_bon_ingested_midwives_from_tracked_roster.csv",
+      "sha256": "b6754ad5da54263624e823bc1e1ae2d1d4cb2ffd715cdd192ae2094fba2d7d82"
+    }
+  ],
+  "code_sha256": "54a172698e6b2f2f04e3121c1f2bab252531a1f2ea0c15a9f37d18ca6b566b41",
+  "code": [
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/clean_state.R",
+      "sha256": "188cee53abd5b2e7afb2c6bffbc7ea27a16029189fb97ca8be1865d5ab0c2c23"
+    },
+    {
+      "path": "R/lib/cohort_definitions.R",
+      "sha256": "15b1a0d8b5f1973e29a5258fc1e7d97df437b09208f367f38c78984a8dfd7dc5"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/oig_phase2_candidate_set.R",
+      "sha256": "2d9e313162024b96755cb52a0cfb3ee07904bcde88d8754b742bd9900709581f"
+    },
+    {
+      "path": "R/lib/oig_zip_normalizers.R",
+      "sha256": "571ec683eeab31de29ee758f45a13506edd3dcbca22f1c9c966014565c67c98b"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    },
+    {
+      "path": "remake_oig_07_09_00440_midwifery.R",
+      "sha256": "df90b32009715659edc9d256d72bdd8461407745a88ddda524fc680a842ce054"
+    }
+  ]
+}

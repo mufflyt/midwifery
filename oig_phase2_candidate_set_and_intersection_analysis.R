@@ -78,36 +78,11 @@ write_person_level <- function(x, filename) {
 FROZEN_PATH <- file.path("artifacts", "amcb_npi_linkage_FROZEN.csv")
 stopifnot(file.exists(FROZEN_PATH))
 
-# Same ZIP normalizers as remake_oig_07_09_00440_midwifery.R:94-119.
-# ponytail: duplicated rather than sourced from that script, because that
-# script is being actively edited by a concurrent session right now. Once
-# that settles, move both copies into a shared R/lib/oig_zip_normalizers.R.
-norm_pecos_bigint_zip5 <- function(x) {
-  s <- trimws(as.character(x))
-  s[is.na(s) | !nzchar(s) | s == "0"] <- NA_character_
-  s <- gsub("[^0-9]", "", s)
-  n <- nchar(s)
-  out <- rep(NA_character_, length(s))
-  idx5 <- !is.na(n) & n >= 3L & n <= 5L
-  idx9 <- !is.na(n) & n >= 7L & n <= 9L
-  out[idx5] <- str_pad(s[idx5], width = 5L, side = "left", pad = "0")
-  out[idx9] <- substr(str_pad(s[idx9], width = 9L, side = "left", pad = "0"), 1L, 5L)
-  out[out == "00000"] <- NA_character_
-  out
-}
-
-norm_str_zip5 <- function(x) {
-  s <- gsub("[^0-9]", "", trimws(as.character(x)))
-  s[is.na(s) | nchar(s) < 3L] <- NA_character_
-  n <- nchar(s)
-  out <- rep(NA_character_, length(s))
-  idx5 <- !is.na(n) & n >= 3L & n <= 5L
-  idx9 <- !is.na(n) & n > 5L
-  out[idx5] <- str_pad(s[idx5], width = 5L, side = "left", pad = "0")
-  out[idx9] <- substr(s[idx9], 1L, 5L)
-  out[out == "00000"] <- NA_character_
-  out
-}
+# norm_pecos_bigint_zip5() and norm_str_zip5() now live in
+# R/lib/oig_zip_normalizers.R, shared with remake_oig_07_09_00440_midwifery.R
+# (both scripts are committed now, so the earlier ponytail note about
+# deferring de-duplication no longer applies).
+source(file.path("R", "lib", "oig_zip_normalizers.R"))
 
 # =============================================================================
 # 1. Cohort frame (same 5,897-enrolled PECOS frame as the existing audit)

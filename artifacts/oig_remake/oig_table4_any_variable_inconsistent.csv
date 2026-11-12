@@ -1,0 +1,3 @@
+comparison_label,year,source_a,source_b,n_overlap_providers,n_any_inconsistent_oig_rule,pct_any_inconsistent_oig_rule,n_any_inconsistent_strict_set,pct_any_inconsistent_strict_set,mean_inconsistent_vars_per_provider,oig_2013_benchmark_any_inconsistent_pct
+2019 NPPES vs 2019 Relational PECOS (with group-reassignment ZIP linkage),2019,nppes,pecos,5819,1735,29.82,5316,91.36,0.39,97.4
+"2026 NPPES vs 2026 PECOS/DAC (practice ZIP, state, phone, credential, name, gender, specialty)",2026,nppes,dac,5877,4267,72.61,4856,82.63,1.17,97.4

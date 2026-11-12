@@ -1,0 +1,7 @@
+database,variable,verification_gold_standard,n_evaluated,n_definitive,n_unresolved,n_accurate,pct_accurate_definitive,n_inaccurate_total,pct_inaccurate_definitive,n_partially_inaccurate_typo,pct_of_inaccurate_partially,n_formerly_correct_outdated,pct_of_inaccurate_formerly,n_never_correct,pct_of_inaccurate_never
+NPPES (2026),"State Licensure Status (3 API-Verified State BONs: CO, TX, WA)","Live State Boards of Nursing (CO, TX, WA - GENUINE_BOARD_STATES)",1391,1226,165,1153,94.05,73,5.95,0,0,73,100,0,0
+PECOS (2026),"State Licensure Status (3 API-Verified State BONs: CO, TX, WA)","Live State Boards of Nursing (CO, TX, WA - GENUINE_BOARD_STATES)",940,863,77,831,96.29,32,3.71,0,0,32,100,0,0
+NPPES (2026),State Licensure Status & Qualification (All 7 State BON Files; Unmatched = Unresolved),"Live State Boards of Nursing (CO, CT, FL, IL, PA, TX, WA)",3193,1940,1253,1796,92.58,144,7.42,9,6.2,135,93.8,0,0
+PECOS (2026),State Licensure Status & Qualification (All 7 State BON Files; Unmatched = Unresolved),"Live State Boards of Nursing (CO, CT, FL, IL, PA, TX, WA)",2312,1411,901,1342,95.11,69,4.89,7,10.1,62,89.9,0,0
+NPPES (2026),Legal Name (First & Last Name vs AMCB National Board; Historical Evidence Required),AMCB National Certification Roster,16775,16774,1,11405,67.99,5369,32.01,5143,95.8,226,4.2,0,0
+PECOS (2026),Legal Name (First & Last Name vs AMCB National Board; Historical Evidence Required),AMCB National Certification Roster,8808,8801,7,7303,82.98,1498,17.02,1413,94.3,85,5.7,0,0
