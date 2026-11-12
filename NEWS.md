@@ -49,6 +49,22 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   duplicate keys and are now `assert_one_row_per_id()`; 1 had duplicates
   with provably identical values and is now an explicit `arrange()` +
   `slice(1)`).
+- **A third State BON comparison arm: NPPES + Practice Locations (PL).**
+  Adds `nppes_plus_pl_zip5_set` (the union of NPPES's single primary
+  practice ZIP5 and its secondary PL-reported ZIP5s) to
+  `oig_state_bon_address_geographic_concordance.csv`, reported alongside
+  -- not replacing -- the plain NPPES row, matching the existing
+  `practice_zip5_with_nppes_pl` convention used for Table 4. Finding: on
+  this cohort, PL currently adds nothing -- **0 of 12,160 cohort NPIs with
+  a PL record have a PL ZIP5 different from their main NPPES practice
+  ZIP5** -- so the NPPES+PL row is numerically identical to the plain NPPES
+  row. A genuine null result, not a bug: PL mirrors the primary location
+  here rather than adding a distinct secondary site.
+- `R/lib/oig_zip_normalizers.R`: `norm_pecos_bigint_zip5()` and
+  `norm_str_zip5()` extracted from their two duplicate copies (this script
+  and `oig_phase2_candidate_set_and_intersection_analysis.R`), closing the
+  de-duplication the Phase 2 script's own `ponytail:` comment deferred
+  until both scripts were committed.
 
 ## [Unreleased] — 2026-11-10 — OIG remake Phase 2: only 68% of the "1,789 corroborated" matches are actually unique
 

@@ -79,6 +79,7 @@ source(file.path("R", "lib", "cohort_definitions.R"))
 source(file.path("R", "lib", "artifact_provenance.R"))
 source(file.path("R", "lib", "clean_state.R"))
 source(file.path("R", "lib", "oig_phase2_candidate_set.R"))  # assert_one_row_per_id()
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_pecos_bigint_zip5(), norm_str_zip5()
 
 #' Assert a data frame has at most one row per (key1, key2) pair; stop with a
 #' clear message naming the duplicates if not. Multi-column counterpart to
@@ -103,35 +104,10 @@ stopifnot(file.exists(FROZEN_PATH))
 # -----------------------------------------------------------------------------
 # Normalization helpers following OIG OEI-07-09-00440 Appendix A (p. 20)
 # -----------------------------------------------------------------------------
-# ZIP5: OIG compared the first 5 digits of ZIP Codes. In PECOS (`ppef_addr_2019`),
-# `zip_cd` was stored as BIGINT, dropping leading zeros on 5-digit (len 3..5)
-# and 9-digit ZIP+4 (len 7..9) codes. Restore leading zeros before taking 5 digits.
-norm_pecos_bigint_zip5 <- function(x) {
-  s <- trimws(as.character(x))
-  s[is.na(s) | !nzchar(s) | s == "0"] <- NA_character_
-  s <- gsub("[^0-9]", "", s)
-  n <- nchar(s)
-  out <- rep(NA_character_, length(s))
-  idx5 <- !is.na(n) & n >= 3L & n <= 5L
-  idx9 <- !is.na(n) & n >= 7L & n <= 9L
-  out[idx5] <- str_pad(s[idx5], width = 5L, side = "left", pad = "0")
-  out[idx9] <- substr(str_pad(s[idx9], width = 9L, side = "left", pad = "0"), 1L, 5L)
-  out[out == "00000"] <- NA_character_
-  out
-}
-
-norm_str_zip5 <- function(x) {
-  s <- gsub("[^0-9]", "", trimws(as.character(x)))
-  s[is.na(s) | nchar(s) < 3L] <- NA_character_
-  n <- nchar(s)
-  out <- rep(NA_character_, length(s))
-  idx5 <- !is.na(n) & n >= 3L & n <= 5L
-  idx9 <- !is.na(n) & n > 5L
-  out[idx5] <- str_pad(s[idx5], width = 5L, side = "left", pad = "0")
-  out[idx9] <- substr(s[idx9], 1L, 5L)
-  out[out == "00000"] <- NA_character_
-  out
-}
+# norm_pecos_bigint_zip5() and norm_str_zip5() live in
+# R/lib/oig_zip_normalizers.R, shared with
+# oig_phase2_candidate_set_and_intersection_analysis.R (tests/ci_hygiene.R's
+# H4 refuses two copies of the same function name).
 
 norm_phone10 <- function(x) {
   s <- gsub("[^0-9]", "", trimws(as.character(x)))
@@ -1360,7 +1336,42 @@ bon_with_zip <- bon_classified %>%
       group_by(npi) %>%
       summarise(dac_zip5_set = paste(sort(unique(value)), collapse = "|"), .groups = "drop"),
     by = "npi"
-  )
+  ) %>%
+  left_join(
+    # NPPES Practice Locations (PL): the main P-file's "practice_zip5" is only
+    # NPPES's single primary business location; PL carries whatever
+    # additional practice sites a clinician separately registered. Already
+    # treated this way for the Table 4 comparison above
+    # (`nppes_2026_plus_pl_zip`, labeled "practice_zip5_with_nppes_pl",
+    # reported alongside -- not merged into -- plain "practice_zip5"). Same
+    # convention here: nppes_plus_pl_zip5_set is its own labeled comparison
+    # arm below, not a silent replacement of the single-value nppes_zip5 one.
+    nppes_pl_2026 %>%
+      transmute(npi = trimws(npi), pl_zip5 = norm_str_zip5(pl_zip5)) %>%
+      filter(!is.na(pl_zip5)) %>%
+      distinct(npi, pl_zip5) %>%
+      group_by(npi) %>%
+      summarise(nppes_pl_zip5_set = paste(sort(unique(pl_zip5)), collapse = "|"), .groups = "drop"),
+    by = "npi"
+  ) %>%
+  rowwise() %>%
+  mutate(
+    nppes_plus_pl_zip5_set = paste(
+      sort(unique(c(
+        if (!is.na(nppes_zip5)) nppes_zip5 else character(0),
+        if (!is.na(nppes_pl_zip5_set)) strsplit(nppes_pl_zip5_set, "\\|")[[1]] else character(0)
+      ))),
+      collapse = "|"
+    ),
+    nppes_plus_pl_zip5_set = ifelse(nzchar(nppes_plus_pl_zip5_set), nppes_plus_pl_zip5_set, NA_character_)
+    # Verified during review: 0 of 12,160 cohort NPIs with a PL record have a
+    # PL ZIP5 different from their main NPPES practice ZIP5 -- PL currently
+    # mirrors the primary location for every midwife here rather than adding
+    # a genuinely new site. The "NPPES + PL" comparison row below is
+    # therefore expected to equal the plain "NPPES" row exactly; that is a
+    # finding about this cohort's PL data, not a bug in this computation.
+  ) %>%
+  ungroup()
 
 compute_bon_zip_decomposition <- function(df, prac_col, pair_label) {
   # prac_col names a column holding a pipe-joined SET of practice ZIP5s (a
@@ -1443,6 +1454,10 @@ bon_zip_concordance_tbl <- bind_rows(
   compute_bon_zip_decomposition(
     bon_with_zip, "dac_zip5_set",
     "PECOS/DAC Practice ZIP5 vs. State BON Licensing/Mailing ZIP5 (CT, FL, IL, PA)"
+  ),
+  compute_bon_zip_decomposition(
+    bon_with_zip, "nppes_plus_pl_zip5_set",
+    "NPPES + Practice Locations (PL) vs. State BON Licensing/Mailing ZIP5 (CT, FL, IL, PA)"
   )
 )
 
@@ -2366,7 +2381,12 @@ pc_2019_sub <- read_csv("artifacts/physician_compare_historical_midwives.csv", c
     .groups = "drop"
   )
 
-wilson_ci <- function(k, n) {
+# Named apart from R/lib/wilson_interval.R's wilson_ci() on purpose, same
+# convention that file documents for mw_wilson()/scn_wilson(): this one is
+# prop.test()-based (plain numeric pair), not the closed-form Wilson score
+# formula (tibble of ci_low/ci_high) -- different return shape, not a
+# duplicate to merge.
+wilson_ci_proptest <- function(k, n) {
   if (n == 0L) return(c(NA_real_, NA_real_))
   ci <- suppressWarnings(prop.test(k, n, correct = FALSE)$conf.int)
   round(100 * as.numeric(ci), 2)
@@ -2395,8 +2415,8 @@ pecos_2019_location_corroboration_tbl <- hierarchy_2019_df %>%
     pct_evaluated_in_2019_claims_directory = round(100 * mean(in_2019_phys_compare), 2),
     n_pecos_zip5_corroborated_by_claims_dir = sum(pecos_matches_pc_zip5),
     pct_pecos_corroborated_among_evaluated = ifelse(sum(in_2019_phys_compare) > 0, round(100 * sum(pecos_matches_pc_zip5) / sum(in_2019_phys_compare), 2), NA_real_),
-    ci95_low_corroborated_among_evaluated = wilson_ci(sum(pecos_matches_pc_zip5), sum(in_2019_phys_compare))[1],
-    ci95_high_corroborated_among_evaluated = wilson_ci(sum(pecos_matches_pc_zip5), sum(in_2019_phys_compare))[2],
+    ci95_low_corroborated_among_evaluated = wilson_ci_proptest(sum(pecos_matches_pc_zip5), sum(in_2019_phys_compare))[1],
+    ci95_high_corroborated_among_evaluated = wilson_ci_proptest(sum(pecos_matches_pc_zip5), sum(in_2019_phys_compare))[2],
     n_all3_zip5_corroborated_pecos_nppes_pc = sum(all3_zip5_corroborated),
     pct_all3_corroborated_of_tier = round(100 * mean(all3_zip5_corroborated), 2),
     n_all3_corroborated_with_hospital_ccn = sum(all3_zip5_corroborated & coalesce(has_hospital_ccn, FALSE)),

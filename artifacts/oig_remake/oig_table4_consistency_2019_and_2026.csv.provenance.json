@@ -1,6 +1,6 @@
 {
   "artifact": "oig_table4_consistency_2019_and_2026.csv",
-  "written_utc": "2026-11-12 22:16:58 UTC",
+  "written_utc": "2026-11-12 22:56:58 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
@@ -59,7 +59,7 @@
       "sha256": "b6754ad5da54263624e823bc1e1ae2d1d4cb2ffd715cdd192ae2094fba2d7d82"
     }
   ],
-  "code_sha256": "0c60775d37bcdaaba59e82099d2b146b227d2f5d21f476d8809f34786613f848",
+  "code_sha256": "54a172698e6b2f2f04e3121c1f2bab252531a1f2ea0c15a9f37d18ca6b566b41",
   "code": [
     {
       "path": "R/lib/artifact_provenance.R",
@@ -82,12 +82,16 @@
       "sha256": "2d9e313162024b96755cb52a0cfb3ee07904bcde88d8754b742bd9900709581f"
     },
     {
+      "path": "R/lib/oig_zip_normalizers.R",
+      "sha256": "571ec683eeab31de29ee758f45a13506edd3dcbca22f1c9c966014565c67c98b"
+    },
+    {
       "path": "R/lib/provenance.R",
       "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
     },
     {
       "path": "remake_oig_07_09_00440_midwifery.R",
-      "sha256": "a7c9a32c65940da305335dddba078c988cc2094aed193849cc37cc62382fef58"
+      "sha256": "df90b32009715659edc9d256d72bdd8461407745a88ddda524fc680a842ce054"
     }
   ]
 }
