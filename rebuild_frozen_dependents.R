@@ -555,7 +555,12 @@ REBUILD_ORDER <- list(
                    # via canonical_active_primary(); independent of the
                    # migration-classifier cluster above, placed here only
                    # because this is the last layer before publication.
-                   "oig_phase2_candidate_set_and_intersection_analysis.R")),
+                   "oig_phase2_candidate_set_and_intersection_analysis.R",
+                   # Added 2026-11-12. Reads amcb_npi_linkage_FROZEN directly
+                   # (canonical_active_primary() and linkage_eligible()); the
+                   # OIG six-priority audit this Phase 2 script built on.
+                   # Independent of the migration-classifier cluster above.
+                   "remake_oig_07_09_00440_midwifery.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        # export_amcb_npi_geography.R writes the tracked state aggregate and
        # the gitignored person-level export, both of which read the crosswalk

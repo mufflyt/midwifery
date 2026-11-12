@@ -500,6 +500,45 @@ is unblinded.
 
 ## Closed
 
+## D13 — DAC multi-site ZIP5 comparison silently picked an arbitrary one of a clinician's real sites
+
+- **status:** closed
+- **owner:** tyler
+- **raised:** 2026-11-12
+- **closed:** 2026-11-12
+- **resolution:** `distinct(npi, .keep_all = TRUE)` replaced with a full per-NPI ZIP5 set, compared by membership in `compute_bon_zip_decomposition()` rather than equality against one arbitrary row
+
+Before comparing a clinician's DAC practice ZIP5 against her State Board of
+Nursing (BON) licensing ZIP5 in `remake_oig_07_09_00440_midwifery.R`, the DAC
+claims were collapsed to one row per NPI with
+`distinct(npi, .keep_all = TRUE)` -- which keeps whichever row DuckDB happens
+to return first, in unspecified order. **955 cohort NPIs genuinely have 2-6
+distinct DAC practice ZIP5s** (real multi-site practice), not duplicate rows
+of the same value. A clinician whose BON ZIP matched one of her real DAC
+sites could be scored as a mismatch purely because a *different* one of her
+sites got kept.
+
+Measured effect on `oig_state_bon_address_geographic_concordance.csv`'s
+PECOS/DAC-vs-BON comparison (n=303, CT/FL/IL/PA):
+
+| category | before | after |
+|---|---|---|
+| exact ZIP5 match | 94 (31.0%) | 118 (38.9%) |
+| no match at all (worst category) | 89 (29.4%) | 74 (24.4%) |
+
+24 clinicians were wrongly denied an exact match, and 15 were wrongly placed
+in the "unattributed discordance" category, purely from which arbitrary DAC
+row got kept. Fixed by building the full set of a clinician's distinct DAC
+ZIP5s and testing whether the BON ZIP5 (or its SCF3 prefix) appears in that
+set at all, matching the any-observed-value semantics this script already
+uses elsewhere (e.g. `pecos_matches_pc_zip5`). All 11 other `.keep_all = TRUE`
+sites in the same script were audited the same way: none had this effect --
+9 had zero duplicate keys (converted to `assert_one_row_per_id()`, which
+fails loudly rather than silently picking a winner if that ever changes),
+and 1 (PECOS 2026Q3 enrollment names) had duplicate rows with provably
+identical names, so `arrange() + slice(1)` is a genuine reduction, not an
+arbitrary pick.
+
 ## D0 — Provenance determinism of the recorded name variant
 
 - **status:** closed

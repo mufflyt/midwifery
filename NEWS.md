@@ -20,6 +20,36 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-12 — OIG remake Phase 1 committed; a real DAC multi-site ZIP bug fixed in review (D13)
+
+### Added
+
+- **`remake_oig_07_09_00440_midwifery.R`** committed for the first time: the
+  OIG OEI-07-09-00440 "six-priority audit" that Phase 2
+  (`oig_phase2_candidate_set_and_intersection_analysis.R`) builds on. Writes
+  20 provenance-stamped aggregate artifacts to `artifacts/oig_remake/`
+  (OIG Tables 1-4 remade, the PECOS location-specificity hierarchy, the
+  2019/2026 NPPES-vs-PECOS/DAC consistency and completeness audit, State
+  BON primary-source verification, T-MSIS three-way concordance, and more).
+  Reviewed before committing (see Fixed below); all 20 outputs are
+  byte-identical to the prior unreviewed run except the one table the
+  review corrected.
+
+### Fixed
+
+- **D13: DAC multi-site ZIP5 comparison silently picked an arbitrary one of
+  a clinician's real practice sites.** `distinct(npi, .keep_all = TRUE)`
+  collapsed 955 cohort NPIs' genuinely multi-valued DAC practice ZIP5s
+  (2-6 distinct real sites each) to one row in unspecified order before
+  comparing against State BON licensing ZIP5s. Exact-match rate on the
+  CT/FL/IL/PA comparison (n=303) moves **31.0% → 38.9%** (+24 clinicians);
+  the worst "no match at all" category drops **29.4% → 24.4%** (-15
+  clinicians). See `DEBT.md` D13 for the full before/after and the audit of
+  all 11 other `.keep_all = TRUE` sites in the same script (9 had zero
+  duplicate keys and are now `assert_one_row_per_id()`; 1 had duplicates
+  with provably identical values and is now an explicit `arrange()` +
+  `slice(1)`).
+
 ## [Unreleased] — 2026-11-10 — OIG remake Phase 2: only 68% of the "1,789 corroborated" matches are actually unique
 
 ### Added
