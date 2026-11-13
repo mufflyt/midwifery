@@ -419,6 +419,22 @@ REBUILD_ORDER <- list(
                    # fully precedes layer 6, satisfies that ordering without
                    # needing to interleave it into the publication layer.
                    "extract_open_payments_profile_supplement.R",
+                   # Added 2026-11-12, by T5 in the pull request that
+                   # introduced it. Reads amcb_npi_linkage_FROZEN plus the
+                   # per-program-year Open Payments general-payment tables in
+                   # the warehouse, and writes
+                   # artifacts/open_payments_midwife_presence_by_year.csv --
+                   # the 2013-2025 presence series that turned Open Payments
+                   # from a single year into a longitudinal source. Program
+                   # years 2013-2014 carry no NPI column in CMS's own file and
+                   # are recovered by joining Covered_Recipient_Profile_ID to
+                   # the lookup that build_open_payments_profile_npi_lookup.R
+                   # learns from 2021+, so that script must run first. The
+                   # lookup builder itself is NOT declared here: it reads only
+                   # the warehouse's 2021+ payment tables and is independent of
+                   # the cohort, so it is not a frozen dependent and T5 would
+                   # reject it as extra.
+                   "extract_open_payments_cohort_by_year.R",
                    # Added 2026-11-05, by T5 in the pull request that
                    # introduced it. Reads amcb_npi_linkage_FROZEN plus the
                    # CMS Public Provider Enrollment File (PPEF, a single

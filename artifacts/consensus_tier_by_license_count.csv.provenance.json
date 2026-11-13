@@ -1,0 +1,29 @@
+{
+  "artifact": "consensus_tier_by_license_count.csv",
+  "written_utc": "2026-11-13 02:15:17 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/mrost_consensus_tier_by_npi.csv",
+      "sha256": "0a84f48cc1295a47804e5ec2f539b81f7b9b119855f04b05a2a90ab4bb6b3203"
+    },
+    {
+      "path": "artifacts/cohort_midwives_open_payments_profile_supplement.csv",
+      "sha256": "f5f241aa4c6d73e09bdfb0125d64fdfc59868ace9033349d98e633c7c3263479"
+    }
+  ],
+  "code_sha256": "91bdf624691578238c40732383c9e8ee2ae0f36cc62eb07662b9fe35e6568b51",
+  "code": [
+    {
+      "path": "analyze_consensus_tier_by_license_count.R",
+      "sha256": "ddccad418857dc8ceb70cfacaf5bffe65112ba89e375d8d5cc0e0258df4e0d87"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ]
+}

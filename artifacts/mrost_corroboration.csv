@@ -1,6 +1,7 @@
 source,attribute,led_n,corrected_n,opportunities_n,n_pairs,lead_rate
-medicare_part_b,state,151,18,399,3,0.893
-medicare_part_d,state,359,60,903,3,0.857
-pecos_revalidation,state,525,450,3465,4,0.538
-nppes,state,593,543,2385,4,0.522
-medicaid_enrollment,state,397,954,4108,4,0.294
+medicare_part_b,state,169,19,422,4,0.899
+medicare_part_d,state,403,62,959,4,0.867
+pecos_revalidation,state,602,497,3705,5,0.548
+nppes,state,647,599,2501,5,0.519
+open_payments,state,169,276,1085,5,0.38
+medicaid_enrollment,state,480,1017,4758,5,0.321

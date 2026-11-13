@@ -990,3 +990,17 @@ data/raw/ipeds/
 # Raw Transparency in Coverage MRF payloads (payer-hosted, large).
 # Reacquire with accessmrf_03_pull_provider_refs.py; sha256 in the file manifest.
 data/raw/accessmrf/
+
+# Open Payments longitudinal reconstruction, 2026-11-12. Person-level (one row
+# per NPI) or too large to commit irreversibly; all four are regenerable from
+# the warehouse by build_open_payments_profile_npi_lookup.R and
+# extract_open_payments_cohort_by_year.R. The AGGREGATES the figures and the
+# manuscript actually read -- consensus_tier_by_license_count.csv,
+# medicaid_vs_ndh_state_reduction.csv, consensus_tier_persistence_2021_2025*.csv
+# -- carry no NPI and are tracked.
+artifacts/open_payments_profile_npi_lookup.csv
+artifacts/open_payments_profile_npi_lookup.csv.provenance.json
+artifacts/open_payments_profile_npi_conflicts.csv
+artifacts/open_payments_profile_npi_conflicts.csv.provenance.json
+artifacts/open_payments_midwife_presence_by_year.csv
+artifacts/mrost_consensus_tier_by_npi.csv

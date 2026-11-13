@@ -1,0 +1,41 @@
+{
+  "artifact": "consensus_tier_persistence_2021_2025.csv",
+  "written_utc": "2026-11-13 03:32:39 UTC",
+  "inputs": [
+    {
+      "path": "midwife_panel.csv",
+      "sha256": "6b9696ce891949d07e37fb768ae48095838ba74a9600ffe84e599cf03835f4d3"
+    },
+    {
+      "path": "artifacts/physician_compare_historical_midwives.csv",
+      "sha256": "58ebc15f91f6e053c472c8a4d528e9d9ed850cdd6242017b3f15c2ab4ddfa50c"
+    },
+    {
+      "path": "artifacts/open_payments_midwife_presence_by_year.csv",
+      "sha256": "c2a2a85668573c3c22c6184f23f7e23d7e183821ad34df979930117d290c5bce"
+    },
+    {
+      "path": "artifacts/pecos_revalidation_cohort_state_by_year.csv",
+      "sha256": "e35286ed521c8eb5e45d33b1d6aa38507711493aaf2b339b24660d950db21d99"
+    }
+  ],
+  "code_sha256": "2e83a4402e70e36c2434109747e740ff6a4a758e1ea941e3187ebd4bc8f2e243",
+  "code": [
+    {
+      "path": "analyze_consensus_tier_persistence_2021_2025.R",
+      "sha256": "6a9ec66a573dd95e20ce95a8389e73239f0a208b66d8df2ed0c5c1a21d338fd9"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/clean_state.R",
+      "sha256": "188cee53abd5b2e7afb2c6bffbc7ea27a16029189fb97ca8be1865d5ab0c2c23"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ]
+}

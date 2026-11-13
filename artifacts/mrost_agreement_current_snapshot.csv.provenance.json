@@ -1,17 +1,17 @@
 {
   "artifact": "mrost_agreement_current_snapshot.csv",
-  "written_utc": "2026-11-11 03:03:44 UTC",
+  "written_utc": "2026-11-13 02:12:09 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
       "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
     }
   ],
-  "code_sha256": "9831d8139436f13140862433f23bdd7bbe10eec65357ebcfe082d807ca3c9f63",
+  "code_sha256": "7d942f9b8d6c11ac18b6351a4546aac023a587058676a8a2a7f1e620ed2403a1",
   "code": [
     {
-      "path": "/private/tmp/claude-501/-Users-tylermuffly-midwifery/21970d20-42b4-4407-ab2d-fac972433e7d/scratchpad/cmp_a2.R",
-      "sha256": "52b3575dae571de9a537a5a5e8242b23e6db89e748c7c4ec6f16af953644aebc"
+      "path": "/private/tmp/claude-501/-Users-tylermuffly-midwifery/21970d20-42b4-4407-ab2d-fac972433e7d/scratchpad/cmp_tier2.R",
+      "sha256": "ee2f6e2d3552994311d5cfdb93f1f78be652f929dc2e8154185665074f82edfd"
     },
     {
       "path": "R/lib/artifact_provenance.R",

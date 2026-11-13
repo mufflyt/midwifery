@@ -94,21 +94,11 @@ assert_source_year <- function(path, expected_year,
   # ---- level 1: a date or program-year column inside the data -------------
   years <- source_year_from_columns(path, date_columns, sample_rows)
   if (length(years)) {
-    bad <- years[years < SOURCE_YEAR_MIN | years > SOURCE_YEAR_MAX]
-    if (length(bad))
-      return(out("refuted", "high", "in_file_date", years,
-                 sprintf("implausible year(s) in data: %s",
-                         paste(sort(unique(bad)), collapse = ", "))))
-    if (length(years) > 1L && !isTRUE(multiyear))
-      return(out("refuted", "high", "in_file_date", years,
-                 sprintf("file mixes years %s; pass multiyear = TRUE if that is expected",
-                         paste(sort(years), collapse = ", "))))
-    if (!expected_year %in% years)
-      return(out("refuted", "high", "in_file_date", years,
-                 sprintf("data says %s, caller says %d",
-                         paste(sort(years), collapse = ", "), expected_year)))
-    return(out("in_file_date", "high", "in_file_date", years,
-               "a date column inside the file carries the expected year"))
+    # One rule, applied here and by any caller that discovered the years
+    # some cheaper way. See assert_year_set().
+    r <- assert_year_set(years, expected_year, multiyear = multiyear,
+                         strict = FALSE, label = basename(path))
+    return(out(r$status, r$confidence, "in_file_date", years, r$detail))
   }
 
   # ---- level 2: an authoritative release identifier in the path -----------
@@ -139,6 +129,57 @@ assert_source_year <- function(path, expected_year,
 
   out("unverified", "none", "none", NA_integer_,
       "no in-file date, no release identifier in the path, no fingerprint")
+}
+
+#' Apply the year-refusal rules to an ALREADY-OBSERVED set of years
+#'
+#' assert_source_year() reads a sample to discover the years in a file. That
+#' is the wrong approach for a 7 GB CSV, where the scan has to happen anyway
+#' inside the query that extracts the data: the engine can return
+#' SELECT DISTINCT Program_Year far more cheaply than R can sample it, and
+#' the answer is exact rather than sampled.
+#'
+#' So the rules live here and both entry points use them. One definition of
+#' what counts as refuted, two ways of discovering the years.
+#'
+#' @param years [integer] the distinct years actually observed in the data.
+#' @param expected_year [integer] what the caller believes it holds.
+#' @param multiyear [logical] TRUE when the source legitimately spans years.
+#' @param strict [logical] TRUE stops on refusal; FALSE returns the verdict.
+#' @param label [character] what to name in an error message.
+#' @return [list] same shape as `assert_source_year()`.
+#' @examples
+#' assert_year_set(2019L, 2019L)$status   # "in_file_date"
+#' assert_year_set(c(2019L, 2020L), 2019L, strict = FALSE)$status  # "refuted"
+assert_year_set <- function(years, expected_year, multiyear = FALSE,
+                            strict = TRUE, label = "<year set>") {
+  years <- sort(unique(as.integer(years[!is.na(years)])))
+  expected_year <- as.integer(expected_year)
+  out <- function(status, confidence, detail) {
+    v <- list(status = status, confidence = confidence,
+              method = "in_file_date", observed_years = years,
+              expected_year = expected_year, detail = detail, path = label)
+    if (isTRUE(strict) && identical(status, "refuted"))
+      stop(sprintf("assert_year_set: %s -- %s", label, detail), call. = FALSE)
+    v
+  }
+  if (!length(years))
+    return(out("unverified", "none", "no years observed in the data"))
+  bad <- years[years < SOURCE_YEAR_MIN | years > SOURCE_YEAR_MAX]
+  if (length(bad))
+    return(out("refuted", "high",
+               sprintf("implausible year(s): %s",
+                       paste(bad, collapse = ", "))))
+  if (length(years) > 1L && !isTRUE(multiyear))
+    return(out("refuted", "high",
+               sprintf("data mixes years %s; pass multiyear = TRUE if expected",
+                       paste(years, collapse = ", "))))
+  if (!expected_year %in% years)
+    return(out("refuted", "high",
+               sprintf("data says %s, caller says %d",
+                       paste(years, collapse = ", "), expected_year)))
+  out("in_file_date", "high",
+      "the data's own year field carries the expected year")
 }
 
 #' Years present in the first date-like column a file actually has
