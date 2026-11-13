@@ -58,7 +58,21 @@ if (!file.exists(SUPPLEMENT))
                SUPPLEMENT), call. = FALSE)
 cat(sprintf("Supplement: %s\n", basename(SUPPLEMENT)))
 
-link <- chr("artifacts/amcb_npi_linkage_FROZEN.csv")
+# THE COHORT FREEZE IS VERIFIED AGAINST ITS OWN MANIFEST, NOT TRUSTED.
+# verify_linkage_freeze() exists for exactly this and was not being called
+# here. It should have been: the 2026-11-12 rebuild of this artifact silently
+# used the superseded pre-reconciliation freeze (sha dbcc76f4, 54 columns,
+# 16,898 cohort members) while the tracked manifest beside it describes the
+# 2026-10-22 reconciled freeze (sha 9f224007, 60 columns, 22,357 rows, 16,775
+# members) -- so the matched count came out on a cohort this project no longer
+# uses. Running on the superseded freeze is still possible, deliberately, via
+# ALLOW_FREEZE_SHA256; the freeze's sha256 lands in the provenance sidecar
+# either way, so which cohort produced a given artifact stays recoverable.
+FREEZE <- "artifacts/amcb_npi_linkage_FROZEN.csv"
+source(file.path("R", "lib", "cohort_definitions.R"))
+verify_linkage_freeze(FREEZE)
+
+link <- chr(FREEZE)
 coh <- link %>%
   filter(cohort_member == "TRUE") %>%
   transmute(certification_number, npi = trimws(npi)) %>%
@@ -113,7 +127,7 @@ out <- rows %>%
 
 source(file.path("R", "lib", "artifact_provenance.R"))
 write_with_provenance(out, "artifacts/cohort_midwives_open_payments_profile_supplement.csv",
-                      inputs = c(SUPPLEMENT, "artifacts/amcb_npi_linkage_FROZEN.csv"), na = "")
+                      inputs = c(SUPPLEMENT, FREEZE), na = "")
 cat(sprintf("\nwrote %s rows -> artifacts/cohort_midwives_open_payments_profile_supplement.csv\n",
             format(nrow(out), big.mark = ",")))
 cat(sprintf("multistate-licensed: %s / %s (%.1f%%)\n",

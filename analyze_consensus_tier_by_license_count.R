@@ -74,12 +74,20 @@ small <- sum(cs$expected < 5)
 out$chisq        <- unname(cs$statistic)
 out$chisq_df     <- unname(cs$parameter)
 out$chisq_p      <- cs$p.value
+# chisq_p UNDERFLOWS TO ZERO once the statistic passes about 1,400 on 2 df: the
+# true value is smaller than the smallest positive double, so the column reads
+# 0, which is not a p-value. log10 p is carried alongside so the magnitude
+# survives the floor, and the prose must quote the bound, never the literal 0.
+out$chisq_log10_p <- pchisq(cs$statistic, cs$parameter, lower.tail = FALSE,
+                            log.p = TRUE) / log(10)
 out$chisq_n      <- sum(tab)
 out$expected_cells_under_5 <- small
 
 print(as.data.frame(out), row.names = FALSE, digits = 4)
-cat(sprintf("\nchi-square(%d, n=%s) = %.1f, p = %.3g%s\n",
-            cs$parameter, format(sum(tab), big.mark = ","), cs$statistic, cs$p.value,
+cat(sprintf("\nchi-square(%d, n=%s) = %.1f, %s%s\n",
+            cs$parameter, format(sum(tab), big.mark = ","), cs$statistic,
+            if (cs$p.value > 0) sprintf("p = %.3g", cs$p.value)
+            else sprintf("log10(p) = %.1f (p underflows double)", out$chisq_log10_p[1]),
             if (small) sprintf("  [WARNING: %d expected cell(s) < 5]", small) else ""))
 
 sp <- out %>% filter(tier == "split") %>% select(lic_band, pct)
