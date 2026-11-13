@@ -26,9 +26,8 @@ suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr)})
 source(file.path(.this_script_dir, "R", "lib", "medicare_duckdb.R"))
 source(file.path(.this_script_dir, "R", "lib", "artifact_provenance.R"))
 
-MEDICAID_DB <- Sys.getenv(
-  "MEDICAID_ENROLLMENT_DB",
-  "/Volumes/MufflySamsung/DuckDB/medicaid_provider_enrollment_segments.duckdb")
+MEDICAID_DB <- samsung_duckdb_path("DuckDB/medicaid_provider_enrollment_segments.duckdb",
+                                   "MEDICAID_ENROLLMENT_DB")
 if (!file.exists(MEDICAID_DB)) stop("missing required input: ", MEDICAID_DB, call. = FALSE)
 
 con <- duckdb_connect()

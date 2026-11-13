@@ -162,7 +162,15 @@ cat("\n-- H: NO executable source hardcodes the volume, in any language --\n")
                               "*.R", "*.py", "*.sh", "*.yml", "*.yaml", "*.Rmd"),
                      stdout = TRUE)
   tracked <- tracked[file.exists(tracked)]
-  allowed <- c("R/lib/medicare_duckdb.R", "tests/test_duckdb_volume_resolution.R")
+  # EXEMPT BECAUSE THEY DEFINE THE SPELLING, not because they are convenient.
+  # Each of these three is the one place its language names the mount: the R
+  # resolver, its Python mirror (samsung_volume.py, added 2026-11-13 so the
+  # four Python producers stopped spelling the path out themselves), and this
+  # test. Anything else that needs the volume calls one of them. Adding a
+  # fourth entry here is how this rule dies, so it needs the same argument:
+  # that the file IS the single definition, not that it happens to want one.
+  allowed <- c("R/lib/medicare_duckdb.R", "samsung_volume.py",
+               "tests/test_duckdb_volume_resolution.R")
   # Comment lines are exempt: a comment cannot open a database, and the history
   # of WHY this rule exists is worth keeping legible.
   comment_re <- "^\\s*(#|//|--)"

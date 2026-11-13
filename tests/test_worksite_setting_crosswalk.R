@@ -2,10 +2,12 @@
 
 suppressPackageStartupMessages(library(stringr))
 
+source("tests/ci_report.R")
 paths <- c("artifacts/worksite_address_setting_crosswalk.csv",
            "artifacts/worksite_address_setting_best_match.csv",
            "artifacts/worksite_setting_source_registry.csv")
-stopifnot(all(file.exists(paths)))
+ci_require_files(paths, "artifacts/midwife_work_sites_long.csv",
+                 what = "the work-site setting crosswalk")
 d <- read.csv(paths[[1]], stringsAsFactors = FALSE, check.names = FALSE)
 b <- read.csv(paths[[2]], stringsAsFactors = FALSE, check.names = FALSE)
 r <- read.csv(paths[[3]], stringsAsFactors = FALSE, check.names = FALSE)

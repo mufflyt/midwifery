@@ -57,6 +57,30 @@ FILES_TO_CHECK = (
     "artifacts/cms_ndh_bulk_cohort.csv",
 )
 
+# THE ONE DEFECT THIS TEST WAS WRITTEN AGAINST, NAMED SO IT CANNOT HIDE A
+# SECOND ONE.
+#
+# Added 2026-11-13. As first written, this test failed on the very row its
+# docstring documents: NPI 1417904962 is still in the tracked discovery
+# artifact, so the check could never be green and the nightly reported it
+# every night as though it were new. A permanently red check stops being read,
+# which is worse than no check -- and its stated purpose is the NEXT such row,
+# not this one.
+#
+# So the known row is recorded with its EXACT count, and three things still
+# fail:
+#   - any other NPI over the threshold, in either file;
+#   - this NPI with a different count (CMS re-exported it, changed);
+#   - this NPI gone, so the entry cannot outlive its cause -- the same rule
+#     N1 enforces on tests/ci_nightly_exceptions.txt.
+#
+# It is NOT dropped from the data. The row stays in the artifact exactly as
+# CMS published it, written up in docs/TECHNICAL_APPENDIX_CMS_NDH.md; this
+# only records that one specific published defect is already known.
+KNOWN_CMS_DEFECTS = {
+    ("artifacts/cms_ndh_bulk_national_cnm.csv", "1417904962"): 153,
+}
+
 FAILURES = []
 
 
@@ -81,11 +105,31 @@ def run():
             rows = list(csv.DictReader(f))
 
         offenders = [r for r in rows if int(r.get("ndh_n_addresses", 0) or 0) > MAX_PLAUSIBLE_ADDRESSES]
-        check(f"{rel_path}: no row exceeds {MAX_PLAUSIBLE_ADDRESSES} addresses",
-              len(offenders) == 0,
-              detail="; ".join(f"NPI {o['npi']} ({o.get('ndh_given','')} {o.get('ndh_family','')}): "
-                                f"{o['ndh_n_addresses']} addresses"
-                                for o in offenders) or None)
+
+        def describe(o):
+            return (f"NPI {o['npi']} ({o.get('ndh_given','')} {o.get('ndh_family','')}): "
+                    f"{o['ndh_n_addresses']} addresses")
+
+        unexpected = [o for o in offenders
+                      if KNOWN_CMS_DEFECTS.get((rel_path, o["npi"])) !=
+                      int(o.get("ndh_n_addresses", 0) or 0)]
+        check(f"{rel_path}: no NEW row exceeds {MAX_PLAUSIBLE_ADDRESSES} addresses",
+              len(unexpected) == 0,
+              detail="; ".join(describe(o) for o in unexpected) or None)
+
+        for o in offenders:
+            if (rel_path, o["npi"]) in KNOWN_CMS_DEFECTS:
+                print(f"  KNOWN {describe(o)} -- documented CMS export defect, "
+                      f"see docs/TECHNICAL_APPENDIX_CMS_NDH.md")
+
+        # A recorded defect that is no longer in the data must be deleted from
+        # KNOWN_CMS_DEFECTS, not left to excuse some future row silently.
+        seen = {o["npi"] for o in offenders}
+        stale = [npi for (f, npi) in KNOWN_CMS_DEFECTS if f == rel_path and npi not in seen]
+        check(f"{rel_path}: every recorded defect is still present",
+              len(stale) == 0,
+              detail=("gone from the data -- delete from KNOWN_CMS_DEFECTS: "
+                      + ", ".join(stale)) if stale else None)
 
         # Visibility, not just pass/fail -- same discipline as the
         # Healthgrades scraper's "AMBIGUOUS: ... Not attributable" logging.

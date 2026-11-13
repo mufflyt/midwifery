@@ -135,7 +135,14 @@ jobs:
                     # for real; ci.yml's unit-test job installs these for the same
                     # reason (f380881). The nightly never did, so S8-S10 failed with
                     # "there is no package called 'ggplot2'".
-                    "ggplot2", "patchwork", "forcats")
+                    "ggplot2", "patchwork", "forcats",
+                    # R/lib/medicaid_enrollment_intervals.R uses
+                    # data.table::foverlaps() for the interval self-join, so
+                    # test_medicaid_enrollment_intervals.R aborted at the
+                    # contradictory-status section with "there is no package
+                    # called 'data.table'". Everything before that point had
+                    # already passed, which is why it read as a partial run.
+                    "data.table")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
           for (p in pkgs) if (!requireNamespace(p, quietly = TRUE))
@@ -214,6 +221,27 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pytest
+
+      # THE duckdb CLI BINARY, NOT THE PYTHON PACKAGE. download_medicaid_
+      # provider_enrollment_segments.py and hhs_opendata_csv_pipeline.py shell
+      # out to `duckdb` on purpose -- the module docstrings explain why
+      # (sustained-throughput CSV ingestion straight to a local file) -- so
+      # `pip install duckdb` would not satisfy them. Without the binary, 8 of
+      # their tests failed every night with
+      # "FileNotFoundError: [Errno 2] No such file or directory: 'duckdb'",
+      # which is a missing runner dependency, not a defect in the pipelines.
+      #
+      # Pinned, like every other dependency here. v1.5.6 (2026-09-28) rather
+      # than the v2.0.0 released three weeks ago: these tests only create and
+      # read back their own throwaway databases, so there is nothing to gain
+      # from a major version whose behaviour has not settled.
+      - name: Install the duckdb CLI (pinned)
+        run: |
+          curl -fsSL -o /tmp/duckdb_cli.zip \
+            https://github.com/duckdb/duckdb/releases/download/v1.5.6/duckdb_cli-linux-amd64.zip
+          unzip -o -q /tmp/duckdb_cli.zip -d /usr/local/bin
+          chmod +x /usr/local/bin/duckdb
+          duckdb --version
 
       # Compiling every tracked .py catches a syntax error in a script that no
       # test imports -- which is most of them.

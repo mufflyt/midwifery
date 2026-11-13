@@ -80,7 +80,10 @@ op_profile_pairs <- function(con, src, year) {
 }
 
 if (sys.nframe() == 0L) {
-  con <- DBI::dbConnect(duckdb::duckdb())
+  # duckdb_connect() rather than a raw DBI::dbConnect(): it applies the
+  # encoding bootstrap every ingestion needs, and the architecture gate
+  # requires every connection to route through it.
+  con <- duckdb_connect()
   on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
   DBI::dbExecute(con, sprintf("SET temp_directory=%s",
                               DBI::dbQuoteString(con, tempdir())))

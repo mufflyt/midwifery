@@ -232,7 +232,7 @@ if (sys.nframe() == 0L) {
   base::message(sprintf("%d PPEF vintage(s), %s to %s", nrow(v),
                         min(v$vintage), max(v$vintage)))
 
-  con <- DBI::dbConnect(duckdb::duckdb())
+  con <- duckdb_connect()   # encoding bootstrap; never a raw dbConnect()
   on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
   DBI::dbExecute(con, sprintf("SET temp_directory=%s",
                               DBI::dbQuoteString(con, tempdir())))

@@ -1,8 +1,9 @@
 #!/usr/bin/env Rscript
 
+source("tests/ci_report.R")
 path <- "artifacts/worksite_address_resolution.csv"
 queue <- "artifacts/worksite_address_resolution_unresolved.csv"
-stopifnot(file.exists(path), file.exists(queue))
+ci_require_files(path, queue, what = "the work-site address resolution")
 d <- read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
 q <- read.csv(queue, stringsAsFactors = FALSE, check.names = FALSE)
 required <- c("site_id", "address_key", "resolved_site_name", "resolution_status",

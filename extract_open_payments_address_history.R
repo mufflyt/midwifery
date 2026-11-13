@@ -29,8 +29,9 @@ source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-inge
 
 YEARS <- as.integer(strsplit(Sys.getenv("YEARS", "2015,2016,2017,2018,2019,2020,2021"), ",")[[1]])
 
-WAREHOUSE <- Sys.getenv("OPEN_PAYMENTS_WAREHOUSE",
-  "/Volumes/MufflySamsung/open_payments_data/open_payments_merged_2013_2024.duckdb")
+WAREHOUSE <- samsung_duckdb_path(file.path("open_payments_data",
+                                           "open_payments_merged_2013_2024.duckdb"),
+                                 "OPEN_PAYMENTS_WAREHOUSE")
 stopifnot(file.exists(WAREHOUSE))
 
 crosswalk_candidates <- sort(Sys.glob("artifacts/amcb_npi_crosswalk_*panel*.csv"),

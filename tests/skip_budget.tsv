@@ -79,3 +79,32 @@ tests/test-nightly-mutations.R	testthat	pr	0	0	Nightly framework mutation tests
 tests/test-nightly-pr-enumeration.R	testthat	pr	0	0	Nightly framework open PR enumeration completeness tests
 
 
+# -----------------------------------------------------------------------------
+# The seven work-site tests, added 2026-11-13.
+#
+# Each asserts on an artifact produced on a researcher's machine and never
+# committed -- the work-site long table, the setting crosswalk, the Trilliant
+# detail table, the internal leaflet map, the organization-affiliation report.
+# They used to abort with a bare stopifnot(file.exists(...)) on every CI run,
+# which is noise rather than a finding: nothing regressed, the input was never
+# there. They now skip through ci_require_files(), and skipping is exactly the
+# thing this file exists to keep visible, so each is declared here.
+#
+# full == lean == 1 BECAUSE THE `full` FLAG KEYS ON A DIFFERENT PRIVATE FILE.
+# The environment is called "full" when artifacts/amcb_npi_linkage_FROZEN.csv
+# is present; these seven need the work-site artifacts, which are a separate
+# gitignored set. A machine that has the frozen linkage but has not run the
+# work-site pipeline -- the development machine this was written on -- still
+# skips all seven. On a machine that HAS run it, these rows go STALE and the
+# gate will say so, which is the correct outcome: lower them there.
+#
+# One skip each, not more: ci_require_files() prints a single line naming every
+# missing input and exits, so a count above 1 would mean a second skip
+# mechanism appeared in the file.
+tests/test_midwife_organization_affiliation_report.R	ci_skip	pr	1	1	reads artifacts/midwife_organization_affiliation_report.csv, gitignored person-level output
+tests/test_trilliant_worksite_detail_table.R	ci_skip	pr	1	1	reads the Trilliant work-site detail table and its HTML, both gitignored
+tests/test_worksite_address_resolution.R	ci_skip	pr	1	1	reads the work-site address resolution and its unresolved queue, both gitignored
+tests/test_worksite_leaflet_map.R	ci_skip	pr	1	1	reads qa/leaflet_work_sites_INTERNAL.html, gitignored
+tests/test_worksite_military_flag.R	ci_skip	pr	1	1	reads the work-site long and excluded tables, both gitignored
+tests/test_worksite_setting_crosswalk.R	ci_skip	pr	1	1	reads the setting crosswalk, best-match and source registry, all gitignored
+tests/test_worksite_tables.R	ci_skip	pr	1	1	reads the work-site topology/settings/combinations tables, all gitignored

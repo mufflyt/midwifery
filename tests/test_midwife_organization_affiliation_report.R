@@ -1,8 +1,9 @@
 #!/usr/bin/env Rscript
 root <- "."
 if (!dir.exists(file.path(root, ".git")) && dir.exists("../.git")) root <- ".."
+source(file.path(root, "tests", "ci_report.R"))
 path <- file.path(root, "artifacts", "midwife_organization_affiliation_report.csv")
-stopifnot(file.exists(path))
+ci_require_files(path, what = "the organization-affiliation report")
 d <- read.csv(path, stringsAsFactors = FALSE, na.strings = "")
 required <- c("certification_number", "npi", "organization_name", "source",
               "relationship", "evidence")

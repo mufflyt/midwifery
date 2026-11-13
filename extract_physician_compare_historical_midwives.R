@@ -76,7 +76,7 @@ VINTAGES <- list(
   list(vintage = "2016-04", path = "data/raw/cms_physician_compare/2016/National_Downloadable_File_2016-04.csv")
 )
 
-WAREHOUSE <- "/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb"
+WAREHOUSE <- samsung_duckdb_path("DuckDB/nber_my_duckdb.duckdb", DUCKDB_ENV_VAR)
 WAREHOUSE_VINTAGES <- list(
   list(vintage = "2017-04", table = "doc_archive_04_2017_Refresh_Data_Archive_04_2017_csv_1"),
   list(vintage = "2017-12", table = "doc_archive_12_2017_Physician_Compare_National_Downloadable_File_csv_3"),

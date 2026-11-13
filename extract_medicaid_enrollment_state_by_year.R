@@ -194,7 +194,7 @@ if (sys.nframe() == 0L) {
   if (is.na(parquet))
     stop("segments parquet not found under the mounted volume", call. = FALSE)
 
-  con <- DBI::dbConnect(duckdb::duckdb())
+  con <- duckdb_connect()   # encoding bootstrap; never a raw dbConnect()
   on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
   DBI::dbExecute(con, sprintf("SET temp_directory=%s",
                               DBI::dbQuoteString(con, tempdir())))

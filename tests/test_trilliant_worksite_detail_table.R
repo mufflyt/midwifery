@@ -1,8 +1,9 @@
 #!/usr/bin/env Rscript
 
+source("tests/ci_report.R")
 path <- "artifacts/table_trilliant_worksite_detail.csv"
-stopifnot(file.exists(path))
-stopifnot(file.exists("docs/table_trilliant_worksite_detail.html"))
+ci_require_files(path, "docs/table_trilliant_worksite_detail.html",
+                 what = "the Trilliant work-site detail table")
 
 d <- read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
 required <- c("domain", "measure", "n_observed", "percent_of_cohort", "summary",

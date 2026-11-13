@@ -7,7 +7,7 @@ Provider-level T-MSIS enrollment segments, January 2018 - December 2024, one
 row per provider-state enrollment period. Sibling dataset to
 hhs_medicaid_provider_spending (same opendata.hhs.gov platform, same Azure
 Blob Storage account), which already has its own standalone DuckDB file at
-/Volumes/MufflySamsung/DuckDB/medicaid_provider_spending.duckdb -- this script
+<volume>/DuckDB/medicaid_provider_spending.duckdb -- this script
 follows that same placement convention rather than this repo's midwife-cohort
 pipeline (R/lib/medicare_duckdb.R's duckdb_connect() bootstrap), because this
 dataset is general national reference data, not midwife-specific.
@@ -32,7 +32,7 @@ accessmrf_06_build_relationships.py's write_parquet() for the same pattern).
 
 WHY THE DOWNLOAD, EXTRACTION AND DUCKDB BUILD ALL HAPPEN ON LOCAL DISK, NOT
 THE EXTERNAL VOLUME. The zip unpacks to an 11.5 GB CSV. A first attempt wrote
-that CSV directly onto /Volumes/MufflySamsung (matching the layout of the
+that CSV directly onto <volume> (matching the layout of the
 sibling medicaid_provider_spending.duckdb) and measured sustained throughput
 as low and HIGHLY variable -- bursts of 30-60 MB/s next to multi-minute
 stretches under 1 MB/s, with Time Machine's backupd running concurrently as
@@ -42,7 +42,7 @@ the external volume as one sequential transfer has two benefits: the slow,
 contended link only ever carries bytes once, and DuckDB's own storage format
 is smaller than the source CSV, so there is simply less to move across it.
 
-Output: /Volumes/MufflySamsung/DuckDB/medicaid_provider_enrollment_segments.duckdb
+Output: <volume>/DuckDB/medicaid_provider_enrollment_segments.duckdb
     table `enrollment_segments`    one row per provider-state enrollment segment
     table `_provenance`            one row per successful load, append-only
 """
@@ -57,11 +57,14 @@ import urllib.request
 import zipfile
 from datetime import datetime, timezone
 
+from samsung_volume import samsung_path
+
 DEFAULT_VERSION_DATE = "2026-07-24"
 BLOB_BASE = "https://stopendataprod.blob.core.windows.net/datasets/medicaid-provider-enrollment-segments"
 WORK_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                          "scratch", "medicaid_provider_enrollment_segments")
-DB_PATH = "/Volumes/MufflySamsung/DuckDB/medicaid_provider_enrollment_segments.duckdb"
+DB_PATH = samsung_path("DuckDB/medicaid_provider_enrollment_segments.duckdb",
+                       env_var="MEDICAID_ENROLLMENT_DB")
 TABLE_NAME = "enrollment_segments"
 CHUNK_SIZE = 1 << 20  # 1 MiB
 

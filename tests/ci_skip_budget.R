@@ -66,10 +66,26 @@ ci_section("SB1 every gate that can skip is in the budget")
 # synthetic fixtures. Neither calls it. Named explicitly rather than dodged with
 # a cleverer regex, because a regex that has to distinguish a call from a string
 # containing a call is one more thing to be subtly wrong about.
-NOT_GATES <- c("tests/ci_skip_budget.R", "tests/test_skip_budget_detect.R")
+# A THIRD ENTRY, 2026-11-13, for the same reason as the first two: the shared
+# reporter DEFINES the skip mechanism rather than using it. ci_require_files()
+# lives in tests/ci_report.R and prints through ci_skip(), so the file now
+# carries the literal this check searches for while being no more a gate than
+# ci_skip() itself is. It asserts nothing and can therefore skip nothing.
+NOT_GATES <- c("tests/ci_skip_budget.R", "tests/test_skip_budget_detect.R",
+               "tests/ci_report.R")
+
+# TWO SPELLINGS OF ONE MECHANISM, and missing the second would have opened
+# exactly the blind spot this gate exists to close. ci_require_files() (added
+# 2026-11-13, tests/ci_report.R) skips a whole test file when its gitignored
+# person-level input is absent -- seven work-site tests use it -- and it does
+# so without the caller ever writing `ci_skip(`. Scanning only for ci_skip()
+# would have left seven files that skip on every CI run invisible to the
+# budget, which is the same shape of hole as the testthat SKIP count the
+# header describes.
+SKIP_CALLS <- "ci_skip\\(|ci_require_files\\("
 skippers <- Filter(function(f) {
   !(f %in% NOT_GATES) &&
-    any(grepl("ci_skip\\(", readLines(file.path(root, f), warn = FALSE)))
+    any(grepl(SKIP_CALLS, readLines(file.path(root, f), warn = FALSE)))
 }, ci_tracked("tests/*.R"))
 # testthat targets are named in ci.yml rather than discoverable from the source,
 # because a file only skips through testthat when CI chooses to run it that way.

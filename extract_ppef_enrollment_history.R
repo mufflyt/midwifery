@@ -35,7 +35,9 @@
 suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); library(readr); library(stringr)})
 source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-ingestion bootstrap
 
-PPEF <- "/Volumes/MufflySamsung/nppes_historical_downloads/pecos/PPEF_Enrollment_Extract_2026.07.17.csv"
+PPEF <- samsung_duckdb_path(file.path("nppes_historical_downloads", "pecos",
+                                      "PPEF_Enrollment_Extract_2026.07.17.csv"),
+                            "PPEF_ENROLLMENT_EXTRACT")
 if (!file.exists(PPEF))
   stop(sprintf("PPEF extract not found at %s. It lives on an external volume; mount it or adjust the path.", PPEF), call. = FALSE)
 

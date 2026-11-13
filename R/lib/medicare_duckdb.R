@@ -58,6 +58,44 @@ samsung_volume_path <- function(relative, must_exist = TRUE) {
   NA_character_
 }
 
+#' The volume's canonical spelling, named ONCE in this repository
+#'
+#' tests/test_duckdb_volume_resolution.R H1/H2 forbid this literal in every
+#' tracked executable file but this one, because the original incident was a
+#' second drive called "MufflySamsung 1" silently answering for the first. A
+#' path spelled out at a call site cannot be corrected centrally when the
+#' mount is renamed, and 19 files had spelled it out -- every nightly failed on
+#' H1/H2 for that reason alone.
+SAMSUNG_VOLUME_CANONICAL <- "/Volumes/MufflySamsung"
+
+#' Resolve a database on the Samsung volume, honouring an explicit override
+#'
+#' The sibling of samsung_volume_path() for the many scripts that read a
+#' NAMED DuckDB off the volume and accept an environment variable instead.
+#' Those scripts used to spell the mount path out as a Sys.getenv() default,
+#' which is both the H1/H2 violation and the rename bug: a hardcoded default
+#' keeps pointing at the old mount after macOS renames it.
+#'
+#' WHEN NOTHING IS MOUNTED THIS RETURNS A PATH, NOT NA. Callers already follow
+#' it with their own `if (!file.exists(db)) stop("missing required input: ",
+#' db)`, and NA there would print "missing required input: NA" -- strictly
+#' worse than the hardcoded default it replaced. So the canonical location is
+#' returned unresolved, the caller's existing check fails as before, and the
+#' message still names somewhere a human can go and look.
+#'
+#' @param relative [character(1)] path below the volume root, e.g.
+#'   "DuckDB/medicaid_provider_enrollment_segments.duckdb".
+#' @param env_var [character(1)] environment variable checked first; "" to skip.
+#' @return [character(1)] the override, the resolved path, or the canonical
+#'   location when the volume is not mounted.
+samsung_duckdb_path <- function(relative, env_var = "") {
+  override <- if (nzchar(env_var)) Sys.getenv(env_var, "") else ""
+  if (nzchar(override)) return(override)
+  hit <- samsung_volume_path(relative, must_exist = FALSE)
+  if (!is.na(hit)) return(hit)
+  file.path(SAMSUNG_VOLUME_CANONICAL, relative)
+}
+
 #' Where the warehouse might be, whatever macOS called the volume today
 DUCKDB_GLOB_DEFAULT <- "/Volumes/MufflySamsung*/DuckDB/nber_my_duckdb.duckdb"
 

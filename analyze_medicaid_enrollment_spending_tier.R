@@ -54,7 +54,8 @@ source(file.path(.this_script_dir, "R", "lib", "artifact_provenance.R"))
 source(file.path(.this_script_dir, "R", "lib", "ob_midwife_cohort.R"))
 source(file.path(.this_script_dir, "R", "lib", "medicaid_enrollment_intervals.R"))
 
-ENROLLMENT_DB <- "/Volumes/MufflySamsung/DuckDB/medicaid_provider_enrollment_segments.duckdb"
+ENROLLMENT_DB <- samsung_duckdb_path("DuckDB/medicaid_provider_enrollment_segments.duckdb",
+                                     "MEDICAID_ENROLLMENT_DB")
 SPENDING_DUCKDB_RELATIVE <- "DuckDB/medicaid_provider_spending_verified.duckdb"
 PROCEDURE_CODES <- c("Q0091", "G0101",
                       "51725", "51726", "51727", "51728", "51729", "51736",

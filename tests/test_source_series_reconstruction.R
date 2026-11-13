@@ -36,6 +36,9 @@
 ok <- requireNamespace("duckdb", quietly = TRUE) && requireNamespace("DBI", quietly = TRUE)
 if (!ok) { cat("duckdb/DBI unavailable -- skipping\n"); quit(status = 0L) }
 suppressPackageStartupMessages({library(DBI); library(duckdb)})
+# duckdb_connect(), so this test's own connection goes through the same
+# bootstrap the architecture gate requires of every producer it tests.
+source(file.path("R", "lib", "medicare_duckdb.R"))
 source(file.path("R", "lib", "clean_state.R"))
 
 fails <- 0L
@@ -53,7 +56,7 @@ is_def <- vapply(exprs, function(e)
 chk(sum(is_def) == 1L, sprintf("pull_states() found exactly once in %s", SCRIPT))
 if (sum(is_def) != 1L) quit(status = 1L)
 
-con <- dbConnect(duckdb::duckdb())
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 eval(exprs[[which(is_def)]])   # defines pull_states() against this `con`
 
