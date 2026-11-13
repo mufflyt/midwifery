@@ -39,8 +39,17 @@ tiers <- read_csv(TIERS, show_col_types = FALSE, progress = FALSE) %>%
   transmute(npi = trimws(as.character(npi)), tier)
 lic <- read_csv(LIC, show_col_types = FALSE, progress = FALSE) %>%
   transmute(npi = trimws(as.character(npi)), n_license_states) %>%
-  filter(!is.na(n_license_states), n_license_states >= 1) %>%
-  distinct(npi, .keep_all = TRUE)
+  filter(!is.na(n_license_states), n_license_states >= 1)
+
+# The supplement is one row per NPI, and its producer says so after checking.
+# ASSERTED rather than forced by keeping the first row: if CMS ever ships two
+# profile rows for one provider, silently keeping whichever sorted first would
+# pick a licence count at random and nothing downstream would show it.
+dup <- lic %>% count(npi) %>% filter(n > 1)
+if (nrow(dup))
+  stop(sprintf(paste0("%s is not one row per NPI (%d duplicated). Decide how to ",
+                      "combine their licence counts before using it here."),
+               LIC, nrow(dup)), call. = FALSE)
 
 j <- inner_join(tiers, lic, by = "npi") %>%
   mutate(lic_band = ifelse(n_license_states >= 2, "2+ licence states", "1 licence state"))

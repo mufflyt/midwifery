@@ -1,6 +1,6 @@
 {
   "artifact": "consensus_tier_by_license_count.csv",
-  "written_utc": "2026-11-13 02:15:17 UTC",
+  "written_utc": "2026-11-13 03:55:08 UTC",
   "inputs": [
     {
       "path": "artifacts/mrost_consensus_tier_by_npi.csv",
@@ -11,11 +11,11 @@
       "sha256": "f5f241aa4c6d73e09bdfb0125d64fdfc59868ace9033349d98e633c7c3263479"
     }
   ],
-  "code_sha256": "91bdf624691578238c40732383c9e8ee2ae0f36cc62eb07662b9fe35e6568b51",
+  "code_sha256": "68cbe5a1e07e4abcedee5c28aebfcb61f07b42bdbfd068d5a793c087695d6839",
   "code": [
     {
       "path": "analyze_consensus_tier_by_license_count.R",
-      "sha256": "ddccad418857dc8ceb70cfacaf5bffe65112ba89e375d8d5cc0e0258df4e0d87"
+      "sha256": "f4469ab31bb37f0045a5f34c3537422f8f33922b770926ab706d5f7ad419316b"
     },
     {
       "path": "R/lib/artifact_provenance.R",

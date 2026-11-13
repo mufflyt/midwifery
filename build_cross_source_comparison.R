@@ -290,7 +290,13 @@ if (!is.null(medicaid)) {
            n_equals_modal_state = nrow(modal_hits),
            pct_equals_modal_state = if (nrow(comparable)) round(100 * nrow(modal_hits) / nrow(comparable), 1) else NA_real_)
   })) %>% arrange(desc(n_comparable))
-  write_csv(containment, "artifacts/cross_source_medicaid_containment.csv")
+  # Written WITH a provenance sidecar because this one is tracked (contract A3
+  # requires a sidecar on every tracked artifact). The other outputs of this
+  # script are per-NPI and gitignored, so they keep plain write_csv.
+  source(file.path("R", "lib", "artifact_provenance.R"))
+  write_with_provenance(containment, "artifacts/cross_source_medicaid_containment.csv",
+                        inputs = c("artifacts/amcb_npi_linkage_FROZEN.csv",
+                                   "artifacts/cms_ndh_midwives.csv"), na = "")
   cat("Medicaid containment (is the other source's state anywhere in her Medicaid footprint?):\n")
   print(as.data.frame(containment))
 }

@@ -64,10 +64,22 @@ pecos <- read_csv(PECOS, col_types = cc, progress = FALSE) %>%
   transmute(npi = trimws(npi), year = as.integer(year),
             state = clean_state(pecos_state), source = "pecos")
 
+# ONE STATE PER SOURCE PER NPI-YEAR, and the reduction is written out rather
+# than left to a silent first-row pick, which hides both that a choice is being
+# made and what it is. A source can report several states for one midwife in
+# one year (multiple practice addresses, multiple enrolments); the first
+# alphabetically is taken so a rerun is byte-identical, and n_states records
+# how often the choice was forced, which is the number a reader needs to judge
+# how much the reduction is doing. This mirrors the original design, which
+# reduced every source to one state before comparing.
 long <- bind_rows(nppes, dac, op, pecos) %>%
   filter(year %in% YEARS, !is.na(npi), nzchar(npi), !is.na(state)) %>%
-  arrange(npi, year, source, state) %>%
-  distinct(npi, year, source, .keep_all = TRUE)
+  group_by(npi, year, source) %>%
+  summarise(n_states = n_distinct(state), state = min(state), .groups = "drop")
+cat(sprintf("source-NPI-years where the source named >1 state: %s of %s (%.1f%%)\n",
+            format(sum(long$n_states > 1), big.mark = ","),
+            format(nrow(long), big.mark = ","),
+            100 * mean(long$n_states > 1)))
 
 for (s in c("nppes", "dac", "open_payments", "pecos")) {
   yy <- sort(unique(long$year[long$source == s]))

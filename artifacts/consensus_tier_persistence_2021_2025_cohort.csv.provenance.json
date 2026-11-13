@@ -1,6 +1,6 @@
 {
   "artifact": "consensus_tier_persistence_2021_2025_cohort.csv",
-  "written_utc": "2026-11-13 03:32:51 UTC",
+  "written_utc": "2026-11-13 03:56:27 UTC",
   "inputs": [
     {
       "path": "midwife_panel.csv",
@@ -19,11 +19,11 @@
       "sha256": "e35286ed521c8eb5e45d33b1d6aa38507711493aaf2b339b24660d950db21d99"
     }
   ],
-  "code_sha256": "2e83a4402e70e36c2434109747e740ff6a4a758e1ea941e3187ebd4bc8f2e243",
+  "code_sha256": "571fa1b75baeef56e3b21e665c31a713c71dbf4dbf2873ab4c33fd9d888551b5",
   "code": [
     {
       "path": "analyze_consensus_tier_persistence_2021_2025.R",
-      "sha256": "6a9ec66a573dd95e20ce95a8389e73239f0a208b66d8df2ed0c5c1a21d338fd9"
+      "sha256": "6ddae2d5cc8a0bec55775933a4dbdec392a346b8d5ac1622aa0bdcbfe5ced727"
     },
     {
       "path": "R/lib/artifact_provenance.R",
