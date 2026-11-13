@@ -94,7 +94,7 @@ if (sys.nframe() == 0L) {
   parquet <- samsung_volume_path(SPEND_REL, must_exist = FALSE)
   if (is.na(parquet)) stop("spending parquet not mounted", call. = FALSE)
 
-  con <- DBI::dbConnect(duckdb::duckdb())
+  con <- duckdb_connect()   # encoding bootstrap; never a raw dbConnect()
   on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
   DBI::dbExecute(con, sprintf("SET temp_directory=%s",
                               DBI::dbQuoteString(con, tempdir())))

@@ -41,6 +41,21 @@ tests/test_mysterynpi_contracts.R       external-private  # the consumer-side co
 # canonical rank_one_to_one() -- that function did NOT move to mysterynpi.
 tests/test_isochrones_stage2_rank_one_to_one.R  external-private  # canonical rank_one_to_one()
 
+# Same blocker, two more files. Both live-source out of the isochrones
+# checkout through load_isochrones_name_tools(), which refuses to fall back to
+# a vendored copy on purpose -- "a fix applied to one copy is a fix applied to
+# none". On a public runner there is no ~/isochrones and no ISOCHRONES_R, so
+# they aborted every night from 2026-11-?? with "isochrones R/ directory not
+# found at /home/runner/isochrones/R". That is the absent private repository
+# this class exists for, not a defect in the borrowed vectors: both pass
+# locally against the real checkout.
+#
+# NOT fixed by vendoring the functions here. Duplicating the name logic is the
+# exact failure these tests were written to detect, so a copy made to satisfy
+# CI would defeat the test it satisfies.
+tests/test_borrowed_isochrones_saboteurs.R             external-private  # live-sources luhn_check_npi() from ~/isochrones
+tests/test_borrowed_isochrones_name_parser_saboteurs.R external-private  # live-sources the name parser from ~/isochrones
+
 # -----------------------------------------------------------------------------
 # Downloads a CMS Facility_Affiliation file at run time, so it depends on
 # data.cms.gov being up. Stays informational for that reason and no other.

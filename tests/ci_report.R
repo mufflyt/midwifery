@@ -105,3 +105,41 @@ ci_law_evidence_header <- function(source_rel) {
               ci_evidence_commit(),
               { r <- Sys.getenv("LAW_RUN_ID"); if (nzchar(r)) r else "adhoc" }))
 }
+
+# --- A TEST WHOSE INPUT IS PERSON-LEVEL AND GITIGNORED ----------------------
+# Several tests assert on artifacts that are produced on a researcher's machine
+# and deliberately never committed (work-site tables, the Trilliant detail
+# table, the internal leaflet map). On CI those files do not exist, so a bare
+# stopifnot(file.exists(...)) failed every night -- which is noise, not a
+# finding: nothing regressed, the input was never there to begin with.
+#
+# THE DISTINCTION THAT KEEPS THIS HONEST: absent-and-gitignored is a skip,
+# absent-and-TRACKED is a failure. A tracked artifact that has gone missing is
+# a real regression and must not be excused by the same helper that excuses a
+# private one, so the ignore status is asked of git rather than assumed from
+# the path. When git cannot be consulted at all, the stricter branch is taken.
+#
+# Returns invisibly when every path is present; otherwise prints one skip line
+# naming what is missing and exits 0, or stops when a missing path is tracked.
+ci_require_files <- function(..., what = NULL) {
+  paths <- unlist(list(...), use.names = FALSE)
+  missing <- paths[!file.exists(paths)]
+  if (!length(missing)) return(invisible(TRUE))
+
+  ignored <- vapply(missing, function(p) {
+    st <- suppressWarnings(system2("git", c("check-ignore", "-q", shQuote(p)),
+                                   stdout = FALSE, stderr = FALSE))
+    identical(as.integer(st), 0L)
+  }, logical(1))
+
+  if (!all(ignored))
+    stop(sprintf(paste0("tracked input(s) missing, which is a regression, not a ",
+                        "private-data skip:\n  %s"),
+                 paste(missing[!ignored], collapse = "\n  ")), call. = FALSE)
+
+  ci_skip("%s absent (person-level, gitignored; expected on CI and a fresh checkout): %s -- asserts locally only",
+          if (is.null(what)) "input" else what,
+          paste(basename(missing), collapse = ", "))
+  cat("PASS (skipped: private input absent)\n")
+  quit(status = 0)
+}

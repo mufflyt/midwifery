@@ -200,7 +200,7 @@ if (sys.nframe() == 0L) {
     filter(!is.na(npi), nzchar(npi)) %>% distinct()
   base::message(sprintf("cohort NPIs: %s", format(nrow(cohort), big.mark = ",")))
 
-  con <- DBI::dbConnect(duckdb::duckdb())
+  con <- duckdb_connect()   # encoding bootstrap; never a raw dbConnect()
   on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
   DBI::dbExecute(con, sprintf("SET temp_directory=%s",
                               DBI::dbQuoteString(con, tempdir())))

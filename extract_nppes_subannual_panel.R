@@ -77,7 +77,7 @@ cat(sprintf("Cohort NPIs: %s\n", format(nrow(link), big.mark = ",")))
 pick <- function(have, ...) { opts <- c(...); hit <- opts[opts %in% have]; if (!length(hit)) return(NULL); hit[1] }
 
 extract_one_from_warehouse <- function(table, vintage) {
-  con <- dbConnect(duckdb(), WAREHOUSE, read_only = TRUE)
+  con <- duckdb_connect(WAREHOUSE, read_only = TRUE)
   on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
   have <- names(dbGetQuery(con, sprintf("SELECT * FROM %s LIMIT 0", dbQuoteIdentifier(con, table))))
   col_npi <- pick(have, "NPI"); col_entity <- pick(have, "Entity Type Code")

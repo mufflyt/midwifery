@@ -33,8 +33,8 @@ source(file.path(.this_script_dir, "R", "lib", "cohort_definitions.R"))
 
 PANEL       <- Sys.getenv("MIDWIFE_PANEL", "midwife_panel.csv")
 FROZEN      <- Sys.getenv("STAGE2_FROZEN", "artifacts/amcb_npi_linkage_FROZEN.csv")
-MEDICAID_DB <- Sys.getenv("MEDICAID_ENROLLMENT_DB",
-                          "/Volumes/MufflySamsung/DuckDB/medicaid_provider_enrollment_segments.duckdb")
+MEDICAID_DB <- samsung_duckdb_path("DuckDB/medicaid_provider_enrollment_segments.duckdb",
+                                   "MEDICAID_ENROLLMENT_DB")
 for (p in c(PANEL, FROZEN, MEDICAID_DB))
   if (!file.exists(p)) stop(sprintf("missing required input: %s", p), call. = FALSE)
 

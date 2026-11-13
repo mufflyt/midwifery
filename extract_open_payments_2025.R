@@ -24,7 +24,9 @@
 suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); library(readr)})
 source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-ingestion bootstrap
 
-RAW_FILE <- "/Volumes/MufflySamsung/open_payments_data/2025/unzipped_files/OP_DTL_GNRL_PGYR2025_P06302026_06032026.csv"
+RAW_FILE <- samsung_duckdb_path(file.path("open_payments_data", "2025", "unzipped_files",
+                                          "OP_DTL_GNRL_PGYR2025_P06302026_06032026.csv"),
+                                "OP_2025_RAW")
 stopifnot(file.exists(RAW_FILE))
 
 crosswalk_candidates <- sort(Sys.glob("artifacts/amcb_npi_crosswalk_*panel*.csv"), decreasing = TRUE)

@@ -127,6 +127,23 @@ r <- sb_run_in(d)
 chk(r$code != 0 && grepl("not in the budget", r$text, fixed = TRUE),
     "a gate that can skip but is undeclared fails")
 
+# THE SECOND SPELLING, added 2026-11-13 with the ci_require_files() mechanism.
+# A gate can now skip without the word ci_skip appearing anywhere in it, which
+# is a blind spot of exactly the shape the testthat SKIP count was. SB1's scan
+# was widened to both spellings, so the widening gets its own fixture: without
+# it, seven work-site tests would skip on every CI run and the budget would
+# have no way to notice.
+d <- sb_scaffold(0, 0)
+writeLines(c("source(file.path('tests','ci_report.R'))",
+             "ci_require_files('definitely/absent.csv', what = 'a synthetic private input')",
+             "ci_ok('never reached')", "ci_finish()"),
+           file.path(d, "tests", "ci_fake_requirer.R"))
+system2("git", c("-C", shQuote(d), "add", "-A", "-f"), stdout = FALSE, stderr = FALSE)
+r <- sb_run_in(d)
+chk(r$code != 0 && grepl("ci_fake_requirer.R", r$text, fixed = TRUE) &&
+      grepl("not in the budget", r$text, fixed = TRUE),
+    "a gate that skips via ci_require_files() and is undeclared also fails")
+
 d <- sb_scaffold(1, 1)
 writeLines(c("gate\tkind\twhen\tfull\tlean\treason",
              "tests/ci_fake_gate.R\tci_skip\tpr\t1\t1\ta synthetic gate",

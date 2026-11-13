@@ -1,8 +1,10 @@
 #!/usr/bin/env Rscript
+source("tests/ci_report.R")
 files <- file.path("artifacts", c("table_worksite_topology.csv",
                                    "table_worksite_settings.csv",
                                    "table_worksite_combinations.csv"))
-stopifnot(all(file.exists(files)))
+ci_require_files(files, "docs/table_worksite_combinations_upset.html",
+                 what = "the work-site topology tables")
 top <- read.csv(files[1], stringsAsFactors = FALSE)
 set <- read.csv(files[2], stringsAsFactors = FALSE)
 combo <- read.csv(files[3], stringsAsFactors = FALSE)

@@ -45,10 +45,8 @@ source(file.path("R", "join_safety.R"))
 PANEL_PATH  <- Sys.getenv("MIDWIFE_PANEL", "midwife_panel.csv")
 DAC_PATH    <- Sys.getenv("DAC_MIDWIVES", "dac_midwives.csv")
 FROZEN_PATH <- Sys.getenv("STAGE2_FROZEN", "artifacts/amcb_npi_linkage_FROZEN.csv")
-MEDICAID_DB <- Sys.getenv(
-  "MEDICAID_ENROLLMENT_DB",
-  "/Volumes/MufflySamsung/DuckDB/medicaid_provider_enrollment_segments.duckdb"
-)
+MEDICAID_DB <- samsung_duckdb_path("DuckDB/medicaid_provider_enrollment_segments.duckdb",
+                                   "MEDICAID_ENROLLMENT_DB")
 
 for (p in c(PANEL_PATH, DAC_PATH, FROZEN_PATH, MEDICAID_DB)) {
   if (!file.exists(p)) stop(sprintf("Missing required input: %s", p), call. = FALSE)

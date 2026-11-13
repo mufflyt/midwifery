@@ -23,7 +23,7 @@ download_medicaid_provider_enrollment_segments.py via
 hhs_opendata_csv_pipeline.py -- see that module's docstring for the shared
 Azure Blob URL shape and SHA-256 verification approach.
 
-Output: /Volumes/MufflySamsung/DuckDB/medicaid_provider_spending_ndc_verified.duckdb
+Output: <volume>/DuckDB/medicaid_provider_spending_ndc_verified.duckdb
     table `spending_ndc`    one row per (billing NPI, prescribing NPI, NDC, month)
     table `_provenance`     one row per successful load, append-only
 """
@@ -33,6 +33,7 @@ import sys
 import urllib.error
 
 import hhs_opendata_csv_pipeline as pipeline
+from samsung_volume import samsung_path
 
 DEFAULT_VERSION_DATE = "2026-07-24"
 BLOB_BASE = "https://stopendataprod.blob.core.windows.net/datasets/medicaid-provider-spending-ndc"
@@ -40,7 +41,8 @@ ZIP_FILENAME = "medicaid-provider-spending-ndc.csv.zip"
 TABLE_NAME = "spending_ndc"
 WORK_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                          "scratch", "medicaid_provider_spending_ndc")
-DB_PATH = "/Volumes/MufflySamsung/DuckDB/medicaid_provider_spending_ndc_verified.duckdb"
+DB_PATH = samsung_path("DuckDB/medicaid_provider_spending_ndc_verified.duckdb",
+                       env_var="MEDICAID_SPENDING_NDC_DB")
 
 
 def main():

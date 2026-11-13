@@ -30,7 +30,7 @@ accessmrf_06_build_relationships.py's write_parquet() for the same pattern).
 
 WHY DOWNLOAD, EXTRACTION AND THE DUCKDB BUILD ALL HAPPEN ON LOCAL DISK, NOT
 THE EXTERNAL VOLUME, THEN COPY ONCE. Measured directly on the enrollment-
-segments pull: writing the extracted CSV straight to /Volumes/MufflySamsung
+segments pull: writing the extracted CSV straight to <volume>
 gave low, highly variable throughput (bursts of 30-60 MB/s next to multi-
 minute stretches under 1 MB/s, with Time Machine's backupd running
 concurrently as one plausible contributor). Building locally (fast internal

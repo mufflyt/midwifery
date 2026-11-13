@@ -29,10 +29,34 @@ cat("\n-- amcb_parse_person(): the NA-contract shim --\n")
 {
   # T1. The shim's whole job: mysterynpi renders absent parts as "", and this
   # repository's callers test is.na() instead, so the shim must convert.
+  #
+  # CORRECTED 2026-11-13. T1 used to also assert `is.na(got1$suffix)`, and it
+  # failed every night. mysterynpi::parse_person() returns first/middle/last
+  # and NO suffix column, so `got1$suffix` was NULL and `is.na(NULL)` is
+  # logical(0) -- the clause could never be TRUE whatever the parser did. The
+  # suffix belongs to the isochrones parser exercised in
+  # test_borrowed_isochrones_name_parser_saboteurs.R, not to this shim, and no
+  # non-test caller of amcb_parse_person() reads $suffix. So the clause is
+  # removed rather than the function grown a column nothing wants.
+  #
+  # The conversion is now proven where it actually happens: an ABSENT middle,
+  # which the parser really does render as "". That is a stronger check than
+  # the old one, which asserted nothing at all.
   got1 <- amcb_parse_person("Jane Q Public")
+  got1b <- amcb_parse_person("Jane Public")
   chk(identical(got1$first, "JANE") && identical(got1$middle, "Q") &&
-      identical(got1$last, "PUBLIC") && is.na(got1$suffix),
-      "T1 a full name parses with every present part filled and the absent suffix as NA, not ''")
+      identical(got1$last, "PUBLIC") &&
+      identical(got1b$first, "JANE") && is.na(got1b$middle) &&
+      identical(got1b$last, "PUBLIC"),
+      "T1 a full name keeps every present part, and an absent middle becomes NA, not ''")
+
+  # T1b. And if mysterynpi ever DOES start returning a suffix, say so instead
+  # of silently passing: the shim would then need to carry it through the same
+  # NA conversion, and a column added upstream is exactly the kind of change
+  # that goes unnoticed until a caller reads "" where it expected NA.
+  chk(identical(names(got1), c("first", "middle", "last")),
+      sprintf("T1b parse_person() still returns exactly first/middle/last [%s]",
+              paste(names(got1), collapse = ", ")))
 
   # T2. Blank input and explicit NA input must both normalise to ALL-NA
   # parts -- not an empty string anywhere, which is exactly the distinction

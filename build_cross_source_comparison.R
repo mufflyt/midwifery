@@ -96,8 +96,9 @@ MEDICAID_SEGMENTS_REL <- file.path(
 load_medicaid_states <- function(npis) {
   path <- samsung_volume_path(MEDICAID_SEGMENTS_REL, must_exist = FALSE)
   if (is.na(path)) {
-    cat("Medicaid enrollment segments NOT FOUND under any /Volumes/MufflySamsung*",
-        "mount.\n  Skipping Medicaid; the other nine sources are unaffected.\n",
+    cat(sprintf("Medicaid enrollment segments NOT FOUND under any %s* mount.\n",
+                SAMSUNG_VOLUME_CANONICAL),
+        "  Skipping Medicaid; the other nine sources are unaffected.\n",
         "  Expected:", MEDICAID_SEGMENTS_REL, "\n")
     return(NULL)
   }

@@ -115,8 +115,7 @@ if (sys.nframe() == 0L) {
   rows <- list()
   for (src in names(WANT)) {
     dir_rel <- sprintf("medicare_%s_by_provider", src)
-    dest_dir <- file.path(dirname(samsung_volume_path("DuckDB", must_exist = FALSE) %||%
-                                  "/Volumes/MufflySamsung/DuckDB"), dir_rel)
+    dest_dir <- file.path(dirname(samsung_duckdb_path("DuckDB")), dir_rel)
     dir.create(dest_dir, showWarnings = FALSE, recursive = TRUE)
     cat(sprintf("\n%s -> %s\n", src, dest_dir))
     for (y in WANT[[src]]) {

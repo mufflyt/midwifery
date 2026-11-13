@@ -69,10 +69,27 @@ work_setting_blocks <- c("Medicare practice group size (CMS DAC)",
 for (block in work_setting_blocks)
   chk(any(grepl(block, qmd, fixed = TRUE)),
       sprintf("the mobility manuscript selects the work-setting block: %s", block))
-chk(!any(grepl("Hospital affiliation (CMS facility affiliation, CCN)", builder, fixed = TRUE)),
-    "the canonical Table 1 builder omits the CMS privilege-derived hospital block")
+# INVERTED 2026-11-13, because the assertion had locked in an accident.
+# Written 2026-10-20 (a3d4013), this pair asserted the builder must NOT mention
+# the privilege-derived hospital block -- true at the time, but only because
+# the block had been *accidentally deleted* when the Trilliant work-site block
+# was added in its place. build_table1_midwives.R restored it on 2026-11-05
+# with its reasoning in the file: the two are complementary, not redundant --
+# this one is Medicare privilege data via CCN, the Trilliant block is
+# claims-derived work-site classification -- and TABLE1_ENRICHMENT had gone on
+# requiring dac_hospital_affiliation_person.csv the whole time it contributed
+# nothing. So the test, not the builder, was the stale one, and it had failed
+# every nightly since.
+#
+# BUILDER-EMITS AND MANUSCRIPT-SELECTS STAY SEPARATE CHECKS. The builder
+# computing a block is a data question; the mobility manuscript selecting it
+# into its Table 1 is an editorial one, and that manuscript deliberately
+# presents the work-site measure ("Any observed hospital work site") instead.
+# Asserting both from one fact is how this check went wrong the first time.
+chk(any(grepl("Hospital affiliation (CMS facility affiliation, CCN)", builder, fixed = TRUE)),
+    "the canonical Table 1 builder emits the CMS privilege-derived hospital block")
 chk(!any(grepl("Hospital affiliation (CMS facility affiliation, CCN)", qmd, fixed = TRUE)),
-    "the mobility manuscript omits the CMS privilege-derived hospital block")
+    "the mobility manuscript does not select the privilege-derived hospital block")
 chk(any(grepl("Primary claims-site setting", builder, fixed = TRUE)),
     "the canonical Table 1 builder emits the primary-site setting detail")
 chk(any(grepl("not recorded/unresolved/not applicable", qmd, fixed = TRUE)),

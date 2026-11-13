@@ -651,6 +651,74 @@ scn_completes <- function(uv, target, others, nums) {
 # primaries without complaint. Fixed by pivoting the disposition column instead
 # of enumerating it, so `n` is the sum of the columns rather than an
 # independent count and the two cannot disagree.
+# A SECOND HONEST SHAPE, recognised 2026-11-13.
+#
+# scn_completes() asks whether the unresolved count is a TERM inside the
+# denominator. That is one honest shape and it was the only one SCN6 knew. The
+# other is its mirror: the unresolved are EXCLUDED from the denominator on
+# purpose, and the file publishes BOTH the pre-exclusion total and a fully
+# itemised denominator, so a reader can still place every subject.
+# oig_remake/oig_table2_inaccuracy_subtypes_by_variable.csv is that shape --
+#
+#     n_evaluated      = n_definitive + n_unresolved
+#     n_definitive     = n_accurate + n_inaccurate_total
+#     n_inaccurate_total = n_partially_inaccurate_typo
+#                        + n_formerly_correct_outdated + n_never_correct
+#
+# -- and each percentage column is NAMED for the denominator it used
+# (`pct_accurate_definitive`, `pct_of_inaccurate_partially`). Nobody is
+# invisible: every evaluated case is in exactly one of n_definitive and
+# n_unresolved. SCN6 failed all four of its percentages every night anyway,
+# because an excluded count can never be a term summing to the denominator it
+# was excluded from -- it is that denominator's complement.
+#
+# This is the same class of false positive as the SCOPED-TO-FILES-THAT-PUBLISH-
+# A-PERCENTAGE note above, one level up, and the same argument applies: a gate
+# that rejects a correctly-reported exclusion teaches people to ignore it.
+#
+# THE RULE IS STRICTER THAN THE ONE IT SUPPLEMENTS, not looser. Both halves
+# must hold:
+#
+#   1. the unresolved count is explicitly COMPLEMENTED to a published total --
+#      unresolved + some other count == that total, and the total is really
+#      bigger than the part, so it is not the same column under another name;
+#   2. the percentage's own denominator is itself fully ITEMISED by other
+#      published counts.
+#
+# Half (1) alone would let a file publish a total it never breaks down; half
+# (2) alone is what scn_completes() already covers. Together they demand two
+# reconciliations where the original demanded one, and a table that drops
+# people fails both: its total will not add up.
+scn_subset_sums_to <- function(target, others, nums) {
+  zero <- rep(0L, length(target))
+  scn_completes(zero, target, others, nums)
+}
+
+scn_excluded_and_itemised <- function(uv, target, others, nums) {
+  # (1) the unresolved count is complemented to a published total.
+  total <- NULL
+  for (t in others) {
+    tv <- nums[[t]]
+    if (is.null(tv)) next
+    for (part in setdiff(others, t)) {
+      pv <- nums[[part]]
+      if (is.null(pv)) next
+      ok <- !is.na(uv) & !is.na(pv) & !is.na(tv)
+      if (!any(ok)) next
+      if (all(uv[ok] + pv[ok] == tv[ok]) && any(tv[ok] > pv[ok])) {
+        total <- t
+        break
+      }
+    }
+    if (!is.null(total)) break
+  }
+  if (is.null(total)) return(NULL)
+
+  # (2) and the denominator is itemised by counts other than the unresolved.
+  if (is.null(scn_subset_sums_to(target, others, nums))) return(NULL)
+  total
+}
+
 SCN6_BASELINE <- character(0)
 
 off <- character(0); known <- character(0); n_part <- 0L
@@ -665,6 +733,8 @@ for (f in names(SCN)) {
     for (fit in fits) {
       others <- setdiff(s$counts, u)
       cc <- scn_completes(uv, fit$dvec, others, s$nums)
+      if (!is.null(cc)) { n_part <- n_part + 1L; next }
+      cc <- scn_excluded_and_itemised(uv, fit$dvec, others, s$nums)
       if (!is.null(cc)) { n_part <- n_part + 1L; next }
       entry <- sprintf("%s: %s belongs to no set of columns adding to %s, the denominator behind %s",
                        f, u, fit$den, fit$col)

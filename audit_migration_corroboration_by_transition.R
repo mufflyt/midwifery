@@ -62,8 +62,8 @@ source(file.path("R", "lib", "medicaid_enrollment_intervals.R"))
 source(file.path("R", "lib", "artifact_provenance.R"))
 source(file.path("R", "lib", "wilson_interval.R"))  # wilson_ci()
 
-MEDICAID_DB <- Sys.getenv("MEDICAID_ENROLLMENT_DB",
-                           "/Volumes/MufflySamsung/DuckDB/medicaid_provider_enrollment_segments.duckdb")
+MEDICAID_DB <- samsung_duckdb_path("DuckDB/medicaid_provider_enrollment_segments.duckdb",
+                                   "MEDICAID_ENROLLMENT_DB")
 
 # 2 spikes (docs/TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md S2) + the
 # same 4 controls that appendix's own S4b already used, so this is a
