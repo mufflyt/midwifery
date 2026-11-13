@@ -165,32 +165,66 @@ place?
 
 The audit had never had a source that captures multi-state licensure
 *directly* — until a second look at a file already being read for something
-else. CMS's Open Payments Covered Recipient Profile Supplement — 1.69 million
+else. CMS's Open Payments Covered Recipient Profile Supplement — 1,697,028
 rows, already mined for name and address fields — carries five columns of
 licensed states per provider, entirely independent of every practice-location
-source already in the audit. Matched against the cohort: 8,411 of 16,775
-midwives (50.1%) have a profile at all, and of those, 2,865 — better than one
-in three — are licensed in two or more states.
+source already in the audit. Matched against the cohort: 8,497 of 16,898
+midwives (50.3%) have a profile at all, and of those, 2,887 — better than one
+in three — are licensed in two or more states. *(Those counts are computed on
+a superseded cohort freeze and are not comparable to the 8,411 of 16,775 first
+published; the rate is. See the note below.)*
 
 Cross that against the per-NPI consensus tiers and the pattern is stark.
-Midwives licensed in exactly one state are **79.3% unanimous**, with a 1.1%
+Midwives licensed in exactly one state are **81.4% unanimous**, with a 0.8%
 split rate — about what ordinary data noise looks like. Midwives licensed in
-two or more states are **40.4% unanimous**, with an **8.2% split rate**,
-**7.2 times higher**. χ²(2, n = 6,140) = 970.7, p = 1.7×10⁻²¹¹. That is not
-a subtle effect.
+two or more states are **39.1% unanimous**, with an **8.7% split rate**,
+**11.2 times higher**. χ²(2, n = 8,439) = 1,601.0; the p-value is below the
+smallest positive double, log₁₀ p = −347.6. That is not a subtle effect.
 
-*(Rebuilt 2026-11-12 by `analyze_consensus_tier_by_license_count.R`. The
-version published on 2026-11-04 read 92.4% / 2.4% against 59.9% / 22.1%,
-χ²(2, n = 8,312) = 1,353.1, a ratio of about nine. Both are real; they use
-different consensus tiers. The published version scored tiers across the ten
-sources of this audit, the rebuild across the twelve of
+*(Rebuilt 2026-11-13 by `analyze_consensus_tier_by_license_count.R` against
+the same Open Payments vintage the original used — the June 2026 profile
+publication, `OP_CVRD_RCPNT_PRFL_SPLMTL_P06302026_06032026.csv`, 1,697,028
+rows, downloaded 2026-11-13 after the first rebuild had only the January 2025
+publication (1,530,413 rows) to work from. **The vintage gap is closed; the
+difference from the original is not.** Three versions now exist:*
+
+| run | licence vintage | tier source | 1 state | 2+ states | χ² (2 df) |
+|---|---|---|---:|---:|---:|
+| published 2026-11-04 | Jun 2026 | ten-source audit | 92.4% / 2.4% | 59.9% / 22.1% | 1,353.1 (n = 8,312) |
+| rebuilt 2026-11-12 | Jan 2025 | twelve-source | 79.3% / 1.1% | 40.4% / 8.2% | 970.7 (n = 6,140) |
+| rebuilt 2026-11-13 | Jun 2026 | twelve-source | 81.4% / 0.8% | 39.1% / 8.7% | 1,601.0 (n = 8,439) |
+
+*(unanimous % / split %.) The multi-state licence **rate** was never the
+problem: 34.0% against 34.1% at both vintages. Two things still differ from
+the original, and neither is the licence file:*
+
+*First, the **tier source**. The published version scored tiers across the ten
+sources of this audit, both rebuilds across the twelve of
 `compare_all_sources_mysteryroster.R`, and those two audits assign tiers
-differently — the open conflict recorded at the end of this document. The
-licence data also comes from an earlier Open Payments vintage: the January
-2025 publication available here matches 6,188 midwives against the 8,411 the
-later vintage matched, while the multi-state **rate** reproduces almost
-exactly, 34.0% against 34.1%. Direction, magnitude and significance survive
-every one of those changes; the levels move with the tier source.)*
+differently — the open conflict recorded at the end of this document. That is
+what moves the levels.*
+
+*Second — and this is a defect, not a difference — **both rebuilds ran against
+a superseded cohort freeze.** `artifacts/amcb_npi_linkage_FROZEN.csv` on this
+machine has sha256 `dbcc76f4…`, 54 columns and 16,898 cohort members, while
+the tracked manifest sitting beside it describes the 2026-10-22 reconciled
+freeze: sha256 `9f224007…`, 60 columns, 22,357 rows, **16,775** members, from
+run `reconcile_ab_20261022T134500_remove_fuzzy_surname_matching`. The original
+analysis used that reconciled freeze; the rebuilds used its predecessor. So
+8,497-of-16,898 is **not** a reproduction of 8,411-of-16,775 — it is the right
+analysis on the wrong cohort, and the gap is in the same direction the extra
+123 members predict. Every copy of the freeze on this machine is the
+superseded one, so the correct cohort cannot be restored here; it is the same
+blocker as the A4/A5 contract failures (see
+`docs/ci-a4-a5-local-failures.md`).*
+
+*`verify_linkage_freeze()` has existed for exactly this check and was not
+being called by this producer. It is now, so the override is explicit
+(`ALLOW_FREEZE_SHA256`) and the freeze's sha256 is recorded in the artifact's
+provenance sidecar. **94 of the 100 scripts that read the freeze still do not
+call it** — only the six Trilliant producers do — so the same silent
+substitution is possible elsewhere in this repository and is not yet
+closed.*
 
 This doesn't prove any one specific disagreement is genuine multi-state
 practice rather than a data error — it's a population-level association, not
@@ -202,7 +236,7 @@ cross-source disagreement in this cohort, not an edge case. The sources
 weren't all wrong about the same midwife. In nearly a quarter of split cases,
 they were each right about a different place she practices.
 
-![Consensus tier by licence count as 100% stacked bars: midwives licensed in one state are 79.3% unanimous and 1.1% split, while those licensed in two or more are 40.4% unanimous and 8.2% split.](figures/consensus_tier_by_license_count.png)
+![Consensus tier by licence count as 100% stacked bars: midwives licensed in one state are 81.4% unanimous and 0.8% split, while those licensed in two or more are 39.1% unanimous and 8.7% split.](figures/consensus_tier_by_license_count.png)
 
 ## The source that could never be included, and now can
 
@@ -378,10 +412,14 @@ left in place rather than deleted because the analyses were real when run:
   an error in either version** — see "Why the two versions differ" below. Both
   definitions are now computed and stored side by side in that artifact, so
   the published figures stay checkable rather than being quietly replaced.
-- ~~The **licence-count consensus split**.~~ **Resolved 2026-11-12.** The CMS
-  source was located on archival storage
-  (`PHPRFL_P01302025_01212025.zip`, January 2025 publication, 1,530,413 rows)
-  and `extract_open_payments_profile_supplement.R` re-run against it, so
+- ~~The **licence-count consensus split**.~~ **Resolved 2026-11-12, and
+  re-run at the original vintage 2026-11-13.** The CMS source was first
+  located on archival storage (`PHPRFL_P01302025_01212025.zip`, January 2025
+  publication, 1,530,413 rows); the publication the original analysis actually
+  used was then downloaded from `download.cms.gov`
+  (`PHPRFL_P06302026_06032026`, June 2026, 1,697,028 rows — the "1.69 million"
+  of the text above, matching to the row). `extract_open_payments_profile_supplement.R`
+  was re-run against it, so
   `cohort_midwives_open_payments_profile_supplement.csv` exists again with a
   provenance sidecar naming the source file by SHA-256. The per-NPI consensus
   tier — computed inside `compare_all_sources_mysteryroster.R` and previously
@@ -396,7 +434,9 @@ left in place rather than deleted because the analyses were real when run:
   it needs the CMS publication, and
   `extract_open_payments_profile_supplement.R` now takes its path from the
   `OP_PROFILE_SUPPLEMENT` environment variable so no machine-specific path is
-  baked into the code. The aggregate it feeds
+  baked into the code. That publication is a public download, and the URL is
+  recorded in `harvest_open_payments_profile.py`, so the condition is a step
+  to run rather than a dependency on this machine. The aggregate it feeds
   (`artifacts/consensus_tier_by_license_count.csv`) is tracked, carries no
   person-level column, and is what the figure actually reads.
 - The **184-NPI persistence cohort**, as originally computed. **Addressed

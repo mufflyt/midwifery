@@ -39,23 +39,23 @@
 <polyline points='336.15,275.68 336.15,64.05 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
 <polyline points='466.14,275.68 466.14,64.05 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
 <polyline points='596.12,275.68 596.12,64.05 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<rect x='488.48' y='190.06' width='101.73' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6B6B6B;' />
-<rect x='590.21' y='190.06' width='5.92' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #8C8C8C;' />
-<rect x='76.18' y='190.06' width='412.30' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #333333;' />
-<rect x='286.19' y='93.87' width='267.29' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6B6B6B;' />
-<rect x='553.47' y='93.87' width='42.65' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #8C8C8C;' />
-<rect x='76.18' y='93.87' width='210.01' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #333333;' />
-<text x='539.34' y='221.32' text-anchor='middle' style='font-size: 9.39px;fill: #262626; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>19.6%</text>
-<text x='282.33' y='221.32' text-anchor='middle' style='font-size: 9.39px;fill: #FFFFFF; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>79.3%</text>
-<text x='419.83' y='125.12' text-anchor='middle' style='font-size: 9.39px;fill: #262626; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>51.4%</text>
-<text x='574.80' y='125.12' text-anchor='middle' style='font-size: 9.39px;fill: #262626; font-family: "Arial";' textLength='21.38px' lengthAdjust='spacingAndGlyphs'>8.2%</text>
-<text x='181.18' y='125.12' text-anchor='middle' style='font-size: 9.39px;fill: #FFFFFF; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>40.4%</text>
+<rect x='499.18' y='190.06' width='92.92' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6B6B6B;' />
+<rect x='592.10' y='190.06' width='4.02' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #8C8C8C;' />
+<rect x='76.18' y='190.06' width='423.00' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #333333;' />
+<rect x='279.67' y='93.87' width='271.45' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6B6B6B;' />
+<rect x='551.12' y='93.87' width='45.00' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #8C8C8C;' />
+<rect x='76.18' y='93.87' width='203.50' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #333333;' />
+<text x='545.64' y='221.32' text-anchor='middle' style='font-size: 9.39px;fill: #262626; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>17.9%</text>
+<text x='287.68' y='221.32' text-anchor='middle' style='font-size: 9.39px;fill: #FFFFFF; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>81.4%</text>
+<text x='415.40' y='125.12' text-anchor='middle' style='font-size: 9.39px;fill: #262626; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>52.2%</text>
+<text x='573.62' y='125.12' text-anchor='middle' style='font-size: 9.39px;fill: #262626; font-family: "Arial";' textLength='21.38px' lengthAdjust='spacingAndGlyphs'>8.7%</text>
+<text x='177.92' y='125.12' text-anchor='middle' style='font-size: 9.39px;fill: #FFFFFF; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>39.1%</text>
 </g>
 <g clip-path='url(#cpMC4wMHw2MTIuMDB8MC4wMHwzNjAuMDA=)'>
 <text x='71.25' y='216.36' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='56.22px' lengthAdjust='spacingAndGlyphs'>1 licence state</text>
-<text x='71.25' y='225.86' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='42.75px' lengthAdjust='spacingAndGlyphs'>(n = 4,043)</text>
+<text x='71.25' y='225.86' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='42.75px' lengthAdjust='spacingAndGlyphs'>(n = 5,562)</text>
 <text x='71.25' y='120.17' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='65.77px' lengthAdjust='spacingAndGlyphs'>2+ licence states</text>
-<text x='71.25' y='129.67' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='42.75px' lengthAdjust='spacingAndGlyphs'>(n = 2,097)</text>
+<text x='71.25' y='129.67' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='42.75px' lengthAdjust='spacingAndGlyphs'>(n = 2,877)</text>
 <text x='76.18' y='286.91' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>0</text>
 <text x='206.16' y='286.91' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.78px' lengthAdjust='spacingAndGlyphs'>25</text>
 <text x='336.15' y='286.91' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.78px' lengthAdjust='spacingAndGlyphs'>50</text>
@@ -69,8 +69,8 @@
 <text x='351.03' y='329.92' style='font-size: 8.80px; font-family: "Arial";' textLength='30.78px' lengthAdjust='spacingAndGlyphs'>majority</text>
 <text x='410.05' y='329.92' style='font-size: 8.80px; font-family: "Arial";' textLength='15.64px' lengthAdjust='spacingAndGlyphs'>split</text>
 <text x='76.18' y='29.83' style='font-size: 9.30px; font-family: "Arial";' textLength='416.83px' lengthAdjust='spacingAndGlyphs'>Consensus across the twelve-source comparison, by how many states CMS's Open Payments profile</text>
-<text x='76.18' y='43.22' style='font-size: 9.30px; font-family: "Arial";' textLength='349.66px' lengthAdjust='spacingAndGlyphs'>says she is licensed in. The split rate is 7.2 times higher among multi-state licensees.</text>
-<text x='76.18' y='56.61' style='font-size: 9.30px; font-family: "Arial";' textLength='361.98px' lengthAdjust='spacingAndGlyphs'>chi-square(2, n = 6,140) = 971, p &lt; 2.2e-16. An association, not a per-case adjudication.</text>
+<text x='76.18' y='43.22' style='font-size: 9.30px; font-family: "Arial";' textLength='354.14px' lengthAdjust='spacingAndGlyphs'>says she is licensed in. The split rate is 11.2 times higher among multi-state licensees.</text>
+<text x='76.18' y='56.61' style='font-size: 9.30px; font-family: "Arial";' textLength='367.16px' lengthAdjust='spacingAndGlyphs'>chi-square(2, n = 8,439) = 1601, p &lt; 2.2e-16. An association, not a per-case adjudication.</text>
 <text x='76.18' y='14.93' style='font-size: 13.20px; font-family: "Arial";' textLength='444.69px' lengthAdjust='spacingAndGlyphs'>Midwives licensed in several states are the ones the sources disagree about</text>
 <text x='606.52' y='352.67' text-anchor='end' style='font-size: 8.80px; font-family: "Arial";' textLength='390.59px' lengthAdjust='spacingAndGlyphs'>artifacts/consensus_tier_by_license_count.csv; tiers from artifacts/mrost_consensus_tier_by_npi.csv</text>
 </g>

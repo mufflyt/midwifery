@@ -1,21 +1,21 @@
 {
   "artifact": "cohort_midwives_open_payments_profile_supplement.csv",
-  "written_utc": "2026-11-13 02:01:25 UTC",
+  "written_utc": "2026-11-13 15:57:00 UTC",
   "inputs": [
     {
-      "path": "/Volumes/MufflySamsung/open_payments_data/profiles/unzipped_files/OP_CVRD_RCPNT_PRFL_SPLMTL_P01302025_01212025.csv",
-      "sha256": "4def12943bb4d55532edeeddf9541f6db367c8f715dd34cf1ac9a5d0f82737f4"
+      "path": "/Volumes/MufflySamsung/open_payments_data/profiles/PHPRFL_P06302026_06032026/OP_CVRD_RCPNT_PRFL_SPLMTL_P06302026_06032026.csv",
+      "sha256": "c36dbb10c1052bd0579cca3c4f170307374df50952c83d52cbedb99aa90739e9"
     },
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
       "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
     }
   ],
-  "code_sha256": "b9136f51ef32c8c97b00d208f8fcab120f806f89f9f2ff410057de0e0e035be0",
+  "code_sha256": "ef99ce8b8fbfd4b81ae9729f57f7187784282fdda2c044e911571a8903266665",
   "code": [
     {
       "path": "extract_open_payments_profile_supplement.R",
-      "sha256": "2d46cfd107fd0d279760c26a4a35ee89797625e00b14ed35ed3006c0291d3c43"
+      "sha256": "68304309def2613df8154ce98ddf3b2af8e4c63ce4afe303f46e3055b7ea5df9"
     },
     {
       "path": "R/lib/artifact_provenance.R",
@@ -24,6 +24,10 @@
     {
       "path": "R/lib/clean_state.R",
       "sha256": "188cee53abd5b2e7afb2c6bffbc7ea27a16029189fb97ca8be1865d5ab0c2c23"
+    },
+    {
+      "path": "R/lib/cohort_definitions.R",
+      "sha256": "15b1a0d8b5f1973e29a5258fc1e7d97df437b09208f367f38c78984a8dfd7dc5"
     },
     {
       "path": "R/lib/common_helpers.R",

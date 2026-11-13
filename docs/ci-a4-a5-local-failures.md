@@ -46,6 +46,43 @@ on `sum(active_unmatched_by_reason) == active_unmatched_n`, preceded by four
 `Unknown or uninitialised column: match_status` warnings — the same missing
 column, surfacing in a third place.
 
+## Confirmed independently, 2026-11-13, by the freeze's own manifest
+
+The first pass of this investigation inferred the staleness from a missing
+column. There is stronger evidence sitting beside the file: its own tracked
+manifest, `artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json`, records what
+the freeze is supposed to be, and the file on this machine is not it.
+
+| | manifest says | file on disk |
+|---|---|---|
+| sha256 | `9f224007d99ac91d…` | `dbcc76f420ac9be8…` |
+| rows | 22,357 | 22,309 |
+| columns | 60 | 54 |
+| `cohort_members` | **16,775** | **16,898** |
+| run | `reconcile_ab_20261022T134500_remove_fuzzy_surname_matching` | — |
+
+So the freeze on disk is the predecessor of the 2026-10-22 reconciliation
+that removed fuzzy surname matching (17,028 → 16,775, NEWS 2026-10-22). Every
+copy on this machine is the same `dbcc76f4` file — checked in
+`~/midwifery-osmde`, `~/mw-truth` and two `Broken_Mac_Rescue` trees — so the
+reconciled freeze cannot be restored here, only regenerated.
+
+### The gate that would have caught it, and the 94 scripts that skip it
+
+`verify_linkage_freeze()` in `R/lib/cohort_definitions.R` does exactly this
+comparison and refuses a freeze its manifest does not describe. **94 of the
+100 scripts that read the freeze never call it** — only the six Trilliant
+producers do. That is how
+`artifacts/cohort_midwives_open_payments_profile_supplement.csv` came to be
+rebuilt on 16,898 members and reported against a published figure computed on
+16,775: not a wrong calculation, a wrong cohort, silently. The guard was added
+to `extract_open_payments_profile_supplement.R` on 2026-11-13, so that
+producer now refuses unless `ALLOW_FREEZE_SHA256` is set deliberately. **The
+other 93 are not fixed**, and sweeping them is a separate change: the guard
+has to be added one producer at a time, because each has to be re-run and its
+artifact re-checked afterwards, and some legitimately analyse a pinned
+historical freeze.
+
 ## Why CI is unaffected
 
 | check | behaviour without the freeze (CI) |
