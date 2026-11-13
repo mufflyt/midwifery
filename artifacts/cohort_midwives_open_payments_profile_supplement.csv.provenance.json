@@ -1,0 +1,41 @@
+{
+  "artifact": "cohort_midwives_open_payments_profile_supplement.csv",
+  "written_utc": "2026-11-13 02:01:25 UTC",
+  "inputs": [
+    {
+      "path": "/Volumes/MufflySamsung/open_payments_data/profiles/unzipped_files/OP_CVRD_RCPNT_PRFL_SPLMTL_P01302025_01212025.csv",
+      "sha256": "4def12943bb4d55532edeeddf9541f6db367c8f715dd34cf1ac9a5d0f82737f4"
+    },
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
+    }
+  ],
+  "code_sha256": "b9136f51ef32c8c97b00d208f8fcab120f806f89f9f2ff410057de0e0e035be0",
+  "code": [
+    {
+      "path": "extract_open_payments_profile_supplement.R",
+      "sha256": "2d46cfd107fd0d279760c26a4a35ee89797625e00b14ed35ed3006c0291d3c43"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/clean_state.R",
+      "sha256": "188cee53abd5b2e7afb2c6bffbc7ea27a16029189fb97ca8be1865d5ab0c2c23"
+    },
+    {
+      "path": "R/lib/common_helpers.R",
+      "sha256": "55c6b894798e2740f538b1262391e58e8fe9bea84f072b80708e59aea3197067"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ]
+}

@@ -527,6 +527,93 @@ if (nzchar(Sys.which("zip")) && file.exists("extract_ppef_cohort_state_by_vintag
   }
 } else cat("  skip [12] zip binary or PPEF script unavailable\n")
 
+# ---- [20] the Open Payments profile-link backfill ------------------------
+# 2013 and 2014 carry NO NPI column in CMS's own file, so those years are
+# recovered by joining Covered_Recipient_Profile_ID to a profile->NPI lookup
+# learned from 2021+. That retrospective join is the most dangerous thing in
+# the series: it can silently invent a midwife-year for a profile that was
+# never hers, and nothing downstream would notice -- a fabricated 2013 row
+# looks exactly like a recovered one. These checks are its killer.
+OPS <- "extract_open_payments_cohort_by_year.R"
+if (file.exists(OPS)) {
+  oexp <- parse(OPS)
+  lift_op <- function(nm) {
+    hit <- vapply(oexp, function(e)
+      is.call(e) && identical(as.character(e[[1]]), "<-") &&
+        is.name(e[[2]]) && identical(as.character(e[[2]]), nm), logical(1))
+    chk(sum(hit) == 1L, sprintf("[20] %s() found once in %s", nm, OPS))
+    if (sum(hit) == 1L) { eval(oexp[[which(hit)]], envir = globalenv()); TRUE } else FALSE
+  }
+  # The two column-name helpers moved to R/lib/open_payments_schema.R when
+  # ci_hygiene H4 caught them defined in two scripts at once; they are sourced
+  # from the lib here rather than lifted, while the query function is still
+  # lifted from the shipped script so the test cannot drift from it.
+  SCHEMA <- file.path("R", "lib", "open_payments_schema.R")
+  chk(file.exists(SCHEMA), "[20] open_payments_schema.R is where the column helpers live")
+  if (file.exists(SCHEMA)) source(SCHEMA)
+  have <- file.exists(SCHEMA) && lift_op("op_year_rows_via_profile")
+
+  if (have) {
+    # The schema boundaries. CMS renamed these columns twice, and an off-by-one
+    # year here reads a column that does not exist (year drops out entirely) or
+    # one that does but holds something else.
+    chk(is.na(op_npi_column(2013L)) && is.na(op_npi_column(2014L)),
+        "[20] 2013-2014 have no NPI column, so the direct path is refused")
+    chk(identical(op_npi_column(2015L), "Physician_NPI"),
+        "[20] 2015 uses Physician_NPI")
+    chk(identical(op_npi_column(2016L), "Covered_Recipient_NPI") &&
+          identical(op_npi_column(2025L), "Covered_Recipient_NPI"),
+        "[20] 2016 onward uses Covered_Recipient_NPI")
+    chk(identical(op_profile_column(2015L), "Physician_Profile_ID") &&
+          identical(op_profile_column(2016L), "Covered_Recipient_Profile_ID"),
+        "[20] the profile column switches name at 2016, not 2015")
+
+    # A 2013-shaped table: no NPI column at all, only a profile id.
+    mk("op13", data.frame(
+      Physician_Profile_ID = c("P1", "P1", "P1", "P2", "P9"),
+      Recipient_State      = c("CO", "NY", "NY", "TX", "FL"),
+      stringsAsFactors = FALSE))
+    # P1 -> a cohort midwife. P2 -> a real NPI that is NOT in the cohort.
+    # P9 -> no lookup entry at all.
+    mk("profile_npi", data.frame(profile_id = c("P1", "P2"),
+                                 npi = c("1000000001", "1000000002"),
+                                 stringsAsFactors = FALSE))
+    mk("cohort_npi", data.frame(npi = "1000000001", stringsAsFactors = FALSE))
+
+    got <- op_year_rows_via_profile(con, "op13", 2013L)
+    chk(!is.null(got) && nrow(got) == 1L,
+        "[20] exactly one midwife is recovered from a 2013-shaped table")
+    chk(!is.null(got) && identical(got$npi[1], "1000000001"),
+        "[20] and it is the one the profile lookup maps into the cohort")
+    chk(!is.null(got) && identical(got$state[1], "NY"),
+        "[20] her state is the modal one across her payment rows, not the first")
+    chk(!is.null(got) && got$n_payment_rows_all_states[1] == 3L,
+        "[20] every row of hers is counted in the all-states total")
+    chk(!is.null(got) && got$n_states_this_year[1] == 2L,
+        "[20] and her two states are reported, not collapsed away")
+    chk(!is.null(got) && !any(got$npi == "1000000002"),
+        "[20] a profile outside the cohort contributes nothing")
+    chk(!is.null(got) && got$program_year[1] == 2013L,
+        "[20] the recovered rows are stamped with the program year asked for")
+
+    # THE FABRICATION GUARD. A profile id with no lookup entry must vanish,
+    # not join to something.
+    #
+    # VERIFIED AGAINST FOUR MUTATIONS, three killed and one not. Inverting the
+    # modal pick (n DESC -> n ASC) and loosening the cohort filter are both
+    # caught. Loosening the PROFILE join to a LEFT JOIN is NOT caught, and
+    # that is correct rather than a hole: an unmatched profile yields a NULL
+    # npi, which the inner join to cohort_npi then discards, so the mutant
+    # cannot produce a fabricated row. It is an equivalent mutant. The guard
+    # that actually holds is the cohort join, and saboteur 4 above covers it.
+    mk("profile_npi", data.frame(profile_id = character(0), npi = character(0),
+                                 stringsAsFactors = FALSE))
+    none <- op_year_rows_via_profile(con, "op13", 2013L)
+    chk(is.null(none) || nrow(none) == 0L,
+        "[20] an empty lookup recovers nobody rather than inventing NA rows")
+  }
+} else cat("  skip [20] Open Payments extractor unavailable\n")
+
 cat(sprintf("\n%s (%d failure%s)\n", if (fails == 0L) "PASS" else "FAILURES",
             fails, if (fails == 1L) "" else "s"))
 quit(status = if (fails == 0L) 0L else 1L)

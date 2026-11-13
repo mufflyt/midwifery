@@ -1,0 +1,14 @@
+program_year,cnm_reportable,evidence_type,n_midwives,pct_of_cohort
+2013,FALSE,retrospective,17,0.1
+2014,FALSE,retrospective,16,0.09
+2015,FALSE,observed,21,0.12
+2016,FALSE,observed,7,0.04
+2017,FALSE,observed,4,0.02
+2018,FALSE,observed,5,0.03
+2019,FALSE,observed,6,0.04
+2020,FALSE,observed,6,0.04
+2021,TRUE,observed,3018,17.86
+2022,TRUE,observed,3993,23.63
+2023,TRUE,observed,4224,25
+2024,TRUE,observed,4716,27.91
+2025,TRUE,observed,5034,29.79

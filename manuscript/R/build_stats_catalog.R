@@ -1072,6 +1072,161 @@ mw_build_catalog <- function(root = ".") {
     )
   }
 
+
+  # --- Twelve-source state concordance (mysteryroster) ----------------------
+  # compare_all_sources_mysteryroster.R cross-checks twelve independent
+  # sources -- six longitudinal panels and six current-only snapshots --
+  # against each other on one attribute, practice state. There is no gold
+  # standard among them, so every quantity here is a statement about
+  # CONSISTENCY, never about correctness: a midwife can be correctly recorded
+  # in two states by two sources built for different purposes.
+  #
+  # WHY THIS IS A SEPARATE SECTION FROM `leadlag`. Both measure which source
+  # changes first, and both include an NPPES-to-Open-Payments comparison, so
+  # they look interchangeable and are not. `leadlag` is the ADDRESS-level
+  # audit (street/ZIP/city/state) over matched address pairs from
+  # address_lead_lag_openpayments_nppes.csv. This section is STATE-level only,
+  # over the twelve-source presence panel, which is a different denominator.
+  # The two therefore disagree on the NPPES-Open-Payments state figure BY
+  # CONSTRUCTION, and neither is wrong. Any prose quoting one must name its
+  # basis, and the two must never be declared equal in
+  # manuscript/protected_results.tsv -- P4 would be enforcing an identity that
+  # the designs do not claim.
+  #
+  # CONFIDENCE INTERVALS ARE ADDED HERE, not taken from the artifacts. The
+  # mysteryroster tables carry point estimates for agreement and odd-one-out;
+  # a results paragraph of bare proportions is not reportable, and the smallest
+  # strata are small enough for it to matter (state boards of nursing
+  # contribute 648 records, the split consensus tier 550 midwives). mw_wilson()
+  # is the same arithmetic the rest of this catalog uses.
+  mr_inv  <- rd(file.path(MW_ART, "mrost_source_inventory.csv"))
+  mr_tier <- rd(file.path(MW_ART, "mrost_consensus_tier.csv"))
+  mr_odd  <- rd(file.path(MW_ART, "mrost_odd_one_out_rate.csv"))
+  mr_fus  <- rd(file.path(MW_ART, "mrost_truth_fusion_agreement.csv"))
+  mr_pw   <- rd(file.path(MW_ART, "mrost_agreement_pairwise.csv"))
+  mr_ll   <- rd(file.path(MW_ART, "mrost_lead_lag.csv"))
+
+  if (!is.null(mr_inv) && !is.null(mr_tier) && !is.null(mr_odd) && !is.null(mr_fus)) {
+    s <- list()
+
+    # Inventory. n_sources is read, not typed: the comparison gains sources as
+    # historical series are recovered (Open Payments went from one year to
+    # five in November 2026), and a hard-coded "twelve" in the prose would go
+    # stale the next time one is added.
+    s$n_sources      <- nrow(mr_inv)
+    s$n_longitudinal <- sum(mr_inv$tier == "longitudinal")
+    s$n_snapshot     <- sum(mr_inv$tier == "snapshot")
+    s$panel_year_min <- suppressWarnings(min(mr_inv$year_min, na.rm = TRUE))
+    s$panel_year_max <- suppressWarnings(max(mr_inv$year_max, na.rm = TRUE))
+
+    # Consensus tier: the headline concordance result. Pulled by name rather
+    # than by row position so a reordered artifact cannot silently swap
+    # "unanimous" for "split".
+    #
+    # ITS DENOMINATOR IS NOT THE COHORT, and this is the one thing in this
+    # section a reader can most easily get wrong. `tier_total_n` is 15,999:
+    # the midwives for whom a consensus is DEFINED, meaning enough sources
+    # name a state to compare. NPPES alone carries 16,885, so roughly 900
+    # cohort members are outside this denominator entirely -- not disagreeing,
+    # just unobserved by a second source. A "71% unanimous" sentence that
+    # divides by the cohort is a different and smaller number, and the
+    # shortfall below is exposed as a key so the prose can state what the
+    # denominator excludes instead of implying it includes everyone.
+    tier_v <- function(nm, col) {
+      r <- mr_tier[mr_tier$tier == nm, , drop = FALSE]
+      if (!nrow(r)) return(NA_real_)
+      as.numeric(r[[col]][1])
+    }
+    s$tier_total_n  <- sum(mr_tier$n_npis)
+    for (tn in c("unanimous", "majority", "split")) {
+      s[[paste0(tn, "_n")]]   <- tier_v(tn, "n_npis")
+      s[[paste0(tn, "_pct")]] <- tier_v(tn, "pct")
+      ci <- mw_wilson(tier_v(tn, "n_npis"), sum(mr_tier$n_npis))
+      s[[paste0(tn, "_lo")]]  <- ci[1]
+      s[[paste0(tn, "_hi")]]  <- ci[2]
+    }
+
+    # Per-source keys are built in a loop so that recovering a new historical
+    # series adds keys without a code change here. Source names are already
+    # snake_case in every artifact, so they are key-safe as they stand.
+    for (i in seq_len(nrow(mr_odd))) {
+      nm <- mr_odd$source[i]
+      n_odd <- as.numeric(mr_odd$n_odd_one_out[i]); n_el <- as.numeric(mr_odd$n_eligible[i])
+      ci <- mw_wilson(n_odd, n_el)
+      s[[paste0("odd_", nm, "_n")]]   <- n_odd
+      s[[paste0("odd_", nm, "_eligible_n")]] <- n_el
+      # Stored as a PERCENT, while the artifact's own odd_rate column is a
+      # proportion. Both forms of 0.165 read as plausible in prose, and the
+      # interval beside it is in percent, so the two must not be mixed.
+      s[[paste0("odd_", nm, "_pct")]] <- 100 * n_odd / n_el
+      s[[paste0("odd_", nm, "_lo")]]  <- ci[1]
+      s[[paste0("odd_", nm, "_hi")]]  <- ci[2]
+    }
+
+    for (i in seq_len(nrow(mr_fus))) {
+      nm <- mr_fus$source[i]
+      ci <- mw_wilson(as.numeric(mr_fus$n_agree[i]), as.numeric(mr_fus$n_comparable[i]))
+      s[[paste0("fusion_", nm, "_n")]]   <- as.numeric(mr_fus$n_comparable[i])
+      s[[paste0("fusion_", nm, "_pct")]] <- as.numeric(mr_fus$pct_agree_with_fused[i])
+      s[[paste0("fusion_", nm, "_lo")]]  <- ci[1]
+      s[[paste0("fusion_", nm, "_hi")]]  <- ci[2]
+    }
+
+    # Pairwise agreement is stored for the NPPES pairings only. NPPES is the
+    # panel's backbone (99.9% of the cohort appears in it), so it is the one
+    # comparator every other source has enough overlap with to report. The
+    # artifact does not guarantee NPPES is source_a, so the row is found by
+    # membership in the pair rather than by column.
+    if (!is.null(mr_pw)) {
+      for (i in seq_len(nrow(mr_pw))) {
+        pair <- c(mr_pw$source_a[i], mr_pw$source_b[i])
+        if (!"nppes" %in% pair) next
+        nm <- setdiff(pair, "nppes")
+        if (length(nm) != 1L) next
+        ci <- mw_wilson(as.numeric(mr_pw$n_agree[i]), as.numeric(mr_pw$n_comparable[i]))
+        s[[paste0("pw_", nm, "_n")]]   <- as.numeric(mr_pw$n_comparable[i])
+        s[[paste0("pw_", nm, "_pct")]] <- as.numeric(mr_pw$pct_agree[i])
+        s[[paste0("pw_", nm, "_lo")]]  <- ci[1]
+        s[[paste0("pw_", nm, "_hi")]]  <- ci[2]
+      }
+    }
+
+    # Lead/lag, state level, each longitudinal source against NPPES. The three
+    # resolution columns are kept together deliberately: a source's
+    # persistent-discordance share is only interpretable beside the two ways a
+    # disagreement can resolve, and quoting `persistent_pct` alone invites the
+    # reading that the remainder was an error rather than a move.
+    if (!is.null(mr_ll) && "source_b" %in% names(mr_ll)) {
+      st <- mr_ll[mr_ll$attribute == "state", , drop = FALSE]
+      for (i in seq_len(nrow(st))) {
+        nm <- st$source_b[i]
+        if (is.na(nm) || !nzchar(nm)) next
+        s[[paste0("ll_", nm, "_transitions_n")]] <- as.numeric(st$n_paired_transitions[i])
+        s[[paste0("ll_", nm, "_discordant_n")]]  <- as.numeric(st$n_discordant_at_t[i])
+        s[[paste0("ll_", nm, "_adopts_pct")]]    <- as.numeric(st$b_adopts_a_at_t1_pct[i])
+        s[[paste0("ll_", nm, "_reverts_pct")]]   <- as.numeric(st$a_reverts_to_b_at_t1_pct[i])
+        s[[paste0("ll_", nm, "_persistent_pct")]] <- as.numeric(st$persistent_discordant_at_t1_pct[i])
+      }
+    }
+
+    # The tiers must reconstruct the panel, or the concordance table does not
+    # add up in front of a reviewer -- the same check the linkage section makes
+    # on its dispositions.
+    stopifnot(abs(sum(mr_tier$pct) - 100) < 0.2)
+
+    # Exact arithmetic on two artifact values, not an inferred cohort size:
+    # how many midwives NPPES observes but the consensus cannot speak about.
+    mr_pres <- rd(file.path(MW_ART, "mrost_presence_by_source.csv"))
+    if (!is.null(mr_pres) && "nppes" %in% mr_pres$source) {
+      np_n <- as.numeric(mr_pres$n_npis[mr_pres$source == "nppes"][1])
+      s$nppes_presence_n           <- np_n
+      s$tier_outside_denominator_n <- np_n - sum(mr_tier$n_npis)
+    }
+
+    s$inventory <- mr_inv
+    s$tier_table <- mr_tier
+    cat_$sources <- s
+  }
   cat_$meta <- list(built = format(Sys.time(), "%Y-%m-%d %H:%M %Z"),
                     r_version = paste(R.version$major, R.version$minor, sep = "."))
   cat_

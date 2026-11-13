@@ -1,0 +1,45 @@
+{
+  "artifact": "cross_source_medicaid_containment.csv",
+  "written_utc": "2026-11-13 03:58:16 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
+    },
+    {
+      "path": "artifacts/cms_ndh_midwives.csv",
+      "sha256": "6a439987fd5bf78474dd15e097f579d7871fd67210fd14a33ac99f68c1bb1b7e"
+    }
+  ],
+  "code_sha256": "f94e3daf58e6a04dd889b895ff1dc8c4ff611fc4ad5d2188c13fefd1d9165daa",
+  "code": [
+    {
+      "path": "/private/tmp/claude-501/-Users-tylermuffly-midwifery/21970d20-42b4-4407-ab2d-fac972433e7d/scratchpad/csc2.R",
+      "sha256": "d864910878371b33c85221c55226bb8e2f210f406946f9010c0844de00a13d4a"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/clean_state.R",
+      "sha256": "188cee53abd5b2e7afb2c6bffbc7ea27a16029189fb97ca8be1865d5ab0c2c23"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    },
+    {
+      "path": "R/lib/source_vintage.R",
+      "sha256": "92f60ec13974a5cdd46208e626d92650b6e62963ac52c2fb38241fa0589713e1"
+    },
+    {
+      "path": "R/lib/wilson_interval.R",
+      "sha256": "0458dbfbaaef986be0ebfbcc1edebff2c715358c11c68d9b5cf9dfdb0af918a7"
+    }
+  ]
+}

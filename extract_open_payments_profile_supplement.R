@@ -36,8 +36,27 @@ suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); l
 source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-ingestion bootstrap
 source("R/lib/common_helpers.R")
 
-SUPPLEMENT <- "data/CMS_Open_Payments_Profile_Supplement.csv"
-stopifnot(file.exists(SUPPLEMENT))
+# SOURCE PATH IS OVERRIDABLE, AND THE VINTAGE IS RECORDED. The repository copy
+# at data/ is gitignored and absent from most clones; the same file ships from
+# CMS as OP_CVRD_RCPNT_PRFL_SPLMTL_<publication>_<asof>.csv inside
+# PHPRFL_<publication>.zip, and a mounted archive copy is the usual way to get
+# it. No absolute path is hard-coded here (ci_repo_integrity forbids it) --
+# point OP_PROFILE_SUPPLEMENT at the file instead.
+#
+# VINTAGES ARE NOT INTERCHANGEABLE. The January 2025 publication carries
+# 1,530,413 rows; the analysis first published in the 2026-11-03 technical
+# appendix cites 1.69M, so that run used a LATER publication. Counts computed
+# from different vintages will differ legitimately and must not be reconciled
+# by adjusting either one. The row count and file name are written into the
+# provenance sidecar so which vintage produced a given artifact is recoverable.
+SUPPLEMENT <- Sys.getenv("OP_PROFILE_SUPPLEMENT",
+                         "data/CMS_Open_Payments_Profile_Supplement.csv")
+if (!file.exists(SUPPLEMENT))
+  stop(sprintf(paste0("Profile supplement not found at %s.\n",
+                      "  Set OP_PROFILE_SUPPLEMENT to the CMS file ",
+                      "(OP_CVRD_RCPNT_PRFL_SPLMTL_*.csv, inside PHPRFL_*.zip)."),
+               SUPPLEMENT), call. = FALSE)
+cat(sprintf("Supplement: %s\n", basename(SUPPLEMENT)))
 
 link <- chr("artifacts/amcb_npi_linkage_FROZEN.csv")
 coh <- link %>%
@@ -92,7 +111,9 @@ out <- rows %>%
   select(npi, certification_number, profile_state, license_states_list, n_license_states,
          multistate_licensed, primary_specialty, ops_taxonomy_1, ops_taxonomy_2, ops_taxonomy_3)
 
-write_csv(out, "artifacts/cohort_midwives_open_payments_profile_supplement.csv", na = "")
+source(file.path("R", "lib", "artifact_provenance.R"))
+write_with_provenance(out, "artifacts/cohort_midwives_open_payments_profile_supplement.csv",
+                      inputs = c(SUPPLEMENT, "artifacts/amcb_npi_linkage_FROZEN.csv"), na = "")
 cat(sprintf("\nwrote %s rows -> artifacts/cohort_midwives_open_payments_profile_supplement.csv\n",
             format(nrow(out), big.mark = ",")))
 cat(sprintf("multistate-licensed: %s / %s (%.1f%%)\n",

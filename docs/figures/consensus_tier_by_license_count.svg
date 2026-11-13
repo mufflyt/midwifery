@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='612.00pt' height='360.00pt' viewBox='0 0 612.00 360.00'>
+<g class='svglite'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+    .svglite g.glyphgroup path {
+      fill: inherit;
+      stroke: none;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<defs>
+  <clipPath id='cpMC4wMHw2MTIuMDB8MC4wMHwzNjAuMDA='>
+    <rect x='0.00' y='0.00' width='612.00' height='360.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHw2MTIuMDB8MC4wMHwzNjAuMDA=)'>
+<rect x='0.000000000000064' y='0.00' width='612.00' height='360.00' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+</g>
+<defs>
+  <clipPath id='cpNzYuMTh8NjA2LjUyfDY0LjA1fDI3NS42OA=='>
+    <rect x='76.18' y='64.05' width='530.34' height='211.62' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpNzYuMTh8NjA2LjUyfDY0LjA1fDI3NS42OA==)'>
+<polyline points='76.18,275.68 76.18,64.05 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='206.16,275.68 206.16,64.05 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='336.15,275.68 336.15,64.05 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='466.14,275.68 466.14,64.05 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='596.12,275.68 596.12,64.05 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
+<rect x='488.48' y='190.06' width='101.73' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6B6B6B;' />
+<rect x='590.21' y='190.06' width='5.92' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #8C8C8C;' />
+<rect x='76.18' y='190.06' width='412.30' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #333333;' />
+<rect x='286.19' y='93.87' width='267.29' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6B6B6B;' />
+<rect x='553.47' y='93.87' width='42.65' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #8C8C8C;' />
+<rect x='76.18' y='93.87' width='210.01' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #333333;' />
+<text x='539.34' y='221.32' text-anchor='middle' style='font-size: 9.39px;fill: #262626; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>19.6%</text>
+<text x='282.33' y='221.32' text-anchor='middle' style='font-size: 9.39px;fill: #FFFFFF; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>79.3%</text>
+<text x='419.83' y='125.12' text-anchor='middle' style='font-size: 9.39px;fill: #262626; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>51.4%</text>
+<text x='574.80' y='125.12' text-anchor='middle' style='font-size: 9.39px;fill: #262626; font-family: "Arial";' textLength='21.38px' lengthAdjust='spacingAndGlyphs'>8.2%</text>
+<text x='181.18' y='125.12' text-anchor='middle' style='font-size: 9.39px;fill: #FFFFFF; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>40.4%</text>
+</g>
+<g clip-path='url(#cpMC4wMHw2MTIuMDB8MC4wMHwzNjAuMDA=)'>
+<text x='71.25' y='216.36' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='56.22px' lengthAdjust='spacingAndGlyphs'>1 licence state</text>
+<text x='71.25' y='225.86' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='42.75px' lengthAdjust='spacingAndGlyphs'>(n = 4,043)</text>
+<text x='71.25' y='120.17' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='65.77px' lengthAdjust='spacingAndGlyphs'>2+ licence states</text>
+<text x='71.25' y='129.67' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='42.75px' lengthAdjust='spacingAndGlyphs'>(n = 2,097)</text>
+<text x='76.18' y='286.91' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>0</text>
+<text x='206.16' y='286.91' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.78px' lengthAdjust='spacingAndGlyphs'>25</text>
+<text x='336.15' y='286.91' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.78px' lengthAdjust='spacingAndGlyphs'>50</text>
+<text x='466.14' y='286.91' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.78px' lengthAdjust='spacingAndGlyphs'>75</text>
+<text x='596.12' y='286.91' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='14.67px' lengthAdjust='spacingAndGlyphs'>100</text>
+<text x='341.35' y='299.37' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='177.41px' lengthAdjust='spacingAndGlyphs'>% of midwives in each licence group</text>
+<rect x='258.28' y='319.41' width='14.73' height='14.73' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #333333;' />
+<rect x='329.55' y='319.41' width='14.73' height='14.73' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6B6B6B;' />
+<rect x='388.57' y='319.41' width='14.73' height='14.73' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #8C8C8C;' />
+<text x='279.76' y='329.92' style='font-size: 8.80px; font-family: "Arial";' textLength='43.03px' lengthAdjust='spacingAndGlyphs'>unanimous</text>
+<text x='351.03' y='329.92' style='font-size: 8.80px; font-family: "Arial";' textLength='30.78px' lengthAdjust='spacingAndGlyphs'>majority</text>
+<text x='410.05' y='329.92' style='font-size: 8.80px; font-family: "Arial";' textLength='15.64px' lengthAdjust='spacingAndGlyphs'>split</text>
+<text x='76.18' y='29.83' style='font-size: 9.30px; font-family: "Arial";' textLength='416.83px' lengthAdjust='spacingAndGlyphs'>Consensus across the twelve-source comparison, by how many states CMS's Open Payments profile</text>
+<text x='76.18' y='43.22' style='font-size: 9.30px; font-family: "Arial";' textLength='349.66px' lengthAdjust='spacingAndGlyphs'>says she is licensed in. The split rate is 7.2 times higher among multi-state licensees.</text>
+<text x='76.18' y='56.61' style='font-size: 9.30px; font-family: "Arial";' textLength='361.98px' lengthAdjust='spacingAndGlyphs'>chi-square(2, n = 6,140) = 971, p &lt; 2.2e-16. An association, not a per-case adjudication.</text>
+<text x='76.18' y='14.93' style='font-size: 13.20px; font-family: "Arial";' textLength='444.69px' lengthAdjust='spacingAndGlyphs'>Midwives licensed in several states are the ones the sources disagree about</text>
+<text x='606.52' y='352.67' text-anchor='end' style='font-size: 8.80px; font-family: "Arial";' textLength='390.59px' lengthAdjust='spacingAndGlyphs'>artifacts/consensus_tier_by_license_count.csv; tiers from artifacts/mrost_consensus_tier_by_npi.csv</text>
+</g>
+</g>
+</svg>

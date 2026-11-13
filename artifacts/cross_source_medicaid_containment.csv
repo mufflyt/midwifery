@@ -1,0 +1,10 @@
+source,n_comparable,n_in_medicaid_footprint,pct_in_medicaid_footprint,n_equals_modal_state,pct_equals_modal_state
+nppes,13313,12238,91.9,9843,73.9
+cms_ndh_fhir,12748,11553,90.6,9253,72.6
+pecos_revalidation,9032,8266,91.5,6380,70.6
+healthgrades,6571,6035,91.8,4817,73.3
+dac_physician_compare,4432,4021,90.7,3075,69.4
+doximity,4066,3735,91.9,2911,71.6
+open_payments,3826,3662,95.7,2939,76.8
+facility_affiliation_ccn,1596,1506,94.4,1123,70.4
+state_boards_of_nursing,546,517,94.7,389,71.2

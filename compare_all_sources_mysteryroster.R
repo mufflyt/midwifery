@@ -180,12 +180,34 @@ longi$medicare_part_d <- read_if(file.path(ART, "cohort_midwives_part_d_state_by
     transmute(npi = trimws(npi), year = as.integer(year), state = clean_state(state)) %>%
     filter(!is.na(state)) %>% keep_cohort() %>% distinct())
 
-op_files <- Sys.glob(file.path(ART, "cohort_midwives_open_payments_general_*.csv"))
-longi$open_payments <- if (!length(op_files)) NULL else bind_rows(lapply(op_files, function(f)
-  read_csv(f, col_types = cols(.default = "c"), progress = FALSE) %>%
-    transmute(npi = trimws(npi), year = as.integer(str_extract(basename(f), "\\d{4}")),
-              state = clean_state(recipient_state)))) %>%
-  filter(!is.na(npi), !is.na(state)) %>% keep_cohort() %>% distinct()
+# OPEN PAYMENTS IS LONGITUDINAL NOW, 2021-2025, NOT A SINGLE YEAR.
+# It sat in this tier with only 2024 extracted, producing zero transitions and
+# four skipped lead/lag pairings, while the raw releases for 2013-2023 and
+# 2025 were on the volume the whole time. extract_open_payments_cohort_by_year.R
+# reads all of them: 21,067 NPI-years, 8,496 midwives, 2013-2025.
+#
+# ONLY 2021 ONWARDS ENTERS THE COMPARISON. Certified nurse-midwives did not
+# become covered recipients until the SUPPORT Act expansion hit program year
+# 2021, and before that this cohort has 4-21 midwives a year against 3,018 in
+# 2021 -- a 500-fold discontinuity at the rule change. Those trace years are
+# real observations but they are not a trend, and feeding them to churn or
+# lead/lag would manufacture transitions from a handful of people who were
+# reportable under some other recipient category. The producer marks them
+# usable_for_trend = FALSE and this filter honours it.
+#
+# 2013-2014 additionally carry no NPI in the source at all; they are linked
+# retrospectively through a profile -> NPI lookup learned from 2021-2025 and
+# are evidence class B. They are excluded here for the eligibility reason
+# above, which also keeps the retrospective rows out of the comparison.
+longi$open_payments <- read_if(
+  file.path(ART, "open_payments_midwife_presence_by_year.csv"), function()
+  read_csv(file.path(ART, "open_payments_midwife_presence_by_year.csv"),
+           col_types = cols(.default = "c"), progress = FALSE) %>%
+    filter(usable_for_trend == "TRUE") %>%
+    transmute(npi = trimws(npi), year = as.integer(program_year),
+              state = clean_state(state)) %>%
+    filter(!is.na(npi), !is.na(year), !is.na(state)) %>% keep_cohort() %>%
+    distinct())
 
 if (is.null(longi$nppes)) stop("nppes panel is required and absent", call. = FALSE)
 longi <- longi[!vapply(longi, is.null, logical(1))]
@@ -384,6 +406,28 @@ tier_sum <- tier %>% count(tier, name = "n_npis") %>%
   mutate(pct = round(100 * n_npis / sum(n_npis), 1))
 print(as.data.frame(tier_sum), row.names = FALSE)
 write_with_provenance(tier_sum, file.path(ART, "mrost_consensus_tier.csv"), inputs = COHORT, na = "")
+
+# THE PER-NPI TIER IS KEPT, not just its tally. It was computed here and
+# discarded, which meant any analysis asking "who disagrees, and what else is
+# true of them?" had to recompute it from scratch or go without -- the licence
+# -count cross-tabulation in the state-source audit vignette went without, and
+# its figure became unreproducible when the intermediate was lost. Writing the
+# per-NPI assignment costs one line and makes that class of question answerable
+# from a tracked artifact. Carries no name, address or date of birth: an NPI is
+# a public provider identifier, and the tier is derived from public sources.
+# attribute_consensus_tier() names the entity column `id`, not `npi`; it is
+# renamed on the way out so the artifact joins to every other mrost table
+# without the caller having to know that. The agreement detail is kept too --
+# how many sources reported, how many distinct values they gave, and the
+# concordance percentage -- because a tier label alone cannot distinguish
+# "two sources, one disagreed" from "seven sources, three disagreed".
+write_with_provenance(
+  tier %>%
+    transmute(npi = as.character(id), year, n_reporting, n_distinct_values,
+              concordance_pct, tier) %>%
+    arrange(npi),
+  file.path(ART, "mrost_consensus_tier_by_npi.csv"),
+  inputs = COHORT, na = "")
 
 # -------------------------------------------------- 6. churn per source
 cat("\n[6] churn: how often each source's own value flips\n")
