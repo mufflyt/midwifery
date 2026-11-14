@@ -409,8 +409,24 @@ if (!file.exists(t1_csv) || !file.exists(t1_md)) {
     ci_ok("A5: both Table 1 files report %s%s", format(csv_n, big.mark = ","),
           if (is.na(canon_n)) " (freeze absent; canonical count unchecked)"
           else ", matching canonical_active_primary()")
-    if (length(known))
-      ci_ok("A5: the recorded mismatch is gone -- delete tests/ci_table1_cohort_baseline.txt to hold the gain")
+    # NEVER ADVISE A SHRINK ON A COMPARISON THAT DID NOT RUN. With the freeze
+    # absent, `agree` means only that the two FILES match each other; canon_n is
+    # NA and the cohort definition they both claim went unchecked. On a runner
+    # that is every run, so the old unconditional hint told CI -- the one place
+    # that cannot evaluate the third number -- to delete the baseline recording
+    # the mismatch in it. A baseline removed on partial evidence is how a
+    # shrink-only guard quietly becomes no guard.
+    if (length(known)) {
+      if (is.na(canon_n)) {
+        ci_ok(paste0("A5: the two files agree at %s, but the recorded mismatch is about ",
+                     "the canonical count, which was NOT checked here (freeze absent). ",
+                     "Keeping tests/ci_table1_cohort_baseline.txt -- a machine with the ",
+                     "freeze decides whether it comes off."),
+              format(csv_n, big.mark = ","))
+      } else {
+        ci_ok("A5: the recorded mismatch is gone -- delete tests/ci_table1_cohort_baseline.txt to hold the gain")
+      }
+    }
   } else if (observed %in% known) {
     ci_ok("A5: known mismatch, unchanged (%s); see tests/ci_table1_cohort_baseline.txt", observed)
   } else {
