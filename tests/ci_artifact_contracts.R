@@ -268,15 +268,32 @@ if (length(sidecars_all) == 0) {
   } else character(0)
 
   new_nameless <- setdiff(nameless, gf_code)
-  fixed_code <- setdiff(gf_code, nameless)
+  # GONE IS NOT FIXED. `nameless` is derived from the tracked sidecar list, so a
+  # baseline entry whose sidecar has merely stopped being tracked falls out of
+  # it and reads as "now fixed -- remove it from the baseline". A sidecar that
+  # was deleted has not acquired code provenance; it has disappeared, and on the
+  # next rebuild it can come back exactly as unprovenanced as before, with the
+  # baseline line that recorded it already gone. Local gate sweeps in this
+  # repository delete tracked artifacts and their sidecars routinely -- that is
+  # why `git add -A` after a test run is a documented hazard -- so this is the
+  # ordinary case, not a hypothetical. ci_leak_guard.R draws the same
+  # distinction for the same reason.
+  fixed_code <- intersect(setdiff(gf_code, nameless), sidecars_all)
+  absent_code <- setdiff(setdiff(gf_code, nameless), sidecars_all)
 
   if (length(new_nameless)) {
     ci_fail("A3b: %d sidecar(s) do not name their producing code and are not on the baseline. This happens when write_with_provenance() runs from `Rscript -e`; move the call into a script file and re-run it:\n       %s",
             length(new_nameless),
             paste(utils::head(new_nameless, 8), collapse = "\n       "))
-  } else if (length(fixed_code)) {
-    ci_ok(sprintf("A3b no NEW sidecar lacks code provenance (%d grandfathered; %d now fixed -- remove them from the baseline to hold the gain)",
-                  length(gf_code), length(fixed_code)))
+  } else if (length(fixed_code) || length(absent_code)) {
+    ci_ok(sprintf(paste0("A3b no NEW sidecar lacks code provenance (%d grandfathered; ",
+                         "%d still tracked and now fixed -- remove those from the baseline ",
+                         "to hold the gain; %d no longer tracked, which is NOT fixed and NOT ",
+                         "a reason to remove the line%s)"),
+                  length(gf_code), length(fixed_code), length(absent_code),
+                  if (length(absent_code))
+                    paste0(": ", paste(utils::head(absent_code, 4), collapse = ", "))
+                  else ""))
   } else {
     ci_ok(sprintf("A3b no NEW sidecar lacks code provenance (%d grandfathered)",
                   length(gf_code)))

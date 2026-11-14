@@ -153,15 +153,54 @@ if (length(named_new)) {
 # reasons. STALE is a note, not a failure: nobody should have to edit either
 # file to make a green build green again.
 present <- union(hits, named_all)
-stale_baseline <- setdiff(baseline, present)
-stale_exceptions <- setdiff(reviewed_exceptions, present)
+
+# NOT TRACKED IS NOT THE SAME AS NOW CLEAN, and conflating them advises
+# deleting a live exception.
+#
+# `present` is built from ci_tracked("*"), so an entry whose file has merely
+# stopped being tracked falls out of it and used to be reported as "now clean --
+# delete from the baseline". The two cases need different advice:
+#
+#   still tracked, no longer flagged   genuinely cleaned. The entry has done its
+#                                      job and should come off.
+#   no longer tracked at all           the file was deleted, renamed, or is
+#                                      simply absent from this checkout. The
+#                                      content may return under the same name on
+#                                      the next rebuild, or already exist under
+#                                      another one, and the review that entry
+#                                      records would be gone.
+#
+# Observed 2026-11-13: a local gate sweep deleted
+# artifacts/temporal_separation_by_pool.csv.provenance.json, and this check
+# immediately advised deleting its reviewed-exception entry. Following that
+# advice would have dropped the exception while the artifact came back on the
+# next rebuild -- unreviewed, and with nothing recording that it ever had been.
+tracked_now <- ci_tracked("*")
+clean_now <- function(v) intersect(setdiff(v, present), tracked_now)
+gone_now  <- function(v) setdiff(setdiff(v, present), tracked_now)
+
+stale_baseline <- clean_now(baseline)
+stale_exceptions <- clean_now(reviewed_exceptions)
+absent_baseline <- gone_now(baseline)
+absent_exceptions <- gone_now(reviewed_exceptions)
+
+if (length(absent_baseline) || length(absent_exceptions)) {
+  n_absent <- length(absent_baseline) + length(absent_exceptions)
+  ci_ok(paste0("%d baseline/exception %s a file that is no longer tracked. ",
+               "NOT counted as clean and NOT a reason to delete the entry -- the file ",
+               "may be absent from this checkout or renamed, and the review would go ",
+               "with it:\n%s"),
+     n_absent,
+     if (n_absent == 1) "entry names" else "entries name",
+     paste(sprintf("       %s", c(absent_baseline, absent_exceptions)), collapse = "\n"))
+}
 if (length(stale_baseline)) {
-  ci_ok("%d ci_leak_baseline.txt entr%s now clean -- delete from ci_leak_baseline.txt:\n%s",
+  ci_ok("%d ci_leak_baseline.txt entr%s still tracked and now clean -- delete from ci_leak_baseline.txt:\n%s",
      length(stale_baseline), if (length(stale_baseline) == 1) "y is" else "ies are",
      paste(sprintf("       %s", stale_baseline), collapse = "\n"))
 }
 if (length(stale_exceptions)) {
-  ci_ok("%d ci_leak_reviewed_exceptions.txt entr%s now clean -- delete from ci_leak_reviewed_exceptions.txt:\n%s",
+  ci_ok("%d ci_leak_reviewed_exceptions.txt entr%s still tracked and now clean -- delete from ci_leak_reviewed_exceptions.txt:\n%s",
      length(stale_exceptions), if (length(stale_exceptions) == 1) "y is" else "ies are",
      paste(sprintf("       %s", stale_exceptions), collapse = "\n"))
 }
