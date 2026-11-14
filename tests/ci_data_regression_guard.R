@@ -563,4 +563,71 @@ if (!length(fm_all)) {
   }
 }
 
+# -----------------------------------------------------------------------------
+ci_section("D13 prose that quotes the freeze's row count quotes the manifest's")
+
+# PUBLIC, cross-source, and it found a live disagreement the first time it ran.
+# D2 refuses two independently-generated ARTIFACTS that claim the same fact and
+# disagree. The same discipline had never been applied to prose, and prose is
+# what a reader actually reads: README.md described a 22,357-row freeze while
+# .github/workflows/ci.yml described a 22,309-row one, the superseded
+# 2026-08-10 vintage. Both are tracked, both are statements about the same file,
+# and nothing compared them.
+#
+# NARROW ON PURPOSE. Only "<N>-row" immediately qualified as the freeze is
+# matched. A column count is NOT checked: "13-column" and "14-column" in this
+# repository are about the midwife panel and the geocode queue, and a gate that
+# cannot tell those from the freeze would fail on correct prose, which is how a
+# check gets deleted rather than fixed.
+#
+# SELF-EXCLUDED, the lesson frozen_dependency_graph.R records about a scanner
+# appearing in its own inventory: this section quotes the pattern and both
+# numbers as literals.
+fm_path13 <- drg_path("artifacts", "amcb_npi_linkage_FROZEN.csv.manifest.json")
+if (!file.exists(fm_path13)) {
+  ci_fail("D13: %s is committed and absent", fm_path13)
+} else {
+  want_rows <- read_json(fm_path13)$artifact_rows
+  tracked <- suppressWarnings(system2("git", c("-C", shQuote(root), "ls-files"),
+                                      stdout = TRUE, stderr = FALSE))
+  # TWO DIFFERENT REASONS, not one list of convenience.
+  #   this file          a scanner must not appear in its own inventory: the
+  #                      section above quotes the pattern and both numbers as
+  #                      literals (the lesson frozen_dependency_graph.R records).
+  #   the audit document exists to compare the three freezes, so quoting a
+  #                      superseded row count is its subject matter, not drift.
+  #                      It names every count beside the hash it belongs to.
+  # A row count alone cannot distinguish "describing history" from "stale", so
+  # an exemption is declared per file with its reason, rather than inferred.
+  SELF <- c("tests/ci_data_regression_guard.R")
+  HISTORICAL <- c("docs/LINKAGE_FREEZE_RECONCILIATION_AUDIT_2026-11-13.md")
+  pat <- "([0-9][0-9,]*)-row (FROZEN|frozen|freeze|crosswalk)"
+  wrong <- character(0); checked <- 0L
+  for (f in setdiff(tracked, c(SELF, HISTORICAL))) {
+    fp <- drg_path(f)
+    if (!file.exists(fp) || isTRUE(file.info(fp)$isdir)) next
+    if (!grepl("\\.(R|r|py|md|yml|yaml|Rmd|qmd)$", f)) next
+    txt <- tryCatch(readLines(fp, warn = FALSE), error = function(e) character(0))
+    hits <- grep(pat, txt)
+    for (i in hits) {
+      m <- regmatches(txt[i], regexec(pat, txt[i]))[[1]]
+      got <- suppressWarnings(as.integer(gsub(",", "", m[2])))
+      checked <- checked + 1L
+      if (!is.na(got) && !identical(got, as.integer(want_rows)))
+        wrong <- c(wrong, sprintf("%s:%d says %s-row, manifest says %s",
+                                  f, i, m[2], format(want_rows, big.mark = ",")))
+    }
+  }
+  if (length(wrong)) {
+    ci_fail(paste0("D13: %d tracked statement(s) quote the wrong freeze row count:\n       %s\n",
+                   "       Update the prose, or if it is deliberately describing a SUPERSEDED\n",
+                   "       vintage, say so in the sentence rather than leaving a bare number a\n",
+                   "       reader will take as current."),
+            length(wrong), paste(wrong, collapse = "\n       "))
+  } else {
+    ci_ok("%d tracked statement(s) about the freeze's row count all agree with the manifest (%s)",
+          checked, format(want_rows, big.mark = ","))
+  }
+}
+
 ci_finish()
