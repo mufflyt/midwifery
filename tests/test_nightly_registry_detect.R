@@ -43,7 +43,13 @@ chk <- function(cond, m) {
   else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
 }
 
-run_gate <- function() {
+# NAMED FOR THIS GATE, not `run_gate`. H4 refuses one function defined at top
+# level in two files, and tests/test_aggregate_gate.R already has a run_gate()
+# that does something else entirely (it sets NEEDS_JSON/REQUIRED for the
+# aggregate gate). The first version of this file called it run_gate and H4
+# caught it -- which it could only do once the file was TRACKED, so running the
+# hygiene gate on an untracked new file proves nothing.
+run_registry_gate <- function() {
   out <- suppressWarnings(system2("Rscript", shQuote(GATE), stdout = TRUE, stderr = TRUE))
   list(txt = paste(out, collapse = "\n"),
        failed = any(grepl("^FAILED", out)))
@@ -54,7 +60,7 @@ INNOCENT <- "tests/test_safe_divide_types.R"
 stopifnot(file.exists(file.path(root, INNOCENT)))
 
 cat("\n-- the registry as committed --\n")
-base <- run_gate()
+base <- run_registry_gate()
 chk(!base$failed, "T1 the committed registry passes")
 chk(grepl("all 8 exception\\(s\\) still reach|all [0-9]+ exception\\(s\\) still reach", base$txt),
     "T2 ...and N5 reports a non-zero number of exceptions examined")
@@ -74,7 +80,7 @@ chk(!is.na(examined) && examined == n_declared,
 cat("\n-- a stale exception is detected, in both classes --\n")
 for (cls in c("external-private", "external-network")) {
   writeLines(c(ORIGINAL, paste(INNOCENT, cls, "# planted by the detector", sep = "\t")), REG)
-  r <- run_gate()
+  r <- run_registry_gate()
   chk(r$failed && grepl("N5:", r$txt),
       sprintf("T4 an exception claiming %s for a test with no such dependency fails", cls))
   writeLines(ORIGINAL, REG)
