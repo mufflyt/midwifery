@@ -6,7 +6,12 @@
 **Library**: [`R/lib/trilliant_identity.R`](../R/lib/trilliant_identity.R), tested by
 [`tests/test_trilliant_identity.R`](../tests/test_trilliant_identity.R) (22 checks, run in CI)
 **Freeze scored**: the 2026-08-10 freeze, sha256 `dbcc76f4…` (22,309 certificants), accepted on
-purpose with `ALLOW_FREEZE_SHA256`. **It is not the current freeze** (`1a7bd6a8…`); see §9.
+purpose with `ALLOW_FREEZE_SHA256`. **It is not the current freeze**; see §9.
+**Note added 2026-11-13**: the freeze this appendix called current (`1a7bd6a8…`) was itself
+superseded on 2026-10-22 by `9f224007…` (16,775 members), so the gap between what was scored
+here and the current cohort is one re-freeze wider than §9 states. The pin this experiment
+relies on is now declared in [`artifacts/freeze_pins.tsv`](../artifacts/freeze_pins.tsv), which
+names this script as its only sanctioned consumer.
 **Directory**: Trilliant `directory_provider`, snapshot 2026-06-25. **NPPES**: November 2025 bulk file.
 **Date**: 2026-09-14
 **Status**: an experiment. Nothing here changes the linkage, the matcher or mysterynpi.
@@ -444,8 +449,11 @@ file.
 
 ## 9. Limitations
 
-- **Not the current freeze.** The current freeze (`1a7bd6a8…`, 22,357 rows)
-  was not on the machine that ran this. Its candidate window runs through 2026,
+- **Not the current freeze.** The freeze current when this was written
+  (`1a7bd6a8…`, 22,357 rows) was not on the machine that ran this. It has since
+  been superseded as well: the current freeze is `9f224007…` (22,357 rows,
+  16,775 members, 2026-10-22), which retired class-4 fuzzy surname matching
+  entirely. Two re-freezes now separate the scored data from the cohort. Its candidate window runs through 2026,
   so the recent-enumeration recoveries (§5.4) are the numbers most likely to
   shrink. Every output carries the freeze's sha8 in its name, so a rerun writes
   new files beside these.

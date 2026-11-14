@@ -60,23 +60,96 @@
 #' a file once claimed to have scraped it.
 GENUINE_BOARD_STATES <- c("WA", "CO", "TX")
 
+#' The script currently running, for per-consumer pin matching
+#' @return [character(1)] its basename, or "" when not run via Rscript.
+#' @keywords internal
+#' @noRd
+freeze_running_script <- function() {
+  a <- grep("^--file=", commandArgs(), value = TRUE)
+  if (length(a)) basename(sub("^--file=", "", a[1])) else ""
+}
+
+#' A declared pin for a freeze other than the manifest's, or NA
+#'
+#' A PIN IS PER CONSUMER, NOT PER HASH. Keying only on the hash would mean that
+#' declaring the 2026-08-10 freeze for one dated experiment also unlocks it for
+#' every other consumer in the repository -- including the ones that compute
+#' published counts. That is the permissiveness this registry exists to remove,
+#' so the row has to name the script that may read it.
+#'
+#' @param sha256 [character(1)] the hash to look up.
+#' @param pins [character(1)] the registry.
+#' @param consumer [character(1)] the script asking; defaults to the running one.
+#' @return [character(1)] the purpose, or NA_character_ when undeclared.
+freeze_pin_purpose <- function(sha256,
+                               pins = "artifacts/freeze_pins.tsv",
+                               consumer = freeze_running_script()) {
+  if (!file.exists(pins)) return(NA_character_)
+  d <- utils::read.delim(pins, comment.char = "#", stringsAsFactors = FALSE,
+                         colClasses = "character")
+  if (!"consumer" %in% names(d)) return(NA_character_)
+  hit <- d[tolower(d$sha256) == tolower(sha256) &
+             basename(trimws(d$consumer)) == consumer, , drop = FALSE]
+  if (!nrow(hit) || !nzchar(trimws(hit$purpose[1]))) return(NA_character_)
+  sprintf("%s [%s; %s]", trimws(hit$purpose[1]), hit$scope[1], hit$doc[1])
+}
+
 #' Refuse a linkage file that is not the freeze the manifest describes
+#'
+#' Two ways to read a different freeze on purpose, and they are deliberately
+#' not equivalent:
+#'
+#'   allow_sha256=        passed in code, at one call site, visible in review.
+#'   ALLOW_FREEZE_SHA256  an environment variable -- ambient, applying to every
+#'                        consumer in the process, invisible in the script, and
+#'                        leaving no record of which freeze was read. This is
+#'                        how a build came to describe 11,920 midwives instead
+#'                        of 12,171 (docs/DATA_VAULT.md). It is still allowed,
+#'                        but only for a hash DECLARED in freeze_pins.tsv with
+#'                        a stated purpose, and it says so on every run.
 #'
 #' @param path [character(1)] the linkage CSV.
 #' @param manifest [character(1)] its tracked manifest.
-#' @param allow_sha256 [character(1)] a different freeze accepted on purpose.
+#' @param allow_sha256 [character(1)] a different freeze accepted on purpose at
+#'   this call site. NULL (the default) consults ALLOW_FREEZE_SHA256 instead,
+#'   which additionally requires the hash to be declared.
+#' @param pins [character(1)] the pin registry.
+#' @param consumer [character(1)] the script asking; defaults to the running one.
 #' @return [character(1)] the file's sha256, invisibly.
 verify_linkage_freeze <- function(path,
                                   manifest = "artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json",
-                                  allow_sha256 = Sys.getenv("ALLOW_FREEZE_SHA256", "")) {
+                                  allow_sha256 = NULL,
+                                  pins = "artifacts/freeze_pins.tsv",
+                                  consumer = freeze_running_script()) {
   if (!file.exists(path)) stop("no linkage file at ", path, call. = FALSE)
+  from_env <- is.null(allow_sha256)
+  if (from_env) allow_sha256 <- Sys.getenv("ALLOW_FREEZE_SHA256", "")
   m <- jsonlite::read_json(manifest)
   sha <- digest::digest(file = path, algo = "sha256")
-  if (!identical(sha, m$artifact_sha256) && !identical(sha, allow_sha256)) {
+  if (identical(sha, m$artifact_sha256)) return(invisible(sha))
+
+  if (!identical(sha, allow_sha256))
     stop(sprintf(paste0("%s has sha256 %s..., but the tracked manifest describes %s... (%s rows).\n",
-                        "  Use the current freeze, or set ALLOW_FREEZE_SHA256 to use this one deliberately."),
+                        "  Use the current freeze, or set ALLOW_FREEZE_SHA256 to use this one deliberately\n",
+                        "  (declare it in %s first)."),
                  path, substr(sha, 1, 8), substr(m$artifact_sha256, 1, 8),
-                 format(m$artifact_rows, big.mark = ",")), call. = FALSE)
+                 format(m$artifact_rows, big.mark = ","), pins), call. = FALSE)
+
+  if (from_env) {
+    why <- freeze_pin_purpose(sha, pins, consumer)
+    if (is.na(why))
+      stop(sprintf(paste0("ALLOW_FREEZE_SHA256 names %s..., which is not declared in %s\n",
+                          "  for the script reading it (%s).\n",
+                          "  A pin has to be written down before it can be used, and it names ONE\n",
+                          "  consumer: add a row with that script, the rows, members, scope and the\n",
+                          "  document stating why reading this freeze is legitimate there. A pin for\n",
+                          "  another script does not carry over, and nothing pinned may back a\n",
+                          "  published count."),
+                   substr(sha, 1, 8), pins,
+                   if (nzchar(consumer)) consumer else "<not run via Rscript>"),
+           call. = FALSE)
+    message(sprintf("ALLOW_FREEZE_SHA256: reading the pinned freeze %s... -- %s",
+                    substr(sha, 1, 8), why))
   }
   invisible(sha)
 }

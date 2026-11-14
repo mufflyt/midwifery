@@ -3,7 +3,7 @@
 # =============================================================================
 # DELIBERATELY SMALL. Almost every test in tests/ loads a multi-megabyte
 # artifact, and several reach outside the repo entirely -- the name-normalisation
-# tests need ~/isochrones, the linkage tests need a 22,309-row FROZEN crosswalk
+# tests need ~/isochrones, the linkage tests need a 22,357-row FROZEN crosswalk
 # that is gitignored because it is person-level. None of that exists on a runner,
 # so CI runs the subset that is genuinely hermetic and says nothing about the
 # rest. A green tick here means "the keys and the syntax are sound", NOT "the

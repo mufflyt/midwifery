@@ -24,7 +24,11 @@ root <- {
 setwd(root)
 COV <- file.path(root, "tests", "ci_law_coverage.R")
 REP <- file.path(root, "tests", "ci_report.R")
-stopifnot(file.exists(COV), file.exists(REP))
+# The gate sources this, so the scratch repository needs it too; without it the
+# gate dies on source() and every scenario below "fails" for a reason that has
+# nothing to do with coverage.
+LAWPRIV <- file.path(root, "R", "lib", "law_privacy.R")
+stopifnot(file.exists(COV), file.exists(REP), file.exists(LAWPRIV))
 
 fails <- 0L
 chk <- function(cond, m) if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m)) else {
@@ -33,9 +37,24 @@ chk <- function(cond, m) if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m)) else {
 # A scratch repository whose coverage is complete.
 cov_scaffold <- function(dir, registry, gate_lines, mut_lines) {
   dir.create(file.path(dir, "tests"), recursive = TRUE, showWarnings = FALSE)
+  dir.create(file.path(dir, "R", "lib"), recursive = TRUE, showWarnings = FALSE)
   file.copy(COV, file.path(dir, "tests", "ci_law_coverage.R"))
   file.copy(REP, file.path(dir, "tests", "ci_report.R"))
+  file.copy(LAWPRIV, file.path(dir, "R", "lib", "law_privacy.R"))
   writeLines(registry, file.path(dir, "tests", "science_law_registry.tsv"))
+  # N5's sibling: the gate refuses a non-public law that is not declared in the
+  # privacy baseline. These fixtures deliberately register derived-ok and
+  # private-ok laws to test SKIP ACCOUNTING, which is a different question, so
+  # the scaffold declares whatever it registers. Derived from the registry
+  # rather than hardcoded, so a new fixture cannot silently fail for this
+  # reason instead of the one it is testing.
+  reg_rows <- strsplit(registry[-1], "\t")
+  non_public <- vapply(reg_rows, function(r) {
+    if (length(r) < 5L || identical(trimws(r[5]), "public")) NA_character_
+    else paste(trimws(r[1]), trimws(r[5]), "declared by the detector", sep = "\t")
+  }, character(1))
+  writeLines(c("law\tprivacy\treason", non_public[!is.na(non_public)]),
+             file.path(dir, "tests", "law_privacy_baseline.tsv"))
   writeLines(gate_lines, file.path(dir, "tests", "fake_gate.R"))
   writeLines(mut_lines,  file.path(dir, "tests", "fake_mutation.R"))
   dir.create(file.path(dir, ".git"), showWarnings = FALSE)

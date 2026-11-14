@@ -113,5 +113,54 @@ chk(grepl("incomplete rebuild", runner, fixed = TRUE),
 chk(grepl("refusing to rebuild while dependency completeness fails", runner, fixed = TRUE),
     "T13 the runner refuses to apply when completeness fails")
 
+cat("\n-- freeze verification coverage --\n")
+
+# WHY THIS IS A BASELINE AND NOT A PASS/FAIL. 91 of the 98 discovered consumers
+# read the freeze without verifying it, so a gate that simply required
+# verification would be red on arrival and get bypassed. What matters first is
+# that the number cannot grow: a NEW consumer added without a check is the same
+# defect arriving again, and that is caught here on the day it lands.
+#
+# The existing 91 are a backlog, not an exoneration. Until one of them calls
+# verify_linkage_freeze(), it reports whatever cohort the file in artifacts/
+# happens to describe -- which on at least one machine is the 2026-08-10 freeze
+# (dbcc76f4..., 16,898 members) while the manifest describes 9f224007...
+# (16,775). The two are not interchangeable and nothing in those scripts says so.
+BASELINE <- file.path(root, "tests", "frozen_verify_baseline.txt")
+base <- grep("^#|^\\s*$", readLines(BASELINE, warn = FALSE), value = TRUE, invert = TRUE)
+cons <- sort(frozen_consumers(".")$script)
+verifies <- vapply(cons, function(f)
+  any(grepl("verify_linkage_freeze", readLines(f, warn = FALSE))), logical(1))
+unver <- cons[!verifies]
+
+new_unver <- setdiff(unver, base)
+chk(length(new_unver) == 0L,
+    sprintf("T14 no NEW unverified freeze consumer [%s]",
+            if (length(new_unver)) paste(new_unver, collapse = ", ") else "none"))
+
+fixed <- setdiff(base, unver)
+gone <- fixed[!file.exists(file.path(root, fixed))]
+now_verifies <- setdiff(fixed, gone)
+chk(length(fixed) == 0L,
+    sprintf("T15 the baseline holds no line that can be deleted [%d verify now: %s; %d no longer exist: %s]",
+            length(now_verifies),
+            if (length(now_verifies)) paste(now_verifies, collapse = ", ") else "-",
+            length(gone), if (length(gone)) paste(gone, collapse = ", ") else "-"))
+
+chk(sum(verifies) > 0L,
+    sprintf("T16 some consumer does verify, so the check is exercised [%d of %d]",
+            sum(verifies), length(cons)))
+
+# A pin must not be able to back a published number: the registry says so in
+# prose, and this makes it true.
+PINS <- file.path(root, "artifacts", "freeze_pins.tsv")
+if (file.exists(PINS)) {
+  pins <- utils::read.delim(PINS, comment.char = "#", stringsAsFactors = FALSE,
+                            colClasses = "character")
+  chk(nrow(pins) == 0L || !any(pins$scope == "production"),
+      sprintf("T17 no freeze pin claims production scope [%s]",
+              paste(unique(pins$scope), collapse = ", ")))
+}
+
 cat(sprintf("\n%s (%d failures)\n", if (fails == 0L) "PASS" else "FAIL", fails))
 quit(status = if (fails == 0L) 0L else 1L)

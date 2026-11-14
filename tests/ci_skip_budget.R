@@ -43,12 +43,69 @@ if (is.null(bud) || !nrow(bud)) {
   ci_finish()
 }
 
+# `full` IS INFERRED FROM ONE FILE, and the budget has only two columns.
+#
+# env_full is decided by the presence of amcb_npi_linkage_FROZEN.csv alone, and
+# the line below then calls the environment "person-level artifacts present" --
+# but there are many person-level inputs and holding one is not holding all of
+# them. Measured 2026-11-13 in a worktree that had been given only the freeze:
+# it was classified `full`, compared against the `full` column, and SB2 reported
+# five gates over budget because they skipped for OTHER absent private inputs
+# (ci_science_contracts, ci_data_regression_guard, test_cycle15_ob_capacity,
+# test_cycle19_address_provenance, test_cycle22_idempotence). None of those is a
+# budget error; the environment was misdescribed.
+#
+# PRESENT IS ALSO NOT THE SAME AS CORRECT.
+# `full` describes the skips expected when the person-level freeze is available;
+# `lean` describes a bare checkout, which is how CI runs. A machine holding a
+# freeze that is NOT the one the manifest describes is in neither state: its
+# gates do not skip for missing data, they FAIL on data that is present and
+# wrong (measured 2026-11-13 -- ci_manuscript_numbers fails with the superseded
+# 2026-08-10 freeze in place and passes with that file absent). Compared against
+# the `full` column without comment, that machine's counts drift for a reason
+# that has nothing to do with the budget, which is how two rows here came to
+# disagree on one development machine and get written off as pre-existing.
+#
+# This does not change what SB2 compares -- a stale freeze is still a full
+# environment as far as file presence goes -- it refuses to let the environment
+# line claim more than it knows.
 env_full <- file.exists(PERSON_LEVEL)
+FREEZE_MANIFEST <- file.path(root, "artifacts",
+                             "amcb_npi_linkage_FROZEN.csv.manifest.json")
+freeze_state <- "absent"
+if (env_full) {
+  freeze_state <- "unverifiable"
+  if (file.exists(FREEZE_MANIFEST) &&
+      requireNamespace("digest", quietly = TRUE) &&
+      requireNamespace("jsonlite", quietly = TRUE)) {
+    want <- tryCatch(jsonlite::read_json(FREEZE_MANIFEST)$artifact_sha256,
+                     error = function(e) NULL)
+    got <- tryCatch(digest::digest(file = PERSON_LEVEL, algo = "sha256"),
+                    error = function(e) NULL)
+    if (!is.null(want) && !is.null(got))
+      freeze_state <- if (identical(tolower(got), tolower(want))) "current" else "stale"
+  }
+}
 env_name <- if (env_full) "full" else "lean"
 col <- if (env_full) "full" else "lean"
 cat(sprintf("\nenvironment: %s (%s)\n", env_name,
-            if (env_full) "person-level artifacts present"
-            else "bare checkout, as CI runs"))
+            if (!env_full) "bare checkout, as CI runs"
+            else switch(freeze_state,
+              current = paste0("the freeze is present and matches the manifest; note `full` is ",
+                               "inferred from THAT FILE ALONE -- other person-level inputs may ",
+                               "still be absent, and a gate that skips for one of those is not ",
+                               "a budget error"),
+              stale = paste0("the freeze is present but is NOT the one the manifest describes -- ",
+                             "gates that read it FAIL rather than skip, and `full` is inferred from ",
+                             "that file alone, so counts below may not match either column"),
+              "person-level artifacts present; freeze could not be verified")))
+if (identical(freeze_state, "stale"))
+  cat("  note: a stale freeze is a third environment the budget does not model.\n",
+      "        Resolve the freeze before reading an SB2 disagreement as a budget error.\n", sep = "")
+if (env_full)
+  cat("  note: `full` means amcb_npi_linkage_FROZEN.csv is present. It does NOT mean\n",
+      "        every person-level input is. Check the named gate's own skip reason\n",
+      "        before changing a budget row.\n", sep = "")
 
 # --- SB1 every gate that can skip is declared --------------------------------
 # Static, and the reason this is not merely a count check: a NEW gate that
