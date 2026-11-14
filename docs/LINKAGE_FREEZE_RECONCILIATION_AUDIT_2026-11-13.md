@@ -196,6 +196,32 @@ None is a scientific inconsistency, and none is a regression. Evidence:
 - **L12.** `match_status` is one of the six columns the stale freeze lacks (§3),
   so the unmatched-by-reason breakdown is empty and cannot sum to its total.
 
+### The wrong freeze is worse than no freeze
+
+Measured directly, by hiding the file and running the gate again:
+
+| `artifacts/amcb_npi_linkage_FROZEN.csv` | `ci_manuscript_numbers` |
+|---|---|
+| present (the stale `dbcc76f4`) | **FAIL** — stats catalog cannot build |
+| absent (runner-equivalent) | **PASS** |
+
+So this machine is **strictly worse off than a bare CI runner**. These are not
+private-data checks that finally get to run here; they are checks that a wrong
+input poisons, and that pass when the input is simply not there. `L12` is
+registered `public` precisely because its inputs are tracked — it passes on
+every runner — and it fails here only because a superseded freeze is present
+for it to read.
+
+Two consequences:
+
+- The fastest way to make this machine's gates honest is to **move the stale
+  freeze aside**, not to keep it for the sake of having something. Until
+  `9f224007` arrives, `artifacts/amcb_npi_linkage_FROZEN.csv` is a liability.
+- This is the strongest argument for the §7.4 backlog. A consumer that calls
+  `verify_linkage_freeze()` **stops**; one of the 91 that does not **computes a
+  wrong answer and reports success**. The gates caught it here only because
+  three of them happen to assert something a stale file cannot satisfy.
+
 ### The finding that matters most
 
 `ci.yml` states that the runner "never has access to the gitignored,
@@ -288,6 +314,12 @@ Audit and guardrails only; no cohort, freeze, manifest or figure touched.
 - **Do** provision the data vault and `vault_publish()` the `9f224007…` freeze
   from the machine that built it on 2026-10-22. That is the designed path, needs
   no rebuild, and is verified by hash on arrival.
+- **Meanwhile**, consider moving `artifacts/amcb_npi_linkage_FROZEN.csv` aside
+  on this machine. A measurement above shows the gates do better with no freeze
+  than with the wrong one, and keeping it invites exactly the silent substitution
+  `docs/DATA_VAULT.md` was written about. The Trilliant identity experiment is
+  the only sanctioned reader, and it now names the file by hash through
+  `freeze_pins.tsv`, so it does not need the file under the canonical name.
 - **Then** re-run A4, A5 and `ci_science_laws` against it. A4 is expected to
   return to 0 orphans, because that was observed on 2026-09-11 against the
   post-fix freeze. A5 and L12 are expected to pass because the counts and the
