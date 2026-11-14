@@ -90,6 +90,68 @@ chk(cohort_refuses(verify_linkage_freeze(tmp, man, allow_sha256 = "")), "T19 any
 chk(!cohort_refuses(verify_linkage_freeze(tmp, man, allow_sha256 = digest::digest(file = tmp, algo = "sha256"))),
     "T20 ...unless it is named on purpose")
 
+# The environment variable is the dangerous half: ambient, invisible in the
+# script, applying to every consumer in the process. Naming a hash in code is
+# reviewable (T20); naming one in the environment now has to be declared first.
+sha_other <- digest::digest(file = tmp, algo = "sha256")
+withr_env <- function(val, expr) {
+  old <- Sys.getenv("ALLOW_FREEZE_SHA256", unset = NA)
+  Sys.setenv(ALLOW_FREEZE_SHA256 = val); on.exit(
+    if (is.na(old)) Sys.unsetenv("ALLOW_FREEZE_SHA256") else Sys.setenv(ALLOW_FREEZE_SHA256 = old))
+  force(expr)
+}
+empty_pins <- tempfile(fileext = ".tsv")
+writeLines(c("sha256\tconsumer\trows\tmembers\tscope\tdoc\tpurpose"), empty_pins)
+chk(withr_env(sha_other, cohort_refuses(verify_linkage_freeze(tmp, man, pins = empty_pins))),
+    "T20b ALLOW_FREEZE_SHA256 alone is not enough -- an undeclared pin stops")
+
+declared <- tempfile(fileext = ".tsv")
+writeLines(c("sha256\tconsumer\trows\tmembers\tscope\tdoc\tpurpose",
+             paste(sha_other, "mine.R", "1", "1", "experiment", "docs/x.md",
+                   "a dated experiment scored against this freeze", sep = "\t")),
+           declared)
+chk(!withr_env(sha_other, cohort_refuses(
+      verify_linkage_freeze(tmp, man, pins = declared, consumer = "mine.R"))),
+    "T20c ...and is enough once the pin is declared with a purpose")
+
+no_purpose <- tempfile(fileext = ".tsv")
+writeLines(c("sha256\tconsumer\trows\tmembers\tscope\tdoc\tpurpose",
+             paste(sha_other, "mine.R", "1", "1", "experiment", "docs/x.md", "",
+                   sep = "\t")),
+           no_purpose)
+chk(withr_env(sha_other, cohort_refuses(
+      verify_linkage_freeze(tmp, man, pins = no_purpose, consumer = "mine.R"))),
+    "T20d a declared row with an empty purpose is not a declaration")
+
+chk(is.na(freeze_pin_purpose(sha_other, empty_pins, "mine.R")) &&
+    !is.na(freeze_pin_purpose(sha_other, declared, "mine.R")),
+    "T20e freeze_pin_purpose() reports the purpose only when one is recorded")
+
+# The hole this closes: a pin declared for one script must not unlock the freeze
+# for a different one, or declaring it for an experiment would licence every
+# published count in the repository to read the same stale file.
+chk(is.na(freeze_pin_purpose(sha_other, declared, "someone_else.R")) &&
+    withr_env(sha_other, cohort_refuses(
+      verify_linkage_freeze(tmp, man, pins = declared, consumer = "someone_else.R"))),
+    "T20j a pin declared for one consumer does not unlock another")
+
+# The real registry must itself be well formed, or the policy is decorative.
+real_pins <- "artifacts/freeze_pins.tsv"
+if (file.exists(real_pins)) {
+  rp <- utils::read.delim(real_pins, comment.char = "#", stringsAsFactors = FALSE,
+                          colClasses = "character")
+  chk(all(c("sha256", "consumer", "rows", "members", "scope", "doc", "purpose") %in% names(rp)),
+      "T20f the pin registry has the declared columns")
+  chk(nrow(rp) == 0 || all(file.exists(trimws(rp$consumer))),
+      "T20k every pin names a consumer script that exists")
+  chk(nrow(rp) == 0 || all(grepl("^[0-9a-f]{64}$", rp$sha256)),
+      "T20g every pinned sha256 is a full 64-hex digest, not a prefix")
+  chk(nrow(rp) == 0 || !any(rp$scope == "production"),
+      "T20h no pin claims production scope -- production is the manifest's freeze")
+  chk(nrow(rp) == 0 || all(nzchar(trimws(rp$purpose)) & file.exists(rp$doc)),
+      "T20i every pin states a purpose and points at a document that exists")
+}
+
 cat("\n-- TRANSITIONS BETWEEN FREEZES --\n")
 old <- data.frame(
   certification_number = c("B1", "B2", "B3", "B4", "B5", "B6", "B7"),

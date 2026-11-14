@@ -92,6 +92,57 @@ def check(name, condition, detail=""):
         FAILURES.append(name)
 
 
+# WHY THE 153-ADDRESS RECORD NEEDS NO SENSITIVITY ANALYSIS -- AND WHAT WOULD
+# CHANGE THAT (audited 2026-11-13).
+#
+# The defect cannot perturb any estimate, because nothing downstream reads
+# either NDH artifact: the only readers are clean_cms_ndh_bulk.py, which
+# WRITES them, and this test. The NPI is also absent from
+# artifacts/amcb_npi_linkage_FROZEN.csv and from cms_ndh_bulk_cohort.csv, so
+# even a cohort-restricted consumer could not see it.
+#
+# Measured bound, kept so the number exists before it is needed rather than
+# after: in the national discovery artifact the record holds 153 of 64,941
+# addresses (0.236% of the address mass) and sets the maximum; excluding it
+# moves that maximum from 153 to 60. In cms_ndh_bulk_cohort.csv -- the file any
+# cohort analysis would actually use -- the row is not present at all, the
+# maximum is 52 across 16,361 CNMs, and no row exceeds 60.
+#
+# That premise is enforced here rather than remembered. The day a script starts
+# reading either artifact, this fails and the defect gets re-evaluated against
+# that specific use before it reaches an estimate -- which is the risk the
+# docstring above was written about ("gets fed into something that assumes NDH
+# address counts are vetted worksites"). A legitimate new consumer is added to
+# ALLOWED_NDH_READERS together with that re-evaluation; it is a tripwire, not a
+# prohibition.
+ALLOWED_NDH_READERS = ("clean_cms_ndh_bulk.py",
+                       "tests/test_cms_ndh_address_count_sanity.py")
+
+
+def check_no_cohort_reaching_consumer():
+    """Fail if anything but the producer and this test reads the NDH artifacts."""
+    import subprocess
+    tracked = subprocess.run(["git", "ls-files", "*.R", "*.py", "*.Rmd", "*.qmd"],
+                             cwd=ROOT, capture_output=True, text=True).stdout.split()
+    stems = ("cms_ndh_bulk_national_cnm", "cms_ndh_bulk_cohort")
+    readers = []
+    for rel in tracked:
+        if rel in ALLOWED_NDH_READERS:
+            continue
+        try:
+            txt = open(os.path.join(ROOT, rel), encoding="utf-8", errors="replace").read()
+        except OSError:
+            continue
+        if any(stem in txt for stem in stems):
+            readers.append(rel)
+    check("no unreviewed script consumes the NDH artifacts",
+          not readers,
+          detail=("these now read an artifact holding a known 153-address CMS "
+                  "defect; re-evaluate its effect on what they compute, then add "
+                  "them to ALLOWED_NDH_READERS: " + ", ".join(readers))
+                 if readers else None)
+
+
 def run():
     checked_any = False
     for rel_path in FILES_TO_CHECK:
@@ -136,6 +187,8 @@ def run():
         for thresh in (10, 25, 50, 100):
             n = sum(1 for r in rows if int(r.get("ndh_n_addresses", 0) or 0) > thresh)
             print(f"        {rel_path}: {n} of {len(rows)} rows have >{thresh} addresses")
+
+    check_no_cohort_reaching_consumer()
 
     if not checked_any:
         print("  SKIP  neither file present -- run clean_cms_ndh_bulk.py first")

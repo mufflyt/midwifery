@@ -90,6 +90,16 @@ chk(any(grepl("Hospital affiliation (CMS facility affiliation, CCN)", builder, f
     "the canonical Table 1 builder emits the CMS privilege-derived hospital block")
 chk(!any(grepl("Hospital affiliation (CMS facility affiliation, CCN)", qmd, fixed = TRUE)),
     "the mobility manuscript does not select the privilege-derived hospital block")
+
+# The block stays (2026-11-13 decision), so the caveat that keeps it honest has
+# to stay with it. A CCN privilege is not a practice location, and the column
+# label alone does not say so -- a reader who takes these rows as locations
+# overcounts where midwives work. Asserted on the builder, not on the rendered
+# table, because the table is gitignored on a fresh checkout and this must be
+# checked on every machine, including CI.
+chk(any(grepl("Medicare facility", builder, fixed = TRUE)) &&
+    any(grepl("not a practice location", builder, fixed = TRUE)),
+    "the Table 1 builder states that a CCN privilege is not a practice location")
 chk(any(grepl("Primary claims-site setting", builder, fixed = TRUE)),
     "the canonical Table 1 builder emits the primary-site setting detail")
 chk(any(grepl("not recorded/unresolved/not applicable", qmd, fixed = TRUE)),

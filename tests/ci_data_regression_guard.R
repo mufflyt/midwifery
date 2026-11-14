@@ -437,4 +437,130 @@ if (length(sidecars) == 0) {
   }
 }
 
+# -----------------------------------------------------------------------------
+ci_section("D11 the freeze manifest's membership rule matches the code that applies it")
+
+# PUBLIC, cross-source. The manifest's `membership_rule` is the SCIENTIFIC
+# statement of who is in the cohort; COHORT_MEMBERSHIP_TIERS in
+# R/amcb_cohort_membership.R is the IMPLEMENTATION that decides it, and
+# reconcile_linkage.R writes cohort_member by calling the latter. Nothing has
+# ever held the two together, so an edit to either side alone leaves the
+# manifest describing a cohort the pipeline does not build -- the drift #244
+# found between two copies of a definition, in a worse place, because this copy
+# is what a reader is told the cohort means.
+#
+# Both sides are tracked, so unlike A4/A5 this runs on a runner with no
+# person-level data. It fires on a deliberate change too, which is correct: a
+# cohort rule is not something to move without updating the file that states it.
+fm_path <- drg_path("artifacts", "amcb_npi_linkage_FROZEN.csv.manifest.json")
+memb_path <- drg_path("R", "amcb_cohort_membership.R")
+if (!file.exists(fm_path) || !file.exists(memb_path)) {
+  ci_fail("D11: %s and/or %s is committed and absent", fm_path, memb_path)
+} else {
+  fm <- read_json(fm_path)
+  rule <- unlist(fm$membership_rule)
+  src <- readLines(memb_path, warn = FALSE)
+  i <- grep("^COHORT_MEMBERSHIP_TIERS\\s*<-\\s*c\\(", src)
+  if (!length(rule) || !length(i)) {
+    ci_fail("D11: could not read membership_rule from the manifest (%d tier(s)) or COHORT_MEMBERSHIP_TIERS from %s (%d match(es))",
+            length(rule), basename(memb_path), length(i))
+  } else {
+    close_i <- i + which(grepl("^\\s*\\)", src[(i + 1):length(src)]))[1]
+    tiers <- regmatches(src[i:close_i],
+                        gregexpr('"[^"]+"', src[i:close_i]))
+    tiers <- gsub('"', "", unlist(tiers))
+    missing_in_code <- setdiff(rule, tiers)
+    missing_in_manifest <- setdiff(tiers, rule)
+    if (length(missing_in_code) || length(missing_in_manifest)) {
+      ci_fail(paste0("D11: the cohort rule and its implementation disagree.\n",
+                     "       in the manifest but not COHORT_MEMBERSHIP_TIERS: %s\n",
+                     "       in COHORT_MEMBERSHIP_TIERS but not the manifest: %s\n",
+                     "       One of the two was edited alone. Fix whichever is wrong; do not\n",
+                     "       widen the rule to make this pass."),
+              if (length(missing_in_code)) paste(missing_in_code, collapse = ", ") else "(none)",
+              if (length(missing_in_manifest)) paste(missing_in_manifest, collapse = ", ") else "(none)")
+    } else {
+      ci_ok("%d membership tier(s) agree between the manifest and COHORT_MEMBERSHIP_TIERS: %s",
+            length(rule), paste(rule, collapse = ", "))
+    }
+  }
+}
+
+# -----------------------------------------------------------------------------
+ci_section("D12 the freeze lineage: distinct hashes, and the archive claim holds")
+
+# PUBLIC. The freeze CSVs are gitignored, but every one of them has a TRACKED
+# manifest, and those manifests make checkable claims about each other. On
+# 2026-11-13 the current manifest described 9f224007... while the file in
+# artifacts/ was dbcc76f4..., the 2026-08-10 freeze -- the vintage
+# docs/DATA_VAULT.md records as having produced a build describing 11,920
+# midwives instead of 12,171. Nothing in CI could see the file, but these
+# manifest-only invariants are visible on any checkout:
+#
+#   - cohort_members cannot exceed artifact_rows;
+#   - every manifest's artifact_sha256 is a full 64-hex digest;
+#   - the lineage's hashes are DISTINCT, so two freezes are never one file;
+#   - the CURRENT manifest's hash is not also an ARCHIVED one, which would mean
+#     the freeze described as current is a vintage that was already superseded;
+#   - when the current manifest's decision text names the outgoing freeze it
+#     archived ("(sha256 <64 hex>)"), that hash must be some archived
+#     manifest's artifact_sha256 -- otherwise the archive it claims to have
+#     written is not the file that is there.
+fm_all <- Sys.glob(drg_path("artifacts", "amcb_npi_linkage_FROZEN*.csv.manifest.json"))
+if (!length(fm_all)) {
+  ci_fail("D12: no tracked freeze manifest found -- these are committed")
+} else {
+  bad <- character(0)
+  shas <- stats::setNames(rep(NA_character_, length(fm_all)), basename(fm_all))
+  for (f in fm_all) {
+    m <- read_json(f)
+    sha <- if (is.null(m$artifact_sha256)) "" else tolower(m$artifact_sha256)
+    rows <- if (is.null(m$artifact_rows)) NA_integer_ else as.integer(m$artifact_rows)
+    memb <- if (is.null(m$cohort_members)) NA_integer_ else as.integer(m$cohort_members)
+    if (!grepl("^[0-9a-f]{64}$", sha)) {
+      bad <- c(bad, sprintf("%s: artifact_sha256 is not a 64-hex digest", basename(f)))
+    } else {
+      shas[basename(f)] <- sha
+    }
+    if (!is.na(rows) && !is.na(memb) && memb > rows) {
+      bad <- c(bad, sprintf("%s: cohort_members (%s) exceeds artifact_rows (%s)",
+                            basename(f), format(memb, big.mark = ","),
+                            format(rows, big.mark = ",")))
+    }
+  }
+  known <- shas[!is.na(shas)]
+  dup <- names(known)[duplicated(known) | duplicated(known, fromLast = TRUE)]
+  if (length(dup)) {
+    bad <- c(bad, sprintf("two freeze manifests claim one hash: %s",
+                          paste(sort(dup), collapse = ", ")))
+  }
+  cur_name <- "amcb_npi_linkage_FROZEN.csv.manifest.json"
+  if (cur_name %in% names(known)) {
+    cur <- known[[cur_name]]
+    arch <- known[names(known) != cur_name]
+    if (cur %in% arch) {
+      bad <- c(bad, sprintf("the current manifest's hash %s... is also archived as %s -- the 'current' freeze is a superseded vintage",
+                            substr(cur, 1, 8),
+                            paste(names(arch)[arch == cur], collapse = ", ")))
+    }
+    cm <- read_json(drg_path("artifacts", cur_name))
+    dec <- if (is.null(cm$decision)) "" else as.character(cm$decision)
+    claim <- regmatches(dec, regexpr("sha256 [0-9a-f]{64}", dec))
+    if (length(claim)) {
+      claimed <- sub("^sha256 ", "", claim)
+      if (!claimed %in% arch) {
+        bad <- c(bad, sprintf("the decision says it archived the outgoing freeze as sha256 %s..., which no archived manifest describes",
+                              substr(claimed, 1, 8)))
+      }
+    }
+  }
+  if (length(bad)) {
+    ci_fail("D12: %d freeze-lineage problem(s):\n       %s",
+            length(bad), paste(bad, collapse = "\n       "))
+  } else {
+    ci_ok("%d freeze manifest(s) form a consistent lineage: distinct 64-hex hashes, members <= rows, and the archive claim resolves",
+          length(fm_all))
+  }
+}
+
 ci_finish()
