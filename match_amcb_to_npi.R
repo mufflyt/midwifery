@@ -66,12 +66,21 @@ root_dir <- {
 # rank_one_to_one() below is copied verbatim from isochrones commit
 # 56471c3f5^ (R/npi_resolution.R) -- the revision immediately BEFORE that
 # repo's rank_one_to_one() was refactored to require mysterynpi >= 0.8.0
-# (mysterynpi::resolve_one_to_one()). This project pins mysterynpi at
-# ac42561b (see ci.yml / nightly.yml), which predates that function, so the
-# current isochrones version cannot run here; this older, fully
-# self-contained version can, and is what has actually been producing this
-# pipeline's output. norm_name() now calls mysterynpi directly rather than
-# going through isochrones' own thin wrapper around the same package.
+# (mysterynpi::resolve_one_to_one()).
+#
+# THE PIN NOW CLEARS THAT FLOOR, AND THE VENDORED COPY STAYS ANYWAY. As of
+# 691daaf (mysterynpi 0.9.0) this project pins a version that HAS
+# resolve_one_to_one(), so the original reason for vendoring -- the pin
+# predating the function -- no longer holds. The copy is kept deliberately:
+# it is the function that has actually produced every frozen artifact this
+# repository publishes, and swapping it for upstream's would change
+# one-to-one resolution in the same change that revises the name rules,
+# leaving two candidate explanations for any difference in the output. If
+# upstream resolution is adopted, it goes in its own separately audited
+# change, measured against a freeze that differs only in that respect.
+#
+# norm_name() calls mysterynpi directly rather than going through
+# isochrones' own thin wrapper around the same package.
 norm_name <- function(x) mysterynpi::name_key(x)
 safe_pct <- function(n, d) {
   if (length(d) != 1L || is.na(d) || d == 0) return(0)

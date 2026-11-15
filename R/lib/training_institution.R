@@ -58,7 +58,7 @@ strip_med_suffix <- function(x) {
       !"strip_med_suffix" %in% getNamespaceExports("mysterynpi"))
     stop("strip_med_suffix() now lives in mysterynpi, and the installed copy ",
          "does not have it. Install the version CI pins: ",
-         "remotes::install_github(\"mufflyt/mysterynpi@ac42561b46d400a7e62649ee0161313628d914e8\")", call. = FALSE)
+         "remotes::install_github(\"mufflyt/mysterynpi@691daaf99bb9a5fd44c3e1907fcfc017169105ba\")", call. = FALSE)
   mysterynpi::strip_med_suffix(x)
 }
 
