@@ -50,13 +50,33 @@ cat("\n-- amcb_parse_person(): the NA-contract shim --\n")
       identical(got1b$last, "PUBLIC"),
       "T1 a full name keeps every present part, and an absent middle becomes NA, not ''")
 
-  # T1b. And if mysterynpi ever DOES start returning a suffix, say so instead
-  # of silently passing: the shim would then need to carry it through the same
-  # NA conversion, and a column added upstream is exactly the kind of change
-  # that goes unnoticed until a caller reads "" where it expected NA.
-  chk(identical(names(got1), c("first", "middle", "last")),
-      sprintf("T1b parse_person() still returns exactly first/middle/last [%s]",
+  # T1b. THE TRIPWIRE FIRED, AND THIS IS WHAT IT CAUGHT (2026-11-15).
+  #
+  # T1b previously asserted the column set was exactly first/middle/last, and
+  # said in as many words: "if mysterynpi ever DOES start returning a suffix,
+  # say so instead of silently passing". Pinning mysterynpi at 691daaf (0.9.0)
+  # did exactly that -- parse_person() now returns a fourth column, `suffix`,
+  # populated by its own extract_suffix() before strip_name_noise() can delete
+  # it -- and this assertion went red on the pin bump rather than at some later
+  # point when a caller read "" where it expected NA. That is the test working.
+  #
+  # THE EXPECTATION IS UPDATED, NOT RELAXED. The set is still asserted
+  # EXACTLY, so a fifth column is still a red test tomorrow; only the known
+  # value has moved from three names to four. And the NA contract this shim
+  # exists to enforce is now asserted ON the new column rather than assumed:
+  # amcb_parse_person() converts every column it is handed, so `suffix` is
+  # covered by construction, and T1c below proves it on a name that has one.
+  chk(identical(names(got1), c("first", "middle", "last", "suffix")),
+      sprintf("T1b parse_person() returns exactly first/middle/last/suffix [%s]",
               paste(names(got1), collapse = ", ")))
+
+  # T1c. The shim's NA conversion reaches the new column. An absent suffix
+  # must arrive as NA, never "", on the same footing as an absent middle --
+  # otherwise the shim's one job is done for three columns out of four.
+  got1c <- amcb_parse_person("Jane Q Public Jr")
+  chk(is.na(got1$suffix) && identical(got1c$suffix, "JR"),
+      sprintf("T1c an absent suffix becomes NA and a present one survives [%s / %s]",
+              format(got1$suffix), format(got1c$suffix)))
 
   # T2. Blank input and explicit NA input must both normalise to ALL-NA
   # parts -- not an empty string anywhere, which is exactly the distinction

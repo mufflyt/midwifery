@@ -166,6 +166,24 @@ REBUILD_ORDER <- list(
                    # free.
                    "compare_nppes_to_dac_demographics.R",
                    "audit_linkage_arms_3way.R",
+                   # Added 2026-11-14 by T5 again -- the eighth catch, in the
+                   # pull request that introduced it.
+                   #
+                   # audit_mysterynpi_migration.R measures what a change in the
+                   # pinned mysterynpi version does to the name decisions the
+                   # matcher makes, over the freeze's own roster. Its report is
+                   # a claim about a PARTICULAR cohort's name comparisons, so a
+                   # rebuild that promotes a new cohort invalidates it the same
+                   # way it invalidates any other description of the crosswalk.
+                   #
+                   # Belongs in this layer for the same reason the other audits
+                   # do: it describes the crosswalk and feeds nothing
+                   # downstream, so its order within the layer is free. It
+                   # writes outside artifacts/ entirely (the caller names the
+                   # output directory), so it cannot collide with a rebuild's
+                   # own writes. In "diff" mode it reads no freeze at all and
+                   # only compares two probe directories.
+                   "audit_mysterynpi_migration.R",
                    # Added 2026-11-09 by T5 again, in the pull request that
                    # added Medicare Part B and Part D to the source comparison
                    # -- the seventh catch.
