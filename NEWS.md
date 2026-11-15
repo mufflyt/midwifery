@@ -20,6 +20,127 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-14 — the 123-member freeze mystery was a dependency, not an arithmetic error
+
+### Changed
+
+- **`mysterynpi` pinned at `691daaf` (0.9.0), up from `ac42561b`
+  (0.3.1.9000)**, at all three sites that name it (`.github/workflows/ci.yml`,
+  `.github/workflows/nightly.yml`, `R/lib/training_institution.R`). The
+  upgrade carries a correction to `middle_agreement()` that this repository
+  paid for in published output.
+
+  **The defect.** A hyphen in a middle name was read as a name *boundary*, so
+  `"MARIE-LEFEVER"` conflicted with `"MARIE LEFEVER"` — the same name,
+  differently punctuated — and a conflict there **vetoes a candidate**. AMCB
+  certificant `CNM04881` was published as `"unmatched"` against NPI
+  `1619274149`, which records that middle name in **eight consecutive annual
+  snapshots**. "Unmatched" is indistinguishable from absent from the registry
+  entirely, so the freeze reported a correctly identified midwife as missing.
+
+  **Why the tokenizer is still right.** `503a37e` stopped the tokenizers
+  splitting on a hyphen because splitting `"Mary-Jane"` into `MARY`/`JANE` let
+  it satisfy `person_matches()`'s shared-token requirement against an unrelated
+  `"Jane"`. That reasoning holds where a shared token is evidence **for** a
+  match and inverts where a token mismatch is a **veto**: there, under-splitting
+  produces false negatives, and the veto is silent. The fix therefore lives in
+  `middle_agreement()` alone; `middle_tokens()`, `given_tokens()` and
+  `person_matches()` are untouched upstream, and the `503a37e` false positive is
+  asserted still fixed rather than assumed.
+
+  Measured over this study's full pre-veto candidate corpus — 319,744
+  roster × registry name-variant comparisons, 306,138 distinct pairs — the
+  correction changes **9** middle-name verdicts and lifts **8** candidate
+  vetoes, adding **none**. Every one is the same name differently punctuated
+  (`MARIE-LEFEVER`/`MARIE LEFEVER`, `DE BRUIJN`/`DEBRUIJN`, `RAEANNE`/`RAE
+  ANNE`, `VANHORN`/`VAN HORN`, `DE'JOURA`/`DEJOURA`, `RENE`/`RENE'`,
+  `RENEE'`/`RENEE`, `JENEE`/`JENEE'`).
+
+  **Nothing is promoted here.** No FROZEN artifact, manifest or cohort is
+  touched. A lifted veto restores *candidacy*, not a match: the candidate
+  re-enters ranking and must still win on the evidence.
+
+- **The pin bump tripped `T1b`, which is the entire reason `T1b` exists.**
+  `parse_person()` at the new pin returns a fourth column, `suffix`. T1b
+  asserted the set was exactly `first/middle/last` and said in as many words
+  "if mysterynpi ever DOES start returning a suffix, say so instead of silently
+  passing" — so it went red on the dependency change rather than later, when a
+  caller read `""` where it expected `NA`.
+
+  The expectation is **updated, not relaxed**: the column set is still asserted
+  **exactly**, so a fifth column is still red tomorrow, and new **T1c** proves
+  the shim's NA conversion reaches `suffix` (`"Jane Q Public Jr"` → `"JR"`,
+  absent → `NA`). `amcb_parse_person()`'s conversion was already
+  column-agnostic, so the new column inherited the NA contract for free; that
+  is now asserted rather than assumed.
+
+### Added
+
+- **`audit_mysterynpi_migration.R`** — a differential audit of every
+  `mysterynpi` entry point the matcher can reach, run against both pinned
+  versions over the same corpus, with input hashes recorded per probe and the
+  diff **refusing to run** if they disagree.
+
+  It is exhaustive on purpose. The 123-member reconciliation spent days on the
+  wrong hypothesis: `first_initial()` was never called on that path, and both
+  revisions of `norm_name()` resolve to the same `name_key()` call. The real
+  cause was `split_given()`, which nobody had listed as a suspect. Selective
+  reasoning about which function *ought* to matter is the failure mode this
+  script removes.
+
+  Differences are bucketed as `representational` / `blocking` / `evidence` /
+  `class5` / `parse`, because a changed *string* and a changed *decision* are
+  not the same event. The script also records which functions the production
+  matcher actually calls, so a downstream effect cannot be attributed to a
+  function the linkage never invokes.
+
+- **`docs/TECHNICAL_APPENDIX_MYSTERYNPI_MIGRATION.md`** — the full narrative:
+  the two refuted hypotheses, the two real causes (`cb86e56` punctuation
+  stripping, which explains all 1,278 middle-name and 129 given-name
+  differences with **zero residual**; and `503a37e`'s hyphen rule), the
+  identification of the exact build that produced `9f224007` (mysterynpi
+  0.7.0, built 2026-09-28 20:02:43 UTC, found by observation on the machine
+  that built it), the upstream fix, and the reproduction recipe.
+
+- **Semantic package fingerprints in every artifact sidecar.**
+  `R/lib/artifact_provenance.R` now records the version **and source commit**
+  of each package whose name semantics can move a result (`mysterynpi`,
+  `stringi`, `humaniformat`). "Which matcher built this freeze?" cost days of
+  machine archaeology to answer; it is now one field in the sidecar. A CRAN
+  package reports `source_sha = NA` — the honest answer — and a package that is
+  not installed appears with `installed = FALSE` rather than being omitted, so
+  "absent" and "never asked" cannot look alike.
+  `tests/test_semantic_package_fingerprint.R` pins this (T1–T12).
+
+- **`tests/test_data_vault_saboteurs.R`** — 20 saboteurs (S1–S20) against
+  `R/lib/data_vault.R`, with **five real gaps recorded as findings** rather
+  than papered over. Two are worth naming because the first guess was wrong in
+  both cases: a stale `.partial` **does** block a republish
+  (`file.copy(overwrite = FALSE)`), and a squatted destination directory is
+  caught by the early `file.exists()` branch, which makes the unchecked
+  `file.rename` unreachable at runtime — so S9 is a source assertion and says
+  why.
+
+### Recorded, not acted on
+
+- **The new pin clears the `mysterynpi >= 0.8.0` floor** that originally forced
+  `rank_one_to_one()` to be vendored into `match_amcb_to_npi.R`. The vendored
+  copy **stays**, and the header now says why: it produced every frozen
+  artifact this repository publishes, and swapping it for upstream's
+  `resolve_one_to_one()` in the same change that revises the name rules would
+  leave two candidate explanations for any difference in the output.
+
+- **Three `surname_agreement()` classifications changed** between the two pins
+  (`Erickson-Owens`/`ERICKSONOWENS` and `Meslar-Little`/`MESLARLITTLE`
+  conflicts → corroborates, both corrections; `Gener Montan`/`GENER BETANCOURT`
+  corroborates → conflicts, a tightening). **None can affect an AMCB linkage
+  decision:** `surname_agreement()` appears nowhere in
+  `match_amcb_to_npi.R`, `R/amcb_match_rules.R` or `R/amcb_name_keys.R` —
+  established by enumerating every `mysterynpi::` and `amcb_*` symbol in all
+  three. Its only consumers here are the Trilliant identity experiment. They
+  are recorded because incidental package drift is what caused the original
+  123-row mystery, not because they move a cohort member.
+
 ## [Unreleased] — 2026-11-12 — OIG remake Phase 1 committed; a real DAC multi-site ZIP bug fixed in review (D13)
 
 ### Added

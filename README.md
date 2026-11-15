@@ -880,6 +880,37 @@ instead. Both A/B arms (`…years-2007-2026.csv` and `…years-through-2017.csv`
 were regenerated with the same fix before reconciling, each archived at its
 own `_2026-10-22` sidecar before being overwritten.
 
+### The 123-member movement between the two earlier freezes was a dependency
+
+`dbcc76f4…` (2026-08-10, 16,898 members) and `1a7bd6a8…` (2026-09-10, 17,028)
+were built from **byte-identical input** and differ by 123 cohort members.
+Nothing in this repository explained it, and the first two hypotheses were
+wrong: `first_initial()` was never called on that path, and both revisions of
+`norm_name()` resolve to the same `name_key()` call. The cause was underneath
+the pipeline — `mysterynpi`, which owns every name rule the matcher uses, had
+changed semantics without a `NEWS` entry:
+
+| upstream change | effect here | verdict |
+|---|---|---|
+| `cb86e56` (2026-09-13) — `split_given()` strips `[.,]` | explains all **1,278** normalised middle names and **129** given names that moved, with **zero residual** | correct; an initial and the same initial with a period are one initial |
+| `503a37e` — tokenizers stopped splitting on a hyphen | `"MARIE-LEFEVER"` conflicted with `"MARIE LEFEVER"`, and a middle-name conflict **vetoes a candidate** | correct for `person_matches()`, wrong for `middle_agreement()` |
+
+The second one has a named cost. AMCB certificant `CNM04881` was published as
+`"unmatched"` against NPI `1619274149`, which records that middle name in
+**eight consecutive annual snapshots** — same person, same name, different
+punctuation. "Unmatched" is indistinguishable from absent from the registry
+entirely. Fixed upstream in `mysterynpi` 0.9.0 (`691daaf`), which this
+repository now pins; measured over the full pre-veto candidate corpus
+(306,138 distinct pairs) the correction lifts **8** candidate vetoes and adds
+**none**.
+
+**A lifted veto restores candidacy, not a match** — the candidate re-enters
+ranking and must still win on the evidence, so a changed verdict is not a
+changed cohort member. The two are reconciled separately, by shadow rebuild,
+and no FROZEN artifact has been modified. See
+[`docs/TECHNICAL_APPENDIX_MYSTERYNPI_MIGRATION.md`](docs/TECHNICAL_APPENDIX_MYSTERYNPI_MIGRATION.md)
+and [`audit_mysterynpi_migration.R`](audit_mysterynpi_migration.R).
+
 ## Attribute layers: what we know about each midwife
 
 Identity and geography answer *who* and *where*. Four further layers answer
@@ -1582,6 +1613,20 @@ available for the artifact you are checking:
 To reproduce a specific published figure, use the **commit SHA in that
 artifact's sidecar**, not the version number in `NEWS.md` — those are
 retrospective groupings of 280 commits, not tags.
+
+**A fourth mechanism, added 2026-11-14: semantic package fingerprints.** The
+commit pins *this* repository; it does not pin the packages underneath it. Two
+freezes built three days apart from byte-identical input differed by 123 cohort
+members because `mysterynpi` — which owns every name normalisation and
+agreement rule the matcher uses — had changed semantics without a `NEWS` entry.
+Answering "which matcher built this freeze?" took machine archaeology. Sidecars
+now record the version **and source commit** of every package whose name
+semantics can move a result (`mysterynpi`, `stringi`, `humaniformat`); a CRAN
+package honestly reports `source_sha = NA`, and a package that is not installed
+appears with `installed = FALSE` rather than being omitted. The pinned
+`mysterynpi` is **`691daaf`** (0.9.0), named in `ci.yml`, `nightly.yml` and
+`R/lib/training_institution.R`. Full narrative:
+[`docs/TECHNICAL_APPENDIX_MYSTERYNPI_MIGRATION.md`](docs/TECHNICAL_APPENDIX_MYSTERYNPI_MIGRATION.md).
 
 ### Tier A — cohort and identity
 
