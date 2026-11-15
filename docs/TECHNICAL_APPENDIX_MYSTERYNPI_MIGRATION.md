@@ -351,6 +351,146 @@ everything but the package held constant.
 
 ---
 
+## 4c. Results: the three-arm shadow reconciliation
+
+Run 2026-11-15. Three rebuilds of the base linkage, all at commit `692a5a4`,
+all reading the same symlinked roster and panel, differing **only** in the
+installed `mysterynpi`:
+
+| arm | `mysterynpi` | location |
+|---|---|---|
+| 1 | `0.3.1.9000` (old pin) | `/tmp/mw-shadow-old` |
+| 2 | `0.9.0` | `/tmp/mw-shadow` |
+| 3 | `0.9.1` (current pin) | `/tmp/mw-shadow-091` |
+
+### Loading the old package required `R_PROFILE`, not `R_LIBS`
+
+Worth recording, because all three obvious approaches fail silently. This
+project's R is a *portable* install whose `etc/Rprofile.site` calls
+
+```r
+.libPaths(c(file.path(r_home, "library"), .Library))
+```
+
+outright, which **discards `R_LIBS`, `R_LIBS_USER` and `R_LIBS_SITE` alike**.
+Each of the three returned the *current* version with no warning; only
+`--vanilla` behaved differently, which is what localised the cause.
+
+Editing a shared site file to run one experiment is not acceptable, so arm 1
+runs under `R_PROFILE` pointing at a wrapper that `sys.source()`s the real site
+profile first — applying the portable configuration exactly as normal — and
+*then* prepends a symlink farm: every package from the main library, with only
+`mysterynpi` redirected to the `0.3.1.9000` build. Nothing in the shared
+library is modified. The wrapper **stops the run** if the loaded version is not
+`0.3.1.9000`, and echoes it as its first log line, so this arm cannot quietly
+execute the wrong package. That guard exists because an earlier comparison in
+this work *did* silently load the wrong source and had to be retracted.
+
+### Arm 1 -> arm 3: 10 of 22,309 records (0.045%)
+
+| | n |
+|---|---:|
+| NPI assignment changed | **10** |
+| gained an NPI | 8 |
+| lost an NPI | 1 |
+| swapped NPI | 1 |
+| normalised name strings changed | **0** |
+
+Normalised names do not move at all, which is consistent with §1.2: `cb86e56`'s
+punctuation stripping is already present in the old pin.
+
+Every changed record, in full:
+
+| cert | status | roster middle | registry | outcome |
+|---|---|---|---|---|
+| `7820` | RETIRED | `DE BRUIJN` | `DEBRUIJN` | gained, -> class 1 |
+| `CNM06929` | ACTIVE | `JENEE` | `JENEE'` | gained, -> class 1 |
+| `CNM07737` | ACTIVE | `RENEE'` | `RENEE` | gained, -> class 1 |
+| `CNM10904` | ACTIVE | `DEJAUNNA` | `DE JAUNNA` | gained, -> class 1 |
+| `CNM1242` | LAPSED | `RENE` | `RENE'` | gained, -> class 1 |
+| `CNM1558` | ACTIVE | `RAEANNE` | `RAE ANNE` | gained, -> class 1 |
+| `CNM2767` | ACTIVE | `RENEE` | `RENEE'` | gained, -> class 1 |
+| `CNM2783` | ACTIVE | `SHABAD-JIT` | `S` | gained, -> class 1 |
+| `CNM10691` | ACTIVE | `DE'JOURA` | `DEJOURA` | swapped, **class 3 -> 1** |
+| `11191` | RETIRED | `GAIL-ROSANNE` | `GAIL` | **lost**, class 1 -> none |
+
+Nine are defensible on sight: separator and apostrophe variants of one name,
+plus `CNM10691` upgrading from a nursing-taxonomy record to the midwifery one.
+
+**`11191` is a regression and is flagged, not endorsed.** It is the
+compound-versus-half veto `503a37e` introduces: the old pin split
+`GAIL-ROSANNE` into `GAIL`/`ROSANNE`, shared `GAIL`, and matched; the new pin
+reads one token, classifies it `component_subset`, and vetoes. The certificant
+is RETIRED and therefore outside the ACTIVE study population, but a woman whose
+middle name is "Gail-Rosanne" being recorded as "Gail" is entirely ordinary,
+and this one should be ruled on by a human rather than accepted because the
+aggregate looks good.
+
+**Six of the ten arrived as `ambiguous_tied_names -> matched`** — the winner's
+own verdict did not improve; competing candidates were *vetoed*, breaking a
+tie. So the added vetoes of §4a are not purely destructive: they also resolve
+ambiguity. This is the clearest demonstration that a verdict count and a
+membership count are different quantities.
+
+### ACTIVE subset (15,285)
+
+| `npi_match_status` | arm 1 | arm 3 | delta |
+|---|---:|---:|---:|
+| `matched` | 12,643 | 12,650 | **+7** |
+| `ambiguous_tied_names` | 1,284 | 1,278 | **-6** |
+| `matched_nursing_taxonomy` | 727 | 726 | **-1** |
+| `unmatched` | 594 | 594 | 0 |
+| `ambiguous_contested_npi` | 31 | 31 | 0 |
+| `ambiguous_unruled_out_component` | 6 | 6 | 0 |
+
+Evidence-class 1 among ACTIVE: **7,727 -> 7,734**. Distinct NPIs assigned
+roster-wide: **17,217 -> 17,224**.
+
+### Arm 2 -> arm 3: zero changes
+
+The punctuation-only-token defect of §4a has **no realised cohort effect** in
+this corpus. Not one NPI assignment, match status or evidence class differs
+between 0.9.0 and 0.9.1: the 12 affected candidate pairs were already
+non-matches for other reasons. The fix remains correct — a phone number must
+never veto a match — but it was not costing this study anything, and saying so
+is more useful than assuming it was.
+
+### What these numbers are NOT comparable to
+
+All three arms are built from the **on-disk 22,309-row roster**, not the
+freeze's 22,357 (§4b). So **none of these counts may be set beside 16,775 or
+163.** The 123-row question and the 156/163 class-5 holdout behaviour still
+require a roster matching the 2026-09-02 scrape, which is not on this machine.
+This is also the base linkage only: `freeze_cohort.R`'s class-5 guard has not
+run.
+
+### Per-record detail
+
+`qa/mysterynpi_migration/` — `npi_changed_arm1_to_arm3.csv`,
+`status_changed_arm1_to_arm3.csv` and the arm-to-arm diff script.
+**`qa/` is gitignored**, because those rows pair a certification number with an
+NPI.
+
+### Recommendation on promotion
+
+The **dependency upgrade is defensible** on this evidence: 0.045% of records
+move, nine of ten toward stronger identity evidence, and the only loss sits
+outside the ACTIVE population.
+
+**Promoting a new canonical freeze is a separate decision and is not yet
+supported**, on two conditions that remain open:
+
+1. **`11191` needs a ruling.** The compound-versus-half rule is conservative by
+   design, and this is the case where that conservatism costs a real match.
+2. **Re-run against the correct roster vintage.** Until the arms are built from
+   the 2026-09-02 scrape, no statement about cohort membership, the 123-row
+   difference, or the class-5 holdout can be made from them.
+
+Recovering the old 16,898-member cohort by adjusting name rules remains
+explicitly not a goal.
+
+---
+
 ## 5. Provenance: the question that cost days is now one field
 
 `R/lib/artifact_provenance.R` records, in every artifact's sidecar, the version
