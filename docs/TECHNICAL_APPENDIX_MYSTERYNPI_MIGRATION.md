@@ -1,4 +1,4 @@
-# Technical appendix — migrating the `mysterynpi` pin from `ac42561b` to `691daaf`
+# Technical appendix — migrating the `mysterynpi` pin from `ac42561b` to `aa5d94c`
 
 **Status:** dependency upgrade and differential audit. **No canonical FROZEN
 artifact, manifest or cohort is modified by this work.** Whether the corrected
@@ -92,6 +92,11 @@ Two PRs, both merged:
 |---|---|---|
 | [#48](https://github.com/mufflyt/mysterynpi/pull/48) | `8fc2ecf25a8bcba518bea44709ae4f19321dc118` | DuckDB lambdas off the deprecated `->` arrow — unblocked a fully red CI matrix |
 | [#47](https://github.com/mufflyt/mysterynpi/pull/47) | `691daaf99bb9a5fd44c3e1907fcfc017169105ba` | the scientific correction, `Version: 0.9.0` |
+| [#49](https://github.com/mufflyt/mysterynpi/pull/49) | `aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a` | **the defect this audit found**, `Version: 0.9.1` — a token must carry a letter |
+
+**The pin is `aa5d94c` (0.9.1).** §4a records why: the differential found a
+phone number in a registry middle-name field vetoing matches, and pinning
+0.9.0 would carry that defect.
 
 ### 2.1 Why #48 had to come first
 
@@ -414,7 +419,7 @@ git -C ~/mysterynpi worktree add /tmp/mn-oldpin ac42561b46d400a7e62649ee01613136
 R CMD INSTALL --no-multiarch -l /tmp/lib_old /tmp/mn-oldpin
 
 # 2. the current pin, exactly as CI installs it
-Rscript -e 'remotes::install_github("mufflyt/mysterynpi@691daaf99bb9a5fd44c3e1907fcfc017169105ba", upgrade = "never")'
+Rscript -e 'remotes::install_github("mufflyt/mysterynpi@aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a", upgrade = "never")'
 
 # 3. both probes, then the diff
 Rscript audit_mysterynpi_migration.R probe /tmp/lib_old /tmp/probe_old

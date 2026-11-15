@@ -69,7 +69,7 @@ root_dir <- {
 # (mysterynpi::resolve_one_to_one()).
 #
 # THE PIN NOW CLEARS THAT FLOOR, AND THE VENDORED COPY STAYS ANYWAY. As of
-# 691daaf (mysterynpi 0.9.0) this project pins a version that HAS
+# aa5d94c (mysterynpi 0.9.1) this project pins a version that HAS
 # resolve_one_to_one(), so the original reason for vendoring -- the pin
 # predating the function -- no longer holds. The copy is kept deliberately:
 # it is the function that has actually produced every frozen artifact this

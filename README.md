@@ -899,7 +899,7 @@ The second one has a named cost. AMCB certificant `CNM04881` was published as
 `"unmatched"` against an NPPES record carrying that middle name in
 **eight consecutive annual snapshots** — same person, same name, different
 punctuation. "Unmatched" is indistinguishable from absent from the registry
-entirely. Fixed upstream in `mysterynpi` 0.9.0 (`691daaf`), which this
+entirely. Fixed upstream in `mysterynpi` 0.9.0, which this
 repository now pins; measured over the full pre-veto candidate corpus
 (306,138 distinct pairs) the correction lifts **8** candidate vetoes and adds
 **none**.
@@ -1624,7 +1624,7 @@ now record the version **and source commit** of every package whose name
 semantics can move a result (`mysterynpi`, `stringi`, `humaniformat`); a CRAN
 package honestly reports `source_sha = NA`, and a package that is not installed
 appears with `installed = FALSE` rather than being omitted. The pinned
-`mysterynpi` is **`691daaf`** (0.9.0), named in `ci.yml`, `nightly.yml` and
+`mysterynpi` is **`aa5d94c`** (0.9.1), named in `ci.yml`, `nightly.yml` and
 `R/lib/training_institution.R`. Full narrative:
 [`docs/TECHNICAL_APPENDIX_MYSTERYNPI_MIGRATION.md`](docs/TECHNICAL_APPENDIX_MYSTERYNPI_MIGRATION.md).
 
