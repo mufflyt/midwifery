@@ -896,7 +896,7 @@ changed semantics without a `NEWS` entry:
 | `503a37e` — tokenizers stopped splitting on a hyphen | `"MARIE-LEFEVER"` conflicted with `"MARIE LEFEVER"`, and a middle-name conflict **vetoes a candidate** | correct for `person_matches()`, wrong for `middle_agreement()` |
 
 The second one has a named cost. AMCB certificant `CNM04881` was published as
-`"unmatched"` against NPI `1619274149`, which records that middle name in
+`"unmatched"` against an NPPES record carrying that middle name in
 **eight consecutive annual snapshots** — same person, same name, different
 punctuation. "Unmatched" is indistinguishable from absent from the registry
 entirely. Fixed upstream in `mysterynpi` 0.9.0 (`691daaf`), which this

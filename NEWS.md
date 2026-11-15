@@ -33,8 +33,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   **The defect.** A hyphen in a middle name was read as a name *boundary*, so
   `"MARIE-LEFEVER"` conflicted with `"MARIE LEFEVER"` — the same name,
   differently punctuated — and a conflict there **vetoes a candidate**. AMCB
-  certificant `CNM04881` was published as `"unmatched"` against NPI
-  `1619274149`, which records that middle name in **eight consecutive annual
+  certificant `CNM04881` was published as `"unmatched"` against an NPPES
+  record carrying that middle name in **eight consecutive annual
   snapshots**. "Unmatched" is indistinguishable from absent from the registry
   entirely, so the freeze reported a correctly identified midwife as missing.
 

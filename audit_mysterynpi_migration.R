@@ -267,19 +267,19 @@ TABLES <- list(
 summary <- data.table::data.table(
   table = character(), bucket = character(), column = character(),
   changed = integer(), of = integer(), pct = numeric())
-add <- function(...) summary <<- rbind(summary, data.table::data.table(...))
+record_diff <- function(...) summary <<- rbind(summary, data.table::data.table(...))
 
 for (nm in names(TABLES)) {
   keys <- TABLES[[nm]]
   fo <- file.path(OLD, paste0(nm, ".csv")); fn <- file.path(NEW, paste0(nm, ".csv"))
   if (!file.exists(fo) || !file.exists(fn)) {
-    add(table = nm, bucket = "MISSING", column = "", changed = 0L, of = 0L, pct = 0)
+    record_diff(table = nm, bucket = "MISSING", column = "", changed = 0L, of = 0L, pct = 0)
     next
   }
   a <- data.table::fread(fo, colClasses = "character")
   b <- data.table::fread(fn, colClasses = "character")
   if (!identical(names(a), names(b))) {
-    add(table = nm, bucket = "SCHEMA",
+    record_diff(table = nm, bucket = "SCHEMA",
         column = paste0("old[", paste(setdiff(names(a), names(b)), collapse = ","),
                         "] new[", paste(setdiff(names(b), names(a)), collapse = ","), "]"),
         changed = 0L, of = 0L, pct = 0)
@@ -288,7 +288,7 @@ for (nm in names(TABLES)) {
   data.table::setkeyv(a, keys); data.table::setkeyv(b, keys)
   only_old <- a[!b, on = keys]; only_new <- b[!a, on = keys]
   if (nrow(only_old) || nrow(only_new)) {
-    add(table = nm, bucket = "KEYSET", column = "rows in one run only",
+    record_diff(table = nm, bucket = "KEYSET", column = "rows in one run only",
         changed = nrow(only_old), of = nrow(only_new), pct = 0)
     data.table::fwrite(rbind(
       cbind(side = "old_only", only_old[, ..keys]),
@@ -301,7 +301,7 @@ for (nm in names(TABLES)) {
     o <- m[[paste0(c0, ".o")]]; n <- m[[paste0(c0, ".n")]]
     chg <- which(!(o == n | (is.na(o) & is.na(n))))
     if (!length(chg)) next
-    add(table = nm, bucket = if (c0 %in% names(BUCKET)) BUCKET[[c0]] else "unclassified",
+    record_diff(table = nm, bucket = if (c0 %in% names(BUCKET)) BUCKET[[c0]] else "unclassified",
         column = c0, changed = length(chg), of = nrow(m),
         pct = 100 * length(chg) / max(nrow(m), 1))
     data.table::fwrite(cbind(m[chg, ..keys],

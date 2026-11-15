@@ -66,7 +66,7 @@ finding:
 > and the veto is silent.
 
 The measured cost: AMCB certificant **CNM04881**, roster middle name
-`"Marie-Lefever"`, against NPI `1619274149`, which records `"MARIE LEFEVER"` in
+`"Marie-Lefever"`, against an NPPES record carrying `"MARIE LEFEVER"` in
 **eight consecutive annual snapshots**. One token versus two share nothing, so
 `middle_agreement()` returned `"conflicts"`, the only candidate was vetoed, and
 a correctly identified midwife was published as `"unmatched"` —
