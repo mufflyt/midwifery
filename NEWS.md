@@ -158,7 +158,60 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   dirty registry field was silently deleting matches. Fixed in mysterynpi
   **0.9.1** (mufflyt/mysterynpi#49): a token must carry a letter.
 
-- **The shadow rebuild needs two shadow arms, and only one exists.** The first
+- **The shadow reconciliation is done: the pin move changes 10 of 22,309
+  records (0.045%).** Three rebuilds at one commit, same roster and panel,
+  differing only in the installed `mysterynpi` — arm 1 `0.3.1.9000`, arm 2
+  `0.9.0`, arm 3 `0.9.1`.
+
+  **Arm 1 → arm 3: 8 NPIs gained, 1 lost, 1 swapped, and zero normalised name
+  strings changed** (consistent with `cb86e56` already being in the old pin).
+  Nine are defensible on sight — separator and apostrophe variants of one name
+  (`DE BRUIJN`/`DEBRUIJN`, `JENEE`/`JENEE'`, `RAEANNE`/`RAE ANNE`,
+  `DEJAUNNA`/`DE JAUNNA`, `RENE`/`RENE'`, `RENEE`/`RENEE'`), plus `CNM10691`
+  (`DE'JOURA`/`DEJOURA`) upgrading from a nursing-taxonomy record to the
+  midwifery one, class 3 → 1.
+
+  **One is a regression and is flagged rather than endorsed:** `11191`, roster
+  `GAIL-ROSANNE` against registry `GAIL`, loses its only candidate to the
+  compound-versus-half veto. RETIRED, so outside the ACTIVE study population —
+  but a woman whose middle name is "Gail-Rosanne" being recorded as "Gail" is
+  entirely ordinary, and this one wants a human ruling.
+
+  **Six of the ten arrived as `ambiguous_tied_names` → `matched`:** the
+  winner's own verdict did not improve, competing candidates were *vetoed*,
+  breaking a tie. The added vetoes are not purely destructive.
+
+  ACTIVE subset (15,285): matched 12,643 → 12,650, tied 1,284 → 1,278, nursing
+  727 → 726, unmatched unchanged at 594. Evidence-class 1 among ACTIVE 7,727 →
+  7,734. Distinct NPIs assigned roster-wide 17,217 → 17,224.
+
+- **Arm 2 → arm 3: zero changes — the punctuation-token defect had no realised
+  cohort effect here.** Not one NPI assignment, match status or evidence class
+  differs between 0.9.0 and 0.9.1; the 12 affected candidate pairs were already
+  non-matches for other reasons. The fix is still correct (a phone number must
+  never veto a match) but it was not costing this study anything, which is
+  worth stating rather than assuming.
+
+- **None of those counts is comparable to 16,775 or 163.** All three arms build
+  from the on-disk 22,309-row roster, not the freeze's 22,357, and they are the
+  base linkage only — `freeze_cohort.R`'s class-5 guard has not run. **The
+  123-row question and the class-5 holdout behaviour remain open** pending a
+  roster matching the 2026-09-02 scrape, which is not on this machine.
+
+- **Promotion: the dependency upgrade is defensible; a new canonical freeze is
+  not yet supported.** Two conditions are open — a ruling on `11191`, and
+  re-running the arms against the correct roster vintage.
+
+- **Loading an old package version here needs `R_PROFILE`, not `R_LIBS`.** This
+  project's R is a portable install whose `etc/Rprofile.site` calls
+  `.libPaths()` outright, discarding `R_LIBS`, `R_LIBS_USER` and
+  `R_LIBS_SITE` alike — all three silently returned the current version. Arm 1
+  runs under a wrapper profile that sources the real site profile and then
+  prepends a symlink farm with only `mysterynpi` redirected, and **stops the
+  run** if the loaded version is wrong.
+
+- **Superseded note — the shadow rebuild needed two arms, and at the time only
+  one existed.** The first
   design (new pin vs `9f224007`) cannot isolate the package, and the pipeline
   said so immediately: `AMCB rows: 22,309` against the freeze's 22,357. Three
   confounds, all already documented under *"The frozen cohort cannot be
