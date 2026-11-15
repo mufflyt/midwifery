@@ -563,7 +563,7 @@ jobs:
           GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
         run: |
           Rscript -e 'if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")'
-          Rscript -e 'remotes::install_github("mufflyt/mysterynpi@691daaf99bb9a5fd44c3e1907fcfc017169105ba", upgrade = "never")'
+          Rscript -e 'remotes::install_github("mufflyt/mysterynpi@aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a", upgrade = "never")'
           Rscript -e 'stopifnot("strip_med_suffix" %in% getNamespaceExports("mysterynpi")); cat("mysterynpi", as.character(packageVersion("mysterynpi")), "\n")'
 
       # The Trilliant layer's pure functions: which freeze and cohort a build may
