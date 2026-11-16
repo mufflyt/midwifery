@@ -225,6 +225,86 @@ cat("\n-- an unexpected additional year on disk --\n")
       "T11 an undeclared file on disk does not enter the analysed window")
 }
 
+cat("\n-- a source that publishes no state at all: DECLARED, not broken --\n")
+{
+  # Texas BON and Washington DOH carry no address field of any kind, so no
+  # re-harvest can produce a state. They declare an EMPTY state_field. That
+  # must NOT read as a broken schema -- but it must also never be counted as
+  # state evidence, or the audit is back to inventing observations.
+  build_full_fixture()
+  stateless_dir <- file.path(fixture_dir, "stateless")
+  dir.create(stateless_dir, showWarnings = FALSE)
+  stateless_path <- file.path(stateless_dir, "no_state_source.csv")
+  readr::write_csv(tibble::tibble(
+    certification_number = c("CNM1", "CNM2"), npi = c("1000000001",
+                                                      "1000000002"),
+    program_year = c(2026L, 2026L),
+    live_bon_status = c("Active", "Active")), stateless_path)
+
+  declared_no_state <- tibble::tibble(
+    source_id = "state_boards_of_nursing", source_name = "stateless fixture",
+    expected_year = 2026L, required = TRUE, source_type = "snapshot",
+    input_path = stateless_path, producer = "fixture",
+    date_field = "program_year", state_field = "",
+    validation_method = "producer_declared", source_vintage = "fixture",
+    artifact_sha256 = NA_character_, availability_status = "available",
+    notes = "source publishes no state field")
+
+  coverage_audit <- suppressMessages(
+    validate_source_coverage(declared_no_state, publication_mode = TRUE))
+  chk(identical(coverage_audit$validation_status, "ok"),
+      sprintf("T13 an empty declared state_field is valid, not schema_invalid [%s]",
+              coverage_audit$validation_status))
+  chk(identical(as.integer(coverage_audit$state_observed_count), 0L),
+      "T13b it observes 0 states, so it can never pass as state evidence")
+
+  # The other half: a source that DOES declare a state column and has lost it
+  # is exactly the Colorado defect, and must still fail loudly.
+  declared_with_state <- declared_no_state
+  declared_with_state$state_field <- "live_bon_state"
+  verdict <- publication_fails(declared_with_state)
+  chk(verdict$failed,
+      "T14 a DECLARED state column that is absent still fails publication")
+  chk(grepl("live_bon_state", verdict$message),
+      "T14b the failure names the missing state column")
+}
+
+cat("\n-- the re-harvested Boards of Nursing files carry their state --\n")
+{
+  real_manifest <- suppressMessages(read_source_manifest())
+  bon_declared <- real_manifest %>%
+    dplyr::filter(.data$source_id == "state_boards_of_nursing")
+  chk(nrow(bon_declared) == 8L,
+      sprintf("T15 eight state boards are declared [%d]", nrow(bon_declared)))
+  # nzchar(NA_character_) is TRUE, and readr reads an empty manifest cell as
+  # NA -- so "declares a state column" has to test both.
+  observes_state <- bon_declared %>%
+    dplyr::filter(!is.na(.data$state_field), nzchar(.data$state_field))
+  chk(nrow(observes_state) == 6L,
+      sprintf("T15b six declare an observable state column [%d]",
+              nrow(observes_state)))
+  if (all(file.exists(bon_declared$input_path))) {
+    bon_audit <- suppressMessages(
+      validate_source_coverage(bon_declared, publication_mode = TRUE))
+    chk(all(bon_audit$validation_status %in% c("ok", "present_zero_records")),
+        sprintf("T15c every declared board file validates [%s]",
+                paste(unique(bon_audit$validation_status), collapse = ",")))
+    # Measured the same way on the archived 2026-11-09 files, this sum is
+    # 720: Colorado and Pennsylvania contributed 0 because their state
+    # column was absent (both register schema_invalid against this same
+    # manifest), and Texas and Washington contribute 0 either way because
+    # their sources carry no state. The 2026-11-15 re-harvest took it to
+    # 1,292. Asserted as a floor, not an equality, because these are live
+    # portals and the counts move between harvests.
+    states_seen <- sum(bon_audit$state_observed_count, na.rm = TRUE)
+    chk(states_seen > 720L,
+        sprintf("T15d state observed on %d board records, above the 720 the %s",
+                states_seen, "pre-re-harvest files could supply"))
+  } else {
+    cat("  skip T15c/T15d -- person-level board files absent from this checkout\n")
+  }
+}
+
 cat("\n-- the real manifest parses and declares the intended window --\n")
 {
   real_manifest <- suppressMessages(read_source_manifest())

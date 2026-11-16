@@ -104,9 +104,26 @@ CT/DE/FL/IL, which is dominated by Florida.
 The audit nonetheless labels this source **"2026-10 (7 states:
 CO/CT/FL/IL/PA/TX/WA)"** and reports n = 664, and Figure 6 ranks "State
 Boards × CMS NDH" among its highest-agreement pairs. The label describes a
-sample the figure never had. Re-harvesting is a live scrape of eight state
-portals and is deliberately **not** done here; the contract now fails loudly
-instead.
+sample the figure never had.
+
+**Re-harvested 2026-11-15 — see `docs/state-source-audit-bon-reharvest.md`.**
+The four states split two ways. Colorado and Pennsylvania were harvester
+defects: both APIs return the licensee's state on the row the harvester was
+already reading, and both scripts discarded it. Re-harvesting recovered 572
+state observations (720 -> 1,292 under the contract; the compared sample rose
+from 668 to 1,240 records and from four states to six). Texas and Washington
+are source limitations -- data.texas.gov `jnzg-cr4w` publishes no state and
+data.wa.gov `qxh8-f4bd` publishes no address at all -- so no harvest can
+supply one, and both now declare that absence in the manifest rather than
+losing a column to `bind_rows()`.
+
+The re-harvest also exposed a defect it cannot repair: every harvester
+selects its candidates with `nppes_state == "<its own state>"`, so this
+source's agreement with NPPES is structurally near-100% and is not
+like-for-like with the genuinely independent pairs it is ranked against.
+Figure 6 and the Section 4 rankings stay **RED** on interpretation until they
+are relabelled as address concordance within a state-matched sample over six
+states.
 
 ### 5.2 YELLOW — the annual files cannot prove their own year
 

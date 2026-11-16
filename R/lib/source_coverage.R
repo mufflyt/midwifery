@@ -127,8 +127,21 @@ describe_source_input <- function(input_path, state_column) {
   }
 
   has_npi <- "npi" %in% names(input_rows)
-  has_state <- state_column %in% names(input_rows)
-  state_values <- if (has_state) input_rows[[state_column]] else character(0)
+
+  # A SOURCE THAT PUBLISHES NO STATE AT ALL IS DECLARED, NOT BROKEN. The
+  # Texas BON APRN file and the Washington DOH credential file carry no
+  # address field of any kind, so no re-harvest can produce a state from
+  # them; both declare an EMPTY state_field in the manifest. That has to be
+  # distinguishable from Colorado's file, which DOES publish a state and
+  # whose column went missing because the harvester dropped it -- the bug
+  # this contract exists to catch. So an empty declaration excuses the
+  # column, a non-empty one demands it, and `state_observed` stays 0 either
+  # way so nothing downstream can read a declared absence as evidence.
+  state_declared <- !is.na(state_column) && nzchar(state_column)
+  has_state_column <- state_declared && state_column %in% names(input_rows)
+  has_state <- has_state_column || !state_declared
+  state_values <- if (has_state_column)
+    input_rows[[state_column]] else character(0)
 
   list(
     record_count = nrow(input_rows),
@@ -138,7 +151,7 @@ describe_source_input <- function(input_path, state_column) {
       dplyr::n_distinct(
         input_rows$certification_number[
           !is.na(input_rows$certification_number)]) else NA_integer_,
-    state_observed = if (has_state)
+    state_observed = if (has_state_column)
       sum(!is.na(state_values) & nzchar(trimws(state_values))) else 0L,
     file_sha256 = digest_file_sha256(input_path),
     schema_valid = has_npi && has_state)
@@ -245,7 +258,11 @@ validate_source_coverage <- function(source_manifest,
       status == "absent_optional_input" ~ paste0(
         "optional input absent: ", input_path),
       status == "schema_invalid" ~ paste0(
-        "present but missing npi or ", declared$state_field, ": ", input_path),
+        "present but missing npi or the declared state column '",
+        declared$state_field, "': ", input_path,
+        " -- regenerate with ", declared$producer,
+        " (a source that genuinely publishes no state declares an empty ",
+        "state_field instead)"),
       status == "year_refuted" ~ paste0(
         "in-file year contradicts declared year ", declared$expected_year),
       status == "year_unverified" ~ paste0(
@@ -297,11 +314,17 @@ validate_source_coverage <- function(source_manifest,
                                                  "year_refuted",
                                                  "year_unverified"))
   if (nrow(failing_rows)) {
-    failure_text <- paste(sprintf("%s %s: %s", failing_rows$source_id,
+    # THE ERROR CARRIES THE REASON, NOT JUST THE VERDICT. A build that stops
+    # with "schema_invalid" tells whoever reads the CI log nothing about which
+    # column went missing or which producer to rerun; the per-row
+    # validation_message already says both, so it goes in the failure instead
+    # of only into the message log, where a non-interactive run loses it.
+    failure_text <- paste(sprintf("%s %s: %s -- %s", failing_rows$source_id,
                                   ifelse(is.na(failing_rows$program_year),
                                          "(snapshot)",
                                          failing_rows$program_year),
-                                  failing_rows$validation_status),
+                                  failing_rows$validation_status,
+                                  failing_rows$validation_message),
                           collapse = "\n  ")
     if (isTRUE(publication_mode)) {
       stop(sprintf(paste0(
