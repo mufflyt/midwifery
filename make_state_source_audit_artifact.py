@@ -33,21 +33,21 @@ SERIES = ["#2a78d6", "#d2551f", "#0f8f62", "#9c6b00"]
 # Derived names were running "PECOS revalidation" and "Facility Affiliation"
 # to within a few pixels of the right edge.
 SHORT_LABEL = {
-    "dac_physician_compare": "DAC",
-    "open_payments": "Open Payments",
-    "pecos_revalidation": "PECOS",
-    "facility_affiliation_ccn": "Facility affiliation",
+    "dac_physician_compare": "Medicare directory",
+    "open_payments": "Industry payments",
+    "pecos_revalidation": "Medicare enrolment",
+    "facility_affiliation_ccn": "Hospital affiliation",
 }
 
 DISPLAY = {
-    "dac_physician_compare": "DAC / Physician Compare",
-    "open_payments": "Open Payments",
-    "pecos_revalidation": "PECOS revalidation",
-    "facility_affiliation_ccn": "Facility Affiliation (CCN)",
+    "dac_physician_compare": "Medicare's public clinician directory",
+    "open_payments": "Industry payment records",
+    "pecos_revalidation": "Medicare enrolment revalidation",
+    "facility_affiliation_ccn": "Hospital affiliation records",
     "healthgrades": "Healthgrades",
     "doximity": "Doximity",
-    "state_boards_of_nursing": "State Boards of Nursing",
-    "cms_ndh_fhir": "CMS National Directory of Healthcare Providers",
+    "state_boards_of_nursing": "State boards of nursing",
+    "cms_ndh_fhir": "National Directory of Healthcare Providers",
 }
 
 
@@ -247,7 +247,7 @@ def coverage_grid():
     rows = []
     order = sorted(cov_by_source, key=lambda s: (-len(cov_by_source[s]), s))
     head = "".join(f"<th>{y % 100:02d}</th>" for y in coverage_years)
-    rows.append(f"<tr><th class='rowhead'>Source</th>{head}</tr>")
+    rows.append(f"<tr><th class='rowhead'>Record</th>{head}</tr>")
     for source in order:
         cells = "".join(
             f"<td class='{'has' if y in cov_by_source[source] else 'hasnot'}'>"
@@ -271,11 +271,14 @@ def agreement_table():
                     src=esc(DISPLAY[source]),
                     yr=esc(row["year"] if row["year"].isdigit()
                            else row["year"].split(" (")[0]),
-                    basis=esc(row["comparison_basis"].replace("_", " ")),
+                    basis=esc({"same_year": "same year",
+                               "current_only": "current snapshot"}.get(
+                                   row["comparison_basis"],
+                                   row["comparison_basis"].replace("_", " "))),
                     n=fmt_int(row["n_comparable"]),
                     pct=esc(row["pct_agree"])))
-    return ("<table class='data'><thead><tr><th>Source</th><th>Period</th>"
-            "<th>Basis</th><th>Comparable</th><th>Agree</th></tr></thead>"
+    return ("<table class='data'><thead><tr><th>Record</th><th>Period</th>"
+            "<th>Compared</th><th>Cases</th><th>Agree</th></tr></thead>"
             "<tbody>" + "".join(rows) + "</tbody></table>")
 
 
@@ -293,14 +296,17 @@ def bon_table():
                 cls=" gain" if int(row["state_recovered"]) else "",
                 delta=("+" + fmt_int(row["state_recovered"])
                        if int(row["state_recovered"]) else "0"),
-                note=("recovered: the API publishes a state the harvester "
-                      "had discarded" if int(row["state_recovered"])
-                      else ("present and empty" if row["state"] == "delaware"
-                            else ("already correct" if publishes
-                                  else "source publishes no state at all")))))
-    return ("<table class='data'><thead><tr><th>Board</th>"
-            "<th>9 Nov</th><th>15 Nov</th><th>Change</th>"
-            "<th>Why</th></tr></thead><tbody>"
+                note=("recovered &mdash; the board does publish a state, "
+                      "and our search had been discarding it"
+                      if int(row["state_recovered"])
+                      else ("searched, and the board holds no matching "
+                            "licence" if row["state"] == "delaware"
+                            else ("already complete" if publishes
+                                  else "the board publishes no address, so "
+                                       "it cannot take part")))))
+    return ("<table class='data'><thead><tr><th>State board</th>"
+            "<th>Before</th><th>After</th><th>Change</th>"
+            "<th>What happened</th></tr></thead><tbody>"
             + "".join(rows) + "</tbody></table>")
 
 
@@ -430,136 +436,154 @@ a {{ color: var(--accent); }}
 <div class="wrap">
 <header>
   <div class="eyebrow">Practice-state coverage &middot; rebuilt 15 November 2026</div>
-  <h1>Where ten sources say a midwife practices, and whether they agree</h1>
-  <p class="standfirst">There is no ground truth for a certified nurse-midwife's
-  practice state. Every source here is self-reported, administratively enrolled,
-  third-party-scraped or FHIR-published, so agreement means two records are
-  consistent &mdash; never that either is right. NPPES is the comparison anchor
-  only because every other source links through it.</p>
+  <h1>Where ten records say a midwife practises, and whether they agree</h1>
+  <p class="standfirst">Nobody holds the answer to where a certified
+  nurse-midwife actually works. Each of the ten records compared here was
+  created for some other purpose &mdash; enrolling her in a programme, billing
+  for her care, listing her in a directory &mdash; and each captures an address
+  as a side effect. So when two of them agree, it means they are consistent
+  with one another. It does not mean either is right.</p>
+  <p class="standfirst">One record is used as the reference point: the federal
+  registry every clinician must enrol in and keep current, which assigns the
+  identifying number the other nine are matched by. It is the anchor because
+  everything links to it, not because it is more accurate than the rest.</p>
 </header>
 
 <section>
   <h2>What this rebuild corrected</h2>
-  <p>The 12 November build published numbers two defects had quietly shaped.
-  Both are fixed; both moved a result.</p>
+  <p>Two faults had shaped the numbers published on 12 November. Neither
+  announced itself. Both changed a result.</p>
+
   <div class="callout">
-    <div class="label">Correction 1 &middot; Open Payments lost four of five years</div>
-    <p>The producer discovered its input with
-    <span class="mono">Sys.glob(&hellip;general_*.csv)</span>, so the files present
-    on the machine decided the years analysed. Only 2024 was there. The build
-    succeeded and reported a one-year series where five were intended.</p>
+    <div class="label">Correction 1 &middot; four of five years quietly vanished</div>
+    <p>The comparison of industry payment records was meant to span five years.
+    It was built from whichever of those yearly files happened to be sitting on
+    the computer at the time, and only one of them was. Nothing anywhere stated
+    how many years there were supposed to be, so a one-year comparison and a
+    five-year comparison looked identical from the outside. The build reported
+    success.</p>
   </div>
   <figure>
     <div class="scroller">{op_chart}</div>
-    <figcaption>Comparable NPI-years per program year. Orange is the single
-    year the 12 November build published; blue is the four it silently dropped.
-    Coverage now comes from a declared manifest, and each annual file carries
-    CMS's own <span class="mono">Program_Year</span> so it can prove its own
-    vintage.</figcaption>
+    <figcaption>Midwife-years available for comparison, by payment year. The
+    orange bar is the single year that was published; the blue bars are the
+    four that were lost. The intended span is now written down in advance, and
+    each yearly file carries the year inside it, so a file cannot be mistaken
+    for a different year or quietly left out.</figcaption>
   </figure>
+
   <div class="callout">
-    <div class="label">Correction 2 &middot; four boards of nursing had no state column</div>
-    <p>Four of eight harvested board files lacked
-    <span class="mono">live_bon_state</span>.
-    <span class="mono">bind_rows()</span> fills an absent column with
-    <span class="mono">NA</span>, so 1,411 of 2,269 verified records &mdash; 62%
-    &mdash; entered the comparison stateless while the audit went on labelling
-    the source &ldquo;7 states&rdquo;.</p>
+    <div class="label">Correction 2 &middot; most licensing records lost their state</div>
+    <p>Eight state nursing boards were searched for cohort members. Four of the
+    eight returned records with no state attached, and when those were combined
+    with the four that did, the gap was filled in as blank rather than flagged.
+    <strong>1,411 of 2,269 verified licensing records &mdash; 62% &mdash;
+    entered the comparison with no state at all</strong>, while the published
+    description still named seven states. The figure described a sample it
+    never had.</p>
   </div>
   <div class="tiles">
-    <div class="tile"><div class="v">{bon_n}</div><div class="k">Board records comparable</div><div class="was">was 665</div></div>
-    <div class="tile"><div class="v">{bon_pct}%</div><div class="k">Agreement with NPPES</div><div class="was">was 96.1%</div></div>
-    <div class="tile"><div class="v">+{bon_recovered}</div><div class="k">State observations recovered</div><div class="was">of 1,411 lost</div></div>
-    <div class="tile"><div class="v">6 of 8</div><div class="k">Boards that publish a state</div><div class="was">was reported as 7</div></div>
+    <div class="tile"><div class="v">{bon_n}</div><div class="k">Licensing records that can be compared</div><div class="was">previously 665</div></div>
+    <div class="tile"><div class="v">{bon_pct}%</div><div class="k">Agreement with the federal registry</div><div class="was">previously 96.1%</div></div>
+    <div class="tile"><div class="v">+{bon_recovered}</div><div class="k">States recovered</div><div class="was">of 1,411 lost</div></div>
+    <div class="tile"><div class="v">6 of 8</div><div class="k">Boards that publish a state</div><div class="was">reported as 7</div></div>
   </div>
   <div class="scroller">{bon_table}</div>
-  <p>Colorado and Pennsylvania were our own harvesters discarding a state their
-  APIs do publish. Texas and Washington publish no address field at all, so no
-  re-harvest can make them comparable; they now declare that absence instead of
-  losing a column to a row-bind. The recovered records agree <em>less</em> well
-  than the ones that survived &mdash; Colorado at 93.8% and Pennsylvania at
-  85.1% are the two weakest boards &mdash; so the published 96.1% was biased
-  upward, not merely under-powered.</p>
+  <p>The split matters more than the total. Colorado and Pennsylvania do
+  publish a state; our own search had been reading those records and throwing
+  the state away, and re-running it got them back. Texas and Washington publish
+  no address of any kind, so nothing we do will make them comparable &mdash;
+  they are now recorded as unable to contribute rather than appearing to
+  contribute nothing.</p>
+  <p>The records that had gone missing agree <em>less</em> well than the ones
+  that survived. Colorado at 93.8% and Pennsylvania at 85.1% are the two
+  weakest boards, and they were exactly the two that had dropped out. The
+  published figure of 96.1% was therefore too high, not merely based on too
+  few cases.</p>
 </section>
 
 <section>
-  <h2>Agreement with NPPES, where a source repeats</h2>
+  <h2>How well the records agree, year by year</h2>
   <figure>
     <div class="scroller">{line_chart}</div>
     {legend}
-    <figcaption>Same-year basis against NPPES, the four sources with a real
-    multi-year series. The grey band is weighted least squares on DAC through
-    2025: <strong>{dac_slope:.3f} points a year</strong> (p = 0.0002), so the
-    2026 drop continues a trend rather than breaking a flat one. Open Payments
-    and PECOS are flat, with five and six years each to say so with.</figcaption>
+    <figcaption>Each line compares one record against the federal registry in
+    the same year. The grey band is the fitted trend through Medicare's public
+    clinician directory: agreement falls <strong>{dac_drop:.3f} percentage
+    points a year</strong> (p = 0.0002), so the drop in the most recent year
+    continues a slow decline rather than breaking a flat line. Industry
+    payments and Medicare enrolment are flat, with five and six years each to
+    say so.</figcaption>
   </figure>
   <div class="scroller">{agreement_table}</div>
 </section>
 
 <section>
-  <h2>What the Boards of Nursing number does not mean</h2>
-  <p>Every board harvester selects its candidates with
-  <span class="mono">nppes_state == &quot;&lt;its own state&gt;&quot;</span>.
-  The only people who can be verified against Colorado's board are people NPPES
-  already places in Colorado. So this row is not two independent sources
-  agreeing on a state: within a sample already matched on NPPES's answer, it can
-  only measure whether the board's own mailing address also names that state.
-  A high value is close to structurally guaranteed, and the row must not be
-  ranked against pairs that share no such filter.</p>
-  <p>The field is real signal even so. Across all 500 current Pennsylvania
-  nurse-midwife licensees, only 303 give a Pennsylvania address &mdash; 47 New
-  Jersey, 16 New York, 15 Maryland. A harvester that had defaulted the column
-  to &ldquo;PA&rdquo; would have fabricated 197 observations. Across the six
-  contributing boards the 1,240 observed addresses span 35 states, which is the
-  second thing the old &ldquo;7 states&rdquo; label got wrong: it named the
-  jurisdictions queried, not the states observed.</p>
-  <p>Florida's 190 blank states are also a finding rather than a gap. The board
-  answers <span class="mono">NOT PRACTICING</span> or
-  <span class="mono">No current practice location in Florida</span> &mdash; it is
-  affirmatively reporting absence, in the same category as Delaware's
-  present-and-empty file.</p>
+  <h2>Why the licensing figure is not what it looks like</h2>
+  <p>Each state board was searched only for midwives the federal registry
+  already places in that state. The only people who can be confirmed against
+  Colorado's board are people already listed as practising in Colorado. So this
+  number does not measure two independent records agreeing about where someone
+  works. Inside a group already chosen for being in one state, it can only ask
+  whether the address the board holds also names that state. A high answer is
+  close to guaranteed, and it should not be ranked against comparisons that
+  carry no such filter.</p>
+  <p>The address is still telling us something real. Among all 500 people
+  currently licensed as nurse-midwives in Pennsylvania, only 303 give a
+  Pennsylvania address &mdash; 47 are in New Jersey, 16 in New York, 15 in
+  Maryland. Four in ten people licensed to practise there do not live there.
+  Across the six contributing boards, the 1,240 addresses on record span
+  <strong>35 states</strong>. That is the second thing the old
+  &ldquo;seven states&rdquo; description got wrong: it counted the boards we
+  asked, not the places midwives turned out to be.</p>
+  <p>Florida's 190 blank entries are a finding rather than a gap. The board
+  answers <em>not practising</em>, or <em>no current practice location in
+  Florida</em>. It is stating an absence, which is different from having
+  nothing to say, and it is kept out of the percentage rather than counted as
+  either agreement or missing data.</p>
 </section>
 
 <section>
-  <h2>Which years each source actually has</h2>
+  <h2>Which years each record covers</h2>
   <div class="scroller">{coverage_grid}</div>
-  <figcaption>Filled cells are years the source carries a comparable practice
-  state. Open Payments is declared from 2021: certified nurse-midwives only
-  became reportable covered recipients that year, so its 2015&ndash;2020 files
-  exist, hold 0&ndash;29 incidental rows, and are declared ineligible rather
-  than quietly absent.</figcaption>
+  <figcaption>A filled cell means that record carries a usable practice state
+  for that year. Industry payments begin in 2021 because that is when certified
+  nurse-midwives first had to be reported as recipients; the earlier files
+  exist and hold a handful of stray rows, and are set aside deliberately rather
+  than appearing to be missing.</figcaption>
 </section>
 
 <section>
   <h2>What this does not establish</h2>
   <ul>
-    <li><strong>Agreement is not accuracy.</strong> Two sources agreeing are
-    consistent with each other, not correct. Nothing here is a ground truth for
-    where a midwife actually practises.</li>
-    <li><strong>The authority on the credential holds no address.</strong> AMCB
-    certifies, and carries no practice or residential address at all. Every
-    source that does have an address is either self-enumerated or
-    billing-derived.</li>
-    <li><strong>Practice state may not be single-valued.</strong> Multi-state
-    practice is common enough in this cohort that treating state as one value
-    generates disagreement on its own; the Medicaid set-membership correction
-    moved agreement from 74.7% to 88.5% without a single underlying record
-    changing.</li>
-    <li><strong>Two boards cannot contribute.</strong> Texas and Washington
-    publish no state, so the board comparison is six boards and will stay six
-    unless those agencies publish an address.</li>
+    <li><strong>Agreement is not accuracy.</strong> Two records agreeing are
+    consistent with one another, not correct. Nothing here establishes where a
+    midwife actually practises.</li>
+    <li><strong>The body that certifies midwives holds no address.</strong> The
+    American Midwifery Certification Board is authoritative on the credential
+    and records no practice or home address at all. Every record that does hold
+    an address was either filled in by the midwife herself or derived from
+    billing.</li>
+    <li><strong>Practising in one state may be the wrong assumption.</strong>
+    Working across state lines is common enough in this group that forcing a
+    single state per person creates disagreement by itself. Scoring Medicaid
+    enrolment by whether a state is among those a midwife is enrolled in,
+    rather than whether it is the one state picked for her, moved agreement
+    from 74.7% to 88.5% without a single underlying record changing.</li>
+    <li><strong>Two boards cannot take part.</strong> Texas and Washington
+    publish no address, so this comparison covers six boards and will stay at
+    six unless those states begin publishing one.</li>
   </ul>
 </section>
 
 <footer>
-  <div>Rendered from <span class="mono">artifacts/state_source_audit_agreement.csv</span>,
-  <span class="mono">state_source_audit_coverage.csv</span> and
-  <span class="mono">state_boards_of_nursing_reharvest_before_after.csv</span>
-  by <span class="mono">make_state_source_audit_artifact.py</span>, so the page
-  cannot drift from the audit that produced it.</div>
-  <div>Coverage is declared in <span class="mono">config/state_source_audit_sources.csv</span>
-  and enforced by <span class="mono">R/lib/source_coverage.R</span>; 50 contract
-  and saboteur checks cover the two defects above.</div>
+  <div>Every number on this page is read directly from the audit's own output
+  tables when the page is built, so the page cannot drift from the analysis it
+  describes.</div>
+  <div>The years and sources each comparison is meant to include are now
+  declared in advance and checked before anything is published; fifty automated
+  tests cover the two faults above, including deliberate attempts to reproduce
+  them.</div>
 </footer>
 </div>
 """
@@ -578,6 +602,7 @@ rendered = PAGE.format(
     bon_pct=bon_row["pct_agree"],
     bon_recovered=fmt_int(bon_recovered),
     dac_slope=dac_slope,
+    dac_drop=abs(dac_slope),
 )
 out_path.write_text(rendered)
 print(f"wrote {out_path} ({len(rendered):,} bytes)")
