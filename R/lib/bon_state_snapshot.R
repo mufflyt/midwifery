@@ -71,23 +71,75 @@ read_bon_state_snapshot <- function(publication_mode = TRUE) {
     declared, publication_mode = publication_mode)
 
   with_state <- declared %>% dplyr::filter(.data$publishes_state)
+  # unique(): the manifest rejects a repeated source_id/year/path, so the same
+  # board file declared under two different expected_years passes that check
+  # and would be read twice -- every one of its licensees counted twice in the
+  # published numerator and denominator alike.
   usable_paths <- resolve_source_inputs(coverage_audit,
                                         "state_boards_of_nursing") %>%
     dplyr::filter(.data$input_path %in% with_state$input_path) %>%
-    dplyr::pull(.data$input_path)
+    dplyr::pull(.data$input_path) %>%
+    unique()
 
-  verified <- dplyr::bind_rows(lapply(usable_paths, function(board_file) {
-    readr::read_csv(board_file, col_types = readr::cols(.default = "c"),
-                    progress = FALSE)
-  })) %>%
-    dplyr::filter(.data$live_bon_match_status == "VERIFIED_LIVE_BON") %>%
-    dplyr::transmute(npi = trimws(.data$npi),
-                     state = clean_state(.data$live_bon_state)) %>%
-    dplyr::filter(!is.na(.data$npi), nzchar(.data$npi))
+  # EVERY FILE CARRIES EVERY COLUMN, CHECKED PER FILE BEFORE THE BIND. The
+  # coverage contract validates `npi` and the declared state column, but
+  # nothing declares `live_bon_match_status`, and that is the column the
+  # verified filter turns on. bind_rows() fills an absent column with NA,
+  # NA == "VERIFIED_LIVE_BON" is NA, and dplyr::filter() drops NA -- so one
+  # board losing that one column removes that board's entire contribution
+  # while the build succeeds and the label still claims it. This is the
+  # 2026-11 Colorado/Pennsylvania defect (docs/state-source-audit-bon-
+  # reharvest.md) relocated one column to the right, so the check is on the
+  # columns this function actually reads rather than on the two the manifest
+  # happens to name. Note that an EMPTY board file is not exempt and does not
+  # need to be: Delaware's real present-and-empty file is a header with zero
+  # rows, so it carries all three columns and passes, while a zero-byte file
+  # carries none and is refused by the coverage contract as schema_invalid
+  # before it ever reaches here. A harvest that matched nothing still wrote
+  # its schema; a file that did not write its schema is not evidence that a
+  # harvest ran.
+  REQUIRED_BOARD_COLUMNS <- c("npi", "live_bon_match_status", "live_bon_state")
+  board_tables <- lapply(usable_paths, function(board_file) {
+    board_rows <- readr::read_csv(board_file,
+                                  col_types = readr::cols(.default = "c"),
+                                  progress = FALSE)
+    absent_columns <- setdiff(REQUIRED_BOARD_COLUMNS, names(board_rows))
+    if (length(absent_columns)) {
+      stop("read_bon_state_snapshot(): ", board_file, " has ",
+           nrow(board_rows), " rows but no ",
+           paste(absent_columns, collapse = ", "), " column -- binding it ",
+           "would fill that column with NA and silently drop every one of ",
+           "its records from the state comparison. Regenerate it with ",
+           "the board's harvester.", call. = FALSE)
+    }
+    board_rows
+  })
+
+  bound <- dplyr::bind_rows(board_tables)
+  verified <- if (!nrow(bound)) {
+    # Every usable board was present and empty. That is a legitimate verdict
+    # under the coverage contract, and it must not become a column-not-found
+    # error from the filter below.
+    tibble::tibble(npi = character(0), state = character(0))
+  } else {
+    bound %>%
+      dplyr::filter(.data$live_bon_match_status == "VERIFIED_LIVE_BON") %>%
+      dplyr::transmute(npi = trimws(.data$npi),
+                       state = clean_state(.data$live_bon_state)) %>%
+      dplyr::filter(!is.na(.data$npi), nzchar(.data$npi))
+  }
   comparable <- verified %>% dplyr::filter(!is.na(.data$state))
 
-  boards_with_state <- sort(with_state$board)
+  # THE LABEL DESCRIBES THE SAMPLE, NOT THE DECLARATION. Taking these from
+  # `declared` is how the old hand-written "7 states: CO/CT/FL/IL/PA/TX/WA"
+  # label kept describing a sample it had stopped matching. A board that the
+  # coverage audit declined -- which publication_mode turns into an error,
+  # but an exploratory run does not -- is named as excluded rather than
+  # counted as if it had been read.
+  boards_with_state <- sort(sub("_bon_.*$", "", sub("^live_", "",
+                                                    basename(usable_paths))))
   boards_without_state <- sort(declared$board[!declared$publishes_state])
+  boards_excluded <- setdiff(sort(with_state$board), boards_with_state)
   states_seen <- sort(unique(comparable$state))
 
   # NOT substr(board, 1, 2): that yields CO for both colorado and
@@ -110,10 +162,14 @@ read_bon_state_snapshot <- function(publication_mode = TRUE) {
     unname(BOARD_STATE_CODE[board_names])
   }
   label <- sprintf(
-    "2026-11 (%d boards harvested; %d publish a state: %s; %s publish none)",
+    "2026-11 (%d boards harvested; %d publish a state: %s; %s publish none%s)",
     nrow(declared), length(boards_with_state),
     paste(abbreviate_board(boards_with_state), collapse = "/"),
-    paste(abbreviate_board(boards_without_state), collapse = "/"))
+    paste(abbreviate_board(boards_without_state), collapse = "/"),
+    if (length(boards_excluded))
+      sprintf("; %s EXCLUDED, input unusable",
+              paste(abbreviate_board(boards_excluded), collapse = "/"))
+    else "")
 
   base::message(sprintf(
     "  state_boards_of_nursing: %d verified records from %d state-publishing boards",
@@ -138,6 +194,7 @@ read_bon_state_snapshot <- function(publication_mode = TRUE) {
 
   list(verified = verified, comparable = comparable, label = label,
        boards_with_state = boards_with_state,
+       boards_excluded = boards_excluded,
        boards_without_state = boards_without_state,
        states_seen = states_seen)
 }
