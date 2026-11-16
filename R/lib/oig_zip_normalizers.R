@@ -36,3 +36,32 @@ norm_str_zip5 <- function(x) {
   out[out == "00000"] <- NA_character_
   out
 }
+
+#' The same normalization, as a SQL expression
+#'
+#' Seven producers extract a ZIP inside a DuckDB query, where an R function
+#' cannot be called. Writing the padding by hand in each of those queries
+#' would put eight definitions of "a ZIP code" in the repository, which is
+#' the thing this file exists to prevent. So the SQL is generated from here
+#' and the two forms are held to each other by
+#' tests/test_zip_normalizer_saboteurs.R, which runs the same values through
+#' both and fails if they ever disagree.
+#'
+#' Semantics match norm_str_zip5() exactly: strip non-digits, refuse fewer
+#' than three, left-pad three-to-five, take the first five of anything
+#' longer, and refuse "00000".
+#'
+#' @param column_expr [character] a SQL expression naming the raw column,
+#'   for example `"TRIM(n.ploczip)"`.
+#' @return [character] a SQL expression producing a 5-character ZIP or NULL.
+#' @export
+zip5_sql <- function(column_expr) {
+  digits <- sprintf("REGEXP_REPLACE(CAST(%s AS VARCHAR), '[^0-9]', '', 'g')",
+                    column_expr)
+  sprintf(paste0(
+    "NULLIF(CASE ",
+    "WHEN LENGTH(%s) < 3 THEN NULL ",
+    "WHEN LENGTH(%s) <= 5 THEN LPAD(%s, 5, '0') ",
+    "ELSE SUBSTR(%s, 1, 5) END, '00000')"),
+    digits, digits, digits, digits)
+}

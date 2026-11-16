@@ -37,6 +37,7 @@ suppressPackageStartupMessages({library(DBI); library(duckdb)})
   if (length(file_arg)) dirname(normalizePath(sub("^--file=", "", file_arg[1]))) else getwd()
 })
 source(file.path(.this_script_dir, "R", "lib", "medicare_duckdb.R"))
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5(), zip5_sql()
 
 ROOT <- Sys.getenv("NPPES_HISTORY", "")
 if (!nzchar(ROOT)) {
@@ -290,7 +291,7 @@ process_core_parquet_year <- function(con, npi_parquet, ptax_parquet, year, snap
             UPPER(TRIM(n.pmname)) AS middle_name, UPPER(TRIM(n.pcredential)) AS credential,
             UPPER(TRIM(n.plocline1)) AS practice_address, UPPER(TRIM(n.ploccityname)) AS practice_city,
             UPPER(TRIM(n.plocstatename)) AS practice_state,
-            SUBSTR(TRIM(n.ploczip), 1, 5) AS practice_zip,
+            %s AS practice_zip,
             n.npideactdatest::VARCHAR AS deactivation_date,
             CASE WHEN (%s) THEN 'midwife' ELSE 'nursing' END AS tax_class,
             %d AS snapshot_year, '%s' AS snapshot_date
@@ -304,7 +305,7 @@ process_core_parquet_year <- function(con, npi_parquet, ptax_parquet, year, snap
      QUALIFY ROW_NUMBER() OVER (PARTITION BY n.npi) = 1",
     # No tax_scope column -- see the matching BUG FIX note in
     # process_reshaped_year(); the panel's real header has 13 columns.
-    mid_expr, year, snap_date_str, npi_parquet, ptax_parquet, where_tax)
+    zip5_sql("TRIM(n.ploczip)"), mid_expr, year, snap_date_str, npi_parquet, ptax_parquet, where_tax)
   dbGetQuery(con, sql)
 }
 
@@ -474,7 +475,7 @@ for (k in seq_along(files)) {
                  sel("st1", "practice_address"), sel("city", "practice_city"),
                  sel("state", "practice_state"),
                  if (is.na(col$zip)) "NULL AS practice_zip"
-                 else sprintf("SUBSTR(TRIM(%s), 1, 5) AS practice_zip", col$zip),
+                 else sprintf("%s AS practice_zip", zip5_sql(col$zip)),
                  if (is.na(col$deact)) "NULL AS deactivation_date"
                  else sprintf("TRIM(%s) AS deactivation_date", col$deact),
                  # BUG FIX: this used to also emit a `tax_scope` column -- see

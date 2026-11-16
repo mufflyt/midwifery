@@ -42,6 +42,7 @@ cat("DAC source: ", basename(dac), "\n", sep = "")
 
 source(file.path("R", "lib", "medicare_duckdb.R"))
 source(file.path("R", "lib", "credential_filter.R"))
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5(), zip5_sql()
 con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
@@ -87,11 +88,11 @@ sql <- sprintf(r"(
     UPPER(TRIM(COALESCE(adr_ln_1, '')))    AS practice_address,
     UPPER(TRIM(COALESCE(%s, '')))          AS practice_city,
     UPPER(TRIM(COALESCE(%s, '')))          AS practice_state,
-    SUBSTR(TRIM(COALESCE(%s, '')), 1, 5)   AS practice_zip
+    %s   AS practice_zip
   FROM %s
   WHERE UPPER(COALESCE(pri_spec, '')) LIKE '%%MIDWIFE%%'
      OR UPPER(COALESCE(sec_spec_all, '')) LIKE '%%MIDWIFE%%')",
-  col_last, col_first, col_mid, col_city, col_state, col_zip, src)
+  col_last, col_first, col_mid, col_city, col_state, zip5_sql(col_zip), src)
 
 cat("Scanning DAC national file...\n")
 rows <- dbGetQuery(con, sql)

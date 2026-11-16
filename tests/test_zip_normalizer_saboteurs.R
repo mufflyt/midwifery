@@ -198,6 +198,49 @@ sab(13, "normalizing is idempotent")
   chk(identical(once, twice), "a second pass changes nothing")
 }
 
-cat(sprintf("\n%s (%d failures across 13 saboteurs)\n",
+# =============================================================================
+# PART 5 -- THE SQL FORM MUST BE THE SAME FUNCTION
+# =============================================================================
+
+sab(14, "the generated SQL agrees with the R function on every edge case")
+{
+  # Seven producers normalize inside a DuckDB query. zip5_sql() generates
+  # that SQL from this same file so there is one definition, but generating
+  # it is not the same as it being right. This runs the identical values
+  # through both and fails on any disagreement, which is the only thing that
+  # keeps the two from drifting as either is edited.
+  have_duckdb <- requireNamespace("duckdb", quietly = TRUE) &&
+    requireNamespace("DBI", quietly = TRUE)
+  if (!have_duckdb) {
+    cat("  skip Z14 -- duckdb not available in this session\n")
+  } else {
+    probe_values <- c("01234", "1234", "123", "12", "012345678",
+                      "12345-6789", "00000", "0", "", "80204", "00501",
+                      "99999", " 80204 ", "N/A", "006", "1234567890")
+    con <- DBI::dbConnect(duckdb::duckdb())  # duckdb-exception: test fixture
+    on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+    DBI::dbWriteTable(con, "probe",
+                      data.frame(raw = probe_values,
+                                 stringsAsFactors = FALSE),
+                      overwrite = TRUE)
+    from_sql <- DBI::dbGetQuery(con, sprintf(
+      "SELECT raw, %s AS z FROM probe", zip5_sql("raw")))
+    from_r <- norm_str_zip5(from_sql$raw)
+    disagree <- which(!mapply(eq, from_sql$z, from_r))
+    chk(length(disagree) == 0L,
+        sprintf("R and SQL agree on all %d probe values [%d disagree]",
+                length(probe_values), length(disagree)))
+    if (length(disagree)) {
+      for (i in disagree) {
+        cat(sprintf("       %-14s SQL=%-8s R=%s\n",
+                    paste0("\"", from_sql$raw[i], "\""),
+                    ifelse(is.na(from_sql$z[i]), "NA", from_sql$z[i]),
+                    ifelse(is.na(from_r[i]), "NA", from_r[i])))
+      }
+    }
+  }
+}
+
+cat(sprintf("\n%s (%d failures across 14 saboteurs)\n",
             if (fails == 0L) "PASS" else "FAIL", fails))
 quit(status = if (fails == 0L) 0L else 1L)
