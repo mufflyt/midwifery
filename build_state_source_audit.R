@@ -58,31 +58,18 @@ nppes_current <- nppes %>% filter(year == max(year, na.rm = TRUE)) %>%
 coverage <- list()
 agreement <- list()
 
-add_coverage <- function(source, df_year_npi) {
-  df_year_npi %>% count(year, name = "n_rows") %>%
-    left_join(df_year_npi %>% distinct(npi, year) %>% count(year, name = "n_npis"),
-              by = "year", relationship = "one-to-one") %>%
-    mutate(source = source) %>% select(source, year, n_rows, n_npis)
-}
-
+# The three functions that compute every published percentage used to live
+# here, closed over `nppes` and `nppes_current` from this script, which meant
+# nothing could call them without running the whole audit. They now take the
+# comparison target as an argument and are tested directly; see
+# R/lib/state_agreement.R and tests/test_state_agreement_saboteurs.R.
+source(file.path("R", "lib", "state_agreement.R"))
 agree_same_year <- function(source, df) {
-  # df: npi, year, state
-  df %>% inner_join(nppes, by = c("npi", "year"), relationship = "many-to-one") %>%
-    filter(!is.na(state), !is.na(nppes_state)) %>%
-    group_by(year) %>%
-    summarise(n_comparable = n(), n_agree = sum(state == nppes_state), .groups = "drop") %>%
-    mutate(source = source, comparison_basis = "same_year", year = as.character(year),
-           pct_agree = round(100 * n_agree / n_comparable, 1)) %>%
-    select(source, year, comparison_basis, n_comparable, n_agree, pct_agree)
+  state_agreement_same_year(source, df, nppes)
 }
-
 agree_current_only <- function(source, df_npi_state, as_of_label) {
-  # df_npi_state: npi, state (single snapshot, no year axis)
-  cmp <- df_npi_state %>% inner_join(nppes_current, by = "npi") %>%
-    filter(!is.na(state), !is.na(nppes_state))
-  tibble(source = source, year = as_of_label, comparison_basis = "current_only",
-         n_comparable = nrow(cmp), n_agree = sum(cmp$state == cmp$nppes_state),
-         pct_agree = round(100 * sum(cmp$state == cmp$nppes_state) / nrow(cmp), 1))
+  state_agreement_current_only(source, df_npi_state, nppes_current,
+                               as_of_label)
 }
 
 # --- DAC / Physician Compare, 2013-2016 + 2026 -------------------------------
