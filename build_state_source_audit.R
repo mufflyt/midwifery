@@ -135,14 +135,24 @@ dox <- dox %>% left_join(link, by = "certification_number", relationship = "many
 coverage$dox <- add_coverage("doximity", dox)
 agreement$dox <- agree_same_year("doximity", dox)
 
-# --- State Boards of Nursing: 7 states, current snapshot only ---------------
-bon_files <- Sys.glob("artifacts/live_*_bon_ingested_midwives_from_tracked_roster.csv")
-bon <- bind_rows(lapply(bon_files, function(f) {
-  read_csv(f, col_types = cols(.default = "c"), progress = FALSE)
-})) %>% filter(live_bon_match_status == "VERIFIED_LIVE_BON") %>%
-  transmute(npi = trimws(npi), state = clean_state(live_bon_state)) %>% filter(!is.na(npi), nzchar(npi))
-coverage$bon <- tibble(source = "state_boards_of_nursing", year = 2026L, n_rows = nrow(bon), n_npis = n_distinct(bon$npi))
-agreement$bon <- agree_current_only("state_boards_of_nursing", bon, "2026-10 (7 states: CO/CT/FL/IL/PA/TX/WA)")
+# --- State Boards of Nursing: declared boards, current snapshot only --------
+# THE LABEL IS COMPUTED, NOT ASSERTED, and the reader is shared with the two
+# other producers that consume these files -- see R/lib/bon_state_snapshot.R
+# for why all three stopped globbing. The agreement number this produces is
+# address concordance within a state-matched sample, NOT independent
+# agreement: every board harvester selects its candidates with nppes_state ==
+# its own state, so a high value is close to structurally guaranteed and must
+# not be ranked against the genuinely independent pairs.
+source(file.path("R", "lib", "source_coverage.R"))
+source(file.path("R", "lib", "bon_state_snapshot.R"))
+bon_snapshot <- read_bon_state_snapshot(publication_mode = TRUE)
+
+coverage$bon <- tibble(source = "state_boards_of_nursing", year = 2026L,
+                       n_rows = nrow(bon_snapshot$comparable),
+                       n_npis = n_distinct(bon_snapshot$comparable$npi))
+agreement$bon <- agree_current_only("state_boards_of_nursing",
+                                    bon_snapshot$comparable,
+                                    bon_snapshot$label)
 
 # --- FHIR / CMS National Directory of Healthcare Providers, current only ----
 ndh <- read_csv("artifacts/cms_ndh_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%

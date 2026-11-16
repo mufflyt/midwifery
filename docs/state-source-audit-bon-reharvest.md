@@ -75,7 +75,23 @@ before and after columns are the same measurement:
 
 Restricted to records the audit actually compares (`live_bon_match_status ==
 "VERIFIED_LIVE_BON"`), the comparable sample rose from **668 to 1,240
-records** and from **four states to six**.
+records**, from **four contributing boards to six**, and the 1,240 observed
+addresses span **35 states** — the other reason the old "7 states" label was
+wrong, since it named the jurisdictions queried rather than the states
+observed.
+
+Recomputed against NPPES's current snapshot with the audit's own
+`agree_current_only()`, the published agreement figure moves:
+
+| | n comparable | % agree |
+|---|---:|---:|
+| Appendix §3, as published 2026-11-03 | 665 | 96.1% |
+| Re-harvested 2026-11-15 | **1,221** | **94.2%** |
+
+The records that had been dropped agree *less* well than the ones that
+survived, so **the published figure was biased upward, not merely
+under-powered** — Colorado (93.8%) and Pennsylvania (85.1%) are the two
+weakest boards and were exactly the two whose state column had gone missing.
 
 Note the two `schema_invalid` verdicts: run against the archived 2026-11-09
 files, the contract added in this branch **fails** on Colorado and
@@ -119,7 +135,8 @@ labelling and the ranking can.
 
 ## 5. Florida's 191 blank states are a finding, not a gap
 
-Of Florida's 813 verified records, 191 carry no state. They are not missing
+Of Florida's 813 verified records, 191 carry no state (190 after the
+empty-NPI filter the audit applies). They are not missing
 data: the board returns an explicit message in the address field —
 `"NOT PRACTICING"`, or `"No current practice location in Florida"`. Florida
 is affirmatively reporting the absence of an in-state practice location.
@@ -148,8 +165,19 @@ Tests: `tests/test_source_coverage_contracts.R` T13–T15 (30 checks, all pass).
 
 ## 7. Still outstanding
 
-- Figure 6 and the §4 rankings must be relabelled per §4 before publication;
-  they remain **RED** until then, for interpretation rather than coverage.
+- **Relabelled 2026-11-15.** The earlier note here pointed at "Figure 6 and
+  the §4 rankings", which was wrong: Figure 6 is the consensus-tier-by-
+  licence-count chart and §4 of the 2026-11-03 appendix is the Medicaid
+  classification, neither of which carries board data, and no script plots
+  the pairwise matrix at all. The seven-state label and the un-caveated
+  ranking actually lived in four places, now all corrected: the
+  `agree_current_only()` label in `build_state_source_audit.R` (now computed
+  from the observed data rather than hand-written), the §2 coverage row, the
+  §3 agreement row and its new interpretation note, and the §5 pairwise
+  ranking. `remake_oig_07_09_00440_midwifery.R` also says "7 states", but it
+  uses the board files for licensure status rather than state and its count
+  of boards-with-matches is correct in that context; left alone
+  deliberately.
 - Florida's 191 affirmative absences should enter the audit as observed
   absence (§5) rather than being NA-dropped.
 - California has a harvester (`harvest_live_california_bon_from_tracked_roster.py`)

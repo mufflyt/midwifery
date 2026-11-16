@@ -82,12 +82,27 @@ dox <- dox %>% left_join(link, by = "certification_number", relationship = "many
   transmute(npi = trimws(npi), year = as.integer(substr(date_modified, 1, 4)), state = clean_state(state)) %>%
   filter(!is.na(npi), !is.na(year))
 
-# --- State Boards of Nursing: 7 states, current snapshot only -----------
-bon_files <- Sys.glob("artifacts/live_*_bon_ingested_midwives_from_tracked_roster.csv")
-bon <- bind_rows(lapply(bon_files, function(f) read_csv(f, col_types = cols(.default = "c"), progress = FALSE))) %>%
-  filter(live_bon_match_status == "VERIFIED_LIVE_BON") %>%
-  transmute(npi = trimws(npi), year = 2026L, state = clean_state(live_bon_state)) %>%
-  filter(!is.na(npi), nzchar(npi))
+# --- State Boards of Nursing: declared boards, current snapshot only ----
+# READ THIS BEFORE INTERPRETING ANY PAIR INVOLVING THIS SOURCE. The pairwise
+# matrix below ranks every source pair side by side, which only means
+# something if the pairs are comparable. This one is not. Every board
+# harvester selects its candidates with nppes_state == its own state, so the
+# board records that reach this matrix are already filtered on NPPES's
+# answer; the comparison can only detect a licensee whose board mailing
+# address names a different state than the board's own jurisdiction. Its
+# agreement is therefore structurally high against NPPES and inherits that
+# selection in every pair it appears in. Ranking it against DAC x Open
+# Payments, which share no such filter, is not like-for-like.
+#
+# Six of the eight harvested boards publish a state; Texas and Washington
+# publish none and are excluded by declaration rather than by a column that
+# bind_rows() quietly filled with NA, which is what cost this matrix 1,411
+# of 2,269 verified records until 2026-11-15. See
+# R/lib/bon_state_snapshot.R and docs/state-source-audit-bon-reharvest.md.
+source(file.path("R", "lib", "source_coverage.R"))
+source(file.path("R", "lib", "bon_state_snapshot.R"))
+bon <- read_bon_state_snapshot(publication_mode = TRUE)$comparable %>%
+  mutate(year = 2026L)
 
 # --- FHIR / CMS National Directory of Healthcare Providers, current only -
 ndh <- read_csv("artifacts/cms_ndh_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
