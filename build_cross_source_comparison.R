@@ -154,12 +154,17 @@ cur_dac <- read_csv("dac_midwives.csv", col_types = cols(.default = "c"), progre
   transmute(npi = trimws(npi), year = 2026L, state = clean_state(practice_state))
 dac_all <- bind_rows(hist_dac, cur_dac) %>% filter(!is.na(npi))
 
-op_files <- Sys.glob("artifacts/cohort_midwives_open_payments_general_*.csv")
-op_all <- bind_rows(lapply(op_files, function(f) {
-  yr <- as.integer(str_extract(f, "\\d{4}"))
-  read_csv(f, col_types = cols(.default = "c"), progress = FALSE) %>%
-    transmute(npi = trimws(npi), year = yr, state = clean_state(recipient_state))
-})) %>% filter(!is.na(npi))
+# --- Open Payments, declared window 2021-2025 --------------------------------
+# Window and year both come from the declared-coverage contract, not from a
+# glob and not from the filename -- see R/lib/open_payments_state_series.R
+# for the two defects that cost the 2026-11-12 build four of its five years.
+# 2015-2020 are present but declared ineligible: CNMs only became reportable
+# covered recipients in program year 2021.
+source(file.path("R", "lib", "open_payments_state_series.R"))
+
+source(file.path("R", "lib", "source_coverage.R"))
+op_all <- read_open_payments_state_series(
+  publication_mode = TRUE)$rows
 
 pecos <- read_csv("artifacts/pecos_revalidation_cohort_state_by_year.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
   transmute(npi = trimws(npi), year = as.integer(year), state = clean_state(pecos_state))

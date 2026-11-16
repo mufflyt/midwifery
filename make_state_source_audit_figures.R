@@ -42,6 +42,19 @@ suppressPackageStartupMessages({
 APPENDIX <- file.path("docs", "TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md")
 OUT_DIR  <- file.path("docs", "figures")
 
+# CATEGORICAL HUES, FIXED ORDER, NEVER CYCLED. Four series, assigned by the
+# factor order of `source` so a hue follows the source and not its rank -- a
+# filter that drops a series must not repaint the survivors. These are the
+# blue/orange/aqua/amber slots of the house categorical ramp, each stepped
+# darker until it clears 3:1 against white, because a 0.9pt line in the
+# undarkened aqua (2.74:1) and amber (2.11:1) is not readable on a printed
+# page. Verified on the adjacent pairlist (the right test for lines): worst
+# colour-vision-deficient separation dE 8.7 (deutan), worst normal-vision
+# dE 16.3, all four >= 3:1 contrast. Do not substitute a hue without
+# re-checking all four gates; the amber in particular fails the
+# normal-vision floor against the orange if it is lightened back.
+AUDIT_SERIES <- c("#2a78d6", "#d2551f", "#0f8f62", "#9c6b00")
+
 save_audit_fig <- function(p, name, width = 8.5, height = 5.4) {
   out <- file.path(OUT_DIR, name)
   ggsave(paste0(out, ".pdf"), p, width = width, height = height,
@@ -158,8 +171,15 @@ agr <- agr %>%
 
 # THE TREND IS TESTED, NOT EYEBALLED. An earlier draft of the vignette called
 # this panel a flat line. Weighted least squares over the thirteen DAC years
-# through 2025 gives -0.228 points a year, p = 0.0014 -- a real decline -- so
+# through 2025 gives -0.248 points a year, p = 0.0002 -- a real decline -- so
 # the fitted line is drawn to keep the corrected claim visible in the figure.
+# The slope and p in the subtitle are COMPUTED from the parsed table, never
+# typed; this comment records what they were on 2026-11-15 so a reader can
+# tell at a glance whether a regenerated figure has moved. They did move:
+# the table this is parsed from was three vintages stale until
+# refresh_state_source_appendix_section3.R made it a rendering of
+# artifacts/state_source_audit_agreement.csv, and it had been reporting
+# -0.228 at p = 0.0014 from data that no longer existed.
 dac_fit <- agr %>% filter(grepl("^DAC", source), year <= 2025, !is.na(pct))
 dac_lm  <- lm(pct ~ year, data = dac_fit, weights = n)
 dac_p   <- summary(dac_lm)$coefficients[2, 4]
@@ -170,9 +190,9 @@ p2 <- ggplot(agr, aes(x = year, y = pct, colour = source, group = source)) +
   geom_line(linewidth = 0.7, na.rm = TRUE) +
   geom_point(size = 1.9, na.rm = TRUE) +
   scale_x_continuous(breaks = seq(min(agr$year), max(agr$year), by = 2)) +
-  scale_colour_grey(start = 0.05, end = 0.68) +
+  scale_colour_manual(values = AUDIT_SERIES) +
   labs(title = "Agreement erodes slowly, and only where the series is long enough to tell",
-       subtitle = sprintf(paste0("Same-year basis against NPPES. DAC falls %.2f points a year over 2013-2025 (p = %.4f; fitted line),\n",
+       subtitle = sprintf(paste0("Same-year basis against NPPES. DAC falls %.3f points a year over 2013-2025 (p = %.4f; fitted line),\n",
                                  "so the 2026 drop continues a trend rather than breaking a flat one. Open Payments and PECOS\n",
                                  "are flat, but each has only five years to say so with."),
                           abs(coef(dac_lm)[2]), dac_p),

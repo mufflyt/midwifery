@@ -90,8 +90,24 @@ read_bon_state_snapshot <- function(publication_mode = TRUE) {
   boards_without_state <- sort(declared$board[!declared$publishes_state])
   states_seen <- sort(unique(comparable$state))
 
+  # NOT substr(board, 1, 2): that yields CO for both colorado and
+  # connecticut, PE for pennsylvania and TE for texas, which is how the
+  # first run of this label published "CO/CO/DE/FL/IL/PE; TE/WA". A board
+  # name is not a state code, so the mapping is explicit and a board added
+  # without an entry here fails loudly rather than being abbreviated wrong.
+  BOARD_STATE_CODE <- c(colorado = "CO", connecticut = "CT",
+                        delaware = "DE", florida = "FL", illinois = "IL",
+                        pennsylvania = "PA", texas = "TX",
+                        washington = "WA", california = "CA")
   abbreviate_board <- function(board_names) {
-    toupper(substr(board_names, 1, 2))
+    unknown_boards <- setdiff(board_names, names(BOARD_STATE_CODE))
+    if (length(unknown_boards)) {
+      stop("read_bon_state_snapshot(): no state code for board(s) ",
+           paste(unknown_boards, collapse = ", "),
+           " -- add them to BOARD_STATE_CODE rather than letting the label ",
+           "abbreviate a board name as if it were a state", call. = FALSE)
+    }
+    unname(BOARD_STATE_CODE[board_names])
   }
   label <- sprintf(
     "2026-11 (%d boards harvested; %d publish a state: %s; %s publish none)",

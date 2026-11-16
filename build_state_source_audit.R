@@ -84,13 +84,15 @@ dac_all <- bind_rows(hist_dac, cur_dac) %>% filter(!is.na(npi))
 coverage$dac <- add_coverage("dac_physician_compare", dac_all)
 agreement$dac <- agree_same_year("dac_physician_compare", dac_all)
 
-# --- Open Payments, 2015-2024 ------------------------------------------------
-op_files <- Sys.glob("artifacts/cohort_midwives_open_payments_general_*.csv")
-op_all <- bind_rows(lapply(op_files, function(f) {
-  yr <- as.integer(str_extract(f, "\\d{4}"))
-  read_csv(f, col_types = cols(.default = "c"), progress = FALSE) %>%
-    transmute(npi = trimws(npi), year = yr, state = clean_state(recipient_state))
-})) %>% filter(!is.na(npi))
+# --- Open Payments, declared window 2021-2025 --------------------------------
+# Window and year both come from the declared-coverage contract, not from a
+# glob and not from the filename -- see R/lib/open_payments_state_series.R
+# for the two defects that cost the 2026-11-12 build four of its five years.
+# 2015-2020 are present but declared ineligible: CNMs only became reportable
+# covered recipients in program year 2021.
+source(file.path("R", "lib", "open_payments_state_series.R"))
+source(file.path("R", "lib", "source_coverage.R"))
+op_all <- read_open_payments_state_series(publication_mode = TRUE)$rows
 coverage$op <- add_coverage("open_payments", op_all)
 agreement$op <- agree_same_year("open_payments", op_all)
 

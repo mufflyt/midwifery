@@ -162,46 +162,46 @@ Full table: [`artifacts/state_source_audit_agreement.csv`](../artifacts/state_so
 
 | Source | Period | Basis | n comparable | % agree |
 |---|---|---|---:|---:|
-| DAC / Physician Compare | 2013 | same_year | 10,844 | 95.1% |
-| DAC / Physician Compare | 2014 | same_year | 6,199 | 94.8% |
+| DAC / Physician Compare | 2013 | same_year | 10,858 | 95.1% |
+| DAC / Physician Compare | 2014 | same_year | 6,241 | 94.9% |
 | DAC / Physician Compare | 2015 | same_year | 6,494 | 94.3% |
 | DAC / Physician Compare | 2016 | same_year | 6,230 | 93.8% |
-| DAC / Physician Compare | 2017 | same_year | 6,557 | 91.9% |
-| DAC / Physician Compare | 2018 | same_year | 6,162 | 93.8% |
-| DAC / Physician Compare | 2019 | same_year | 4,621 | 92.6% |
-| DAC / Physician Compare | 2020 | same_year | 4,483 | 94.2% |
-| DAC / Physician Compare | 2021 | same_year | 5,023 | 93.0% |
-| DAC / Physician Compare | 2022 | same_year | 5,068 | 92.3% |
-| DAC / Physician Compare | 2023 | same_year | 5,008 | 92.5% |
-| DAC / Physician Compare | 2024 | same_year | 5,354 | 91.8% |
-| DAC / Physician Compare | 2025 | same_year | 5,278 | 92.6% |
-| DAC / Physician Compare | 2026 | same_year | 5,575 | 89.8% |
-| Open Payments | 2021 | same_year | 14,441 | 96.2% |
-| Open Payments | 2022 | same_year | 19,349 | 96.5% |
-| Open Payments | 2023 | same_year | 19,261 | 96.1% |
-| Open Payments | 2024 | same_year | 18,720 | 97.5% |
-| Open Payments | 2025 | same_year | 21,731 | 96.1% |
-| PECOS revalidation | 2021 | same_year | 7,979 | 88.7% |
-| PECOS revalidation | 2022 | same_year | 8,588 | 88.1% |
-| PECOS revalidation | 2023 | same_year | 9,071 | 87.8% |
-| PECOS revalidation | 2024 | same_year | 9,674 | 88.5% |
-| PECOS revalidation | 2025 | same_year | 10,096 | 88.3% |
-| PECOS revalidation | 2026 | same_year | 9,736 | 88.0% |
-| Doximity | 2026 | same_year | 4,701 | 95.9% |
-| Facility Affiliation (CCN) | 2013 | same_year | 1,877 | 94.5% |
-| Facility Affiliation (CCN) | 2014 | same_year | 1,080 | 96.0% |
-| Facility Affiliation (CCN) | 2015 | same_year | 1,189 | 95.2% |
-| Facility Affiliation (CCN) | 2016 | same_year | 1,279 | 95.2% |
-| Facility Affiliation (CCN) | 2017 | same_year | 1,421 | 93.7% |
-| Facility Affiliation (CCN) | 2018 | same_year | 885 | 95.0% |
-| Facility Affiliation (CCN) | 2019 | same_year | 693 | 94.2% |
-| Facility Affiliation (CCN) | 2020 | same_year | 667 | 94.6% |
-| Facility Affiliation (CCN) | 2021 | same_year | 891 | 93.9% |
-| Facility Affiliation (CCN) | 2022 | same_year | 889 | 93.8% |
-| Facility Affiliation (CCN) | 2026 | same_year | 1,675 | 92.7% |
-| Healthgrades | current | current_only | 17,772 | 91.8% |
-| State Boards of Nursing | current | current_only | **1,221** | **94.2%** | 
-| CMS NDH (FHIR) | current | current_only | 15,340 | 89.9% |
+| DAC / Physician Compare | 2017 | same_year | 12,250 | 92.8% |
+| DAC / Physician Compare | 2018 | same_year | 18,732 | 93.6% |
+| DAC / Physician Compare | 2019 | same_year | 14,274 | 92.5% |
+| DAC / Physician Compare | 2020 | same_year | 9,373 | 93.7% |
+| DAC / Physician Compare | 2021 | same_year | 10,233 | 92.5% |
+| DAC / Physician Compare | 2022 | same_year | 10,126 | 91.8% |
+| DAC / Physician Compare | 2023 | same_year | 10,342 | 92.3% |
+| DAC / Physician Compare | 2024 | same_year | 10,691 | 92.1% |
+| DAC / Physician Compare | 2025 | same_year | 5,286 | 92.6% |
+| DAC / Physician Compare | 2026 | same_year | 5,633 | 90.2% |
+| Open Payments | 2021 | same_year | 14,200 | 95.8% |
+| Open Payments | 2022 | same_year | 19,126 | 96.5% |
+| Open Payments | 2023 | same_year | 18,998 | 96.1% |
+| Open Payments | 2024 | same_year | 18,436 | 96.8% |
+| Open Payments | 2025 | same_year | 21,759 | 96.6% |
+| PECOS revalidation | 2021 | same_year | 7,980 | 88.2% |
+| PECOS revalidation | 2022 | same_year | 8,680 | 88.0% |
+| PECOS revalidation | 2023 | same_year | 9,166 | 87.6% |
+| PECOS revalidation | 2024 | same_year | 9,607 | 87.5% |
+| PECOS revalidation | 2025 | same_year | 10,334 | 88.3% |
+| PECOS revalidation | 2026 | same_year | 9,672 | 88.1% |
+| Facility Affiliation (CCN) | 2013 | same_year | 1,945 | 94.0% |
+| Facility Affiliation (CCN) | 2014 | same_year | 1,124 | 95.9% |
+| Facility Affiliation (CCN) | 2015 | same_year | 1,222 | 95.3% |
+| Facility Affiliation (CCN) | 2016 | same_year | 1,321 | 94.9% |
+| Facility Affiliation (CCN) | 2017 | same_year | 1,788 | 93.7% |
+| Facility Affiliation (CCN) | 2018 | same_year | 1,261 | 93.7% |
+| Facility Affiliation (CCN) | 2019 | same_year | 1,143 | 92.7% |
+| Facility Affiliation (CCN) | 2020 | same_year | 1,067 | 94.4% |
+| Facility Affiliation (CCN) | 2021 | same_year | 1,281 | 93.8% |
+| Facility Affiliation (CCN) | 2022 | same_year | 899 | 93.9% |
+| Facility Affiliation (CCN) | 2026 | same_year | 1,657 | 92.8% |
+| Healthgrades | ~2026-10 (scrape, undated per-record) | current_only | 15,482 | 91.4% |
+| Doximity | 2026 | same_year | 4,627 | 96.7% |
+| State Boards of Nursing | 2026-11 (8 boards harvested; 6 publish a state: CO/CT/DE/FL/IL/PA; TX/WA publish none) | current_only | 1,221 | 94.2% |
+| CMS NDH (FHIR) | 2026-10 (bulk pull; meta.lastUpdated available per-record, not yet exploited here) | current_only | 15,336 | 89.9% |
 
 **The State Boards of Nursing row was recomputed 2026-11-15 and means
 something narrower than the rest of this table.** Two corrections:
