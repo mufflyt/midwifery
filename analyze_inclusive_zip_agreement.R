@@ -26,6 +26,14 @@ suppressPackageStartupMessages({
   library(DBI); library(dplyr); library(readr)
 })
 source(file.path("R", "lib", "medicare_duckdb.R"))
+# ONE DEFINITION OF A ZIP CODE. R/lib/oig_zip_normalizers.R already holds the
+# repository's normalizers and tests/ci_hygiene.R H4 refuses a second copy.
+# An earlier draft of this script defined its own five-digit helper, which
+# dropped a ZIP whose leading zero had been lost upstream (a four-digit
+# "1234" became NA instead of "01234") and silently mis-read a ZIP+4 in the
+# same state ("12345678" became "12345" rather than "01234"). Neither is
+# hypothetical: the secondary-location file carries both shapes.
+source(file.path("R", "lib", "oig_zip_normalizers.R"))
 
 PL_FILE <- Sys.getenv(
   "NPPES_PL_FILE",
@@ -40,21 +48,12 @@ if (!file.exists(PL_FILE)) {
        call. = FALSE)
 }
 
-#' First five digits of a postal code, or NA
-#'
-#' @param postal_code [character] raw value.
-#' @return [character] five digits, or NA when fewer are present.
-zip5_of <- function(postal_code) {
-  digits <- substr(gsub("[^0-9]", "", postal_code), 1, 5)
-  ifelse(nchar(digits) == 5, digits, NA_character_)
-}
-
 base::message("Reading the comparison source (Medicare clinician directory)")
 directory_zips <- read_csv("dac_midwives.csv",
                            col_types = cols(.default = "c"),
                            progress = FALSE) %>%
   transmute(npi = trimws(.data$npi),
-            directory_zip = zip5_of(.data$practice_zip)) %>%
+            directory_zip = norm_str_zip5(.data$practice_zip)) %>%
   filter(!is.na(.data$npi), nzchar(.data$npi),
          !is.na(.data$directory_zip)) %>%
   distinct()
@@ -66,7 +65,7 @@ registry_primary <- read_csv("midwife_panel.csv",
   mutate(snapshot_year = as.integer(.data$snapshot_year)) %>%
   filter(.data$snapshot_year == max(.data$snapshot_year, na.rm = TRUE)) %>%
   transmute(npi = trimws(.data$npi),
-            registry_zip = zip5_of(.data$practice_zip)) %>%
+            registry_zip = norm_str_zip5(.data$practice_zip)) %>%
   filter(!is.na(.data$registry_zip)) %>%
   distinct()
 
@@ -78,12 +77,13 @@ dbWriteTable(con, "comparison_npis", directory_zips %>% distinct(.data$npi),
 base::message("Reading every secondary practice location for these midwives")
 registry_secondary <- dbGetQuery(con, sprintf('
   SELECT DISTINCT TRIM(pl."NPI") AS npi,
-         SUBSTR(REGEXP_REPLACE(pl."%s", \'[^0-9]\', \'\', \'g\'), 1, 5)
-           AS registry_zip
+         REGEXP_REPLACE(pl."%s", \'[^0-9]\', \'\', \'g\') AS raw_zip
   FROM read_csv_auto(\'%s\', ALL_VARCHAR = TRUE, SAMPLE_SIZE = -1) pl
   INNER JOIN comparison_npis c ON TRIM(pl."NPI") = c.npi',
   SECONDARY_ZIP_COLUMN, PL_FILE)) %>%
-  filter(nchar(.data$registry_zip) == 5)
+  mutate(registry_zip = norm_pecos_bigint_zip5(.data$raw_zip)) %>%
+  filter(!is.na(.data$registry_zip)) %>%
+  select(npi, registry_zip)
 
 every_registry_zip <- bind_rows(registry_primary, registry_secondary) %>%
   distinct()
