@@ -671,8 +671,51 @@ ensure_duckdb_encodings <- function(con, quiet = FALSE) {
 #' @return a DBI connection with the `encodings` extension already loaded and
 #'   `attr(., "duckdb_bootstrap_version")` / `attr(., "duckdb_bootstrap_action")`
 #'   set for provenance (see `duckdb_connection_provenance()`).
+#' Create the spill directory DuckDB has already been told to use
+#'
+#' FAILS ONLY ON BIG QUERIES, WHICH IS WHY IT SURVIVED THIS LONG. The duckdb R
+#' package points `temp_directory` at `<tempdir()>/duckdb/temp` but never
+#' creates it, and DuckDB itself does not create the parent chain. A query
+#' small enough to stay in memory never touches the path, so an interactive
+#' probe and every modest extract look healthy; a query large enough to spill
+#' aborts with `IO Error: Failed to create directory ... No such file or
+#' directory`. That is how the 2025 Open Payments extract (a 9.2 GB scan)
+#' failed on 2026-11-15 while the 2015-2023 warehouse extracts in the same
+#' session succeeded.
+#'
+#' Creating it here, in the one bootstrap every script already routes through,
+#' fixes it for all callers rather than per-script. Deliberately best-effort:
+#' if the directory cannot be made, this returns FALSE and leaves the
+#' connection usable, so a caller whose query never spills is not blocked by a
+#' directory it would not have used.
+#'
+#' @param con [DBI connection] an open DuckDB connection.
+#' @return [logical] invisibly, TRUE when the spill directory exists
+#'   afterwards, FALSE when it could not be created or determined.
+ensure_duckdb_temp_directory <- function(con) {
+  spill_dir <- tryCatch(
+    DBI::dbGetQuery(con, "SELECT current_setting('temp_directory') AS td")$td,
+    error = function(e) NULL)
+  if (!length(spill_dir) || is.na(spill_dir[1]) || !nzchar(spill_dir[1])) {
+    base::message("duckdb_connect(): no temp_directory reported; ",
+                  "leaving spill configuration untouched")
+    return(invisible(FALSE))
+  }
+  if (dir.exists(spill_dir[1])) return(invisible(TRUE))
+  made <- dir.create(spill_dir[1], recursive = TRUE, showWarnings = FALSE)
+  if (made) {
+    base::message("duckdb_connect(): created DuckDB spill directory ",
+                  spill_dir[1])
+  } else {
+    base::message("duckdb_connect(): could NOT create DuckDB spill directory ",
+                  spill_dir[1], " -- a query large enough to spill will fail")
+  }
+  invisible(dir.exists(spill_dir[1]))
+}
+
 duckdb_connect <- function(dbdir = ":memory:", read_only = FALSE, ...) {
   con <- DBI::dbConnect(duckdb::duckdb(), dbdir = dbdir, read_only = read_only, ...)  # duckdb-exception: bootstrap-definition
+  ensure_duckdb_temp_directory(con)
   probe <- ensure_duckdb_encodings(con, quiet = TRUE)
   attr(con, "duckdb_bootstrap_version") <- DUCKDB_BOOTSTRAP_VERSION
   attr(con, "duckdb_bootstrap_action") <- probe$bootstrap_action_taken
