@@ -114,6 +114,7 @@ cohort_artifact_path <- function(family, window = NULL,
                    { a <- cohort_artifact_available(family, definition, art_dir)
                      if (nrow(a)) paste(a$window, collapse = ", ") else "<none>" }),
            call. = FALSE)
+    if (must_exist) return(assert_usable_cohort_artifact(p))
     return(p)
   }
   a <- cohort_artifact_available(family, definition, art_dir)
@@ -124,13 +125,55 @@ cohort_artifact_path <- function(family, window = NULL,
                  family, art_dir, definition,
                  cohort_artifact_basename(family, "YYYY-YYYY", definition)), call. = FALSE)
   }
-  top <- a[a$end_year == a$end_year[1], , drop = FALSE]
-  if (nrow(top) > 1L)
-    stop(sprintf(paste0("cohort artifact '%s' is AMBIGUOUS: %d files share the latest end ",
-                        "year %d:\n  %s\n  Pass window= explicitly. Choosing by file mtime ",
-                        "would pick the most recently TOUCHED file, which is not the newest ",
-                        "cohort."),
-                 family, nrow(top), top$end_year[1],
-                 paste(basename(top$path), collapse = "\n  ")), call. = FALSE)
-  top$path[1]
+  # A START YEAR THAT MOVED IS A DIFFERENT COHORT, NOT A NEWER ONE. Ordering by
+  # end year alone made `years-2020-2026` the "latest" window and
+  # `years-2007-2025` the older one, so a truncated rebuild, a test run with a
+  # restricted window or a changed panel config would be picked up as the
+  # newest cohort and frozen by freeze_cohort.R:133 -- every published
+  # denominator moving at once, with nothing to fail. The panel's start year is
+  # a property of the cohort definition and is fixed; only the end year follows
+  # the panel forward. Where the start years on disk disagree, the choice is
+  # between different cohorts and there is no "latest", so it is refused.
+  distinct_starts <- sort(unique(a$start_year))
+  if (length(distinct_starts) > 1L)
+    stop(sprintf(paste0("cohort artifact '%s' has windows with DIFFERENT START YEARS ",
+                        "(%s), so there is no latest window to take:\n  %s\n  A start ",
+                        "year that moved means a different cohort, not a newer one. Pass ",
+                        "window= explicitly to say which cohort you mean."),
+                 family, paste(distinct_starts, collapse = ", "),
+                 paste(sprintf("%s (window %s)", basename(a$path), a$window),
+                       collapse = "\n  ")), call. = FALSE)
+
+  # The start-year check above subsumes the shared-end-year ambiguity branch
+  # that used to stand here. Two canonical files differ in their window by
+  # definition -- the window IS the name -- so two sharing an end year must
+  # differ in their start year, which is now refused one step earlier with a
+  # message that names the real condition. Keeping both left a branch no
+  # input could reach, and an unreachable guard is one nobody can test.
+  assert_usable_cohort_artifact(a$path[which.max(a$end_year)])
+}
+
+#' A resolved cohort artifact must be a readable file with content
+#'
+#' `file.exists()` is TRUE for a directory and TRUE for a zero-byte file, and
+#' this function's answer is handed straight to `read_csv()` by every caller.
+#' A botched extract leaving a DIRECTORY named like the artifact, or a
+#' truncated or interrupted write leaving nothing in it, would resolve as the
+#' cohort and be read as a cohort with no records. Unlike a declared source
+#' year, a zero-byte cohort linkage is never evidence of absence: a real empty
+#' cohort still writes its header, so no bytes at all means no write happened.
+#'
+#' @param path [character(1)] the resolved path.
+#' @return [character(1)] the same path, or an error.
+assert_usable_cohort_artifact <- function(path) {
+  if (dir.exists(path))
+    stop(sprintf(paste0("cohort artifact resolved to a DIRECTORY, not a file: %s\n",
+                        "  file.exists() is TRUE for a directory, so this would have ",
+                        "been read as the cohort."), path), call. = FALSE)
+  if (file.exists(path) && file.size(path) == 0L)
+    stop(sprintf(paste0("cohort artifact is ZERO BYTES: %s\n  A cohort with no ",
+                        "certificants still writes its header, so an empty file means ",
+                        "the write did not finish, not that the cohort is empty."),
+                 path), call. = FALSE)
+  path
 }
