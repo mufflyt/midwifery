@@ -81,22 +81,25 @@ location, and most disagreements never resolve.
 **Objective:** To examine the accuracy, completeness, and internal consistency
 of publicly available federal administrative databases that describe the
 United States certified nurse-midwife and certified midwife workforce, and to
-establish which variables in those databases can support geographic research.
+establish which variables can support geographic research. Accuracy is
+estimable only where a record outside these systems can adjudicate them,
+which here means licensure status and legal name, not practice location.
 
 **Methods:** We replicated the 2013 Department of Health and Human Services
 Office of Inspector General evaluation of federal provider data [@oig2013]
 for a national cohort of certified nurse-midwives and certified midwives
 drawn from the American Midwifery Certification Board roster and linked to
-the National Plan and Provider Enumeration System. Accuracy was assessed
-against two primary sources independent of the federal records: live state
-board of nursing licensure verification and the certification board roster.
-Completeness was the proportion of eligible records carrying a value.
-Consistency was pairwise disagreement between databases describing the same
-provider in the same year, across `r n_word(A$sources_total_n)` sources.
+the National Plan and Provider Enumeration System (NPPES). Accuracy was
+assessed
+against two independent primary sources: live state board of nursing
+licensure verification and the certification board roster. Completeness was
+the proportion of eligible records carrying a value. Consistency was pairwise
+disagreement between databases describing the same provider in the same year,
+across `r n_word(A$sources_total_n)` sources.
 
-**Results:** Where an independent primary source existed, federal records
-were largely accurate. Licensure status in the national provider registry
-agreed with live state board verification for
+**Results:** Where an independent primary source existed, records were
+largely accurate. Licensure status in the national provider registry
+agreed with live state board of nursing verification for
 `r pc(A$nppes_license_3$pct_accurate, 2)` of
 `r cnt(A$nppes_license_3$n_definitive)` resolved records in three
 machine-verified states and `r pc(A$nppes_license_7$pct_accurate, 2)` across
@@ -104,16 +107,15 @@ seven. Of inaccurate records, `r pc(A$nppes_license_7$pct_outdated, 1)` were
 formerly correct and had gone out of date. Consistency was weaker: the
 registry and Medicare's public clinician directory disagreed on at least one
 variable for `r pc(A$any_inconsistent_2026, 1)` of
-`r cnt(A$any_overlap_2026)` providers present in both, concentrated in the
-finest geographic unit, affecting `r pc(A$zip_inconsistent, 1)` of postal
+`r cnt(A$any_overlap_2026)` providers present in both, concentrated in the finest
+geographic unit, affecting `r pc(A$zip_inconsistent, 1)` of postal
 codes but `r pc(A$state_inconsistent, 1)` of practice states. Of
 `r cnt(A$disagree_2021_n)` providers whose records disagreed in 2021,
 `r pc(A$unresolved_pct, 1)` still disagreed in 2026.
 
 **Conclusion:** Practice state is the only geographic variable in these
-databases that is accurate, complete, and consistent enough to support
-research. Analyses conducted at city or postal-code level rest on the part of
-these data that does not hold.
+databases consistent enough to support research. Analyses at city or
+postal-code level rest on the part of these data that does not hold.
 
 ## Introduction
 
@@ -126,15 +128,14 @@ directories. Each of these captures a practice address as an administrative
 by-product rather than as a measured quantity.
 
 The limits of those records are documented. In May 2013 the Department of
-Health and Human Services Office of Inspector General evaluated the two
+Health and Human Services Office of Inspector General (OIG) evaluated the two
 federal systems that together establish who a clinician is and where they
-practice [@oig2013]. Across the 987,266 providers listed in both, 48% of
-records in the national provider registry and 58% of records in the Medicare
-enrollment system contained inaccurate data. The two systems disagreed on at
-least one variable for `r pc(A$oig_any_benchmark, 0)` of providers, and
-practice location was the least consistent variable of all, mismatching for
-`r pc(A$oig_zip_benchmark, 1)`. Only 1.2% of those mismatches could be
-attributed to one system having been updated before the other.
+practice [@oig2013]. Across the 987,266 providers listed in both, 48% of records in the
+national provider registry and 58% in the Medicare enrollment system
+contained inaccurate data; the two disagreed on at least one variable for
+`r pc(A$oig_any_benchmark, 0)` of providers, and practice location was the
+least consistent variable at `r pc(A$oig_zip_benchmark, 1)`, only 1.2% of
+which could be attributed to update lag.
 
 That evaluation was possible because the Inspector General had a gold
 standard. Accuracy was not inferred by comparing the two databases to one
@@ -145,14 +146,12 @@ correct. One hundred twenty-six of 170 sampled providers responded.
 
 No equivalent gold standard exists for the practice location of a certified
 nurse-midwife. The American Midwifery Certification Board is authoritative for
-the credential but records no practice or residential address. Surveying a
-national cohort at the scale required is not feasible, and the only records
-that carry an address are the records under examination. Two primary sources
-do exist for other attributes: state boards of nursing publish current
-licensure status, and the certification board publishes legal name and
-certification status. Those permit a direct accuracy estimate for the
-variables they cover, and bound what can be claimed for the variables they do
-not.
+the credential but records no address, surveying a national cohort is not
+feasible, and the only records carrying an address are the records under
+examination. Two primary sources do exist for other attributes: state boards
+of nursing publish licensure status, and the certification board publishes
+legal name. Those permit a direct accuracy estimate for the variables they
+cover, and bound what can be claimed for those they do not.
 
 The present study had three objectives: to estimate the accuracy of federal
 administrative records describing midwives against independent primary
@@ -164,10 +163,9 @@ these databases are fit for geographic research on this workforce.
 
 ### Cohort
 
-The sampling frame was the American Midwifery Certification Board public
-verification directory, the national roster of certified nurse-midwives and
-certified midwives. Certificants were linked to the National Plan and Provider
-Enumeration System by name and credential evidence, with linkage decisions
+The sampling frame was the American Midwifery Certification Board (AMCB)
+public verification directory, the national roster of certified nurse-midwives and
+certified midwives. Certificants were linked to NPPES by name and credential evidence, with linkage decisions
 frozen before any analysis in this study was performed. Of `r cnt(linkage_total_n)` certification
 records, `r cnt(linkage_matched_n)` (`r pc(linkage_matched_pct, 1)`) resolved
 to a provider record, giving an analytic cohort of `r cnt(cohort_n)`
@@ -176,18 +174,18 @@ publicly available records and was not human subjects research.
 
 ### Sources
 
-`r n_word(A$sources_total_n)` record systems were examined (Table 1). The
-National Plan and Provider Enumeration System served as the reference
-standard, not because it is more accurate than the others but because it
+`r n_word(A$sources_total_n)` record systems were examined (Table 1). NPPES
+served as the reference standard, not because it is more accurate than the others but because it
 assigns the identifier through which every other source is matched.
 `r n_word(A$sources_compared_n)` sources were compared pairwise against it.
-Medicaid was carried as its own classification rather than as a percentage,
+Medicaid, specifically the Transformed Medicaid Statistical Information
+System (T-MSIS), was carried as its own classification rather than as a percentage,
 because it is the only source with a per-provider-year concordance already
 constructed and because reducing concurrent multi-state enrollment to a single
 state discards the categories of most interest.
 
 ```{r table-sources}
-#| tbl-cap: "Table 1. Record systems examined, their role in the analysis, and the years each covers."
+#| tbl-cap: "Table 1. Record systems examined, their custodian and role, the years each covers, and the public access point for each. The certification board roster is listed last because it is the cohort frame and a primary source rather than a record under comparison."
 if (!is.null(A$coverage_table)) {
   cv <- A$coverage_table
   cv$year <- as.integer(cv$year)
@@ -196,15 +194,29 @@ if (!is.null(A$coverage_table)) {
     years = if (length(unique(d$year)) == 1) as.character(unique(d$year)) else
       paste(range(d$year), collapse = "-"),
     n_years = length(unique(d$year)), stringsAsFactors = FALSE)))
-  label <- c(nppes = "National provider registry",
-             dac_physician_compare = "Medicare clinician directory",
-             open_payments = "Industry payment records",
-             pecos_revalidation = "Medicare enrollment revalidation",
-             facility_affiliation_ccn = "Hospital affiliation records",
-             healthgrades = "Healthgrades",
-             doximity = "Doximity",
-             state_boards_of_nursing = "State boards of nursing",
-             cms_ndh_fhir = "National directory of healthcare providers")
+  # Named as the journal asks: full name at first use, then the short form
+  # the rest of the paper uses. The public access point for each is carried
+  # in the table itself, so a reader can go to the record we read.
+  label <- c(
+    nppes = "National Plan and Provider Enumeration System (NPPES)",
+    dac_physician_compare = "Doctors and Clinicians (DAC)",
+    open_payments = "Open Payments",
+    pecos_revalidation = "Provider Enrollment, Chain and Ownership System (PECOS)",
+    facility_affiliation_ccn = "Facility Affiliation",
+    healthgrades = "Healthgrades",
+    doximity = "Doximity",
+    state_boards_of_nursing = "State boards of nursing",
+    cms_ndh_fhir = "National Directory of Healthcare Providers and Services (NDH)")
+  access <- c(
+    nppes = "https://download.cms.gov/nppes/NPI_Files.html",
+    dac_physician_compare = "https://data.cms.gov/provider-data/topics/doctors-clinicians",
+    open_payments = "https://openpaymentsdata.cms.gov/",
+    pecos_revalidation = "https://data.cms.gov/provider-characteristics/medicare-provider-supplier-enrollment",
+    facility_affiliation_ccn = "https://data.cms.gov/provider-data/topics/doctors-clinicians",
+    healthgrades = "https://www.healthgrades.com/",
+    doximity = "https://www.doximity.com/",
+    state_boards_of_nursing = "https://data.colorado.gov/resource/7s5z-vewr, https://data.texas.gov/resource/jnzg-cr4w, https://data.wa.gov/resource/qxh8-f4bd, https://www.pals.pa.gov/",
+    cms_ndh_fhir = "https://data.cms.gov/ndh")
   role <- ifelse(span$source == "nppes", "Reference standard", "Compared")
   out <- data.frame(
     `Record system` = label[span$source],
@@ -213,15 +225,26 @@ if (!is.null(A$coverage_table)) {
                        ifelse(span$source == "state_boards_of_nursing",
                               "State", "Federal")),
     Role = role,
-    `Years covered` = span$years,
+    `Years` = span$years,
+    `Public access point` = access[span$source],
     check.names = FALSE)
   out <- out[order(out$Role != "Reference standard", out$Custodian,
                    out$`Record system`), ]
   out <- rbind(out, data.frame(
-    `Record system` = "Medicaid enrollment (Transformed Medicaid Statistical Information System)",
+    `Record system` =
+      "Transformed Medicaid Statistical Information System (T-MSIS)",
     Custodian = "Federal", Role = "Classified separately",
-    `Years covered` = A$medicaid_years, check.names = FALSE))
-  style_manuscript_table(out, align = c("l", "l", "l", "l"))
+    `Years` = A$medicaid_years,
+    `Public access point` =
+      "https://www.medicaid.gov/medicaid/data-systems/macbis/transformed-medicaid-statistical-information-system-t-msis/index.html",
+    check.names = FALSE))
+  out <- rbind(out, data.frame(
+    `Record system` = "American Midwifery Certification Board (AMCB) roster",
+    Custodian = "Certifying body", Role = "Cohort frame and primary source",
+    `Years` = "2026",
+    `Public access point` = "https://www.amcbmidwife.org/",
+    check.names = FALSE))
+  style_manuscript_table(out, align = c("l", "l", "l", "l", "l"))
 }
 ```
 
@@ -236,10 +259,12 @@ provider survey that supplied the Inspector General's gold standard was
 replaced by primary-source verification against records that exist
 independently of the databases being evaluated.
 
-### Accuracy
+### Accuracy, and the attributes for which it is estimable
 
-Accuracy was assessed for the two attributes with an independent primary
-source.
+Accuracy requires a record that can adjudicate the federal one. Two exist for
+this cohort, covering licensure status and legal name; neither covers
+practice location. Accuracy was therefore assessed for those two attributes
+only, and the geographic variables are reported as agreement throughout.
 
 *Licensure status* was verified against live state board of nursing records
 obtained directly from each state's published licensure system. Three states
@@ -270,12 +295,11 @@ incomplete.
 Consistency was pairwise disagreement between two sources describing the same
 provider. For sources with an annual vintage, providers were compared within
 the same program year; for sources published only as a current snapshot, the
-comparison was against the registry as it stood at extraction. Addresses were
-compared after normalization following the Inspector General's appendix. The
-observation window for every source was declared in a manifest before
-analysis, and each input was verified for presence, schema, and internal
-program year before it entered the comparison, so that a missing input would
-fail the analysis rather than silently narrow it.
+comparison was against the registry as it stood at extraction. Addresses were normalized following the
+Inspector General's appendix. Each source's observation window was declared
+before analysis and every input verified for presence, schema and internal
+program year, so a missing input failed the analysis rather than silently
+narrowing it.
 
 ### Record age and resolution
 
@@ -320,6 +344,12 @@ reverse.](`r fig("source_reliability_spectrum")`)
 
 ### Accuracy against independent primary sources
 
+Accuracy is reported here only for licensure status and legal name, the two
+attributes an outside record can adjudicate. Every geographic figure in this
+paper is agreement, not accuracy, and the distinction is not a hedge: a
+location on which two databases agree may be wrong in both, and nothing in
+this design would detect it.
+
 Where an independent primary source existed, the federal records were
 accurate. Licensure status recorded in the national provider registry agreed
 with live state board verification for
@@ -350,7 +380,7 @@ inaccurate rather than a different person, consistent with transcription and
 with name change not being propagated.
 
 ```{r table-accuracy}
-#| tbl-cap: "Table 2. Accuracy of federal records against independent primary sources."
+#| tbl-cap: "Table 2. Accuracy of licensure status and legal name, the only two attributes with an independent primary source. Accuracy could not be estimated for practice location, city or postal code, for which no primary source exists; those are reported as agreement in Tables 4 and 5."
 if (!is.null(A$subtypes_table)) {
   tb <- A$subtypes_table
   # The artifact carries the systems by their acronyms; the manuscript names
@@ -423,15 +453,12 @@ Disagreement was concentrated in the finest geographic unit. Practice postal
 code disagreed for `r pc(A$zip_inconsistent, 1)` of providers, against the
 Inspector General's `r pc(A$oig_zip_benchmark, 1)`, while practice state
 disagreed for only `r pc(A$state_inconsistent, 1)` (Figure 3, Table 4). The
-same ordering held for every pair of sources examined (Figure 4).
+same ordering held for every pair of sources examined.
 
-![**Figure 3.** Disagreement by geographic granularity against the Inspector
-General's 2011 benchmark. Disagreement rises steeply as the unit
-narrows.](`r fig("address_granularity_vs_oig_benchmark")`)
-
-![**Figure 4.** Pairwise address agreement across every source pair with
-sufficient overlap. State agreement is high throughout; postal code is
-not.](`r fig("address_agreement_heatmap")`)
+![**Figure 3.** Disagreement by geographic granularity, against the Inspector
+General's 2011 benchmark. The dashed rule marks that benchmark: of the 987,266
+providers listed in both federal systems in 2011, 88.6% had a practice-location
+ZIP code that did not match between them.](`r fig("address_granularity_vs_oig_benchmark")`)
 
 ```{r table-consistency}
 #| tbl-cap: "Table 4. Disagreement between the national provider registry and Medicare's public clinician directory, 2026, against the Inspector General's 2011 benchmark."
@@ -480,13 +507,13 @@ system.
 ### Agreement over time
 
 Agreement between the public clinician directory and the registry declined by
-`r sprintf("%.3f", A$dac_slope_abs)` percentage points per year across
+`r sprintf("%.2f", A$dac_slope_abs)` percentage points per year across
 `r cnt(A$dac_years_n)` years (`r mw_pval(A$dac_p)`), so the decline in the most
-recent year continues a trend rather than breaking a flat one (Figure 5).
+recent year continues a trend rather than breaking a flat one (Figure 4).
 Industry payment records and Medicare enrollment records were flat across
 their five and six years respectively.
 
-![**Figure 5.** Agreement with the national provider registry by year, for the
+![**Figure 4.** Agreement with the national provider registry by year, for the
 four sources with a multi-year series. The fitted line is weighted least
 squares through the clinician directory.](`r fig("state_source_agreement_by_year")`)
 
@@ -515,24 +542,22 @@ if (!is.null(A$agreement_table)) {
 }
 ```
 
-### Medicaid enrollment, classified rather than scored
+### One midwife in six is enrolled in Medicaid in more than one state at once
 
-The tenth record system was classified per provider-year rather than reduced
-to a percentage. Across `r A$medicaid_years` it contributed
+`r pc(A$medicaid_multistate_pct, 1)` of observed provider-years in the
+Transformed Medicaid Statistical Information System (T-MSIS) involved
+concurrent enrollment in more than one state. That is the rate at which the
+single-state assumption every other comparison in this paper is forced to make
+converts a correct record into an apparent error, and it is why T-MSIS was
+classified per provider-year rather than reduced to a percentage.
+
+Across `r A$medicaid_years` T-MSIS contributed
 `r cnt(A$medicaid_total_n)` provider-years, of which
 `r cnt(A$medicaid_observed_n)` carried an observable enrollment.
 `r cnt(A$medicaid_concordant_n)` were concordant with the registry on a single
-state and `r cnt(A$medicaid_multistate_concordant_n)` were concordant through
-concurrent enrollment in more than one state, meaning the registry's state was
-among those a midwife was enrolled in. `r cnt(A$medicaid_discordant_n)` were
-discordant and `r cnt(A$medicaid_multistate_discordant_n)` were discordant
-despite multi-state enrollment. A further
-`r cnt(A$medicaid_indeterminate_n)` were indeterminate.
-
-`r pc(A$medicaid_multistate_pct, 1)` of observed provider-years involved
-concurrent enrollment in more than one state. Collapsing those to a single
-state before scoring, which is what every other comparison in this paper does
-by necessity, converts a correct record into an apparent error.
+state and a further `r cnt(A$medicaid_multistate_concordant_n)` were
+concordant through concurrent enrollment in more than one state, meaning the
+registry's state was among those a midwife was enrolled in.
 
 ### Multi-state practice as a source of apparent disagreement
 
@@ -540,20 +565,17 @@ A portion of the disagreement between sources is not error. Scoring Medicaid
 enrollment by whether a state is among those in which a midwife is
 concurrently enrolled, rather than by whether it equals a single state
 selected for her, raised agreement with the registry from
-`r pc(74.7, 1)` to `r pc(88.5, 1)` on identical records (Figure 6, Figure 7).
+`r pc(74.7, 1)` to `r pc(88.5, 1)` on identical records (Figure 6).
 No underlying record changed; only the question did.
 
-![**Figure 6.** Concurrent multi-state Medicaid enrollment in the cohort.
+![**Figure 5.** Concurrent multi-state Medicaid enrollment in the cohort.
 Multi-state participation is common rather than
 exceptional.](`r fig("medicaid_multistate_footprint")`)
 
-![**Figure 7.** The cost of reducing concurrent multi-state enrollment to a
-single state before scoring agreement.](`r fig("medicaid_state_reduction_cost")`)
-
 Consistent with this, providers licensed in more than one state accounted for
-a disproportionate share of cross-source disagreement (Figure 8).
+a disproportionate share of cross-source disagreement (Figure 6).
 
-![**Figure 8.** Cross-source consensus by number of states in which a provider
+![**Figure 6.** Cross-source consensus by number of states in which a provider
 holds a license.](`r fig("consensus_tier_by_license_count")`)
 
 ### Summary of what these data can support
@@ -567,7 +589,7 @@ by update lag.
 
 ## Figures and Tables
 
-Figures 1 through 8 and Tables 1 through 5 are generated from the artifacts
+Figures 1 through 6 and Tables 1 through 5 are generated from the artifacts
 named in the repository's data inventory and are regenerated on every render
 of this manuscript.
 
