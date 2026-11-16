@@ -1361,6 +1361,49 @@ mw_build_catalog <- function(root = ".") {
       a$state_agree_min <- min(as.numeric(ag$pct_agree), na.rm = TRUE)
       a$state_agree_max <- max(as.numeric(ag$pct_agree), na.rm = TRUE)
     }
+    # THE SOURCE ROSTER, COUNTED RATHER THAN ASSERTED. The paper says "ten
+    # sources"; this is where that ten comes from, so the claim cannot drift
+    # from the analysis. One source is the reference standard (the provider
+    # registry), eight are compared pairwise against it, and Medicaid is
+    # carried as its own classification because it is the only source with a
+    # per-provider-year concordance already built, and reducing it to a
+    # percentage would discard the multi-state categories that matter most.
+    acc_cov <- rd(file.path(MW_ART, "state_source_audit_coverage.csv"))
+    acc_mcaid <- rd(file.path(MW_ART,
+                              "state_source_audit_medicaid_classification_by_year.csv"))
+    if (!is.null(acc_cov)) {
+      compared <- sort(unique(acc_agree$source))
+      anchor_src <- setdiff(sort(unique(acc_cov$source)), compared)
+      a$sources_compared <- compared
+      a$sources_compared_n <- length(compared)
+      a$source_anchor <- anchor_src
+      a$sources_total_n <- length(compared) + length(anchor_src) +
+        as.integer(!is.null(acc_mcaid))
+      a$coverage_table <- acc_cov
+    }
+    if (!is.null(acc_mcaid)) {
+      mc <- acc_mcaid
+      mc$n <- as.numeric(mc$n)
+      by_class <- stats::aggregate(n ~ classification, data = mc, FUN = sum)
+      grand <- sum(by_class$n)
+      getc <- function(lbl) {
+        v <- by_class$n[by_class$classification == lbl]
+        if (!length(v)) NA_real_ else v
+      }
+      a$medicaid_years <- paste(range(mc$year), collapse = "-")
+      a$medicaid_total_n <- grand
+      a$medicaid_observed_n <- grand - getc("Not observed")
+      a$medicaid_concordant_n <- getc("Concordant")
+      a$medicaid_multistate_concordant_n <- getc("Multistate concordant")
+      a$medicaid_discordant_n <- getc("Discordant")
+      a$medicaid_multistate_discordant_n <- getc("Multistate discordant")
+      a$medicaid_indeterminate_n <- getc("Indeterminate")
+      obs <- a$medicaid_observed_n
+      a$medicaid_multistate_pct <- 100 *
+        (getc("Multistate concordant") + getc("Multistate discordant")) / obs
+      a$medicaid_table <- by_class
+    }
+
     cat_$dbacc <- a
   }
 

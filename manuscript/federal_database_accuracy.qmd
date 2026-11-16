@@ -59,6 +59,13 @@ linkage_matched_n <- K$linkage$matched
 linkage_matched_pct <- K$linkage$matched_pct
 cohort_n <- K$linkage$cohort_n
 
+n_word <- function(x) {
+  words <- c("one", "two", "three", "four", "five", "six", "seven", "eight",
+             "nine", "ten", "eleven", "twelve")
+  if (is.null(x) || is.na(x)) "**[PENDING]**" else
+    if (x >= 1 && x <= length(words)) words[x] else as.character(x)
+}
+
 pc  <- function(x, d = 1) if (is.null(x) || is.na(x)) "**[PENDING]**" else
   sprintf(paste0("%.", d, "f%%"), x)
 cnt <- function(x) if (is.null(x) || is.na(x)) "**[PENDING]**" else
@@ -85,7 +92,7 @@ against two primary sources independent of the federal records: live state
 board of nursing licensure verification and the certification board roster.
 Completeness was the proportion of eligible records carrying a value.
 Consistency was pairwise disagreement between databases describing the same
-provider in the same year, across ten sources.
+provider in the same year, across `r n_word(A$sources_total_n)` sources.
 
 **Results:** Where an independent primary source existed, federal records
 were largely accurate. Licensure status in the national provider registry
@@ -167,6 +174,57 @@ to a provider record, giving an analytic cohort of `r cnt(cohort_n)`
 certificants once the nursing-taxonomy sensitivity tier is included. This study used only administrative and
 publicly available records and was not human subjects research.
 
+### Sources
+
+`r n_word(A$sources_total_n)` record systems were examined (Table 1). The
+National Plan and Provider Enumeration System served as the reference
+standard, not because it is more accurate than the others but because it
+assigns the identifier through which every other source is matched.
+`r n_word(A$sources_compared_n)` sources were compared pairwise against it.
+Medicaid was carried as its own classification rather than as a percentage,
+because it is the only source with a per-provider-year concordance already
+constructed and because reducing concurrent multi-state enrollment to a single
+state discards the categories of most interest.
+
+```{r table-sources}
+#| tbl-cap: "Table 1. Record systems examined, their role in the analysis, and the years each covers."
+if (!is.null(A$coverage_table)) {
+  cv <- A$coverage_table
+  cv$year <- as.integer(cv$year)
+  span <- do.call(rbind, lapply(split(cv, cv$source), function(d) data.frame(
+    source = d$source[1],
+    years = if (length(unique(d$year)) == 1) as.character(unique(d$year)) else
+      paste(range(d$year), collapse = "-"),
+    n_years = length(unique(d$year)), stringsAsFactors = FALSE)))
+  label <- c(nppes = "National provider registry",
+             dac_physician_compare = "Medicare clinician directory",
+             open_payments = "Industry payment records",
+             pecos_revalidation = "Medicare enrollment revalidation",
+             facility_affiliation_ccn = "Hospital affiliation records",
+             healthgrades = "Healthgrades",
+             doximity = "Doximity",
+             state_boards_of_nursing = "State boards of nursing",
+             cms_ndh_fhir = "National directory of healthcare providers")
+  role <- ifelse(span$source == "nppes", "Reference standard", "Compared")
+  out <- data.frame(
+    `Record system` = label[span$source],
+    Custodian = ifelse(span$source %in% c("healthgrades", "doximity"),
+                       "Commercial",
+                       ifelse(span$source == "state_boards_of_nursing",
+                              "State", "Federal")),
+    Role = role,
+    `Years covered` = span$years,
+    check.names = FALSE)
+  out <- out[order(out$Role != "Reference standard", out$Custodian,
+                   out$`Record system`), ]
+  out <- rbind(out, data.frame(
+    `Record system` = "Medicaid enrollment (Transformed Medicaid Statistical Information System)",
+    Custodian = "Federal", Role = "Classified separately",
+    `Years covered` = A$medicaid_years, check.names = FALSE))
+  style_manuscript_table(out, align = c("l", "l", "l", "l"))
+}
+```
+
 ### Design
 
 We replicated the structure and the operational definitions of the Inspector
@@ -238,7 +296,11 @@ comparable providers as weights. All analyses were performed in R.
 
 ### What the sources cover
 
-No single source spans the observation window (Figure 1). Four of the ten
+All `r n_word(A$sources_total_n)` record systems in Table 1 are reported here:
+`r n_word(A$sources_compared_n)` compared pairwise against the reference
+standard in Tables 4 and 5, the reference standard itself characterized for
+completeness in Table 3, and Medicaid classified separately below. No single
+source spans the observation window (Figure 1). Four of the ten
 exist only as a current snapshot and cannot support any longitudinal claim.
 Industry payment records begin in program year 2021, the first year in which
 certified nurse-midwives were reportable covered recipients.
@@ -288,7 +350,7 @@ inaccurate rather than a different person, consistent with transcription and
 with name change not being propagated.
 
 ```{r table-accuracy}
-#| tbl-cap: "Table 1. Accuracy of federal records against independent primary sources."
+#| tbl-cap: "Table 2. Accuracy of federal records against independent primary sources."
 if (!is.null(A$subtypes_table)) {
   tb <- A$subtypes_table
   # The artifact carries the systems by their acronyms; the manuscript names
@@ -327,7 +389,7 @@ absent for `r pc(A$dac_phone_incomplete, 1)` and credential for
 limiting property of these data.
 
 ```{r table-completeness}
-#| tbl-cap: "Table 2. Incomplete records among eligible fields, by source and year."
+#| tbl-cap: "Table 3. Incomplete records among eligible fields, by source and year."
 if (!is.null(A$completeness_table)) {
   ct <- A$completeness_table
   ct <- ct[as.numeric(ct$pct_incomplete_of_eligible) > 0, , drop = FALSE]
@@ -360,7 +422,7 @@ same measure across all providers in 2011.
 Disagreement was concentrated in the finest geographic unit. Practice postal
 code disagreed for `r pc(A$zip_inconsistent, 1)` of providers, against the
 Inspector General's `r pc(A$oig_zip_benchmark, 1)`, while practice state
-disagreed for only `r pc(A$state_inconsistent, 1)` (Figure 3, Table 3). The
+disagreed for only `r pc(A$state_inconsistent, 1)` (Figure 3, Table 4). The
 same ordering held for every pair of sources examined (Figure 4).
 
 ![**Figure 3.** Disagreement by geographic granularity against the Inspector
@@ -372,7 +434,7 @@ sufficient overlap. State agreement is high throughout; postal code is
 not.](`r fig("address_agreement_heatmap")`)
 
 ```{r table-consistency}
-#| tbl-cap: "Table 3. Disagreement between the national provider registry and Medicare's public clinician directory, 2026, against the Inspector General's 2011 benchmark."
+#| tbl-cap: "Table 4. Disagreement between the national provider registry and Medicare's public clinician directory, 2026, against the Inspector General's 2011 benchmark."
 if (!is.null(A$consistency_table)) {
   cs <- A$consistency_table
   cs <- cs[cs$year == "2026" & cs$source_a == "nppes" &
@@ -429,7 +491,7 @@ four sources with a multi-year series. The fitted line is weighted least
 squares through the clinician directory.](`r fig("state_source_agreement_by_year")`)
 
 ```{r table-agreement}
-#| tbl-cap: "Table 4. Agreement with the national provider registry, by source and year."
+#| tbl-cap: "Table 5. Agreement with the national provider registry, by source and year."
 if (!is.null(A$agreement_table)) {
   ag <- A$agreement_table
   label <- c(dac_physician_compare = "Medicare clinician directory",
@@ -452,6 +514,25 @@ if (!is.null(A$agreement_table)) {
   style_manuscript_table(out, align = c("l", "l", "l", "r", "r"))
 }
 ```
+
+### Medicaid enrollment, classified rather than scored
+
+The tenth record system was classified per provider-year rather than reduced
+to a percentage. Across `r A$medicaid_years` it contributed
+`r cnt(A$medicaid_total_n)` provider-years, of which
+`r cnt(A$medicaid_observed_n)` carried an observable enrollment.
+`r cnt(A$medicaid_concordant_n)` were concordant with the registry on a single
+state and `r cnt(A$medicaid_multistate_concordant_n)` were concordant through
+concurrent enrollment in more than one state, meaning the registry's state was
+among those a midwife was enrolled in. `r cnt(A$medicaid_discordant_n)` were
+discordant and `r cnt(A$medicaid_multistate_discordant_n)` were discordant
+despite multi-state enrollment. A further
+`r cnt(A$medicaid_indeterminate_n)` were indeterminate.
+
+`r pc(A$medicaid_multistate_pct, 1)` of observed provider-years involved
+concurrent enrollment in more than one state. Collapsing those to a single
+state before scoring, which is what every other comparison in this paper does
+by necessity, converts a correct record into an apparent error.
 
 ### Multi-state practice as a source of apparent disagreement
 
@@ -486,7 +567,7 @@ by update lag.
 
 ## Figures and Tables
 
-Figures 1 through 8 and Tables 1 through 4 are generated from the artifacts
+Figures 1 through 8 and Tables 1 through 5 are generated from the artifacts
 named in the repository's data inventory and are regenerated on every render
 of this manuscript.
 
