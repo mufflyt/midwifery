@@ -98,7 +98,14 @@ if (sys.nframe() == 0L) {
     "Multi-year: confirmed billing in ANY missing year",   sum(ev$any_billing & multi), NA, NA, "count",
     "Multi-year: confirmed billing in EVERY missing year", sum(ev$all_billing & multi), NA, NA, "count",
     "Gaps filled by Part B activity",   sum(fills), dplyr::n_distinct(ep$npi[fills]), NA, "count")
-  out$pct_of_episodes <- ifelse(is.na(out$episodes), NA,
+  # A COHORT WITH NO INTERIOR GAPS DIVIDES BY ZERO. nrow(ep) is the
+  # denominator for every share in this table, and gap_episodes() returns
+  # zero rows whenever no midwife has a break inside her own span, which
+  # a narrower cohort or a single-year window can both produce. 100*0/0
+  # is NaN and 100*5/0 is Inf, and both would be written to the published
+  # artifact as though they were measurements.
+  out$pct_of_episodes <- if (nrow(ep) == 0L) NA_real_ else
+    ifelse(is.na(out$episodes), NA,
                                 round(100 * out$episodes / nrow(ep), 1))
 
   write_with_provenance(out, "artifacts/billing_gap_headline_figures.csv",
