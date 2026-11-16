@@ -1227,6 +1227,143 @@ mw_build_catalog <- function(root = ".") {
     s$tier_table <- mr_tier
     cat_$sources <- s
   }
+  # --- Federal administrative database accuracy -----------------------------
+  # Feeds manuscript/federal_database_accuracy.qmd. Every number in that paper
+  # is read here from the OIG replication artifacts rather than typed into the
+  # prose, for the same reason the rest of this catalog exists: a figure typed
+  # into a paragraph outlives the artifact that produced it.
+  acc_dir <- file.path(MW_ART, "oig_remake")
+  acc_1 <- rd(file.path(acc_dir, "oig_table1_table2_accuracy_summary.csv"))
+  acc_2 <- rd(file.path(acc_dir, "oig_table2_inaccuracy_subtypes_by_variable.csv"))
+  acc_3 <- rd(file.path(acc_dir, "oig_table3_completeness_2019_and_2026.csv"))
+  acc_4 <- rd(file.path(acc_dir, "oig_table4_consistency_2019_and_2026.csv"))
+  acc_any <- rd(file.path(acc_dir, "oig_table4_any_variable_inconsistent.csv"))
+  acc_lag <- rd(file.path(acc_dir, "oig_update_lag_and_staleness_check.csv"))
+  acc_agree <- rd(file.path(MW_ART, "state_source_audit_agreement.csv"))
+
+  if (!is.null(acc_2)) {
+    num <- function(x) suppressWarnings(as.numeric(x))
+    pick <- function(frame, pattern, column) {
+      hit <- frame[grepl(pattern, frame$variable) &
+                     grepl(pattern = "", frame$database), , drop = FALSE]
+      hit
+    }
+    row_of <- function(db, pattern) {
+      hit <- acc_2[acc_2$database == db & grepl(pattern, acc_2$variable), ,
+                   drop = FALSE]
+      if (!nrow(hit)) NULL else hit[1, , drop = FALSE]
+    }
+
+    # The three-state track is the one with a machine-readable primary source
+    # for every record; the seven-state track carries unresolved rows and is
+    # reported with its sensitivity bounds rather than as a point estimate.
+    np3 <- row_of("NPPES (2026)", "3 API-Verified")
+    pe3 <- row_of("PECOS (2026)", "3 API-Verified")
+    np7 <- row_of("NPPES (2026)", "All 7 State BON")
+    pe7 <- row_of("PECOS (2026)", "All 7 State BON")
+    npn <- row_of("NPPES (2026)", "Legal Name")
+    pen <- row_of("PECOS (2026)", "Legal Name")
+
+    as_track <- function(r) {
+      if (is.null(r)) return(NULL)
+      list(n_evaluated = num(r$n_evaluated), n_definitive = num(r$n_definitive),
+           n_unresolved = num(r$n_unresolved), n_accurate = num(r$n_accurate),
+           pct_accurate = num(r$pct_accurate_definitive),
+           n_inaccurate = num(r$n_inaccurate_total),
+           pct_inaccurate = num(r$pct_inaccurate_definitive),
+           pct_typo = num(r$pct_of_inaccurate_partially),
+           pct_outdated = num(r$pct_of_inaccurate_formerly),
+           pct_never = num(r$pct_of_inaccurate_never))
+    }
+
+    a <- list(nppes_license_3 = as_track(np3), pecos_license_3 = as_track(pe3),
+              nppes_license_7 = as_track(np7), pecos_license_7 = as_track(pe7),
+              nppes_name = as_track(npn), pecos_name = as_track(pen),
+              subtypes_table = acc_2)
+
+    # The Inspector General's own 2013 findings, carried as the benchmark
+    # column of the rebuilt tables so the comparison cannot drift.
+    if (!is.null(acc_4)) {
+      bm <- acc_4[!is.na(acc_4$oig_2013_benchmark_inconsistent_pct), , drop = FALSE]
+      a$oig_zip_benchmark   <- num(bm$oig_2013_benchmark_inconsistent_pct[
+        bm$attribute == "practice_zip5"][1])
+      a$oig_phone_benchmark <- num(bm$oig_2013_benchmark_inconsistent_pct[
+        bm$attribute == "phone10"][1])
+      a$oig_name_benchmark  <- num(bm$oig_2013_benchmark_inconsistent_pct[
+        bm$attribute == "full_name"][1])
+      cur <- acc_4[acc_4$year == "2026" & acc_4$source_a == "nppes" &
+                     acc_4$source_b == "dac", , drop = FALSE]
+      get_cur <- function(att)
+        num(cur$pct_inconsistent_any_shared[cur$attribute == att][1])
+      a$zip_inconsistent   <- get_cur("practice_zip5")
+      a$state_inconsistent <- get_cur("practice_state")
+      a$phone_inconsistent <- get_cur("phone10")
+      a$cred_inconsistent  <- get_cur("credential")
+      a$name_inconsistent  <- get_cur("full_name")
+      a$consistency_table  <- acc_4
+    }
+
+    if (!is.null(acc_any)) {
+      a$any_inconsistent_2026 <- num(acc_any$pct_any_inconsistent_oig_rule[
+        acc_any$year == "2026"][1])
+      a$any_overlap_2026 <- num(acc_any$n_overlap_providers[
+        acc_any$year == "2026"][1])
+      a$mean_inconsistent_vars <- num(acc_any$mean_inconsistent_vars_per_provider[
+        acc_any$year == "2026"][1])
+      a$oig_any_benchmark <- num(acc_any$oig_2013_benchmark_any_inconsistent_pct[1])
+    }
+
+    if (!is.null(acc_lag)) {
+      band <- acc_lag[acc_lag$analysis_type ==
+        "2026_nppes_record_age_band_vs_pecos_dac_zip5_inconsistency", , drop = FALSE]
+      band$metric_detail <- trimws(band$metric_detail)
+      get_band <- function(lbl) num(band$pct_zip5_inconsistent[
+        band$metric_detail == lbl][1])
+      a$stale_lt1  <- get_band("<1 yr")
+      a$stale_1_3  <- get_band("1-3 yr")
+      a$stale_3_5  <- get_band("3-5 yr")
+      a$stale_5p   <- get_band("5+ yr")
+      a$stale_table <- band
+      res <- acc_lag[grepl("combined_lag_resolution", acc_lag$analysis_type), ,
+                     drop = FALSE]
+      if (nrow(res)) {
+        a$disagree_2021_n <- num(res$n_compared[1])
+        a$unresolved_n    <- num(res$n_zip5_inconsistent[1])
+        a$unresolved_pct  <- num(res$pct_zip5_inconsistent[1])
+      }
+    }
+
+    if (!is.null(acc_3)) {
+      elig <- acc_3[acc_3$completeness_eligible == "TRUE", , drop = FALSE]
+      a$completeness_table <- elig
+      get_inc <- function(yr, src, att) num(elig$pct_incomplete_of_eligible[
+        elig$year == yr & elig$source == src & elig$attribute == att][1])
+      a$nppes_state_incomplete <- get_inc("2026", "nppes", "practice_state")
+      a$nppes_zip_incomplete   <- get_inc("2026", "nppes", "practice_zip5")
+      a$dac_phone_incomplete   <- get_inc("2026", "dac", "phone10")
+      a$dac_cred_incomplete    <- get_inc("2026", "dac", "credential")
+    }
+
+    if (!is.null(acc_agree)) {
+      a$agreement_table <- acc_agree
+      ag <- acc_agree
+      ag$year_int <- suppressWarnings(as.integer(ag$year))
+      dac <- ag[ag$source == "dac_physician_compare" & !is.na(ag$year_int) &
+                  ag$year_int <= 2025, , drop = FALSE]
+      if (nrow(dac) >= 3) {
+        fit <- stats::lm(as.numeric(pct_agree) ~ year_int, data = dac,
+                         weights = as.numeric(dac$n_comparable))
+        a$dac_slope <- unname(stats::coef(fit)[2])
+        a$dac_slope_abs <- abs(unname(stats::coef(fit)[2]))
+        a$dac_p <- summary(fit)$coefficients[2, 4]
+        a$dac_years_n <- nrow(dac)
+      }
+      a$state_agree_min <- min(as.numeric(ag$pct_agree), na.rm = TRUE)
+      a$state_agree_max <- max(as.numeric(ag$pct_agree), na.rm = TRUE)
+    }
+    cat_$dbacc <- a
+  }
+
   cat_$meta <- list(built = format(Sys.time(), "%Y-%m-%d %H:%M %Z"),
                     r_version = paste(R.version$major, R.version$minor, sep = "."))
   cat_
