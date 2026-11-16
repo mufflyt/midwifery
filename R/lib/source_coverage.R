@@ -235,6 +235,18 @@ validate_source_coverage <- function(source_manifest,
     status <- dplyr::case_when(
       !declared$required && identical(declared$availability_status,
                                       "ineligible") ~ "ineligible",
+      # A DECLARED EXCLUSION IS NOT UNDONE BY A FILE TURNING UP. Open
+      # Payments 2013 and 2014 are declared `unavailable` because the CMS
+      # file carries no NPI column at all, so no file for those years can
+      # ever be analysable. Only `ineligible` was being honoured here, so a
+      # stub or a mis-keyed regeneration producing a readable 2013 file would
+      # have been graded "ok", joined the resolved inputs and widened the
+      # published Open Payments window by two pre-eligibility years -- a
+      # declaration overruled by the filesystem, which is the inversion this
+      # whole contract exists to forbid. The verdict stays distinct from
+      # `ineligible` because the reason is different and the audit says which.
+      !declared$required && identical(declared$availability_status,
+                                      "unavailable") ~ "declared_unavailable",
       !present && declared$required ~ "missing_required_input",
       !present && !declared$required ~ "absent_optional_input",
       isFALSE(measured$schema_valid) ~ "schema_invalid",
@@ -252,6 +264,9 @@ validate_source_coverage <- function(source_manifest,
     status_message <- dplyr::case_when(
       status == "ineligible" ~ paste0(
         "declared ineligible for this year: ", declared$notes),
+      status == "declared_unavailable" ~ paste0(
+        "declared unavailable for this year, so no file for it is ",
+        "analysable: ", declared$notes),
       status == "missing_required_input" ~ paste0(
         "REQUIRED input absent: ", input_path,
         " -- regenerate with ", declared$producer),
