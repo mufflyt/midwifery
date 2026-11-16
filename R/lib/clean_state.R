@@ -25,6 +25,16 @@
 #' @param x `character`: raw state field from any source.
 #' @return `character`: a valid 2-letter code, or `NA_character_`.
 VALID_STATES <- c(state.abb, "DC", "PR", "VI", "GU", "AS", "MP")
+# A SPELLED-OUT NAME IS THE SAME JURISDICTION, NOT A DIFFERENT ONE. Refusing
+# every non-code protected against comparing "Colorado" to "CO" as though
+# they disagreed, which was right. But it refused them by discarding, and
+# discarding loses places the pipeline means to include: the 2026 registry
+# panel spells "PUERTO RICO" 184 times, and PR is in VALID_STATES. Those
+# rows were dropped for their spelling, not their geography. Pennsylvania's
+# licensing portal is the other half of it -- it returns "Pennsylvania", and
+# the board harvester had to parse a code out of an address line to work
+# around this function. Which jurisdictions count is unchanged; only their
+# spelling is.
 FULL_STATE_NAME_TO_ABB <- stats::setNames(
   c(toupper(state.abb), "DC", "PR", "VI", "GU", "AS", "MP"),
   toupper(c(state.name, "DISTRICT OF COLUMBIA", "PUERTO RICO", "VIRGIN ISLANDS",
@@ -91,7 +101,7 @@ MILITARY_POSTAL_CODES <- c("AA", "AE", "AP")
 clean_state_report <- function(x) {
   raw <- toupper(trimws(x))
   blank <- is.na(raw) | !nzchar(raw)
-  kept <- !blank & raw %in% VALID_STATES
+  kept <- !blank & !is.na(clean_state(raw))
   military <- !blank & !kept & raw %in% MILITARY_POSTAL_CODES
   unrecognised <- !blank & !kept & !military
   stopifnot(sum(blank) + sum(kept) + sum(military) +

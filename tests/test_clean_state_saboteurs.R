@@ -42,19 +42,33 @@ sab(1, "case and whitespace as every real extract delivers them")
       "lower, mixed and padded all normalize to one code")
 }
 
-sab(2, "a full state name is refused, not silently accepted")
+sab(2, "a spelled-out jurisdiction resolves to its code")
 {
-  # Pennsylvania's licensing portal returns "Pennsylvania", not "PA". If a
-  # name were accepted as a code it would never match any other source and
-  # would read as total disagreement rather than as a format problem.
-  chk(is.na(clean_state("Colorado")), "a spelled-out state is NA")
-  chk(is.na(clean_state("PENNSYLVANIA")), "upper case does not rescue it")
+  # THIS TEST ONCE PINNED THE OPPOSITE. It asserted that "Colorado" must be
+  # NA, on the reasoning that a name compared against a code would read as
+  # disagreement. The reasoning was right and the remedy was wrong: refusing
+  # by discarding lost places the pipeline means to include. The registry
+  # panel spells "PUERTO RICO" 184 times and PR is an accepted jurisdiction,
+  # so those rows were dropped for their spelling, not their geography.
+  # Resolving the name to its code satisfies the original concern properly --
+  # "Colorado" and "CO" now compare equal instead of both being lost.
+  chk(identical(clean_state("Colorado"), "CO"), "a state name becomes its code")
+  chk(identical(clean_state("PUERTO RICO"), "PR"),
+      "a territory the pipeline accepts is no longer lost to its spelling")
+  chk(identical(clean_state("Pennsylvania"), "PA"),
+      "which is what the licensing portal returns")
+  chk(identical(clean_state("District of Columbia"), "DC"),
+      "and the District resolves too")
+  chk(!identical(clean_state("Colorado"), "COLORADO"),
+      "the name is never passed through as though it were a code")
 }
 
 sab(3, "a code that is not a state")
 {
   chk(is.na(clean_state("XX")), "a two-letter non-state is NA")
-  chk(is.na(clean_state("ALBERTA")), "a Canadian province is NA")
+  chk(is.na(clean_state("ALBERTA")),
+      "a Canadian province is NA even spelled out, because it is not in scope")
+  chk(is.na(clean_state("GERMANY")), "and so is a country")
   chk(is.na(clean_state("AB")), "and so is its code")
   chk(is.na(clean_state("80204")), "a ZIP in the state column is NA")
 }
@@ -64,7 +78,10 @@ sab(4, "THE CATASTROPHIC CASE: a source switches from codes to names")
   # This is the glob defect wearing different clothes. Every value refused,
   # a far smaller n published, nothing failed. report_state_cleaning() now
   # refuses to let that pass.
-  switched <- c("Colorado", "Texas", "Florida", "Illinois", "New York")
+  # Spelled-out US states now resolve, so the catastrophic case is a source
+  # that switches to something genuinely unrecognisable: a foreign scheme, a
+  # shifted column, a numeric code.
+  switched <- c("ONTARIO", "QUEBEC", "BAVARIA", "99", "ZZ")
   r <- quiet(clean_state_report(switched))
   chk(r$n_kept == 0L && r$n_unrecognised == 5L,
       sprintf("all five refused [kept %d]", r$n_kept))
@@ -73,6 +90,12 @@ sab(4, "THE CATASTROPHIC CASE: a source switches from codes to names")
   }, error = function(e) grepl("100%|format change", conditionMessage(e)))
   chk(isTRUE(stopped),
       "and the build STOPS rather than publishing a source with no states")
+  # The variant that used to be catastrophic must now simply work.
+  names_only <- c("Colorado", "Texas", "Florida", "Illinois", "New York")
+  rn <- quiet(clean_state_report(names_only))
+  chk(rn$n_kept == 5L,
+      sprintf("a source that writes names instead of codes now survives [%d]",
+              rn$n_kept))
 }
 
 sab(5, "military postal codes leave, and are counted on the way out")
@@ -90,7 +113,7 @@ sab(6, "a partial wipeout is reported but does not stop the build")
 {
   # Losing some values is normal. Losing all of them is not. Only the second
   # is fatal, or every source with one bad row would halt the audit.
-  partial <- c("CO", "TX", "Colorado", "XX", "", NA)
+  partial <- c("CO", "TX", "GERMANY", "XX", "", NA)
   r <- tryCatch(quiet(report_state_cleaning(partial, "fixture")),
                 error = function(e) e)
   chk(!inherits(r, "error"), "a source with some bad values still runs")
@@ -104,7 +127,7 @@ sab(7, "every row is accounted for, so none can vanish unnoticed")
   # The arithmetic guard. kept + blank + military + unrecognised must equal
   # the input length; if a future edit introduces a fifth category that is
   # neither kept nor reported, this fails rather than losing rows quietly.
-  messy <- c("CO", "", NA, "AE", "Colorado", " tx ", "XX", "80204", "DC", "PR")
+  messy <- c("CO", "", NA, "AE", "GERMANY", " tx ", "XX", "80204", "DC", "PR")
   r <- quiet(clean_state_report(messy))
   chk(r$n_kept + r$n_blank + r$n_military + r$n_unrecognised == r$n_input,
       sprintf("the four categories sum to the input [%d of %d]",
@@ -141,7 +164,7 @@ sab(9, "INVERTED: the vector contract holds")
 
 sab(10, "INVERTED: cleaning twice changes nothing")
 {
-  input <- c("co", " TX ", "Colorado", "AE", NA)
+  input <- c("co", " TX ", "Colorado", "AE", NA)  # Colorado resolves, then holds
   once <- clean_state(input)
   chk(identical(once, clean_state(once)),
       "a second pass over cleaned values is a no-op")
