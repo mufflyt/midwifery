@@ -53,3 +53,95 @@ clean_state <- function(x) {
 
   out
 }
+
+# =============================================================================
+# What clean_state() threw away, and why
+# =============================================================================
+# clean_state() maps anything it does not recognise to NA. That is the right
+# behaviour -- a typo or a full state name must not be compared as though it
+# were a code -- but on its own it is silent, and silence is how this
+# repository has lost data before. A source that changed format from "CO" to
+# "Colorado" would have every row refused, the audit would publish a much
+# smaller n, and nothing would fail.
+#
+# The 2026 registry panel carries 456 providers with a military postal code
+# (AE 285, AP 162, AA 9) plus a tail of base names and Canadian provinces.
+# None of them is a United States practice state, so none of them should be
+# compared as one. All of them should be counted and reported rather than
+# disappearing into a denominator.
+
+#' USPS codes that are deliberately NOT practice states
+#'
+#' Armed Forces Africa/Canada/Europe/Middle East (AE), Armed Forces Americas
+#' (AA) and Armed Forces Pacific (AP) are mail-routing designations for
+#' service members posted outside the fifty states. A midwife with an AE
+#' address does not practise in a US state, so she cannot enter a
+#' state-agreement comparison -- but she must be counted as excluded, not
+#' lost.
+MILITARY_POSTAL_CODES <- c("AA", "AE", "AP")
+
+#' Account for every value clean_state() refuses
+#'
+#' @param x [character] the same raw vector passed to clean_state().
+#' @return [list] `n_input`, `n_kept`, `n_blank`, `n_military`,
+#'   `n_unrecognised`, `pct_dropped`, and `dropped_values`, a frequency table
+#'   of what was refused. The three n_ categories plus n_kept sum to n_input,
+#'   so no row can go missing without appearing here.
+#' @export
+clean_state_report <- function(x) {
+  raw <- toupper(trimws(x))
+  blank <- is.na(raw) | !nzchar(raw)
+  kept <- !blank & raw %in% VALID_STATES
+  military <- !blank & !kept & raw %in% MILITARY_POSTAL_CODES
+  unrecognised <- !blank & !kept & !military
+  stopifnot(sum(blank) + sum(kept) + sum(military) +
+              sum(unrecognised) == length(raw))
+  list(n_input = length(raw), n_kept = sum(kept), n_blank = sum(blank),
+       n_military = sum(military), n_unrecognised = sum(unrecognised),
+       pct_dropped = if (length(raw)) {
+         round(100 * (sum(military) + sum(unrecognised)) / length(raw), 2)
+       } else 0,
+       dropped_values = sort(table(raw[military | unrecognised]),
+                             decreasing = TRUE))
+}
+
+#' Log what a source lost to state cleaning, and refuse a total wipeout
+#'
+#' Called by the audit producers for every source. A source that loses ALL of
+#' its non-blank values has almost certainly changed format rather than
+#' changed content, and publishing that silently is the defect this guard
+#' exists for.
+#'
+#' @param x [character] raw state values.
+#' @param source_label [character] name for the message.
+#' @param stop_on_total_loss [logical] stop rather than warn.
+#' @return [list] the report, invisibly.
+#' @export
+report_state_cleaning <- function(x, source_label,
+                                  stop_on_total_loss = TRUE) {
+  r <- clean_state_report(x)
+  base::message(sprintf(
+    "  clean_state(%s): %s of %s kept, %s blank, %s military, %s unrecognised (%.2f%% dropped)",
+    source_label, format(r$n_kept, big.mark = ","),
+    format(r$n_input, big.mark = ","), format(r$n_blank, big.mark = ","),
+    format(r$n_military, big.mark = ","),
+    format(r$n_unrecognised, big.mark = ","), r$pct_dropped))
+  if (r$n_unrecognised > 0) {
+    top <- utils::head(r$dropped_values, 5)
+    base::message(sprintf("    most common refused values: %s",
+                          paste(sprintf("%s (%d)", names(top),
+                                        as.integer(top)), collapse = ", ")))
+  }
+  n_nonblank <- r$n_input - r$n_blank
+  if (n_nonblank > 0 && r$n_kept == 0) {
+    msg <- sprintf(paste0(
+      "clean_state(%s): every one of %s non-blank values was refused. ",
+      "A source does not lose 100%% of its states by chance -- this is a ",
+      "format change (full names where codes are expected, or a shifted ",
+      "column), not an empty source. Refusing to continue."),
+      source_label, format(n_nonblank, big.mark = ","))
+    if (isTRUE(stop_on_total_loss)) stop(msg, call. = FALSE)
+    base::message("WARNING: ", msg)
+  }
+  invisible(r)
+}

@@ -38,8 +38,19 @@ suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr)
 source(file.path("R", "lib", "clean_state.R"))
 
 # --- NPPES: the comparison anchor --------------------------------------------
-nppes <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
-  transmute(npi = trimws(npi), year = as.integer(snapshot_year), nppes_state = clean_state(practice_state)) %>%
+nppes_raw <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"),
+                      progress = FALSE)
+# WHAT STATE CLEANING THREW AWAY, SAID OUT LOUD. clean_state() maps anything
+# it does not recognise to NA, which is correct and was silent. The 2026
+# panel carries 456 providers with a military postal code (AE, AP, AA) plus
+# base names and Canadian provinces; none is a United States practice state,
+# all of them leave this comparison, and until now none was counted. The
+# guard also stops the build if a source ever loses ALL of its states, which
+# is a format change rather than an empty source.
+report_state_cleaning(nppes_raw$practice_state, "nppes practice_state")
+nppes <- nppes_raw %>%
+  transmute(npi = trimws(npi), year = as.integer(snapshot_year),
+            nppes_state = clean_state(practice_state)) %>%
   filter(!is.na(npi), nzchar(npi))
 nppes_current <- nppes %>% filter(year == max(year, na.rm = TRUE)) %>%
   group_by(npi) %>% slice(1) %>% ungroup() %>% select(npi, nppes_state)
