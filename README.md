@@ -154,6 +154,27 @@ directly; current observed evidence is Figure 1.)*
 > the claim "11,355 midwives board-verified across 40 states" becomes **374, in
 > one state** as of 2026-08-17, and **1,353 licences returned across three
 > states** once Colorado and Texas were queried (Figure 1).
+>
+> **As of 2026-11-16, eight boards have been harvested** and the number is
+> **1,430 verified records, of which 1,240 carry an observed practice state,
+> across 35 states**. Six boards publish a licensee state (CO, CT, DE, FL, IL,
+> PA); Texas (`data.texas.gov jnzg-cr4w`) and Washington (`data.wa.gov
+> qxh8-f4bd`) publish no address of any kind, so they are recorded as unable to
+> contribute rather than appearing to contribute nothing. Florida answers *not
+> practising* or *no current practice location in Florida* for **190** of its
+> verified records — an affirmative absence, kept out of the percentage rather
+> than counted as either agreement or missing data.
+>
+> **This number is not independent agreement and must not be ranked against
+> the other source pairs.** Every board harvester selects its candidates with
+> `nppes_state == its own state`, so the only question the comparison can ask
+> is whether the address the board holds also names that state, and a high
+> answer is close to structurally guaranteed. It is **address concordance
+> within a state-matched sample**. The address is still telling us something
+> real: of all 500 people currently licensed as nurse-midwives in
+> Pennsylvania, only **303 give a Pennsylvania address** — 47 are in New
+> Jersey, 16 in New York, 15 in Maryland. Four in ten people licensed to
+> practise there do not live there.
 
 ### 5. Active Midwifery Supply per 100,000 Women of Reproductive Age (15–44)
 ![Active State Rate Map](docs/maps/active_state_rate.png)
