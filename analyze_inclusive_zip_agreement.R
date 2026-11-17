@@ -115,7 +115,13 @@ result <- tibble::tibble(
   n_with_secondary_location = dplyr::n_distinct(registry_secondary$npi),
   n_secondary_locations = nrow(registry_secondary),
   source_file = basename(PL_FILE))
-write_csv(result, "artifacts/inclusive_zip_agreement.csv")
+# write_with_provenance(), not write_csv(): ci_artifact_contracts A3 requires a
+# tracked artifact to carry a sidecar recording its inputs and their SHA-256.
+# This one shipped without, and the baseline carries it until a run re-records
+# it -- a sidecar has to be written AT production time, not reconstructed.
+source(file.path("R", "lib", "artifact_provenance.R"))
+write_with_provenance(result, "artifacts/inclusive_zip_agreement.csv",
+                      inputs = PL_FILE)
 
 base::message(sprintf(
   "  %s midwives compared; %s have a secondary practice location",

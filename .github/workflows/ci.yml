@@ -265,8 +265,13 @@ jobs:
       # A filename list also fails silently in the one direction that matters:
       # a NEW test file is not covered until somebody remembers to add it here,
       # and nothing reports that it was forgotten. A directory cannot forget.
+      # -rs so SKIP REASONS appear in the log, the same contract the pipeline
+      # integration step states: a reader must be able to tell a deliberate
+      # skip from a test that quietly did nothing. Eight tests shell out to the
+      # `duckdb` CLI binary, which is not installed here on purpose -- see the
+      # pytestmark in tests/test_hhs_opendata_csv_pipeline.py.
       - name: Python tests
-        run: python -m pytest tests -q
+        run: python -m pytest tests -q -rs
 
       # -v so the SKIP REASONS appear in the log. Three of these four tests read
       # a person-level artifact that is gitignored by design and therefore never
