@@ -59,7 +59,6 @@ run_case <- function(root_dir, out_dir, env = character(0), timeout_s = 60) {
   ))
   list(status = attr(res, "status") %||% 0L, output = paste(res, collapse = "\n"))
 }
-`%||%` <- function(a, b) if (is.null(a)) b else a
 
 with_case_dir <- function(case_fn) {
   base <- tempfile("panel_bug_hunt_")

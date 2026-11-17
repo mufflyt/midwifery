@@ -116,11 +116,16 @@ cat("\n-- H4 no function defined at top level in two files --\n")
 # a synthetic test-fixture row builder (two independent test files each build
 # their own candidate rows for their own scenarios) -- not a join key or a
 # normalisation either, since it never touches real data.
-ALLOW <- c("chk", "xchk", "error", "pick", "f", "ok", "bad", "skip", "kills",
-           "rd", "fmt", "mk", "sel",
-           "main", "code", "as_lgl", "rate", "key_of", "nonascii", "fetch_one",
+# 2026-11-16: as_lgl, disagree, drop_zip, error, nonascii and sel removed --
+# none is duplicated any more, and an allowlist entry for a name that no longer
+# repeats is a hole kept open for nothing. drop_zip in particular was listed as
+# "never a join key", which was wrong: it exists to build key_nozip, so it now
+# lives once in R/lib/geocode_conflicts.R with the collapse that follows it.
+ALLOW <- c("chk", "xchk", "pick", "f", "ok", "bad", "skip", "kills",
+           "rd", "fmt", "mk",
+           "main", "code", "rate", "key_of", "fetch_one",
            "assign_cd", "centroid_counts", "assign_county_from_points",
-           "drop_zip", "disagree", "raises", "err_msg", "mk_cand")
+           "raises", "err_msg", "mk_cand")
 defs <- list()
 for (f in r_files) {
   ln <- readLines(f, warn = FALSE)

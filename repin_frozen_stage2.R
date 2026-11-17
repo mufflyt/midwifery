@@ -100,7 +100,6 @@ if (!"npi" %in% names(src) || anyDuplicated(src$npi[!is.na(src$npi)]))
   stop("Refusing to pin: source is missing an npi column or has a duplicate NPI.",
        call. = FALSE)
 
-`%||%` <- function(a, b) if (is.null(a)) b else a
 county_best <- if ("county_best" %in% names(src)) sum(!is.na(src$county_best)) else NA_integer_
 new_fp <- list(source = basename(SOURCE), frozen = PINNED,
                sha256 = as.character(tools::md5sum(SOURCE)),  # placeholder, replaced below

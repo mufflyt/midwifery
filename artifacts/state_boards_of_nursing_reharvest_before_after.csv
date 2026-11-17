@@ -1,0 +1,9 @@
+state,state_published_by_source,state_observed_2026_11_09,state_observed_2026_11_15,state_recovered,status_2026_11_09,status_2026_11_15
+colorado,TRUE,0,485,485,schema_invalid,ok
+pennsylvania,TRUE,0,87,87,schema_invalid,ok
+connecticut,TRUE,28,28,0,ok,ok
+delaware,TRUE,0,0,0,present_zero_records,present_zero_records
+florida,TRUE,674,674,0,ok,ok
+illinois,TRUE,18,18,0,ok,ok
+texas,FALSE,0,0,0,ok,ok
+washington,FALSE,0,0,0,ok,ok

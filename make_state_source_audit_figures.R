@@ -42,6 +42,19 @@ suppressPackageStartupMessages({
 APPENDIX <- file.path("docs", "TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md")
 OUT_DIR  <- file.path("docs", "figures")
 
+# CATEGORICAL HUES, FIXED ORDER, NEVER CYCLED. Four series, assigned by the
+# factor order of `source` so a hue follows the source and not its rank -- a
+# filter that drops a series must not repaint the survivors. These are the
+# blue/orange/aqua/amber slots of the house categorical ramp, each stepped
+# darker until it clears 3:1 against white, because a 0.9pt line in the
+# undarkened aqua (2.74:1) and amber (2.11:1) is not readable on a printed
+# page. Verified on the adjacent pairlist (the right test for lines): worst
+# colour-vision-deficient separation dE 8.7 (deutan), worst normal-vision
+# dE 16.3, all four >= 3:1 contrast. Do not substitute a hue without
+# re-checking all four gates; the amber in particular fails the
+# normal-vision floor against the orange if it is lightened back.
+AUDIT_SERIES <- c("#2a78d6", "#d2551f", "#0f8f62", "#9c6b00")
+
 save_audit_fig <- function(p, name, width = 8.5, height = 5.4) {
   out <- file.path(OUT_DIR, name)
   ggsave(paste0(out, ".pdf"), p, width = width, height = height,
@@ -121,19 +134,34 @@ cov <- bind_rows(lapply(seq_len(nrow(cov_raw)), function(i) {
 cov$source <- gsub("\u2194", " to ", cov$source, fixed = FALSE)
 cov$source <- factor(cov$source, levels = rev(sort(unique(cov$source))))
 
-p1 <- ggplot(cov, aes(x = year, y = source)) +
-  geom_tile(fill = "grey25", width = 0.85, height = 0.6) +
+# COLOUR CARRIES THE CUSTODIAN, which is information the grid otherwise hides.
+# Whether a record is federal, state or commercial determines what it can be
+# held to: a federal register has a statutory update duty, a commercial
+# directory has none. A reader comparing coverage needs that on the same
+# picture, not two pages away in a table.
+CUSTODIAN <- c(
+  "NPPES" = "Federal", "DAC / Physician Compare" = "Federal",
+  "Open Payments" = "Federal", "PECOS revalidation" = "Federal",
+  "Facility Affiliation (CCN)" = "Federal", "CMS NDH (FHIR)" = "Federal",
+  "Medicaid" = "Federal", "State Boards of Nursing" = "State",
+  "Healthgrades" = "Commercial", "Doximity" = "Commercial")
+cov$custodian <- factor(
+  ifelse(as.character(cov$source) %in% names(CUSTODIAN),
+         CUSTODIAN[as.character(cov$source)], "Federal"),
+  levels = c("Federal", "State", "Commercial"))
+
+p1 <- ggplot(cov, aes(x = year, y = source, fill = custodian)) +
+  geom_tile(width = 0.85, height = 0.6) +
   scale_x_continuous(breaks = seq(min(cov$year), max(cov$year), by = 2)) +
-  labs(title = "No source covers the whole window",
-       subtitle = sprintf(paste0("Years each source carries a comparable practice state, %d-%d.\n",
-                                 "Four sources are a single current snapshot, and no source spans the window."),
-                          min(cov$year), max(cov$year)),
-       caption = paste0("Parsed from §2 of ", basename(APPENDIX)),
-       x = NULL, y = NULL) +
-  theme_minimal(base_size = 11) +
+  scale_fill_manual(values = c(Federal = AUDIT_SERIES[1],
+                               State = AUDIT_SERIES[3],
+                               Commercial = AUDIT_SERIES[2])) +
+  labs(caption = paste0("Parsed from \u00a72 of ", basename(APPENDIX)),
+       x = "Program year", y = "Record system", fill = "Custodian") +
+  theme_minimal(base_size = 13) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(),
-        plot.subtitle = element_text(size = 9.5, lineheight = 1.2))
-save_audit_fig(p1, "state_source_coverage_by_year", height = 4.9)
+        legend.position = "bottom")
+save_audit_fig(p1, "state_source_coverage_by_year", height = 5.2)
 
 # --- Figure 2: agreement with NPPES by year -----------------------------------
 agr_raw <- md_table(APPENDIX, c("Source", "% agree", "n comparable"))
@@ -158,8 +186,15 @@ agr <- agr %>%
 
 # THE TREND IS TESTED, NOT EYEBALLED. An earlier draft of the vignette called
 # this panel a flat line. Weighted least squares over the thirteen DAC years
-# through 2025 gives -0.228 points a year, p = 0.0014 -- a real decline -- so
+# through 2025 gives -0.248 points a year, p = 0.0002 -- a real decline -- so
 # the fitted line is drawn to keep the corrected claim visible in the figure.
+# The slope and p in the subtitle are COMPUTED from the parsed table, never
+# typed; this comment records what they were on 2026-11-15 so a reader can
+# tell at a glance whether a regenerated figure has moved. They did move:
+# the table this is parsed from was three vintages stale until
+# refresh_state_source_appendix_section3.R made it a rendering of
+# artifacts/state_source_audit_agreement.csv, and it had been reporting
+# -0.228 at p = 0.0014 from data that no longer existed.
 dac_fit <- agr %>% filter(grepl("^DAC", source), year <= 2025, !is.na(pct))
 dac_lm  <- lm(pct ~ year, data = dac_fit, weights = n)
 dac_p   <- summary(dac_lm)$coefficients[2, 4]
@@ -170,16 +205,11 @@ p2 <- ggplot(agr, aes(x = year, y = pct, colour = source, group = source)) +
   geom_line(linewidth = 0.7, na.rm = TRUE) +
   geom_point(size = 1.9, na.rm = TRUE) +
   scale_x_continuous(breaks = seq(min(agr$year), max(agr$year), by = 2)) +
-  scale_colour_grey(start = 0.05, end = 0.68) +
-  labs(title = "Agreement erodes slowly, and only where the series is long enough to tell",
-       subtitle = sprintf(paste0("Same-year basis against NPPES. DAC falls %.2f points a year over 2013-2025 (p = %.4f; fitted line),\n",
-                                 "so the 2026 drop continues a trend rather than breaking a flat one. Open Payments and PECOS\n",
-                                 "are flat, but each has only five years to say so with."),
-                          abs(coef(dac_lm)[2]), dac_p),
-       caption = paste0("Parsed from \u00a73 of ", basename(APPENDIX),
+  scale_colour_manual(values = AUDIT_SERIES) +
+  labs(caption = paste0("Parsed from \u00a73 of ", basename(APPENDIX),
                         "; trend by weighted least squares, weights = n comparable"),
-       x = NULL, y = "% agreeing with NPPES", colour = NULL) +
-  theme_minimal(base_size = 11) +
+       x = "Year", y = "Agreement with NPPES (%)", colour = "Record system") +
+  theme_minimal(base_size = 13) +
   theme(legend.position = "bottom", panel.grid.minor = element_blank(),
         plot.subtitle = element_text(size = 9.3, lineheight = 1.2))
 save_audit_fig(p2, "state_source_agreement_by_year", height = 5.8)
@@ -208,17 +238,32 @@ if (file.exists(oig4)) {
   p3 <- ggplot(t4, aes(x = attribute, y = pct, fill = basis)) +
     geom_col(position = position_dodge(width = 0.7), width = 0.6) +
     geom_hline(yintercept = bench, linetype = "dashed", colour = "grey35") +
-    annotate("text", x = 0.6, y = bench + 3, hjust = 0, size = 3.1, colour = "grey25",
-             label = sprintf("OIG 2011, all Medicare providers, ZIP only: %.1f%%", bench)) +
+    # WHAT IS 88.6% A PERCENTAGE OF? The old label said "OIG 2011, all
+    # Medicare providers, ZIP only: 88.6%" and never named the denominator or
+    # the quantity, so a reader could not tell whether it was agreement or
+    # disagreement, nor among whom. It is the share of the 987,266 providers
+    # listed in BOTH federal systems whose practice-location ZIP did not match
+    # between them.
+    scale_y_continuous(limits = c(0, 100),
+                       expand = expansion(mult = c(0, 0.02))) +
+    # BELOW the benchmark rule, not above it: placed above, the three wrapped
+    # lines ran off the top of the panel and the first one was cut in half.
+    annotate("text", x = 0.55, y = bench - 5, hjust = 0, vjust = 1, size = 3.6,
+             colour = "grey20", lineheight = 1.05,
+             label = sprintf(paste0(
+               "Inspector General 2011 benchmark: %.1f%% of 987,266 providers\n",
+               "listed in both federal systems had a practice-location ZIP\n",
+               "that did not match between them"), bench)) +
     geom_text(aes(label = sprintf("%.1f%%", pct)),
-              position = position_dodge(width = 0.7), vjust = -0.5, size = 3.1) +
-    scale_fill_grey(start = 0.35, end = 0.72) +
-    labs(title = "How much of \"disagreement\" is the question getting tighter",
-         subtitle = paste0("NPPES vs DAC, 2026 (n = 5,877). The same records disagree far more on ZIP than on state,\n",
-                      "and more again when every reported value must match rather than just one."),
-         caption = paste0("artifacts/oig_remake/oig_table4_consistency_2019_and_2026.csv; benchmark OEI-07-09-00440 table 4"),
-         x = NULL, y = "% of compared records disagreeing", fill = NULL) +
-    theme_minimal(base_size = 11) +
+              position = position_dodge(width = 0.7), vjust = -0.5, size = 3.8) +
+    scale_fill_manual(values = c(`no reported value in common` = AUDIT_SERIES[2],
+                                 `reported value sets differ` = AUDIT_SERIES[1])) +
+    scale_x_discrete(labels = c(practice_state = "Practice state",
+                                practice_zip5 = "Practice ZIP code")) +
+    labs(caption = "artifacts/oig_remake/oig_table4_consistency_2019_and_2026.csv; benchmark OEI-07-09-00440 table 4",
+         x = "Geographic unit compared", y = "Records disagreeing (%)",
+         fill = "Matching rule") +
+    theme_minimal(base_size = 13) +
     theme(legend.position = "bottom", panel.grid.major.x = element_blank(),
           plot.subtitle = element_text(size = 9.5, lineheight = 1.2))
   save_audit_fig(p3, "address_granularity_vs_oig_benchmark", height = 5.2)
@@ -249,7 +294,7 @@ if (file.exists(fp)) {
                             sum(ms$pct[ms$band != "1 state"])),
          caption = paste0(fp, " (set-membership footprint, not the modal reduction)"),
          x = NULL, y = "% of enrolled midwives") +
-    theme_minimal(base_size = 11) +
+    theme_minimal(base_size = 13) +
     theme(panel.grid.major.x = element_blank(), panel.grid.minor = element_blank())
   save_audit_fig(p4, "medicaid_multistate_footprint", height = 5.0)
 } else {
@@ -289,7 +334,7 @@ if (file.exists(red)) {
          caption = paste0(red, "; counts below each point are midwives. ",
                           "NDH is treated as a set of states, not reduced to one."),
          x = "State Medicaid programmes she is enrolled in", y = NULL, colour = NULL) +
-    theme_minimal(base_size = 11) +
+    theme_minimal(base_size = 13) +
     theme(legend.position = "bottom", panel.grid.minor = element_blank(),
           panel.grid.major.x = element_blank(),
           plot.subtitle = element_text(size = 9.3, lineheight = 1.2))
@@ -329,7 +374,7 @@ if (file.exists(lic)) {
                             ratio, L$chisq_df[1], format(L$chisq_n[1], big.mark = ","), L$chisq[1]),
          caption = paste0(lic, "; tiers from artifacts/mrost_consensus_tier_by_npi.csv"),
          x = NULL, y = "% of midwives in each licence group", fill = NULL) +
-    theme_minimal(base_size = 11) +
+    theme_minimal(base_size = 13) +
     theme(legend.position = "bottom", panel.grid.major.y = element_blank(),
           panel.grid.minor = element_blank(),
           plot.subtitle = element_text(size = 9.3, lineheight = 1.2))

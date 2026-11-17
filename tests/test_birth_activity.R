@@ -78,7 +78,10 @@ res <- build_midwife_birth_activity(
   reference_births = 100)
 
 pa <- res$provider_activity
-g <- function(n) pa[pa$npi_activity == n, ]
+# activity_rows(), not g(): ci_hygiene H4 refuses a top-level function
+# defined in two tracked files, and tests/test_expand_former_name_candidates.R
+# had its own one-letter picker over a different frame.
+activity_rows <- function(n) pa[pa$npi_activity == n, ]
 
 cat("\n=== cohort membership ===\n")
 ok("INACTIVE certificant excluded", !("5555555555" %in% pa$npi_activity))
@@ -86,31 +89,31 @@ ok("six ACTIVE midwives retained", nrow(pa) == 6L)
 
 cat("\n=== ABSENCE IS NOT ZERO (the core property) ===\n")
 ok("WY midwife with no records has missing activity status",
-   is.na(g("3333333333")$birth_activity_state))
+   is.na(activity_rows("3333333333")$birth_activity_state))
 ok("...her observed_births is NA, not 0",
-   is.na(g("3333333333")$observed_births))
+   is.na(activity_rows("3333333333")$observed_births))
 ok("...her birth_active is NA, not FALSE",
-   is.na(g("3333333333")$birth_active))
+   is.na(activity_rows("3333333333")$birth_active))
 ok("...her birth_fte_weight is NA, not 0",
-   is.na(g("3333333333")$birth_fte_weight))
+   is.na(activity_rows("3333333333")$birth_fte_weight))
 
 cat("\n=== a zero is emitted ONLY where ascertainment is adequate ===\n")
 ok("CO midwife with no records is no_observed_births",
-   g("2222222222")$birth_activity_state == "no_observed_births")
-ok("...observed_births is 0", g("2222222222")$observed_births == 0)
-ok("...birth_active is FALSE", identical(g("2222222222")$birth_active, FALSE))
-ok("...birth_fte_weight is 0", g("2222222222")$birth_fte_weight == 0)
+   activity_rows("2222222222")$birth_activity_state == "no_observed_births")
+ok("...observed_births is 0", activity_rows("2222222222")$observed_births == 0)
+ok("...birth_active is FALSE", identical(activity_rows("2222222222")$birth_active, FALSE))
+ok("...birth_fte_weight is 0", activity_rows("2222222222")$birth_fte_weight == 0)
 
 cat("\n=== overlapping sources are not double counted ===\n")
 # m1: TAF 20, birth certificate 25. Summing would give 45.
 ok("observed_births is the max across sources, not the sum",
-   g("1111111111")$observed_births == 25)
-ok("both sources recorded", g("1111111111")$n_activity_sources == 2L)
+   activity_rows("1111111111")$observed_births == 25)
+ok("both sources recorded", activity_rows("1111111111")$n_activity_sources == 2L)
 
 cat("\n=== FTE weighting ===\n")
-ok("120 births caps at 1.0 FTE", g("4444444444")$birth_fte_weight == 1)
+ok("120 births caps at 1.0 FTE", activity_rows("4444444444")$birth_fte_weight == 1)
 ok("25 births at reference 100 gives 0.25",
-   abs(g("1111111111")$birth_fte_weight - 0.25) < 1e-9)
+   abs(activity_rows("1111111111")$birth_fte_weight - 0.25) < 1e-9)
 
 cat("\n=== location shares ===\n")
 lw <- res$provider_location_activity

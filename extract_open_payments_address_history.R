@@ -27,7 +27,24 @@
 suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); library(readr)})
 source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-ingestion bootstrap
 
-YEARS <- as.integer(strsplit(Sys.getenv("YEARS", "2015,2016,2017,2018,2019,2020,2021"), ",")[[1]])
+# THE YEAR MUST BE PROVABLE FROM INSIDE THE FILE. Until 2026-11-15 these
+# artifacts carried no year column at all: the year existed only in the
+# filename, which R/lib/source_year.R::assert_source_year() refuses as proof
+# by design (parse_vintage() rejects a bare four-digit number). A file
+# renamed, or written by a producer handed the wrong year, would have been
+# believed -- and in the 2026-11-12 build four of five years went missing
+# with nothing to notice. The SELECT below now carries CMS's own
+# Program_Year column plus Date_of_Payment, so each annual artifact proves
+# its own vintage from an authoritative field rather than from its name.
+# Program_Year is read from the source, never written from `y`, because a
+# year the producer asserts is not an observation.
+#
+# The default window is the full declared series. It used to stop at 2021,
+# which is how a run that simply took the default could produce a short
+# series without saying so.
+YEARS <- as.integer(strsplit(Sys.getenv(
+  "YEARS", "2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025"),
+  ",")[[1]])
 
 WAREHOUSE <- samsung_duckdb_path(file.path("open_payments_data",
                                            "open_payments_merged_2013_2024.duckdb"),
@@ -63,6 +80,8 @@ for (y in YEARS) {
   sql <- sprintf(r"(
     SELECT c.certification_number, o.%s AS npi, c.first_name, c.last_name,
            c.nppes_state,
+           o.Program_Year                      AS program_year,
+           o.Date_of_Payment                   AS date_of_payment,
            o.Teaching_Hospital_Name            AS teaching_hospital_name,
            ''                                  AS principal_practice_business_name,
            o.Recipient_Primary_Business_Street_Address_Line1 AS recipient_address,

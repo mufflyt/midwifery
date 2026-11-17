@@ -22,7 +22,6 @@
 suppressPackageStartupMessages({library(dplyr); library(readr); library(sf)})
 
 # dplyr exports %||% in recent versions; define only if absent.
-if (!exists("%||%")) `%||%` <- function(a, b) if (is.null(a)) b else a
 
 ISO <- Sys.getenv("ISOCHRONES_DIR", path.expand("~/isochrones"))
 QUEUE <- Sys.getenv("GEOCODE_QUEUE", "artifacts/panel_geocode_queue.csv")

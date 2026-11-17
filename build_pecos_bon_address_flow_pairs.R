@@ -36,6 +36,7 @@
 suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr); library(cli)})
 source(file.path("R", "lib", "address_flow_helpers.R"))
 source(file.path("R", "join_safety.R"))  # assert_unique_keys(dedupe = TRUE)
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5()
 
 OUT <- "artifacts/pecos_vs_bon_address_pairs.csv"
 ZIP_CENTROIDS <- "data/us_zip_centroids.csv"
@@ -56,7 +57,7 @@ stopifnot(all(file.exists(BON_PATHS)))
 dac <- read_csv("dac_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
   transmute(npi, nppes_city = str_to_upper(str_squish(practice_city)),
             nppes_state = str_to_upper(str_squish(practice_state)),
-            zip5 = str_sub(practice_zip, 1, 5)) %>%
+            zip5 = norm_str_zip5(practice_zip)) %>%
   inner_join(centroids, by = c("zip5" = "zip")) %>%
   rename(nppes_lon = longitude, nppes_lat = latitude) %>%
   select(-zip5)
@@ -67,7 +68,7 @@ bon <- bind_rows(lapply(BON_STATES, function(spec) {
     filter(live_bon_match_status == "VERIFIED_LIVE_BON", nzchar(npi)) %>%
     transmute(npi, comparison_city = str_to_upper(str_squish(.data[[spec$city]])),
               comparison_state = str_to_upper(str_squish(.data[[spec$state]])),
-              zip5 = str_sub(.data[[spec$zip]], 1, 5))
+              zip5 = norm_str_zip5(.data[[spec$zip]]))
 })) %>%
   inner_join(centroids, by = c("zip5" = "zip")) %>%
   rename(comparison_lon = longitude, comparison_lat = latitude) %>%

@@ -79,6 +79,7 @@ source(file.path("R", "lib", "duckdb_guards.R"))
 # the 2026 file: a newer vintage would reintroduce the very mismatch this
 # script exists to remove.
 source(file.path("R", "lib", "medicare_duckdb.R"))
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # zip5_sql()
 
 NPPES <- Sys.getenv("NPPES_2025", "")
 if (!nzchar(NPPES))
@@ -162,7 +163,7 @@ duckdb::duckdb_register(con, "cand_num", numbered)
 duckdb::duckdb_register(con, "cand_name", nameonly)
 cand <- dbGetQuery(con, "
   WITH k AS (
-    SELECT *, SUBSTR(REGEXP_REPLACE(zip, '[^0-9]', '', 'g'), 1, 5) AS z5,
+    SELECT *, ", zip5_sql("zip"), " AS z5,
            CASE WHEN REGEXP_MATCHES(TRIM(addr), '^[0-9]+')
                 THEN REGEXP_EXTRACT(TRIM(addr), '^[0-9]+') END AS hn
     FROM org2)

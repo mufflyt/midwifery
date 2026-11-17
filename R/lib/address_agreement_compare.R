@@ -13,6 +13,7 @@
 # against tests/mutation_catalogue.R.
 # =============================================================================
 suppressPackageStartupMessages({library(dplyr); library(stringr); library(purrr); library(tibble)})
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5()
 
 #' Normalize one source's raw address columns into the common npi/state/
 #' city/zip5 shape every compare_*_address.R script joins on.
@@ -50,8 +51,15 @@ shape_address <- function(df, npi_col, state_col = NULL, city_col, zip_col = NUL
     # one character. No source currently has that whitespace (checked
     # directly), so this is a defensive hardening, not a correction.
     zip_col_trimmed <- str_trim(df[[zip_col]])
+    # "substr" mode now goes through the repository's canonical normalizer
+    # rather than a bare str_sub(). The two agree on every well-formed value
+    # and differ on three the old form got wrong: a ZIP whose leading zero
+    # was lost upstream ("1234") is padded rather than left four digits
+    # wide, a ZIP+4 is handled by digits rather than by character position,
+    # and the "00000" placeholder resolves to NA instead of entering the
+    # comparison as a location. See tests/test_zip_normalizer_saboteurs.R.
     zip5 <- if (zip_mode == "substr") {
-      str_sub(zip_col_trimmed, 1, 5)
+      norm_str_zip5(zip_col_trimmed)
     } else {
       str_extract(zip_col_trimmed, "[0-9]{5}$")
     }

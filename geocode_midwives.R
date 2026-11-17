@@ -106,25 +106,18 @@ cache <- cache_keyed %>%
   group_by(cache_key) %>% slice(1) %>% ungroup()
 
 # Zip-less fallback: same key minus the ZIP field, for records whose ZIP is
-# missing or disagrees. Both sides drop it the same way.
-drop_zip <- function(x) sub("\\|[^|]*$", "", x)
-# Dropping the ZIP MERGES cache keys that were distinct, so this fallback can
-# create conflicts the keyed pass did not have: two different addresses on the
-# same street in different ZIPs collapse to one key. Resolved or refused on
-# the same contract, never picked by row order.
+# missing or disagrees. drop_zip() and the deterministic collapse that follows
+# it are shared with geocode_panel_addresses.R rather than written twice --
+# stripping the ZIP builds a JOIN KEY, and two copies of a key construction
+# drifting apart changes results in silence. See R/lib/geocode_conflicts.R.
 cache_nz_in <- cache %>% mutate(key_nozip = drop_zip(cache_key))
 nz_res <- resolve_geocode_key(cache_nz_in$key_nozip, cache_nz_in$latitude,
                               cache_nz_in$longitude, cache_nz_in$quality_score)
 message("zip-less fallback -- ", summarise_geocode_resolution(nz_res))
-cache_nozip <- cache_nz_in %>%
-  inner_join(nz_res %>% filter(!is.na(lat)) %>%
-               select(key_nozip = key, .lat = lat, .lon = lon),
-             by = "key_nozip") %>%
-  filter(latitude == .lat, longitude == .lon) %>%
-  arrange(key_nozip, desc(quality_score), geocoder_provenance) %>%
-  group_by(key_nozip) %>% slice(1) %>% ungroup() %>%
-  select(key_nozip, lat_nz = latitude, lon_nz = longitude,
-         q_nz = quality_score, prov_nz = geocoder_provenance)
+cache_nozip <- collapse_zipless_key(cache_nz_in, nz_res,
+                                    "geocoder_provenance") %>%
+  rename(lat_nz = latitude, lon_nz = longitude, q_nz = quality_score,
+         prov_nz = geocoder_provenance)
 
 hit <- located %>%
   left_join(select(cache, cache_key, latitude, longitude, quality_score,

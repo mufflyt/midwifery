@@ -49,7 +49,6 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(DBI); library(duckdb); library(cli)
 })
 
-`%||%` <- function(a, b) if (is.null(a)) b else a
 
 root_dir <- {
   a <- grep("--file=", commandArgs(), value = TRUE)

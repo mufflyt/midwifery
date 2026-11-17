@@ -19,6 +19,7 @@ suppressPackageStartupMessages({
   library(leaflet); library(htmlwidgets); library(htmltools)
 })
 source(file.path("R", "lib", "clinical_setting.R"))
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5()
 
 cat("=== Building Complete R Leaflet Midwifery Access Map ===\n")
 
@@ -49,7 +50,7 @@ hosp_map <- hosp_geo %>%
 mws_geo <- mws_df %>%
   left_join(geo_df %>% select(npi, practice_address_1, practice_city, practice_state, practice_zip), by = "npi") %>%
   mutate(
-    zip5 = str_pad(str_sub(coalesce(practice_zip, nppes_zip, ""), 1, 5), 5, "left", "0"),
+    zip5 = norm_str_zip5(coalesce(practice_zip, nppes_zip, "")),
     st = toupper(coalesce(practice_state, nppes_state, "")),
     addr_clean = toupper(coalesce(practice_address_1, nppes_practice_address, "")),
     h_key = paste0(addr_clean, "_", st)
