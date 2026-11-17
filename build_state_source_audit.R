@@ -52,8 +52,11 @@ nppes <- nppes_raw %>%
   transmute(npi = trimws(npi), year = as.integer(snapshot_year),
             nppes_state = clean_state(practice_state)) %>%
   filter(!is.na(npi), nzchar(npi))
+# THE YEAR TRAVELS WITH THE SNAPSHOT. select(npi, nppes_state) used to drop
+# it here, which left state_agreement_current_only() unable to check what it
+# was comparing against -- see R/lib/state_agreement.R.
 nppes_current <- nppes %>% filter(year == max(year, na.rm = TRUE)) %>%
-  group_by(npi) %>% slice(1) %>% ungroup() %>% select(npi, nppes_state)
+  group_by(npi) %>% slice(1) %>% ungroup() %>% select(npi, nppes_state, year)
 
 coverage <- list()
 agreement <- list()
@@ -67,9 +70,13 @@ source(file.path("R", "lib", "state_agreement.R"))
 agree_same_year <- function(source, df) {
   state_agreement_same_year(source, df, nppes)
 }
-agree_current_only <- function(source, df_npi_state, as_of_label) {
+# `source_year` is stated per source rather than defaulted, because a default
+# is the thing that went wrong: every current-only source here happens to be a
+# 2026 snapshot today, and a default would keep saying 2026 after one of them
+# stopped being re-harvested.
+agree_current_only <- function(source, df_npi_state, as_of_label, source_year) {
   state_agreement_current_only(source, df_npi_state, nppes_current,
-                               as_of_label)
+                               as_of_label, source_year)
 }
 
 # --- DAC / Physician Compare, 2013-2016 + 2026 -------------------------------
@@ -123,7 +130,7 @@ agreement$fa <- agree_same_year("facility_affiliation_ccn", fa_all)
 hg <- read_csv("healthgrades_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
   transmute(npi = trimws(hg_npi), state = clean_state(hg_state)) %>% filter(!is.na(npi), nzchar(npi))
 coverage$hg <- tibble(source = "healthgrades", year = 2026L, n_rows = nrow(hg), n_npis = n_distinct(hg$npi))
-agreement$hg <- agree_current_only("healthgrades", hg, "~2026-10 (scrape, undated per-record)")
+agreement$hg <- agree_current_only("healthgrades", hg, "~2026-10 (scrape, undated per-record)", 2026L)
 
 # --- Doximity: has a real per-record date_modified ---------------------------
 dox <- read_csv("artifacts/doximity_public_matched.csv", col_types = cols(.default = "c"), progress = FALSE)
@@ -152,7 +159,7 @@ coverage$bon <- tibble(source = "state_boards_of_nursing", year = 2026L,
                        n_npis = n_distinct(bon_snapshot$comparable$npi))
 agreement$bon <- agree_current_only("state_boards_of_nursing",
                                     bon_snapshot$comparable,
-                                    bon_snapshot$label)
+                                    bon_snapshot$label, 2026L)
 
 # --- FHIR / CMS National Directory of Healthcare Providers, current only ----
 ndh <- read_csv("artifacts/cms_ndh_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
@@ -160,7 +167,7 @@ ndh <- read_csv("artifacts/cms_ndh_midwives.csv", col_types = cols(.default = "c
   mutate(state = clean_state(str_match(ndh_addresses, "\\b([A-Z]{2})\\s+\\d{5}")[, 2])) %>%
   transmute(npi = trimws(npi), state) %>% filter(!is.na(npi), !is.na(state))
 coverage$ndh <- tibble(source = "cms_ndh_fhir", year = 2026L, n_rows = nrow(ndh), n_npis = n_distinct(ndh$npi))
-agreement$ndh <- agree_current_only("cms_ndh_fhir", ndh, "2026-10 (bulk pull; meta.lastUpdated available per-record, not yet exploited here)")
+agreement$ndh <- agree_current_only("cms_ndh_fhir", ndh, "2026-10 (bulk pull; meta.lastUpdated available per-record, not yet exploited here)", 2026L)
 
 # --- NPPES's own coverage, for context ---------------------------------------
 coverage$nppes <- add_coverage("nppes", nppes %>% filter(!is.na(npi)))

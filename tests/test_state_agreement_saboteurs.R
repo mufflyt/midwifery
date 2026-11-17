@@ -19,26 +19,23 @@
 # than implied.
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.harness <- grep("--file=", commandArgs(), value = TRUE)
+source(file.path(if (length(.harness)) dirname(sub("--file=", "", .harness[1]))
+                 else "tests", "helper-saboteur.R"))
+root <- test_repo_root()
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 suppressPackageStartupMessages({library(dplyr); library(tibble)})
 source(file.path(root, "R", "lib", "state_agreement.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
-sab <- function(n, name) cat(sprintf("\nA%d %s\n", n, name))
+SAB_PREFIX <- "A"
 
 registry <- tibble(npi = c("1", "2", "3", "4"), year = rep(2025L, 4),
                    nppes_state = c("CO", "TX", "FL", NA))
+# The current snapshot now carries its own year, because
+# state_agreement_current_only() has to check the pairing rather than take
+# the caller's word for it -- see tests/test_cross_vintage_pairing_saboteurs.R.
 registry_now <- tibble(npi = c("1", "2", "3"),
-                       nppes_state = c("CO", "TX", "FL"))
+                       nppes_state = c("CO", "TX", "FL"), year = 2026L)
 
 sab(1, "the plain case: three midwives, one disagrees")
 {
@@ -145,7 +142,7 @@ sab(8, "nothing comparable reports NA, not NaN and not zero")
   # 0/0 is NaN. Printed in a table it reads as a failed computation; worse,
   # a reader may take it for zero agreement. NA is the honest value.
   empty <- tibble(npi = character(0), state = character(0))
-  r <- state_agreement_current_only("fixture", empty, registry_now, "2026")
+  r <- state_agreement_current_only("fixture", empty, registry_now, "2026", 2026L)
   chk(r$n_comparable == 0L, "no comparable rows")
   chk(is.na(r$pct_agree) && !is.nan(r$pct_agree),
       sprintf("the percentage is NA, not NaN [%s]", r$pct_agree))
@@ -154,7 +151,7 @@ sab(8, "nothing comparable reports NA, not NaN and not zero")
 sab(9, "the snapshot comparison matches on identifier alone")
 {
   src <- tibble(npi = c("1", "2", "3"), state = c("CO", "NM", "FL"))
-  r <- state_agreement_current_only("fixture", src, registry_now, "2026-11")
+  r <- state_agreement_current_only("fixture", src, registry_now, "2026-11", 2026L)
   chk(r$n_comparable == 3L && r$n_agree == 2L,
       sprintf("2 of 3 [%d of %d]", r$n_agree, r$n_comparable))
   chk(identical(r$year, "2026-11"),

@@ -27,7 +27,22 @@
 # and the two together make the weighting visible instead of implied.
 # Changing WHICH estimand is published is a scientific decision and is not
 # made here.
+# PAIRING IS PART OF THE ARITHMETIC. Neither function below could see what
+# YEAR it was comparing. state_agreement_current_only() took the registry
+# with its year column already stripped by the caller and a free-text
+# `as_of_label` that nothing checked, so handing it a 2019 source and the
+# 2026 registry produced a row stamped `year = 2026` and published it as a
+# 2026 comparison. state_agreement_same_year() joins on year and so cannot
+# mismatch, but when the two year sets did not meet AT ALL it returned zero
+# rows and the source simply left the agreement table. Both now state the
+# years they paired and refuse a pairing they cannot justify, through the
+# guard in R/lib/source_vintage.R that already existed for this and that
+# nothing had ever called.
 # =============================================================================
+
+if (!exists("assert_same_vintage_year", mode = "function")) {
+  source(file.path("R", "lib", "source_vintage.R"))
+}
 
 #' Rows and distinct identifiers a source contributes per year
 #'
@@ -54,6 +69,29 @@ add_coverage <- function(source_id, source_rows) {
 #' @return [tbl_df] one row per year.
 #' @export
 state_agreement_same_year <- function(source_id, source_rows, registry) {
+  # A SOURCE THAT SHARES NO YEAR WITH THE REGISTRY COMPARED NOTHING. The
+  # inner join on (npi, year) makes a cross-year pairing impossible, which is
+  # the point of it -- but when the two year sets are disjoint it yields zero
+  # rows, this function returns a zero-row tibble, and bind_rows() in the
+  # audit drops the source out of state_source_audit_agreement.csv with no
+  # error and no empty row to notice. The source does not look wrong; it
+  # looks absent, which is how a truncated or re-keyed input publishes a
+  # smaller study. Named here rather than discovered by a reader counting
+  # sources in the output.
+  source_years <- sort(unique(stats::na.omit(source_rows$year)))
+  registry_years <- sort(unique(stats::na.omit(registry$year)))
+  if (!length(intersect(source_years, registry_years))) {
+    stop(sprintf(paste0(
+      "state_agreement_same_year(): '%s' shares no year with the registry, so ",
+      "nothing was compared and the source would vanish from the agreement ",
+      "table rather than fail.\n  source years:   %s\n  registry years: %s\n",
+      "  Supply the years the source actually covers, or drop the source ",
+      "deliberately -- an empty comparison must not be published as absence."),
+      source_id,
+      if (length(source_years)) paste(source_years, collapse = ", ") else "<none: the source has no dated rows>",
+      if (length(registry_years)) paste(registry_years, collapse = ", ") else "<none>"),
+      call. = FALSE)
+  }
   compared <- source_rows %>%
     dplyr::inner_join(registry, by = c("npi", "year"),
                       relationship = "many-to-one") %>%
@@ -74,14 +112,54 @@ state_agreement_same_year <- function(source_id, source_rows, registry) {
 
 #' Agreement with the registry's current snapshot, for sources with no year
 #'
+#' THE LABEL WAS AN ASSERTION, AND THE YEAR HAD BEEN THROWN AWAY. This joins
+#' on `npi` alone, which is the only option for a source that carries no
+#' year -- a scrape, a board roster, a FHIR pull. But `as_of_label` is free
+#' text that lands in the output's `year` column, nothing checked it, and
+#' the caller passed `registry_current` with its `year` column already
+#' dropped. So the function was structurally incapable of knowing which
+#' registry snapshot it had been handed: a 2019 source against the 2026
+#' registry returned a row labelled 2026 and 0% agreement, and the 0% read
+#' as the source disagreeing rather than as seven years of drift.
+#'
+#' `source_year` now has to be stated and `registry_current` has to carry
+#' its own `year`, so the one is checked against the other instead of
+#' against a sentence. The label stays, because "2026-11 (6 boards
+#' harvested; ...)" says more than a year does -- it is now a caption on a
+#' pairing that has been verified rather than the only evidence for it.
+#'
 #' @param source_id [character] name recorded in the output.
 #' @param source_rows [data.frame] with `npi` and `state`.
-#' @param registry_current [data.frame] with `npi` and `nppes_state`.
+#' @param registry_current [data.frame] with `npi`, `nppes_state` and `year`.
 #' @param as_of_label [character] goes in the `year` column.
+#' @param source_year [integer] the year the source's snapshot is FROM.
+#' @param max_months [numeric] how far apart the two sides may be before the
+#'   pairing is refused. Widen it deliberately to measure across a gap.
 #' @return [tbl_df] a single row.
 #' @export
 state_agreement_current_only <- function(source_id, source_rows, registry_current,
-                               as_of_label) {
+                               as_of_label, source_year, max_months = 6) {
+  if (!"year" %in% names(registry_current)) {
+    stop(sprintf(paste0(
+      "state_agreement_current_only(): the registry passed for '%s' carries no ",
+      "year column, so which snapshot it is cannot be checked and the pairing ",
+      "cannot be shown to be same-year. Pass the registry WITH its year rather ",
+      "than selecting it away."), source_id), call. = FALSE)
+  }
+  registry_year <- unique(stats::na.omit(registry_current$year))
+  if (length(registry_year) != 1L) {
+    stop(sprintf(paste0(
+      "state_agreement_current_only(): the registry passed for '%s' spans %d ",
+      "year(s) (%s), so there is no single snapshot to compare against. This ",
+      "function matches on npi alone; handing it several years silently pools ",
+      "them and lets one midwife match a row from any of them."),
+      source_id, length(registry_year),
+      if (length(registry_year)) paste(sort(registry_year), collapse = ", ") else "none"),
+      call. = FALSE)
+  }
+  assert_same_vintage_year(source_year, registry_year,
+                           sprintf("%s, as of %s", source_id, as_of_label),
+                           "the registry's current snapshot", max_months)
   compared <- source_rows %>%
     dplyr::inner_join(registry_current, by = "npi") %>%
     dplyr::filter(!is.na(.data$state), !is.na(.data$nppes_state))
