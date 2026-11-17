@@ -43,9 +43,14 @@ owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 SAB_PREFIX <- "A"
 
 tracked <- system2("git", "ls-files", stdout = TRUE)
-read_if <- function(p) if (file.exists(p)) paste(readLines(p, warn = FALSE),
+# read_tracked, not read_if: compare_all_sources_mysteryroster.R
+# defines read_if() at top level and ci_hygiene H4 refuses the same
+# name in two tracked files. H4 reads `git ls-files`, so this
+# collision was invisible until the file was staged -- which is the
+# second time that has caught me in one session.
+read_tracked <- function(p) if (file.exists(p)) paste(readLines(p, warn = FALSE),
                                                 collapse = "\n") else ""
-workflows <- paste(vapply(Sys.glob(".github/workflows/*.yml"), read_if,
+workflows <- paste(vapply(Sys.glob(".github/workflows/*.yml"), read_tracked,
                           character(1)), collapse = "\n")
 
 sab(1, "every tracked Python file is reachable some way")
@@ -64,7 +69,7 @@ sab(1, "every tracked Python file is reachable some way")
   # and an encoding error must not masquerade as unreachability.
   textish <- grep("[.](png|jpg|jpeg|pdf|svg|zip|xlsx|duckdb|rds|gz|parquet)$",
                   tracked, value = TRUE, invert = TRUE)
-  corpus <- paste(vapply(textish, read_if, character(1)), collapse = "\n")
+  corpus <- paste(vapply(textish, read_tracked, character(1)), collapse = "\n")
   hits <- function(needle, haystack, fixed = TRUE) {
     m <- gregexpr(needle, haystack, fixed = fixed, useBytes = TRUE)[[1]]
     if (length(m) == 1L && m[1] == -1L) 0L else length(m)
@@ -74,7 +79,7 @@ sab(1, "every tracked Python file is reachable some way")
     # Collected by pytest: tests/ is the pytest root, so tests/test_*.py runs
     # whether or not anything names it.
     if (startsWith(f, "tests/") && startsWith(basename(f), "test_")) next
-    own <- read_if(f)
+    own <- read_tracked(f)
     base_name <- basename(f)
     elsewhere <- hits(base_name, corpus) - hits(base_name, own)
     if (elsewhere <= 0L) {
@@ -110,8 +115,8 @@ sab(2, "a cross-language twin has to say it is one")
   for (st in stems) {
     pf <- py[basename(py) == paste0(st, ".py")][1]
     rf <- r[basename(r) == paste0(st, ".R")][1]
-    mutual <- grepl(basename(rf), read_if(pf), fixed = TRUE) ||
-      grepl(basename(pf), read_if(rf), fixed = TRUE)
+    mutual <- grepl(basename(rf), read_tracked(pf), fixed = TRUE) ||
+      grepl(basename(pf), read_tracked(rf), fixed = TRUE)
     if (!mutual) silent <- c(silent, sprintf("%s <-> %s", pf, rf))
   }
   chk(length(silent) == 0L,
@@ -210,7 +215,7 @@ sab(7, "INVERTED: a DIFFERENT %||% is still allowed to exist")
 
 sab(8, "the flow diagram has one theme, and no switch to select it")
 {
-  fd <- read_if("R/lib/flow_diagram.R")
+  fd <- read_tracked("R/lib/flow_diagram.R")
   # The DEFINITION, not the name: flow_diagram.R's own docblock explains the
   # removal and names the function, and a saboteur that greps for the bare
   # name fails on the comment that documents its absence.
@@ -277,7 +282,7 @@ sab(11, "INVERTED: the identity scorer's two variants are BOTH real")
               paste(arg, collapse = ", ")))
   chk(all(c("full", "identity_only") %in% names(TRL_DECISION_RULES)),
       "and TRL_DECISION_RULES carries thresholds for each")
-  caller <- read_if("experiment_trilliant_identity_linkage.R")
+  caller <- read_tracked("experiment_trilliant_identity_linkage.R")
   chk(grepl('"identity_only"', caller, fixed = TRUE),
       "and a production script still asks for the identity_only variant")
 }
