@@ -37,7 +37,12 @@ suppressPackageStartupMessages({library(DBI); library(duckdb)})
   if (length(file_arg)) dirname(normalizePath(sub("^--file=", "", file_arg[1]))) else getwd()
 })
 source(file.path(.this_script_dir, "R", "lib", "medicare_duckdb.R"))
-source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5(), zip5_sql()
+# .this_script_dir, NOT a cwd-relative path -- see the comment above. The ZIP
+# sweep added this line with a bare relative path, which resolved fine in
+# normal use and died instantly under tests/test_build_midwife_panel.R, whose
+# cases run this script from a temp working directory. Cases 14, 15 and 16 all
+# failed because the subprocess could not even load.
+source(file.path(.this_script_dir, "R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5(), zip5_sql()
 
 ROOT <- Sys.getenv("NPPES_HISTORY", "")
 if (!nzchar(ROOT)) {
@@ -305,7 +310,7 @@ process_core_parquet_year <- function(con, npi_parquet, ptax_parquet, year, snap
      QUALIFY ROW_NUMBER() OVER (PARTITION BY n.npi) = 1",
     # No tax_scope column -- see the matching BUG FIX note in
     # process_reshaped_year(); the panel's real header has 13 columns.
-    zip5_sql("TRIM(n.ploczip)"), mid_expr, year, snap_date_str, npi_parquet, ptax_parquet, where_tax)
+    zip5_sql("n.ploczip"), mid_expr, year, snap_date_str, npi_parquet, ptax_parquet, where_tax)
   dbGetQuery(con, sql)
 }
 

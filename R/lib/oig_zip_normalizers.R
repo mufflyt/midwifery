@@ -55,9 +55,23 @@ norm_str_zip5 <- function(x) {
 #'   for example `"TRIM(n.ploczip)"`.
 #' @return [character] a SQL expression producing a 5-character ZIP or NULL.
 #' @export
+#' PASS A COLUMN, NOT A STRING EXPRESSION. This casts to VARCHAR itself, so
+#' the cast wraps whatever it is handed: `zip5_sql("TRIM(n.ploczip)")` emits
+#' `CAST(TRIM(n.ploczip) AS VARCHAR)`, and DuckDB binds the TRIM first. On the
+#' core parquet `ploczip` is an INTEGER, so that is
+#' `Binder Error: No function matches ... 'trim(INTEGER)'` and the whole panel
+#' build dies. An outer TRIM is also pointless here: the regexp strips every
+#' non-digit including whitespace.
 zip5_sql <- function(column_expr) {
-  digits <- sprintf("REGEXP_REPLACE(CAST(%s AS VARCHAR), '[^0-9]', '', 'g')",
-                    column_expr)
+  # DROP A TRAILING DECIMAL FRACTION BEFORE STRIPPING NON-DIGITS. A ZIP read as
+  # a DOUBLE casts to "501.0", and removing non-digits from that leaves "5010",
+  # which LPADs to "05010" -- a different, entirely valid-looking ZIP. R's
+  # as.character(501) is "501", so the two sides also disagreed. Found by
+  # Z14b in tests/test_zip_normalizer_saboteurs.R, which probes an int, a text
+  # and a double column because the original probe only ever passed strings.
+  as_text <- sprintf("REGEXP_REPLACE(CAST(%s AS VARCHAR), '\\.[0-9]*$', '')",
+                     column_expr)
+  digits <- sprintf("REGEXP_REPLACE(%s, '[^0-9]', '', 'g')", as_text)
   sprintf(paste0(
     "NULLIF(CASE ",
     "WHEN LENGTH(%s) < 3 THEN NULL ",

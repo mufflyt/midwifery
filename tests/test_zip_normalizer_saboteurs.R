@@ -196,6 +196,37 @@ sab(13, "normalizing is idempotent")
 # PART 5 -- THE SQL FORM MUST BE THE SAME FUNCTION
 # =============================================================================
 
+sab("14b", "the generated SQL survives a column that is not VARCHAR")
+{
+  # Z14 probes a VARCHAR column by a bare name, and that is exactly the shape
+  # that hid a real defect for a day: build_midwife_panel.R called
+  # zip5_sql("TRIM(n.ploczip)"), zip5_sql() wraps what it is given in
+  # CAST(... AS VARCHAR), and on the core parquet `ploczip` is an INTEGER. So
+  # DuckDB bound TRIM(INTEGER) first and refused -- the whole core-parquet
+  # panel build died, and no test noticed because every test passed a string.
+  have_duckdb <- requireNamespace("duckdb", quietly = TRUE) &&
+    requireNamespace("DBI", quietly = TRUE)
+  if (!have_duckdb) {
+    cat("  skip Z14b -- duckdb not available in this session\n")
+  } else {
+    con <- DBI::dbConnect(duckdb::duckdb())  # duckdb-exception: test fixture
+    on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+    DBI::dbExecute(con, paste(
+      "CREATE TABLE typed AS",
+      "SELECT 80202 AS as_int, '80202' AS as_text, 80202.0 AS as_dbl",
+      "UNION ALL SELECT 501, '00501', 501.0"))
+    for (col in c("as_int", "as_text", "as_dbl")) {
+      got <- tryCatch(
+        DBI::dbGetQuery(con, sprintf("SELECT %s AS z FROM typed t",
+                                     zip5_sql(paste0("t.", col))))$z,
+        error = function(e) conditionMessage(e))
+      chk(identical(got, c("80202", "00501")),
+          sprintf("Z14b a %s column normalises to five padded digits [%s]",
+                  col, paste(utils::head(got, 2), collapse = ", ")))
+    }
+  }
+}
+
 sab(14, "the generated SQL agrees with the R function on every edge case")
 {
   # Seven producers normalize inside a DuckDB query. zip5_sql() generates
