@@ -20,6 +20,7 @@
 # =============================================================================
 
 suppressPackageStartupMessages({
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5()
   library(httr)
   library(readr)
   library(dplyr)
@@ -59,7 +60,7 @@ coh <- coh %>%
     last_clean  = str_remove_all(last_upper, "[^A-Z]"),
     first_token = str_to_upper(map_chr(str_split(first_upper, "\\s+"), 1)),
     nppes_city_clean = if ("nppes_city" %in% names(.)) str_to_upper(str_trim(nppes_city)) else NA_character_,
-    nppes_zip_clean  = if ("nppes_zip" %in% names(.)) str_sub(as.character(nppes_zip), 1, 5) else NA_character_
+    nppes_zip_clean  = if ("nppes_zip" %in% names(.)) norm_str_zip5(nppes_zip) else NA_character_
   ) %>%
   filter(!is.na(last_upper), last_upper != "", !is.na(first_upper), first_upper != "")
 

@@ -124,6 +124,9 @@ jobs:
       - name: CCN -> state resolution contract
         run: Rscript tests/test_ccn_state.R
 
+      - name: clean_state() full-name and combined-form translation contract
+        run: Rscript tests/test_clean_state.R
+
       # Base R plus stringr. Every cross-source comparison pairs files published
       # on different dates, and parse_vintage() is what knows those dates. Its
       # dangerous failure is silent: a name it cannot read must return NA, never
@@ -250,11 +253,25 @@ jobs:
       - name: Install pytest
         run: python -m pip install --quiet --disable-pip-version-check pytest
 
-      # Covers the two failure modes that silently truncate the roster: the
-      # 500-row APEX cap in the directory pager, and the 200-row response cap in
-      # the NPI API's candidate lists.
-      - name: Scraper and NPI-candidate tests
-        run: python -m pytest tests/test_scrape.py tests/test_fetch_npi_candidates.py -q
+      # THE WHOLE DIRECTORY, NOT A LIST OF FILENAMES. This step named
+      # tests/test_scrape.py and tests/test_fetch_npi_candidates.py explicitly,
+      # which ran 27 of the 134 Python tests in tests/. The other 107 -- across
+      # ten files and 2,032 lines, including the five live BON harvesters, the
+      # HHS open-data pipeline and the microsimulation conservation suite --
+      # collected and passed but gated NOTHING, which is worse than having no
+      # suite because it reads as coverage. The whole directory runs in 16
+      # seconds, so the narrow list was never a budget decision.
+      #
+      # A filename list also fails silently in the one direction that matters:
+      # a NEW test file is not covered until somebody remembers to add it here,
+      # and nothing reports that it was forgotten. A directory cannot forget.
+      # -rs so SKIP REASONS appear in the log, the same contract the pipeline
+      # integration step states: a reader must be able to tell a deliberate
+      # skip from a test that quietly did nothing. Eight tests shell out to the
+      # `duckdb` CLI binary, which is not installed here on purpose -- see the
+      # pytestmark in tests/test_hhs_opendata_csv_pipeline.py.
+      - name: Python tests
+        run: python -m pytest tests -q -rs
 
       # -v so the SKIP REASONS appear in the log. Three of these four tests read
       # a person-level artifact that is gitignored by design and therefore never

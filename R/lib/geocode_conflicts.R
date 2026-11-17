@@ -118,3 +118,79 @@ summarise_geocode_resolution <- function(resolved) {
           format(tb[["by_quality"]], big.mark = ","),
           format(tb[["refused_ambiguous"]], big.mark = ","))
 }
+
+#' The cache key with its ZIP field removed
+#'
+#' Both geocoding producers fall back to street+city+state when a record's ZIP
+#' is missing or disagrees with the cache, and both have to strip it the SAME
+#' way or a 9-digit cached ZIP defeats the fallback on one side only. The
+#' one-liner lived in `geocode_midwives.R` and `geocode_panel_addresses.R`
+#' separately, and it is the construction of a JOIN KEY -- the one category
+#' where two copies drifting apart changes results silently.
+#'
+#' @param key [character] the pipe-delimited cache key.
+#' @return [character] the key with its final `|field` dropped.
+#' @export
+drop_zip <- function(key) sub("\\|[^|]*$", "", key)
+
+#' One row per zip-less key, chosen deterministically or not at all
+#'
+#' DROPPING THE ZIP MERGES KEYS THAT WERE DISTINCT, so this fallback can
+#' create conflicts the keyed pass did not have: two different addresses on
+#' the same street in different ZIPs collapse to one key. Both producers then
+#' did the same four steps -- keep only rows whose coordinate matches the one
+#' `resolve_geocode_key()` settled on, order totally, and take the first --
+#' differing only in which columns break the tie and what the outputs are
+#' called. The steps are here once; the renaming stays with the caller, where
+#' the column names belong.
+#'
+#' `tiebreak` exists because the coordinate is already agreed by the time this
+#' runs: what is left to choose is the METADATA row, and ordering by named
+#' columns makes that choice reproducible instead of dependent on row order.
+#'
+#' @param cache_rows [data.frame] cache rows carrying `key_nozip`, `latitude`,
+#'   `longitude`, `quality_score` and every column named in `tiebreak`.
+#' @param resolved [data.frame] output of `resolve_geocode_key()` over
+#'   `cache_rows$key_nozip`.
+#' @param tiebreak [character] column names that break a remaining tie, in
+#'   order. Required: an unordered pick is the defect this function prevents.
+#' @return [data.frame] one row per resolved `key_nozip`, with `key_nozip`,
+#'   `latitude`, `longitude`, `quality_score` and the `tiebreak` columns.
+#' @export
+collapse_zipless_key <- function(cache_rows, resolved, tiebreak) {
+  missing_cols <- setdiff(c("key_nozip", "latitude", "longitude",
+                            "quality_score", tiebreak), names(cache_rows))
+  if (length(missing_cols)) {
+    stop("collapse_zipless_key(): cache rows have no ",
+         paste(missing_cols, collapse = ", "), " column. Without every ",
+         "tiebreak column the ordering is partial and the surviving row ",
+         "depends on row order, which is what this function exists to ",
+         "prevent.", call. = FALSE)
+  }
+  if (!length(tiebreak)) {
+    stop("collapse_zipless_key(): tiebreak is empty, so rows that agree on ",
+         "coordinate and quality would be separated by row order alone.",
+         call. = FALSE)
+  }
+  # match(), not merge(): resolve_geocode_key() returns ONE row per key, so
+  # this is a lookup rather than a join, and a geocoding cache runs to a
+  # million rows where merge() costs minutes and a copy of everything.
+  settled <- resolved[!is.na(resolved$lat), , drop = FALSE]
+  at <- match(cache_rows$key_nozip, settled$key)
+  # The coordinate the resolver SETTLED ON, not merely some coordinate filed
+  # under that key: a row the resolver did not pick must not supply the
+  # metadata. A key it refused has no match and drops out here.
+  keep <- !is.na(at) &
+    cache_rows$latitude == settled$lat[at] &
+    cache_rows$longitude == settled$lon[at]
+  keep[is.na(keep)] <- FALSE
+  kept <- cache_rows[keep, c("key_nozip", "latitude", "longitude",
+                             "quality_score", tiebreak), drop = FALSE]
+  ord <- do.call(order, c(list(kept$key_nozip, -xtfrm(kept$quality_score)),
+                          unname(lapply(tiebreak, function(column)
+                            kept[[column]]))))
+  kept <- kept[ord, , drop = FALSE]
+  kept <- kept[!duplicated(kept$key_nozip), , drop = FALSE]
+  rownames(kept) <- NULL
+  kept
+}

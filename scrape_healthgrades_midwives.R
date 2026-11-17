@@ -87,7 +87,12 @@ BROWSER_HEADERS <- c(
   `Connection` = "keep-alive"
 )
 
-log_message <- function(msg) {
+# NOT log_message(): R/build_amcb_state_licenses.R has a function of that name
+# that takes `...` and calls message(). This one takes one string and tees it
+# to LOG_FILE as well as the console. Two different functions, so two names --
+# ci_hygiene H4 flagged the collision and merging them would have changed
+# where one pipeline's log goes.
+hg_log_message <- function(msg) {
   line <- sprintf("[%s] %s", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), msg)
   cat(line, "\n", sep = "")
   cat(line, "\n", sep = "", file = LOG_FILE, append = TRUE)
@@ -131,7 +136,7 @@ extract_npi_from_html <- function(content) {
 fetch <- function(url) {
   Sys.sleep(DELAY_SEC)
   r <- tryCatch(GET(url, add_headers(.headers = BROWSER_HEADERS), timeout(45)),
-                error = function(e) { log_message(paste("  fetch error:", e$message)); NULL })
+                error = function(e) { hg_log_message(paste("  fetch error:", e$message)); NULL })
   if (is.null(r) || status_code(r) != 200) return(NA_character_)
   content(r, "text", encoding = "UTF-8")
 }
@@ -642,7 +647,7 @@ verify_profile <- function(html, first, last) {
 
 scrape_one <- function(row) {
   first <- row$first_name; last <- row$last_name
-  log_message(sprintf("%s %s", first, last))
+  hg_log_message(sprintf("%s %s", first, last))
 
   urls <- search_midwife(first, last)
   url <- pick_best_url(urls, given_name(first), last)
@@ -706,7 +711,7 @@ main <- function(n_limit = NA_integer_) {
     if (!is.null(prior) && nrow(prior) &&
         dplyr::n_distinct(prior$certification_number) > length(done)) {
       recovered <- split(prior, prior$certification_number)
-      log_message(sprintf(
+      hg_log_message(sprintf(
         "RECOVERY: %s has %d certificants but the checkpoint has %d. Rebuilding
    the checkpoint from the CSV so completed work is not re-scraped.",
         OUTPUT, length(recovered), length(done)))
@@ -726,13 +731,13 @@ main <- function(n_limit = NA_integer_) {
   todo <- roster %>% filter(!certification_number %in% names(done))
   if (!is.na(n_limit)) todo <- head(todo, n_limit)
 
-  log_message(sprintf("roster=%d already_done=%d this_run=%d delay=%ss",
+  hg_log_message(sprintf("roster=%d already_done=%d this_run=%d delay=%ss",
                       nrow(roster), length(done), nrow(todo), DELAY_SEC))
 
   for (i in seq_len(nrow(todo))) {
     r <- todo[i, ]
     res <- tryCatch(scrape_one(r), error = function(e) {
-      log_message(paste("  ERROR:", e$message))
+      hg_log_message(paste("  ERROR:", e$message))
       tibble(certification_number = r$certification_number, hg_status = "error")
     })
     done[[as.character(r$certification_number)]] <- res
@@ -741,7 +746,7 @@ main <- function(n_limit = NA_integer_) {
       atomic_saveRDS(done, CHECKPOINT)
       out <- bind_rows(done)
       atomic_write_csv(out, OUTPUT, na = "")
-      log_message(sprintf("  checkpoint %d/%d -> %s (%d rows)",
+      hg_log_message(sprintf("  checkpoint %d/%d -> %s (%d rows)",
                           i, nrow(todo), OUTPUT, nrow(out)))
     }
   }
@@ -774,20 +779,20 @@ main <- function(n_limit = NA_integer_) {
       count(hg_url) %>%
       filter(n > 1)
     if (nrow(dup))
-      log_message(sprintf(
+      hg_log_message(sprintf(
         "AMBIGUOUS: %d profile URL(s) claimed by >1 certificant (%d certificant-links). Not attributable; drop before use.",
         nrow(dup), sum(dup$n)))
   }
 
   s <- out %>% count(hg_status, sort = TRUE)
-  log_message("--- status counts ---")
-  for (j in seq_len(nrow(s))) log_message(sprintf("  %-28s %d", s$hg_status[j], s$n[j]))
+  hg_log_message("--- status counts ---")
+  for (j in seq_len(nrow(s))) hg_log_message(sprintf("  %-28s %d", s$hg_status[j], s$n[j]))
   hits <- filter(out, hg_status == "ok")
-  log_message(sprintf("people with an address : %d",
+  hg_log_message(sprintf("people with an address : %d",
                       dplyr::n_distinct(hits$certification_number)))
-  log_message(sprintf("locations              : %d", nrow(hits)))
-  log_message(sprintf("with coordinates       : %d", sum(!is.na(hits$hg_lat))))
-  log_message(sprintf("with Luhn-valid NPI    : %d",
+  hg_log_message(sprintf("locations              : %d", nrow(hits)))
+  hg_log_message(sprintf("with coordinates       : %d", sum(!is.na(hits$hg_lat))))
+  hg_log_message(sprintf("with Luhn-valid NPI    : %d",
                       dplyr::n_distinct(hits$certification_number[!is.na(hits$hg_npi)])))
   invisible(out)
 }

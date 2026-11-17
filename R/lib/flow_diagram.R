@@ -133,14 +133,15 @@ fd_layout <- function(nodes, canvas_w = 1000, tier_gap = 78, pad_top = 14) {
   nodes
 }
 
-#' Named colour/font sets `fd_render()`/`fd_write()` accept via `theme`.
+#' The colour/font set every diagram is drawn with
 #'
-#' `NULL` (the default everywhere) resolves to `fd_theme_default()`, so every
-#' existing call site (make_cohort_flow_figure.R included) renders exactly as
-#' before. `fd_theme_journal()` is monochrome -- white fill, black border and
-#' text throughout, weight rather than colour carrying emphasis -- for
-#' figures headed to print in a journal that will greyscale a colour figure
-#' on the way to the page anyway.
+#' There was a `theme` parameter on `fd_render()` and `fd_write()` and a
+#' second palette, `fd_theme_journal()`, for monochrome CONSORT-style output.
+#' Nothing ever selected it -- no script, no test, no .qmd -- so `theme` was
+#' NULL at all five internal sites and always resolved here. A theme
+#' parameter with one theme is a switch with one position, so both are gone.
+#' If a journal submission does need the greyscale CONSORT variant, it is in
+#' git history rather than lost: `git log -S fd_theme_journal`.
 #' @keywords internal
 fd_theme_default <- function() {
   list(ink = FD_INK, muted = FD_MUTED, rule = FD_RULE, accent = FD_ACCENT,
@@ -148,29 +149,12 @@ fd_theme_default <- function() {
        corner = 3, reverse_lead = TRUE, dashed_drop = TRUE)
 }
 
-#' @rdname fd_theme_default
-#'
-#' @section Journal theme specifics:
-#' Modelled directly on the classic CONSORT template (sharp-cornered boxes,
-#' uniform white fill/black border throughout, no reversed "anchor" box, no
-#' dashed exclusion border -- every box reads the same, distinguished only by
-#' its position and its label text, exactly as in a published CONSORT
-#' flowchart) rather than on this library's own softer default look.
-#' @keywords internal
-fd_theme_journal <- function() {
-  list(ink = "#000000", muted = "#000000", rule = "#000000", accent = "#000000",
-       soft = "#ffffff", paper = "#ffffff", font = "sans",
-       corner = 0, reverse_lead = FALSE, dashed_drop = FALSE)
-}
-
 #' Draw. Every edge leaves its source's bottom, runs to a shared horizontal
 #' band, and enters its target's top -- the routing a reader expects, and the
 #' only one this needs.
-#' @param theme [list] or NULL: colour/font set from `fd_theme_default()` /
-#'   `fd_theme_journal()`. NULL (default) keeps the original look.
 #' @keywords internal
-fd_render <- function(nodes, edges, canvas_w = 1000, canvas_h = NULL, theme = NULL) {
-  pal <- if (is.null(theme)) fd_theme_default() else theme
+fd_render <- function(nodes, edges, canvas_w = 1000, canvas_h = NULL) {
+  pal <- fd_theme_default()
   # An edge naming a node id that does not exist (a typo) previously rendered
   # with no error: nodes[nodes$id == bad_id, ] returns a 0-row frame, so a$cx/
   # a$bottom become numeric(0) and the c()'d coordinate vector for that edge
@@ -234,12 +218,12 @@ fd_render <- function(nodes, edges, canvas_w = 1000, canvas_h = NULL, theme = NU
               default.units = "native", gp = gpl)
   }
 
-  # Unset fields fall back to the default theme's values, so a hand-built
-  # theme list that predates these fields still renders as it did before.
-  dflt <- fd_theme_default()
-  corner_pt    <- if (is.null(pal$corner)) dflt$corner else pal$corner
-  reverse_lead <- if (is.null(pal$reverse_lead)) dflt$reverse_lead else pal$reverse_lead
-  dashed_drop  <- if (is.null(pal$dashed_drop)) dflt$dashed_drop else pal$dashed_drop
+  # These fell back to the default theme when a hand-built theme list omitted
+  # them. `pal` IS the default theme now that `theme` is gone, and it sets all
+  # three, so the NULL branch was unreachable.
+  corner_pt    <- pal$corner
+  reverse_lead <- pal$reverse_lead
+  dashed_drop  <- pal$dashed_drop
 
   for (i in seq_len(nrow(nodes))) {
     n <- nodes[i, ]
@@ -284,21 +268,19 @@ fd_render <- function(nodes, edges, canvas_w = 1000, canvas_h = NULL, theme = NU
 }
 
 #' Render to pdf, png and svg at one aspect ratio
-#' @param theme [list] or NULL: passed through to `fd_render()`. See
-#'   `fd_theme_default()` / `fd_theme_journal()`.
 #' @param title [character] or NULL: caption drawn above the diagram
 #'   (e.g. "The CONSORT Flowchart" in the classic template). NULL (default)
 #'   reserves no extra space, so existing callers are unaffected.
 #' @keywords internal
 fd_write <- function(nodes, edges, base, width_in = 7.6, canvas_w = 1000,
-                     canvas_h = NULL, extra = NULL, theme = NULL, title = NULL) {
+                     canvas_h = NULL, extra = NULL, title = NULL) {
   pad_top <- if (is.null(title)) 14 else 46
   lay <- fd_layout(nodes, canvas_w = canvas_w, pad_top = pad_top)
   if (is.null(canvas_h)) canvas_h <- max(lay$bottom) + 40
   h_in <- width_in * canvas_h / canvas_w
-  pal <- if (is.null(theme)) fd_theme_default() else theme
+  pal <- fd_theme_default()
   draw <- function() {
-    fd_render(lay, edges, canvas_w, canvas_h, theme = theme)
+    fd_render(lay, edges, canvas_w, canvas_h)
     if (!is.null(title)) {
       # fd_render() has already popped its viewport by the time control
       # returns here, so the title needs its own viewport in the same

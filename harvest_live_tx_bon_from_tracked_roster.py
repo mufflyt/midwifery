@@ -141,6 +141,21 @@ with open(roster_file, "r", encoding="utf-8", errors="ignore") as f:
             out["live_rxn_authority_number"] = tx_info.get("apn_prescriptive_authority_number", "")
             out["live_rxn_authority_status"] = tx_info.get("apn_prescriptive_authority_status", "")
             out["live_rxn_authority_exp_date"] = tx_info.get("apn_prescriptive_authority_expiration_date", "")
+            # NO STATE IS OBSERVABLE IN THIS SOURCE. The Texas BON APRN
+            # file (data.texas.gov jnzg-cr4w) publishes no address and no
+            # state: its only geographic fields are county_of_residence (a
+            # Texas county, populated on 628 of 766 rows) and
+            # place_of_employment (a free-text employer address). Writing
+            # "TX" here would be inventing an observation -- and a
+            # circular one, since this harvester only considers cohort
+            # members NPPES already places in Texas, so a derived "TX"
+            # would agree with NPPES by construction and measure nothing.
+            # The column is written EMPTY and present, so that
+            # build_state_source_audit.R sees a declared absence instead of
+            # an absent column that bind_rows() quietly fills with NA.
+            # Employment state is a different address concept and is not
+            # substituted for residence state.
+            out["live_bon_state"] = ""
             out["live_bon_match_status"] = "VERIFIED_LIVE_BON"
             matched_tx.append(out)
         else:
@@ -153,6 +168,7 @@ with open(roster_file, "r", encoding="utf-8", errors="ignore") as f:
             out["live_rxn_authority_number"] = "NA"
             out["live_rxn_authority_status"] = "NA"
             out["live_rxn_authority_exp_date"] = "NA"
+            out["live_bon_state"] = ""
             out["live_bon_match_status"] = "UNMATCHED" if not candidates else "AMBIGUOUS"
             unmatched_tx.append(out)
 

@@ -1,3 +1,15 @@
+#' A percentage, or NA when nothing was comparable
+#'
+#' 0/0 is NaN, which prints in a results table as a failed computation and
+#' may be read as zero persistence. NA is the honest value.
+#'
+#' @param numerator,denominator [numeric] counts.
+#' @return [numeric] percentage, or NA_real_.
+pct_or_na <- function(numerator, denominator) {
+  if (is.na(denominator) || denominator == 0) NA_real_ else
+    100 * numerator / denominator
+}
+
 #' Geographic persistence statistics from a resolved provider-year table
 #'
 #' Shared core for every county-resolution method
@@ -18,9 +30,26 @@
 #'   county/ZIP/state), `rurality` (origin-stratified annual + career same
 #'   county), `movers` (origin x destination career-mover counts, zero-filled).
 #' @family geographic-persistence
+# RURALITY_LABELS_SHORT lives in table1_bands.R and this file used it without
+# saying so, which meant the function worked only when the caller happened to
+# have sourced that file first and raised an obscure factor() error otherwise.
+source(file.path("R", "lib", "table1_bands.R"))  # RURALITY_LABELS_SHORT
+
 compute_geographic_persistence_stats <- function(py) {
-  stopifnot(all(c("npi", "snapshot_year", "practice_zip", "practice_state",
-                  "county_fips", "rucc_cat") %in% names(py)))
+  # NAME WHAT IS MISSING. stopifnot() truncates its deparsed condition with
+  # "...." and never says which column was absent, so a caller saw only that
+  # a long all(c(...)) expression was not TRUE and had to read this source to
+  # find out why. Without any check at all the function fails later inside a
+  # grouped mutate, naming a group key instead of the contract.
+  required <- c("npi", "snapshot_year", "practice_zip", "practice_state",
+                "county_fips", "rucc_cat")
+  missing_columns <- setdiff(required, names(py))
+  if (length(missing_columns)) {
+    stop(sprintf(
+      "compute_geographic_persistence_stats(): the provider-year table is missing %s. Required: %s.",
+      paste(missing_columns, collapse = ", "),
+      paste(required, collapse = ", ")), call. = FALSE)
+  }
 
   providers_observed <- dplyr::n_distinct(py$npi)
   provider_years <- nrow(py)
@@ -45,12 +74,27 @@ compute_geographic_persistence_stats <- function(py) {
                      same_county = !is.na(county_fips) & !is.na(prev_county) & county_fips == prev_county,
                      same_zip = !is.na(practice_zip) & !is.na(prev_zip) & practice_zip == prev_zip,
                      same_state = !is.na(practice_state) & !is.na(prev_state) & practice_state == prev_state,
-                     county_resolved = !is.na(county_fips) & !is.na(prev_county))
+                     county_resolved = !is.na(county_fips) & !is.na(prev_county),
+                     zip_resolved = !is.na(practice_zip) & !is.na(prev_zip),
+                     state_resolved = !is.na(practice_state) & !is.na(prev_state))
 
+  # EACH MEASURE DIVIDES BY THE PAIRS IT COULD ACTUALLY JUDGE. County already
+  # did; ZIP and state did not, and `same_zip` is FALSE when either side is
+  # missing, so an unresolved ZIP was scored as a MOVE rather than as
+  # unknown. On data where nobody moved, a single missing ZIP in four pairs
+  # reported 75% ZIP persistence against 100% county persistence. The panel
+  # carries only two blank ZIPs in 4.7 million rows, so the bias was near
+  # zero in practice -- until the ZIP normalizer sweep began returning NA for
+  # the 28 "00000" and 143 sub-three-digit values that used to pass through
+  # as though they were places.
   annual <- pairs %>% dplyr::summarise(
     pairs_total = dplyr::n(), pairs_used = sum(county_resolved),
-    annual_county = 100 * sum(same_county[county_resolved]) / sum(county_resolved),
-    annual_zip = 100 * mean(same_zip), annual_state = 100 * mean(same_state))
+    pairs_used_zip = sum(zip_resolved), pairs_used_state = sum(state_resolved),
+    annual_county = pct_or_na(sum(same_county[county_resolved]),
+                              sum(county_resolved)),
+    annual_zip = pct_or_na(sum(same_zip[zip_resolved]), sum(zip_resolved)),
+    annual_state = pct_or_na(sum(same_state[state_resolved]),
+                             sum(state_resolved)))
 
   career_pairs <- py %>%
     dplyr::arrange(npi, snapshot_year) %>%
@@ -67,12 +111,17 @@ compute_geographic_persistence_stats <- function(py) {
                   same_county = county_resolved & first_county == last_county,
                   same_zip = !is.na(first_zip) & !is.na(last_zip) & first_zip == last_zip,
                   same_state = !is.na(first_state) & !is.na(last_state) & first_state == last_state,
+                  zip_resolved = !is.na(first_zip) & !is.na(last_zip),
+                  state_resolved = !is.na(first_state) & !is.na(last_state),
                   span = last_year - first_year)
 
   career <- career_pairs %>% dplyr::summarise(
     providers_used = dplyr::n(), median_span = median(span),
-    career_county = 100 * sum(same_county[county_resolved]) / sum(county_resolved),
-    career_zip = 100 * mean(same_zip), career_state = 100 * mean(same_state))
+    career_county = pct_or_na(sum(same_county[county_resolved]),
+                              sum(county_resolved)),
+    career_zip = pct_or_na(sum(same_zip[zip_resolved]), sum(zip_resolved)),
+    career_state = pct_or_na(sum(same_state[state_resolved]),
+                             sum(state_resolved)))
 
   rates <- dplyr::bind_rows(
     tibble::tibble(horizon = "year_to_year", n = annual$pairs_used,

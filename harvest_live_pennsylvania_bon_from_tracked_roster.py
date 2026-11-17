@@ -43,6 +43,7 @@
 # =============================================================================
 import csv
 import json
+import re
 import os
 import sys
 import time
@@ -54,6 +55,21 @@ from provenance import sha256_file, utc_now, write_provenance  # noqa: E402
 print("=== Live Pennsylvania BON (Nurse-Midwife) cross-reference (tracked-roster cohort) ===")
 
 SEARCH_URL = "https://www.pals.pa.gov/api/Search/SearchForPersonOrFacilty"
+STATE_IN_ADDRESS = re.compile(r",\s*([A-Z]{2})\s+\d{5}")
+
+
+def _state_from_address_line(address_line):
+    """Pull the two-letter state out of a PALS AddressLine4.
+
+    PALS packs the last line of the mailing address as
+    "PHILADELPHIA, PA 19111". Returns "" when the line is absent or does
+    not carry a state, so that a missing address is reported as missing
+    rather than silently attributed to Pennsylvania.
+    """
+    matched = STATE_IN_ADDRESS.search((address_line or "").upper())
+    return matched.group(1) if matched else ""
+
+
 NURSE_MIDWIFE_PROFESSION_ID = 37   # State Board of Medicine
 NURSE_MIDWIFE_LICENSE_TYPE_ID = 234  # "Nurse-Midwife"
 PAGE_DELAY_SECONDS = 0.5
@@ -136,6 +152,20 @@ def match_cohort_to_pa_bon(cohort_rows, pa_records):
             out["live_bon_license_number"] = info.get("LicenseNumber", "")
             out["live_bon_status"] = info.get("Status", "")
             out["live_bon_city"] = info.get("City", "")
+            # OBSERVED, NOT ASSUMED, AND NOT ALWAYS "PA". PALS returns the
+            # state spelled out ("Pennsylvania", "New Jersey"), and of the
+            # 500 current Nurse-Midwife licensees only 303 give a
+            # Pennsylvania address -- 47 are New Jersey, 16 New York, 15
+            # Maryland. So this field carries real signal and a harvester
+            # that defaulted it to "PA" would be inventing 197 observations.
+            # AddressLine4 ("PHILADELPHIA, PA 19111") already holds the
+            # two-letter code the audit's clean_state() wants, and parsing it
+            # reproduces the spelled-out State field exactly on all 497 rows
+            # that have an address, so it is read from there rather than
+            # carrying a fifty-entry name table. Blank when absent (3 rows),
+            # never guessed from the board's own jurisdiction.
+            out["live_bon_state"] = _state_from_address_line(
+                info.get("AddressLine4"))
             out["live_bon_county"] = info.get("County", "")
             out["live_bon_zip"] = info.get("zipcode", "")
             out["live_bon_match_status"] = "VERIFIED_LIVE_BON"
@@ -144,6 +174,9 @@ def match_cohort_to_pa_bon(cohort_rows, pa_records):
             out["live_bon_license_number"] = "NA"
             out["live_bon_status"] = "UNMATCHED_BON" if not candidates else "AMBIGUOUS_BON"
             out["live_bon_city"] = "NA"
+            # Empty, not "NA": no board record was observed, so there is no
+            # address to report.
+            out["live_bon_state"] = ""
             out["live_bon_county"] = "NA"
             out["live_bon_zip"] = "NA"
             out["live_bon_match_status"] = "UNMATCHED" if not candidates else "AMBIGUOUS"

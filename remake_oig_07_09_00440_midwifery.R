@@ -401,6 +401,11 @@ deact_all_elig_2026 <- if (DBI::dbExistsTable(con, "nppes_deact_norm_v")) {
   tibble(npi = character(), deact_file_date = character())
 }
 
+# A CROSS-VINTAGE BORROW, SAID OUT LOUD. The 2019 panel has no sex code, so
+# `gender` on nppes_2019 is the FEBRUARY 2026 file's value. Every other column
+# of this frame is 2019. The claim built from it declares value_year = 2026
+# below; see R/lib/vintage_claims.R for why the declaration is required rather
+# than defaulted.
 nppes_2026_gender <- nppes_2026 %>% select(npi, gender)
 assert_one_row_per_id(nppes_2026_gender, "npi", "2026 NPPES gender lookup")
 nppes_2019 <- nppes_2019_panel %>%
@@ -682,16 +687,11 @@ source_fields <- expand_grid(
 # an NA value becomes a row with `value = NA_character_` (`field_value_missing` = OIG "Null Data Field").
 # When a relational child table has NO row for that provider, omitting the row
 # causes `attribute_record_presence()` to classify it as `field_row_missing` (OIG "Missing Record")!
-make_parent_field_claims <- function(df, yr, src, attr_name, val_vec) {
-  tibble(
-    npi = trimws(df$npi),
-    year = as.integer(yr),
-    source = src,
-    attribute = attr_name,
-    value = as.character(val_vec)
-  ) %>%
-    distinct()
-}
+# Moved to R/lib/vintage_claims.R, where it can be called -- and tested --
+# without a 91 GB warehouse attached. It now requires the year the VALUES are
+# from, because this script had one claim whose values came from another year
+# and nothing to notice.
+source(file.path("R", "lib", "vintage_claims.R"))
 
 # 1) 2019 NPPES claims
 nppes_2019_spec_vec <- dplyr::case_when(
@@ -701,13 +701,22 @@ nppes_2019_spec_vec <- dplyr::case_when(
 )
 
 claims_nppes_2019 <- bind_rows(
-  make_parent_field_claims(nppes_2019, 2019L, "nppes", "full_name", norm_oig_name(nppes_2019$first_name, nppes_2019$last_name)),
-  make_parent_field_claims(nppes_2019, 2019L, "nppes", "gender", norm_gender(nppes_2019$gender)),
-  make_parent_field_claims(nppes_2019, 2019L, "nppes", "specialty_code", nppes_2019_spec_vec),
-  make_parent_field_claims(nppes_2019, 2019L, "nppes", "credential", norm_oig_credential(nppes_2019$credential)),
-  make_parent_field_claims(nppes_2019, 2019L, "nppes", "practice_zip5_direct", norm_str_zip5(nppes_2019$practice_zip)),
-  make_parent_field_claims(nppes_2019, 2019L, "nppes", "practice_zip5", norm_str_zip5(nppes_2019$practice_zip)),
-  make_parent_field_claims(nppes_2019, 2019L, "nppes", "practice_state", clean_state(nppes_2019$practice_state))
+  make_parent_field_claims(nppes_2019, 2019L, "nppes", "full_name", norm_oig_name(nppes_2019$first_name, nppes_2019$last_name), value_year = 2019L),
+  # THE 2019 PANEL CARRIES NO SEX CODE, so these values are the FEBRUARY 2026
+  # file's, borrowed at the join above and compared against 2019 PECOS. Sex
+  # is near-immutable, which is the only reason the number survives the
+  # borrow; declaring it is what stops the next borrowed column being a
+  # column that moves.
+  make_parent_field_claims(nppes_2019, 2019L, "nppes", "gender", norm_gender(nppes_2019$gender),
+                           value_year = 2026L,
+                           cross_vintage_reason = paste(
+                             "midwife_panel.csv snapshot_year==2019 has no sex code;",
+                             "borrowed from the February 2026 NPPES dissemination")),
+  make_parent_field_claims(nppes_2019, 2019L, "nppes", "specialty_code", nppes_2019_spec_vec, value_year = 2019L),
+  make_parent_field_claims(nppes_2019, 2019L, "nppes", "credential", norm_oig_credential(nppes_2019$credential), value_year = 2019L),
+  make_parent_field_claims(nppes_2019, 2019L, "nppes", "practice_zip5_direct", norm_str_zip5(nppes_2019$practice_zip), value_year = 2019L),
+  make_parent_field_claims(nppes_2019, 2019L, "nppes", "practice_zip5", norm_str_zip5(nppes_2019$practice_zip), value_year = 2019L),
+  make_parent_field_claims(nppes_2019, 2019L, "nppes", "practice_state", clean_state(nppes_2019$practice_state), value_year = 2019L)
 )
 
 # 2) 2019 PECOS claims (Relational!)
@@ -729,7 +738,7 @@ pecos_2019_any_state <- bind_rows(
   pecos_linkage_2019$links %>%
     filter(location_linked) %>%
     transmute(npi = id, year = 2019L, source = "pecos", attribute = "practice_state", value = practice_state),
-  make_parent_field_claims(pecos_enrl_2019, 2019L, "pecos", "practice_state", clean_state(pecos_enrl_2019$enrol_state))
+  make_parent_field_claims(pecos_enrl_2019, 2019L, "pecos", "practice_state", clean_state(pecos_enrl_2019$enrol_state), value_year = 2019L)
 ) %>%
   filter(!is.na(value)) %>%
   distinct()
@@ -741,8 +750,8 @@ pecos_2019_specs <- bind_rows(
   distinct()
 
 claims_pecos_2019 <- bind_rows(
-  make_parent_field_claims(pecos_enrl_2019, 2019L, "pecos", "full_name", norm_oig_name(pecos_enrl_2019$first_name, pecos_enrl_2019$last_name)),
-  make_parent_field_claims(pecos_enrl_2019, 2019L, "pecos", "gender", norm_gender(pecos_enrl_2019$gndr_sw)),
+  make_parent_field_claims(pecos_enrl_2019, 2019L, "pecos", "full_name", norm_oig_name(pecos_enrl_2019$first_name, pecos_enrl_2019$last_name), value_year = 2019L),
+  make_parent_field_claims(pecos_enrl_2019, 2019L, "pecos", "gender", norm_gender(pecos_enrl_2019$gndr_sw), value_year = 2019L),
   pecos_2019_specs %>% transmute(npi, year = 2019L, source = "pecos", attribute = "specialty_code", value = spec),
   pecos_2019_direct_zip,
   pecos_2019_any_zip,
@@ -789,24 +798,24 @@ nppes_2026_lic_claims <- tibble(npi = unique(nppes_2026$npi)) %>%
   transmute(npi, year = 2026L, source = "nppes", attribute = "license_state", value = valid_lic_state)
 
 claims_nppes_2026 <- bind_rows(
-  make_parent_field_claims(nppes_2026, 2026L, "nppes", "full_name", norm_oig_name(nppes_2026$first_name, nppes_2026$last_name)),
-  make_parent_field_claims(nppes_2026, 2026L, "nppes", "gender", norm_gender(nppes_2026$gender)),
+  make_parent_field_claims(nppes_2026, 2026L, "nppes", "full_name", norm_oig_name(nppes_2026$first_name, nppes_2026$last_name), value_year = 2026L),
+  make_parent_field_claims(nppes_2026, 2026L, "nppes", "gender", norm_gender(nppes_2026$gender), value_year = 2026L),
   nppes_2026_spec_claims,
-  make_parent_field_claims(nppes_2026, 2026L, "nppes", "credential", norm_oig_credential(nppes_2026$credential)),
+  make_parent_field_claims(nppes_2026, 2026L, "nppes", "credential", norm_oig_credential(nppes_2026$credential), value_year = 2026L),
   nppes_2026_lic_claims,
-  make_parent_field_claims(nppes_2026, 2026L, "nppes", "phone10", norm_phone10(nppes_2026$practice_phone)),
-  make_parent_field_claims(nppes_2026, 2026L, "nppes", "mailing_zip5", norm_str_zip5(nppes_2026$mailing_zip)),
-  make_parent_field_claims(nppes_2026, 2026L, "nppes", "practice_zip5_direct", norm_str_zip5(nppes_2026$practice_zip)),
-  make_parent_field_claims(nppes_2026, 2026L, "nppes", "practice_zip5", norm_str_zip5(nppes_2026$practice_zip)),
-  make_parent_field_claims(nppes_2026, 2026L, "nppes", "practice_state", clean_state(nppes_2026$practice_state))
+  make_parent_field_claims(nppes_2026, 2026L, "nppes", "phone10", norm_phone10(nppes_2026$practice_phone), value_year = 2026L),
+  make_parent_field_claims(nppes_2026, 2026L, "nppes", "mailing_zip5", norm_str_zip5(nppes_2026$mailing_zip), value_year = 2026L),
+  make_parent_field_claims(nppes_2026, 2026L, "nppes", "practice_zip5_direct", norm_str_zip5(nppes_2026$practice_zip), value_year = 2026L),
+  make_parent_field_claims(nppes_2026, 2026L, "nppes", "practice_zip5", norm_str_zip5(nppes_2026$practice_zip), value_year = 2026L),
+  make_parent_field_claims(nppes_2026, 2026L, "nppes", "practice_state", clean_state(nppes_2026$practice_state), value_year = 2026L)
 ) %>%
   distinct()
 
 # 4) 2026 PECOS (`ppef_enrol_2026Q3`) & 2026 DAC (`doctors_and_clinicians` + `dac_midwives.csv`)
 claims_pecos_2026 <- bind_rows(
-  make_parent_field_claims(pecos_enrl_2026, 2026L, "pecos", "full_name", norm_oig_name(pecos_enrl_2026$first_name, pecos_enrl_2026$last_name)),
-  make_parent_field_claims(pecos_enrl_2026, 2026L, "pecos", "specialty_code", norm_oig_specialty(pecos_enrl_2026$provider_type_desc, "pecos_desc")),
-  make_parent_field_claims(pecos_enrl_2026, 2026L, "pecos", "practice_state", clean_state(pecos_enrl_2026$enrol_state))
+  make_parent_field_claims(pecos_enrl_2026, 2026L, "pecos", "full_name", norm_oig_name(pecos_enrl_2026$first_name, pecos_enrl_2026$last_name), value_year = 2026L),
+  make_parent_field_claims(pecos_enrl_2026, 2026L, "pecos", "specialty_code", norm_oig_specialty(pecos_enrl_2026$provider_type_desc, "pecos_desc"), value_year = 2026L),
+  make_parent_field_claims(pecos_enrl_2026, 2026L, "pecos", "practice_state", clean_state(pecos_enrl_2026$enrol_state), value_year = 2026L)
 ) %>%
   distinct()
 
@@ -855,14 +864,14 @@ dac_phone_claims_2026 <- tibble(npi = dac_2026_npis) %>%
   transmute(npi, year = 2026L, source = "dac", attribute = "phone10", value = phone)
 
 claims_dac_2026 <- bind_rows(
-  make_parent_field_claims(dac_combined_2026, 2026L, "dac", "full_name", norm_oig_name(dac_combined_2026$first_name, dac_combined_2026$last_name)),
-  make_parent_field_claims(dac_combined_2026, 2026L, "dac", "gender", norm_gender(dac_combined_2026$gender)),
-  make_parent_field_claims(dac_combined_2026, 2026L, "dac", "specialty_code", norm_oig_specialty(dac_combined_2026$spec, "pecos_desc")),
-  make_parent_field_claims(dac_combined_2026, 2026L, "dac", "credential", norm_oig_credential(dac_combined_2026$credential)),
+  make_parent_field_claims(dac_combined_2026, 2026L, "dac", "full_name", norm_oig_name(dac_combined_2026$first_name, dac_combined_2026$last_name), value_year = 2026L),
+  make_parent_field_claims(dac_combined_2026, 2026L, "dac", "gender", norm_gender(dac_combined_2026$gender), value_year = 2026L),
+  make_parent_field_claims(dac_combined_2026, 2026L, "dac", "specialty_code", norm_oig_specialty(dac_combined_2026$spec, "pecos_desc"), value_year = 2026L),
+  make_parent_field_claims(dac_combined_2026, 2026L, "dac", "credential", norm_oig_credential(dac_combined_2026$credential), value_year = 2026L),
   dac_phone_claims_2026,
-  make_parent_field_claims(dac_combined_2026, 2026L, "dac", "practice_zip5_direct", norm_str_zip5(dac_combined_2026$practice_zip)),
-  make_parent_field_claims(dac_combined_2026, 2026L, "dac", "practice_zip5", norm_str_zip5(dac_combined_2026$practice_zip)),
-  make_parent_field_claims(dac_combined_2026, 2026L, "dac", "practice_state", clean_state(dac_combined_2026$practice_state))
+  make_parent_field_claims(dac_combined_2026, 2026L, "dac", "practice_zip5_direct", norm_str_zip5(dac_combined_2026$practice_zip), value_year = 2026L),
+  make_parent_field_claims(dac_combined_2026, 2026L, "dac", "practice_zip5", norm_str_zip5(dac_combined_2026$practice_zip), value_year = 2026L),
+  make_parent_field_claims(dac_combined_2026, 2026L, "dac", "practice_state", clean_state(dac_combined_2026$practice_state), value_year = 2026L)
 ) %>%
   # Collapse duplicate NA rows when a provider has multiple site rows in DAC, at least one of which is populated
   group_by(npi, year, source, attribute) %>%

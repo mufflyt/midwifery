@@ -152,7 +152,7 @@ Full table: [`artifacts/state_source_audit_coverage.csv`](../artifacts/state_sou
 | Facility Affiliation (CCN↔NPI) | 2013-2022, 2026 | 2013-2022 from CCNs embedded in the historical DAC files (see Revision note 3); 2026 from CMS's current Facility Affiliation product, itself a single always-current snapshot with no archived history; 2023-2025 has no CCN in either source |
 | Healthgrades | 2026 only (single scrape) | No per-record date at all |
 | Doximity | 2026 only (effectively) | Has `date_modified`, but it does not vary meaningfully across the matched cohort |
-| State Boards of Nursing | 2026 only | 7 states with real matches: CO, CT, FL, IL, PA, TX, WA (`VERIFIED_LIVE_BON` status only; DE returned 0 matches) |
+| State Boards of Nursing | 2026 only | **Eight boards harvested; six can contribute a state** (CO, CT, DE, FL, IL, PA), of which DE returned 0 matches. TX and WA publish no state at all and cannot enter the comparison -- see the note below the Section 3 table. `VERIFIED_LIVE_BON` status only. Re-harvested 2026-11-15; the earlier "7 states: CO/CT/FL/IL/PA/TX/WA" label described a sample this source never had |
 | CMS NDH (FHIR) | 2026 only | 15,444 of 16,775 cohort NPIs found; `meta.lastUpdated` exists per Practitioner resource but is not yet extracted into this audit's state-comparison path |
 | Medicaid | 2018-2024 | See §4 — classified separately, not folded into the same-year/current-only table |
 
@@ -162,46 +162,94 @@ Full table: [`artifacts/state_source_audit_agreement.csv`](../artifacts/state_so
 
 | Source | Period | Basis | n comparable | % agree |
 |---|---|---|---:|---:|
-| DAC / Physician Compare | 2013 | same_year | 10,844 | 95.1% |
-| DAC / Physician Compare | 2014 | same_year | 6,199 | 94.8% |
+| DAC / Physician Compare | 2013 | same_year | 10,858 | 95.1% |
+| DAC / Physician Compare | 2014 | same_year | 6,241 | 94.9% |
 | DAC / Physician Compare | 2015 | same_year | 6,494 | 94.3% |
 | DAC / Physician Compare | 2016 | same_year | 6,230 | 93.8% |
-| DAC / Physician Compare | 2017 | same_year | 6,557 | 91.9% |
-| DAC / Physician Compare | 2018 | same_year | 6,162 | 93.8% |
-| DAC / Physician Compare | 2019 | same_year | 4,621 | 92.6% |
-| DAC / Physician Compare | 2020 | same_year | 4,483 | 94.2% |
-| DAC / Physician Compare | 2021 | same_year | 5,023 | 93.0% |
-| DAC / Physician Compare | 2022 | same_year | 5,068 | 92.3% |
-| DAC / Physician Compare | 2023 | same_year | 5,008 | 92.5% |
-| DAC / Physician Compare | 2024 | same_year | 5,354 | 91.8% |
-| DAC / Physician Compare | 2025 | same_year | 5,278 | 92.6% |
-| DAC / Physician Compare | 2026 | same_year | 5,575 | 89.8% |
-| Open Payments | 2021 | same_year | 14,441 | 96.2% |
-| Open Payments | 2022 | same_year | 19,349 | 96.5% |
-| Open Payments | 2023 | same_year | 19,261 | 96.1% |
-| Open Payments | 2024 | same_year | 18,720 | 97.5% |
-| Open Payments | 2025 | same_year | 21,731 | 96.1% |
-| PECOS revalidation | 2021 | same_year | 7,979 | 88.7% |
-| PECOS revalidation | 2022 | same_year | 8,588 | 88.1% |
-| PECOS revalidation | 2023 | same_year | 9,071 | 87.8% |
-| PECOS revalidation | 2024 | same_year | 9,674 | 88.5% |
-| PECOS revalidation | 2025 | same_year | 10,096 | 88.3% |
-| PECOS revalidation | 2026 | same_year | 9,736 | 88.0% |
-| Doximity | 2026 | same_year | 4,701 | 95.9% |
-| Facility Affiliation (CCN) | 2013 | same_year | 1,877 | 94.5% |
-| Facility Affiliation (CCN) | 2014 | same_year | 1,080 | 96.0% |
-| Facility Affiliation (CCN) | 2015 | same_year | 1,189 | 95.2% |
-| Facility Affiliation (CCN) | 2016 | same_year | 1,279 | 95.2% |
-| Facility Affiliation (CCN) | 2017 | same_year | 1,421 | 93.7% |
-| Facility Affiliation (CCN) | 2018 | same_year | 885 | 95.0% |
-| Facility Affiliation (CCN) | 2019 | same_year | 693 | 94.2% |
-| Facility Affiliation (CCN) | 2020 | same_year | 667 | 94.6% |
-| Facility Affiliation (CCN) | 2021 | same_year | 891 | 93.9% |
-| Facility Affiliation (CCN) | 2022 | same_year | 889 | 93.8% |
-| Facility Affiliation (CCN) | 2026 | same_year | 1,675 | 92.7% |
-| Healthgrades | current | current_only | 17,772 | 91.8% |
-| State Boards of Nursing | current | current_only | 665 | 96.1% |
-| CMS NDH (FHIR) | current | current_only | 15,340 | 89.9% |
+| DAC / Physician Compare | 2017 | same_year | 12,250 | 92.8% |
+| DAC / Physician Compare | 2018 | same_year | 18,732 | 93.6% |
+| DAC / Physician Compare | 2019 | same_year | 14,274 | 92.5% |
+| DAC / Physician Compare | 2020 | same_year | 9,373 | 93.7% |
+| DAC / Physician Compare | 2021 | same_year | 10,233 | 92.5% |
+| DAC / Physician Compare | 2022 | same_year | 10,126 | 91.8% |
+| DAC / Physician Compare | 2023 | same_year | 10,342 | 92.3% |
+| DAC / Physician Compare | 2024 | same_year | 10,691 | 92.1% |
+| DAC / Physician Compare | 2025 | same_year | 5,286 | 92.6% |
+| DAC / Physician Compare | 2026 | same_year | 5,633 | 90.2% |
+| Open Payments | 2021 | same_year | 14,200 | 95.8% |
+| Open Payments | 2022 | same_year | 19,126 | 96.5% |
+| Open Payments | 2023 | same_year | 18,998 | 96.1% |
+| Open Payments | 2024 | same_year | 18,436 | 96.8% |
+| Open Payments | 2025 | same_year | 21,759 | 96.6% |
+| PECOS revalidation | 2021 | same_year | 7,980 | 88.2% |
+| PECOS revalidation | 2022 | same_year | 8,680 | 88.0% |
+| PECOS revalidation | 2023 | same_year | 9,166 | 87.6% |
+| PECOS revalidation | 2024 | same_year | 9,607 | 87.5% |
+| PECOS revalidation | 2025 | same_year | 10,334 | 88.3% |
+| PECOS revalidation | 2026 | same_year | 9,672 | 88.1% |
+| Facility Affiliation (CCN) | 2013 | same_year | 1,945 | 94.0% |
+| Facility Affiliation (CCN) | 2014 | same_year | 1,124 | 95.9% |
+| Facility Affiliation (CCN) | 2015 | same_year | 1,222 | 95.3% |
+| Facility Affiliation (CCN) | 2016 | same_year | 1,321 | 94.9% |
+| Facility Affiliation (CCN) | 2017 | same_year | 1,788 | 93.7% |
+| Facility Affiliation (CCN) | 2018 | same_year | 1,261 | 93.7% |
+| Facility Affiliation (CCN) | 2019 | same_year | 1,143 | 92.7% |
+| Facility Affiliation (CCN) | 2020 | same_year | 1,067 | 94.4% |
+| Facility Affiliation (CCN) | 2021 | same_year | 1,281 | 93.8% |
+| Facility Affiliation (CCN) | 2022 | same_year | 899 | 93.9% |
+| Facility Affiliation (CCN) | 2026 | same_year | 1,657 | 92.8% |
+| Healthgrades | ~2026-10 (scrape, undated per-record) | current_only | 15,482 | 91.4% |
+| Doximity | 2026 | same_year | 4,627 | 96.7% |
+| State Boards of Nursing | 2026-11 (8 boards harvested; 6 publish a state: CO/CT/DE/FL/IL/PA; TX/WA publish none) | current_only | 1,221 | 94.2% |
+| CMS NDH (FHIR) | 2026-10 (bulk pull; meta.lastUpdated available per-record, not yet exploited here) | current_only | 15,336 | 89.9% |
+
+**The State Boards of Nursing row was recomputed 2026-11-15 and means
+something narrower than the rest of this table.** Two corrections:
+
+*Coverage.* Four of the eight harvested board files had no `live_bon_state`
+column, `dplyr::bind_rows()` filled it with `NA`, and 1,411 of 2,269 verified
+records left the comparison without a word. Colorado and Pennsylvania turned
+out to be our own harvesters discarding a state their APIs do publish;
+re-harvesting recovered them. Texas and Washington publish no state at all
+and are now excluded by declaration rather than by accident. The comparable
+sample went from **665 to 1,221 records** and agreement from **96.1% to
+94.2%** — the records that had gone missing agree *less* well than the ones
+that survived, so the old figure was biased upward, not merely
+under-powered.
+
+*Interpretation.* Every board harvester selects its candidates with
+`nppes_state == "<its own state>"`. So this row is **not** two independent
+sources agreeing on a midwife's state, and it does not mean what the DAC,
+Open Payments, PECOS and Facility Affiliation rows mean. Within a sample
+already matched on NPPES's answer, it can only measure whether the board's
+own mailing address also names that state — *address concordance within a
+state-matched sample*. The residual, per board:
+
+| Board | Comparable | Board address = board's own state |
+|---|---:|---:|
+| Florida | 622 | 600 (96.5%) |
+| Illinois | 18 | 17 (94.4%) |
+| Colorado | 485 | 455 (93.8%) |
+| Connecticut | 28 | 26 (92.9%) |
+| Pennsylvania | 87 | 74 (85.1%) |
+| Delaware | 0 | — (present and empty; a finding, not a gap) |
+
+That the residual is real is clearest in Pennsylvania, where only 303 of all
+500 current Nurse-Midwife licensees give a PA address (47 New Jersey, 16 New
+York, 15 Maryland) — a harvester that had defaulted the column to "PA" would
+have fabricated 197 observations. Across the six boards the 1,240 observed
+addresses span **35 states**, which is the other reason the former "7 states"
+label was wrong: it named the jurisdictions queried, not the states observed.
+
+A further 190 verified Florida records carry no state because the board
+answers `"NOT PRACTICING"` or `"No current practice location in Florida"` in
+the address field. That is Florida affirmatively reporting absence, in the
+same category as Delaware's empty file, and it is excluded from the
+denominator rather than counted as agreement or as missing data.
+
+Only this row was recomputed. Every other row still dates from the
+2026-11-03 run and is pending the full rebuild. Full account:
+`docs/state-source-audit-bon-reharvest.md`.
 
 (2015/2016/2019/2020 Open Payments rows are omitted — n is 1-17, too small to
 report a meaningful percentage, consistent with §2's explanation.)
@@ -276,6 +324,8 @@ sources, **CMS NDH is the common low point** — it disagrees most with four
 different sources (DAC, Doximity, Healthgrades, PECOS), not just NPPES,
 pointing at NDH itself rather than any single counterpart. Full table:
 `artifacts/state_source_audit_pairwise_agreement.csv`.
+
+**Every pair involving State Boards of Nursing is exempt from that ranking.** This matrix is only meaningful because it compares pairs on equal footing, and the board pairs are not on equal footing: each board harvester pre-selects its records with `nppes_state == "<its own state>"`, so the board rows entering the matrix are already filtered on NPPES's answer and carry that filter into every pair they join. Those pairs measure address concordance within a state-matched sample, not independent agreement, and a high value there is close to structurally guaranteed. Read them on their own, never ranked against DAC x Open Payments or any other pair that shares no such filter. The same selection applies to the consensus score below, where this source should count as one state-matched address check rather than an independent vote.
 
 **Per-NPI consensus score** (`build_cross_source_comparison.R`): for every
 cohort NPI with ≥2 sources reporting a current state (n=16,939), what share
@@ -369,11 +419,31 @@ a partial table rather than overwrite the real one.
   panel — requiring all four longitudinal sources present every year
   2021-2025 is a demanding filter, and that 184 is not necessarily
   representative of midwives who only appear in some years or some sources.
-- **State Boards of Nursing cover 7 states only** (CO, CT, FL, IL, PA, TX,
-  WA) — this is not a 50-state audit for that source, and the other sources'
+- **State Boards of Nursing contribute six boards, not seven, and the
+  number they produce is not what it looks like.** Eight boards were
+  harvested; only six publish a licensee state at all (CO, CT, DE, FL, IL,
+  PA), and Delaware returns 0 matches. Texas (data.texas.gov `jnzg-cr4w`)
+  and Washington (data.wa.gov `qxh8-f4bd`) publish no state field, so no
+  harvest can make them comparable. Until 2026-11-15 four of the eight files
+  had no state column and `bind_rows()` filled it with `NA`, so 1,411 of
+  2,269 verified records — 62% — dropped out of the comparison while this
+  appendix went on naming seven states.
+
+  More importantly, **this source's agreement figure is not independent
+  agreement.** Every board harvester selects its candidates with
+  `nppes_state == "<its own state>"`, so the only people who can be verified
+  against Colorado's board are people NPPES already places in Colorado.
+  Within a sample matched on NPPES state, the figure can only measure
+  whether the board's own mailing address also names that state — address
+  concordance within a state-matched sample. A high value is close to
+  structurally guaranteed and must not be read as, or ranked against,
+  agreement between two independent sources.
+
+  This is also not a 50-state audit for that source, and the other sources'
   "coverage" numbers are national, not state-by-state breakdowns, in this
   first pass. A true state-by-state cut of every source (not just the
-  state-scoped BON data) is future work, not done here.
+  state-scoped BON data) is future work, not done here. Full account:
+  `docs/state-source-audit-bon-reharvest.md`.
 - **NPPES's own staleness is not classified** in this pass, because
   `last_update_date` is not yet extracted into `midwife_panel.csv`. Every
   "disagreement" above could be NPPES being stale, the other source being

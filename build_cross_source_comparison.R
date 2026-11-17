@@ -154,12 +154,17 @@ cur_dac <- read_csv("dac_midwives.csv", col_types = cols(.default = "c"), progre
   transmute(npi = trimws(npi), year = 2026L, state = clean_state(practice_state))
 dac_all <- bind_rows(hist_dac, cur_dac) %>% filter(!is.na(npi))
 
-op_files <- Sys.glob("artifacts/cohort_midwives_open_payments_general_*.csv")
-op_all <- bind_rows(lapply(op_files, function(f) {
-  yr <- as.integer(str_extract(f, "\\d{4}"))
-  read_csv(f, col_types = cols(.default = "c"), progress = FALSE) %>%
-    transmute(npi = trimws(npi), year = yr, state = clean_state(recipient_state))
-})) %>% filter(!is.na(npi))
+# --- Open Payments, declared window 2021-2025 --------------------------------
+# Window and year both come from the declared-coverage contract, not from a
+# glob and not from the filename -- see R/lib/open_payments_state_series.R
+# for the two defects that cost the 2026-11-12 build four of its five years.
+# 2015-2020 are present but declared ineligible: CNMs only became reportable
+# covered recipients in program year 2021.
+source(file.path("R", "lib", "open_payments_state_series.R"))
+
+source(file.path("R", "lib", "source_coverage.R"))
+op_all <- read_open_payments_state_series(
+  publication_mode = TRUE)$rows
 
 pecos <- read_csv("artifacts/pecos_revalidation_cohort_state_by_year.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
   transmute(npi = trimws(npi), year = as.integer(year), state = clean_state(pecos_state))
@@ -176,10 +181,20 @@ link <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv", col_types = cols(.defa
 dox <- dox_raw %>% left_join(link, by = "certification_number", relationship = "many-to-one") %>%
   transmute(npi = trimws(npi), state = clean_state(state)) %>% dedupe_one_per_npi()
 
-bon_files <- Sys.glob("artifacts/live_*_bon_ingested_midwives_from_tracked_roster.csv")
-bon <- bind_rows(lapply(bon_files, function(f) read_csv(f, col_types = cols(.default = "c"), progress = FALSE))) %>%
-  filter(live_bon_match_status == "VERIFIED_LIVE_BON") %>%
-  transmute(npi = trimws(npi), state = clean_state(live_bon_state)) %>% dedupe_one_per_npi()
+# State Boards of Nursing. Read through the declared-coverage contract, not a
+# glob -- six of the eight harvested boards publish a licensee state, Texas
+# and Washington publish none, and until 2026-11-15 four files had no state
+# column at all, which bind_rows() filled with NA and which cost this
+# consensus score 1,411 of 2,269 verified records without reporting
+# anything. The board records that arrive here are already selected on
+# nppes_state by every harvester, so this source agrees with NPPES partly by
+# construction; in a consensus tally it should be read as one state-matched
+# address check among the sources, not an independent vote. See
+# R/lib/bon_state_snapshot.R.
+source(file.path("R", "lib", "source_coverage.R"))
+source(file.path("R", "lib", "bon_state_snapshot.R"))
+bon <- read_bon_state_snapshot(publication_mode = TRUE)$comparable %>%
+  dedupe_one_per_npi()
 
 ndh <- read_csv("artifacts/cms_ndh_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
   filter(toupper(ndh_found) %in% c("TRUE", "1")) %>%

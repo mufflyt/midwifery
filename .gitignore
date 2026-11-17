@@ -1004,3 +1004,9 @@ artifacts/open_payments_profile_npi_conflicts.csv
 artifacts/open_payments_profile_npi_conflicts.csv.provenance.json
 artifacts/open_payments_midwife_presence_by_year.csv
 artifacts/mrost_consensus_tier_by_npi.csv
+
+# Local pre-overwrite copies of tracked person-level artifacts. The authoritative
+# history is git itself (e.g. `git show 6df41c1:artifacts/live_colorado_bon_...`);
+# these are a working convenience for before/after measurement and must not
+# double the person-level data in the repository.
+artifacts/archive/

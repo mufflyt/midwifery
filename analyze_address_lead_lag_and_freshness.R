@@ -41,6 +41,7 @@ source(file.path("R", "lib", "cohort_definitions.R"))
 source(file.path("R", "lib", "medicare_duckdb.R"))
 source(file.path("R", "lib", "medicaid_enrollment_intervals.R"))
 source(file.path("R", "join_safety.R"))
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5()
 
 PANEL_PATH  <- Sys.getenv("MIDWIFE_PANEL", "midwife_panel.csv")
 DAC_PATH    <- Sys.getenv("DAC_MIDWIVES", "dac_midwives.csv")
@@ -73,7 +74,7 @@ dac <- read_csv(DAC_PATH, col_types = cols(.default = "c"), progress = FALSE) %>
     npi,
     state  = str_to_upper(str_squish(practice_state)),
     city   = str_to_upper(str_squish(practice_city)),
-    zip5   = str_sub(practice_zip, 1, 5),
+    zip5   = norm_str_zip5(practice_zip),
     street = norm_street(practice_address)
   )
 
@@ -93,7 +94,7 @@ op_all <- map_dfr(op_files, function(f) {
     year   = yr,
     state  = str_to_upper(str_squish(d_modal$recipient_state)),
     city   = str_to_upper(str_squish(d_modal$recipient_city)),
-    zip5   = str_sub(d_modal$recipient_zip, 1, 5),
+    zip5   = norm_str_zip5(d_modal$recipient_zip),
     street = norm_street(d_modal$recipient_address)
   )
 })
@@ -107,7 +108,7 @@ panel <- read_csv(PANEL_PATH, col_types = cols(.default = "c"), progress = FALSE
     year   = as.integer(snapshot_year),
     state  = str_to_upper(str_squish(practice_state)),
     city   = str_to_upper(str_squish(practice_city)),
-    zip5   = str_sub(practice_zip, 1, 5),
+    zip5   = norm_str_zip5(practice_zip),
     street = norm_street(practice_address)
   ) %>%
   arrange(npi, year, desc(snapshot_date)) %>%

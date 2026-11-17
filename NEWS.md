@@ -49,6 +49,111 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   could not be re-run: 3 of its gitignored local inputs no longer exist on
   disk, unrelated to this audit.
 
+## [Unreleased] — 2026-11-16 — a comparison that could not say what year each side was from
+
+### Fixed
+
+- **A claim's year was a literal and its values were a bare vector, so a 2026
+  column could be stamped 2019.** `midwife_panel.csv` at `snapshot_year ==
+  2019` carries no sex code, so `remake_oig_07_09_00440_midwifery.R:401`
+  borrowed `gender` from the February 2026 NPPES dissemination and `:699`
+  stamped the claim `2019L`. The row `2019,nppes,pecos,gender` in
+  `artifacts/oig_remake/oig_table4_consistency_2019_and_2026.csv` is therefore
+  2026 NPPES values compared against 2019 PECOS values — 5,776 compared, 17
+  inconsistent, 0.29% — in a table whose purpose is to compare two records of
+  the same vintage. **Sex is near-immutable, which is the only reason the
+  number survives the borrow;** on `practice_state` the same mechanism would
+  have produced a wrong number with nothing to notice. The builder moved to
+  `R/lib/vintage_claims.R`, `value_year` is now required rather than
+  defaulted, and a cross-vintage borrow needs a stated reason that prints on
+  every run. **The row is still published as a 2019 claim** — dropping or
+  relabelling it is a scientific decision, not a patch. See
+  [`docs/APPENDIX_vintage_pairing_2026-11-16.md`](docs/APPENDIX_vintage_pairing_2026-11-16.md).
+- **A current-snapshot comparison could not see which registry snapshot it had
+  been handed.** `state_agreement_current_only()` joins on `npi` alone, took
+  the registry with its `year` column already selected away, and wrote a
+  free-text `as_of_label` into the output's `year` column that nothing
+  checked. A 2019 source against the 2026 registry returned a row stamped
+  `year = 2026` with 0% agreement, and 0% reads as the source disagreeing
+  rather than as seven years of drift. It now requires the source's year and
+  reads the registry's from the data.
+- **A source sharing no year with the registry left the agreement table
+  silently.** `state_agreement_same_year()` returned zero rows, `bind_rows()`
+  dropped the source, and `state_source_audit_agreement.csv` came out one
+  source shorter than `state_source_audit_coverage.csv`. Absent, not wrong —
+  which is how a truncated input publishes a smaller study.
+- **107 of 134 Python tests gated nothing.** `python-checks` ran pytest
+  against two named files, so ten suites and 2,032 lines — five live BON
+  harvesters, the HHS open-data pipeline, the microsimulation conservation
+  suite — collected and passed without ever being a gate. All 134 pass; the
+  whole directory runs in 16 seconds, so the narrow list was never a budget
+  decision. CI now runs the directory.
+- **`ci_hygiene.R`'s H4 gate had been failing since round 6 of the
+  adversarial-saboteur work.** It passed at `origin/main` and failed on this
+  branch because each new suite hand-rolled `sab`, `refused`, `says`,
+  `restore_scene`, `write_manifest`, `write_year`, `year_path` and `snapshot`,
+  and the gate was never run while they were written.
+  `tests/helper-saboteur.R` now holds the four pieces that are genuinely
+  identical — the root-finding preamble that appeared byte-identical in 111
+  tracked files, `chk`, `sab` and `refused`.
+
+### Changed — numerical effect on a license key
+
+- **`normalize_state()` is gone from both files that defined it; license state
+  goes through `clean_state()`.** The resolver's copy knew the 50 states and
+  DC, so a Puerto Rico, Guam, Virgin Islands, American Samoa or Northern
+  Marianas licence state became `NA` and its key could never resolve;
+  measured over the copy's whole input domain, `clean_state()` loses nothing
+  and gains those plus the `"XX - FULL NAME"` form. **The bridge's copy
+  TIGHTENED a key:** its rule was `str_detect("^[A-Z]{2}$") ~ raw_state`, so
+  any two-letter token passed through as a state. Over `midwife_panel.csv`
+  (4,735,546 rows, 156 distinct `practice_state` values) that accepted eleven
+  non-states — the military postal codes `AE`/`AP`/`AA`, the Canadian
+  provinces `AB`/`BC`/`ON`, and `UK`/`RP`/`US`/`PW`/`CE` — across **6,331 rows
+  and 731 NPIs**. It also refused `"TX - TEXAS"`, losing 8 rows across 2 NPIs.
+- **`normalize_license_number()` was two opposed decisions under one name**,
+  each documented where it was made: one strips leading zeros so `"0007"` and
+  `"7"` agree, the other keeps them ("deliberately conservative"). They are
+  now `_unpadded` and `_padded`. **Merging them would have changed a license
+  key in one of the two pipelines**, so they were named apart instead — which
+  is what this repository did when `find_column` diverged the same way.
+
+### Removed
+
+- **22 tracked Python scripts, 1,581 lines, referenced by nothing** — no code,
+  no doc, no workflow, no string. Two were duplicate ports of live code:
+  `artifact_provenance.py` beside the imported `tools/provenance.py`, and
+  `match_ohio_voter_ages.py` beside the executable `match_ohio_voter_ages.R`
+  that README documents and `tests/ci_science_laws.R` asserts against its
+  Florida twin. The rest were one-off probes (`demonstrate_*`, `explore_*`,
+  `inspect_*`, `search_*`).
+- **14 redefinitions of `%||%`** identical to base R's, which has shipped it
+  since 4.4.0; CI runs `r-version: release`. Four copies genuinely diverge
+  (length-0, `NA`, and first-element semantics) and keep their local names.
+- **`fd_theme_journal()` and the `theme` parameter it existed to carry.**
+  Nothing ever selected it — no script, no test, no `.qmd` — so `theme` was
+  `NULL` at all five internal sites. A theme parameter with one theme is a
+  switch with one position. Recoverable: `git log -S fd_theme_journal`.
+- **`tests/ci_hygiene_baseline.txt` is empty.** All six grandfathered
+  duplicate definitions are paid off, and the fix was not the one that file
+  predicted: it prescribed "move the definition into `R/lib/`", correct for
+  only one of the six. **Four were different functions wearing the same
+  name**, and merging them would have hidden that rather than fixed it.
+
+### Retracted — an audit finding, not a result
+
+- **The claim that `trilliant_identity.R`'s `variant` parameter was an
+  abstraction with one implementation was wrong.** It has two, both scored,
+  ranked, decided and reported against each other as a scientific comparison
+  (`experiment_trilliant_identity_linkage.R:286-287`,
+  `summarise_trilliant_identity_evidence.R`). The scan that produced the
+  finding searched for `variant =` and the callers pass it **positionally** —
+  `trl_rank_candidates(scored, "identity_only")`. Acting on it would have
+  deleted half of a published comparison.
+  `tools/audit_unused_params.py` now counts positional arguments, and
+  `tests/test_audit_cuts_saboteurs.R` A11 pins both variants as real so the
+  wrong finding cannot be rediscovered and acted on.
+
 ## [Unreleased] — 2026-11-14 — the 123-member freeze mystery was a dependency, not an arithmetic error
 
 ### Changed

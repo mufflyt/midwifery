@@ -57,6 +57,7 @@ CROSSWALK <- Sys.getenv(
   "artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv")
 GEO_OUT   <- Sys.getenv("GEO_OUT", "artifacts/amcb_npi_geography.csv")
 source(file.path("R", "lib", "medicare_duckdb.R"))
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5(), zip5_sql()
 ROOT      <- Sys.getenv("NPPES_HISTORY", "")
 if (!nzchar(ROOT)) ROOT <- samsung_volume_path("nppes_historical_downloads")
 stopifnot(file.exists(CROSSWALK), dir.exists(ROOT))
@@ -156,10 +157,10 @@ sql <- sprintf(
   col$npi,
   sel("pa1", "practice_address_1"), sel("pa2", "practice_address_2"),
   sel("pcity", "practice_city"), sel("pstate", "practice_state"),
-  sprintf("SUBSTR(TRIM(%s), 1, 5) AS practice_zip", col$pzip),
+  sprintf("%s AS practice_zip", zip5_sql(col$pzip)),
   sel("ma1", "mailing_address_1"), sel("mcity", "mailing_city"),
   sel("mstate", "mailing_state"),
-  sprintf("SUBSTR(TRIM(%s), 1, 5) AS mailing_zip", col$mzip),
+  sprintf("%s AS mailing_zip", zip5_sql(col$mzip)),
   sel("enum", "nppes_enumeration_date"), sel("upd", "nppes_last_update_date"),
   sel("deact", "nppes_deactivation_date"),
   paste(sprintf("TRIM(%s) AS %s", c(tax_cols, sw_cols), c(tax_cols, sw_cols)),

@@ -84,7 +84,6 @@ resolve_by_provider_urls <- function(catalog_url = CATALOG) {
   r <- unique(do.call(rbind, out))
   r[order(r$source, r$year), , drop = FALSE]
 }
-`%||%` <- function(a, b) if (is.null(a)) b else a
 
 #' Fetch one file unless it is already complete on disk
 #'

@@ -44,6 +44,7 @@ suppressPackageStartupMessages({
 })
 
 source(file.path("R", "lib", "artifact_provenance.R"))
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5()
 
 artifact_dir <- file.path("artifacts", "accessmrf")
 dir.create(artifact_dir, recursive = TRUE, showWarnings = FALSE)
@@ -65,7 +66,7 @@ cohort <- roster |>
     name = str_squish(paste(.data$first_name, .data$last_name)),
     credential = .data$certification,
     practice_state = .data$nppes_state,
-    practice_zip = str_sub(str_pad(.data$nppes_zip, 5, pad = "0"), 1, 5),
+    practice_zip = norm_str_zip5(.data$nppes_zip),
     practice_city = .data$nppes_city,
     # TRUE for every row here: membership in the canonical active-primary
     # linkage IS the cohort definition. Carried explicitly so a downstream
