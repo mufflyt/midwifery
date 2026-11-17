@@ -31,6 +31,10 @@
 #           gitignored, NPI x year x variant x method predicted state;
 #           added 2026-11-06 for classify_migration_moves_full_panel.R)
 # =============================================================================
+# mysteryroster's version can move this result (attribute_truth_fusion() owns
+# the fusion rule) -- differential-audited and confirmed byte-identical as of:
+#   remotes::install_github("mufflyt/mysteryroster@de1aa5d4e4262e8006254e3463c0e0a80eec56ba")
+# See docs/TECHNICAL_APPENDIX_MYSTERYROSTER_PIN_AUDIT.md.
 suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr); library(mysteryroster)})
 source(file.path("R", "lib", "clean_state.R"))
 source(file.path("R", "lib", "truth_fusion_claims.R"))

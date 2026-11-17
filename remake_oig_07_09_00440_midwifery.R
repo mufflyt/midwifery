@@ -71,6 +71,12 @@ suppressPackageStartupMessages({
   library(stringr)
   library(tidyr)
   library(tibble)
+  # mysteryroster's version can move a result (attribute_record_presence(),
+  # attribute_set_agreement(), validity_estimates() each own a decision rule
+  # the OIG remake's numbers come from -- see docs/
+  # TECHNICAL_APPENDIX_MYSTERYROSTER_PIN_AUDIT.md). Differential-audited and
+  # confirmed byte-identical output as of this commit at:
+  #   remotes::install_github("mufflyt/mysteryroster@de1aa5d4e4262e8006254e3463c0e0a80eec56ba")
   library(mysteryroster)
 })
 

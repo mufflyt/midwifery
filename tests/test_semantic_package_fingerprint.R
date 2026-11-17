@@ -43,6 +43,15 @@ cat("\n-- the declaration --\n")
 chk("mysterynpi" %in% SEMANTIC_PACKAGES,
     "T1 mysterynpi is declared semantic -- it owns the name-matching rules")
 
+# T1b. mysteryroster owns attribute_truth_fusion(), attribute_set_agreement(),
+# attribute_record_presence() and validity_estimates() -- the decision rules
+# the OIG-remake, migration-corroboration and OIG-style-consistency scripts'
+# committed numbers come from. Added 2026-11-16 after an audit (mirroring the
+# mysterynpi incident above) found it had never been declared, despite two
+# real defects already found and fixed in it on 2026-11-12.
+chk("mysteryroster" %in% SEMANTIC_PACKAGES,
+    "T1b mysteryroster is declared semantic -- it owns the fusion/agreement rules")
+
 # T2. Declared, not discovered: a short, auditable list. A fingerprint over
 # every loaded namespace would churn every sidecar on an unrelated upgrade.
 chk(length(SEMANTIC_PACKAGES) >= 1L && length(SEMANTIC_PACKAGES) <= 12L &&
@@ -72,6 +81,11 @@ chk(length(inst) > 0L &&
 mn <- Filter(function(e) identical(e$package, "mysterynpi"), got)[[1]]
 chk(isTRUE(mn$installed) && "source_sha" %in% names(mn),
     "T5 mysterynpi carries a source_sha field (the commit, when installed from git)")
+
+# T5b. Same field, same reason, for mysteryroster.
+mr <- Filter(function(e) identical(e$package, "mysteryroster"), got)[[1]]
+chk(isTRUE(mr$installed) && "source_sha" %in% names(mr),
+    "T5b mysteryroster carries a source_sha field (the commit, when installed from git)")
 
 # T6. CRAN packages have no RemoteSha. NA is the honest answer -- the version
 # alone identifies a CRAN source -- and must not be the string "NULL" or "".
@@ -114,6 +128,11 @@ sp <- m$semantic_packages
 mn_side <- Filter(function(e) identical(e$package, "mysterynpi"), sp)
 chk(length(mn_side) == 1L && nzchar(as.character(mn_side[[1]]$version)),
     "T10 the sidecar states which mysterynpi version produced the artifact")
+
+# T10b. Same assertion, for mysteryroster.
+mr_side <- Filter(function(e) identical(e$package, "mysteryroster"), sp)
+chk(length(mr_side) == 1L && nzchar(as.character(mr_side[[1]]$version)),
+    "T10b the sidecar states which mysteryroster version produced the artifact")
 
 # T11. The existing required-key schema still passes. ci_data_regression_guard.R
 # uses setdiff(need, names(m)), so a NEW key is additive -- but that is a fact
