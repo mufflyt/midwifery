@@ -2,7 +2,7 @@
 # =============================================================================
 # Saboteur tests: R/resolve_amcb_by_state_license.R
 # =============================================================================
-# tests/test_license_resolution.R covers normalize_license_number() and
+# tests/test_license_resolution.R covers normalize_license_number_unpadded() and
 # normalize_state() at a basic level, but normalize_identifier(),
 # find_column(), build_license_resolution_summary() and
 # extract_nppes_license_slots() had ZERO direct coverage before this file --
@@ -65,9 +65,9 @@ cat("\n-- find_column(): the column-name probe, under absence --\n")
       sprintf("T5 the first CANDIDATE (not the first available column) wins when both are present [%s]", got5))
 }
 
-cat("\n-- normalize_license_number(): leading-zero equivalence, pinned exactly --\n")
+cat("\n-- normalize_license_number_unpadded(): leading-zero equivalence, pinned exactly --\n")
 {
-  got <- normalize_license_number(c("0007", "7", "A007", "NONE", "none", "  12-34 ", "0000"))
+  got <- normalize_license_number_unpadded(c("0007", "7", "A007", "NONE", "none", "  12-34 ", "0000"))
   chk(identical(got[1], got[2]) && got[1] == "7",
       sprintf("T6 '0007' and '7' normalise to the same key ('7'), the documented leading-zero equivalence [%s]", got[1]))
   chk(got[3] == "A007",
@@ -86,27 +86,36 @@ cat("\n-- normalize_license_number(): leading-zero equivalence, pinned exactly -
       sprintf("T10 an all-zero license number ('0000') normalises to '0' -- distinct from both '7' and NA [%s]", got[7]))
 }
 
-cat("\n-- normalize_state(): a real US-territory gap --\n")
+cat("\n-- license state: the US-territory gap, now closed --\n")
 {
-  got <- normalize_state(c("colorado", "CO", "Colorado ", "Puerto Rico", "ZZ",
-                           NA, "district of columbia"))
+  # T14 used to record this as a CONFIRMED GAP and leave it: a Puerto Rico
+  # licence state normalised to NA, indistinguishable from garbage like "ZZ",
+  # so no PR/GU/VI/AS/MP licence key could ever resolve. The local
+  # normalize_state() that did that is gone; license_state now goes through
+  # the canonical clean_state(), which accepts exactly the jurisdictions
+  # VALID_STATES declares valid. The checks below are the same inputs with
+  # the finding inverted -- the territory must resolve AND the garbage must
+  # still be refused, because widening the lookup is only correct if it did
+  # not also loosen it.
+  got <- clean_state(c("colorado", "CO", "Colorado ", "Puerto Rico", "ZZ",
+                       NA, "district of columbia"))
   chk(identical(got[1:3], c("CO", "CO", "CO")),
       "T11 full state name, abbreviation, and trailing-whitespace variants all normalise to the same two-letter code")
   chk(identical(got[6], NA_character_) && identical(got[5], NA_character_),
       "T12 a genuinely unrecognised code ('ZZ') and an NA input both fail to NA")
   chk(identical(got[7], "DC"),
-      "T13 'district of columbia' resolves via the special-cased DC alias this function explicitly adds")
-  # T14. CONFIRMED FINDING: 'Puerto Rico' -- a real US jurisdiction that can
-  # legitimately issue a midwifery or nursing license -- is NOT in this
-  # function's lookup (only the 50 states plus the explicitly-added DC
-  # alias). It fails to NA, indistinguishable from genuine garbage input
-  # like 'ZZ'. Any AMCB certificant or NPPES record carrying a Puerto Rico
-  # (or Guam, US Virgin Islands, etc.) license state would silently fail to
-  # normalise here. Reported, not fixed: fixing the allowlist is a scope
-  # decision for whoever owns this pipeline's jurisdiction coverage.
-  chk(is.na(got[4]),
-      sprintf("T14 CONFIRMED GAP: 'Puerto Rico' normalises to NA, identical to genuine garbage ('ZZ') -- US territories are not in the lookup [got %s]",
+      "T13 'district of columbia' resolves to DC")
+  chk(identical(got[4], "PR"),
+      sprintf("T14 GAP CLOSED: 'Puerto Rico' resolves to PR instead of NA [got %s]",
               if (is.na(got[4])) "NA" else got[4]))
+  # The other four territories, so closing the gap for PR alone cannot pass.
+  terr <- clean_state(c("GU", "Guam", "VI", "AS", "MP", "American Samoa"))
+  chk(identical(terr, c("GU", "GU", "VI", "AS", "MP", "AS")),
+      "T14b and so do Guam, the Virgin Islands, American Samoa and the Northern Marianas")
+  # A military postal code is NOT a jurisdiction that issues a licence, and
+  # the old function refused it only by accident of its short allowlist.
+  chk(all(is.na(clean_state(c("AE", "AP", "AA")))),
+      "T14c while military postal codes are still refused, not swept in with the territories")
 }
 
 cat("\n-- build_license_resolution_summary(): is the invariant guard reachable? --\n")

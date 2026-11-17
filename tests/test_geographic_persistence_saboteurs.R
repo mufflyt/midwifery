@@ -25,21 +25,15 @@
 # been passing through as though they were real places.
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.harness <- grep("--file=", commandArgs(), value = TRUE)
+source(file.path(if (length(.harness)) dirname(sub("--file=", "", .harness[1]))
+                 else "tests", "helper-saboteur.R"))
+root <- test_repo_root()
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 suppressPackageStartupMessages({library(dplyr); library(tibble)})
 source(file.path(root, "R", "lib", "geographic_persistence_stats.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
-sab <- function(n, name) cat(sprintf("\nG%d %s\n", n, name))
+SAB_PREFIX <- "G"
 
 METRO <- RURALITY_LABELS_SHORT[1]
 RURAL <- RURALITY_LABELS_SHORT[length(RURALITY_LABELS_SHORT)]

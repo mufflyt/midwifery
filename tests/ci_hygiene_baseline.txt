@@ -7,25 +7,35 @@
 # times with divergent suite handling, zip5 three times, and a test shadowed the
 # canonical pad5 so three assertions tested a private lambda.
 #
-# The eight license-resolution entries below were under active development when
-# the check landed and were left alone deliberately. The fix for each is the
-# same: move the definition into R/lib/ and have both callers source it.
-log_message: R/build_amcb_state_licenses.R, scrape_healthgrades_midwives.R
-normalize_state: R/resolve_amcb_by_state_license.R, amcb_license_bridge.R
-read_amcb_roster: R/build_amcb_state_licenses.R, amcb_license_bridge.R
-save_license_artifacts: R/build_amcb_state_licenses.R, amcb_license_bridge.R
-normalize_license_number: R/resolve_amcb_by_state_license.R, amcb_license_bridge.R
-g: tests/test_birth_activity.R, tests/test_expand_former_name_candidates.R
-
-# 2026-08-15. Four entries retired. normalize_npi and fmt_n had byte-identical
-# bodies and now live once in R/lib/common_helpers.R. find_column and
-# normalize_state did NOT: their copies differ in case sensitivity and in which
-# state spellings they accept, so they were given distinct names instead of
-# being merged -- collapsing them would have loosened license-key construction,
-# which is a linkage change rather than a cleanup.
+# 2026-11-16. EMPTY. The last six entries are paid off, and the fix was not the
+# one this file predicted. It said "move the definition into R/lib/ and have
+# both callers source it" -- correct for only one of the six:
 #
-# normalize_state still has two genuinely different implementations:
-#   R/resolve_amcb_by_state_license.R  states + DC, exact match
-#   amcb_license_bridge.R              states + DC + PR/GU/VI/AS/MP, via normalize_text()
-# Retiring that last pair means deciding whether the bridge's territory support
-# belongs in the resolver, which is a scientific question, not a rename.
+#   normalize_state           MERGED. R/lib/clean_state.R::clean_state() turned
+#                             out to be a strict superset of the resolver's copy
+#                             (measured over its whole input domain: nothing
+#                             lost, PR/GU/VI/AS/MP and "XX - FULL NAME" gained),
+#                             which is the question the 2026-08-15 note left
+#                             open. The bridge's copy merged too, but that one
+#                             TIGHTENED a license key -- its rule passed any
+#                             two-letter token through as a state, accepting
+#                             AE/AP/AA, AB/BC/ON and UK/RP/US/PW/CE across 6,331
+#                             panel rows and 731 NPIs.
+#   normalize_license_number  NAMED APART, not merged: _unpadded strips leading
+#                             zeros so "0007" and "7" agree, _padded keeps them.
+#                             Both choices are documented and defended where
+#                             they are made; collapsing them would have changed
+#                             a license key in one of the two pipelines.
+#   log_message               NAMED APART (hg_log_message): one takes `...` and
+#                             calls message(), the other takes one string and
+#                             tees it to LOG_FILE.
+#   read_amcb_roster          NAMED APART (bridge_*): one synthesizes row IDs
+#   save_license_artifacts    and normalizes names into a cohort table, the
+#                             other reads all-character for the bridge.
+#   g                         NAMED APART (activity_rows, rescue_count): two
+#                             one-line pickers over different frames.
+#
+# The lesson for the next entry: a shared NAME is not evidence of shared WORK.
+# Four of these six were different functions wearing the same name, and merging
+# them would have been worse than the duplication -- it would have hidden that
+# they do different things. Check the bodies before reaching for R/lib/.

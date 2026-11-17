@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# Thirteen saboteurs: the Boards of Nursing snapshot
+# Thirteen saboteurs: the Boards of Nursing bon_snapshot
 # =============================================================================
 # read_bon_state_snapshot() produces the 1,221-record / 94.2% boards-of-
 # nursing figure that manuscript/federal_database_accuracy.qmd prints, and it
@@ -30,22 +30,16 @@
 # later "fix" could satisfy the other eight by refusing every input.
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
 suppressPackageStartupMessages({library(dplyr); library(readr)})
+.harness <- grep("--file=", commandArgs(), value = TRUE)
+source(file.path(if (length(.harness)) dirname(sub("--file=", "", .harness[1]))
+                 else "tests", "helper-saboteur.R"))
+root <- test_repo_root()
 source(file.path(root, "R", "lib", "source_year.R"))
 source(file.path(root, "R", "lib", "source_coverage.R"))
 source(file.path(root, "R", "lib", "clean_state.R"))
 source(file.path(root, "R", "lib", "bon_state_snapshot.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 
 # --- the crime scene ---------------------------------------------------------
 # Three boards, standing in for the real eight: two that publish a state
@@ -62,7 +56,7 @@ board_path <- function(board)
 
 # `npi_from` keeps each board's NPIs distinct so a double-read is visible as a
 # row count rather than hidden by a distinct().
-write_board <- function(board, n_rows = 3L, npi_from = 1L,
+bon_write_board <- function(board, n_rows = 3L, npi_from = 1L,
                         states = c("CO", "NM", "AZ"),
                         statuses = "VERIFIED_LIVE_BON",
                         drop_columns = character(0), npis = NULL) {
@@ -76,10 +70,10 @@ write_board <- function(board, n_rows = 3L, npi_from = 1L,
                    file.path(sandbox, board_path(board)))
 }
 
-write_manifest <- function(boards = BOARDS, extra_year_for = character(0)) {
+bon_write_manifest <- function(boards = BOARDS, extra_year_for = character(0)) {
   declared <- tibble::tibble(
     source_id = "state_boards_of_nursing", source_name = "saboteur fixture",
-    expected_year = 2026L, required = TRUE, source_type = "snapshot",
+    expected_year = 2026L, required = TRUE, source_type = "bon_snapshot",
     input_path = board_path(boards), producer = "fixture",
     date_field = NA_character_,
     state_field = ifelse(boards %in% NO_STATE_BOARDS, NA_character_,
@@ -100,26 +94,25 @@ write_manifest <- function(boards = BOARDS, extra_year_for = character(0)) {
                              "state_source_audit_sources.csv"))
 }
 
-restore_scene <- function(...) {
+bon_restore_scene <- function(...) {
   unlink(sandbox, recursive = TRUE)
   dir.create(file.path(sandbox, "artifacts"), recursive = TRUE,
              showWarnings = FALSE)
   dir.create(file.path(sandbox, "config"), recursive = TRUE,
              showWarnings = FALSE)
   for (board_index in seq_along(BOARDS))
-    write_board(BOARDS[board_index], npi_from = 1L + 100L * board_index)
-  write_manifest(...)
+    bon_write_board(BOARDS[board_index], npi_from = 1L + 100L * board_index)
+  bon_write_manifest(...)
 }
 
-# Runs the snapshot inside the sandbox and returns either the result or the
+# Runs the bon_snapshot inside the sandbox and returns either the result or the
 # refusal text, never letting an error end the suite.
-snapshot <- function(publication_mode = TRUE) {
+bon_snapshot <- function(publication_mode = TRUE) {
   owd <- setwd(sandbox); on.exit(setwd(owd), add = TRUE)
   tryCatch(suppressMessages(read_bon_state_snapshot(publication_mode)),
            error = function(e) structure(conditionMessage(e),
                                          class = "refusal"))
 }
-refused <- function(x) inherits(x, "refusal")
 names_what <- function(x, ...) {
   if (!refused(x)) return(FALSE)
   all(vapply(c(...), function(needle) grepl(needle, x, fixed = TRUE),
@@ -127,8 +120,8 @@ names_what <- function(x, ...) {
 }
 
 cat("\n=== baseline: the scene is intact before each saboteur ===\n")
-restore_scene()
-baseline <- snapshot()
+bon_restore_scene()
+baseline <- bon_snapshot()
 chk(!refused(baseline), "B1 an intact scene publishes")
 chk(!refused(baseline) && nrow(baseline$verified) == 6L,
     "B2 both state-publishing boards contribute all 3 records each")
@@ -142,10 +135,10 @@ chk(!refused(baseline) &&
 
 # --- S1: the original defect, one column to the right ------------------------
 cat("\n=== S1 a board with rows loses live_bon_match_status ===\n")
-restore_scene()
-write_board("connecticut", npi_from = 201L,
+bon_restore_scene()
+bon_write_board("connecticut", npi_from = 201L,
             drop_columns = "live_bon_match_status")
-s1 <- snapshot()
+s1 <- bon_snapshot()
 chk(names_what(s1, "live_bon_match_status", "live_connecticut_bon"),
     "S1 refuses, naming the file and the missing column")
 chk(refused(s1) || nrow(s1$verified) != 3L,
@@ -153,25 +146,25 @@ chk(refused(s1) || nrow(s1$verified) != 3L,
 
 # --- S2: every board loses it, which used to be a cryptic dplyr error --------
 cat("\n=== S2 every board loses live_bon_match_status ===\n")
-restore_scene()
+bon_restore_scene()
 for (board in STATE_BOARDS)
-  write_board(board, drop_columns = "live_bon_match_status")
-s2 <- snapshot()
+  bon_write_board(board, drop_columns = "live_bon_match_status")
+s2 <- bon_snapshot()
 chk(names_what(s2, "live_bon_match_status"),
     "S2 refuses with the column named, not an unattributed lookup error")
 
 # --- S3: the column the coverage contract does name --------------------------
 cat("\n=== S3 a board loses its npi column ===\n")
-restore_scene()
-write_board("colorado", drop_columns = "npi")
-s3 <- snapshot()
+bon_restore_scene()
+bon_write_board("colorado", drop_columns = "npi")
+s3 <- bon_snapshot()
 chk(refused(s3), "S3 refuses a board file with no npi column")
 
 # --- S4 (INVERTED): present, complete and empty is evidence of absence -------
 cat("\n=== S4 one board is present and empty (Delaware's real case) ===\n")
-restore_scene()
-write_board("connecticut", n_rows = 0L)
-s4 <- snapshot()
+bon_restore_scene()
+bon_write_board("connecticut", n_rows = 0L)
+s4 <- bon_snapshot()
 chk(!refused(s4), "S4 an empty board file does NOT fail the build")
 chk(!refused(s4) && nrow(s4$verified) == 3L,
     "S4 colorado's three records survive the empty sibling")
@@ -180,17 +173,17 @@ chk(!refused(s4) && identical(s4$boards_excluded, character(0)),
 
 # --- S5 (INVERTED): all of them empty ----------------------------------------
 cat("\n=== S5 every state-publishing board is present and empty ===\n")
-restore_scene()
-for (board in STATE_BOARDS) write_board(board, n_rows = 0L)
-s5 <- snapshot()
+bon_restore_scene()
+for (board in STATE_BOARDS) bon_write_board(board, n_rows = 0L)
+s5 <- bon_snapshot()
 chk(!refused(s5), "S5 an all-empty harvest returns a verdict, not an error")
 chk(!refused(s5) && nrow(s5$comparable) == 0L,
     "S5 zero comparable records, reported as zero")
 
 # --- S6: the same file declared under two years ------------------------------
 cat("\n=== S6 one board file is declared under two expected_years ===\n")
-restore_scene(extra_year_for = "colorado")
-s6 <- snapshot()
+bon_restore_scene(extra_year_for = "colorado")
+s6 <- bon_snapshot()
 chk(!refused(s6) && nrow(s6$verified) == 6L,
     "S6 a twice-declared board file is read once, not counted twice")
 chk(!refused(s6) && length(s6$boards_with_state) == 2L,
@@ -198,12 +191,12 @@ chk(!refused(s6) && length(s6$boards_with_state) == 2L,
 
 # --- S7: a board that publishes no state must not enter the denominator -----
 cat("\n=== S7 the no-state board's file carries verified rows ===\n")
-restore_scene()
+bon_restore_scene()
 texas_rows <- tibble::tibble(
   npi = sprintf("9%09d", 1:5),
   live_bon_match_status = rep("VERIFIED_LIVE_BON", 5))
 readr::write_csv(texas_rows, file.path(sandbox, board_path("texas")))
-s7 <- snapshot()
+s7 <- bon_snapshot()
 chk(!refused(s7) && nrow(s7$verified) == 6L,
     "S7 texas's rows never enter `verified`, which is the published denominator")
 chk(!refused(s7) && !any(grepl("^9", s7$comparable$npi)),
@@ -211,10 +204,10 @@ chk(!refused(s7) && !any(grepl("^9", s7$comparable$npi)),
 
 # --- S8: unresolvable state values are not comparable ------------------------
 cat("\n=== S8 a board publishes state values nothing can resolve ===\n")
-restore_scene()
-write_board("connecticut", npi_from = 201L,
+bon_restore_scene()
+bon_write_board("connecticut", npi_from = 201L,
             states = c("N/A", "UNKNOWN", "--"))
-s8 <- snapshot()
+s8 <- bon_snapshot()
 chk(!refused(s8) && nrow(s8$verified) == 6L,
     "S8 the junk rows stay in `verified`, so the denominator is honest")
 chk(!refused(s8) && nrow(s8$comparable) == 3L,
@@ -226,10 +219,10 @@ chk(!refused(s8) && nrow(s8$comparable) == 3L,
 # already NA -- which is why the nzchar() guard downstream of trimws() is
 # belt-and-braces rather than the thing doing the work.
 cat("\n=== S9 a board file carries blank and whitespace-only npis ===\n")
-restore_scene()
-write_board("connecticut", n_rows = 3L,
+bon_restore_scene()
+bon_write_board("connecticut", n_rows = 3L,
             npis = c("1000000201", "   ", NA_character_))
-s9 <- snapshot()
+s9 <- bon_snapshot()
 chk(!refused(s9) && nrow(s9$comparable) == 4L,
     "S9 two unidentifiable rows are dropped; the one real npi is kept")
 chk(!refused(s9) && !any(is.na(s9$comparable$npi)),
@@ -237,8 +230,8 @@ chk(!refused(s9) && !any(is.na(s9$comparable$npi)),
 
 # --- S10: a board name is not a state code -----------------------------------
 cat("\n=== S10 a ninth board is declared with no state-code entry ===\n")
-restore_scene()
-write_board("colorado", npi_from = 101L)
+bon_restore_scene()
+bon_write_board("colorado", npi_from = 101L)
 oregon_path <- file.path(sandbox, board_path("oregon"))
 write_board_oregon <- {
   readr::write_csv(tibble::tibble(
@@ -246,19 +239,19 @@ write_board_oregon <- {
     live_bon_match_status = rep("VERIFIED_LIVE_BON", 2),
     live_bon_state = c("OR", "OR")), oregon_path)
 }
-write_manifest(boards = c(BOARDS, "oregon"))
-s10 <- snapshot()
+bon_write_manifest(boards = c(BOARDS, "oregon"))
+s10 <- bon_snapshot()
 chk(names_what(s10, "oregon", "BOARD_STATE_CODE"),
     "S10 refuses rather than abbreviating a board name as a state code")
 
 # --- S11 (INVERTED): an exploratory run must not claim what it did not read --
 cat("\n=== S11 a declined board in exploratory mode ===\n")
-restore_scene()
+bon_restore_scene()
 unlink(file.path(sandbox, board_path("connecticut")))
-s11_published <- snapshot(publication_mode = TRUE)
+s11_published <- bon_snapshot(publication_mode = TRUE)
 chk(refused(s11_published),
     "S11a publication mode refuses when a declared board file is absent")
-s11 <- snapshot(publication_mode = FALSE)
+s11 <- bon_snapshot(publication_mode = FALSE)
 chk(!refused(s11) && identical(s11$boards_excluded, "connecticut"),
     "S11b exploratory mode names connecticut as excluded")
 chk(!refused(s11) && grepl("CT EXCLUDED", s11$label, fixed = TRUE),
@@ -277,10 +270,10 @@ chk(!refused(s11) && nrow(s11$verified) == 3L,
 # different verdicts, which is the whole distinction the coverage contract
 # exists to draw.
 cat("\n=== S12 every state-publishing board file is zero bytes ===\n")
-restore_scene()
+bon_restore_scene()
 for (board in STATE_BOARDS)
   file.create(file.path(sandbox, board_path(board)))
-s12 <- snapshot()
+s12 <- bon_snapshot()
 chk(names_what(s12, "live_colorado_bon"),
     "S12 refuses a zero-byte board file, naming it")
 chk(refused(s12) || nrow(s12$comparable) == 0L,
@@ -288,9 +281,9 @@ chk(refused(s12) || nrow(s12$comparable) == 0L,
 
 # --- S13 (INVERTED): nothing resolved at all ---------------------------------
 cat("\n=== S13 exploratory run where every state-publishing board is absent ===\n")
-restore_scene()
+bon_restore_scene()
 for (board in STATE_BOARDS) unlink(file.path(sandbox, board_path(board)))
-s13 <- snapshot(publication_mode = FALSE)
+s13 <- bon_snapshot(publication_mode = FALSE)
 chk(!refused(s13) && nrow(s13$comparable) == 0L,
     "S13 an empty resolved set returns zero records, not an error")
 chk(!refused(s13) &&

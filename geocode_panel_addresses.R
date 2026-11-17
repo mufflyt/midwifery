@@ -98,26 +98,17 @@ cache <- dbGetQuery(con, sprintf("
 
 # Exact key first; then street+city+state ignoring zip, stripped identically on
 # both sides so a 9-digit cached zip cannot silently defeat the fallback.
-drop_zip <- function(x) sub("\\|[^|]*$", "", x)
+# drop_zip() and the collapse below are shared with geocode_midwives.R -- see
+# R/lib/geocode_conflicts.R, which both scripts already source.
+source("R/lib/geocode_conflicts.R")
 cache$key_nozip <- drop_zip(cache$address_hash)
 roster$key_nozip <- drop_zip(roster$address_hash)
-# Same defect as geocode_midwives.R: dropping the ZIP collapses genuinely
-# different addresses, and distinct() then assigned one address's coordinates
-# to another by row order. Resolved or refused, never picked.
-source("R/lib/geocode_conflicts.R")
 nozip_res <- resolve_geocode_key(cache$key_nozip, cache$latitude,
                                  cache$longitude, cache$quality_score)
 message(summarise_geocode_resolution(nozip_res))
-nozip <- cache %>%
-  inner_join(nozip_res %>% filter(!is.na(lat)) %>%
-               select(key_nozip = key, .lat = lat, .lon = lon),
-             by = "key_nozip") %>%
-  filter(latitude == .lat, longitude == .lon) %>%
-  # Coordinate already agreed; a total ordering makes the metadata pick
-  # deterministic instead of dependent on row order.
-  arrange(key_nozip, desc(quality_score), census_tract, county_fips) %>%
-  group_by(key_nozip) %>% slice(1) %>% ungroup() %>%
-  select(key_nozip, lat2 = latitude, lon2 = longitude, q2 = quality_score,
+nozip <- collapse_zipless_key(cache, nozip_res,
+                              c("census_tract", "county_fips")) %>%
+  rename(lat2 = latitude, lon2 = longitude, q2 = quality_score,
          tract2 = census_tract, county2 = county_fips)
 
 hit <- roster %>%

@@ -19,20 +19,14 @@
 # left silently was not.
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.harness <- grep("--file=", commandArgs(), value = TRUE)
+source(file.path(if (length(.harness)) dirname(sub("--file=", "", .harness[1]))
+                 else "tests", "helper-saboteur.R"))
+root <- test_repo_root()
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 source(file.path(root, "R", "lib", "clean_state.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
-sab <- function(n, name) cat(sprintf("\nC%d %s\n", n, name))
+SAB_PREFIX <- "C"
 quiet <- function(expr) suppressMessages(expr)
 
 sab(1, "case and whitespace as every real extract delivers them")

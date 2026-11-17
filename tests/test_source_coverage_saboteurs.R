@@ -27,31 +27,25 @@
 #       (docs/state-source-audit-bon-reharvest.md)
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.harness <- grep("--file=", commandArgs(), value = TRUE)
+source(file.path(if (length(.harness)) dirname(sub("--file=", "", .harness[1]))
+                 else "tests", "helper-saboteur.R"))
+root <- test_repo_root()
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 suppressPackageStartupMessages({library(dplyr); library(readr)})
 source(file.path(root, "R", "lib", "source_coverage.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 
 sabotage_dir <- file.path(tempdir(), "saboteurs")
 
 # --- the crime scene, rebuilt before every saboteur ---------------------------
 DECLARED_YEARS <- 2021:2025
 
-year_path <- function(program_year)
+coverage_year_path <- function(program_year)
   file.path(sabotage_dir, sprintf("cohort_general_%d.csv", program_year))
 
-write_year <- function(program_year, n_rows = 3L, year_written = program_year,
-                       path = year_path(program_year)) {
+coverage_write_year <- function(program_year, n_rows = 3L, year_written = program_year,
+                       path = coverage_year_path(program_year)) {
   readr::write_csv(tibble::tibble(
     certification_number = sprintf("CNM%05d", seq_len(n_rows)),
     npi = sprintf("1%09d", seq_len(n_rows)),
@@ -60,17 +54,17 @@ write_year <- function(program_year, n_rows = 3L, year_written = program_year,
   path
 }
 
-restore_scene <- function() {
+coverage_restore_scene <- function() {
   unlink(sabotage_dir, recursive = TRUE)
   dir.create(sabotage_dir, recursive = TRUE, showWarnings = FALSE)
-  for (program_year in DECLARED_YEARS) write_year(program_year)
+  for (program_year in DECLARED_YEARS) coverage_write_year(program_year)
 }
 
 manifest_for <- function(years = DECLARED_YEARS) {
   tibble::tibble(
     source_id = "open_payments", source_name = "saboteur fixture",
     expected_year = years, required = TRUE, source_type = "annual",
-    input_path = year_path(years), producer = "fixture",
+    input_path = coverage_year_path(years), producer = "fixture",
     date_field = "program_year", state_field = "recipient_state",
     validation_method = "in_file_date", source_vintage = "fixture",
     artifact_sha256 = NA_character_, availability_status = "available",
@@ -97,7 +91,7 @@ exploratory_audit <- function(manifest_rows = manifest_for()) {
     error = function(e) NULL)
 }
 
-status_of <- function(audit, program_year) {
+coverage_status_of <- function(audit, program_year) {
   if (is.null(audit)) return(NA_character_)
   hit <- dplyr::filter(audit, .data$program_year == !!program_year)
   if (!nrow(hit)) NA_character_ else hit$validation_status[1]
@@ -111,7 +105,7 @@ saboteur <- function(number, name) cat(sprintf("\nS%d %s\n", number, name))
 
 saboteur(1, "delete one required year")
 {
-  restore_scene(); file.remove(year_path(2023))
+  coverage_restore_scene(); file.remove(coverage_year_path(2023))
   verdict <- attempt_publication()
   chk(verdict$refused, "refuses to publish")
   chk(grepl("2023", verdict$message), "names 2023")
@@ -119,7 +113,7 @@ saboteur(1, "delete one required year")
 
 saboteur(2, "delete four of five years -- the 2026-11-12 defect exactly")
 {
-  restore_scene(); file.remove(year_path(c(2021, 2022, 2023, 2025)))
+  coverage_restore_scene(); file.remove(coverage_year_path(c(2021, 2022, 2023, 2025)))
   verdict <- attempt_publication()
   chk(verdict$refused, "refuses to publish a one-year series")
   chk(all(vapply(c("2021", "2022", "2023", "2025"), grepl, logical(1),
@@ -132,8 +126,8 @@ saboteur(2, "delete four of five years -- the 2026-11-12 defect exactly")
 
 saboteur(3, "rename a year's file -- a glob would never notice")
 {
-  restore_scene()
-  file.rename(year_path(2022), file.path(sabotage_dir, "cohort_general_2022.bak"))
+  coverage_restore_scene()
+  file.rename(coverage_year_path(2022), file.path(sabotage_dir, "cohort_general_2022.bak"))
   verdict <- attempt_publication()
   chk(verdict$refused && grepl("2022", verdict$message),
       "a renamed input is a missing year, named")
@@ -141,10 +135,10 @@ saboteur(3, "rename a year's file -- a glob would never notice")
 
 saboteur(4, "INVERTED -- a genuinely empty year must still publish")
 {
-  restore_scene(); write_year(2024, n_rows = 0L)
+  coverage_restore_scene(); coverage_write_year(2024, n_rows = 0L)
   verdict <- attempt_publication()
   chk(!verdict$refused, "does NOT refuse: zero records is evidence of absence")
-  chk(identical(status_of(verdict$audit, 2024L), "present_zero_records"),
+  chk(identical(coverage_status_of(verdict$audit, 2024L), "present_zero_records"),
       "and is recorded as its own verdict, not as ok")
   chk(identical(as.integer(
         dplyr::filter(verdict$audit,
@@ -154,7 +148,7 @@ saboteur(4, "INVERTED -- a genuinely empty year must still publish")
 
 saboteur(5, "a year's file holds another year's data")
 {
-  restore_scene(); write_year(2022, year_written = 2023L)
+  coverage_restore_scene(); coverage_write_year(2022, year_written = 2023L)
   verdict <- attempt_publication()
   chk(verdict$refused && grepl("2022", verdict$message),
       "refuses, naming the year whose contents contradict it")
@@ -162,8 +156,8 @@ saboteur(5, "a year's file holds another year's data")
 
 saboteur(6, "substitute an older snapshot under the right filename")
 {
-  restore_scene()
-  file.copy(year_path(2024), year_path(2025), overwrite = TRUE)
+  coverage_restore_scene()
+  file.copy(coverage_year_path(2024), coverage_year_path(2025), overwrite = TRUE)
   verdict <- attempt_publication()
   chk(verdict$refused,
       "refuses a 2024 file wearing the 2025 name")
@@ -172,13 +166,13 @@ saboteur(6, "substitute an older snapshot under the right filename")
 
 saboteur(7, "every year present, one of them silently truncated mid-write")
 {
-  restore_scene()
-  full_lines <- readLines(year_path(2023))
-  writeLines(full_lines[1:2], year_path(2023))   # header + one row survives
+  coverage_restore_scene()
+  full_lines <- readLines(coverage_year_path(2023))
+  writeLines(full_lines[1:2], coverage_year_path(2023))   # header + one row survives
   verdict <- attempt_publication()
   chk(!verdict$refused,
       "a short but well-formed year is not refused -- rows are not coverage")
-  chk(identical(status_of(verdict$audit, 2023L), "ok"),
+  chk(identical(coverage_status_of(verdict$audit, 2023L), "ok"),
       "it validates, and its record count is what reports the truncation")
   chk(identical(as.integer(
         dplyr::filter(verdict$audit,
@@ -192,10 +186,10 @@ saboteur(7, "every year present, one of them silently truncated mid-write")
 
 saboteur(8, "strip the program_year column")
 {
-  restore_scene()
-  stripped <- readr::read_csv(year_path(2023), col_types = readr::cols(),
+  coverage_restore_scene()
+  stripped <- readr::read_csv(coverage_year_path(2023), col_types = readr::cols(),
                               progress = FALSE) %>% dplyr::select(-program_year)
-  readr::write_csv(stripped, year_path(2023))
+  readr::write_csv(stripped, coverage_year_path(2023))
   verdict <- attempt_publication()
   chk(verdict$refused, "refuses: a filename is not proof of a year")
   chk(grepl("2023|program_year", verdict$message), "names the year or column")
@@ -203,15 +197,15 @@ saboteur(8, "strip the program_year column")
 
 saboteur(9, "blank every program_year value")
 {
-  restore_scene()
-  write_year(2021, year_written = NA)
+  coverage_restore_scene()
+  coverage_write_year(2021, year_written = NA)
   verdict <- attempt_publication()
   chk(verdict$refused, "refuses an unverifiable year")
 }
 
 saboteur(10, "an impossible program_year")
 {
-  restore_scene(); write_year(2025, year_written = 2099L)
+  coverage_restore_scene(); coverage_write_year(2025, year_written = 2099L)
   verdict <- attempt_publication()
   chk(verdict$refused && grepl("2025", verdict$message),
       "refuses a year no CMS file could carry")
@@ -219,7 +213,7 @@ saboteur(10, "an impossible program_year")
 
 saboteur(11, "INVERTED -- an undeclared extra year must not widen the study")
 {
-  restore_scene(); write_year(2026L)
+  coverage_restore_scene(); coverage_write_year(2026L)
   verdict <- attempt_publication()
   chk(!verdict$refused, "does not refuse over a file it was never promised")
   resolved <- resolve_source_inputs(verdict$audit, "open_payments")
@@ -233,20 +227,20 @@ saboteur(11, "INVERTED -- an undeclared extra year must not widen the study")
 
 saboteur(12, "a zero-byte file")
 {
-  restore_scene(); file.create(year_path(2022))
+  coverage_restore_scene(); file.create(coverage_year_path(2022))
   verdict <- attempt_publication()
   chk(verdict$refused, "refuses a file with not even a header")
 }
 
 saboteur(13, "binary junk with a valid header")
 {
-  restore_scene()
+  coverage_restore_scene()
   writeLines(c("certification_number,npi,program_year,recipient_state",
                "\"unterminated,1,2023,CO", "\x01\x02\x03 not csv"),
-             year_path(2023))
+             coverage_year_path(2023))
   verdict <- attempt_publication()
   chk(verdict$refused, "refuses an unparseable file")
-  chk(!identical(status_of(exploratory_audit(), 2023L), "ok"),
+  chk(!identical(coverage_status_of(exploratory_audit(), 2023L), "ok"),
       "and never records it as ok, even exploring")
 }
 
@@ -255,34 +249,34 @@ saboteur(14, "INVERTED -- a declared path that is a DIRECTORY")
   # file.exists() returns TRUE for a directory in R, so a naive existence
   # check passes and the read then explodes. The contract must call this
   # unusable, and must not abort the harness doing so.
-  restore_scene(); file.remove(year_path(2024)); dir.create(year_path(2024))
+  coverage_restore_scene(); file.remove(coverage_year_path(2024)); dir.create(coverage_year_path(2024))
   verdict <- attempt_publication()
   chk(verdict$refused, "refuses a directory masquerading as the input")
   chk(nzchar(verdict$message), "with a message, not an uncaught crash")
-  unlink(year_path(2024), recursive = TRUE)
+  unlink(coverage_year_path(2024), recursive = TRUE)
 }
 
 saboteur(15, "a file the process cannot read")
 {
-  restore_scene()
-  Sys.chmod(year_path(2021), mode = "000")
-  readable <- file.access(year_path(2021), mode = 4L) == 0L
+  coverage_restore_scene()
+  Sys.chmod(coverage_year_path(2021), mode = "000")
+  readable <- file.access(coverage_year_path(2021), mode = 4L) == 0L
   if (readable) {
     cat("  skip S15 -- running with privileges that ignore file modes\n")
   } else {
     verdict <- attempt_publication()
     chk(verdict$refused, "refuses an unreadable declared input")
   }
-  Sys.chmod(year_path(2021), mode = "644")
+  Sys.chmod(coverage_year_path(2021), mode = "644")
 }
 
 saboteur(16, "drop the declared state column -- the Colorado defect")
 {
-  restore_scene()
-  destated <- readr::read_csv(year_path(2022), col_types = readr::cols(),
+  coverage_restore_scene()
+  destated <- readr::read_csv(coverage_year_path(2022), col_types = readr::cols(),
                               progress = FALSE) %>%
     dplyr::select(-recipient_state)
-  readr::write_csv(destated, year_path(2022))
+  readr::write_csv(destated, coverage_year_path(2022))
   verdict <- attempt_publication()
   chk(verdict$refused, "refuses: 62% of records once vanished exactly this way")
   chk(grepl("recipient_state", verdict$message),
@@ -291,10 +285,10 @@ saboteur(16, "drop the declared state column -- the Colorado defect")
 
 saboteur(17, "drop the npi column")
 {
-  restore_scene()
-  deidentified <- readr::read_csv(year_path(2023), col_types = readr::cols(),
+  coverage_restore_scene()
+  deidentified <- readr::read_csv(coverage_year_path(2023), col_types = readr::cols(),
                                   progress = FALSE) %>% dplyr::select(-npi)
-  readr::write_csv(deidentified, year_path(2023))
+  readr::write_csv(deidentified, coverage_year_path(2023))
   verdict <- attempt_publication()
   chk(verdict$refused, "refuses a file nothing can be linked through")
 }
@@ -305,7 +299,7 @@ saboteur(17, "drop the npi column")
 
 saboteur(18, "declare the same source-year twice")
 {
-  restore_scene()
+  coverage_restore_scene()
   doubled <- dplyr::bind_rows(manifest_for(),
                               dplyr::filter(manifest_for(),
                                             .data$expected_year == 2023L))
@@ -322,7 +316,7 @@ saboteur(19, "INVERTED -- declare a state column the source truly lacks")
   # Texas and Washington publish no state. They declare an EMPTY state_field,
   # and that must be honoured -- otherwise the only way to pass the contract
   # is to invent a state, which is the fabrication the audit exists to stop.
-  restore_scene()
+  coverage_restore_scene()
   readr::write_csv(tibble::tibble(
     certification_number = "CNM1", npi = "1000000001",
     program_year = 2026L, live_bon_status = "Active"),
@@ -353,7 +347,7 @@ saboteur(20, "fabricate the state column the source cannot support")
   # with NPPES by construction and measures nothing. The manifest declares
   # no state field, so the contract must ignore the fabricated column rather
   # than reward it with a state count.
-  restore_scene()
+  coverage_restore_scene()
   fabricated_path <- file.path(sabotage_dir, "fabricated_state_board.csv")
   readr::write_csv(tibble::tibble(
     certification_number = sprintf("CNM%d", 1:4),

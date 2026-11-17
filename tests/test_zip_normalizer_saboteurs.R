@@ -24,25 +24,19 @@
 # ZIP in a different state. Z6 and Z7 are that failure.
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.harness <- grep("--file=", commandArgs(), value = TRUE)
+source(file.path(if (length(.harness)) dirname(sub("--file=", "", .harness[1]))
+                 else "tests", "helper-saboteur.R"))
+root <- test_repo_root()
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 suppressPackageStartupMessages({library(stringr)})
 source(file.path(root, "R", "lib", "oig_zip_normalizers.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 eq <- function(actual, expected) {
   (is.na(actual) && is.na(expected)) ||
     (!is.na(actual) && !is.na(expected) && identical(actual, expected))
 }
-sab <- function(n, name) cat(sprintf("\nZ%d %s\n", n, name))
+SAB_PREFIX <- "Z"
 
 # =============================================================================
 # PART 1 -- A LEADING ZERO THAT WAS LOST UPSTREAM

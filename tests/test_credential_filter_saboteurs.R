@@ -19,21 +19,15 @@
 # everything, would satisfy a naive suite and destroy the cohort either way.
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.harness <- grep("--file=", commandArgs(), value = TRUE)
+source(file.path(if (length(.harness)) dirname(sub("--file=", "", .harness[1]))
+                 else "tests", "helper-saboteur.R"))
+root <- test_repo_root()
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 source(file.path(root, "R", "lib", "credential_filter.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 keep <- function(x, ...) exclude_by_credential(x, ...)
-sab <- function(n, name) cat(sprintf("\nE%d %s\n", n, name))
+SAB_PREFIX <- "E"
 
 sab(1, "a bare physician credential, however it is cased")
 {

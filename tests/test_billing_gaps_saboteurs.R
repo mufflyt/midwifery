@@ -17,20 +17,14 @@
 # produces a plausible number nobody can see is wrong. B2 and B3 pin that.
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.harness <- grep("--file=", commandArgs(), value = TRUE)
+source(file.path(if (length(.harness)) dirname(sub("--file=", "", .harness[1]))
+                 else "tests", "helper-saboteur.R"))
+root <- test_repo_root()
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 source(file.path(root, "R", "lib", "billing_gaps.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
-sab <- function(n, name) cat(sprintf("\nB%d %s\n", n, name))
+SAB_PREFIX <- "B"
 yrs <- function(npi, year) data.frame(npi = npi, year = as.integer(year),
                                       stringsAsFactors = FALSE)
 
