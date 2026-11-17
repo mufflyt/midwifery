@@ -22,6 +22,7 @@ AGREEMENT = ROOT / "artifacts/state_source_audit_agreement.csv"
 COVERAGE = ROOT / "artifacts/state_source_audit_coverage.csv"
 OP_AUDIT = ROOT / "artifacts/open_payments_annual_coverage_audit.csv"
 BON_BEFORE_AFTER = ROOT / "artifacts/state_boards_of_nursing_reharvest_before_after.csv"
+OIG_TABLE4 = ROOT / "artifacts/oig_remake/oig_table4_consistency_2019_and_2026.csv"
 
 # The palette validated for the paper figures (CVD dE >= 8 on the adjacent
 # pairlist, normal-vision dE >= 15, every series >= 3:1 on white). Reused
@@ -40,7 +41,7 @@ SHORT_LABEL = {
 }
 
 DISPLAY = {
-    "dac_physician_compare": "Medicare's public clinician directory",
+    "dac_physician_compare": "Medicare clinician directory (Doctors and Clinicians)",
     "open_payments": "Industry payment records",
     "pecos_revalidation": "Medicare enrolment revalidation",
     "facility_affiliation_ccn": "Hospital affiliation records",
@@ -48,6 +49,17 @@ DISPLAY = {
     "doximity": "Doximity",
     "state_boards_of_nursing": "State boards of nursing",
     "cms_ndh_fhir": "National Directory of Healthcare Providers",
+}
+
+
+# The Inspector General's 2011 variables, named the way a reader would.
+OIG_FIELD = {
+    "practice_zip5": "Practice location (postal code)",
+    "phone10": "Telephone number",
+    "credential": "Credential",
+    "full_name": "Full name",
+    "gender": "Gender",
+    "practice_state": "Practice state",
 }
 
 
@@ -95,6 +107,7 @@ agreement = read_rows(AGREEMENT)
 coverage = read_rows(COVERAGE)
 op_audit = read_rows(OP_AUDIT) if OP_AUDIT.exists() else []
 bon_rows = read_rows(BON_BEFORE_AFTER) if BON_BEFORE_AFTER.exists() else []
+oig_rows = read_rows(OIG_TABLE4) if OIG_TABLE4.exists() else []
 
 by_source = {}
 for row in agreement:
@@ -166,6 +179,10 @@ def line_chart(series_map, width=760, height=330):
     # the fitted DAC trend, drawn under the data
     fit_lo = dac_intercept + dac_slope * dac_through_2025[0][0]
     fit_hi = dac_intercept + dac_slope * dac_through_2025[-1][0]
+    # THE POINT OF THE CHART HAS TO BE VISIBLE. This was a 5px band at 22%
+    # opacity in the same grey as the gridlines, which is to say invisible.
+    # It is now a dashed rule in ink, drawn over the gridlines and under the
+    # data, and it appears in the legend like any other series.
     parts.append(
         f'<line x1="{sx(dac_through_2025[0][0]):.1f}" y1="{sy(fit_lo):.1f}" '
         f'x2="{sx(dac_through_2025[-1][0]):.1f}" y2="{sy(fit_hi):.1f}" '
@@ -204,6 +221,9 @@ def legend(series_map):
         items.append(
             f'<li><span class="swatch" style="background:{colour}"></span>'
             f'{esc(DISPLAY[source])}</li>')
+    items.append(
+        '<li><span class="swatch swatch-fit"></span>'
+        'Fitted trend, Medicare clinician directory</li>')
     return '<ul class="legend">' + "".join(items) + "</ul>"
 
 
@@ -278,8 +298,90 @@ def agreement_table():
                     n=fmt_int(row["n_comparable"]),
                     pct=esc(row["pct_agree"])))
     return ("<table class='data'><thead><tr><th>Record</th><th>Period</th>"
-            "<th>Compared</th><th>Cases</th><th>Agree</th></tr></thead>"
+            "<th>Year basis</th><th>Cases</th>"
+            "<th>Agrees with federal registry</th></tr></thead>"
             "<tbody>" + "".join(rows) + "</tbody></table>")
+
+
+def oig_comparison_table():
+    """The Inspector General's 2011 mismatch rates beside this cohort's.
+
+    Read from the audit's own rebuild rather than retyped, so the benchmark
+    column and our column cannot drift apart. Restricted to the 2026
+    comparison of the federal registry against Medicare's clinician
+    directory, which is the pair this page is about.
+    """
+    if not oig_rows:
+        return ""
+    current = [r for r in oig_rows
+               if r["year"] == "2026" and r["source_a"] == "nppes"
+               and r["source_b"] == "dac" and r["attribute"] in OIG_FIELD]
+    order = list(OIG_FIELD)
+    current.sort(key=lambda r: order.index(r["attribute"]))
+    body = []
+    for row in current:
+        benchmark = row["oig_2013_benchmark_inconsistent_pct"]
+        shown = ("%.1f%%" % float(benchmark)) if benchmark not in ("", "NA") \
+            else "<span class='subtle'>not reported separately</span>"
+        body.append(
+            "<tr><td>{field}</td><td class='num'>{bench}</td>"
+            "<td class='num'>{ours}</td></tr>".format(
+                field=esc(OIG_FIELD[row["attribute"]]),
+                bench=shown,
+                ours="%.1f%%" % float(row["pct_inconsistent_any_shared"])))
+    return ("<table class='data'><thead><tr><th>Provider detail</th>"
+            "<th>Inspector General, 2011<br><span class='subhead'>all providers</span></th>"
+            "<th>Midwifery cohort, 2026<br><span class='subhead'>this study</span></th></tr></thead><tbody>"
+            + "".join(body) + "</tbody></table>")
+
+
+BOARD_STATE = {"colorado": "CO", "connecticut": "CT", "delaware": "DE",
+               "florida": "FL", "illinois": "IL", "pennsylvania": "PA",
+               "texas": "TX", "washington": "WA"}
+BOARD_NAME = {k: k.title() for k in BOARD_STATE}
+
+
+def board_concordance_table():
+    """How often a board's own address names that board's own state.
+
+    Computed from the harvested board files, which are person-level and
+    untracked; only the aggregate reaches the page. Returns "" when they are
+    absent, so a clean checkout still renders.
+    """
+    import csv as _csv
+    body = []
+    for board in ("florida", "illinois", "colorado", "connecticut",
+                  "pennsylvania", "delaware"):
+        path = (ROOT / ("artifacts/live_%s_bon_ingested_midwives"
+                        "_from_tracked_roster.csv" % board))
+        if not path.exists():
+            return ""
+        with path.open(newline="") as handle:
+            verified = [r for r in _csv.DictReader(handle)
+                        if r.get("live_bon_match_status") == "VERIFIED_LIVE_BON"
+                        and (r.get("live_bon_state") or "").strip()]
+        own = BOARD_STATE[board]
+        in_state = sum(1 for r in verified
+                       if r["live_bon_state"].strip().upper() == own)
+        if not verified:
+            body.append(
+                "<tr><td>{name}</td><td class='num'>0</td>"
+                "<td class='num'>&ndash;</td>"
+                "<td class='basis'>searched, and the board holds no matching "
+                "licence</td></tr>".format(name=BOARD_NAME[board]))
+            continue
+        body.append(
+            "<tr><td>{name}</td><td class='num'>{n}</td>"
+            "<td class='num'>{pct:.1f}%</td><td class='basis'>{note}</td></tr>"
+            .format(name=BOARD_NAME[board], n=fmt_int(len(verified)),
+                    pct=100 * in_state / len(verified),
+                    note="%s of %s give an address in the state that licensed "
+                         "them" % (fmt_int(in_state), fmt_int(len(verified)))))
+    return ("<table class='data'><thead><tr><th>State board</th>"
+            "<th>Licences with an address</th>"
+            "<th>Address in that state</th>"
+            "<th>&nbsp;</th></tr></thead><tbody>"
+            + "".join(body) + "</tbody></table>")
 
 
 def bon_table():
@@ -296,7 +398,7 @@ def bon_table():
                 cls=" gain" if int(row["state_recovered"]) else "",
                 delta=("+" + fmt_int(row["state_recovered"])
                        if int(row["state_recovered"]) else "0"),
-                note=("recovered &mdash; the board does publish a state, "
+                note=("recovered: the board does publish a state, "
                       "and our search had been discarding it"
                       if int(row["state_recovered"])
                       else ("searched, and the board holds no matching "
@@ -399,10 +501,13 @@ strong {{ font-weight: 600; }}
 .data th, .data td {{ text-align: left; padding: 0.4rem 0.7rem;
   border-bottom: 1px solid var(--rule); white-space: nowrap; }}
 .data thead th {{ font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--ink-3); }}
+  text-transform: uppercase; color: var(--ink-3); vertical-align: bottom; }}
+.data thead .subhead {{ text-transform: none; letter-spacing: 0;
+  font-size: 0.68rem; opacity: 0.75; font-weight: 400; }}
 .data td.num {{ text-align: right; font-family: var(--mono); }}
 .data td.gain {{ color: var(--good); font-weight: 500; }}
 .data td.basis {{ color: var(--ink-3); font-size: 0.8rem; white-space: normal; }}
+.data .subtle {{ color: var(--ink-3); font-weight: 400; font-size: 0.8rem; }}
 .grid th, .grid td {{ padding: 0.22rem 0.3rem; border-bottom: 1px solid var(--rule); }}
 .grid th.rowhead {{ text-align: left; font-weight: 400; white-space: nowrap;
   padding-right: 0.8rem; font-size: 0.82rem; }}
@@ -412,7 +517,8 @@ strong {{ font-weight: 600; }}
 .grid td.hasnot {{ background: transparent; }}
 .sr {{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }}
 svg .grid {{ stroke: var(--rule); stroke-width: 1; }}
-svg .fit {{ stroke: var(--ink-3); stroke-width: 5; opacity: 0.22; stroke-linecap: round; }}
+svg .fit {{ stroke: var(--ink); stroke-width: 2.4; opacity: 0.85;
+  stroke-dasharray: 9 5; stroke-linecap: round; }}
 svg .tick {{ font-family: var(--mono); font-size: 10px; fill: var(--ink-3); }}
 svg .tick.subtle {{ font-size: 9px; opacity: 0.8; }}
 svg .barval {{ font-family: var(--mono); font-size: 10px; fill: var(--ink-2); }}
@@ -423,6 +529,8 @@ svg .ta-mid {{ text-anchor: middle; }}
   gap: 0.3rem 1.1rem; font-size: 0.84rem; color: var(--ink-2); max-width: none; }}
 .legend li {{ display: flex; align-items: center; gap: 0.4rem; }}
 .legend .swatch {{ width: 0.72rem; height: 0.72rem; border-radius: 2px; flex: none; }}
+.legend .swatch-fit {{ width: 1.15rem; height: 0; border-radius: 0;
+  border-top: 2.4px dashed var(--ink); opacity: 0.85; }}
 figcaption {{ font-size: 0.82rem; color: var(--ink-3); max-width: 40rem; }}
 figure {{ margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }}
 ul {{ margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.4rem;
@@ -439,10 +547,10 @@ a {{ color: var(--accent); }}
   <h1>Where ten records say a midwife practises, and whether they agree</h1>
   <p class="standfirst">Nobody holds the answer to where a certified
   nurse-midwife actually works. Each of the ten records compared here was
-  created for some other purpose &mdash; enrolling her in a programme, billing
-  for her care, listing her in a directory &mdash; and each captures an address
-  as a side effect. So when two of them agree, it means they are consistent
-  with one another. It does not mean either is right.</p>
+  created for some other purpose, such as enrolling her in a programme,
+  billing for her care, or listing her in a directory, and each captures an
+  address only as a side effect. So when two of them agree, it means they are
+  consistent with one another. It does not mean either is right.</p>
   <p class="standfirst">One record is used as the reference point: the federal
   registry every clinician must enrol in and keep current, which assigns the
   identifying number the other nine are matched by. It is the anchor because
@@ -450,107 +558,141 @@ a {{ color: var(--accent); }}
 </header>
 
 <section>
-  <h2>What this rebuild corrected</h2>
-  <p>Two faults had shaped the numbers published on 12 November. Neither
-  announced itself. Both changed a result.</p>
-
-  <div class="callout">
-    <div class="label">Correction 1 &middot; four of five years quietly vanished</div>
-    <p>The comparison of industry payment records was meant to span five years.
-    It was built from whichever of those yearly files happened to be sitting on
-    the computer at the time, and only one of them was. Nothing anywhere stated
-    how many years there were supposed to be, so a one-year comparison and a
-    five-year comparison looked identical from the outside. The build reported
-    success.</p>
-  </div>
+  <h2>What there is to work with</h2>
   <figure>
-    <div class="scroller">{op_chart}</div>
-    <figcaption>Midwife-years available for comparison, by payment year. The
-    orange bar is the single year that was published; the blue bars are the
-    four that were lost. The intended span is now written down in advance, and
-    each yearly file carries the year inside it, so a file cannot be mistaken
-    for a different year or quietly left out.</figcaption>
+    <div class="scroller">{coverage_grid}</div>
+    <figcaption><strong>Figure 1.</strong> Years in which each record carries a
+    usable practice state. No record covers the whole window, and four exist
+    only as a single current snapshot. Industry payment records begin in 2021
+    because that is the first year certified nurse-midwives had to be reported
+    as recipients. The earlier files exist and hold a handful of stray rows,
+    and are set aside deliberately rather than appearing to be
+    missing.</figcaption>
   </figure>
-
-  <div class="callout">
-    <div class="label">Correction 2 &middot; most licensing records lost their state</div>
-    <p>Eight state nursing boards were searched for cohort members. Four of the
-    eight returned records with no state attached, and when those were combined
-    with the four that did, the gap was filled in as blank rather than flagged.
-    <strong>1,411 of 2,269 verified licensing records &mdash; 62% &mdash;
-    entered the comparison with no state at all</strong>, while the published
-    description still named seven states. The figure described a sample it
-    never had.</p>
-  </div>
-  <div class="tiles">
-    <div class="tile"><div class="v">{bon_n}</div><div class="k">Licensing records that can be compared</div><div class="was">previously 665</div></div>
-    <div class="tile"><div class="v">{bon_pct}%</div><div class="k">Agreement with the federal registry</div><div class="was">previously 96.1%</div></div>
-    <div class="tile"><div class="v">+{bon_recovered}</div><div class="k">States recovered</div><div class="was">of 1,411 lost</div></div>
-    <div class="tile"><div class="v">6 of 8</div><div class="k">Boards that publish a state</div><div class="was">reported as 7</div></div>
-  </div>
-  <div class="scroller">{bon_table}</div>
-  <p>The split matters more than the total. Colorado and Pennsylvania do
-  publish a state; our own search had been reading those records and throwing
-  the state away, and re-running it got them back. Texas and Washington publish
-  no address of any kind, so nothing we do will make them comparable &mdash;
-  they are now recorded as unable to contribute rather than appearing to
-  contribute nothing.</p>
-  <p>The records that had gone missing agree <em>less</em> well than the ones
-  that survived. Colorado at 93.8% and Pennsylvania at 85.1% are the two
-  weakest boards, and they were exactly the two that had dropped out. The
-  published figure of 96.1% was therefore too high, not merely based on too
-  few cases.</p>
 </section>
 
 <section>
-  <h2>How well the records agree, year by year</h2>
+  <h2>Why this is about agreement, and not about accuracy</h2>
+  <p>Federal provider records are not good at staying current, and the
+  government has measured this on itself. In May 2013 the Department of Health
+  and Human Services Office of Inspector General published
+  <a href="https://oig.hhs.gov/documents/evaluation/3024/OEI-07-09-00440-Complete%20Report.pdf">
+  <i>Improvements Needed To Ensure Provider Enumeration and Medicare Enrollment
+  Data Are Accurate, Complete, and Consistent</i></a> (report number
+  OEI-07-09-00440). It examined the two federal systems that between them say
+  who a clinician is and where they work, across the 987,266 providers listed
+  in both.</p>
+  <ul>
+    <li><strong>48% of records</strong> in the national provider registry
+    contained inaccurate data.</li>
+    <li><strong>58% of records</strong> in the Medicare enrolment system
+    contained inaccurate data.</li>
+    <li>The two systems disagreed on at least one detail for
+    <strong>97% of providers</strong>. Only 3% matched on everything.</li>
+    <li>Practice location was the worst detail of all, mismatching for
+    <strong>88.6%</strong> of providers. Only 1.2% of all the mismatches could
+    be explained by one system having been updated before the other. The rest
+    were simply wrong somewhere.</li>
+  </ul>
+  <p>What made that study possible was something we do not have. The Inspector
+  General did not judge accuracy by comparing the databases to each other.
+  They <strong>asked the providers</strong>. A sample of 170 was contacted and
+  126 replied, each shown their own record and asked whether every detail was
+  right, and where it was wrong, whether it was partly wrong, once right but
+  now out of date, or never right. That survey was the gold standard, and it
+  is what turns a disagreement into an error with a known owner.</p>
+  <p>We rebuilt that study for certified nurse-midwives, using the same
+  structure and the same definitions, through a package written for it
+  (<span class="mono">mysteryroster</span>). The completeness and consistency
+  halves carry over intact, and Table 1 sets ours beside theirs. The accuracy
+  half does not carry over, because there is no public record anywhere that
+  will say which state, city or postal code a given midwife actually practises
+  in. Nobody can be surveyed at the scale this cohort needs, the board that
+  certifies midwives holds no address at all, and the only records that do hold
+  one are the records under examination.</p>
+  <p><strong>Without that gold standard, accuracy is not a quantity we can
+  compute.</strong> What we can compute is whether independent records agree
+  with one another, and how that agreement moves over time. That is what every
+  number on this page is, and why none of them is called correct.</p>
+  {oig_table}
+  <figcaption><strong>Table 1.</strong> Share of providers whose two federal
+  records disagree on each detail. The first column is the Inspector General's
+  2011 finding across all providers in report OEI-07-09-00440; the second is
+  the midwifery cohort in 2026, comparing the federal registry against
+  Medicare's public clinician directory (Doctors and Clinicians, formerly
+  Physician Compare).</figcaption>
+</section>
+
+<section>
+  <h2>State holds up. Finer than state, the records fall apart.</h2>
+  <p>That is the single most useful thing this comparison says about midwives.
+  Asked which <em>state</em> a midwife practises in, the records agree
+  <strong>88% to 97%</strong> of the time depending on which pair you take.
+  Asked for her postal code, the same two federal records disagree about
+  <strong>46%</strong> of the time (Table 1). The Inspector General found the
+  same shape in 2011, only worse, at 88.6%.</p>
+  <p>This is not a rounding problem that better matching would fix. A postal
+  code identifies a building; a state identifies a licensing jurisdiction, and
+  that is the unit these systems are actually built to track. Any analysis of
+  this cohort that rests on city or postal code is resting on the part of the
+  data that does not hold, and any map drawn below state level inherits that
+  weakness whether or not it is visible on the page.</p>
+  {agreement_table}
+  <figcaption><strong>Table 2.</strong> Every row compares one record against
+  the federal provider registry. &ldquo;Same year&rdquo; means the two were
+  compared within the same year. &ldquo;Current snapshot&rdquo; means that
+  record exists only as one present-day extract and is compared against the
+  registry as it stands today.</figcaption>
+</section>
+
+<section>
+  <h2>Agreement is eroding, slowly, where the series is long enough to tell</h2>
   <figure>
     <div class="scroller">{line_chart}</div>
     {legend}
-    <figcaption>Each line compares one record against the federal registry in
-    the same year. The grey band is the fitted trend through Medicare's public
-    clinician directory: agreement falls <strong>{dac_drop:.3f} percentage
-    points a year</strong> (p = 0.0002), so the drop in the most recent year
-    continues a slow decline rather than breaking a flat line. Industry
-    payments and Medicare enrolment are flat, with five and six years each to
-    say so.</figcaption>
+    <figcaption><strong>Figure 2.</strong> Each line is one record compared
+    against the federal provider registry in the same year. The dashed rule is
+    the fitted trend through Medicare's public clinician directory (Doctors and
+    Clinicians, formerly Physician Compare): agreement falls
+    <strong>{dac_drop:.3f} percentage points a year</strong> (p = 0.0002), so
+    the drop in the most recent year continues a slow decline rather than
+    breaking a flat line. Industry payment records and Medicare enrolment are
+    flat, with five and six years each to say so.</figcaption>
   </figure>
-  <div class="scroller">{agreement_table}</div>
+  <p>Two decades of a registry that clinicians update at their own pace should
+  be expected to drift, and it does. What the trend does not tell us is who
+  drifted. Agreement can fall because the registry went stale, or because the
+  directory did, or because the midwife genuinely moved and only one of them
+  noticed. Separating those requires a clock, and only some of these records
+  carry one.</p>
 </section>
 
 <section>
-  <h2>Why the licensing figure is not what it looks like</h2>
-  <p>Each state board was searched only for midwives the federal registry
-  already places in that state. The only people who can be confirmed against
-  Colorado's board are people already listed as practising in Colorado. So this
-  number does not measure two independent records agreeing about where someone
-  works. Inside a group already chosen for being in one state, it can only ask
-  whether the address the board holds also names that state. A high answer is
-  close to guaranteed, and it should not be ranked against comparisons that
-  carry no such filter.</p>
-  <p>The address is still telling us something real. Among all 500 people
-  currently licensed as nurse-midwives in Pennsylvania, only 303 give a
-  Pennsylvania address &mdash; 47 are in New Jersey, 16 in New York, 15 in
-  Maryland. Four in ten people licensed to practise there do not live there.
-  Across the six contributing boards, the 1,240 addresses on record span
-  <strong>35 states</strong>. That is the second thing the old
-  &ldquo;seven states&rdquo; description got wrong: it counted the boards we
-  asked, not the places midwives turned out to be.</p>
-  <p>Florida's 190 blank entries are a finding rather than a gap. The board
-  answers <em>not practising</em>, or <em>no current practice location in
-  Florida</em>. It is stating an absence, which is different from having
-  nothing to say, and it is kept out of the percentage rather than counted as
-  either agreement or missing data.</p>
-</section>
-
-<section>
-  <h2>Which years each record covers</h2>
-  <div class="scroller">{coverage_grid}</div>
-  <figcaption>A filled cell means that record carries a usable practice state
-  for that year. Industry payments begin in 2021 because that is when certified
-  nurse-midwives first had to be reported as recipients; the earlier files
-  exist and hold a handful of stray rows, and are set aside deliberately rather
-  than appearing to be missing.</figcaption>
+  <h2>Many midwives are licensed in states they do not live in</h2>
+  <p>Six of the eight state nursing boards searched publish a licensee's
+  mailing address, which gives an independent read on how often a midwife's
+  working life crosses a state line.</p>
+  <p>Across all 500 people currently licensed as nurse-midwives in
+  Pennsylvania, only <strong>303 give a Pennsylvania address</strong>. Of the
+  rest, 47 are in New Jersey, 16 in New York and 15 in Maryland. Four in ten
+  people licensed to practise in Pennsylvania do not live there. Within this
+  cohort, the 1,240 licensing records that carry an address span
+  <strong>35 states</strong> across six board jurisdictions.</p>
+  {board_table}
+  <figcaption><strong>Table 3.</strong> How often a board's own address names
+  the state that issued the licence, among records matched to this cohort.
+  Delaware was searched and holds no matching licence, which is a finding
+  rather than a gap.</figcaption>
+  <p>This number cannot be pushed further than it goes. Each board was searched
+  only for midwives the federal registry already places in that state, so the
+  group is selected on the very thing the comparison would be testing. It
+  establishes that multi-state licensure is common in this workforce. It cannot
+  establish which record is right about any individual.</p>
+  <p>Florida's 190 blank entries are also a finding. The board answers
+  <em>not practising</em>, or <em>no current practice location in Florida</em>.
+  It is stating an absence, which is different from having nothing to say, and
+  it is kept out of the percentage rather than counted as either agreement or
+  missing data.</p>
 </section>
 
 <section>
@@ -580,10 +722,11 @@ a {{ color: var(--accent); }}
   <div>Every number on this page is read directly from the audit's own output
   tables when the page is built, so the page cannot drift from the analysis it
   describes.</div>
-  <div>The years and sources each comparison is meant to include are now
-  declared in advance and checked before anything is published; fifty automated
-  tests cover the two faults above, including deliberate attempts to reproduce
-  them.</div>
+  <div>These figures were rebuilt on 15 November 2026 after two faults were
+  found in how the inputs were assembled. The industry payment series had been
+  published with one year of five, and most state licensing records had been
+  entering the comparison with no state attached. Both are corrected here and
+  documented in the repository.</div>
 </footer>
 </div>
 """
@@ -598,6 +741,8 @@ rendered = PAGE.format(
     agreement_table=agreement_table(),
     coverage_grid=coverage_grid(),
     bon_table=bon_table(),
+    oig_table=oig_comparison_table(),
+    board_table=board_concordance_table(),
     bon_n=fmt_int(bon_row["n_comparable"]),
     bon_pct=bon_row["pct_agree"],
     bon_recovered=fmt_int(bon_recovered),
