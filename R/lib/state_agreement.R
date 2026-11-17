@@ -160,8 +160,18 @@ state_agreement_current_only <- function(source_id, source_rows, registry_curren
   assert_same_vintage_year(source_year, registry_year,
                            sprintf("%s, as of %s", source_id, as_of_label),
                            "the registry's current snapshot", max_months)
+  # relationship = "many-to-one": a source may hold several rows for one
+  # midwife (a board roster with two licences, a scrape with two profiles), the
+  # registry holds exactly one -- this function refuses a registry spanning
+  # more than one year above, and the caller slices one row per npi. Declaring
+  # it makes a duplicated registry row an error instead of a silent
+  # multiplication of the denominator. tests/test_cycle9_joins.R T89 caps the
+  # number of joins under R/ that do NOT declare their cardinality, and this
+  # one entered that directory when these functions were extracted from
+  # build_state_source_audit.R, which is exactly the case the ratchet is for.
   compared <- source_rows %>%
-    dplyr::inner_join(registry_current, by = "npi") %>%
+    dplyr::inner_join(registry_current, by = "npi",
+                      relationship = "many-to-one") %>%
     dplyr::filter(!is.na(.data$state), !is.na(.data$nppes_state))
   n_comparable <- nrow(compared)
   n_agree <- sum(compared$state == compared$nppes_state)
