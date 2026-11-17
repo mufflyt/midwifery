@@ -387,4 +387,3 @@ resolve_source_inputs <- function(coverage_audit, source_id_wanted) {
   resolved
 }
 
-`%||%` <- function(lhs, rhs) if (is.null(lhs)) rhs else lhs

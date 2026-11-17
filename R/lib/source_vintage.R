@@ -130,8 +130,11 @@ nearest_vintage <- function(paths, target, max_months = NA_real_) {
 #' Refuse a comparison whose vintages are too far apart
 #'
 #' @return invisibly the gap in months. Errors past `max_months`.
-assert_vintage_gap <- function(a, b, max_months = 6,
-                               what_a = "source A", what_b = "source B") {
+# what_a/what_b ARE REQUIRED. They defaulted to "source A" and "source B",
+# which no caller ever used -- every one names both sides -- and a refusal
+# reading "source A and source B are 84.0 months apart" would name neither the
+# source nor the file, which is the whole job of the message.
+assert_vintage_gap <- function(a, b, max_months = 6, what_a, what_b) {
   g <- vintage_gap_months(a, b)
   if (is.na(g))
     stop(sprintf("assert_vintage_gap(): %s or %s has no vintage, so the gap is unknown.",

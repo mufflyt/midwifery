@@ -62,7 +62,6 @@ source(file.path(root, "tests", "helper-optional-inputs.R"))
 # sha256_of(): the canonical hash used by write_with_provenance(), so the test
 # compares like with like rather than reimplementing the digest.
 source(file.path(root, "R", "lib", "provenance.R"))
-`%||%` <- function(a, b) if (is.null(a)) b else a
 EV <- "artifacts/invariant_address_provenance_failures.csv"
 ev <- if (file.exists(EV))
   suppressWarnings(read_csv(EV, show_col_types = FALSE, progress = FALSE,

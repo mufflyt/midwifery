@@ -2185,8 +2185,15 @@ midwifery/
 │   │                               uses, measured and switched off
 │   └── HALL_OF_SHAME.md            defects written here, and what each cost
 ├── tests/                      contract tests
+│   ├── helper-saboteur.R                the harness every saboteur suite uses
 │   ├── test_address_key_matching.py     exact address keys, adversarial
 │   └── test_open_payments_type2_bulk.R  candidate universe, order invariance
+├── tools/
+│   ├── provenance.py                    the Python provenance writer, imported
+│   │                                    by 14 harvesters
+│   ├── mutate_saboteurs.py              break the library, prove the suite
+│   │                                    notices
+│   └── audit_unused_params.py           parameters no caller overrides
 ├── qa/                         quality-assurance snapshots
 ├── vignettes/                  amcb-midwife-npi-matching.Rmd
 ├── logs/
@@ -2202,7 +2209,13 @@ midwifery/
     ├── report_org_resolution_ppv.R       PPV per rule, Wilson intervals
     ├── link_open_payments_type2_bulk.R   bulk-table candidate universe
     ├── audit_python_org_selection.R      diagnostic: selection-defect audit
-    ├── address_keys.py                   canonical address-key helpers
+    ├── build_state_source_audit.R        agreement vs NPPES, ten sources
+    ├── build_cross_source_comparison.R   pairwise matrix + consensus tiers
+    ├── remake_oig_07_09_00440_midwifery.R  the OIG 2011 study, rebuilt
+    ├── make_state_source_audit_artifact.py  -> docs/state_source_audit_artifact.html
+    ├── address_keys.py                   FACILITY-classification keys; not
+    │                                     the twin of R/lib/address_keys.R,
+    │                                     which builds ORGANISATION join keys
     ├── build_table1_midwives.R           Table 1
     ├── make_linkage_upset_figure.R       linkage strata as nested properties
     ├── make_evidence_class_figure.R      accepted matches by evidence class
@@ -2394,7 +2407,7 @@ pull request, across three Linux jobs tiered by what they cost to install:
 | Job | Installs | Checks |
 |---|---|---|
 | **r-checks** | `stringr` | every tracked R file parses; no hardcoded path into another user's home; no duplicate `.gitignore` rules; no function defined at top level in two files; the join keys (`pad5` vs `zip5_key`, `zip5` vs `zip5_first_run`, `zip9`, `phone10`, `norm_addr` vs `norm_addr_drop_unit`, `pad_ccn`); Table 1 age/tenure/decade banding; **the leak guard**; **the artifact contracts** |
-| **python-checks** | `pytest` | every tracked `.py` compiles; address-key matching; the scraper's 500-row APEX pager cap and the NPI API's 200-row candidate cap |
+| **python-checks** | `pytest` | every tracked `.py` compiles; address-key matching; **the whole `tests/` directory under pytest — 134 tests** (the scraper's 500-row APEX pager cap, the NPI API's 200-row candidate cap, five live BON harvesters, the HHS open-data pipeline, the microsimulation conservation suite) |
 | **r-unit-tests** | the tidyverse stack, cached | the deterministic license→NPI bridge and its collision handling; state-license table construction; former/maiden-name candidate expansion; age-at-certification validation; the cross-taxonomy rule that a nursing-only match is never promoted into the primary cohort; the checkpoint-merge contract |
 
 The tiering is deliberate. The first two jobs stay trivially cheap so they are
@@ -2403,6 +2416,15 @@ because it can be disabled on its own without taking the fast checks with it.
 No job may install sf or system geo libraries — a twenty-minute CI that builds
 GDAL to check a string function goes red for an unrelated reason in week one
 and gets switched off in week two.
+
+**`python-checks` runs a DIRECTORY, not a list of filenames.** It used to name
+`tests/test_scrape.py` and `tests/test_fetch_npi_candidates.py` explicitly,
+which ran 27 of the 134 Python tests in `tests/`. The other 107 — ten files,
+2,032 lines — collected and passed and gated nothing, which is worse than
+having no suite because it reads as coverage. The whole directory runs in 16
+seconds, so the narrow list was never a budget decision. A filename list also
+fails in the one direction that matters: a new test file is uncovered until
+somebody remembers to add it, and nothing reports that it was forgotten.
 
 **Adding a test?** Verify it is hermetic the way these were: run it in a fresh
 `git clone` of HEAD, which has no gitignored artifacts and no `~/isochrones`.

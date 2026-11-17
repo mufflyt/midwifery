@@ -49,7 +49,6 @@ run <- function(script, args = character(0)) {
                                   stdout = TRUE, stderr = TRUE))
   list(status = attr(out, "status") %||% 0L, out = paste(out, collapse = "\n"))
 }
-`%||%` <- function(a, b) if (is.null(a)) b else a
 
 # Everything person-level lands in qa/, which is gitignored. The test owns that
 # directory for the duration and puts it back, so a developer's real gallery is

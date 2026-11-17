@@ -9,6 +9,13 @@ about a duplicate implementation, not about shipped behaviour.
 
 The rule these enforce: a hospital campus is asserted ONLY on exact normalized
 key equality. Failing to match is the safe direction; a wrong match is not.
+
+NOT the twin of R/lib/address_keys.R, despite the shared stem. That file builds
+ORGANISATION-matching join keys (norm_addr, zip5, zip9, phone10) for the NPPES
+and PECOS comparisons. These build FACILITY-classification keys for deciding
+whether an address is a hospital campus. The two are unrelated and must not be
+made to agree with each other; the shared name is a historical accident worth
+knowing about before assuming either is canonical for the other's job.
 """
 import re
 

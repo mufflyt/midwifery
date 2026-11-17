@@ -98,7 +98,6 @@ env <- c(
 res <- suppressWarnings(system2("Rscript", c(shQuote(script)), env = env,
                                 stdout = TRUE, stderr = TRUE, wait = TRUE, timeout = 60))
 status <- attr(res, "status") %||% 0L
-`%||%` <- function(a, b) if (is.null(a)) b else a
 output <- paste(res, collapse = "\n")
 
 chk(identical(status, 0L), sprintf("script exits 0 (status=%s)", status))
