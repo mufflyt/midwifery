@@ -4,8 +4,11 @@
 **Primary scripts**: [`build_state_source_audit.R`](../build_state_source_audit.R), [`build_state_source_pairwise_audit.R`](../build_state_source_pairwise_audit.R), [`build_cross_source_comparison.R`](../build_cross_source_comparison.R), [`extract_physician_compare_historical_midwives.R`](../extract_physician_compare_historical_midwives.R), [`extract_historical_facility_affiliation.R`](../extract_historical_facility_affiliation.R), [`extract_open_payments_profile_supplement.R`](../extract_open_payments_profile_supplement.R), [`extract_pecos_revalidation_state_history.R`](../extract_pecos_revalidation_state_history.R), [`extract_open_payments_address_history.R`](../extract_open_payments_address_history.R), [`extract_open_payments_2025.R`](../extract_open_payments_2025.R)
 **Related**: [`TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md`](TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md), [`TECHNICAL_APPENDIX_DAC_OPENPAYMENTS_ADDRESS_AGREEMENT.md`](TECHNICAL_APPENDIX_DAC_OPENPAYMENTS_ADDRESS_AGREEMENT.md), `~/mysterymedicaid/R/mm_record_staleness.R` (the freshness-tuning pattern this appendix follows)
 **Narrative companion**: [`VIGNETTE_STATE_SOURCE_AUDIT_2026-11-04.md`](VIGNETTE_STATE_SOURCE_AUDIT_2026-11-04.md) — a story-driven walk through these same findings, for a reader who wants the "why it matters" before the tables
+**Coverage contract**: [`state-source-audit-source-inventory.md`](state-source-audit-source-inventory.md) (what the audit is contracted to read) · [`state-source-audit-reconstruction.md`](state-source-audit-reconstruction.md) (how to rebuild and verify it) · [`state-source-audit-scientific-changelog.md`](state-source-audit-scientific-changelog.md) (what moved, and why) · [`state-source-audit-coverage-defect.md`](state-source-audit-coverage-defect.md) (the root cause)
+**Abbreviations**: spelled out at first use below and collected in [`state-source-audit-abbreviations.md`](state-source-audit-abbreviations.md), which also distinguishes the six kinds of address this audit refuses to treat as synonyms
 **Investigation date**: 2026-11-02 to 2026-11-03 (revised twice on 2026-11-03:
-DAC/Physician Compare extended from 5 vintages to full annual coverage,
+the Doctors and Clinicians file (DAC, formerly Physician Compare) extended
+from 5 vintages to full annual coverage,
 2013-2026, then Open Payments extended from 2021-2024 to 2021-2025 -- see
 revision notes below)
 
@@ -13,13 +16,16 @@ revision notes below)
 >
 > Every `medicaid_enrollment` agreement statistic in this document was computed
 > by testing whether another source **equalled one arbitrarily chosen state**.
-> The T-MSIS enrolment file records every state a midwife is concurrently
-> enrolled in; the reduction kept one per NPI-year and discarded the rest —
+> The Transformed Medicaid Statistical Information System (T-MSIS) enrolment
+> file records every state a midwife is concurrently
+> enrolled in; the reduction kept one per National Provider Identifier
+> (NPI)-year and discarded the rest —
 > **59,380 of 178,907 memberships, 33.2%**. A midwife enrolled in CO, NM and AZ
 > was recorded as AZ and scored as disagreeing with a source that said CO.
 >
-> Recomputed as **membership of the enrolled set**, on the same 107,386
-> comparable NPI-years:
+> Recomputed as **membership of the enrolled set**, against the National Plan
+> and Provider Enumeration System (NPPES) as the reference source, on the same
+> 107,386 comparable NPI-years:
 >
 > | | equality with the modal pick | membership of the set |
 > |---|---|---|
@@ -47,8 +53,8 @@ revision notes below)
 
 **Revision note 1 (2026-11-03)**: an earlier pass of this audit reported DAC/
 Physician Compare coverage as five discrete vintages (2013, 2014, 2015, 2016,
-2026) and described 2017-2025 as an inaccessible nine-year hole -- NBER's
-mirror stops at April 2016, which remains true. What was missed is that
+2026) and described 2017-2025 as an inaccessible nine-year hole -- the National Bureau
+of Economic Research's (NBER) mirror stops at April 2016, which remains true. What was missed is that
 `/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb` -- already mounted,
 already used elsewhere in this audit -- had the 2017-2025 vintages sitting in
 it the whole time (`physician_compare_<year>_Q2` tables plus a 2017 archive
@@ -56,9 +62,11 @@ table), never checked before concluding the gap was real. §2 and §3 below now
 reflect full annual DAC coverage. A follow-up sweep of the rest of the
 external drive found no comparable gain for any of the other nine sources
 (checked: Open Payments 2013-2014 NPI linkage, which is confirmed genuinely
-unpopulated, not just unchecked; PECOS pre-2021; Facility Affiliation
-history; a second CMS NDH pull; additional Healthgrades/Doximity/BON
-snapshots; Medicaid's true date range).
+unpopulated, not just unchecked; Provider Enrollment, Chain, and Ownership
+System (PECOS) pre-2021; Facility Affiliation
+history; a second Centers for Medicare & Medicaid Services (CMS) National
+Directory of Healthcare Providers (NDH) pull; additional Healthgrades/
+Doximity/Board of Nursing (BON) snapshots; Medicaid's true date range).
 
 **Revision note 2 (2026-11-03)**: this audit had also claimed "CMS's own
 historical API is blocked from this sandbox" (true for the specific
@@ -81,7 +89,7 @@ conclusion.
 metastore API, genuinely is a single always-current snapshot (one dataset
 entry, no year in the title, modified 2026-10-02). But the historical DAC/
 Physician Compare vintages extracted for §2/§3 already carry hospital
-affiliation CCNs embedded in the file itself (`ccn_1..ccn_5`, same
+affiliation CMS Certification Numbers (CCNs) embedded in the file itself (`ccn_1..ccn_5`, same
 "Claims based hospital affiliation CCN" / `hosp_afl_1..5` fields used there),
 unused for this purpose until now. `extract_historical_facility_affiliation.R`
 pulls those CCNs for 2013-2022 (91,414 — 11,414 NPI-years with at least one
@@ -101,7 +109,8 @@ multi-year tables, with the highest agreement of the four continuous sources,
 **There is no gold standard for a midwife's practice state.** Every source
 below is self-reported (NPPES), administratively enrolled (DAC/Physician
 Compare, PECOS revalidation, Medicaid), third-party-scraped (Healthgrades,
-Doximity, state Boards of Nursing), or FHIR-published (CMS's National
+Doximity, state Boards of Nursing), or published in Fast Healthcare
+Interoperability Resources (FHIR) format (CMS's National
 Directory of Healthcare Providers, "NDH"). "Agreement" in this appendix means
 **pairwise agreement against NPPES specifically** — NPPES is used as the
 comparison anchor only because every other source's NPI already links through
@@ -147,7 +156,7 @@ Full table: [`artifacts/state_source_audit_coverage.csv`](../artifacts/state_sou
 |---|---|---|
 | NPPES | 2007-2026 (every year) | Backbone; 92,042 → 425,990 provider-years, growing with the panel |
 | DAC / Physician Compare | 2013-2026, every year | 2013-2016 from NBER's mirror; 2017-2025 from `physician_compare_<year>_Q2` tables (plus a 2017 archive table) already present in `nber_my_duckdb.duckdb`; 2026 is the current CMS live pull. Hospital-affiliation CCN columns are embedded 2013-2022, dropped by CMS from the file itself starting 2023 |
-| Open Payments | 2015-2025 | 2013-2014 impossible (no NPI column in CMS's own file); 2015-2020 near-zero (1-29 rows/year) because CNMs were not Open-Payments-reportable until the SUPPORT Act expansion hit program year 2021; 2021-2025 real (2,391-4,382 NPIs/year) |
+| Open Payments | 2015-2025 | 2013-2014 impossible (no NPI column in CMS's own file); 2015-2020 near-zero (0-29 rows/year) because CNMs were not Open-Payments-reportable until the SUPPORT Act expansion hit program year 2021; 2021-2025 real (2,370-4,324 NPIs/year) |
 | PECOS revalidation/reassignment | 2021-2026 | Monthly CMS releases (40 vintages), one row per NPI per year (year-end vintage); 8,216-10,305 NPIs/year |
 | Facility Affiliation (CCN↔NPI) | 2013-2022, 2026 | 2013-2022 from CCNs embedded in the historical DAC files (see Revision note 3); 2026 from CMS's current Facility Affiliation product, itself a single always-current snapshot with no archived history; 2023-2025 has no CCN in either source |
 | Healthgrades | 2026 only (single scrape) | No per-record date at all |
