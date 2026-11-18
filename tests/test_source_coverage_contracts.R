@@ -317,6 +317,37 @@ cat("\n-- the real manifest parses and declares the intended window --\n")
       "T12b no required source resolves by wildcard discovery")
 }
 
+cat("\n-- the Open Payments producers name their cohort arm --\n")
+{
+  # THE SAME DEFECT, ONE FILE OVER. The audit's year window stopped coming
+  # from a wildcard on 2026-11-15, but both Open Payments extractors still
+  # chose their COHORT by matching amcb_npi_crosswalk_*panel*.csv and taking
+  # the first of a DESCENDING sort -- the translit arm, where every other
+  # published table (build_table1_midwives.R, the hospital matchers, the
+  # licence enrichers) names c5guard outright. The three arms exist in order
+  # to differ, so a denominator under every Open Payments percentage was
+  # being chosen by alphabetical order. Comments are stripped before
+  # matching, so the note explaining the old code cannot satisfy the test.
+  producers <- c("extract_open_payments_2025.R",
+                 "extract_open_payments_address_history.R")
+  for (producer in producers) {
+    code <- readLines(file.path(root, producer), warn = FALSE)
+    code <- code[!grepl("^\\s*#", code)]
+    chk(!any(grepl("Sys\\.glob\\(.*amcb_npi_crosswalk", code)),
+        sprintf("T16 %s does not wildcard-match its cohort arm", producer))
+    chk(any(grepl("cohort_artifact_path\\(", code)),
+        sprintf("T16b %s resolves the cohort through cohort_artifact_path()",
+                producer))
+    # BOTH write artifacts/cohort_midwives_open_payments_general_2025.csv, and
+    # read_open_payments_state_series() refuses an annual artifact with no
+    # program_year. extract_open_payments_2025.R selected neither year column,
+    # so the 2025 step the appendix documents under "Reproducing" overwrote a
+    # usable artifact with one the audit reader rejects.
+    chk(any(grepl("AS program_year", code)),
+        sprintf("T17 %s selects CMS's own Program_Year", producer))
+  }
+}
+
 unlink(fixture_dir, recursive = TRUE)
 cat(sprintf("\n%s (%d failures)\n", if (fails == 0L) "PASS" else "FAIL", fails))
 quit(status = if (fails == 0L) 0L else 1L)

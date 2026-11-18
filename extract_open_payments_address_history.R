@@ -26,6 +26,7 @@
 # =============================================================================
 suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); library(readr)})
 source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-ingestion bootstrap
+source(file.path("R", "lib", "cohort_artifacts.R"))  # cohort_artifact_path(): one arm, named
 
 # THE YEAR MUST BE PROVABLE FROM INSIDE THE FILE. Until 2026-11-15 these
 # artifacts carried no year column at all: the year existed only in the
@@ -51,11 +52,17 @@ WAREHOUSE <- samsung_duckdb_path(file.path("open_payments_data",
                                  "OPEN_PAYMENTS_WAREHOUSE")
 stopifnot(file.exists(WAREHOUSE))
 
-crosswalk_candidates <- sort(Sys.glob("artifacts/amcb_npi_crosswalk_*panel*.csv"),
-                             decreasing = TRUE)
-if (!length(crosswalk_candidates))
-  stop("no artifacts/amcb_npi_crosswalk_*panel*.csv found", call. = FALSE)
-MIDWIVES_FILE <- crosswalk_candidates[1]
+# WHICH ARM, NOT WHICHEVER SORTS LAST. The glob that stood here matched all
+# three crosswalk arms -- translit, component, c5guard -- and a DESCENDING
+# sort took translit, while the rest of the pipeline (build_table1_midwives.R,
+# the hospital matchers, the licence enrichers) names c5guard outright. The
+# arms exist in order to differ, so the Open Payments denominator was being
+# picked by alphabetical accident, against a cohort other published tables do
+# not use. Verified before pinning: all three arms are identical on every
+# column read below -- 11,920 ACTIVE primary_midwifery NPIs each, same npi,
+# certification_number, first_name, last_name and nppes_state -- so this
+# changes no number today. It stops the agreement from being luck.
+MIDWIVES_FILE <- cohort_artifact_path("crosswalk_c5guard")
 
 cw <- read_csv(MIDWIVES_FILE, col_types = cols(.default = "c"), progress = FALSE)
 coh <- cw %>%

@@ -1,14 +1,16 @@
 # A Vignette: Ten Sources Disagree About Where Midwives Practice — and That Turns Out to Be the Finding
 
-*A narrative companion to [`TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md`](TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md). Sections 1 through 4 below draw their numbers from that appendix; the OIG comparison and the Medicaid section postdate it and name their own artifacts inline. The figures read the appendix too — `make_state_source_audit_figures.R` parses its §2 and §3 tables rather than restating them, so a figure here cannot disagree with the table there. Corrections applied 2026-11-12 are listed at the end.*
+*A narrative companion to [`TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md`](TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md). Sections 1 through 4 below draw their numbers from that appendix; the Office of Inspector General (OIG) comparison and the Medicaid section postdate it and name their own artifacts inline. Abbreviations are spelled out at first use and collected in [`state-source-audit-abbreviations.md`](state-source-audit-abbreviations.md), which also sets out the six kinds of address this audit keeps apart. The figures read the appendix too — `make_state_source_audit_figures.R` parses its §2 and §3 tables rather than restating them, so a figure here cannot disagree with the table there. Corrections applied 2026-11-12 are listed at the end.*
 
 ## The question nobody could answer cleanly
 
 Ask "where does this midwife practice?" and ten different federal, state, and
-commercial sources will each hand you an answer — NPPES, CMS's Doctors &
-Clinicians file, PECOS, Open Payments, two hospital-affiliation routes, state
-boards of nursing, CMS's National Downloadable Health directory, Healthgrades,
-Doximity. None of them is a gold standard. Each is a self-report, a claims
+commercial sources will each hand you an answer — the National Plan and
+Provider Enumeration System (NPPES), the Centers for Medicare & Medicaid
+Services' (CMS) Doctors and Clinicians file (DAC), the Provider Enrollment,
+Chain, and Ownership System (PECOS), Open Payments, two hospital-affiliation
+routes, state boards of nursing, CMS's National Directory of Healthcare
+Providers (NDH), Healthgrades, Doximity. None of them is a gold standard. Each is a self-report, a claims
 byproduct, a licensing record, or a commercial scrape, built for a purpose
 that has nothing to do with answering this particular question precisely.
 
@@ -55,7 +57,7 @@ measured decline would confuse an absence of evidence with evidence of
 absence. The honest summary: where the series is long enough to tell,
 agreement erodes slowly; everywhere else the question is still open.
 
-![Agreement with NPPES by year for the four multi-year sources: DAC holds a narrow band for thirteen years then drops in 2026, PECOS sits flat and lowest throughout, and Facility Affiliation breaks where CMS dropped the CCN columns.](figures/state_source_agreement_by_year.png)
+![Agreement with NPPES by year for the four multi-year sources: DAC holds a narrow band for thirteen years then drops in 2026, PECOS sits flat and lowest throughout, and Facility Affiliation breaks where CMS dropped the CMS Certification Number (CCN) columns.](figures/state_source_agreement_by_year.png)
 
 ## The source that looked worst was being asked a different question
 
@@ -103,7 +105,7 @@ the same measurement and neither bounds the other. Two sources can agree
 perfectly and both be wrong.
 
 What does carry across is table 4, and only on the row where the methodology
-lines up. OIG matched addresses on the ZIP portion alone — their own footnote
+lines up. OIG matched addresses on the ZIP (Zone Improvement Plan) Code portion alone — their own footnote
 warns this "may overestimate the consistency between addresses" — so their
 practice-location row is a ZIP comparison, and it belongs beside this project's
 ZIP5 level rather than its city or state level.
@@ -119,7 +121,7 @@ ZIP5 level rather than its city or state level.
 | Date of birth | 2.2% | not compared |
 | Gender | 1.2% | not compared |
 | SSN (last 4) | 0% | not held |
-| NPI | 0% | not comparable — NPI is the join key |
+| NPI | 0% | not comparable — the National Provider Identifier (NPI) is the join key |
 | **Any variable** | **97.4%** | not computable from a single variable |
 
 *Percentages are records that disagree. OIG figures: OEI-07-09-00440 table 4.
@@ -247,7 +249,8 @@ about why, and about it being a real gap rather than a silent omission — from
 > Medicaid is NOT included — this audit's Medicaid source is a pre-built
 > Concordant/Discordant/… classification, not raw per-NPI-year state values,
 > so it cannot feed a pairwise state comparison or a consensus score without
-> rebuilding it from T-MSIS enrollment intervals from scratch. Out of scope
+> rebuilding it from Transformed Medicaid Statistical Information System
+> (T-MSIS) enrollment intervals from scratch. Out of scope
 > for this pass; the gap is real and stated here rather than silently dropped.
 
 Those enrollment intervals were published on 2026-07-24. HHS's DOGE team put
@@ -372,7 +375,8 @@ document.*
 1. **"A twelve-year flat line" was wrong.** DAC agreement with NPPES falls
    0.23 percentage points a year over 2013–2025 (weighted least squares,
    p = 0.0014), a fitted 2.7-point decline. *Independently confirmed
-   2026-11-12*: rebuilding the agreement table from the recovered NBER files
+   2026-11-12*: rebuilding the agreement table from the recovered National Bureau of
+   Economic Research (NBER) files
    rather than reading it out of the appendix gives **−0.248 points a year,
    p = 0.0002** — same direction, slightly steeper, and more significant. The
    figures quote the appendix value because that is the published table they
@@ -428,7 +432,8 @@ left in place rather than deleted because the analyses were real when run:
   is rebuilt from both.
 
   **Its reproducibility has one condition.** The licence extract is
-  person-level — it carries each midwife's AMCB certification number — so it
+  person-level — it carries each midwife's American Midwifery Certification
+  Board (AMCB) certification number — so it
   is gitignored, like every other person-level file in this repository. A
   fresh clone therefore cannot redraw this figure from tracked files alone;
   it needs the CMS publication, and
