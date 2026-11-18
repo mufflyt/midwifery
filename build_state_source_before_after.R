@@ -86,14 +86,19 @@ message(sprintf("  %d rebuilt agreement rows, %d rebuilt coverage rows",
 # warehouse with CMS's own Program_Year as the year of record instead of the
 # year in the filename. Those are two of the six classes the audit asks for,
 # and they are not interchangeable.
-classify <- function(program_year, delta) {
+#
+# Named apart from tests/test_adversarial_identity_resolution.R's own
+# classify(), which decides something else entirely. ci_hygiene.R H4 reads
+# `git ls-files`, so the clash only appeared once this file was committed --
+# a local run of the gate on an untracked file cannot see it.
+classify_difference <- function(program_year, delta) {
   recovered <- !program_year %in% BUILT_YEARS_2026_11_12
   ifelse(recovered,
          "1_missing_input_recovery + 2_source_vintage_correction",
          "2_source_vintage_correction")
 }
 
-explain <- function(program_year) {
+explain_difference <- function(program_year) {
   ifelse(!program_year %in% BUILT_YEARS_2026_11_12,
          paste("absent from the 2026-11-12 build (no annual input file on that",
                "machine); restored from the warehouse and re-verified against a",
@@ -119,8 +124,8 @@ before_after <- PUBLISHED_2026_11_12 %>%
     original_cohort_npi_count = NA_integer_,
     abs_pct_point_difference = round(
       abs(.data$rebuilt_agreement_pct - .data$original_agreement_pct), 1),
-    difference_class = classify(.data$program_year, .data$abs_pct_point_difference),
-    difference_reason = explain(.data$program_year)) %>%
+    difference_class = classify_difference(.data$program_year, .data$abs_pct_point_difference),
+    difference_reason = explain_difference(.data$program_year)) %>%
   select(source_id, program_year,
          original_source_coverage, rebuilt_source_coverage,
          original_source_record_count, rebuilt_source_record_count,

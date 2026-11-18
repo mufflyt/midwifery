@@ -1,6 +1,6 @@
 {
   "artifact": "state_source_audit_before_after.csv",
-  "written_utc": "2026-11-18 02:55:00 UTC",
+  "written_utc": "2026-11-18 03:12:44 UTC",
   "inputs": [
     {
       "path": "artifacts/state_source_audit_agreement.csv",
@@ -15,11 +15,11 @@
       "sha256": "4a33ead3f55ea99568cd38698448edc24195636970c3a75eb2e0b6aa45777d3f"
     }
   ],
-  "code_sha256": "b3d15e528624cc1982f4e0358008afd54323a60976bf1807591824520f1e1ca3",
+  "code_sha256": "65c91035712f89361784abf6f12e8a8bb67d3791e57f1f5b69bc73a4329202cf",
   "code": [
     {
       "path": "build_state_source_before_after.R",
-      "sha256": "c0b5db0c318e05115518bfa6c00ac2eddfacbee2c0714444b8078927940cf4fa"
+      "sha256": "0da7b8d02a0c13a8060579ba7253f8f7c9a36a86f4d2d4a89c1e3b5d20622369"
     },
     {
       "path": "R/lib/artifact_provenance.R",
