@@ -13,8 +13,10 @@
 #   F3 §11 reconstruction audit -- built over the canonical table; medicare's
 #      two validation legs (warehouse release_id + CSV fingerprint) must
 #      collapse to one row per year, not duplicate it.
-#   F4 changelog honesty -- must not claim T-MSIS spending outputs exist
-#      (still missing) and must record the fingerprint upgrade as landed.
+#   F4 changelog honesty -- T-MSIS outputs now exist (warehouse rebuilt
+#      2026-11-19); the changelog must record the run with evidence, not a
+#      bare "done", and must not still list it as blocked. The fingerprint
+#      upgrade must also be recorded as landed.
 #   F5 DAC honesty -- the audit's dac series is real (physician_compare_
 #      historical_midwives.csv, 14 years); the residual spec item is
 #      finer-grained vintages, so no doc may claim dac coverage is missing.
@@ -127,10 +129,21 @@ sab(4, "the changelog cannot claim outputs that do not exist")
 cl <- paste(readLines(file.path(root, "docs",
                                 "longitudinal-reconstruction-changelog.md"),
                       warn = FALSE), collapse = "\n")
-chk(grepl("fingerprint", cl, fixed = TRUE) &&
-      grepl("T-MSIS spending activity", cl, fixed = TRUE) &&
-      !grepl("tmsis_medicaid_spending_cohort_by_year.csv` written", cl),
-    "F4 changelog records the fingerprint fix and keeps T-MSIS blocked")
+chk(grepl("fingerprint", cl, fixed = TRUE),
+    "F4a changelog records the fingerprint fix as landed")
+# T-MSIS is DONE as of 2026-11-19: the changelog must carry the run's
+# evidence (row count), the blocked list must not still contain it, and
+# the artifacts must exist on disk -- a doc claim without a file is the
+# failure this saboteur guards.
+chk(grepl("238,015,729", cl, fixed = TRUE) &&
+      !grepl("extraction outputs pending", cl, fixed = TRUE) &&
+      file.exists(file.path(root, "artifacts",
+                            "tmsis_medicaid_spending_cohort_by_year.csv")) &&
+      file.exists(file.path(root, "artifacts",
+                            "medicaid_billing_by_state.csv")) &&
+      file.exists(file.path(root, "artifacts",
+                            "medicaid_billing_year_trend.csv")),
+    "F4b changelog records the T-MSIS run with evidence and the files exist")
 
 # --- F5 DAC honesty -------------------------------------------------------------
 sab(5, "no doc may claim the 14-year DAC series is missing")
