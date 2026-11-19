@@ -165,6 +165,32 @@ cat("\n-- a corrupted CSV --\n")
   chk(!(2023L %in% suppressMessages(
           resolve_source_inputs(coverage_audit, "open_payments"))$program_year),
       "T7b a corrupted year is not handed to the producer")
+  chk(identical(corrupt_row$validation_status, "schema_invalid"),
+      sprintf("T7c and it is refused AS unparseable [%s]",
+              corrupt_row$validation_status))
+
+  # THE CASE THAT CAUGHT T7 OUT, AND THE ONE THAT ISOLATES THE GUARD. Above,
+  # the junk also nulls the year column, so a contract that noticed nothing
+  # about corruption still failed the YEAR and T7 passed -- by accident, and
+  # only on a readr whose leniency nulls it. On the readr installed in CI the
+  # same fixture graded "ok".
+  #
+  # Here one row is a field SHORT. readr reports the problem; base read.csv,
+  # which is what the year check reads with, recovers program_year = 2023
+  # without complaint. Every other check therefore passes: the header has
+  # both declared columns, there are two records, the year verifies. Nothing
+  # but a positive corruption check refuses this file, which is why removing
+  # that check fails T7d as well as T7e.
+  build_full_fixture()
+  writeLines(c("certification_number,npi,program_year,recipient_state",
+               "CNM00001,1000000001,2023,CO",
+               "CNM00002,1000000002,2023"),
+             file.path(fixture_dir, "cohort_general_2023.csv"))
+  verdict <- publication_fails(fixture_manifest())
+  chk(verdict$failed,
+      "T7d a short row is refused although every other check passes")
+  chk(grepl("UNPARSEABLE", verdict$message),
+      "T7e and the refusal says unparseable, not a missing column")
 }
 
 cat("\n-- an empty but readable CSV: VALID, and must not fail --\n")

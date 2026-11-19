@@ -149,7 +149,8 @@ describe_source_input <- function(input_path, state_column,
   blank_record <- list(record_count = NA_integer_, npi_count = NA_integer_,
                        amcb_id_count = NA_integer_,
                        state_observed = NA_integer_,
-                       file_sha256 = NA_character_, schema_valid = NA)
+                       file_sha256 = NA_character_, schema_valid = NA,
+                       parse_problems = NA_integer_)
   if (!file.exists(input_path)) return(blank_record)
 
   input_rows <- tryCatch(
@@ -161,6 +162,28 @@ describe_source_input <- function(input_path, state_column,
     # the audit can name the exact file that would not read.
     blank_record$schema_valid <- FALSE
     blank_record$file_sha256 <- digest_file_sha256(input_path)
+    blank_record$parse_problems <- NA_integer_
+    return(blank_record)
+  }
+
+  # CORRUPTION IS DETECTED, NOT WAITED FOR. The branch above fires only when
+  # readr THROWS, and readr almost never throws on a damaged CSV -- it warns
+  # and hands back whatever it could make of the bytes. So that branch was
+  # close to dead code, and the contract's answer for a corrupt required
+  # input depended on what readr's leniency happened to do with it. In CI,
+  # where the installed readr parses an unterminated quote differently from
+  # the one on this machine, the same corrupt fixture graded "ok" -- T7 had
+  # been passing locally only because the junk also nulled the year column
+  # and tripped a different guard entirely. A parse that reported problems
+  # is not trustworthy evidence whatever it returned, so it is refused here,
+  # on any readr version. Measured across all 29 real declared inputs:
+  # zero problems, so this costs nothing that is actually readable.
+  parse_problem_count <- tryCatch(nrow(readr::problems(input_rows)),
+                                  error = function(e) 0L)
+  if (parse_problem_count > 0L) {
+    blank_record$schema_valid <- FALSE
+    blank_record$file_sha256 <- digest_file_sha256(input_path)
+    blank_record$parse_problems <- parse_problem_count
     return(blank_record)
   }
 
@@ -205,7 +228,8 @@ describe_source_input <- function(input_path, state_column,
     state_observed = if (has_state_column)
       sum(!is.na(state_values) & nzchar(trimws(state_values))) else 0L,
     file_sha256 = digest_file_sha256(input_path),
-    schema_valid = has_npi && has_state)
+    schema_valid = has_npi && has_state,
+    parse_problems = 0L)
 }
 
 #' SHA-256 of a file, or NA when it cannot be read
@@ -316,6 +340,14 @@ describe_panel_input <- function(input_path, date_column, state_column,
     described$schema_valid <- FALSE
     return(described)
   }
+  # Same rule as describe_source_input(): a parse that reported problems is
+  # not evidence, whatever readr handed back.
+  if (tryCatch(nrow(readr::problems(panel_rows)) > 0L,
+               error = function(e) FALSE)) {
+    described$schema_valid <- FALSE
+    described$by_year <- empty_by_year
+    return(described)
+  }
 
   column_or_na <- function(column_name) {
     if (is.na(column_name)) rep(NA_character_, nrow(panel_rows))
@@ -417,7 +449,9 @@ validate_source_coverage <- function(source_manifest,
            state_observed = if (nrow(year_row)) year_row$state_observed[1]
                             else NA_integer_,
            file_sha256 = described$file_sha256,
-           schema_valid = described$schema_valid)
+           schema_valid = described$schema_valid,
+           parse_problems = if (isFALSE(described$schema_valid)) NA_integer_
+                            else 0L)
     } else {
       describe_source_input(input_path, declared$state_field,
                             declared_npi_field)
@@ -506,6 +540,12 @@ validate_source_coverage <- function(source_manifest,
         " -- regenerate with ", declared$producer),
       status == "absent_optional_input" ~ paste0(
         "optional input absent: ", input_path),
+      status == "schema_invalid" &&
+        isTRUE(measured$parse_problems > 0L) ~ paste0(
+        "present but UNPARSEABLE: readr reported ", measured$parse_problems,
+        " parsing problem(s) in ", input_path,
+        " -- a damaged file is not evidence of anything, whatever it parsed",
+        " to; regenerate with ", declared$producer),
       status == "schema_invalid" ~ paste0(
         "present but missing npi or the declared state column '",
         declared$state_field, "': ", input_path,
