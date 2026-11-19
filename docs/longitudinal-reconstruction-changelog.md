@@ -69,10 +69,24 @@ renamed by-provider CSVs, upgrading their year validation from `unverified`
 to `fingerprint` (verified end-to-end: correct hash → `fingerprint`, wrong
 hash → `refuted`). `longitudinal_reconstruction_audit.csv` closes §11.
 
+## 2026-11-19 — T-MSIS spending warehouse + Workstream C outputs
+
+`download_medicaid_provider_spending.py` completed: sha256-verified zip
+(3.76 GB → 11.55 GB CSV), 238,015,729 rows loaded locally then copied to
+`/Volumes/MufflySamsung/DuckDB/medicaid_provider_spending_verified.duckdb`
+with a row-count-verified copy. `extract_tmsis_medicaid_spending_history.R`
+produced the person-level cohort file (26,641 NPI-years, 7,467 NPIs,
+2018–2024): only 10 rows excluded on HCPCS code shape (all `'18'`), zero
+rows tripped the paid/lines/patients plausibility bounds — the documented
+national corruption does not reach this cohort, same reply the script was
+written to defend. `analyze_medicaid_billing_by_state.R` and
+`analyze_medicaid_billing_year_trend.R` produced the two aggregate
+artifacts; `R/lib/ob_midwife_cohort.R` gained an archive fallback so its
+pinned 20261012 ABOG input resolves to the newest local archive when the
+pin is absent (path+sha256 recorded in the sidecars).
+
 ## Known blocked items (unchanged)
 
-- T-MSIS spending activity 2018–2024: warehouse rebuilt by
-  `download_medicaid_provider_spending.py`; extraction outputs pending.
 - NPPES deactivation chronology: source file now current
   (NPPES_Deactivated_NPI_Report_110926_V2, Nov 2026); Workstream E pending.
 - DAC 2017–2025: no historical Physician Compare files on this volume.

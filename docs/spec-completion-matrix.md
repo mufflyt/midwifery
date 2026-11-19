@@ -55,7 +55,7 @@ so every DONE row names the test that covers it.
 |---|---|---|
 | Inspect schema, validate `CLAIM_FROM_MONTH` | **DONE** | VARCHAR "YYYY-MM", **2018-01 → 2024-12**, 84 months, 21,515,000 rows |
 | Reconstruct "2013–2024" | **BLOCKED (spec error)** | no data before 2018-01; will deliver 2018–2024 |
-| All outputs | **IN PROGRESS** | warehouse rebuilt by `download_medicaid_provider_spending.py` on 2026-11-19 (zip sha256-verified, 11.5 GB CSV, local build then copy to volume); run `extract_tmsis_medicaid_spending_history.R` when the load finishes |
+| All outputs | **DONE** (2026-11-19) | warehouse rebuilt by `download_medicaid_provider_spending.py` (238,015,729 rows, sha256-verified zip); `extract_tmsis_medicaid_spending_history.R` → person-level `tmsis_medicaid_spending_cohort_by_year.csv` (26,641 NPI-years, 7,467 NPIs, 2018–2024, 0 bound violations); `analyze_medicaid_billing_by_state.R` → `medicaid_billing_by_state.csv` (264 rows); `analyze_medicaid_billing_year_trend.R` → `medicaid_billing_year_trend.csv` (68 rows). Monthly aggregation tests (§10 #10) still outstanding |
 
 ## §6 Workstream D — year validation
 
@@ -162,7 +162,7 @@ Phase 4 **NOT STARTED** · Phase 5 **NOT STARTED**
 2. A2 — before/after for churn, lead/lag, consensus, pairwise agreement
 3. A3 — claims-lineage correction and sign-off report (needs approval)
 4. ~~B — all of Open Payments 2013–2025~~ **DONE**
-5. C — all of Medicaid activity 2018–2024 — **IN PROGRESS**, warehouse rebuilt 2026-11-19, extraction pending
+5. ~~C — all of Medicaid activity 2018–2024~~ **DONE** — warehouse + three artifacts 2026-11-19
 6. ~~D — wire `assert_source_year()` into every producer~~ **DONE**; fingerprints pinned
 7. E — ~~download NPPES deactivation~~ **source downloaded** (`download_nppes_deactivation.py`, Nov-2026 report); chronology construction pending
 8. F1 — the two missing field groups; extend beyond 4 sources
