@@ -257,7 +257,13 @@ validate_year <- function(src, year) {
                   confidence = "none", observed_years = NA_character_,
                   detail = "no source on this machine for this year"))
   if (!is.null(src$path)) {
-    v <- assert_source_year(src$path, year, strict = FALSE)
+    # A renamed by-provider CSV has no in-file year and no parseable release
+    # id; the fingerprint manifest is the strongest evidence it can offer.
+    fp <- FINGERPRINTS$sha256[FINGERPRINTS$filename == basename(src$path) &
+                               FINGERPRINTS$year == year]
+    v <- assert_source_year(src$path, year,
+                            fingerprint = if (length(fp)) fp[1] else NULL,
+                            strict = FALSE)
     return(tibble(year = year, source = basename(src$path),
                   status = v$status, confidence = v$confidence,
                   observed_years = paste(v$observed_years, collapse = ";"),
@@ -269,6 +275,13 @@ validate_year <- function(src, year) {
            "warehouse table name medicare_*_<year> is the ingest pipeline's ",
            "release identifier; no in-table year column exists"))
 }
+
+# sha256s pinned 2026-11-19 for the renamed by-provider CSVs; matched on
+# (basename, year) so a file carrying the right name but wrong bytes still
+# lands `unverified` rather than inheriting a sibling's proof.
+FINGERPRINTS <- read_csv("config/cms_by_provider_fingerprints.csv",
+                         col_types = cols(.default = "c"), progress = FALSE) %>%
+  mutate(year = as.integer(year))
 
 cat("\nValidating each year's source (spec Workstream D):\n")
 year_validation <- bind_rows(

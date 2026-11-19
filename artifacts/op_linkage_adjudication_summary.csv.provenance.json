@@ -1,0 +1,11 @@
+{
+  "artifact": "op_linkage_adjudication_summary.csv",
+  "generated_by": "adjudicate_op_linkage_450.py",
+  "generated_at": "2026-11-19T04:34:46.856485+00:00",
+  "inputs": [
+    {
+      "path": "/Users/tylermuffly/midwifery/artifacts/op_linkage_disagreement_diagnosis.csv",
+      "sha256": "98bb9f21ff467ce2b0b9adb24ff283d25d46881060dfdcbea3a75a3786abbead"
+    }
+  ]
+}

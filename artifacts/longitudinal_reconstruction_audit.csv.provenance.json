@@ -1,0 +1,49 @@
+{
+  "artifact": "longitudinal_reconstruction_audit.csv",
+  "written_utc": "2026-11-19 04:42:44 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/open_payments_year_validation.csv",
+      "sha256": "b395db7b5030b50604dd242ea44f3769dd038d696a8634e4f8430da31e876264"
+    },
+    {
+      "path": "artifacts/medicare_claims_year_validation.csv",
+      "sha256": "b4ea7554135f71562157ef1e19abc0b831c52ba3f718ddbb8e794e96ef6d97c9"
+    }
+  ],
+  "code_sha256": "b988932ad5a7a8a6f60cd7f42c3c7aef276ea92fb09d91e8c6e733eeb9184ce7",
+  "code": [
+    {
+      "path": "build_longitudinal_reconstruction_audit.R",
+      "sha256": "fdf888147675eee1f9225904767ff4f23444c6b435632b1ca8d14e0d70946fe6"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "4937914878dfd340d545d54ab079074fb74320f4272dd5e4c8196aeefd46c391"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ],
+  "semantic_packages": [
+    {
+      "package": "mysterynpi",
+      "installed": true,
+      "version": "0.9.1",
+      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
+    },
+    {
+      "package": "stringi",
+      "installed": true,
+      "version": "1.8.9",
+      "source_sha": null
+    },
+    {
+      "package": "humaniformat",
+      "installed": true,
+      "version": "0.6.0",
+      "source_sha": null
+    }
+  ]
+}

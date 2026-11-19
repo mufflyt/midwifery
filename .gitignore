@@ -313,6 +313,8 @@ artifacts/cohort_midwives_medicare_claims_state_by_year.csv
 artifacts/cohort_midwives_medicare_claims_state_by_year.csv.provenance.json
 artifacts/op_linkage_disagreement_diagnosis.csv
 artifacts/op_linkage_disagreement_diagnosis.csv.provenance.json
+artifacts/op_linkage_adjudication.csv
+artifacts/op_linkage_adjudication.csv.provenance.json
 artifacts/canonical_source_records.csv
 artifacts/canonical_source_records.csv.provenance.json
 
