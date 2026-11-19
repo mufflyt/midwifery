@@ -75,6 +75,7 @@ suppressPackageStartupMessages({
 })
 source(file.path("R", "lib", "clean_state.R"))
 source(file.path("R", "lib", "medicare_duckdb.R"))
+source(file.path("R", "lib", "source_year.R"))
 source(file.path("R", "lib", "artifact_provenance.R"))
 
 COHORT <- "artifacts/amcb_npi_linkage_FROZEN.csv"
@@ -129,7 +130,7 @@ has_table <- function(tb) {
 #'   absent -- having logged that it was skipped.
 tbl_src <- function(tb) {
   if (!has_table(tb)) { cat(sprintf("  %-44s absent, skipped\n", tb)); return(NULL) }
-  list(sql = dbQuoteIdentifier(con, tb), label = tb)
+  list(sql = dbQuoteIdentifier(con, tb), label = tb, table = tb)
 }
 #' A downloaded CSV on the external volume as a source expression
 #'
@@ -151,7 +152,7 @@ csv_src <- function(relative) {
     cat(sprintf("  %-44s absent, skipped\n", basename(relative))); return(NULL)
   }
   list(sql = sprintf("read_csv(%s, all_varchar = true)", dbQuoteString(con, p)),
-       label = basename(p))
+       label = basename(p), path = p)
 }
 #' The downloaded by-provider file for one year, if it was fetched
 #'
@@ -230,6 +231,58 @@ pull_states <- function(src, npi_col, state_col, year) {
               format(nrow(out), big.mark = ","), dplyr::n_distinct(out$state)))
   out[, c("npi", "year", "state", "n_states_this_year")]
 }
+
+#' Prove what year each source's data is from (spec Workstream D)
+#'
+#' The year this series assigns is the caller's integer, not a value read
+#' from the bytes -- neither the warehouse tables nor the by-provider CSVs
+#' carry a year column, so `in_file_date` evidence is impossible by design.
+#' What CAN be checked is the release identifier: `assert_source_year()` on
+#' the downloaded files parses the filename through the same parse_vintage()
+#' used everywhere else, and refuses a file whose name disagrees with the
+#' year claimed for it. For the warehouse tables the name `medicare_*_<year>`
+#' is itself the release identifier left by the ingest pipeline, recorded as
+#' `release_id` with the detail saying the evidence is the table name, not a
+#' hidden date column. `strict = FALSE` so a year no parser can prove is
+#' written `unverified` in the artifact rather than silently trusted or
+#' silently killing the run.
+#'
+#' @param src [list] a source expression from `tbl_src()`/`csv_src()`.
+#' @param year [integer] the year about to be claimed for it.
+#' @return [tibble] one validation row.
+validate_year <- function(src, year) {
+  year <- as.integer(year)
+  if (is.null(src))
+    return(tibble(year = year, source = NA_character_, status = "absent",
+                  confidence = "none", observed_years = NA_character_,
+                  detail = "no source on this machine for this year"))
+  if (!is.null(src$path)) {
+    v <- assert_source_year(src$path, year, strict = FALSE)
+    return(tibble(year = year, source = basename(src$path),
+                  status = v$status, confidence = v$confidence,
+                  observed_years = paste(v$observed_years, collapse = ";"),
+                  detail = v$detail))
+  }
+  tibble(year = year, source = src$table, status = "release_id",
+         confidence = "medium", observed_years = NA_character_,
+         detail = paste0(
+           "warehouse table name medicare_*_<year> is the ingest pipeline's ",
+           "release identifier; no in-table year column exists"))
+}
+
+cat("\nValidating each year's source (spec Workstream D):\n")
+year_validation <- bind_rows(
+  bind_rows(lapply(2013:2023, function(y)
+    validate_year(tbl_src(sprintf("medicare_part_b_%d", y)), y))),
+  validate_year(part_b_csv(2024), 2024),
+  bind_rows(lapply(2013:2024, function(y)
+    validate_year(if (y %in% 2022:2023) tbl_src(sprintf("medicare_part_d_%d", y))
+                  else part_d_csv(y), y))))
+cat(sprintf("  %d year-rows checked: %s\n", nrow(year_validation),
+            paste(sprintf("%d %s", as.integer(table(year_validation$status)),
+                          names(table(year_validation$status))), collapse = ", ")))
+write_with_provenance(year_validation,
+                      "artifacts/medicare_claims_year_validation.csv", na = "")
 
 cat("\nPart B (Physician & Other Practitioners), state by year:\n")
 part_b <- bind_rows(

@@ -690,6 +690,15 @@ REBUILD_ORDER <- list(
        # reads back in. No dependency on build_table1_midwives.R itself --
        # it does not read that script's output -- so order between them is
        # free; placed beside it because they describe the same cohort.
+       #
+       # build_canonical_source_records.R (added 2026-11-18, caught by T5 in
+       # the pull request that introduced it) reads the freeze through
+       # verify_linkage_freeze() plus the layer-5 extractors' state-by-year
+       # artifacts (PECOS revalidation, Medicare claims, Open Payments
+       # presence, T-MSIS enrolment) and midwife_panel.csv, and writes the
+       # canonical 13-field source-record table -- a leaf nothing else in
+       # this registry reads back in, order free, placed last because it
+       # consumes the most upstream outputs.
        scripts = c("build_table1_midwives.R", "export_amcb_npi_geography.R",
                    "validate_training_institution_against_acme.R",
                    "provenance_manifest.R", "diagnose_migration_year_over_year.R",
@@ -705,7 +714,8 @@ REBUILD_ORDER <- list(
                    "build_state_source_pairwise_audit.R",
                    "build_cross_source_comparison.R",
                    "analyze_address_lead_lag_and_freshness.R",
-                   "build_table1_by_year.R", "diagnose_truth_fusion_migration_states.R"))
+                   "build_table1_by_year.R", "diagnose_truth_fusion_migration_states.R",
+                   "build_canonical_source_records.R"))
 )
 declared <- unlist(lapply(REBUILD_ORDER, `[[`, "scripts"))
 

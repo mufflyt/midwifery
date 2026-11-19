@@ -152,6 +152,16 @@ this project happened to fetch the file). Concretely:
 
 Full table: [`artifacts/state_source_audit_coverage.csv`](../artifacts/state_source_audit_coverage.csv).
 
+Every window below is **declared**, not discovered. All ten sources are under
+the coverage contract in
+[`config/state_source_audit_sources.csv`](../config/state_source_audit_sources.csv)
+(85 source-year rows), and the three audit producers resolve every input
+through it rather than from a path literal or a glob. A required year that is
+absent — a missing annual file, or a year missing from inside a one-file panel
+such as `midwife_panel.csv` — refuses to publish and names the year; so does a
+year present in a panel that nothing declares. See
+[`state-source-audit-source-inventory.md`](state-source-audit-source-inventory.md).
+
 | Source | Years covered | Notes |
 |---|---|---|
 | NPPES | 2007-2026 (every year) | Backbone; 92,042 → 425,990 provider-years, growing with the panel |
@@ -196,6 +206,18 @@ Full table: [`artifacts/state_source_audit_agreement.csv`](../artifacts/state_so
 | PECOS revalidation | 2024 | same_year | 9,607 | 87.5% |
 | PECOS revalidation | 2025 | same_year | 10,334 | 88.3% |
 | PECOS revalidation | 2026 | same_year | 9,672 | 88.1% |
+| Medicare claims (Parts B and D) | 2013 | same_year | 2,821 | 97.0% |
+| Medicare claims (Parts B and D) | 2014 | same_year | 2,936 | 96.9% |
+| Medicare claims (Parts B and D) | 2015 | same_year | 3,038 | 96.5% |
+| Medicare claims (Parts B and D) | 2016 | same_year | 3,203 | 97.0% |
+| Medicare claims (Parts B and D) | 2017 | same_year | 3,210 | 96.9% |
+| Medicare claims (Parts B and D) | 2018 | same_year | 3,355 | 97.1% |
+| Medicare claims (Parts B and D) | 2019 | same_year | 3,475 | 96.6% |
+| Medicare claims (Parts B and D) | 2020 | same_year | 3,499 | 96.8% |
+| Medicare claims (Parts B and D) | 2021 | same_year | 3,556 | 96.4% |
+| Medicare claims (Parts B and D) | 2022 | same_year | 3,588 | 96.2% |
+| Medicare claims (Parts B and D) | 2023 | same_year | 3,759 | 96.4% |
+| Medicare claims (Parts B and D) | 2024 | same_year | 3,980 | 96.2% |
 | Facility Affiliation (CCN) | 2013 | same_year | 1,945 | 94.0% |
 | Facility Affiliation (CCN) | 2014 | same_year | 1,124 | 95.9% |
 | Facility Affiliation (CCN) | 2015 | same_year | 1,222 | 95.3% |

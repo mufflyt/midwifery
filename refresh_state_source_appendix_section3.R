@@ -33,6 +33,7 @@ DISPLAY_NAME <- c(
   dac_physician_compare   = "DAC / Physician Compare",
   open_payments           = "Open Payments",
   pecos_revalidation      = "PECOS revalidation",
+  medicare_claims         = "Medicare claims (Parts B and D)",
   facility_affiliation_ccn = "Facility Affiliation (CCN)",
   healthgrades            = "Healthgrades",
   doximity                = "Doximity",

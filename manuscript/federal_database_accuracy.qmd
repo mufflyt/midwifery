@@ -203,6 +203,7 @@ if (!is.null(A$coverage_table)) {
     open_payments = "Open Payments",
     pecos_revalidation = "Provider Enrollment, Chain and Ownership System (PECOS)",
     facility_affiliation_ccn = "Facility Affiliation",
+    medicare_claims = "Medicare claims (Parts B and D)",
     healthgrades = "Healthgrades",
     doximity = "Doximity",
     state_boards_of_nursing = "State boards of nursing",
@@ -213,6 +214,7 @@ if (!is.null(A$coverage_table)) {
     open_payments = "https://openpaymentsdata.cms.gov/",
     pecos_revalidation = "https://data.cms.gov/provider-characteristics/medicare-provider-supplier-enrollment",
     facility_affiliation_ccn = "https://data.cms.gov/provider-data/topics/doctors-clinicians",
+    medicare_claims = "https://data.cms.gov/summary-statistics-on-use-and-payments/medicare-provider-other-utilization-payment-data",
     healthgrades = "https://www.healthgrades.com/",
     doximity = "https://www.doximity.com/",
     state_boards_of_nursing = "https://data.colorado.gov/resource/7s5z-vewr, https://data.texas.gov/resource/jnzg-cr4w, https://data.wa.gov/resource/qxh8-f4bd, https://www.pals.pa.gov/",
@@ -324,7 +326,7 @@ All `r n_word(A$sources_total_n)` record systems in Table 1 are reported here:
 `r n_word(A$sources_compared_n)` compared pairwise against the reference
 standard in Tables 4 and 5, the reference standard itself characterized for
 completeness in Table 3, and Medicaid classified separately below. No single
-source spans the observation window (Figure 1). Four of the ten
+source spans the observation window (Figure 1). Four of the `r n_word(A$sources_total_n)`
 exist only as a current snapshot and cannot support any longitudinal claim.
 Industry payment records begin in program year 2021, the first year in which
 certified nurse-midwives were reportable covered recipients.
@@ -514,7 +516,7 @@ Industry payment records and Medicare enrollment records were flat across
 their five and six years respectively.
 
 ![**Figure 4.** Agreement with the national provider registry by year, for the
-four sources with a multi-year series. The fitted line is weighted least
+five sources with a multi-year series. The fitted line is weighted least
 squares through the clinician directory.](`r fig("state_source_agreement_by_year")`)
 
 ```{r table-agreement}
@@ -525,6 +527,7 @@ if (!is.null(A$agreement_table)) {
              open_payments = "Industry payment records",
              pecos_revalidation = "Medicare enrollment revalidation",
              facility_affiliation_ccn = "Hospital affiliation",
+             medicare_claims = "Medicare claims (Parts B and D)",
              healthgrades = "Healthgrades", doximity = "Doximity",
              state_boards_of_nursing = "State boards of nursing",
              cms_ndh_fhir = "National directory of healthcare providers")
@@ -586,6 +589,101 @@ source existed to check it, and it was the most consistent geographic variable
 between every pair of sources examined. Practice postal code failed on
 consistency in roughly half of providers, and that failure was not explained
 by update lag.
+
+## Discussion
+
+### Principal findings
+
+Three findings organize what this study measured. First, where a record
+outside the federal systems could adjudicate them, the systems were accurate:
+licensure status verified against live state boards agreed in the high
+nineties, and nearly every error observed was a value that had been correct
+and gone stale rather than one entered wrong. Second, accuracy is not the
+limiting property of these data — consistency is. Databases populated
+correctly and then maintained on different schedules diverge, and the
+divergence is concentrated in the finest geographic unit, replicating the
+Inspector General's ordering thirteen years later at close to the same
+magnitudes. Third, disagreement mostly never resolves: of providers whose
+registry and Medicare enrollment records disagreed in 2021, more than three
+quarters still disagreed in 2026, and resolution, where it occurred, ran in
+both directions — so disagreement cannot be read as one system simply lagging
+another.
+
+### Implications for workforce and access research
+
+For research on the geographic distribution of the midwifery workforce, these
+results define a boundary that runs through the geographic hierarchy.
+Practice state is usable essentially as measured; postal code is not — the
+half of providers on whom two systems disagree is too large a fraction to
+analyze past, and the disagreement is not a lag artifact that more time will
+heal. Workforce statements that need sub-state geography should be
+constructed from the source whose geographic precision is actually
+corroborated rather than from whichever source is largest.
+
+Timeliness inverts a common assumption. Where sources and the registry
+disagreed across a transition, Medicare claims records held the registry's
+eventual value first in roughly three of five cases — billing observes a
+practice move before enumeration records it. The directories and licensure
+files researchers most often reach for are snapshots that cannot express a
+lag at all, and the registry itself is updated irregularly. A study that
+needs *where she practises now* is better served by claims-derived sources
+than by enumeration data; a study that needs a *denominator* is better served
+by the registry's completeness than by any directory's recency.
+
+The same boundary applies to access-to-care inference. One midwife in six was
+enrolled in Medicaid in more than one state at once, and scoring that file by
+a single assigned state converted correct records into apparent errors —
+agreement with the registry rose from 74.7% to 88.5% on identical data when
+the question was fixed. For a workforce whose members hold multiple state
+licenses and enrol in multiple state programs, "the practice state" is partly
+an artifact of how the question is asked, and any single-state assumption
+should be measured rather than made.
+
+### Comparison with the 2013 evaluation
+
+This study is a replication with one deliberate departure: where the
+Inspector General surveyed providers, we verified records against independent
+primary sources. The consistency findings replicate almost exactly — the same
+concentration of disagreement in postal code, the same ordering of variables,
+a lower any-variable disagreement than the `r pc(A$oig_any_benchmark, 0)`
+found across all providers in 2011, which may reflect a smaller, more
+uniformly enumerated workforce rather than improvement, since the postal-code
+rate itself is comparable. Where the designs differ, ours could not estimate
+accuracy for practice location at all, because no primary source for it
+exists — and the Inspector General's finding that only 1.2% of location
+disagreement was attributable to update lag is consistent with what we
+observe in resolution: most disagreement persists for years.
+
+### Strengths and limitations
+
+The strengths are the cohort and the design: a certification-board frame
+linked by a frozen, fully-accounted matching procedure, and comparisons
+computed only within declared, content-verified observation windows, so that
+every agreement figure is a comparison of like with like.
+
+The limitations bound what can be claimed. Four of the `r n_word(A$sources_total_n)`
+record systems exist only as a current snapshot, so their data quality over
+time is not measurable — the longitudinal claims in this paper rest on the
+five sources with a real series. Practice-location accuracy is not estimable:
+every figure on geography is agreement, and a location on which two databases
+agree may be wrong in both. Agreement comparisons weight by the records each
+source publishes, so sources with several records per provider count those
+providers more than once. Finally, agreement between sources with a shared
+upstream lineage — Medicare Part B and Part D claims, and Medicare enrollment
+and the public directory it feeds — is agreement within a family, not
+independent corroboration; the claims products are reported together for that
+reason.
+
+### Conclusion
+
+Federal and commercial databases agree on where a midwife practises at the
+state level and disagree on the finer geography that access analysis usually
+wants. The failures are failures of consistency, not of accuracy or
+completeness, and they are structural: records entered correctly and then
+maintained on different clocks diverge and mostly stay diverged. For this
+workforce, the registry is the most complete source, billing-derived sources
+are the most timely, and no source is both — the study design should choose
+which property the question needs rather than assume any one file has both.
 
 ## Figures and Tables
 

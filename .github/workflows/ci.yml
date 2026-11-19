@@ -303,6 +303,17 @@ jobs:
   #
   # Packages are cached on the workflow file's hash: the install only re-runs
   # when this list changes.
+  #
+  # THE IMAGE VERSION IS PART OF THE KEY, and that is not tidiness. These are
+  # COMPILED binaries. restore-keys makes a changed hash fall back to whatever
+  # cache was built last, so a .so built on an older runner image gets
+  # restored onto a newer one -- and on 2026-11-19 it did: this job restored a
+  # stringi built against ICU 74, which the current image no longer ships, and
+  # every stringr call threw. That killed test_science_invariants outright and,
+  # worse, made parse_vintage() throw inside the source-coverage contract,
+  # where a swallowed error was grading unverifiable years "ok" (see
+  # R/lib/source_coverage.R, year_check_failed). A cache keyed without the
+  # image silently imports binaries for a different operating system.
   # ---------------------------------------------------------------------------
   r-unit-tests:
     name: R unit tests (pure functions)
@@ -320,8 +331,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.R_LIBS_USER }}
-          key: ${{ runner.os }}-r-tidy-${{ hashFiles('.github/workflows/ci.yml') }}
-          restore-keys: ${{ runner.os }}-r-tidy-
+          key: ${{ runner.os }}-${{ env.ImageVersion }}-r-tidy-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: ${{ runner.os }}-${{ env.ImageVersion }}-r-tidy-
 
       # Binary packages from the public RSPM. No compilation, no system geo
       # libraries -- if a package here ever needs one, it does not belong here.
@@ -377,7 +388,14 @@ jobs:
                     # make_evidence_class_figure.R for real rather than asserting
                     # around it. Binary from RSPM, no system libraries, which is
                     # this job's standing condition for anything added here.
-                    "ggplot2", "patchwork", "forcats")
+                    "ggplot2", "patchwork", "forcats",
+                    # systemfonts: fit_plot_labels() MEASURES each label with
+                    # string_width() rather than counting characters, and the
+                    # appendix suite asserts on that measurement. Not a
+                    # recursive dependency of anything above it, so without
+                    # this name the figure checks die at F3 with "there is no
+                    # package called 'systemfonts'". Binary from RSPM.
+                    "systemfonts")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
         shell: Rscript {0}
@@ -400,6 +418,42 @@ jobs:
       # surface and not a speed one.
       - name: Provenance wiring and hash memo
         run: Rscript tests/test_cycle21_provenance_wiring.R
+
+      # THESE RAN ONLY AT NIGHT. The declared-coverage contract is what stops
+      # a missing input from publishing a smaller study -- the 2026-11-12
+      # defect, where four of Open Payments' five years were absent and the
+      # build exited 0. Its tests landed in #321 without a step in this file,
+      # so nightly's tests/test*.R glob was the only thing running them: a
+      # pull request that broke the contract could merge green and be found
+      # the next morning.
+      #
+      # HERE AND NOT IN r-checks, for the reason the two comments above give,
+      # and which this step got wrong on its first attempt: it needs dplyr,
+      # readr and tibble, and r-checks is the stringr-only tier. Both files
+      # build their fixtures on disk; the only real inputs they read are the
+      # sixteen TRACKED board rosters, present in any checkout, so neither
+      # needs the Samsung volume and there is no reason for them to be
+      # nightly-only.
+      - name: Declared source coverage contract
+        run: |
+          Rscript tests/test_source_coverage_contracts.R
+          Rscript tests/test_source_coverage_saboteurs.R
+
+      # ITS FIGURE CHECKS HAD NEVER RUN ANYWHERE. This file is not named in any
+      # step here, so nightly's tests/test*.R glob was the only thing running
+      # it -- and even there it quit 0 at line 37, because the agreement
+      # artifact it gates on is gitignored and absent from every checkout.
+      # F1-F5b read nothing but tracked source; they now sit above that gate
+      # and a rogue ggsave() in a figure script fails this step. Verified the
+      # old pair: in a fresh worktree with a direct ggsave() appended to
+      # make_state_source_comparison_steps_figures.R, the committed test
+      # printed "PASS (0 failures)" and the reordered one exits 1 at F2d.
+      #
+      # HERE AND NOT IN r-checks, same reason as the three steps above: it
+      # needs dplyr, readr, ggplot2 and systemfonts. A1-A6 still skip without
+      # the artifact, and the step says so in its own output.
+      - name: Appendix prose and figure label fitting
+        run: Rscript tests/test_appendix_matches_artifacts.R
 
       - name: Science invariants (defects that actually occurred)
         run: Rscript tests/test_science_invariants.R
@@ -858,8 +912,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-sf-${{ hashFiles('.github/workflows/ci.yml') }}
-          restore-keys: ${{ runner.os }}-apt-sf-
+          key: ${{ runner.os }}-${{ env.ImageVersion }}-apt-sf-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: ${{ runner.os }}-${{ env.ImageVersion }}-apt-sf-
 
       # sf needs the geo stack ci.yml otherwise refuses (see the file header).
       # Confined to this job, and only installed when the relevance check

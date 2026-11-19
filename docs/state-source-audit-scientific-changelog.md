@@ -10,6 +10,56 @@ one row per Open Payments program year with both values and a reason class.
 
 ---
 
+## 2026-11-18 — the remaining eight sources brought under the coverage contract
+
+**What it was.** Two of the audit's ten sources were declared: Open Payments
+and the Boards of Nursing. The other eight — NPPES, DAC / Physician Compare,
+PECOS revalidation, Facility Affiliation, Healthgrades, Doximity, CMS NDH and
+Medicaid — were read from path literals in three producers, and their expected
+windows existed only as prose in §2 of the technical appendix. The protection
+was asymmetric and a reader could not tell: a missing Open Payments year
+failed the build, a missing NPPES year did not.
+
+**What it is.** All ten sources, 85 declared source-year rows in
+`config/state_source_audit_sources.csv`. `build_state_source_audit.R`,
+`build_state_source_pairwise_audit.R` and `build_cross_source_comparison.R`
+each resolve every input through `declared_path()` and name no audited source
+by a path literal.
+
+**The part that needed a new idea, not more rows.** Open Payments keeps one
+file per year, so `file.exists()` is a real test of a year. Eight of the ten
+keep every year in *one* file — `midwife_panel.csv` holds 2007-2026 — and for
+those, presence proves nothing: a panel that lost 2015 from inside is still a
+file that exists. Declaring them row-per-year against a presence check would
+have produced a contract that **cannot fail**, which is worse than none,
+because it reads like protection. Panel rows are checked against the years the
+file actually holds, in both directions: a declared year absent from the data
+is refuted, and a year in the data that nobody declared is refused — the glob
+defect with the sign flipped, the data deciding the sample.
+
+**What moved: nothing.** All three producers were re-run and every artifact
+they publish is byte-identical, which is the expected result of replacing a
+path literal with a declaration of the same path. The measured windows also
+agree, year for year, with what §2 of the appendix already claimed in prose —
+NPPES's twenty per-year record counts reproduce the published coverage CSV
+exactly — so this entry records no change to any number, only a change in what
+can go wrong without anyone noticing.
+
+**One gap is now declared rather than inferred.** Facility Affiliation
+2023-2025 is `unavailable`: CMS dropped the CCN columns from the DAC file in
+2023 and keeps no archived affiliation history, so no file for those years can
+ever carry affiliation state. The three-year hole in Figure 2 is a gap in the
+source, and a build now says so rather than a reader having to notice.
+
+**Two sources remain weaker than the other eight**, for reasons in the sources
+rather than the manifest: Healthgrades has no per-record date at all, and CMS
+NDH's `meta.lastUpdated` is not extracted into this audit's state path, so both
+rest on a producer's declared run rather than on the bytes. Recorded in
+[`state-source-audit-source-inventory.md`](state-source-audit-source-inventory.md)
+so a reader knows which years are evidenced from inside the data.
+
+---
+
 ## 2026-11-15 — Open Payments restored from one year to five
 
 **What it was.** The 2026-11-12 build analysed program year 2024 alone,

@@ -1,0 +1,45 @@
+{
+  "artifact": "lead_lag_decomposition.csv",
+  "written_utc": "2026-11-19 02:53:20 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/mrost_lead_lag.csv",
+      "sha256": "52f65c940ea80e48143133bfe5e59b11750162fb46d929335990d4d890f71045"
+    }
+  ],
+  "code_sha256": "580eb82c618eff3ae013d8139233edf62d872c325be5e71884425f756734e92e",
+  "code": [
+    {
+      "path": "build_lead_lag_decomposition.R",
+      "sha256": "57ba3ee19ab7d255d1d17619f629b4dafaccc63ff3c9c61fed3dd9f008ecdc18"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "4937914878dfd340d545d54ab079074fb74320f4272dd5e4c8196aeefd46c391"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ],
+  "semantic_packages": [
+    {
+      "package": "mysterynpi",
+      "installed": true,
+      "version": "0.9.1",
+      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
+    },
+    {
+      "package": "stringi",
+      "installed": true,
+      "version": "1.8.9",
+      "source_sha": null
+    },
+    {
+      "package": "humaniformat",
+      "installed": true,
+      "version": "0.6.0",
+      "source_sha": null
+    }
+  ]
+}

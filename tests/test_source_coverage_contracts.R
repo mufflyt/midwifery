@@ -165,6 +165,40 @@ cat("\n-- a corrupted CSV --\n")
   chk(!(2023L %in% suppressMessages(
           resolve_source_inputs(coverage_audit, "open_payments"))$program_year),
       "T7b a corrupted year is not handed to the producer")
+  # DELIBERATELY NOT PINNED TO ONE VERDICT. How readr treats an unterminated
+  # quote differs by version -- that divergence is what made this fixture
+  # grade "ok" in CI while passing here -- so this asserts only that the
+  # verdict is one a publication build refuses. The exact "unparseable"
+  # claim is made by T7e below, on a fixture whose damage is a structural
+  # field-count mismatch that every vroom reports.
+  chk(corrupt_row$validation_status %in%
+        c("schema_invalid", "year_unverified", "year_refuted",
+          "year_check_failed"),
+      sprintf("T7c and the verdict is one that refuses to publish [%s]",
+              corrupt_row$validation_status))
+
+  # THE CASE THAT CAUGHT T7 OUT, AND THE ONE THAT ISOLATES THE GUARD. Above,
+  # the junk also nulls the year column, so a contract that noticed nothing
+  # about corruption still failed the YEAR and T7 passed -- by accident, and
+  # only on a readr whose leniency nulls it. On the readr installed in CI the
+  # same fixture graded "ok".
+  #
+  # Here one row is a field SHORT. readr reports the problem; base read.csv,
+  # which is what the year check reads with, recovers program_year = 2023
+  # without complaint. Every other check therefore passes: the header has
+  # both declared columns, there are two records, the year verifies. Nothing
+  # but a positive corruption check refuses this file, which is why removing
+  # that check fails T7d as well as T7e.
+  build_full_fixture()
+  writeLines(c("certification_number,npi,program_year,recipient_state",
+               "CNM00001,1000000001,2023,CO",
+               "CNM00002,1000000002,2023"),
+             file.path(fixture_dir, "cohort_general_2023.csv"))
+  verdict <- publication_fails(fixture_manifest())
+  chk(verdict$failed,
+      "T7d a short row is refused although every other check passes")
+  chk(grepl("UNPARSEABLE", verdict$message),
+      "T7e and the refusal says unparseable, not a missing column")
 }
 
 cat("\n-- an empty but readable CSV: VALID, and must not fail --\n")
@@ -346,6 +380,223 @@ cat("\n-- the Open Payments producers name their cohort arm --\n")
     chk(any(grepl("AS program_year", code)),
         sprintf("T17 %s selects CMS's own Program_Year", producer))
   }
+}
+
+cat("\n-- when the year check itself cannot run --\n")
+{
+  # THE DEFECT THIS PAIR EXISTS FOR, FOUND BY CI AND NOT BY THIS MACHINE.
+  # validate_source_coverage() wrapped the year probe in a tryCatch that
+  # mapped every error to NULL, and a NULL probe fell through every verdict
+  # to "ok". So a year whose evidence could not be examined was graded
+  # usable.
+  #
+  # It happened for real. assert_source_year() reaches parse_vintage()
+  # whenever no in-file date is found, and parse_vintage() calls
+  # stringr::str_match(). On a runner whose stringi could not load its ICU
+  # library that call threw, and T7, S8 and S9 -- a corrupt file, a stripped
+  # year column, a blanked year column, three tests written to prove exactly
+  # this -- all reported that the build refused nothing.
+  #
+  # Reproduced here by shadowing parse_vintage() with one that throws, which
+  # is what a broken stringi does to it.
+  build_full_fixture()
+  stripped_path <- file.path(fixture_dir, "cohort_general_2023.csv")
+  stripped <- readr::read_csv(stripped_path, progress = FALSE,
+                              col_types = readr::cols(.default = "c"))
+  readr::write_csv(dplyr::select(stripped, -"program_year"), stripped_path)
+
+  real_parse_vintage <- parse_vintage
+  parse_vintage <- function(...) stop("stringi could not be loaded")
+  verdict <- publication_fails(fixture_manifest())
+  parse_vintage <- real_parse_vintage
+
+  chk(verdict$failed,
+      "T24 a year check that THROWS refuses to publish, it does not pass")
+  chk(grepl("could not RUN", verdict$message),
+      "T24b the refusal says the check could not run")
+  chk(grepl("stringi could not be loaded", verdict$message),
+      "T24c and carries the underlying error, so the cause is visible")
+
+  # The ordinary unverifiable case must still read as unverified, not as a
+  # broken check: the two are different defects and the audit says which.
+  #
+  # ONLY CHECKABLE WHERE THE CHECK WORKS. Reaching "unverified" requires
+  # parse_vintage() to return NA cleanly, so on the very runner this verdict
+  # was added for -- where stringi cannot load and parse_vintage() throws --
+  # there is no such thing as a cleanly unverifiable year, and asserting one
+  # would be asserting that the environment is healthy. T24-T24c cover the
+  # broken case; this covers the healthy one, and says which it had.
+  vintage_runs <- !inherits(
+    tryCatch(parse_vintage("probe.csv"), error = function(e) e), "error")
+  if (vintage_runs) {
+    build_full_fixture()
+    readr::write_csv(dplyr::select(stripped, -"program_year"), stripped_path)
+    unverified <- suppressMessages(
+      validate_source_coverage(fixture_manifest(), publication_mode = FALSE))
+    chk(identical(
+          unverified$validation_status[unverified$program_year == 2023L],
+          "year_unverified"),
+        "T24d a year with no evidence reads 'unverified', not 'check failed'")
+  } else {
+    cat("  skip T24d -- parse_vintage() cannot run here, so there is no",
+        "cleanly unverifiable year to tell apart\n")
+  }
+}
+
+cat("\n-- a PANEL source: the file existing proves nothing about a year --\n")
+{
+  # WHY A SECOND SHAPE EXISTS. Eight of the audit's ten sources keep every
+  # year in ONE file with a year column, so the file.exists() test that makes
+  # the Open Payments contract real is vacuous for them: a panel that lost
+  # 2015 from inside is still a file that exists. These are the tests that the
+  # panel contract can actually fail -- without them, declaring eight sources
+  # would have produced protection that only reads like protection.
+  panel_path <- file.path(fixture_dir, "panel.csv")
+  write_panel <- function(years) {
+    readr::write_csv(tibble::tibble(
+      npi = sprintf("1%09d", seq_along(years)),
+      snapshot_year = as.character(years),
+      practice_state = rep(c("CO", "NM"), length.out = length(years))),
+      panel_path)
+  }
+  panel_manifest <- function(years = 2021:2025) {
+    tibble::tibble(
+      source_id = "nppes", source_name = "fixture panel",
+      expected_year = years, required = TRUE, source_type = "panel",
+      input_path = panel_path, producer = "fixture",
+      date_field = "snapshot_year", npi_field = "npi",
+      state_field = "practice_state",
+      validation_method = "in_file_year_set", source_vintage = "fixture",
+      artifact_sha256 = NA_character_, availability_status = "available",
+      notes = "fixture")
+  }
+
+  write_panel(2021:2025)
+  panel_audit <- suppressMessages(
+    validate_source_coverage(panel_manifest(), publication_mode = TRUE))
+  chk(nrow(panel_audit) == 5L && all(panel_audit$validation_status == "ok"),
+      sprintf("T18 five years inside one file validate as five years [%s]",
+              paste(unique(panel_audit$validation_status), collapse = ",")))
+  chk(identical(as.integer(panel_audit$source_record_count), rep(1L, 5L)),
+      "T18b each panel row reports ITS year's count, not the whole file's")
+
+  # THE MUTATION. One year removed from INSIDE the file; the file still
+  # exists, is readable, has both declared columns, and holds four of the five
+  # declared years. This is the 2026-11-12 defect in panel form.
+  write_panel(c(2021, 2022, 2024, 2025))
+  verdict <- publication_fails(panel_manifest())
+  chk(verdict$failed,
+      "T19 a declared year missing from INSIDE the panel fails publication")
+  chk(grepl("2023", verdict$message),
+      "T19b the failure names the year the panel does not hold")
+  chk(grepl("presence proved nothing", verdict$message),
+      "T19c the failure says the file existing settled nothing")
+  exploratory <- suppressMessages(
+    validate_source_coverage(panel_manifest(), publication_mode = FALSE))
+  chk(identical(
+        exploratory$validation_status[exploratory$program_year == 2023L],
+        "year_refuted"),
+      "T19d the verdict is year_refuted, not input_present")
+
+  # THE OTHER DIRECTION. The annual model cannot publish an undeclared year,
+  # because resolve_source_inputs() only returns declared paths. A panel
+  # producer reads the whole file, so a re-scrape that widened the window
+  # would publish a year nobody declared -- the glob defect with the sign
+  # flipped, the data deciding the sample.
+  write_panel(2021:2026)
+  verdict <- publication_fails(panel_manifest(2021:2025))
+  chk(verdict$failed,
+      "T20 a year in the panel that nobody declared fails publication")
+  chk(grepl("2026", verdict$message) &&
+        grepl("undeclared_year_observed", verdict$message),
+      "T20b the failure names the undeclared year and the verdict")
+  widened <- suppressMessages(
+    validate_source_coverage(panel_manifest(2021:2025),
+                             publication_mode = FALSE))
+  undeclared_row <- dplyr::filter(widened, .data$program_year == 2026L)
+  chk(nrow(undeclared_row) == 1L && isFALSE(undeclared_row$expected),
+      "T20c the undeclared year is the one row marked expected = FALSE")
+  chk(!(2026L %in% suppressMessages(
+          resolve_source_inputs(widened, "nppes"))$program_year),
+      "T20d an undeclared year is never resolved as a usable input")
+  chk(nrow(suppressMessages(
+        validate_source_coverage(panel_manifest(2021:2026),
+                                 publication_mode = TRUE))) == 6L,
+      "T20e declaring the sixth year is what makes it publishable")
+
+  # THE PERSON KEY IS ENFORCED, NOT DECORATIVE. Healthgrades declares
+  # hg_npi and Doximity certification_number; a contract that accepted any
+  # spelling would have let a renamed column through, and one that demanded
+  # `npi` would have failed those two sources for the wrong reason.
+  write_panel(2021:2025)
+  renamed_key <- panel_manifest()
+  renamed_key$npi_field <- "provider_npi"
+  verdict <- publication_fails(renamed_key)
+  chk(verdict$failed && grepl("schema_invalid", verdict$message),
+      "T21 a declared person key the file does not have fails publication")
+  blank_key <- panel_manifest()
+  blank_key$npi_field <- NA_character_
+  blank_audit <- suppressMessages(
+    validate_source_coverage(blank_key, publication_mode = TRUE))
+  chk(all(blank_audit$validation_status == "ok") &&
+        all(is.na(blank_audit$unique_npi_count)),
+      "T21b a source declaring NO person key validates and counts none")
+}
+
+cat("\n-- all ten audited sources are under the manifest --\n")
+{
+  real_manifest <- suppressMessages(read_source_manifest())
+  # The audit's own source list, so this cannot drift into a hand-kept copy.
+  audited_sources <- c("nppes", "dac_physician_compare", "open_payments",
+                       "pecos_revalidation", "facility_affiliation_ccn",
+                       "healthgrades", "doximity", "state_boards_of_nursing",
+                       "cms_ndh_fhir", "medicaid_enrollment")
+  unmanifested <- setdiff(audited_sources, real_manifest$source_id)
+  chk(!length(unmanifested),
+      sprintf("T22 every audited source has manifest rows [%s]",
+              if (length(unmanifested))
+                paste(unmanifested, collapse = ", ") else "none missing"))
+  chk(all(nzchar(real_manifest$producer)) &&
+        !any(grepl("\\*", real_manifest$input_path)),
+      "T22b every declared input names a producer and no path is a wildcard")
+
+  # The windows the appendix publishes in prose are the windows the manifest
+  # declares. Pinned here rather than restated, so the two cannot drift.
+  declared_window <- function(source_id) {
+    years <- real_manifest$expected_year[
+      real_manifest$source_id == source_id &
+        real_manifest$availability_status != "unavailable"]
+    sort(unique(years))
+  }
+  chk(identical(declared_window("nppes"), 2007:2026),
+      "T22c NPPES declares 2007-2026, the panel's full published window")
+  chk(identical(declared_window("dac_physician_compare"), 2013:2026),
+      "T22d DAC declares 2013-2026 across its historical and current files")
+  chk(identical(declared_window("pecos_revalidation"), 2021:2026),
+      "T22e PECOS revalidation declares 2021-2026")
+  chk(identical(declared_window("facility_affiliation_ccn"),
+                c(2013:2022, 2026L)),
+      "T22f Facility Affiliation declares 2013-2022 and 2026")
+  chk(identical(declared_window("medicaid_enrollment"), 2018:2024),
+      "T22g Medicaid declares 2018-2024")
+  chk(all(vapply(c("healthgrades", "doximity", "cms_ndh_fhir"),
+                 function(s) identical(declared_window(s), 2026L),
+                 logical(1))),
+      "T22h the three current-only sources each declare 2026 alone")
+
+  # THE THREE-YEAR HOLE IS DECLARED, NOT INFERRED FROM ITS ABSENCE. CMS
+  # dropped the CCN columns in 2023 and keeps no affiliation history, so no
+  # file for 2023-2025 can ever exist. Saying so is the difference between a
+  # gap a reader can trust and a gap nobody noticed.
+  fa_unavailable <- real_manifest %>%
+    dplyr::filter(.data$source_id == "facility_affiliation_ccn",
+                  .data$availability_status == "unavailable")
+  chk(identical(sort(fa_unavailable$expected_year), 2023:2025) &&
+        !any(fa_unavailable$required),
+      sprintf("T23 the 2023-2025 affiliation hole is declared unavailable [%s]",
+              paste(sort(fa_unavailable$expected_year), collapse = ",")))
+  chk(all(grepl("CCN", fa_unavailable$notes)),
+      "T23b each unavailable year says why no file for it can exist")
 }
 
 unlink(fixture_dir, recursive = TRUE)

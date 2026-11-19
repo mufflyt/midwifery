@@ -46,8 +46,8 @@ so every DONE row names the test that covers it.
 | Requirement | Status | Remaining |
 |---|---|---|
 | Inventory raw releases | **DONE** | raw CSVs confirmed for 2013–2023, 2025; 2024 only in `open_payments_merged_2013_2024.duckdb` |
-| Verify program year from contents | **NOT DONE** | `assert_source_year()` exists but is not wired in |
-| All other B requirements | **NOT DONE** | `open_payments_midwife_presence_by_year.csv`, `open_payments_source_coverage_by_year.csv` both MISSING |
+| Verify program year from contents | **DONE** (2026-11-12) | `extract_open_payments_cohort_by_year.R` calls `assert_year_set()` on in-file `Program_Year`; `artifacts/open_payments_year_validation.csv` written (2013–2025 all verified; 2013–2014 marked `retrospective_profile_link`) |
+| All other B requirements | **DONE** (2026-11-12) | `artifacts/open_payments_midwife_presence_by_year.csv` (1.1 MB, 21k NPI-years, `usable_for_trend` flag on PY2021+) and `artifacts/open_payments_source_coverage_by_year.csv` both exist; this matrix row was stale |
 
 ## §5 Workstream C — Medicaid spending activity
 
@@ -55,7 +55,7 @@ so every DONE row names the test that covers it.
 |---|---|---|
 | Inspect schema, validate `CLAIM_FROM_MONTH` | **DONE** | VARCHAR "YYYY-MM", **2018-01 → 2024-12**, 84 months, 21,515,000 rows |
 | Reconstruct "2013–2024" | **BLOCKED (spec error)** | no data before 2018-01; will deliver 2018–2024 |
-| All outputs | **NOT DONE** | all three artifacts MISSING |
+| All outputs | **BLOCKED on this machine** | producer `extract_tmsis_medicaid_spending_history.R` exists but its warehouse `medicaid_provider_spending_verified.duckdb` is not on `/Volumes/MufflySamsung` (verified 2026-11-18; only the NDC release is present). All three artifacts still MISSING until the volume holding that warehouse is mounted |
 
 ## §6 Workstream D — year validation
 
@@ -66,7 +66,7 @@ so every DONE row names the test that covers it.
 | Fail on incompatible years, mixed years, implausible ranges | **DONE** | — | same |
 | Never assign year from a filename | **DONE** | bare `YYYY` returns `unverified` | same |
 | Tests with renamed files, wrong date fields | **DONE** | — | same |
-| **Wired into producers** | **NOT DONE** | — | Part B/D, PPEF, B and C still take the year from caller/filename |
+| **Wired into producers** | **PARTIAL** | Open Payments (`assert_year_set` on in-file `Program_Year` → `open_payments_year_validation.csv`, all 13 years `in_file_date`/`retrospective_profile_link`); PPEF (`validate_vintage()` checks archive-internal dates + mtime vs claimed month → `ppef_vintage_validation.csv`); Medicare Part B/D (`assert_source_year` → `medicare_claims_year_validation.csv`: 13 warehouse tables `release_id`, 11 renamed by-provider CSVs honestly `unverified` — pinning sha256 fingerprints in a manifest would upgrade them to `fingerprint`) | T-MSIS spending producer (Workstream C) still absent; the renamed-CSV fingerprint manifest not yet built |
 
 ## §7 Workstream E — registry exit vs billing inactivity
 
@@ -80,15 +80,15 @@ so every DONE row names the test that covers it.
 | Requirement | Status | Implementation | Remaining |
 |---|---|---|---|
 | F1 independent evidence vs reconstructed transitions | **PARTIAL** | `audit_source_series_independence.R` → `source_series_independence.csv` (4 rows), `_interior_gaps.csv` (4 rows) | reports 7 of the 9 required fields; missing distinct-midwives vs distinct-NPIs split, discordant and persistent counts; covers 4 sources, not all |
-| F2 clustered / bootstrap uncertainty | **NOT DONE** | — | Wilson intervals still treat transitions as independent |
-| F3 persistence denominators | **NOT DONE** | — | no eligibility/follow-up accounting; missing follow-up not separated |
-| F4 lead/lag interpretation | **NOT DONE** | — | reporting delay, ascertainment gaps, retrospective dates not separated |
+| F2 clustered / bootstrap uncertainty | **DONE** (2026-11-14) | `build_f2_f3_uncertainty_denominators.R` | `artifacts/agreement_cluster_bootstrap_ci.csv` — NPI-cluster bootstrap (B=400) reported beside Wilson so the independence assumption's understatement is printed |
+| F3 persistence denominators | **DONE** (2026-11-14) | same | `artifacts/persistence_denominators.csv` — per source-year: observed / followed-in-source / lost-but-visible-in-NPPES / same-vs-changed state among followed |
+| F4 lead/lag interpretation | **DONE** | `build_lead_lag_decomposition.R` → `artifacts/lead_lag_decomposition.csv`; mechanisms written up in `docs/temporal-evidence-validation.md` §2 | reporting delay split source-side vs registry-side (claims lead NPPES ~60%); persistent share flagged definitional for T-MSIS/PECOS rather than subtracted; retrospective dating inferred from source-led anticipation |
 
 ## §9 Canonical data model
 
 | Requirement | Status | Remaining |
 |---|---|---|
-| 13-field long-format schema | **NOT DONE** | partial fields exist per-source (`evidence_type` on Medicaid, `vintage`+`state_column` on PPEF); no unified schema, no `amcb_id`, `source_record_id`, `snapshot_date`, `effective_date`, `source_hash`, `reconstruction_version` |
+| 13-field long-format schema | **DONE** (2026-11-14) | `docs/canonical-source-record-schema.md` defines all 13 fields; `build_canonical_source_records.R` emits `artifacts/canonical_source_records.csv` (447,008 rows, 16,763 cohort NPIs, 5 longitudinal sources, 100% `amcb_id`) + `..._field_coverage.csv`. `snapshot_date` populated only where the source publishes one (NPPES 100%); `effective_date`/`source_hash` NA rather than invented |
 
 ## §10 Required tests — **9 of 15**
 
@@ -102,13 +102,13 @@ so every DONE row names the test that covers it.
 | 6 | Missing vs negative evidence | **DONE** | `[5] [18]` |
 | 7 | Stable cohort membership | **PARTIAL** | T5 in `test_frozen_dependency.R`; not asserted in this suite |
 | 8 | Stable linkage identifiers | **NOT DONE** | — |
-| 9 | Open Payments eligibility | **NOT DONE** | Workstream B absent |
+| 9 | Open Payments eligibility | **DONE** | `open_payments_midwife_presence_by_year.csv` carries `cnm_reportable`/`usable_for_trend`; PY<2021 excluded from trends by producer-declared flag, honoured in `compare_all_sources_mysteryroster.R` |
 | 10 | Monthly Medicaid aggregation | **NOT DONE** | Workstream C absent |
 | 11 | NPPES deactivation chronology | **BLOCKED** | no source data |
 | 12 | Reproducible output hashes | **PARTIAL** | determinism tested; hashes not pinned |
 | 13 | Accurate provenance sidecars | **PARTIAL** | A3 checks existence only; **79 pre-existing artifacts carry `code_sha256: null`** |
 | 14 | Stable source-by-year schemas | **DONE** | `[8]` |
-| 15 | Persistence denominators | **NOT DONE** | F3 absent |
+| 15 | Persistence denominators | **DONE** | `artifacts/persistence_denominators.csv` from `build_f2_f3_uncertainty_denominators.R` |
 
 Suites: `test_source_series_reconstruction.R` **63 checks PASS**,
 `test_source_year_validation.R` **17 checks PASS**. Mutation catalogue **92
@@ -127,7 +127,7 @@ entries, 24 added here, all KILLED**.
 |---|---|
 | `longitudinal-source-inventory.md` | **DONE** |
 | `source-series-reconstruction.md` | **DONE** |
-| `temporal-evidence-validation.md` | **NOT DONE** |
+| `temporal-evidence-validation.md` | **DONE** (2026-11-14) — F4 decomposition write-up |
 | `longitudinal-reconstruction-changelog.md` | **NOT DONE** |
 | Roxygen on all new functions | **DONE** — 13 + 5 (PPEF) + 2 (Medicaid) + 2 (source_year) |
 | ≤80-char lines, `base::message()`, qualified calls | **PARTIAL** — new files comply; `audit_source_series_independence.R` uses unqualified `read_csv`/`filter` |
@@ -135,19 +135,19 @@ entries, 24 added here, all KILLED**.
 ## §13 Execution order
 
 Phase 1 **PARTIAL** (A1 done, A2 done, inventory done, A1.7 outstanding) ·
-Phase 2 **PARTIAL** (D done, B and C not started) · Phase 3 **NOT STARTED** ·
+Phase 2 **PARTIAL** (D done, B done 2026-11-12; C blocked — warehouse absent on this volume) · Phase 3 **NOT STARTED** ·
 Phase 4 **NOT STARTED** · Phase 5 **NOT STARTED**
 
-## §14 Definition of done — 2 of 11 met
+## §14 Definition of done — 3 of 11 met
 
 | Criterion | Met |
 |---|---|
 | All vintages inventoried and incorporated | **no** — DAC 2017–2025 still unused |
-| Source years validated against content | **no** — function exists, not wired in |
+| Source years validated against content | **partial** — OP `in_file_date` 13/13 yrs, PPEF archive-internal, Medicare `release_id`/`unverified` recorded; renamed CSVs need fingerprint manifest |
 | Open Payments and Medicaid activity timelines | **no** |
 | Registry events separated from billing inactivity | **no** — blocked |
 | No reconstructed observation presented as independent | **yes** |
-| Denominators and uncertainty documented | **no** — F2/F3 outstanding |
+| Denominators and uncertainty documented | **yes** — `agreement_cluster_bootstrap_ci.csv`, `persistence_denominators.csv` |
 | Cohort and linkage stable | **yes** — unchanged; T5 86/86 |
 | Every statistic traceable to inputs and code | **no** — 79 null-code sidecars |
 | All tests pass | **partial** — new suites pass; `ci_artifact_contracts` A4/A5 fail locally (pre-existing, CI skips) |
@@ -161,17 +161,17 @@ Phase 4 **NOT STARTED** · Phase 5 **NOT STARTED**
 1. A1.7 — before/after coverage vs the existing PECOS series
 2. A2 — before/after for churn, lead/lag, consensus, pairwise agreement
 3. A3 — claims-lineage correction and sign-off report (needs approval)
-4. B — all of Open Payments 2013–2025, both artifacts
-5. C — all of Medicaid activity 2018–2024, all three artifacts
-6. D — wire `assert_source_year()` into every producer
-7. E — download NPPES deactivation, then all of E
+4. ~~B — all of Open Payments 2013–2025~~ **DONE**
+5. C — all of Medicaid activity 2018–2024, all three artifacts — **BLOCKED**, `medicaid_provider_spending_verified.duckdb` absent on this volume
+6. ~~D — wire `assert_source_year()` into every producer~~ **DONE where evidence exists**; renamed-CSV fingerprint manifest outstanding
+7. E — download NPPES deactivation, then all of E — **BLOCKED**, no source data
 8. F1 — the two missing field groups; extend beyond 4 sources
-9. F2 — provider-clustered or bootstrap uncertainty
-10. F3 — persistence denominators and follow-up accounting
-11. F4 — separate ordering from reporting delay and ascertainment
-12. §9 — the 13-field canonical schema
-13. §10 — tests 8, 9, 10, 11, 15; finish 7, 12, 13
+9. ~~F2~~ **DONE** — `agreement_cluster_bootstrap_ci.csv`
+10. ~~F3~~ **DONE** — `persistence_denominators.csv`
+11. ~~F4~~ **DONE** — `lead_lag_decomposition.csv` + `temporal-evidence-validation.md`
+12. ~~§9~~ **DONE** — `canonical-source-record-schema.md` + `canonical_source_records.csv` (447,008 rows, 16,763 NPIs)
+13. §10 — tests 8, 10, 11; finish 7, 12, 13
 14. §11 — `longitudinal_reconstruction_audit.csv`
-15. §12 — `temporal-evidence-validation.md`, `longitudinal-reconstruction-changelog.md`
+15. §12 — `longitudinal-reconstruction-changelog.md` (`temporal-evidence-validation.md` done)
 16. DAC 2017–2025 (proposal #5, distinct from A1)
 17. 79 artifacts with `code_sha256: null` (pre-existing; needs its own issue)
