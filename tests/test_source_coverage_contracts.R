@@ -348,6 +348,162 @@ cat("\n-- the Open Payments producers name their cohort arm --\n")
   }
 }
 
+cat("\n-- a PANEL source: the file existing proves nothing about a year --\n")
+{
+  # WHY A SECOND SHAPE EXISTS. Eight of the audit's ten sources keep every
+  # year in ONE file with a year column, so the file.exists() test that makes
+  # the Open Payments contract real is vacuous for them: a panel that lost
+  # 2015 from inside is still a file that exists. These are the tests that the
+  # panel contract can actually fail -- without them, declaring eight sources
+  # would have produced protection that only reads like protection.
+  panel_path <- file.path(fixture_dir, "panel.csv")
+  write_panel <- function(years) {
+    readr::write_csv(tibble::tibble(
+      npi = sprintf("1%09d", seq_along(years)),
+      snapshot_year = as.character(years),
+      practice_state = rep(c("CO", "NM"), length.out = length(years))),
+      panel_path)
+  }
+  panel_manifest <- function(years = 2021:2025) {
+    tibble::tibble(
+      source_id = "nppes", source_name = "fixture panel",
+      expected_year = years, required = TRUE, source_type = "panel",
+      input_path = panel_path, producer = "fixture",
+      date_field = "snapshot_year", npi_field = "npi",
+      state_field = "practice_state",
+      validation_method = "in_file_year_set", source_vintage = "fixture",
+      artifact_sha256 = NA_character_, availability_status = "available",
+      notes = "fixture")
+  }
+
+  write_panel(2021:2025)
+  panel_audit <- suppressMessages(
+    validate_source_coverage(panel_manifest(), publication_mode = TRUE))
+  chk(nrow(panel_audit) == 5L && all(panel_audit$validation_status == "ok"),
+      sprintf("T18 five years inside one file validate as five years [%s]",
+              paste(unique(panel_audit$validation_status), collapse = ",")))
+  chk(identical(as.integer(panel_audit$source_record_count), rep(1L, 5L)),
+      "T18b each panel row reports ITS year's count, not the whole file's")
+
+  # THE MUTATION. One year removed from INSIDE the file; the file still
+  # exists, is readable, has both declared columns, and holds four of the five
+  # declared years. This is the 2026-11-12 defect in panel form.
+  write_panel(c(2021, 2022, 2024, 2025))
+  verdict <- publication_fails(panel_manifest())
+  chk(verdict$failed,
+      "T19 a declared year missing from INSIDE the panel fails publication")
+  chk(grepl("2023", verdict$message),
+      "T19b the failure names the year the panel does not hold")
+  chk(grepl("presence proved nothing", verdict$message),
+      "T19c the failure says the file existing settled nothing")
+  exploratory <- suppressMessages(
+    validate_source_coverage(panel_manifest(), publication_mode = FALSE))
+  chk(identical(
+        exploratory$validation_status[exploratory$program_year == 2023L],
+        "year_refuted"),
+      "T19d the verdict is year_refuted, not input_present")
+
+  # THE OTHER DIRECTION. The annual model cannot publish an undeclared year,
+  # because resolve_source_inputs() only returns declared paths. A panel
+  # producer reads the whole file, so a re-scrape that widened the window
+  # would publish a year nobody declared -- the glob defect with the sign
+  # flipped, the data deciding the sample.
+  write_panel(2021:2026)
+  verdict <- publication_fails(panel_manifest(2021:2025))
+  chk(verdict$failed,
+      "T20 a year in the panel that nobody declared fails publication")
+  chk(grepl("2026", verdict$message) &&
+        grepl("undeclared_year_observed", verdict$message),
+      "T20b the failure names the undeclared year and the verdict")
+  widened <- suppressMessages(
+    validate_source_coverage(panel_manifest(2021:2025),
+                             publication_mode = FALSE))
+  undeclared_row <- dplyr::filter(widened, .data$program_year == 2026L)
+  chk(nrow(undeclared_row) == 1L && isFALSE(undeclared_row$expected),
+      "T20c the undeclared year is the one row marked expected = FALSE")
+  chk(!(2026L %in% suppressMessages(
+          resolve_source_inputs(widened, "nppes"))$program_year),
+      "T20d an undeclared year is never resolved as a usable input")
+  chk(nrow(suppressMessages(
+        validate_source_coverage(panel_manifest(2021:2026),
+                                 publication_mode = TRUE))) == 6L,
+      "T20e declaring the sixth year is what makes it publishable")
+
+  # THE PERSON KEY IS ENFORCED, NOT DECORATIVE. Healthgrades declares
+  # hg_npi and Doximity certification_number; a contract that accepted any
+  # spelling would have let a renamed column through, and one that demanded
+  # `npi` would have failed those two sources for the wrong reason.
+  write_panel(2021:2025)
+  renamed_key <- panel_manifest()
+  renamed_key$npi_field <- "provider_npi"
+  verdict <- publication_fails(renamed_key)
+  chk(verdict$failed && grepl("schema_invalid", verdict$message),
+      "T21 a declared person key the file does not have fails publication")
+  blank_key <- panel_manifest()
+  blank_key$npi_field <- NA_character_
+  blank_audit <- suppressMessages(
+    validate_source_coverage(blank_key, publication_mode = TRUE))
+  chk(all(blank_audit$validation_status == "ok") &&
+        all(is.na(blank_audit$unique_npi_count)),
+      "T21b a source declaring NO person key validates and counts none")
+}
+
+cat("\n-- all ten audited sources are under the manifest --\n")
+{
+  real_manifest <- suppressMessages(read_source_manifest())
+  # The audit's own source list, so this cannot drift into a hand-kept copy.
+  audited_sources <- c("nppes", "dac_physician_compare", "open_payments",
+                       "pecos_revalidation", "facility_affiliation_ccn",
+                       "healthgrades", "doximity", "state_boards_of_nursing",
+                       "cms_ndh_fhir", "medicaid_enrollment")
+  unmanifested <- setdiff(audited_sources, real_manifest$source_id)
+  chk(!length(unmanifested),
+      sprintf("T22 every audited source has manifest rows [%s]",
+              if (length(unmanifested))
+                paste(unmanifested, collapse = ", ") else "none missing"))
+  chk(all(nzchar(real_manifest$producer)) &&
+        !any(grepl("\\*", real_manifest$input_path)),
+      "T22b every declared input names a producer and no path is a wildcard")
+
+  # The windows the appendix publishes in prose are the windows the manifest
+  # declares. Pinned here rather than restated, so the two cannot drift.
+  declared_window <- function(source_id) {
+    years <- real_manifest$expected_year[
+      real_manifest$source_id == source_id &
+        real_manifest$availability_status != "unavailable"]
+    sort(unique(years))
+  }
+  chk(identical(declared_window("nppes"), 2007:2026),
+      "T22c NPPES declares 2007-2026, the panel's full published window")
+  chk(identical(declared_window("dac_physician_compare"), 2013:2026),
+      "T22d DAC declares 2013-2026 across its historical and current files")
+  chk(identical(declared_window("pecos_revalidation"), 2021:2026),
+      "T22e PECOS revalidation declares 2021-2026")
+  chk(identical(declared_window("facility_affiliation_ccn"),
+                c(2013:2022, 2026L)),
+      "T22f Facility Affiliation declares 2013-2022 and 2026")
+  chk(identical(declared_window("medicaid_enrollment"), 2018:2024),
+      "T22g Medicaid declares 2018-2024")
+  chk(all(vapply(c("healthgrades", "doximity", "cms_ndh_fhir"),
+                 function(s) identical(declared_window(s), 2026L),
+                 logical(1))),
+      "T22h the three current-only sources each declare 2026 alone")
+
+  # THE THREE-YEAR HOLE IS DECLARED, NOT INFERRED FROM ITS ABSENCE. CMS
+  # dropped the CCN columns in 2023 and keeps no affiliation history, so no
+  # file for 2023-2025 can ever exist. Saying so is the difference between a
+  # gap a reader can trust and a gap nobody noticed.
+  fa_unavailable <- real_manifest %>%
+    dplyr::filter(.data$source_id == "facility_affiliation_ccn",
+                  .data$availability_status == "unavailable")
+  chk(identical(sort(fa_unavailable$expected_year), 2023:2025) &&
+        !any(fa_unavailable$required),
+      sprintf("T23 the 2023-2025 affiliation hole is declared unavailable [%s]",
+              paste(sort(fa_unavailable$expected_year), collapse = ",")))
+  chk(all(grepl("CCN", fa_unavailable$notes)),
+      "T23b each unavailable year says why no file for it can exist")
+}
+
 unlink(fixture_dir, recursive = TRUE)
 cat(sprintf("\n%s (%d failures)\n", if (fails == 0L) "PASS" else "FAIL", fails))
 quit(status = if (fails == 0L) 0L else 1L)

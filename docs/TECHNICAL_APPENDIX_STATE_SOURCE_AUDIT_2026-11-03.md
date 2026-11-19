@@ -152,6 +152,16 @@ this project happened to fetch the file). Concretely:
 
 Full table: [`artifacts/state_source_audit_coverage.csv`](../artifacts/state_source_audit_coverage.csv).
 
+Every window below is **declared**, not discovered. All ten sources are under
+the coverage contract in
+[`config/state_source_audit_sources.csv`](../config/state_source_audit_sources.csv)
+(85 source-year rows), and the three audit producers resolve every input
+through it rather than from a path literal or a glob. A required year that is
+absent — a missing annual file, or a year missing from inside a one-file panel
+such as `midwife_panel.csv` — refuses to publish and names the year; so does a
+year present in a panel that nothing declares. See
+[`state-source-audit-source-inventory.md`](state-source-audit-source-inventory.md).
+
 | Source | Years covered | Notes |
 |---|---|---|
 | NPPES | 2007-2026 (every year) | Backbone; 92,042 → 425,990 provider-years, growing with the panel |

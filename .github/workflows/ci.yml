@@ -135,6 +135,20 @@ jobs:
       - name: Source vintage contract
         run: Rscript tests/test_source_vintage.R
 
+      # THESE RAN ONLY AT NIGHT. The declared-coverage contract is what stops a
+      # missing input from publishing a smaller study -- the 2026-11-12 defect,
+      # where four of Open Payments' five years were absent and the build
+      # exited 0. Its tests landed in #321 without a step here, so the glob in
+      # nightly.yml was the only thing running them: a pull request that broke
+      # the contract could merge green and be found the next morning. The
+      # contracts file needs no person-level artifact (it builds its fixtures on
+      # disk and skips the two board checks when the real files are absent), so
+      # there is no reason for it to be nightly-only.
+      - name: Declared source coverage contract
+        run: |
+          Rscript tests/test_source_coverage_contracts.R
+          Rscript tests/test_source_coverage_saboteurs.R
+
       # Base R. freeze_cohort.R reconstructs the producer of the frozen cohort,
       # which had 77 readers and no writer. Its rule decides who is in the study,
       # so an edit that moves membership must fail here rather than in a
