@@ -209,7 +209,7 @@ sab("14b", "the generated SQL survives a column that is not VARCHAR")
   if (!have_duckdb) {
     cat("  skip Z14b -- duckdb not available in this session\n")
   } else {
-    con <- DBI::dbConnect(duckdb::duckdb())  # duckdb-exception: test fixture
+    con <- DBI::dbConnect(duckdb::duckdb())  # duckdb-exception: zip-sql-typed-column
     on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
     DBI::dbExecute(con, paste(
       "CREATE TABLE typed AS",
@@ -242,7 +242,7 @@ sab(14, "the generated SQL agrees with the R function on every edge case")
     probe_values <- c("01234", "1234", "123", "12", "012345678",
                       "12345-6789", "00000", "0", "", "80204", "00501",
                       "99999", " 80204 ", "N/A", "006", "1234567890")
-    con <- DBI::dbConnect(duckdb::duckdb())  # duckdb-exception: test fixture
+    con <- DBI::dbConnect(duckdb::duckdb())  # duckdb-exception: zip-sql-agreement
     on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
     DBI::dbWriteTable(con, "probe",
                       data.frame(raw = probe_values,

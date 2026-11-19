@@ -55,7 +55,7 @@ so every DONE row names the test that covers it.
 |---|---|---|
 | Inspect schema, validate `CLAIM_FROM_MONTH` | **DONE** | VARCHAR "YYYY-MM", **2018-01 → 2024-12**, 84 months, 21,515,000 rows |
 | Reconstruct "2013–2024" | **BLOCKED (spec error)** | no data before 2018-01; will deliver 2018–2024 |
-| All outputs | **BLOCKED on this machine** | producer `extract_tmsis_medicaid_spending_history.R` exists but its warehouse `medicaid_provider_spending_verified.duckdb` is not on `/Volumes/MufflySamsung` (verified 2026-11-18; only the NDC release is present). All three artifacts still MISSING until the volume holding that warehouse is mounted |
+| All outputs | **DONE** (2026-11-19) | warehouse rebuilt by `download_medicaid_provider_spending.py` (238,015,729 rows, sha256-verified zip); `extract_tmsis_medicaid_spending_history.R` → person-level `tmsis_medicaid_spending_cohort_by_year.csv` (26,641 NPI-years, 7,467 NPIs, 2018–2024, 0 bound violations); `analyze_medicaid_billing_by_state.R` → `medicaid_billing_by_state.csv` (264 rows); `analyze_medicaid_billing_year_trend.R` → `medicaid_billing_year_trend.csv` (68 rows). Monthly aggregation tests (§10 #10) still outstanding |
 
 ## §6 Workstream D — year validation
 
@@ -66,14 +66,14 @@ so every DONE row names the test that covers it.
 | Fail on incompatible years, mixed years, implausible ranges | **DONE** | — | same |
 | Never assign year from a filename | **DONE** | bare `YYYY` returns `unverified` | same |
 | Tests with renamed files, wrong date fields | **DONE** | — | same |
-| **Wired into producers** | **PARTIAL** | Open Payments (`assert_year_set` on in-file `Program_Year` → `open_payments_year_validation.csv`, all 13 years `in_file_date`/`retrospective_profile_link`); PPEF (`validate_vintage()` checks archive-internal dates + mtime vs claimed month → `ppef_vintage_validation.csv`); Medicare Part B/D (`assert_source_year` → `medicare_claims_year_validation.csv`: 13 warehouse tables `release_id`, 11 renamed by-provider CSVs honestly `unverified` — pinning sha256 fingerprints in a manifest would upgrade them to `fingerprint`) | T-MSIS spending producer (Workstream C) still absent; the renamed-CSV fingerprint manifest not yet built |
+| **Wired into producers** | **PARTIAL** | Open Payments (`assert_year_set` on in-file `Program_Year` → `open_payments_year_validation.csv`, all 13 years `in_file_date`/`retrospective_profile_link`); PPEF (`validate_vintage()` checks archive-internal dates + mtime vs claimed month → `ppef_vintage_validation.csv`); Medicare Part B/D (`assert_source_year` → `medicare_claims_year_validation.csv`: 13 warehouse tables `release_id`, 11 renamed by-provider CSVs now `fingerprint` via `config/cms_by_provider_fingerprints.csv` sha256 pins, verified end-to-end 2026-11-19) | T-MSIS spending producer waits on the warehouse rebuild in progress |
 
 ## §7 Workstream E — registry exit vs billing inactivity
 
 | Requirement | Status | Remaining |
 |---|---|---|
-| Locate NPPES deactivation source | **BLOCKED** | **no data file on this volume**; only isochrones scripts reference one. Must download first |
-| Everything else in E | **NOT DONE** | all of it |
+| Locate NPPES deactivation source | **DONE** (2026-11-19) | `download_nppes_deactivation.py` fetches the current monthly report from the CMS index page (scrapes `NPI_Files.html`, refuses a link-free page); downloaded `NPPES Deactivated NPI Report 20261109.xlsx`, release 2026-11-09 |
+| Everything else in E | **NOT DONE** | chronology construction on the downloaded report not yet started |
 
 ## §8 Workstream F — statistical interpretation
 
@@ -162,9 +162,9 @@ Phase 4 **NOT STARTED** · Phase 5 **NOT STARTED**
 2. A2 — before/after for churn, lead/lag, consensus, pairwise agreement
 3. A3 — claims-lineage correction and sign-off report (needs approval)
 4. ~~B — all of Open Payments 2013–2025~~ **DONE**
-5. C — all of Medicaid activity 2018–2024, all three artifacts — **BLOCKED**, `medicaid_provider_spending_verified.duckdb` absent on this volume
-6. ~~D — wire `assert_source_year()` into every producer~~ **DONE where evidence exists**; renamed-CSV fingerprint manifest outstanding
-7. E — download NPPES deactivation, then all of E — **BLOCKED**, no source data
+5. ~~C — all of Medicaid activity 2018–2024~~ **DONE** — warehouse + three artifacts 2026-11-19
+6. ~~D — wire `assert_source_year()` into every producer~~ **DONE**; fingerprints pinned
+7. E — ~~download NPPES deactivation~~ **source downloaded** (`download_nppes_deactivation.py`, Nov-2026 report); chronology construction pending
 8. F1 — the two missing field groups; extend beyond 4 sources
 9. ~~F2~~ **DONE** — `agreement_cluster_bootstrap_ci.csv`
 10. ~~F3~~ **DONE** — `persistence_denominators.csv`

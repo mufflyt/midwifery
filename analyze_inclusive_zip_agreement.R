@@ -35,9 +35,22 @@ source(file.path("R", "lib", "medicare_duckdb.R"))
 # hypothetical: the secondary-location file carries both shapes.
 source(file.path("R", "lib", "oig_zip_normalizers.R"))
 
-PL_FILE <- Sys.getenv(
-  "NPPES_PL_FILE",
-  "/Volumes/MufflySamsung/nppes_historical_downloads/extracted_2024/pl_pfile_20050523-20241208.csv")
+# RESOLVED, NOT SPELLED OUT. This default was the volume literal, and it is
+# what failed H1/H2 of tests/test_duckdb_volume_resolution.R on every nightly
+# since the 2026-11-16 ZIP sweep: the original incident was a second drive
+# called "MufflySamsung 1" answering for the first, so a path written at a call
+# site cannot be corrected centrally when the mount is renamed.
+# medicare_duckdb.R is already sourced above, so the resolver was available the
+# whole time. must_exist = FALSE and the canonical fallback keep the existing
+# check below as the thing that reports the absence, because its message says
+# what is at stake -- a resolver error would only say the file is missing.
+PL_REL <- file.path("nppes_historical_downloads", "extracted_2024",
+                    "pl_pfile_20050523-20241208.csv")
+PL_FILE <- Sys.getenv("NPPES_PL_FILE", "")
+if (!nzchar(PL_FILE)) {
+  PL_FILE <- samsung_volume_path(PL_REL, must_exist = FALSE)
+  if (is.na(PL_FILE)) PL_FILE <- file.path(SAMSUNG_VOLUME_CANONICAL, PL_REL)
+}
 SECONDARY_ZIP_COLUMN <-
   "Provider Secondary Practice Location Address - Postal Code"
 

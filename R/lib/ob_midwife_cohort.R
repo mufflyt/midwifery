@@ -27,11 +27,22 @@
 #' build_ob_midwife_cohort() already computed internally.
 OB_MIDWIFE_COHORT_SOURCES <- local({
   iso <- path.expand("~/isochrones")
+  pinned <- file.path(iso, "artifacts/cohort_tracking_archive",
+                      "20261012_182448_90267847/abog_inputs",
+                      "canonical_abog_npi_LATEST.csv")
+  abog_csv <- if (file.exists(pinned)) pinned else {
+    # The pinned archive was produced on another machine. Fall back to the
+    # newest real (non-test_*) archive present in this checkout; the exact
+    # path+sha256 land in the provenance sidecar either way.
+    candidates <- sort(Sys.glob(file.path(
+      iso, "artifacts/cohort_tracking_archive/*/abog_inputs",
+      "canonical_abog_npi_LATEST.csv")), decreasing = TRUE)
+    candidates <- candidates[!grepl("/test_", candidates)]
+    if (!length(candidates)) pinned else candidates[1]
+  }
   list(
     amcb_linkage = "artifacts/amcb_npi_linkage_FROZEN.csv",
-    abog_canonical_csv = file.path(iso, "artifacts/cohort_tracking_archive",
-                                    "20261012_182448_90267847/abog_inputs",
-                                    "canonical_abog_npi_LATEST.csv"),
+    abog_canonical_csv = abog_csv,
     abog_subspecialist_rds = file.path(iso, "artifacts/isochrones/step_2.5_final_cohort.rds")
   )
 })

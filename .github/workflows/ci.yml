@@ -320,7 +320,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      # fetch-depth 0: ci_duckdb_exception_provenance.R re-derives exception
+      # provenance from `git show BASE_COMMIT:file`; a depth-1 checkout has no
+      # BASE_COMMIT object and every PREEXISTING row fails as unjustified.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: r-lib/actions/setup-r@v2
         with:
@@ -454,6 +459,30 @@ jobs:
       # the artifact, and the step says so in its own output.
       - name: Appendix prose and figure label fitting
         run: Rscript tests/test_appendix_matches_artifacts.R
+
+      # NIGHTLY-ONLY IS HOW THE 2026-11-16 ZIP SWEEP MERGED GREEN AND BROKE
+      # THESE BY MORNING. Two defects rode in on a passing pull request: a raw
+      # DuckDB connection whose `# duckdb-exception:` comment was never
+      # registered, and a volume literal back in an analysis script. Both are
+      # exactly what these gates are for, and neither was named by any job in
+      # this file -- so the only thing that could see them ran at 05:22Z, after
+      # the merge, with nobody reading the result.
+      #
+      # All of them are hermetic, which is what makes them fair game for a pull
+      # request: throwaway in-memory databases, no warehouse, no Samsung
+      # volume. The volume test proves that about ITSELF -- it builds a decoy
+      # mount and a fixture tree rather than reading the real drive.
+      #
+      # The architecture gate re-runs the ingestion bootstrap as a subprocess,
+      # so naming the bootstrap separately costs a few seconds and buys a
+      # direct per-gate verdict instead of one summarised inside a bundle of
+      # ten. The architecture gate is the slow one, a few minutes, and it is
+      # the one that catches an unregistered connection.
+      - name: DuckDB architecture and volume-resolution gates
+        run: |
+          Rscript tests/ci_duckdb_ingestion_bootstrap.R
+          Rscript tests/test_duckdb_volume_resolution.R
+          Rscript tests/ci_duckdb_architecture_gate.R
 
       - name: Science invariants (defects that actually occurred)
         run: Rscript tests/test_science_invariants.R
@@ -863,7 +892,10 @@ jobs:
   science-law-coverage:
     name: Science-law coverage
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # 15 was eaten whole by the sf system-library apt install (~12 min),
+    # canceling the law steps with ~3 min left. Budget for the install
+    # plus the actual run.
+    timeout-minutes: 30
     # THE JOB MUST SAY WHETHER IT DID THE WORK. Every law step below is gated on
     # steps.relevance.outputs.run. When a path filter could set that to false,
     # this job exited zero having evaluated nothing -- and a green tick was
