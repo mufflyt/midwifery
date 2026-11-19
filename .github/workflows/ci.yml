@@ -320,7 +320,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      # fetch-depth: 0 BECAUSE A GATE IN THIS JOB READS HISTORY. The DuckDB
+      # step below runs ci_duckdb_exception_provenance.R, which re-derives each
+      # registry entry's classification from `git show BASE_COMMIT:<file>`
+      # rather than trusting a comment. BASE_COMMIT is from 2026-09-07, so a
+      # depth-1 checkout does not contain it and every PREEXISTING row fails as
+      # unjustified -- which is what happened the first time this step ran.
+      # nightly.yml's R suite has always checked out full history for the same
+      # reason.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: r-lib/actions/setup-r@v2
         with:
