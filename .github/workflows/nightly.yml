@@ -96,15 +96,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.R_LIBS_USER }}
-          key: ${{ runner.os }}-r-nightly-${{ hashFiles('.github/workflows/nightly.yml') }}
-          restore-keys: ${{ runner.os }}-r-nightly-
+          key: ${{ runner.os }}-${{ env.ImageVersion }}-r-nightly-${{ hashFiles('.github/workflows/nightly.yml') }}
+          restore-keys: ${{ runner.os }}-${{ env.ImageVersion }}-r-nightly-
 
       - name: Cache APT packages for sf
         uses: actions/cache@v4
         with:
           path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-sf-${{ hashFiles('.github/workflows/nightly.yml') }}
-          restore-keys: ${{ runner.os }}-apt-sf-
+          key: ${{ runner.os }}-${{ env.ImageVersion }}-apt-sf-${{ hashFiles('.github/workflows/nightly.yml') }}
+          restore-keys: ${{ runner.os }}-${{ env.ImageVersion }}-apt-sf-
 
       # ci.yml deliberately refuses the geo stack to stay hermetic and fast.
       # The nightly is where the spatial suites actually get to run, so the
@@ -401,8 +401,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-sf-${{ hashFiles('.github/workflows/nightly.yml') }}
-          restore-keys: ${{ runner.os }}-apt-sf-
+          key: ${{ runner.os }}-${{ env.ImageVersion }}-apt-sf-${{ hashFiles('.github/workflows/nightly.yml') }}
+          restore-keys: ${{ runner.os }}-${{ env.ImageVersion }}-apt-sf-
 
       - name: System libraries for sf
         run: |
@@ -689,8 +689,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-sf-${{ hashFiles('.github/workflows/nightly.yml') }}
-          restore-keys: ${{ runner.os }}-apt-sf-
+          key: ${{ runner.os }}-${{ env.ImageVersion }}-apt-sf-${{ hashFiles('.github/workflows/nightly.yml') }}
+          restore-keys: ${{ runner.os }}-${{ env.ImageVersion }}-apt-sf-
 
       - name: System libraries for sf
         run: |
@@ -1012,15 +1012,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.R_LIBS_USER }}
-          key: ${{ runner.os }}-r-nightly-sentinel-${{ hashFiles('.github/workflows/nightly.yml') }}
-          restore-keys: ${{ runner.os }}-r-nightly-sentinel-
+          key: ${{ runner.os }}-${{ env.ImageVersion }}-r-nightly-sentinel-${{ hashFiles('.github/workflows/nightly.yml') }}
+          restore-keys: ${{ runner.os }}-${{ env.ImageVersion }}-r-nightly-sentinel-
 
       - name: Cache APT packages for sf
         uses: actions/cache@v4
         with:
           path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-sf-${{ hashFiles('.github/workflows/nightly.yml') }}
-          restore-keys: ${{ runner.os }}-apt-sf-
+          key: ${{ runner.os }}-${{ env.ImageVersion }}-apt-sf-${{ hashFiles('.github/workflows/nightly.yml') }}
+          restore-keys: ${{ runner.os }}-${{ env.ImageVersion }}-apt-sf-
 
       - name: System libraries for sf
         run: |

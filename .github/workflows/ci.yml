@@ -303,6 +303,17 @@ jobs:
   #
   # Packages are cached on the workflow file's hash: the install only re-runs
   # when this list changes.
+  #
+  # THE IMAGE VERSION IS PART OF THE KEY, and that is not tidiness. These are
+  # COMPILED binaries. restore-keys makes a changed hash fall back to whatever
+  # cache was built last, so a .so built on an older runner image gets
+  # restored onto a newer one -- and on 2026-11-19 it did: this job restored a
+  # stringi built against ICU 74, which the current image no longer ships, and
+  # every stringr call threw. That killed test_science_invariants outright and,
+  # worse, made parse_vintage() throw inside the source-coverage contract,
+  # where a swallowed error was grading unverifiable years "ok" (see
+  # R/lib/source_coverage.R, year_check_failed). A cache keyed without the
+  # image silently imports binaries for a different operating system.
   # ---------------------------------------------------------------------------
   r-unit-tests:
     name: R unit tests (pure functions)
@@ -320,8 +331,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.R_LIBS_USER }}
-          key: ${{ runner.os }}-r-tidy-${{ hashFiles('.github/workflows/ci.yml') }}
-          restore-keys: ${{ runner.os }}-r-tidy-
+          key: ${{ runner.os }}-${{ env.ImageVersion }}-r-tidy-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: ${{ runner.os }}-${{ env.ImageVersion }}-r-tidy-
 
       # Binary packages from the public RSPM. No compilation, no system geo
       # libraries -- if a package here ever needs one, it does not belong here.
@@ -878,8 +889,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-sf-${{ hashFiles('.github/workflows/ci.yml') }}
-          restore-keys: ${{ runner.os }}-apt-sf-
+          key: ${{ runner.os }}-${{ env.ImageVersion }}-apt-sf-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: ${{ runner.os }}-${{ env.ImageVersion }}-apt-sf-
 
       # sf needs the geo stack ci.yml otherwise refuses (see the file header).
       # Confined to this job, and only installed when the relevance check
