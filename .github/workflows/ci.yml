@@ -412,8 +412,10 @@ jobs:
       # HERE AND NOT IN r-checks, for the reason the two comments above give,
       # and which this step got wrong on its first attempt: it needs dplyr,
       # readr and tibble, and r-checks is the stringr-only tier. Both files
-      # build their fixtures on disk and need no person-level artifact, so
-      # there is no reason for them to be nightly-only.
+      # build their fixtures on disk; the only real inputs they read are the
+      # sixteen TRACKED board rosters, present in any checkout, so neither
+      # needs the Samsung volume and there is no reason for them to be
+      # nightly-only.
       - name: Declared source coverage contract
         run: |
           Rscript tests/test_source_coverage_contracts.R
