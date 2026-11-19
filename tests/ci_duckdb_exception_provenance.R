@@ -1,5 +1,6 @@
 # =============================================================================
 # The 4-to-7 exception count is a measurement correction, not a regression
+# (and 7-to-9 is two sites that say so themselves)
 # =============================================================================
 # A registry that grows from 4 entries to 7 looks, out of context, exactly
 # like new raw connections being introduced. It isn't: the base architecture
@@ -87,7 +88,7 @@ if (!is.null(provenance)) {
 }
 cat(sprintf("\nnew unjustified exceptions introduced: %d\n", n_new_unjustified))
 if (n_new_unjustified == 0L) {
-  ci_ok("0 new unjustified exceptions -- the 4-to-7 registry growth is fully accounted for by base-commit sites that existed but were not yet registered")
+  ci_ok("0 new unjustified exceptions -- every row is either a base-commit site that existed but was not yet registered, or classified INTENTIONALLY_ADDED_BY_THIS_CHANGE against a file the base commit does not contain")
 } else {
   ci_fail("%d exception(s) claim preexistence but are not supported by the base commit's own content", n_new_unjustified)
 }

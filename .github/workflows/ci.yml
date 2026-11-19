@@ -455,6 +455,30 @@ jobs:
       - name: Appendix prose and figure label fitting
         run: Rscript tests/test_appendix_matches_artifacts.R
 
+      # NIGHTLY-ONLY IS HOW THE 2026-11-16 ZIP SWEEP MERGED GREEN AND BROKE
+      # THESE BY MORNING. Two defects rode in on a passing pull request: a raw
+      # DuckDB connection whose `# duckdb-exception:` comment was never
+      # registered, and a volume literal back in an analysis script. Both are
+      # exactly what these gates are for, and neither was named by any job in
+      # this file -- so the only thing that could see them ran at 05:22Z, after
+      # the merge, with nobody reading the result.
+      #
+      # All of them are hermetic, which is what makes them fair game for a pull
+      # request: throwaway in-memory databases, no warehouse, no Samsung
+      # volume. The volume test proves that about ITSELF -- it builds a decoy
+      # mount and a fixture tree rather than reading the real drive.
+      #
+      # The architecture gate re-runs the ingestion bootstrap as a subprocess,
+      # so naming the bootstrap separately costs a few seconds and buys a
+      # direct per-gate verdict instead of one summarised inside a bundle of
+      # ten. The architecture gate is the slow one, a few minutes, and it is
+      # the one that catches an unregistered connection.
+      - name: DuckDB architecture and volume-resolution gates
+        run: |
+          Rscript tests/ci_duckdb_ingestion_bootstrap.R
+          Rscript tests/test_duckdb_volume_resolution.R
+          Rscript tests/ci_duckdb_architecture_gate.R
+
       - name: Science invariants (defects that actually occurred)
         run: Rscript tests/test_science_invariants.R
 

@@ -74,7 +74,7 @@ provenance <- run_duckdb_gate("tests/ci_duckdb_exception_provenance.R")
 n_unjustified_match <- regmatches(paste(provenance$out, collapse = "\n"),
                                   regexpr("new unjustified exceptions introduced: \\d+", paste(provenance$out, collapse = "\n")))
 cat(sprintf("%s\n", if (length(n_unjustified_match) && nzchar(n_unjustified_match)) n_unjustified_match else "new unjustified exceptions introduced: <not found>"))
-record("exception-registry provenance (4->7 explained, 0 new unjustified)", provenance$ok,
+record("exception-registry provenance (every entry classified, 0 new unjustified)", provenance$ok,
        if (!provenance$ok) "tests/ci_duckdb_exception_provenance.R did not report PASS" else NULL)
 
 # -----------------------------------------------------------------------------
