@@ -1,7 +1,18 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# State-name coverage and cross-source agreement audit, 10 years
+# State-name coverage and cross-source agreement audit, 2007-2026
 # =============================================================================
+# THE WINDOW IS PER SOURCE, AND "10 YEARS" STOOD HERE UNTIL 2026-11-18. It was
+# true when this script was written and quietly stopped being true as the NPPES
+# panel grew backwards: the anchor now spans 2007-2026 (20 years) and the DAC
+# series 2013-2026 (14). No single source covers the whole window, four of the
+# ten are a single current snapshot, and each source is compared only in the
+# years it actually carries a state -- so one number in a title was never going
+# to describe this and is not replaced by a better one. The declared window per
+# source is config/state_source_audit_sources.csv, which the block below
+# validates before anything is read; restating it here would be the second
+# inventory that file exists to prevent.
+#
 # There is no gold standard for a midwife's practice state -- every source
 # below is self-reported (NPPES), administratively enrolled (DAC/PECOS/
 # PECOS-revalidation/Medicaid), third-party-scraped (Healthgrades/Doximity/

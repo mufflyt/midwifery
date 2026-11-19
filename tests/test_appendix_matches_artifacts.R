@@ -214,10 +214,14 @@ if (length(section2_row) == 1L && file.exists(COVERAGE_AUDIT)) {
 # and wraps until it fits. Tested on the function rather than on a rendered
 # file: the figures need gitignored artifacts to build, and a test that skips
 # whenever the data are absent guards nothing.
-FIGURE_SCRIPT <- "make_state_source_audit_figures.R"
+# The style now lives in a library, because a second figure script needed the
+# same saver and ci_hygiene H4 forbids defining one name in two tracked files.
+# That makes this test simpler AND stricter: the definition can be sourced
+# directly rather than lifted out of a 480-line script that cannot be sourced
+# without running, and the assertions below now cover every script that draws
+# an audit figure instead of only the first one.
+FIGURE_SCRIPT <- file.path("R", "lib", "audit_figure_style.R")
 {
-  # The script has no sys.nframe() guard, so lift out the one definition
-  # instead of sourcing it and running the whole pipeline.
   top_level <- as.list(parse(FIGURE_SCRIPT))
   defines <- function(name) {
     function(e) is.call(e) && identical(as.character(e[[1]]), "<-") &&
@@ -232,6 +236,24 @@ FIGURE_SCRIPT <- "make_state_source_audit_figures.R"
   chk(length(save_body) == 1L &&
         grepl("fit_plot_labels", paste(deparse(save_body[[1]]), collapse = " ")),
       "F2 save_audit_fig() routes every figure through it")
+
+  # AND NO DRAWING SCRIPT MAY GO AROUND IT. The whole point of moving the
+  # style into a library is that two scripts cannot drift apart on size, dpi
+  # or label fitting. A script that calls ggsave() directly has drifted
+  # already, whatever its figures look like today.
+  drawing_scripts <- Sys.glob("make_state_source_*figures.R")
+  chk(length(drawing_scripts) >= 2L,
+      sprintf("F2b at least two audit figure scripts are checked [%d]",
+              length(drawing_scripts)))
+  for (drawing_script in drawing_scripts) {
+    code <- readLines(drawing_script, warn = FALSE)
+    code <- code[!grepl("^\\s*#", code)]
+    chk(any(grepl("audit_figure_style\\.R", code)),
+        sprintf("F2c %s sources the shared style", basename(drawing_script)))
+    chk(!any(grepl("ggsave\\(", code)),
+        sprintf("F2d %s saves only through save_audit_fig()",
+                basename(drawing_script)))
+  }
 
   if (length(found) == 1L) {
     suppressPackageStartupMessages(library(ggplot2))

@@ -39,8 +39,12 @@ suppressPackageStartupMessages({
   library(ggplot2); library(dplyr); library(readr); library(tidyr); library(stringr)
 })
 
+source(file.path("R", "lib", "audit_figure_style.R"))  # AUDIT_SERIES,
+# fit_plot_labels(), gloss(), save_audit_fig() -- shared with
+# make_state_source_comparison_steps_figures.R, see that file's header.
+
 APPENDIX <- file.path("docs", "TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md")
-OUT_DIR  <- file.path("docs", "figures")
+OUT_DIR  <- AUDIT_FIG_DIR
 
 # CATEGORICAL HUES, FIXED ORDER, NEVER CYCLED. Four series, assigned by the
 # factor order of `source` so a hue follows the source and not its rank -- a
@@ -53,87 +57,6 @@ OUT_DIR  <- file.path("docs", "figures")
 # dE 16.3, all four >= 3:1 contrast. Do not substitute a hue without
 # re-checking all four gates; the amber in particular fails the
 # normal-vision floor against the orange if it is lightened back.
-AUDIT_SERIES <- c("#2a78d6", "#d2551f", "#0f8f62", "#9c6b00")
-
-# A LABEL THAT DOES NOT FIT IS DRAWN ANYWAY, AND ggsave REPORTS SUCCESS.
-# base_size went 11 -> 13 on 2026-11-15 (eb8d693) but only two of the six
-# figures were regenerated, so four kept their 11pt rendering and the repo
-# stopped agreeing with the script that claims to produce it. Redrawn at 13
-# they lose text with nothing failing: the consensus title ends "disagree
-# abou", the multistate subtitle ends "43.8% were e". No test reads a figure,
-# so a truncated sentence ships looking finished.
-#
-# Titles and captions are aligned to the plot rather than the panel, which
-# gives them the whole canvas instead of whatever is left beside the axis
-# labels, and each label is then wrapped to what that canvas actually holds.
-# The width is MEASURED, never counted in characters: systemfonts is what
-# svglite and ragg measure with at draw time, and the size comes from the
-# plot's own completed theme, so a figure that overrides plot.subtitle is
-# wrapped at the size it will really be drawn at. Change the font or the base
-# size and the wrap moves; nothing silently falls off the edge.
-fit_plot_labels <- function(p, width_in) {
-  th <- ggplot2::complete_theme(p$theme)
-  margin_pt <- as.numeric(grid::convertUnit(
-    ggplot2::calc_element("plot.margin", th), "pt"))
-  limit <- width_in * 72 - margin_pt[2] - margin_pt[4]
-  for (part in c("title", "subtitle", "caption")) {
-    label <- p$labels[[part]]
-    if (!is.character(label) || length(label) != 1L || !nzchar(label)) next
-    size <- ggplot2::calc_element(paste0("plot.", part), th)$size
-    widest <- function(text) max(systemfonts::string_width(
-      strsplit(text, "\n", fixed = TRUE)[[1]], size = size))
-    flat <- gsub("[\r\n]+", " ", label)
-    if (widest(flat) <= limit) { p$labels[[part]] <- flat; next }
-    for (chars in seq(nchar(flat), 20L, by = -3L)) {
-      wrapped <- stringr::str_wrap(flat, width = chars)
-      if (widest(wrapped) <= limit) { p$labels[[part]] <- wrapped; break }
-    }
-  }
-  p + ggplot2::theme(plot.title.position = "plot",
-                     plot.caption.position = "plot")
-}
-
-# A FIGURE HAS TO READ ON ITS OWN. These plots travel into slides and reviews
-# with no appendix beside them, and an axis tick has no room for "Provider
-# Enrollment, Chain, and Ownership System", so the expansions go in the
-# caption. That only became safe once fit_plot_labels() measured and wrapped:
-# a longer caption used to be published with its first words cut off, which is
-# exactly what happened to state_source_agreement_by_year, whose caption shipped
-# starting mid-sentence at "of TECHNICAL_APPENDIX_...".
-GLOSS <- c(
-  NPPES = "National Plan and Provider Enumeration System",
-  DAC   = "Doctors and Clinicians, formerly Physician Compare",
-  PECOS = "Provider Enrollment, Chain, and Ownership System",
-  CCN   = "CMS Certification Number",
-  NDH   = "National Directory of Healthcare Providers",
-  FHIR  = "Fast Healthcare Interoperability Resources",
-  CMS   = "Centers for Medicare & Medicaid Services",
-  OIG   = "HHS Office of Inspector General")
-
-#' Caption tail defining the abbreviations one figure actually shows
-#'
-#' @param ... abbreviations, which must be names of `GLOSS`.
-#' @return [character(1)] " NPPES = ...; DAC = ...." for pasting onto a caption.
-gloss <- function(...) {
-  keys <- c(...)
-  unknown <- setdiff(keys, names(GLOSS))
-  if (length(unknown))
-    stop(sprintf("gloss(): no expansion for %s", paste(unknown, collapse = ", ")),
-         call. = FALSE)
-  paste0("; ", paste(sprintf("%s = %s", keys, GLOSS[keys]), collapse = "; "), ".")
-}
-
-save_audit_fig <- function(p, name, width = 8.5, height = 5.4) {
-  p <- fit_plot_labels(p, width)
-  out <- file.path(OUT_DIR, name)
-  ggsave(paste0(out, ".pdf"), p, width = width, height = height,
-         device = grDevices::cairo_pdf)
-  ggsave(paste0(out, ".png"), p, width = width, height = height, dpi = 300, bg = "white")
-  tryCatch(ggsave(paste0(out, ".svg"), p, width = width, height = height),
-           error = function(e) message("  (svg skipped: ", conditionMessage(e), ")"))
-  cat(sprintf("  wrote %s.{png,pdf,svg}\n", out))
-}
-
 #' Read one pipe-table out of a markdown file by its header row
 #'
 #' Finds the FIRST table whose header contains every name in `must_have`, then
