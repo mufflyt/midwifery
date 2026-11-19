@@ -388,7 +388,14 @@ jobs:
                     # make_evidence_class_figure.R for real rather than asserting
                     # around it. Binary from RSPM, no system libraries, which is
                     # this job's standing condition for anything added here.
-                    "ggplot2", "patchwork", "forcats")
+                    "ggplot2", "patchwork", "forcats",
+                    # systemfonts: fit_plot_labels() MEASURES each label with
+                    # string_width() rather than counting characters, and the
+                    # appendix suite asserts on that measurement. Not a
+                    # recursive dependency of anything above it, so without
+                    # this name the figure checks die at F3 with "there is no
+                    # package called 'systemfonts'". Binary from RSPM.
+                    "systemfonts")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
         shell: Rscript {0}
@@ -431,6 +438,22 @@ jobs:
         run: |
           Rscript tests/test_source_coverage_contracts.R
           Rscript tests/test_source_coverage_saboteurs.R
+
+      # ITS FIGURE CHECKS HAD NEVER RUN ANYWHERE. This file is not named in any
+      # step here, so nightly's tests/test*.R glob was the only thing running
+      # it -- and even there it quit 0 at line 37, because the agreement
+      # artifact it gates on is gitignored and absent from every checkout.
+      # F1-F5b read nothing but tracked source; they now sit above that gate
+      # and a rogue ggsave() in a figure script fails this step. Verified the
+      # old pair: in a fresh worktree with a direct ggsave() appended to
+      # make_state_source_comparison_steps_figures.R, the committed test
+      # printed "PASS (0 failures)" and the reordered one exits 1 at F2d.
+      #
+      # HERE AND NOT IN r-checks, same reason as the three steps above: it
+      # needs dplyr, readr, ggplot2 and systemfonts. A1-A6 still skip without
+      # the artifact, and the step says so in its own output.
+      - name: Appendix prose and figure label fitting
+        run: Rscript tests/test_appendix_matches_artifacts.R
 
       - name: Science invariants (defects that actually occurred)
         run: Rscript tests/test_science_invariants.R
