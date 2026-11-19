@@ -25,8 +25,8 @@
 # The two figures that need a per-provider computation rather than a published
 # summary read tracked artifacts in the ordinary way.
 #
-#   Figure 1  Coverage: which years each of the ten sources actually has
-#   Figure 2  Agreement with NPPES by year, the four multi-year sources
+#   Figure 1  Coverage: which years each of the sources actually has
+#   Figure 2  Agreement with NPPES by year, the five multi-year sources
 #   Figure 3  Address disagreement by granularity, against OIG's 2011 benchmark
 #   Figure 4  Multi-state Medicaid enrolment, the independent multi-state check
 #
@@ -46,17 +46,11 @@ source(file.path("R", "lib", "audit_figure_style.R"))  # AUDIT_SERIES,
 APPENDIX <- file.path("docs", "TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md")
 OUT_DIR  <- AUDIT_FIG_DIR
 
-# CATEGORICAL HUES, FIXED ORDER, NEVER CYCLED. Four series, assigned by the
+# CATEGORICAL HUES, FIXED ORDER, NEVER CYCLED. Five series, assigned by the
 # factor order of `source` so a hue follows the source and not its rank -- a
 # filter that drops a series must not repaint the survivors. These are the
-# blue/orange/aqua/amber slots of the house categorical ramp, each stepped
-# darker until it clears 3:1 against white, because a 0.9pt line in the
-# undarkened aqua (2.74:1) and amber (2.11:1) is not readable on a printed
-# page. Verified on the adjacent pairlist (the right test for lines): worst
-# colour-vision-deficient separation dE 8.7 (deutan), worst normal-vision
-# dE 16.3, all four >= 3:1 contrast. Do not substitute a hue without
-# re-checking all four gates; the amber in particular fails the
-# normal-vision floor against the orange if it is lightened back.
+# blue/orange/aqua/amber/violet slots of the house categorical ramp, each
+# stepped darker until it clears 3:1 against white (violet #7a5195 = 6.1:1).
 #' Read one pipe-table out of a markdown file by its header row
 #'
 #' Finds the FIRST table whose header contains every name in `must_have`, then

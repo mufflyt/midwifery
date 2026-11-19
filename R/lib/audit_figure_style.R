@@ -21,7 +21,10 @@ suppressPackageStartupMessages({
 
 AUDIT_FIG_DIR <- file.path("docs", "figures")
 
-AUDIT_SERIES <- c("#2a78d6", "#d2551f", "#0f8f62", "#9c6b00")
+# Five hues now: the claims arm added a fifth multi-year series on
+# 2026-11-14. #7a5195 keeps the worst contrast at 6.1:1 against white and is
+# far from the blue/aqua pair on the hue circle.
+AUDIT_SERIES <- c("#2a78d6", "#d2551f", "#0f8f62", "#9c6b00", "#7a5195")
 
 # A LABEL THAT DOES NOT FIT IS DRAWN ANYWAY, AND ggsave REPORTS SUCCESS.
 # base_size went 11 -> 13 on 2026-11-15 (eb8d693) but only two of the six

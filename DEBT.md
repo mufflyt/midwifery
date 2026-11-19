@@ -196,6 +196,33 @@ nobody can yet defend.
 used for anything published. The comparison document already lays out inputs,
 keys, normalization and rules side by side, which is where a diagnosis starts.
 
+**Update 2026-11-18: diagnosed.** `diagnose_op_linkage_disagreement.py`
+reproduced the 450-overlap / 16.4% figure exactly and decomposed all 376
+disagreements (`artifacts/op_linkage_disagreement_diagnosis.csv`):
+
+- **254 (67.6%) are input-source differences.** A links the Open Payments
+  recipient-reported address; B links NPPES practice locations, and for these
+  midwives the OP address is not among her NPPES locations at all. Two
+  correct linkers measuring different places. No code fix closes this arm.
+- **122 (32.4%) are same-building different-tenant picks, dominated by A's
+  rule.** A returns the first of ≤10 unordered API results in the same
+  city/state/ZIP whose first 8 address characters prefix-match; B requires a
+  shared telephone or ZIP+4+street tying the org to *her* practice. ~117 of
+  the 122 name unrelated organizations; ~5 look like the same org under
+  different enumeration. Conditioning on the SAME input address and on B
+  being unambiguous drops agreement to **7/102 (6.9%)** — A's pick is almost
+  never the defensible one even where both read the same place.
+
+The 83.6% is therefore a *measurement-of-different-things* problem plus an
+under-identified selector in A, not unexplained noise. Ruling recorded in the
+comparison document: **B (`midwife_org_affiliations_candidate.csv`) is
+canonical for organization affiliation; A's outputs are validation-only and
+no published claim may read its `type2_organization_npi` as an employer.**
+Residual, owner-level: whether the 254 input-source disagreements get written
+up as an Open Payments recipient-address-quality finding in the manuscript,
+and whether A's scripts get a header-level demotion comment to match the
+ruling.
+
 ## D6 — Care Compare and PECOS agree on 43% of organization relationships
 
 - **status:** closed

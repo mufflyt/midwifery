@@ -59,7 +59,8 @@ SOURCE_LABEL <- c(
   doximity                 = "Doximity",
   state_boards_of_nursing  = "State Boards of Nursing",
   cms_ndh_fhir             = "CMS NDH (FHIR)",
-  medicaid_enrollment      = "Medicaid (T-MSIS)")
+  medicaid_enrollment      = "Medicaid (T-MSIS)",
+  medicare_claims          = "Medicare claims (Parts B and D)")
 
 #' Short axis label for a declared source id
 #'
@@ -232,7 +233,7 @@ save_audit_fig(step2, "comparison_step2_pairs_formed", height = 5.2)
 # ---------------------------------------------------------------------------
 # TWO PANELS, NOT TWO AXES. A percentage and a record count do not share a
 # scale, and a second y-axis invites the reader to see a crossing that is an
-# artefact of where the two were anchored. Only the four sources with a
+# artefact of where the two were anchored. Only the five sources with a
 # multi-year series appear: a single snapshot has no trend to draw.
 multi_year <- compared %>%
   dplyr::filter(.data$basis == "Matched to the registry's own year") %>%
@@ -255,7 +256,7 @@ trend_panels <- multi_year %>%
   dplyr::filter(!is.na(.data$value))
 
 series_levels <- c("dac_physician_compare", "facility_affiliation_ccn",
-                   "open_payments", "pecos_revalidation")
+                   "medicare_claims", "open_payments", "pecos_revalidation")
 # HUE FOLLOWS THE SOURCE, NEVER ITS RANK. Assigned by this fixed order, so
 # dropping a series cannot repaint the ones that remain.
 series_colours <- stats::setNames(AUDIT_SERIES[seq_along(series_levels)],
@@ -287,7 +288,7 @@ step3 <- ggplot(trend_panels, aes(x = .data$year, y = .data$value,
                      "drawn against two axes."),
     x = NULL, y = NULL,
     caption = paste0(
-      "The four sources with a multi-year series. Reading the upper panel ",
+      "The five sources with a multi-year series. Reading the upper panel ",
       "without the lower one invites a trend claim that the number of ",
       "records compared may not support",
       gloss("DAC", "PECOS", "CCN"))) +

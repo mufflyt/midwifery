@@ -6,7 +6,7 @@
 # true when this script was written and quietly stopped being true as the NPPES
 # panel grew backwards: the anchor now spans 2007-2026 (20 years) and the DAC
 # series 2013-2026 (14). No single source covers the whole window, four of the
-# ten are a single current snapshot, and each source is compared only in the
+# eleven are a single current snapshot, and each source is compared only in the
 # years it actually carries a state -- so one number in a title was never going
 # to describe this and is not replaced by a better one. The declared window per
 # source is config/state_source_audit_sources.csv, which the block below
@@ -77,7 +77,7 @@ source(file.path("R", "lib", "source_coverage.R"))
 # R/lib/source_coverage.R.
 AUDITED_SOURCES <- c("nppes", "dac_physician_compare", "pecos_revalidation",
                      "facility_affiliation_ccn", "healthgrades", "doximity",
-                     "cms_ndh_fhir", "medicaid_enrollment")
+                     "cms_ndh_fhir", "medicaid_enrollment", "medicare_claims")
 audit_coverage <- validate_source_coverage(read_source_manifest(),
                                            publication_mode = TRUE,
                                            source_ids = AUDITED_SOURCES)
@@ -91,6 +91,7 @@ HEALTHGRADES_SCRAPE <- declared_path(audit_coverage, "healthgrades")
 DOXIMITY_MATCHED <- declared_path(audit_coverage, "doximity")
 NDH_FHIR <- declared_path(audit_coverage, "cms_ndh_fhir")
 MEDICAID_BY_YEAR <- declared_path(audit_coverage, "medicaid_enrollment")
+MEDICARE_CLAIMS <- declared_path(audit_coverage, "medicare_claims")
 
 # --- NPPES: the comparison anchor --------------------------------------------
 nppes_raw <- read_csv(NPPES_PANEL, col_types = cols(.default = "c"),
@@ -226,6 +227,18 @@ ndh <- read_csv(NDH_FHIR,
   transmute(npi = trimws(npi), state) %>% filter(!is.na(npi), !is.na(state))
 coverage$ndh <- tibble(source = "cms_ndh_fhir", year = 2026L, n_rows = nrow(ndh), n_npis = n_distinct(ndh$npi))
 agreement$ndh <- agree_current_only("cms_ndh_fhir", ndh, "2026-10 (bulk pull; meta.lastUpdated available per-record, not yet exploited here)", 2026L)
+
+# --- Medicare claims, Part B + Part D collapsed to one claim per NPI-year ----
+# The two products share one claims lineage and measured zero state conflicts
+# on 41,953 NPI-years, so they enter as a single family rather than as two
+# votes -- see build_medicare_claims_state_series.R and
+# artifacts/cohort_midwives_medicare_claims_collapse_audit.csv.
+medicare_claims <- read_csv(MEDICARE_CLAIMS,
+                            col_types = cols(.default = "c"), progress = FALSE) %>%
+  transmute(npi = trimws(npi), year = as.integer(year), state = clean_state(state)) %>%
+  filter(!is.na(npi), !is.na(year))
+coverage$mc <- add_coverage("medicare_claims", medicare_claims)
+agreement$mc <- agree_same_year("medicare_claims", medicare_claims)
 
 # --- NPPES's own coverage, for context ---------------------------------------
 coverage$nppes <- add_coverage("nppes", nppes %>% filter(!is.na(npi)))
