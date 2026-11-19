@@ -892,7 +892,10 @@ jobs:
   science-law-coverage:
     name: Science-law coverage
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # 15 was eaten whole by the sf system-library apt install (~12 min),
+    # canceling the law steps with ~3 min left. Budget for the install
+    # plus the actual run.
+    timeout-minutes: 30
     # THE JOB MUST SAY WHETHER IT DID THE WORK. Every law step below is gated on
     # steps.relevance.outputs.run. When a path filter could set that to false,
     # this job exited zero having evaluated nothing -- and a green tick was
