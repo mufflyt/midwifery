@@ -54,7 +54,7 @@ OUT <- "artifacts/lead_lag_decomposition.csv"
 stopifnot(file.exists(IN))
 
 ll <- read_csv(IN, col_types = cols(.default = "c"), progress = FALSE)
-num <- function(x) suppressWarnings(as.numeric(x))
+as_num_quiet <- function(x) suppressWarnings(as.numeric(x))
 
 DEFINITIONAL_COMPONENT <- c(
   medicaid_enrollment = "enrolment-in-state != practice-in-state; concurrent multi-state enrolment inflates the persistent share",
@@ -64,16 +64,16 @@ DEFINITIONAL_COMPONENT <- c(
 out <- ll %>%
   transmute(
     source = source_b,
-    n_paired_transitions   = as.integer(num(n_paired_transitions)),
-    n_discordant_at_t      = as.integer(num(n_discordant_at_t)),
-    pct_source_reporting_delay_t1    = num(b_adopts_a_at_t1_pct),
-    pct_source_reporting_delay_multi = num(b_adopts_a_multi_pct),
-    pct_registry_reporting_delay_t1    = num(a_reverts_to_b_at_t1_pct),
-    pct_registry_reporting_delay_multi = num(a_reverts_b_multi_pct),
-    pct_persistent_ascertainment_or_definition = num(persistent_discordant_at_t1_pct),
-    pct_cross_section_source_held_destination_first = num(cross_section_in_prior_b_pct),
-    both_move_together_n = as.integer(num(both_move_together_at_t1)),
-    base_year = as.integer(num(base_year)),
+    n_paired_transitions   = as.integer(as_num_quiet(n_paired_transitions)),
+    n_discordant_at_t      = as.integer(as_num_quiet(n_discordant_at_t)),
+    pct_source_reporting_delay_t1    = as_num_quiet(b_adopts_a_at_t1_pct),
+    pct_source_reporting_delay_multi = as_num_quiet(b_adopts_a_multi_pct),
+    pct_registry_reporting_delay_t1    = as_num_quiet(a_reverts_to_b_at_t1_pct),
+    pct_registry_reporting_delay_multi = as_num_quiet(a_reverts_b_multi_pct),
+    pct_persistent_ascertainment_or_definition = as_num_quiet(persistent_discordant_at_t1_pct),
+    pct_cross_section_source_held_destination_first = as_num_quiet(cross_section_in_prior_b_pct),
+    both_move_together_n = as.integer(as_num_quiet(both_move_together_at_t1)),
+    base_year = as.integer(as_num_quiet(base_year)),
     definitional_component = DEFINITIONAL_COMPONENT[source])
 
 out <- out %>%

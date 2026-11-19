@@ -21,12 +21,14 @@ suppressPackageStartupMessages({
   library(dplyr); library(readr); library(tibble)
 })
 source(file.path("R", "lib", "clean_state.R"))
+source(file.path("R", "lib", "cohort_definitions.R"))
 source(file.path("R", "lib", "artifact_provenance.R"))
 
 OUT <- "artifacts/canonical_source_records.csv"
 COV <- "artifacts/canonical_source_records_field_coverage.csv"
 VERSION <- "canonical_v1"
 
+verify_linkage_freeze("artifacts/amcb_npi_linkage_FROZEN.csv")
 link <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv",
                  col_select = c(npi, amcb_id, cohort_member),
                  col_types = cols(.default = "c"), progress = FALSE) %>%
