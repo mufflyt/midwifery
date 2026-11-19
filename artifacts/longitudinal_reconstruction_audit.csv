@@ -1,4 +1,4 @@
-source,year,n_rows,n_npis,coverage_pct,n_distinct_states,evidence_types,vintage,usable_for_trend_pct,source_record_id_pct,year_validation_status
+source,year,n_rows,n_npis,coverage_pct,n_distinct_states,evidence_types,vintage,usable_for_trend_pct,n_with_source_record_id,year_validation_status
 medicaid_enrollment,2013,6226,6226,37.1,44,retrospective,T-MSIS enrollment segments 2026-07-24,0,0,not_validated
 medicaid_enrollment,2014,6834,6834,40.8,45,retrospective,T-MSIS enrollment segments 2026-07-24,0,0,not_validated
 medicaid_enrollment,2015,7582,7582,45.2,46,retrospective,T-MSIS enrollment segments 2026-07-24,0,0,not_validated

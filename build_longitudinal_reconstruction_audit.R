@@ -12,7 +12,7 @@
 # Columns:
 #   source, year, n_rows, n_npis, coverage_pct (of frozen cohort),
 #   n_distinct_states, evidence_types, vintage, usable_for_trend_pct,
-#   year_validation_status, source_record_id_pct
+#   year_validation_status, n_with_source_record_id
 #
 # Input : artifacts/canonical_source_records.csv (person-level, gitignored)
 #         artifacts/open_payments_year_validation.csv
@@ -49,7 +49,7 @@ audit <- records %>%
     evidence_types = paste(sort(unique(evidence_type)), collapse = ";"),
     vintage = paste(sort(unique(vintage)), collapse = ";"),
     usable_for_trend_pct = round(100 * mean(usable_for_trend), 1),
-    source_record_id_pct = round(100 * mean(!is.na(source_record_id)), 1),
+    n_with_source_record_id = sum(!is.na(source_record_id)),
     .groups = "drop")
 
 # Join whatever year-validation the producers emitted. A source-year with no
