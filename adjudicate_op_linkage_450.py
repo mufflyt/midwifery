@@ -44,6 +44,7 @@ SUM = os.path.join(ROOT, "artifacts", "op_linkage_adjudication_summary.csv")
 
 
 def sidecar(path, inputs):
+    script_sha = hashlib.sha256(open(__file__, "rb").read()).hexdigest()
     payload = {
         "artifact": os.path.basename(path),
         "generated_by": os.path.basename(__file__),
@@ -52,6 +53,8 @@ def sidecar(path, inputs):
             {"path": i, "sha256": hashlib.sha256(open(i, "rb").read()).hexdigest()}
             for i in inputs
         ],
+        "code_sha256": script_sha,
+        "code": [{"path": os.path.basename(__file__), "sha256": script_sha}],
     }
     with open(path + ".provenance.json", "w") as f:
         json.dump(payload, f, indent=2)

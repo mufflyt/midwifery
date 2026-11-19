@@ -1,11 +1,18 @@
 {
   "artifact": "op_linkage_adjudication_summary.csv",
   "generated_by": "adjudicate_op_linkage_450.py",
-  "generated_at": "2026-11-19T04:34:46.856485+00:00",
+  "generated_at": "2026-11-19T05:08:23.458194+00:00",
   "inputs": [
     {
       "path": "/Users/tylermuffly/midwifery/artifacts/op_linkage_disagreement_diagnosis.csv",
       "sha256": "98bb9f21ff467ce2b0b9adb24ff283d25d46881060dfdcbea3a75a3786abbead"
+    }
+  ],
+  "code_sha256": "d6c4e7a6e487bbc0a9b081d640640f5f6c704fb4cb80cd6105401f8a58c238e3",
+  "code": [
+    {
+      "path": "adjudicate_op_linkage_450.py",
+      "sha256": "d6c4e7a6e487bbc0a9b081d640640f5f6c704fb4cb80cd6105401f8a58c238e3"
     }
   ]
 }

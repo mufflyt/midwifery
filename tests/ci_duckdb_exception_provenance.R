@@ -45,8 +45,34 @@ if (!is.null(provenance)) {
 }
 
 ci_section("New unjustified exceptions introduced: re-derived from git history, not asserted")
+
+# A SHALLOW CLONE MADE THIS GATE ACCUSE EVERY ROW IT COULD NOT CHECK. The
+# per-file loop below reads `git show BASE_COMMIT:<file>` and treats a non-zero
+# exit as "the file did not exist at the base commit" -- which is right when
+# the commit IS there and the file is not, and badly wrong when the commit
+# itself is missing from the clone. On 2026-11-19 this gate was added to
+# ci.yml's r-unit-tests, whose checkout has no fetch-depth and therefore stops
+# one commit deep: every `git show` failed, and the gate reported "new
+# unjustified exceptions introduced: 7", sending a reader to hunt for seven
+# misclassified rows that were all correctly classified. The absence of
+# history is not evidence about the rows.
+#
+# So the precondition is checked FIRST and reported as itself. It still fails
+# -- a check that could not run has not passed -- but it fails saying which
+# commit is missing and what to do, instead of making a false claim about the
+# registry. nightly.yml's R suite already uses fetch-depth: 0, which is why
+# this gate was green there and red on the pull request that wired it in.
+base_present <- identical(0L, suppressWarnings(system2(
+  "git", c("-C", shQuote(root), "cat-file", "-e",
+           paste0(BASE_COMMIT, "^{commit}")),
+  stdout = FALSE, stderr = FALSE)))
+if (!base_present) {
+  ci_fail("base commit %s is not in this clone, so no row's classification can be re-derived -- this is a CHECKOUT problem, not a registry problem: give this job `fetch-depth: 0` (nightly.yml's R suite already does) rather than reading anything below as a verdict on the rows",
+          substr(BASE_COMMIT, 1, 7))
+}
+
 n_new_unjustified <- 0L
-if (!is.null(provenance)) {
+if (!is.null(provenance) && base_present) {
   for (f in unique(provenance$file)) {
     rows <- provenance[provenance$file == f, ]
     base_content <- tryCatch(
@@ -86,8 +112,11 @@ if (!is.null(provenance)) {
     }
   }
 }
-cat(sprintf("\nnew unjustified exceptions introduced: %d\n", n_new_unjustified))
-if (n_new_unjustified == 0L) {
+if (base_present)
+  cat(sprintf("\nnew unjustified exceptions introduced: %d\n", n_new_unjustified))
+if (!base_present) {
+  cat("\nnew unjustified exceptions introduced: NOT DERIVED (base commit absent)\n")
+} else if (n_new_unjustified == 0L) {
   ci_ok("0 new unjustified exceptions -- every row is either a base-commit site that existed but was not yet registered, or classified INTENTIONALLY_ADDED_BY_THIS_CHANGE against a file the base commit does not contain")
 } else {
   ci_fail("%d exception(s) claim preexistence but are not supported by the base commit's own content", n_new_unjustified)
