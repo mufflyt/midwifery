@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# Twenty-five saboteurs: every way we know to make this publish a lie
+# Twenty-six saboteurs: every way we know to make this publish a lie
 # =============================================================================
 # tests/test_source_coverage_contracts.R proves the contract works on the
 # cases we designed it for. This file is the adversary. Each saboteur
@@ -479,7 +479,24 @@ saboteur(25, "rename the panel's person key")
       "counting no persons rather than inventing some")
 }
 
+saboteur(26, "damage the panel so readr parses it but reports problems")
+{
+  # A corrupt PANEL must say it is corrupt, not "missing npi or the declared
+  # state column" -- that message names a fix (rerun the harvester to restore
+  # a column) that would not help, and hides one that would.
+  coverage_restore_scene()
+  writeLines(c("npi,snapshot_year,practice_state",
+               "1000000001,2021,CO",
+               "1000000002,2022"), panel_path)
+  verdict <- attempt_publication(panel_manifest_for(2021:2022))
+  chk(verdict$refused, "a short row in the panel refuses to publish")
+  chk(grepl("UNPARSEABLE", verdict$message),
+      "and the refusal says unparseable")
+  chk(!grepl("missing npi", verdict$message),
+      "not 'missing npi', which would name a fix that cannot help")
+}
+
 unlink(sabotage_dir, recursive = TRUE)
-cat(sprintf("\n%s (%d failures across 25 saboteurs)\n",
+cat(sprintf("\n%s (%d failures across 26 saboteurs)\n",
             if (fails == 0L) "PASS" else "FAIL", fails))
 quit(status = if (fails == 0L) 0L else 1L)

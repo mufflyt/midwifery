@@ -295,7 +295,7 @@ describe_panel_input <- function(input_path, date_column, state_column,
     state_observed = integer(0))
   if (!file.exists(input_path))
     return(list(file_sha256 = NA_character_, schema_valid = NA,
-                by_year = empty_by_year))
+                parse_problems = NA_integer_, by_year = empty_by_year))
 
   header_names <- tryCatch(
     names(readr::read_csv(input_path, n_max = 0L,
@@ -322,7 +322,8 @@ describe_panel_input <- function(input_path, date_column, state_column,
   schema_valid <- (!npi_declared || !is.na(npi_name)) &&
     (!state_declared || !is.na(state_name))
   described <- list(file_sha256 = digest_file_sha256(input_path),
-                    schema_valid = schema_valid, by_year = empty_by_year)
+                    schema_valid = schema_valid, parse_problems = 0L,
+                    by_year = empty_by_year)
   if (is.na(year_name) || !length(header_names)) return(described)
 
   read_names <- unique(c(year_name, state_name, npi_name, amcb_name))
@@ -338,14 +339,19 @@ describe_panel_input <- function(input_path, date_column, state_column,
     error = function(e) NULL)
   if (is.null(panel_rows)) {
     described$schema_valid <- FALSE
+    described$parse_problems <- NA_integer_
     return(described)
   }
   # Same rule as describe_source_input(): a parse that reported problems is
-  # not evidence, whatever readr handed back.
-  if (tryCatch(nrow(readr::problems(panel_rows)) > 0L,
-               error = function(e) FALSE)) {
+  # not evidence, whatever readr handed back. The COUNT travels with the
+  # verdict so the refusal can say "unparseable" rather than fall through to
+  # "missing npi or the declared state column", which would name the wrong
+  # fix for a damaged panel.
+  panel_problem_count <- tryCatch(nrow(readr::problems(panel_rows)),
+                                  error = function(e) 0L)
+  if (panel_problem_count > 0L) {
     described$schema_valid <- FALSE
-    described$by_year <- empty_by_year
+    described$parse_problems <- panel_problem_count
     return(described)
   }
 
@@ -450,8 +456,7 @@ validate_source_coverage <- function(source_manifest,
                             else NA_integer_,
            file_sha256 = described$file_sha256,
            schema_valid = described$schema_valid,
-           parse_problems = if (isFALSE(described$schema_valid)) NA_integer_
-                            else 0L)
+           parse_problems = described$parse_problems)
     } else {
       describe_source_input(input_path, declared$state_field,
                             declared_npi_field)
@@ -459,12 +464,32 @@ validate_source_coverage <- function(source_manifest,
 
     year_verified <- NA
     year_method <- NA_character_
+    # A CHECK THAT COULD NOT RUN IS NOT A CHECK THAT PASSED. This tryCatch
+    # mapped any error to NULL, and a NULL probe left year_verified NA and
+    # year_method NA_character_ -- which fell through every case below to
+    # "ok". So a year whose evidence could not be examined at all was graded
+    # usable, by the same silence this whole contract exists to end.
+    #
+    # It is not hypothetical. assert_source_year() reaches parse_vintage()
+    # whenever no in-file date is found, and parse_vintage() calls
+    # stringr::str_match(). On a CI runner whose stringi could not load its
+    # ICU library, that call threw, every such row graded "ok", and three
+    # saboteurs written to prove exactly this case -- a stripped year column,
+    # a blanked year column, a corrupt file -- all reported that the build
+    # refused nothing. A broken package was silently converting
+    # "unverifiable" into "fine". The error is now its own verdict and
+    # carries its own text, so a reader sees the stringi failure instead of
+    # a green build.
+    year_probe_error <- NA_character_
     if (present && !is.na(declared$expected_year) &&
         identical(declared$validation_method, "in_file_date")) {
       year_probe <- tryCatch(
         assert_source_year(input_path, declared$expected_year,
                            date_columns = declared$date_field, strict = FALSE),
-        error = function(e) NULL)
+        error = function(e) {
+          year_probe_error <<- conditionMessage(e)
+          NULL
+        })
       if (!is.null(year_probe)) {
         # "refuted" means the data contradicts the declared year; "unverified"
         # means the year could not be established at all. Both are unusable
@@ -480,14 +505,21 @@ validate_source_coverage <- function(source_manifest,
       # suspended because a panel spanning years is the declared shape. What
       # is NOT suspended is `expected_year %in% years`: that is the whole
       # check, and the reason a panel can be declared at all.
-      year_probe <- assert_year_set(observed_years, declared$expected_year,
-                                    multiyear = TRUE, strict = FALSE,
-                                    label = basename(input_path))
-      year_verified <- if (identical(year_probe$status, "refuted")) FALSE
-                       else if (identical(year_probe$status,
-                                          "unverified")) NA
-                       else TRUE
-      year_method <- year_probe$status
+      year_probe <- tryCatch(
+        assert_year_set(observed_years, declared$expected_year,
+                        multiyear = TRUE, strict = FALSE,
+                        label = basename(input_path)),
+        error = function(e) {
+          year_probe_error <<- conditionMessage(e)
+          NULL
+        })
+      if (!is.null(year_probe)) {
+        year_verified <- if (identical(year_probe$status, "refuted")) FALSE
+                         else if (identical(year_probe$status,
+                                            "unverified")) NA
+                         else TRUE
+        year_method <- year_probe$status
+      }
     } else if (present && identical(declared$validation_method,
                                     "producer_declared")) {
       # The producer writes one year per file and records the program year in
@@ -527,6 +559,7 @@ validate_source_coverage <- function(source_manifest,
       declared$validation_method %in% c("in_file_date",
                                         "in_file_year_set") &&
         identical(year_method, "unverified") ~ "year_unverified",
+      !is.na(year_probe_error) ~ "year_check_failed",
       TRUE ~ "ok")
 
     status_message <- dplyr::case_when(
@@ -563,6 +596,10 @@ validate_source_coverage <- function(source_manifest,
       status == "year_unverified" ~ paste0(
         "cannot establish the program year from column '", declared$date_field,
         "' -- a four-digit year in the filename is not proof"),
+      status == "year_check_failed" ~ paste0(
+        "the year check could not RUN on ", input_path, ": ",
+        year_probe_error,
+        " -- a year whose evidence could not be examined has not passed"),
       status == "present_zero_records" ~ paste0(
         "present and complete with zero qualifying cohort records ",
         "-- valid evidence of absence"),
@@ -652,7 +689,8 @@ validate_source_coverage <- function(source_manifest,
          .data$validation_status %in% c("missing_required_input",
                                         "schema_invalid",
                                         "year_refuted",
-                                        "year_unverified")) |
+                                        "year_unverified",
+                                        "year_check_failed")) |
         .data$validation_status == "undeclared_year_observed")
   if (nrow(failing_rows)) {
     # THE ERROR CARRIES THE REASON, NOT JUST THE VERDICT. A build that stops

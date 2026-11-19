@@ -165,8 +165,16 @@ cat("\n-- a corrupted CSV --\n")
   chk(!(2023L %in% suppressMessages(
           resolve_source_inputs(coverage_audit, "open_payments"))$program_year),
       "T7b a corrupted year is not handed to the producer")
-  chk(identical(corrupt_row$validation_status, "schema_invalid"),
-      sprintf("T7c and it is refused AS unparseable [%s]",
+  # DELIBERATELY NOT PINNED TO ONE VERDICT. How readr treats an unterminated
+  # quote differs by version -- that divergence is what made this fixture
+  # grade "ok" in CI while passing here -- so this asserts only that the
+  # verdict is one a publication build refuses. The exact "unparseable"
+  # claim is made by T7e below, on a fixture whose damage is a structural
+  # field-count mismatch that every vroom reports.
+  chk(corrupt_row$validation_status %in%
+        c("schema_invalid", "year_unverified", "year_refuted",
+          "year_check_failed"),
+      sprintf("T7c and the verdict is one that refuses to publish [%s]",
               corrupt_row$validation_status))
 
   # THE CASE THAT CAUGHT T7 OUT, AND THE ONE THAT ISOLATES THE GUARD. Above,
@@ -371,6 +379,67 @@ cat("\n-- the Open Payments producers name their cohort arm --\n")
     # usable artifact with one the audit reader rejects.
     chk(any(grepl("AS program_year", code)),
         sprintf("T17 %s selects CMS's own Program_Year", producer))
+  }
+}
+
+cat("\n-- when the year check itself cannot run --\n")
+{
+  # THE DEFECT THIS PAIR EXISTS FOR, FOUND BY CI AND NOT BY THIS MACHINE.
+  # validate_source_coverage() wrapped the year probe in a tryCatch that
+  # mapped every error to NULL, and a NULL probe fell through every verdict
+  # to "ok". So a year whose evidence could not be examined was graded
+  # usable.
+  #
+  # It happened for real. assert_source_year() reaches parse_vintage()
+  # whenever no in-file date is found, and parse_vintage() calls
+  # stringr::str_match(). On a runner whose stringi could not load its ICU
+  # library that call threw, and T7, S8 and S9 -- a corrupt file, a stripped
+  # year column, a blanked year column, three tests written to prove exactly
+  # this -- all reported that the build refused nothing.
+  #
+  # Reproduced here by shadowing parse_vintage() with one that throws, which
+  # is what a broken stringi does to it.
+  build_full_fixture()
+  stripped_path <- file.path(fixture_dir, "cohort_general_2023.csv")
+  stripped <- readr::read_csv(stripped_path, progress = FALSE,
+                              col_types = readr::cols(.default = "c"))
+  readr::write_csv(dplyr::select(stripped, -"program_year"), stripped_path)
+
+  real_parse_vintage <- parse_vintage
+  parse_vintage <- function(...) stop("stringi could not be loaded")
+  verdict <- publication_fails(fixture_manifest())
+  parse_vintage <- real_parse_vintage
+
+  chk(verdict$failed,
+      "T24 a year check that THROWS refuses to publish, it does not pass")
+  chk(grepl("could not RUN", verdict$message),
+      "T24b the refusal says the check could not run")
+  chk(grepl("stringi could not be loaded", verdict$message),
+      "T24c and carries the underlying error, so the cause is visible")
+
+  # The ordinary unverifiable case must still read as unverified, not as a
+  # broken check: the two are different defects and the audit says which.
+  #
+  # ONLY CHECKABLE WHERE THE CHECK WORKS. Reaching "unverified" requires
+  # parse_vintage() to return NA cleanly, so on the very runner this verdict
+  # was added for -- where stringi cannot load and parse_vintage() throws --
+  # there is no such thing as a cleanly unverifiable year, and asserting one
+  # would be asserting that the environment is healthy. T24-T24c cover the
+  # broken case; this covers the healthy one, and says which it had.
+  vintage_runs <- !inherits(
+    tryCatch(parse_vintage("probe.csv"), error = function(e) e), "error")
+  if (vintage_runs) {
+    build_full_fixture()
+    readr::write_csv(dplyr::select(stripped, -"program_year"), stripped_path)
+    unverified <- suppressMessages(
+      validate_source_coverage(fixture_manifest(), publication_mode = FALSE))
+    chk(identical(
+          unverified$validation_status[unverified$program_year == 2023L],
+          "year_unverified"),
+        "T24d a year with no evidence reads 'unverified', not 'check failed'")
+  } else {
+    cat("  skip T24d -- parse_vintage() cannot run here, so there is no",
+        "cleanly unverifiable year to tell apart\n")
   }
 }
 
