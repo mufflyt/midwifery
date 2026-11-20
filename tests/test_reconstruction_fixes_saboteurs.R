@@ -133,17 +133,53 @@ chk(grepl("fingerprint", cl, fixed = TRUE),
     "F4a changelog records the fingerprint fix as landed")
 # T-MSIS is DONE as of 2026-11-19: the changelog must carry the run's
 # evidence (row count), the blocked list must not still contain it, and
-# the artifacts must exist on disk -- a doc claim without a file is the
+# the published outputs must exist -- a doc claim without a file is the
 # failure this saboteur guards.
+#
+# "THE FILES EXIST" USED TO INCLUDE A FILE THAT CANNOT EXIST HERE. This
+# assertion also required artifacts/tmsis_medicaid_spending_cohort_by_year.csv,
+# which .gitignore excludes BY DESIGN and with its reason written down:
+# person-level NPI-year billing activity. So the check passed on the machine
+# that ran the extraction and could only ever fail on a runner -- which is
+# exactly what it did in the 2026-11-20 nightly, reporting the changelog as
+# dishonest when the changelog was fine and the gate was asking CI to see a
+# file the repository deliberately does not carry. Tracking the file to make
+# the assertion pass would publish person-level data to satisfy a test, which
+# is the worst available fix.
+#
+# What IS checkable everywhere: the two aggregates the changelog names as the
+# run's outputs are tracked, so their absence is a real defect anywhere.
 chk(grepl("238,015,729", cl, fixed = TRUE) &&
       !grepl("extraction outputs pending", cl, fixed = TRUE) &&
-      file.exists(file.path(root, "artifacts",
-                            "tmsis_medicaid_spending_cohort_by_year.csv")) &&
       file.exists(file.path(root, "artifacts",
                             "medicaid_billing_by_state.csv")) &&
       file.exists(file.path(root, "artifacts",
                             "medicaid_billing_year_trend.csv")),
-    "F4b changelog records the T-MSIS run with evidence and the files exist")
+    "F4b changelog records the T-MSIS run with evidence and its tracked aggregates exist")
+
+# And the person-level extract itself is held to the opposite assertion: it
+# must NOT be in the repository. That is checkable in any clone, it is the
+# property that actually matters about this file, and it fails loudly if
+# someone "fixes" F4b by committing it.
+PERSON_LEVEL <- "artifacts/tmsis_medicaid_spending_cohort_by_year.csv"
+tracked <- identical(0L, suppressWarnings(system2(
+  "git", c("-C", shQuote(root), "ls-files", "--error-unmatch",
+           shQuote(PERSON_LEVEL)), stdout = FALSE, stderr = FALSE)))
+ignored <- identical(0L, suppressWarnings(system2(
+  "git", c("-C", shQuote(root), "check-ignore", "-q", shQuote(PERSON_LEVEL)),
+  stdout = FALSE, stderr = FALSE)))
+chk(!tracked && ignored,
+    "F4c the person-level T-MSIS extract is gitignored and untracked, never published")
+# Where the extraction actually ran, the file is also checked for content; in a
+# clone it is absent for the documented reason, and that is said out loud
+# rather than counted as a pass.
+if (file.exists(file.path(root, PERSON_LEVEL))) {
+  chk(file.size(file.path(root, PERSON_LEVEL)) > 0,
+      "F4d the local person-level extract is non-empty")
+} else {
+  cat(sprintf("  --   F4d skipped: %s is absent, as .gitignore intends outside the extraction host\n",
+              PERSON_LEVEL))
+}
 
 # --- F5 DAC honesty -------------------------------------------------------------
 sab(5, "no doc may claim the 14-year DAC series is missing")
