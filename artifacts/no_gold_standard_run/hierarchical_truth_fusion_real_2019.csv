@@ -1,5 +1,5 @@
 grain,depth,n_entities,n_resolved_exact_at_grain,pct_resolved_exact,n_resolved_at_or_finer,pct_resolved_at_or_finer
-state,1,581,99,17.04,538,92.6
-scf3,2,581,50,8.61,439,75.56
-zip5,3,581,389,66.95,389,66.95
-unresolved,0,581,43,7.4,43,7.4
+state,1,585,89,15.21,542,92.65
+scf3,2,585,50,8.55,453,77.44
+zip5,3,585,403,68.89,403,68.89
+unresolved,0,585,43,7.35,43,7.35

@@ -35,6 +35,7 @@ source(file.path("R", "lib", "medicare_duckdb.R"))
 source(file.path("R", "lib", "cohort_definitions.R"))
 source(file.path("R", "lib", "artifact_provenance.R"))
 source(file.path("R", "lib", "clean_state.R"))
+source(file.path("R", "lib", "oig_zip_normalizers.R"))
 
 OUT_DIR <- file.path("artifacts", "no_gold_standard_run")
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
@@ -85,11 +86,6 @@ pecos_addr_2019 <- DBI::dbGetQuery(con, "
 ")
 cat(sprintf("Real PECOS 2019 (cohort-filtered): %d enrollment edges, %d reassignment edges, %d raw address rows\n",
             nrow(pecos_enrl_2019), nrow(pecos_reassign_2019), nrow(pecos_addr_2019)))
-
-norm_pecos_bigint_zip5 <- function(z) {
-  s <- sprintf("%09d", as.numeric(z))
-  substr(s, 1, 5)
-}
 
 nppes_2019_panel <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
   filter(snapshot_year == "2019") %>%
@@ -580,14 +576,14 @@ print(flow_real)
 #         -- real 3-source state claims, 2021 (first full overlap year)
 # =============================================================================
 cat("\n--- 20. attribute_claims_collapse_lineage() ---\n")
-to_claims <- function(df, src) {
+to_state_fusion_claims <- function(df, src) {
   tibble(entity_id = df$npi, attribute = "practice_state", source_id = src,
          claimed_value = df$state, reference_year = df$year)
 }
 claims_2021_real <- bind_rows(
-  to_claims(nppes_state_panel %>% filter(year == 2021), "nppes"),
-  to_claims(pecos_reval_panel %>% filter(year == 2021), "pecos_reval"),
-  to_claims(tmsis_panel %>% filter(year == 2021), "tmsis")
+  to_state_fusion_claims(nppes_state_panel %>% filter(year == 2021), "nppes"),
+  to_state_fusion_claims(pecos_reval_panel %>% filter(year == 2021), "pecos_reval"),
+  to_state_fusion_claims(tmsis_panel %>% filter(year == 2021), "tmsis")
 ) %>% filter(!is.na(claimed_value))
 collapsed_real <- attribute_claims_collapse_lineage(
   claims_2021_real,
