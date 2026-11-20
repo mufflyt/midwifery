@@ -68,6 +68,7 @@ root_dir <- {
   if (length(a)) normalizePath(dirname(sub("--file=", "", a[1]))) else normalizePath(".")
 }
 setwd(root_dir)
+source(file.path("R", "lib", "common_helpers.R"))  # chr(): all-character reader
 source(file.path("R", "lib", "artifact_provenance.R"))
 source(file.path("R", "lib", "org_names.R"))
 
@@ -76,7 +77,6 @@ OUT_TRA  <- "artifacts/organization_identity_transitions.csv"
 OUT_COV  <- "artifacts/organization_identity_coverage.csv"
 OUT_CON  <- "artifacts/organization_identity_conflicts.csv"
 
-rd <- function(p) read_csv(p, col_types = cols(.default = "c"), progress = FALSE)
 need <- function(p, why) {
   if (!file.exists(p))
     stop(sprintf("%s not found.\n  %s\n  Refusing to report a reconciliation that did not happen.",
@@ -88,7 +88,7 @@ need("artifacts/organization_affiliation_resolved.csv",
      "Run build_organization_affiliation_resolver.R first; it is the frozen BEFORE state.")
 
 # --- the bridge --------------------------------------------------------------
-ever <- rd("artifacts/pac_npi_ever.csv")
+ever <- chr("artifacts/pac_npi_ever.csv")
 # Durable relation = unique AND never ambiguous in any snapshot.
 ever_ok <- ever %>%
   filter(pac_npi_resolution == "unique",
@@ -101,7 +101,7 @@ chain_pacs <- ever %>%
 cli::cli_alert_info("bridge: {format(nrow(ever_ok), big.mark = ',')} durable PAC->NPI; {format(length(chain_pacs), big.mark = ',')} multi-NPI entities")
 
 bridge_snap <- if (file.exists("artifacts/pac_npi_snapshot.csv")) {
-  rd("artifacts/pac_npi_snapshot.csv") %>%
+  chr("artifacts/pac_npi_snapshot.csv") %>%
     filter(pac_npi_resolution == "unique") %>%
     transmute(join_snapshot = substr(snapshot_date, 1, 7), pac_id, snap_npi = npi) %>%
     distinct(join_snapshot, pac_id, .keep_all = TRUE)
@@ -121,13 +121,13 @@ arm_add <- function(nm, d) {
   cli::cli_alert_success("{nm}: {format(nrow(d), big.mark = ',')} evidence rows")
 }
 if (file.exists("artifacts/midwife_reassignment_spells.csv"))
-  arm_add("pecos_reassignment", rd("artifacts/midwife_reassignment_spells.csv") %>%
+  arm_add("pecos_reassignment", chr("artifacts/midwife_reassignment_spells.csv") %>%
         transmute(midwife_npi, source_organization_id = org_pac_id,
                   organization_name_raw = organization_name,
                   source_snapshot_date = last_seen_vintage) %>%
         filter(!is.na(source_organization_id), nzchar(source_organization_id)))
 if (file.exists("artifacts/midwife_organization_panel.csv"))
-  arm_add("care_compare_group", rd("artifacts/midwife_organization_panel.csv") %>%
+  arm_add("care_compare_group", chr("artifacts/midwife_organization_panel.csv") %>%
         filter(has_group %in% c("TRUE", "true")) %>%
         transmute(midwife_npi, source_organization_id = org_pac_id,
                   organization_name_raw = organization_name,
@@ -135,12 +135,12 @@ if (file.exists("artifacts/midwife_organization_panel.csv"))
         filter(!is.na(source_organization_id), nzchar(source_organization_id)) %>% distinct())
 coloc <- NULL
 if (file.exists("artifacts/nppes_colocation_2025.csv"))
-  coloc <- rd("artifacts/nppes_colocation_2025.csv") %>%
+  coloc <- chr("artifacts/nppes_colocation_2025.csv") %>%
     transmute(midwife_npi = npi, source_organization_id = org_npi,
               organization_name_raw = organization_name,
               source_snapshot_date = nppes_vintage)
 if (file.exists("artifacts/midwife_org_person.csv")) {
-  o <- rd("artifacts/midwife_org_person.csv") %>%
+  o <- chr("artifacts/midwife_org_person.csv") %>%
     transmute(midwife_npi = npi, source_organization_id = org_npi,
               organization_name_raw = organization_name,
               source_snapshot_date = NA_character_)
@@ -150,13 +150,13 @@ if (!is.null(coloc)) arm_add("nppes_org_colocation",
                          coloc %>% filter(!is.na(source_organization_id),
                                           nzchar(source_organization_id)))
 if (file.exists("artifacts/dac_facility_affiliations.csv"))
-  arm_add("facility_affiliation", rd("artifacts/dac_facility_affiliations.csv") %>%
+  arm_add("facility_affiliation", chr("artifacts/dac_facility_affiliations.csv") %>%
         transmute(midwife_npi = npi, source_organization_id = ccn,
                   organization_name_raw = facility_name,
                   source_snapshot_date = NA_character_) %>%
         filter(!is.na(source_organization_id), nzchar(source_organization_id)))
 if (file.exists("artifacts/midwife_hospital_affiliations.csv"))
-  arm_add("hospital_affiliation", rd("artifacts/midwife_hospital_affiliations.csv") %>%
+  arm_add("hospital_affiliation", chr("artifacts/midwife_hospital_affiliations.csv") %>%
         transmute(midwife_npi = npi, source_organization_id = cms_ccn,
                   organization_name_raw = hospital_name,
                   source_snapshot_date = NA_character_) %>%
@@ -209,7 +209,7 @@ print(as.data.frame(count(evidence, source, bridge_source)), row.names = FALSE)
 
 # --- BEFORE, read from the frozen artifact -----------------------------------
 cli::cli_h2("BEFORE (read, not recomputed)")
-before <- rd("artifacts/organization_affiliation_resolved.csv")
+before <- chr("artifacts/organization_affiliation_resolved.csv")
 before_pair <- before %>%
   transmute(midwife_npi = npi, org_key = norm_org(organization_name),
             before_class = affiliation_class,
@@ -338,10 +338,10 @@ per_mw <- evidence %>%
 cw <- Sys.glob("artifacts/amcb_npi_crosswalk_*panel*.csv")
 cw <- cw[!grepl("\\.manifest\\.json$|\\.provenance\\.json$", cw)]
 cw <- cw[order(file.mtime(cw), decreasing = TRUE)][1]
-spine <- rd(cw) %>% filter(!is.na(npi), nzchar(npi)) %>%
+spine <- chr(cw) %>% filter(!is.na(npi), nzchar(npi)) %>%
   distinct(certification_number = amcb_id, midwife_npi = npi)
 status <- if (file.exists("artifacts/cohort_membership_four_way.csv")) {
-  rd("artifacts/cohort_membership_four_way.csv") %>%
+  chr("artifacts/cohort_membership_four_way.csv") %>%
     distinct(certification_number, .keep_all = TRUE) %>% select(certification_number, status)
 } else tibble::tibble(certification_number = character(), status = character())
 

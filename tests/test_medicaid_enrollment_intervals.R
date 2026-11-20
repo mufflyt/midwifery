@@ -5,19 +5,14 @@
 # loudly or merge correctly on the specific cases the spec calls out --
 # never silently drop or silently merge something that should stay separate.
 # =============================================================================
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 suppressPackageStartupMessages({library(dplyr); library(tibble)})
 source(file.path(root, "R", "lib", "medicaid_enrollment_intervals.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 
 cat("\n-- NPI VALIDATION --\n")
 chk(npi_check_digit_valid("1234567893"),

@@ -485,6 +485,21 @@ jobs:
       - name: Manuscript figure saboteurs
         run: Rscript tests/test_manuscript_figure_saboteurs.R
 
+      # Pure text scans over tracked files -- no packages beyond base R, but it
+      # lives here rather than in r-checks so it sits beside the other saboteur
+      # suites. It guards the cuts from the 2026-11-20 over-engineering audit:
+      # a copied harness, an executed @archive path, a second CSV reader, a
+      # second root mechanism.
+      - name: Over-engineering cut saboteurs
+        run: Rscript tests/test_ponytail_cuts_saboteurs.R
+
+      # Q3 diffs against origin/main, which this job has because its checkout
+      # is fetch-depth: 0 for the exception-provenance gate. Without that it
+      # reports the missing ref and fails, rather than a clean diff nobody
+      # computed.
+      - name: Gate-integrity saboteurs
+        run: Rscript tests/test_gate_integrity_saboteurs.R
+
       - name: DuckDB architecture and volume-resolution gates
         run: |
           Rscript tests/ci_duckdb_ingestion_bootstrap.R

@@ -27,10 +27,11 @@
 #       (docs/state-source-audit-bon-reharvest.md)
 # =============================================================================
 
-.harness <- grep("--file=", commandArgs(), value = TRUE)
-source(file.path(if (length(.harness)) dirname(sub("--file=", "", .harness[1]))
-                 else "tests", "helper-saboteur.R"))
-root <- test_repo_root()
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 suppressPackageStartupMessages({library(dplyr); library(readr)})
 source(file.path(root, "R", "lib", "source_coverage.R"))

@@ -39,6 +39,20 @@ test_repo_root <- function() {
   else normalizePath(".")
 }
 
+
+#' The repository root, resolved once when this harness is sourced
+SAB_ROOT <- test_repo_root()
+
+#' Read a repository-relative file as one string
+#'
+#' Lived in two saboteur suites at once, which is what ci_hygiene H4 forbids
+#' and for the usual reason: the duplication is not the name but the work.
+#' @param rel [character(1)] path relative to the repository root.
+#' @param root [character(1)] the root; resolved once at source time.
+#' @return [character(1)] the whole file, newline-joined.
+slurp <- function(rel, root = SAB_ROOT)
+  paste(readLines(file.path(root, rel), warn = FALSE), collapse = "\n")
+
 fails <- 0L
 
 #' Assert, print, and count

@@ -18,21 +18,16 @@
 # Run: Rscript tests/test_amcb_license_bridge.R   (exit 1 on any failure)
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 
 # Sourcing runs the script's library() calls but, thanks to its
 # sys.nframe() guard, NOT its pipeline.
 source(file.path(root, "amcb_license_bridge.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 
 # -----------------------------------------------------------------------------
 cat("\n-- license-number normalization --\n")
