@@ -64,6 +64,65 @@ fit_plot_labels <- function(p, width_in) {
                      plot.caption.position = "plot")
 }
 
+# AND THE LEGEND IS A LABEL TOO -- fit_plot_labels() above measures the title,
+# the subtitle and the caption, and for a long time that was the whole list.
+# A legend is text on the same canvas, obeys none of that wrapping, and when a
+# bottom legend is wider than the figure ggplot draws it anyway and centres the
+# overflow, so it loses text from BOTH ends at once. That is what happened to
+# state_source_agreement_by_year when the claims arm added a fifth series on
+# 2026-11-14: the published figure reads "tem" where it should read "Record
+# system", and the fifth series -- PECOS revalidation, a line plotted in the
+# panel -- has no label at all. Five hues, one of them unnamed.
+#
+# The width is MEASURED, not estimated: the legend is built into its real grob
+# and its real width asked for in points, then rows are added until it fits.
+# Measuring the assembled guide box is what makes this independent of key size,
+# spacing, title width and the font, none of which this function has to know.
+#' The width of a plot's assembled legend, in points
+#'
+#' @param p [ggplot] the plot, with whatever guide settings it carries.
+#' @return [numeric(1)] the widest guide box, or 0 when there is no legend.
+legend_box_width_pt <- function(p) {
+  g <- ggplot2::ggplotGrob(p)
+  idx <- grep("guide-box", g$layout$name)
+  if (!length(idx)) return(0)
+  widths <- vapply(idx, function(i) {
+    grb <- g$grobs[[i]]
+    w <- grb$widths
+    if (is.null(w) || !length(w)) return(0)
+    sum(grid::convertWidth(w, "pt", valueOnly = TRUE))
+  }, numeric(1))
+  max(widths, 0)
+}
+
+#' Wrap a bottom or top legend onto as many rows as it takes to fit
+#'
+#' @param p [ggplot] the plot.
+#' @param width_in [numeric(1)] the canvas width the figure will be saved at.
+#' @param max_rows [integer(1)] the most rows to try before giving up and
+#'   returning the narrowest arrangement found.
+#' @return [ggplot] the plot, with legend rows set if it needed them.
+fit_plot_legend <- function(p, width_in, max_rows = 4L) {
+  th <- ggplot2::complete_theme(p$theme)
+  pos <- ggplot2::calc_element("legend.position", th)
+  if (!is.character(pos) || !pos %in% c("bottom", "top")) return(p)
+  margin_pt <- as.numeric(grid::convertUnit(
+    ggplot2::calc_element("plot.margin", th), "pt"))
+  limit <- width_in * 72 - margin_pt[2] - margin_pt[4]
+  if (legend_box_width_pt(p) <= limit) return(p)
+  for (rows in 2:max_rows) {
+    cand <- p + ggplot2::guides(
+      colour = ggplot2::guide_legend(nrow = rows),
+      fill   = ggplot2::guide_legend(nrow = rows))
+    if (legend_box_width_pt(cand) <= limit) return(cand)
+  }
+  # Still too wide at max_rows: return the most-wrapped arrangement rather than
+  # the original, because the alternative is shipping the clipped one.
+  p + ggplot2::guides(
+    colour = ggplot2::guide_legend(nrow = max_rows),
+    fill   = ggplot2::guide_legend(nrow = max_rows))
+}
+
 # A FIGURE HAS TO READ ON ITS OWN. These plots travel into slides and reviews
 # with no appendix beside them, and an axis tick has no room for "Provider
 # Enrollment, Chain, and Ownership System", so the expansions go in the
@@ -106,6 +165,7 @@ gloss <- function(...) {
 save_audit_fig <- function(p, name, width = 8.5, height = 5.4,
                            out_dir = AUDIT_FIG_DIR) {
   p <- fit_plot_labels(p, width)
+  p <- fit_plot_legend(p, width)
   out <- file.path(out_dir, name)
   ggsave(paste0(out, ".pdf"), p, width = width, height = height,
          device = grDevices::cairo_pdf)

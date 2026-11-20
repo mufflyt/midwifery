@@ -66,6 +66,14 @@ n_word <- function(x) {
     if (x >= 1 && x <= length(words)) words[x] else as.character(x)
 }
 
+# A NUMBER WORD AT THE START OF A SENTENCE IS STILL THE START OF A SENTENCE.
+# n_word() returns lower case because most uses are mid-sentence, and two uses
+# in Materials and Methods were not: the rendered manuscript opened sentences
+# with "eleven record systems were examined" and "nine sources were compared".
+# Capitalizing at the call site is what a copy editor would otherwise do by
+# hand on every render.
+N_word <- function(x) sub("^(.)", "\\U\\1", n_word(x), perl = TRUE)
+
 pc  <- function(x, d = 1) if (is.null(x) || is.na(x)) "**[PENDING]**" else
   sprintf(paste0("%.", d, "f%%"), x)
 cnt <- function(x) if (is.null(x) || is.na(x)) "**[PENDING]**" else
@@ -174,10 +182,10 @@ publicly available records and was not human subjects research.
 
 ### Sources
 
-`r n_word(A$sources_total_n)` record systems were examined (Table 1). NPPES
+`r N_word(A$sources_total_n)` record systems were examined (Table 1). NPPES
 served as the reference standard, not because it is more accurate than the others but because it
 assigns the identifier through which every other source is matched.
-`r n_word(A$sources_compared_n)` sources were compared pairwise against it.
+`r N_word(A$sources_compared_n)` sources were compared pairwise against it.
 Medicaid, specifically the Transformed Medicaid Statistical Information
 System (T-MSIS), was carried as its own classification rather than as a percentage,
 because it is the only source with a per-provider-year concordance already
@@ -417,8 +425,12 @@ of registry records and postal code for all but
 `r pc(A$nppes_zip_incomplete, 2)`. Completeness was materially worse in the
 public clinician directory for non-geographic fields, with telephone number
 absent for `r pc(A$dac_phone_incomplete, 1)` and credential for
-`r pc(A$dac_cred_incomplete, 1)` of records. Completeness is therefore not the
-limiting property of these data.
+`r pc(A$dac_cred_incomplete, 1)` of records. One field is absent almost
+entirely rather than partially -- the directly reported practice postal code
+in the 2019 Medicare enrollment extract, null for 99.6% of records -- which is
+why practice postal code for that source is read from the practice address
+instead. For the geographic variables this study compares, completeness is
+therefore not the limiting property of these data.
 
 ```{r table-completeness}
 #| tbl-cap: "Table 3. Incomplete records among eligible fields, by source and year."
@@ -545,7 +557,7 @@ if (!is.null(A$agreement_table)) {
 }
 ```
 
-### One midwife in six is enrolled in Medicaid in more than one state at once
+### One Medicaid provider-year in six carries enrollment in more than one state at once
 
 `r pc(A$medicaid_multistate_pct, 1)` of observed provider-years in the
 Transformed Medicaid Statistical Information System (T-MSIS) involved
@@ -568,12 +580,17 @@ A portion of the disagreement between sources is not error. Scoring Medicaid
 enrollment by whether a state is among those in which a midwife is
 concurrently enrolled, rather than by whether it equals a single state
 selected for her, raised agreement with the registry from
-`r pc(74.7, 1)` to `r pc(88.5, 1)` on identical records (Figure 6).
+`r pc(A$medicaid_equality_pct, 1)` to `r pc(A$medicaid_membership_pct, 1)` on
+the same `r cnt(A$medicaid_comparable_npi_years)` comparable provider-years.
 No underlying record changed; only the question did.
 
-![**Figure 5.** Concurrent multi-state Medicaid enrollment in the cohort.
-Multi-state participation is common rather than
-exceptional.](`r fig("medicaid_multistate_footprint")`)
+Multi-state enrollment is common rather than exceptional among midwives who
+appear in Medicaid at all (Figure 5).
+
+![**Figure 5.** Concurrent multi-state Medicaid enrollment, among midwives
+carrying any Medicaid enrollment. The denominator is midwives, not
+provider-years, so this proportion and the provider-year rate above are not
+comparable figures.](`r fig("medicaid_multistate_footprint")`)
 
 Consistent with this, providers licensed in more than one state accounted for
 a disproportionate share of cross-source disagreement (Figure 6).
@@ -630,12 +647,14 @@ needs *where she practises now* is better served by claims-derived sources
 than by enumeration data; a study that needs a *denominator* is better served
 by the registry's completeness than by any directory's recency.
 
-The same boundary applies to access-to-care inference. One midwife in six was
-enrolled in Medicaid in more than one state at once, and scoring that file by
+The same boundary applies to access-to-care inference. One observed Medicaid
+provider-year in six carried enrollment in more than one state at once, and
+scoring that file by
 a single assigned state converted correct records into apparent errors —
-agreement with the registry rose from 74.7% to 88.5% on identical data when
-the question was fixed. For a workforce whose members hold multiple state
-licenses and enrol in multiple state programs, "the practice state" is partly
+agreement with the registry rose from
+`r pc(A$medicaid_equality_pct, 1)` to `r pc(A$medicaid_membership_pct, 1)` on
+identical data when the question was fixed. For a workforce whose members hold multiple state
+licenses and enroll in multiple state programs, "the practice state" is partly
 an artifact of how the question is asked, and any single-state assumption
 should be measured rather than made.
 

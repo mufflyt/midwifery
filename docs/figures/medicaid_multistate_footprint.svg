@@ -65,8 +65,8 @@
 <text x='431.26' y='335.23' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='5.78px' lengthAdjust='spacingAndGlyphs'>4</text>
 <text x='540.17' y='335.23' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='44.47px' lengthAdjust='spacingAndGlyphs'>5 or more</text>
 <text transform='translate(15.79,190.97) rotate(-90)' text-anchor='middle' style='font-size: 13.00px; font-family: "Arial";' textLength='132.98px' lengthAdjust='spacingAndGlyphs'>% of enrolled midwives</text>
-<text x='6.48' y='36.71' style='font-size: 13.00px; font-family: "Arial";' textLength='562.33px' lengthAdjust='spacingAndGlyphs'>State Medicaid programmes each midwife was enrolled in, 13,622 enrolled midwives. 43.8% were</text>
-<text x='6.48' y='50.75' style='font-size: 13.00px; font-family: "Arial";' textLength='135.88px' lengthAdjust='spacingAndGlyphs'>enrolled in two or more.</text>
+<text x='6.48' y='36.71' style='font-size: 13.00px; font-family: "Arial";' textLength='568.83px' lengthAdjust='spacingAndGlyphs'>State Medicaid programs each midwife was enrolled in, among 13,622 midwives with any Medicaid</text>
+<text x='6.48' y='50.75' style='font-size: 13.00px; font-family: "Arial";' textLength='357.77px' lengthAdjust='spacingAndGlyphs'>enrollment. 43.8% were enrolled in two or more at some point.</text>
 <text x='6.48' y='17.64' style='font-size: 15.60px; font-family: "Arial";' textLength='270.38px' lengthAdjust='spacingAndGlyphs'>Multi-state practice is not an edge case</text>
 <text x='605.52' y='351.34' text-anchor='end' style='font-size: 10.40px; font-family: "Arial";' textLength='499.27px' lengthAdjust='spacingAndGlyphs'>artifacts/medicaid_enrollment_cohort_state_footprint.csv (set-membership footprint, not the modal reduction)</text>
 </g>

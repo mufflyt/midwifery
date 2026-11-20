@@ -52,23 +52,23 @@
 <text x='188.95' y='112.80' text-anchor='middle' style='font-size: 9.39px;fill: #FFFFFF; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>39.1%</text>
 </g>
 <g clip-path='url(#cpMC4wMHw2MTIuMDB8MC4wMHwzNjAuMDA=)'>
-<text x='84.23' y='196.81' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='66.48px' lengthAdjust='spacingAndGlyphs'>1 licence state</text>
+<text x='84.23' y='196.81' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='66.48px' lengthAdjust='spacingAndGlyphs'>1 license state</text>
 <text x='84.23' y='208.04' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='50.55px' lengthAdjust='spacingAndGlyphs'>(n = 5,562)</text>
-<text x='84.23' y='107.54' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='77.75px' lengthAdjust='spacingAndGlyphs'>2+ licence states</text>
+<text x='84.23' y='107.54' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='77.75px' lengthAdjust='spacingAndGlyphs'>2+ license states</text>
 <text x='84.23' y='118.78' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='50.55px' lengthAdjust='spacingAndGlyphs'>(n = 2,877)</text>
 <text x='90.05' y='265.54' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='5.78px' lengthAdjust='spacingAndGlyphs'>0</text>
 <text x='216.39' y='265.54' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>25</text>
 <text x='342.74' y='265.54' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>50</text>
 <text x='469.08' y='265.54' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>75</text>
 <text x='595.42' y='265.54' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='17.34px' lengthAdjust='spacingAndGlyphs'>100</text>
-<text x='347.79' y='280.27' text-anchor='middle' style='font-size: 13.00px; font-family: "Arial";' textLength='209.61px' lengthAdjust='spacingAndGlyphs'>% of midwives in each licence group</text>
+<text x='347.79' y='280.27' text-anchor='middle' style='font-size: 13.00px; font-family: "Arial";' textLength='209.61px' lengthAdjust='spacingAndGlyphs'>% of midwives in each license group</text>
 <rect x='254.08' y='303.71' width='14.73' height='14.73' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #333333;' />
 <rect x='335.17' y='303.71' width='14.73' height='14.73' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6B6B6B;' />
 <rect x='401.79' y='303.71' width='14.73' height='14.73' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #8C8C8C;' />
 <text x='276.56' y='314.79' style='font-size: 10.40px; font-family: "Arial";' textLength='50.86px' lengthAdjust='spacingAndGlyphs'>unanimous</text>
 <text x='357.65' y='314.79' style='font-size: 10.40px; font-family: "Arial";' textLength='36.39px' lengthAdjust='spacingAndGlyphs'>majority</text>
 <text x='424.27' y='314.79' style='font-size: 10.40px; font-family: "Arial";' textLength='18.50px' lengthAdjust='spacingAndGlyphs'>split</text>
-<text x='6.48' y='34.05' style='font-size: 9.30px; font-family: "Arial";' textLength='579.94px' lengthAdjust='spacingAndGlyphs'>Consensus across the twelve-source comparison, by how many states CMS's Open Payments profile says she is licensed in. The split rate is</text>
+<text x='6.48' y='34.05' style='font-size: 9.30px; font-family: "Arial";' textLength='580.98px' lengthAdjust='spacingAndGlyphs'>Consensus across the eleven-source comparison, by how many states CMS's Open Payments profile says she is licensed in. The split rate is</text>
 <text x='6.48' y='47.45' style='font-size: 9.30px; font-family: "Arial";' textLength='560.77px' lengthAdjust='spacingAndGlyphs'>11.2 times higher among multi-state licensees. chi-square(2, n = 8,439) = 1601, p &lt; 2.2e-16. An association, not a per-case adjudication.</text>
 <text x='6.48' y='17.64' style='font-size: 15.60px; font-family: "Arial";' textLength='526.06px' lengthAdjust='spacingAndGlyphs'>Midwives licensed in several states are the ones the sources disagree about</text>
 <text x='605.52' y='340.10' text-anchor='end' style='font-size: 10.40px; font-family: "Arial";' textLength='553.91px' lengthAdjust='spacingAndGlyphs'>artifacts/consensus_tier_by_license_count.csv; tiers from artifacts/mrost_consensus_tier_by_npi.csv; CMS = Centers for</text>

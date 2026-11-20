@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='612.00pt' height='360.00pt' viewBox='0 0 612.00 360.00'>
+<g class='svglite'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+    .svglite g.glyphgroup path {
+      fill: inherit;
+      stroke: none;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<defs>
+  <clipPath id='cpMC4wMHw2MTIuMDB8MC4wMHwzNjAuMDA='>
+    <rect x='0.00' y='0.00' width='612.00' height='360.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHw2MTIuMDB8MC4wMHwzNjAuMDA=)'>
+<rect x='-0.000000000000064' y='0.00' width='612.00' height='360.00' style='stroke-width: 1.26; stroke: none; fill: #FFFFFF;' />
+</g>
+<defs>
+  <clipPath id='cpOTguOTZ8NjA1LjUyfDU3Ljk0fDI4My4wMQ=='>
+    <rect x='98.96' y='57.94' width='506.56' height='225.06' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpOTguOTZ8NjA1LjUyfDU3Ljk0fDI4My4wMQ==)'>
+<rect x='98.96' y='57.94' width='253.28' height='56.27' style='stroke-width: 4.69; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #0F8F62;' />
+<rect x='352.24' y='57.94' width='253.28' height='56.27' style='stroke-width: 4.69; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #D1D1D1;' />
+<rect x='98.96' y='114.21' width='253.28' height='56.27' style='stroke-width: 4.69; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #D2551F;' />
+<rect x='352.24' y='114.21' width='253.28' height='56.27' style='stroke-width: 4.69; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #D2551F;' />
+<rect x='98.96' y='170.48' width='253.28' height='56.27' style='stroke-width: 4.69; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2A78D6;' />
+<rect x='352.24' y='170.48' width='253.28' height='56.27' style='stroke-width: 4.69; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2A78D6;' />
+<rect x='98.96' y='226.74' width='253.28' height='56.27' style='stroke-width: 4.69; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #D1D1D1;' />
+<rect x='352.24' y='226.74' width='253.28' height='56.27' style='stroke-width: 4.69; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #7A5195;' />
+<text x='225.60' y='89.64' text-anchor='middle' style='font-size: 9.96px; font-weight: bold;fill: #FFFFFF; font-family: "Arial";' textLength='61.36px' lengthAdjust='spacingAndGlyphs'>Authoritative</text>
+<text x='478.88' y='89.64' text-anchor='middle' style='font-size: 9.96px; font-weight: bold;fill: #333333; font-family: "Arial";' textLength='52.53px' lengthAdjust='spacingAndGlyphs'>Not carried</text>
+<text x='225.60' y='145.91' text-anchor='middle' style='font-size: 9.96px; font-weight: bold;fill: #FFFFFF; font-family: "Arial";' textLength='61.92px' lengthAdjust='spacingAndGlyphs'>Self-reported</text>
+<text x='478.88' y='145.91' text-anchor='middle' style='font-size: 9.96px; font-weight: bold;fill: #FFFFFF; font-family: "Arial";' textLength='61.92px' lengthAdjust='spacingAndGlyphs'>Self-reported</text>
+<text x='225.60' y='202.17' text-anchor='middle' style='font-size: 9.96px; font-weight: bold;fill: #FFFFFF; font-family: "Arial";' textLength='69.11px' lengthAdjust='spacingAndGlyphs'>Administrative</text>
+<text x='478.88' y='202.17' text-anchor='middle' style='font-size: 9.96px; font-weight: bold;fill: #FFFFFF; font-family: "Arial";' textLength='69.11px' lengthAdjust='spacingAndGlyphs'>Administrative</text>
+<text x='225.60' y='258.44' text-anchor='middle' style='font-size: 9.96px; font-weight: bold;fill: #333333; font-family: "Arial";' textLength='52.53px' lengthAdjust='spacingAndGlyphs'>Not carried</text>
+<text x='478.88' y='258.44' text-anchor='middle' style='font-size: 9.96px; font-weight: bold;fill: #FFFFFF; font-family: "Arial";' textLength='69.11px' lengthAdjust='spacingAndGlyphs'>Billing-derived</text>
+</g>
+<g clip-path='url(#cpMC4wMHw2MTIuMDB8MC4wMHwzNjAuMDA=)'>
+<text x='225.60' y='49.93' text-anchor='middle' style='font-size: 10.40px; font-weight: bold;fill: #4D4D4D; font-family: "Arial";' textLength='50.81px' lengthAdjust='spacingAndGlyphs'>Credential</text>
+<text x='478.88' y='49.93' text-anchor='middle' style='font-size: 10.40px; font-weight: bold;fill: #4D4D4D; font-family: "Arial";' textLength='83.17px' lengthAdjust='spacingAndGlyphs'>Practice location</text>
+<text x='93.13' y='252.67' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='75.11px' lengthAdjust='spacingAndGlyphs'>Medicare claims</text>
+<text x='93.13' y='264.52' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='71.62px' lengthAdjust='spacingAndGlyphs'>(Parts B and D)</text>
+<text x='93.13' y='196.40' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='67.58px' lengthAdjust='spacingAndGlyphs'>Medicare DAC</text>
+<text x='93.13' y='208.26' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='86.66px' lengthAdjust='spacingAndGlyphs'>(clinician directory)</text>
+<text x='93.13' y='140.13' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='35.25px' lengthAdjust='spacingAndGlyphs'>NPPES</text>
+<text x='93.13' y='151.99' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='81.42px' lengthAdjust='spacingAndGlyphs'>(provider registry)</text>
+<text x='93.13' y='83.87' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='59.48px' lengthAdjust='spacingAndGlyphs'>AMCB roster</text>
+<text x='93.13' y='95.72' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='73.95px' lengthAdjust='spacingAndGlyphs'>(certifying body)</text>
+<rect x='133.37' y='305.55' width='11.04' height='11.04' style='stroke-width: 4.69; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #0F8F62;' />
+<rect x='221.40' y='305.55' width='11.04' height='11.04' style='stroke-width: 4.69; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2A78D6;' />
+<rect x='316.93' y='305.55' width='11.04' height='11.04' style='stroke-width: 4.69; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #7A5195;' />
+<rect x='412.46' y='305.55' width='11.04' height='11.04' style='stroke-width: 4.69; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #D2551F;' />
+<rect x='502.77' y='305.55' width='11.04' height='11.04' style='stroke-width: 4.69; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #D1D1D1;' />
+<text x='154.01' y='314.79' style='font-size: 10.40px; font-family: "Arial";' textLength='57.80px' lengthAdjust='spacingAndGlyphs'>Authoritative</text>
+<text x='242.04' y='314.79' style='font-size: 10.40px; font-family: "Arial";' textLength='65.30px' lengthAdjust='spacingAndGlyphs'>Administrative</text>
+<text x='337.57' y='314.79' style='font-size: 10.40px; font-family: "Arial";' textLength='65.30px' lengthAdjust='spacingAndGlyphs'>Billing-derived</text>
+<text x='433.09' y='314.79' style='font-size: 10.40px; font-family: "Arial";' textLength='60.08px' lengthAdjust='spacingAndGlyphs'>Self-reported</text>
+<text x='523.40' y='314.79' style='font-size: 10.40px; font-family: "Arial";' textLength='50.83px' lengthAdjust='spacingAndGlyphs'>Not carried</text>
+<text x='6.48' y='34.05' style='font-size: 9.30px; font-family: "Arial";' textLength='579.27px' lengthAdjust='spacingAndGlyphs'>How each system is populated for the two attributes this study compares. Ordered from no location information to location observed in billing.</text>
+<text x='6.48' y='17.64' style='font-size: 15.60px; font-family: "Arial";' textLength='476.66px' lengthAdjust='spacingAndGlyphs'>The source with the strongest credential data carries no location data</text>
+<text x='605.52' y='340.10' text-anchor='end' style='font-size: 10.40px; font-family: "Arial";' textLength='572.22px' lengthAdjust='spacingAndGlyphs'>Documented properties of each record system, not measured accuracy; sources as listed in Table 1; NPPES = National Plan</text>
+<text x='605.52' y='351.34' text-anchor='end' style='font-size: 10.40px; font-family: "Arial";' textLength='440.56px' lengthAdjust='spacingAndGlyphs'>and Provider Enumeration System; DAC = Doctors and Clinicians, formerly Physician Compare.</text>
+</g>
+</g>
+</svg>
