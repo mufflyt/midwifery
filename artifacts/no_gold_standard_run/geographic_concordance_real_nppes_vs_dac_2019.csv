@@ -1,0 +1,7 @@
+concordance_category,n,n_compared,pct,ci_low,ci_high
+1. Exact Practice ZIP5 Match,1544,3012,51.26,49.5,53
+"2. Differs from Practice ZIP5, Matches Mailing ZIP5 (Same 3-Digit SCF)",0,3012,0,0,0.1
+"3. Differs from Practice ZIP5, Matches Mailing ZIP5 (Different 3-Digit SCF)",0,3012,0,0,0.1
+4. Same 3-Digit SCF Area Only (No Practice or Mailing ZIP5 Match),593,3012,19.69,18.3,21.1
+5. Unattributed ZIP5 Discordance,875,3012,29.05,27.5,30.7
+Total,3012,3012,100,100,100

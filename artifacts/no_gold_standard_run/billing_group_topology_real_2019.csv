@@ -1,0 +1,6 @@
+group_archetype,n_groups,pct_of_groups,n_clinician_links,pct_of_clinician_links,median_unique_zip5
+"1. Single-Site Practice (1 ZIP5, 1 State)",679,30.35,1358,16.7,1
+"2. Local Multi-Site Group (2-5 ZIP5s, 1 SCF3, 1 State)",275,12.29,770,9.47,3
+"3. Intrastate Regional Group (2-20 ZIP5s across >=2 SCF3s, 1 State)",977,43.67,3536,43.49,7
+"4. Large Intrastate Health System (>20 ZIP5s, 1 State)",267,11.94,2224,27.36,36
+5. Multi-State System / National Aggregator (>=2 States),39,1.74,242,2.98,24

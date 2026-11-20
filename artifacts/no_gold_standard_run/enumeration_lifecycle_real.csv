@@ -1,0 +1,8 @@
+lifecycle_status,npi_enumeration_status,n,n_roster,pct,ci_low,ci_high,n_any_downstream,n_post_event_downstream
+active,active_and_deactivated_conflict,3,16938,0.02,0,0.1,3,0
+active,active_nppes,8448,16938,49.88,49.1,50.6,7575,0
+active,confirmed_deactivated,8,16938,0.05,0,0.1,6,0
+active,not_in_active_or_deactivated,4633,16938,27.35,26.7,28,3263,0
+deceased,not_in_active_or_deactivated,165,16938,0.97,0.8,1.1,0,0
+lapsed_or_retired,not_in_active_or_deactivated,3670,16938,21.67,21.1,22.3,0,0
+revoked_or_suspended,not_in_active_or_deactivated,11,16938,0.06,0,0.1,0,0

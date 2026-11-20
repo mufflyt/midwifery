@@ -1,0 +1,15 @@
+family,year,n_denominator,n_combined,pct_combined,yoy_pp_change,subfeed_counts,active_subfeeds,missing_subfeeds,vintage_status
+medicare_combined,2013,12170,1529,12.56,NA,dac=1529; pecos_reval=0,dac,pecos_reval,partial_subfeed_omission
+medicare_combined,2014,12170,1642,13.49,0.93,dac=1642; pecos_reval=0,dac,pecos_reval,partial_subfeed_omission
+medicare_combined,2015,12170,1866,15.33,1.84,dac=1866; pecos_reval=0,dac,pecos_reval,partial_subfeed_omission
+medicare_combined,2016,12170,1992,16.37,1.04,dac=1992; pecos_reval=0,dac,pecos_reval,partial_subfeed_omission
+medicare_combined,2017,12170,2786,22.89,6.52,dac=2786; pecos_reval=0,dac,pecos_reval,partial_subfeed_omission
+medicare_combined,2018,12170,2768,22.74,-0.15,dac=2768; pecos_reval=0,dac,pecos_reval,partial_subfeed_omission
+medicare_combined,2019,12170,3031,24.91,2.17,dac=3031; pecos_reval=0,dac,pecos_reval,partial_subfeed_omission
+medicare_combined,2020,12170,3020,24.82,-0.09,dac=3020; pecos_reval=0,dac,pecos_reval,partial_subfeed_omission
+medicare_combined,2021,12170,6897,56.67,31.85,dac=3487; pecos_reval=6866,dac+pecos_reval,none,complete_subfeeds
+medicare_combined,2022,12170,7465,61.34,4.67,dac=3678; pecos_reval=7453,dac+pecos_reval,none,complete_subfeeds
+medicare_combined,2023,12170,8071,66.32,4.98,dac=3798; pecos_reval=8062,dac+pecos_reval,none,complete_subfeeds
+medicare_combined,2024,12170,8586,70.55,4.23,dac=3057; pecos_reval=8581,dac+pecos_reval,none,complete_subfeeds
+medicare_combined,2025,12170,9168,75.33,4.78,dac=3137; pecos_reval=9157,dac+pecos_reval,none,complete_subfeeds
+medicare_combined,2026,12170,8958,73.61,-1.72,dac=0; pecos_reval=8958,pecos_reval,dac,partial_subfeed_omission

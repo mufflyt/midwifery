@@ -1,0 +1,5 @@
+stage_order,stage_code,stage_label,n_clinicians,pct_of_cohort,plain_english_note
+1,enrolled_cohort,Stage 1: Enrolled Cohort in Administrative Registry,5897,100,"All 5,897 enrolled midwives in the target cohort."
+2,associated_location_linked,Stage 2: Linked to >=1 Associated Location (Direct or Billing Group),5643,95.69,"26 (0.4%) had a directly linked location; 5,617 (95.3%) were linked only through billing organizations."
+3,pinpoint_single_zip5_site,Stage 3: Linked to a Single Pinpoint Practice ZIP5 (1 ZIP5 in 1 State),588,9.97,"Only 588 (10.0%) mapped to a single pinpoint ZIP5, whereas 4,016 (68.1%) fanned out across large multi-site or multi-state billing organizations (mean 29.7, median 14 unique ZIP5s)."
+4,independently_corroborated_site,Stage 4: Independently Corroborated Practice Location,447,7.58,"447 (7.6% of cohort; 76.0% of pinpoint sites) had a corroborated pinpoint ZIP5, and 2,300 (39.0%) had a practice ZIP5 corroborated across all supplied reference sources."

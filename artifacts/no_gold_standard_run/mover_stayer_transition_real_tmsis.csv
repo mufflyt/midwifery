@@ -1,0 +1,7 @@
+mobility_regime,n,n_clinicians,pct,ci_low,ci_high,pct_with_contiguous_border_move
+1. Strict Single-State Stayer,5174,6583,78.6,77.6,79.6,0
+"2. Concurrent Multi-State Stayer (1 Primary State, >=2 Concurrent States)",0,6583,0,0,0.1,NA
+3. One-Time Permanent Mover (A -> B),1009,6583,15.33,14.5,16.2,50.1
+4. Alternating / Return Commuter (A -> B -> A),202,6583,3.07,2.7,3.5,57.4
+5. Multi-State Serial Mover / Traveler (>=3 Primary States),198,6583,3.01,2.6,3.4,70.7
+Total,6583,6583,100,100,100,11.6
