@@ -1,6 +1,6 @@
 {
   "artifact": "oig_audit_narrative_prose.csv",
-  "written_utc": "2026-11-16 15:08:41 UTC",
+  "written_utc": "2026-11-12 22:57:10 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
@@ -59,11 +59,11 @@
       "sha256": "b6754ad5da54263624e823bc1e1ae2d1d4cb2ffd715cdd192ae2094fba2d7d82"
     }
   ],
-  "code_sha256": "a3145a1ce2b81d41dbcb6c6ec6eee0b8cc40c89f6572f49bbde7819fd64cf6a3",
+  "code_sha256": "54a172698e6b2f2f04e3121c1f2bab252531a1f2ea0c15a9f37d18ca6b566b41",
   "code": [
     {
       "path": "R/lib/artifact_provenance.R",
-      "sha256": "c1677e2402be56a1a30cc8b6985c0b512bd0599ed93c303d0c0e96e0b9d12b60"
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
     },
     {
       "path": "R/lib/clean_state.R",
@@ -71,11 +71,11 @@
     },
     {
       "path": "R/lib/cohort_definitions.R",
-      "sha256": "63ad5336d9c4d148b72f211fd3947f3c3dde44b1c18270c344c13916a1c47e17"
+      "sha256": "15b1a0d8b5f1973e29a5258fc1e7d97df437b09208f367f38c78984a8dfd7dc5"
     },
     {
       "path": "R/lib/medicare_duckdb.R",
-      "sha256": "90e35ec7eb0a3ca04a46b7b33f039da23a6c0f9a8cad0834f3b4560ebd22eb51"
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
     },
     {
       "path": "R/lib/oig_phase2_candidate_set.R",
@@ -92,32 +92,6 @@
     {
       "path": "remake_oig_07_09_00440_midwifery.R",
       "sha256": "df90b32009715659edc9d256d72bdd8461407745a88ddda524fc680a842ce054"
-    }
-  ],
-  "semantic_packages": [
-    {
-      "package": "mysterynpi",
-      "installed": true,
-      "version": "0.9.1",
-      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
-    },
-    {
-      "package": "stringi",
-      "installed": true,
-      "version": "1.8.9",
-      "source_sha": null
-    },
-    {
-      "package": "humaniformat",
-      "installed": true,
-      "version": "0.6.0",
-      "source_sha": null
-    },
-    {
-      "package": "mysteryroster",
-      "installed": true,
-      "version": "0.3.0",
-      "source_sha": "de1aa5d4e4262e8006254e3463c0e0a80eec56ba"
     }
   ]
 }
