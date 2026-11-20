@@ -45,7 +45,6 @@ tracked <- function(pattern) {
 # scripts and calling the result "no tracked R file". Listing once and
 # filtering in R makes the scope the message already claimed.
 tracked_r <- function() grep("\\.R$", tracked("."), value = TRUE)
-slurp <- function(rel) paste(readLines(file.path(root, rel), warn = FALSE), collapse = "\n")
 
 HELPER <- "tests/helper-saboteur.R"
 ROOT_IDIOM <- paste(

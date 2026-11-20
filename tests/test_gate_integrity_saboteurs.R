@@ -40,8 +40,6 @@ git_out <- function(...) {
                                   stdout = TRUE, stderr = FALSE))
   if (!length(out)) character(0) else out
 }
-slurp <- function(rel) paste(readLines(file.path(root, rel), warn = FALSE),
-                             collapse = "\n")
 ALL_R <- grep("\\.R$", git_out("ls-files"), value = TRUE)
 
 # --- Q1 every regex literal in a tracked file compiles -------------------------
@@ -127,7 +125,9 @@ narrow <- unlist(lapply(grep("^tests/", ALL_R, value = TRUE), function(f) {
 chk(!length(narrow),
     sprintf("Q2a no gate scans with a bare \"*.ext\" pathspec, which reads only the repository root%s",
             if (length(narrow)) paste0(" [", paste(basename(narrow), collapse = ", "), "]") else ""))
-chk(length(root_only_pathspec('out <- system2("git", c("ls-files", "*.R"))')) == 1L,
+# Assembled, not spelled: Q2a reads every tracked gate including this one.
+.bare <- paste0("\"*", ".R\"")
+chk(length(root_only_pathspec(sprintf('out <- system2("git", c("ls-files", %s))', .bare))) == 1L,
     "Q2b KILLED: the bare pathspec that read 267 of 645 files is caught")
 chk(length(root_only_pathspec('out <- system2("git", c("ls-files", "tests/*.R"))')) == 0L,
     "Q2c a directory-qualified glob is honest about its scope and is not flagged")
@@ -209,8 +209,10 @@ stale <- setdiff(Q4_BASELINE, tautologies)
 chk(!length(stale),
     sprintf("Q4a2 every baselined file still contains the assertion it was baselined for, so the list shrinks rather than rots%s",
             if (length(stale)) paste0(" -- remove: ", paste(basename(stale), collapse = ", ")) else ""))
-chk(length(unfailable('chk(any(grepl("x", y)) ||\n      TRUE, "always ok")')) >= 1L,
-    "Q4b KILLED: the `|| TRUE` that made a real check unfailable is caught")
+# Likewise: writing the tautology out in full would make Q4a flag this file.
+.taut <- paste0("|", "| TRUE")
+chk(length(unfailable(sprintf('chk(any(grepl("x", y)) %s, "always ok")', .taut))) >= 1L,
+    "Q4b KILLED: the `||`-TRUE that made a real check unfailable is caught")
 chk(length(unfailable('chk(nrow(d) > 0L, "the frame has rows")')) == 0L,
     "Q4c an ordinary assertion is not flagged")
 # A scanner must not be able to find its own needle. Both existing suites
