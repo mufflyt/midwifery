@@ -478,6 +478,13 @@ jobs:
       # direct per-gate verdict instead of one summarised inside a bundle of
       # ten. The architecture gate is the slow one, a few minutes, and it is
       # the one that catches an unregistered connection.
+      # In r-unit-tests because it builds real ggplot grobs to MEASURE a legend
+      # (ggplot2 + systemfonts, both installed above). nightly.yml globs
+      # tests/test*.R and would run it anyway; naming it here is what makes it
+      # run on the pull request that breaks it.
+      - name: Manuscript figure saboteurs
+        run: Rscript tests/test_manuscript_figure_saboteurs.R
+
       - name: DuckDB architecture and volume-resolution gates
         run: |
           Rscript tests/ci_duckdb_ingestion_bootstrap.R

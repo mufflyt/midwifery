@@ -278,7 +278,7 @@ if (file.exists(fp)) {
               vjust = -0.3, size = 3.1, lineheight = 0.95) +
     scale_y_continuous(expand = expansion(mult = c(0, 0.16))) +
     labs(title = "Multi-state practice is not an edge case",
-         subtitle = sprintf("State Medicaid programmes each midwife was enrolled in, %s enrolled midwives. %.1f%% were enrolled in two or more.",
+         subtitle = sprintf("State Medicaid programs each midwife was enrolled in, among %s midwives with any Medicaid enrollment. %.1f%% were enrolled in two or more at some point.",
                             format(sum(ms$n), big.mark = ","),
                             sum(ms$pct[ms$band != "1 state"])),
          caption = paste0(fp, " (set-membership footprint, not the modal reduction)"),
@@ -323,7 +323,7 @@ if (file.exists(red)) {
          caption = paste0(red, "; counts below each point are midwives. ",
                           "NDH is treated as a set of states, not reduced to one",
                           gloss("NDH", "CMS")),
-         x = "State Medicaid programmes she is enrolled in", y = NULL, colour = NULL) +
+         x = "State Medicaid programs she is enrolled in", y = NULL, colour = NULL) +
     theme_minimal(base_size = 13) +
     theme(legend.position = "bottom", panel.grid.minor = element_blank(),
           panel.grid.major.x = element_blank(),
@@ -344,7 +344,11 @@ lic <- "artifacts/consensus_tier_by_license_count.csv"
 if (file.exists(lic)) {
   L <- read_csv(lic, show_col_types = FALSE, progress = FALSE)
   L <- L %>%
+    # The artifact spells it "licence"; this journal is American. Relabelled
+    # for display rather than rewriting the artifact, because the artifact is
+    # the producer's output and a spelling is not a reason to move a number.
     mutate(tier = factor(tier, levels = c("split", "majority", "unanimous")),
+           lic_band = sub("licence", "license", lic_band, fixed = TRUE),
            lic_band = sprintf("%s\n(n = %s)", lic_band, format(n_in_band, big.mark = ",")))
   sp <- L %>% filter(tier == "split") %>% arrange(pct)
   ratio <- max(sp$pct) / min(sp$pct)
@@ -358,13 +362,13 @@ if (file.exists(lic)) {
     scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
     coord_flip() +
     labs(title = "Midwives licensed in several states are the ones the sources disagree about",
-         subtitle = sprintf(paste0("Consensus across the twelve-source comparison, by how many states CMS's Open Payments profile\n",
+         subtitle = sprintf(paste0("Consensus across the eleven-source comparison, by how many states CMS's Open Payments profile\n",
                                    "says she is licensed in. The split rate is %.1f times higher among multi-state licensees.\n",
                                    "chi-square(%d, n = %s) = %.0f, p < 2.2e-16. An association, not a per-case adjudication."),
                             ratio, L$chisq_df[1], format(L$chisq_n[1], big.mark = ","), L$chisq[1]),
          caption = paste0(lic, "; tiers from artifacts/mrost_consensus_tier_by_npi.csv",
                           gloss("CMS")),
-         x = NULL, y = "% of midwives in each licence group", fill = NULL) +
+         x = NULL, y = "% of midwives in each license group", fill = NULL) +
     theme_minimal(base_size = 13) +
     theme(legend.position = "bottom", panel.grid.major.y = element_blank(),
           panel.grid.minor = element_blank(),
