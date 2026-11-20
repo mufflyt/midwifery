@@ -50,8 +50,8 @@ stopifnot(file.exists(FROZEN_PATH))
 lnk_raw <- read_csv(FROZEN_PATH, col_types = cols(.default = "c"), progress = FALSE)
 cohort_active <- canonical_active_primary(lnk_raw) %>%
   mutate(npi = trimws(npi)) %>%
-  filter(!is.na(npi), nzchar(npi)) %>%
-  distinct(npi, .keep_all = TRUE)
+  filter(!is.na(npi), nzchar(npi))
+stopifnot(!anyDuplicated(cohort_active$npi))
 cat(sprintf("Canonical active primary-linked AMCB cohort: N = %d unique NPIs\n", nrow(cohort_active)))
 
 con <- open_medicare_duckdb(read_only = TRUE)
@@ -90,8 +90,8 @@ cat(sprintf("Real PECOS 2019 (cohort-filtered): %d enrollment edges, %d reassign
 nppes_2019_panel <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
   filter(snapshot_year == "2019") %>%
   mutate(npi = trimws(npi)) %>%
-  semi_join(cohort_active, by = "npi") %>%
-  distinct(npi, .keep_all = TRUE)
+  semi_join(cohort_active, by = "npi")
+stopifnot(!anyDuplicated(nppes_2019_panel$npi))
 cat(sprintf("Real NPPES 2019 panel (cohort-filtered): %d rows\n", nrow(nppes_2019_panel)))
 
 indiv_edges_2019 <- pecos_enrl_2019 %>%
@@ -178,11 +178,22 @@ print(vintage_res_real$flagged_discontinuities)
 # 3-5. Enrollment linkage trio (cardinality, specificity, topology) -- real 2019 PECOS
 # =============================================================================
 cat("\n--- 3. attribute_enrollment_cardinality_audit() ---\n")
+# raw_suite_rows must represent a layer MORE raw than
+# attribute_enrollment_locations()'s own linked-rows output -- a would-be
+# suite/floor-level join row count before any collapse. nrow(pecos_addr_2019)
+# is the wrong layer entirely: it's the raw *location table* row count
+# (45,637), which is smaller than the linked edge x location join (184,694)
+# because the real fan-out here is edges-per-enrollment-id x
+# locations-per-enrollment-id, not suite/floor duplication within one
+# location. Passing the location-table count as raw_suite_rows produced an
+# impossible negative "removed" count at step 2 (caught by this repo's own
+# CI semantic-contract check, S5). Omit it and let the function use its
+# correct internal default (nrow(sub), the linked-rows table itself) as
+# step 1 -- guaranteed non-increasing by construction.
 nppes_ref_state_real <- nppes_2019_panel %>%
   transmute(id = npi, year = 2019L, practice_state = clean_state(practice_state))
 card_audit_real <- attribute_enrollment_cardinality_audit(
   pecos_linkage_2019$links,
-  raw_suite_rows = nrow(pecos_addr_2019),
   reference_state = nppes_ref_state_real
 )
 write_with_provenance(card_audit_real, out("enrollment_cardinality_audit_real_2019.csv"),
@@ -196,7 +207,7 @@ dac_2019_vintage <- read_csv("artifacts/physician_compare_historical_midwives.cs
   filter(year == 2019) %>%
   semi_join(cohort_active, by = "npi") %>%
   arrange(npi, desc(vintage)) %>%
-  distinct(npi, .keep_all = TRUE) %>%
+  group_by(npi) %>% slice(1) %>% ungroup() %>%
   transmute(id = npi, year = 2019L, practice_zip5 = str_pad(practice_zip, 5, pad = "0"))
 stopifnot(!anyDuplicated(dac_2019_vintage[, c("id", "year")]))
 corrob_sources_real <- list(
@@ -283,8 +294,8 @@ geo_guarded <- read_csv("artifacts/frozen_cohort/midwives_geography_guarded.csv"
                          col_types = cols(.default = "c"), progress = FALSE) %>%
   mutate(npi = trimws(npi), latitude = as.numeric(latitude), longitude = as.numeric(longitude)) %>%
   filter(!is.na(latitude), !is.na(longitude)) %>%
-  semi_join(cohort_active, by = "npi") %>%
-  distinct(npi, .keep_all = TRUE)
+  semi_join(cohort_active, by = "npi")
+stopifnot(!anyDuplicated(geo_guarded$npi))
 dir_coords_real <- geo_guarded %>% transmute(npi, year = 2019L, lat = latitude, lon = longitude)
 ref_zip_real <- nppes_2019_panel %>%
   semi_join(geo_guarded, by = "npi") %>%
@@ -307,14 +318,29 @@ cat("\n--- Building real multi-year state panels (NPPES / PECOS-reval / T-MSIS) 
 nppes_state_panel <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
   mutate(npi = trimws(npi), year = as.integer(snapshot_year)) %>%
   semi_join(cohort_active, by = "npi") %>%
-  distinct(npi, year, .keep_all = TRUE) %>%
   transmute(npi, year, state = clean_state(practice_state))
-tmsis_panel <- read_csv("artifacts/tmsis_medicaid_enrollment_state_by_year.csv",
-                         col_types = cols(.default = "c"), progress = FALSE) %>%
+stopifnot(!anyDuplicated(nppes_state_panel[, c("npi", "year")]))
+
+# T-MSIS is a genuinely multi-state source: 12,159 real (npi, year) pairs in
+# this cohort report more than one distinct state in the same year (true
+# concurrent Medicaid enrollment, not duplicate noise -- verified directly).
+# Collapsing that to one row per (npi, year) before calling
+# attribute_mover_stayer_transition_matrix() would silently discard exactly
+# the concurrency signal concurrent_source exists to capture. Keep the full
+# raw set for concurrent_source, and derive a single deterministic (not
+# fabricated -- always one of the real reported states) primary state per
+# (npi, year) only for the panel argument, which requires exactly one row.
+tmsis_raw_real <- read_csv("artifacts/tmsis_medicaid_enrollment_state_by_year.csv",
+                            col_types = cols(.default = "c"), progress = FALSE) %>%
   mutate(npi = trimws(npi), year = as.integer(year)) %>%
   semi_join(cohort_active, by = "npi") %>%
-  distinct(npi, year, .keep_all = TRUE) %>%
-  transmute(npi, year, state = clean_state(state))
+  transmute(npi, year, state = clean_state(state)) %>%
+  filter(!is.na(state))
+tmsis_panel <- tmsis_raw_real %>%
+  arrange(npi, year, state) %>%
+  group_by(npi, year) %>% slice(1) %>% ungroup()
+stopifnot(!anyDuplicated(tmsis_panel[, c("npi", "year")]))
+
 pecos_reval_panel <- pecos_reval %>%
   inner_join(
     read_csv("artifacts/pecos_revalidation_cohort_state_by_year.csv",
@@ -322,8 +348,8 @@ pecos_reval_panel <- pecos_reval %>%
       mutate(npi = trimws(npi), year = as.integer(year)),
     by = c("npi", "year")
   ) %>%
-  distinct(npi, year, .keep_all = TRUE) %>%
   transmute(npi, year, state = clean_state(pecos_state))
+stopifnot(!anyDuplicated(pecos_reval_panel[, c("npi", "year")]))
 cat(sprintf("Real panels: NPPES %d rows (%d NPIs, years %d-%d); PECOS-reval %d rows; T-MSIS %d rows\n",
             nrow(nppes_state_panel), n_distinct(nppes_state_panel$npi),
             min(nppes_state_panel$year), max(nppes_state_panel$year),
@@ -404,7 +430,8 @@ tmsis_multi_year <- tmsis_panel %>%
   group_by(npi) %>% filter(n_distinct(year) >= 2L) %>% ungroup() %>%
   filter(!is.na(state))
 markov_real <- attribute_mover_stayer_transition_matrix(
-  tmsis_multi_year %>% transmute(npi, year, state)
+  tmsis_multi_year %>% transmute(npi, year, state),
+  concurrent_source = tmsis_raw_real %>% semi_join(tmsis_multi_year, by = "npi")
 )
 write_with_provenance(markov_real$regime_summary, out("mover_stayer_transition_real_tmsis.csv"),
                        inputs = "artifacts/tmsis_medicaid_enrollment_state_by_year.csv")
@@ -417,16 +444,34 @@ cat("\n--- 13. attribute_enumeration_lifecycle() ---\n")
 cert_roster_real <- lnk_raw %>%
   mutate(npi = trimws(npi)) %>%
   filter(!is.na(npi), nzchar(npi)) %>%
-  distinct(npi, .keep_all = TRUE) %>%
   transmute(npi, cert_status = toupper(status))
+stopifnot(!anyDuplicated(cert_roster_real$npi))
 active_nppes_real <- nppes_2019_panel %>% filter(is.na(deactivation_date) | !nzchar(deactivation_date)) %>%
   distinct(npi)
-deact_nppes_real <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+# midwife_panel.csv carries one row per NPPES snapshot year, so a deactivated
+# NPI's deactivation_date is repeated across every later snapshot year it
+# still appears in -- real duplication, not noise, but almost always the
+# same date repeated. Checked directly: of 47 NPIs with >1 row here, all but
+# 2 report one single, consistent deactivation_date across every snapshot.
+# Use the earliest reported date per NPI (when NPPES first recorded the
+# deactivation) and flag the 2 genuinely inconsistent NPIs rather than
+# silently picking whichever snapshot year happened to sort first.
+deact_nppes_raw_real <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
   mutate(npi = trimws(npi)) %>%
   filter(!is.na(deactivation_date), nzchar(deactivation_date)) %>%
-  semi_join(cohort_active, by = "npi") %>%
-  distinct(npi, .keep_all = TRUE) %>%
+  semi_join(cohort_active, by = "npi")
+deact_inconsistent_real <- deact_nppes_raw_real %>%
+  group_by(npi) %>% summarise(n_distinct_dates = n_distinct(deactivation_date), .groups = "drop") %>%
+  filter(n_distinct_dates > 1L)
+if (nrow(deact_inconsistent_real) > 0L) {
+  cat(sprintf("NOTE: %d NPI(s) report inconsistent deactivation_date across NPPES snapshot years (using the earliest reported date for each): %s\n",
+              nrow(deact_inconsistent_real), paste(deact_inconsistent_real$npi, collapse = ", ")))
+}
+deact_nppes_real <- deact_nppes_raw_real %>%
+  arrange(npi, deactivation_date) %>%
+  group_by(npi) %>% slice(1) %>% ungroup() %>%
   transmute(npi, deactivation_date)
+stopifnot(!anyDuplicated(deact_nppes_real$npi))
 downstream_panels_real <- list(
   pecos_reval = pecos_reval_panel %>% transmute(npi, year),
   tmsis = tmsis_panel %>% transmute(npi, year)
@@ -475,7 +520,7 @@ cat("\n--- 15. attribute_oig_audit_html() ---\n")
 rp_real <- bind_rows(
   nppes_multi_2019 %>% transmute(id = npi, year, source = "nppes", attribute = "practice_zip5",
                                   record_present = TRUE, field_status = "populated"),
-  pecos_multi_2019 %>% distinct(npi, .keep_all = TRUE) %>%
+  pecos_multi_2019 %>% distinct(npi, year) %>%
     transmute(id = npi, year, source = "pecos", attribute = "practice_zip5",
               record_present = TRUE, field_status = "populated")
 )
