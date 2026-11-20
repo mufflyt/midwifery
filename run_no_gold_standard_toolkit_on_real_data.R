@@ -43,6 +43,7 @@ out <- function(name) file.path(OUT_DIR, name)
 
 FROZEN_PATH <- file.path("artifacts", "amcb_npi_linkage_FROZEN.csv")
 stopifnot(file.exists(FROZEN_PATH))
+verify_linkage_freeze(FROZEN_PATH)
 
 # =============================================================================
 # 0. Cohort and real source tables
