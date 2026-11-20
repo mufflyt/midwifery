@@ -74,6 +74,21 @@ chk(!copies_harness(paste('source("helper-saboteur.R")', ROOT_IDIOM, FAILS_IDIOM
                           CHK_IDIOM, sep = "\n")),
     "P1d a file that sources the helper is not an offender even if it keeps a local root line")
 
+# AND THE SOURCE PATH HAS TO BE ONE ci_repo_integrity.R CAN RESOLVE. That gate
+# builds a source() closure and keeps only the LITERAL TAIL of a file.path(),
+# so the adopter idiom file.path(<computed dir>, "helper-saboteur.R") resolves
+# to <root>/helper-saboteur.R and fails with "Missing source() target". The 15
+# files that already used it never tripped the gate because none was a CI
+# entrypoint -- it was armed, not harmless, and converting 67 more set it off.
+unresolvable <- Filter(function(f) {
+  txt <- slurp(f)
+  grepl("helper-saboteur", txt, fixed = TRUE) &&
+    !grepl('file.path(root, "tests", "helper-saboteur.R")', txt, fixed = TRUE)
+}, tracked("tests/*.R"))
+chk(!length(unresolvable),
+    sprintf("P1e every file sources the helper by a path the integrity gate can resolve%s",
+            if (length(unresolvable)) paste0(" [", paste(basename(unresolvable), collapse = ", "), "]") else ""))
+
 # --- P2 deleted code stays deleted ---------------------------------------------
 sab(2, "nothing executes a path that was deleted")
 # EXECUTION, not mention. compare_pecos_to_doximity_address.R still quotes the
@@ -127,13 +142,22 @@ chk(!dup_reader(paste0(DUP_READER_LINE, " %>%\n  transmute(npi)")),
 
 # --- P4 one root mechanism in tests ---------------------------------------------
 sab(4, "tests resolve the repository root one way")
-loads_here <- function(txt) grepl("library(here)", txt, fixed = TRUE)
+# The needle is assembled, not spelled: P4a reads every tracked test file
+# including this one, and a gate that fails on its own search term is a
+# gate nobody can keep green.
+HERE_CALL <- paste0("library(", "here)")
+loads_here <- function(txt) grepl(HERE_CALL, txt, fixed = TRUE)
 here_tests <- Filter(function(f) loads_here(slurp(f)), tracked("tests/*.R"))
 chk(!length(here_tests),
     sprintf("P4a no test file loads `here` as a second root mechanism%s",
             if (length(here_tests)) paste0(" [", paste(basename(here_tests), collapse = ", "), "]") else ""))
-chk(loads_here("library(testthat)\nlibrary(here)\n"),
-    "P4b KILLED: re-adding library(here) to a test is caught")
+# BUILT, NOT WRITTEN OUT. Spelling the call literally here would make this
+# file its own offender -- P4a scans every tracked test, including this one.
+.probe <- paste0("library(", "here)")
+chk(loads_here(paste0("library(testthat)\n", .probe, "\n")),
+    "P4b KILLED: re-adding the second root mechanism to a test is caught")
+chk(!loads_here("library(testthat)\n"),
+    "P4c ... and a test that does not load it is not an offender")
 
 cat(sprintf("\n%s (%d failure(s) across 4 over-engineering saboteurs)\n",
             if (fails == 0L) "ALL SABOTEURS HELD" else "SABOTEURS FOUND GAPS", fails))
