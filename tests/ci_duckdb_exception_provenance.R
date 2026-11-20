@@ -17,6 +17,11 @@ root <- "."
 if (!dir.exists(file.path(root, ".git")) && dir.exists("../.git")) root <- ".."
 source(file.path(root, "tests", "ci_report.R"))
 source(file.path(root, "R", "lib", "medicare_duckdb.R"))
+# The raw-connection registry and duckdb_scan_for_raw_connections() moved
+# here from R/lib/medicare_duckdb.R on 2026-11-20: they are CI-only, and
+# 30-odd scripts were sourcing 343 lines of gate machinery to reach
+# open_medicare_duckdb(). Same rule, same scan, same return shape.
+source(file.path(root, "tests", "duckdb_architecture_scan.R"))
 
 BASE_COMMIT <- "15051d939905048e5d4c380448eb6e9b4e5b5325"
 provenance <- ci_read_head(file.path("tests", "fixtures", "duckdb_exception_registry_provenance.csv"), root = root)
