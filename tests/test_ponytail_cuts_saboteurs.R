@@ -39,6 +39,12 @@ tracked <- function(pattern) {
                                   stdout = TRUE, stderr = FALSE))
   if (!length(out)) character(0) else out
 }
+# EVERY tracked .R file, not just the ones at the top level. A git pathspec of
+# "*.R" returns 267 paths here and the repository has 645: it does not cross
+# directory boundaries, so three of the scans below were reading the root
+# scripts and calling the result "no tracked R file". Listing once and
+# filtering in R makes the scope the message already claimed.
+tracked_r <- function() grep("\\.R$", tracked("."), value = TRUE)
 slurp <- function(rel) paste(readLines(file.path(root, rel), warn = FALSE), collapse = "\n")
 
 HELPER <- "tests/helper-saboteur.R"
@@ -103,7 +109,7 @@ exec_archive <- function(txt) {
   grep("(source|system2|file\\.exists|readLines)\\([^)]*@archive/[^)]*\\.R", lines,
        value = TRUE, perl = TRUE)
 }
-hits <- unlist(lapply(tracked("*.R"), function(f) {
+hits <- unlist(lapply(tracked_r(), function(f) {
   h <- exec_archive(slurp(f)); if (length(h)) paste0(basename(f), ": ", h[1]) else character(0)
 }))
 chk(!length(hits),
@@ -114,9 +120,12 @@ chk(!length(tracked("@archive/*.R")),
 chk(length(tracked("@archive/run_midwifery_microsimulation.py")) == 1L,
     "P2c ... and that survivor is still tracked, because tests/test_run_midwifery_microsimulation.R runs it")
 # SABOTEUR: restore an execution and the scanner must see it.
-chk(length(exec_archive('source("@archive/experiment_external_org_sources.R")')) == 1L,
+# Assembled, not spelled: P2a reads every tracked .R file including this one,
+# and a fixture written out in full would make this suite its own offender.
+.gone <- paste0("@", "archive/experiment_external_org_sources.R")
+chk(length(exec_archive(sprintf('source("%s")', .gone))) == 1L,
     "P2d KILLED: a restored source() of a deleted script is caught")
-chk(length(exec_archive('# see @archive/experiment_external_org_sources.R for the assessment')) == 0L,
+chk(length(exec_archive(sprintf("# see %s for the assessment", .gone))) == 0L,
     "P2e a comment discussing the removed script is not a dependency")
 
 # --- P3 one name, one behaviour for the reader ---------------------------------
@@ -130,7 +139,7 @@ DUP_READER_LINE <-
   'rd <- function(p) read_csv(p, col_types = cols(.default = "c"), progress = FALSE)'
 dup_reader <- function(txt)
   any(trimws(strsplit(txt, "\n", fixed = TRUE)[[1]]) == DUP_READER_LINE)
-dups <- Filter(function(f) dup_reader(slurp(f)), tracked("*.R"))
+dups <- Filter(function(f) dup_reader(slurp(f)), tracked_r())
 chk(!length(dups),
     sprintf("P3a no file redefines the all-character reader that R/lib/common_helpers.R already exports as chr()%s",
             if (length(dups)) paste0(" [", paste(basename(dups), collapse = ", "), "]") else ""))
@@ -196,8 +205,11 @@ dead_here <- Filter(function(f) {
   txt <- slurp(f)
   grepl(HERE_CALL, txt, fixed = TRUE) &&
     !grepl("here::here(", txt, fixed = TRUE) &&
-    !grepl("[^:.a-zA-Z_]here(", txt)
-}, tracked("*.R"))
+    # The paren is escaped. It was not, which is an invalid regex -- and the
+    # `&&` above short-circuited past it for every file until the scan was
+    # widened past the root scripts, so this condition had never once run.
+    !grepl("[^:.a-zA-Z_]here\\(", txt)
+}, tracked_r())
 chk(!length(dead_here),
     sprintf("P4e no file loads `here` without calling it%s",
             if (length(dead_here)) paste0(" [", paste(basename(dead_here), collapse = ", "), "]") else ""))

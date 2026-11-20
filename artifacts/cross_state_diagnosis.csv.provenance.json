@@ -1,6 +1,6 @@
 {
   "artifact": "cross_state_diagnosis.csv",
-  "written_utc": "2026-11-20 03:37:41 UTC",
+  "written_utc": "2026-08-24 11:49:45 UTC",
   "inputs": [
     {
       "path": "midwives_geography.csv",
@@ -13,45 +13,6 @@
     {
       "path": "artifacts/zip_fallback_discordant.csv",
       "sha256": "46cd178e7c53dddb248f35b5c4ff3b6584e87caec93fd7d2f56ce1f98d62edd6"
-    }
-  ],
-  "code_sha256": "d2a4ce8668e70d5d3f8696ae41c30e19bb6814cc5e43a197ecb9e1e7f8f1be6d",
-  "code": [
-    {
-      "path": "R/04-diagnose-cross-state.R",
-      "sha256": "bac48bcea37a8a4bb4a13841417e05366315e96f920ac050e6c8f2f7ef525fda"
-    },
-    {
-      "path": "R/lib/artifact_provenance.R",
-      "sha256": "4937914878dfd340d545d54ab079074fb74320f4272dd5e4c8196aeefd46c391"
-    },
-    {
-      "path": "R/lib/provenance.R",
-      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
-    },
-    {
-      "path": "R/spatial_crs_contract.R",
-      "sha256": "55fb0c59f12ae781d1d23100ab15a77dc9205e5705d60f268ca6575ecad653ad"
-    }
-  ],
-  "semantic_packages": [
-    {
-      "package": "mysterynpi",
-      "installed": true,
-      "version": "0.9.1",
-      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
-    },
-    {
-      "package": "stringi",
-      "installed": true,
-      "version": "1.8.9",
-      "source_sha": null
-    },
-    {
-      "package": "humaniformat",
-      "installed": true,
-      "version": "0.6.0",
-      "source_sha": null
     }
   ]
 }
