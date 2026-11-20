@@ -594,7 +594,17 @@ REBUILD_ORDER <- list(
                    # (canonical_active_primary() and linkage_eligible()); the
                    # OIG six-priority audit this Phase 2 script built on.
                    # Independent of the migration-classifier cluster above.
-                   "remake_oig_07_09_00440_midwifery.R")),
+                   "remake_oig_07_09_00440_midwifery.R",
+                   # Added 2026-11-20. Reads amcb_npi_linkage_FROZEN directly
+                   # (canonical_active_primary()) to exercise mysteryroster's
+                   # no-gold-standard comparison toolkit against the real
+                   # cohort. Must follow remake_oig_07_09_00440_midwifery.R:
+                   # its own audit-diff step (comparing
+                   # attribute_enrollment_cardinality_audit() against that
+                   # script's hand-rolled numbers) reads
+                   # artifacts/oig_remake/oig_pecos_2019_join_cardinality_audit.csv,
+                   # which only exists after that script has run.
+                   "run_no_gold_standard_toolkit_on_real_data.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        # export_amcb_npi_geography.R writes the tracked state aggregate and
        # the gitignored person-level export, both of which read the crosswalk

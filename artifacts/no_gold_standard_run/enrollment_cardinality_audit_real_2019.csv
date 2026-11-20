@@ -1,0 +1,7 @@
+step_order,aggregation_level,description,n_rows_or_pairs,n_clinicians,mean_per_clinician,sd_per_clinician,median_per_clinician,p25_per_clinician,p75_per_clinician,max_per_clinician,n_removed_vs_step1,pct_removed_vs_step1,n_out_of_state_pairs,pct_out_of_state_pairs
+1,linked_edge_location_rows,"Distinct (id, year, enrollment_id, location_id) rows returned by attribute_enrollment_locations()",184694,5625,32.83,48.59,15,5,41,353,0,0,NA,NA
+2,distinct_id_group_zip5,"Distinct (id, year, enrollment_id, zip5) clinician-group-ZIP5 combinations",176413,5625,31.36,45.96,15,4,38,325,8281,4.48,NA,NA
+3,distinct_id_city_state_zip5,"Distinct (id, year, city, state, zip5) across all billing organizations",177347,5625,31.53,47.26,15,4,38,294,7347,3.98,NA,NA
+4,distinct_id_zip5,"Distinct (id, year, zip5) unique 5-digit ZIP codes associated with each clinician",168917,5625,30.03,44.64,14,4,37,261,15777,8.54,16080,9.62
+5,distinct_id_state,"Distinct (id, year, state) unique states associated with each clinician",6234,5625,1.11,0.37,1,1,1,5,178460,96.62,NA,NA
+6,distinct_id_group_enrollment,"Distinct (id, year, enrollment_id) clinician-billing organization relationships",8130,5625,1.45,0.8,1,1,2,10,176564,95.6,NA,NA

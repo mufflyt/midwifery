@@ -1,0 +1,1 @@
+We identified 2,102 state-arrival events tracked across 2 sources. Ranked by median years to catch up, lowest to highest: NPPES (0), PECOS revalidation (0). (tied: NPPES, PECOS revalidation) NPPES: 95% CI 0 to 0 years (n at risk at crossing = 2100). PECOS revalidation: 95% CI 0 to 0 years (n at risk at crossing = 1999).
