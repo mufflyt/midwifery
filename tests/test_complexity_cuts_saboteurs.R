@@ -149,6 +149,43 @@ chk(any(grepl('source\\(here::here\\("R", "assert_unique_keys\\.R"\\)\\)',
               noncomment(slurp("R/join_safety.R")))),
     "C1h ... and R/join_safety.R still reaches it, so the other 16 callers keep working unchanged")
 
+# DELETING A SUITE MEANS DELETING ITS REGISTRATIONS. The 500-line test file
+# that existed only to exercise safe_inner_join() went with it, and two files
+# that NAME suites by path were left pointing at it: tests/skip_budget.tsv
+# (caught by ci_skip_budget.R's SB1 on the pull request) and
+# RUN_REGRESSION_TESTS.R (caught by nothing -- it warned and continued, so the
+# regression set shrank by one file and still printed PASS). Both are fixed;
+# this asserts the second cannot regress, because a warning is not a gate.
+RUNNER <- "RUN_REGRESSION_TESTS.R"
+declared_suites <- function(txt)
+  gsub('"', "", regmatches(txt, gregexpr('"tests/[^"]+\\.R"', txt))[[1]])
+runner_txt <- slurp(RUNNER)
+declared <- declared_suites(runner_txt)
+chk(length(declared) >= 15L,
+    sprintf("C1i the regression runner declares %d suites by path (a list this scan can read)",
+            length(declared)))
+absent <- declared[!file.exists(file.path(SAB_ROOT, declared))]
+chk(!length(absent),
+    sprintf("C1j every suite %s names exists%s", RUNNER,
+            if (length(absent)) paste0(" [", paste(absent, collapse = ", "), "]") else ""))
+# The runner must REFUSE, not warn: run it with one suite that cannot exist.
+runner_refuses <- function() {
+  tmp <- file.path(tempdir(), "runner_probe.R")
+  probe <- sub('regression_suites <- c\\(',
+               sprintf('regression_suites <- c(\n  "tests/%s.R",',
+                       paste0("no_such_suite_", as.integer(Sys.time()))),
+               runner_txt, fixed = FALSE)
+  writeLines(probe, tmp)
+  out <- suppressWarnings(system2("Rscript", c(tmp), stdout = TRUE, stderr = TRUE))
+  list(status = !is.null(attr(out, "status")) && attr(out, "status") != 0L,
+       says = any(grepl("do not exist", out, fixed = TRUE)))
+}
+probe <- runner_refuses()
+chk(probe$status,
+    "C1k KILLED: a declared suite that does not exist makes the regression runner exit non-zero")
+chk(probe$says,
+    "C1l ... and the refusal says which declared suite is missing, not just that a count was low")
+
 # --- C2 the dead branch is gone, the refusal is not ----------------------------
 sab(2, "an unreachable delegation is deleted without deleting the refusal it guarded")
 PHANTOMS <- c(paste0("safe_left_join_", "with_metrics"), paste0("log_join_", "integrity"))
