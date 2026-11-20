@@ -12,7 +12,11 @@
 # Columns:
 #   source, year, n_rows, n_npis, coverage_pct (of frozen cohort),
 #   n_distinct_states, evidence_types, vintage, usable_for_trend_pct,
-#   year_validation_status, n_with_source_record_id
+#   n_usable_for_trend, year_validation_status, n_with_source_record_id
+#
+# Twelve, not the spec's eleven: n_usable_for_trend is the numerator of
+# usable_for_trend_pct, added so the percentage can be recomputed from the
+# row beside it rather than taken on faith.
 #
 # Input : artifacts/canonical_source_records.csv (person-level, gitignored)
 #         artifacts/open_payments_year_validation.csv
@@ -48,7 +52,18 @@ audit <- records %>%
     n_distinct_states = dplyr::n_distinct(state),
     evidence_types = paste(sort(unique(evidence_type)), collapse = ";"),
     vintage = paste(sort(unique(vintage)), collapse = ";"),
+    # n_usable_for_trend IS THE NUMERATOR OF THE COLUMN ABOVE IT, and it was
+    # missing. usable_for_trend_pct is 100 * mean(usable_for_trend), so the
+    # count that produces it is sum(usable_for_trend) -- and without that
+    # count published beside it, the percentage is unverifiable: no reader can
+    # recompute it, and ci_science_nightly.R's SCN1/SCN2 could not either.
+    # Lacking the real numerator, SCN2 fitted the only pair that reproduced
+    # the column -- itself, usable_for_trend_pct / usable_for_trend_pct -- and
+    # then read the 13 source-years where the share is 0 as rates on an empty
+    # denominator. The denominator was never empty; n_rows is 6226 on the
+    # first of them. Publishing the count makes the real formula findable.
     usable_for_trend_pct = round(100 * mean(usable_for_trend), 1),
+    n_usable_for_trend = sum(usable_for_trend),
     n_with_source_record_id = sum(!is.na(source_record_id)),
     .groups = "drop")
 

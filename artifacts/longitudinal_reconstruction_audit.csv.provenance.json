@@ -1,6 +1,6 @@
 {
   "artifact": "longitudinal_reconstruction_audit.csv",
-  "written_utc": "2026-11-19 05:18:37 UTC",
+  "written_utc": "2026-11-20 02:16:48 UTC",
   "inputs": [
     {
       "path": "artifacts/open_payments_year_validation.csv",
@@ -11,11 +11,11 @@
       "sha256": "b4ea7554135f71562157ef1e19abc0b831c52ba3f718ddbb8e794e96ef6d97c9"
     }
   ],
-  "code_sha256": "9f6e0c279527535bc4b6bba5079eda412e7162c7bd52d337d2aff1d8764ac64c",
+  "code_sha256": "6132e24df7bc39526b2b930c1c2a91bcc21e128c1c7cfcdfdba1ea5f158abbff",
   "code": [
     {
       "path": "build_longitudinal_reconstruction_audit.R",
-      "sha256": "9d6a0dfbe3bfc46c1349b7eda2f591456d90dbb7c8e65883baf5b4643d07a058"
+      "sha256": "df2ece63125c75328f82de34095e2b787226c94d2704658813916e3fea100e54"
     },
     {
       "path": "R/lib/artifact_provenance.R",
