@@ -1,0 +1,49 @@
+{
+  "artifact": "persistence_denominators.csv",
+  "written_utc": "2026-11-19 03:01:35 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/canonical_source_records.csv",
+      "sha256": "81cf8b26e0a055bc5ddbe74f3ffe872105d12025272bce18b9b68acfc901f006"
+    }
+  ],
+  "code_sha256": "236442d454598749bece4f37aeb3df67fb843328a16ae7dbfd6cff5deb92fb6e",
+  "code": [
+    {
+      "path": "build_f2_f3_uncertainty_denominators.R",
+      "sha256": "f5436ff5fa283cb446fcf9b7b8703c3a0f0ffed080cf5aad4a3c355db91ae4e1"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "4937914878dfd340d545d54ab079074fb74320f4272dd5e4c8196aeefd46c391"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    },
+    {
+      "path": "R/lib/wilson_interval.R",
+      "sha256": "0458dbfbaaef986be0ebfbcc1edebff2c715358c11c68d9b5cf9dfdb0af918a7"
+    }
+  ],
+  "semantic_packages": [
+    {
+      "package": "mysterynpi",
+      "installed": true,
+      "version": "0.9.1",
+      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
+    },
+    {
+      "package": "stringi",
+      "installed": true,
+      "version": "1.8.9",
+      "source_sha": null
+    },
+    {
+      "package": "humaniformat",
+      "installed": true,
+      "version": "0.6.0",
+      "source_sha": null
+    }
+  ]
+}

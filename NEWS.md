@@ -49,6 +49,107 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   could not be re-run: 3 of its gitignored local inputs no longer exist on
   disk, unrelated to this audit.
 
+## [Unreleased] — 2026-11-20 — ten checks that reported ok against the defect they guard
+
+### Fixed
+
+- **Twelve figure assertions had never run anywhere.**
+  `tests/test_appendix_matches_artifacts.R` quit 0 above its figure block when
+  the agreement artifact was absent. The artifact is gitignored, so it is
+  absent in every fresh checkout — every CI runner, nightly included — and the
+  file printed `PASS (0 failures)` for assertions that had not executed. The
+  artifact-free checks were moved above the guard, and the guard now reports
+  what they found. Mutation-proved with a rogue `ggsave()`: reordered file
+  red, committed file green.
+
+- **The nightly asserted on a font measurement it never installed the ruler
+  for.** `fit_plot_labels()` measures each label with
+  `systemfonts::string_width()`, so the appendix suite loads systemfonts for
+  real. `ci.yml` had the package; `nightly.yml` did not, and nightly is the job
+  that globs `tests/test*.R`. The suite had been dying mid-run at F3 after
+  F1–F2d printed ok.
+
+- **A saboteur required a file `.gitignore` deliberately withholds.** F4b
+  asserted that `artifacts/tmsis_medicaid_spending_cohort_by_year.csv` exists.
+  It is excluded as person-level NPI-year billing activity, so the check
+  passed on the extraction host and could only ever fail on a runner. F4b now
+  asserts the changelog evidence and the two *tracked* aggregates; the new F4c
+  asserts the opposite about the person-level file — it must stay untracked.
+
+- **SCN2 reported 13 rates on an empty denominator that were never empty.**
+  `usable_for_trend_pct` had no published numerator, so `scn_formula()` fitted
+  the only pair that reproduced it — itself — and read every 0 as 0/0. The
+  numerator (`n_usable_for_trend`) is now published, the gate refuses a
+  column divided by itself, and ties are broken by denominator coverage.
+  `max |pct − 100·n/d| = 0`; no pre-existing column changed.
+
+- **Five manuscript figure defects that rendered without an error.** A legend
+  wider than its canvas is drawn anyway and clipped at both ends —
+  `state_source_agreement_by_year` published a legend reading `tem` and a
+  fifth series with no label. Figure 2 was a conference slide, drawing
+  Trilliant, a source absent from Table 1. A citation pointed at Figure 6 for
+  a result Figure 6 does not show, and Figure 5 was never cited. A heading
+  stated a per-midwife rate from a per-provider-year denominator. Details in
+  `docs/APPENDIX_checks_that_cannot_fail_2026-11-20.md`.
+
+### Changed
+
+- **The set-membership pair is read, not typed.** The Results and Discussion
+  stated agreement rising 74.7% → 88.5% as literals. They were *correct* —
+  `audit_medicaid_set_membership.R` writes both to a tracked artifact on
+  107,386 comparable NPI-years — but a typed number does not move when its
+  artifact is rebuilt. `build_stats_catalog.R` now reads them. No published
+  number moved; the sentence gained the denominator it is computed on.
+
+- **The copied test harness.** 67 files carried a byte-identical root
+  resolver, `fails` and `chk`; `tests/helper-saboteur.R` exports all three and
+  had been adopted in 15 of ~247. All 66 runnable candidates were run before
+  and after and their output compared — identical, or identical once
+  timestamps and temp-directory names are normalised.
+
+- **Six archived scripts removed** (835 lines), reachable only from `NEWS.md`
+  and one prose comment. `run_midwifery_microsimulation.py` stays: it has a
+  live test. The comment that cited one now quotes its conclusion inline.
+
+- **`rd` was four functions under one name** — eight forcing every column to
+  character, two letting readr guess types, one returning a DuckDB scan
+  expression. The eight now call `chr()` from `R/lib/common_helpers.R`; the
+  SQL builder is `read_csv_auto_sql()`. The two type-guessing readers were
+  left alone: converting them would change what types reach a figure.
+
+### Retracted
+
+- **The README's scientific-laws badge said 10 declared, 30 planted defects.**
+  `tests/science_law_registry.tsv` declares 13 and CI reports 39/39 planted
+  defects detected. Corrected.
+
+- **`here` was called a redundant second root mechanism, and it is not.**
+  `ci.yml` runs eight tests through `testthat::test_file()`, which sets the
+  working directory to `tests/` and supplies no `--file=`. Converting them to
+  the `commandArgs` idiom made every path gain a second `tests/`. Reverted —
+  the audit finding was wrong.
+
+- **Thirty environment flags were called dead config, and none is.**
+  `GITHUB_ACTIONS`, `GITHUB_STEP_SUMMARY`, `CENSUS_API_KEY` and
+  `RETICULATE_PYTHON` are set by the platform; `ALLOW_REFREEZE`,
+  `FREEZE_WRITE`, `MATCH_RESTART`, `RUN_UNBLIND` and `REPIN_APPLY` are
+  operator safety switches. "Nothing in the repo sets it" is the correct state
+  for a switch. Nothing changed.
+
+### Known, unresolved
+
+- **Four assertions that cannot fail predate this work** and are baselined in
+  `tests/test_gate_integrity_saboteurs.R`, individually named with what each
+  needs. The baseline refuses a fifth, and `Q4a2` fails the moment one is
+  fixed so the list shrinks rather than rots.
+
+- **`ci_artifact_contracts` A5** (`table1_csv_n=12171`, `canonical_n=12170`)
+  remains red and is in no pull-request job's required set. The README now
+  prints both numbers rather than choosing one.
+
+- **`docs/spec-completion-matrix.md:121`** still calls the §11 reconstruction
+  audit NOT DONE / MISSING while the artifact is tracked and built.
+
 ## [Unreleased] — 2026-11-16 — a comparison that could not say what year each side was from
 
 ### Fixed

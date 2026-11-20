@@ -303,6 +303,21 @@ artifacts/cohort_midwives_part_b_state_by_year.csv.provenance.json
 artifacts/cohort_midwives_part_d_state_by_year.csv
 artifacts/cohort_midwives_part_d_state_by_year.csv.provenance.json
 
+# Same person-level class as the Part B/D pair above, added 2026-11-18:
+# the lineage-collapsed claims series (npi+year+state), the 450-midwife
+# Open Payments linkage diagnosis (npi + Type-2 NPIs), and the canonical
+# 13-field source-record table (amcb_id+npi+year+state). Their aggregate
+# companions -- the collapse audit, field coverage, year validation -- are
+# tracked.
+artifacts/cohort_midwives_medicare_claims_state_by_year.csv
+artifacts/cohort_midwives_medicare_claims_state_by_year.csv.provenance.json
+artifacts/op_linkage_disagreement_diagnosis.csv
+artifacts/op_linkage_disagreement_diagnosis.csv.provenance.json
+artifacts/op_linkage_adjudication.csv
+artifacts/op_linkage_adjudication.csv.provenance.json
+artifacts/canonical_source_records.csv
+artifacts/canonical_source_records.csv.provenance.json
+
 # PPEF (NBER mirror of the CMS Public Provider Enrollment File) cohort
 # enrolment state, person-level (NPI-vintage-state), same class as the PECOS
 # pair above. Added 2026-11-10 with extract_ppef_cohort_state_by_vintage.R.
@@ -1003,7 +1018,9 @@ artifacts/open_payments_profile_npi_lookup.csv.provenance.json
 artifacts/open_payments_profile_npi_conflicts.csv
 artifacts/open_payments_profile_npi_conflicts.csv.provenance.json
 artifacts/open_payments_midwife_presence_by_year.csv
+artifacts/open_payments_midwife_presence_by_year.csv.provenance.json
 artifacts/mrost_consensus_tier_by_npi.csv
+artifacts/mrost_consensus_tier_by_npi.csv.provenance.json
 
 # Local pre-overwrite copies of tracked person-level artifacts. The authoritative
 # history is git itself (e.g. `git show 6df41c1:artifacts/live_colorado_bon_...`);

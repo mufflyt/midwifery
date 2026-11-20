@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# Twenty saboteurs: every way we know to make this pipeline publish a lie
+# Twenty-six saboteurs: every way we know to make this publish a lie
 # =============================================================================
 # tests/test_source_coverage_contracts.R proves the contract works on the
 # cases we designed it for. This file is the adversary. Each saboteur
@@ -27,10 +27,11 @@
 #       (docs/state-source-audit-bon-reharvest.md)
 # =============================================================================
 
-.harness <- grep("--file=", commandArgs(), value = TRUE)
-source(file.path(if (length(.harness)) dirname(sub("--file=", "", .harness[1]))
-                 else "tests", "helper-saboteur.R"))
-root <- test_repo_root()
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 suppressPackageStartupMessages({library(dplyr); library(readr)})
 source(file.path(root, "R", "lib", "source_coverage.R"))
@@ -367,7 +368,136 @@ saboteur(20, "fabricate the state column the source cannot support")
       "but the fabricated column earns 0 state observations, not 4")
 }
 
+# =============================================================================
+# S21-S25: the panel shape, where file.exists() answers nothing
+# =============================================================================
+# Eight of the audit's ten sources keep every year in ONE file. Saboteurs
+# S1-S20 all damage a file; these five leave the file perfectly intact and
+# damage a YEAR INSIDE it, which is the only way to attack a panel and the
+# reason the panel contract exists.
+
+panel_path <- file.path(sabotage_dir, "panel.csv")
+
+panel_write <- function(years, state_values = NULL, npi_values = NULL) {
+  readr::write_csv(tibble::tibble(
+    npi = npi_values %||% sprintf("1%09d", seq_along(years)),
+    snapshot_year = as.character(years),
+    practice_state = state_values %||%
+      rep(c("CO", "NM"), length.out = length(years))), panel_path)
+  panel_path
+}
+
+panel_manifest_for <- function(years = DECLARED_YEARS) {
+  tibble::tibble(
+    source_id = "nppes", source_name = "saboteur panel",
+    expected_year = years, required = TRUE, source_type = "panel",
+    input_path = panel_path, producer = "fixture",
+    date_field = "snapshot_year", npi_field = "npi",
+    state_field = "practice_state",
+    validation_method = "in_file_year_set", source_vintage = "fixture",
+    artifact_sha256 = NA_character_, availability_status = "available",
+    notes = "saboteur panel")
+}
+
+saboteur(21, "delete one year from INSIDE the panel, leaving the file intact")
+{
+  coverage_restore_scene()
+  panel_write(c(2021, 2022, 2024, 2025))
+  verdict <- attempt_publication(panel_manifest_for())
+  chk(file.exists(panel_path), "the file is still there and readable")
+  chk(verdict$refused, "and the build still refuses")
+  chk(grepl("2023", verdict$message), "naming the year the panel lost")
+  chk(grepl("presence proved nothing", verdict$message),
+      "and saying the file existing settled nothing")
+}
+
+saboteur(22, "append a year nobody declared -- the glob defect, sign flipped")
+{
+  coverage_restore_scene()
+  panel_write(2021:2026)
+  verdict <- attempt_publication(panel_manifest_for(2021:2025))
+  chk(verdict$refused, "an undeclared year refuses to publish")
+  chk(grepl("undeclared_year_observed", verdict$message),
+      "with its own verdict, not mistaken for a missing year")
+  audit <- exploratory_audit(panel_manifest_for(2021:2025))
+  chk(!(2026L %in% suppressMessages(
+          resolve_source_inputs(audit, "nppes"))$program_year),
+      "and it is never resolved as a usable input")
+}
+
+saboteur(23, "collapse the panel to its newest year -- 11-12, panel form")
+{
+  coverage_restore_scene()
+  panel_write(2025L)
+  verdict <- attempt_publication(panel_manifest_for())
+  chk(verdict$refused, "four declared years gone refuses to publish")
+  chk(all(vapply(c("2021", "2022", "2023", "2024"),
+                 function(y) grepl(y, verdict$message), logical(1))),
+      "and the refusal names ALL FOUR, not just the first")
+}
+
+saboteur(24, "sort the panel so head and tail see only the endpoints")
+{
+  # WHY THE SCAN IS EXACT. source_year_from_columns() samples a head and a
+  # tail, which is right for a one-year file. A panel ordered by year would
+  # show it 2021 and 2025 and nothing between, and every middle year would be
+  # refuted although the data is perfect. This saboteur is INVERTED: it
+  # passes only if the contract keeps working.
+  coverage_restore_scene()
+  ordered_years <- rep(2021:2025, each = 40L)
+  panel_write(ordered_years,
+              npi_values = sprintf("1%09d", seq_along(ordered_years)))
+  verdict <- attempt_publication(panel_manifest_for())
+  chk(!verdict$refused, "an ordered panel publishes")
+  audit <- exploratory_audit(panel_manifest_for())
+  chk(all(audit$validation_status == "ok"),
+      "and every middle year validates, not just the endpoints")
+  chk(identical(as.integer(audit$source_record_count), rep(40L, 5L)),
+      "each year reporting its OWN 40 rows, not the panel's 200")
+}
+
+saboteur(25, "rename the panel's person key")
+{
+  coverage_restore_scene()
+  panel_write(DECLARED_YEARS)
+  renamed <- readr::read_csv(panel_path, progress = FALSE,
+                             col_types = readr::cols(.default = "c"))
+  names(renamed)[names(renamed) == "npi"] <- "provider_npi"
+  readr::write_csv(renamed, panel_path)
+  verdict <- attempt_publication(panel_manifest_for())
+  chk(verdict$refused, "a declared person key that is gone refuses to publish")
+  chk(grepl("schema_invalid", verdict$message), "as a schema failure")
+
+  # INVERTED half: a source that declares NO person key must still publish.
+  # The Medicaid concordance is a year-by-classification aggregate.
+  declared_keyless <- panel_manifest_for()
+  declared_keyless$npi_field <- NA_character_
+  declared_keyless$state_field <- NA_character_
+  keyless_verdict <- attempt_publication(declared_keyless)
+  chk(!keyless_verdict$refused,
+      "but an aggregate that declares neither key nor state still publishes")
+  chk(all(is.na(keyless_verdict$audit$unique_npi_count)),
+      "counting no persons rather than inventing some")
+}
+
+saboteur(26, "damage the panel so readr parses it but reports problems")
+{
+  # A corrupt PANEL must say it is corrupt, not "missing npi or the declared
+  # state column" -- that message names a fix (rerun the harvester to restore
+  # a column) that would not help, and hides one that would.
+  coverage_restore_scene()
+  writeLines(c("npi,snapshot_year,practice_state",
+               "1000000001,2021,CO",
+               "1000000002,2022"), panel_path)
+  verdict <- attempt_publication(panel_manifest_for(2021:2022))
+  chk(verdict$refused, "a short row in the panel refuses to publish")
+  chk(grepl("UNPARSEABLE", verdict$message),
+      "and the refusal says unparseable")
+  chk(!grepl("missing npi", verdict$message),
+      "not 'missing npi', which would name a fix that cannot help")
+}
+
 unlink(sabotage_dir, recursive = TRUE)
-cat(sprintf("\n%s (%d failures across 20 saboteurs)\n",
+cat(sprintf("\n%s (%d failures across 26 saboteurs)\n",
             if (fails == 0L) "PASS" else "FAIL", fails))
 quit(status = if (fails == 0L) 0L else 1L)

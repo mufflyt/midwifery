@@ -381,6 +381,35 @@ cat("\n[4] current-state agreement across every source (latest year each)\n")
 current <- c(
   lapply(longi, function(d) d %>% filter(year == max(year)) %>% transmute(npi, year = 1L, state)),
   lapply(snap,  function(d) d %>% transmute(npi, year = 1L, state)))
+
+# ONE VOTE PER LINEAGE, NOT PER FILE. Medicare Part B and Part D are two
+# products of one CMS claims pipeline and never named different states on
+# 13,745 shared NPI-years (mrost_agreement_pairwise.csv): counting both as
+# independent votes in consensus-tier or truth-fusion steps double-counts a
+# single underlying record. The pairwise tables above keep them separate on
+# purpose -- "does Part D agree with NPPES" is a real question with a real
+# answer (96.6%), and the pair is not a vote there. Every step that counts
+# sources as voters uses `current_collapsed`, where the family rule is the
+# one attribute_claims_collapse_lineage() encodes: same value -> one claim;
+# conflict -> no claim; one side present -> passes through.
+collapse_pair_to_family <- function(a, b) {
+  dplyr::full_join(a %>% dplyr::rename(state_a = .data$state),
+                   b %>% dplyr::rename(state_b = .data$state),
+                   by = c("npi", "year")) %>%
+    dplyr::mutate(state = dplyr::case_when(
+      is.na(.data$state_a) ~ .data$state_b,
+      is.na(.data$state_b) ~ .data$state_a,
+      .data$state_a == .data$state_b ~ .data$state_a,
+      TRUE ~ NA_character_)) %>%
+    dplyr::filter(!is.na(.data$state)) %>%
+    dplyr::select("npi", "year", "state")
+}
+current_collapsed <- current
+if (all(c("medicare_part_b", "medicare_part_d") %in% names(current))) {
+  current_collapsed$medicare_claims <- collapse_pair_to_family(
+    current$medicare_part_b, current$medicare_part_d)
+  current_collapsed[c("medicare_part_b", "medicare_part_d")] <- NULL
+}
 agr_now <- attribute_agreement(current, "state") %>%
   group_by(source_a, source_b) %>%
   summarise(n_comparable = n(), n_agree = sum(agree), .groups = "drop") %>%
@@ -401,7 +430,7 @@ if (length(current) >= 3) {
   write_with_provenance(ooo_rate, file.path(ART, "mrost_odd_one_out_rate.csv"), inputs = COHORT, na = "")
 }
 
-tier <- attribute_consensus_tier(current, "state")
+tier <- attribute_consensus_tier(current_collapsed, "state")
 tier_sum <- tier %>% count(tier, name = "n_npis") %>%
   mutate(pct = round(100 * n_npis / sum(n_npis), 1))
 print(as.data.frame(tier_sum), row.names = FALSE)
@@ -461,6 +490,13 @@ cat("\n[8] truth fusion (majority) vs each source\n")
 claims <- bind_rows(lapply(names(current), function(n)
   current[[n]] %>% transmute(entity_id = npi, attribute = "state", source_id = n,
                              claimed_value = state, reference_year = 2026L)))
+# The collapse is applied at the claims layer as well, through the package's
+# own rule rather than the hand-rolled one above, so the two enforcement
+# points cannot drift: current_collapsed governs the consensus tier and this
+# call governs fusion. on_conflict = "drop" matches the family rule.
+claims <- attribute_claims_collapse_lineage(
+  claims, lineage_groups = list(medicare_claims = c("medicare_part_b", "medicare_part_d")),
+  on_conflict = "drop")
 fus <- tryCatch(attribute_truth_fusion(claims, method = "majority"), error = function(e) {
   cat("  truth fusion failed:", conditionMessage(e), "\n"); NULL })
 if (!is.null(fus)) {

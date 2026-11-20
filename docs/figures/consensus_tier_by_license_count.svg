@@ -26,53 +26,53 @@
   </clipPath>
 </defs>
 <g clip-path='url(#cpMC4wMHw2MTIuMDB8MC4wMHwzNjAuMDA=)'>
-<rect x='0.000000000000064' y='0.00' width='612.00' height='360.00' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<rect x='0.00' y='0.00' width='612.00' height='360.00' style='stroke-width: 1.26; stroke: none; fill: #FFFFFF;' />
 </g>
 <defs>
-  <clipPath id='cpNzYuMTh8NjA2LjUyfDY0LjA1fDI3NS42OA=='>
-    <rect x='76.18' y='64.05' width='530.34' height='211.62' />
+  <clipPath id='cpOTAuMDV8NjA1LjUyfDU1Ljg4fDI1Mi4yNw=='>
+    <rect x='90.05' y='55.88' width='515.47' height='196.39' />
   </clipPath>
 </defs>
-<g clip-path='url(#cpNzYuMTh8NjA2LjUyfDY0LjA1fDI3NS42OA==)'>
-<polyline points='76.18,275.68 76.18,64.05 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='206.16,275.68 206.16,64.05 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='336.15,275.68 336.15,64.05 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='466.14,275.68 466.14,64.05 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='596.12,275.68 596.12,64.05 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<rect x='499.18' y='190.06' width='92.92' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6B6B6B;' />
-<rect x='592.10' y='190.06' width='4.02' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #8C8C8C;' />
-<rect x='76.18' y='190.06' width='423.00' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #333333;' />
-<rect x='279.67' y='93.87' width='271.45' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6B6B6B;' />
-<rect x='551.12' y='93.87' width='45.00' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #8C8C8C;' />
-<rect x='76.18' y='93.87' width='203.50' height='55.79' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #333333;' />
-<text x='545.64' y='221.32' text-anchor='middle' style='font-size: 9.39px;fill: #262626; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>17.9%</text>
-<text x='287.68' y='221.32' text-anchor='middle' style='font-size: 9.39px;fill: #FFFFFF; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>81.4%</text>
-<text x='415.40' y='125.12' text-anchor='middle' style='font-size: 9.39px;fill: #262626; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>52.2%</text>
-<text x='573.62' y='125.12' text-anchor='middle' style='font-size: 9.39px;fill: #262626; font-family: "Arial";' textLength='21.38px' lengthAdjust='spacingAndGlyphs'>8.7%</text>
-<text x='177.92' y='125.12' text-anchor='middle' style='font-size: 9.39px;fill: #FFFFFF; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>39.1%</text>
+<g clip-path='url(#cpOTAuMDV8NjA1LjUyfDU1Ljg4fDI1Mi4yNw==)'>
+<polyline points='90.05,252.27 90.05,55.88 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='216.39,252.27 216.39,55.88 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='342.74,252.27 342.74,55.88 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='469.08,252.27 469.08,55.88 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='595.42,252.27 595.42,55.88 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
+<rect x='501.20' y='172.82' width='90.31' height='51.78' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6B6B6B;' />
+<rect x='591.51' y='172.82' width='3.91' height='51.78' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #8C8C8C;' />
+<rect x='90.05' y='172.82' width='411.14' height='51.78' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #333333;' />
+<rect x='287.84' y='83.55' width='263.84' height='51.78' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6B6B6B;' />
+<rect x='551.68' y='83.55' width='43.74' height='51.78' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #8C8C8C;' />
+<rect x='90.05' y='83.55' width='197.79' height='51.78' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #333333;' />
+<text x='546.35' y='202.06' text-anchor='middle' style='font-size: 9.39px;fill: #262626; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>17.9%</text>
+<text x='295.62' y='202.06' text-anchor='middle' style='font-size: 9.39px;fill: #FFFFFF; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>81.4%</text>
+<text x='419.76' y='112.80' text-anchor='middle' style='font-size: 9.39px;fill: #262626; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>52.2%</text>
+<text x='573.55' y='112.80' text-anchor='middle' style='font-size: 9.39px;fill: #262626; font-family: "Arial";' textLength='21.38px' lengthAdjust='spacingAndGlyphs'>8.7%</text>
+<text x='188.95' y='112.80' text-anchor='middle' style='font-size: 9.39px;fill: #FFFFFF; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>39.1%</text>
 </g>
 <g clip-path='url(#cpMC4wMHw2MTIuMDB8MC4wMHwzNjAuMDA=)'>
-<text x='71.25' y='216.36' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='56.22px' lengthAdjust='spacingAndGlyphs'>1 licence state</text>
-<text x='71.25' y='225.86' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='42.75px' lengthAdjust='spacingAndGlyphs'>(n = 5,562)</text>
-<text x='71.25' y='120.17' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='65.77px' lengthAdjust='spacingAndGlyphs'>2+ licence states</text>
-<text x='71.25' y='129.67' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='42.75px' lengthAdjust='spacingAndGlyphs'>(n = 2,877)</text>
-<text x='76.18' y='286.91' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>0</text>
-<text x='206.16' y='286.91' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.78px' lengthAdjust='spacingAndGlyphs'>25</text>
-<text x='336.15' y='286.91' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.78px' lengthAdjust='spacingAndGlyphs'>50</text>
-<text x='466.14' y='286.91' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.78px' lengthAdjust='spacingAndGlyphs'>75</text>
-<text x='596.12' y='286.91' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='14.67px' lengthAdjust='spacingAndGlyphs'>100</text>
-<text x='341.35' y='299.37' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='177.41px' lengthAdjust='spacingAndGlyphs'>% of midwives in each licence group</text>
-<rect x='258.28' y='319.41' width='14.73' height='14.73' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #333333;' />
-<rect x='329.55' y='319.41' width='14.73' height='14.73' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6B6B6B;' />
-<rect x='388.57' y='319.41' width='14.73' height='14.73' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #8C8C8C;' />
-<text x='279.76' y='329.92' style='font-size: 8.80px; font-family: "Arial";' textLength='43.03px' lengthAdjust='spacingAndGlyphs'>unanimous</text>
-<text x='351.03' y='329.92' style='font-size: 8.80px; font-family: "Arial";' textLength='30.78px' lengthAdjust='spacingAndGlyphs'>majority</text>
-<text x='410.05' y='329.92' style='font-size: 8.80px; font-family: "Arial";' textLength='15.64px' lengthAdjust='spacingAndGlyphs'>split</text>
-<text x='76.18' y='29.83' style='font-size: 9.30px; font-family: "Arial";' textLength='416.83px' lengthAdjust='spacingAndGlyphs'>Consensus across the twelve-source comparison, by how many states CMS's Open Payments profile</text>
-<text x='76.18' y='43.22' style='font-size: 9.30px; font-family: "Arial";' textLength='354.14px' lengthAdjust='spacingAndGlyphs'>says she is licensed in. The split rate is 11.2 times higher among multi-state licensees.</text>
-<text x='76.18' y='56.61' style='font-size: 9.30px; font-family: "Arial";' textLength='367.16px' lengthAdjust='spacingAndGlyphs'>chi-square(2, n = 8,439) = 1601, p &lt; 2.2e-16. An association, not a per-case adjudication.</text>
-<text x='76.18' y='14.93' style='font-size: 13.20px; font-family: "Arial";' textLength='444.69px' lengthAdjust='spacingAndGlyphs'>Midwives licensed in several states are the ones the sources disagree about</text>
-<text x='606.52' y='352.67' text-anchor='end' style='font-size: 8.80px; font-family: "Arial";' textLength='390.59px' lengthAdjust='spacingAndGlyphs'>artifacts/consensus_tier_by_license_count.csv; tiers from artifacts/mrost_consensus_tier_by_npi.csv</text>
+<text x='84.23' y='196.81' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='66.48px' lengthAdjust='spacingAndGlyphs'>1 license state</text>
+<text x='84.23' y='208.04' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='50.55px' lengthAdjust='spacingAndGlyphs'>(n = 5,562)</text>
+<text x='84.23' y='107.54' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='77.75px' lengthAdjust='spacingAndGlyphs'>2+ license states</text>
+<text x='84.23' y='118.78' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='50.55px' lengthAdjust='spacingAndGlyphs'>(n = 2,877)</text>
+<text x='90.05' y='265.54' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='5.78px' lengthAdjust='spacingAndGlyphs'>0</text>
+<text x='216.39' y='265.54' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>25</text>
+<text x='342.74' y='265.54' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>50</text>
+<text x='469.08' y='265.54' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>75</text>
+<text x='595.42' y='265.54' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='17.34px' lengthAdjust='spacingAndGlyphs'>100</text>
+<text x='347.79' y='280.27' text-anchor='middle' style='font-size: 13.00px; font-family: "Arial";' textLength='209.61px' lengthAdjust='spacingAndGlyphs'>% of midwives in each license group</text>
+<rect x='254.08' y='303.71' width='14.73' height='14.73' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #333333;' />
+<rect x='335.17' y='303.71' width='14.73' height='14.73' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6B6B6B;' />
+<rect x='401.79' y='303.71' width='14.73' height='14.73' style='stroke-width: 1.92; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #8C8C8C;' />
+<text x='276.56' y='314.79' style='font-size: 10.40px; font-family: "Arial";' textLength='50.86px' lengthAdjust='spacingAndGlyphs'>unanimous</text>
+<text x='357.65' y='314.79' style='font-size: 10.40px; font-family: "Arial";' textLength='36.39px' lengthAdjust='spacingAndGlyphs'>majority</text>
+<text x='424.27' y='314.79' style='font-size: 10.40px; font-family: "Arial";' textLength='18.50px' lengthAdjust='spacingAndGlyphs'>split</text>
+<text x='6.48' y='34.05' style='font-size: 9.30px; font-family: "Arial";' textLength='580.98px' lengthAdjust='spacingAndGlyphs'>Consensus across the eleven-source comparison, by how many states CMS's Open Payments profile says she is licensed in. The split rate is</text>
+<text x='6.48' y='47.45' style='font-size: 9.30px; font-family: "Arial";' textLength='560.77px' lengthAdjust='spacingAndGlyphs'>11.2 times higher among multi-state licensees. chi-square(2, n = 8,439) = 1601, p &lt; 2.2e-16. An association, not a per-case adjudication.</text>
+<text x='6.48' y='17.64' style='font-size: 15.60px; font-family: "Arial";' textLength='526.06px' lengthAdjust='spacingAndGlyphs'>Midwives licensed in several states are the ones the sources disagree about</text>
+<text x='605.52' y='340.10' text-anchor='end' style='font-size: 10.40px; font-family: "Arial";' textLength='553.91px' lengthAdjust='spacingAndGlyphs'>artifacts/consensus_tier_by_license_count.csv; tiers from artifacts/mrost_consensus_tier_by_npi.csv; CMS = Centers for</text>
+<text x='605.52' y='351.34' text-anchor='end' style='font-size: 10.40px; font-family: "Arial";' textLength='142.73px' lengthAdjust='spacingAndGlyphs'>Medicare &amp; Medicaid Services.</text>
 </g>
 </g>
 </svg>

@@ -1,0 +1,25 @@
+year,source,status,confidence,observed_years,detail
+2013,medicare_part_b_2013,release_id,medium,,warehouse table name medicare_*_<year> is the ingest pipeline's release identifier; no in-table year column exists
+2014,medicare_part_b_2014,release_id,medium,,warehouse table name medicare_*_<year> is the ingest pipeline's release identifier; no in-table year column exists
+2015,medicare_part_b_2015,release_id,medium,,warehouse table name medicare_*_<year> is the ingest pipeline's release identifier; no in-table year column exists
+2016,medicare_part_b_2016,release_id,medium,,warehouse table name medicare_*_<year> is the ingest pipeline's release identifier; no in-table year column exists
+2017,medicare_part_b_2017,release_id,medium,,warehouse table name medicare_*_<year> is the ingest pipeline's release identifier; no in-table year column exists
+2018,medicare_part_b_2018,release_id,medium,,warehouse table name medicare_*_<year> is the ingest pipeline's release identifier; no in-table year column exists
+2019,medicare_part_b_2019,release_id,medium,,warehouse table name medicare_*_<year> is the ingest pipeline's release identifier; no in-table year column exists
+2020,medicare_part_b_2020,release_id,medium,,warehouse table name medicare_*_<year> is the ingest pipeline's release identifier; no in-table year column exists
+2021,medicare_part_b_2021,release_id,medium,,warehouse table name medicare_*_<year> is the ingest pipeline's release identifier; no in-table year column exists
+2022,medicare_part_b_2022,release_id,medium,,warehouse table name medicare_*_<year> is the ingest pipeline's release identifier; no in-table year column exists
+2023,medicare_part_b_2023,release_id,medium,,warehouse table name medicare_*_<year> is the ingest pipeline's release identifier; no in-table year column exists
+2024,part_b_by_provider_2024.csv,unverified,none,NA,"no in-file date, no release identifier in the path, no fingerprint"
+2013,part_d_by_provider_2013.csv,unverified,none,NA,"no in-file date, no release identifier in the path, no fingerprint"
+2014,part_d_by_provider_2014.csv,unverified,none,NA,"no in-file date, no release identifier in the path, no fingerprint"
+2015,part_d_by_provider_2015.csv,unverified,none,NA,"no in-file date, no release identifier in the path, no fingerprint"
+2016,part_d_by_provider_2016.csv,unverified,none,NA,"no in-file date, no release identifier in the path, no fingerprint"
+2017,part_d_by_provider_2017.csv,unverified,none,NA,"no in-file date, no release identifier in the path, no fingerprint"
+2018,part_d_by_provider_2018.csv,unverified,none,NA,"no in-file date, no release identifier in the path, no fingerprint"
+2019,part_d_by_provider_2019.csv,unverified,none,NA,"no in-file date, no release identifier in the path, no fingerprint"
+2020,part_d_by_provider_2020.csv,unverified,none,NA,"no in-file date, no release identifier in the path, no fingerprint"
+2021,part_d_by_provider_2021.csv,unverified,none,NA,"no in-file date, no release identifier in the path, no fingerprint"
+2022,medicare_part_d_2022,release_id,medium,,warehouse table name medicare_*_<year> is the ingest pipeline's release identifier; no in-table year column exists
+2023,medicare_part_d_2023,release_id,medium,,warehouse table name medicare_*_<year> is the ingest pipeline's release identifier; no in-table year column exists
+2024,part_d_by_provider_2024.csv,unverified,none,NA,"no in-file date, no release identifier in the path, no fingerprint"

@@ -37,17 +37,47 @@
 suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr); library(mysteryroster)})
 
 source(file.path("R", "lib", "clean_state.R"))
+source(file.path("R", "lib", "source_coverage.R"))
+
+# --- every input is declared before any of it is read ------------------------
+# THE SAME CONTRACT AS build_state_source_audit.R, FOR THE SAME REASON. This
+# script read the same eight sources from its own path literals, so the two
+# producers could disagree about what a source IS while publishing numbers
+# side by side in the same appendix. Both now resolve every input through
+# config/state_source_audit_sources.csv, which is the only declaration of the
+# intended window; a literal here would be a second inventory that nothing
+# validates. See R/lib/source_coverage.R for the panel contract.
+#
+# Medicaid is deliberately absent from this list, matching the exclusion this
+# script's header already explains: its richer classification is not reducible
+# to a pairwise percentage, so this producer never reads it.
+AUDITED_SOURCES <- c("nppes", "dac_physician_compare", "pecos_revalidation",
+                     "facility_affiliation_ccn", "healthgrades", "doximity",
+                     "cms_ndh_fhir")
+audit_coverage <- validate_source_coverage(read_source_manifest(),
+                                           publication_mode = TRUE,
+                                           source_ids = AUDITED_SOURCES)
+NPPES_PANEL <- declared_path(audit_coverage, "nppes")
+DAC_HISTORY <- declared_path(audit_coverage, "dac_physician_compare", 2025L)
+DAC_CURRENT <- declared_path(audit_coverage, "dac_physician_compare", 2026L)
+PECOS_HISTORY <- declared_path(audit_coverage, "pecos_revalidation")
+FA_CURRENT <- declared_path(audit_coverage, "facility_affiliation_ccn", 2026L)
+HEALTHGRADES_SCRAPE <- declared_path(audit_coverage, "healthgrades")
+DOXIMITY_MATCHED <- declared_path(audit_coverage, "doximity")
+NDH_FHIR <- declared_path(audit_coverage, "cms_ndh_fhir")
 
 # --- NPPES --------------------------------------------------------------
-nppes <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+nppes <- read_csv(NPPES_PANEL, col_types = cols(.default = "c"),
+                  progress = FALSE) %>%
   transmute(npi = trimws(npi), year = as.integer(snapshot_year), state = clean_state(practice_state)) %>%
   filter(!is.na(npi), nzchar(npi))
 
 # --- DAC / Physician Compare, 2013-2016 + 2026 ---------------------------
-hist_dac <- read_csv("artifacts/physician_compare_historical_midwives.csv",
+hist_dac <- read_csv(DAC_HISTORY,
                       col_types = cols(.default = "c"), progress = FALSE) %>%
   transmute(npi = trimws(npi), year = as.integer(substr(vintage, 1, 4)), state = clean_state(practice_state))
-cur_dac <- read_csv("dac_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+cur_dac <- read_csv(DAC_CURRENT, col_types = cols(.default = "c"),
+                    progress = FALSE) %>%
   transmute(npi = trimws(npi), year = 2026L, state = clean_state(practice_state))
 dac_all <- bind_rows(hist_dac, cur_dac) %>% filter(!is.na(npi))
 
@@ -65,22 +95,25 @@ op_all <- read_open_payments_state_series(
   publication_mode = TRUE)$rows
 
 # --- PECOS revalidation/reassignment, 2021-2026 --------------------------
-pecos <- read_csv("artifacts/pecos_revalidation_cohort_state_by_year.csv",
+pecos <- read_csv(PECOS_HISTORY,
                    col_types = cols(.default = "c"), progress = FALSE) %>%
   transmute(npi = trimws(npi), year = as.integer(year), state = clean_state(pecos_state))
 
 # --- Facility Affiliation / CCN-NPI, current (2026) only -----------------
-fa <- read_csv("artifacts/dac_facility_affiliations.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+fa <- read_csv(FA_CURRENT, col_types = cols(.default = "c"),
+               progress = FALSE) %>%
   transmute(npi = trimws(npi), year = 2026L, state = clean_state(state)) %>% filter(!is.na(npi)) %>%
   group_by(npi, year) %>% slice(1) %>% ungroup()
 
 # --- Healthgrades, current scrape only -----------------------------------
-hg <- read_csv("healthgrades_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+hg <- read_csv(HEALTHGRADES_SCRAPE, col_types = cols(.default = "c"),
+               progress = FALSE) %>%
   transmute(npi = trimws(hg_npi), year = 2026L, state = clean_state(hg_state)) %>%
   filter(!is.na(npi), nzchar(npi))
 
 # --- Doximity -------------------------------------------------------------
-dox <- read_csv("artifacts/doximity_public_matched.csv", col_types = cols(.default = "c"), progress = FALSE)
+dox <- read_csv(DOXIMITY_MATCHED, col_types = cols(.default = "c"),
+                progress = FALSE)
 link <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
   filter(cohort_member == "TRUE") %>% transmute(certification_number, npi = trimws(npi))
 dox <- dox %>% left_join(link, by = "certification_number", relationship = "many-to-one") %>%
@@ -110,7 +143,8 @@ bon <- read_bon_state_snapshot(publication_mode = TRUE)$comparable %>%
   mutate(year = 2026L)
 
 # --- FHIR / CMS National Directory of Healthcare Providers, current only -
-ndh <- read_csv("artifacts/cms_ndh_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+ndh <- read_csv(NDH_FHIR, col_types = cols(.default = "c"),
+                progress = FALSE) %>%
   filter(toupper(ndh_found) %in% c("TRUE", "1")) %>%
   mutate(state = clean_state(str_match(ndh_addresses, "\\b([A-Z]{2})\\s+\\d{5}")[, 2])) %>%
   transmute(npi = trimws(npi), year = 2026L, state) %>% filter(!is.na(npi), !is.na(state))

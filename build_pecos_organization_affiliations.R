@@ -92,7 +92,12 @@ con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 duckdb::duckdb_register(con, "cohort", cohort)
 
-rd <- function(path) sprintf(
+# NAMED read_csv_auto_sql, NOT rd. Eleven other tracked files define `rd`
+# as a CSV reader that forces every column to character; this one builds a
+# DuckDB scan expression and returns a STRING. Same name, different return
+# type, different job -- which is how a reader gets pasted into a query and
+# a query gets handed to dplyr.
+read_csv_auto_sql <- function(path) sprintf(
   "read_csv_auto('%s', header=TRUE, all_varchar=TRUE, ignore_errors=TRUE)", path)
 
 # --- A. individual enrollments for our midwives ------------------------------
@@ -103,7 +108,7 @@ ind <- dbGetQuery(con, sprintf("
          e.pecos_asct_cntl_id AS individual_pac_id,
          e.provider_type_desc AS individual_provider_type
   FROM cohort c
-  JOIN %s e ON TRIM(e.npi) = c.npi", rd(ENROL)))
+  JOIN %s e ON TRIM(e.npi) = c.npi", read_csv_auto_sql(ENROL)))
 cli::cli_alert_success("midwives with a PECOS enrollment: {format(n_distinct(ind$midwife_npi), big.mark = ',')}")
 
 if (!nrow(ind)) {
@@ -121,7 +126,7 @@ pairs <- dbGetQuery(con, sprintf("
          r.rcv_bnft_enrlmt_id AS org_enrlmt_id
   FROM ind i
   JOIN %s r ON TRIM(r.reasgn_bnft_enrlmt_id) = i.individual_enrlmt_id",
-  rd(REASSIGN)))
+  read_csv_auto_sql(REASSIGN)))
 cli::cli_alert_success("reassignment pairs: {format(nrow(pairs), big.mark = ',')} for {format(n_distinct(pairs$midwife_npi), big.mark = ',')} midwives")
 duckdb::duckdb_register(con, "pairs", pairs)
 
@@ -137,7 +142,7 @@ aff <- dbGetQuery(con, sprintf("
          o.provider_type_desc  AS organization_provider_type,
          o.state_cdstr         AS organization_state
   FROM pairs p
-  JOIN %s o ON TRIM(o.enrlmt_id) = p.org_enrlmt_id", rd(ENROL)))
+  JOIN %s o ON TRIM(o.enrlmt_id) = p.org_enrlmt_id", read_csv_auto_sql(ENROL)))
 
 # A receiving entity with no organization name and no Type-2 NPI cannot be
 # reported as an organization. Kept and labelled rather than dropped: silently
@@ -185,7 +190,7 @@ if (file.exists(ADDR)) {
                                 ORDER BY l.state_cdstr, l.city_name, l.zip_cd) rn
       FROM (SELECT DISTINCT org_enrlmt_id FROM aff) a
       JOIN %s l ON TRIM(l.enrlmt_id) = a.org_enrlmt_id) WHERE rn = 1",
-    rd(ADDR)))
+    read_csv_auto_sql(ADDR)))
   # Deterministic pick: an organization with several locations gets the first
   # by state/city/zip, not by row order. Which location is recorded must not
   # depend on how the file was written.

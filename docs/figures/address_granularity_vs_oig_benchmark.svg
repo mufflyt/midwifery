@@ -29,49 +29,50 @@
 <rect x='0.000000000000064' y='0.00' width='612.00' height='374.40' style='stroke-width: 1.26; stroke: none; fill: #FFFFFF;' />
 </g>
 <defs>
-  <clipPath id='cpNDQuOTN8NjA1LjUyfDYuNDh8Mjc3Ljkw'>
-    <rect x='44.93' y='6.48' width='560.59' height='271.43' />
+  <clipPath id='cpNDQuOTN8NjA1LjUyfDYuNDh8MjY2LjY3'>
+    <rect x='44.93' y='6.48' width='560.59' height='260.19' />
   </clipPath>
 </defs>
-<g clip-path='url(#cpNDQuOTN8NjA1LjUyfDYuNDh8Mjc3Ljkw)'>
-<polyline points='44.93,244.64 605.52,244.64 ' style='stroke-width: 0.63; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='44.93,178.11 605.52,178.11 ' style='stroke-width: 0.63; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='44.93,111.59 605.52,111.59 ' style='stroke-width: 0.63; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='44.93,45.06 605.52,45.06 ' style='stroke-width: 0.63; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='44.93,277.90 605.52,277.90 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='44.93,211.38 605.52,211.38 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='44.93,144.85 605.52,144.85 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='44.93,78.32 605.52,78.32 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='44.93,11.80 605.52,11.80 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
-<rect x='369.82' y='154.51' width='76.44' height='123.39' style='stroke-width: 1.26; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #D2551F;' />
-<rect x='459.01' y='116.30' width='76.44' height='161.60' style='stroke-width: 1.26; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #2A78D6;' />
-<rect x='115.01' y='253.18' width='76.44' height='24.72' style='stroke-width: 1.26; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #D2551F;' />
-<rect x='204.19' y='245.84' width='76.44' height='32.07' style='stroke-width: 1.26; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #2A78D6;' />
-<line x1='44.93' y1='42.13' x2='605.52' y2='42.13' style='stroke-width: 1.26; stroke: #595959; stroke-dasharray: 6.73,6.73; stroke-linecap: butt;' />
-<text x='83.15' y='62.76' style='font-size: 10.24px;fill: #333333; font-family: "Arial";' textLength='290.44px' lengthAdjust='spacingAndGlyphs'>Inspector General 2011 benchmark: 88.6% of 987,266 providers</text>
-<text x='83.15' y='75.67' style='font-size: 10.24px;fill: #333333; font-family: "Arial";' textLength='256.58px' lengthAdjust='spacingAndGlyphs'>listed in both federal systems had a practice-location ZIP</text>
-<text x='83.15' y='88.57' style='font-size: 10.24px;fill: #333333; font-family: "Arial";' textLength='148.45px' lengthAdjust='spacingAndGlyphs'>that did not match between them</text>
-<text x='408.04' y='150.64' text-anchor='middle' style='font-size: 10.81px; font-family: "Arial";' textLength='30.59px' lengthAdjust='spacingAndGlyphs'>46.4%</text>
-<text x='497.23' y='112.43' text-anchor='middle' style='font-size: 10.81px; font-family: "Arial";' textLength='30.59px' lengthAdjust='spacingAndGlyphs'>60.7%</text>
-<text x='153.23' y='249.31' text-anchor='middle' style='font-size: 10.81px; font-family: "Arial";' textLength='24.59px' lengthAdjust='spacingAndGlyphs'>9.3%</text>
-<text x='242.41' y='241.97' text-anchor='middle' style='font-size: 10.81px; font-family: "Arial";' textLength='30.59px' lengthAdjust='spacingAndGlyphs'>12.1%</text>
+<g clip-path='url(#cpNDQuOTN8NjA1LjUyfDYuNDh8MjY2LjY3)'>
+<polyline points='44.93,234.78 605.52,234.78 ' style='stroke-width: 0.63; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='44.93,171.01 605.52,171.01 ' style='stroke-width: 0.63; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='44.93,107.24 605.52,107.24 ' style='stroke-width: 0.63; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='44.93,43.46 605.52,43.46 ' style='stroke-width: 0.63; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='44.93,266.67 605.52,266.67 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='44.93,202.90 605.52,202.90 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='44.93,139.12 605.52,139.12 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='44.93,75.35 605.52,75.35 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='44.93,11.58 605.52,11.58 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
+<rect x='369.82' y='148.38' width='76.44' height='118.29' style='stroke-width: 1.26; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #D2551F;' />
+<rect x='459.01' y='111.75' width='76.44' height='154.92' style='stroke-width: 1.26; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #2A78D6;' />
+<rect x='115.01' y='242.97' width='76.44' height='23.70' style='stroke-width: 1.26; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #D2551F;' />
+<rect x='204.19' y='235.93' width='76.44' height='30.74' style='stroke-width: 1.26; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #2A78D6;' />
+<line x1='44.93' y1='40.66' x2='605.52' y2='40.66' style='stroke-width: 1.26; stroke: #595959; stroke-dasharray: 6.73,6.73; stroke-linecap: butt;' />
+<text x='83.15' y='60.73' style='font-size: 10.24px;fill: #333333; font-family: "Arial";' textLength='290.44px' lengthAdjust='spacingAndGlyphs'>Inspector General 2011 benchmark: 88.6% of 987,266 providers</text>
+<text x='83.15' y='73.64' style='font-size: 10.24px;fill: #333333; font-family: "Arial";' textLength='256.58px' lengthAdjust='spacingAndGlyphs'>listed in both federal systems had a practice-location ZIP</text>
+<text x='83.15' y='86.55' style='font-size: 10.24px;fill: #333333; font-family: "Arial";' textLength='148.45px' lengthAdjust='spacingAndGlyphs'>that did not match between them</text>
+<text x='408.04' y='144.52' text-anchor='middle' style='font-size: 10.81px; font-family: "Arial";' textLength='30.59px' lengthAdjust='spacingAndGlyphs'>46.4%</text>
+<text x='497.23' y='107.89' text-anchor='middle' style='font-size: 10.81px; font-family: "Arial";' textLength='30.59px' lengthAdjust='spacingAndGlyphs'>60.7%</text>
+<text x='153.23' y='239.10' text-anchor='middle' style='font-size: 10.81px; font-family: "Arial";' textLength='24.59px' lengthAdjust='spacingAndGlyphs'>9.3%</text>
+<text x='242.41' y='232.06' text-anchor='middle' style='font-size: 10.81px; font-family: "Arial";' textLength='30.59px' lengthAdjust='spacingAndGlyphs'>12.1%</text>
 </g>
 <g clip-path='url(#cpMC4wMHw2MTIuMDB8MC4wMHwzNzQuNDA=)'>
-<text x='39.10' y='281.62' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='5.78px' lengthAdjust='spacingAndGlyphs'>0</text>
-<text x='39.10' y='215.09' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>25</text>
-<text x='39.10' y='148.57' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>50</text>
-<text x='39.10' y='82.04' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>75</text>
-<text x='39.10' y='15.52' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='17.34px' lengthAdjust='spacingAndGlyphs'>100</text>
-<text x='197.82' y='291.17' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='63.00px' lengthAdjust='spacingAndGlyphs'>Practice state</text>
-<text x='452.64' y='291.17' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='81.88px' lengthAdjust='spacingAndGlyphs'>Practice ZIP code</text>
-<text x='325.23' y='305.90' text-anchor='middle' style='font-size: 13.00px; font-family: "Arial";' textLength='153.25px' lengthAdjust='spacingAndGlyphs'>Geographic unit compared</text>
-<text transform='translate(15.79,142.19) rotate(-90)' text-anchor='middle' style='font-size: 13.00px; font-family: "Arial";' textLength='143.11px' lengthAdjust='spacingAndGlyphs'>Records disagreeing (%)</text>
-<text x='131.53' y='341.36' style='font-size: 13.00px; font-family: "Arial";' textLength='78.06px' lengthAdjust='spacingAndGlyphs'>Matching rule</text>
-<rect x='216.90' y='328.90' width='15.60' height='15.60' style='stroke-width: 1.26; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #D2551F;' />
-<rect x='381.78' y='328.90' width='15.60' height='15.60' style='stroke-width: 1.26; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #2A78D6;' />
-<text x='239.82' y='340.43' style='font-size: 10.40px; font-family: "Arial";' textLength='134.64px' lengthAdjust='spacingAndGlyphs'>no reported value in common</text>
-<text x='404.69' y='340.43' style='font-size: 10.40px; font-family: "Arial";' textLength='114.23px' lengthAdjust='spacingAndGlyphs'>reported value sets differ</text>
-<text x='605.52' y='365.74' text-anchor='end' style='font-size: 10.40px; font-family: "Arial";' textLength='478.55px' lengthAdjust='spacingAndGlyphs'>artifacts/oig_remake/oig_table4_consistency_2019_and_2026.csv; benchmark OEI-07-09-00440 table 4</text>
+<text x='39.10' y='270.39' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='5.78px' lengthAdjust='spacingAndGlyphs'>0</text>
+<text x='39.10' y='206.62' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>25</text>
+<text x='39.10' y='142.84' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>50</text>
+<text x='39.10' y='79.07' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>75</text>
+<text x='39.10' y='15.30' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='17.34px' lengthAdjust='spacingAndGlyphs'>100</text>
+<text x='197.82' y='279.94' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='63.00px' lengthAdjust='spacingAndGlyphs'>Practice state</text>
+<text x='452.64' y='279.94' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='81.88px' lengthAdjust='spacingAndGlyphs'>Practice ZIP code</text>
+<text x='325.23' y='294.67' text-anchor='middle' style='font-size: 13.00px; font-family: "Arial";' textLength='153.25px' lengthAdjust='spacingAndGlyphs'>Geographic unit compared</text>
+<text transform='translate(15.79,136.57) rotate(-90)' text-anchor='middle' style='font-size: 13.00px; font-family: "Arial";' textLength='143.11px' lengthAdjust='spacingAndGlyphs'>Records disagreeing (%)</text>
+<text x='131.53' y='330.13' style='font-size: 13.00px; font-family: "Arial";' textLength='78.06px' lengthAdjust='spacingAndGlyphs'>Matching rule</text>
+<rect x='216.90' y='317.67' width='15.60' height='15.60' style='stroke-width: 1.26; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #D2551F;' />
+<rect x='381.78' y='317.67' width='15.60' height='15.60' style='stroke-width: 1.26; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #2A78D6;' />
+<text x='239.82' y='329.19' style='font-size: 10.40px; font-family: "Arial";' textLength='134.64px' lengthAdjust='spacingAndGlyphs'>no reported value in common</text>
+<text x='404.69' y='329.19' style='font-size: 10.40px; font-family: "Arial";' textLength='114.23px' lengthAdjust='spacingAndGlyphs'>reported value sets differ</text>
+<text x='605.52' y='354.50' text-anchor='end' style='font-size: 10.40px; font-family: "Arial";' textLength='578.58px' lengthAdjust='spacingAndGlyphs'>artifacts/oig_remake/oig_table4_consistency_2019_and_2026.csv; benchmark OEI-07-09-00440 table 4; OIG = HHS Office of</text>
+<text x='605.52' y='365.74' text-anchor='end' style='font-size: 10.40px; font-family: "Arial";' textLength='85.52px' lengthAdjust='spacingAndGlyphs'>Inspector General.</text>
 </g>
 </g>
 </svg>

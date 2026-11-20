@@ -105,10 +105,13 @@ This work is explicitly **not complete**, and says so in its own tracking docume
 (`docs/spec-completion-matrix.md`): 5 of 14 planned sections are done, 4 partial, 5 not started.
 Worth knowing before building on it:
 
-- **Part B and Part D claims are still counted as two independent votes** despite sharing one
-  underlying claims lineage -- 100% agreement on 13,745 NPI-years, which this work's own PPEF
-  recovery *grew* rather than shrank. `attribute_claims_collapse_lineage()` exists and is not
-  yet applied here.
+- **Part B and Part D claims now count as ONE vote** (fixed 2026-11-18): both
+  `compare_all_sources_mysteryroster.R` consensus-tier and truth-fusion steps collapse the
+  {part_b, part_d} family through `attribute_claims_collapse_lineage()` (1,198 NPIs collapsed
+  on agreement, 0 dropped on conflict in the 2026 run), and `build_state_source_audit.R`
+  compares a single lineage-collapsed `medicare_claims` series built by
+  `build_medicare_claims_state_series.R`. Pairwise tables still report each part separately
+  on purpose -- a pair is a measurement, not a vote.
 - **NPPES snapshots are 6.0-19.1 months apart** (median 12.0), so every year-over-year rate in
   this repo assumes a clean annual period that doesn't actually exist.
 - A validator for source-year assumptions, `assert_source_year()`, is implemented and tested

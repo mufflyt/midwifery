@@ -38,18 +38,13 @@
 # testable without the 655 MB national file.
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 
 # Source only what is needed. The file's pipeline entry point downloads a CMS
 # dataset at call time; the flag helper does not.

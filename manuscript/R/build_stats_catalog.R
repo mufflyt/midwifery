@@ -1404,6 +1404,28 @@ mw_build_catalog <- function(root = ".") {
       a$medicaid_table <- by_class
     }
 
+    # THE SET-MEMBERSHIP PAIR, READ RATHER THAN TYPED. The manuscript stated
+    # these two as literals -- pc(74.7, 1) and pc(88.5, 1) -- in the Results
+    # and again in the Discussion, in a document whose setup chunk says every
+    # figure is reached by key and nothing is typed by hand. They were not
+    # wrong: audit_medicaid_set_membership.R writes them to a tracked
+    # artifact, on 107,386 comparable NPI-years, a different and larger
+    # universe than the 53,414 observed provider-years the classification
+    # table counts. Being right is not the same as being wired up: a typed
+    # number does not move when its artifact is rebuilt, which is the failure
+    # mode this catalog exists to prevent.
+    acc_setm <- rd(file.path(MW_ART, "medicaid_set_membership_before_after.csv"))
+    if (!is.null(acc_setm)) {
+      getq <- function(lbl) {
+        v <- acc_setm$value[acc_setm$quantity == lbl]
+        if (!length(v)) NA_real_ else as.numeric(v)
+      }
+      a$medicaid_equality_pct <- getq("agreement, equality with the modal pick (%)")
+      a$medicaid_membership_pct <- getq("agreement, membership of the enrolled set (%)")
+      a$medicaid_comparable_npi_years <- getq("comparable NPI-years vs NPPES")
+      a$medicaid_newly_agreeing_n <- getq("NPI-years newly scored as agreeing")
+    }
+
     cat_$dbacc <- a
   }
 

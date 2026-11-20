@@ -1,6 +1,6 @@
 attribute,n_paired_transitions,n_concordant_at_t,a_breaks_concordance_first,b_breaks_concordance_first,both_move_together_at_t1,n_discordant_at_t,b_adopts_a_at_t1_n,b_adopts_a_at_t1_pct,a_reverts_to_b_at_t1_n,a_reverts_to_b_at_t1_pct,persistent_discordant_at_t1_pct,base_year,disc_base_n,b_adopts_a_multi_n,b_adopts_a_multi_pct,a_reverts_b_multi_n,a_reverts_b_multi_pct,cross_section_disc_n,cross_section_in_prior_b_n,cross_section_in_prior_b_pct,source_b
-state,43746,38482,332,569,220,5264,265,5,552,10.5,79.4,2021,939,141,15,248,26.5,,,,pecos_revalidation
-state,11046,10806,4,164,0,240,4,1.7,146,60.8,34.6,2013,21,1,4.8,21,100,,,,medicare_part_b
-state,27153,26376,6,472,0,777,7,0.9,468,60.2,35.1,2013,76,6,7.9,74,97.4,,,,medicare_part_d
-state,10519,10149,13,240,80,370,134,36.2,166,44.9,11.9,2021,116,54,46.6,56,49.1,,,,open_payments
-state,94103,70274,656,1627,107,23829,1251,5.2,891,3.7,85.2,2013,1349,445,33,200,14.8,,,,medicaid_enrollment
+state,42761,37629,330,553,218,5132,258,5,543,10.6,79.3,2021,913,134,14.7,241,26.5,,,,pecos_revalidation
+state,10128,9900,3,154,0,228,4,1.8,138,60.5,34.6,2013,20,1,5,20,100,,,,medicare_part_b
+state,26273,25507,5,462,0,766,7,0.9,461,60.2,35.1,2013,76,6,7.9,74,97.4,,,,medicare_part_d
+state,10228,9863,13,238,79,365,131,35.9,165,45.2,11.8,2021,113,53,46.9,55,49.1,,,,open_payments
+state,91991,68676,651,1601,107,23315,1226,5.3,877,3.8,85.1,2013,1316,435,33.1,198,15.1,,,,medicaid_enrollment

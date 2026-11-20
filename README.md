@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml)
 [![Nightly](https://github.com/mufflyt/midwifery/actions/workflows/nightly.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/nightly.yml)
-[![Scientific laws](https://img.shields.io/badge/scientific%20laws-10%20declared%2C%2030%20planted%20defects-blueviolet.svg)](tests/science_law_registry.tsv)
+[![Scientific laws](https://img.shields.io/badge/scientific%20laws-13%20declared%2C%2039%20planted%20defects-blueviolet.svg)](tests/science_law_registry.tsv)
 [![Known debt](https://img.shields.io/badge/known%20debt-4%20open%2C%2010%20closed-informational.svg)](DEBT.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Cite this repository](https://img.shields.io/badge/cite-CITATION.cff-brightgreen.svg)](CITATION.cff)
@@ -39,7 +39,7 @@ flowchart LR
 | AMCB roster (live directory scrape, 2026-09-02) | 22,357 certificants; 15,328 ACTIVE | `artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json` (`artifact_rows`); `artifacts/linkage_completeness_by_status.csv` |
 | ACTIVE certificants matched to an NPPES midwifery record | 12,170 of 15,328 (79.4%) | `artifacts/linkage_completeness_by_status.csv`, disposition `matched` |
 | Analytic cohort (all AMCB statuses) | 16,775 | FROZEN manifest, `cohort_members` |
-| Table 1 cohort (ACTIVE, primary-linked) | 12,171 | `artifacts/table1_provenance.csv` |
+| Table 1 cohort (ACTIVE, primary-linked) | 12,170 (`cohort_n`). The tracked Table 1 CSV and markdown carry 12,171; `ci_artifact_contracts` A5 is open on that one-row disagreement and is not yet resolved, so both numbers are printed rather than one chosen. | `artifacts/table1_provenance.csv` |
 | State boards queried for licensure | 3: WA DOH, Colorado DORA, Texas BON (open data, matched by name). Illinois IDFPR open data was also queried, for licence issue dates in age calibration only. | `harvest_live_{wa,co,tx}_bon_from_tracked_roster.py`; `artifacts/state_nursing_license_ages_provenance.csv` (`states_queried`) |
 | Licences a board returned | 1,353: WA 369, CO 486, TX 498 (any status the board reported) | `docs/figures/board_licensure_observed_counts.csv` |
 | Delivery attendance | not observable: public Medicare Part B has no delivery-code rows for any provider, 2013–2023 | `artifacts/medicare_delivery_code_observability.csv` |
@@ -300,7 +300,7 @@ name carries the freeze hash. Source:
 ([`analyze_trilliant_activity_flag.R`](analyze_trilliant_activity_flag.R)). Full
 write-up: [docs/TECHNICAL_APPENDIX_TRILLIANT.md](docs/TECHNICAL_APPENDIX_TRILLIANT.md).*
 
-### 16. Can Trilliant's directory resolve who is who? (experiment)
+### 17. Can Trilliant's directory resolve who is who? (experiment)
 ![What Trilliant's directory says about each certificant's NPI](docs/figures/trilliant_identity_outcomes.png)
 *Figure 16: Every certificant in the 2026-08-10 freeze searched against all
 7.5 million directory NPIs by exact keys, and scored twice: with profession,
@@ -313,7 +313,7 @@ through it. Source: `artifacts/trilliant_identity_outcomes_dbcc76f4.csv`
 ([`experiment_trilliant_identity_linkage.R`](experiment_trilliant_identity_linkage.R)).
 Full write-up: [docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md](docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md).*
 
-### 17. Which identity fields the directory carries
+### 18. Which identity fields the directory carries
 ![Which identity fields Trilliant's directory carries](docs/figures/trilliant_identity_fields.png)
 *Figure 17: Field coverage over all 7,518,635 individual NPIs and over the
 25,540 with a midwifery specialty or credential. Name, sex and credential are
@@ -323,7 +323,7 @@ blank for nearly every midwife, so it cannot serve as identity evidence. Source:
 `artifacts/trilliant_provider_identity_coverage.csv`
 ([`build_trilliant_provider_identity_index.R`](build_trilliant_provider_identity_index.R)).*
 
-### 18. Graduation year separates true links from namesakes
+### 19. Graduation year separates true links from namesakes
 ![Trilliant's graduation year against the AMCB certification year](docs/figures/trilliant_identity_grad_year.png)
 *Figure 18: For each current link, the directory's graduation year minus the
 AMCB certification year, among pairs where the directory has one. Primary-tier
@@ -333,7 +333,7 @@ this (9.4 within a year, 0.05 beyond ten) are in
 `artifacts/trilliant_identity_evidence_dbcc76f4.csv`. Source:
 `artifacts/trilliant_identity_grad_year_agreement_dbcc76f4.csv`.*
 
-### 19. From the AMCB roster to the final analytic cohort
+### 20. From the AMCB roster to the final analytic cohort
 ![Cohort exclusion flow: AMCB roster to the final analytic cohort](docs/figures/cohort_exclusion_flow.png)
 *Figure 19: 22,357 AMCB certificants, step by step, to the **12,022**
 certificants (99.87% of those NPI-matched) in the final analytic cohort:

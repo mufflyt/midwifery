@@ -25,8 +25,8 @@
 # The two figures that need a per-provider computation rather than a published
 # summary read tracked artifacts in the ordinary way.
 #
-#   Figure 1  Coverage: which years each of the ten sources actually has
-#   Figure 2  Agreement with NPPES by year, the four multi-year sources
+#   Figure 1  Coverage: which years each of the sources actually has
+#   Figure 2  Agreement with NPPES by year, the five multi-year sources
 #   Figure 3  Address disagreement by granularity, against OIG's 2011 benchmark
 #   Figure 4  Multi-state Medicaid enrolment, the independent multi-state check
 #
@@ -39,32 +39,18 @@ suppressPackageStartupMessages({
   library(ggplot2); library(dplyr); library(readr); library(tidyr); library(stringr)
 })
 
-APPENDIX <- file.path("docs", "TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md")
-OUT_DIR  <- file.path("docs", "figures")
+source(file.path("R", "lib", "audit_figure_style.R"))  # AUDIT_SERIES,
+# fit_plot_labels(), gloss(), save_audit_fig() -- shared with
+# make_state_source_comparison_steps_figures.R, see that file's header.
 
-# CATEGORICAL HUES, FIXED ORDER, NEVER CYCLED. Four series, assigned by the
+APPENDIX <- file.path("docs", "TECHNICAL_APPENDIX_STATE_SOURCE_AUDIT_2026-11-03.md")
+OUT_DIR  <- AUDIT_FIG_DIR
+
+# CATEGORICAL HUES, FIXED ORDER, NEVER CYCLED. Five series, assigned by the
 # factor order of `source` so a hue follows the source and not its rank -- a
 # filter that drops a series must not repaint the survivors. These are the
-# blue/orange/aqua/amber slots of the house categorical ramp, each stepped
-# darker until it clears 3:1 against white, because a 0.9pt line in the
-# undarkened aqua (2.74:1) and amber (2.11:1) is not readable on a printed
-# page. Verified on the adjacent pairlist (the right test for lines): worst
-# colour-vision-deficient separation dE 8.7 (deutan), worst normal-vision
-# dE 16.3, all four >= 3:1 contrast. Do not substitute a hue without
-# re-checking all four gates; the amber in particular fails the
-# normal-vision floor against the orange if it is lightened back.
-AUDIT_SERIES <- c("#2a78d6", "#d2551f", "#0f8f62", "#9c6b00")
-
-save_audit_fig <- function(p, name, width = 8.5, height = 5.4) {
-  out <- file.path(OUT_DIR, name)
-  ggsave(paste0(out, ".pdf"), p, width = width, height = height,
-         device = grDevices::cairo_pdf)
-  ggsave(paste0(out, ".png"), p, width = width, height = height, dpi = 300, bg = "white")
-  tryCatch(ggsave(paste0(out, ".svg"), p, width = width, height = height),
-           error = function(e) message("  (svg skipped: ", conditionMessage(e), ")"))
-  cat(sprintf("  wrote %s.{png,pdf,svg}\n", out))
-}
-
+# blue/orange/aqua/amber/violet slots of the house categorical ramp, each
+# stepped darker until it clears 3:1 against white (violet #7a5195 = 6.1:1).
 #' Read one pipe-table out of a markdown file by its header row
 #'
 #' Finds the FIRST table whose header contains every name in `must_have`, then
@@ -156,7 +142,8 @@ p1 <- ggplot(cov, aes(x = year, y = source, fill = custodian)) +
   scale_fill_manual(values = c(Federal = AUDIT_SERIES[1],
                                State = AUDIT_SERIES[3],
                                Commercial = AUDIT_SERIES[2])) +
-  labs(caption = paste0("Parsed from \u00a72 of ", basename(APPENDIX)),
+  labs(caption = paste0("Parsed from \u00a72 of ", basename(APPENDIX),
+                        gloss("NPPES", "DAC", "PECOS", "CCN", "CMS", "NDH", "FHIR")),
        x = "Program year", y = "Record system", fill = "Custodian") +
   theme_minimal(base_size = 13) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(),
@@ -207,7 +194,8 @@ p2 <- ggplot(agr, aes(x = year, y = pct, colour = source, group = source)) +
   scale_x_continuous(breaks = seq(min(agr$year), max(agr$year), by = 2)) +
   scale_colour_manual(values = AUDIT_SERIES) +
   labs(caption = paste0("Parsed from \u00a73 of ", basename(APPENDIX),
-                        "; trend by weighted least squares, weights = n comparable"),
+                        "; trend by weighted least squares, weights = n comparable",
+                        gloss("NPPES", "DAC", "PECOS", "CCN")),
        x = "Year", y = "Agreement with NPPES (%)", colour = "Record system") +
   theme_minimal(base_size = 13) +
   theme(legend.position = "bottom", panel.grid.minor = element_blank(),
@@ -260,7 +248,8 @@ if (file.exists(oig4)) {
                                  `reported value sets differ` = AUDIT_SERIES[1])) +
     scale_x_discrete(labels = c(practice_state = "Practice state",
                                 practice_zip5 = "Practice ZIP code")) +
-    labs(caption = "artifacts/oig_remake/oig_table4_consistency_2019_and_2026.csv; benchmark OEI-07-09-00440 table 4",
+    labs(caption = paste0("artifacts/oig_remake/oig_table4_consistency_2019_and_2026.csv; ",
+                          "benchmark OEI-07-09-00440 table 4", gloss("OIG")),
          x = "Geographic unit compared", y = "Records disagreeing (%)",
          fill = "Matching rule") +
     theme_minimal(base_size = 13) +
@@ -289,7 +278,7 @@ if (file.exists(fp)) {
               vjust = -0.3, size = 3.1, lineheight = 0.95) +
     scale_y_continuous(expand = expansion(mult = c(0, 0.16))) +
     labs(title = "Multi-state practice is not an edge case",
-         subtitle = sprintf("State Medicaid programmes each midwife was enrolled in, %s enrolled midwives. %.1f%% were enrolled in two or more.",
+         subtitle = sprintf("State Medicaid programs each midwife was enrolled in, among %s midwives with any Medicaid enrollment. %.1f%% were enrolled in two or more at some point.",
                             format(sum(ms$n), big.mark = ","),
                             sum(ms$pct[ms$band != "1 state"])),
          caption = paste0(fp, " (set-membership footprint, not the modal reduction)"),
@@ -332,8 +321,9 @@ if (file.exists(red)) {
                            "moves with how many states she works in. Asked whether her LARGEST Medicaid state is one of them, it\n",
                            "falls away -- because reducing a multi-state provider to one state is a choice the comparison makes."),
          caption = paste0(red, "; counts below each point are midwives. ",
-                          "NDH is treated as a set of states, not reduced to one."),
-         x = "State Medicaid programmes she is enrolled in", y = NULL, colour = NULL) +
+                          "NDH is treated as a set of states, not reduced to one",
+                          gloss("NDH", "CMS")),
+         x = "State Medicaid programs she is enrolled in", y = NULL, colour = NULL) +
     theme_minimal(base_size = 13) +
     theme(legend.position = "bottom", panel.grid.minor = element_blank(),
           panel.grid.major.x = element_blank(),
@@ -354,7 +344,11 @@ lic <- "artifacts/consensus_tier_by_license_count.csv"
 if (file.exists(lic)) {
   L <- read_csv(lic, show_col_types = FALSE, progress = FALSE)
   L <- L %>%
+    # The artifact spells it "licence"; this journal is American. Relabelled
+    # for display rather than rewriting the artifact, because the artifact is
+    # the producer's output and a spelling is not a reason to move a number.
     mutate(tier = factor(tier, levels = c("split", "majority", "unanimous")),
+           lic_band = sub("licence", "license", lic_band, fixed = TRUE),
            lic_band = sprintf("%s\n(n = %s)", lic_band, format(n_in_band, big.mark = ",")))
   sp <- L %>% filter(tier == "split") %>% arrange(pct)
   ratio <- max(sp$pct) / min(sp$pct)
@@ -368,12 +362,13 @@ if (file.exists(lic)) {
     scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
     coord_flip() +
     labs(title = "Midwives licensed in several states are the ones the sources disagree about",
-         subtitle = sprintf(paste0("Consensus across the twelve-source comparison, by how many states CMS's Open Payments profile\n",
+         subtitle = sprintf(paste0("Consensus across the eleven-source comparison, by how many states CMS's Open Payments profile\n",
                                    "says she is licensed in. The split rate is %.1f times higher among multi-state licensees.\n",
                                    "chi-square(%d, n = %s) = %.0f, p < 2.2e-16. An association, not a per-case adjudication."),
                             ratio, L$chisq_df[1], format(L$chisq_n[1], big.mark = ","), L$chisq[1]),
-         caption = paste0(lic, "; tiers from artifacts/mrost_consensus_tier_by_npi.csv"),
-         x = NULL, y = "% of midwives in each licence group", fill = NULL) +
+         caption = paste0(lic, "; tiers from artifacts/mrost_consensus_tier_by_npi.csv",
+                          gloss("CMS")),
+         x = NULL, y = "% of midwives in each license group", fill = NULL) +
     theme_minimal(base_size = 13) +
     theme(legend.position = "bottom", panel.grid.major.y = element_blank(),
           panel.grid.minor = element_blank(),

@@ -1,135 +1,92 @@
-# Longitudinal Reconstruction Changelog
+# Longitudinal reconstruction changelog
 
-Method changes from the longitudinal source-reconstruction work, with what each
-did to the numbers. Entries that **withdraw** a published figure print the wrong
-number beside the right one; those are the entries that matter.
+Decisions and corrections that changed what the year-by-year series mean,
+in the order they landed. Dates are the commit date, not the observation
+window. The audit table is `artifacts/longitudinal_reconstruction_audit.csv`.
 
----
+## 2026-11-10 — Medicaid moved from SNAPSHOT to LONGITUDINAL
 
-## 2026-11-10 — Medicaid is not an unreliable source; the comparison was wrong
+T-MSIS enrollment was previously read as a single current state. Reading the
+enrollment segments longitudinally and comparing against ANY enrolled state
+(not an arbitrary modal pick) changed NPPES agreement from 74.7% to 88.5% —
+14,815 NPI-years reclassified. Multi-state enrollment remains set-valued;
+reducing it to one state is documented as a comparison choice, not a fact.
 
-**Withdrawn.** Three statements about `medicaid_enrollment`:
+## 2026-11-12 — Open Payments window declared 2021–2025, not 2013–2025
 
-| Published | Status |
-|---|---|
-| odd-one-out rate **0.166**, five times the next worst source | withdrawn — measured the comparator |
-| truth-fusion agreement **77.5% / 77.6%** | withdrawn — same cause |
-| "the clear systematic outlier" | unsupported |
+CNMs were not reportable covered recipients before program year 2021
+(SUPPORT Act expansion). The full 2013–2025 series is written with
+`usable_for_trend`; producers and consumers honour the flag — pre-2021 rows
+exist but carry no trend claims. 2013–2014 rows are additionally labelled
+`retrospective_profile_link` (no NPI in the source; linked through a
+2021–2025 profile lookup).
 
-**Root cause.** `expand_segments_to_years()` computed every `(year, npi, state)`
-a midwife was concurrently enrolled in, then kept one per NPI-year by modal rule
-and emitted the rest nowhere — **59,380 of 178,907 memberships, 33.2%**. Every
-comparison then tested whether another source *equalled one arbitrary pick*
-rather than whether it *named a state she was enrolled in*. A midwife enrolled
-in CO, NM and AZ was recorded as AZ and scored as disagreeing with a source that
-said CO.
+DAC is a 14-year arm (2013–2026) via
+`artifacts/physician_compare_historical_midwives.csv`; the residual
+"2017–2025 unused" item in the spec matrix concerns finer-grained mid-year
+vintages inside that file, not missing coverage.
 
-**Corrected.** On the same 107,386 comparable NPI-years:
+## 2026-11-14 — Medicare Part B + Part D collapsed to one claims vote
 
-| | agreement with NPPES |
-|---|---|
-| equality with the modal pick | 74.7% |
-| **membership of the enrolled set** | **88.5%** |
-| 2024 alone | **91.4%** |
+The two products share one claims lineage and never conflicted on 41,953
+NPI-years. Pairwise comparison keeps both arms; consensus/truth-fusion
+counts the family once (`attribute_claims_collapse_lineage`, zero
+conflicts). `medicare_claims` enters the audit manifest 2013–2024.
 
-**14,815 NPI-years newly scored as agreeing.** No underlying record changed.
+## 2026-11-14 — F4 lead/lag decomposed
 
-**No location assignment moved.** Truth fusion reads the single-valued series,
-which is unchanged; the footprint is a separate artifact. Whether fusion
-*should* resolve a multi-state source toward consensus is an open decision, not
-something changed here.
+`lead_lag_decomposition.csv` separates source-side delay, registry-side
+delay, persistent ascertainment/definitional disagreement, and unresolved
+transitions; `docs/temporal-evidence-validation.md` explains the categories.
+A source "adopting" NPPES's value later is not evidence of a real move.
 
-**Caveat.** 88.5% shows the two sources are consistent under the corrected
-comparison. It does not show that either names the midwife's true practice
-location.
+## 2026-11-18 — Canonical 13-field schema + F2/F3 uncertainty
 
-Files: `extract_medicaid_enrollment_state_by_year.R` (footprint emitter),
-`audit_medicaid_set_membership.R`. Tests: `[19]`, 7 checks. Saboteur:
-`medicaid-footprint-collapsed`, killed.
+`canonical_source_records.csv` (447k rows, 16,763 cohort NPIs) unifies the
+five longitudinal sources under `amcb_id`, `source_record_id`,
+`snapshot_date`, `effective_date`, `vintage`, `evidence_type`,
+`usable_for_trend`, `source_hash`, `reconstruction_version` — NA never
+invented. `agreement_cluster_bootstrap_ci.csv` (cluster bootstrap by NPI vs
+independence-assumption Wilson) and `persistence_denominators.csv`
+(followed-in-source vs lost-but-visible-in-NPPES) replace the missing
+denominator story.
 
----
+## 2026-11-18 — Year validation wired into producers
 
-## 2026-11-10 — A prior correction of mine was itself incomplete
+Open Payments: `assert_year_set` on in-file `Program_Year` — all 13 years
+`in_file_date`/retrospective. PPEF: `validate_vintage` on archive-internal
+dates. Medicare: `assert_source_year` → 13 warehouse tables `release_id`,
+11 renamed by-provider CSVs `unverified` (no in-file year column exists by
+design; fingerprint pinning pending).
 
-An earlier entry attributed Medicaid's disagreement to multi-state practice
-being a multi-valued question. Half right, one step short: the reduction did
-not merely *pick* one of several true states, it *discarded the others*. The
-estimand explanation was superseded by the set-membership finding above.
+## 2026-11-19 — OP linkage adjudication + CMS fingerprints + §11 audit
 
-Before that, I predicted the date-range expansion (A2) would resolve Medicaid's
-outlier status. It did not — odd-one-out moved **0.166 → 0.163**, fusion
-**77.5% → 77.6%**. The expansion was still correct and necessary; the prediction
-was wrong, and the prediction was mine.
+`adjudicate_op_linkage_450.py` rules each disagreement: 254/376
+input-universe, 95 tenant error (A), 27 genuinely ambiguous — B's join
+governs the practice-location estimand; neither implementation is deleted.
+`config/cms_by_provider_fingerprints.csv` pins sha256 for the eleven
+renamed by-provider CSVs, upgrading their year validation from `unverified`
+to `fingerprint` (verified end-to-end: correct hash → `fingerprint`, wrong
+hash → `refuted`). `longitudinal_reconstruction_audit.csv` closes §11.
 
----
+## 2026-11-19 — T-MSIS spending warehouse + Workstream C outputs
 
-## 2026-11-10 — Medicare billing gaps are not workforce exit
+`download_medicaid_provider_spending.py` completed: sha256-verified zip
+(3.76 GB → 11.55 GB CSV), 238,015,729 rows loaded locally then copied to
+`/Volumes/MufflySamsung/DuckDB/medicaid_provider_spending_verified.duckdb`
+with a row-count-verified copy. `extract_tmsis_medicaid_spending_history.R`
+produced the person-level cohort file (26,641 NPI-years, 7,467 NPIs,
+2018–2024): only 10 rows excluded on HCPCS code shape (all `'18'`), zero
+rows tripped the paid/lines/patients plausibility bounds — the documented
+national corruption does not reach this cohort, same reply the script was
+written to defend. `analyze_medicaid_billing_by_state.R` and
+`analyze_medicaid_billing_year_trend.R` produced the two aggregate
+artifacts; `R/lib/ob_midwife_cohort.R` gained an archive fallback so its
+pinned 20261012 ABOG input resolves to the newest local archive when the
+pin is absent (path+sha256 recorded in the sidecars).
 
-**27.1% is the wrong headline.** It divides by all 8,147 Part D midwives,
-including 1,682 seen in a single year who cannot have an interior gap. The
-conditional rate among midwives whose span covers ≥3 calendar years — the ones
-who could actually have one — is **40.1%** (2,209 of 5,514).
+## Known blocked items (unchanged)
 
-**Registry exit explains none of it.** Of 396 dated NPI deactivations in this
-cohort, **zero** fall inside a gap. Zero conflicting timelines.
-
-**Corroboration is mostly administrative, not clinical.** Of 2,731 episodes:
-
-| evidence during the gap | episodes | midwives | share |
-|---|---|---|---|
-| confirmed dated billing | 285 | 266 | **10.4%** |
-| Medicaid enrolment only | 2,223 | 1,831 | 81.4% |
-| none | 223 | 195 | 8.2% |
-
-An earlier draft reported 90–93% "corroboration" by counting enrolment as
-activity. Enrolment is administrative presence, not care delivered. For
-multi-year gaps, confirmed billing covers **any** missing year in 11.9% of
-episodes and **every** missing year in **2.1%**.
-
-**Suppression thresholds differ by program**, verified on the files: Part D
-admits on claims (`Tot_Clms ≥ 11`), Part B on beneficiaries and services
-(`Tot_Benes ≥ 11`, `Tot_Srvcs ≥ 11`). 35–41% of cohort Part D rows carry a
-suppressed beneficiary cell — those providers *are* in the file with one field
-withheld, which is a different mechanism from omission and is not evidence about
-how many were omitted.
-
-Files: `audit_billing_gaps_vs_registry_status.R`,
-`audit_billing_gap_mechanisms.R`, `audit_billing_gap_headline_figures.R`,
-`R/lib/billing_gaps.R`.
-
----
-
-## 2026-11-09/10 — Part D gains a state for every year; PPEF recovered
-
-**Part D**: 7,126 NPI-years over 4,349 midwives → **39,235 over 8,147**,
-2013–2024. The warehouse holds 2013–2021 only as the `_standardized` cut, which
-drops `Prscrbr_State_Abrvtn`; the CMS by-provider files carry it. Agreement with
-NPPES moved 96.2% → **96.6%** while the base grew five-fold — stability under
-more evidence, not a new finding.
-
-**PPEF**: 16 previously unread vintages, **127,372 rows / 11,931 midwives**,
-2016-08 → 2024-07. August 2016 alone holds **6,388** midwives with a state, five
-years before the existing PECOS series begins.
-
-**Medicaid enrolment** moved from the snapshot tier to longitudinal: 119,527
-NPI-years, 2013–2024. The whole-file modal state differed from the year-specific
-state on **14.4%** of NPI-years (30.5% in 2013 → 5.7% in 2024).
-
-**`medicare_part_d_presence` removed** as a separate source — it would have
-counted Part D twice.
-
----
-
-## Open, not done
-
-- Part B and Part D remain one claims lineage counted as two votes: **100.0%
-  agreement on 13,745 NPI-years**, up from 2,423, so this work *grew* the
-  inflation. `attribute_claims_collapse_lineage()` is not applied.
-- NPPES snapshots are **6.0–19.1 months apart** (median 12.0); every
-  year-over-year rate assumes a period that does not exist.
-- Wilson intervals over transition counts treat repeated measurements of the
-  same midwife as independent and are anticonservative.
-- `assert_source_year()` is implemented and tested but not yet called by any
-  producer.
-- DAC 2017–2025 sits in the warehouse unused; its producer aborts on five
-  absent NBER files before reaching the code that would read it.
+- NPPES deactivation chronology: source file now current
+  (NPPES_Deactivated_NPI_Report_110926_V2, Nov 2026); Workstream E pending.
+- DAC 2017–2025: no historical Physician Compare files on this volume.

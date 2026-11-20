@@ -27,21 +27,16 @@
 # Run: Rscript tests/test_nightly_registry_detect.R
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 GATE <- file.path(root, "tests", "ci_nightly_registry_check.R")
 REG  <- file.path(root, "tests", "ci_nightly_exceptions.txt")
 ORIGINAL <- readLines(REG, warn = FALSE)
 on.exit(writeLines(ORIGINAL, REG), add = TRUE)
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 
 # NAMED FOR THIS GATE, not `run_gate`. H4 refuses one function defined at top
 # level in two files, and tests/test_aggregate_gate.R already has a run_gate()

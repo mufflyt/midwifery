@@ -279,7 +279,32 @@ DUCKDB_RAW_CONNECTION_EXCEPTIONS <- list(
        exception_class = "mutation-harness",
        owner = "DuckDB bootstrap architecture maintainer",
        added_date = "2026-09-07",
-       removal_condition = "If mutation M8 is ever removed from this file, remove this entry too.")
+       removal_condition = "If mutation M8 is ever removed from this file, remove this entry too."),
+  # BOTH OF THESE WERE COMMENTED BUT NOT REGISTERED, and the nightly of
+  # 2026-11-18 is where that surfaced. The sites carried
+  # `# duckdb-exception: test fixture`, which the scanner reads as the single
+  # token "test" (its pattern is `duckdb-exception:\\s*(\\S+)`), and no entry
+  # for the file existed at all -- so the comment exempted nothing, which is
+  # precisely the behaviour this registry is for. One tag per site rather than
+  # one shared tag for both: a shared tag would also cover a THIRD connection
+  # added later with the same comment, which is the file-level cover this
+  # design replaced.
+  list(file = "tests/test_zip_normalizer_saboteurs.R",
+       tag = "zip-sql-typed-column",
+       locator = "Z14b (a column that is not VARCHAR)",
+       reason = "In-memory connection -- dbConnect(duckdb::duckdb()) with no dbdir -- holding a three-column CREATE TABLE of INTEGER/VARCHAR/DOUBLE ZIPs, to prove zip5_sql() survives the non-VARCHAR column that killed the core-parquet panel build. No external file is read on it, so there is no encoding hazard to bootstrap against, and duckdb_connect() would point a saboteur suite at the production warehouse.",
+       exception_class = "synthetic-fixture",
+       owner = "ZIP normalizer maintainer",
+       added_date = "2026-11-19",
+       removal_condition = "If Z14b stops constructing its own typed table -- or is ever changed to read an external file on this connection -- remove this entry."),
+  list(file = "tests/test_zip_normalizer_saboteurs.R",
+       tag = "zip-sql-agreement",
+       locator = "Z14 (the generated SQL agrees with the R function)",
+       reason = "In-memory connection carrying sixteen probe values written with dbWriteTable() from an R data frame, so the SQL zip5_sql() generates and the R normalizer can be run over identical input and compared. Same reasoning as zip-sql-typed-column: nothing is read from disk and the comparison needs a real connection.",
+       exception_class = "synthetic-fixture",
+       owner = "ZIP normalizer maintainer",
+       added_date = "2026-11-19",
+       removal_condition = "If the SQL-vs-R agreement check is ever removed from this file, remove this entry too.")
   # tests/test_cache_vintage_detect.R was in this registry under the regex-based
   # scanner (duckdb_scan_for_raw_connections()'s predecessor), which matched the
   # pattern inside a STRING LITERAL the test builds as example output text. The
@@ -299,7 +324,14 @@ DUCKDB_RAW_CONNECTION_EXCEPTIONS <- list(
 #' for how the count of 4 in an earlier version of this file undercounted --
 #' it was file-level, and missed three sites in a file that was never listed
 #' at all).
-DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX <- 7L
+#'
+#' 7 -> 9 on 2026-11-19, deliberately and with the reason recorded: the two ZIP
+#' saboteur sites above. They are not new connections -- they have existed
+#' since the 2026-11-16 ZIP sweep, carrying an exception comment the scanner
+#' could not match -- so this raise registers an existing footprint rather
+#' than admitting new bypasses. The speed bump worked: the gate refused them
+#' for three days and the nightly said so every morning.
+DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX <- 9L
 
 #' Structured probe of DuckDB encoding-bootstrap capability on this connection
 #'

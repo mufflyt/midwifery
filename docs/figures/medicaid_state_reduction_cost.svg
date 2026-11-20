@@ -26,64 +26,65 @@
   </clipPath>
 </defs>
 <g clip-path='url(#cpMC4wMHw2MTIuMDB8MC4wMHw0MDMuMjA=)'>
-<rect x='0.00' y='0.000000000000057' width='612.00' height='403.20' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<rect x='0.00' y='0.000000000000057' width='612.00' height='403.20' style='stroke-width: 1.26; stroke: none; fill: #FFFFFF;' />
 </g>
 <defs>
-  <clipPath id='cpMjUuMDh8NjA2LjUyfDY0LjA1fDMxOC44OA=='>
-    <rect x='25.08' y='64.05' width='581.44' height='254.82' />
+  <clipPath id='cpMjkuNjV8NjA1LjUyfDY5LjI3fDI5NS40Nw=='>
+    <rect x='29.65' y='69.27' width='575.88' height='226.20' />
   </clipPath>
 </defs>
-<g clip-path='url(#cpMjUuMDh8NjA2LjUyfDY0LjA1fDMxOC44OA==)'>
-<polyline points='25.08,307.29 606.52,307.29 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='25.08,262.74 606.52,262.74 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='25.08,218.19 606.52,218.19 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='25.08,173.64 606.52,173.64 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='25.08,129.09 606.52,129.09 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='25.08,84.54 606.52,84.54 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<polyline points='90.29,109.55 198.97,100.35 307.65,95.00 416.33,89.10 525.01,88.53 ' style='stroke-width: 1.71; stroke: #191919; stroke-linecap: butt;' />
-<polyline points='90.29,109.55 198.97,220.37 307.65,243.29 416.33,252.18 525.01,256.09 ' style='stroke-width: 1.71; stroke: #9E9E9E; stroke-linecap: butt;' />
-<circle cx='90.29' cy='109.55' r='2.92' style='stroke-width: 0.71; stroke: #191919; fill: #191919;' />
-<circle cx='90.29' cy='109.55' r='2.92' style='stroke-width: 0.71; stroke: #9E9E9E; fill: #9E9E9E;' />
-<circle cx='198.97' cy='100.35' r='2.92' style='stroke-width: 0.71; stroke: #191919; fill: #191919;' />
-<circle cx='198.97' cy='220.37' r='2.92' style='stroke-width: 0.71; stroke: #9E9E9E; fill: #9E9E9E;' />
-<circle cx='307.65' cy='95.00' r='2.92' style='stroke-width: 0.71; stroke: #191919; fill: #191919;' />
-<circle cx='307.65' cy='243.29' r='2.92' style='stroke-width: 0.71; stroke: #9E9E9E; fill: #9E9E9E;' />
-<circle cx='416.33' cy='89.10' r='2.92' style='stroke-width: 0.71; stroke: #191919; fill: #191919;' />
-<circle cx='416.33' cy='252.18' r='2.92' style='stroke-width: 0.71; stroke: #9E9E9E; fill: #9E9E9E;' />
-<circle cx='525.01' cy='88.53' r='2.92' style='stroke-width: 0.71; stroke: #191919; fill: #191919;' />
-<circle cx='525.01' cy='256.09' r='2.92' style='stroke-width: 0.71; stroke: #9E9E9E; fill: #9E9E9E;' />
-<text x='531.66' y='91.89' style='font-size: 9.39px;fill: #191919; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>99.1%</text>
-<text x='531.66' y='259.45' style='font-size: 9.39px;fill: #9E9E9E; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>61.5%</text>
-<text x='90.29' y='301.44' text-anchor='middle' style='font-size: 8.54px;fill: #666666; font-family: "Arial";' textLength='21.38px' lengthAdjust='spacingAndGlyphs'>7,054</text>
-<text x='198.97' y='301.44' text-anchor='middle' style='font-size: 8.54px;fill: #666666; font-family: "Arial";' textLength='21.38px' lengthAdjust='spacingAndGlyphs'>3,467</text>
-<text x='307.65' y='301.44' text-anchor='middle' style='font-size: 8.54px;fill: #666666; font-family: "Arial";' textLength='21.38px' lengthAdjust='spacingAndGlyphs'>1,406</text>
-<text x='416.33' y='301.44' text-anchor='middle' style='font-size: 8.54px;fill: #666666; font-family: "Arial";' textLength='19.00px' lengthAdjust='spacingAndGlyphs'>  489</text>
-<text x='525.01' y='301.44' text-anchor='middle' style='font-size: 8.54px;fill: #666666; font-family: "Arial";' textLength='19.00px' lengthAdjust='spacingAndGlyphs'>  335</text>
+<g clip-path='url(#cpMjkuNjV8NjA1LjUyfDY5LjI3fDI5NS40Nw==)'>
+<polyline points='29.65,285.19 605.52,285.19 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='29.65,245.64 605.52,245.64 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='29.65,206.10 605.52,206.10 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='29.65,166.55 605.52,166.55 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='29.65,127.01 605.52,127.01 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='29.65,87.46 605.52,87.46 ' style='stroke-width: 1.26; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='94.23,109.66 201.87,101.49 309.51,96.74 417.15,91.51 524.79,91.00 ' style='stroke-width: 1.71; stroke: #191919; stroke-linecap: butt;' />
+<polyline points='94.23,109.66 201.87,208.03 309.51,228.37 417.15,236.26 524.79,239.74 ' style='stroke-width: 1.71; stroke: #9E9E9E; stroke-linecap: butt;' />
+<circle cx='94.23' cy='109.66' r='2.98' style='stroke-width: 0.84; stroke: #191919; fill: #191919;' />
+<circle cx='94.23' cy='109.66' r='2.98' style='stroke-width: 0.84; stroke: #9E9E9E; fill: #9E9E9E;' />
+<circle cx='201.87' cy='101.49' r='2.98' style='stroke-width: 0.84; stroke: #191919; fill: #191919;' />
+<circle cx='201.87' cy='208.03' r='2.98' style='stroke-width: 0.84; stroke: #9E9E9E; fill: #9E9E9E;' />
+<circle cx='309.51' cy='96.74' r='2.98' style='stroke-width: 0.84; stroke: #191919; fill: #191919;' />
+<circle cx='309.51' cy='228.37' r='2.98' style='stroke-width: 0.84; stroke: #9E9E9E; fill: #9E9E9E;' />
+<circle cx='417.15' cy='91.51' r='2.98' style='stroke-width: 0.84; stroke: #191919; fill: #191919;' />
+<circle cx='417.15' cy='236.26' r='2.98' style='stroke-width: 0.84; stroke: #9E9E9E; fill: #9E9E9E;' />
+<circle cx='524.79' cy='91.00' r='2.98' style='stroke-width: 0.84; stroke: #191919; fill: #191919;' />
+<circle cx='524.79' cy='239.74' r='2.98' style='stroke-width: 0.84; stroke: #9E9E9E; fill: #9E9E9E;' />
+<text x='531.44' y='94.36' style='font-size: 9.39px;fill: #191919; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>99.1%</text>
+<text x='531.44' y='243.10' style='font-size: 9.39px;fill: #9E9E9E; font-family: "Arial";' textLength='26.59px' lengthAdjust='spacingAndGlyphs'>61.5%</text>
+<text x='94.23' y='280.34' text-anchor='middle' style='font-size: 8.54px;fill: #666666; font-family: "Arial";' textLength='21.38px' lengthAdjust='spacingAndGlyphs'>7,054</text>
+<text x='201.87' y='280.34' text-anchor='middle' style='font-size: 8.54px;fill: #666666; font-family: "Arial";' textLength='21.38px' lengthAdjust='spacingAndGlyphs'>3,467</text>
+<text x='309.51' y='280.34' text-anchor='middle' style='font-size: 8.54px;fill: #666666; font-family: "Arial";' textLength='21.38px' lengthAdjust='spacingAndGlyphs'>1,406</text>
+<text x='417.15' y='280.34' text-anchor='middle' style='font-size: 8.54px;fill: #666666; font-family: "Arial";' textLength='19.00px' lengthAdjust='spacingAndGlyphs'>  489</text>
+<text x='524.79' y='280.34' text-anchor='middle' style='font-size: 8.54px;fill: #666666; font-family: "Arial";' textLength='19.00px' lengthAdjust='spacingAndGlyphs'>  335</text>
 </g>
 <g clip-path='url(#cpMC4wMHw2MTIuMDB8MC4wMHw0MDMuMjA=)'>
-<text x='20.15' y='310.44' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.78px' lengthAdjust='spacingAndGlyphs'>50</text>
-<text x='20.15' y='265.89' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.78px' lengthAdjust='spacingAndGlyphs'>60</text>
-<text x='20.15' y='221.34' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.78px' lengthAdjust='spacingAndGlyphs'>70</text>
-<text x='20.15' y='176.79' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.78px' lengthAdjust='spacingAndGlyphs'>80</text>
-<text x='20.15' y='132.24' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.78px' lengthAdjust='spacingAndGlyphs'>90</text>
-<text x='20.15' y='87.69' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='14.67px' lengthAdjust='spacingAndGlyphs'>100</text>
-<text x='90.29' y='330.11' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>1</text>
-<text x='198.97' y='330.11' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>2</text>
-<text x='307.65' y='330.11' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>3</text>
-<text x='416.33' y='330.11' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>4</text>
-<text x='525.01' y='330.11' text-anchor='middle' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='10.03px' lengthAdjust='spacingAndGlyphs'>5+</text>
-<text x='315.80' y='342.57' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='223.28px' lengthAdjust='spacingAndGlyphs'>State Medicaid programmes she is enrolled in</text>
-<line x1='146.44' y1='369.97' x2='160.26' y2='369.97' style='stroke-width: 1.71; stroke: #191919; stroke-linecap: butt;' />
-<circle cx='153.35' cy='369.97' r='2.92' style='stroke-width: 0.71; stroke: #191919; fill: #191919;' />
-<line x1='284.16' y1='369.97' x2='297.98' y2='369.97' style='stroke-width: 1.71; stroke: #9E9E9E; stroke-linecap: butt;' />
-<circle cx='291.07' cy='369.97' r='2.92' style='stroke-width: 0.71; stroke: #9E9E9E; fill: #9E9E9E;' />
-<text x='167.47' y='373.12' style='font-size: 8.80px; font-family: "Arial";' textLength='109.48px' lengthAdjust='spacingAndGlyphs'>Enrolled in a state NDH lists</text>
-<text x='305.19' y='373.12' style='font-size: 8.80px; font-family: "Arial";' textLength='181.70px' lengthAdjust='spacingAndGlyphs'>Her LARGEST Medicaid state is one NDH lists</text>
-<text x='25.08' y='29.83' style='font-size: 9.30px; font-family: "Arial";' textLength='429.14px' lengthAdjust='spacingAndGlyphs'>Asked whether a midwife is enrolled in Medicaid somewhere CMS's directory lists her, the answer barely</text>
-<text x='25.08' y='43.22' style='font-size: 9.30px; font-family: "Arial";' textLength='434.42px' lengthAdjust='spacingAndGlyphs'>moves with how many states she works in. Asked whether her LARGEST Medicaid state is one of them, it</text>
-<text x='25.08' y='56.61' style='font-size: 9.30px; font-family: "Arial";' textLength='411.36px' lengthAdjust='spacingAndGlyphs'>falls away -- because reducing a multi-state provider to one state is a choice the comparison makes.</text>
-<text x='25.08' y='14.93' style='font-size: 13.20px; font-family: "Arial";' textLength='261.52px' lengthAdjust='spacingAndGlyphs'>Same records, two questions, a 38-point gap</text>
-<text x='606.52' y='395.87' text-anchor='end' style='font-size: 8.80px; font-family: "Arial";' textLength='547.44px' lengthAdjust='spacingAndGlyphs'>artifacts/medicaid_vs_ndh_state_reduction.csv; counts below each point are midwives. NDH is treated as a set of states, not reduced to one.</text>
+<text x='23.82' y='288.91' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>50</text>
+<text x='23.82' y='249.36' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>60</text>
+<text x='23.82' y='209.82' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>70</text>
+<text x='23.82' y='170.27' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>80</text>
+<text x='23.82' y='130.73' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.56px' lengthAdjust='spacingAndGlyphs'>90</text>
+<text x='23.82' y='91.18' text-anchor='end' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='17.34px' lengthAdjust='spacingAndGlyphs'>100</text>
+<text x='94.23' y='308.74' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='5.78px' lengthAdjust='spacingAndGlyphs'>1</text>
+<text x='201.87' y='308.74' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='5.78px' lengthAdjust='spacingAndGlyphs'>2</text>
+<text x='309.51' y='308.74' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='5.78px' lengthAdjust='spacingAndGlyphs'>3</text>
+<text x='417.15' y='308.74' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='5.78px' lengthAdjust='spacingAndGlyphs'>4</text>
+<text x='524.79' y='308.74' text-anchor='middle' style='font-size: 10.40px;fill: #4D4D4D; font-family: "Arial";' textLength='11.84px' lengthAdjust='spacingAndGlyphs'>5+</text>
+<text x='317.59' y='323.47' text-anchor='middle' style='font-size: 13.00px; font-family: "Arial";' textLength='245.75px' lengthAdjust='spacingAndGlyphs'>State Medicaid programs she is enrolled in</text>
+<line x1='120.23' y1='354.27' x2='134.06' y2='354.27' style='stroke-width: 1.71; stroke: #191919; stroke-linecap: butt;' />
+<circle cx='127.15' cy='354.27' r='2.98' style='stroke-width: 0.84; stroke: #191919; fill: #191919;' />
+<line x1='279.90' y1='354.27' x2='293.73' y2='354.27' style='stroke-width: 1.71; stroke: #9E9E9E; stroke-linecap: butt;' />
+<circle cx='286.82' cy='354.27' r='2.98' style='stroke-width: 0.84; stroke: #9E9E9E; fill: #9E9E9E;' />
+<text x='142.26' y='357.99' style='font-size: 10.40px; font-family: "Arial";' textLength='129.44px' lengthAdjust='spacingAndGlyphs'>Enrolled in a state NDH lists</text>
+<text x='301.93' y='357.99' style='font-size: 10.40px; font-family: "Arial";' textLength='214.73px' lengthAdjust='spacingAndGlyphs'>Her LARGEST Medicaid state is one NDH lists</text>
+<text x='6.48' y='34.05' style='font-size: 9.30px; font-family: "Arial";' textLength='568.17px' lengthAdjust='spacingAndGlyphs'>Asked whether a midwife is enrolled in Medicaid somewhere CMS's directory lists her, the answer barely moves with how many states she</text>
+<text x='6.48' y='47.45' style='font-size: 9.30px; font-family: "Arial";' textLength='564.09px' lengthAdjust='spacingAndGlyphs'>works in. Asked whether her LARGEST Medicaid state is one of them, it falls away -- because reducing a multi-state provider to one state</text>
+<text x='6.48' y='60.84' style='font-size: 9.30px; font-family: "Arial";' textLength='142.66px' lengthAdjust='spacingAndGlyphs'>is a choice the comparison makes.</text>
+<text x='6.48' y='17.64' style='font-size: 15.60px; font-family: "Arial";' textLength='309.39px' lengthAdjust='spacingAndGlyphs'>Same records, two questions, a 38-point gap</text>
+<text x='605.52' y='383.30' text-anchor='end' style='font-size: 10.40px; font-family: "Arial";' textLength='572.17px' lengthAdjust='spacingAndGlyphs'>artifacts/medicaid_vs_ndh_state_reduction.csv; counts below each point are midwives. NDH is treated as a set of states, not</text>
+<text x='605.52' y='394.54' text-anchor='end' style='font-size: 10.40px; font-family: "Arial";' textLength='541.36px' lengthAdjust='spacingAndGlyphs'>reduced to one; NDH = National Directory of Healthcare Providers; CMS = Centers for Medicare &amp; Medicaid Services.</text>
 </g>
 </g>
 </svg>

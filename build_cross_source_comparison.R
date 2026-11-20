@@ -144,13 +144,40 @@ dedupe_one_per_npi <- function(df) {
 }
 
 # --- reload every source's state extract, same logic as build_state_source_audit.R ---
-nppes <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+# EVERY INPUT IS DECLARED BEFORE ANY OF IT IS READ. This script read the same
+# eight sources from its own path literals while the audit it mirrors read
+# them from its own, so the two could disagree about what a source IS while
+# publishing numbers in the same appendix. Both now resolve every input
+# through config/state_source_audit_sources.csv, the only declaration of the
+# intended window. See R/lib/source_coverage.R for the panel contract -- a
+# declared year missing from inside a one-file-many-years source is refuted,
+# and a year nobody declared is refused.
+source(file.path("R", "lib", "source_coverage.R"))
+AUDITED_SOURCES <- c("nppes", "dac_physician_compare", "pecos_revalidation",
+                     "facility_affiliation_ccn", "healthgrades", "doximity",
+                     "cms_ndh_fhir")
+audit_coverage <- validate_source_coverage(read_source_manifest(),
+                                           publication_mode = TRUE,
+                                           source_ids = AUDITED_SOURCES)
+NPPES_PANEL <- declared_path(audit_coverage, "nppes")
+DAC_HISTORY <- declared_path(audit_coverage, "dac_physician_compare", 2025L)
+DAC_CURRENT <- declared_path(audit_coverage, "dac_physician_compare", 2026L)
+PECOS_HISTORY <- declared_path(audit_coverage, "pecos_revalidation")
+FA_CURRENT <- declared_path(audit_coverage, "facility_affiliation_ccn", 2026L)
+HEALTHGRADES_SCRAPE <- declared_path(audit_coverage, "healthgrades")
+DOXIMITY_MATCHED <- declared_path(audit_coverage, "doximity")
+NDH_FHIR <- declared_path(audit_coverage, "cms_ndh_fhir")
+
+nppes <- read_csv(NPPES_PANEL, col_types = cols(.default = "c"),
+                  progress = FALSE) %>%
   transmute(npi = trimws(npi), year = as.integer(snapshot_year), state = clean_state(practice_state)) %>%
   filter(!is.na(npi), nzchar(npi))
 
-hist_dac <- read_csv("artifacts/physician_compare_historical_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+hist_dac <- read_csv(DAC_HISTORY, col_types = cols(.default = "c"),
+                     progress = FALSE) %>%
   transmute(npi = trimws(npi), year = as.integer(substr(vintage, 1, 4)), state = clean_state(practice_state))
-cur_dac <- read_csv("dac_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+cur_dac <- read_csv(DAC_CURRENT, col_types = cols(.default = "c"),
+                    progress = FALSE) %>%
   transmute(npi = trimws(npi), year = 2026L, state = clean_state(practice_state))
 dac_all <- bind_rows(hist_dac, cur_dac) %>% filter(!is.na(npi))
 
@@ -161,21 +188,23 @@ dac_all <- bind_rows(hist_dac, cur_dac) %>% filter(!is.na(npi))
 # 2015-2020 are present but declared ineligible: CNMs only became reportable
 # covered recipients in program year 2021.
 source(file.path("R", "lib", "open_payments_state_series.R"))
-
-source(file.path("R", "lib", "source_coverage.R"))
 op_all <- read_open_payments_state_series(
   publication_mode = TRUE)$rows
 
-pecos <- read_csv("artifacts/pecos_revalidation_cohort_state_by_year.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+pecos <- read_csv(PECOS_HISTORY, col_types = cols(.default = "c"),
+                  progress = FALSE) %>%
   transmute(npi = trimws(npi), year = as.integer(year), state = clean_state(pecos_state))
 
-fa <- read_csv("artifacts/dac_facility_affiliations.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+fa <- read_csv(FA_CURRENT, col_types = cols(.default = "c"),
+               progress = FALSE) %>%
   transmute(npi = trimws(npi), state = clean_state(state)) %>% dedupe_one_per_npi()
 
-hg <- read_csv("healthgrades_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+hg <- read_csv(HEALTHGRADES_SCRAPE, col_types = cols(.default = "c"),
+               progress = FALSE) %>%
   transmute(npi = trimws(hg_npi), state = clean_state(hg_state)) %>% dedupe_one_per_npi()
 
-dox_raw <- read_csv("artifacts/doximity_public_matched.csv", col_types = cols(.default = "c"), progress = FALSE)
+dox_raw <- read_csv(DOXIMITY_MATCHED, col_types = cols(.default = "c"),
+                    progress = FALSE)
 link <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
   filter(cohort_member == "TRUE") %>% transmute(certification_number, npi = trimws(npi))
 dox <- dox_raw %>% left_join(link, by = "certification_number", relationship = "many-to-one") %>%
@@ -191,12 +220,12 @@ dox <- dox_raw %>% left_join(link, by = "certification_number", relationship = "
 # construction; in a consensus tally it should be read as one state-matched
 # address check among the sources, not an independent vote. See
 # R/lib/bon_state_snapshot.R.
-source(file.path("R", "lib", "source_coverage.R"))
 source(file.path("R", "lib", "bon_state_snapshot.R"))
 bon <- read_bon_state_snapshot(publication_mode = TRUE)$comparable %>%
   dedupe_one_per_npi()
 
-ndh <- read_csv("artifacts/cms_ndh_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+ndh <- read_csv(NDH_FHIR, col_types = cols(.default = "c"),
+                progress = FALSE) %>%
   filter(toupper(ndh_found) %in% c("TRUE", "1")) %>%
   mutate(state = clean_state(str_match(ndh_addresses, "\\b([A-Z]{2})\\s+\\d{5}")[, 2])) %>%
   transmute(npi = trimws(npi), state) %>% dedupe_one_per_npi()
@@ -312,7 +341,7 @@ if (!is.null(medicaid)) {
   source(file.path("R", "lib", "artifact_provenance.R"))
   write_with_provenance(containment, "artifacts/cross_source_medicaid_containment.csv",
                         inputs = c("artifacts/amcb_npi_linkage_FROZEN.csv",
-                                   "artifacts/cms_ndh_midwives.csv"), na = "")
+                                   NDH_FHIR), na = "")
   cat("Medicaid containment (is the other source's state anywhere in her Medicaid footprint?):\n")
   print(as.data.frame(containment))
 }
