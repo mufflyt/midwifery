@@ -29,9 +29,13 @@
 # =============================================================================
 
 library(testthat)
-library(here)
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 
-suppressWarnings(suppressMessages(source(here::here("R", "safe_divide.R"))))
+suppressWarnings(suppressMessages(source(file.path(test_repo_root(), "R", "safe_divide.R"))))
 ZT <- 1e-10   # default zero_threshold
 
 # -----------------------------------------------------------------------------
@@ -106,7 +110,7 @@ test_that("on_zero = 'error' stops on a zero denominator; 'silent' does not", {
 # Source contract: the zero-detection rule and default threshold unchanged.
 # -----------------------------------------------------------------------------
 test_that("regression: safe_divide zero rule is is.na | abs(denom) < zero_threshold (1e-10)", {
-  src <- paste(readLines(here::here("R", "safe_divide.R"), warn = FALSE), collapse = "\n")
+  src <- paste(readLines(file.path(test_repo_root(), "R", "safe_divide.R"), warn = FALSE), collapse = "\n")
   expect_true(grepl("zero_threshold\\s*=\\s*1e-10", src),
               info = "default zero tolerance must be 1e-10")
   expect_true(grepl("is\\.na\\(denominator\\)\\s*\\|\\s*abs\\(denominator\\)\\s*<\\s*zero_threshold", src),

@@ -52,6 +52,7 @@ root_dir <- {
   if (length(a)) normalizePath(dirname(sub("--file=", "", a[1]))) else normalizePath(".")
 }
 setwd(root_dir)
+source(file.path("R", "lib", "common_helpers.R"))  # chr(): all-character reader
 source(file.path("R", "lib", "artifact_provenance.R"))
 source(file.path("R", "lib", "address_keys.R"))
 
@@ -69,16 +70,15 @@ if (!file.exists(NPPES))
   stop(sprintf("NPPES dissemination not found: %s\n  Set NPPES_2025 or mount the volume.", NPPES),
        call. = FALSE)
 
-rd <- function(p) read_csv(p, col_types = cols(.default = "c"), progress = FALSE)
 
 # --- who is unresolved -------------------------------------------------------
 cw <- Sys.glob("artifacts/amcb_npi_crosswalk_*panel*.csv")
 cw <- cw[!grepl("manifest|provenance", cw)]
 cw <- cw[order(file.mtime(cw), decreasing = TRUE)][1]
-spine <- rd(cw) %>% filter(!is.na(npi), nzchar(npi)) %>%
+spine <- chr(cw) %>% filter(!is.na(npi), nzchar(npi)) %>%
   distinct(certification_number = amcb_id, npi)
-res <- rd("artifacts/organization_affiliation_resolved.csv")
-status <- rd("artifacts/cohort_membership_four_way.csv") %>%
+res <- chr("artifacts/organization_affiliation_resolved.csv")
+status <- chr("artifacts/cohort_membership_four_way.csv") %>%
   distinct(certification_number, .keep_all = TRUE) %>% select(certification_number, status)
 
 unres <- spine %>% left_join(status, by = "certification_number") %>%

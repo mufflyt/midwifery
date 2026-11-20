@@ -56,6 +56,7 @@ root_dir <- {
   if (length(a)) normalizePath(dirname(sub("--file=", "", a[1]))) else normalizePath(".")
 }
 setwd(root_dir)
+source(file.path("R", "lib", "common_helpers.R"))  # chr(): all-character reader
 source(file.path("R", "lib", "artifact_provenance.R"))
 source(file.path("R", "lib", "org_names.R"))
 source(file.path("R", "lib", "organization_affiliation_status.R"))
@@ -64,14 +65,13 @@ OUT     <- "artifacts/organization_affiliation_resolved.csv"
 OUT_SUM <- "artifacts/organization_affiliation_summary.csv"
 OUT_UNR <- "artifacts/organization_affiliation_unresolved.csv"
 
-rd <- function(p) read_csv(p, col_types = cols(.default = "c"), progress = FALSE)
 
 # --- spine -------------------------------------------------------------------
 cw <- Sys.glob("artifacts/amcb_npi_crosswalk_*panel*.csv")
 cw <- cw[!grepl("\\.manifest\\.json$|\\.provenance\\.json$", cw)]
 if (!length(cw)) stop("no AMCB->NPI crosswalk in artifacts/", call. = FALSE)
 cw <- cw[order(file.mtime(cw), decreasing = TRUE)][1]
-spine <- rd(cw) %>% filter(!is.na(npi), nzchar(npi)) %>%
+spine <- chr(cw) %>% filter(!is.na(npi), nzchar(npi)) %>%
   distinct(certification_number = amcb_id, npi)
 cli::cli_alert_info("spine: {format(nrow(spine), big.mark = ',')} resolved midwives")
 
@@ -101,7 +101,7 @@ cli::cli_h2("Arms")
 
 # PECOS reassignment -- carries real dates, from the spell table.
 if (have("artifacts/midwife_reassignment_spells.csv")) {
-  arm_note("pecos_reassignment", rd("artifacts/midwife_reassignment_spells.csv") %>%
+  arm_note("pecos_reassignment", chr("artifacts/midwife_reassignment_spells.csv") %>%
     transmute(npi = midwife_npi, org_id = org_pac_id, org_id_type = "pac_id",
               organization_name, first_evidence = first_seen_vintage,
               last_evidence = last_seen_vintage) %>%
@@ -110,7 +110,7 @@ if (have("artifacts/midwife_reassignment_spells.csv")) {
 
 # Care Compare -- dated by vintage; collapse to the observed span.
 if (have("artifacts/midwife_organization_panel.csv")) {
-  arm_note("care_compare_group", rd("artifacts/midwife_organization_panel.csv") %>%
+  arm_note("care_compare_group", chr("artifacts/midwife_organization_panel.csv") %>%
     filter(has_group %in% c("TRUE", "true")) %>%
     group_by(npi = midwife_npi, org_id = org_pac_id, organization_name) %>%
     summarise(first_evidence = min(vintage), last_evidence = max(vintage),
@@ -134,12 +134,12 @@ if (have("artifacts/midwife_organization_panel.csv")) {
 # not the new).
 coloc <- NULL
 if (have("artifacts/nppes_colocation_2025.csv")) {
-  coloc <- rd("artifacts/nppes_colocation_2025.csv") %>%
+  coloc <- chr("artifacts/nppes_colocation_2025.csv") %>%
     transmute(npi, org_id = org_npi, org_id_type = "npi_type2",
               organization_name, colocation_vintage = nppes_vintage)
 }
 if (have("artifacts/midwife_org_person.csv")) {
-  older <- rd("artifacts/midwife_org_person.csv") %>%
+  older <- chr("artifacts/midwife_org_person.csv") %>%
     transmute(npi, org_id = org_npi, org_id_type = "npi_type2",
               organization_name, colocation_vintage = "pre_2025")
   coloc <- if (is.null(coloc)) older
@@ -154,14 +154,14 @@ if (!is.null(coloc)) {
 
 # Facility / hospital arms -- CCN-identified, undated.
 if (have("artifacts/dac_facility_affiliations.csv")) {
-  arm_note("facility_affiliation", rd("artifacts/dac_facility_affiliations.csv") %>%
+  arm_note("facility_affiliation", chr("artifacts/dac_facility_affiliations.csv") %>%
     transmute(npi, org_id = ccn, org_id_type = "ccn",
               organization_name = facility_name,
               first_evidence = NA_character_, last_evidence = NA_character_) %>%
     filter(!is.na(npi), nzchar(npi)))
 }
 if (have("artifacts/midwife_hospital_affiliations.csv")) {
-  arm_note("hospital_affiliation", rd("artifacts/midwife_hospital_affiliations.csv") %>%
+  arm_note("hospital_affiliation", chr("artifacts/midwife_hospital_affiliations.csv") %>%
     transmute(npi, org_id = cms_ccn, org_id_type = "ccn",
               organization_name = hospital_name,
               first_evidence = NA_character_, last_evidence = NA_character_) %>%
@@ -189,7 +189,7 @@ bc <- list(
   c("artifacts/cabc_matched_midwives_final.csv", "matched_cabc_birth_center"))
 bc_rows <- lapply(bc, function(x) {
   if (!have(x[1])) return(NULL)
-  d <- rd(x[1]); if (!x[2] %in% names(d)) return(NULL)
+  d <- chr(x[1]); if (!x[2] %in% names(d)) return(NULL)
   tibble::tibble(npi = d$npi, org_id = NA_character_, org_id_type = "none",
                  organization_name = d[[x[2]]],
                  first_evidence = NA_character_, last_evidence = NA_character_)
@@ -202,7 +202,7 @@ if (nrow(bc_rows)) arm_note("birth_center_registry",
 
 if (have("artifacts/cohort_midwives_open_payments_type2_organizations.csv")) {
   arm_note("open_payments_org",
-       rd("artifacts/cohort_midwives_open_payments_type2_organizations.csv") %>%
+       chr("artifacts/cohort_midwives_open_payments_type2_organizations.csv") %>%
          transmute(npi = midwife_npi, org_id = type2_organization_npi,
                    org_id_type = "npi_type2",
                    organization_name = type2_organization_name,
@@ -319,7 +319,7 @@ cli::cli_alert_success("wrote {OUT_SUM} (cells under 11 suppressed)")
 # The unresolved group, described only in aggregate -- it is the work list, and
 # the person-level version stays out of the repo.
 geo <- if (have("artifacts/amcb_npi_geography.csv")) {
-  rd("artifacts/amcb_npi_geography.csv") %>% distinct(npi, .keep_all = TRUE) %>%
+  chr("artifacts/amcb_npi_geography.csv") %>% distinct(npi, .keep_all = TRUE) %>%
     select(npi, practice_state, taxonomy_description)
 } else tibble::tibble(npi = character(), practice_state = character(),
                       taxonomy_description = character())

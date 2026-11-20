@@ -26,9 +26,13 @@
 # =============================================================================
 
 library(testthat)
-library(here)
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 
-source(here("R", "utils", "resolve_tract_vintage.R"))
+source(file.path(test_repo_root(), "R", "utils", "resolve_tract_vintage.R"))
 
 BASE_DIR <- "data/08-block-group-overlap/output"
 

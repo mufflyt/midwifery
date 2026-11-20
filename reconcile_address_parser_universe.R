@@ -69,6 +69,7 @@ root_dir <- {
   if (length(a)) normalizePath(dirname(sub("--file=", "", a[1]))) else normalizePath(".")
 }
 setwd(root_dir)
+source(file.path("R", "lib", "common_helpers.R"))  # chr(): all-character reader
 source(file.path("R", "lib", "artifact_provenance.R"))
 source(file.path("R", "lib", "address_keys.R"))
 source(file.path("R", "lib", "isochrones_dep.R"))
@@ -89,16 +90,15 @@ if (!nzchar(NPPES))
 if (!file.exists(NPPES)) stop("NPPES 2025 not found: ", NPPES, call. = FALSE)
 
 OUT <- "artifacts/address_parser_reconciliation.csv"
-rd <- function(p) read_csv(p, col_types = cols(.default = "c"), progress = FALSE)
 
 # --- the cohort, built exactly as production builds it -----------------------
 cw <- Sys.glob("artifacts/amcb_npi_crosswalk_*panel*.csv")
 cw <- cw[!grepl("manifest|provenance", cw)]
 cw <- cw[order(file.mtime(cw), decreasing = TRUE)][1]
-spine <- rd(cw) %>% filter(!is.na(npi), nzchar(npi)) %>%
+spine <- chr(cw) %>% filter(!is.na(npi), nzchar(npi)) %>%
   distinct(certification_number = amcb_id, npi)
-res <- rd("artifacts/organization_affiliation_resolved.csv")
-status <- rd("artifacts/cohort_membership_four_way.csv") %>%
+res <- chr("artifacts/organization_affiliation_resolved.csv")
+status <- chr("artifacts/cohort_membership_four_way.csv") %>%
   distinct(certification_number, .keep_all = TRUE) %>%
   select(certification_number, status)
 
@@ -235,7 +235,7 @@ arms <- bind_rows(
 # Arm 1 IS production. If it does not reproduce the published decomposition,
 # every difference below is a harness artifact and no conclusion follows.
 cli::cli_h2("Validation: does the production arm reproduce the published counts?")
-published <- rd("artifacts/unresolved_affiliation_reasons.csv") %>%
+published <- chr("artifacts/unresolved_affiliation_reasons.csv") %>%
   count(reason, name = "published")
 repro <- arms %>% filter(parser == "norm_addr (production)") %>%
   count(reason, name = "reproduced")

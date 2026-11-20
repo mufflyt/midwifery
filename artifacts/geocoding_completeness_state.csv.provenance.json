@@ -1,6 +1,6 @@
 {
   "artifact": "geocoding_completeness_state.csv",
-  "written_utc": "2026-08-24 11:49:42 UTC",
+  "written_utc": "2026-11-20 03:37:36 UTC",
   "inputs": [
     {
       "path": "data/county_base.csv",
@@ -13,6 +13,53 @@
     {
       "path": "midwives_geocoded.csv",
       "sha256": "02c5582241d3787fbe84125cec8b0a1a2428f6902ae12b4a2cfcdb16d3fdaf1f"
+    }
+  ],
+  "code_sha256": "5821b2538f51b5c61b327bacc83971466185a1921d03aab8f0b1506862867891",
+  "code": [
+    {
+      "path": "R/02-geocoding-completeness.R",
+      "sha256": "1be684fa3c9546f938007415bd67273ac16828dc51ebe95ef6d977e23d9f8789"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "4937914878dfd340d545d54ab079074fb74320f4272dd5e4c8196aeefd46c391"
+    },
+    {
+      "path": "R/lib/common_helpers.R",
+      "sha256": "ced28bb67e43c1a020efdf46dd628d6e0f361fd0581b03ae9aae40afa9f93892"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    },
+    {
+      "path": "R/lib/table1_bands.R",
+      "sha256": "312b7504d0fed8ae986eadae6c55b0efd6f1099a613e4589f772387a2db115e1"
+    },
+    {
+      "path": "R/lib/zip_county_crosswalk.R",
+      "sha256": "8b0fb8f7c9145c81ceda865e3ef0820ca3e832d460cf967ff40eb4c189899264"
+    }
+  ],
+  "semantic_packages": [
+    {
+      "package": "mysterynpi",
+      "installed": true,
+      "version": "0.9.1",
+      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
+    },
+    {
+      "package": "stringi",
+      "installed": true,
+      "version": "1.8.9",
+      "source_sha": null
+    },
+    {
+      "package": "humaniformat",
+      "installed": true,
+      "version": "0.6.0",
+      "source_sha": null
     }
   ]
 }

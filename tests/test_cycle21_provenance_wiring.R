@@ -26,20 +26,15 @@
 # Run: Rscript tests/test_cycle21_provenance_wiring.R
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 suppressPackageStartupMessages({library(dplyr); library(readr); library(jsonlite)})
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 source(file.path(root, "R", "lib", "artifact_provenance.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 WIRED <- c("data/county_base.csv",
            "artifacts/county_profiles/county_birth_profiles.csv",
            "artifacts/district_profiles/district_profiles.csv")

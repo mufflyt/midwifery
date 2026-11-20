@@ -20,10 +20,14 @@
 
 library(testthat)
 library(dplyr)
-library(here)
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 
 # Source the new join safety module
-source(here::here("R", "join_safety.R"))
+source(file.path(test_repo_root(), "R", "join_safety.R"))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # 1. BASIC FUNCTIONALITY TESTS
