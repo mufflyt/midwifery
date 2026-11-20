@@ -227,6 +227,34 @@ writeLines(c("# the artifact spells it licence; relabelled for display",
 chk(length(scan_british(brit_comment)) == 0L,
     "G6c a British spelling in a comment is not a failure, because a comment is not typeset")
 
-cat(sprintf("\n%s (%d failure(s) across 6 manuscript-figure saboteurs)\n",
+# --- G7 no statistic is typed into the prose ------------------------------------
+sab(7, "every statistic is reached by key, not typed into the sentence")
+# The manuscript's own setup chunk says every figure in the text is reached by
+# key and nothing is typed by hand. Two were: the Results and the Discussion
+# both printed pc(74.7, 1) and pc(88.5, 1) as literals. They were not WRONG --
+# audit_medicaid_set_membership.R writes exactly those two values to a tracked
+# artifact -- but a typed number does not move when its artifact is rebuilt,
+# and the three vintages of one number this catalog was built to prevent all
+# started as a correct number typed once.
+#
+# The first argument of pc() or cnt() is the statistic. A numeric literal
+# there is a typed statistic; a literal in the SECOND argument is the number
+# of decimal places, which is formatting and not a finding.
+typed_stats <- function(lines)
+  grep("\\b(pc|cnt)\\(\\s*[0-9]", lines, value = TRUE, perl = TRUE)
+
+typed <- typed_stats(qmd)
+chk(!length(typed),
+    sprintf("G7a no statistic is typed into the manuscript prose%s",
+            if (length(typed)) paste0(" [", length(typed), " site(s): ",
+                                      paste(trimws(substr(typed, 1, 40)), collapse = " | "), "]")
+            else ""))
+# SABOTEUR: type one back in, exactly as it was, and the scanner must see it.
+chk(length(typed_stats("`r pc(74.7, 1)` to `r pc(88.5, 1)` on identical records.")) == 1L,
+    "G7b KILLED: the literal pair this fix replaced is caught when typed back in")
+chk(length(typed_stats("`r pc(A$medicaid_equality_pct, 1)` rose to `r cnt(A$n)`")) == 0L,
+    "G7c a catalog key with a decimal-place argument is not a typed statistic")
+
+cat(sprintf("\n%s (%d failure(s) across 7 manuscript-figure saboteurs)\n",
             if (fails == 0L) "ALL SABOTEURS HELD" else "SABOTEURS FOUND GAPS", fails))
 quit(status = if (fails == 0L) 0L else 1L)

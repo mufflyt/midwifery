@@ -580,7 +580,8 @@ A portion of the disagreement between sources is not error. Scoring Medicaid
 enrollment by whether a state is among those in which a midwife is
 concurrently enrolled, rather than by whether it equals a single state
 selected for her, raised agreement with the registry from
-`r pc(74.7, 1)` to `r pc(88.5, 1)` on identical records.
+`r pc(A$medicaid_equality_pct, 1)` to `r pc(A$medicaid_membership_pct, 1)` on
+the same `r cnt(A$medicaid_comparable_npi_years)` comparable provider-years.
 No underlying record changed; only the question did.
 
 Multi-state enrollment is common rather than exceptional among midwives who
@@ -650,8 +651,9 @@ The same boundary applies to access-to-care inference. One observed Medicaid
 provider-year in six carried enrollment in more than one state at once, and
 scoring that file by
 a single assigned state converted correct records into apparent errors —
-agreement with the registry rose from 74.7% to 88.5% on identical data when
-the question was fixed. For a workforce whose members hold multiple state
+agreement with the registry rose from
+`r pc(A$medicaid_equality_pct, 1)` to `r pc(A$medicaid_membership_pct, 1)` on
+identical data when the question was fixed. For a workforce whose members hold multiple state
 licenses and enroll in multiple state programs, "the practice state" is partly
 an artifact of how the question is asked, and any single-state assumption
 should be measured rather than made.
