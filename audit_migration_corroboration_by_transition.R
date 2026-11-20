@@ -50,6 +50,13 @@
 #          artifacts/migration_corroboration_medicaid_lead_lag.csv (tracked)
 #          artifacts/migration_corroboration_spike_vs_control.csv (tracked)
 # =============================================================================
+# mysteryroster's version can move this result (enrollment_move_lead_lag()
+# owns the lead-lag rule) -- differential-audited; the committed summary CSVs
+# were found stale relative to separately-landed DAC/PECOS vintage recovery
+# work (unrelated to mysteryroster, whose own code is confirmed unchanged),
+# not to a mysteryroster regression. Pinned at:
+#   remotes::install_github("mufflyt/mysteryroster@de1aa5d4e4262e8006254e3463c0e0a80eec56ba")
+# See docs/TECHNICAL_APPENDIX_MYSTERYROSTER_PIN_AUDIT.md.
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(tidyr)
   library(DBI); library(duckdb); library(mysteryroster)

@@ -199,7 +199,17 @@ source(file.path("R", "lib", "provenance.R"))
 SEMANTIC_PACKAGES <- c(
   "mysterynpi",     # name_key, split_given, middle_tokens, middle_agreement
   "stringi",        # transliteration; name_key() stops without it
-  "humaniformat"    # person-name parsing under mysterynpi::parse_person()
+  "humaniformat",   # person-name parsing under mysterynpi::parse_person()
+  "mysteryroster"   # attribute_truth_fusion, attribute_set_agreement,
+                     # attribute_record_presence, validity_estimates, and
+                     # every other decision rule the OIG-remake, migration-
+                     # corroboration and OIG-style-consistency scripts read
+                     # their numbers from -- added 2026-11-16 after an audit
+                     # found it had never been declared, despite two real
+                     # defects (row-corrupting bind_rows(); an overclaiming
+                     # "confirmed" wording) already found and fixed in it on
+                     # 2026-11-12 with nothing here having recorded which
+                     # build produced which committed number.
 )
 
 #' Version and source commit of each semantic package that is installed

@@ -20,6 +20,35 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-17 — mysteryroster audited the same way mysterynpi was; one script's output is stale, unrelated to the pin
+
+### Added
+
+- **`mysteryroster` added to `SEMANTIC_PACKAGES`** (`R/lib/artifact_provenance.R`),
+  closing a provenance gap that mirrored the one found for `mysterynpi` on
+  2026-11-14: nothing recorded which `mysteryroster` build produced which
+  committed number. Zero call-site changes needed — every future
+  `write_with_provenance()` call now records it automatically. Extended
+  `tests/test_semantic_package_fingerprint.R` (T1b/T5b/T10b) so an accidental
+  removal is caught the same way mysterynpi's would be.
+- **Pinned `mysteryroster@de1aa5d4e4262e8006254e3463c0e0a80eec56ba`** in the
+  header of the 4 scripts with tracked/committed output that depend on it.
+  No CI job installs this package (unlike mysterynpi), so no `ci.yml`/
+  `nightly.yml` change — explicit scope decision, not an oversight.
+- `docs/TECHNICAL_APPENDIX_MYSTERYROSTER_PIN_AUDIT.md`: full differential
+  audit. 2 of 4 scripts' committed output re-verified byte-identical under
+  the current mysteryroster HEAD (`remake_oig_07_09_00440_midwifery.R`'s 20
+  `artifacts/oig_remake/*.csv` files; `build_leave_one_source_out_sensitivity.R`'s
+  leave-one-out sensitivity CSV, ~2 hours of Crowd-Kit runtime across 6
+  variants). 1 script's committed output (`audit_migration_corroboration_
+  by_transition.R`) was found to differ, root-caused to richer DAC/PECOS
+  vintage coverage landed the day *after* that baseline was committed
+  (commit `30493777`) — confirmed unrelated to mysteryroster by diffing
+  `enrollment_move_lead_lag()`'s exact function body byte-for-byte across
+  both package states. 1 script (`analysis/oig_style_source_consistency.R`)
+  could not be re-run: 3 of its gitignored local inputs no longer exist on
+  disk, unrelated to this audit.
+
 ## [Unreleased] — 2026-11-20 — ten checks that reported ok against the defect they guard
 
 ### Fixed
