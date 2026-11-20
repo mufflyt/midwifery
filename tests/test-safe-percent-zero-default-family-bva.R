@@ -29,13 +29,9 @@
 # =============================================================================
 
 library(testthat)
-.sb <- grep("--file=", commandArgs(), value = TRUE)
-root <- if (length(.sb)) {
-  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
-} else normalizePath(".")
-source(file.path(root, "tests", "helper-saboteur.R"))
+library(here)
 
-suppressWarnings(suppressMessages(source(file.path(test_repo_root(), "R", "safe_divide.R"))))
+suppressWarnings(suppressMessages(source(here::here("R", "safe_divide.R"))))
 ZT <- 1e-10
 
 # -----------------------------------------------------------------------------
@@ -90,7 +86,7 @@ test_that("safe_percent(0, 5) [real zero part] and safe_percent(5, 0) [zero tota
 # Source contracts: the intentional default split must not be flattened.
 # -----------------------------------------------------------------------------
 test_that("regression: safe_percent defaults to 0; safe_rate/ratio default to NA", {
-  src <- paste(readLines(file.path(test_repo_root(), "R", "safe_divide.R"), warn = FALSE), collapse = "\n")
+  src <- paste(readLines(here::here("R", "safe_divide.R"), warn = FALSE), collapse = "\n")
   expect_true(grepl("safe_percent\\s*<-\\s*function\\([^)]*default\\s*=\\s*0", src, perl = TRUE),
               info = "safe_percent must default to 0 (empty tract = 0% access)")
   expect_true(grepl("safe_rate\\s*<-\\s*function\\([^)]*default\\s*=\\s*NA_real_", src, perl = TRUE),

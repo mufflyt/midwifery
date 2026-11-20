@@ -40,11 +40,7 @@
 # =============================================================================
 
 library(testthat)
-.sb <- grep("--file=", commandArgs(), value = TRUE)
-root <- if (length(.sb)) {
-  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
-} else normalizePath(".")
-source(file.path(root, "tests", "helper-saboteur.R"))
+library(here)
 
 # ---------------------------------------------------------------------------
 # Helpers shared across tests
@@ -596,7 +592,7 @@ test_that("Bug 14 integration: safe_percent() returns 0-100 scale and sprintf fo
   # Verify safe_percent() is available and returns 0-100 scale
   safe_percent_fn <- tryCatch(
     {
-      source(file.path(test_repo_root(), "R", "safe_divide.R"), local = TRUE)
+      source(here::here("R", "safe_divide.R"), local = TRUE)
       get("safe_percent", envir = environment(), inherits = FALSE)
     },
     error = function(e) NULL

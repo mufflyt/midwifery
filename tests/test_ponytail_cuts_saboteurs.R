@@ -15,7 +15,10 @@
 #      Comments may still discuss one; a comment is not a dependency.
 #   P3 One name, one behaviour for the all-character CSV reader. `rd` had
 #      drifted into four different functions, one of which returned SQL.
-#   P4 One root mechanism in tests. `here` was a second one.
+#   P4 A test's root resolver matches how CI invokes it. The audit called
+#      `here` a redundant second mechanism; it is the only one that works
+#      under testthat::test_file(), which supplies no --file= and runs from
+#      tests/. Converting eight files off it broke CI; this gate is the record.
 #
 # SCOPED TO WHAT WAS ACTUALLY CUT. P1 polices the exact idiom that was
 # removed, not every harness in the tree: 33 files still carry the same `chk`
@@ -140,24 +143,64 @@ chk(dup_reader(DUP_READER_LINE),
 chk(!dup_reader(paste0(DUP_READER_LINE, " %>%\n  transmute(npi)")),
     "P3e a reader that goes on to project is a different function, not a duplicate")
 
-# --- P4 one root mechanism in tests ---------------------------------------------
-sab(4, "tests resolve the repository root one way")
-# The needle is assembled, not spelled: P4a reads every tracked test file
-# including this one, and a gate that fails on its own search term is a
-# gate nobody can keep green.
+# --- P4 the root resolver matches how the test is invoked --------------------
+sab(4, "a test's root resolver matches how CI invokes it")
+# THIS SABOTEUR EXISTS BECAUSE THE AUDIT GOT IT BACKWARDS. `here` was called a
+# redundant second root mechanism and eight test files were converted off it,
+# onto the commandArgs idiom the other 240 use. CI then failed with
+#
+#   cannot open file '.../midwifery/tests/tests/helper-saboteur.R'
+#
+# because ci.yml runs those eight through testthat::test_file(), which sets the
+# working directory to tests/ and passes no --file=. With no --file= the
+# commandArgs idiom falls back to normalizePath("."), which under test_file()
+# is tests/, not the repository root -- so every path built on it gains a
+# second "tests". here::here() finds the project root whatever the working
+# directory is, which is exactly the case it was there to handle. It was not a
+# duplicate mechanism; it was the right one for a different invocation.
+COMMANDARGS_ROOT <- "--file="
+test_file_invoked <- local({
+  yml <- slurp(".github/workflows/ci.yml")
+  m <- regmatches(yml, gregexpr('test_file\\("tests/[^"]+"', yml))[[1]]
+  # BOTH ends. The first draft stripped only the prefix, left the closing
+  # quote on every path, and every file.exists() below was therefore FALSE --
+  # so P4b scanned an empty list and could not fail. That is the same shape as
+  # the defects this suite was written to catch, written into the suite.
+  sub('"$', "", sub('test_file\\("', "", m))
+})
+chk(length(test_file_invoked) > 0L,
+    sprintf("P4a ci.yml still invokes %d test(s) through testthat::test_file()",
+            length(test_file_invoked)))
+unresolved <- Filter(function(f) !file.exists(file.path(root, f)), test_file_invoked)
+chk(!length(unresolved),
+    sprintf("P4a2 every path P4b is about to scan actually resolves, so an empty scan means a clean tree and not a broken parser%s",
+            if (length(unresolved)) paste0(" [", paste(unresolved, collapse = ", "), "]") else ""))
+mismatched <- Filter(function(f) {
+  if (!file.exists(file.path(root, f))) return(FALSE)
+  grepl(COMMANDARGS_ROOT, slurp(f), fixed = TRUE)
+}, test_file_invoked)
+chk(!length(mismatched),
+    sprintf("P4b no test_file()-invoked test resolves its root from commandArgs, which test_file does not supply%s",
+            if (length(mismatched)) paste0(" [", paste(basename(mismatched), collapse = ", "), "]") else ""))
+chk(grepl(COMMANDARGS_ROOT,
+          'root <- if (length(.sb)) normalizePath(dirname(sub("--file=", "", .sb[1])))',
+          fixed = TRUE),
+    "P4c KILLED: converting such a test onto the commandArgs idiom is caught")
+chk(!grepl(COMMANDARGS_ROOT, 'source(here::here("R", "safe_divide.R"))', fixed = TRUE),
+    "P4d a here::here() resolver is not an offender -- it is the fix, not the defect")
+
+# The one part of the original finding that survived: a dependency loaded and
+# never called is still dead. geocode_midwives.R loaded `here` and made no call.
 HERE_CALL <- paste0("library(", "here)")
-loads_here <- function(txt) grepl(HERE_CALL, txt, fixed = TRUE)
-here_tests <- Filter(function(f) loads_here(slurp(f)), tracked("tests/*.R"))
-chk(!length(here_tests),
-    sprintf("P4a no test file loads `here` as a second root mechanism%s",
-            if (length(here_tests)) paste0(" [", paste(basename(here_tests), collapse = ", "), "]") else ""))
-# BUILT, NOT WRITTEN OUT. Spelling the call literally here would make this
-# file its own offender -- P4a scans every tracked test, including this one.
-.probe <- paste0("library(", "here)")
-chk(loads_here(paste0("library(testthat)\n", .probe, "\n")),
-    "P4b KILLED: re-adding the second root mechanism to a test is caught")
-chk(!loads_here("library(testthat)\n"),
-    "P4c ... and a test that does not load it is not an offender")
+dead_here <- Filter(function(f) {
+  txt <- slurp(f)
+  grepl(HERE_CALL, txt, fixed = TRUE) &&
+    !grepl("here::here(", txt, fixed = TRUE) &&
+    !grepl("[^:.a-zA-Z_]here(", txt)
+}, tracked("*.R"))
+chk(!length(dead_here),
+    sprintf("P4e no file loads `here` without calling it%s",
+            if (length(dead_here)) paste0(" [", paste(basename(dead_here), collapse = ", "), "]") else ""))
 
 cat(sprintf("\n%s (%d failure(s) across 4 over-engineering saboteurs)\n",
             if (fails == 0L) "ALL SABOTEURS HELD" else "SABOTEURS FOUND GAPS", fails))

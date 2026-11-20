@@ -46,13 +46,9 @@
 # =============================================================================
 
 library(testthat)
-.sb <- grep("--file=", commandArgs(), value = TRUE)
-root <- if (length(.sb)) {
-  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
-} else normalizePath(".")
-source(file.path(root, "tests", "helper-saboteur.R"))
+library(here)
 
-source(file.path(test_repo_root(), "R", "utils", "resolve_tract_vintage.R"))
+source(here("R", "utils", "resolve_tract_vintage.R"))
 
 # The BVA triplet: one below the boundary, the boundary, one above.
 YEAR_BELOW    <- 2019L  # last 2010-boundary vintage

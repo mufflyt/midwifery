@@ -16,11 +16,7 @@
 # =============================================================================
 
 library(testthat)
-.sb <- grep("--file=", commandArgs(), value = TRUE)
-root <- if (length(.sb)) {
-  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
-} else normalizePath(".")
-source(file.path(root, "tests", "helper-saboteur.R"))
+library(here)
 
 test_that("NPI strings must be exactly 10 digits", {
   valid_npi <- "1234567890"
@@ -39,8 +35,8 @@ test_that("NPI cannot be NA", {
 })
 
 test_that("join_safety.R exists and defines join functions", {
-  expect_true(file.exists(file.path(test_repo_root(), "R", "join_safety.R")))
-  content <- readLines(file.path(test_repo_root(), "R", "join_safety.R"))
+  expect_true(file.exists(here::here("R", "join_safety.R")))
+  content <- readLines(here::here("R", "join_safety.R"))
   combined <- paste(content, collapse = "\n")
   expect_true(grepl("safe_left_join.*<- function", combined))
   expect_true(grepl("safe_inner_join.*<- function", combined))

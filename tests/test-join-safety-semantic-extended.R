@@ -26,16 +26,12 @@
 # NOTE: Tests 17-20 implemented by phase2-agent
 
 library(testthat)
-.sb <- grep("--file=", commandArgs(), value = TRUE)
-root <- if (length(.sb)) {
-  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
-} else normalizePath(".")
-source(file.path(root, "tests", "helper-saboteur.R"))
+library(here)
 library(dplyr)
 library(readr)
 
 # Source join safety functions
-source(file.path(test_repo_root(), "R", "join_safety.R"))
+source(here("R", "join_safety.R"))
 
 # ==============================================================================
 # Test 21: Sequential Join Coverage Tracking
