@@ -20,6 +20,78 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-21 — ten claims the repository made about itself, now checked
+
+Two over-engineering audits produced ten findings; three were wrong and two
+overstated, and each of the three was wrong the same way — a claim about the
+repository that read as true and that nothing in the repository could
+contradict. `tests/test_claim_integrity_saboteurs.R` turns ten such standing
+claims into checks. Every one was mutation-proved: the defect was planted and
+the gate seen to fail, not reasoned about.
+
+### Added
+
+- **`tests/test_claim_integrity_saboteurs.R`** (R1–R10, 31 assertions, 31s).
+  R1/R2 every package a test loads unguarded is installed by the job that
+  globs or names it — the `systemfonts` failure of 2026-11-20 generalized;
+  R3 every file the README links to exists (148 citations); R4 a
+  testthat-dispatched test never resolves its root from the working directory —
+  the `here` finding that broke CI, made unrepeatable; R5 figure numbers unique
+  and contiguous; R6 the scientific-laws badge agrees with the registry and
+  with the prose beneath it; R7 no Python helper defined at top level in two
+  tracked files (26 baselined, shrink-only); R8 no two saboteurs share a label;
+  R9 every baselined path is tracked or deliberately ignored; R10 every suite's
+  declared saboteur count matches the saboteurs it runs. Named in `ci.yml` as
+  well as globbed by nightly, so it runs on the pull request.
+- **A README count check inside `tests/ci_law_coverage.R`**, where `n_law` and
+  `tot_mut` already exist. Any separate gate would have to re-derive the
+  planted-defect total, and the repository would then hold two answers.
+- **`tests/helper-workflow-scan.R`**: `scan_jobs()` moved out of
+  `ci_workflow_contracts.R` so a second gate can read workflow jobs without a
+  second copy of the reader. Behaviour unchanged — 17 jobs, 140 invocations,
+  same verdict.
+
+### Fixed
+
+- **README figures 16–20 renumbered.** Two captions were both "Figure 16", so
+  the figures ran 1–19 over 20 pictures. The one in-text cross-reference was
+  moved with the figure it already named: a renumbering may not silently
+  re-point a citation.
+- **README planted-defect prose: 37 → 39.** The badge said 39 and the sentence
+  below it said "37 planted defects, 37 detected"; CI's own run of
+  `ci_law_coverage.R` reports 39/39. The badge was updated alongside the laws
+  in #328, the sentence was written in #104 and never revisited.
+- **One stale entry removed from `tests/ci_frozen_staleness_baseline.txt`**
+  (`artifacts/msn_dnp_credential_classification.csv`, deleted in `0703513`).
+  It named a path neither tracked nor ignored, so it forgave nothing while
+  reading as though it forgave something. 111 entries remain.
+- **Gate performance:** R9 asked git about each baselined path twice, 748
+  processes for 374 entries and 72 of the first version's 82 seconds. Tracked
+  is now answered from the listing already in memory and the rest go to
+  `check-ignore --stdin` together. 82s → 31s.
+
+### Not done, deliberately
+
+- **A package-list drift gate** was written and dropped. It asserted that the
+  job running every test installs at least what a job running part of the
+  suite installs; `ci.yml` may legitimately install a package for a test
+  nightly excepts from its glob, so the rule would fire on a correct workflow.
+  R1 catches the consequence exactly, without the arguable premise.
+- **A "gate no workflow invokes" check** was written and dropped: nightly's
+  `suite-coverage` job already asserts it ("Every `ci_*.R` gate is named by
+  some job"), and two copies of a claim drift until they disagree.
+- **A duplicate-`chk()`-message gate** was dropped after measuring it: 19
+  suites would be flagged and most of the repeats are legitimate.
+
+### Known-unresolved
+
+- `README.md:1790` cites "(Figure 20)" for an NDH exclusion-flag figure, but
+  Figure 20 is the CONSORT flow and no figure in 16–20 shows that flag. The
+  pointer was already wrong before the renumbering and was carried, not
+  corrected, because guessing the intended target is not a renumbering.
+- `ci_artifact_contracts` A5 (`table1_csv_n=12171` vs `canonical_n=12170`) and
+  `docs/spec-completion-matrix.md:121` are unchanged from 2026-11-20.
+
 ## [Unreleased] — 2026-11-17 — mysteryroster audited the same way mysterynpi was; one script's output is stale, unrelated to the pin
 
 ### Added
