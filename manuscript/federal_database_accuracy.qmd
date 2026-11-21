@@ -193,7 +193,7 @@ constructed and because reducing concurrent multi-state enrollment to a single
 state discards the categories of most interest.
 
 ```{r table-sources}
-#| tbl-cap: "Table 1. Record systems examined, their custodian and role, the years each covers, and the public access point for each. The certification board roster is listed last because it is the cohort frame and a primary source rather than a record under comparison."
+#| tbl-cap: "Table 1. Record systems examined, their custodian and role, the years each covers, and the public access point for each, sorted by custodian. The Transformed Medicaid Statistical Information System carries a per-provider-year concordance classification -- including concurrent enrollment in more than one state -- rather than a single state that could be set against the registry, so its consistency is analyzed separately rather than in Tables 4 and 5."
 if (!is.null(A$coverage_table)) {
   cv <- A$coverage_table
   cv$year <- as.integer(cv$year)
@@ -202,20 +202,20 @@ if (!is.null(A$coverage_table)) {
     years = if (length(unique(d$year)) == 1) as.character(unique(d$year)) else
       paste(range(d$year), collapse = "-"),
     n_years = length(unique(d$year)), stringsAsFactors = FALSE)))
-  # Named as the journal asks: full name at first use, then the short form
-  # the rest of the paper uses. The public access point for each is carried
+  # Full system names only, no abbreviations; the prose introduces the
+  # short forms at first use. The public access point for each is carried
   # in the table itself, so a reader can go to the record we read.
   label <- c(
-    nppes = "National Plan and Provider Enumeration System (NPPES)",
-    dac_physician_compare = "Doctors and Clinicians (DAC)",
+    nppes = "National Plan and Provider Enumeration System",
+    dac_physician_compare = "Doctors and Clinicians",
     open_payments = "Open Payments",
-    pecos_revalidation = "Provider Enrollment, Chain and Ownership System (PECOS)",
+    pecos_revalidation = "Provider Enrollment, Chain and Ownership System",
     facility_affiliation_ccn = "Facility Affiliation",
-    medicare_claims = "Medicare claims (Parts B and D)",
+    medicare_claims = "Medicare Part B and Part D claims",
     healthgrades = "Healthgrades",
     doximity = "Doximity",
     state_boards_of_nursing = "State boards of nursing",
-    cms_ndh_fhir = "National Directory of Healthcare Providers and Services (NDH)")
+    cms_ndh_fhir = "National Directory of Healthcare Providers and Services")
   access <- c(
     nppes = "https://download.cms.gov/nppes/NPI_Files.html",
     dac_physician_compare = "https://data.cms.gov/provider-data/topics/doctors-clinicians",
@@ -238,22 +238,22 @@ if (!is.null(A$coverage_table)) {
     `Years` = span$years,
     `Public access point` = access[span$source],
     check.names = FALSE)
-  out <- out[order(out$Role != "Reference standard", out$Custodian,
-                   out$`Record system`), ]
   out <- rbind(out, data.frame(
     `Record system` =
-      "Transformed Medicaid Statistical Information System (T-MSIS)",
-    Custodian = "Federal", Role = "Classified separately",
+      "Transformed Medicaid Statistical Information System",
+    Custodian = "Federal",
+    Role = "Multi-state concordance, analyzed separately",
     `Years` = A$medicaid_years,
     `Public access point` =
       "https://www.medicaid.gov/medicaid/data-systems/macbis/transformed-medicaid-statistical-information-system-t-msis/index.html",
     check.names = FALSE))
   out <- rbind(out, data.frame(
-    `Record system` = "American Midwifery Certification Board (AMCB) roster",
+    `Record system` = "American Midwifery Certification Board roster",
     Custodian = "Certifying body", Role = "Cohort frame and primary source",
     `Years` = "2026",
     `Public access point` = "https://www.amcbmidwife.org/",
     check.names = FALSE))
+  out <- out[order(out$Custodian, out$`Record system`), ]
   style_manuscript_table(out, align = c("l", "l", "l", "l", "l"))
 }
 ```
