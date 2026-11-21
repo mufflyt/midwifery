@@ -1,21 +1,21 @@
 {
   "artifact": "agreement_cluster_bootstrap_ci.csv",
-  "written_utc": "2026-11-19 03:01:34 UTC",
+  "written_utc": "2026-11-21 17:16:27 UTC",
   "inputs": [
     {
       "path": "artifacts/canonical_source_records.csv",
       "sha256": "81cf8b26e0a055bc5ddbe74f3ffe872105d12025272bce18b9b68acfc901f006"
     }
   ],
-  "code_sha256": "236442d454598749bece4f37aeb3df67fb843328a16ae7dbfd6cff5deb92fb6e",
+  "code_sha256": "207cb9c624065d72188ca0725099b96ebf26a4dcd11faff55effb049f0b2c660",
   "code": [
     {
       "path": "build_f2_f3_uncertainty_denominators.R",
-      "sha256": "f5436ff5fa283cb446fcf9b7b8703c3a0f0ffed080cf5aad4a3c355db91ae4e1"
+      "sha256": "998bda2d3d333f03c9da8c3acc914c36cb479eaff014eabd1a3951629eaa0111"
     },
     {
       "path": "R/lib/artifact_provenance.R",
-      "sha256": "4937914878dfd340d545d54ab079074fb74320f4272dd5e4c8196aeefd46c391"
+      "sha256": "c1677e2402be56a1a30cc8b6985c0b512bd0599ed93c303d0c0e96e0b9d12b60"
     },
     {
       "path": "R/lib/provenance.R",
@@ -43,6 +43,12 @@
       "package": "humaniformat",
       "installed": true,
       "version": "0.6.0",
+      "source_sha": null
+    },
+    {
+      "package": "mysteryroster",
+      "installed": true,
+      "version": "0.3.0",
       "source_sha": null
     }
   ]
