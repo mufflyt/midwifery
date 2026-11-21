@@ -194,6 +194,23 @@ state discards the categories of most interest.
 
 ```{r table-sources}
 #| tbl-cap: "Table 1. Record systems examined, their custodian and role, the years each covers, and the public access point for each, sorted by custodian. The Transformed Medicaid Statistical Information System carries a per-provider-year concordance classification -- including concurrent enrollment in more than one state -- rather than a single state that could be set against the registry, so its consistency is analyzed separately rather than in Tables 4 and 5."
+descr <- c(
+  nppes = "National registry that assigns the National Provider Identifier; providers self-report practice address, credential, and taxonomy at enumeration and on update",
+  dac_physician_compare = "CMS's public clinician directory, built from enrollment records and linked Medicare claims; the successor to Physician Compare",
+  open_payments = "Industry-reported payments and transfers of value to covered recipients; nurse-midwives became reportable recipients in program year 2021",
+  pecos_revalidation = "Medicare's enrollment, chain, and reassignment records; revalidation carries the practice address on file at enrollment",
+  facility_affiliation_ccn = "CMS-published clinician-to-facility affiliation file distributed with the clinician directory",
+  medicare_claims = "Part B carrier and Part D prescriber utilization files; a provider's state is the billing address on submitted claims",
+  healthgrades = "Commercial provider directory aggregating self-reported and third-party practice information",
+  doximity = "Commercial professional network whose member profiles form a provider directory",
+  state_boards_of_nursing = "State licensure records; the primary source for license status and a verifying source for legal name",
+  cms_ndh_fhir = "CMS's FHIR-based national provider directory consolidating directory data across programs")
+descr["tmsis"] <- paste("Medicaid's transformed statistical system; provider",
+  "enrollment carries a per-provider-year state concordance, and the 2018-2024",
+  "spending release carries person-level billing activity")
+descr["amcb"] <- paste("The certification board's roster of certified",
+  "nurse-midwives; defines the cohort and is the primary source for the",
+  "certified name")
 if (!is.null(A$coverage_table)) {
   cv <- A$coverage_table
   cv$year <- as.integer(cv$year)
@@ -230,6 +247,7 @@ if (!is.null(A$coverage_table)) {
   role <- ifelse(span$source == "nppes", "Reference standard", "Compared")
   out <- data.frame(
     `Record system` = label[span$source],
+    Description = descr[span$source],
     Custodian = ifelse(span$source %in% c("healthgrades", "doximity"),
                        "Commercial",
                        ifelse(span$source == "state_boards_of_nursing",
@@ -241,6 +259,7 @@ if (!is.null(A$coverage_table)) {
   out <- rbind(out, data.frame(
     `Record system` =
       "Transformed Medicaid Statistical Information System",
+    Description = descr["tmsis"],
     Custodian = "Federal",
     Role = "Multi-state concordance, analyzed separately",
     `Years` = A$medicaid_years,
@@ -249,12 +268,13 @@ if (!is.null(A$coverage_table)) {
     check.names = FALSE))
   out <- rbind(out, data.frame(
     `Record system` = "American Midwifery Certification Board roster",
+    Description = descr["amcb"],
     Custodian = "Certifying body", Role = "Cohort frame and primary source",
     `Years` = "2026",
     `Public access point` = "https://www.amcbmidwife.org/",
     check.names = FALSE))
   out <- out[order(out$Custodian, out$`Record system`), ]
-  style_manuscript_table(out, align = c("l", "l", "l", "l", "l"))
+  style_manuscript_table(out, align = c("l", "l", "l", "l", "l", "l"))
 }
 ```
 
@@ -390,7 +410,7 @@ inaccurate rather than a different person, consistent with transcription and
 with name change not being propagated.
 
 ```{r table-accuracy}
-#| tbl-cap: "Table 2. Accuracy of licensure status and legal name, the only two attributes with an independent primary source. Accuracy could not be estimated for practice location, city or postal code, for which no primary source exists; those are reported as agreement in Tables 4 and 5."
+#| tbl-cap: "Table 2. Accuracy of the two provider attributes that have an independent primary source to be checked against: licensure status, verified against state board of nursing records, and legal name, verified against the certification board roster. Licensure status is shown at two verification depths -- the three states (Colorado, Texas, Washington) whose boards publish a live verification interface, where every record resolves definitively, and all seven states with obtainable board records, a set that adds four states verified from published files. Practice location, city, and postal code have no independent primary source, so Tables 4 and 5 report agreement between databases for them rather than verified accuracy."
 if (!is.null(A$subtypes_table)) {
   tb <- A$subtypes_table
   # The artifact carries the systems by their acronyms; the manuscript names
@@ -405,8 +425,8 @@ if (!is.null(A$subtypes_table)) {
                               "State boards of nursing"),
     `Attribute` = ifelse(grepl("Legal Name", tb$variable), "Legal name",
                          ifelse(grepl("3 API", tb$variable),
-                                "Licensure status (3 states)",
-                                "Licensure status (7 states)")),
+                                "Licensure status, 3 states with live board verification",
+                                "Licensure status, all 7 states with board records")),
     `Resolved` = formatC(as.numeric(tb$n_definitive), format = "d",
                          big.mark = ","),
     `Accurate (%)` = sprintf("%.2f", as.numeric(tb$pct_accurate_definitive)),
