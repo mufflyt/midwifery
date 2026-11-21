@@ -1426,6 +1426,39 @@ mw_build_catalog <- function(root = ".") {
       a$medicaid_newly_agreeing_n <- getq("NPI-years newly scored as agreeing")
     }
 
+    # Supplemental displays (SDC). Butala-style dose-response: unanimous and
+    # pairwise practice-state agreement by number of sources reporting one.
+    acc_nsrc <- rd(file.path(MW_ART,
+      "source_count_agreement_by_n_sources.csv"))
+    if (!is.null(acc_nsrc)) a$source_count_table <- acc_nsrc
+
+    # Haeder-style disposition of base-year disagreements: what happened to
+    # each registry-vs-source discordance at the next observation.
+    acc_mrost <- rd(file.path(MW_ART, "mrost_lead_lag.csv"))
+    if (!is.null(acc_mrost)) a$resolution_table <- acc_mrost
+
+    # Persistence denominators: where a provider who leaves a source went.
+    acc_pers <- rd(file.path(MW_ART, "persistence_denominators.csv"))
+    if (!is.null(acc_pers)) {
+      p <- acc_pers
+      num_ <- function(v) as.numeric(v)
+      agg <- aggregate(cbind(n_observed, n_followed_source, n_same_state,
+                             n_changed_state, n_lost_visible_in_nppes,
+                             n_lost_source_but_in_nppes,
+                             n_lost_from_source) ~ source,
+                       data = transform(p,
+                         n_observed = num_(n_observed),
+                         n_followed_source = num_(n_followed_source),
+                         n_same_state = num_(n_same_state),
+                         n_changed_state = num_(n_changed_state),
+                         n_lost_visible_in_nppes = num_(n_lost_visible_in_nppes),
+                         n_lost_source_but_in_nppes =
+                           num_(n_lost_source_but_in_nppes),
+                         n_lost_from_source = num_(n_lost_from_source)),
+                       FUN = sum, na.rm = TRUE)
+      a$persistence_table <- agg
+    }
+
     cat_$dbacc <- a
   }
 

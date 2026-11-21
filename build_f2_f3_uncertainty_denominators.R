@@ -111,6 +111,19 @@ in_nppes_next <- records %>%
   distinct(source, npi, year) %>%
   mutate(in_nppes_next = TRUE)
 
+# The conditional version: provider-years observed in a source at t, absent
+# from that source at t+1, and still visible in NPPES at t+1. This is the
+# number that turns "X% of records leave the source" into "of those who
+# left, Y% did not leave the workforce" -- billing attrition vs exit.
+lost_source_but_in_nppes <- records %>%
+  filter(source != "nppes") %>%
+  anti_join(followed %>% select(source, npi, year),
+            by = c("source", "npi", "year")) %>%
+  inner_join(nppes %>% transmute(npi, year_next = year, in_nppes = TRUE),
+             by = "npi", relationship = "many-to-many") %>%
+  filter(year_next == year + 1L) %>%
+  distinct(source, npi, year)
+
 f3 <- f3 %>%
   left_join(followed %>% group_by(source, year) %>%
               summarise(n_followed_source = dplyr::n(), .groups = "drop"),
@@ -121,6 +134,10 @@ f3 <- f3 %>%
             by = c("source", "year")) %>%
   left_join(in_nppes_next %>% group_by(source, year) %>%
               summarise(n_lost_visible_in_nppes = dplyr::n(), .groups = "drop"),
+            by = c("source", "year")) %>%
+  left_join(lost_source_but_in_nppes %>% group_by(source, year) %>%
+              summarise(n_lost_source_but_in_nppes = dplyr::n(),
+                        .groups = "drop"),
             by = c("source", "year")) %>%
   mutate(across(starts_with("n_"), ~ tidyr::replace_na(.x, 0L)),
          n_lost_from_source = n_observed - n_followed_source,

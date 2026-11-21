@@ -436,7 +436,10 @@ entirely rather than partially -- the directly reported practice postal code
 in the 2019 Medicare enrollment extract, null for 99.6% of records -- which is
 why practice postal code for that source is read from the practice address
 instead. For the geographic variables this study compares, completeness is
-therefore not the limiting property of these data.
+therefore not the limiting property of these data. Provider-years that leave
+a billing source likewise almost always remain visible in the registry, so
+source attrition is billing attrition rather than exit from the workforce
+(Supplemental Table S4).
 
 
 ### Consistency between databases
@@ -502,7 +505,7 @@ whose registry and Medicare enrollment records disagreed in 2021,
 `r pc(A$unresolved_pct, 1)` still disagreed in 2026. Where resolution did
 occur it was slow, with a median of two to three years, and it ran in both
 directions, so the disagreement cannot be attributed to a single lagging
-system.
+system (Supplemental Table S3).
 
 ### Agreement over time
 
@@ -578,6 +581,8 @@ appear in Medicaid at all (Supplemental Figure S4).
 
 Consistent with this, providers licensed in more than one state accounted for
 a disproportionate share of cross-source disagreement (Supplemental Figure S5).
+Unanimous agreement likewise falls as more sources report a state for the
+same provider-year (Supplemental Table S2).
 
 
 
@@ -743,6 +748,80 @@ if (!is.null(A$completeness_table)) {
     check.names = FALSE)
   style_manuscript_table(out[order(out$Year, out$Source), ],
                          align = c("l", "l", "l", "r", "r"))
+}
+```
+
+```{r table-source-count-agreement}
+#| tbl-cap: "Supplemental Table S2. Practice-state agreement as a function of the number of sources reporting a state in the same provider-year, in the style of the cross-directory comparison of Butala et al. Unanimous agreement requires every reporting source to record the same state; pairwise agreement is the share of source-pairs that agree. Unanimous agreement declines as more sources report, mirroring the dose-response reported for commercial insurer directories."
+if (!is.null(A$source_count_table)) {
+  sc <- A$source_count_table
+  out <- data.frame(
+    `Sources reporting a practice state` = sc$n_sources_reporting,
+    `Provider-years` = formatC(as.numeric(sc$n_provider_years), format = "d",
+                               big.mark = ","),
+    `All sources agree (%)` = sprintf("%.1f",
+                                      as.numeric(sc$pct_unanimous_agreement)),
+    `Source-pairs agreeing (%)` = sprintf("%.1f",
+                                          as.numeric(sc$pct_pairwise_agreement)),
+    check.names = FALSE)
+  style_manuscript_table(out, align = c("l", "r", "r", "r"))
+}
+```
+
+```{r table-resolution-disposition}
+#| tbl-cap: "Supplemental Table S3. Disposition of provider-years on which a source and the national provider registry held discordant practice states at the base year, measured at the next observation, in the style of the follow-up taxonomy of Haeder and Zhu. 'Source adopted registry' and 'registry adopted source' are the two directions of resolution; 'both moved' means both records changed to a third value. Columns may not sum to 100 where a provider-year left observation."
+if (!is.null(A$resolution_table)) {
+  rs <- A$resolution_table
+  label <- c(pecos_revalidation = "Medicare enrollment revalidation",
+             medicare_part_b = "Medicare Part B claims",
+             medicare_part_d = "Medicare Part D claims",
+             open_payments = "Industry payment records",
+             medicaid_enrollment = "Medicaid enrollment (T-MSIS)")[rs$source_b]
+  out <- data.frame(
+    Source = ifelse(is.na(label), rs$source_b, label),
+    `Base year` = rs$base_year,
+    `Discordant (n)` = formatC(as.numeric(rs$n_discordant_at_t), format = "d",
+                               big.mark = ","),
+    `Still discordant (%)` = sprintf("%.1f",
+      as.numeric(rs$persistent_discordant_at_t1_pct)),
+    `Source adopted registry (%)` = sprintf("%.1f",
+      as.numeric(rs$b_adopts_a_at_t1_pct)),
+    `Registry adopted source (%)` = sprintf("%.1f",
+      as.numeric(rs$a_reverts_to_b_at_t1_pct)),
+    `Both moved (%)` = sprintf("%.1f",
+      100 * as.numeric(rs$both_move_together_at_t1) /
+        as.numeric(rs$n_discordant_at_t)),
+    check.names = FALSE)
+  style_manuscript_table(out, align = c("l", "l", "r", "r", "r", "r", "r"))
+}
+```
+
+```{r table-persistence-denominators}
+#| tbl-cap: "Supplemental Table S4. Where a provider-year goes by the following year, aggregated across each source's observed window. A provider who leaves a billing source is rarely leaving the workforce: most remain visible in the national provider registry, so source attrition is billing attrition rather than exit from practice. Same-state and different-state shares are computed among provider-years re-observed in the same source; the leavers' registry-visibility share is computed among provider-years absent from the source at the next observation. The registry itself is omitted because persistence in it and visibility in it cannot be distinguished."
+if (!is.null(A$persistence_table)) {
+  ps <- A$persistence_table
+  ps <- ps[ps$source != "nppes", , drop = FALSE]
+  label <- c(nppes = "National provider registry",
+             pecos_revalidation = "Medicare enrollment revalidation",
+             medicare_claims = "Medicare claims (Parts B and D)",
+             medicaid_enrollment = "Medicaid enrollment (T-MSIS)",
+             open_payments = "Industry payment records")[ps$source]
+  out <- data.frame(
+    Source = ifelse(is.na(label), ps$source, label),
+    `Observed (n)` = formatC(ps$n_observed, format = "d", big.mark = ","),
+    `In source next year (%)` = sprintf("%.1f",
+      100 * ps$n_followed_source / ps$n_observed),
+    `Same state (%)` = sprintf("%.1f",
+      100 * ps$n_same_state / ps$n_followed_source),
+    `Different state (%)` = sprintf("%.1f",
+      100 * ps$n_changed_state / ps$n_followed_source),
+    `Left source (%)` = sprintf("%.1f",
+      100 * ps$n_lost_from_source / ps$n_observed),
+    `Leavers still in registry (%)` = sprintf("%.1f",
+      100 * ps$n_lost_source_but_in_nppes / ps$n_lost_from_source),
+    check.names = FALSE)
+  style_manuscript_table(out[order(-ps$n_observed), ],
+                         align = c("l", "r", "r", "r", "r", "r", "r"))
 }
 ```
 
