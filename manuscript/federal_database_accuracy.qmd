@@ -441,7 +441,13 @@ instead. For the geographic variables this study compares, completeness is
 therefore not the limiting property of these data. Provider-years that leave
 a billing source likewise almost always remain visible in the registry, so
 source attrition is billing attrition rather than exit from the workforce
-(Supplemental Table S4).
+(Supplemental Table S4). Completeness also varies geographically inside one
+source: in the public Medicaid enrollment file, the share of segments
+carrying a provider NPI ranged from `r pc(A$medicaid_npi_pop_min, 1)` in
+`r knitr::combine_words(A$medicaid_npi_pop_zero_state_names)` -- whose
+files contain no NPI-bearing segment at all -- to `r pc(A$medicaid_npi_pop_max, 1)` in `r A$medicaid_npi_pop_max_state_name`, so a
+clinician enrolled only in Oregon Medicaid is unobservable in this source
+regardless of record accuracy (Supplemental Figure S6).
 
 
 ### Consistency between databases
@@ -585,7 +591,8 @@ appear in Medicaid at all (Supplemental Figure S4).
 Consistent with this, providers licensed in more than one state accounted for
 a disproportionate share of cross-source disagreement (Supplemental Figure S5).
 Unanimous agreement likewise falls as more sources report a state for the
-same provider-year (Supplemental Table S2).
+same provider-year (Supplemental Table S2), and agreement with the registry
+varies widely by the provider's state (Supplemental Figure S7).
 
 
 
@@ -874,3 +881,9 @@ comparable figures.](`r fig("medicaid_multistate_footprint")`)
 
 ![**Supplemental Figure S5.** Cross-source consensus by number of states in which a provider
 holds a license.](`r fig("consensus_tier_by_license_count")`)
+
+![**Supplemental Figure S6.** Share of public Medicaid enrollment segments carrying a
+provider NPI, by enrolling state.](`r fig("medicaid_npi_population_by_state")`)
+
+![**Supplemental Figure S7.** Practice-state agreement with the provider registry, by the
+provider's registry state and reporting source.](`r fig("state_variation_agreement_by_source")`)

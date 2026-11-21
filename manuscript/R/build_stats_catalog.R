@@ -1438,6 +1438,27 @@ mw_build_catalog <- function(root = ".") {
     acc_mrost <- rd(file.path(MW_ART, "mrost_lead_lag.csv"))
     if (!is.null(acc_mrost)) a$resolution_table <- acc_mrost
 
+    # NPI-population rate in the public Medicaid enrollment file, by state.
+    # Read so the prose extrema move if the released file is refreshed.
+    acc_npipop <- rd(file.path(MW_ART, "medicaid_npi_population_by_state.csv"))
+    if (!is.null(acc_npipop)) {
+      p <- acc_npipop$pct_segments_with_npi
+      a$medicaid_npi_pop_min <- min(p, na.rm = TRUE)
+      a$medicaid_npi_pop_max <- max(p, na.rm = TRUE)
+      zero_states <-
+        acc_npipop$state[acc_npipop$pct_segments_with_npi == 0]
+      a$medicaid_npi_pop_zero_states <- zero_states
+      state_names <- c(NM = "New Mexico", OR = "Oregon", VI = "the Virgin Islands",
+                       GU = "Guam", PR = "Puerto Rico", DC = "the District of Columbia")
+      a$medicaid_npi_pop_zero_state_names <-
+        ifelse(zero_states %in% names(state_names),
+               unname(state_names[zero_states]), zero_states)
+      max_state <- acc_npipop$state[which.max(acc_npipop$pct_segments_with_npi)]
+      a$medicaid_npi_pop_max_state_name <-
+        ifelse(max_state %in% names(state_names),
+               unname(state_names[max_state]), max_state)
+    }
+
     # Persistence denominators: where a provider who leaves a source went.
     acc_pers <- rd(file.path(MW_ART, "persistence_denominators.csv"))
     if (!is.null(acc_pers)) {
