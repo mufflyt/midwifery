@@ -20,6 +20,57 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-21 — five published rates divide by a group the numerator never came from; a gate per defect
+
+### Added
+
+- **`tests/ci_denominator_contracts.R` (D1-D5): a rate's numerator must belong
+  to its denominator's group.** `ci_artifact_contracts.R` checks arithmetic
+  inside a file, `ci_semantic_contracts.R` that two files describe one world,
+  `ci_science_contracts.R` that the code claims no more than the data supports.
+  None of them checks the thing that produced four wrong supplemental-table
+  rates in this rewrite: a percentage whose numerator is a sub-count of some
+  *other* group, or whose denominator pools rows where the rate is undefined.
+  D1 refuses a persistence rate pooled across the panel edge (no t+1 at a
+  source's last year makes `n_lost_from_source == n_observed` by construction);
+  D2 refuses registry visibility computed past the registry's last year; D3
+  refuses a numerator divided by a group it is not a sub-count of; D4 refuses a
+  base-year label backed by a pooled count; D5 requires every consumer of the
+  canonical source record table to honour `usable_for_trend`. Base R, static
+  source plus committed artifacts, no person-level data.
+- **`tests/test_denominator_contracts_detect.R`: 9 planted defects, 4 near
+  misses, 13/13.** Same gate-of-gates construction as
+  `tests/test_science_contracts_detect.R` and for the reason
+  `docs/APPENDIX_checks_that_cannot_fail_2026-11-20.md` records — a gate whose
+  regex matches nothing passes exactly like a clean repository. Writing it
+  caught a design defect in D1 that reading it had not: the structural check
+  hard-coded the *broken* edge shape, so the gate would have blocked its own
+  remedy the moment anyone applied it. D1 now accepts declared-or-withheld
+  degeneracy. Both false positives the gates produced on their first run are
+  pinned as near-miss cases (`build_lead_lag_decomposition.R` carrying two
+  columns through one `transmute()` without dividing them; a 1,500-line catalog
+  whose unrelated `year <` satisfied the year-restriction check from four
+  hundred lines away), so the precision cannot silently regress.
+
+### Changed
+
+- **`code_lines()` moved from `tests/ci_science_contracts.R` to
+  `ci_code_lines()` in `tests/ci_report.R`.** The new gate needs the same
+  comment-stripping read, and a second top-level definition of it is the H4
+  defect these gates exist to catch. All 8 call sites rewritten; proven
+  behaviourally neutral by running both versions in one worktree (identical
+  skip sets, `test_science_contracts_detect.R` 13/13).
+
+### Known issues
+
+- **The five gates report `FAILED (5)` on arrival, because all five defects are
+  live.** No published number changed in this entry — the gates make the
+  defects blocking, they do not fix them. The measurements, the affected
+  tables, the proposed producer-side fix, and the reason this gate is wired
+  into `ci.yml` red (unlike `tests/test_cohort_vintage.R`, which is red for an
+  environment reason and deliberately unwired) are in **D14** of
+  [`DEBT.md`](DEBT.md).
+
 ## [Unreleased] — 2026-11-17 — mysteryroster audited the same way mysterynpi was; one script's output is stale, unrelated to the pin
 
 ### Added

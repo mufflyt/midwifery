@@ -121,7 +121,16 @@ cat("\n-- H4 no function defined at top level in two files --\n")
 # repeats is a hole kept open for nothing. drop_zip in particular was listed as
 # "never a join key", which was wrong: it exists to build key_nozip, so it now
 # lives once in R/lib/geocode_conflicts.R with the collapse that follows it.
+# `scaffold` and `gate_fails` are the gate-of-gates pair -- build a throwaway
+# git repo that passes, then run the gate in it as a subprocess and report
+# whether it exited non-zero. Same category as `kills` directly above: console
+# and subprocess plumbing in a standalone harness, never a join key and never
+# touching real data. They became duplicated when ci_denominator_contracts.R
+# got the detector that ci_science_contracts.R already had, and divergence
+# between the two is harmless by construction -- each builds the fixtures its
+# own gate reads, so a shared definition would be the wrong thing.
 ALLOW <- c("chk", "xchk", "pick", "f", "ok", "bad", "skip", "kills",
+           "scaffold", "gate_fails",
            "rd", "fmt", "mk",
            "main", "code", "rate", "key_of", "fetch_one",
            "assign_cd", "centroid_counts", "assign_county_from_points",

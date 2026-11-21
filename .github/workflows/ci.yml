@@ -223,6 +223,31 @@ jobs:
       - name: Science contracts
         run: Rscript tests/ci_science_contracts.R
 
+      # What none of the three above asks: whether every published RATE divides
+      # a count by the group that count came from, over the rows where the rate
+      # is defined. Five gates, each a defect that reached a supplemental table
+      # in the Green Journal rewrite: a persistence rate pooled across the panel
+      # edge (no t+1 exists at a source's last year, so 0% followed is
+      # arithmetic, not attrition), registry visibility scored past the
+      # registry's own last year, a concordant-group count divided by the
+      # discordant denominator (one row summed to 114.5%), a pooled count
+      # printed under a base-year label, and a consumer scoring agreement on
+      # records the producer marked unusable.
+      #
+      # D5 carries a baseline of one pre-existing consumer, listed in the file
+      # with the reason. Same rule as SCI2: it can only shrink.
+      # Runs BEFORE the gate it checks, same as the science gate-of-gates above
+      # and for the same reason: a denominator gate whose arithmetic reads a
+      # column that no longer exists passes exactly like a clean repository.
+      # Nine planted defects and four near misses, each in a temporary git repo.
+      # Both false positives the gates produced on their first run are cases
+      # here, as is the shape that made the first "clean" fixture fail.
+      - name: Denominator gates detect planted defects
+        run: Rscript tests/test_denominator_contracts_detect.R
+
+      - name: Denominator contracts
+        run: Rscript tests/ci_denominator_contracts.R
+
   python-checks:
     name: Python syntax and address keys
     runs-on: ubuntu-latest

@@ -143,3 +143,18 @@ ci_require_files <- function(..., what = NULL) {
   cat("PASS (skipped: private input absent)\n")
   quit(status = 0)
 }
+
+# Code lines of a tracked .R/.qmd file, comments stripped. A rule NAMED in a
+# comment or a roxygen block is documentation of the rule, not a violation of
+# it -- the gates are heavily commented in the very files they police, and
+# matching prose would make every gate self-tripping. That mistake was made
+# three times in this repository's test suite already.
+#
+# Lived in ci_science_contracts.R until ci_denominator_contracts.R needed the
+# same three lines. Copying it would have been the H4 defect exactly, so it
+# moved here instead -- the same reason ci_read_head() is above.
+ci_code_lines <- function(path, root = ".") {
+  txt <- tryCatch(readLines(file.path(root, path), warn = FALSE),
+                  error = function(e) character(0))
+  txt[!grepl("^\\s*#'?", txt)]
+}
