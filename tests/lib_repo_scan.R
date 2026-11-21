@@ -12,6 +12,17 @@
 # ORDERING. `SAB_ROOT` comes from tests/helper-saboteur.R, so source that
 # first. These functions close over it rather than taking a root argument,
 # because every caller in this repository means the same root.
+#
+# WHY `lib_`, NOT `helper-`. testthat sources every tests/helper-*.R
+# ALPHABETICALLY before it runs any test file in the directory. Named
+# helper-repo-scan.R, this file sorted before helper-saboteur.R, read
+# `SAB_ROOT` at load time, errored with "object 'SAB_ROOT' not found", and
+# took down all 16 testthat files in the directory -- which surfaced not as an
+# error anyone read but as ci_skip_budget.R reporting 16 gates that "produced
+# no testthat summary line". tests/lib_manuscript_numbers.R already set the
+# convention: a file that suites source explicitly is `lib_`. The alternative,
+# making this file self-sufficient, would run `git ls-files` once per testthat
+# file -- 213 subprocesses to serve two callers that source it directly.
 # =============================================================================
 
 #' Lines of a git command's stdout, empty on failure

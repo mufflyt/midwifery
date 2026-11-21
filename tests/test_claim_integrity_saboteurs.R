@@ -52,10 +52,10 @@ root <- if (length(.sb)) {
 source(file.path(root, "tests", "helper-saboteur.R"))
 source(file.path(root, "tests", "helper-workflow-scan.R"))
 # git_lines(), TRACKED, known_paths() and link_paths() moved to
-# helper-repo-scan.R when test_doc_integrity_saboteurs.R turned out to need
+# lib_repo_scan.R when test_doc_integrity_saboteurs.R turned out to need
 # all four unchanged. ci_hygiene.R's H4 forbids a top-level function in two
 # tracked files, and two readers of the same tree are exactly what it is for.
-source(file.path(root, "tests", "helper-repo-scan.R"))
+source(file.path(root, "tests", "lib_repo_scan.R"))
 SAB_PREFIX <- "R"
 ALL_R <- grep("\\.R$", TRACKED, value = TRUE)
 ALL_PY <- grep("\\.py$", TRACKED, value = TRUE)

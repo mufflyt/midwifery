@@ -43,7 +43,7 @@ root <- if (length(.sb)) {
   normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
 } else normalizePath(".")
 source(file.path(root, "tests", "helper-saboteur.R"))
-source(file.path(root, "tests", "helper-repo-scan.R"))
+source(file.path(root, "tests", "lib_repo_scan.R"))
 SAB_PREFIX <- "D"
 
 ALL_MD <- grep("\\.md$", TRACKED, value = TRUE)
