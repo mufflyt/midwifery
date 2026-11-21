@@ -51,14 +51,12 @@ root <- if (length(.sb)) {
 } else normalizePath(".")
 source(file.path(root, "tests", "helper-saboteur.R"))
 source(file.path(root, "tests", "helper-workflow-scan.R"))
+# git_lines(), TRACKED, known_paths() and link_paths() moved to
+# helper-repo-scan.R when test_doc_integrity_saboteurs.R turned out to need
+# all four unchanged. ci_hygiene.R's H4 forbids a top-level function in two
+# tracked files, and two readers of the same tree are exactly what it is for.
+source(file.path(root, "tests", "helper-repo-scan.R"))
 SAB_PREFIX <- "R"
-
-git_lines <- function(...) {
-  out <- suppressWarnings(system2("git", c("-C", shQuote(root), ...),
-                                  stdout = TRUE, stderr = FALSE))
-  if (!length(out)) character(0) else out
-}
-TRACKED <- git_lines("ls-files")
 ALL_R <- grep("\\.R$", TRACKED, value = TRUE)
 ALL_PY <- grep("\\.py$", TRACKED, value = TRUE)
 TEST_R <- grep("^tests/test[-_].*\\.R$", TRACKED, value = TRUE)
@@ -292,14 +290,6 @@ sab(3, "a link to a renamed file is a dead claim that still reads as a citation"
 # This repository's README is its data inventory, and it cites 147 files by
 # relative path. A rename leaves the prose reading as a citation and pointing
 # at nothing.
-#' Relative repository paths linked from markdown
-#' @keywords internal
-#' @noRd
-link_paths <- function(ln) {
-  pat <- "\\]\\([A-Za-z0-9_./-]+[.](R|py|csv|md|tsv|txt|json|qmd|ya?ml|sh)\\)"
-  m <- regmatches(ln, gregexpr(pat, ln))
-  unique(sub("\\)$", "", sub("^\\]\\(", "", unlist(m))))
-}
 links <- link_paths(readLines(file.path(root, "README.md"), warn = FALSE))
 chk(length(links) > 50L,
     sprintf("R3a the README's file citations are read (%d links)", length(links)))
@@ -496,26 +486,6 @@ sab(9, "a baseline naming a path the repository never heard of excuses nothing a
 # outputs and are absent from every fresh clone by design; calling those stale
 # produced 25 false alarms on the first pass. The defensible claim is narrower:
 # the path must be one the repository KNOWS -- tracked, or ignored on purpose.
-#' Which of these paths does the repository know?
-#'
-#' ONE GIT CALL, NOT ONE PER PATH. The first version shelled out twice per
-#' entry -- `ls-files --error-unmatch` and `check-ignore -q` -- which is 748
-#' processes for 374 entries and 72 of the gate's 82 seconds, all of it
-#' spawning. Tracked is answered from the `git ls-files` listing already in
-#' memory, and every remaining path goes to `check-ignore --stdin` together.
-#' @param paths [character] repository-relative paths.
-#' @return [logical] one per path.
-known_paths <- function(paths) {
-  known <- paths %in% TRACKED
-  rest <- unique(paths[!known])
-  if (length(rest)) {
-    ignored <- suppressWarnings(system2(
-      "git", c("-C", shQuote(root), "check-ignore", "--stdin"),
-      input = rest, stdout = TRUE, stderr = FALSE))
-    known <- known | paths %in% ignored
-  }
-  known
-}
 baselines <- grep("^tests/.*baseline.*\\.(txt|tsv)$", TRACKED, value = TRUE)
 entry_file <- character(0); entry_path <- character(0)
 for (b in baselines) {

@@ -20,6 +20,99 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-21 — ten claims the documentation made about the tree, now checked
+
+The sibling of the entry below it. That batch gated the claims the repository
+made about *itself* — its badges, its figure numbers, its own baselines. This
+one gates the claims its *documentation* makes about the tree: a status table
+saying a file is missing, a citation pointing at a line, a command shown in a
+fenced block. Each read as true. None was checked.
+
+### Fixed
+
+- **`docs/spec-completion-matrix.md` called a built artifact missing.** The §11
+  row said `artifacts/longitudinal_reconstruction_audit.csv` was **NOT DONE**
+  and "MISSING. Needs 11 columns per source-year". The file is tracked, built
+  by `build_longitudinal_reconstruction_audit.R`, and carries 63 source-years
+  across 12 columns. Now **DONE**, with that measurement as its evidence.
+- **The same table called a written document unwritten.** The §12 row said
+  `longitudinal-reconstruction-changelog.md` was **NOT DONE**; the file is
+  tracked with 92 lines. Now **DONE**, and that section's header moves from
+  **3 of 4** to **4 of 4**.
+
+### Added
+
+- **`tests/test_doc_integrity_saboteurs.R`** — 10 saboteurs, 34 assertions,
+  25 seconds, all 10 proved by mutation. Named in `ci.yml` as "Doc-integrity
+  saboteurs", so it runs on a pull request and not only at night.
+
+  | | the claim, now checked | surface |
+  |---|---|---|
+  | D1 | a status table's DONE / NOT DONE verdict matches the tree | 22 rows, 41 paths |
+  | D2 | a `file.R:123` citation points inside that file | 77 of 89 resolvable |
+  | D3 | a markdown link resolves to something git knows | 463 links, 99 files |
+  | D4 | an in-document anchor names a heading in its own file | 33 anchors |
+  | D5 | the law registry's gate and mutation files are tracked | 13 laws, 10 files |
+  | D6 | a table row has as many cells as its header | 396 tables |
+  | D7 | every fence the corpus opens is closed | 878 fenced lines |
+  | D8 | every baseline, budget and exception ledger is opened by a script | 15 ledgers |
+  | D9 | no action is used at two different versions | 43 uses, 5 actions |
+  | D10 | a script a documented command runs exists | 178 commands |
+
+- **`tests/helper-repo-scan.R`** — `git_lines()`, `TRACKED`,
+  `known_paths()` and `link_paths()`, moved out of
+  `test_claim_integrity_saboteurs.R` because both suites need them unchanged.
+  `ci_hygiene.R`'s H4 forbids a top-level function in two tracked files, and
+  two readers of the same tree are exactly what it is for. The claim suite
+  re-runs clean on the shared copy.
+
+### The gates caught three of my own errors before the tree did
+
+- **A slug function that collapsed runs of spaces** called two correct README
+  anchors broken. GitHub drops the `&` in "Key Visualizations & Data Gallery"
+  and keeps *both* its spaces, so the anchor is
+  `key-visualizations--data-gallery`. D4d now asserts that rule directly.
+- **A DONE predicate of "tracked or gitignored"** failed on eight true claims.
+  Four of those CSVs — `medicaid_billing_by_state.csv` among them — are real
+  outputs of tracked producers that no `.gitignore` rule happens to name. D1
+  now separates source files, which must be tracked because this repository
+  never generates a `.R`, from data artifacts, which may be ignored or merely
+  named by a producer; the file states what that weaker third test does not
+  establish.
+- **A negative control that named its sentinel in plain text.** D8c asserts
+  that a basename this tree does not have is found in no script — and spelled
+  the name out, in a file that D8 itself reads. It passed while the file was
+  untracked and failed the moment it was staged. The sentinel is now built
+  from pieces, so the literal cannot appear in the corpus it tests.
+
+### Not done, deliberately
+
+Five candidates were measured and dropped rather than shipped. Each is
+recorded in the suite's header with its numbers.
+
+- **"every commit SHA a doc cites resolves"** — 1 of 11 does not, and
+  correctly: `docs/CI_BEST_PRACTICES.md:1405` cites `a631aa226` in
+  `mufflyt/isochrones`, naming that repository in the same sentence.
+- **"every path `DEBT.md` cites exists"** — 11 do not, and a debt ledger is
+  where they should not: one entry names an upstream file under
+  "belongs to: `mufflyt/isochrones`", another records an artifact deliberately
+  deleted when its finding was withdrawn.
+- **"every `docs/*.md` is linked from another doc"** — 14 are not. That is
+  drift, not a claim the repository makes anywhere.
+- **"every `*_detect.R` is in the law registry"** — 6 are not, correctly:
+  they detect for gates, and the registry is for laws.
+- **"every tracked `ci_*.R` is named in a workflow"** — 6 looked unrun, and
+  all six are run by `nightly.yml` under a path form the first scan missed.
+
+### Known-unresolved
+
+- `README.md:1790` cites "(Figure 20)" for an NDH exclusion-flag figure, and
+  Figure 20 is the CONSORT flow. The pointer was already wrong before the
+  renumbering in the entry below; it was carried, not corrected.
+- The §12 row `≤80-char lines, base::message(), qualified calls` still reads
+  **PARTIAL** and still names `audit_source_series_independence.R`. D1 checks
+  a row's cited paths, not whether its prose about them is current.
+
 ## [Unreleased] — 2026-11-21 — ten claims the repository made about itself, now checked
 
 Two over-engineering audits produced ten findings; three were wrong and two

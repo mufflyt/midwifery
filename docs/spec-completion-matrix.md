@@ -118,17 +118,17 @@ entries, 24 added here, all KILLED**.
 
 | Requirement | Status | Remaining |
 |---|---|---|
-| `artifacts/longitudinal_reconstruction_audit.csv` | **NOT DONE** | MISSING. Needs 11 columns per source-year |
+| `artifacts/longitudinal_reconstruction_audit.csv` | **DONE** | tracked, 63 source-years × 12 columns, from `build_longitudinal_reconstruction_audit.R` |
 | Headline summary with explanations | **PARTIAL** | `a2_medicaid_before_after.csv` covers 2 metrics for 1 source |
 
-## §12 Documentation — **3 of 4**
+## §12 Documentation — **4 of 4**
 
 | Doc | Status |
 |---|---|
 | `longitudinal-source-inventory.md` | **DONE** |
 | `source-series-reconstruction.md` | **DONE** |
 | `temporal-evidence-validation.md` | **DONE** (2026-11-14) — F4 decomposition write-up |
-| `longitudinal-reconstruction-changelog.md` | **NOT DONE** |
+| `longitudinal-reconstruction-changelog.md` | **DONE** |
 | Roxygen on all new functions | **DONE** — 13 + 5 (PPEF) + 2 (Medicaid) + 2 (source_year) |
 | ≤80-char lines, `base::message()`, qualified calls | **PARTIAL** — new files comply; `audit_source_series_independence.R` uses unqualified `read_csv`/`filter` |
 
