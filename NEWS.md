@@ -20,6 +20,124 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-21 — eleven claims the pipeline made about its own data, now checked
+
+The third and last of the three batches below. The first gated what the
+repository says about **itself**; the second, what its **documentation** says
+about the tree; this one, what the **pipeline** says about the data it moves
+— which script produced an artifact, what it was built from, when, and from
+inputs of what hash. 304 tracked `*.provenance.json` sidecars assert all of
+it, and the only thing ever checked about them was that they exist.
+
+Full write-up, including the thirteen candidates measured and dropped and the
+eight errors the gates caught in their own first drafts:
+[`docs/APPENDIX_gates_for_unchecked_claims_2026-11-21.md`](docs/APPENDIX_gates_for_unchecked_claims_2026-11-21.md).
+
+### Fixed
+
+- **A count of what is unverified, itself unverified.**
+  `docs/spec-completion-matrix.md` said "79 pre-existing artifacts carry
+  `code_sha256: null`" at row 13 and again at item 17. The measurement is
+  **80** — 75 under `artifacts/`, 5 under `data/`. The number was stale under
+  either reading of "artifacts" and the population was never stated, so
+  nothing could have checked it. Both lines now name the population, and
+  `M4` recomputes all of it.
+- **Provenance naming a file the repository could not account for.**
+  `artifacts/dac_hospital_affiliation_summary.csv.provenance.json` records an
+  input at `data/facility_affiliation_refresh/Facility_Affiliation_2026-06.csv`,
+  which was neither tracked nor ignored. It is a CMS download, not a product,
+  so it is now deliberately uncommitted alongside the existing `data/ahrf/`
+  and `data/cms_pos_hospital.csv` rules.
+- **A shared helper that silenced every test beside it.**
+  `tests/helper-repo-scan.R`, added by the previous entry, broke all 16
+  testthat files in `tests/`. testthat sources every `tests/helper-*.R`
+  **alphabetically** before running any test file; the new helper sorted
+  before `helper-saboteur.R` and read `SAB_ROOT` at load time. Nothing
+  reported an error — the files reported no testthat summary line at all, and
+  `ci_skip_budget.R`, which counts skips by parsing that line, called 16
+  gates over budget with "produced no testthat summary line, so its skips
+  could not be counted". Renamed to `tests/lib_repo_scan.R`, matching the
+  convention `tests/lib_manuscript_numbers.R` already set. `M8` is that
+  defect's gate.
+- **A `git add` that staged nothing, silently.** The rename commit landed the
+  file move and nothing else — "1 file changed, 0 insertions(+), 0
+  deletions(-)" — because the pathspec list still named the old path. Git
+  refuses the whole command when one pathspec matches nothing, and a
+  `2>/dev/null` hid the refusal, so both suites went on sourcing a file the
+  same commit had renamed away.
+
+### Added
+
+- **`tests/test_provenance_integrity_saboteurs.R`** — 11 saboteurs, 31
+  assertions, 16 seconds, all 11 proved by mutation. Named in `ci.yml` as
+  "Provenance-integrity saboteurs".
+
+  | | the claim, now checked | surface |
+  |---|---|---|
+  | M1 | every tracked artifact is named somewhere in the tree | 354 artifacts, 978 tokens |
+  | M2 | a sidecar's `artifact` field names the file it sits beside | 304 sidecars |
+  | M3 | a repository-relative input path is tracked or deliberately ignored | 834 entries |
+  | M4 | the documented count of null `code_sha256` equals the measured count | stated twice |
+  | M5 | no sidecar outlives its artifact | 304 sidecars |
+  | M6 | a sidecar's timestamp is well-formed and not in the future | 302 of 304 |
+  | M7 | a recorded input hash is 64 lowercase hex digits | 954 hashes |
+  | M8 | loading every `tests/helper-*.R` in testthat's order raises no error | 9 helpers |
+  | M9 | every literal `source()` target exists, from the parse tree | 105 targets |
+  | M10 | the numbered pipeline has no duplicate and no gap | 15 stages, 1–15 |
+  | M11 | every suite `RUN_REGRESSION_TESTS.R` names is tracked | 26 suites |
+
+- **`docs/APPENDIX_gates_for_unchecked_claims_2026-11-21.md`** — the three
+  suites' catalogue, the seven defects they found, the thirteen candidates
+  measured and dropped with their numbers, the eight first-draft errors, and
+  the design rules that came out of them.
+
+### The gates caught three more of their own errors
+
+- **`M6` demanded one timestamp field and there are three.** 20 sidecars
+  carry `accessed_utc` and no `written_utc` — the `cms_ndh_*` and
+  `live_*_bon_ingested_*` files are *fetched*, so when the source was read is
+  the honest claim. One more, `op_linkage_adjudication_summary`, spells it
+  `generated_at`, which the gate found by failing on it. `M6e` is now a
+  positive control for that third spelling.
+- **`M1` called three correct artifacts dead.**
+  `trilliant_demographics_validation_1a7bd6a8.csv` carries a commit hash and
+  `cohort_flow_17224_to_16775.csv` two cohort counts, both written by
+  `sprintf`, so no literal in any script can match them. The gate reduces a
+  run stamp to the stem its producer actually writes.
+- **This appendix's own defect table broke `D1`.** The two rows recording a
+  wrong "NOT DONE" verdict stated it in bold, and `D1` reads a bolded status
+  token in a table row as a live claim about the path beside it — so the
+  appendix asserted the very things it reports as corrected. The verdicts are
+  quoted unbolded, and the file says why.
+
+### Not done, deliberately
+
+- **"every recorded input hash still matches its file"** — 97 of 280 tracked
+  input entries do not, and almost all are
+  `live_*_bon_ingested_midwives_from_tracked_roster.csv`, re-ingested on every
+  run. A sidecar recording the hash its artifact was *built from* is supposed
+  to differ from a later refresh of that input.
+- **"every function defined under `R/` is called somewhere"** — 15 are not,
+  all but one dot-prefixed internals. Dead code is a complexity finding, not
+  a false claim.
+- **"no top-level constant is defined in two files"** — 180 are, `ART` in 24
+  files and `FROZEN` in 18. `ci_hygiene.R`'s H4 forbids that for *functions*,
+  where two copies diverge in behaviour; a per-script path constant is this
+  pipeline's idiom.
+- **"dead `.gitignore` rules"** — the scan called 447 of 463 dead and the
+  scan was wrong: ignore patterns apply recursively and there is no reverse
+  `check-ignore`.
+
+### Known-unresolved
+
+- Two sidecars, `nppes_license_concordance.csv.provenance.json` and
+  `nursys_qa_sample.csv.provenance.json`, record no time at all. They are
+  named in `M6`'s `TIMELESS` list, which may only shrink; `M6d` fails if
+  either gains a timestamp. Backfilling one from a commit date would be
+  inventing provenance to satisfy a gate.
+- Three timestamp spellings remain in use across producers. Unifying them is
+  a producer-side change and a different task.
+
 ## [Unreleased] — 2026-11-21 — ten claims the documentation made about the tree, now checked
 
 The sibling of the entry below it. That batch gated the claims the repository

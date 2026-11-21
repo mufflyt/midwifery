@@ -106,7 +106,7 @@ so every DONE row names the test that covers it.
 | 10 | Monthly Medicaid aggregation | **NOT DONE** | Workstream C absent |
 | 11 | NPPES deactivation chronology | **BLOCKED** | no source data |
 | 12 | Reproducible output hashes | **PARTIAL** | determinism tested; hashes not pinned |
-| 13 | Accurate provenance sidecars | **PARTIAL** | A3 checks existence only; **79 pre-existing artifacts carry `code_sha256: null`** |
+| 13 | Accurate provenance sidecars | **PARTIAL** | A3 checks existence only; **80 tracked sidecars carry `code_sha256: null` — 75 under `artifacts/`, 5 under `data/`** |
 | 14 | Stable source-by-year schemas | **DONE** | `[8]` |
 | 15 | Persistence denominators | **DONE** | `artifacts/persistence_denominators.csv` from `build_f2_f3_uncertainty_denominators.R` |
 
@@ -174,4 +174,5 @@ Phase 4 **NOT STARTED** · Phase 5 **NOT STARTED**
 14. §11 — `longitudinal_reconstruction_audit.csv`
 15. §12 — `longitudinal-reconstruction-changelog.md` (`temporal-evidence-validation.md` done)
 16. DAC 2017–2025 (proposal #5, distinct from A1)
-17. 79 artifacts with `code_sha256: null` (pre-existing; needs its own issue)
+17. 80 sidecars with `code_sha256: null` — 75 under `artifacts/`, 5 under
+    `data/` (pre-existing; needs its own issue)

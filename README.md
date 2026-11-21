@@ -2423,13 +2423,19 @@ expiration_date, last_name, first_name, middle_name, discipline, primary_source`
 ## Continuous integration
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push and
-pull request, across three Linux jobs tiered by what they cost to install:
+pull request, across five Linux jobs tiered by what they cost to install.
+Three install something and run checks; `science-law-coverage` runs the
+mutation suite that counts the laws and planted defects in the badge above;
+`scientific-gate` installs nothing and refuses to call the run green unless
+every required job succeeded:
 
 | Job | Installs | Checks |
 |---|---|---|
 | **r-checks** | `stringr` | every tracked R file parses; no hardcoded path into another user's home; no duplicate `.gitignore` rules; no function defined at top level in two files; the join keys (`pad5` vs `zip5_key`, `zip5` vs `zip5_first_run`, `zip9`, `phone10`, `norm_addr` vs `norm_addr_drop_unit`, `pad_ccn`); Table 1 age/tenure/decade banding; **the leak guard**; **the artifact contracts** |
 | **python-checks** | `pytest` | every tracked `.py` compiles; address-key matching; **the whole `tests/` directory under pytest — 134 tests** (the scraper's 500-row APEX pager cap, the NPI API's 200-row candidate cap, five live BON harvesters, the HHS open-data pipeline, the microsimulation conservation suite) |
-| **r-unit-tests** | the tidyverse stack, cached | the deterministic license→NPI bridge and its collision handling; state-license table construction; former/maiden-name candidate expansion; age-at-certification validation; the cross-taxonomy rule that a nursing-only match is never promoted into the primary cohort; the checkpoint-merge contract |
+| **r-unit-tests** | the tidyverse stack, cached | the deterministic license→NPI bridge and its collision handling; state-license table construction; former/maiden-name candidate expansion; age-at-certification validation; the cross-taxonomy rule that a nursing-only match is never promoted into the primary cohort; the checkpoint-merge contract; the skip budget; and three claim-integrity suites — 31 saboteurs over what the repository says about itself, what its documentation says about the tree, and what the pipeline says about the data it moves ([appendix](docs/APPENDIX_gates_for_unchecked_claims_2026-11-21.md)) |
+| **science-law-coverage** | the tidyverse stack, cached | every declared scientific law has a gate and a mutation that the gate kills; the README's badge **and** its prose must both state the law count and the planted-defect count this run measured |
+| **scientific-gate** | nothing | every required job above ran and succeeded — a skipped step cannot report green ([`tests/ci_aggregate_gate.sh`](tests/ci_aggregate_gate.sh)) |
 
 The tiering is deliberate. The first two jobs stay trivially cheap so they are
 never the reason someone switches CI off; the third is allowed to cost a minute

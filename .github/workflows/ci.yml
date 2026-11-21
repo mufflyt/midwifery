@@ -513,6 +513,9 @@ jobs:
       - name: Doc-integrity saboteurs
         run: Rscript tests/test_doc_integrity_saboteurs.R
 
+      - name: Provenance-integrity saboteurs
+        run: Rscript tests/test_provenance_integrity_saboteurs.R
+
       # The 2026-11-20 complexity audit's four fixes. Mostly text and
       # parse-tree scans over tracked files, but it also SOURCES
       # R/join_safety.R (checkmate, dplyr -- both installed above) to prove
