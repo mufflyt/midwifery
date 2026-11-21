@@ -22,7 +22,8 @@
 #     before this rewrite. That is exactly the regression class this file
 #     exists to catch, caught in the act rather than in a postmortem.
 #   - the inline allowlist became DUCKDB_RAW_CONNECTION_EXCEPTIONS in
-#     R/lib/medicare_duckdb.R: a structured registry with file/reason/owner/
+#     tests/duckdb_architecture_scan.R (R/lib/medicare_duckdb.R until
+#     2026-11-19): a structured registry with file/reason/owner/
 #     expiry_condition per entry, so "this is fine" is a checkable, attributed
 #     claim rather than an anonymous vector entry.
 #
@@ -32,6 +33,11 @@ if (!dir.exists(file.path(root, ".git")) && dir.exists("../.git")) root <- ".."
 
 source(file.path(root, "tests", "ci_report.R"))
 source(file.path(root, "R", "lib", "medicare_duckdb.R"))
+# The raw-connection registry and duckdb_scan_for_raw_connections() moved
+# here from R/lib/medicare_duckdb.R on 2026-11-20: they are CI-only, and
+# 30-odd scripts were sourcing 343 lines of gate machinery to reach
+# open_medicare_duckdb(). Same rule, same scan, same return shape.
+source(file.path(root, "tests", "duckdb_architecture_scan.R"))
 
 # -----------------------------------------------------------------------------
 # 1. Structural (AST) bypass check -- see duckdb_scan_for_raw_connections()
@@ -73,7 +79,7 @@ if (nrow(offenders)) {
 # DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX without a conscious edit to that
 # constant, right next to the registry it bounds -- see its docstring.
 if (length(DUCKDB_RAW_CONNECTION_EXCEPTIONS) > DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX) {
-  ci_fail("DUCKDB_RAW_CONNECTION_EXCEPTIONS has grown to %d entries, past its declared upper bound of %d -- if this growth is genuinely justified, raise DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX in R/lib/medicare_duckdb.R deliberately, in the same change, with a reason",
+  ci_fail("DUCKDB_RAW_CONNECTION_EXCEPTIONS has grown to %d entries, past its declared upper bound of %d -- if this growth is genuinely justified, raise DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX in tests/duckdb_architecture_scan.R deliberately, in the same change, with a reason",
           length(DUCKDB_RAW_CONNECTION_EXCEPTIONS), DUCKDB_RAW_CONNECTION_EXCEPTIONS_MAX)
 } else {
   ci_ok("exception registry size (%d) is within its declared upper bound (%d)",

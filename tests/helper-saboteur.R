@@ -53,6 +53,27 @@ SAB_ROOT <- test_repo_root()
 slurp <- function(rel, root = SAB_ROOT)
   paste(readLines(file.path(root, rel), warn = FALSE), collapse = "\n")
 
+#' Tracked paths, from git
+#'
+#' @param pattern [character(1)] a git pathspec. A DIRECTORY-QUALIFIED glob
+#'   ("tests/*.R") or "." -- never a bare "*.R", which does not cross
+#'   directory boundaries and reads only the repository root (267 of 647 files
+#'   here). `tests/test_gate_integrity_saboteurs.R`'s Q2a refuses the bare
+#'   form; this docstring is the other half of that fix.
+#' @param root [character(1)] the repository root; resolved once at source time.
+#' @return [character] tracked paths, or `character(0)`.
+tracked <- function(pattern, root = SAB_ROOT) {
+  out <- suppressWarnings(system2("git", c("-C", shQuote(root), "ls-files", pattern),
+                                  stdout = TRUE, stderr = FALSE))
+  if (!length(out)) character(0) else out
+}
+
+#' Every tracked .R file, at any depth
+#'
+#' Lists once and filters in R, because a git pathspec does not recurse.
+#' @return [character] repository-relative paths.
+tracked_r <- function() grep("\\.R$", tracked("."), value = TRUE)
+
 fails <- 0L
 
 #' Assert, print, and count

@@ -48,6 +48,122 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   both package states. 1 script (`analysis/oig_style_source_consistency.R`)
   could not be re-run: 3 of its gitignored local inputs no longer exist on
   disk, unrelated to this audit.
+## [Unreleased] — 2026-11-19 — 1,300 lines the pipeline parsed and never called
+
+An AI-assisted code-complexity pass over the five-stage pipeline's `source()`
+closure (`Review_AI_complexity.qmd`, ropensci-skills `run-complexity`). No
+estimate moved: nothing here changes a number, a cohort, or an artifact. What
+changed is how much code the pipeline has to load to do its work, and one join
+wrapper's actual behaviour.
+
+### Removed
+
+- **Three join wrappers with no production caller, and 1,017 lines of
+  `R/join_safety.R` with them.** `safe_inner_join()` (cyclomatic complexity
+  55, 260 lines), `safe_semi_join()` and `safe_anti_join()` were called only
+  from tests — and were one function written four times, the semi/anti pair
+  measuring 0.78 structural similarity on a 7-gram token comparison. They
+  remain in `~/isochrones/R/join_safety.R`, the copy this file was vendored
+  from, which is where to take one from if a caller ever appears. The module
+  went from 1,892 lines to 875. `tests/test-join-safety-semantic-extended.R`
+  (500 lines, every one of them exercising `safe_inner_join()`) was deleted;
+  ten of `tests/test-join-safety.R`'s 21 blocks went with it.
+
+- **Two blocks of delegation to functions no file in this repository
+  defines.** `safe_left_join()` carried a 54-line enhanced-metrics path
+  calling `safe_left_join_with_metrics()` from `R/join_metrics.R`, which was
+  never added here, and — two hundred lines further down, behind
+  `exists("log_join_integrity", mode = "function")` and inside a `tryCatch`
+  that would have swallowed any error — 17 more lines logging to a
+  join-integrity ledger that also does not exist. The second one was found by
+  the gate written for the first.
+
+  The `use_enhanced_metrics` **parameter stays**, and still hard-stops when
+  set. The audit recommended deleting it along with the 22 call sites that
+  pass `FALSE`; that was wrong, and the measurement is why it looked right.
+  `R/01-build-county-base.R`'s `load_join_safety()` sources the vendored copy
+  **or** `~/isochrones/R/join_safety.R`, and upstream defaults the same
+  parameter to `TRUE` with `R/join_metrics.R` present. The six explicit
+  `FALSE`s are upstream-compatibility insurance, not noise.
+
+- **`DUCKDB_RAW_CONNECTION_EXCEPTIONS` and
+  `duckdb_scan_for_raw_connections()` left `R/lib/medicare_duckdb.R`** for
+  `tests/duckdb_architecture_scan.R`, beside the four `tests/ci_duckdb_*.R`
+  gates that are their only callers. The scanner was the pipeline's most
+  complex function (cyclomatic complexity 98 over 156 lines) and has no
+  production caller at all — it parses tracked files to police them — while
+  the library holding it is sourced by 30-odd scripts including pipeline stage
+  4, every one of which was evaluating 343 lines of gate machinery to reach
+  `open_medicare_duckdb()`. Same registry, same site-level tag matching, same
+  `data.frame(file, line, tag, symbol)`; the M1–M17 mutation suite passes
+  unchanged, which is what says so.
+
+### Changed
+
+- **`assert_unique_keys()` moved to `R/assert_unique_keys.R`.** Seventeen
+  scripts source all of `R/join_safety.R` to reach this one 69-line function,
+  which calls nothing else in that module; `check_npi_deactivation.R` is 65
+  lines and was pulling 2,195 (the module plus the `R/safe_divide.R` it
+  sources) to call it once, then doing its own join bare. Stage 5 now sources
+  the 69 lines. `R/join_safety.R` sources the new file, so the other sixteen
+  call sites are unchanged — switching them is a separate decision, one file
+  at a time, for whoever can confirm each uses nothing else from the module.
+
+- **One call-tree walker, `walk_call_tree()` in `R/lib/ast_walk.R`.** It had
+  been written twice — `walk()` inside `.code_closure()` and `walk_calls()`
+  inside the DuckDB scanner, both reachable from the same pipeline script,
+  each with its own paragraph about R's empty symbol. Same traversal in both;
+  they differed only in how each coped with a node that cannot be walked, so
+  the shared one does both. `regex_literals()` in
+  `tests/test_gate_integrity_saboteurs.R` is deliberately not converted: it
+  visits call heads as well as arguments, and Q1's scan set is calibrated to
+  that traversal.
+
+### Fixed
+
+- **`safe_anti_join()` did not harmonize join key types, though its own
+  documentation said it did** — in `~/isochrones/R/join_safety.R`, the
+  canonical copy, where the function survives. The 2026-04-05 fix was applied
+  to `safe_left_join()`, `safe_inner_join()` and `safe_semi_join()` and missed
+  the fourth; a character key against an integer key (a CSV read against a
+  parquet or RDS round-trip — the exact hazard
+  `check_npi_deactivation.R:28-30` warns about) aborted with dplyr's
+  "incompatible types" where the three siblings coerced and continued. Found
+  by the duplication measurement, not by reading: the semi/anti pair scored
+  0.78, and the diff of the two bodies showed one guard present in one and
+  absent in the other. Fixed upstream with
+  `~/isochrones/tests/testthat/test-safe-join-key-harmonization.R`, which asserts the
+  parity rather than the one function — the defect was that one of four
+  diverged.
+
+- **`tests/test_ponytail_cuts_saboteurs.R`'s P1e matched text where it meant a
+  `source()` call.** It read whole file text for "helper-saboteur", so a file
+  naming the harness in a comment was an offender. Now anchored to
+  non-comment `source()` lines, with P1f/P1g holding both directions. Shape 2
+  of `docs/APPENDIX_checks_that_cannot_fail_2026-11-20.md`, in the suite that
+  documents it.
+
+### Added
+
+- **`tests/test_complexity_cuts_saboteurs.R`** — 26 assertions, four
+  saboteurs, one per cut, each mutating what it guards and each checked in
+  both directions. Its C2a parses every tracked `.R` file for *calls* (not
+  text) to functions no file defines, which is what found the second dead
+  delegation above. Registered in `ci.yml`'s `r-unit-tests` job; nightly would
+  glob it anyway, naming it there is what makes it run on the pull request
+  that breaks it.
+
+  Its C3f gates a defect introduced and fixed inside this change: the moved
+  scanner was first named `tests/helper-duckdb-scan.R`, and
+  `testthat::test_file()` auto-sources every `tests/helper-*.R` **from the
+  tests directory** — so all ten `test_file()`-invoked suites in `ci.yml`
+  began sourcing a DuckDB scanner and all ten broke on
+  `tests/R/lib/ast_walk.R`. The P4 lesson arriving from a direction P4 does
+  not scan.
+
+- **`tracked()` and `tracked_r()` moved into `tests/helper-saboteur.R`** when
+  a second suite needed them. A top-level function defined in two tracked
+  files is what `ci_hygiene` H4 refuses, and the reason that harness exists.
 
 ## [Unreleased] — 2026-11-20 — ten checks that reported ok against the defect they guard
 

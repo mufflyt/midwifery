@@ -23,6 +23,8 @@
 #' @family provenance
 
 source(file.path("R", "lib", "provenance.R"))
+# walk_call_tree(): the one call-tree walker (2026-11-20 audit, finding 4).
+source(file.path("R", "lib", "ast_walk.R"))
 
 #' Write an artifact together with the hashes of its inputs
 #'
@@ -112,40 +114,24 @@ source(file.path("R", "lib", "provenance.R"))
     if (is.null(ex)) return(invisible(NULL))
     # Walk the parse tree for source()/sys.source() and rebuild the path from
     # the string literals in the call, which is how this repo writes them.
-    walk <- function(node) {
-      if (is.call(node)) {
-        fn <- node[[1L]]
-        if (is.name(fn) && as.character(fn) %in% c("source", "sys.source")) {
-          lits <- unlist(lapply(as.list(node)[-1L], function(a)
-            if (is.character(a)) a
-            else if (is.call(a)) Filter(is.character, as.list(a)[-1L])
-            else NULL), use.names = FALSE)
-          lits <- unlist(lits, use.names = FALSE)
-          if (length(lits)) {
-            cand <- do.call(file.path, as.list(lits))
-            hit <- .resolve_code_path(cand)
-            if (!is.na(hit)) visit(hit, depth + 1L)
-          }
-        }
-        # The gap in `x[, 1]` parses to the empty symbol. Binding it to a loop
-        # variable makes ANY later use of that variable raise "argument is
-        # missing", so it cannot be tested after binding -- compare the
-        # one-element sublist instead, which never evaluates it.
-        args <- as.list(node)[-1L]
-        for (i in seq_along(args)) {
-          if (identical(args[i], list(quote(expr = )))) next
-          walk(args[[i]])
-        }
-      } else if (is.pairlist(node) || is.expression(node) || is.list(node)) {
-        args <- as.list(node)
-        for (i in seq_along(args)) {
-          if (identical(args[i], list(quote(expr = )))) next
-          walk(args[[i]])
-        }
-      }
+    # The walker itself is R/lib/ast_walk.R: it was written twice, once here
+    # and once as walk_calls() inside duckdb_scan_for_raw_connections(), each
+    # with its own paragraph about R's empty symbol. Only the visitor is local.
+    visit_source <- function(node) {
+      fn <- node[[1L]]
+      if (!(is.name(fn) && as.character(fn) %in% c("source", "sys.source")))
+        return(invisible(NULL))
+      lits <- unlist(lapply(as.list(node)[-1L], function(a)
+        if (is.character(a)) a
+        else if (is.call(a)) Filter(is.character, as.list(a)[-1L])
+        else NULL), use.names = FALSE)
+      lits <- unlist(lits, use.names = FALSE)
+      if (!length(lits)) return(invisible(NULL))
+      hit <- .resolve_code_path(do.call(file.path, as.list(lits)))
+      if (!is.na(hit)) visit(hit, depth + 1L)
       invisible(NULL)
     }
-    for (e in as.list(ex)) walk(e)
+    for (e in as.list(ex)) walk_call_tree(e, visit_source)
     invisible(NULL)
   }
   visit(entry, 0L)
