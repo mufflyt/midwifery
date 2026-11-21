@@ -1424,6 +1424,7 @@ mw_build_catalog <- function(root = ".") {
       a$medicaid_membership_pct <- getq("agreement, membership of the enrolled set (%)")
       a$medicaid_comparable_npi_years <- getq("comparable NPI-years vs NPPES")
       a$medicaid_newly_agreeing_n <- getq("NPI-years newly scored as agreeing")
+      a$setm_table <- acc_setm
     }
 
     # Supplemental displays (SDC). Butala-style dose-response: unanimous and

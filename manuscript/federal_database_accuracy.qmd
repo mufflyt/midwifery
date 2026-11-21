@@ -569,7 +569,8 @@ concurrently enrolled, rather than by whether it equals a single state
 selected for her, raised agreement with the registry from
 `r pc(A$medicaid_equality_pct, 1)` to `r pc(A$medicaid_membership_pct, 1)` on
 the same `r cnt(A$medicaid_comparable_npi_years)` comparable provider-years.
-No underlying record changed; only the question did. Commercial insurer
+No underlying record changed; only the question did (Supplemental
+Table S5). Commercial insurer
 directories show the same mechanism: practice-address consistency rose
 from 27.9% to 84.8% when only physicians practicing at a single location
 were counted [@butala2023directories].
@@ -822,6 +823,28 @@ if (!is.null(A$persistence_table)) {
     check.names = FALSE)
   style_manuscript_table(out[order(-ps$n_observed), ],
                          align = c("l", "r", "r", "r", "r", "r", "r"))
+}
+```
+
+```{r table-set-membership}
+#| tbl-cap: "Supplemental Table S5. Medicaid enrollment versus the national provider registry on identical provider-years under two scoring rules, adopting the two-universe column design of Butala et al., who reported directory consistency for all physicians and for the restricted universe of single-location physicians side by side. Equality requires the registry state to equal the single state the file would assign; membership requires it to be among the states in which the provider is concurrently enrolled. The gap between the two columns is apparent disagreement manufactured by the scoring rule, not error in the underlying records."
+if (!is.null(A$setm_table)) {
+  getq <- function(lbl) {
+    v <- A$setm_table$value[A$setm_table$quantity == lbl]
+    if (!length(v)) NA_real_ else as.numeric(v)
+  }
+  out <- data.frame(
+    `Scoring rule` = c(
+      "Equality: registry state must equal the single assigned state",
+      "Membership: registry state among the enrolled states"),
+    `Provider-years` = formatC(
+      rep(getq("comparable NPI-years vs NPPES"), 2), format = "d",
+      big.mark = ","),
+    `Agreement with registry (%)` = sprintf("%.1f", c(
+      getq("agreement, equality with the modal pick (%)"),
+      getq("agreement, membership of the enrolled set (%)"))),
+    check.names = FALSE)
+  style_manuscript_table(out, align = c("l", "r", "r"))
 }
 ```
 
