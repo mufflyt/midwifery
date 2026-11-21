@@ -31,8 +31,11 @@ IN  <- "artifacts/canonical_source_records.csv"
 OUT <- "artifacts/source_count_agreement_by_n_sources.csv"
 stopifnot(file.exists(IN))
 
+# usable_for_trend excludes left-censored Medicaid segments and
+# pre-SUPPORT-Act Open Payments years; scoring them would measure records
+# the manuscript excludes everywhere else (DEBT D14, item 5).
 x <- read_csv(IN, col_types = cols(.default = "c"), progress = FALSE) %>%
-  filter(!is.na(state), state != "")
+  filter(usable_for_trend == "TRUE", !is.na(state), state != "")
 
 # For each provider-year with >= 2 reporting sources, count the source
 # pairs and how many of them record the same state.

@@ -1,17 +1,17 @@
 {
   "artifact": "source_count_agreement_by_n_sources.csv",
-  "written_utc": "2026-11-21 17:13:41 UTC",
+  "written_utc": "2026-11-21 22:58:47 UTC",
   "inputs": [
     {
       "path": "artifacts/canonical_source_records.csv",
       "sha256": "81cf8b26e0a055bc5ddbe74f3ffe872105d12025272bce18b9b68acfc901f006"
     }
   ],
-  "code_sha256": "855cac4a3a39195e2ade2171e39b26f0cf42da2eaa082920097fe17824c64e4c",
+  "code_sha256": "04b88fab87b67be00d7c29aff77168cabbe59ba10f368361c75ed528b87fd103",
   "code": [
     {
       "path": "build_source_count_agreement.R",
-      "sha256": "adaedf323fac5684e40f40e9da72aea220589d40f071e4355126db1afae987f6"
+      "sha256": "3284639eb722dbbf99d9cfc784829a2c151b1791bec4ed7122e31a8493604a36"
     },
     {
       "path": "R/lib/artifact_provenance.R",

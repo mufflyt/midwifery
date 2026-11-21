@@ -182,7 +182,10 @@ Medicaid, specifically the Transformed Medicaid Statistical Information
 System (T-MSIS), was carried as its own classification rather than as a percentage,
 because it is the only source with a per-provider-year concordance already
 constructed and because reducing concurrent multi-state enrollment to a single
-state discards the categories of most interest.
+state discards the categories of most interest. Analysis of the enrollment
+segments release [@fr2026segments] followed the T-MSIS reporting checklist,
+including disclosure of state-level identifiability limits
+[@schpero2025taf].
 
 ```{r table-sources}
 #| tbl-cap: "Table 1. Record systems examined, their custodian and role, the years each covers, and the public access point for each, sorted by custodian. The Transformed Medicaid Statistical Information System carries a per-provider-year concordance classification -- including concurrent enrollment in more than one state -- rather than a single state that could be set against the registry, so its consistency is analyzed separately rather than in Tables 3 and 4."
@@ -447,7 +450,9 @@ carrying a provider NPI ranged from `r pc(A$medicaid_npi_pop_min, 1)` in
 `r knitr::combine_words(A$medicaid_npi_pop_zero_state_names)` -- whose
 files contain no NPI-bearing segment at all -- to `r pc(A$medicaid_npi_pop_max, 1)` in `r A$medicaid_npi_pop_max_state_name`, so a
 clinician enrolled only in Oregon Medicaid is unobservable in this source
-regardless of record accuracy (Supplemental Figure S6).
+regardless of record accuracy (Supplemental Figure S6). Field completeness
+varies by state in Medicaid files [@samples2025cmc]; CMS's own quality
+threshold for missing provider NPIs is 10% [@cms_tmsis_prv_npi].
 
 
 ### Consistency between databases
@@ -584,7 +589,8 @@ from 27.9% to 84.8% when only physicians practicing at a single location
 were counted [@butala2023directories].
 
 Multi-state enrollment is common rather than exceptional among midwives who
-appear in Medicaid at all (Supplemental Figure S4).
+appear in Medicaid at all (Supplemental Figure S4); enrollment out of
+state adds credentialing requirements [@macpac2026enrollment].
 
 
 
@@ -660,8 +666,9 @@ This study replicates and extends. The Office of Inspector
 General's 2013 evaluation established the accuracy--completeness--consistency
 framework, with a surveyed provider sample as the reference standard
 [@oig2013]; sibling evaluations had already found stale terminated
-relationships in the Medicare enrollment extract and missing elements in
-industry payment records [@oig2009pecos; @oig2018openpayments]. Subsequent
+relationships in the Medicare enrollment extract, missing elements in
+industry payment records, and improving but uneven Medicaid submission
+completeness [@oig2009pecos; @oig2018openpayments; @gao2021tmsis]. Subsequent
 work comparing national physician sampling
 frames, licensure records, and commercial directories documented
 discrepancies in clinician addresses and specialty classifications
@@ -669,9 +676,9 @@ discrepancies in clinician addresses and specialty classifications
 @butala2024directory]; a national comparison of five
 major insurer directories found consistent practice-address information
 for only 27.9% of physicians listed in more than one directory
-[@butala2023directories]; in one re-survey, 44.8% of inaccurate listings
-were still wrong months later [@haeder2024persistence], and the
-regulator's own audit found roughly half of Medicare Advantage directory
+[@butala2023directories]; one re-survey found 44.8% of inaccurate
+listings still wrong months later [@haeder2024persistence], and the
+regulator's audit found half of Medicare Advantage directory
 locations inaccurate [@cms2018directory]. Within
 midwifery, taxonomy alone undercounts certified midwives and credential
 fields improve identification, but that work addressed identification,

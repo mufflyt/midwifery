@@ -30,8 +30,12 @@ OUT <- "artifacts/state_variation_agreement_by_source.csv"
 MIN_N <- 30L
 stopifnot(file.exists(IN))
 
+# usable_for_trend marks left-censored Medicaid segments and pre-SUPPORT-Act
+# Open Payments years the producer says cannot support a trend or an
+# agreement score; scoring them would measure records the manuscript
+# excludes everywhere else (DEBT D14, item 5).
 x <- read_csv(IN, col_types = cols(.default = "c"), progress = FALSE) %>%
-  filter(!is.na(state), state != "")
+  filter(usable_for_trend == "TRUE", !is.na(state), state != "")
 
 nppes <- x %>%
   filter(source == "nppes") %>%
