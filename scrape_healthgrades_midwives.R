@@ -243,6 +243,63 @@ given_forms <- function(p) {
   unique(c(p$first, toks, paste(toks, collapse = "")))
 }
 
+#' Given-name pairs this cohort adjudicated as DIFFERENT people
+#'
+#' WHY A LIST AND NOT A RULE. The nickname corpus records LINDA as a
+#' shortening of MELINDA (edge `MELINDA>LINDA`, from carltonnorthern/nicknames
+#' via mysterynpi), and that is correct English -- a Melinda may well go by
+#' Linda. It is also how two separate certificants were merged into one row in
+#' this cohort. No property of the two names distinguishes the good case from
+#' the bad one, so nothing here tries to derive one; the pair is listed, with
+#' the evidence that put it on the list.
+#'
+#' A DIRECTIONAL RULE WAS TRIED AND REJECTED (2026-11-20). "Accept the
+#' shortening only when the roster holds the formal name" sounds principled and
+#' is not supported by the data: 90.5% of the 2,846 corpus edges are recorded
+#' in one direction only, and the recorded direction carries no hierarchy --
+#' `BOB>ROBERT` is stored with BOB as the formal name. Such a rule would reject
+#' roster-LINDA/page-MELINDA while accepting roster-BOB/page-ROBERT, which is
+#' the same situation decided by an artifact of the corpus.
+#'
+#' WHY THIS IS NOT FIXED UPSTREAM. mysterynpi already holds this case as audit
+#' row DIFF-001 in `inst/extdata/external_nickname_edge_audit_reconciled.csv`,
+#' classified `NEEDS_ADJUDICATION`: "the midwifery cohort holds an adjudicated
+#' false merge of two certificants through it; candidate for a drop-list entry,
+#' owner decision", alongside "presence is a fact, not a judgement". Dropping
+#' the edge there would break two things deliberately: the CORPUS INVARIANT in
+#' `test-nickname-equivalence.R` (every recorded edge must be equivalent and
+#' corroborate, swept over the whole corpus) and `NICKNAME_POLICY`, whose
+#' verdict layer is locked at `retain_global` from the 2026-09-07 ablation and
+#' which may only change by supersession. The linguistic fact belongs to the
+#' corpus; the adjudication belongs to the cohort that made it, which is here.
+#'
+#' THE COST IS A MISS, AND IT IS THE RIGHT TRADE. A genuine Melinda whose
+#' profile reads Linda will not be matched by this scraper. One unmatched
+#' midwife is recoverable; a wrong NPI and address written against a
+#' certification number is not, and was not noticed in production until the
+#' rows were audited.
+#'
+#' @format character matrix, one adjudicated pair per row, upper case. Order
+#'   within a row is not meaningful: the pair is rejected both ways.
+ADJUDICATED_DISTINCT_GIVEN <- rbind(
+  # Two certificants merged through MELINDA>LINDA; pinned by
+  # tests/test_science_invariants.R G2 and by mysterynpi audit row DIFF-001.
+  c("LINDA", "MELINDA")
+)
+
+#' Has this given-name pair been adjudicated as two different people?
+#'
+#' Symmetric by construction: the adjudication is about the pair, not about
+#' which source supplied which name.
+#'
+#' @param x,y [character(1)]: two given names, any case.
+#' @return [logical(1)]
+given_names_adjudicated_distinct <- function(x, y) {
+  a <- toupper(x); b <- toupper(y)
+  l <- ADJUDICATED_DISTINCT_GIVEN[, 1]; r <- ADJUDICATED_DISTINCT_GIVEN[, 2]
+  any((l == a & r == b) | (l == b & r == a))
+}
+
 #' Does the given name match, allowing documented shortenings?
 #'
 #' Surnames must match exactly because a wrong surname means a different
@@ -251,7 +308,9 @@ given_forms <- function(p) {
 #' "Sara"/"Sarah", "Jan"/"Janet". A prefix rule accepts those while still
 #' rejecting the substring collisions that motivated this change --
 #' "Linda"/"Melinda" and "Elissa"/"Melissa" are NOT prefixes of one another, so
-#' they stay rejected.
+#' the prefix rule alone kept them rejected -- until the nickname dictionary was
+#' added in front of it and re-opened the first (see
+#' ADJUDICATED_DISTINCT_GIVEN).
 #'
 #' Nicknames that are not prefixes ("Beth" for Elizabeth) remain misses. That is
 #' accepted: a miss costs one unmatched midwife, a false match corrupts a row.
@@ -261,10 +320,14 @@ given_forms <- function(p) {
 given_name_match <- function(a, b) {
   if (is.na(a) || is.na(b) || !nzchar(a) || !nzchar(b)) return(FALSE)
   if (identical(a, b)) return(TRUE)
+  # Adjudicated pairs outrank the dictionary, because evidence outranks a
+  # corpus. See ADJUDICATED_DISTINCT_GIVEN.
+  if (given_names_adjudicated_distinct(a, b)) return(FALSE)
   # Nickname dictionary FIRST, from isochrones. It resolves the pairs a prefix
   # rule structurally cannot -- Beth/Elizabeth, Peggy/Margaret, Betty/Elizabeth
-  # -- which were previously logged here as permanent misses. It correctly
-  # rejects Linda/Melinda and Elissa/Melissa.
+  # -- which were previously logged here as permanent misses. It rejects
+  # Elissa/Melissa. It does NOT reject Linda/Melinda, which is what
+  # ADJUDICATED_DISTINCT_GIVEN above is for.
   if (isTRUE(are_nickname_variants(a, b))) return(TRUE)
   # Prefix rule retained: isochrones has no principled equivalent (only a
   # 3-character containment hack in its Healthgrades verifier), and this is what
