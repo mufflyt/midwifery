@@ -64,6 +64,7 @@ source(file.path("R", "lib", "address_keys.R"))          # zip5(), phone10()
 source(file.path("R", "lib", "org_names.R"))             # norm_org()
 source(file.path("R", "lib", "trilliant_org_bridge.R"))  # norm_street(), name_sim(), trl_read_orgs()
 source(file.path("R", "lib", "wilson_interval.R"))       # wilson() -- the same interval report_org_resolution_ppv.R uses
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5()
 
 FROZEN <- Sys.getenv("LINKAGE_CSV", file.path("artifacts", "amcb_npi_linkage_FROZEN.csv"))
 LAKE   <- { v <- Sys.getenv("TRILLIANT_LAKE", "")
@@ -127,7 +128,7 @@ prov <- prov |>
             trl_street = provider_affiliated_practice_1_street_address,
             trl_city = provider_affiliated_practice_1_city,
             trl_state = provider_affiliated_practice_1_state,
-            trl_zip5 = substr(provider_affiliated_practice_1_zip_code, 1L, 5L),
+            trl_zip5 = norm_str_zip5(provider_affiliated_practice_1_zip_code),
             trl_phone = phone10(provider_affiliated_practice_1_phone_number),
             trl_visit_share = provider_affiliated_practice_1_visits_percent_total,
             ns = norm_street(provider_affiliated_practice_1_street_address))

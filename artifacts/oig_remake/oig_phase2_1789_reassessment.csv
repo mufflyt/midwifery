@@ -1,0 +1,12 @@
+table_section,metric,n_count,pct_of_1789,note,interpretation,pc_derived_from_pecos,independently_supported_site
+5.4_headline_metrics,original_1789_cross_source_geographic_concordance,1789,100,NA,NA,NA,NA
+5.4_headline_metrics,n_uniquely_resolved_exactly_one_zip5_three_way,1780,99.5,Three-way (PECOS n NPPES n Physician Compare) intersection is structurally empty-or-singleton because NPPES contributes <=1 ZIP5/clinician -- see pairwise metric below for genuine multi-ZIP5 agreement.,NA,NA,NA
+5.4_headline_metrics,n_multiple_shared_zip5_two_or_more_three_way,0,0,"Mathematically near-impossible given a singleton NPPES set (see note above); near-zero is expected, not a bug.",NA,NA,NA
+5.4_headline_metrics,n_with_pecos_candidate_set_over_5_zip5_many_in_pecos_proxy,1290,72.11,NA,NA,NA,NA
+5.4_headline_metrics,n_pecos_vs_physcompare_pairwise_multi_zip5_chance_agreement,576,32.2,The honest answer to 'chance agreement from a large billing-group address list': PECOS and Physician Compare (both genuinely multi-valued) share >1 ZIP5 despite the existing any-overlap definition counting this clinician as corroborated.,NA,NA,NA
+5.4_breakdown_by_three_way_intersection_bucket,exactly_one,1780,99.5,NA,Uniquely geographically resolved -- the ONLY group reportable as such per spec 5.4.,NA,NA
+5.4_breakdown_by_three_way_intersection_bucket,no_common_zip5,9,0.5,NA,Inconsistent with the existing any-overlap definition; should not occur (QA check).,NA,NA
+5.4_breakdown_by_pairwise_pecos_vs_physcompare_bucket,exactly_one,1213,67.8,NA,PECOS and Physician Compare agree on exactly one ZIP5 -- the strongest pairwise evidence available.,NA,NA
+5.4_breakdown_by_pairwise_pecos_vs_physcompare_bucket,more_than_five,3,0.17,NA,"PECOS and Physician Compare share multiple ZIP5s -- consistent with chance agreement from a large billing-group address list, not a pinpointed site.",NA,NA
+5.4_breakdown_by_pairwise_pecos_vs_physcompare_bucket,three_to_five,114,6.37,NA,"PECOS and Physician Compare share multiple ZIP5s -- consistent with chance agreement from a large billing-group address list, not a pinpointed site.",NA,NA
+5.4_breakdown_by_pairwise_pecos_vs_physcompare_bucket,two,459,25.66,NA,"PECOS and Physician Compare share multiple ZIP5s -- consistent with chance agreement from a large billing-group address list, not a pinpointed site.",NA,NA

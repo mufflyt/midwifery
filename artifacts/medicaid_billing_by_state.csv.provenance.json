@@ -1,6 +1,6 @@
 {
   "artifact": "medicaid_billing_by_state.csv",
-  "written_utc": "2026-10-26 19:54:58 UTC",
+  "written_utc": "2026-11-19 06:07:23 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
@@ -8,10 +8,10 @@
     },
     {
       "path": "/Volumes/MufflySamsung/DuckDB/medicaid_provider_spending_verified.duckdb",
-      "sha256": "dd120407de781c180d022824d4b9bbfb114b8b7b82bad92791064169580f5b38"
+      "sha256": "f788897d7d995c20daabcaecee08f565abf5933a8818e4a167d369219697fa0f"
     }
   ],
-  "code_sha256": "4c62460a55204afc6dec6d5437c4d4a729817b34db2fa2703dac3f8450f1bbe8",
+  "code_sha256": "e31dfdb788be05957cac7bd4dcd882ea377aec7a86a2350146d5d1eb1c7d3b78",
   "code": [
     {
       "path": "analyze_medicaid_billing_by_state.R",
@@ -19,23 +19,43 @@
     },
     {
       "path": "R/lib/artifact_provenance.R",
-      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+      "sha256": "4937914878dfd340d545d54ab079074fb74320f4272dd5e4c8196aeefd46c391"
     },
     {
       "path": "R/lib/cohort_definitions.R",
-      "sha256": "15b1a0d8b5f1973e29a5258fc1e7d97df437b09208f367f38c78984a8dfd7dc5"
+      "sha256": "63ad5336d9c4d148b72f211fd3947f3c3dde44b1c18270c344c13916a1c47e17"
     },
     {
       "path": "R/lib/medicare_duckdb.R",
-      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+      "sha256": "119d6106bd63bd92b01c4d762710cbd2e4e33bd6fbcdbc4a292b068366e2b343"
     },
     {
       "path": "R/lib/ob_midwife_cohort.R",
-      "sha256": "e633d85ea1fae03a70c270e380ea99b1bdbf971ba3c2347e59390530c708179c"
+      "sha256": "37a406966c72a24c80291667e3b55509e3e574bc731d2e83101679817f96c3b1"
     },
     {
       "path": "R/lib/provenance.R",
-      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ],
+  "semantic_packages": [
+    {
+      "package": "mysterynpi",
+      "installed": true,
+      "version": "0.9.1",
+      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
+    },
+    {
+      "package": "stringi",
+      "installed": true,
+      "version": "1.8.9",
+      "source_sha": null
+    },
+    {
+      "package": "humaniformat",
+      "installed": true,
+      "version": "0.6.0",
+      "source_sha": null
     }
   ]
 }

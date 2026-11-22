@@ -1,0 +1,23 @@
+# Laws allowed to be registered something other than `public`.
+#
+# WHY THIS FILE EXISTS. A law's `privacy` column in science_law_registry.tsv
+# decides whether a skip is legitimate. `public` means the inputs are tracked,
+# so a skip is a failure and the law is enforced on every runner.
+# `private-ok` and `derived-ok` both make a skip legal -- which converts an
+# enforced law into one that no runner evaluates.
+#
+# That downgrade is a one-word edit to a TSV. ci_law_coverage.R counted and
+# named the result but never failed on it, so the number could grow while the
+# gate stayed green and merely printed a bigger total. The registry's own
+# comment records this happening: registering L5 `private-ok` asserted that a
+# 31 MB derived isochrone surface was person-level data.
+#
+# THIS LIST MAY ONLY SHRINK. A law that is non-public and not declared here
+# fails coverage. A law declared here that has since become `public` must be
+# deleted from this file -- a declaration must not outlive its cause, the same
+# rule N1 enforces on ci_nightly_exceptions.txt and the CMS defect registry.
+#
+# Columns: law  privacy  reason
+# Currently EMPTY, and that is the state worth defending: all 13 declared laws
+# are `public`, so every one of them is enforced on every runner.
+law	privacy	reason

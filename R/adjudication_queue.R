@@ -90,7 +90,6 @@ derive_case_state <- function(instrument, reviews, resolution) {
              stringsAsFactors = FALSE)
 }
 
-`%||%` <- function(a, b) if (is.null(a)) b else a
 
 #' Build the queue of UNRESOLVED cases, blinded, batch-tagged, byte-stable
 #'

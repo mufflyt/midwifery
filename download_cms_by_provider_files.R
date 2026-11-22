@@ -84,7 +84,6 @@ resolve_by_provider_urls <- function(catalog_url = CATALOG) {
   r <- unique(do.call(rbind, out))
   r[order(r$source, r$year), , drop = FALSE]
 }
-`%||%` <- function(a, b) if (is.null(a)) b else a
 
 #' Fetch one file unless it is already complete on disk
 #'
@@ -115,8 +114,7 @@ if (sys.nframe() == 0L) {
   rows <- list()
   for (src in names(WANT)) {
     dir_rel <- sprintf("medicare_%s_by_provider", src)
-    dest_dir <- file.path(dirname(samsung_volume_path("DuckDB", must_exist = FALSE) %||%
-                                  "/Volumes/MufflySamsung/DuckDB"), dir_rel)
+    dest_dir <- file.path(dirname(samsung_duckdb_path("DuckDB")), dir_rel)
     dir.create(dest_dir, showWarnings = FALSE, recursive = TRUE)
     cat(sprintf("\n%s -> %s\n", src, dest_dir))
     for (y in WANT[[src]]) {

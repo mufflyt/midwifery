@@ -1,0 +1,53 @@
+{
+  "artifact": "cohort_midwives_medicare_claims_collapse_audit.csv",
+  "written_utc": "2026-11-19 02:36:36 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/cohort_midwives_part_b_state_by_year.csv",
+      "sha256": "4798f820df826a6e482f328bdbc0787d15d0e147d8f212a13f162e17beed8c32"
+    },
+    {
+      "path": "artifacts/cohort_midwives_part_d_state_by_year.csv",
+      "sha256": "df98b751e33e85413f42b51939366b5c72b091879a4bf5fbc8d10cbef0745870"
+    }
+  ],
+  "code_sha256": "fcf9bf08d3cbb12d7949da86758eb09f60767631715b9bc32f13ae3dfd04f199",
+  "code": [
+    {
+      "path": "build_medicare_claims_state_series.R",
+      "sha256": "7c670ae32e64d5da30ab5f06393ad6de58546030bec803f5d3550590456ea249"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "4937914878dfd340d545d54ab079074fb74320f4272dd5e4c8196aeefd46c391"
+    },
+    {
+      "path": "R/lib/clean_state.R",
+      "sha256": "a8945acebe3fabca73f9839202a184fdbd75164d8884680e9cb49be6072906f8"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ],
+  "semantic_packages": [
+    {
+      "package": "mysterynpi",
+      "installed": true,
+      "version": "0.9.1",
+      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
+    },
+    {
+      "package": "stringi",
+      "installed": true,
+      "version": "1.8.9",
+      "source_sha": null
+    },
+    {
+      "package": "humaniformat",
+      "installed": true,
+      "version": "0.6.0",
+      "source_sha": null
+    }
+  ]
+}

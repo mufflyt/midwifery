@@ -141,6 +141,25 @@ if (!file.exists("scrape_healthgrades_midwives.R")) {
         "MARTIN must not match MARTINEZ (observed false match)")
     chk(!name_matches_roster("Melinda Jones, CNM", "Linda A.", "Jones"),
         "LINDA must not match MELINDA (observed false match, given name)")
+    # BOTH WAYS, because the adjudication is about the pair. The nickname
+    # corpus records MELINDA>LINDA and that edge is correct English, so the
+    # cost of this rejection is a real miss when a Melinda's profile reads
+    # Linda. It is pinned deliberately: a future reader who sees only the
+    # assertion above might "restore recall" by making the rejection
+    # directional, which the corpus cannot support -- 90.5% of its edges are
+    # one-way and BOB>ROBERT is recorded with BOB as the formal name.
+    chk(!name_matches_roster("Linda Jones, CNM", "Melinda", "Jones"),
+        "MELINDA must not match LINDA in the other direction either")
+    # Dictionary recall the directional rule keeps. These are not prefixes of
+    # one another, so the prefix rule cannot carry them: if the nickname path
+    # is ever removed or the dictionary goes missing, these fail rather than
+    # degrade quietly.
+    chk(name_matches_roster("Beth Carlson, CNM", "Elizabeth", "Carlson"),
+        "BETH must still match a roster ELIZABETH (non-prefix shortening)")
+    chk(name_matches_roster("Peggy Alvarez, CNM", "Margaret", "Alvarez"),
+        "PEGGY must still match a roster MARGARET (non-prefix shortening)")
+    chk(name_matches_roster("Kathy Boyle, CNM", "Katherine", "Boyle"),
+        "KATHY must still match a roster KATHERINE (non-prefix shortening)")
     # legitimate variation that must survive: losing these is a silent recall cut
     chk(name_matches_roster("Carolyn Nelson-Becker, CNM", "Carolyn", "Nelson"),
         "married/hyphenated surname must still match")

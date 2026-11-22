@@ -22,6 +22,7 @@
 # =============================================================================
 
 suppressPackageStartupMessages({
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5()
   library(dplyr); library(stringr); library(stringdist)
 })
 
@@ -84,7 +85,7 @@ trl_read_orgs <- function(lake, zips) {
   duckplyr::read_parquet_duckdb(file.path(lake, "directory_organization", "*.parquet")) |>
     filter(!is.na(organization_zip_code), !is.na(organization_street_line_1)) |>
     # 1L / 5L, not 1 / 5: DuckDB's substr() wants whole numbers
-    mutate(oz = substr(organization_zip_code, 1L, 5L)) |>
+    mutate(oz = norm_str_zip5(organization_zip_code)) |>
     semi_join(duckplyr::as_duckdb_tibble(tibble(oz = unique(zips))), by = "oz") |>
     select(org_npi = organization_npi, org_name = organization_name, org_type = organization_type,
            tax = organization_primary_taxonomy_code, tax_desc = organization_primary_taxonomy_description,

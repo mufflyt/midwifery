@@ -131,7 +131,7 @@ than `~/isochrones`, point the scripts at it with `ISOCHRONES_R` and
 | `HPT_PRICES` | `build_trilliant_work_sites.R` | `hpt_prices` on the Samsung volume | CMS hospital references and the price-file CCN crosswalk. |
 | `MIDWIFERY_ARTIFACTS` | Trilliant scripts | `artifacts` | Where the person-level inputs are read from. |
 | `MIDWIFERY_VAULT` | `R/lib/data_vault.R` | the Dropbox folder `midwifery-data` | The shared data vault. |
-| `ALLOW_FREEZE_SHA256` | `verify_linkage_freeze()` | unset | Accept a linkage file other than the manifest's freeze, on purpose, by its full sha256. |
+| `ALLOW_FREEZE_SHA256` | `verify_linkage_freeze()` | unset | Accept a linkage file other than the manifest's freeze, on purpose, by its full sha256 -- **only if that hash is declared in `artifacts/freeze_pins.tsv` for the script reading it**, with a scope and a stated purpose. A pin names one consumer and does not carry over to another. An undeclared hash is refused, and an accepted pin is announced on every run. Pinning in code (`verify_linkage_freeze(path, allow_sha256 = ...)`) needs no declaration, because the call site is the record. |
 | `LEGACY_FROZEN_CSV` / `CURRENT_FROZEN_CSV` | `reconcile_trilliant_cohort.R` | unset | The 2026-08-10 freeze (required) and the current freeze (optional; makes the reconciliation three-way). |
 
 ## Dependencies

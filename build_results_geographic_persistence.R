@@ -46,6 +46,7 @@ source(file.path("R", "lib", "table1_bands.R"))
 source(file.path("R", "lib", "common_helpers.R"))
 source(file.path("R", "lib", "zip_county_crosswalk.R"))
 source(file.path("R", "lib", "geographic_persistence_stats.R"))
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5()
 
 LINKAGE <- Sys.getenv("GEO_PERSIST_LINKAGE", "artifacts/amcb_npi_linkage_FROZEN.csv")
 PANEL   <- Sys.getenv("GEO_PERSIST_PANEL", "midwife_panel.csv")
@@ -82,7 +83,7 @@ cbase <- read_csv(CBASE, show_col_types = FALSE)
 rucc_lookup <- build_rucc_lookup(cbase$GEOID, cbase$rucc_2023)
 
 py <- panel %>%
-  mutate(practice_zip = substr(trimws(practice_zip), 1, 5)) %>%
+  mutate(practice_zip = norm_str_zip5(practice_zip)) %>%
   # many-to-one: zip_county_dominant() guarantees exactly one row per zcta5
   # (assert_no_na_key() on its output), many provider-years share a ZIP.
   left_join(zcta, by = c("practice_zip" = "zcta5"), relationship = "many-to-one") %>%

@@ -63,7 +63,8 @@
 suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); library(readr)})
 source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-ingestion bootstrap
 
-SPEND_DB <- "/Volumes/MufflySamsung/DuckDB/medicaid_provider_spending_verified.duckdb"
+SPEND_DB <- samsung_duckdb_path("DuckDB/medicaid_provider_spending_verified.duckdb",
+                                "MEDICAID_SPENDING_DB")
 if (!file.exists(SPEND_DB))
   stop(sprintf("T-MSIS spending warehouse not found at %s. It lives on an external volume; mount it or adjust the path.", SPEND_DB), call. = FALSE)
 

@@ -1,0 +1,5 @@
+deceased_audit_stratum,linkage_tier,confirmed_deactivated_npi,n_clinicians,pct_of_159_deceased,median_amcb_cert_exp_year,median_nppes_last_update_year,n_in_pecos_2026
+1. Primary Midwifery Tier: Confirmed Deactivated NPI in NPPES (`nppes_deact_norm_v` / Feb 2026 P-File),primary_midwifery,TRUE,89,55.97,2017,NA,0
+2. Sensitivity Nursing Tier: Confirmed Deactivated NPI in NPPES (`nppes_deact_norm_v` / Feb 2026 P-File),sensitivity_nursing,TRUE,8,5.03,2013.5,NA,0
+3. Primary Midwifery Tier: Open NPI in Feb 2026 NPPES (AMCB lacks exact death date; candidate for SSA Death Master File check),primary_midwifery,FALSE,2,1.26,2020.5,2013.5,0
+4. Sensitivity Nursing Tier: Open NPI in Feb 2026 NPPES & AMCB Cert Expired <=2019 (either unrecorded death or common-name RN linkage),sensitivity_nursing,FALSE,60,37.74,2014,2018,0

@@ -118,17 +118,19 @@ ok("A3 source is 'unresolved'", gx("A3")$identity_resolution_source == "unresolv
 
 cat("\n=== normalizers ===\n")
 ok("leading zeros stripped only for all-digit licenses",
-   normalize_license_number("0007") == "7" &&
-     normalize_license_number("A007") == "A007")
+   normalize_license_number_unpadded("0007") == "7" &&
+     normalize_license_number_unpadded("A007") == "A007")
 ok("punctuation and case removed",
-   normalize_license_number(" rn-12 345 ") == "RN12345")
+   normalize_license_number_unpadded(" rn-12 345 ") == "RN12345")
 ok("placeholder values become NA",
-   all(is.na(normalize_license_number(c("", "NONE", "UNKNOWN", NA)))))
+   all(is.na(normalize_license_number_unpadded(c("", "NONE", "UNKNOWN", NA)))))
+# license_state now goes through the canonical clean_state() rather than a
+# local copy that knew only the 50 states and DC; "Narnia" must still fail.
 ok("state names and abbreviations both normalize",
-   identical(normalize_state(c("Colorado","co","CO","Narnia", NA)),
+   identical(clean_state(c("Colorado","co","CO","Narnia", NA)),
              c("CO","CO","CO",NA,NA)))
-ok("normalize_state does not error (datasets::state.name, not base)",
-   !is.na(normalize_state("Utah")))
+ok("a US territory's licence state resolves rather than failing to NA",
+   identical(clean_state(c("Puerto Rico", "GU")), c("PR", "GU")))
 
 cat("\n=== contract failures are loud ===\n")
 write_csv(tibble(certification_number = c("A1","A1"), last_name = c("x","y")),

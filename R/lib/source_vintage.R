@@ -130,8 +130,11 @@ nearest_vintage <- function(paths, target, max_months = NA_real_) {
 #' Refuse a comparison whose vintages are too far apart
 #'
 #' @return invisibly the gap in months. Errors past `max_months`.
-assert_vintage_gap <- function(a, b, max_months = 6,
-                               what_a = "source A", what_b = "source B") {
+# what_a/what_b ARE REQUIRED. They defaulted to "source A" and "source B",
+# which no caller ever used -- every one names both sides -- and a refusal
+# reading "source A and source B are 84.0 months apart" would name neither the
+# source nor the file, which is the whole job of the message.
+assert_vintage_gap <- function(a, b, max_months = 6, what_a, what_b) {
   g <- vintage_gap_months(a, b)
   if (is.na(g))
     stop(sprintf("assert_vintage_gap(): %s or %s has no vintage, so the gap is unknown.",
@@ -143,6 +146,46 @@ assert_vintage_gap <- function(a, b, max_months = 6,
                  what_a, format(as.Date(a)), what_b, format(as.Date(b)), g, max_months),
          call. = FALSE)
   invisible(g)
+}
+
+#' Refuse a comparison whose two sides are from different YEARS
+#'
+#' The year-keyed twin of `assert_vintage_gap()`, for the comparisons that
+#' know only a year: the audit joins a source to the registry on
+#' `(npi, year)` or on `npi` alone, and the OIG rebuild stamps every claim
+#' with a literal year. A year becomes an instant by the convention this
+#' file already uses for Open Payments -- the MIDPOINT of the year, not
+#' January 1st -- so adjacent years are 12 months apart and the same year is
+#' 0, and the gap is then judged by `assert_vintage_gap()` rather than by a
+#' second copy of the same arithmetic.
+#'
+#' WHY A WRAPPER AND NOT A NEW RULE. `assert_vintage_gap()` was written,
+#' tested and never called by anything in production. The comparisons that
+#' needed it do not hold dates, they hold years, and nobody wanted to invent
+#' January 1st at the call site to use it -- so the guard sat unused while
+#' 2019 values were compared against 2026 ones. This is the missing adapter,
+#' not a second opinion about what counts as too far apart.
+#'
+#' @param year_a,year_b [integer] the two years being paired.
+#' @param what_a,what_b [character] what to call each side in the error.
+#' @param max_months [numeric] 6 by default, matching `assert_vintage_gap()`.
+#'   Pass a wider limit to measure ACROSS years deliberately.
+#' @return invisibly the gap in months.
+assert_same_vintage_year <- function(year_a, year_b, what_a = "side A",
+                                     what_b = "side B", max_months = 6) {
+  as_instant <- function(y) {
+    y <- suppressWarnings(as.integer(y))
+    if (length(y) != 1L || is.na(y))
+      stop(sprintf(paste0("assert_same_vintage_year(): a vintage year must be one ",
+                          "parseable year, got %d value(s): %s. A comparison whose ",
+                          "year is unknown cannot be shown to be same-year, and must ",
+                          "not be published as if it were."),
+                   length(y), paste(y, collapse = ", ")), call. = FALSE)
+    interval_representative(sprintf("%d-01-01", y), sprintf("%d-12-31", y))
+  }
+  assert_vintage_gap(as_instant(year_a), as_instant(year_b), max_months,
+                     sprintf("%s [year %s]", what_a, year_a),
+                     sprintf("%s [year %s]", what_b, year_b))
 }
 
 #' The vintage of every source the cross-source comparisons use

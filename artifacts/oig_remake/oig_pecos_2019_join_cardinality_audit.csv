@@ -1,0 +1,13 @@
+decomposition_step,n_count,mean_per_linked_midwife,methodological_explanation
+1. Raw relational join rows (indiv_enrlmt_id x rcv_bnft_enrlmt_id x raw ppef_addr_2019 row),394749,70.18,"Includes multiple suite/street rows in ppef_addr_2019 for the same group & ZIP5 (210,055 redundant suite/street rows removed in Step 3)."
+2. Deduplicated across multiple individual enrlmt_ids per NPI (npi x rcv_bnft_enrlmt_id x raw ppef_addr_2019 row),391613,69.62,"Removes 3,136 duplicate rows caused by midwives holding >1 individual enrollment ID (I20...) linked to the same billing group."
+"3. Deduplicated street/suite rows within same billing group, city, state & ZIP5 (mysteryroster link rows: npi x indiv_enrlmt_id x rcv_bnft_enrlmt_id x city x state x zip5)",186254,33.11,"Exact 184,694 count reported by mysteryroster::attribute_enrollment_locations() after collapsing ppef_addr_2019 to unique (enrlmt_id, city, state, zip5)."
+4. Distinct clinician x billing organization x 5-digit ZIP5 (npi x rcv_bnft_enrlmt_id x zip5),176413,31.36,Collapses multiple city names within the same 5-digit ZIP5 and billing organization.
+5. Distinct clinician x city x state x 5-digit ZIP5 across all billing groups (npi x city x state x zip5),177347,31.53,Collapses overlapping clinic sites shared across >1 billing organization for the same midwife.
+6. Distinct clinician x 5-digit ZIP5 pairs across all billing groups (npi x zip5),168917,30.03,"True distinct (midwife, 5-digit ZIP5) candidate practice locations (~30.0 unique ZIP5s per group-linked midwife; median 15)."
+7. Distinct clinician x state pairs across all billing groups (npi x state),6234,1.11,Mean 1.11 states per group-linked midwife (510 midwives linked to multi-state billing groups).
+8. Distinct clinician x billing organization pairs (npi x rcv_bnft_enrlmt_id),8130,1.45,Mean 1.45 billing organizations (O20...) per group-linked midwife.
+9. Distinct midwives with >=1 group-reassigned location (npi),5625,1,"5,625 midwives have group-reassigned locations (plus 18 with direct-only and 8 with both = 5,643 linked midwives)."
+10. Distinct midwives with >=1 direct OR group-reassigned location (npi; Figure 2 Stage 2),5643,1,"95.69% (5,643 / 5,897) of 2019 PECOS-enrolled midwives have >=1 associated administrative address."
+"11. Out-of-state share among 184,694 city/state/ZIP-deduped group rows (state != 2019 NPPES state)",36439,6.48,9.32% of raw group rows lie outside the midwife's 2019 NPPES state due to interstate billing groups.
+"12. Out-of-state share among 168,917 distinct (npi, zip5) pairs (state != 2019 NPPES state)",16148,2.87,"9.65% (16,148 / 168,917) of distinct (midwife, ZIP5) pairs lie outside the midwife's 2019 NPPES state."

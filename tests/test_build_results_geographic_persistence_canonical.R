@@ -32,7 +32,6 @@ chk <- function(cond, m) {
   if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
   else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
 }
-`%||%` <- function(a, b) if (is.null(a)) b else a
 
 tmp <- tempfile("geo_persist_canonical_test_")
 dir.create(tmp)

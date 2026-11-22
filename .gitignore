@@ -14,10 +14,12 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
-# join_safety writes a coverage report next to the caller. One block of the
-# ported test-join-safety-semantic-extended.R exercises the default path
-# rather than overriding JOIN_REPORT_DIR, so running it from tests/ leaves
-# files here. Set JOIN_REPORT_DIR to a temp dir when wiring it into CI.
+# join_safety writes a coverage report next to the caller, so any suite that
+# calls a safe_*_join() without overriding JOIN_REPORT_DIR leaves files here
+# when run from tests/. Set JOIN_REPORT_DIR to a temp dir when wiring one into
+# CI. (The block that first made this necessary lived in the ported
+# test-join-safety-semantic-extended.R, deleted 2026-11-20 with the
+# safe_inner_join it tested.)
 tests/artifacts/
 
 # Derived NPPES pulls: 176 MB candidate table and a 1.4 GB response cache.
@@ -302,6 +304,51 @@ artifacts/cohort_midwives_part_b_state_by_year.csv
 artifacts/cohort_midwives_part_b_state_by_year.csv.provenance.json
 artifacts/cohort_midwives_part_d_state_by_year.csv
 artifacts/cohort_midwives_part_d_state_by_year.csv.provenance.json
+
+# Same person-level class as the Part B/D pair above, added 2026-11-18:
+# the lineage-collapsed claims series (npi+year+state), the 450-midwife
+# Open Payments linkage diagnosis (npi + Type-2 NPIs), and the canonical
+# 13-field source-record table (amcb_id+npi+year+state). Their aggregate
+# companions -- the collapse audit, field coverage, year validation -- are
+# tracked.
+artifacts/cohort_midwives_medicare_claims_state_by_year.csv
+artifacts/cohort_midwives_medicare_claims_state_by_year.csv.provenance.json
+artifacts/op_linkage_disagreement_diagnosis.csv
+artifacts/op_linkage_disagreement_diagnosis.csv.provenance.json
+artifacts/op_linkage_adjudication.csv
+artifacts/op_linkage_adjudication.csv.provenance.json
+artifacts/canonical_source_records.csv
+artifacts/canonical_source_records.csv.provenance.json
+
+# PPEF (NBER mirror of the CMS Public Provider Enrollment File) cohort
+# enrolment state, person-level (NPI-vintage-state), same class as the PECOS
+# pair above. Added 2026-11-10 with extract_ppef_cohort_state_by_vintage.R.
+# The two aggregate companions it writes -- ppef_vintage_validation.csv and
+# ppef_cohort_coverage_by_vintage.csv -- carry no NPI and ARE tracked.
+artifacts/ppef_cohort_state_by_vintage.csv
+artifacts/ppef_cohort_state_by_vintage.csv.provenance.json
+
+# Person-level outputs of the 2026-11-10 Medicaid and billing-gap work, same
+# class as the PECOS and Part B/D series above. Each carries an npi column;
+# every aggregate companion they produce (coverage, summary, sensitivity,
+# gradient, set-membership, modal-vs-yearly, headline figures) carries no NPI
+# and IS tracked.
+artifacts/medicaid_enrollment_cohort_state_by_year.csv
+artifacts/medicaid_enrollment_cohort_state_by_year.csv.provenance.json
+artifacts/medicaid_enrollment_cohort_state_footprint.csv
+artifacts/medicaid_enrollment_cohort_state_footprint.csv.provenance.json
+artifacts/medicaid_midwife_activity_by_month.csv
+artifacts/medicaid_midwife_activity_by_month.csv.provenance.json
+artifacts/medicaid_midwife_activity_by_year.csv
+artifacts/medicaid_midwife_activity_by_year.csv.provenance.json
+artifacts/part_d_cohort_volume_by_year.csv
+artifacts/part_d_cohort_volume_by_year.csv.provenance.json
+artifacts/billing_gap_mechanism.csv
+artifacts/billing_gap_mechanism.csv.provenance.json
+artifacts/billing_gap_registry_episodes.csv
+artifacts/billing_gap_registry_episodes.csv.provenance.json
+artifacts/billing_gap_registry_conflicts.csv
+artifacts/billing_gap_registry_conflicts.csv.provenance.json
 
 # PPEF (Public Provider Enrollment Files) Medicare enrollment year,
 # person-level (NPI, first enrollment year, enrollment count).
@@ -960,3 +1007,25 @@ data/raw/ipeds/
 # Raw Transparency in Coverage MRF payloads (payer-hosted, large).
 # Reacquire with accessmrf_03_pull_provider_refs.py; sha256 in the file manifest.
 data/raw/accessmrf/
+
+# Open Payments longitudinal reconstruction, 2026-11-12. Person-level (one row
+# per NPI) or too large to commit irreversibly; all four are regenerable from
+# the warehouse by build_open_payments_profile_npi_lookup.R and
+# extract_open_payments_cohort_by_year.R. The AGGREGATES the figures and the
+# manuscript actually read -- consensus_tier_by_license_count.csv,
+# medicaid_vs_ndh_state_reduction.csv, consensus_tier_persistence_2021_2025*.csv
+# -- carry no NPI and are tracked.
+artifacts/open_payments_profile_npi_lookup.csv
+artifacts/open_payments_profile_npi_lookup.csv.provenance.json
+artifacts/open_payments_profile_npi_conflicts.csv
+artifacts/open_payments_profile_npi_conflicts.csv.provenance.json
+artifacts/open_payments_midwife_presence_by_year.csv
+artifacts/open_payments_midwife_presence_by_year.csv.provenance.json
+artifacts/mrost_consensus_tier_by_npi.csv
+artifacts/mrost_consensus_tier_by_npi.csv.provenance.json
+
+# Local pre-overwrite copies of tracked person-level artifacts. The authoritative
+# history is git itself (e.g. `git show 6df41c1:artifacts/live_colorado_bon_...`);
+# these are a working convenience for before/after measurement and must not
+# double the person-level data in the repository.
+artifacts/archive/

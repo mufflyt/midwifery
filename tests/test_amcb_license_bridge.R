@@ -18,34 +18,53 @@
 # Run: Rscript tests/test_amcb_license_bridge.R   (exit 1 on any failure)
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 
 # Sourcing runs the script's library() calls but, thanks to its
 # sys.nframe() guard, NOT its pipeline.
 source(file.path(root, "amcb_license_bridge.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 
 # -----------------------------------------------------------------------------
 cat("\n-- license-number normalization --\n")
 # -----------------------------------------------------------------------------
 
-chk(normalize_license_number("  012-345  ") == "012345",
+chk(normalize_license_number_padded("  012-345  ") == "012345",
     "strips spaces and dashes, keeps leading zeros")
-chk(normalize_license_number("rn 12345") == "RN12345",
+chk(normalize_license_number_padded("rn 12345") == "RN12345",
     "upper-cases and keeps a letter prefix (never coerces to numeric)")
-chk(is.na(normalize_license_number("")),
+chk(is.na(normalize_license_number_padded("")),
     "blank normalizes to NA")
-chk(identical(normalize_license_number(c("a1", NA)), c("A1", NA_character_)),
+chk(identical(normalize_license_number_padded(c("a1", NA)), c("A1", NA_character_)),
     "vectorized, NA-preserving")
+
+# -----------------------------------------------------------------------------
+cat("\n-- name/city normalization folds accents DETERMINISTICALLY --\n")
+# -----------------------------------------------------------------------------
+
+# normalize_text() used base::iconv(to = "ASCII//TRANSLIT"), whose output is
+# the C library's choice: libiconv (macOS) emits the combining mark and glibc
+# (the CI runners) does not, so "Mu\u00f1oz" folded to "Mu~noz" here and "Munoz"
+# there -- and the [^A-Z0-9 ] pass then turned the mark into a space, making the
+# key MU NOZ locally and MUNOZ in CI. A linkage key that depends on which
+# machine built it cannot be compared across arms, so these assert the FOLD,
+# not merely that something happened. They fail if anyone reverts to iconv.
+chk(identical(normalize_person_name("Mu\u00f1oz"), normalize_person_name("Munoz")),
+    "\u00f1 folds to n, so both spellings share one key")
+chk(identical(normalize_person_name("Jos\u00e9"), normalize_person_name("Jose")),
+    "\u00e9 folds to e (libiconv rendered this one \"Jos'e\" -> JOS E)")
+chk(identical(normalize_person_name("\u00c5sa"), normalize_person_name("Asa")),
+    "\u00c5 folds to A")
+chk(normalize_person_name("Mu\u00f1oz") == "MUNOZ",
+    "and the folded key has no stray separator in it")
+chk(identical(normalize_city("Espa\u00f1ola"), normalize_city("Espanola")),
+    "same fold on the city path, which shares the normalizer")
+chk(is.na(normalize_person_name(NA)) && is.na(normalize_person_name("")),
+    "NA and blank still normalize to NA")
 
 # -----------------------------------------------------------------------------
 cat("\n-- license key (state :: number) --\n")
@@ -62,11 +81,27 @@ chk(is.na(make_license_key("012345", NA)),
 cat("\n-- state normalization --\n")
 # -----------------------------------------------------------------------------
 
-chk(normalize_state("California") == "CA", "full state name -> code")
-chk(normalize_state("tx") == "TX", "two-letter code passes through, upper-cased")
-chk(normalize_state("District of Columbia") == "DC", "DC handled")
-chk(normalize_state("Puerto Rico") == "PR", "territory handled")
-chk(is.na(normalize_state(NA)), "NA -> NA")
+# The bridge no longer carries its own normalize_state(); license_state_key
+# and practice state go through the canonical clean_state().
+chk(clean_state("California") == "CA", "full state name -> code")
+chk(clean_state("tx") == "TX", "two-letter code passes through, upper-cased")
+chk(clean_state("District of Columbia") == "DC", "DC handled")
+chk(clean_state("Puerto Rico") == "PR", "territory handled")
+chk(is.na(clean_state(NA)), "NA -> NA")
+# THE TIGHTENING, pinned. The old rule passed ANY two-letter token through as
+# a state, which over midwife_panel.csv accepted AE/AP/AA (military postal
+# codes), AB/BC/ON (Canadian provinces) and UK/RP/US/PW/CE across 6,331 rows
+# and 731 NPIs. None is a US practice state and none may become a license key.
+chk(all(is.na(clean_state(c("AE", "AP", "AA")))),
+    "a military postal code is not a license state")
+chk(all(is.na(clean_state(c("AB", "BC", "ON")))),
+    "nor is a Canadian province")
+chk(all(is.na(clean_state(c("UK", "RP", "US", "PW", "CE")))),
+    "nor is any other two-letter token that merely looks like a code")
+# And the widening: NPPES does emit the combined form, which the old rule
+# refused because it is not two letters.
+chk(identical(clean_state(c("TX - TEXAS", "CA - CALIFORNIA")), c("TX", "CA")),
+    "the combined 'XX - FULL NAME' form resolves instead of being lost")
 
 # -----------------------------------------------------------------------------
 cat("\n-- name helpers --\n")
@@ -154,7 +189,7 @@ readr::write_csv(
   nppes_csv
 )
 
-roster <- read_amcb_roster(roster_csv)
+roster <- bridge_read_amcb_roster(roster_csv)
 bridge <- read_amcb_license_bridge(bridge_csv)
 nppes_wide <- read_nppes_license_fields(nppes_csv, slots = 15L)
 nppes_licenses <- classify_nppes_license_keys(

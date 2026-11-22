@@ -1418,6 +1418,92 @@ the correction.
 
 ---
 
+## 48. A new gate must be proven to accept the REMEDY, not just to reject the defect — a gate written against the status quo can forbid its own fix
+
+**Rule**: item 46 says plant the defect, watch the gate fail, revert, watch it
+pass. That procedure has a blind spot when the gate is written *to describe a
+defect that is currently live*: reverting the planted defect returns you to the
+broken world, so "passes when reverted" is satisfied by a gate that encodes the
+broken shape as law. Such a gate goes green today and fails the moment someone
+applies the fix it was written to demand — the worst possible time, because the
+failure lands on the person doing the right thing and reads as "your fix broke
+CI." Whenever a gate is added for a defect that has not been fixed yet, write
+down the fixed form first and prove the gate accepts it. If the remedy has more
+than one legal shape (withhold the value, or declare it explicitly), the gate
+must accept every one of them, because a gate that permits exactly one spelling
+of the fix is a design decision smuggled in as a correctness check.
+
+Corollary for the gate's own test fixtures: build the "clean" fixture from the
+**fixed** form, never by copying the live artifact. A fixture copied from a
+defective artifact fails the gate on construction — and when that baseline
+failure is noticed and papered over, every perturbation case built on top of it
+becomes vacuous, since the fixture was already failing for an unrelated reason.
+
+**How to check**: for each gate added against an unfixed defect, require two
+runs in the review: the gate failing on the live tree, and the gate passing on
+a tree where the prescribed fix has been applied (a scratch copy is enough).
+Then grep the gate for literals taken from the broken artifact — a hard-coded
+`== 0`, a required column, an exact count — and ask of each one whether the fix
+changes it. In the detector, confirm the clean fixture passes the gate *before*
+any case is planted; if it does not, no case below it proves anything.
+
+**Incident**: `midwifery`, 2026-11-21. `tests/ci_denominator_contracts.R` D1
+forbids pooling a persistence rate across the panel edge, where a source's last
+observed year has no `t+1` and so reports total attrition by construction. The
+structural half of the check asserted the shape the live artifact carries —
+`n_followed_source == 0` and `n_lost_from_source == n_observed` on edge rows —
+which is exactly the shape the prescribed fix removes: the producer should
+*withhold* those columns (NA) so a blank cell cannot be summed into a wrong
+rate where a zero can. The gate would have passed on arrival and then failed on
+the commit that fixed the defect. D1 now accepts `declared | withheld`, and D2
+treats an NA pooled sum as a pass rather than a missing value. Separately, the
+detector's clean scaffold had been written by copying the live artifact's zeros,
+so it failed D2 on construction and all four near-miss cases were vacuous;
+rebuilding the fixture in the withheld form immediately exposed two real false
+positives the vacuous run had hidden. Neither problem was visible from reading
+the gate — both surfaced only from asking what the fixed world looks like.
+
+---
+
+## 49. Wiring a red gate into a merge-blocking job is right when the red is a live defect and wrong when it is the environment — decide which, and say so in writing
+
+**Rule**: "never add a gate that is red on arrival" is usually stated as one
+rule and is really two. A gate red because *the environment can never satisfy
+it* — person-level data absent from every runner, a 31 MB derived surface no
+clone has, a private dependency public CI cannot fetch — can never be turned
+green by anyone's work. It will be muted, and a muted gate checks nothing while
+still being counted as coverage; that one must stay unwired, with its skip
+classified and counted (items 5, 6 and 28). A gate red because *the defect it
+names is live in this branch and fixable from tracked source* is just a
+blocking check doing its job: red is its correct state until the fix lands, and
+unwiring it to get a green run is how the defect reaches a release. Record
+which of the two you have, in the debt entry or beside the workflow step, and
+record the reversal condition for the second case — if the fix slips to a later
+branch, the gate stops being defect-red and becomes rot.
+
+**How to check**: for every gate that fails on arrival, answer one question:
+*can a change to tracked source in this repository make it pass?* If no, it
+does not belong in the PR-gating job. If yes, it does, and the fix belongs in
+the same milestone. Then check the two never get confused in prose: a debt
+entry saying "deliberately not wired because it is red" should name the
+environment reason explicitly, so nobody later cites it as precedent for
+unwiring a gate that found something.
+
+**Incident**: `midwifery` carries one of each, and the second was nearly
+decided by citing the first. `tests/test_cohort_vintage.R` (`DEBT.md` D10) is
+deliberately unwired from `.github/workflows/ci.yml` under the reasoning that
+"a gate that is red on arrival teaches people to ignore gates" — correct there,
+because CI has no person-level data to run it against at all and never will.
+`tests/ci_denominator_contracts.R` (D14) was then added reporting `FAILED (5)`
+and wired into the PR job anyway, because all five failures are live
+supplemental-table defects reproducible from committed artifacts, two of them
+reversing the sentence they support. Applying D10's sentence as a general rule
+would have unwired the gate that had just found four wrong published rates.
+D14 states the distinction and the reversal condition rather than leaving the
+red step to be explained by whoever hits it next.
+
+---
+
 ## Quick audit script skeleton
 
 ```bash
@@ -1537,3 +1623,13 @@ both survived because nothing had exercised the failing code path for real.
 Item 47's incident is not a hypothetical — it names a specific, real audit
 result from that repo (`a631aa226`) as an example of the pattern to guard
 against, not a defect being claimed against it.*
+
+*Items 48-49 added 2026-11-21 from a `midwifery` review session that found
+four wrong rates in the manuscript's supplemental tables and wrote a gate per
+defect (`tests/ci_denominator_contracts.R`, `DEBT.md` D14). Both items record
+mistakes made and corrected while building that gate, not hypotheticals: item
+48's gate really did encode the broken shape as law and would have failed the
+commit that fixed the defect, and its detector's "clean" fixture really was
+copied from the defective artifact, which made four near-miss cases vacuous.
+Item 49 records a decision nearly made the wrong way by citing this
+repository's own D10 as precedent.*

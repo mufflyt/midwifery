@@ -15,7 +15,7 @@ EXACTLY these seven columns and nothing else:
 Deliberately NOT included here: provider name, provider state, or any other
 demographic field -- the official source is NPI-keyed only. This is a
 MATERIAL DIFFERENCE from the pre-existing, unverified
-/Volumes/MufflySamsung/DuckDB/medicaid_provider_spending.duckdb, whose
+<volume>/DuckDB/medicaid_provider_spending.duckdb, whose
 billing_providers/servicing_providers tables carry name/state/address columns
 this official release does not have. Per docs/HANDOFF_hhs_medicaid_provider_
 spending.md, those two dimension tables were pulled from a third-party
@@ -35,7 +35,7 @@ opendata.hhs.gov dataset follows (stable unauthenticated Azure Blob Storage
 URL, x-ms-meta-sha256 as the only integrity oracle, verified live against the
 server rather than a hardcoded constant).
 
-Output: /Volumes/MufflySamsung/DuckDB/medicaid_provider_spending_verified.duckdb
+Output: <volume>/DuckDB/medicaid_provider_spending_verified.duckdb
     table `spending`        one row per (billing NPI, servicing NPI, HCPCS, month)
     table `_provenance`     one row per successful load, append-only
 """
@@ -45,6 +45,7 @@ import sys
 import urllib.error
 
 import hhs_opendata_csv_pipeline as pipeline
+from samsung_volume import samsung_path
 
 DEFAULT_VERSION_DATE = "2026-02-09"
 BLOB_BASE = "https://stopendataprod.blob.core.windows.net/datasets/medicaid-provider-spending"
@@ -52,7 +53,8 @@ ZIP_FILENAME = "medicaid-provider-spending.csv.zip"
 TABLE_NAME = "spending"
 WORK_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                          "scratch", "medicaid_provider_spending")
-DB_PATH = "/Volumes/MufflySamsung/DuckDB/medicaid_provider_spending_verified.duckdb"
+DB_PATH = samsung_path("DuckDB/medicaid_provider_spending_verified.duckdb",
+                       env_var="MEDICAID_SPENDING_DB")
 
 
 def main():

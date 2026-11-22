@@ -17,6 +17,11 @@ root <- "."
 if (!dir.exists(file.path(root, ".git")) && dir.exists("../.git")) root <- ".."
 source(file.path(root, "tests", "ci_report.R"))
 source(file.path(root, "R", "lib", "medicare_duckdb.R"))
+# The raw-connection registry and duckdb_scan_for_raw_connections() moved
+# here from R/lib/medicare_duckdb.R on 2026-11-20: they are CI-only, and
+# 30-odd scripts were sourcing 343 lines of gate machinery to reach
+# open_medicare_duckdb(). Same rule, same scan, same return shape.
+source(file.path(root, "tests", "duckdb_architecture_scan.R"))
 
 # Every artifact this gate produces is stamped with the exact SHA it ran
 # against -- a result from an earlier commit is not acceptance evidence for
@@ -74,7 +79,7 @@ provenance <- run_duckdb_gate("tests/ci_duckdb_exception_provenance.R")
 n_unjustified_match <- regmatches(paste(provenance$out, collapse = "\n"),
                                   regexpr("new unjustified exceptions introduced: \\d+", paste(provenance$out, collapse = "\n")))
 cat(sprintf("%s\n", if (length(n_unjustified_match) && nzchar(n_unjustified_match)) n_unjustified_match else "new unjustified exceptions introduced: <not found>"))
-record("exception-registry provenance (4->7 explained, 0 new unjustified)", provenance$ok,
+record("exception-registry provenance (every entry classified, 0 new unjustified)", provenance$ok,
        if (!provenance$ok) "tests/ci_duckdb_exception_provenance.R did not report PASS" else NULL)
 
 # -----------------------------------------------------------------------------

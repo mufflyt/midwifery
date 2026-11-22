@@ -49,15 +49,9 @@ root <- "."
 if (!dir.exists(file.path(root, ".git")) && dir.exists("../.git")) root <- ".."
 source(file.path(root, "tests", "ci_report.R"))
 
-# Code lines only. A rule NAMED in a comment or a roxygen block is documentation
-# of the rule, not a violation of it -- these gates are heavily commented in the
-# very files they police, and matching prose would make every gate self-tripping.
-# That mistake was made three times in this repo's test suite already.
-code_lines <- function(path) {
-  txt <- tryCatch(readLines(file.path(root, path), warn = FALSE),
-                  error = function(e) character(0))
-  txt[!grepl("^\\s*#'?", txt)]
-}
+# ci_code_lines() comes from ci_report.R, which is also where ci_read_head()
+# lives and for the same reason: a second definition of either is the H4 defect
+# this file's neighbours exist to catch.
 
 # Files that carry the analysis. Excludes tests/ so a gate does not police the
 # fixtures written to prove the gate works.
@@ -79,7 +73,7 @@ ci_section("SCI1 organizational affiliation is never labelled employment")
 EMPLOY <- "\\b(employer|employed_by|employment_org|works_for)\\b\\s*(=|<-)"
 off <- character(0)
 for (f in analysis_files()) {
-  hits <- grep(EMPLOY, code_lines(f), value = TRUE)
+  hits <- grep(EMPLOY, ci_code_lines(f, root = root), value = TRUE)
   if (length(hits)) off <- c(off, sprintf("%s: %s", f, trimws(hits[1])))
 }
 arts <- ci_tracked("artifacts/*.csv")
@@ -142,7 +136,7 @@ GUARDED <- "(n_distinct\\([^)]*\\)|\\bn\\b|n_orgs?)\\s*==\\s*1L?\\b"
 
 off <- character(0); known <- character(0)
 for (f in analysis_files()) {
-  hits <- grep(PICK, code_lines(f), value = TRUE, perl = TRUE)
+  hits <- grep(PICK, ci_code_lines(f, root = root), value = TRUE, perl = TRUE)
   hits <- hits[!grepl(GUARDED, hits, perl = TRUE)]
   if (!length(hits)) next
   entry <- sprintf("%s: %s", f, trimws(hits[1]))
@@ -192,7 +186,7 @@ NEG <- paste0("is\\.na\\([^)]*\\)\\s*(~|,)\\s*[\"']?(No|NO|FALSE|0)[\"']?|",
               "coalesce\\([^)]*,\\s*[\"']No[\"']\\)")
 off <- character(0)
 for (f in analysis_files()) {
-  txt <- code_lines(f)
+  txt <- ci_code_lines(f, root = root)
   # Only where a partial-coverage source is in play. A "No" default on a
   # complete-enumeration variable (a roster field, a state license table) is
   # legitimate and must not be flagged.
@@ -244,12 +238,12 @@ if (!length(exps)) {
   CUT <- paste0("(threshold|cutoff|min_[a-z_]+|_floor)\\s*(=|<-)\\s*[0-9]|",
                 "\\bfilter\\([^)]*\\b(n_clin|density|similarity|score)[a-z_]*",
                 "\\s*(>=|>|<=|<)\\s*[0-9]")
-  tuned <- Filter(function(f) any(grepl(CUT, code_lines(f), perl = TRUE)), exps)
+  tuned <- Filter(function(f) any(grepl(CUT, ci_code_lines(f, root = root), perl = TRUE)), exps)
   if (!length(tuned)) {
     ci_skip("no experiment script chooses a numeric cut; nothing to declare")
   }
   off <- tuned[!vapply(tuned,
-                       function(f) any(grepl("exploratory", code_lines(f))),
+                       function(f) any(grepl("exploratory", ci_code_lines(f, root = root))),
                        logical(1))]
   if (length(off)) {
     ci_fail("SCI4: %d experiment script(s) never mark a row exploratory:\n%s\n       A threshold chosen after seeing the data is a hypothesis. Set\n       exploratory = TRUE on the rows it produces.",
@@ -269,7 +263,7 @@ WRAP <- "R/lib/address_parser_canonical.R"
 if (!file.exists(file.path(root, WRAP))) {
   ci_fail("SCI5: %s is missing.\n       Without it every caller reimplements street abbreviation privately.", WRAP)
 } else {
-  w <- code_lines(WRAP)
+  w <- ci_code_lines(WRAP, root = root)
   # A street-suffix mapping inside the delegator. The canonical parser owns
   # these; a copy here is the fork this gate exists to prevent.
   SUFFIX <- "\\bAVENUE\\b|\\bBOULEVARD\\b|\\bPARKWAY\\b|\\bSTREET\\b\\s*[\"']?\\s*,"
@@ -300,7 +294,7 @@ LEGACY <- c("norm_addr", "norm_addr_drop_unit")
 defs <- character(0)
 for (f in analysis_files()) {
   d <- grep("^\\s*(norm_addr[a-z_]*|normali[sz]e_addr[a-z_]*)\\s*<-\\s*function",
-            code_lines(f), value = TRUE)
+            ci_code_lines(f, root = root), value = TRUE)
   if (length(d)) defs <- c(defs, sprintf("%s: %s", f, trimws(d)))
 }
 extra <- defs[!grepl(sprintf("\\b(%s|norm_addr_canonical|norm_addr_canonical_keep_unit)\\s*<-",
@@ -327,7 +321,7 @@ VOTE <- paste0("\\b(majority|consensus|vote|votes|voting)\\s*(=|<-)|",
                "\\bsum\\(\\s*(agree|concur)[a-z_]*\\s*\\)\\s*(>=|>)\\s*[0-9]")
 off <- character(0)
 for (f in analysis_files()) {
-  txt <- code_lines(f)
+  txt <- ci_code_lines(f, root = root)
   if (!any(grepl("open_payments", txt) & TRUE) &&
       !any(grepl("healthgrades|doximity", txt, ignore.case = TRUE))) next
   hits <- grep(VOTE, txt, value = TRUE, perl = TRUE)

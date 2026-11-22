@@ -3,7 +3,7 @@
 # =============================================================================
 # DELIBERATELY SMALL. Almost every test in tests/ loads a multi-megabyte
 # artifact, and several reach outside the repo entirely -- the name-normalisation
-# tests need ~/isochrones, the linkage tests need a 22,309-row FROZEN crosswalk
+# tests need ~/isochrones, the linkage tests need a 22,357-row FROZEN crosswalk
 # that is gitignored because it is person-level. None of that exists on a runner,
 # so CI runs the subset that is genuinely hermetic and says nothing about the
 # rest. A green tick here means "the keys and the syntax are sound", NOT "the
@@ -86,6 +86,21 @@ jobs:
       - name: Workflow contracts (a job installs what it runs)
         run: Rscript tests/ci_workflow_contracts.R
 
+      # The detector runs BEFORE the gate it tests, deliberately. ci_read_width.R
+      # is a parse walk over a shrink-only baseline, and the two ways a parse
+      # walk fails are "matched nothing" and "scanned nothing" -- both of which
+      # look exactly like a clean tree. Both happened while it was being
+      # written, so the order here means a gate that has stopped detecting is
+      # reported as a gate failure rather than as a green repository.
+      #
+      # In this job because neither script needs a package: base R, ci_report.R
+      # and R/lib/ast_walk.R, about 20s for the pair.
+      - name: Panel read-width detector (the gate still detects)
+        run: Rscript tests/test_read_width_detect.R
+
+      - name: Panel read-width (a 544 MB read names its columns)
+        run: Rscript tests/ci_read_width.R
+
       # The aggregate gate decides whether this pull request is scientifically
       # green, so its logic is tested here rather than trusted: all-success
       # passes, and skipped, cancelled, failed, missing and ran-nothing are each
@@ -123,6 +138,9 @@ jobs:
 
       - name: CCN -> state resolution contract
         run: Rscript tests/test_ccn_state.R
+
+      - name: clean_state() full-name and combined-form translation contract
+        run: Rscript tests/test_clean_state.R
 
       # Base R plus stringr. Every cross-source comparison pairs files published
       # on different dates, and parse_vintage() is what knows those dates. Its
@@ -250,11 +268,25 @@ jobs:
       - name: Install pytest
         run: python -m pip install --quiet --disable-pip-version-check pytest
 
-      # Covers the two failure modes that silently truncate the roster: the
-      # 500-row APEX cap in the directory pager, and the 200-row response cap in
-      # the NPI API's candidate lists.
-      - name: Scraper and NPI-candidate tests
-        run: python -m pytest tests/test_scrape.py tests/test_fetch_npi_candidates.py -q
+      # THE WHOLE DIRECTORY, NOT A LIST OF FILENAMES. This step named
+      # tests/test_scrape.py and tests/test_fetch_npi_candidates.py explicitly,
+      # which ran 27 of the 134 Python tests in tests/. The other 107 -- across
+      # ten files and 2,032 lines, including the five live BON harvesters, the
+      # HHS open-data pipeline and the microsimulation conservation suite --
+      # collected and passed but gated NOTHING, which is worse than having no
+      # suite because it reads as coverage. The whole directory runs in 16
+      # seconds, so the narrow list was never a budget decision.
+      #
+      # A filename list also fails silently in the one direction that matters:
+      # a NEW test file is not covered until somebody remembers to add it here,
+      # and nothing reports that it was forgotten. A directory cannot forget.
+      # -rs so SKIP REASONS appear in the log, the same contract the pipeline
+      # integration step states: a reader must be able to tell a deliberate
+      # skip from a test that quietly did nothing. Eight tests shell out to the
+      # `duckdb` CLI binary, which is not installed here on purpose -- see the
+      # pytestmark in tests/test_hhs_opendata_csv_pipeline.py.
+      - name: Python tests
+        run: python -m pytest tests -q -rs
 
       # -v so the SKIP REASONS appear in the log. Three of these four tests read
       # a person-level artifact that is gitignored by design and therefore never
@@ -286,13 +318,29 @@ jobs:
   #
   # Packages are cached on the workflow file's hash: the install only re-runs
   # when this list changes.
+  #
+  # THE IMAGE VERSION IS PART OF THE KEY, and that is not tidiness. These are
+  # COMPILED binaries. restore-keys makes a changed hash fall back to whatever
+  # cache was built last, so a .so built on an older runner image gets
+  # restored onto a newer one -- and on 2026-11-19 it did: this job restored a
+  # stringi built against ICU 74, which the current image no longer ships, and
+  # every stringr call threw. That killed test_science_invariants outright and,
+  # worse, made parse_vintage() throw inside the source-coverage contract,
+  # where a swallowed error was grading unverifiable years "ok" (see
+  # R/lib/source_coverage.R, year_check_failed). A cache keyed without the
+  # image silently imports binaries for a different operating system.
   # ---------------------------------------------------------------------------
   r-unit-tests:
     name: R unit tests (pure functions)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      # fetch-depth 0: ci_duckdb_exception_provenance.R re-derives exception
+      # provenance from `git show BASE_COMMIT:file`; a depth-1 checkout has no
+      # BASE_COMMIT object and every PREEXISTING row fails as unjustified.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: r-lib/actions/setup-r@v2
         with:
@@ -303,8 +351,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.R_LIBS_USER }}
-          key: ${{ runner.os }}-r-tidy-${{ hashFiles('.github/workflows/ci.yml') }}
-          restore-keys: ${{ runner.os }}-r-tidy-
+          key: ${{ runner.os }}-${{ env.ImageVersion }}-r-tidy-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: ${{ runner.os }}-${{ env.ImageVersion }}-r-tidy-
 
       # Binary packages from the public RSPM. No compilation, no system geo
       # libraries -- if a package here ever needs one, it does not belong here.
@@ -360,7 +408,14 @@ jobs:
                     # make_evidence_class_figure.R for real rather than asserting
                     # around it. Binary from RSPM, no system libraries, which is
                     # this job's standing condition for anything added here.
-                    "ggplot2", "patchwork", "forcats")
+                    "ggplot2", "patchwork", "forcats",
+                    # systemfonts: fit_plot_labels() MEASURES each label with
+                    # string_width() rather than counting characters, and the
+                    # appendix suite asserts on that measurement. Not a
+                    # recursive dependency of anything above it, so without
+                    # this name the figure checks die at F3 with "there is no
+                    # package called 'systemfonts'". Binary from RSPM.
+                    "systemfonts")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
         shell: Rscript {0}
@@ -384,11 +439,112 @@ jobs:
       - name: Provenance wiring and hash memo
         run: Rscript tests/test_cycle21_provenance_wiring.R
 
+      # THESE RAN ONLY AT NIGHT. The declared-coverage contract is what stops
+      # a missing input from publishing a smaller study -- the 2026-11-12
+      # defect, where four of Open Payments' five years were absent and the
+      # build exited 0. Its tests landed in #321 without a step in this file,
+      # so nightly's tests/test*.R glob was the only thing running them: a
+      # pull request that broke the contract could merge green and be found
+      # the next morning.
+      #
+      # HERE AND NOT IN r-checks, for the reason the two comments above give,
+      # and which this step got wrong on its first attempt: it needs dplyr,
+      # readr and tibble, and r-checks is the stringr-only tier. Both files
+      # build their fixtures on disk; the only real inputs they read are the
+      # sixteen TRACKED board rosters, present in any checkout, so neither
+      # needs the Samsung volume and there is no reason for them to be
+      # nightly-only.
+      - name: Declared source coverage contract
+        run: |
+          Rscript tests/test_source_coverage_contracts.R
+          Rscript tests/test_source_coverage_saboteurs.R
+
+      # ITS FIGURE CHECKS HAD NEVER RUN ANYWHERE. This file is not named in any
+      # step here, so nightly's tests/test*.R glob was the only thing running
+      # it -- and even there it quit 0 at line 37, because the agreement
+      # artifact it gates on is gitignored and absent from every checkout.
+      # F1-F5b read nothing but tracked source; they now sit above that gate
+      # and a rogue ggsave() in a figure script fails this step. Verified the
+      # old pair: in a fresh worktree with a direct ggsave() appended to
+      # make_state_source_comparison_steps_figures.R, the committed test
+      # printed "PASS (0 failures)" and the reordered one exits 1 at F2d.
+      #
+      # HERE AND NOT IN r-checks, same reason as the three steps above: it
+      # needs dplyr, readr, ggplot2 and systemfonts. A1-A6 still skip without
+      # the artifact, and the step says so in its own output.
+      - name: Appendix prose and figure label fitting
+        run: Rscript tests/test_appendix_matches_artifacts.R
+
+      # NIGHTLY-ONLY IS HOW THE 2026-11-16 ZIP SWEEP MERGED GREEN AND BROKE
+      # THESE BY MORNING. Two defects rode in on a passing pull request: a raw
+      # DuckDB connection whose `# duckdb-exception:` comment was never
+      # registered, and a volume literal back in an analysis script. Both are
+      # exactly what these gates are for, and neither was named by any job in
+      # this file -- so the only thing that could see them ran at 05:22Z, after
+      # the merge, with nobody reading the result.
+      #
+      # All of them are hermetic, which is what makes them fair game for a pull
+      # request: throwaway in-memory databases, no warehouse, no Samsung
+      # volume. The volume test proves that about ITSELF -- it builds a decoy
+      # mount and a fixture tree rather than reading the real drive.
+      #
+      # The architecture gate re-runs the ingestion bootstrap as a subprocess,
+      # so naming the bootstrap separately costs a few seconds and buys a
+      # direct per-gate verdict instead of one summarised inside a bundle of
+      # ten. The architecture gate is the slow one, a few minutes, and it is
+      # the one that catches an unregistered connection.
+      # In r-unit-tests because it builds real ggplot grobs to MEASURE a legend
+      # (ggplot2 + systemfonts, both installed above). nightly.yml globs
+      # tests/test*.R and would run it anyway; naming it here is what makes it
+      # run on the pull request that breaks it.
+      - name: Manuscript figure saboteurs
+        run: Rscript tests/test_manuscript_figure_saboteurs.R
+
+      # Pure text scans over tracked files -- no packages beyond base R, but it
+      # lives here rather than in r-checks so it sits beside the other saboteur
+      # suites. It guards the cuts from the 2026-11-20 over-engineering audit:
+      # a copied harness, an executed @archive path, a second CSV reader, a
+      # second root mechanism.
+      - name: Over-engineering cut saboteurs
+        run: Rscript tests/test_ponytail_cuts_saboteurs.R
+
+      # Q3 diffs against origin/main, which this job has because its checkout
+      # is fetch-depth: 0 for the exception-provenance gate. Without that it
+      # reports the missing ref and fails, rather than a clean diff nobody
+      # computed.
+      - name: Gate-integrity saboteurs
+        run: Rscript tests/test_gate_integrity_saboteurs.R
+
+      # The 2026-11-20 complexity audit's four fixes. Mostly text and
+      # parse-tree scans over tracked files, but it also SOURCES
+      # R/join_safety.R (checkmate, dplyr -- both installed above) to prove
+      # safe_left_join() still refuses use_enhanced_metrics = TRUE, and
+      # tests/duckdb_architecture_scan.R to prove the moved scanner still finds a
+      # raw connection. Both are why it lives in this job. nightly.yml globs
+      # tests/test*.R and would run it anyway; naming it here is what makes it
+      # run on the pull request that breaks it.
+      - name: Complexity-cut saboteurs
+        run: Rscript tests/test_complexity_cuts_saboteurs.R
+
+      - name: DuckDB architecture and volume-resolution gates
+        run: |
+          Rscript tests/ci_duckdb_ingestion_bootstrap.R
+          Rscript tests/test_duckdb_volume_resolution.R
+          Rscript tests/ci_duckdb_architecture_gate.R
+
       - name: Science invariants (defects that actually occurred)
         run: Rscript tests/test_science_invariants.R
 
       - name: AMCB license bridge
         run: Rscript tests/test_amcb_license_bridge.R
+
+      # Saboteurs for the platform-dependent-key and scope-rebinding fixes:
+      # each plants the original defect back and requires the guard to die on
+      # it, plus near misses so a guard cannot regress into "written exactly
+      # this way". The H6 cases run the real tests/ci_hygiene.R in a throwaway
+      # git repository, so this step needs git on PATH -- which this runner has.
+      - name: Review-fix saboteurs
+        run: Rscript tests/test_review_fixes_saboteurs.R
 
       - name: State-license table construction
         run: Rscript tests/test_build_amcb_state_licenses.R
@@ -563,7 +719,7 @@ jobs:
           GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
         run: |
           Rscript -e 'if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")'
-          Rscript -e 'remotes::install_github("mufflyt/mysterynpi@ac42561b46d400a7e62649ee0161313628d914e8", upgrade = "never")'
+          Rscript -e 'remotes::install_github("mufflyt/mysterynpi@aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a", upgrade = "never")'
           Rscript -e 'stopifnot("strip_med_suffix" %in% getNamespaceExports("mysterynpi")); cat("mysterynpi", as.character(packageVersion("mysterynpi")), "\n")'
 
       # The Trilliant layer's pure functions: which freeze and cohort a build may
@@ -701,13 +857,12 @@ jobs:
       # bounds. JOIN_REPORT_DIR is set because one block exercises the DEFAULT
       # report path rather than overriding it, and would otherwise write into
       # tests/artifacts/ in the checkout.
-      - name: Ported - join_safety (79 assertions)
+      - name: Ported - join_safety (24 assertions)
         env:
           JOIN_REPORT_DIR: ${{ runner.temp }}/join_reports
         run: |
           mkdir -p "$JOIN_REPORT_DIR"
           Rscript -e 'testthat::test_file("tests/test-join-safety.R", stop_on_failure = TRUE)'
-          Rscript -e 'testthat::test_file("tests/test-join-safety-semantic-extended.R", stop_on_failure = TRUE)'
           Rscript -e 'testthat::test_file("tests/test-step2-npi-dedup-bug.R", stop_on_failure = TRUE)'
 
       # resolve_tract_vintage.R is BYTE-IDENTICAL to upstream, so these two are
@@ -792,7 +947,10 @@ jobs:
   science-law-coverage:
     name: Science-law coverage
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # 15 was eaten whole by the sf system-library apt install (~12 min),
+    # canceling the law steps with ~3 min left. Budget for the install
+    # plus the actual run.
+    timeout-minutes: 30
     # THE JOB MUST SAY WHETHER IT DID THE WORK. Every law step below is gated on
     # steps.relevance.outputs.run. When a path filter could set that to false,
     # this job exited zero having evaluated nothing -- and a green tick was
@@ -841,8 +999,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-sf-${{ hashFiles('.github/workflows/ci.yml') }}
-          restore-keys: ${{ runner.os }}-apt-sf-
+          key: ${{ runner.os }}-${{ env.ImageVersion }}-apt-sf-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: ${{ runner.os }}-${{ env.ImageVersion }}-apt-sf-
 
       # sf needs the geo stack ci.yml otherwise refuses (see the file header).
       # Confined to this job, and only installed when the relevance check

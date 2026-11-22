@@ -32,6 +32,8 @@ ci_entrypoints <- file.path("tests", c(
   "test_open_payments_type2_bulk.R", "test_table1_blk_hg.R",
   "test_pip_materialization.R", "test_safe_divide_types.R",
   "test_amcb_license_bridge.R", "test_build_amcb_state_licenses.R",
+  "test_review_fixes_saboteurs.R",
+  "test_read_width_detect.R",
   "test_adapt_license_bridge_to_reconcile.R",
   "test_expand_former_name_candidates.R",
   "test_validate_age_at_certification.R", "test_cross_taxonomy_hierarchy.R",
@@ -41,12 +43,18 @@ ci_entrypoints <- file.path("tests", c(
   "test-safe-percent-zero-default-family-bva.R",
   "test-consort-audit-rounds-61-thru-65-2026-05-21.R",
   "test-den-032-safe-pct-manu-na-semantics.R", "test-join-safety.R",
-  "test-join-safety-semantic-extended.R", "test-step2-npi-dedup-bug.R",
+  # test-join-safety-semantic-extended.R was deleted on 2026-11-20: all 500
+  # lines of it exercised safe_inner_join(), which had no production caller
+  # and went with the complexity audit's first cut.
+  "test-step2-npi-dedup-bug.R",
   "test-tract-vintage-boundary-bva-2019-2020-2021.R",
   "test-step8-tract-vintage-routing.R",
   # The Trilliant layer's step in r-unit-tests.
   "test_cohort_definitions.R", "test_work_site_topology.R",
-  "test_data_vault.R", "test_trilliant_demographics.R", "test_trilliant_identity.R"
+  "test_data_vault.R", "test_trilliant_demographics.R", "test_trilliant_identity.R",
+  # Sources R/join_safety.R to prove safe_left_join() still refuses
+  # use_enhanced_metrics = TRUE, so the package gate should follow its chain.
+  "test_complexity_cuts_saboteurs.R"
 ))
 
 # Must match .github/workflows/ci.yml exactly. When they disagree, CI is red on

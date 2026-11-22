@@ -1,0 +1,3 @@
+metric_id,label,old_value,new_value,raw_delta,pct_change,status,reconciliation_reason
+distinct_npi_state_pairs,distinct_npi_state_pairs,6234,6234,0,0,unchanged,"Validation only: attribute_enrollment_cardinality_audit() recomputing the same real quantity as the script's hand-rolled Step 7, not a correction."
+distinct_npi_group_pairs,distinct_npi_group_pairs,8130,8130,0,0,unchanged,"Validation only: attribute_enrollment_cardinality_audit() recomputing the same real quantity as the script's hand-rolled Step 8, not a correction."

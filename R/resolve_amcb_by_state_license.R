@@ -14,7 +14,7 @@
 #' is a silent error that propagates into every downstream count.
 #'
 #' @section Leading zeros:
-#' `normalize_license_number()` strips leading zeros so "0007" and "7" agree,
+#' `normalize_license_number_unpadded()` strips leading zeros so "0007" and "7" agree,
 #' which is necessary because boards and NPPES disagree on padding. The cost is
 #' that a jurisdiction where leading zeros are SIGNIFICANT would see two
 #' distinct licences collide -- such a collision surfaces as
@@ -35,6 +35,19 @@
 # in sequence into one environment, which is how the pipeline runs.
 if (!exists("normalize_npi", mode = "function")) {
   source(file.path("R", "lib", "common_helpers.R"))
+}
+# LICENSE STATE IS NORMALIZED BY THE CANONICAL FUNCTION, NOT A LOCAL COPY.
+# This file carried its own normalize_state() accepting the 50 states and DC
+# and nothing else, so a Puerto Rico, Guam, Virgin Islands, American Samoa or
+# Northern Marianas licence had its state set to NA and its licence key could
+# never resolve. clean_state() accepts exactly the jurisdictions
+# VALID_STATES declares valid repo-wide, resolves full names and the
+# "XX - FULL NAME" form, and refuses everything else -- measured over the
+# local copy's whole input domain it loses nothing and adds those seven. See
+# tests/ci_hygiene_baseline.txt for why this pair was held open until
+# clean_state() could answer it.
+if (!exists("clean_state", mode = "function")) {
+  source(file.path("R", "lib", "clean_state.R"))
 }
 resolve_amcb_by_state_license <- function(
     amcb_path,
@@ -104,9 +117,9 @@ resolve_amcb_by_state_license <- function(
   state_licenses <- state_licenses_raw |>
     dplyr::transmute(
       amcb_id_license = normalize_identifier(.data[[state_id_col]]),
-      license_state = normalize_state(.data[[license_state_col]]),
+      license_state = clean_state(.data[[license_state_col]]),
       license_number_raw = as.character(.data[[license_col]]),
-      license_number = normalize_license_number(.data[[license_col]])) |>
+      license_number = normalize_license_number_unpadded(.data[[license_col]])) |>
     dplyr::filter(!is.na(.data$amcb_id_license), !is.na(.data$license_state),
                   !is.na(.data$license_number)) |>
     dplyr::distinct()
@@ -463,8 +476,8 @@ extract_nppes_license_slots <- function(nppes_records, max_slots = 15L) {
     }
     tibble::tibble(
       npi = normalize_npi(nppes_records[[npi_col]]),
-      license_state = normalize_state(nppes_records[[state_col]]),
-      license_number = normalize_license_number(nppes_records[[license_col]]),
+      license_state = clean_state(nppes_records[[state_col]]),
+      license_number = normalize_license_number_unpadded(nppes_records[[license_col]]),
       taxonomy_code = taxonomy_value,
       taxonomy_slot = slot)
   })
@@ -540,7 +553,7 @@ build_license_resolution_summary <- function(amcb_roster, state_licenses,
 #' @param x License number.
 #' @return [character] normalized, NA when unusable.
 #' @keywords internal
-normalize_license_number <- function(x) {
+normalize_license_number_unpadded <- function(x) {
   normalized <- toupper(trimws(as.character(x)))
   normalized <- stringr::str_replace_all(normalized, "[^A-Z0-9]", "")
   # Strip leading zeros only when the remainder is entirely digits, so "A007"
@@ -550,25 +563,6 @@ normalize_license_number <- function(x) {
                normalized %in% c("NA", "NONE", "NULL", "UNKNOWN")] <-
     NA_character_
   normalized
-}
-
-#' Normalize a state to a two-character abbreviation
-#' @param x State name or abbreviation.
-#' @return [character] two-letter abbreviation, NA when unrecognised.
-#' @keywords internal
-normalize_state <- function(x) {
-  # state.name/state.abb live in `datasets`, NOT `base`. Calling
-  # base::state.name errors with "object 'state.name' not found", which would
-  # have made every call to this function fail.
-  state_text <- toupper(trimws(as.character(x)))
-  full_names <- toupper(c(datasets::state.name, "DISTRICT OF COLUMBIA"))
-  abbreviations <- c(datasets::state.abb, "DC")
-  state_lookup <- stats::setNames(abbreviations, full_names)
-
-  full_name_match <- !is.na(state_text) & state_text %in% names(state_lookup)
-  state_text[full_name_match] <- state_lookup[state_text[full_name_match]]
-  state_text[is.na(state_text) | !state_text %in% abbreviations] <- NA_character_
-  state_text
 }
 
 #' Normalize an AMCB stable identifier

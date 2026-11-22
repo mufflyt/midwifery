@@ -31,7 +31,29 @@
 #
 # ADDED 2026-10-29, 2 lines, both from Medicaid billing/MCO work that existed
 # only as uncommitted work in a worktree:
-#   artifacts/ca_mi_cohort_for_mco_check.csv -- written by an ad-hoc R
+#   # ADDED 2026-11-16, 3 lines, from the state-source-audit coverage work on
+# branch fix/state-source-audit-coverage-contracts:
+#   artifacts/inclusive_zip_agreement.csv -- analyze_inclusive_zip_agreement.R
+#   wrote it with a bare write_csv(). That call now goes through
+#   write_with_provenance(), so the NEXT run records inputs+sha256 and this
+#   line can come off; it cannot be back-filled, because the script reads a
+#   gitignored person-level practice-location file and re-running it here
+#   would record this machine's copy rather than the one that produced the
+#   shipped artifact.
+#   artifacts/open_payments_annual_coverage_audit.csv
+#   artifacts/state_boards_of_nursing_reharvest_before_after.csv -- no
+#   producer script exists for either. make_state_source_audit_artifact.py
+#   READS them; they were produced interactively while the Open Payments
+#   window and the eight-board re-harvest were being reconstructed. Same
+#   situation as ca_mi_cohort_for_mco_check.csv above: nothing to attach a
+#   sidecar to.
+#
+# NOTE for whoever prunes this next: the header above says "there is also no
+# Python path to provenance ... write_with_provenance() exists only in
+# R/lib/artifact_provenance.R". That is now out of date -- tools/provenance.py
+# provides write_provenance() and sha256_file() and 14 harvesters import it.
+# The Python producers on this list can be fixed; they have not been.
+#
 #   snippet calling build_ob_midwife_cohort(include_state=TRUE) that was run
 #   interactively and never saved as a script (see
 #   harvest_live_mco_network_membership_ca_mi.py's own header, which
@@ -52,6 +74,7 @@ artifacts/acme_repository_registry.csv
 artifacts/amcb_age_calibration_provenance.csv
 artifacts/bon_contamination_inventory.csv
 artifacts/ca_mi_cohort_for_mco_check.csv
+artifacts/ca_mi_cohort_for_mco_check.csv -- written by an ad-hoc R
 artifacts/cabc_accredited_birth_centers_master.csv
 artifacts/cabc_birth_centers_master_clean.csv
 artifacts/cabc_birth_centers_master_perfect.csv
@@ -75,6 +98,7 @@ artifacts/historical_isochrone_recovery_catalog.csv
 artifacts/historical_isochrone_recovery_validated.csv
 artifacts/historical_isochrone_recovery_waterfall.csv
 artifacts/hpsa_status_summary.csv
+artifacts/inclusive_zip_agreement.csv
 artifacts/isochrone_coverage_after_validated_recovery.csv
 artifacts/isochrone_coverage_with_recovery.csv
 artifacts/isochrone_representation_by_rucc.csv
@@ -88,8 +112,10 @@ artifacts/midwifery_theses_oai.csv
 artifacts/oai_source_concentration.csv
 artifacts/ob_hospitals_fallback_log.csv
 artifacts/ohio_voter_license_ages_provenance.csv
+artifacts/open_payments_annual_coverage_audit.csv
 artifacts/org_resolution_distribution_shift.csv
 artifacts/org_resolution_ppv.csv
+artifacts/state_boards_of_nursing_reharvest_before_after.csv
 artifacts/state_nursing_license_ages_provenance.csv
 artifacts/step00_summary/join_left_20260809_234744.978.csv
 artifacts/step00_summary/join_left_20260809_234745.092.csv

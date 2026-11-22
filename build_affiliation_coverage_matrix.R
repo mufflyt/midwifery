@@ -51,13 +51,13 @@ root_dir <- {
   if (length(a)) normalizePath(dirname(sub("--file=", "", a[1]))) else normalizePath(".")
 }
 setwd(root_dir)
+source(file.path("R", "lib", "common_helpers.R"))  # chr(): all-character reader
 source(file.path("R", "lib", "artifact_provenance.R"))
 
 OUT      <- "artifacts/affiliation_coverage_matrix.csv"
 OUT_SUM  <- "artifacts/affiliation_coverage_summary.csv"
 OUT_CMP  <- "artifacts/pecos_missingness_comparison.csv"
 
-rd <- function(p) read_csv(p, col_types = cols(.default = "c"), progress = FALSE)
 
 # --- the spine: every resolved midwife ---------------------------------------
 cw <- Sys.glob("artifacts/amcb_npi_crosswalk_*panel*.csv")
@@ -65,7 +65,7 @@ cw <- cw[!grepl("\\.manifest\\.json$|\\.provenance\\.json$", cw)]
 if (!length(cw)) stop("no AMCB->NPI crosswalk in artifacts/", call. = FALSE)
 cw <- cw[order(file.mtime(cw), decreasing = TRUE)][1]
 
-spine <- rd(cw) %>%
+spine <- chr(cw) %>%
   filter(!is.na(npi), nzchar(npi)) %>%
   distinct(certification_number = amcb_id, npi)
 cli::cli_alert_info("spine: {format(nrow(spine), big.mark = ',')} resolved midwives from {basename(cw)}")
@@ -95,7 +95,7 @@ ARMS <- tibble::tribble(
 
 seen_in_arm <- function(file, key) {
   if (!file.exists(file)) { cli::cli_alert_warning("absent, arm scored NA: {file}"); return(NULL) }
-  d <- rd(file)
+  d <- chr(file)
   if (!key %in% names(d)) {
     cli::cli_alert_danger("{file}: no column {key}; arm scored NA")
     return(NULL)
@@ -153,7 +153,7 @@ cov <- mat %>% select(certification_number, npi, pecos_visible, n_arms_seeing,
                       all_of(arm_cols))
 
 geo <- if (file.exists("artifacts/amcb_npi_geography.csv")) {
-  rd("artifacts/amcb_npi_geography.csv") %>%
+  chr("artifacts/amcb_npi_geography.csv") %>%
     distinct(npi, .keep_all = TRUE) %>%
     transmute(npi,
               practice_state = practice_state,
@@ -163,13 +163,13 @@ geo <- if (file.exists("artifacts/amcb_npi_geography.csv")) {
 } else NULL
 
 fourway <- if (file.exists("artifacts/cohort_membership_four_way.csv")) {
-  rd("artifacts/cohort_membership_four_way.csv") %>%
+  chr("artifacts/cohort_membership_four_way.csv") %>%
     distinct(certification_number, .keep_all = TRUE) %>%
     transmute(certification_number, rucc_cat, cert_decade, status)
 } else NULL
 
 ages <- if (file.exists("artifacts/amcb_calibrated_ages.csv")) {
-  rd("artifacts/amcb_calibrated_ages.csv") %>%
+  chr("artifacts/amcb_calibrated_ages.csv") %>%
     distinct(certification_number, .keep_all = TRUE) %>%
     transmute(certification_number,
               final_age = suppressWarnings(as.numeric(final_age)),

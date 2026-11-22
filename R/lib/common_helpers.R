@@ -133,7 +133,6 @@ with_iso_wd <- function(expr) {
 #' "we looked and it is missing" is not the same as "we never looked".
 #' @param a,b any.
 #' @return `b` if `a` is NULL, else `a`.
-`%||%` <- function(a, b) if (is.null(a)) b else a
 
 #' Missing-coalesce: NULL, empty OR all-NA
 #'

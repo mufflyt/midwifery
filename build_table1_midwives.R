@@ -1351,6 +1351,20 @@ md <- c("# Table 1. Characteristics of the ACTIVE certified-midwife cohort", "",
                              format(length(hg_ambiguous), big.mark = ",")),
                 format(n_acnm_unmapped, big.mark = ","),
                 format(N, big.mark = ",")), "",
+        # A PRIVILEGE IS NOT A PLACE OF PRACTICE. Every other geographic row in
+        # this table is address-derived; the CCN rows are not, and a reader who
+        # reads them as locations will overcount where midwives actually work.
+        # Kept in the table (2026-11-13 decision) with the distinction stated
+        # for the reader rather than left to the column label.
+        if ("hospital_affiliation" %in% names(coh)) c(
+          paste0("Hospital-affiliation rows (CCN) record a **Medicare facility ",
+                 "privilege**, which is not a practice location and not a measure ",
+                 "of clinical activity: the CMS extract carries no volume, FTE or ",
+                 "site-of-care field, and a privilege can be held at a hospital ",
+                 "where the midwife attends no births. Read these rows as ",
+                 "*affiliation recorded by CMS*, not as where care is delivered, ",
+                 "and do not compare them with the address-derived geography ",
+                 "rows above."), "") else NULL,
         "| Characteristic | n | % |", "|---|---:|---:|")
 for (cat_i in unique(t1$category)) {
   md <- c(md, sprintf("| **%s** | | |", cat_i))

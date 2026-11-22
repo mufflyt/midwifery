@@ -1,0 +1,26 @@
+# Linkage freezes that a consumer may read INSTEAD of the one the manifest
+# describes -- each with the hash it expects and why reading it is legitimate.
+#
+# WHY THIS FILE EXISTS. verify_linkage_freeze() used to accept any hash at all
+# through the ALLOW_FREEZE_SHA256 environment variable: ambient, invisible to
+# code review, applying to every consumer in the process, and leaving no record
+# of which freeze was read or on whose authority. That is the mechanism by which
+# a build came to describe 11,920 midwives instead of 12,171 (docs/DATA_VAULT.md).
+# A deliberate pin is still allowed -- it has to be written down here first.
+#
+# A pin is NOT a licence to publish. Nothing in this file may back a cohort
+# count, a table or a figure in the manuscript; those come from the freeze the
+# tracked manifest names, and nothing else. A pin exists so that a dated
+# experiment stays reproducible against the data it actually scored.
+#
+# Columns: sha256  consumer  rows  members  scope  doc  purpose
+#   consumer = the ONE script this pin is for. A pin does not carry over to any
+#           other script: keying on the hash alone would mean that unlocking a
+#           freeze for one dated experiment unlocks it for every consumer in the
+#           repository, published counts included.
+#   scope = experiment | historical    (never "production": production IS the
+#           manifest's freeze, which needs no pin)
+# Delete a row when its consumer stops reading that freeze -- a pin must not
+# outlive its cause.
+sha256	consumer	rows	members	scope	doc	purpose
+dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b	experiment_trilliant_identity_linkage.R	22309	16898	experiment	docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md	The 2026-08-10 freeze, scored by experiment_trilliant_identity_linkage.R because the then-current freeze was not on the machine that ran it (that appendix's section 9 states the limitation). Scores an identity method against a fixed 22,309-certificant roster; changes no linkage and feeds no published count.

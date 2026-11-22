@@ -16,28 +16,24 @@
 #    would have caught it did not exist. T84 is that guard.
 #
 # 2. THE SAFE-JOIN LIBRARY IS BARELY USED.
-#    R/join_safety.R provides safe_left_join(), safe_inner_join(),
-#    safe_semi_join() and safe_anti_join(), which assert row counts and key
-#    uniqueness. The pipeline makes 46 BARE dplyr joins and 8 wrapped ones.
+#    R/join_safety.R provides safe_left_join(), which asserts row counts and
+#    key uniqueness. The pipeline makes 46 BARE dplyr joins and 8 wrapped ones.
+#    (The inner/semi/anti wrappers were deleted on 2026-11-20: 496 lines with
+#    no production caller. The under-use is of the one that is used.)
 #    Every bare left_join against a non-unique right table silently multiplies
 #    rows -- and a fanned-out row count becomes a denominator.
 #
 # Run: Rscript tests/test_cycle9_joins.R
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 suppressPackageStartupMessages({library(dplyr); library(readr)})
 source(file.path(root, "R", "join_safety.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 R_FILES <- list.files(file.path(root, "R"), pattern = "\\.R$",
                       recursive = TRUE, full.names = TRUE)
 
@@ -153,8 +149,12 @@ cat("\n-- SEMANTIC --\n")
 # is defined exactly once and is a function. A wrapper that does not exist is
 # worse than none, because callers believe they are protected.
 {
-  wrappers <- c("safe_left_join", "safe_inner_join", "safe_semi_join",
-                "safe_anti_join", "assert_unique_keys", "assert_no_key_conflict")
+  # The 2026-11-20 complexity audit deleted safe_inner_join(), safe_semi_join()
+  # and safe_anti_join(): zero production call sites, and one function written
+  # four times. T86 advertises what this repository actually provides, so the
+  # list shrank with them -- a guard asserted to exist for callers who have
+  # none is the inverse of this check's point.
+  wrappers <- c("safe_left_join", "assert_unique_keys", "assert_no_key_conflict")
   missing <- wrappers[!vapply(wrappers, exists, logical(1), mode = "function")]
   chk(length(missing) == 0L,
       sprintf("T86 every advertised join guard exists [missing: %s]",

@@ -1,33 +1,53 @@
 {
   "artifact": "mrost_agreement_pairwise.csv",
-  "written_utc": "2026-11-10 03:32:44 UTC",
+  "written_utc": "2026-11-19 02:43:26 UTC",
   "inputs": [
     {
       "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
-      "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
+      "sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716"
     }
   ],
-  "code_sha256": "5418e4fadb5ad8aae80527a66df823a85cc34feb90255ba9616bc848e0214c49",
+  "code_sha256": "4e9276276ce253ffac0033709753d4456546f05126b155b8f8da474c389a21c1",
   "code": [
     {
-      "path": "/private/tmp/claude-501/-Users-tylermuffly-midwifery/21970d20-42b4-4407-ab2d-fac972433e7d/scratchpad/cmp_frozen.R",
-      "sha256": "656e0ba1d65ca7d31923444fb8a4204ed107eb3670d5ba085e5e3928709dc393"
+      "path": "compare_all_sources_mysteryroster.R",
+      "sha256": "f293fb0529440a67ca6a624d078719d868aa44baa3a8524d9757e7e049b41db4"
     },
     {
       "path": "R/lib/artifact_provenance.R",
-      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+      "sha256": "4937914878dfd340d545d54ab079074fb74320f4272dd5e4c8196aeefd46c391"
     },
     {
       "path": "R/lib/clean_state.R",
-      "sha256": "188cee53abd5b2e7afb2c6bffbc7ea27a16029189fb97ca8be1865d5ab0c2c23"
+      "sha256": "a8945acebe3fabca73f9839202a184fdbd75164d8884680e9cb49be6072906f8"
     },
     {
       "path": "R/lib/medicare_duckdb.R",
-      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+      "sha256": "6f825548f04d44ce0847f2aab00b3110d7fbe869e9978aca2ad85c7dd7d6acc1"
     },
     {
       "path": "R/lib/provenance.R",
       "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ],
+  "semantic_packages": [
+    {
+      "package": "mysterynpi",
+      "installed": true,
+      "version": "0.9.1",
+      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
+    },
+    {
+      "package": "stringi",
+      "installed": true,
+      "version": "1.8.9",
+      "source_sha": null
+    },
+    {
+      "package": "humaniformat",
+      "installed": true,
+      "version": "0.6.0",
+      "source_sha": null
     }
   ]
 }

@@ -1,0 +1,8 @@
+year,n_cohort_denominator,n_nppes_observed,pct_nppes_coverage,n_pecos_enrol_extract_observed,pct_pecos_enrol_extract_coverage,n_dac_public_observed,pct_dac_public_coverage,n_pecos_dac_observed,pct_pecos_dac_coverage,n_tmsis_observed,pct_tmsis_coverage,n_all_three_sources,pct_all_three_sources,n_in_nppes_and_tmsis_missing_medicare,pct_of_cohort_nppes_tmsis_missing_medicare,pct_of_tmsis_missing_medicare,n_in_nppes_and_medicare_missing_tmsis,pct_of_cohort_nppes_medicare_missing_tmsis,medicare_source_vintage_note
+2018,12170,7865,64.63,5609,46.09,2768,22.74,5637,46.32,4400,36.15,3373,27.72,858,7.05,19.5,2169,17.82,DuckDB ppef_enrol_2018 + ppef_addr_2018 + Physician Compare/DAC
+2019,12170,8437,69.33,5897,48.46,3031,24.91,5991,49.23,4705,38.66,3628,29.81,940,7.72,19.98,2280,18.73,DuckDB ppef_enrol_2019 + ppef_addr_2019 + Physician Compare/DAC
+2020,12170,8895,73.09,NA,NA,3020,24.82,3020,24.82,4951,40.68,1870,15.37,2963,24.35,59.85,1133,9.31,DAC-only observation year (no 2020 PECOS PPEF extract in warehouse; do not interpret 2020 dip as Medicare disenrollment)
+2021,12170,9290,76.34,6866,56.42,3487,28.65,6897,56.67,5231,42.98,4117,33.83,927,7.62,17.72,2602,21.38,PECOS Revalidation extract + Physician Compare/DAC
+2022,12170,9774,80.31,7453,61.24,3678,30.22,7465,61.34,5408,44.44,4328,35.56,871,7.16,16.11,2944,24.19,PECOS Revalidation extract + Physician Compare/DAC
+2023,12170,10407,85.51,8062,66.24,3798,31.21,8071,66.32,5596,45.98,4536,37.27,855,7.03,15.28,3296,27.08,PECOS Revalidation extract + Physician Compare/DAC
+2024,12170,11499,94.49,8581,70.51,3057,25.12,8586,70.55,5278,43.37,4367,35.88,875,7.19,16.58,4175,34.31,PECOS Revalidation extract + Physician Compare/DAC (2024 T-MSIS preliminary)

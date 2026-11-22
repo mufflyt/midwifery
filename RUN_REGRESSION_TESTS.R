@@ -24,7 +24,6 @@ regression_suites <- c(
   "tests/test-consort-audit-rounds-61-thru-65-2026-05-21.R",
   "tests/test-den-032-safe-pct-manu-na-semantics.R",
   "tests/test-join-safety.R",
-  "tests/test-join-safety-semantic-extended.R",
   "tests/test-step2-npi-dedup-bug.R",
   "tests/test-tract-vintage-boundary-bva-2019-2020-2021.R",
   "tests/test-step8-tract-vintage-routing.R",
@@ -51,11 +50,21 @@ ci_section("Master Regression Test Suite Execution")
 files_run <- 0L
 assertions_evaluated <- 0L
 failures <- character(0)
+missing <- character(0)
 
 for (suite in regression_suites) {
   full_path <- file.path(root, suite)
+  # A MISSING SUITE IS A FAILURE, NOT A WARNING. This was `warning(); next`,
+  # which is the appendix's "scan that claims more than it reads": deleting a
+  # suite without removing its line here shrank the regression set silently,
+  # and the summary still printed PASS with one fewer file. Measured 2026-11-20
+  # -- test-join-safety-semantic-extended.R was deleted with the
+  # safe_inner_join() it tested, and only tests/ci_skip_budget.R's SB1 noticed,
+  # for a different reason (its row in the budget). MIN_TEST_FILES below is a
+  # floor on the count, not on the identities, so 20 of 21 still cleared it.
   if (!file.exists(full_path)) {
-    warning("Regression suite file missing: ", suite)
+    missing <- c(missing, suite)
+    cat("MISSING ", suite, "\n", sep = "")
     next
   }
 
@@ -94,7 +103,13 @@ if (assertions_evaluated < ASSERTION_FLOOR) {
   ci_fail("ASSERTION FLOOR BREACH: Evaluated %d passing assertions against floor requirement of %d.", assertions_evaluated, ASSERTION_FLOOR)
 }
 
-# 3. SUITE FAILURE CHECK
+# 3. EVERY DECLARED SUITE EXISTS
+if (length(missing) > 0) {
+  ci_fail("%d declared regression suite(s) do not exist: %s\n       Delete the line here when you delete the suite, so this list stays\n       a statement of what runs rather than of what used to.",
+          length(missing), paste(missing, collapse = ", "))
+}
+
+# 4. SUITE FAILURE CHECK
 if (length(failures) > 0) {
   ci_fail("%d regression suite(s) failed: %s", length(failures), paste(failures, collapse = ", "))
 }
