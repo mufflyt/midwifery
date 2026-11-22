@@ -27,7 +27,7 @@
 # @author Tyler Muffly, MD + Claude Code
 # =============================================================================
 suppressPackageStartupMessages({
-  library(dplyr); library(DBI); library(duckdb); library(tibble)
+  library(dplyr); library(DBI); library(duckdb)
 })
 source(file.path("R", "lib", "geocoder_provenance.R"))
 source(file.path("R", "lib", "artifact_provenance.R"))

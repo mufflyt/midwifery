@@ -13,6 +13,22 @@
 # not usable: it produces intervals that run past 0 or 1 and understates the
 # width near the boundaries, which is exactly where a rule at 25/25 sits.
 #
+# REFERENCES (rOpenSci statistical standard G1.0, the primary reference for
+# the method implemented here).
+#
+#   Wilson, E. B. (1927). Probable inference, the law of succession, and
+#   statistical inference. Journal of the American Statistical Association
+#   22(158), 209-212. doi:10.1080/01621459.1927.10502953
+#     -- the interval itself.
+#
+#   Brown, L. D., Cai, T. T., & DasGupta, A. (2001). Interval estimation for
+#   a binomial proportion. Statistical Science 16(2), 101-133.
+#   doi:10.1214/ss/1009213286
+#     -- the source of the paragraph above. It shows the Wald (normal
+#     approximation) interval has erratic coverage even at large n, and
+#     recommends Wilson for small n, which is the case these reports are in
+#     at 25 adjudications per stratum.
+#
 # Note the other two intervals in this repository are deliberately NOT this
 # function: manuscript/R/build_stats_catalog.R::mw_wilson() and
 # tests/ci_science_nightly.R::scn_wilson() take a z multiplier rather than a

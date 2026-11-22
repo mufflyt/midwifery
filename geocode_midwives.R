@@ -34,7 +34,7 @@
 
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr)
-  library(DBI); library(duckdb); library(checkmate)
+  library(DBI); library(duckdb)
 })
 source(file.path("R", "lib", "medicare_duckdb.R"))
 

@@ -20,6 +20,100 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-22 — a pull request merged into a branch nothing merges; a skip budget that described the wrong environment
+
+### Fixed
+
+- **#340's work never reached `main`, and was recovered.** The pull request was
+  squashed and merged; the squash commit `f194e36` landed on
+  `fix/table1-custodian-sort`, which was itself merged away in `ad3aec5` and
+  left standing as a ref. GitHub reported #340 as merged, because it was —
+  nothing says *into what*. Recovered to `main`: the `U1` unused-attachment
+  gate (`tests/ci_unused_dependencies.R`), the Wilson agreement suite
+  (`tests/test_wilson_implementations_agree.R`, rOpenSci G5.4a), both of their
+  `ci.yml` steps, all five statistical citations (Wilson 1927; Brown, Cai &
+  DasGupta 2001; Efron 1979; Efron & Tibshirani 1993; Field & Welsh 2007) in
+  `R/lib/wilson_interval.R`, `build_f2_f3_uncertainty_denominators.R`,
+  `manuscript/references.bib` and the manuscript methods paragraph, and the
+  sixteen unused `library()` attachments the gate polices.
+  Found while writing documentation, not in review — a presence check for two
+  files returned `ABSENT` three hours after the merge was reported. The gate
+  that would have caught it was the one that was stranded: `U1` fails on `main`
+  the moment it is restored, because its sixteen cuts were stranded with it.
+  Recovery was selective rather than a cherry-pick, because the squash was
+  computed against the old base and its tree is `-3189` lines against today's
+  `main`. See
+  [`docs/APPENDIX_a_merge_into_a_dead_base_2026-11-22.md`](docs/APPENDIX_a_merge_into_a_dead_base_2026-11-22.md).
+- **One of those sixteen cuts was verified beyond the gate's word.**
+  `scrape_healthgrades_midwives.R` attaches `humaniformat`, which the static
+  scan calls unused — and the only test exercising that file (`test_cycle31`)
+  skips on every runner, so #340's green CI never executed it. The attachment
+  is genuinely unnecessary: the isochrones name tools attach it themselves
+  (`core_utils.R:76`, `batch_npi_processing.R:52`) and otherwise namespace it
+  (`matching_utils.R:371`). A green gate plus a skipped test is not evidence.
+- **Three supplemental-table budget rows were wrong in the `full` column**,
+  which CI never reads and so nothing had contradicted. `ci_science_contracts`
+  expected 1 and the gate prints 2 (SCI2's tie-break sites and the absent
+  numeric-cut declaration both fire in either environment; only the affiliation
+  coverage matrix is bare-checkout-specific). `ci_denominator_contracts` and
+  `test_exclusion_invariants` expected 1 each and now skip 0, because their
+  inputs are present wherever the pipeline has run. The D5 reason had claimed
+  the count was "environment-independent because every input is a tracked
+  artifact" — `.gitignore:320` excludes that input as person-level.
+- **`DEBT.md` carried two D13 entries after a merge, and the gate refused it.**
+  This repository filed the PECOS dedup-determinism bug as D13 on 2026-11-06;
+  `main` had since filed the unrelated DAC multi-site ZIP5 bug as D13 on
+  2026-11-12. `tests/ci_debt_check.R` reported `FAIL B5: duplicated id(s): D13`
+  on the first run after the merge. Keeping both entries is the right
+  resolution for the prose and the wrong one for the label; the PECOS entry is
+  renumbered **D15**. The README debt badge is now counted from the file (4
+  open, 12 closed) rather than carried forward — it had said 10 closed against
+  a file holding 11.
+
+### Added
+
+- **A `needs` column in `tests/skip_budget.tsv`, so a row can name its own
+  precondition.** `full`/`lean` asks exactly one question — is the person-level
+  freeze present — and four rows skip for something else entirely: the `sf`
+  package (`test_cycle11_spatial`, `test_cycle14_coverage_surfaces`) and the
+  `~/isochrones` checkout (`test_cycle12_names_territories`,
+  `test_cycle31_healthgrades_insurance_parsing`). Those are properties of the
+  machine. A scratch worktree is `lean` on the data axis and `full` on theirs,
+  so all four reported `STALE` with nothing wrong with them — and lowering
+  their `lean` count to match would have reddened CI, where the skip is real.
+  Specs are `pkg:`, `iso:` and `path:`; an unrecognised one **fails** rather
+  than falling through, because a row the gate cannot answer for is a row whose
+  count was never checked.
+  Four saboteur cases in `tests/test_skip_budget_detect.R` (14 total, up from
+  10), each shown red against a mutant of the logic it covers — including a
+  `full_env` scaffold, without which the absent-precondition case passed under
+  the mutant.
+- **`docs/APPENDIX_a_merge_into_a_dead_base_2026-11-22.md`**, collecting five
+  findings of one shape: a claim true when written that nothing re-checked
+  against the thing it described. The merge into a dead base; the same dead
+  base making three pull requests report `CONFLICTING` against nothing; the
+  worktree that is neither environment; `.git` being a *file* in a worktree,
+  which breaks the `dir.exists(".git")` root idiom in 31 files under
+  `testthat::test_file()`; and the debt badge nothing gates.
+
+### Known not fixed
+
+- **`file.exists(".git")` would fix the root-detection idiom in all 31 files**
+  that use it. Not applied: the idiom is correct in every context CI uses
+  (`actions/checkout` creates a real `.git` directory), and 31 files is its own
+  change. The visible symptom is worktree-only.
+- **The skip budget's non-vacuity guard catches a testthat run that produces no
+  summary line, but not one that produces `SKIP 0 | PASS 0`.** A file that
+  errored on load asserted nothing, and the budget reads it as zero skips, as
+  expected. `test_invariants_midwifery.R` does exactly that in a worktree.
+- **Nothing compares either README count badge to what it describes.** The debt
+  badge is correct as of this entry (5 open, 12 closed) and has now gone stale
+  twice; the comparison belongs in `tests/ci_debt_check.R`. The scientific-laws
+  badge is in the same position one step further out: its figures are right and
+  `tests/ci_law_coverage.R` does compute them (`13 declared`, `39/39 planted
+  defects detected`), but nothing reads that output back against the README, so
+  adding a law moves the gate's count and leaves the badge behind.
+
 ## [Unreleased] — 2026-11-22 — 1,552 lines cut, and a saboteur for every cut
 
 ### Removed
