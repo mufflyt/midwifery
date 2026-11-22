@@ -337,9 +337,17 @@ whether either source adopted the other's value.
 
 ### Analysis
 
-Proportions are reported with Wilson score intervals. The temporal trend in
-agreement was estimated by weighted least squares with the number of
-comparable providers as weights. All analyses were performed in R.
+Proportions are reported with Wilson score intervals
+[@wilson1927inference], which retain nominal coverage at the stratum sizes
+used here where the normal-approximation interval does not
+[@brown2001binomial]. Because a midwife contributes up to 14 provider-years,
+those intervals treat as independent observations that are not; pooled across
+each source's window we therefore also report a cluster bootstrap that
+resamples midwives rather than provider-years [@efron1979bootstrap;
+@field2007bootstrapping], with percentile bounds [@efron1993introduction].
+The temporal trend in agreement was estimated by weighted least squares with
+the number of comparable providers as weights. All analyses were performed
+in R.
 
 ## Results
 

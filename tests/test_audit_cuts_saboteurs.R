@@ -26,6 +26,7 @@ root <- if (length(.sb)) {
   normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
 } else normalizePath(".")
 source(file.path(root, "tests", "helper-saboteur.R"))
+source(file.path(root, "tests", "ci_report.R"))
 SAB_PREFIX <- "A"
 
 # A throwaway git repo is the only way to run a gate against planted source:
@@ -60,14 +61,6 @@ write_lines_to <- function(dir, rel, lines) {
   p <- file.path(dir, rel)
   dir.create(dirname(p), recursive = TRUE, showWarnings = FALSE)
   writeLines(lines, p)
-}
-
-# Tracked .R/.qmd paths, asked of git with no shell in the way.
-ci_tracked_files <- function(root) {
-  out <- suppressWarnings(system2("git",
-    c("-C", shQuote(root), "ls-files", shQuote("*.R"), shQuote("*.qmd")),
-    stdout = TRUE, stderr = FALSE))
-  if (!length(out)) character(0) else out
 }
 
 gate_rejects <- function(dir, gate) {
@@ -168,7 +161,13 @@ gone <- c("wonder_request_xml", "wonder_post", "load_mysterymaps",
 # gone" while three references to wonder_post() sat in
 # R/lib/wonder_natality.R. Reading tracked files directly has no quoting
 # layer to get wrong.
-tracked <- ci_tracked_files(root)
+# ci_tracked() from tests/ci_report.R, not a second copy of it. The first
+# version of this file defined its own, which was the same four lines and
+# tripped tests/test_gate_integrity_saboteurs.R's Q2: a literal "*.R" beside
+# ls-files is the shape of a pathspec the shell eats before git sees it.
+# shQuote() made this one safe, but "safe copy of an existing helper" is still
+# a copy, and the canonical one is already audited.
+tracked <- c(ci_tracked("*.R"), ci_tracked("*.qmd"))
 tracked <- tracked[!grepl("test_audit_cuts_saboteurs\\.R$", tracked)]
 still <- vapply(gone, function(fn) {
   any(vapply(tracked, function(f) {
