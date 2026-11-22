@@ -223,6 +223,23 @@ jobs:
       - name: Science contracts
         run: Rscript tests/ci_science_contracts.R
 
+      # Ahead of anything that can halt the job: Actions stops at the first
+      # failing step, so a gate wired below one that fails is a gate that does
+      # not run. This branch has four recorded instances of that.
+      - name: Unused package attachments
+        run: Rscript tests/ci_unused_dependencies.R
+
+      # G5.4a of the rOpenSci statistical standards, applied on its merits:
+      # this repository computes a Wilson interval in three places and nothing
+      # compared them to each other. They agree on the formula and differ in
+      # units (proportion vs percent) and shape (vector vs 1x2 matrix); all
+      # three facts are now pinned.
+      - name: Wilson implementations agree
+        run: Rscript tests/test_wilson_implementations_agree.R
+
+      - name: Over-engineering cut saboteurs (operators, deps, dead code)
+        run: Rscript tests/test_audit_cuts_saboteurs.R
+
   python-checks:
     name: Python syntax and address keys
     runs-on: ubuntu-latest

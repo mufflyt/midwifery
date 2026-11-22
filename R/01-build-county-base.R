@@ -46,12 +46,10 @@ suppressPackageStartupMessages({
   library(readxl)
   library(stringr)
   library(purrr)
-  library(glue)
   library(tidyr)
   library(cli)
   library(checkmate)
-  library(janitor)
-  library(tidycensus)
+    library(tidycensus)
   library(tigris)
   library(sf)
 })
@@ -110,18 +108,18 @@ load_join_safety <- function() {
     checkmate::assert_character(by, min.len = 1L)
 
     if (expect_unique_right && anyDuplicated(right[by]) > 0L) {
-      stop(glue::glue("safe_left_join: duplicate join keys in '{label_right}'"), call. = FALSE)
+      stop(sprintf("safe_left_join: duplicate join keys in '%s'", label_right), call. = FALSE)
     }
     out <- dplyr::left_join(left, right, by = by)
     if (nrow(out) != nrow(left)) {
-      stop(glue::glue("safe_left_join: row explosion joining '{label_right}' ",
-                      "({nrow(left)} -> {nrow(out)})"), call. = FALSE)
+      stop(sprintf("safe_left_join: row explosion joining '%s' (%d -> %d)",
+                   label_right, nrow(left), nrow(out)), call. = FALSE)
     }
     probe <- setdiff(names(right), by)[1]
     coverage <- if (is.na(probe)) 1 else mean(!is.na(out[[probe]]))
     if (!is.null(min_coverage) && coverage < min_coverage) {
-      stop(glue::glue("safe_left_join: '{label_right}' coverage {round(coverage, 3)} ",
-                      "< required {min_coverage}"), call. = FALSE)
+      stop(sprintf("safe_left_join: '%s' coverage %s < required %s",
+                   label_right, round(coverage, 3), min_coverage), call. = FALSE)
     }
     cli::cli_alert_info("Joined {label_right}: {round(100 * coverage, 1)}% coverage")
     out
@@ -153,7 +151,7 @@ download_cached <- function(url, filename, force = FALSE) {
   cli::cli_alert("Downloading {filename} ...")
   utils::download.file(url, dest, mode = "wb", quiet = TRUE)
   if (!file.exists(dest) || file.size(dest) == 0) {
-    stop(glue::glue("Download produced an empty file: {filename}"), call. = FALSE)
+    stop(sprintf("Download produced an empty file: %s", filename), call. = FALSE)
   }
   cli::cli_alert_success("{filename} ({round(file.size(dest) / 1e6, 1)} MB)")
   dest

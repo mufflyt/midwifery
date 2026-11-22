@@ -94,6 +94,36 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Four `%||%` operators, four different meanings, all shadowing base R's.**
+  One returned `a[1]`, one treated a scalar `NA` as absent, one fell back on
+  `length(a) == 0`, and one was base R's definition copied out. Base has
+  shipped `%||%` since 4.4, so the copy is deleted; the three that genuinely
+  differ are renamed (`%|first|%`, `%|blank|%`) or inlined at their single
+  call site, keeping their bodies byte-identical so no behaviour moves.
+  `ci_hygiene` H4 could not see any of them — its pattern started at
+  `[.A-Za-z_]`, so a backtick could not match and an operator was never a
+  "function defined twice". It now reads backticked names, which is how it
+  caught a `run_case` collision in the very suite written to test it.
+- **Sixteen `library()` calls attached packages nothing used.** Not errors —
+  R attaches them, nothing calls them, the script works — but every runner
+  installs them and every reader believes the script does something it does
+  not. `tests/ci_unused_dependencies.R` now refuses a new one. Getting it
+  precise mattered more than finding them: judging each file alone reported
+  **48**, including 29 scripts whose `readr` is used by an `R/lib` file they
+  `source()` and which call `read_csv()` unqualified. Removing those would
+  have broken all 29. Following `source()` one level, and counting operator
+  re-exports like `%>%`, brought it to the 16 that are real.
+- **`glue` is gone** — one dependency for four `glue::glue()` calls, all
+  inside `stop()` strings that `sprintf()` writes just as well.
+- **Four functions with no caller anywhere are deleted** (the HTTP half of
+  `R/lib/wonder_natality.R`, `load_mysterymaps`, `source_coverage_columns`).
+  Six more looked equally dead under the first measurement and were kept: a
+  grep that excludes the defining file hides every caller inside the same
+  module, which is how `digest_file_sha256` (4 call sites) and `pct_or_na`
+  (6) were nearly removed. That near miss is pinned in
+  `tests/test_audit_cuts_saboteurs.R`, because the bad measurement is the
+  obvious one to reach for again.
+
 - **The public Medicaid NPI-population rate divided providers by spells, and
   it was published.** `build_medicaid_npi_population_by_state.R` computed
   `COUNT(DISTINCT NPI) / COUNT(*)` — distinct providers over enrollment

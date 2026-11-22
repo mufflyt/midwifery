@@ -34,7 +34,8 @@
 #'
 #' @section Rate limit:
 #' The API requires >= 15 seconds between consecutive requests and says so only
-#' after you exceed it. `wonder_post()` sleeps to enforce this itself.
+#' after you exceed it. Whatever fetches the response must enforce that itself;
+#' this file parses a response it is handed and makes no request.
 #'
 #' @family wonder
 #' @author Tyler Muffly, MD + Claude Code
@@ -46,89 +47,19 @@ WONDER_MIN_WAIT <- 16  # seconds; the documented floor is 15
 .wonder_last    <- new.env(parent = emptyenv())
 .wonder_last$t  <- NULL
 
-#' Build the request XML from vendored defaults plus overrides
-#'
-#' @param overrides [named list]: parameters to set, e.g. `list(B_1 = "D66.V21-level4")`.
-#' @param defaults_path [character(1)]: vendored D66 defaults.
-#' @return [character(1)] request XML.
-#' @family wonder
-#' @export
-wonder_request_xml <- function(overrides = list(),
-                               defaults_path = file.path("data", "wonder", "D66_Defaults.xml")) {
-  if (!file.exists(defaults_path)) {
-    stop("wonder_request_xml: defaults not found at ", defaults_path,
-         ". A partial request is always rejected; the full set is required.",
-         call. = FALSE)
-  }
-  doc <- xml2::read_xml(defaults_path)
-  nodes <- xml2::xml_find_all(doc, "//parameter")
-  names_v <- xml2::xml_text(xml2::xml_find_first(nodes, "./name"))
-
-  for (nm in names(overrides)) {
-    val <- overrides[[nm]]
-    idx <- which(names_v == nm)
-    if (length(idx) == 1L) {
-      # Multi-valued parameters (several <value> children) must be replaced
-      # wholesale, not appended to, or the old value survives alongside the new.
-      node <- nodes[[idx]]
-      for (v in xml2::xml_find_all(node, "./value")) xml2::xml_remove(v)
-      for (v in val) xml2::xml_add_child(node, "value", as.character(v))
-    } else {
-      p <- xml2::xml_add_child(doc, "parameter")
-      xml2::xml_add_child(p, "name", nm)
-      for (v in val) xml2::xml_add_child(p, "value", as.character(v))
-    }
-  }
-  as.character(doc)
-}
-
-#' POST a request to WONDER, enforcing the rate limit
-#'
-#' @param request_xml [character(1)]: from `wonder_request_xml()`.
-#' @return [xml_document] the response.
-#' @family wonder
-#' @export
-wonder_post <- function(request_xml) {
-  # The stamp is persisted to disk, not just held in memory: WONDER rate-limits
-  # per CLIENT, so two consecutive Rscript invocations trip the limit even
-  # though each process believes it has made no prior request. An in-process
-  # throttle alone silently fails the first call of every session with HTTP 429.
-  stamp <- path.expand("~/.wonder_last_request")
-  last <- if (file.exists(stamp)) as.POSIXct(readLines(stamp, warn = FALSE)[1]) else .wonder_last$t
-  if (!is.null(last) && !is.na(last)) {
-    waited <- as.numeric(difftime(Sys.time(), last, units = "secs"))
-    if (waited < WONDER_MIN_WAIT) Sys.sleep(WONDER_MIN_WAIT - waited)
-  }
-  on.exit(writeLines(format(Sys.time()), stamp), add = TRUE)
-  resp <- httr::POST(WONDER_URL, body = list(request_xml = request_xml),
-                     encode = "form", httr::timeout(900))
-  .wonder_last$t <- Sys.time()
-
-  txt <- httr::content(resp, as = "text", encoding = "UTF-8")
-  doc <- xml2::read_xml(txt)
-  # WONDER returns HTTP 200 for errors, with the failure in the body -- so
-  # status_code alone is not a success test.
-  if (identical(xml2::xml_text(xml2::xml_find_first(doc, "//title")), "Processing Error")) {
-    msgs <- xml2::xml_text(xml2::xml_find_all(doc, "//message"))
-    stop("WONDER rejected the request:\n  ", paste(unique(msgs), collapse = "\n  "),
-         call. = FALSE)
-  }
-  doc
-}
-
 #' Parse a WONDER response into a tidy data frame
 #'
 #' Suppressed, unreliable and not-applicable cells are returned as `NA` with a
 #' companion flag rather than silently becoming zero.
 #'
-#' @param doc [xml_document]: from `wonder_post()`.
+#' @param doc [xml_document]: a WONDER response, already fetched.
 #' @param n_group [integer(1)]: number of grouping variables (`B-1`, `B-2`,
 #'   ...) requested, so the parser knows how many leading label columns precede
 #'   the measures. Default 1.
 #' @return [data.frame] one row per data-table row.
 #' @examples
 #' \dontrun{
-#' doc <- wonder_post(body)
+#' doc <- xml2::read_xml(response_body)
 #' wonder_parse(doc, n_group = 2L)   # grouped by state AND year
 #' }
 #' @family wonder

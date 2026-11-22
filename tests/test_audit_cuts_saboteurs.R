@@ -1,38 +1,24 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# Saboteurs for the /ponytail-audit cuts, so none of them grows back
+# Saboteurs for the 2026-11-22 over-engineering cuts
 # =============================================================================
-# A deletion is not finished when the code is gone -- it is finished when the
-# repository refuses to let it come back. Every finding below was found by a
-# whole-tree scan nobody runs on a schedule, so each one gets a gate that does.
+# Three cuts, and the two gates that stop them growing back:
 #
-# WHAT EACH SABOTEUR PROTECTS, and why it is not merely a style rule:
+#   A1 Four `%||%` definitions coexisted with FOUR different meanings, each
+#      shadowing base R's at its own call sites. ci_hygiene H4 is the gate
+#      against a name defined twice, and it could not see any of them: its
+#      pattern started at [.A-Za-z_], so a backtick could not match.
+#   A2 Sixteen library() calls attached packages that no call in the file --
+#      or in anything it source()s -- ever used. Nothing connects an
+#      attachment to its use, so the two drift apart silently.
+#   A3 Four functions with no caller anywhere were deleted. The interesting
+#      part is what was NOT deleted: six more looked dead by the same first
+#      measurement and were not, because they are called from inside their own
+#      file. That near miss is pinned below, because the measurement that
+#      produced it is the obvious one to reach for again.
 #
-#   A1-A3  Twenty-two tracked Python scripts were referenced by nothing at
-#          all -- no code, no doc, no workflow, no string. Two of them were
-#          duplicate ports of live code (artifact_provenance.py beside the
-#          imported tools/provenance.py; match_ohio_voter_ages.py beside the
-#          executable match_ohio_voter_ages.R). The contract is that a tracked
-#          .py must be reachable SOME way: imported, documented, run by a
-#          workflow, or collected by pytest.
-#   A4-A5  CI ran pytest against two named FILES, so 107 of 134 Python tests
-#          gated nothing while passing. A filename list cannot notice a new
-#          test file; a directory can.
-#   A6-A7  Fourteen files defined `%||%` identically to base R's, which has
-#          shipped it since 4.4.0. Four others define it DIFFERENTLY and must
-#          keep their local versions -- the saboteur has to tell those apart,
-#          or "no local %||%" would be a rule that breaks working code.
-#   A8-A9  flow_diagram.R had a `theme` parameter whose only alternative value
-#          nothing ever passed, plus NULL-fallbacks that became unreachable
-#          once the parameter went.
-#   A10    assert_vintage_gap()'s side labels defaulted to "source A"/"source
-#          B", naming neither the source nor the file.
-#   A11    THE RETRACTION, pinned. The audit also claimed trilliant_identity's
-#          `variant` was an abstraction with one implementation. It is not:
-#          both variants are computed, ranked, decided and REPORTED as a
-#          scientific comparison, and the callers pass the argument
-#          POSITIONALLY, which is why a scan for `variant =` missed them. This
-#          saboteur exists so the wrong finding cannot be "fixed" later.
+# Each saboteur reintroduces the defect and requires the guard to fire, so a
+# guard that has stopped being able to fail reports as a failure of the guard.
 # =============================================================================
 
 .sb <- grep("--file=", commandArgs(), value = TRUE)
@@ -40,252 +26,178 @@ root <- if (length(.sb)) {
   normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
 } else normalizePath(".")
 source(file.path(root, "tests", "helper-saboteur.R"))
-owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
+source(file.path(root, "tests", "ci_report.R"))
 SAB_PREFIX <- "A"
 
-tracked <- system2("git", "ls-files", stdout = TRUE)
-# read_tracked, not read_if: compare_all_sources_mysteryroster.R
-# defines read_if() at top level and ci_hygiene H4 refuses the same
-# name in two tracked files. H4 reads `git ls-files`, so this
-# collision was invisible until the file was staged -- which is the
-# second time that has caught me in one session.
-read_tracked <- function(p) if (file.exists(p)) paste(readLines(p, warn = FALSE),
-                                                collapse = "\n") else ""
-workflows <- paste(vapply(Sys.glob(".github/workflows/*.yml"), read_tracked,
-                          character(1)), collapse = "\n")
-
-sab(1, "every tracked Python file is reachable some way")
-{
-  py <- grep("[.]py$", tracked, value = TRUE)
-  # EVERY TRACKED TEXT FILE, not just the code. The first draft scanned only
-  # .R/.py/.qmd/.md/.yml and flagged eight live files -- three BON harvesters
-  # named in config/state_source_audit_sources.csv, two named only in
-  # .gitignore, and the artifact builder itself. A manifest entry IS a
-  # reference, and so is a leak-guard exception.
-  #
-  # Counted against the file's OWN text rather than compared file by file:
-  # one corpus pass instead of 72 x 1,300, and a name that appears only as
-  # many times as the file itself contains it is a self-reference. useBytes
-  # because a tracked file in this repository is not valid in the C locale,
-  # and an encoding error must not masquerade as unreachability.
-  textish <- grep("[.](png|jpg|jpeg|pdf|svg|zip|xlsx|duckdb|rds|gz|parquet)$",
-                  tracked, value = TRUE, invert = TRUE)
-  corpus <- paste(vapply(textish, read_tracked, character(1)), collapse = "\n")
-  hits <- function(needle, haystack, fixed = TRUE) {
-    m <- gregexpr(needle, haystack, fixed = fixed, useBytes = TRUE)[[1]]
-    if (length(m) == 1L && m[1] == -1L) 0L else length(m)
-  }
-  unreachable <- character(0)
-  for (f in py) {
-    # Collected by pytest: tests/ is the pytest root, so tests/test_*.py runs
-    # whether or not anything names it.
-    if (startsWith(f, "tests/") && startsWith(basename(f), "test_")) next
-    own <- read_tracked(f)
-    base_name <- basename(f)
-    elsewhere <- hits(base_name, corpus) - hits(base_name, own)
-    if (elsewhere <= 0L) {
-      module <- sub("[.]py$", "", base_name)
-      rx <- sprintf("(^|[^A-Za-z0-9_])%s([^A-Za-z0-9_]|$)", module)
-      elsewhere <- hits(rx, corpus, fixed = FALSE) - hits(rx, own, fixed = FALSE)
-    }
-    if (elsewhere <= 0L) unreachable <- c(unreachable, f)
-  }
-  chk(length(unreachable) == 0,
-      sprintf("no tracked .py is referenced by nothing [%s]",
-              if (length(unreachable)) paste(unreachable, collapse = ", ")
-              else sprintf("all %d reachable", length(py))))
+# A throwaway git repo is the only way to run a gate against planted source:
+# both gates ask git which files are tracked, so an untracked fixture is
+# invisible to them and every case would pass vacuously.
+scaffold_repo <- function(dir, gate) {
+  dir.create(file.path(dir, "tests"), recursive = TRUE, showWarnings = FALSE)
+  dir.create(file.path(dir, "R", "lib"), recursive = TRUE, showWarnings = FALSE)
+  file.copy(file.path(root, "tests", gate), file.path(dir, "tests", gate))
+  file.copy(file.path(root, "tests", "ci_report.R"),
+            file.path(dir, "tests", "ci_report.R"))
+  # A .gitignore, because ci_hygiene's H3 reads one and dies on its absence --
+  # which made the FIRST version of these cases "pass" without ever reaching
+  # H4. A saboteur that is satisfied by an unrelated error is not testing the
+  # guard it names; see docs/APPENDIX_checks_that_cannot_fail_2026-11-20.md.
+  writeLines(c("*.tmp"), file.path(dir, ".gitignore"))
+  system2("git", c("-C", dir, "init", "-q"), stdout = FALSE, stderr = FALSE)
 }
 
-sab(2, "a cross-language twin has to say it is one")
-{
-  # match_ohio_voter_ages.py sat beside match_ohio_voter_ages.R for three
-  # months with nothing stating the relationship. The R one is executable,
-  # documented in README and asserted against its Florida twin by
-  # tests/ci_science_laws.R; the .py was the superseded original.
-  #
-  # But a shared stem is NOT by itself a defect: tools/provenance.py and
-  # R/lib/provenance.R are the same job in two languages because harvesters
-  # are written in both, and address_keys exists twice so the two languages
-  # can be shown to build the SAME join key. The rule is therefore not "no
-  # twins" -- it is that one of the pair must name the other, so a reader
-  # finding one cannot miss that the other exists and must agree with it.
-  py <- grep("[.]py$", tracked, value = TRUE)
-  r <- grep("[.]R$", tracked, value = TRUE)
-  stems <- intersect(sub("[.]py$", "", basename(py)), sub("[.]R$", "", basename(r)))
-  silent <- character(0)
-  for (st in stems) {
-    pf <- py[basename(py) == paste0(st, ".py")][1]
-    rf <- r[basename(r) == paste0(st, ".R")][1]
-    mutual <- grepl(basename(rf), read_tracked(pf), fixed = TRUE) ||
-      grepl(basename(pf), read_tracked(rf), fixed = TRUE)
-    if (!mutual) silent <- c(silent, sprintf("%s <-> %s", pf, rf))
-  }
-  chk(length(silent) == 0L,
-      sprintf("every .py/.R twin names its counterpart [%s]",
-              if (length(silent)) paste(silent, collapse = "; ") else "all do"))
+# A scaffold that is CLEAN must pass, or every rejection below could be the
+# scaffold's own fault rather than the planted defect's.
+control_is_clean <- function(gate, plant) {
+  dir <- file.path(tempdir(), paste0("ctl", sample.int(1e6, 1)))
+  dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+  scaffold_repo(dir, gate)
+  plant(dir)
+  !gate_rejects(dir, gate)
 }
 
-sab(3, "one provenance writer per language, not two")
-{
-  py_prov <- grep("provenance[.]py$", tracked, value = TRUE)
-  chk(length(py_prov) == 1L,
-      sprintf("exactly one Python provenance module [%s]",
-              paste(py_prov, collapse = ", ")))
-  chk(identical(py_prov, "tools/provenance.py"),
-      "and it is tools/provenance.py, the one 14 harvesters import")
+write_lines_to <- function(dir, rel, lines) {
+  p <- file.path(dir, rel)
+  dir.create(dirname(p), recursive = TRUE, showWarnings = FALSE)
+  writeLines(lines, p)
 }
 
-sab(4, "CI points pytest at the DIRECTORY, not a list of filenames")
-{
-  # The defect: `pytest tests/test_scrape.py tests/test_fetch_npi_candidates.py`
-  # ran 27 of 134 tests. Everything else passed and gated nothing.
-  pytest_lines <- grep("pytest", strsplit(workflows, "\n")[[1]], value = TRUE)
-  invocations <- grep("python -m pytest|python3 -m pytest", pytest_lines,
-                      value = TRUE)
-  chk(length(invocations) > 0L, "a workflow invokes pytest at all")
-  named_files <- grep("pytest[^|&]*tests/[A-Za-z0-9_]+[.]py", invocations,
-                      value = TRUE)
-  chk(length(named_files) == 0L,
-      sprintf("no pytest invocation names individual test files [%s]",
-              if (length(named_files)) trimws(named_files[1]) else "none"))
-  chk(any(grepl("pytest\\s+tests\\b", invocations)),
-      "and one of them runs the whole tests directory")
+gate_rejects <- function(dir, gate) {
+  system2("git", c("-C", dir, "add", "-A"), stdout = FALSE, stderr = FALSE)
+  st <- suppressWarnings(system2("sh", c("-c",
+    shQuote(sprintf("cd %s && Rscript tests/%s", shQuote(dir), gate))),
+    stdout = NULL, stderr = NULL))
+  !identical(as.integer(st), 0L)
 }
 
-sab(5, "INVERTED: every Python test file is still collectable")
-{
-  # Pointing pytest at a directory is only an improvement if the directory's
-  # contents actually run. A file that fails to IMPORT makes pytest exit
-  # non-zero for a reason unrelated to any assertion, which is how a broadened
-  # gate gets narrowed again.
-  py_tests <- grep("^tests/test_.*[.]py$", tracked, value = TRUE)
-  chk(length(py_tests) >= 10L,
-      sprintf("tests/ holds the Python suites [%d files]", length(py_tests)))
-  bad <- py_tests[!vapply(py_tests, function(f) {
-    out <- suppressWarnings(system2("python3", c("-m", "py_compile", f),
-                                    stdout = TRUE, stderr = TRUE))
-    is.null(attr(out, "status")) || attr(out, "status") == 0L
-  }, logical(1))]
-  chk(length(bad) == 0L,
-      sprintf("and every one compiles [%s]",
-              if (length(bad)) paste(bad, collapse = ", ") else "all"))
+audit_case <- function(label, gate, plant, expect_reject = TRUE) {
+  dir <- file.path(tempdir(), paste0("aud", sample.int(1e6, 1)))
+  dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+  scaffold_repo(dir, gate)
+  plant(dir)
+  chk(identical(gate_rejects(dir, gate), expect_reject), label)
 }
 
-sab(6, "nothing redefines base R's %||%")
-{
-  # Base R has shipped %||% since 4.4.0 and CI runs r-version: release.
-  chk(exists("%||%", where = baseenv()),
-      sprintf("base R supplies %%||%% [R %s]", getRversion()))
-  BASE_EQUIVALENT <- c(
-    "function(a, b) if (is.null(a)) b else a",
-    "function(x, y) if (is.null(x)) y else x",
-    "function(lhs, rhs) if (is.null(lhs)) rhs else lhs")
-  redundant <- character(0)
-  for (f in grep("[.]R$", tracked, value = TRUE)) {
-    for (ln in grep("`%\\|\\|%`\\s*<-", readLines(f, warn = FALSE),
-                    value = TRUE)) {
-      body <- trimws(sub(".*<-\\s*", "", ln))
-      if (body %in% BASE_EQUIVALENT) redundant <- c(redundant, paste0(f, ": ", body))
-    }
-  }
-  chk(length(redundant) == 0L,
-      sprintf("no file redefines it with base's exact body [%s]",
-              if (length(redundant)) redundant[1] else "none"))
-}
+# --- A1 a second definition of an operator ------------------------------------
+sab(1, "H4 sees a function defined twice even when its name is an operator")
 
-sab(7, "INVERTED: a DIFFERENT %||% is still allowed to exist")
-{
-  # Four copies diverge on purpose -- one treats length-0 as null, one treats
-  # NA as null, one returns a[1]. "No local %||%" would delete working code,
-  # so A6 must key on the BODY and not the name. If this ever reports zero,
-  # A6 has stopped being able to tell the two cases apart.
-  divergent <- 0L
-  for (f in grep("[.]R$", tracked, value = TRUE)) {
-    for (ln in grep("`%\\|\\|%`\\s*<-", readLines(f, warn = FALSE), value = TRUE)) {
-      body <- trimws(sub(".*<-\\s*", "", ln))
-      if (!body %in% c("function(a, b) if (is.null(a)) b else a",
-                       "function(x, y) if (is.null(x)) y else x",
-                       "function(lhs, rhs) if (is.null(lhs)) rhs else lhs"))
-        divergent <- divergent + 1L
-    }
-  }
-  chk(divergent > 0L,
-      sprintf("the body-aware check still permits divergent copies [%d present]",
-              divergent))
-}
+chk(control_is_clean("ci_hygiene.R", function(d) {
+      write_lines_to(d, "a.R", c("z <- 1"))
+      write_lines_to(d, "b.R", c("q <- 2"))
+    }), "A1-control an empty scaffold passes ci_hygiene, so a rejection below means the planted defect")
 
-sab(8, "the flow diagram has one theme, and no switch to select it")
-{
-  fd <- read_tracked("R/lib/flow_diagram.R")
-  # The DEFINITION, not the name: flow_diagram.R's own docblock explains the
-  # removal and names the function, and a saboteur that greps for the bare
-  # name fails on the comment that documents its absence.
-  chk(!grepl("fd_theme_journal\\s*<-\\s*function", fd),
-      "fd_theme_journal() is no longer defined, not merely unused")
-  chk(!grepl("theme\\s*=\\s*NULL", fd),
-      "and no function still takes a theme = NULL parameter")
-  chk(grepl("fd_theme_default <- function", fd, fixed = TRUE),
-      "while the one palette that is used remains")
-}
+audit_case("A1a KILLED: the same `%||%` defined in two files is caught",
+         "ci_hygiene.R",
+         function(d) {
+           write_lines_to(d, "a.R", c('`%||%` <- function(x, y) if (is.null(x)) y else x',
+                                      'z <- 1'))
+           write_lines_to(d, "b.R", c('`%||%` <- function(a, b) if (length(a)) a else b',
+                                      'q <- 2'))
+         })
 
-sab(9, "the single theme supplies every field the renderer reads unguarded")
-{
-  # Removing `theme` made three NULL-fallbacks unreachable, so they went too.
-  # That is only safe while fd_theme_default() actually sets all three; if a
-  # field is dropped from the palette, pal$corner becomes NULL and grid draws
-  # with a NULL radius instead of falling back.
-  source(file.path(root, "R", "lib", "flow_diagram.R"))
-  pal <- fd_theme_default()
-  needed <- c("ink", "muted", "rule", "accent", "soft", "paper",
-              "corner", "reverse_lead", "dashed_drop")
-  absent <- needed[!needed %in% names(pal)]
-  chk(length(absent) == 0L,
-      sprintf("fd_theme_default() sets every field [%s]",
-              if (length(absent)) paste(absent, collapse = ", ") else "all 9"))
-  nulls <- needed[vapply(needed, function(k) is.null(pal[[k]]), logical(1))]
-  chk(length(nulls) == 0L,
-      sprintf("and none of them is NULL [%s]",
-              if (length(nulls)) paste(nulls, collapse = ", ") else "none"))
-}
+audit_case("A1b near miss: two DIFFERENTLY named operators are not a duplicate",
+         "ci_hygiene.R",
+         function(d) {
+           write_lines_to(d, "a.R", c('`%|na|%` <- function(a, b) if (all(is.na(a))) b else a',
+                                      'z <- 1'))
+           write_lines_to(d, "b.R", c('`%|blank|%` <- function(a, b) if (!length(a)) b else a',
+                                      'q <- 2'))
+         }, expect_reject = FALSE)
 
-sab(10, "a vintage refusal has to name both sides")
-{
-  source(file.path(root, "R", "lib", "source_vintage.R"))
-  unnamed <- tryCatch({
-    assert_vintage_gap(as.Date("2019-07-01"), as.Date("2026-07-01"), 6)
-    "ACCEPTED"
-  }, error = function(e) conditionMessage(e))
-  chk(grepl("what_a", unnamed, fixed = TRUE),
-      "calling it without naming side A fails rather than printing 'source A'")
-  named <- tryCatch(assert_vintage_gap(as.Date("2019-07-01"),
-                                       as.Date("2026-07-01"), 6,
-                                       "pecos 2019", "nppes 2026"),
-                    error = function(e) conditionMessage(e))
-  chk(grepl("pecos 2019", named, fixed = TRUE) &&
-        grepl("nppes 2026", named, fixed = TRUE),
-      "and a named call puts both names in the refusal")
-}
+# The fix itself: no hand-rolled %||% survives, and base R supplies one.
+defs <- unlist(lapply(
+  list.files(root, pattern = "\\.R$", recursive = TRUE, full.names = TRUE),
+  function(f) grep("^`%\\|\\|%` *<- *function",
+                   tryCatch(readLines(f, warn = FALSE), error = function(e) character(0)),
+                   value = TRUE)))
+chk(length(defs) == 0L, "A1c no hand-rolled `%||%` is left in the tree")
+chk(exists("%||%", envir = baseenv()),
+    "A1d ... because base R supplies one, which is why the copies could go")
 
-sab(11, "INVERTED: the identity scorer's two variants are BOTH real")
-{
-  # THE AUDIT GOT THIS ONE WRONG. It reported `variant` as an abstraction with
-  # one implementation because no caller passed `variant =` by name. The
-  # callers pass it POSITIONALLY -- trl_rank_candidates(scored,
-  # "identity_only") -- and both variants are scored, ranked, decided and
-  # reported against each other. This saboteur fails if someone "simplifies"
-  # the second variant away, and it is here because a wrong finding that was
-  # merely retracted in prose would be rediscovered and acted on.
-  source(file.path(root, "R", "lib", "trilliant_identity.R"))
-  variants <- names(formals(trl_rank_candidates)$variant)
-  arg <- eval(formals(trl_rank_candidates)$variant)
-  chk(identical(arg, c("full", "identity_only")),
-      sprintf("trl_rank_candidates() still offers both variants [%s]",
-              paste(arg, collapse = ", ")))
-  chk(all(c("full", "identity_only") %in% names(TRL_DECISION_RULES)),
-      "and TRL_DECISION_RULES carries thresholds for each")
-  caller <- read_tracked("experiment_trilliant_identity_linkage.R")
-  chk(grepl('"identity_only"', caller, fixed = TRUE),
-      "and a production script still asks for the identity_only variant")
-}
+# --- A2 an attached package nothing uses --------------------------------------
+sab(2, "an attachment with no use is caught, and a used one is not")
 
-saboteur_report(11)
+audit_case("A2a KILLED: library() for a package the file never calls is caught",
+         "ci_unused_dependencies.R",
+         function(d) write_lines_to(d, "s.R", c("library(tools)", "x <- 1 + 1")))
+
+audit_case("A2b near miss: a package the file DOES call is not flagged",
+         "ci_unused_dependencies.R",
+         function(d) write_lines_to(d, "s.R",
+           c("library(tools)", 'x <- toTitleCase("a b")')),
+         expect_reject = FALSE)
+
+audit_case("A2c near miss: use via pkg:: counts, with no call token at all",
+         "ci_unused_dependencies.R",
+         function(d) write_lines_to(d, "s.R",
+           c("library(tools)", 'x <- tools::toTitleCase("a b")')),
+         expect_reject = FALSE)
+
+# THE FALSE POSITIVE THAT WOULD HAVE BROKEN 29 SCRIPTS. Six R/lib files call
+# read_csv() and friends unqualified, so a script that source()s one must
+# attach readr for code it never names. Judging the file alone reported all of
+# them as carrying an unused readr.
+audit_case("A2d near miss: a package used only by a source()d file is not flagged",
+         "ci_unused_dependencies.R",
+         function(d) {
+           write_lines_to(d, "R/lib/helper.R", c('reader <- function(p) toTitleCase(p)'))
+           write_lines_to(d, "s.R", c("library(tools)",
+                                      'source(file.path("R", "lib", "helper.R"))',
+                                      'x <- reader("a b")'))
+         }, expect_reject = FALSE)
+
+# --- A3 the deleted functions, and the ones that only looked deleted ----------
+sab(3, "dead functions are gone; functions used inside their own file are not")
+
+gone <- c("wonder_request_xml", "wonder_post", "load_mysterymaps",
+          "source_coverage_columns")
+
+# READ THE FILES, DO NOT SHELL OUT. system2() pastes its arguments into a
+# shell command, so `*.R` was glob-expanded by the shell against the top-level
+# directory before git ever saw it -- git grep then searched root-level files
+# only, never R/lib/, and this check could not fail. It reported "all 4 stay
+# gone" while three references to wonder_post() sat in
+# R/lib/wonder_natality.R. Reading tracked files directly has no quoting
+# layer to get wrong.
+# ci_tracked() from tests/ci_report.R, not a second copy of it. The first
+# version of this file defined its own, which was the same four lines and
+# tripped tests/test_gate_integrity_saboteurs.R's Q2: a literal "*.R" beside
+# ls-files is the shape of a pathspec the shell eats before git sees it.
+# shQuote() made this one safe, but "safe copy of an existing helper" is still
+# a copy, and the canonical one is already audited.
+tracked <- c(ci_tracked("*.R"), ci_tracked("*.qmd"))
+tracked <- tracked[!grepl("test_audit_cuts_saboteurs\\.R$", tracked)]
+still <- vapply(gone, function(fn) {
+  any(vapply(tracked, function(f) {
+    txt <- tryCatch(readLines(file.path(root, f), warn = FALSE),
+                    error = function(e) character(0))
+    any(grepl(sprintf("\\b%s\\b", fn), txt))
+  }, logical(1)))
+}, logical(1))
+chk(!any(still), sprintf("A3a all %d deleted functions stay gone (%s)",
+                         length(gone), paste(names(which(still)), collapse = ", ")))
+
+# THE MISTAKE, PINNED. These six were reported dead by a grep that excluded the
+# file defining them, which hides every caller inside the same module. They are
+# live and must stay. A measurement that cannot tell this apart from real death
+# is not good enough to delete on.
+kept <- c("digest_file_sha256" = "R/lib/source_coverage.R",
+          "pct_or_na"          = "R/lib/geographic_persistence_stats.R",
+          "git_commit_date"    = "R/lib/source_vintage.R",
+          "freeze_running_script" = "R/lib/cohort_definitions.R",
+          "ensure_file_exists" = "R/lib/match_npi_to_hospitals.R",
+          "build_ob_hospitals_artifact" = "R/lib/match_npi_to_hospitals.R")
+alive <- vapply(seq_along(kept), function(i) {
+  fn <- names(kept)[i]
+  txt <- readLines(file.path(root, kept[[i]]), warn = FALSE)
+  code <- txt[!grepl("^\\s*#", txt)]
+  # a call, not the definition line
+  any(grepl(sprintf("\\b%s\\s*\\(", fn), code) & !grepl(sprintf("^%s\\s*<-", fn), code))
+}, logical(1))
+chk(all(alive),
+    sprintf("A3b the %d functions called only from inside their own file are still present (%s)",
+            length(kept), paste(names(kept)[!alive], collapse = ", ")))
+
+saboteur_report(3)

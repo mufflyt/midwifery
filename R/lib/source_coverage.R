@@ -60,20 +60,6 @@ if (!exists("assert_source_year", mode = "function")) {
   source(file.path("R", "lib", "source_year.R"))
 }
 
-#' Columns every coverage audit row carries
-#'
-#' Declared once so the audit CSV, the tests, and any consumer agree on the
-#' schema without restating it.
-#' @return [character] column names, in order.
-source_coverage_columns <- function() {
-  c("source_id", "program_year", "input_path", "expected", "required",
-    "input_present", "source_year_verified", "year_method", "schema_valid",
-    "source_file_sha256", "source_vintage", "source_record_count",
-    "unique_npi_count", "cohort_npi_count", "cohort_amcb_id_count",
-    "state_observed_count", "provenance_valid", "validation_status",
-    "validation_message")
-}
-
 #' Read and sanity-check the declared source manifest
 #'
 #' @param manifest_path [character] path to the manifest CSV.
@@ -401,8 +387,7 @@ describe_panel_input <- function(input_path, date_column, state_column,
 #'   required evidence. FALSE records the same verdicts and returns them, for
 #'   an explicitly-invoked exploratory run that must label its outputs.
 #' @param source_ids [character] optional subset of `source_id` to validate.
-#' @return [tbl_df] one row per declared source-year, columns per
-#'   `source_coverage_columns()`.
+#' @return [tbl_df] one row per declared source-year.
 validate_source_coverage <- function(source_manifest,
                                      publication_mode = TRUE,
                                      source_ids = NULL) {

@@ -173,9 +173,9 @@ parse_profile <- function(url) {
   if (!is.na(jsonld_text) && nchar(jsonld_text) > 2) {
     jld <- tryCatch(fromJSON(jsonld_text), error = function(e) NULL)
     if (!is.null(jld)) {
-      uuid          <- jld$mainEntity$identifier %||% NA_character_
-      date_created  <- jld$dateCreated           %||% NA_character_
-      date_modified <- jld$dateModified          %||% NA_character_
+      uuid          <- jld$mainEntity$identifier %|first|% NA_character_
+      date_created  <- jld$dateCreated           %|first|% NA_character_
+      date_modified <- jld$dateModified          %|first|% NA_character_
     }
   }
 
@@ -201,8 +201,8 @@ parse_profile <- function(url) {
   city_state_raw <- html %>%
     html_elements("a[href*='/directory/location/']") %>%
     html_text(trim = TRUE)
-  city  <- city_state_raw[1] %||% NA_character_
-  state <- city_state_raw[2] %||% NA_character_
+  city  <- city_state_raw[1] %|first|% NA_character_
+  state <- city_state_raw[2] %|first|% NA_character_
 
   # --- address and phone (list items) -----------------------------------------
   list_items <- html %>%
@@ -301,7 +301,11 @@ parse_profile <- function(url) {
 }
 
 # Null-coalescing helper
-`%||%` <- function(a, b) if (!is.null(a) && length(a) > 0 && !is.na(a[1])) a[1] else b
+# NOT base R's `%|first|%`, which this used to shadow. It takes the FIRST element
+# and falls back when that element is NA, which a coalesce does not do:
+# `c("a","b") %|first|% "z"` is "a", where base's would be c("a","b"). Renamed
+# so the difference is visible at the call site.
+`%|first|%` <- function(a, b) if (!is.null(a) && length(a) > 0 && !is.na(a[1])) a[1] else b
 
 already_done <- character(0)
 existing_profiles <- NULL

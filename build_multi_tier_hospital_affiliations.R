@@ -3,7 +3,7 @@
 # Multi-Tier Hospital Affiliation Engine (CMS Direct + Spatial Proximity)
 # =============================================================================
 suppressPackageStartupMessages({
-  library(dplyr); library(readr); library(stringr); library(geosphere)
+  library(dplyr); library(readr); library(stringr)
 })
 
 source("R/lib/common_helpers.R")
