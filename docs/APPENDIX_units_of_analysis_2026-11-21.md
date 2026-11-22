@@ -156,6 +156,41 @@ perfectly self-consistent and describe a file that has since been re-released.
 The audit recomputes both formulas from source, prints them beside the
 committed values, and exits non-zero on disagreement.
 
+## The gates were unwired in the same branch that fixed the defects
+
+The worst instance in this sequence is not a gate that failed, aborted or
+passed vacuously. It is three gates that stopped existing.
+
+`579950c`, the merge of #336, took `main`'s `.github/workflows/ci.yml`
+wholesale. Three steps lived only on this feature branch, so there was nothing
+to conflict with and nothing to report:
+
+| step | at `afad4c2` | at `579950c` |
+|---|---|---|
+| `ci_denominator_contracts` (D1-D5) | wired | **gone** |
+| `test_denominator_contracts_detect` (its gate-of-gates) | wired | **gone** |
+| `test_npi_rate_and_cluster_saboteurs` | wired | **gone** |
+
+`bef401e` closed DEBT D14 immediately afterwards. So for that span the branch
+had fixed five denominator defects **and stopped running the gates that police
+them** — and CI went green, because the checks were gone rather than because
+they passed.
+
+This is the limiting case of the family. A red gate is read as "one thing is
+wrong". A gate that aborts is read the same way and means more. A gate that
+is *not wired at all* is read as success, by CI and by anyone looking at the
+badge, and the only trace is an absence in a file nobody diffs during a merge.
+
+**The tell:** a merge that touches a workflow file. Diff the *step names* out
+of `ci.yml` before and after, not the file. Steps that exist only on a feature
+branch are invisible to conflict detection, which is exactly the set most
+likely to be new gates.
+
+A gate's wiring deserves the same proof as its logic: the step list is now
+checked by name in the job log after the first push of any branch that adds
+one, because a wired step and a running step are not the same thing, and this
+branch has now demonstrated three distinct ways they diverge.
+
 ## A note on the reproducibility defect found while verifying the fix
 
 Rebuilding the artifact twice over an unchanged input produced two different
