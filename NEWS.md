@@ -204,6 +204,23 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `FALSE`. The default is `FALSE`, the inline path is what every call runs, and
   `TRUE` stops, because `R/join_metrics.R` has never existed here. A reader of
   `?safe_left_join` was told a check runs that cannot.
+- **A manuscript gate crashed on the restructure it was written to protect**
+  (`tests/test_manuscript_figure_saboteurs.R`). G5c resolved the multi-state
+  panel by hard-coded number, and the Green Journal restructure moved it from
+  Figure 5 to Supplemental Figure S4, so `grep()` returned nothing and `seq()`
+  raised "argument of length 0": the check did not go red, it crashed, taking
+  the rest of the file's sections with it. It now resolves the caption by its
+  content, so a renumber moves the check instead of breaking it. G4c asserted
+  that no figure is cited twice, which was never the law: the original defect
+  was a citation repointed from Figure 5 to Figure 6, which left one figure
+  uncited (G4b's half, and the half that generalises) and another cited twice,
+  and a second mention is legitimate because the data-availability sentence
+  names every display item by number. With the display items cut to Tables 1
+  through 4 plus one figure, that check failed on a manuscript that is right.
+  G4c now asserts what the journal requires, that a figure's FIRST citation
+  precedes its panel, and the saboteur repoints the first citation at a figure
+  number one past the last caption, so it reproduces the original defect at
+  any figure count instead of naming Figure 5. 7 of 7 saboteurs hold.
 - **The denominator detect suite described a schema its producer cannot
   emit.** `tests/test_denominator_contracts_detect.R` built its persistence
   fixture with the `n_lost_visible_in_nppes` column removed above, in the

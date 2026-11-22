@@ -139,7 +139,7 @@ chk(length(scan_out_of_scope(commented)) == 0L,
     "G3c a comment explaining why the source was removed is not itself a violation")
 
 # --- G4 figure citations --------------------------------------------------------
-sab(4, "every figure is cited once, in prose, before its caption")
+sab(4, "every figure is cited in prose, and its FIRST citation precedes its caption")
 qmd <- readLines(QMD, warn = FALSE)
 # Captions are the markdown image lines; citations are every other mention.
 cap_idx <- grep("^!\\[\\*\\*Figure [0-9]+\\.\\*\\*", qmd)
@@ -153,21 +153,40 @@ chk(identical(sort(cap_num), seq_along(cap_num)),
     sprintf("G4a figure captions are numbered 1..%d with no gap or repeat", length(cap_num)))
 chk(identical(sort(unique(cite_num)), sort(cap_num)),
     "G4b every figure that has a caption is cited in the prose, and no citation points at a figure that does not exist")
-chk(!any(duplicated(cite_num)),
-    "G4c no figure is cited twice, which is how Figure 6 came to stand in for Figure 5")
+# CITED ONCE WAS NEVER THE LAW, and holding it as one went red on a correct
+# manuscript. The original defect was a citation repointed from Figure 5 to
+# Figure 6: that left Figure 5 uncited AND Figure 6 cited twice, and only the
+# first half generalises. G4b catches the uncited half. A second mention is
+# legitimate -- the display-items sentence in the data-availability paragraph
+# names every table and figure by number -- so after the Green Journal
+# restructure cut the display items to Tables 1-4 plus one figure, "no figure
+# is cited twice" failed on a manuscript that is right, and a check that fires
+# on correct prose gets switched off rather than obeyed.
+#
+# What the journal actually requires, and what this now asserts, is that the
+# FIRST mention of a figure precedes its panel.
+cites_of <- function(n) cite_idx[vapply(cite_idx, function(i) n %in%
+  as.integer(regmatches(qmd[i], gregexpr("(?<=Figure )[0-9]+", qmd[i],
+                                         perl = TRUE))[[1]]), logical(1))]
 order_ok <- all(vapply(cap_num, function(n) {
-  ci <- cite_idx[vapply(seq_along(cite_idx), function(k) n %in%
-    as.integer(regmatches(qmd[cite_idx[k]],
-      gregexpr("(?<=Figure )[0-9]+", qmd[cite_idx[k]], perl = TRUE))[[1]]), logical(1))]
-  length(ci) == 1L && ci < cap_idx[cap_num == n]
+  ci <- cites_of(n)
+  length(ci) >= 1L && min(ci) < cap_idx[cap_num == n]
 }, logical(1)))
-chk(order_ok, "G4d each figure is cited before the panel it names appears")
-# SABOTEUR: point a citation at the wrong figure and G4c must fire.
-mutated <- sub("\\(Figure 5\\)", "(Figure 6)", qmd[cite_idx], perl = TRUE)
-mut_num <- unlist(lapply(mutated, function(l)
-  as.integer(regmatches(l, gregexpr("(?<=Figure )[0-9]+", l, perl = TRUE))[[1]])))
-chk(any(duplicated(mut_num)),
-    "G4e KILLED: repointing Figure 5's citation at Figure 6 reproduces the original defect and G4c catches it")
+chk(order_ok, "G4c each figure's FIRST citation precedes the panel it names")
+# SABOTEUR: the Figure 5 -> Figure 6 defect, expressed at any figure count.
+# Repoint the first citation at one number past the last caption and G4b, the
+# check that owns the generalisable half, must fire. Built on the real lines,
+# then run through the real predicate.
+ghost <- max(cap_num) + 1L
+first_line <- min(cites_of(cap_num[1]))
+mutated <- sub(sprintf("Figure %d", cap_num[1]), sprintf("Figure %d", ghost),
+               qmd[first_line], fixed = TRUE)
+mut_num <- sort(unique(unlist(lapply(c(qmd[setdiff(cite_idx, first_line)], mutated),
+  function(l) as.integer(regmatches(l, gregexpr("(?<=Figure )[0-9]+", l,
+                                                perl = TRUE))[[1]])))))
+chk(!identical(mut_num, sort(cap_num)),
+    sprintf("G4d KILLED: repointing Figure %d's first citation at a Figure %d that has no caption reproduces the original defect and G4b catches it",
+            cap_num[1], ghost))
 
 # --- G5 a rate is stated in the units of its denominator ------------------------
 sab(5, "a provider-year rate is not reported as a per-midwife rate")
@@ -181,12 +200,21 @@ pct_line <- grep("medicaid_multistate_pct", qmd, value = TRUE)
 chk(length(pct_line) >= 1L && any(grepl("provider-year", pct_line)),
     "G5b the sentence printing the rate names provider-years as its denominator")
 # ... and the figure beside it, which is on a DIFFERENT denominator, says so.
-fig5_cap <- grep("Figure 5\\.", qmd, value = TRUE)
-fig5_block <- paste(qmd[seq(grep("^!\\[\\*\\*Figure 5\\.", qmd),
-                            min(grep("^!\\[\\*\\*Figure 5\\.", qmd) + 5L, length(qmd)))],
-                    collapse = " ")
-chk(grepl("midwives", fig5_block) && grepl("provider-year", fig5_block),
-    "G5c Figure 5's caption names its own denominator and says it is not the provider-year one")
+# The multi-state panel was Figure 5 until the Green Journal restructure moved
+# it to the supplement as Supplemental Figure S4. This check hard-coded
+# "Figure 5", so after the move grep() returned nothing and seq() raised
+# "argument of length 0" -- the check did not go red, it CRASHED, taking the
+# rest of this file's sections with it. Resolve the caption by its content, so
+# a renumber moves the check instead of breaking it.
+ms_cap_idx <- grep("^!\\[\\*\\*(Supplemental )?Figure S?[0-9]+\\.\\*\\* Concurrent multi-state",
+                   qmd)
+chk(length(ms_cap_idx) == 1L,
+    "G5c-pre exactly one caption introduces the concurrent multi-state panel")
+ms_block <- if (length(ms_cap_idx) == 1L) {
+  paste(qmd[seq(ms_cap_idx, min(ms_cap_idx + 5L, length(qmd)))], collapse = " ")
+} else ""
+chk(grepl("midwives", ms_block) && grepl("provider-year", ms_block),
+    "G5c the multi-state panel's caption names its own denominator and says it is not the provider-year one")
 chk(!grepl("One midwife in six", qmd_txt, fixed = TRUE),
     "G5d the per-midwife phrasing of a provider-year statistic is gone from the manuscript")
 
