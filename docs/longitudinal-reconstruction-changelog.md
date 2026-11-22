@@ -85,6 +85,54 @@ artifacts; `R/lib/ob_midwife_cohort.R` gained an archive fallback so its
 pinned 20261012 ABOG input resolves to the newest local archive when the
 pin is absent (path+sha256 recorded in the sidecars).
 
+## 2026-11-21 — Three unit-of-analysis corrections; F2 bootstrap rescoped
+
+Found reviewing the Green Journal rewrite. All three are the same error — a
+number computed over one population and printed under a claim about another —
+and the shapes are recorded in
+[`APPENDIX_units_of_analysis_2026-11-21.md`](APPENDIX_units_of_analysis_2026-11-21.md).
+
+**The Medicaid NPI-coverage rate was providers over spells.**
+`build_medicaid_npi_population_by_state.R` divided `COUNT(DISTINCT NPI)` by
+`COUNT(*)`, so any state filing many enrollment spells per provider read near
+zero: North Dakota 1.0% against a true 96.8%, Missouri 1.1% against 96.5%,
+Colorado 1.2% against 71.9%. Numerator is now `COUNT(NPI)` and the artifact
+carries it as its own column. The released file is well populated nearly
+everywhere, with a real low tail (Illinois 28%, Minnesota 34%, Michigan 43%)
+and 26 of 54 jurisdictions below the 90% implied by CMS's 10%-missing
+threshold. Supplemental Figure S6 and the Results prose are rebuilt. The two
+formulas agree in only 3 of 54 states — New Mexico, Oregon (both zero) and New
+York — and every state the prose and the script header named was drawn from
+exactly those three.
+
+**`agreement_cluster_bootstrap_ci.csv` now clusters at a scope that has
+clusters.** The bootstrap ran inside `group_by(source, year)`, where each NPI
+contributes exactly one row, so it resampled singletons and reproduced the
+Wilson interval it was introduced to replace (`n_npi_years == n_npis` in all
+30 rows; widths averaged 0.98x Wilson, narrower, where positive intracluster
+correlation can only widen). The clustered interval now reports at
+`scope = "pooled"`, one row per source, clusters of 2.4–5.7 NPI-years, design
+effects **1.09x–2.31x**. Per-year rows keep Wilson and withhold the bootstrap
+columns. The estimator was also a mean of per-NPI means, targeting a different
+quantity than the NPI-year `pct_agree` beside it; it is now a ratio estimator
+and the interval brackets its point estimate on all four sources. This
+supersedes the 2026-11-18 entry's description of the artifact.
+
+**`persistence_denominators.csv` loses `n_lost_visible_in_nppes`.** The join
+never excluded providers still present in the source at t+1, so the column
+counted 9,013 of 9,770 observed provider-years as "lost" for
+medicaid_enrollment 2018 where 106 had left.
+`n_lost_source_but_in_nppes` (98) is the same join with the `anti_join` the
+first one omitted and is the quantity Supplemental Table S4 reads. Every other
+column and all 50 rows are unchanged.
+
+Guarded by `tests/test_npi_rate_and_cluster_saboteurs.R` (22 checks, 3 laws,
+4 planted defects, 3 near misses; 13 failures against a clean worktree at
+`6cb96e0`). `audit_medicaid_npi_coverage.R` re-verifies the committed rate
+against the parquet, which no CI runner can reach. A tie-break was added to
+the artifact's `ORDER BY` after two rebuilds over an unchanged file returned
+Florida and Maryland (both 87.11%) in different orders.
+
 ## Known blocked items (unchanged)
 
 - NPPES deactivation chronology: source file now current

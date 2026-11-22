@@ -5,10 +5,23 @@
 # The pairwise agreement statistics report Wilson intervals, which assume the
 # NPI-years are independent Bernoulli trials. They are not: the same midwife
 # appears in up to 14 cells, and her agreement behaviour is serially
-# correlated, so Wilson understates the width. F2 replaces the pointwise
-# interval with a CLUSTER bootstrap -- resample midwives (clusters), not
-# NPI-years (trials) -- alongside the Wilson bounds so the gap between the
-# two assumptions is printed, not just asserted.
+# correlated, so Wilson understates the width. F2 reports a CLUSTER bootstrap
+# -- resample midwives (clusters), not NPI-years (trials) -- alongside the
+# Wilson bounds so the gap between the two assumptions is printed, not just
+# asserted.
+#
+# SCOPE IS THE WHOLE POINT, and this script got it wrong until 2026-11-21.
+# The bootstrap used to run inside group_by(source, year). Within one
+# source-year `agree_cell` holds exactly one row per NPI, so every cluster was
+# a singleton, resampling them reproduced the i.i.d. bootstrap, and the
+# printed interval was Wilson's assumption a second time (n_npi_years ==
+# n_npis in all 30 rows; boot_width averaged 0.98x wilson_width -- narrower,
+# where a positive intracluster correlation must make it wider).
+#
+# A midwife is only in several cells once years are POOLED, so the clustered
+# interval is reported at scope = "pooled", one row per source, where a
+# cluster carries up to 14 NPI-years. The per-year rows keep Wilson and
+# withhold the bootstrap columns rather than print a singleton resample.
 #
 # F3 is the denominator problem the lead/lag table could not see: a midwife
 # observed in a source at year t but NOT at t+1 was silently dropped from
@@ -53,32 +66,63 @@ agree_cell <- records %>%
   summarise(agree = any(state == nppes_state), .groups = "drop")
 
 boot_ci <- function(agree_vec, npi_vec, B) {
-  by_npi <- split(agree_vec, npi_vec)
-  # Cluster mean = mean over resampled clusters of within-cluster mean.
-  cluster_means <- vapply(by_npi, mean, numeric(1))
-  k <- length(cluster_means)
+  # RATIO ESTIMATOR, not a mean of per-NPI means. pct_agree is an NPI-year
+  # mean, so each resampled cluster must contribute its years to BOTH the
+  # numerator and the denominator; averaging within-cluster means instead
+  # silently reweights every midwife equally and targets a different quantity
+  # than the point estimate the interval is printed beside.
+  n_by <- tapply(agree_vec, npi_vec, length)
+  k_by <- tapply(agree_vec, npi_vec, sum)
+  k <- length(n_by)
   if (k < 5) return(c(NA_real_, NA_real_))
-  reps <- replicate(B, mean(sample(cluster_means, k, replace = TRUE)))
+  reps <- replicate(B, {
+    i <- sample.int(k, k, replace = TRUE)
+    sum(k_by[i]) / sum(n_by[i])
+  })
   unname(quantile(reps, c(0.025, 0.975), na.rm = TRUE))
 }
 
-f2 <- agree_cell %>%
+pct_bound <- function(w, i) round(100 * vapply(w, `[`, numeric(1), i), 2)
+
+# Per year: Wilson only. Each NPI appears once in a source-year, so there is
+# no cluster here to resample and the bootstrap columns are withheld.
+f2_year <- agree_cell %>%
   group_by(source, year) %>%
+  summarise(n_npi_years = dplyr::n(), n_npis = dplyr::n_distinct(npi),
+            n_agree = sum(agree),
+            pct_agree = round(100 * mean(agree), 2),
+            wilson = list(wilson(sum(agree), dplyr::n())),
+            .groups = "drop") %>%
+  mutate(scope = "year",
+         wilson_low = pct_bound(wilson, 1), wilson_high = pct_bound(wilson, 2),
+         boot_low = NA_real_, boot_high = NA_real_,
+         method = "wilson_independent") %>%
+  select(-wilson)
+
+# Pooled over the source's whole window: now a cluster is a midwife's run of
+# years and the design effect is measurable.
+f2_pooled <- agree_cell %>%
+  group_by(source) %>%
   summarise(n_npi_years = dplyr::n(), n_npis = dplyr::n_distinct(npi),
             n_agree = sum(agree),
             pct_agree = round(100 * mean(agree), 2),
             wilson = list(wilson(sum(agree), dplyr::n())),
             boot = list(boot_ci(agree, npi, B)),
             .groups = "drop") %>%
-  mutate(
-    wilson_low  = round(100 * vapply(wilson, `[`, numeric(1), 1), 2),
-    wilson_high = round(100 * vapply(wilson, `[`, numeric(1), 2), 2),
-    boot_low    = round(100 * vapply(boot,   `[`, numeric(1), 1), 2),
-    boot_high   = round(100 * vapply(boot,   `[`, numeric(1), 2), 2),
-    wilson_width = wilson_high - wilson_low,
-    boot_width   = boot_high - boot_low,
-    method = sprintf("cluster_bootstrap_B=%d vs wilson_independent", B)) %>%
+  mutate(scope = "pooled", year = NA_integer_,
+         wilson_low = pct_bound(wilson, 1), wilson_high = pct_bound(wilson, 2),
+         boot_low = pct_bound(boot, 1), boot_high = pct_bound(boot, 2),
+         method = sprintf("cluster_bootstrap_B=%d vs wilson_independent", B)) %>%
   select(-wilson, -boot)
+
+f2 <- bind_rows(f2_year, f2_pooled) %>%
+  mutate(wilson_width = wilson_high - wilson_low,
+         boot_width   = boot_high - boot_low,
+         design_effect = round(boot_width / wilson_width, 2)) %>%
+  arrange(source, scope, year) %>%
+  select(source, scope, year, n_npi_years, n_npis, n_agree, pct_agree,
+         wilson_low, wilson_high, boot_low, boot_high,
+         wilson_width, boot_width, design_effect, method)
 
 ## ---- F3: persistence denominators ------------------------------------------
 all_years <- records %>% group_by(source) %>%
@@ -103,18 +147,17 @@ same_state <- records %>%
   group_by(source, npi, year) %>%
   summarise(same = any(state == state_next), .groups = "drop")
 
-in_nppes_next <- records %>%
-  filter(source != "nppes") %>%
-  inner_join(nppes %>% transmute(npi, year_next = year, in_nppes = TRUE),
-             by = "npi", relationship = "many-to-many") %>%
-  filter(year_next == year + 1L) %>%
-  distinct(source, npi, year) %>%
-  mutate(in_nppes_next = TRUE)
-
-# The conditional version: provider-years observed in a source at t, absent
-# from that source at t+1, and still visible in NPPES at t+1. This is the
-# number that turns "X% of records leave the source" into "of those who
-# left, Y% did not leave the workforce" -- billing attrition vs exit.
+# Provider-years observed in a source at t, absent from that source at t+1,
+# and still visible in NPPES at t+1. This is the number that turns "X% of
+# records leave the source" into "of those who left, Y% did not leave the
+# workforce" -- billing attrition vs exit.
+#
+# The anti_join against `followed` is the whole point and is not optional. An
+# earlier column here (`n_lost_visible_in_nppes`) omitted it and so counted
+# every provider-year visible in NPPES at t+1 whether or not it had left the
+# source: 9,013 of 9,770 for medicaid_enrollment 2018, against 98 real
+# leavers still in the registry. It was a `lost`-named column that was not a
+# leaver count, so it has been removed rather than renamed.
 lost_source_but_in_nppes <- records %>%
   filter(source != "nppes") %>%
   anti_join(followed %>% select(source, npi, year),
@@ -131,9 +174,6 @@ f3 <- f3 %>%
   left_join(same_state %>% group_by(source, year) %>%
               summarise(n_same_state = sum(same), n_changed_state = sum(!same),
                         .groups = "drop"),
-            by = c("source", "year")) %>%
-  left_join(in_nppes_next %>% group_by(source, year) %>%
-              summarise(n_lost_visible_in_nppes = dplyr::n(), .groups = "drop"),
             by = c("source", "year")) %>%
   left_join(lost_source_but_in_nppes %>% group_by(source, year) %>%
               summarise(n_lost_source_but_in_nppes = dplyr::n(),

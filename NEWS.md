@@ -20,7 +20,7 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — 2026-11-21 — five published rates divide by a group the numerator never came from; a gate per defect
+## [Unreleased] — 2026-11-21 — five published rates divide by a group the numerator never came from; five declared checks nothing performed; a gate per defect
 
 ### Added
 
@@ -52,6 +52,52 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   whose unrelated `year <` satisfied the year-restriction check from four
   hundred lines away), so the precision cannot silently regress.
 
+- **`tests/test_safe_join_key_harmonization.R`: four wrappers, one
+  invariant.** Asserts that `safe_left_join()`, `safe_inner_join()`,
+  `safe_semi_join()` and `safe_anti_join()` all coerce a character key against
+  an integer key, which is the normal state of this project's data: a comma
+  separated values read gives a character provider identifier, a parquet or
+  serialized R object round trip gives an integer one. It tests all four
+  deliberately, because the defect it guards was one of four diverging, so a
+  test of only the one that broke would reproduce it. Named by `ci.yml`,
+  registered in `ci_entrypoints` (`tests/ci_repo_integrity.R`) so the package
+  gate follows its `source()` chain, and swept by the `tests/test*.R` glob in
+  `nightly.yml`. Twin file in `~/isochrones` at
+  `tests/ci/test-safe-join-key-harmonization.R`.
+- **`tests/test_review_fixes_saboteurs.R`: 24 saboteurs, 24/24.** One per fix
+  in the 2026-11-21 complexity review, each planting the original defect back
+  and requiring the guard to die on it, plus near misses so a guard cannot
+  regress into "written exactly this way". The H6 cases run the real
+  `tests/ci_hygiene.R` inside a throwaway git repository rather than asserting
+  against this one, so the controls keep working when the real counts move.
+- **`tests/ci_hygiene.R` H6: no name bound to a function twice in one scope.**
+  H4 reads top level definitions across files; H6 walks every scope, which is
+  where the same defect hides. As the gate's own comment records, it was found
+  in `mw_build_catalog()`, which bound `g` three times inside one 913 line
+  function body, two of the three taking the same arity with incompatible first
+  argument types, 41 lines apart, in the function that produces every number in
+  the manuscript. Nothing was wrong at the time: each call sat inside its own
+  `if (!is.null(x))` block. That is the point, because `if` is not a scope in
+  R, so all three bindings landed in one environment and the next edit moving a
+  statement across a block boundary would have been silent.
+- **`audit_medicaid_npi_coverage.R` now checks the precondition behind
+  `COUNT(NPI)`.** The rate below is only the share of segments carrying a
+  provider identifier if SQL `NULL` is the one way the field can be absent; a
+  `VARCHAR` column spelling absence as `""` would be counted as present and
+  would read high for exactly the worst reporting states. Measured on the
+  2026-07-24 release: `VARCHAR`, 65,970,112 segments, 51,289,354 non-`NULL`
+  (77.75%), **0** blank after trim, **0** of length other than ten, and 104
+  sentinel values (92 spelled `0000000000`, 12 spelled `9999999999`: together
+  0.0002% of non-`NULL`, below the two decimals the
+  artifact reports). Fails closed if a blank or short value ever appears. It
+  is folded into the script that already recomputes the per-state rates from
+  the same parquet rather than shipping a second root script that opens the
+  same 66 million row file to ask a neighbouring question.
+- **`docs/APPENDIX_vendored_join_safety_divergence_2026-11-21.md`**: the join
+  safety findings, the probe that distinguishes them, and the two places this
+  shape recurred while being fixed, one inside the file and one across the two
+  repositories that vendor it.
+
 ### Changed
 
 - **`code_lines()` moved from `tests/ci_science_contracts.R` to
@@ -60,6 +106,115 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   defect these gates exist to catch. All 8 call sites rewritten; proven
   behaviourally neutral by running both versions in one worktree (identical
   skip sets, `test_science_contracts_detect.R` 13/13).
+
+### Fixed
+
+- **The public Medicaid NPI-population rate divided providers by spells, and
+  it was published.** `build_medicaid_npi_population_by_state.R` computed
+  `COUNT(DISTINCT NPI) / COUNT(*)` — distinct providers over enrollment
+  segments — under the name `pct_segments_with_npi`. Any state filing many
+  spells per provider therefore read near zero: North Dakota printed **1.0%**
+  against a true **96.8%**, Missouri 1.1% against 96.5%, Colorado 1.2% against
+  71.9%. Only the two genuine zeros (New Mexico, Oregon, which file no
+  NPI-bearing segment at all) were right, and the states that looked complete
+  were simply those filing few spells each. The numerator is now `COUNT(NPI)`,
+  and the artifact carries it as its own column so the rate can be checked
+  against its own inputs. Supplemental Figure S6 and the Results prose are
+  rebuilt: the file is well populated almost everywhere, with a real low tail
+  (Illinois 28%, Minnesota 34%, Michigan 43%) and **26 of 54** reporting
+  states and territories below the 90% that CMS's 10%-missing threshold
+  implies — a number the prose now states, having previously cited the
+  threshold without applying it.
+- **The NPI-population artifact was not reproducible.** `ORDER BY
+  pct_segments_with_npi` had no tie-breaker, so Florida and Maryland (both
+  87.11%) swapped places between two runs over an unchanged input file,
+  churning the artifact and its provenance sidecar for no reason. Found by
+  rebuilding twice while verifying the fix above. `ORDER BY
+  pct_segments_with_npi, state`; two consecutive rebuilds now agree byte for
+  byte.
+- **The F2 "cluster bootstrap" resampled singletons.** It ran inside
+  `group_by(source, year)`, where `agree_cell` holds exactly one row per NPI,
+  so every cluster had one member and the result reproduced the i.i.d.
+  interval it was introduced to replace (`n_npi_years == n_npis` in all 30
+  rows; `boot_width` averaged **0.98x** `wilson_width`, narrower, where
+  positive intracluster correlation must make it wider). A midwife is only in
+  several cells once years are pooled, so the clustered interval now reports
+  at `scope = "pooled"`, one row per source, where a cluster carries up to 14
+  NPI-years — design effects **1.09x to 2.31x**, which is the understatement
+  the spec asked to have printed. The estimator was also a mean of per-NPI
+  means, targeting a different quantity than the NPI-year `pct_agree` beside
+  it; it is now a ratio estimator. Per-year rows keep Wilson and withhold the
+  bootstrap columns rather than print a singleton resample.
+- **`n_lost_visible_in_nppes` counted providers who never left.** The join
+  that built it never excluded the providers still present in the source at
+  t+1, so it counted **9,013** of 9,770 observed provider-years as "lost" for
+  medicaid_enrollment 2018 where **106** had left and 98 of those were still
+  in the registry. Supplemental Table S4 reads the neighbouring, correctly
+  conditioned column, so no published number was wrong — but the column was in
+  a committed artifact and already being aggregated by the stats catalog. It
+  is removed at the producer rather than renamed, since
+  `n_lost_source_but_in_nppes` is the quantity anyone wants.
+- **`tests/test_npi_rate_and_cluster_saboteurs.R`: 22 checks, 3 laws, 4
+  planted defects, 3 near misses.** One law per fix — a share of records
+  divides records by records; a clustered interval is computed where a cluster
+  has more than one member; a column named for leavers is a sub-count of
+  leavers — each checked against the real artifact and then against the defect
+  as it actually shipped. Validated both ways: 22/22 on the fixed tree, 13
+  failures against a clean worktree at `6cb96e0`. Two checks initially passed
+  vacuously on the pre-fix artifact because the column they read did not exist
+  yet (`all()` of nothing is `TRUE`), which is the
+  `docs/APPENDIX_checks_that_cannot_fail_2026-11-20.md` failure mode; both now
+  require their columns. Wired into `ci.yml`; needs no extra packages and no
+  private data.
+
+- **`safe_anti_join()` documented a type harmonization it did not perform**
+  (`R/join_safety.R`). The 2026-04-05 fix added `harmonize_join_key_types()` to
+  three of the four wrappers. The fourth kept the claim in its own
+  `@section Algorithm` ("Validates keys, harmonizes types, then calls
+  `dplyr::anti_join()`") and in its `@section Calls`, and lost the call, so a
+  character key against an integer key aborted for seven months where its
+  siblings coerced and continued. Probed against a clean worktree at
+  `6cb96e0`: left 3 rows, inner 2 rows, semi 2 rows, anti
+  `Can't join x$npi with y$npi due to incompatible types`. Nothing here called
+  it from production code, only `tests/test-join-safety.R`, which is why
+  documentation could drift from behaviour without consequence. Found by the
+  complexity audit, which measured the semi and anti pair at 0.78 structural
+  similarity and diffed the near duplicates rather than reading the
+  documentation. The same fix had landed first in the vendored copy in
+  `~/isochrones`, so fixing one of four wrappers also meant fixing one of two
+  copies.
+- **Five parameters in `R/join_safety.R` were accepted, documented, and never
+  read.** `require_complete_keys` defaulted to `TRUE`, was documented as
+  validating key completeness, and was read in exactly one branch that cannot
+  run, so probing it `TRUE` against `FALSE` over a frame with missing join keys
+  gave byte identical results; it is removed rather than silently switched on,
+  because enforcing it is a behaviour change for every call site and needs its
+  own commit and its own test. `agree_on` / `agree_map` and
+  `max_right_dup_keys` on the left join path, and `agree_on`,
+  `max_duplication` and `max_right_dup_keys` on the semi join path, now stop
+  with a message naming what is actually enforced instead of returning a silent
+  pass that reads as agreement. `max_right_dup_keys` is refused only when the
+  value asks for something other than what `expect_unique_right` already
+  implies, so a call that spells the default out still works. No caller in this
+  repository passes any of them.
+- **`safe_left_join()`'s documentation described a validation path that cannot
+  run.** It stated that `use_enhanced_metrics` defaults to `TRUE` and delegates
+  to `safe_left_join_with_metrics()` for full cardinality, coverage and
+  agreement checking, falling back to the inline path only when explicitly set
+  `FALSE`. The default is `FALSE`, the inline path is what every call runs, and
+  `TRUE` stops, because `R/join_metrics.R` has never existed here. A reader of
+  `?safe_left_join` was told a check runs that cannot.
+- **The denominator detect suite described a schema its producer cannot
+  emit.** `tests/test_denominator_contracts_detect.R` built its persistence
+  fixture with the `n_lost_visible_in_nppes` column removed above, in the
+  header and in nine clean rows, and six saboteur cases replaced whole rows
+  positionally with eleven field strings. The suite passed, because the gate
+  selects columns by name, so this was a fixture drifting from the artifact
+  rather than a false negative. All sixteen rows now carry ten fields with each
+  case's intent preserved (the D2 case still presents 99 registry visible
+  leavers against 20 leavers; the D1 near miss still presents a 95% visibility
+  share), and the suite still reports `PASS (0 failures)` with every saboteur
+  firing and every near miss held.
 
 ### Known issues
 

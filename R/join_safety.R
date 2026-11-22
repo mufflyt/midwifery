@@ -556,11 +556,17 @@ join_coverage_report <- function(left_before, joined_rows,
 #' @section Algorithm:
 #' Validates parameters and reads \code{JOIN_MIN_COVERAGE} /
 #' \code{JOIN_MAX_DUPLICATION} environment overrides. Harmonizes key types via
-#' \code{harmonize_join_key_types()}. When \code{use_enhanced_metrics = TRUE}
-#' (default), delegates entirely to \code{safe_left_join_with_metrics()} from
-#' \code{R/join_metrics.R} for full cardinality, coverage, and agreement
-#' checking. Falls back to the inline coverage-only path only when
-#' \code{use_enhanced_metrics = FALSE} is explicitly set.
+#' \code{harmonize_join_key_types()}. Then runs the inline path: coverage
+#' reporting, the unmatched-left-rows gate, and the duplication gate.
+#'
+#' \code{use_enhanced_metrics} defaults to \strong{FALSE} and the inline path is
+#' therefore what every call actually runs. Setting it TRUE does not enable a
+#' richer check -- it hard-stops, because it delegates to
+#' \code{safe_left_join_with_metrics()} from \code{R/join_metrics.R} and that
+#' file does not exist in this repository (see the CYCLE 9 note on the
+#' signature). This paragraph used to say the opposite -- that TRUE was the
+#' default and the inline path a fallback -- which told a reader of
+#' \code{?safe_left_join} that a validation path runs which cannot run.
 #'
 #' @section Calls:
 #' \code{harmonize_join_key_types()}, \code{safe_left_join_with_metrics()} (if enhanced),
@@ -621,7 +627,21 @@ safe_left_join <- function(left, right, by, expect_unique_right = TRUE,
                            max_duplication = NULL,
                            max_right_dup_keys = if (expect_unique_right) 0 else Inf,
                            max_left_only_rows = NA_integer_,
-                           require_complete_keys = TRUE,
+                           # require_complete_keys was removed here. It defaulted
+                           # TRUE and was read in exactly one place: the
+                           # use_enhanced_metrics branch below, which forwards to
+                           # safe_left_join_with_metrics() from R/join_metrics.R --
+                           # the file the CYCLE 9 note further down records as never
+                           # having existed. So it was accepted, defaulted ON, and
+                           # unreachable on every path a caller can take: probing it
+                           # TRUE vs FALSE over a frame with NA join keys gave
+                           # byte-identical results. No caller passed it. A validation
+                           # flag that does nothing is worse than no flag in a file
+                           # whose job is refusing unsafe joins, because it answers
+                           # "are incomplete keys checked?" with a yes. Enforcing it
+                           # instead would have been a behaviour change for all 50-odd
+                           # call sites, so it needs its own commit and its own test,
+                           # not a silent switch-on folded into a cleanup.
                            agree_on = NULL, agree_map = NULL,
                            suffix = c(".x", ".y"),
                            write_report = TRUE, report_prefix = "join_left",
@@ -655,6 +675,38 @@ safe_left_join <- function(left, right, by, expect_unique_right = TRUE,
   checkmate::assert_flag(expect_unique_right)
   checkmate::assert_flag(write_report)
   checkmate::assert_flag(use_enhanced_metrics)
+
+  # REFUSE what this path cannot honour, rather than accepting it in silence.
+  # Each parameter below is accepted for signature parity with the enhanced
+  # metrics module R/join_metrics.R would have supplied -- the file the CYCLE 9
+  # note records as never having existed -- and the inline path that actually
+  # runs reads none of them. Ignoring a supplied validation argument is the
+  # precise failure the PRIORITY 1 note (2026-02-12) in this file forbids: a
+  # REQUESTED check skipped without saying so. safe_inner_join already refuses
+  # agree_on/agree_map for that reason; these bring its three siblings into line.
+  if (!is.null(agree_on) || !is.null(agree_map)) {
+    stop("safe_left_join: agree_on/agree_map need the enhanced metrics module ",
+         "(R/join_metrics.R), which does not exist in this repository, so column ",
+         "agreement cannot be checked on the inline path. Drop the argument or ",
+         "port the module -- do not expect a silent pass to mean agreement held.",
+         call. = FALSE)
+  }
+  if (!missing(max_right_dup_keys)) {
+    # Refuse only a value that ASKS for something different from what is
+    # actually enforced. expect_unique_right is all-or-nothing: 0 duplicate
+    # right keys when TRUE, unlimited when FALSE. A caller who passes the
+    # matching value is requesting the behaviour they are already getting, and
+    # erroring on that would break every call that spells the default out.
+    implied <- if (isTRUE(expect_unique_right)) 0 else Inf
+    if (!isTRUE(all.equal(as.numeric(max_right_dup_keys), as.numeric(implied)))) {
+      stop("safe_left_join: max_right_dup_keys=", max_right_dup_keys,
+           " is not enforced on the inline path, which gates right-key ",
+           "duplication through expect_unique_right alone -- all-or-nothing ",
+           "(0 duplicates when TRUE, unlimited when FALSE), currently implying ",
+           implied, ". Use expect_unique_right, or port R/join_metrics.R.",
+           call. = FALSE)
+    }
+  }
   # Validate suffix
   checkmate::assert_character(suffix, len = 2)
   # Validate report_prefix
@@ -743,7 +795,6 @@ safe_left_join <- function(left, right, by, expect_unique_right = TRUE,
       max_duplication = max_duplication,
       max_right_dup_keys = max_right_dup_keys,
       max_left_only_rows = max_left_only_rows,
-      require_complete_keys = require_complete_keys,
       agree_on = agree_on,
       agree_map = agree_map,
       write_report = write_report,
@@ -829,11 +880,21 @@ safe_left_join <- function(left, right, by, expect_unique_right = TRUE,
   }
 
   # Basic coverage check (enhanced metrics would provide more)
-  join_coverage_report(left_n, matched_rows, label_left, label_right, min_coverage)
+  join_coverage_report(left_before = left_n, joined_rows = matched_rows,
+                       label_left = label_left, label_right = label_right,
+                       min_coverage = min_coverage)
 
-  # BUG FIX (2026-01-27): Enforce max_right_dup_keys in fallback path
-  # Previously this parameter was accepted but silently ignored when enhanced
-  # metrics were unavailable, allowing right-side duplicate keys to go undetected.
+  # NOTE (corrected 2026-11-21): a comment here used to read "BUG FIX
+  # (2026-01-27): Enforce max_right_dup_keys in fallback path", above the
+  # unmatched-left-rows gate, which has nothing to do with right-side duplicate
+  # keys. Whatever that fix did was lost or never landed: `max_right_dup_keys`
+  # appears nowhere in this path. Right-key duplication IS still gated, by
+  # expect_unique_right above (assert_unique_keys, plus relationship =
+  # "many-to-one" on the join itself), so the DEFAULT protection holds -- what
+  # was missing is the tunable count, and the function now refuses that argument
+  # at the top instead of accepting it and doing nothing. A comment asserting an
+  # enforcement that is not there is worse than no comment: it answers the
+  # reader's question wrongly and stops them checking.
 
   # Coverage-consistent gate for unmatched left rows
 
@@ -1302,7 +1363,9 @@ safe_inner_join <- function(left, right, by, expect_unique_both = TRUE,
   # caused join_coverage_report to hard-fail with "row multiplication" error.
   # Coverage should measure "what fraction of left rows appear in output."
   matched_left_rows <- nrow(dplyr::semi_join(left, right, by = by, na_matches = "never"))
-  join_coverage_report(left_n, matched_left_rows, label_left, label_right, min_coverage)
+  join_coverage_report(left_before = left_n, joined_rows = matched_left_rows,
+                       label_left = label_left, label_right = label_right,
+                       min_coverage = min_coverage)
 
   # BUG FIX (2026-01-27): Bug 30 - Enforce max_duplication like safe_left_join
   if (!is.null(max_duplication) && left_n > 0) {
@@ -1526,6 +1589,35 @@ safe_semi_join <- function(left, right, by,
 
   if (nrow(left) == 0L) warning("safe_semi_join: left table has 0 rows", call. = FALSE)
   if (nrow(right) == 0L) warning("safe_semi_join: right table has 0 rows", call. = FALSE)
+
+  # REFUSE what this path cannot honour, rather than accepting it in silence.
+  # Each parameter below is accepted for signature parity with the enhanced
+  # metrics module R/join_metrics.R would have supplied -- the file the CYCLE 9
+  # note records as never having existed -- and the inline path that actually
+  # runs reads none of them. Ignoring a supplied validation argument is the
+  # precise failure the PRIORITY 1 note (2026-02-12) in this file forbids: a
+  # REQUESTED check skipped without saying so. safe_inner_join already refuses
+  # agree_on/agree_map for that reason; these bring its three siblings into line.
+  if (!is.null(agree_on)) {
+    stop("safe_semi_join: agree_on needs the enhanced metrics module ",
+         "(R/join_metrics.R), which does not exist in this repository. A semi ",
+         "join cannot compare columns it does not carry. Drop the argument.",
+         call. = FALSE)
+  }
+  # NULL and Inf both mean "no bound", which is exactly what this path does, so
+  # only a real bound is refused.
+  if (!is.null(max_duplication)) {
+    stop("safe_semi_join: max_duplication is never read. A semi join cannot ",
+         "duplicate left rows -- it filters them -- so there is no duplication ",
+         "to bound. Drop the argument; min_coverage is the threshold that ",
+         "applies here.", call. = FALSE)
+  }
+  if (!missing(max_right_dup_keys) && is.finite(max_right_dup_keys)) {
+    stop("safe_semi_join: max_right_dup_keys is never read. A semi join returns ",
+         "left rows only, so right-side duplicate keys cannot reach the output. ",
+         "Drop the argument (Inf, the default, is honoured because it bounds ",
+         "nothing).", call. = FALSE)
+  }
 
   # BUG FIX (2026-01-27): Add min_coverage enforcement and join validation.
   # Previously reported percentages via message() but never enforced any threshold.
@@ -1770,8 +1862,42 @@ safe_anti_join <- function(left, right, by,
                  paste0("'", missing_right, "'", collapse = ", "),
                  paste0(head(names(right), 10), collapse = ", ")), call. = FALSE)
   }
+  # BUG FIX (2026-11-21): Harmonize join key types, which this function's own
+  # @section Algorithm has claimed all along ("Validates keys, harmonizes
+  # types"). The 2026-04-05 fix added the call to safe_left_join (:731),
+  # safe_inner_join (:1218) and safe_semi_join (:1546) and missed this one, so a
+  # character key against an integer key aborted with dplyr's "incompatible
+  # types" error where the three siblings coerce and continue. ~/isochrones
+  # carries the other copy of this file and got the same fix plus its parity
+  # test, tests/ci/test-safe-join-key-harmonization.R.
+  harmonized <- harmonize_join_key_types(left, right, by, label_left, label_right)
+  left <- harmonized$left
+  right <- harmonized$right
+
   if (nrow(left) == 0L) warning("safe_anti_join: left table has 0 rows", call. = FALSE)
   if (nrow(right) == 0L) warning("safe_anti_join: right table has 0 rows", call. = FALSE)
+
+  # REFUSE what this path cannot honour, rather than accepting it in silence.
+  # Each parameter below is accepted for signature parity with the enhanced
+  # metrics module R/join_metrics.R would have supplied -- the file the CYCLE 9
+  # note records as never having existed -- and the inline path that actually
+  # runs reads none of them. Ignoring a supplied validation argument is the
+  # precise failure the PRIORITY 1 note (2026-02-12) in this file forbids: a
+  # REQUESTED check skipped without saying so. safe_inner_join already refuses
+  # agree_on/agree_map for that reason; these bring its three siblings into line.
+  # Both default to NULL, which means "no threshold" -- and no threshold is what
+  # this path applies. Only a supplied threshold is refused.
+  if (!is.null(min_coverage)) {
+    stop("safe_anti_join: min_coverage is never read, and the name inverts here ",
+         "-- an anti join returns the UNMATCHED left rows, so high coverage means ",
+         "a small result, not a healthy one. Use max_matched, which bounds the ",
+         "fraction of left rows matched away.", call. = FALSE)
+  }
+  if (!is.null(max_duplication)) {
+    stop("safe_anti_join: max_duplication is never read. An anti join cannot ",
+         "duplicate left rows -- it removes them -- so there is no duplication to ",
+         "bound. Use max_matched.", call. = FALSE)
+  }
 
   # BUG FIX (2026-01-27): Add max_matched enforcement and join validation.
   # Previously reported percentages via message() but never enforced thresholds.

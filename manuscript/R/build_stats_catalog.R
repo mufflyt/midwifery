@@ -458,27 +458,27 @@ mw_build_catalog <- function(root = ".") {
   # registry existed to record you.
   fl <- rd(file.path(MW_ART, "linkage_coverage_floor.csv"))
   if (!is.null(fl)) {
-    pick <- function(e, s) {
+    pick_era <- function(e, s) {
       r <- fl[fl$era == e & fl$status == s, ]
       if (nrow(r)) r[1, ] else NULL
     }
-    g <- function(e, s, col) { r <- pick(e, s); if (is.null(r)) NA_real_ else r[[col]] }
+    g_era <- function(e, s, col) { r <- pick_era(e, s); if (is.null(r)) NA_real_ else r[[col]] }
     cat_$floor <- list(
-      pre_n           = g("pre_nppes", "ALL", "n"),
-      pre_pct         = g("pre_nppes", "ALL", "pct_linked"),
-      era_n           = g("nppes_era", "ALL", "n"),
-      era_pct         = g("nppes_era", "ALL", "pct_linked"),
-      active_pre_n    = g("pre_nppes", "ACTIVE", "n"),
-      active_pre_pct  = g("pre_nppes", "ACTIVE", "pct_linked"),
-      active_era_n    = g("nppes_era", "ACTIVE", "n"),
-      active_era_pct  = g("nppes_era", "ACTIVE", "pct_linked"),
-      dead_pre_n      = g("pre_nppes", "DECEASED", "n"),
-      dead_pre_pct    = g("pre_nppes", "DECEASED", "pct_linked"),
-      lapsed_pre_n    = g("pre_nppes", "LAPSED", "n"),
-      lapsed_pre_pct  = g("pre_nppes", "LAPSED", "pct_linked"),
-      retired_pre_pct = g("pre_nppes", "RETIRED", "pct_linked"),
-      never_pre       = g("pre_nppes", "ALL", "never_found"),
-      never_era       = g("nppes_era", "ALL", "never_found")
+      pre_n           = g_era("pre_nppes", "ALL", "n"),
+      pre_pct         = g_era("pre_nppes", "ALL", "pct_linked"),
+      era_n           = g_era("nppes_era", "ALL", "n"),
+      era_pct         = g_era("nppes_era", "ALL", "pct_linked"),
+      active_pre_n    = g_era("pre_nppes", "ACTIVE", "n"),
+      active_pre_pct  = g_era("pre_nppes", "ACTIVE", "pct_linked"),
+      active_era_n    = g_era("nppes_era", "ACTIVE", "n"),
+      active_era_pct  = g_era("nppes_era", "ACTIVE", "pct_linked"),
+      dead_pre_n      = g_era("pre_nppes", "DECEASED", "n"),
+      dead_pre_pct    = g_era("pre_nppes", "DECEASED", "pct_linked"),
+      lapsed_pre_n    = g_era("pre_nppes", "LAPSED", "n"),
+      lapsed_pre_pct  = g_era("pre_nppes", "LAPSED", "pct_linked"),
+      retired_pre_pct = g_era("pre_nppes", "RETIRED", "pct_linked"),
+      never_pre       = g_era("pre_nppes", "ALL", "never_found"),
+      never_era       = g_era("nppes_era", "ALL", "never_found")
     )
     # The gap between the two ACTIVE strata is the whole argument, so it is
     # computed here rather than left to a reader subtracting two rendered
@@ -557,37 +557,37 @@ mw_build_catalog <- function(root = ".") {
   if (!is.null(sig)) {
     row <- function(b) sig[sig$band_minutes == b, ]
     r30 <- row(30); r60 <- row(60)
-    g <- function(r, col) if (nrow(r)) r[[col]][1] else NA_real_
+    g_row <- function(r, col) if (nrow(r)) r[[col]][1] else NA_real_
     gs <- function(r, col) if (nrow(r) && col %in% names(r)) as.character(r[[col]][1]) else NA_character_
     cat_$scope <- list(
-      n_autonomous             = g(r30, "n_autonomous"),
-      n_collaborative          = g(r30, "n_collaborative"),
+      n_autonomous             = g_row(r30, "n_autonomous"),
+      n_collaborative          = g_row(r30, "n_collaborative"),
       # The two counts above are STATES WITH AN ACCESS MEASURE, not the
       # classification. Two autonomous states (AK, HI) have no access row, so
       # 24 vs 25 is being taken from a 26/25 classification -- an exclusion
       # correlated with the exposure, and the manuscript says so rather than
       # leaving a reader to diff two artifacts (#227).
-      n_classified_autonomous    = g(r30, "n_classified_autonomous"),
-      n_classified_collaborative = g(r30, "n_classified_collaborative"),
-      n_excluded                 = g(r30, "n_excluded"),
-      n_excluded_autonomous      = g(r30, "n_excluded_autonomous"),
-      n_excluded_collaborative   = g(r30, "n_excluded_collaborative"),
+      n_classified_autonomous    = g_row(r30, "n_classified_autonomous"),
+      n_classified_collaborative = g_row(r30, "n_classified_collaborative"),
+      n_excluded                 = g_row(r30, "n_excluded"),
+      n_excluded_autonomous      = g_row(r30, "n_excluded_autonomous"),
+      n_excluded_collaborative   = g_row(r30, "n_excluded_collaborative"),
       excluded_states            = gs(r30, "excluded_states"),
       # The exposure's vintage: 2012-2016 law against a 2026 cohort (#226).
       classification_window        = gs(r30, "classification_window"),
-      classification_snapshot_year = g(r30, "classification_snapshot_year"),
-      band30_autonomous_pct    = g(r30, "mean_autonomous_pct"),
-      band30_collaborative_pct = g(r30, "mean_collaborative_pct"),
-      band30_diff_pp           = g(r30, "diff_pp"),
-      band30_ci_lo             = g(r30, "ci_lo"),
-      band30_ci_hi             = g(r30, "ci_hi"),
-      band30_p                 = g(r30, "p_value"),
-      band60_autonomous_pct    = g(r60, "mean_autonomous_pct"),
-      band60_collaborative_pct = g(r60, "mean_collaborative_pct"),
-      band60_diff_pp           = g(r60, "diff_pp"),
-      band60_ci_lo             = g(r60, "ci_lo"),
-      band60_ci_hi             = g(r60, "ci_hi"),
-      band60_p                 = g(r60, "p_value")
+      classification_snapshot_year = g_row(r30, "classification_snapshot_year"),
+      band30_autonomous_pct    = g_row(r30, "mean_autonomous_pct"),
+      band30_collaborative_pct = g_row(r30, "mean_collaborative_pct"),
+      band30_diff_pp           = g_row(r30, "diff_pp"),
+      band30_ci_lo             = g_row(r30, "ci_lo"),
+      band30_ci_hi             = g_row(r30, "ci_hi"),
+      band30_p                 = g_row(r30, "p_value"),
+      band60_autonomous_pct    = g_row(r60, "mean_autonomous_pct"),
+      band60_collaborative_pct = g_row(r60, "mean_collaborative_pct"),
+      band60_diff_pp           = g_row(r60, "diff_pp"),
+      band60_ci_lo             = g_row(r60, "ci_lo"),
+      band60_ci_hi             = g_row(r60, "ci_hi"),
+      band60_p                 = g_row(r60, "p_value")
     )
   }
 
@@ -598,18 +598,18 @@ mw_build_catalog <- function(root = ".") {
   # strata.R measures it; this makes it citable. See #245.
   vs <- rd(file.path(MW_ART, "linkage_veto_strata.csv"))
   if (!is.null(vs)) {
-    g <- function(k, col) {
+    g_stratum <- function(k, col) {
       r <- vs[vs$stratum == k, ]
       if (nrow(r)) r[[col]][1] else NA_real_
     }
     cat_$veto <- list(
-      absence_c2_cohort_n   = g("resolved_by_absence_c2", "n_study_cohort"),
-      absence_c2_cohort_pct = g("resolved_by_absence_c2", "pct_of_study_cohort"),
-      absence_c5_cohort_n   = g("resolved_by_absence_c5", "n_study_cohort"),
-      demoted_c5_roster_n   = g("npi_demoted_absence_c5", "n_roster"),
-      unmatched_after_veto_roster_n = g("unmatched_after_middle_veto", "n_roster"),
-      multi_exact_cohort_n  = g("exact_first_last_multiple_candidates", "n_study_cohort"),
-      multi_exact_cohort_pct = g("exact_first_last_multiple_candidates", "pct_of_study_cohort")
+      absence_c2_cohort_n   = g_stratum("resolved_by_absence_c2", "n_study_cohort"),
+      absence_c2_cohort_pct = g_stratum("resolved_by_absence_c2", "pct_of_study_cohort"),
+      absence_c5_cohort_n   = g_stratum("resolved_by_absence_c5", "n_study_cohort"),
+      demoted_c5_roster_n   = g_stratum("npi_demoted_absence_c5", "n_roster"),
+      unmatched_after_veto_roster_n = g_stratum("unmatched_after_middle_veto", "n_roster"),
+      multi_exact_cohort_n  = g_stratum("exact_first_last_multiple_candidates", "n_study_cohort"),
+      multi_exact_cohort_pct = g_stratum("exact_first_last_multiple_candidates", "pct_of_study_cohort")
     )
   }
 
@@ -838,13 +838,13 @@ mw_build_catalog <- function(root = ".") {
   # --- Table 1 ---------------------------------------------------------------
   t1 <- rd(file.path(MW_ART, "table1_midwives.csv"))
   if (!is.null(t1)) {
-    pick <- function(rx) {
+    pick_t1 <- function(rx) {
       r <- t1[grepl(rx, t1$characteristic, ignore.case = TRUE), ]
       if (nrow(r)) r$percent[1] else NA_real_
     }
     # This row's own percent is NA by design: these people remain in the
     # Table 1 cohort but their state/jurisdiction is absent from the supplied
-    # ACNM region table. Read the raw n rather than asking pick() for percent.
+    # ACNM region table. Read the raw n rather than asking pick_t1() for percent.
     pickn <- function(rx) {
       r <- t1[grepl(rx, t1$characteristic, ignore.case = TRUE), ]
       if (nrow(r)) r$n[1] else NA_real_
@@ -881,8 +881,8 @@ mw_build_catalog <- function(root = ".") {
       n_canonical    = t1_n_canonical,
       n_is_canonical = !is.na(t1_n_canonical) &&
         identical(as.integer(t1$n[1]), as.integer(t1_n_canonical)),
-      n = t1$n[1], cnm_pct = pick("^Certified Nurse-Midwife$"),
-      cm_pct = pick("^Certified Midwife$"), female_pct = pick("^Female$"),
+      n = t1$n[1], cnm_pct = pick_t1("^Certified Nurse-Midwife$"),
+      cm_pct = pick_t1("^Certified Midwife$"), female_pct = pick_t1("^Female$"),
       # NOTE: this n's denominator is t1$n[1] ("ACTIVE, primary-linked
       # midwives" -- ACTIVE status AND primary midwifery-taxonomy match
       # only), NOT exclusion.active_matched_n. Don't divide this by the wrong
@@ -1243,11 +1243,6 @@ mw_build_catalog <- function(root = ".") {
 
   if (!is.null(acc_2)) {
     num <- function(x) suppressWarnings(as.numeric(x))
-    pick <- function(frame, pattern, column) {
-      hit <- frame[grepl(pattern, frame$variable) &
-                     grepl(pattern = "", frame$database), , drop = FALSE]
-      hit
-    }
     row_of <- function(db, pattern) {
       hit <- acc_2[acc_2$database == db & grepl(pattern, acc_2$variable), ,
                    drop = FALSE]
@@ -1448,15 +1443,27 @@ mw_build_catalog <- function(root = ".") {
       zero_states <-
         acc_npipop$state[acc_npipop$pct_segments_with_npi == 0]
       a$medicaid_npi_pop_zero_states <- zero_states
-      state_names <- c(NM = "New Mexico", OR = "Oregon", VI = "the Virgin Islands",
-                       GU = "Guam", PR = "Puerto Rico", DC = "the District of Columbia")
-      a$medicaid_npi_pop_zero_state_names <-
-        ifelse(zero_states %in% names(state_names),
-               unname(state_names[zero_states]), zero_states)
-      max_state <- acc_npipop$state[which.max(acc_npipop$pct_segments_with_npi)]
+      # state.abb/state.name are base R and cover the 50 states; the released
+      # file also carries DC and the territories, which that pair does not.
+      # A six-entry hand list lived here and printed the bare abbreviation for
+      # every state outside it, so the prose read "100.0% in SD".
+      state_names <- c(stats::setNames(state.name, state.abb),
+                       VI = "the Virgin Islands", GU = "Guam",
+                       PR = "Puerto Rico", AS = "American Samoa",
+                       MP = "the Northern Mariana Islands",
+                       DC = "the District of Columbia")
+      name_of_state <- function(x) {
+        hit <- state_names[x]
+        ifelse(is.na(hit), x, unname(hit))
+      }
+      a$medicaid_npi_pop_zero_state_names <- name_of_state(zero_states)
       a$medicaid_npi_pop_max_state_name <-
-        ifelse(max_state %in% names(state_names),
-               unname(state_names[max_state]), max_state)
+        name_of_state(acc_npipop$state[which.max(p)])
+      # How many jurisdictions fall below the 90% that CMS's 10%-missing
+      # provider-NPI threshold implies. The threshold is cited in the Results
+      # prose; without this it is cited and never applied.
+      a$medicaid_npi_pop_n_states <- length(p)
+      a$medicaid_npi_pop_n_below_cms <- sum(p < 90, na.rm = TRUE)
     }
 
     # Persistence denominators: where a provider who leaves a source went.
@@ -1465,7 +1472,7 @@ mw_build_catalog <- function(root = ".") {
       p <- acc_pers
       num_ <- function(v) as.numeric(v)
       agg <- aggregate(cbind(n_observed, n_followed_source, n_same_state,
-                             n_changed_state, n_lost_visible_in_nppes,
+                             n_changed_state,
                              n_lost_source_but_in_nppes,
                              n_lost_from_source) ~ source,
                        data = transform(p,
@@ -1473,7 +1480,6 @@ mw_build_catalog <- function(root = ".") {
                          n_followed_source = num_(n_followed_source),
                          n_same_state = num_(n_same_state),
                          n_changed_state = num_(n_changed_state),
-                         n_lost_visible_in_nppes = num_(n_lost_visible_in_nppes),
                          n_lost_source_but_in_nppes =
                            num_(n_lost_source_but_in_nppes),
                          n_lost_from_source = num_(n_lost_from_source)),

@@ -48,16 +48,16 @@ wl <- function(dir, rel, lines) writeLines(lines, file.path(dir, rel))
 # artifact carries and the "clean" scaffold failed D2 -- correctly, which made
 # every near-miss case below vacuous and hid two real false positives.
 PERS_CLEAN <- c(
-  "source,year,n_observed,n_followed_source,n_same_state,n_changed_state,n_lost_visible_in_nppes,n_lost_source_but_in_nppes,n_lost_from_source,pct_followed,pct_same_given_followed",
-  "src_a,2020,1000,980,950,30,990,19,20,98.0,96.9",
-  "src_a,2021,1100,1080,1050,30,1090,19,20,98.2,97.2",
-  "src_a,2022,1200,,,,,,,,",
-  "src_b,2020,500,480,470,10,495,19,20,96.0,97.9",
-  "src_b,2021,520,500,490,10,515,19,20,96.2,98.0",
-  "src_b,2022,540,,,,,,,,",
-  "nppes,2020,2000,1980,1950,30,0,0,20,99.0,98.5",
-  "nppes,2021,2100,2080,2050,30,0,0,20,99.0,98.6",
-  "nppes,2022,2200,,,,,,,,")
+  "source,year,n_observed,n_followed_source,n_same_state,n_changed_state,n_lost_source_but_in_nppes,n_lost_from_source,pct_followed,pct_same_given_followed",
+  "src_a,2020,1000,980,950,30,19,20,98.0,96.9",
+  "src_a,2021,1100,1080,1050,30,19,20,98.2,97.2",
+  "src_a,2022,1200,,,,,,,",
+  "src_b,2020,500,480,470,10,19,20,96.0,97.9",
+  "src_b,2021,520,500,490,10,19,20,96.2,98.0",
+  "src_b,2022,540,,,,,,,",
+  "nppes,2020,2000,1980,1950,30,0,20,99.0,98.5",
+  "nppes,2021,2100,2080,2050,30,0,20,99.0,98.6",
+  "nppes,2022,2200,,,,,,,")
 
 # Counts that fit the group they belong to: the three concordance-breaking
 # counts inside n_concordant_at_t, the resolution counts inside
@@ -147,7 +147,7 @@ case("D1 detects an interior year with no follow-up (the edge is no longer the o
        # src_a 2021 reports no follow-up at all, so a degenerate row now sits
        # inside the panel where the zero would be real attrition, and the
        # edge-exclusion rule no longer describes the shape.
-       p[3] <- "src_a,2021,1100,0,0,0,1090,19,1100,0.0,"
+       p[3] <- "src_a,2021,1100,0,0,0,19,1100,0.0,"
        wl(d, "artifacts/persistence_denominators.csv", p)
      })
 
@@ -162,7 +162,7 @@ case("D1 detects a consumer pooling every year with no year restriction",
 case("D2 detects more registry-visible leavers than leavers",
      function(d) {
        p <- PERS_CLEAN
-       p[2] <- "src_a,2020,1000,980,950,30,990,99,20,98.0,96.9"
+       p[2] <- "src_a,2020,1000,980,950,30,99,20,98.0,96.9"
        wl(d, "artifacts/persistence_denominators.csv", p)
      })
 
@@ -173,7 +173,7 @@ case("D2 detects a leaver-visibility share that moves >5 points off the panel ed
        # registry visibility instead of withholding both, so pooling drags
        # src_a from 95% down near 1.5%. This is the case the real artifact is
        # in today, and the one the fixed form above makes impossible.
-       p[4] <- "src_a,2022,1200,0,0,0,0,0,1200,0.0,"
+       p[4] <- "src_a,2022,1200,0,0,0,0,1200,0.0,"
        wl(d, "artifacts/persistence_denominators.csv", p)
      })
 
@@ -246,9 +246,9 @@ case("D1 does NOT reject an edge row that DECLARES its degeneracy instead of wit
        # structural check alone. An edge row that declares 1,200 leavers and
        # zero visibility is the D2 case above, not this one.
        p <- PERS_CLEAN
-       p[4] <- "src_a,2022,1200,0,0,0,1140,1140,1200,0.0,"
-       p[7] <- "src_b,2022,540,0,0,0,513,513,540,0.0,"
-       p[10] <- "nppes,2022,2200,0,0,0,0,0,2200,0.0,"
+       p[4] <- "src_a,2022,1200,0,0,0,1140,1200,0.0,"
+       p[7] <- "src_b,2022,540,0,0,0,513,540,0.0,"
+       p[10] <- "nppes,2022,2200,0,0,0,0,2200,0.0,"
        wl(d, "artifacts/persistence_denominators.csv", p)
      }, expect_fail = FALSE)
 

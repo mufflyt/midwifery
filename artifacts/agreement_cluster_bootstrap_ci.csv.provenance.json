@@ -1,17 +1,17 @@
 {
   "artifact": "agreement_cluster_bootstrap_ci.csv",
-  "written_utc": "2026-11-21 17:16:27 UTC",
+  "written_utc": "2026-11-22 00:16:15 UTC",
   "inputs": [
     {
       "path": "artifacts/canonical_source_records.csv",
       "sha256": "81cf8b26e0a055bc5ddbe74f3ffe872105d12025272bce18b9b68acfc901f006"
     }
   ],
-  "code_sha256": "207cb9c624065d72188ca0725099b96ebf26a4dcd11faff55effb049f0b2c660",
+  "code_sha256": "ceede6795cc3339394964fea2525e28e236823ecbff8860460847c6c817551fe",
   "code": [
     {
       "path": "build_f2_f3_uncertainty_denominators.R",
-      "sha256": "998bda2d3d333f03c9da8c3acc914c36cb479eaff014eabd1a3951629eaa0111"
+      "sha256": "3fd36bc0572122d363591d78053834c00966e26b3a0cd6cca3414cf0141c1fad"
     },
     {
       "path": "R/lib/artifact_provenance.R",

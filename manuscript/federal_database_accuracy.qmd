@@ -452,7 +452,9 @@ files contain no NPI-bearing segment at all -- to `r pc(A$medicaid_npi_pop_max, 
 clinician enrolled only in Oregon Medicaid is unobservable in this source
 regardless of record accuracy (Supplemental Figure S6). Field completeness
 varies by state in Medicaid files [@samples2025cmc]; CMS's own quality
-threshold for missing provider NPIs is 10% [@cms_tmsis_prv_npi].
+threshold for missing provider NPIs is 10% [@cms_tmsis_prv_npi], which
+`r A$medicaid_npi_pop_n_below_cms` of the `r A$medicaid_npi_pop_n_states`
+reporting states and territories do not meet.
 
 
 ### Consistency between databases

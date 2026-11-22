@@ -58,7 +58,6 @@ pt <- function(lon, lat, crs = 4326)
 poly <- function(crs = 4326)
   st_sf(g = "A", geometry = st_sfc(st_polygon(list(rbind(
     c(-105, 39), c(-104, 39), c(-104, 40), c(-105, 40), c(-105, 39)))), crs = crs))
-errs <- function(expr) tryCatch({ force(expr); FALSE }, error = function(e) TRUE)
 
 cat("\n-- BVA --\n")
 
