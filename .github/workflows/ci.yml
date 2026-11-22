@@ -238,6 +238,32 @@ jobs:
       - name: Science contracts
         run: Rscript tests/ci_science_contracts.R
 
+      # RESTORED A SECOND TIME, and by the same mechanism as the block below.
+      # Both gates were merged in #340 -- and #340's squash commit f194e36
+      # landed on `fix/table1-custodian-sort`, not on main, because that was
+      # the PR's base and the branch had already been merged away in ad3aec5.
+      # Nothing conflicted and nothing complained; the two files simply were
+      # never on main. Recovered 2026-11-22. See
+      # docs/APPENDIX_a_merge_into_a_dead_base_2026-11-22.md.
+      #
+      # ABOVE the denominator block deliberately. Actions halts a job at its
+      # first failing step, and the block below is the one that has historically
+      # been red by design, so a gate wired beneath it is a gate that does not
+      # run. Both of these are hermetic -- a static scan of library() calls and
+      # pure arithmetic -- so they are the cheapest possible things to put
+      # first and the least likely to halt anything themselves.
+      - name: Unused package attachments
+        run: Rscript tests/ci_unused_dependencies.R
+
+      # G5.4a of the rOpenSci statistical standards, applied on its merits:
+      # this repository computes a Wilson interval in three places and nothing
+      # compared them to each other. They agree on the formula and differ in
+      # units (proportion vs percent) and shape (vector vs 1x2 matrix); all
+      # three facts are pinned, so a change to one implementation cannot
+      # silently diverge from the other two.
+      - name: Wilson implementations agree
+        run: Rscript tests/test_wilson_implementations_agree.R
+
       # RESTORED. These three steps existed at afad4c2 and were dropped by
       # 579950c, the merge of #336, which took main's ci.yml wholesale -- the
       # steps lived only on this branch, so nothing conflicted and nothing

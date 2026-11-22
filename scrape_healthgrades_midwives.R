@@ -36,7 +36,6 @@
 suppressPackageStartupMessages({
   library(httr); library(rvest); library(jsonlite)
   library(dplyr); library(stringr); library(readr); library(tibble)
-  library(humaniformat)
 })
 # Atomic checkpoint/output writes. A plain saveRDS() + write_csv() pair can be
 # killed between the two calls, or mid-write, leaving a checkpoint newer than

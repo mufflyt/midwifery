@@ -875,7 +875,7 @@ found is the normal pre-merge state, not rot. If the fix slips to a later
 branch, unwire the ci.yml steps and say so here rather than leaving a red
 gate standing.
 
-## D15 — PECOS move rate was ~10x too high from a non-deterministic tie-break, not real churn
+## D16 — PECOS move rate was ~10x too high from a non-deterministic tie-break, not real churn
 
 - **status:** closed
 - **owner:** tyler

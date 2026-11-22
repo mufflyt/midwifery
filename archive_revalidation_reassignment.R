@@ -44,7 +44,7 @@
 #' @author Tyler Muffly, MD + Claude Code
 
 suppressPackageStartupMessages({
-  library(dplyr); library(readr); library(jsonlite); library(DBI)
+  library(dplyr); library(jsonlite); library(DBI)
   library(duckdb); library(cli)
 })
 
