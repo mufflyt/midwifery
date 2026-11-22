@@ -18,7 +18,7 @@
 #       <- artifacts/trilliant_activity_validation_<freeze sha8>.csv (newest)
 # =============================================================================
 suppressPackageStartupMessages({
-  library(dplyr); library(readr); library(ggplot2); library(stringr); library(tidyr)
+  library(dplyr); library(readr); library(ggplot2); library(stringr)
   library(scales); library(patchwork)
 })
 FIG <- file.path("docs", "figures")

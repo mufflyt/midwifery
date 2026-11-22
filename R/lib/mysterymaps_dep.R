@@ -88,36 +88,3 @@ mm_home <- function() {
          "\nSet MYSTERYMAPS_HOME to your isochrones-main checkout.", call. = FALSE)
   hit[1]
 }
-
-#' Load the canonical mm_* helpers into the calling environment
-#'
-#' The helper file resolves its own dependencies with `here::here()`, so it must
-#' be sourced with the working directory at that project root; the directory is
-#' restored on exit.
-#'
-#' @return Invisibly, the character vector of `mm_*` objects loaded.
-#' @param quiet [logical(1)]: suppress the source() messages.
-#'   Default TRUE.
-#' @return invisibly TRUE once the helpers are attached; stops if the
-#'   canonical source cannot be found, rather than continuing with a
-#'   partially loaded namespace.
-#' @examples
-#' \dontrun{
-#' load_mysterymaps()
-#' mm_jenks_zero_scale(values)
-#' }
-load_mysterymaps <- function(quiet = TRUE) {
-  home <- mm_home()
-  owd <- setwd(home); on.exit(setwd(owd), add = TRUE)
-  f <- file.path("R", "mysterymaps_urogyn.R")
-  if (quiet) {
-    suppressWarnings(suppressMessages(sys.source(f, envir = globalenv())))
-  } else {
-    sys.source(f, envir = globalenv())
-  }
-  got <- ls(globalenv(), pattern = "^mm_")
-  if (!"mm_jenks_zero_scale" %in% got)
-    stop("mysterymaps loaded but mm_jenks_zero_scale is absent -- wrong file?",
-         call. = FALSE)
-  invisible(got)
-}

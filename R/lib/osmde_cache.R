@@ -91,10 +91,15 @@ osmde_cache_get <- function(cache_dir, key) {
     return(list(sf = x, fetched_utc = NA_character_, routing_engine = legacy_engine))
   if (is.list(x) && inherits(x$sf, "sf"))
     return(list(sf = x$sf, fetched_utc = x$fetched_utc,
-               routing_engine = x$routing_engine %||% legacy_engine))
+                # Inlined from a local `%||%` that shadowed base R's with
+                # different semantics (it also fell back on NA). One call
+                # site does not earn an operator, and shadowing base's name
+                # with a different meaning is how the wrong one gets used.
+                routing_engine = if (is.null(x$routing_engine) ||
+                                     all(is.na(x$routing_engine)))
+                                   legacy_engine else x$routing_engine))
   NULL
 }
-`%||%` <- function(a, b) if (is.null(a) || (length(a) == 1 && is.na(a))) b else a
 
 #' Migrate a monolithic `_checkpoint.rds` into the per-location cache
 #'

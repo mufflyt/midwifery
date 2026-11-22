@@ -36,7 +36,7 @@
 #' @family maintenance
 #' @author Tyler Muffly, MD + Claude Code
 
-suppressPackageStartupMessages({library(jsonlite); library(readr); library(dplyr)})
+suppressPackageStartupMessages({library(jsonlite); library(readr);})
 
 APPLY <- nzchar(Sys.getenv("REPIN_APPLY"))
 LINKAGE_MANIFEST <- "artifacts/linkage_manifest.json"

@@ -6,7 +6,7 @@
 # =============================================================================
 
 suppressPackageStartupMessages({
-  if (requireNamespace("dplyr", quietly = TRUE)) library(dplyr)
+  if (requireNamespace("dplyr", quietly = TRUE))
   if (requireNamespace("jsonlite", quietly = TRUE)) library(jsonlite)
 })
 

@@ -161,7 +161,15 @@ ALLOW <- c("chk", "xchk", "pick", "f", "ok", "bad", "skip", "kills",
 defs <- list()
 for (f in r_files) {
   ln <- readLines(f, warn = FALSE)
-  m <- regmatches(ln, regexpr("^[.A-Za-z_][A-Za-z0-9_.]*(?= *<- *function)", ln,
+  # BACKTICKED NAMES COUNT. The old class started at [.A-Za-z_], so a
+  # backtick could not match and every operator defined with `%op%` <-
+  # function was invisible to this gate. Four separate `%||%` definitions
+  # coexisted under it, with FOUR different meanings -- one returned a[1],
+  # one treated a scalar NA as absent, one fell back on length 0, one was
+  # base R's exactly -- all shadowing base's `%||%` at their call sites.
+  # An operator is a function and a duplicate one is the defect H4 exists
+  # to name.
+  m <- regmatches(ln, regexpr("^(`[^`]+`|[.A-Za-z_][A-Za-z0-9_.]*)(?= *<- *function)", ln,
                               perl = TRUE))
   for (nm in unique(m)) defs[[nm]] <- unique(c(defs[[nm]], f))
 }

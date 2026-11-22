@@ -753,13 +753,9 @@ repo_gate_commit_messages <- function(root) {
 }
 
 
-`%||%` <- function(x, y) {
-  if (base::is.null(x)) {
-    return(y)
-  }
-
-  x
-}
+# `%||%` is base R's since 4.4.0 and this file's copy was identical to it, so
+# the copy is gone rather than kept in sync. The three other definitions in
+# this repository are NOT base's and were renamed instead; see R/lib/common_helpers.R.
 
 
 

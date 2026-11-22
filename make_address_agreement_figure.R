@@ -17,7 +17,7 @@
 # Input : artifacts/dac_openpayments_vs_nppes_address_agreement.csv (tracked)
 # Output: docs/figures/dac_openpayments_vs_nppes_agreement.png
 # =============================================================================
-suppressPackageStartupMessages({library(ggplot2); library(dplyr); library(readr); library(stringr)})
+suppressPackageStartupMessages({library(ggplot2); library(readr); library(stringr)})
 
 IN  <- "artifacts/dac_openpayments_vs_nppes_address_agreement.csv"
 OUT <- "docs/figures/dac_openpayments_vs_nppes_agreement.png"

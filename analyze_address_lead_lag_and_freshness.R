@@ -30,8 +30,7 @@ suppressPackageStartupMessages({
   library(purrr)
   library(DBI)
   library(duckdb)
-  library(lubridate)
-  library(cli)
+    library(cli)
   library(mysteryroster)
 })
 
