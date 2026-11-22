@@ -119,7 +119,10 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   yet (`all()` of nothing is `TRUE`), which is the
   `docs/APPENDIX_checks_that_cannot_fail_2026-11-20.md` failure mode; both now
   require their columns. Wired into `ci.yml`; needs no extra packages and no
-  private data.
+  private data. Wired in **below `Denominator contracts`** on the first push,
+  which fails by design, so GitHub Actions halted the job before reaching it
+  and the suite ran zero times while counting as coverage — found by reading
+  the job log for the step name. It now runs ahead of the known-red gates.
 
 ### Known issues
 

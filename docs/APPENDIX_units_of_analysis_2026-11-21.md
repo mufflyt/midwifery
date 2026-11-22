@@ -148,6 +148,19 @@ because the column they read did not exist yet and `all()` of nothing is
 `TRUE` — Shape 4 of the companion appendix, committed while writing the gate
 for it. Both now require their columns before asserting.
 
+It was then wired into `ci.yml` **below `Denominator contracts`**, which
+fails by design until DEBT D14's open decision is made. GitHub Actions halts a
+job at its first failing step, so the suite ran **zero times** on its first
+push while reporting as coverage in the workflow file and in this appendix.
+Caught by reading the job log for the step name rather than by trusting that a
+wired step runs. It now sits ahead of the known-red gates.
+
+That is the third instance in one change set of the same failure: a check
+that was added, counted, and could not fail — first two vacuous assertions,
+then an entire suite behind a red step. **Wiring a gate is not the same as
+running it.** Verify a new step by name in the job log of the first push, not
+by its presence in the YAML.
+
 [`audit_medicaid_npi_coverage.R`](../audit_medicaid_npi_coverage.R) covers
 what the gate structurally cannot. The suite checks that the artifact is
 consistent with **itself**; it never reads the parquet, and no CI runner can,
