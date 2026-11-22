@@ -438,6 +438,46 @@ partition — process inspection is not a substitute for a claim you can see.
 
 ---
 
+### 21. The lesson from 15 was written down, and it happened again
+
+**2026-11-21.** A session finished a code-complexity review and six fixes
+(`amcb_license_bridge.R`, `manuscript/R/build_stats_catalog.R`,
+`R/join_safety.R`, a new `ci_hygiene.R` gate, a 24-saboteur suite). It never
+committed them. A concurrent session in the same checkout ran `git add -A` and
+committed, and all of it landed inside `966ed9a` — *"Fix five statistics
+computed over the wrong population, and five checks nothing performed"* — whose
+message describes that session's denominator work and mentions none of it.
+
+Then the same tree entered a conflicted merge of `origin/main`, and the merge
+resolution replaced `Review_AI_complexity.qmd` — the first session's report,
+written that day — with the `2026-11-19` report of the same name already on
+main. The file was recoverable only because `git add -A` had committed it first.
+
+**This is entry 15's failure, one tier worse.** Entry 15 already ends with the
+remedy: *"partition by path and never stage or revert outside your partition."*
+That remedy was written down, is in this file, and did not hold — because
+`git add -A` does not respect a partition anyone agreed to, and the person
+running it could not see which paths were someone else's.
+
+**What made it recoverable rather than lost:** the swept work had been staged,
+so it was in a commit, under the wrong message but intact. Nothing was
+destroyed. The cost was attribution and an hour of untangling which half of a
+950-line `R/join_safety.R` conflict belonged to whom.
+
+**Lesson.** A written partition is not a partition. Two agents cannot safely
+share one checkout, because the dangerous command takes no argument that says
+whose work it is. The mechanical fix is cheap and this repository already uses
+it elsewhere: `git worktree add -b <branch> <dir> origin/main` gives each
+session its own working tree and its own index, so `git add -A` can only ever
+sweep that session's own files. Sixteen worktrees were live on this repository
+at the time; the two that collided were the two sharing one.
+
+If you must share a checkout: stage by explicit path, and treat
+`git status` output that is shorter than you expect as a question — the same
+signal entry 15 names, still the earliest one available.
+
+---
+
 ## Tier 6 — Destructive operations
 
 ### 16. Wrote "losing the local copy is not safe", then deleted the local copies
@@ -582,3 +622,92 @@ from the final outputs.
 **Lesson:** a number quoted in a document must come from a committed script run
 on the final outputs, never from an exploratory run or from arithmetic on two
 other numbers.
+
+---
+
+## Tier 8 — Caught before merge: the complexity-review fixes (2026-11-21)
+
+Three own-goals from one session of fixing other defects. None reached `main`;
+each was caught by a different mechanism, and the mechanisms are the point.
+
+### 22. A guard that confused "the caller supplied it" with "the caller asked for something"
+
+`safe_left_join()` accepted four arguments it read nowhere, so they were changed
+to refuse rather than be ignored. The first version of each guard tested
+`!missing(x)`:
+
+```r
+if (!missing(max_right_dup_keys)) stop(...)
+```
+
+`max_right_dup_keys` defaults to `if (expect_unique_right) 0 else Inf`. So the
+guard fired for every caller who spelled the default out — and a bare
+`is.finite()` test instead would have been worse, rejecting *every* ordinary
+call, because the default `0` is finite. The same mistake was in the
+`max_duplication` and `min_coverage` guards, where `NULL` means "no threshold"
+and no threshold is exactly what the function applies.
+
+A refusal must fire only on a value that **asks for something the function will
+not do**. Spelling out a default asks for nothing:
+
+```r
+implied <- if (isTRUE(expect_unique_right)) 0 else Inf
+if (!isTRUE(all.equal(as.numeric(max_right_dup_keys), as.numeric(implied)))) stop(...)
+```
+
+**How it was caught:** writing the near-miss cases. The saboteurs for this fix
+assert both that a real request is refused *and* that a default, and a value
+that restates the default, are not. The first version failed its own near-miss
+test before any caller saw it.
+
+**Lesson.** When converting silence into an error, enumerate the values that
+currently mean "do nothing" and assert each still does. A guard with only
+positive cases is a guard that has never been asked whether it is too eager.
+
+### 23. Proposed deleting a deliberate decision, because the comment explaining it was in the other file
+
+The review found `audit2013_norm()` and `drift_norm()` byte-identical under two
+names and recommended consolidating four person-name normalisers into one
+canonical helper — the repository's own stated rule about duplicated
+normalisers.
+
+`audit_2013_dac_vs_nppes.R:181` forbids exactly that:
+
+> *"Upper-case, strip punctuation and collapse whitespace. Nothing more: no
+> nickname table, no transliteration, no fuzzy distance. The point is to count
+> genuine disagreement, and an aggressive normaliser hides exactly the
+> disagreement this audit exists to measure."*
+
+Consolidating would have reduced measured disagreement — changing the result
+those scripts exist to produce — while looking like de-duplication.
+
+**How it was caught:** reading the four functions before editing them, at the
+point of writing the fix rather than the recommendation.
+
+**Lesson.** Two identical bodies are not evidence that they should be one
+function; they may be two deliberate decisions that happen to agree today. Read
+what is *above* a duplicate, not only the duplicate. And when the rationale
+lives in only one of the copies — as it did here — the copy without it is the
+one that will be "fixed" by someone acting in good faith.
+
+### 24. A new file re-introduced the duplication a gate had just been cleaned of
+
+The saboteur suite written for these fixes defined `errs()` at top level.
+`tests/test_cycle11_spatial.R` already had an `errs()` with the same contract
+and different mechanics (`tryCatch` + `force` against `try()` + `inherits`), so
+`ci_hygiene.R` H4 went red on the commit that added the second copy. The suite
+also defined `scaffold()` and `gate_fails()` — names that a merge landing in
+parallel had *just removed* from H4's allowlist, having de-duplicated them.
+
+Both were fixed the right way round: `errs()` moved into
+`tests/helper-saboteur.R`, which both suites already source, and the other two
+renamed. Neither was added back to the allowlist.
+
+**Lesson.** The tempting repair for a red duplication gate is to widen its
+allowlist, which turns a gate into a record of what you were willing to stop
+checking. An allowlist that only ever shrinks is worth having; one that grows
+to fit each new file is not. Before adding a helper, grep for the name — and
+when a gate names the file it collides with, read that file's version first:
+here it was the better of the two, and the one that survived.
+
+---
