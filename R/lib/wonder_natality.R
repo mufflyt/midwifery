@@ -34,7 +34,8 @@
 #'
 #' @section Rate limit:
 #' The API requires >= 15 seconds between consecutive requests and says so only
-#' after you exceed it. `wonder_post()` sleeps to enforce this itself.
+#' after you exceed it. Whatever fetches the response must enforce that itself;
+#' this file parses a response it is handed and makes no request.
 #'
 #' @family wonder
 #' @author Tyler Muffly, MD + Claude Code
@@ -51,14 +52,14 @@ WONDER_MIN_WAIT <- 16  # seconds; the documented floor is 15
 #' Suppressed, unreliable and not-applicable cells are returned as `NA` with a
 #' companion flag rather than silently becoming zero.
 #'
-#' @param doc [xml_document]: from `wonder_post()`.
+#' @param doc [xml_document]: a WONDER response, already fetched.
 #' @param n_group [integer(1)]: number of grouping variables (`B-1`, `B-2`,
 #'   ...) requested, so the parser knows how many leading label columns precede
 #'   the measures. Default 1.
 #' @return [data.frame] one row per data-table row.
 #' @examples
 #' \dontrun{
-#' doc <- wonder_post(body)
+#' doc <- xml2::read_xml(response_body)
 #' wonder_parse(doc, n_group = 2L)   # grouped by state AND year
 #' }
 #' @family wonder

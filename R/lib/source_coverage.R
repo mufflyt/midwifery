@@ -387,8 +387,7 @@ describe_panel_input <- function(input_path, date_column, state_column,
 #'   required evidence. FALSE records the same verdicts and returns them, for
 #'   an explicitly-invoked exploratory run that must label its outputs.
 #' @param source_ids [character] optional subset of `source_id` to validate.
-#' @return [tbl_df] one row per declared source-year, columns per
-#'   `source_coverage_columns()`.
+#' @return [tbl_df] one row per declared source-year.
 validate_source_coverage <- function(source_manifest,
                                      publication_mode = TRUE,
                                      source_ids = NULL) {

@@ -62,6 +62,14 @@ write_lines_to <- function(dir, rel, lines) {
   writeLines(lines, p)
 }
 
+# Tracked .R/.qmd paths, asked of git with no shell in the way.
+ci_tracked_files <- function(root) {
+  out <- suppressWarnings(system2("git",
+    c("-C", shQuote(root), "ls-files", shQuote("*.R"), shQuote("*.qmd")),
+    stdout = TRUE, stderr = FALSE))
+  if (!length(out)) character(0) else out
+}
+
 gate_rejects <- function(dir, gate) {
   system2("git", c("-C", dir, "add", "-A"), stdout = FALSE, stderr = FALSE)
   st <- suppressWarnings(system2("sh", c("-c",
@@ -152,10 +160,22 @@ sab(3, "dead functions are gone; functions used inside their own file are not")
 
 gone <- c("wonder_request_xml", "wonder_post", "load_mysterymaps",
           "source_coverage_columns")
+
+# READ THE FILES, DO NOT SHELL OUT. system2() pastes its arguments into a
+# shell command, so `*.R` was glob-expanded by the shell against the top-level
+# directory before git ever saw it -- git grep then searched root-level files
+# only, never R/lib/, and this check could not fail. It reported "all 4 stay
+# gone" while three references to wonder_post() sat in
+# R/lib/wonder_natality.R. Reading tracked files directly has no quoting
+# layer to get wrong.
+tracked <- ci_tracked_files(root)
+tracked <- tracked[!grepl("test_audit_cuts_saboteurs\\.R$", tracked)]
 still <- vapply(gone, function(fn) {
-  hits <- system2("git", c("-C", root, "grep", "-lw", fn, "--", "*.R", "*.qmd"),
-                  stdout = TRUE, stderr = FALSE)
-  length(hits) > 0L
+  any(vapply(tracked, function(f) {
+    txt <- tryCatch(readLines(file.path(root, f), warn = FALSE),
+                    error = function(e) character(0))
+    any(grepl(sprintf("\\b%s\\b", fn), txt))
+  }, logical(1)))
 }, logical(1))
 chk(!any(still), sprintf("A3a all %d deleted functions stay gone (%s)",
                          length(gone), paste(names(which(still)), collapse = ", ")))
