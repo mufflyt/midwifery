@@ -22,12 +22,13 @@
 #   LONGITUDINAL  a state for an NPI in a given YEAR, so it can carry
 #                 agreement-over-time, lead/lag, churn and fusion:
 #                 nppes, pecos_revalidation, medicare_part_b, medicare_part_d,
+#                 medicaid_enrollment (moved out of SNAPSHOT 2026-11-10),
 #                 open_payments.
 #   SNAPSHOT      one state per NPI with no usable year, so it can only carry
 #                 presence and current-state agreement: dac_physician_compare,
 #                 facility_affiliation_ccn (the NPI -> CCN route),
 #                 healthgrades, doximity, state_boards_of_nursing,
-#                 cms_ndh_fhir, medicaid_enrollment (DOGE T-MSIS segments).
+#                 cms_ndh_fhir.
 #
 # Giving a snapshot a year it does not have would manufacture a time series,
 # and every lead/lag number computed from it would be an artifact of that
@@ -179,12 +180,34 @@ longi$medicare_part_d <- read_if(file.path(ART, "cohort_midwives_part_d_state_by
     transmute(npi = trimws(npi), year = as.integer(year), state = clean_state(state)) %>%
     filter(!is.na(state)) %>% keep_cohort() %>% distinct())
 
-op_files <- Sys.glob(file.path(ART, "cohort_midwives_open_payments_general_*.csv"))
-longi$open_payments <- if (!length(op_files)) NULL else bind_rows(lapply(op_files, function(f)
-  read_csv(f, col_types = cols(.default = "c"), progress = FALSE) %>%
-    transmute(npi = trimws(npi), year = as.integer(str_extract(basename(f), "\\d{4}")),
-              state = clean_state(recipient_state)))) %>%
-  filter(!is.na(npi), !is.na(state)) %>% keep_cohort() %>% distinct()
+# OPEN PAYMENTS IS LONGITUDINAL NOW, 2021-2025, NOT A SINGLE YEAR.
+# It sat in this tier with only 2024 extracted, producing zero transitions and
+# four skipped lead/lag pairings, while the raw releases for 2013-2023 and
+# 2025 were on the volume the whole time. extract_open_payments_cohort_by_year.R
+# reads all of them: 21,067 NPI-years, 8,496 midwives, 2013-2025.
+#
+# ONLY 2021 ONWARDS ENTERS THE COMPARISON. Certified nurse-midwives did not
+# become covered recipients until the SUPPORT Act expansion hit program year
+# 2021, and before that this cohort has 4-21 midwives a year against 3,018 in
+# 2021 -- a 500-fold discontinuity at the rule change. Those trace years are
+# real observations but they are not a trend, and feeding them to churn or
+# lead/lag would manufacture transitions from a handful of people who were
+# reportable under some other recipient category. The producer marks them
+# usable_for_trend = FALSE and this filter honours it.
+#
+# 2013-2014 additionally carry no NPI in the source at all; they are linked
+# retrospectively through a profile -> NPI lookup learned from 2021-2025 and
+# are evidence class B. They are excluded here for the eligibility reason
+# above, which also keeps the retrospective rows out of the comparison.
+longi$open_payments <- read_if(
+  file.path(ART, "open_payments_midwife_presence_by_year.csv"), function()
+  read_csv(file.path(ART, "open_payments_midwife_presence_by_year.csv"),
+           col_types = cols(.default = "c"), progress = FALSE) %>%
+    filter(usable_for_trend == "TRUE") %>%
+    transmute(npi = trimws(npi), year = as.integer(program_year),
+              state = clean_state(state)) %>%
+    filter(!is.na(npi), !is.na(year), !is.na(state)) %>% keep_cohort() %>%
+    distinct())
 
 if (is.null(longi$nppes)) stop("nppes panel is required and absent", call. = FALSE)
 longi <- longi[!vapply(longi, is.null, logical(1))]
@@ -238,24 +261,38 @@ snap$cms_ndh_fhir <- read_if(file.path(ART, "cms_ndh_midwives.csv"), function()
     keep_cohort() %>% one_per_npi())
 
 # DOGE T-MSIS Medicaid enrollment segments (opendata.hhs.gov, 2026-07-24).
-MEDICAID_REL <- file.path("doge_opendata", "medicaid_provider_enrollment_segments_2026_07_24",
-                          "medicaid-provider-enrollment-segments.parquet")
-snap$medicaid_enrollment <- local({
-  p <- samsung_volume_path(MEDICAID_REL, must_exist = FALSE)
-  if (is.na(p)) { note_missing("medicaid_enrollment", MEDICAID_REL, "Samsung volume not mounted"); return(NULL) }
-  con <- duckdb_connect(); on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
-  DBI::dbWriteTable(con, "wanted", data.frame(npi = cohort_npis), overwrite = TRUE)
-  pairs <- DBI::dbGetQuery(con, sprintf(
-    "SELECT trim(s.NPI) AS npi, s.STATE_CD AS state, count(*) AS n
-       FROM read_parquet(%s) s JOIN wanted w ON w.npi = trim(s.NPI)
-      WHERE s.STATE_CD IS NOT NULL GROUP BY 1,2", DBI::dbQuoteString(con, p)))
-  if (!nrow(pairs)) return(NULL)
-  lut <- tibble(state = unique(pairs$state)) %>% mutate(clean = clean_state(state))
-  pairs %>% inner_join(lut, by = "state") %>% filter(!is.na(clean)) %>%
-    transmute(npi, state = clean, n) %>%
-    arrange(npi, desc(n), state) %>% group_by(npi) %>% slice(1) %>% ungroup() %>%
-    select(npi, state)
-})
+# MEDICAID ENROLMENT IS LONGITUDINAL, AND USED TO BE READ AS A SNAPSHOT.
+# Until 2026-11-10 this block reduced the whole T-MSIS segments file to one
+# modal state per NPI and put it in the SNAPSHOT tier, so a career-long state
+# was compared against every other source's contemporaneous value. The file
+# carries ENRL_START_DT and ENRL_END_DT; expanding by date-range overlap
+# yields 119,527 cohort NPI-years, 2013-2024.
+#
+# Measured, not assumed: the old modal state differs from the year-specific
+# state on 14.4% of NPI-years -- 30.5% in 2013 decaying monotonically to 5.7%
+# in 2024, which is the signature of comparing one fixed value against a
+# moving one. That is why medicaid_enrollment carried an odd-one-out rate of
+# 0.166, five times the next source, and the lowest fusion agreement of the
+# fourteen. See extract_medicaid_enrollment_state_by_year.R and
+# artifacts/medicaid_enrollment_modal_vs_yearly.csv.
+#
+# CLASS B, NOT CLASS A. One file published 2026-07-24 describing years of
+# history is retrospectively reported, not twelve independently dated
+# observations, and 2013-2017 is additionally left-censored: no segment that
+# closed before 2018-01-01 is in the file at all, so coverage in those years
+# is survivorship. The states are sound; the coverage trend is not.
+longi$medicaid_enrollment <- read_if(
+  file.path(ART, "medicaid_enrollment_cohort_state_by_year.csv"), function()
+  read_csv(file.path(ART, "medicaid_enrollment_cohort_state_by_year.csv"),
+           col_types = cols(.default = "c"), progress = FALSE) %>%
+    transmute(npi = trimws(npi), year = as.integer(year),
+              state = clean_state(state)) %>%
+    filter(!is.na(npi), !is.na(year), !is.na(state)) %>% keep_cohort() %>%
+    distinct())
+if (is.null(longi$medicaid_enrollment))
+  note_missing("medicaid_enrollment",
+               file.path(ART, "medicaid_enrollment_cohort_state_by_year.csv"),
+               "run extract_medicaid_enrollment_state_by_year.R first")
 
 snap <- snap[!vapply(snap, is.null, logical(1))]
 for (n in names(snap)) cat(sprintf("  %-26s %6s NPIs\n", n, format(nrow(snap[[n]]), big.mark = ",")))
@@ -344,6 +381,35 @@ cat("\n[4] current-state agreement across every source (latest year each)\n")
 current <- c(
   lapply(longi, function(d) d %>% filter(year == max(year)) %>% transmute(npi, year = 1L, state)),
   lapply(snap,  function(d) d %>% transmute(npi, year = 1L, state)))
+
+# ONE VOTE PER LINEAGE, NOT PER FILE. Medicare Part B and Part D are two
+# products of one CMS claims pipeline and never named different states on
+# 13,745 shared NPI-years (mrost_agreement_pairwise.csv): counting both as
+# independent votes in consensus-tier or truth-fusion steps double-counts a
+# single underlying record. The pairwise tables above keep them separate on
+# purpose -- "does Part D agree with NPPES" is a real question with a real
+# answer (96.6%), and the pair is not a vote there. Every step that counts
+# sources as voters uses `current_collapsed`, where the family rule is the
+# one attribute_claims_collapse_lineage() encodes: same value -> one claim;
+# conflict -> no claim; one side present -> passes through.
+collapse_pair_to_family <- function(a, b) {
+  dplyr::full_join(a %>% dplyr::rename(state_a = .data$state),
+                   b %>% dplyr::rename(state_b = .data$state),
+                   by = c("npi", "year")) %>%
+    dplyr::mutate(state = dplyr::case_when(
+      is.na(.data$state_a) ~ .data$state_b,
+      is.na(.data$state_b) ~ .data$state_a,
+      .data$state_a == .data$state_b ~ .data$state_a,
+      TRUE ~ NA_character_)) %>%
+    dplyr::filter(!is.na(.data$state)) %>%
+    dplyr::select("npi", "year", "state")
+}
+current_collapsed <- current
+if (all(c("medicare_part_b", "medicare_part_d") %in% names(current))) {
+  current_collapsed$medicare_claims <- collapse_pair_to_family(
+    current$medicare_part_b, current$medicare_part_d)
+  current_collapsed[c("medicare_part_b", "medicare_part_d")] <- NULL
+}
 agr_now <- attribute_agreement(current, "state") %>%
   group_by(source_a, source_b) %>%
   summarise(n_comparable = n(), n_agree = sum(agree), .groups = "drop") %>%
@@ -364,11 +430,33 @@ if (length(current) >= 3) {
   write_with_provenance(ooo_rate, file.path(ART, "mrost_odd_one_out_rate.csv"), inputs = COHORT, na = "")
 }
 
-tier <- attribute_consensus_tier(current, "state")
+tier <- attribute_consensus_tier(current_collapsed, "state")
 tier_sum <- tier %>% count(tier, name = "n_npis") %>%
   mutate(pct = round(100 * n_npis / sum(n_npis), 1))
 print(as.data.frame(tier_sum), row.names = FALSE)
 write_with_provenance(tier_sum, file.path(ART, "mrost_consensus_tier.csv"), inputs = COHORT, na = "")
+
+# THE PER-NPI TIER IS KEPT, not just its tally. It was computed here and
+# discarded, which meant any analysis asking "who disagrees, and what else is
+# true of them?" had to recompute it from scratch or go without -- the licence
+# -count cross-tabulation in the state-source audit vignette went without, and
+# its figure became unreproducible when the intermediate was lost. Writing the
+# per-NPI assignment costs one line and makes that class of question answerable
+# from a tracked artifact. Carries no name, address or date of birth: an NPI is
+# a public provider identifier, and the tier is derived from public sources.
+# attribute_consensus_tier() names the entity column `id`, not `npi`; it is
+# renamed on the way out so the artifact joins to every other mrost table
+# without the caller having to know that. The agreement detail is kept too --
+# how many sources reported, how many distinct values they gave, and the
+# concordance percentage -- because a tier label alone cannot distinguish
+# "two sources, one disagreed" from "seven sources, three disagreed".
+write_with_provenance(
+  tier %>%
+    transmute(npi = as.character(id), year, n_reporting, n_distinct_values,
+              concordance_pct, tier) %>%
+    arrange(npi),
+  file.path(ART, "mrost_consensus_tier_by_npi.csv"),
+  inputs = COHORT, na = "")
 
 # -------------------------------------------------- 6. churn per source
 cat("\n[6] churn: how often each source's own value flips\n")
@@ -402,6 +490,13 @@ cat("\n[8] truth fusion (majority) vs each source\n")
 claims <- bind_rows(lapply(names(current), function(n)
   current[[n]] %>% transmute(entity_id = npi, attribute = "state", source_id = n,
                              claimed_value = state, reference_year = 2026L)))
+# The collapse is applied at the claims layer as well, through the package's
+# own rule rather than the hand-rolled one above, so the two enforcement
+# points cannot drift: current_collapsed governs the consensus tier and this
+# call governs fusion. on_conflict = "drop" matches the family rule.
+claims <- attribute_claims_collapse_lineage(
+  claims, lineage_groups = list(medicare_claims = c("medicare_part_b", "medicare_part_d")),
+  on_conflict = "drop")
 fus <- tryCatch(attribute_truth_fusion(claims, method = "majority"), error = function(e) {
   cat("  truth fusion failed:", conditionMessage(e), "\n"); NULL })
 if (!is.null(fus)) {

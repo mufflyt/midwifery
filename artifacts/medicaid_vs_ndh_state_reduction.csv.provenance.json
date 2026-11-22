@@ -1,0 +1,33 @@
+{
+  "artifact": "medicaid_vs_ndh_state_reduction.csv",
+  "written_utc": "2026-11-13 02:05:41 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/medicaid_enrollment_cohort_state_footprint.csv",
+      "sha256": "02a2d3c9e28acebc5b81c617485e4c0531a81d74bae2b154d5ef36addcbc83b3"
+    },
+    {
+      "path": "artifacts/cms_ndh_midwives.csv",
+      "sha256": "6a439987fd5bf78474dd15e097f579d7871fd67210fd14a33ac99f68c1bb1b7e"
+    }
+  ],
+  "code_sha256": "7942f8c9566131c24494fbd8acfa9fed27743aaae21a16d47961796e544987b9",
+  "code": [
+    {
+      "path": "analyze_medicaid_vs_ndh_state_reduction.R",
+      "sha256": "faccfb5d8076655cca0dc4d40c5ad17be8e0a2ccf4c789418d630b03dd6e72de"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/clean_state.R",
+      "sha256": "188cee53abd5b2e7afb2c6bffbc7ea27a16029189fb97ca8be1865d5ab0c2c23"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ]
+}

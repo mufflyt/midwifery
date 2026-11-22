@@ -39,21 +39,16 @@
 # Run: Rscript tests/test_cycle19_address_provenance.R
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 suppressPackageStartupMessages({library(dplyr); library(readr)})
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 # The ZIP key under test is the production one, sourced rather than restated.
 source("R/lib/common_helpers.R")
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 GH <- paste(readLines("R/03-geography-hierarchy.R", warn = FALSE), collapse = "\n")
 # The evidence file is a person-level artifact and gitignored, so it is absent
 # on a runner. Every assertion below that reads it used to chk(FALSE) there,
@@ -62,7 +57,6 @@ source(file.path(root, "tests", "helper-optional-inputs.R"))
 # sha256_of(): the canonical hash used by write_with_provenance(), so the test
 # compares like with like rather than reimplementing the digest.
 source(file.path(root, "R", "lib", "provenance.R"))
-`%||%` <- function(a, b) if (is.null(a)) b else a
 EV <- "artifacts/invariant_address_provenance_failures.csv"
 ev <- if (file.exists(EV))
   suppressWarnings(read_csv(EV, show_col_types = FALSE, progress = FALSE,

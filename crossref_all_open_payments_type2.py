@@ -2,6 +2,18 @@
 # =============================================================================
 # Full-Cohort Open Payments to NPPES Type 2 Organization Cross-Referencer
 # =============================================================================
+#
+# VALIDATION-ONLY, NOT A CANONICAL PRODUCER (DEBT.md D5, ruled 2026-11-18).
+# This script's match accepts the FIRST of <=10 unordered NPI-registry results
+# in the same city/state/ZIP whose first 8 address characters prefix-match --
+# at a multi-tenant medical building that is an arbitrary tenant. Measured:
+# against the canonical implementation (resolve_org_ambiguity.R ->
+# artifacts/midwife_org_affiliations_candidate.csv), the two agree on a Type-2
+# NPI for 74 of 450 overlapping midwives (16.4%), and only 6.9% when
+# conditioned on the same input address and an unambiguous canonical pick.
+# Use this output to VALIDATE or as extra evidence, never as an employer.
+# See docs/OPEN_PAYMENTS_LINKAGE_COMPARISON.md and
+# artifacts/op_linkage_disagreement_diagnosis.csv.
 import requests
 import csv
 import json

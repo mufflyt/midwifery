@@ -1,0 +1,6 @@
+source,n_rows,n_npis,pct_amcb_id,pct_snapshot_date,pct_effective_date,pct_usable_for_trend
+medicaid_enrollment,116737,13305,100,0,0,67.6
+medicare_claims,40214,8204,100,0,0,100
+nppes,214106,16761,100,100,0,100
+open_payments,20495,8290,100,0,0,99.6
+pecos_revalidation,55456,11373,100,0,0,100

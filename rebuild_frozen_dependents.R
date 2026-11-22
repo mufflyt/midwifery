@@ -166,6 +166,24 @@ REBUILD_ORDER <- list(
                    # free.
                    "compare_nppes_to_dac_demographics.R",
                    "audit_linkage_arms_3way.R",
+                   # Added 2026-11-14 by T5 again -- the eighth catch, in the
+                   # pull request that introduced it.
+                   #
+                   # audit_mysterynpi_migration.R measures what a change in the
+                   # pinned mysterynpi version does to the name decisions the
+                   # matcher makes, over the freeze's own roster. Its report is
+                   # a claim about a PARTICULAR cohort's name comparisons, so a
+                   # rebuild that promotes a new cohort invalidates it the same
+                   # way it invalidates any other description of the crosswalk.
+                   #
+                   # Belongs in this layer for the same reason the other audits
+                   # do: it describes the crosswalk and feeds nothing
+                   # downstream, so its order within the layer is free. It
+                   # writes outside artifacts/ entirely (the caller names the
+                   # output directory), so it cannot collide with a rebuild's
+                   # own writes. In "diff" mode it reads no freeze at all and
+                   # only compares two probe directories.
+                   "audit_mysterynpi_migration.R",
                    # Added 2026-11-09 by T5 again, in the pull request that
                    # added Medicare Part B and Part D to the source comparison
                    # -- the seventh catch.
@@ -187,6 +205,33 @@ REBUILD_ORDER <- list(
                    # Layer 1: they describe the crosswalk and feed nothing
                    # downstream, so order within the layer is free.
                    "extract_medicare_part_b_d_cohort_states.R",
+                   # Added 2026-11-10 by T5, the EIGHTH catch, in the pull
+                   # request that recovered the NBER PPEF enrolment vintages.
+                   #
+                   # extract_ppef_cohort_state_by_vintage.R reads the cohort's
+                   # NPIs straight from the freeze and asks sixteen PPEF
+                   # archives (2016-08 through 2024-07) what state each midwife
+                   # was enrolled in at that vintage. It is a frozen consumer
+                   # for the same reason the two above are: change the freeze
+                   # and every per-vintage count in
+                   # artifacts/ppef_cohort_coverage_by_vintage.csv moves, with
+                   # nothing in the artifact itself to say why.
+                   "extract_ppef_cohort_state_by_vintage.R",
+                   # Added 2026-11-10 by T5, the NINTH catch, in the pull
+                   # request that corrected the Medicaid reduction (spec A2)
+                   # and built Medicaid claim activity (spec C).
+                   #
+                   # extract_medicaid_enrollment_state_by_year.R expands the
+                   # T-MSIS enrolment segments into one state per cohort
+                   # NPI-year plus the full multi-state footprint;
+                   # extract_medicaid_activity_by_month.R reads the spending
+                   # file for dated claim months. Both take their NPI list
+                   # straight from the freeze, so a change to the freeze
+                   # silently moves every count in
+                   # medicaid_enrollment_coverage_by_year.csv and
+                   # medicaid_activity_coverage.csv.
+                   "extract_medicaid_enrollment_state_by_year.R",
+                   "extract_medicaid_activity_by_month.R",
                    "compare_all_sources_mysteryroster.R")),
   list(layer = "2-cohort-structure", why = "cohort flow/composition/progression read FROZEN directly",
        scripts = c("R/05-stage-progression.R", "R/06-cohort-flow.R",
@@ -392,6 +437,22 @@ REBUILD_ORDER <- list(
                    # fully precedes layer 6, satisfies that ordering without
                    # needing to interleave it into the publication layer.
                    "extract_open_payments_profile_supplement.R",
+                   # Added 2026-11-12, by T5 in the pull request that
+                   # introduced it. Reads amcb_npi_linkage_FROZEN plus the
+                   # per-program-year Open Payments general-payment tables in
+                   # the warehouse, and writes
+                   # artifacts/open_payments_midwife_presence_by_year.csv --
+                   # the 2013-2025 presence series that turned Open Payments
+                   # from a single year into a longitudinal source. Program
+                   # years 2013-2014 carry no NPI column in CMS's own file and
+                   # are recovered by joining Covered_Recipient_Profile_ID to
+                   # the lookup that build_open_payments_profile_npi_lookup.R
+                   # learns from 2021+, so that script must run first. The
+                   # lookup builder itself is NOT declared here: it reads only
+                   # the warehouse's 2021+ payment tables and is independent of
+                   # the cohort, so it is not a frozen dependent and T5 would
+                   # reject it as extra.
+                   "extract_open_payments_cohort_by_year.R",
                    # Added 2026-11-05, by T5 in the pull request that
                    # introduced it. Reads amcb_npi_linkage_FROZEN plus the
                    # CMS Public Provider Enrollment File (PPEF, a single
@@ -523,7 +584,27 @@ REBUILD_ORDER <- list(
                    # classifier audit cluster and the ordering requirement
                    # (after build_truth_fusion_predictions.R) is already
                    # satisfied at this position.
-                   "audit_migration_stable_vs_mover_corroboration.R")),
+                   "audit_migration_stable_vs_mover_corroboration.R",
+                   # Added 2026-11-10. Reads amcb_npi_linkage_FROZEN directly
+                   # via canonical_active_primary(); independent of the
+                   # migration-classifier cluster above, placed here only
+                   # because this is the last layer before publication.
+                   "oig_phase2_candidate_set_and_intersection_analysis.R",
+                   # Added 2026-11-12. Reads amcb_npi_linkage_FROZEN directly
+                   # (canonical_active_primary() and linkage_eligible()); the
+                   # OIG six-priority audit this Phase 2 script built on.
+                   # Independent of the migration-classifier cluster above.
+                   "remake_oig_07_09_00440_midwifery.R",
+                   # Added 2026-11-20. Reads amcb_npi_linkage_FROZEN directly
+                   # (canonical_active_primary()) to exercise mysteryroster's
+                   # no-gold-standard comparison toolkit against the real
+                   # cohort. Must follow remake_oig_07_09_00440_midwifery.R:
+                   # its own audit-diff step (comparing
+                   # attribute_enrollment_cardinality_audit() against that
+                   # script's hand-rolled numbers) reads
+                   # artifacts/oig_remake/oig_pecos_2019_join_cardinality_audit.csv,
+                   # which only exists after that script has run.
+                   "run_no_gold_standard_toolkit_on_real_data.R")),
   list(layer = "6-publication", why = "tables last: they read everything above",
        # export_amcb_npi_geography.R writes the tracked state aggregate and
        # the gitignored person-level export, both of which read the crosswalk
@@ -619,6 +700,15 @@ REBUILD_ORDER <- list(
        # reads back in. No dependency on build_table1_midwives.R itself --
        # it does not read that script's output -- so order between them is
        # free; placed beside it because they describe the same cohort.
+       #
+       # build_canonical_source_records.R (added 2026-11-18, caught by T5 in
+       # the pull request that introduced it) reads the freeze through
+       # verify_linkage_freeze() plus the layer-5 extractors' state-by-year
+       # artifacts (PECOS revalidation, Medicare claims, Open Payments
+       # presence, T-MSIS enrolment) and midwife_panel.csv, and writes the
+       # canonical 13-field source-record table -- a leaf nothing else in
+       # this registry reads back in, order free, placed last because it
+       # consumes the most upstream outputs.
        scripts = c("build_table1_midwives.R", "export_amcb_npi_geography.R",
                    "validate_training_institution_against_acme.R",
                    "provenance_manifest.R", "diagnose_migration_year_over_year.R",
@@ -634,7 +724,8 @@ REBUILD_ORDER <- list(
                    "build_state_source_pairwise_audit.R",
                    "build_cross_source_comparison.R",
                    "analyze_address_lead_lag_and_freshness.R",
-                   "build_table1_by_year.R", "diagnose_truth_fusion_migration_states.R"))
+                   "build_table1_by_year.R", "diagnose_truth_fusion_migration_states.R",
+                   "build_canonical_source_records.R"))
 )
 declared <- unlist(lapply(REBUILD_ORDER, `[[`, "scripts"))
 

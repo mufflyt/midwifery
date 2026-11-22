@@ -1,0 +1,4 @@
+stratum,pop_N,pop_share,prior_p,prior_sd,unit_cost,response_rate,n_complete,n_fielded,sampling_fraction,design_weight,stratum_moe
+discordant_or_unlinked,764,0.1296,0.3,0.4586,3.5,0.8,48,60,0.0785,12.73,0.1256
+multisite_group,4538,0.7695,0.55,0.4975,2,0.8,409,512,0.1128,8.86,0.046
+pinpoint_concordant,595,0.1009,0.85,0.3574,1,0.8,55,69,0.116,8.62,0.09

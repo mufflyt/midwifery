@@ -67,6 +67,7 @@
 suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); library(readr)})
 source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-ingestion bootstrap
 source(file.path("R", "lib", "credential_filter.R"))
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5(), zip5_sql()
 
 VINTAGES <- list(
   list(vintage = "2013-06", path = "data/raw/cms_physician_compare/2013/National_Downloadable_File_2013-06.csv"),
@@ -76,7 +77,7 @@ VINTAGES <- list(
   list(vintage = "2016-04", path = "data/raw/cms_physician_compare/2016/National_Downloadable_File_2016-04.csv")
 )
 
-WAREHOUSE <- "/Volumes/MufflySamsung/DuckDB/nber_my_duckdb.duckdb"
+WAREHOUSE <- samsung_duckdb_path("DuckDB/nber_my_duckdb.duckdb", DUCKDB_ENV_VAR)
 WAREHOUSE_VINTAGES <- list(
   list(vintage = "2017-04", table = "doc_archive_04_2017_Refresh_Data_Archive_04_2017_csv_1"),
   list(vintage = "2017-12", table = "doc_archive_12_2017_Physician_Compare_National_Downloadable_File_csv_3"),
@@ -138,7 +139,7 @@ for (v in VINTAGES) {
            UPPER(TRIM(COALESCE(line_1_street_address, ''))) AS practice_address,
            UPPER(TRIM(COALESCE(city, '')))              AS practice_city,
            UPPER(TRIM(COALESCE(state, '')))             AS practice_state,
-           SUBSTR(TRIM(COALESCE(zip_code, '')), 1, 5)   AS practice_zip,
+           %s   AS practice_zip,
            claims_based_hospital_affiliation_ccn_1      AS ccn_1,
            claims_based_hospital_affiliation_ccn_2      AS ccn_2,
            claims_based_hospital_affiliation_ccn_3      AS ccn_3,
@@ -147,7 +148,9 @@ for (v in VINTAGES) {
     FROM %s
     WHERE UPPER(COALESCE(%s, '')) LIKE '%%MIDWIFE%%'
        OR UPPER(COALESCE(%s, ''))  LIKE '%%MIDWIFE%%')",
-    col_cred, col_spec, col_sec, src, col_spec, col_sec)
+    col_cred, col_spec, col_sec,
+    zip5_sql("TRIM(COALESCE(zip_code, ''))"),
+    src, col_spec, col_sec)
 
   rows <- dbGetQuery(con, sql)
   n_before <- nrow(rows)
@@ -196,7 +199,7 @@ for (v in WAREHOUSE_VINTAGES) {
            UPPER(TRIM(COALESCE(%s, '')))                AS practice_address,
            UPPER(TRIM(COALESCE(%s, '')))                AS practice_city,
            UPPER(TRIM(COALESCE(%s, '')))                AS practice_state,
-           SUBSTR(TRIM(COALESCE(CAST(%s AS VARCHAR), '')), 1, 5) AS practice_zip,
+           %s AS practice_zip,
            %s
     FROM %s
     WHERE UPPER(COALESCE(%s, '')) LIKE '%%MIDWIFE%%'
@@ -204,7 +207,8 @@ for (v in WAREHOUSE_VINTAGES) {
     dbQuoteIdentifier(con, col_npi), dbQuoteIdentifier(con, col_last), dbQuoteIdentifier(con, col_first),
     dbQuoteIdentifier(con, col_cred), dbQuoteIdentifier(con, col_spec), dbQuoteIdentifier(con, col_sec),
     dbQuoteIdentifier(con, col_addr), dbQuoteIdentifier(con, col_city), dbQuoteIdentifier(con, col_state),
-    dbQuoteIdentifier(con, col_zip), paste(ccn_select, collapse = ",\n           "), qtable,
+    zip5_sql(dbQuoteIdentifier(con, col_zip)),
+    paste(ccn_select, collapse = ",\n           "), qtable,
     dbQuoteIdentifier(con, col_spec), dbQuoteIdentifier(con, col_sec))
 
   rows <- dbGetQuery(con, sql)

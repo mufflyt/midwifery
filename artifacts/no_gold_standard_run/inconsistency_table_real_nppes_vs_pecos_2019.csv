@@ -1,0 +1,5 @@
+source_a,source_b,year,attribute,attribute_label,n_compared,n_any_shared_match,n_disjoint_inconsistent,pct_disjoint_inconsistent,disjoint_ci_low,disjoint_ci_high,n_exact_set_match,n_set_diff_inconsistent,pct_set_diff_inconsistent,set_diff_ci_low,set_diff_ci_high
+nppes,pecos,2019,practice_zip5,Practice 5-Digit ZIP,5570,4310,1260,22.62,21.5,23.7,393,5177,92.94,92.2,93.6
+nppes,pecos,2019,state,Practice State,5570,5173,397,7.13,6.5,7.8,4712,858,15.4,14.5,16.4
+nppes,pecos,2019,any_variable_inconsistent_union,At Least One Variable Inconsistent (Union Denominator),5570,4310,1260,22.62,21.5,23.7,393,5177,92.94,92.2,93.6
+nppes,pecos,2019,any_variable_inconsistent_complete_case,At Least One Variable Inconsistent (Complete-Case Denominator),5570,4310,1260,22.62,21.5,23.7,393,5177,92.94,92.2,93.6

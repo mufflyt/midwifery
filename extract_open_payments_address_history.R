@@ -26,18 +26,43 @@
 # =============================================================================
 suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); library(readr)})
 source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-ingestion bootstrap
+source(file.path("R", "lib", "cohort_artifacts.R"))  # cohort_artifact_path(): one arm, named
 
-YEARS <- as.integer(strsplit(Sys.getenv("YEARS", "2015,2016,2017,2018,2019,2020,2021"), ",")[[1]])
+# THE YEAR MUST BE PROVABLE FROM INSIDE THE FILE. Until 2026-11-15 these
+# artifacts carried no year column at all: the year existed only in the
+# filename, which R/lib/source_year.R::assert_source_year() refuses as proof
+# by design (parse_vintage() rejects a bare four-digit number). A file
+# renamed, or written by a producer handed the wrong year, would have been
+# believed -- and in the 2026-11-12 build four of five years went missing
+# with nothing to notice. The SELECT below now carries CMS's own
+# Program_Year column plus Date_of_Payment, so each annual artifact proves
+# its own vintage from an authoritative field rather than from its name.
+# Program_Year is read from the source, never written from `y`, because a
+# year the producer asserts is not an observation.
+#
+# The default window is the full declared series. It used to stop at 2021,
+# which is how a run that simply took the default could produce a short
+# series without saying so.
+YEARS <- as.integer(strsplit(Sys.getenv(
+  "YEARS", "2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025"),
+  ",")[[1]])
 
-WAREHOUSE <- Sys.getenv("OPEN_PAYMENTS_WAREHOUSE",
-  "/Volumes/MufflySamsung/open_payments_data/open_payments_merged_2013_2024.duckdb")
+WAREHOUSE <- samsung_duckdb_path(file.path("open_payments_data",
+                                           "open_payments_merged_2013_2024.duckdb"),
+                                 "OPEN_PAYMENTS_WAREHOUSE")
 stopifnot(file.exists(WAREHOUSE))
 
-crosswalk_candidates <- sort(Sys.glob("artifacts/amcb_npi_crosswalk_*panel*.csv"),
-                             decreasing = TRUE)
-if (!length(crosswalk_candidates))
-  stop("no artifacts/amcb_npi_crosswalk_*panel*.csv found", call. = FALSE)
-MIDWIVES_FILE <- crosswalk_candidates[1]
+# WHICH ARM, NOT WHICHEVER SORTS LAST. The glob that stood here matched all
+# three crosswalk arms -- translit, component, c5guard -- and a DESCENDING
+# sort took translit, while the rest of the pipeline (build_table1_midwives.R,
+# the hospital matchers, the licence enrichers) names c5guard outright. The
+# arms exist in order to differ, so the Open Payments denominator was being
+# picked by alphabetical accident, against a cohort other published tables do
+# not use. Verified before pinning: all three arms are identical on every
+# column read below -- 11,920 ACTIVE primary_midwifery NPIs each, same npi,
+# certification_number, first_name, last_name and nppes_state -- so this
+# changes no number today. It stops the agreement from being luck.
+MIDWIVES_FILE <- cohort_artifact_path("crosswalk_c5guard")
 
 cw <- read_csv(MIDWIVES_FILE, col_types = cols(.default = "c"), progress = FALSE)
 coh <- cw %>%
@@ -62,6 +87,8 @@ for (y in YEARS) {
   sql <- sprintf(r"(
     SELECT c.certification_number, o.%s AS npi, c.first_name, c.last_name,
            c.nppes_state,
+           o.Program_Year                      AS program_year,
+           o.Date_of_Payment                   AS date_of_payment,
            o.Teaching_Hospital_Name            AS teaching_hospital_name,
            ''                                  AS principal_practice_business_name,
            o.Recipient_Primary_Business_Street_Address_Line1 AS recipient_address,

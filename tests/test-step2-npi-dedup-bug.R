@@ -34,12 +34,18 @@ test_that("NPI cannot be NA", {
   expect_false(npi_valid(NA_character_))
 })
 
-test_that("join_safety.R exists and defines join functions", {
+test_that("join_safety.R exists and defines the join guards it advertises", {
   expect_true(file.exists(here::here("R", "join_safety.R")))
-  content <- readLines(here::here("R", "join_safety.R"))
-  combined <- paste(content, collapse = "\n")
+  combined <- paste(readLines(here::here("R", "join_safety.R")), collapse = "\n")
   expect_true(grepl("safe_left_join.*<- function", combined))
-  expect_true(grepl("safe_inner_join.*<- function", combined))
+  # safe_inner_join() was deleted on 2026-11-20 (no production caller), and
+  # assert_unique_keys() moved to its own file -- so the assertion is that
+  # sourcing this module still REACHES it, not that its text is in this file.
+  expect_true(grepl("assert_unique_keys\\.R", combined))
+  expect_true(file.exists(here::here("R", "assert_unique_keys.R")))
+  expect_true(grepl("assert_unique_keys <- function",
+                    paste(readLines(here::here("R", "assert_unique_keys.R")),
+                          collapse = "\n")))
 })
 
 test_that("left join should not fan out row count beyond input", {

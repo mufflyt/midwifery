@@ -1,0 +1,33 @@
+{
+  "artifact": "a2_medicaid_before_after.csv",
+  "written_utc": "2026-11-11 03:59:45 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/mrost_odd_one_out_rate.csv",
+      "sha256": "0277dc0c30ee0ce4bad5593246acfaba50b8fdb4e110ae2e3e44cd9970fec4f6"
+    },
+    {
+      "path": "artifacts/mrost_truth_fusion_agreement.csv",
+      "sha256": "7bf9a47574bfa5b055613c0f234d1e4472185236e6a69c3cfe3d482f971a9951"
+    },
+    {
+      "path": "artifacts/medicaid_enrollment_cohort_state_by_year.csv",
+      "sha256": "f0b1fe1d9d7e9da6b20d30a107c6aebb2e42b3ec3765fa20eb9d670b7f9ef93c"
+    }
+  ],
+  "code_sha256": "2ea33540d97dce8b291b0cb040306182c54a47ef691af814e5ccf46b0392c152",
+  "code": [
+    {
+      "path": "audit_a2_medicaid_before_after.R",
+      "sha256": "749daabb10d802edd8da8d31e7225efe9fd4076e58501f64e6ff5b61465b6924"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ]
+}

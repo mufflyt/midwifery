@@ -1,7 +1,8 @@
 #!/usr/bin/env Rscript
 
+source("tests/ci_report.R")
 path <- "qa/leaflet_work_sites_INTERNAL.html"
-stopifnot(file.exists(path))
+ci_require_files(path, what = "the internal work-site leaflet map")
 info <- file.info(path)
 stopifnot(is.finite(info$size), info$size > 100000)
 html <- paste(readLines(path, warn = FALSE), collapse = "\n")

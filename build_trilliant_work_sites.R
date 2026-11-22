@@ -56,6 +56,7 @@ source(file.path("R", "lib", "trilliant_org_bridge.R")) # STREET_ABBREV, norm_st
 source(file.path("R", "lib", "table1_bands.R"))         # band_rurality(), RURALITY_LABELS_COHORT
 source(file.path("R", "lib", "zip_county_crosswalk.R")) # zip_county_dominant()
 source(file.path("R", "lib", "ct_county_crosswalk.R"))  # ct_zip_to_region()
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5()
 
 # ---- paths -------------------------------------------------------------------
 # The drive mounts as "MufflySamsung" or "MufflySamsung 1" depending on the day;
@@ -140,7 +141,7 @@ top_sites <- trilliant |>
     street     = provider_affiliated_practice_1_street_address,
     city       = provider_affiliated_practice_1_city,
     state      = provider_affiliated_practice_1_state,
-    zip5       = str_sub(provider_affiliated_practice_1_zip_code, 1, 5),
+    zip5       = norm_str_zip5(provider_affiliated_practice_1_zip_code),
     lat        = provider_affiliated_practice_1_latitude,
     lon        = provider_affiliated_practice_1_longitude,
     county_name = provider_affiliated_practice_1_county,
@@ -172,7 +173,7 @@ read_orgs <- function(zips) {
   read_parquet_duckdb(file.path(LAKE, "directory_organization", "*.parquet")) |>
     filter(!is.na(organization_zip_code), !is.na(organization_street_line_1)) |>
     # 1L / 5L, not 1 / 5: DuckDB's substr() wants whole numbers
-    mutate(oz = substr(organization_zip_code, 1L, 5L)) |>
+    mutate(oz = norm_str_zip5(organization_zip_code)) |>
     semi_join(as_duckdb_tibble(tibble(oz = unique(zips))), by = "oz") |>
     select(org_npi = organization_npi, org_name = organization_name, org_type = organization_type,
            tax = organization_primary_taxonomy_code, tax_desc = organization_primary_taxonomy_description,
@@ -315,7 +316,7 @@ if (file.exists(file.path(ART, "cabc_matched_midwives_final.csv"))) {
     transmute(certification_number, npi = as.numeric(npi),
               source = "cabc_birth_center", source_rank = 5L,
               site_name = matched_cabc_birth_center, street = cabc_address, state = midwife_state,
-              zip5 = str_sub(cabc_zip, 1, 5), facility_type = "birth_center",
+              zip5 = norm_str_zip5(cabc_zip), facility_type = "birth_center",
               facility_type_basis = "cabc_accreditation")
 } else {
   cabc_sites <- tibble(certification_number = character(), npi = numeric(),
@@ -394,10 +395,10 @@ universe <- read_latin1(file.path(HPT, "reference/hospital_universe.csv"))
 hospital_ref <- bind_rows(
   enrollments |> transmute(ccn, hname = str_to_upper(coalesce(doing_business_as_name, organization_name)),
                            hstate = state, hcity = str_to_upper(city), hns = norm_street(address_line_1),
-                           hz = str_sub(zip_code, 1, 5)),
+                           hz = norm_str_zip5(zip_code)),
   universe |> transmute(ccn = pad_ccn(facility_id), hname = str_to_upper(facility_name), hstate = state,
                         hcity = str_to_upper(citytown), hns = norm_street(address),
-                        hz = str_sub(str_pad(zip_code, 5, pad = "0"), 1, 5))) |>
+                        hz = norm_str_zip5(zip_code))) |>
   filter(!is.na(ccn)) |>
   distinct()
 
@@ -588,7 +589,8 @@ sites_all <- sites_all |>
       str_to_upper(str_squish(paste(coalesce(street, ""), coalesce(city, ""), coalesce(state, "")))),
       "\\b(APO|FPO|DPO)\\b"
     ),
-    .zip_flag = str_sub(str_pad(str_squish(coalesce(zip5, "")), 5, side = "left", pad = "0"), 1, 5),
+    # NOT the prefix test below, which is deliberately three characters.
+    .zip_flag = norm_str_zip5(coalesce(zip5, "")),
     .military_zip_prefix = str_sub(.zip_flag, 1, 3) %in% MILITARY_POSTAL_ZIP_PREFIXES,
     .military_base_zip = .zip_flag %in% MILITARY_BASE_ZIPS,
     .dod_tricare_source = source == "DoD/TRICARE military treatment facilities",

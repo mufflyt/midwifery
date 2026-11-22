@@ -31,19 +31,14 @@
 # Run: Rscript tests/test_cycle20_congress_vintage.R
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 suppressPackageStartupMessages({library(dplyr); library(readr)})
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 rd <- function(p) suppressWarnings(read_csv(p, show_col_types = FALSE, progress = FALSE,
                                             col_types = cols(.default = col_character())))
 PROF <- "artifacts/district_profiles/district_profiles.csv"

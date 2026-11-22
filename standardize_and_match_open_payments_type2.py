@@ -2,6 +2,14 @@
 # =============================================================================
 # USPS/postmastr Address Standardization Engine for Open Payments to Type 2 NPI Matching
 # =============================================================================
+#
+# VALIDATION-ONLY, NOT A CANONICAL PRODUCER (DEBT.md D5, ruled 2026-11-18).
+# Same measured defect class as crossref_all_open_payments_type2.py: first
+# match wins among <=20 unordered registry results sharing city/state/ZIP,
+# and rule m2 accepts a street-number-plus-substring match -- an arbitrary
+# co-tenant at any multi-tenant building. No ambiguity state, no promiscuity
+# guard. Canonical organization affiliation lives in resolve_org_ambiguity.R;
+# see docs/OPEN_PAYMENTS_LINKAGE_COMPARISON.md.
 import re
 import csv
 import requests

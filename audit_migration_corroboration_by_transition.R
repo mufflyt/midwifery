@@ -50,6 +50,13 @@
 #          artifacts/migration_corroboration_medicaid_lead_lag.csv (tracked)
 #          artifacts/migration_corroboration_spike_vs_control.csv (tracked)
 # =============================================================================
+# mysteryroster's version can move this result (enrollment_move_lead_lag()
+# owns the lead-lag rule) -- differential-audited; the committed summary CSVs
+# were found stale relative to separately-landed DAC/PECOS vintage recovery
+# work (unrelated to mysteryroster, whose own code is confirmed unchanged),
+# not to a mysteryroster regression. Pinned at:
+#   remotes::install_github("mufflyt/mysteryroster@de1aa5d4e4262e8006254e3463c0e0a80eec56ba")
+# See docs/TECHNICAL_APPENDIX_MYSTERYROSTER_PIN_AUDIT.md.
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr); library(tidyr)
   library(DBI); library(duckdb); library(mysteryroster)
@@ -62,8 +69,8 @@ source(file.path("R", "lib", "medicaid_enrollment_intervals.R"))
 source(file.path("R", "lib", "artifact_provenance.R"))
 source(file.path("R", "lib", "wilson_interval.R"))  # wilson_ci()
 
-MEDICAID_DB <- Sys.getenv("MEDICAID_ENROLLMENT_DB",
-                           "/Volumes/MufflySamsung/DuckDB/medicaid_provider_enrollment_segments.duckdb")
+MEDICAID_DB <- samsung_duckdb_path("DuckDB/medicaid_provider_enrollment_segments.duckdb",
+                                   "MEDICAID_ENROLLMENT_DB")
 
 # 2 spikes (docs/TECHNICAL_APPENDIX_MIGRATION_YEAR_OVER_YEAR.md S2) + the
 # same 4 controls that appendix's own S4b already used, so this is a

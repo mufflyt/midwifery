@@ -1,0 +1,37 @@
+{
+  "artifact": "billing_gap_mechanism_summary.csv",
+  "written_utc": "2026-11-11 04:25:15 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/cohort_midwives_part_d_state_by_year.csv",
+      "sha256": "df98b751e33e85413f42b51939366b5c72b091879a4bf5fbc8d10cbef0745870"
+    },
+    {
+      "path": "artifacts/cohort_midwives_part_b_state_by_year.csv",
+      "sha256": "4798f820df826a6e482f328bdbc0787d15d0e147d8f212a13f162e17beed8c32"
+    }
+  ],
+  "code_sha256": "ec7da7760d63fe3e7ab8c5b9cb4aaf4fd0d22cc8922b0ef4d6460228570fde75",
+  "code": [
+    {
+      "path": "audit_billing_gap_mechanisms.R",
+      "sha256": "38b348e3e774738dbbd53d91c0c36a52f23074ab67bd0bb13eb017b795051c52"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/billing_gaps.R",
+      "sha256": "2cbc4dbcafe2fc404a396b013cb150abaf0f38cbf1d9fec9323bbc35adc0d3b6"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ]
+}

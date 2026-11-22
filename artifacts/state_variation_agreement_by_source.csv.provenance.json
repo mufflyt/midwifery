@@ -1,0 +1,51 @@
+{
+  "artifact": "state_variation_agreement_by_source.csv",
+  "written_utc": "2026-11-21 22:56:23 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/canonical_source_records.csv",
+      "sha256": "81cf8b26e0a055bc5ddbe74f3ffe872105d12025272bce18b9b68acfc901f006"
+    }
+  ],
+  "code_sha256": "bc8632b6e2caf21d5280c5e7e6434d991ee61df28ab34f8316901635e26bbe46",
+  "code": [
+    {
+      "path": "build_state_variation_agreement.R",
+      "sha256": "fcf949b3e60d4c6997d2b0707b47740b4b4d99e8be4eef53fac0dc7ce06c3c77"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "c1677e2402be56a1a30cc8b6985c0b512bd0599ed93c303d0c0e96e0b9d12b60"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ],
+  "semantic_packages": [
+    {
+      "package": "mysterynpi",
+      "installed": true,
+      "version": "0.9.1",
+      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
+    },
+    {
+      "package": "stringi",
+      "installed": true,
+      "version": "1.8.9",
+      "source_sha": null
+    },
+    {
+      "package": "humaniformat",
+      "installed": true,
+      "version": "0.6.0",
+      "source_sha": null
+    },
+    {
+      "package": "mysteryroster",
+      "installed": true,
+      "version": "0.3.0",
+      "source_sha": null
+    }
+  ]
+}

@@ -20,19 +20,14 @@
 # what makes it testable without the drive mounted.
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 source(file.path(root, "R", "lib", "medicare_duckdb.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 # Named for this file: tests/test_cycle11_spatial.R already defines a bare
 # raises(), and ci_hygiene.R H4 refuses a second top-level definition of the
 # same verb -- two files that look identical are how they quietly diverge.
@@ -162,7 +157,15 @@ cat("\n-- H: NO executable source hardcodes the volume, in any language --\n")
                               "*.R", "*.py", "*.sh", "*.yml", "*.yaml", "*.Rmd"),
                      stdout = TRUE)
   tracked <- tracked[file.exists(tracked)]
-  allowed <- c("R/lib/medicare_duckdb.R", "tests/test_duckdb_volume_resolution.R")
+  # EXEMPT BECAUSE THEY DEFINE THE SPELLING, not because they are convenient.
+  # Each of these three is the one place its language names the mount: the R
+  # resolver, its Python mirror (samsung_volume.py, added 2026-11-13 so the
+  # four Python producers stopped spelling the path out themselves), and this
+  # test. Anything else that needs the volume calls one of them. Adding a
+  # fourth entry here is how this rule dies, so it needs the same argument:
+  # that the file IS the single definition, not that it happens to want one.
+  allowed <- c("R/lib/medicare_duckdb.R", "samsung_volume.py",
+               "tests/test_duckdb_volume_resolution.R")
   # Comment lines are exempt: a comment cannot open a database, and the history
   # of WHY this rule exists is worth keeping legible.
   comment_re <- "^\\s*(#|//|--)"

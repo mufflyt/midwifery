@@ -1,0 +1,7 @@
+metric,value
+part_b_npi_years,16463
+part_d_npi_years,39235
+union_npi_years,41953
+kept_single_state,41953
+dropped_b_d_conflict,0
+dropped_conflict_states,

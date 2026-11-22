@@ -1,0 +1,41 @@
+{
+  "artifact": "billing_gap_headline_figures.csv",
+  "written_utc": "2026-11-11 04:53:17 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/cohort_midwives_part_d_state_by_year.csv",
+      "sha256": "df98b751e33e85413f42b51939366b5c72b091879a4bf5fbc8d10cbef0745870"
+    },
+    {
+      "path": "artifacts/cohort_midwives_part_b_state_by_year.csv",
+      "sha256": "4798f820df826a6e482f328bdbc0787d15d0e147d8f212a13f162e17beed8c32"
+    },
+    {
+      "path": "artifacts/medicaid_enrollment_cohort_state_by_year.csv",
+      "sha256": "f0b1fe1d9d7e9da6b20d30a107c6aebb2e42b3ec3765fa20eb9d670b7f9ef93c"
+    },
+    {
+      "path": "artifacts/medicaid_midwife_activity_by_year.csv",
+      "sha256": "4ff2c4c8b8a74e4ace86d1d541e27018f32b277416da6c2b42ff467480c26adb"
+    }
+  ],
+  "code_sha256": "de702eaa58b32f75af2abbbc756a1e2fe9b0544aa37db97415ccd4780ea87b5b",
+  "code": [
+    {
+      "path": "audit_billing_gap_headline_figures.R",
+      "sha256": "a77abc1e2f6c9e073d813503c751291802a98f3c55381e1b715ba620d4d95587"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/billing_gaps.R",
+      "sha256": "2cbc4dbcafe2fc404a396b013cb150abaf0f38cbf1d9fec9323bbc35adc0d3b6"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ]
+}

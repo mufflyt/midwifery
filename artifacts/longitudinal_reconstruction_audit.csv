@@ -1,0 +1,64 @@
+source,year,n_rows,n_npis,coverage_pct,n_distinct_states,evidence_types,vintage,usable_for_trend_pct,n_usable_for_trend,n_with_source_record_id,year_validation_status
+medicaid_enrollment,2013,6226,6226,37.1,44,retrospective,T-MSIS enrollment segments 2026-07-24,0,0,0,not_validated
+medicaid_enrollment,2014,6834,6834,40.8,45,retrospective,T-MSIS enrollment segments 2026-07-24,0,0,0,not_validated
+medicaid_enrollment,2015,7582,7582,45.2,46,retrospective,T-MSIS enrollment segments 2026-07-24,0,0,0,not_validated
+medicaid_enrollment,2016,8193,8193,48.9,46,retrospective,T-MSIS enrollment segments 2026-07-24,0,0,0,not_validated
+medicaid_enrollment,2017,9008,9008,53.7,47,retrospective,T-MSIS enrollment segments 2026-07-24,0,0,0,not_validated
+medicaid_enrollment,2018,9770,9770,58.3,49,retrospective,T-MSIS enrollment segments 2026-07-24,100,9770,0,not_validated
+medicaid_enrollment,2019,10353,10353,61.8,50,retrospective,T-MSIS enrollment segments 2026-07-24,100,10353,0,not_validated
+medicaid_enrollment,2020,10730,10730,64,51,retrospective,T-MSIS enrollment segments 2026-07-24,100,10730,0,not_validated
+medicaid_enrollment,2021,11177,11177,66.7,51,retrospective,T-MSIS enrollment segments 2026-07-24,100,11177,0,not_validated
+medicaid_enrollment,2022,11709,11709,69.9,51,retrospective,T-MSIS enrollment segments 2026-07-24,100,11709,0,not_validated
+medicaid_enrollment,2023,12328,12328,73.5,51,retrospective,T-MSIS enrollment segments 2026-07-24,100,12328,0,not_validated
+medicaid_enrollment,2024,12827,12827,76.5,51,retrospective,T-MSIS enrollment segments 2026-07-24,100,12827,0,not_validated
+medicare_claims,2013,2841,2841,16.9,52,derived,"CMS by-provider claims files, lineage-collapsed",100,2841,0,release_id;unverified
+medicare_claims,2014,2959,2959,17.7,53,derived,"CMS by-provider claims files, lineage-collapsed",100,2959,0,release_id;unverified
+medicare_claims,2015,3048,3048,18.2,53,derived,"CMS by-provider claims files, lineage-collapsed",100,3048,0,release_id;unverified
+medicare_claims,2016,3200,3200,19.1,53,derived,"CMS by-provider claims files, lineage-collapsed",100,3200,0,release_id;unverified
+medicare_claims,2017,3212,3212,19.2,52,derived,"CMS by-provider claims files, lineage-collapsed",100,3212,0,release_id;unverified
+medicare_claims,2018,3348,3348,20,52,derived,"CMS by-provider claims files, lineage-collapsed",100,3348,0,release_id;unverified
+medicare_claims,2019,3470,3470,20.7,53,derived,"CMS by-provider claims files, lineage-collapsed",100,3470,0,release_id;unverified
+medicare_claims,2020,3461,3461,20.6,52,derived,"CMS by-provider claims files, lineage-collapsed",100,3461,0,release_id;unverified
+medicare_claims,2021,3530,3530,21.1,52,derived,"CMS by-provider claims files, lineage-collapsed",100,3530,0,release_id;unverified
+medicare_claims,2022,3560,3560,21.2,52,derived,"CMS by-provider claims files, lineage-collapsed",100,3560,0,release_id
+medicare_claims,2023,3692,3692,22,52,derived,"CMS by-provider claims files, lineage-collapsed",100,3692,0,release_id
+medicare_claims,2024,3893,3893,23.2,52,derived,"CMS by-provider claims files, lineage-collapsed",100,3893,0,unverified
+nppes,2007,5932,5932,35.4,54,observed,NPPES annual dissemination,100,5932,0,release_id
+nppes,2008,6200,6200,37,55,observed,NPPES annual dissemination,100,6200,0,release_id
+nppes,2009,6710,6710,40,55,observed,NPPES annual dissemination,100,6710,0,release_id
+nppes,2010,7004,7004,41.8,54,observed,NPPES annual dissemination,100,7004,0,release_id
+nppes,2011,7494,7494,44.7,54,observed,NPPES annual dissemination,100,7494,0,release_id
+nppes,2012,7968,7968,47.5,55,observed,NPPES annual dissemination,100,7968,0,release_id
+nppes,2013,8439,8439,50.3,54,observed,NPPES annual dissemination,100,8439,0,release_id
+nppes,2014,9001,9001,53.7,55,observed,NPPES annual dissemination,100,9001,0,release_id
+nppes,2015,9571,9571,57.1,55,observed,NPPES annual dissemination,100,9571,0,release_id
+nppes,2016,10141,10141,60.5,54,observed,NPPES annual dissemination,100,10141,0,release_id
+nppes,2017,10720,10720,64,54,observed,NPPES annual dissemination,100,10720,0,release_id
+nppes,2018,11468,11468,68.4,55,observed,NPPES annual dissemination,100,11468,0,release_id
+nppes,2019,11901,11901,71,56,observed,NPPES annual dissemination,100,11901,0,release_id
+nppes,2020,12691,12691,75.7,56,observed,NPPES annual dissemination,100,12691,0,release_id
+nppes,2021,13105,13105,78.2,56,observed,NPPES annual dissemination,100,13105,0,release_id
+nppes,2022,13775,13775,82.2,56,observed,NPPES annual dissemination,100,13775,0,release_id
+nppes,2023,14451,14451,86.2,56,observed,NPPES annual dissemination,100,14451,0,release_id
+nppes,2024,15145,15145,90.3,56,observed,NPPES annual dissemination,100,15145,0,release_id
+nppes,2025,16156,16156,96.4,56,observed,NPPES annual dissemination,100,16156,0,release_id
+nppes,2026,16234,16234,96.8,56,observed,NPPES annual dissemination,100,16234,0,release_id
+open_payments,2013,15,15,0.1,11,retrospective,CMS Open Payments general payments,0,0,0,retrospective_profile_link
+open_payments,2014,16,16,0.1,11,retrospective,CMS Open Payments general payments,0,0,0,retrospective_profile_link
+open_payments,2015,21,21,0.1,11,observed,CMS Open Payments general payments,0,0,0,in_file_date
+open_payments,2016,7,7,0,5,observed,CMS Open Payments general payments,0,0,0,in_file_date
+open_payments,2017,4,4,0,4,observed,CMS Open Payments general payments,0,0,0,in_file_date
+open_payments,2018,5,5,0,5,observed,CMS Open Payments general payments,0,0,0,in_file_date
+open_payments,2019,6,6,0,6,observed,CMS Open Payments general payments,0,0,0,in_file_date
+open_payments,2020,6,6,0,5,observed,CMS Open Payments general payments,0,0,0,in_file_date
+open_payments,2021,2926,2926,17.5,51,observed,CMS Open Payments general payments,100,2926,0,in_file_date
+open_payments,2022,3897,3897,23.2,53,observed,CMS Open Payments general payments,100,3897,0,in_file_date
+open_payments,2023,4101,4101,24.5,52,observed,CMS Open Payments general payments,100,4101,0,in_file_date
+open_payments,2024,4590,4590,27.4,53,observed,CMS Open Payments general payments,100,4590,0,in_file_date
+open_payments,2025,4901,4901,29.2,52,observed,CMS Open Payments general payments,100,4901,0,in_file_date
+pecos_revalidation,2021,8113,8113,48.4,53,administrative,2021-12,100,8113,0,not_validated
+pecos_revalidation,2022,8732,8732,52.1,54,administrative,2022-03;2022-05;2022-07;2022-08;2022-10;2022-11,100,8732,0,not_validated
+pecos_revalidation,2023,9248,9248,55.2,54,administrative,2023-02;2023-05;2023-06;2023-07;2023-08;2023-09;2023-10;2023-11;2023-12,100,9248,0,not_validated
+pecos_revalidation,2024,9647,9647,57.5,54,administrative,2024-01;2024-08;2024-12,100,9647,0,not_validated
+pecos_revalidation,2025,10179,10179,60.7,54,administrative,2025-01;2025-02;2025-03;2025-04;2025-05;2025-06;2025-07;2025-08;2025-09;2025-10;2025-11;2025-12,100,10179,0,not_validated
+pecos_revalidation,2026,9537,9537,56.9,54,administrative,2026-01;2026-02;2026-03;2026-04;2026-05;2026-07;2026-08,100,9537,0,not_validated

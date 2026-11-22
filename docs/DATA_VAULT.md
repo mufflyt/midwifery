@@ -87,10 +87,29 @@ not care where the folder is, only that it holds the right bytes.
 
 ## The file this was built for
 
-The current freeze, `amcb_npi_linkage_FROZEN.csv` (22,357 rows, sha256
-`1a7bd6a8c8f1c08910d3f2a9cb24561ed858a6b1204bf2274fdd3a8bd0887da2`, run
-`reconcile_ab_20260910T193000_issue172`), was built on 2026-09-10 (commit
-`abd325b`). To publish it, run `shasum -a 256 artifacts/amcb_npi_linkage_FROZEN.csv`
-on the machine that has it and check that the result starts with `1a7bd6a8`.
-Then run `Rscript publish_to_data_vault.R` there. Every other machine then
-finds it with `vault_linkage_freeze()`.
+Read the hash from the manifest rather than from this paragraph. The freeze
+has been re-frozen twice since the vault was written, and a hash copied into
+prose goes stale while the manifest does not:
+
+    jq -r '.artifact_sha256, .artifact_rows, .run_id' \
+      artifacts/amcb_npi_linkage_FROZEN.csv.manifest.json
+
+As of 2026-11-14 that is sha256 `9f224007...`, 22,357 rows, 16,775 cohort
+members, run `reconcile_ab_20261022T134500_remove_fuzzy_surname_matching`.
+It superseded `1a7bd6a8...` (the file this vault was originally built for,
+2026-09-10, commit `abd325b`), which in turn superseded `dbcc76f4...`
+(22,309 rows, 16,898 members, 2026-08-10).
+
+To publish it, on the machine that has it:
+
+    shasum -a 256 artifacts/amcb_npi_linkage_FROZEN.csv   # must match the manifest
+    Rscript publish_to_data_vault.R                       # refuses a stale freeze
+
+The no-argument form re-hashes the local file against the manifest and
+refuses to publish anything else, so it cannot put the wrong freeze in the
+vault. Every other machine then finds it with `vault_linkage_freeze()`.
+
+`dbcc76f4...` is NOT a candidate for publishing under this stem. It is
+pinned, for one experiment only, in `artifacts/freeze_pins.tsv`; publishing
+it here would make `vault_latest()` hand it out as the newest freeze until
+the real one lands. See docs/LINKAGE_FREEZE_RECONCILIATION_AUDIT_2026-11-13.md.

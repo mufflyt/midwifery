@@ -46,6 +46,7 @@ suppressPackageStartupMessages({library(DBI); library(duckdb)})
   if (length(file_arg)) dirname(normalizePath(sub("^--file=", "", file_arg[1]))) else getwd()
 })
 source(file.path(.this_script_dir, "R", "lib", "medicare_duckdb.R"))
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # zip5_sql()
 
 PANEL  <- Sys.getenv("MIDWIFE_PANEL", "midwife_panel.csv")
 FROZEN <- Sys.getenv("STAGE2_FROZEN", "artifacts/amcb_npi_linkage_FROZEN.csv")
@@ -64,7 +65,7 @@ by_year <- dbGetQuery(con, sprintf("
   ),
   panel AS (
     SELECT p.npi, p.snapshot_year, p.practice_state,
-           substr(p.practice_zip, 1, 5) AS zip5
+           ", zip5_sql("p.practice_zip"), " AS zip5
     FROM read_csv_auto('%s', ignore_errors=true) p
     JOIN cohort c USING (npi)
     WHERE p.practice_state IS NOT NULL

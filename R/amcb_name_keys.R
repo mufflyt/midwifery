@@ -80,6 +80,21 @@ amcb_split_first <- function(first_name) {
 #' absent parts as "" so has_name_information() is the only test a caller
 #' needs; this repository's callers predate that and test is.na(). The shim
 #' keeps this cohort's NA contract so no consumer changes meaning.
+#'
+#' FOUR COLUMNS SINCE THE 691daaf PIN (mysterynpi 0.9.0), NOT THREE. The
+#' package's parse_person() now also returns `suffix`, lifted by its own
+#' extract_suffix() before strip_name_noise() can delete it as noise. The
+#' conversion below is column-agnostic on purpose -- `out[] <- lapply(out, ...)`
+#' walks whatever columns arrive -- so the new column got the NA contract for
+#' free and no caller changed meaning. That is asserted, not assumed:
+#' test_amcb_name_keys_saboteur.R T1b pins the column set exactly (a fifth
+#' column is a red test) and T1c proves the NA conversion reaches `suffix`.
+#'
+#' No non-test caller reads $suffix today: link_theses_to_amcb.R and the
+#' scrapers select $first/$middle/$last by name, so an extra column is inert
+#' for them. It is carried rather than dropped because dropping it would put
+#' this shim back to silently discarding an upstream field, which is the
+#' failure T1b exists to prevent.
 amcb_parse_person <- function(x) {
   out <- mysterynpi::parse_person(x)
   out[] <- lapply(out, function(v) { v[!nzchar(v)] <- NA_character_; v })

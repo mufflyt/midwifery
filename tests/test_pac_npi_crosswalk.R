@@ -48,7 +48,7 @@ src  <- if (file.exists(BUILDER)) paste(readLines(BUILDER, warn = FALSE), collap
 code <- if (file.exists(BUILDER)) {
   ln <- readLines(BUILDER, warn = FALSE); paste(ln[!grepl("^\\s*#", ln)], collapse = "\n")
 } else ""
-rd <- function(p) read_csv(p, col_types = cols(.default = "c"), progress = FALSE)
+source(file.path(root, "R", "lib", "common_helpers.R"))  # chr(): all-character reader
 
 cat("\n-- PAC1-PAC3: identifiers are text, and traceable --\n")
 {
@@ -122,7 +122,7 @@ cat("\n-- PAC9: cardinality is measured, not assumed --\n")
       "PAC9c the builder never reduces to one row per PAC ID")
   f <- "artifacts/pac_npi_cardinality.csv"
   if (file.exists(f)) {
-    d <- rd(f)
+    d <- chr(f)
     chk(all(c("direction", "entity_kind", "band", "n_ids") %in% names(d)),
         "PAC9d the cardinality report is stratified by direction and entity kind")
     chk(n_distinct(d$direction) == 2L,
@@ -139,7 +139,7 @@ cat("\n-- PAC10: every arm PAC ID gets a verdict --\n")
       "PAC10 arm PAC IDs classify as mapped / ambiguous / genuinely absent")
   f <- "artifacts/pac_npi_arm_coverage.csv"
   if (file.exists(f)) {
-    d <- rd(f)
+    d <- chr(f)
     per_arm <- d %>% group_by(arm) %>% summarise(pct = sum(as.numeric(pct)), .groups = "drop")
     chk(all(abs(per_arm$pct - 100) < 1.5),
         sprintf("PAC10b each arm's classes account for ~100%% of its PAC IDs [%s]",
@@ -154,7 +154,7 @@ cat("\n-- PAC11-PAC12: the bridge behaves when joined --\n")
     pac_skip("PAC11 crosswalk absent (needs PPEF_RAW_DIR); NOT passing vacuously")
     pac_skip("PAC12 crosswalk absent (needs PPEF_RAW_DIR); NOT passing vacuously")
   } else {
-    x <- rd(ever)
+    x <- chr(ever)
     chk(all(grepl("^[0-9]{10}$", x$npi)), "PAC11a every NPI in the crosswalk is ten digits")
     chk(!any(duplicated(paste(x$pac_id, x$npi))),
         "PAC11b (pac_id, npi) is unique in the ever-crosswalk")

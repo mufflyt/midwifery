@@ -36,11 +36,11 @@
 # Run: Rscript tests/test_cycle12_names_territories.R
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 suppressPackageStartupMessages({library(dplyr); library(readr)})
 # DEPENDENCY GUARD, matching what test_cycle4_ct_apportionment.R already does
 # with this shim: R/string_normalization.R re-sources the implementation from
@@ -54,11 +54,6 @@ if (!file.exists(file.path(.iso, "string_normalization.R"))) {
 }
 source(file.path(root, "R", "string_normalization.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 
 # UPSTREAM defects: real, reproduced, and NOT fixable inside this repo. The
 # implementation lives in ~/isochrones, which this loop must not modify, and the

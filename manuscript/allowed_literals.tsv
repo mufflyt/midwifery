@@ -11,3 +11,4 @@
 file	literal	reason
 slides_overview.qmd	35.0	coincidental digit collision with bounds.tip_required: this is the >=15-yrs-observed share in the "Years observed / age-in-panel" provenance row (<5/5-9/10-14/>=15 yrs breakdown), unrelated to the tipping-point quantity. Confirmed 2026-10-20.
 slides_overview.qmd	25	coincidental digit collision with scope.n_collaborative: this is the leading digits of "25.7%" (clinic/practice share) in the "Primary claims-site setting" provenance row, unrelated to the collaborative-states count. Confirmed 2026-10-20.
+federal_database_accuracy.qmd	84.8	Butala et al. 2023's own published figure, cited as prior work: commercial directory practice-address consistency rose from 27.9% to 84.8% when restricted to single-location physicians. It is an external result quoted with its citation, not this study's linkage.active_ascertained_pct, which coincidentally shares the digits. Confirmed 2026-11-22.

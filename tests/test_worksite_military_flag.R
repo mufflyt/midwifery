@@ -1,5 +1,10 @@
 #!/usr/bin/env Rscript
 
+source("tests/ci_report.R")
+ci_require_files("artifacts/midwife_work_sites_long.csv",
+                 "artifacts/midwife_work_sites_excluded_non_workplace.csv",
+                 what = "the work-site long table")
+
 long <- read.csv("artifacts/midwife_work_sites_long.csv",
                  stringsAsFactors = FALSE, check.names = FALSE)
 excluded <- read.csv("artifacts/midwife_work_sites_excluded_non_workplace.csv",

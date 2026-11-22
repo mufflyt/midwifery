@@ -1,0 +1,5 @@
+definition,n_midwives,n_with_gap,pct_with_gap,n_episodes
+part_d_only_any_gap,8147,2209,27.1,2731
+part_d_only_gap_ge_2yr,8147,1297,15.9,1390
+part_d_only_gap_ge_3yr,8147,804,9.9,825
+part_b_or_part_d_any_gap,8461,2232,26.4,2759

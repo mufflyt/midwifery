@@ -170,7 +170,19 @@ scn_denominators <- function(d, nums, counts, groups) {
 # file from minutes into seconds.
 SCN_MIN_PROBE <- 3L
 
-scn_formula <- function(pv, tol, nums, counts, dens) {
+# A COLUMN DIVIDED BY ITSELF EXPLAINS NOTHING, so `self` names the percentage
+# being explained and no candidate pair may be built from it. Without this,
+# every percentage whose real numerator is unpublished fits x = 100 * x / x --
+# true on each row where x is 100, and a 0/0 "rate on an empty denominator" on
+# each row where x is 0. That is how artifacts/longitudinal_reconstruction_audit.csv
+# was reported as publishing 13 rates on empty denominators on 2026-11-20: the
+# denominators were n_rows values like 6226, and the gate had never been given
+# the numerator (n_usable_for_trend, added in the same change) to find. A
+# tautology is not a formula. A percentage this function cannot pair is
+# genuinely unchecked, and SCN1 now says so by name instead of dropping it in
+# silence -- being unable to explain a published percentage is a smaller
+# problem than appearing to explain it with itself, but it is not nothing.
+scn_formula <- function(pv, tol, nums, counts, dens, self = NULL) {
   # THE PROBE HAS TO COME FIRST, and for a long time it did not. This function
   # carried a comment claiming three scalars were tested before the full-vector
   # comparison -- and then built `usable`, four vector operations over every
@@ -188,11 +200,19 @@ scn_formula <- function(pv, tol, nums, counts, dens) {
   if (length(cand) < SCN_MIN_PROBE) return(NULL)
   cand <- utils::head(cand, 24L)
 
+  # Names derived from the percentage itself: the bare column, and the
+  # sum()/sum()-by-group denominators scn_denominators() builds from it.
+  self_dens <- if (is.null(self)) character(0) else
+    c(self, sprintf("sum(%s)", self),
+      grep(sprintf("^sum\\(%s\\) by ", self), names(dens), value = TRUE))
+
   best <- NULL
   for (nm in counts) {
+    if (nm %in% self_dens) next
     nv <- nums[[nm]]
     if (all(is.na(nv[cand]))) next
     for (dn in names(dens)) {
+      if (dn %in% self_dens) next
       dv <- dens[[dn]]
       pr <- cand[!is.na(nv[cand]) & !is.na(dv[cand]) & dv[cand] > 0]
       if (length(pr) < SCN_MIN_PROBE) next
@@ -204,9 +224,24 @@ scn_formula <- function(pv, tol, nums, counts, dens) {
       if (!any(usable)) next
       agree <- abs(pv[usable] - 100 * nv[usable] / dv[usable]) <= tol
       if (mean(agree) < 0.9) next
+      # A TIE ON AGREEMENT IS BROKEN BY HOW MANY ROWS THE DENOMINATOR IS
+      # DEFINED ON, because two orientations of the same ratio can reproduce a
+      # percentage identically and only one of them is the formula. Where every
+      # record in a group is usable, n_usable_for_trend == n_rows, so
+      # usable_for_trend_pct = 100 * n_usable_for_trend / n_rows AND the
+      # inverted 100 * n_rows / n_usable_for_trend both land on exactly 100 --
+      # tied on agreement, tied on score. Keeping whichever came first picked
+      # the inverted one for longitudinal_reconstruction_audit.csv and then
+      # reported its 13 zero-numerator rows as rates on an empty denominator.
+      # The real formula's denominator (n_rows) is defined on all 63 rows; the
+      # inverted one's vanishes on 13. Preferring the wider denominator picks
+      # the formula that explains more of the column, which is the only
+      # evidence available to choose between them.
       score <- sum(agree & pv[usable] > tol)
-      if (is.null(best) || score > best$score)
-        best <- list(score = score, num = nm, den = dn,
+      n_usable <- sum(usable)
+      if (is.null(best) || score > best$score ||
+            (score == best$score && n_usable > best$n_usable))
+        best <- list(score = score, n_usable = n_usable, num = nm, den = dn,
                      agree = agree, usable = usable)
     }
   }
@@ -275,13 +310,19 @@ for (f in scn_files) {
 
 # Formulas, established once and reused by SCN1 and SCN2.
 SCN_FORMULAS <- list()
+# Percentages no pair of published counts explains. These are not failures --
+# the counts may legitimately live in another artifact, or be a mean of a
+# logical rather than a ratio -- but they are UNCHECKED, and SCN1 reporting
+# only the columns it did check reads as though it checked them all.
+SCN_UNPAIRED <- character(0)
 for (f in names(SCN)) {
   s <- SCN[[f]]
   if (!length(s$pcts) || !length(s$counts)) next
   dens <- scn_denominators(s$d, s$nums, s$counts, s$groups)
   for (p in s$pcts) {
-    fit <- scn_formula(s$nums[[p]], scn_tol(s$d[[p]]), s$nums, s$counts, dens)
-    if (is.null(fit)) next
+    fit <- scn_formula(s$nums[[p]], scn_tol(s$d[[p]]), s$nums, s$counts, dens,
+                       self = p)
+    if (is.null(fit)) { SCN_UNPAIRED <- c(SCN_UNPAIRED, paste0(f, ": ", p)); next }
     fit$file <- f; fit$col <- p; fit$dvec <- dens[[fit$den]]
     SCN_FORMULAS[[length(SCN_FORMULAS) + 1L]] <- fit
   }
@@ -305,6 +346,10 @@ if (length(off)) {
   ci_ok("%d percentage column(s) reproduce exactly from their own counts (%d artifacts read)",
         length(SCN_FORMULAS), length(SCN))
 }
+if (length(SCN_UNPAIRED))
+  ci_skip("SCN1: %d percentage column(s) carry no pair of published counts that explains them, so SCN1 and SCN2 say nothing about them:\n%s",
+          length(SCN_UNPAIRED),
+          paste(sprintf("       %s", SCN_UNPAIRED), collapse = "\n"))
 
 # -----------------------------------------------------------------------------
 ci_section("SCN2 a rate on an empty denominator is missing, not zero")
@@ -651,6 +696,74 @@ scn_completes <- function(uv, target, others, nums) {
 # primaries without complaint. Fixed by pivoting the disposition column instead
 # of enumerating it, so `n` is the sum of the columns rather than an
 # independent count and the two cannot disagree.
+# A SECOND HONEST SHAPE, recognised 2026-11-13.
+#
+# scn_completes() asks whether the unresolved count is a TERM inside the
+# denominator. That is one honest shape and it was the only one SCN6 knew. The
+# other is its mirror: the unresolved are EXCLUDED from the denominator on
+# purpose, and the file publishes BOTH the pre-exclusion total and a fully
+# itemised denominator, so a reader can still place every subject.
+# oig_remake/oig_table2_inaccuracy_subtypes_by_variable.csv is that shape --
+#
+#     n_evaluated      = n_definitive + n_unresolved
+#     n_definitive     = n_accurate + n_inaccurate_total
+#     n_inaccurate_total = n_partially_inaccurate_typo
+#                        + n_formerly_correct_outdated + n_never_correct
+#
+# -- and each percentage column is NAMED for the denominator it used
+# (`pct_accurate_definitive`, `pct_of_inaccurate_partially`). Nobody is
+# invisible: every evaluated case is in exactly one of n_definitive and
+# n_unresolved. SCN6 failed all four of its percentages every night anyway,
+# because an excluded count can never be a term summing to the denominator it
+# was excluded from -- it is that denominator's complement.
+#
+# This is the same class of false positive as the SCOPED-TO-FILES-THAT-PUBLISH-
+# A-PERCENTAGE note above, one level up, and the same argument applies: a gate
+# that rejects a correctly-reported exclusion teaches people to ignore it.
+#
+# THE RULE IS STRICTER THAN THE ONE IT SUPPLEMENTS, not looser. Both halves
+# must hold:
+#
+#   1. the unresolved count is explicitly COMPLEMENTED to a published total --
+#      unresolved + some other count == that total, and the total is really
+#      bigger than the part, so it is not the same column under another name;
+#   2. the percentage's own denominator is itself fully ITEMISED by other
+#      published counts.
+#
+# Half (1) alone would let a file publish a total it never breaks down; half
+# (2) alone is what scn_completes() already covers. Together they demand two
+# reconciliations where the original demanded one, and a table that drops
+# people fails both: its total will not add up.
+scn_subset_sums_to <- function(target, others, nums) {
+  zero <- rep(0L, length(target))
+  scn_completes(zero, target, others, nums)
+}
+
+scn_excluded_and_itemised <- function(uv, target, others, nums) {
+  # (1) the unresolved count is complemented to a published total.
+  total <- NULL
+  for (t in others) {
+    tv <- nums[[t]]
+    if (is.null(tv)) next
+    for (part in setdiff(others, t)) {
+      pv <- nums[[part]]
+      if (is.null(pv)) next
+      ok <- !is.na(uv) & !is.na(pv) & !is.na(tv)
+      if (!any(ok)) next
+      if (all(uv[ok] + pv[ok] == tv[ok]) && any(tv[ok] > pv[ok])) {
+        total <- t
+        break
+      }
+    }
+    if (!is.null(total)) break
+  }
+  if (is.null(total)) return(NULL)
+
+  # (2) and the denominator is itemised by counts other than the unresolved.
+  if (is.null(scn_subset_sums_to(target, others, nums))) return(NULL)
+  total
+}
+
 SCN6_BASELINE <- character(0)
 
 off <- character(0); known <- character(0); n_part <- 0L
@@ -665,6 +778,8 @@ for (f in names(SCN)) {
     for (fit in fits) {
       others <- setdiff(s$counts, u)
       cc <- scn_completes(uv, fit$dvec, others, s$nums)
+      if (!is.null(cc)) { n_part <- n_part + 1L; next }
+      cc <- scn_excluded_and_itemised(uv, fit$dvec, others, s$nums)
       if (!is.null(cc)) { n_part <- n_part + 1L; next }
       entry <- sprintf("%s: %s belongs to no set of columns adding to %s, the denominator behind %s",
                        f, u, fit$den, fit$col)

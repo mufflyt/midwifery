@@ -32,8 +32,8 @@ source(file.path("R", "lib", "medicare_duckdb.R"))
 source(file.path("R", "lib", "medicaid_enrollment_intervals.R"))
 source(file.path("R", "lib", "truth_fusion_claims.R"))
 
-MEDICAID_DB <- Sys.getenv("MEDICAID_ENROLLMENT_DB",
-                           "/Volumes/MufflySamsung/DuckDB/medicaid_provider_enrollment_segments.duckdb")
+MEDICAID_DB <- samsung_duckdb_path("DuckDB/medicaid_provider_enrollment_segments.duckdb",
+                                   "MEDICAID_ENROLLMENT_DB")
 if (!file.exists(MEDICAID_DB))
   stop(sprintf("Medicaid enrollment-segment warehouse not found at %s. It lives on an external volume; mount it or adjust the path.", MEDICAID_DB), call. = FALSE)
 

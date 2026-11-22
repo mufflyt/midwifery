@@ -86,12 +86,22 @@ with open(roster_file, "r", encoding="utf-8", errors="ignore") as f:
             out["live_bon_credential_num"] = wa_info.get("credentialnumber", "")
             out["live_bon_status"] = wa_info.get("status", "")
             out["live_bon_exp_date"] = wa_info.get("expirationdate", "")
+            # NO STATE IS OBSERVABLE IN THIS SOURCE. WA DOH's credential
+            # file (data.wa.gov qxh8-f4bd) publishes no address fields at
+            # all -- name, credential number, type, status and dates only.
+            # Writing "WA" here would be inventing an observation, and a
+            # circular one: this harvester only considers cohort members
+            # NPPES already places in Washington. The column is written
+            # EMPTY and present so the audit sees a declared absence rather
+            # than an absent column filled with NA by bind_rows().
+            out["live_bon_state"] = ""
             out["live_bon_match_status"] = "VERIFIED_LIVE_BON"
             matched_wa.append(out)
         else:
             out["live_bon_credential_num"] = "NA"
             out["live_bon_status"] = "UNMATCHED_BON"
             out["live_bon_exp_date"] = "NA"
+            out["live_bon_state"] = ""
             out["live_bon_match_status"] = "UNMATCHED"
             unmatched_wa.append(out)
 
