@@ -534,6 +534,49 @@ safe_left_join <- function(left, right, by, expect_unique_right = TRUE,
   checkmate::assert_flag(expect_unique_right)
   checkmate::assert_flag(write_report)
   checkmate::assert_flag(use_enhanced_metrics)
+
+  # REFUSE what this function cannot honour, rather than accepting it in
+  # silence. These four formals are read NOWHERE in the body: they were
+  # forwarded to safe_left_join_with_metrics() from R/join_metrics.R -- a file
+  # this repository never had -- and when that delegation was removed they were
+  # left declared, defaulted, and dead. Three of them are still documented with
+  # @param above, so a caller reading ?safe_left_join is told a check runs that
+  # does not.
+  #
+  # Accepting a validation argument and ignoring it is the exact failure the
+  # PRIORITY 1 note (2026-02-12) in this file forbids -- a REQUESTED check
+  # skipped without saying so. Refusing keeps every signature byte-identical,
+  # so no existing caller breaks, while turning four silent no-ops into errors.
+  # Each condition fires only on a value that ASKS for something: a default, or
+  # a value spelled out that matches what already happens, is not a request.
+  if (!missing(require_complete_keys)) {
+    stop("safe_left_join: require_complete_keys is never read. Incomplete join ",
+         "keys are not checked on this path -- the coverage gate below catches ",
+         "the rows they lose, but nothing inspects the keys themselves. Drop ",
+         "the argument rather than relying on it.", call. = FALSE)
+  }
+  if (!is.null(agree_on) || !is.null(agree_map)) {
+    stop("safe_left_join: agree_on/agree_map need the enhanced metrics module ",
+         "(R/join_metrics.R), which does not exist in this repository, so ",
+         "column agreement cannot be checked here. Drop the argument or port ",
+         "the module -- do not read a silent pass as agreement holding.",
+         call. = FALSE)
+  }
+  if (!missing(max_right_dup_keys)) {
+    # expect_unique_right is all-or-nothing: 0 duplicate right keys when TRUE,
+    # unlimited when FALSE. A caller passing the matching value is asking for
+    # what they already get, and erroring on that would break every call that
+    # spells the default out -- note the default is 0, a finite number, so a
+    # bare is.finite() test here would reject almost every ordinary call.
+    implied <- if (isTRUE(expect_unique_right)) 0 else Inf
+    if (!isTRUE(all.equal(as.numeric(max_right_dup_keys), as.numeric(implied)))) {
+      stop("safe_left_join: max_right_dup_keys=", max_right_dup_keys,
+           " is not enforced. Right-key duplication is gated by ",
+           "expect_unique_right alone -- all-or-nothing, currently implying ",
+           implied, ". Use expect_unique_right, or port R/join_metrics.R.",
+           call. = FALSE)
+    }
+  }
   # Validate suffix
   checkmate::assert_character(suffix, len = 2)
   # Validate report_prefix
@@ -685,9 +728,16 @@ safe_left_join <- function(left, right, by, expect_unique_right = TRUE,
                        label_left = label_left, label_right = label_right,
                        min_coverage = min_coverage)
 
-  # BUG FIX (2026-01-27): Enforce max_right_dup_keys in fallback path
-  # Previously this parameter was accepted but silently ignored when enhanced
-  # metrics were unavailable, allowing right-side duplicate keys to go undetected.
+  # NOTE (corrected 2026-11-21): this comment used to read "BUG FIX
+  # (2026-01-27): Enforce max_right_dup_keys in fallback path", above the
+  # unmatched-left-rows gate, which has nothing to do with right-side duplicate
+  # keys. Whatever that fix did was lost or never landed -- max_right_dup_keys
+  # appears nowhere in this path. Right-key duplication IS still gated, by
+  # expect_unique_right above, so the DEFAULT protection holds; what was missing
+  # is the tunable count, and the function now refuses that argument at the top
+  # instead of accepting it and doing nothing. A comment asserting an
+  # enforcement that is not there is worse than no comment: it answers the
+  # reader's question wrongly and stops them checking.
 
   # Coverage-consistent gate for unmatched left rows
 

@@ -19,12 +19,15 @@
 #           913-line body; `if (...) { }` is not a scope in R, so all three
 #           landed in the one environment and two took the same arity with
 #           incompatible first-argument types.
-#   R14-R22 No formal of the four safe_*_join wrappers is accepted and then
-#           ignored. require_complete_keys defaulted TRUE and was read only
-#           inside a branch that stops, because it delegates to
-#           R/join_metrics.R, which does not exist here. Six more formals were
-#           in the same state across the other three wrappers.
-#   R23-R24 join_coverage_report() is called with NAMED arguments.
+#   R14-R15 join_coverage_report() is called with NAMED arguments.
+#   R16-R20 safe_left_join() refuses the four formals it reads nowhere, rather
+#           than accepting them and checking nothing. They were forwarded to
+#           safe_left_join_with_metrics() from R/join_metrics.R -- a file this
+#           repository never had -- and PR #329 removed that delegation without
+#           removing them, which left four declared, defaulted, documented
+#           no-ops. tests/test_complexity_cuts_saboteurs.R owns the DELETION of
+#           the three sibling wrappers and the dead delegation itself; this
+#           section owns only the arguments the surviving wrapper still takes.
 #
 # Run: Rscript tests/test_review_fixes_saboteurs.R   (exit 1 on any failure)
 # =============================================================================
@@ -137,7 +140,7 @@ chk(is.na(normalize_person_name(NA)) && is.na(normalize_person_name("")) &&
 # so a gate pointed at untracked files sees an empty repository and passes
 # vacuously; and H3 reads .gitignore with readLines(), which ERRORS rather than
 # warns when the file is absent.
-scaffold <- function(dir, files) {
+h6_scaffold <- function(dir, files) {
   dir.create(file.path(dir, "tests"), recursive = TRUE, showWarnings = FALSE)
   file.copy(file.path(root, "tests", "ci_hygiene.R"),
             file.path(dir, "tests", "ci_hygiene.R"))
@@ -149,7 +152,7 @@ scaffold <- function(dir, files) {
 
 # TRUE when the gate refused. The `cd` is load-bearing: ci_hygiene.R resolves
 # its own root from --file=, so it must be invoked by its path inside dir.
-gate_fails <- function(dir) {
+h6_gate_fails <- function(dir) {
   st <- suppressWarnings(system2(
     "sh", c("-c", shQuote(sprintf("cd %s && Rscript tests/ci_hygiene.R",
                                   shQuote(dir)))),
@@ -161,8 +164,8 @@ h6_case <- function(label, files, expect_fail = TRUE) {
   dir <- file.path(tempdir(), paste0("h6", sample.int(1e6, 1)))
   dir.create(dir, recursive = TRUE, showWarnings = FALSE)
   on.exit(unlink(dir, recursive = TRUE), add = TRUE)
-  scaffold(dir, files)
-  chk(identical(gate_fails(dir), expect_fail), label)
+  h6_scaffold(dir, files)
+  chk(identical(h6_gate_fails(dir), expect_fail), label)
 }
 
 sab(8, "SABOTEUR: one name bound twice in a single function body")
@@ -291,4 +294,87 @@ chk(!identical(sab24, JS), "R15a the saboteur actually changed the source")
 chk(positional_calls(sab24) >= 1L,
     "R15b a positional call is caught")
 
-saboteur_report(15)
+
+# =============================================================================
+# R16-R20  safe_left_join() refuses what it cannot honour
+# =============================================================================
+source(file.path(root, "R", "safe_divide.R"))
+source(file.path(root, "R", "join_safety.R"))
+L <- data.frame(id = c("a", "b", "c"), v = 1:3)
+RT <- data.frame(id = c("a", "b", "c"), w = 4:6)
+
+# The law, checked over the parsed source: no formal is read nowhere in the
+# body. Refusing an argument counts as reading it, so the fix and the law agree.
+syms_read <- function(e, acc = character(0)) {
+  if (is.symbol(e)) return(c(acc, as.character(e)))
+  if (!is.recursive(e)) return(acc)
+  for (i in seq_along(e)) acc <- tryCatch(syms_read(e[[i]], acc),
+                                          error = function(z) acc)
+  acc
+}
+inert_formals <- function(text, fname) {
+  ex <- parse(text = text, keep.source = FALSE)
+  fn <- NULL
+  for (x in ex) if (is.call(x) && length(x) == 3L && deparse(x[[2]])[1] == fname)
+    fn <- eval(x[[3]], new.env(parent = globalenv()))
+  if (!is.function(fn)) stop("no such function in the text: ", fname)
+  setdiff(names(formals(fn)), unique(syms_read(body(fn))))
+}
+
+sab(16, "no formal of safe_left_join is accepted and never read")
+got <- inert_formals(JS, "safe_left_join")
+chk(length(got) == 0L,
+    sprintf("R16 safe_left_join has no inert formal%s",
+            if (length(got)) paste0(" -- found: ", paste(got, collapse = ", ")) else ""))
+
+sab(17, "SABOTEUR: declare a formal and never read it")
+sab17 <- sub("safe_left_join <- function(left, right, by, expect_unique_right = TRUE,",
+             "safe_left_join <- function(left, right, by, never_read = 0.5, expect_unique_right = TRUE,",
+             JS, fixed = TRUE)
+chk(!identical(sab17, JS), "R17a the saboteur actually changed the source")
+chk(identical(inert_formals(sab17, "safe_left_join"), "never_read"),
+    "R17b a formal referenced nowhere in the body is caught")
+
+sab(18, "NEAR MISS: a formal the body does read is not flagged")
+sab18 <- sub("  checkmate::assert_flag(use_enhanced_metrics)",
+             "  checkmate::assert_flag(use_enhanced_metrics)\n  if (!is.null(never_read)) invisible(never_read)",
+             sab17, fixed = TRUE)
+chk(length(inert_formals(sab18, "safe_left_join")) == 0L,
+    "R18 the same formal, once read, is NOT flagged")
+
+sab(19, "a request the function cannot honour is REFUSED, not ignored")
+# Before this, each returned a joined frame and checked nothing, so a caller
+# asking for a check got silence that looked like success.
+chk(errs(safe_left_join(L, RT, by = "id", require_complete_keys = TRUE,
+                        write_report = FALSE)),
+    "R19a require_complete_keys errors instead of silently checking nothing")
+chk(errs(safe_left_join(L, RT, by = "id", agree_on = "v", write_report = FALSE)),
+    "R19b agree_on errors instead of silently skipping")
+chk(errs(safe_left_join(L, RT, by = "id", agree_map = list(v = "w"),
+                        write_report = FALSE)),
+    "R19c agree_map errors")
+chk(errs(safe_left_join(L, RT, by = "id", expect_unique_right = FALSE,
+                        max_right_dup_keys = 5, write_report = FALSE)),
+    "R19d a finite max_right_dup_keys errors (it is never enforced)")
+
+sab(20, "NEAR MISS: defaults, and no-op spellings of them, still work")
+# A first cut of these guards used !missing() alone, which erred on every call
+# that spelled a default out -- and max_right_dup_keys defaults to 0, a finite
+# number, so an is.finite() test alone would have errored on every default call.
+chk(!errs(safe_left_join(L, RT, by = "id", write_report = FALSE)),
+    "R20a the plain default call is untouched")
+chk(!errs(safe_left_join(L, RT, by = "id", expect_unique_right = TRUE,
+                         max_right_dup_keys = 0, write_report = FALSE)),
+    "R20b max_right_dup_keys=0 with expect_unique_right=TRUE is the enforced value, not a request")
+chk(!errs(safe_left_join(L, RT, by = "id", expect_unique_right = FALSE,
+                         max_right_dup_keys = Inf, write_report = FALSE)),
+    "R20c max_right_dup_keys=Inf with expect_unique_right=FALSE bounds nothing, so it is honoured")
+chk(!errs(safe_left_join(L, RT, by = "id", min_coverage = 0.9,
+                         max_duplication = 1.5, write_report = FALSE)),
+    "R20d the arguments that ARE honoured still work")
+RD <- data.frame(id = c("a", "a", "b", "c"), w = 1:4)
+chk(errs(safe_left_join(L, RD, by = "id", expect_unique_right = TRUE,
+                        write_report = FALSE)),
+    "R20e expect_unique_right still catches a duplicated right key -- the guard that makes refusing max_right_dup_keys acceptable")
+
+saboteur_report(20)

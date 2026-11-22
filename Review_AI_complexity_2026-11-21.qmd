@@ -1,5 +1,5 @@
 ---
-title: "midwifery @ 6cb96e0 — AI-Assisted Code-Complexity Analysis"
+title: "midwifery @ 6cb96e0 — AI-Assisted Code-Complexity Analysis (2026-11-21 round)"
 author: "Tyler Muffly (AI-assisted, Claude Code / Opus 5)"
 date: 2026-11-21
 format:
@@ -637,3 +637,42 @@ Not refactors — discoverability points, kept separate and **optional**:
    Minor.)_ One line each; folds into item 4.
 9. **Count and report `walk_calls`'s skipped nodes** _(Low, Minor.)_ One line;
    turns a documented blind spot into a visible one.
+
+
+# Addendum, 2026-11-21 (written after `origin/main` moved)
+
+This report measured commit `6cb96e0`. Between the measurement and the fixes
+landing, `origin/main` merged PR #329 (`refactor/complexity-audit-fixes`), which
+came out of the earlier **2026-11-19** round recorded in
+`Review_AI_complexity.qmd`. Two findings above are therefore partly historical,
+and saying so is cheaper than leaving a reader to discover it:
+
+- **Hotspot 2 (four parallel join wrappers).** PR #329 deleted
+  `safe_inner_join()`, `safe_semi_join()` and `safe_anti_join()` outright — they
+  had zero production call sites — taking `R/join_safety.R` from roughly 1,900
+  lines to 874. The 595-line measurement and the pairwise-overlap table describe
+  a structure that no longer exists. What survived the deletion, and what this
+  round fixed, is narrower and was **not** covered by #329: `safe_left_join()`
+  still declared four formals it reads nowhere. Removing the enhanced-metrics
+  delegation removed the only place `require_complete_keys`, `agree_on`,
+  `agree_map` and `max_right_dup_keys` were ever passed, which turned them from
+  conditionally dead into entirely dead while leaving three of them documented
+  with `@param`. They are now refused rather than ignored.
+- **Minor: positional `join_coverage_report()`.** One of the two call sites went
+  with the deleted wrappers; the remaining one is now called by name.
+
+Everything else in this report was measured against code that PR #329 did not
+touch, and the fixes for it landed as described: the platform-dependent accent
+fold, the three same-scope `g` bindings in `mw_build_catalog()`, and the `H6`
+gate that now forbids the latter class.
+
+One correction to this report's own text, kept here rather than edited silently
+into the body above: **Hotspot 3 was wrong to propose consolidating all four
+person-name normalisers.** `audit_2013_dac_vs_nppes.R:181` documents its
+shallowness as a decision — *"no nickname table, no transliteration, no fuzzy
+distance. The point is to count genuine disagreement, and an aggressive
+normaliser hides exactly the disagreement this audit exists to measure."* Folding
+that into a canonical normaliser would change the result the script exists to
+produce. What was genuinely wrong, and what was fixed, is the **platform
+dependence** in `amcb_license_bridge.R`, which is a different defect that
+happened to live in the same family of functions.

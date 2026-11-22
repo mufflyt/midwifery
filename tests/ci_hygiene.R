@@ -31,6 +31,18 @@
 #       `if (!is.null(x))` block. That is the point -- the next edit to move a
 #       statement across a block boundary would have been silent.
 #
+#   H6  No name bound to a function more than once WITHIN ONE SCOPE. H4 reads
+#       top-level definitions across files; this reads every scope, which is
+#       where the same defect hides. mw_build_catalog() bound `g` three times
+#       in one 913-line function body -- and because `if (...) { }` is not a
+#       scope in R, all three landed in the one environment. Two of the three
+#       took the same arity with incompatible first-argument types (a data
+#       frame at one binding, a character stratum key at the next), 41 lines
+#       apart, in the function that produces every number in the manuscript.
+#       Nothing was wrong at the time: every call sat inside its own
+#       `if (!is.null(x))` block. That is the point -- the next edit to move a
+#       statement across a block boundary would have been silent.
+#
 # H4 carries an allowlist. Some repeats are legitimate -- a test's local `chk`
 # harness, or a genuinely private one-liner -- and an allowlist that must be
 # edited deliberately is the point: adding a name here is a decision someone
