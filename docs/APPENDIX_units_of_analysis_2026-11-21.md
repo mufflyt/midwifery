@@ -233,6 +233,30 @@ was not wrong either time.
 **The tell:** an `Error in ...` line in a suite's output rather than a `FAIL`.
 Count the checks a suite reports, not just its exit status.
 
+### It happened four times in one branch
+
+Repairing each failing step exposed the next one behind it, because GitHub
+Actions halts a job at its first failure:
+
+| what was hiding | what it hid |
+|---|---|
+| the figure suite's abort | its own G5c–G7 groups |
+| `Denominator contracts` (D5, environment) | the new unit-of-analysis saboteur suite, which ran **zero** times |
+| the figure suite's failure | the **DuckDB architecture gate**, red on two raw connections, one of them years old |
+| the DuckDB gate | **`ci_manuscript_numbers`**, flagging a typed literal |
+
+None of these were new breakages. Every one had been red for as long as the
+step ahead of it had, and the job had been reporting a single tidy failure the
+whole time. **A job's first red step is not its only red step**, and a branch
+is not one fix away from green merely because CI names one thing.
+
+The last of them was a false positive worth keeping: `federal_database_accuracy.qmd`
+types `84.8` as Butala et al.'s published consistency figure for
+single-location physicians, which happens to equal this cohort's
+`linkage.active_ascertained_pct`. The number is not ours to compute, so it
+goes in `manuscript/allowed_literals.tsv` with that reason rather than being
+converted to a catalog reference.
+
 ## What was added
 
 [`tests/test_npi_rate_and_cluster_saboteurs.R`](../tests/test_npi_rate_and_cluster_saboteurs.R)

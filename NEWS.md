@@ -281,6 +281,19 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   (2013 vs 2021). `UFT_BASELINE` is now empty, which makes D5 stricter rather
   than laxer. **D1–D5 report `PASS (0 failures)`** on a machine holding the
   canonical records.
+- **Four gates turned out to have been red behind a failing step.** Actions
+  halts a job at its first failure, so repairing each one exposed the next:
+  the figure suite's abort hid its own G5c–G7; `Denominator contracts` hid the
+  new saboteur suite; the figure suite hid the **DuckDB architecture gate**
+  (two raw `dbConnect(duckdb())` calls, one long-standing); and that hid
+  `ci_manuscript_numbers`, which flags `84.8` in
+  `federal_database_accuracy.qmd` as a typed protected result. That last one
+  is a genuine false positive — it is Butala et al.'s published figure for
+  single-location physicians, cited in the same sentence, which coincidentally
+  equals `linkage.active_ascertained_pct`. It is not ours to compute, so it is
+  allowlisted in `manuscript/allowed_literals.tsv` with that reason rather than
+  converted to a catalog reference. **A job's first red step is not its only
+  red step.**
 - **D5 now skips on the input it cannot have, and only on that one.** Its
   first branch failed whenever `artifacts/canonical_source_records.csv` was
   absent, calling it "a tracked artifact" — `.gitignore:320` excludes it, so
