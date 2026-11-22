@@ -178,13 +178,13 @@ if (file.exists(f)) {
 
 # Patient panel: no primary source, so describe it.
 p <- coh |> filter(!is.na(trl_panel_median_age))
-q <- function(v, pr) unname(quantile(v, pr, na.rm = TRUE))
+quant <- function(v, pr) unname(quantile(v, pr, na.rm = TRUE))
 checks <- c(checks, list(
   check_row("panel", "coherent patient panel", nrow(coh), nrow(p)),
-  check_row("panel", "panel median patient age, median", nrow(p), q(p$trl_panel_median_age, 0.5)),
-  check_row("panel", "panel median patient age, 25th percentile", nrow(p), q(p$trl_panel_median_age, 0.25)),
-  check_row("panel", "panel median patient age, 75th percentile", nrow(p), q(p$trl_panel_median_age, 0.75)),
-  check_row("panel", "share of patients female (%), median across midwives", nrow(p), 100 * q(p$trl_panel_percent_female, 0.5))),
+  check_row("panel", "panel median patient age, median", nrow(p), quant(p$trl_panel_median_age, 0.5)),
+  check_row("panel", "panel median patient age, 25th percentile", nrow(p), quant(p$trl_panel_median_age, 0.25)),
+  check_row("panel", "panel median patient age, 75th percentile", nrow(p), quant(p$trl_panel_median_age, 0.75)),
+  check_row("panel", "share of patients female (%), median across midwives", nrow(p), 100 * quant(p$trl_panel_percent_female, 0.5))),
   lapply(TRL_PANEL_AGE_BANDS, \(b) check_row("panel", sprintf("share of patients aged %s (%%), mean across midwives",
                                                       str_replace_all(str_remove(b, "panel_percent_age_"), "_", "-")),
                                       nrow(p), 100 * mean(p[[paste0("trl_", b)]]))))

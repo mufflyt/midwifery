@@ -32,7 +32,7 @@ ci_entrypoints <- file.path("tests", c(
   "test_open_payments_type2_bulk.R", "test_table1_blk_hg.R",
   "test_pip_materialization.R", "test_safe_divide_types.R",
   "test_amcb_license_bridge.R", "test_build_amcb_state_licenses.R",
-  "test_review_fixes_saboteurs.R",
+  "test_review_fixes_saboteurs.R", "test_dead_code_cuts_saboteurs.R",
   "test_read_width_detect.R",
   "test_adapt_license_bridge_to_reconcile.R",
   "test_expand_former_name_candidates.R",
@@ -74,7 +74,13 @@ ci_packages <- c(
   # mysterynpi: reached through R/lib/training_institution.R
   # (strip_med_suffix()). Installed from GitHub at a pinned commit by the
   # "Install mysterynpi (pinned)" step of r-unit-tests.
-  "mysterynpi"
+  "mysterynpi",
+  # cyclocomp: reached through tools/measure_code_complexity.R, which
+  # tests/test_dead_code_cuts_saboteurs.R sources rather than writing a second
+  # parser for the whole tree. Only mcc_profile() calls it and the saboteurs
+  # never do, but a step that CAN reach the call must be able to load it --
+  # the same latent break checkmate was.
+  "cyclocomp"
 )
 
 # chk(), ok() and check() are this repo's hand-rolled assertion helpers. Four

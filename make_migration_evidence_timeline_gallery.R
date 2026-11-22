@@ -35,19 +35,15 @@
 #' @author Tyler Muffly, MD + Claude Code
 
 suppressPackageStartupMessages({library(dplyr); library(readr); library(ggplot2); library(digest); library(ggrepel)})
+source(file.path("R", "lib", "script_cli_and_keys.R"))
 
 # tl_*-prefixed to avoid ci_hygiene H4 (duplicate top-level function names
 # across files) -- build_linkage_case_gallery.R already defines gal_arg/gal_flag.
-tl_arg <- function(key, default) {
-  hit <- grep(paste0("^--", key, "="), commandArgs(TRUE), value = TRUE)
-  if (!length(hit)) return(default)
-  sub(paste0("^--", key, "="), "", hit[1])
-}
 tl_flag <- function(key) paste0("--", key) %in% commandArgs(TRUE)
 
-SEED <- as.integer(tl_arg("seed", "20261109"))
+SEED <- as.integer(cli_arg("seed", "20261109"))
 REDACT <- tl_flag("redact")
-OUTDIR <- tl_arg("outdir", "qa")
+OUTDIR <- cli_arg("outdir", "qa")
 
 if (!identical(OUTDIR, "qa") && !tl_flag("allow-unsafe-outdir")) {
   stop("Refusing to write person-level output outside qa/, which is gitignored.\n",

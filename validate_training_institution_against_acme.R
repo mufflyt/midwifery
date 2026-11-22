@@ -52,14 +52,18 @@
 
 suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr)})
 
-norm <- function(x) {
+# Institution names, not person names: match_amcb_to_npi.R already has a
+# norm_name() that delegates to mysterynpi::name_key(), and two different
+# rules under one name is what ci_hygiene.R H4 refuses. This one strips a
+# leading THE, which a person-name key must not.
+norm_institution_name <- function(x) {
   y <- toupper(str_squish(as.character(x)))
   y <- str_replace_all(y, "[^A-Z0-9 ]", " ")
   str_squish(str_replace(y, "^THE ", ""))
 }
 
 acme <- read_csv("data/acme_accredited_midwifery_programs.csv", show_col_types = FALSE) %>%
-  mutate(norm_name = norm(institution))
+  mutate(norm_institution_name = norm_institution_name(institution))
 
 T1 <- "artifacts/table1_midwives.csv"
 t1 <- read_csv(T1, show_col_types = FALSE)
@@ -102,7 +106,7 @@ if (!nrow(block))
 named <- block %>%
   filter(!startsWith(characteristic, "Other named institution"),
          !startsWith(characteristic, "No school named")) %>%
-  mutate(norm_name = norm(characteristic))
+  mutate(norm_institution_name = norm_institution_name(characteristic))
 
 cat("=== Table 1's named training institutions vs. ACME's current accredited-program list ===\n\n")
 

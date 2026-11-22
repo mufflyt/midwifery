@@ -753,13 +753,6 @@ repo_gate_commit_messages <- function(root) {
 }
 
 
-`%||%` <- function(x, y) {
-  if (base::is.null(x)) {
-    return(y)
-  }
-
-  x
-}
 
 
 
