@@ -86,6 +86,13 @@ jobs:
       - name: Workflow contracts (a job installs what it runs)
         run: Rscript tests/ci_workflow_contracts.R
 
+      # Gate-of-gates for W2. W2 is the check that says a gate nobody runs is
+      # not a gate; if W2 itself cannot fail, it is exactly the thing it
+      # forbids. Six cases, each building a throwaway tree and running the real
+      # gate in it: two kills, four near misses.
+      - name: Workflow contracts detector
+        run: Rscript tests/test_workflow_contracts_detect.R
+
       # The aggregate gate decides whether this pull request is scientifically
       # green, so its logic is tested here rather than trusted: all-success
       # passes, and skipped, cancelled, failed, missing and ran-nothing are each
@@ -222,6 +229,21 @@ jobs:
       # without being removed from the list.
       - name: Science contracts
         run: Rscript tests/ci_science_contracts.R
+
+      # REWIRED 2026-11-22. This gate was added with its steps in 62d24e9, was
+      # deliberately red while DEBT D14 was open, and lost its steps during a
+      # later merge resolution. D14 is now closed and the gate reports PASS --
+      # from no job at all. A gate that passes and that nobody runs is the
+      # failure mode tests/ci_workflow_contracts.R W2 now refuses; this is the
+      # orphan W2 found.
+      #
+      # Detector first, then the gate: if the detector cannot kill a planted
+      # defect, a green gate below means nothing.
+      - name: Denominator contracts detector
+        run: Rscript tests/test_denominator_contracts_detect.R
+
+      - name: Denominator contracts
+        run: Rscript tests/ci_denominator_contracts.R
 
   python-checks:
     name: Python syntax and address keys
