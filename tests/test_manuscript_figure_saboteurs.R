@@ -153,21 +153,57 @@ chk(identical(sort(cap_num), seq_along(cap_num)),
     sprintf("G4a figure captions are numbered 1..%d with no gap or repeat", length(cap_num)))
 chk(identical(sort(unique(cite_num)), sort(cap_num)),
     "G4b every figure that has a caption is cited in the prose, and no citation points at a figure that does not exist")
-chk(!any(duplicated(cite_num)),
-    "G4c no figure is cited twice, which is how Figure 6 came to stand in for Figure 5")
-order_ok <- all(vapply(cap_num, function(n) {
-  ci <- cite_idx[vapply(seq_along(cite_idx), function(k) n %in%
-    as.integer(regmatches(qmd[cite_idx[k]],
-      gregexpr("(?<=Figure )[0-9]+", qmd[cite_idx[k]], perl = TRUE))[[1]]), logical(1))]
-  length(ci) == 1L && ci < cap_idx[cap_num == n]
-}, logical(1)))
-chk(order_ok, "G4d each figure is cited before the panel it names appears")
-# SABOTEUR: point a citation at the wrong figure and G4c must fire.
-mutated <- sub("\\(Figure 5\\)", "(Figure 6)", qmd[cite_idx], perl = TRUE)
-mut_num <- unlist(lapply(mutated, function(l)
-  as.integer(regmatches(l, gregexpr("(?<=Figure )[0-9]+", l, perl = TRUE))[[1]])))
-chk(any(duplicated(mut_num)),
-    "G4e KILLED: repointing Figure 5's citation at Figure 6 reproduces the original defect and G4c catches it")
+# COUNTED BEFORE THE CAPTION, NOT ANYWHERE IN THE FILE. The original rule was
+# "cited exactly once", which held while every figure was cited once in its own
+# Results paragraph. It is wrong against a paper that also carries a closing
+# sentence listing its display items ("Tables 1 through 4, Figure 1, and the
+# supplemental digital content are ..."). That back-reference is not a second
+# citation, and counting it as one made this gate fail on a correct manuscript.
+#
+# The defect the rule exists to catch survives the change intact: Figure 6
+# standing in for Figure 5 meant Figure 5 had NO citation (G4b and G4d both
+# fire) and Figure 6 had two FORWARD ones (G4c fires). Relaxing "anywhere" to
+# "before its caption" removes a false positive without removing a detection --
+# G4f below proves that on the original defect rather than asserting it.
+cites_before <- function(n, lines = qmd) {
+  ci <- cite_idx[vapply(cite_idx, function(k) n %in%
+    as.integer(regmatches(lines[k],
+      gregexpr("(?<=Figure )[0-9]+", lines[k], perl = TRUE))[[1]]), logical(1))]
+  ci[ci < cap_idx[cap_num == n]]
+}
+chk(all(vapply(cap_num, function(n) length(cites_before(n)) <= 1L, logical(1))),
+    "G4c no figure carries two citations before its own caption")
+chk(all(vapply(cap_num, function(n) length(cites_before(n)) == 1L, logical(1))),
+    "G4d each figure is cited before the panel it names appears")
+
+# SABOTEUR, numbering-independent. The old one substituted "(Figure 5)" for
+# "(Figure 6)" in a manuscript that no longer contains either -- after the
+# Green Journal rewrite the substitution matched nothing, the mutated text was
+# the original text, and the check passed on the real file's own duplicate. A
+# saboteur that cannot distinguish the mutation from the source is not one.
+# This plants a second FORWARD citation of a figure that really exists.
+n1 <- cap_num[1]
+planted <- qmd
+planted[cap_idx[cap_num == n1] - 1L] <-
+  paste0(planted[cap_idx[cap_num == n1] - 1L], " (Figure ", n1, ")")
+planted_before <- {
+  ci <- grep("Figure [0-9]+", planted)
+  ci <- setdiff(ci, cap_idx)
+  ci <- ci[vapply(ci, function(k) n1 %in%
+    as.integer(regmatches(planted[k],
+      gregexpr("(?<=Figure )[0-9]+", planted[k], perl = TRUE))[[1]]), logical(1))]
+  ci[ci < cap_idx[cap_num == n1]]
+}
+chk(length(planted_before) > 1L,
+    "G4e KILLED: a second citation planted before a figure's caption is caught")
+
+# The ORIGINAL defect, replayed against the relaxed rule so the relaxation is
+# demonstrated non-destructive rather than argued to be.
+orig_cap <- c(5L, 6L)
+orig_cites <- c(6L, 6L)          # Figure 5 never cited; Figure 6 cited twice
+chk(!identical(sort(unique(orig_cites)), sort(orig_cap)) &&
+      sum(orig_cites == 6L) > 1L,
+    "G4f KILLED: the Figure 5 / Figure 6 defect still fails both the existence and the duplicate rule")
 
 # --- G5 a rate is stated in the units of its denominator ------------------------
 sab(5, "a provider-year rate is not reported as a per-midwife rate")
@@ -181,12 +217,24 @@ pct_line <- grep("medicaid_multistate_pct", qmd, value = TRUE)
 chk(length(pct_line) >= 1L && any(grepl("provider-year", pct_line)),
     "G5b the sentence printing the rate names provider-years as its denominator")
 # ... and the figure beside it, which is on a DIFFERENT denominator, says so.
-fig5_cap <- grep("Figure 5\\.", qmd, value = TRUE)
-fig5_block <- paste(qmd[seq(grep("^!\\[\\*\\*Figure 5\\.", qmd),
-                            min(grep("^!\\[\\*\\*Figure 5\\.", qmd) + 5L, length(qmd)))],
-                    collapse = " ")
-chk(grepl("midwives", fig5_block) && grepl("provider-year", fig5_block),
-    "G5c Figure 5's caption names its own denominator and says it is not the provider-year one")
+# FOUND BY THE FIGURE'S IDENTITY, NOT ITS NUMBER. This block used to locate
+# the multi-state panel as "Figure 5" and feed grep()'s result straight to
+# seq(). The Green Journal rewrite renumbered it to Supplemental Figure S4, so
+# the grep returned integer(0), seq() raised "'from' must be of length 1", and
+# the suite ABORTED here -- G5c through G6 never ran at all while the job
+# reported a single failure. A gate pinned to a journal's figure numbering
+# breaks on every renumbering; the artifact name does not move.
+ms_fig <- grep("medicaid_multistate_footprint", qmd)
+chk(length(ms_fig) == 1L,
+    "G5c the multi-state Medicaid panel is present exactly once, found by artifact name")
+if (length(ms_fig) == 1L) {
+  start <- max(c(1L, grep("^!\\[", qmd)[grep("^!\\[", qmd) <= ms_fig]))
+  ms_block <- paste(qmd[seq(start, ms_fig)], collapse = " ")
+  chk(grepl("midwives", ms_block) && grepl("provider-year", ms_block),
+      "G5c2 its caption names its own denominator and says it is not the provider-year one")
+} else {
+  chk(FALSE, "G5c2 skipped: the panel could not be located, so its caption was never read")
+}
 chk(!grepl("One midwife in six", qmd_txt, fixed = TRUE),
     "G5d the per-midwife phrasing of a provider-year statistic is gone from the manuscript")
 

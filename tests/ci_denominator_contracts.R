@@ -416,7 +416,15 @@ if (is.null(cv) || !"usable_for_trend" %in% names(cv)) {
   # stratification is the author's call, not a test's. The baseline can only
   # shrink: a new consumer fails this gate, and fixing the baselined one
   # requires deleting its line.
-  UFT_BASELINE <- c("build_state_variation_agreement.R")
+  #
+  # DELETED 2026-11-21. build_state_variation_agreement.R now reads
+  # `filter(usable_for_trend == "TRUE", ...)` at its head, which is what DEBT
+  # D14 item 5 asked for, so this gate's own instruction on a baselined
+  # consumer that starts honouring the flag applies: remove its line. The list
+  # is now empty, which makes the gate STRICTER -- any consumer that skips the
+  # flag fails outright, with no forgiven entry to hide behind. Re-adding a
+  # name is a decision to argue for in DEBT, not a convenience.
+  UFT_BASELINE <- character(0)
 
   off <- character(0); known <- character(0)
   for (f in display_files()) {

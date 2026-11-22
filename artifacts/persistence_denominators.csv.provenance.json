@@ -1,17 +1,17 @@
 {
   "artifact": "persistence_denominators.csv",
-  "written_utc": "2026-11-22 00:16:16 UTC",
+  "written_utc": "2026-11-22 01:24:44 UTC",
   "inputs": [
     {
       "path": "artifacts/canonical_source_records.csv",
       "sha256": "81cf8b26e0a055bc5ddbe74f3ffe872105d12025272bce18b9b68acfc901f006"
     }
   ],
-  "code_sha256": "ceede6795cc3339394964fea2525e28e236823ecbff8860460847c6c817551fe",
+  "code_sha256": "8d56aaa2cf0e23754ea53ec965322b91c6bd9b50e68f3fc4b4431bff364c81e5",
   "code": [
     {
       "path": "build_f2_f3_uncertainty_denominators.R",
-      "sha256": "3fd36bc0572122d363591d78053834c00966e26b3a0cd6cca3414cf0141c1fad"
+      "sha256": "3fcd7b0c097c7fb8ff9652bf8b192638159060eb619ebdcc4e9d9e44e74fe3e5"
     },
     {
       "path": "R/lib/artifact_provenance.R",

@@ -186,6 +186,41 @@ f3 <- f3 %>%
            ifelse(n_followed_source > 0,
                   round(100 * n_same_state / n_followed_source, 1), NA_real_))
 
+## ---- Withhold the follow-up columns where t+1 is not observed --------------
+# A ZERO AND A BLANK ARE NOT THE SAME CLAIM, and this is the whole of DEBT D14
+# items 1 and 2. At a source's LAST year there is no t+1, so nobody can be
+# followed: n_followed_source is 0 and n_lost_from_source == n_observed by
+# arithmetic, not by attrition. Summed across years, that one degenerate row
+# dominated the pooled rate -- Medicaid's "left source" read 16.9% where the
+# evaluable years give 0.8%.
+#
+# The registry closes separately. A source-year whose t+1 falls past NPPES's
+# last year cannot distinguish "absent from the registry" from "the registry
+# has not been observed yet", so scoring it as a confirmed absence made PECOS
+# print 16.4% leaver-visibility against an evaluable 96.5% -- a number that
+# contradicted the sentence it was printed under.
+#
+# Withholding rather than filtering is deliberate: the row still reports
+# n_observed, which IS known at t, and a consumer that sums a blank gets NA
+# instead of a confidently wrong number. Dropping the rows would have hidden
+# that the window ends.
+source_max <- f3 %>% group_by(source) %>%
+  summarise(last_year = max(year), .groups = "drop")
+nppes_max <- max(nppes$year)
+
+f3 <- f3 %>%
+  left_join(source_max, by = "source") %>%
+  mutate(
+    .source_edge = year >= last_year,
+    .registry_edge = year + 1L > nppes_max,
+    across(c(n_followed_source, n_same_state, n_changed_state,
+             n_lost_from_source, pct_followed, pct_same_given_followed),
+           ~ replace(.x, .source_edge, NA)),
+    # Defined only when the source AND the registry both have a t+1.
+    n_lost_source_but_in_nppes =
+      replace(n_lost_source_but_in_nppes, .source_edge | .registry_edge, NA)) %>%
+  select(-last_year, -.source_edge, -.registry_edge)
+
 write_with_provenance(f2, "artifacts/agreement_cluster_bootstrap_ci.csv",
                       inputs = "artifacts/canonical_source_records.csv", na = "")
 write_with_provenance(f3, "artifacts/persistence_denominators.csv",

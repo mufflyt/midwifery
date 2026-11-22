@@ -726,11 +726,11 @@ every state that permits a skip is a state a law can hide in.
 
 ## D14 — Four supplemental-table rates divide a count by a group it did not come from
 
-- **status:** open
+- **status:** resolved 2026-11-21, except one CI-environment item in D5 (below)
 - **owner:** tyler
 - **raised:** 2026-11-21
 - **source:** `manuscript/federal_database_accuracy.qmd` (Tables S2/S3/S4 and the Results prose at 441-443), `manuscript/R/build_stats_catalog.R:1467`, `build_f2_f3_uncertainty_denominators.R`, `build_source_count_agreement.R:34-35`, `build_state_variation_agreement.R:33`
-- **policed by:** `tests/ci_denominator_contracts.R` (D1-D5), which is **red on arrival by design** -- see the note at the end of this entry
+- **policed by:** `tests/ci_denominator_contracts.R` (D1-D5). It was **red on arrival by design**; D1-D5 now report `PASS (0 failures)` on a machine holding `artifacts/canonical_source_records.csv`
 
 Found in review of the Green Journal rewrite. Four distinct defects, one law:
 **a rate's numerator must be a sub-count of the group in its denominator, over
@@ -801,6 +801,47 @@ wrong rate where a zero can. Then drop the "Both moved" column or report it as
 the residual `100 - (adopts + reverts + persistent)`, point the base-year
 column at `disc_base_n`, and add the `usable_for_trend` filter to both
 consumers. Every number above is reproducible from committed artifacts.
+
+## Resolution — 2026-11-21
+
+The remedy prescribed below was carried out as written.
+
+1. **D1/D2 withheld at the producer.** `build_f2_f3_uncertainty_denominators.R`
+   now sets the follow-up columns to NA where `year` is the source's last
+   observed year, and `n_lost_source_but_in_nppes` additionally where
+   `year + 1 > max(nppes$year)`. `n_observed` is kept, because it is known at
+   t. The four sources now report `pooled=NA (withheld at the edge)` to D2's
+   control line instead of a pooled rate that contradicted its own caption.
+2. **D1's consumer restricts visibly.** `build_stats_catalog.R` pools
+   `subset(acc_pers, !is.na(pct_followed))`. The formula interface would have
+   dropped those rows via `na.omit` anyway, but silently, and a reader
+   checking Supplemental Table S4 cannot see an aggregation's year range from
+   the table.
+3. **D3: the "Both moved" column is dropped**, not re-denominated.
+   `both_move_together_at_t1` is a sub-count of `n_concordant_at_t`, and this
+   table is about what happened to DISCORDANT pairs, so a concordant-group
+   statistic does not belong in it whatever it is divided by.
+4. **D4: the `Base year` column is dropped** and the caption now states that
+   counts pool every paired transition in each source's window. The
+   alternative -- switching to `disc_base_n` with `_multi_` shares -- was not
+   taken because `persistent_discordant_at_t1_pct` has no `_multi_`
+   counterpart, so that row would have mixed two denominators again.
+5. **D5's baseline is empty.** `build_state_variation_agreement.R` now filters
+   `usable_for_trend == "TRUE"`, so its line was deleted per the gate's own
+   instruction. `UFT_BASELINE <- character(0)` makes the gate stricter: there
+   is no forgiven entry left to hide behind.
+
+**Still open, and it needs a decision rather than a fix.** D5's first branch
+calls `ci_fail()` when `artifacts/canonical_source_records.csv` is absent, on
+the stated grounds that it is "a tracked artifact, so absence is a
+regression". It is not tracked -- `.gitignore:320` excludes it -- so that
+branch fires on every runner and D5 can never pass in CI, which is precisely
+the environment case the note below separates from a live defect. The fix is
+to make it `ci_skip()` with a `tests/skip_budget.tsv` entry, but turning a
+gate's failure into a skip is the shape of weakening oversight to reach green
+and should be reviewed rather than done quietly. Until then
+`ci_denominator_contracts.R` stays red in CI for this one reason and green
+locally.
 
 **On the gate being red.** `tests/ci_denominator_contracts.R` is wired into
 `.github/workflows/ci.yml` while it reports `FAILED (5)`, which is the

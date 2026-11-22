@@ -169,6 +169,69 @@ perfectly self-consistent and describe a file that has since been re-released.
 The audit recomputes both formulas from source, prints them beside the
 committed values, and exits non-zero on disagreement.
 
+## Shape 4 — a denominator that includes rows where the rate is undefined
+
+The three shapes above were found by review. DEBT D14 had already found five
+more of the same family and gated them, and carrying out its remedy made the
+unit question explicit in a way worth recording.
+
+At a source's last observed year there is no `t + 1`. Nobody can be followed,
+so `n_followed_source` is 0 and `n_lost_from_source == n_observed` **by
+arithmetic**. Summed across years, that one row dominated:
+
+| source | pooled "left source" | over evaluable years |
+|---|---|---|
+| medicaid_enrollment | 16.9% | **0.8%** |
+| pecos_revalidation | 20.7% | **4.3%** |
+| medicare_claims | 27.2% | **19.3%** |
+
+The registry closes on its own schedule, which is a second edge. A source-year
+whose `t + 1` falls past the registry's last year cannot distinguish *absent
+from the registry* from *the registry has not been observed yet*. Scoring it
+as a confirmed absence made PECOS print **16.4%** leaver-visibility against an
+evaluable **96.5%** — a number that contradicted the caption printed directly
+above it.
+
+The remedy is **withholding, not filtering.** The producer writes NA where the
+rate is undefined and keeps `n_observed`, which is genuinely known at t. A
+consumer that sums a blank gets NA; a consumer that sums a zero gets a
+confident wrong answer. Dropping the rows instead would have hidden that the
+observation window ends.
+
+**The tell:** a rate pooled over a panel whose last period cannot have a
+successor. Ask what the statistic means in the final row before summing the
+column.
+
+## A note on gates that go dark rather than red
+
+Carrying out D14 surfaced one more instance of the companion appendix's
+subject, and it is the worst-behaved kind.
+
+`tests/test_manuscript_figure_saboteurs.R` located a figure by its number,
+`Figure 5`, and passed `grep()`'s result straight to `seq()`. The Green
+Journal rewrite renumbered that panel to Supplemental Figure S4, so the grep
+returned `integer(0)`, `seq()` raised `'from' must be of length 1`, and the
+suite **aborted mid-file**. Three of its seven groups — G5c onward, all of G6,
+all of G7 — never executed, while the job reported a single ordinary failure.
+A red gate is read as "one thing is wrong". A gate that dies partway through
+is read the same way and means something much larger.
+
+Two fixes, both root-cause rather than local:
+
+- The panel is found by its artifact name, `medicaid_multistate_footprint`,
+  which no renumbering moves. **A gate pinned to a journal's figure numbering
+  breaks on every renumbering**, and the manuscript was not wrong either time.
+- G4's "cited exactly once" became "cited exactly once **before its own
+  caption**", because a closing sentence listing the paper's display items is
+  a back-reference, not a second citation. The relaxation is proved
+  non-destructive rather than argued: G4f replays the original Figure 5 /
+  Figure 6 defect and shows it still fails both the existence rule and the
+  duplicate rule.
+
+**The tell:** an `Error in ...` line in a suite's output, rather than a
+`FAIL`. Count the checks a suite reports, not just its exit status — this one
+printed 14 where it should have printed 22.
+
 ## A note on the reproducibility defect found while verifying the fix
 
 Rebuilding the artifact twice over an unchanged input produced two different

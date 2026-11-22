@@ -793,7 +793,7 @@ if (!is.null(A$source_count_table)) {
 ```
 
 ```{r table-resolution-disposition}
-#| tbl-cap: "Supplemental Table S3. Disposition of provider-years on which a source and the national provider registry held discordant practice states at the base year, measured at the next observation, in the style of the follow-up taxonomy of Haeder and Zhu. 'Source adopted registry' and 'registry adopted source' are the two directions of resolution; 'both moved' means both records changed to a third value. Columns may not sum to 100 where a provider-year left observation."
+#| tbl-cap: "Supplemental Table S3. Disposition of provider-years on which a source and the national provider registry held discordant practice states, measured at the next observation, in the style of the follow-up taxonomy of Haeder and Zhu. Counts pool every paired transition in each source's observation window rather than a single base-year cohort, and the sources' windows begin in different years, so no base year is shown. 'Source adopted registry' and 'registry adopted source' are the two directions of resolution. The three shares are computed on the same discordant denominator and do not sum to 100: the remainder is provider-years that left observation before the next measurement."
 if (!is.null(A$resolution_table)) {
   rs <- A$resolution_table
   label <- c(pecos_revalidation = "Medicare enrollment revalidation",
@@ -803,7 +803,12 @@ if (!is.null(A$resolution_table)) {
              medicaid_enrollment = "Medicaid enrollment (T-MSIS)")[rs$source_b]
   out <- data.frame(
     Source = ifelse(is.na(label), rs$source_b, label),
-    `Base year` = rs$base_year,
+    # NO `Base year` COLUMN. It printed rs$base_year beside
+    # rs$n_discordant_at_t, which pools every paired transition in the
+    # source's window (23,315 for Medicaid) rather than the base-year cohort
+    # (disc_base_n, 1,316) -- a label from one population over a count from
+    # another, and the base years differ by source (2013 vs 2021) with nothing
+    # saying so. The caption now states the pooling instead. See DEBT D14.
     `Discordant (n)` = formatC(as.numeric(rs$n_discordant_at_t), format = "d",
                                big.mark = ","),
     `Still discordant (%)` = sprintf("%.1f",
@@ -812,11 +817,16 @@ if (!is.null(A$resolution_table)) {
       as.numeric(rs$b_adopts_a_at_t1_pct)),
     `Registry adopted source (%)` = sprintf("%.1f",
       as.numeric(rs$a_reverts_to_b_at_t1_pct)),
-    `Both moved (%)` = sprintf("%.1f",
-      100 * as.numeric(rs$both_move_together_at_t1) /
-        as.numeric(rs$n_discordant_at_t)),
+    # NO `Both moved` COLUMN. both_move_together_at_t1 counts provider-years
+    # that AGREED at the base year and then moved together -- a sub-count of
+    # n_concordant_at_t. Divided by n_discordant_at_t it was a numerator from
+    # the concordant group over the discordant denominator, and the
+    # open_payments row summed to 114.5%. It is dropped rather than
+    # re-denominated because this table is about what happened to DISCORDANT
+    # pairs, and a concordant-group statistic does not belong in it whatever
+    # it is divided by. See DEBT D14.
     check.names = FALSE)
-  style_manuscript_table(out, align = c("l", "l", "r", "r", "r", "r", "r"))
+  style_manuscript_table(out, align = c("l", "r", "r", "r", "r"))
 }
 ```
 

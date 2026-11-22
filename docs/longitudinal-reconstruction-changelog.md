@@ -133,6 +133,28 @@ against the parquet, which no CI runner can reach. A tie-break was added to
 the artifact's `ORDER BY` after two rebuilds over an unchanged file returned
 Florida and Maryland (both 87.11%) in different orders.
 
+## 2026-11-21 — Persistence denominators withhold at the panel edge
+
+`persistence_denominators.csv` now carries NA, not 0, for the follow-up
+columns where there is no t+1: at each source's last observed year, and, for
+`n_lost_source_but_in_nppes`, past the registry's last year. `n_observed`
+stays, because it is observed at t. This is DEBT D14 items 1 and 2 carried
+out at the producer.
+
+The rates this changes are not small. Pooled across every year, Medicaid's
+share of provider-years leaving the source read **16.9%**; over the years
+where follow-up exists it is **0.8%**. PECOS's leaver-still-in-registry share
+read **16.4%** pooled against **96.5%** evaluable -- the pooled figure
+contradicted the caption printed above it, because a t+1 that has not been
+observed was being scored as a confirmed absence from the registry.
+Supplemental Table S4's consumer now pools
+`subset(acc_pers, !is.na(pct_followed))`.
+
+Supplemental Table S3 loses its "Both moved" column (a concordant-group
+sub-count over a discordant denominator; the open_payments row summed to
+114.5%) and its "Base year" column (a pooled count under a base-year label,
+with per-source base years differing 2013 vs 2021 and nothing saying so).
+
 ## Known blocked items (unchanged)
 
 - NPPES deactivation chronology: source file now current

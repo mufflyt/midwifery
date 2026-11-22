@@ -124,7 +124,55 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   and the suite ran zero times while counting as coverage — found by reading
   the job log for the step name. It now runs ahead of the known-red gates.
 
+- **DEBT D14 carried out: the five denominator defects are fixed, not just
+  gated.** `build_f2_f3_uncertainty_denominators.R` now **withholds** the
+  follow-up columns where there is no t+1 -- at a source's last observed year,
+  and, for registry visibility, past `max(nppes$year)` -- so a blank cannot be
+  summed where a zero could. `n_observed` is kept, because it is known at t.
+  Medicaid's "left source" read **16.9%** pooled against an evaluable
+  **0.8%**; PECOS's leaver-visibility read **16.4%** against **96.5%**, a
+  number that contradicted the caption above it. `build_stats_catalog.R` pools
+  `subset(acc_pers, !is.na(pct_followed))` so the restriction is visible to a
+  reader of Supplemental Table S4 rather than implicit in `na.omit`.
+  Supplemental Table S3 loses two columns: **"Both moved"**, whose numerator
+  is a sub-count of the concordant group and which made the open_payments row
+  sum to **114.5%**, and **"Base year"**, which labelled a pooled count
+  (23,315 for Medicaid) as a base-year cohort (1,316) while the sources' base
+  years differ (2013 vs 2021). D5's `UFT_BASELINE` is now empty, which makes
+  that gate stricter. D1-D5 report `PASS (0 failures)` on a machine holding
+  the canonical records.
+- **`tests/test_manuscript_figure_saboteurs.R` was aborting, and three of its
+  seven groups had never run.** G5c located the multi-state panel as
+  "Figure 5" and passed `grep()`'s result straight to `seq()`. The Green
+  Journal rewrite renumbered that panel to Supplemental Figure S4, so the grep
+  returned `integer(0)`, `seq()` raised `'from' must be of length 1`, and the
+  suite died mid-file -- **G5c through G7 never executed** while the job
+  reported a single failure. The panel is now found by its artifact name
+  (`medicaid_multistate_footprint`), which no renumbering moves. Recovering
+  those groups showed them passing, so nothing was hidden behind the abort,
+  but nothing was being checked either.
+- **G4 counted a back-reference as a second citation.** The rule was "every
+  figure cited exactly once"; the paper also carries a closing sentence
+  listing its display items ("Tables 1 through 4, Figure 1, and the
+  supplemental digital content are ..."), which is not a second citation. The
+  rule is now "exactly once **before its own caption**". The defect it exists
+  to catch -- Figure 6 standing in for Figure 5 -- still fails both the
+  existence rule and the duplicate rule, and G4f replays it to prove that
+  rather than assert it. The old G4e saboteur substituted `(Figure 5)` for
+  `(Figure 6)` in a manuscript containing neither, so it mutated nothing and
+  passed on the real file's own duplicate; it now plants a second forward
+  citation of a figure that exists.
+
 ### Known issues
+
+- **`ci_denominator_contracts.R` is still red in CI, for one environment
+  reason.** D5's first branch calls `ci_fail()` when
+  `artifacts/canonical_source_records.csv` is absent, on the stated grounds
+  that it is "a tracked artifact". It is not -- `.gitignore:320` excludes it
+  -- so that branch fires on every runner and D5 cannot pass there. The fix is
+  a `ci_skip()` plus a `skip_budget.tsv` entry, but converting a gate's
+  failure into a skip is the shape of weakening oversight to reach green, so
+  it is left for review. See **D14** in [`DEBT.md`](DEBT.md).
 
 - **The five gates report `FAILED (5)` on arrival, because all five defects are
   live.** No published number changed in this entry — the gates make the
