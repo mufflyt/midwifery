@@ -32,6 +32,7 @@ ci_entrypoints <- file.path("tests", c(
   "test_open_payments_type2_bulk.R", "test_table1_blk_hg.R",
   "test_pip_materialization.R", "test_safe_divide_types.R",
   "test_amcb_license_bridge.R", "test_build_amcb_state_licenses.R",
+  "test_review_fixes_saboteurs.R",
   "test_adapt_license_bridge_to_reconcile.R",
   "test_expand_former_name_candidates.R",
   "test_validate_age_at_certification.R", "test_cross_taxonomy_hierarchy.R",

@@ -43,6 +43,30 @@ chk(identical(normalize_license_number_padded(c("a1", NA)), c("A1", NA_character
     "vectorized, NA-preserving")
 
 # -----------------------------------------------------------------------------
+cat("\n-- name/city normalization folds accents DETERMINISTICALLY --\n")
+# -----------------------------------------------------------------------------
+
+# normalize_text() used base::iconv(to = "ASCII//TRANSLIT"), whose output is
+# the C library's choice: libiconv (macOS) emits the combining mark and glibc
+# (the CI runners) does not, so "Mu\u00f1oz" folded to "Mu~noz" here and "Munoz"
+# there -- and the [^A-Z0-9 ] pass then turned the mark into a space, making the
+# key MU NOZ locally and MUNOZ in CI. A linkage key that depends on which
+# machine built it cannot be compared across arms, so these assert the FOLD,
+# not merely that something happened. They fail if anyone reverts to iconv.
+chk(identical(normalize_person_name("Mu\u00f1oz"), normalize_person_name("Munoz")),
+    "\u00f1 folds to n, so both spellings share one key")
+chk(identical(normalize_person_name("Jos\u00e9"), normalize_person_name("Jose")),
+    "\u00e9 folds to e (libiconv rendered this one \"Jos'e\" -> JOS E)")
+chk(identical(normalize_person_name("\u00c5sa"), normalize_person_name("Asa")),
+    "\u00c5 folds to A")
+chk(normalize_person_name("Mu\u00f1oz") == "MUNOZ",
+    "and the folded key has no stray separator in it")
+chk(identical(normalize_city("Espa\u00f1ola"), normalize_city("Espanola")),
+    "same fold on the city path, which shares the normalizer")
+chk(is.na(normalize_person_name(NA)) && is.na(normalize_person_name("")),
+    "NA and blank still normalize to NA")
+
+# -----------------------------------------------------------------------------
 cat("\n-- license key (state :: number) --\n")
 # -----------------------------------------------------------------------------
 

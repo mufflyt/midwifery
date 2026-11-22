@@ -20,6 +20,18 @@
 #       and a test shadowed the canonical pad5. Two scripts keying the same
 #       address produced different keys with nothing saying so.
 #
+#   H6  No name bound to a function more than once WITHIN ONE SCOPE. H4 reads
+#       top-level definitions across files; this reads every scope, which is
+#       where the same defect hides. mw_build_catalog() bound `g` three times
+#       in one 913-line function body -- and because `if (...) { }` is not a
+#       scope in R, all three landed in the one environment. Two of the three
+#       took the same arity with incompatible first-argument types (a data
+#       frame at one binding, a character stratum key at the next), 41 lines
+#       apart, in the function that produces every number in the manuscript.
+#       Nothing was wrong at the time: every call sat inside its own
+#       `if (!is.null(x))` block. That is the point -- the next edit to move a
+#       statement across a block boundary would have been silent.
+#
 # H4 carries an allowlist. Some repeats are legitimate -- a test's local `chk`
 # harness, or a genuinely private one-liner -- and an allowlist that must be
 # edited deliberately is the point: adding a name here is a decision someone
@@ -174,6 +186,98 @@ stale <- setdiff(names(baseline), names(multi))
 if (length(stale))
   cat(sprintf("       note: %s no longer duplicated -- remove from %s\n",
               paste(stale, collapse = ", "), BASE))
+
+cat("\n-- H6 no name bound to a function twice in one scope --\n")
+# Only a function body and local() open a scope in R. `if`, `for`, `while` and
+# a bare `{` DO NOT, so a helper defined inside an if-block belongs to the
+# enclosing function's environment and a second binding of that name silently
+# replaces the first for every statement after it. H4 cannot see this: its
+# pattern is anchored at ^, so it reads top-level definitions only.
+#
+# Scopes are numbered as the walk descends. A file's top level is ONE scope
+# (the script's evaluation environment), not one per expression.
+H6_SID <- 0L
+H6_SWALLOWED <- 0L
+h6_is_fn_assign <- function(e)
+  is.call(e) && length(e) == 3L && deparse(e[[1]])[1] %in% c("<-", "=", "<<-") &&
+    is.call(e[[3]]) && deparse(e[[3]][[1]])[1] == "function"
+h6_opens_scope <- function(e)
+  is.call(e) && length(e) >= 1L && deparse(e[[1]])[1] %in% c("function", "local")
+# Every child step is wrapped: R carries a special EMPTY SYMBOL for an omitted
+# argument (the blank in `df[, "col"]`), and merely binding it to a variable
+# raises "argument is missing" before any check in the loop body can run.
+h6_walk <- function(e, sid) {
+  out <- list()
+  if (!is.recursive(e)) return(out)
+  if (h6_is_fn_assign(e)) out <- list(data.frame(sid = sid, nm = deparse(e[[2]])[1]))
+  for (i in seq_along(e)) {
+    out <- tryCatch({
+      x <- e[[i]]
+      if (!is.recursive(x)) out else {
+        s2 <- if (h6_opens_scope(x)) { H6_SID <<- H6_SID + 1L; H6_SID } else sid
+        c(out, h6_walk(x, s2))
+      }
+    }, error = function(z) {
+      # Swallowing the empty symbol is intended. Swallowing anything ELSE means
+      # a subtree went unwalked, so this check silently covered less of the tree
+      # than it claims -- the same blind spot this review flagged in
+      # duckdb_scan_for_raw_connections()'s walker. Tell the two apart and COUNT
+      # the other one, so a known limit never becomes a silent one.
+      if (!grepl("argument .* is missing", conditionMessage(z)))
+        H6_SWALLOWED <<- H6_SWALLOWED + 1L
+      out
+    })
+  }
+  out
+}
+
+# ALLOWLISTED, keyed on file AND name so it stays narrow: a NEW rebinding in
+# one of these same files still fails. All three are test files that use a
+# top-level `{ ... }` block per scenario and rebind a scenario helper in the
+# next block. Each is harmless TODAY only because every assertion using a
+# binding precedes the next one -- `disagree` in particular goes from
+# (a, b) vectorised to (d) taking a data frame, which is the same shape as the
+# catalog defect this check was written for. The fix when one of these files is
+# next touched is `local({ ... })` per block, which makes the convention a
+# guarantee and lets the entry here be deleted. This list should only shrink.
+H6_ALLOW <- c("tests/test-step2-npi-dedup-bug.R::npi_valid",
+              "tests/test_amcb_gates.R::passthrough",
+              "tests/test_cycle19_address_provenance.R::disagree")
+
+h6_hits <- character(0)
+for (f in r_files) {
+  ex <- tryCatch(parse(f, keep.source = FALSE), error = function(e) NULL)
+  if (is.null(ex)) next
+  H6_SID <- H6_SID + 1L
+  top <- H6_SID
+  rows <- list()
+  for (e in ex) rows <- c(rows, h6_walk(e, top))
+  if (!length(rows)) next
+  d <- do.call(rbind, rows)
+  for (s in unique(d$sid)) {
+    tb <- table(d$nm[d$sid == s])
+    tb <- tb[tb > 1L]
+    for (nm in names(tb)) {
+      if (paste0(f, "::", nm) %in% H6_ALLOW) next
+      h6_hits <- c(h6_hits, sprintf("%s: %s bound %d times in one scope",
+                                    f, nm, as.integer(tb[[nm]])))
+    }
+  }
+}
+note(length(h6_hits) == 0,
+     sprintf("no name bound twice in one scope (%d allowlisted)", length(H6_ALLOW)),
+     h6_hits)
+# Reported, not fatal: an unwalkable subtree lowers this check's COVERAGE
+# without itself being a duplicate-binding defect. It is 0 today.
+#
+# Cost note, measured not guessed: H6 adds ~29s over 657 files against H1's 3s.
+# Left as is. The obvious suspects are not the cause -- replacing every
+# deparse() with a symbol comparison changed nothing -- and a rewrite that
+# dropped the per-node handler aborted on every file while LOOKING 19x faster.
+# If this job needs the time back, profile it first.
+if (H6_SWALLOWED > 0L)
+  cat(sprintf("       note: %d subtree(s) could not be walked -- H6 saw less than the whole tree\n",
+              H6_SWALLOWED))
 
 cat(sprintf("\n%s (%d failure%s)\n", if (fails == 0L) "PASS" else "FAIL",
             fails, if (fails == 1L) "" else "s"))

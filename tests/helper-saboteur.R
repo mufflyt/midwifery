@@ -106,6 +106,21 @@ sab <- function(n, name) cat(sprintf("\n%s%s %s\n", SAB_PREFIX, n, name))
 #' @param x the wrapped result.
 refused <- function(x) inherits(x, "refusal")
 
+#' Did evaluating this expression raise an error?
+#'
+#' Was defined in two suites at once -- tests/test_cycle11_spatial.R and the
+#' review-fix saboteurs -- with the same contract and different mechanics
+#' (tryCatch + force here, try() + inherits there), which is exactly what
+#' ci_hygiene.R H4 forbids and for its stated reason: the duplication is not the
+#' name, it is the work. H4 caught it on the commit that introduced the second
+#' copy. This is the tryCatch form, so the older caller's behaviour is
+#' unchanged; `force()` is what evaluates the promise, since `expr` arrives
+#' unevaluated and a bare mention would not run it.
+#' @param expr an expression, passed unevaluated.
+#' @return [logical(1)] TRUE if it errored.
+errs <- function(expr) tryCatch({ force(expr); FALSE }, error = function(e) TRUE)
+
+
 #' Print the tally and exit with the status a CI runner reads
 #' @param n_saboteurs [character(1)|integer(1)] how many saboteurs ran.
 saboteur_report <- function(n_saboteurs) {

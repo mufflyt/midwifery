@@ -108,11 +108,17 @@ blank_to_na <- function(x) {
 normalize_text <- function(x) {
   cleaned <- blank_to_na(x)
 
-  cleaned <- base::iconv(
-    cleaned,
-    from = "",
-    to = "ASCII//TRANSLIT"
-  )
+  # Accent folding must not depend on the C library. base::iconv(to =
+  # "ASCII//TRANSLIT") is libiconv on macOS and glibc on the Linux runners, and
+  # the two disagree: libiconv emits the combining mark, so "Munoz" arrives here
+  # as "Mu~noz" and "Jose" as "Jos'e", and the [^A-Z0-9 ] pass below turns the
+  # mark into a SPACE -- MU NOZ and JOS E on this machine, MUNOZ and JOSE in CI.
+  # Same input, two linkage keys, decided by which machine ran the script.
+  # R/lib/work_site_topology.R:30 hit this and worked around it by stripping the
+  # marks iconv can leave; the name path here instead uses ICU's Latin-ASCII
+  # transform, which is deterministic by construction and is already the
+  # convention for name normalisation (expand_former_name_candidates.R:127).
+  cleaned <- stringi::stri_trans_general(cleaned, "Latin-ASCII")
 
   cleaned <- cleaned |>
     stringr::str_to_upper() |>
@@ -177,11 +183,17 @@ if (!exists("clean_state", mode = "function")) {
 normalize_license_number_padded <- function(x) {
   cleaned <- blank_to_na(x)
 
+  # Same deterministic fold as normalize_text() above, for the same reason. The
+  # platform difference was NOT reaching the output here -- the strip below is
+  # [^A-Z0-9] with no space in the class, so it DELETES the combining mark
+  # libiconv leaves instead of turning it into a separator, which is the same
+  # accident that makes R/lib/work_site_topology.R safe. That made this call
+  # harmless and fragile rather than wrong: widening the class by one space,
+  # exactly the difference between this function and normalize_text(), would
+  # have brought the platform dependence back silently. Folding deterministically
+  # removes the dependence instead of relying on a later line to hide it.
   cleaned <- cleaned |>
-    base::iconv(
-      from = "",
-      to = "ASCII//TRANSLIT"
-    ) |>
+    stringi::stri_trans_general("Latin-ASCII") |>
     stringr::str_to_upper() |>
     stringr::str_replace_all("[^A-Z0-9]", "")
 
