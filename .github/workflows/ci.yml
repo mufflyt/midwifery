@@ -242,12 +242,13 @@ jobs:
       # Nine planted defects and four near misses, each in a temporary git repo.
       # Both false positives the gates produced on their first run are cases
       # here, as is the shape that made the first "clean" fixture fail.
-      - name: Denominator gates detect planted defects
-        run: Rscript tests/test_denominator_contracts_detect.R
-
-      - name: Denominator contracts
-        run: Rscript tests/ci_denominator_contracts.R
-
+      # ORDERED AHEAD OF THE DENOMINATOR GATES ON PURPOSE. GitHub Actions
+      # halts a job at its first failing step. `Denominator contracts` fails
+      # on every runner for an environment reason (D5 reads a gitignored
+      # artifact), so a suite wired after it never executes -- this one was
+      # added, counted as coverage in this file, and ran zero times on its
+      # first push. Anything placed below a step that cannot go green in CI
+      # is not a gate. See docs/APPENDIX_checks_that_cannot_fail_2026-11-20.md.
       # Saboteurs for the three 2026-11-21 review fixes, none of which any
       # gate above covers. Each law is checked against the real artifact and
       # then against the defect as it actually shipped, so a law that has
@@ -263,6 +264,13 @@ jobs:
       # committed artifacts, so it needs no extra packages and no private data.
       - name: NPI rate, cluster scope and leaver-count saboteurs
         run: Rscript tests/test_npi_rate_and_cluster_saboteurs.R
+
+      - name: Denominator gates detect planted defects
+        run: Rscript tests/test_denominator_contracts_detect.R
+
+      - name: Denominator contracts
+        run: Rscript tests/ci_denominator_contracts.R
+
 
   python-checks:
     name: Python syntax and address keys

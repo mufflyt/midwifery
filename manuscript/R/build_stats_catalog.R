@@ -1469,7 +1469,16 @@ mw_build_catalog <- function(root = ".") {
     # Persistence denominators: where a provider who leaves a source went.
     acc_pers <- rd(file.path(MW_ART, "persistence_denominators.csv"))
     if (!is.null(acc_pers)) {
-      p <- acc_pers
+      # RESTRICTED TO THE YEARS WHERE FOLLOW-UP EXISTS, VISIBLY.
+      # The producer withholds the follow-up columns at a source's last year
+      # and past the registry's last year, because there is no t+1 to measure
+      # against. aggregate()'s formula interface would drop those rows anyway
+      # via na.omit, but silently -- and a reader checking Table S4 cannot see
+      # an aggregation's year range from the table. Pooling them when they
+      # held zeros made Medicaid's "left source" read 16.9% against an
+      # evaluable 0.8%, and PECOS's leaver-visibility 16.4% against 96.5%.
+      # `pct_followed` is NA on exactly the withheld rows. See DEBT D14.
+      p <- subset(acc_pers, !is.na(pct_followed))
       num_ <- function(v) as.numeric(v)
       agg <- aggregate(cbind(n_observed, n_followed_source, n_same_state,
                              n_changed_state,

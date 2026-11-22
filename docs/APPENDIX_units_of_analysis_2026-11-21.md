@@ -135,6 +135,73 @@ every such count is bounded by the group it conditions on.
 
 ---
 
+## Shape 4 — a denominator that includes rows where the rate is undefined
+
+The three shapes above were found by review. DEBT D14 had already found five
+more of the same family and gated them; carrying out its remedy made the unit
+question explicit in a way worth recording beside them.
+
+At a source's last observed year there is no `t + 1`. Nobody can be followed,
+so `n_followed_source` is 0 and `n_lost_from_source == n_observed` **by
+arithmetic, not by attrition.** Pooled across years, that one row dominated:
+
+| source | pooled "left source" | over evaluable years |
+|---|---|---|
+| medicaid_enrollment | 16.9% | **0.8%** |
+| pecos_revalidation | 20.7% | **4.3%** |
+| medicare_claims | 27.2% | **19.3%** |
+
+The registry closes on its own schedule, which is a second and independent
+edge. A source-year whose `t + 1` falls past the registry's last year cannot
+distinguish *absent from the registry* from *the registry has not been
+observed yet*. Scoring it as a confirmed absence made PECOS print **16.4%**
+leaver-visibility against an evaluable **96.5%** — a number that contradicted
+the caption printed directly above it.
+
+The remedy is **withholding, not filtering.** The producer writes NA where the
+rate is undefined and keeps `n_observed`, which is genuinely known at t. A
+consumer that sums a blank gets NA; a consumer that sums a zero gets a
+confident wrong answer. Dropping the rows instead would have hidden that the
+observation window ends at all.
+
+The consumer then has to restrict **visibly**. `aggregate()`'s formula
+interface drops NA rows via `na.omit` on its own, so the arithmetic would have
+come out right either way — but a reader checking Supplemental Table S4 cannot
+see an aggregation's year range from the table, and a silent correction is one
+refactor away from being a silent regression.
+
+Two columns did not survive the same question. **"Both moved"** divided a
+sub-count of the *concordant* group by the *discordant* denominator, and the
+open_payments row summed to 114.5%; it is dropped rather than re-denominated,
+because the table is about what happened to discordant pairs and a
+concordant-group statistic does not belong in it whatever its divisor.
+**"Base year"** labelled a pooled count (23,315 for Medicaid) as a base-year
+cohort (1,316), with the sources' base years differing (2013 vs 2021) and
+nothing saying so.
+
+**The tell:** a rate pooled over a panel whose last period cannot have a
+successor. Ask what the statistic means in the final row before summing the
+column.
+
+## A note on gates that go dark rather than red
+
+One more instance of the companion appendix's subject surfaced here, and it is
+the worst-behaved kind.
+
+`tests/test_manuscript_figure_saboteurs.R` located a figure by its number and
+passed `grep()`'s result straight to `seq()`. The Green Journal rewrite
+renumbered that panel, so the grep returned `integer(0)`, `seq()` raised
+`'from' must be of length 1`, and the suite **aborted mid-file** — three of its
+seven groups never executed, while the job reported one ordinary failure. A
+red gate reads as "one thing is wrong"; a gate that dies partway through reads
+identically and means something much larger. It is repaired to find the panel
+by its artifact name, which no renumbering moves: **a gate pinned to a
+journal's figure numbering breaks on every renumbering**, and the manuscript
+was not wrong either time.
+
+**The tell:** an `Error in ...` line in a suite's output rather than a `FAIL`.
+Count the checks a suite reports, not just its exit status.
+
 ## What was added
 
 [`tests/test_npi_rate_and_cluster_saboteurs.R`](../tests/test_npi_rate_and_cluster_saboteurs.R)

@@ -726,7 +726,7 @@ every state that permits a skip is a state a law can hide in.
 
 ## D14 — Four supplemental-table rates divide a count by a group it did not come from
 
-- **status:** open
+- **status:** resolved 2026-11-21, except one CI-environment item in D5 (below)
 - **owner:** tyler
 - **raised:** 2026-11-21
 - **source:** `manuscript/federal_database_accuracy.qmd` (Tables S2/S3/S4 and the Results prose at 441-443), `manuscript/R/build_stats_catalog.R:1467`, `build_f2_f3_uncertainty_denominators.R`, `build_source_count_agreement.R:34-35`, `build_state_variation_agreement.R:33`
@@ -801,6 +801,46 @@ wrong rate where a zero can. Then drop the "Both moved" column or report it as
 the residual `100 - (adopts + reverts + persistent)`, point the base-year
 column at `disc_base_n`, and add the `usable_for_trend` filter to both
 consumers. Every number above is reproducible from committed artifacts.
+
+## Resolution — 2026-11-21
+
+The remedy prescribed above was carried out as written.
+
+1. **D1/D2 withheld at the producer.** The follow-up columns are NA where
+   `year` is the source's last observed year, and
+   `n_lost_source_but_in_nppes` additionally where `year + 1 > max(nppes$year)`.
+   `n_observed` is kept, because it is known at t. All four sources now report
+   `pooled=NA (withheld at the edge)` to D2's control line instead of a rate
+   that contradicted its own caption.
+2. **D1's consumer restricts visibly.** `build_stats_catalog.R` pools
+   `subset(acc_pers, !is.na(pct_followed))`. The formula interface would drop
+   those rows via `na.omit` anyway, but silently, and a reader checking
+   Supplemental Table S4 cannot see an aggregation's year range from the table.
+3. **D3: "Both moved" is dropped**, not re-denominated.
+   `both_move_together_at_t1` is a sub-count of `n_concordant_at_t`, and this
+   table is about what happened to DISCORDANT pairs, so it does not belong
+   whatever it is divided by.
+4. **D4: "Base year" is dropped** and the caption states that counts pool every
+   paired transition in each source's window. The `disc_base_n` alternative was
+   not taken: `persistent_discordant_at_t1_pct` has no `_multi_` counterpart,
+   so that row would have mixed two denominators again.
+5. **D5's baseline is empty.** `build_state_variation_agreement.R` filters
+   `usable_for_trend`, so its line was deleted per this gate's own instruction.
+   `UFT_BASELINE <- character(0)` makes the gate stricter: nothing is forgiven.
+
+D1-D5 report `PASS (0 failures)` on a machine holding
+`artifacts/canonical_source_records.csv`.
+
+**Still open, and it needs a decision rather than a fix.** D5's first branch
+calls `ci_fail()` when that file is absent, on the stated grounds that it is
+"a tracked artifact, so absence is a regression". It is not tracked --
+`.gitignore:320` excludes it -- so the branch fires on every runner and D5 can
+never pass in CI, which is precisely the environment case the note below
+separates from a live defect. The fix is a `ci_skip()` with a
+`tests/skip_budget.tsv` entry, but converting a gate's failure into a skip is
+the shape of weakening oversight to reach green and should be reviewed rather
+than done quietly. Until then this gate is green locally and red in CI for
+that one reason.
 
 **On the gate being red.** `tests/ci_denominator_contracts.R` is wired into
 `.github/workflows/ci.yml` while it reports `FAILED (5)`, which is the

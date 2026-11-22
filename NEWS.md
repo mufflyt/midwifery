@@ -250,11 +250,45 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   share), and the suite still reports `PASS (0 failures)` with every saboteur
   firing and every near miss held.
 
+- **DEBT D14 carried out: the five denominator defects are fixed, not just
+  gated.** The producer **withholds** the follow-up columns where there is no
+  t+1 — at a source's last observed year, and, for registry visibility, past
+  `max(nppes$year)` — so a blank cannot be summed where a zero could.
+  `n_observed` is kept, because it is known at t. Medicaid's "left source"
+  read **16.9%** pooled against an evaluable **0.8%**; PECOS's
+  leaver-visibility **16.4%** against **96.5%**, a figure that contradicted the
+  caption printed directly above it. `build_stats_catalog.R` now pools
+  `subset(acc_pers, !is.na(pct_followed))`, so the restriction is visible to a
+  reader of Supplemental Table S4 rather than implicit in `na.omit`.
+  Supplemental Table S3 loses two columns: **"Both moved"**, whose numerator is
+  a sub-count of the concordant group and which made the open_payments row sum
+  to **114.5%**, and **"Base year"**, which labelled a pooled count (23,315 for
+  Medicaid) as a base-year cohort (1,316) while the sources' base years differ
+  (2013 vs 2021). `UFT_BASELINE` is now empty, which makes D5 stricter rather
+  than laxer. **D1–D5 report `PASS (0 failures)`** on a machine holding the
+  canonical records.
+- **The new saboteur suite was wired below a step that cannot go green, so it
+  ran zero times.** GitHub Actions halts a job at its first failing step, and
+  `Denominator contracts` fails on every runner for an environment reason (D5
+  reads a gitignored artifact). The suite was added, counted as coverage in
+  `ci.yml`, and executed **never** on its first push — found by grepping the
+  job log for the step name rather than trusting that a wired step runs. It now
+  sits ahead of the denominator gates. Anything placed below a step that cannot
+  go green in CI is not a gate.
+
 ### Known issues
 
-- **The five gates report `FAILED (5)` on arrival, because all five defects are
-  live.** No published number changed in this entry — the gates make the
-  defects blocking, they do not fix them. The measurements, the affected
+- **`ci_denominator_contracts.R` is still red in CI, for one environment
+  reason only.** D5's first branch calls `ci_fail()` when
+  `artifacts/canonical_source_records.csv` is absent, on the stated grounds
+  that it is "a tracked artifact". It is not — `.gitignore:320` excludes it —
+  so that branch fires on every runner and D5 cannot pass there. The fix is a
+  `ci_skip()` plus a `skip_budget.tsv` entry, but converting a gate's failure
+  into a skip is the shape of weakening oversight to reach green, so it is
+  left for review. See **D14** in [`DEBT.md`](DEBT.md).
+- **(Superseded)** The five gates reported `FAILED (5)` on arrival, because all
+  five defects were live. They are fixed above; this note is kept because the
+  entry below still refers to it. The measurements, the affected
   tables, the proposed producer-side fix, and the reason this gate is wired
   into `ci.yml` red (unlike `tests/test_cohort_vintage.R`, which is red for an
   environment reason and deliberately unwired) are in **D14** of
