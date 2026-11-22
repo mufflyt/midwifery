@@ -89,11 +89,19 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   second parser for the tree, which is the duplication it exists to catch;
   `cyclocomp` is declared in `ci.yml` and in the package gate's list because
   that chain can reach it.
-- Two of the gate's own checks were wrong before they were right, and both
-  failures are recorded in the file: it counted a section named in a COMMENT as
-  a call, and it found the end of a function by the first `}` at column zero,
-  which for an extracted top-level function is an inner block. Both now parse
-  instead of grepping.
+- Three of the gate's own checks were wrong before they were right, and all
+  three failures are recorded in the file. It counted a section named in a
+  COMMENT as a call; it found the end of a function by the first `}` at column
+  zero, which for an extracted top-level function is an inner block; and it
+  built its corpus with `ls-files "*.qmd"`, the bare pathspec Q2a of
+  `tests/test_gate_integrity_saboteurs.R` refuses after measuring it read 267
+  of 645 files. That last one is the instructive failure: the short corpus made
+  `mw_pct_ci()` and `mw_wordcount()` look dead, and the first version of this
+  gate shipped an allowlist calling them "referenced only by prose" --
+  recording a truncated scan as a property of the code. The repository's own
+  gate caught it on the first push. Listing every tracked file once and
+  filtering in R found both callers, and the allowlist is gone rather than
+  justified.
 
 ## [Unreleased] — 2026-11-21 — five published rates divide by a group the numerator never came from; five declared checks nothing performed; a gate per defect
 

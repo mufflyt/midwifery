@@ -57,18 +57,29 @@ sab(1, "no tracked file defines a top-level function nothing references")
 # One pass over the corpus, not one grep per name: 1,496 names against 137,000
 # lines is the shape that turns a gate into a four-minute step nobody runs.
 #
-# THREE EXCLUSIONS, each for a measurement reason rather than a taste one:
+# TWO EXCLUSIONS, each for a measurement reason rather than a taste one:
 #   * `%...%` operator names, because the identifier regex cannot see them and
 #     a name it cannot see reads as unreferenced;
 #   * `e$name` assignments into an environment, which are mutations and not
-#     definitions (tests/ci_duckdb_mutation_tests.R builds four);
-#   * the two inline_stats helpers whose only caller is prose in a .qmd that
-#     this corpus reads as text -- they are listed, not forgiven, so the list
-#     can only shrink.
-PROSE_ONLY <- c("mw_pct_ci", "mw_wordcount")
+#     definitions (tests/ci_duckdb_mutation_tests.R builds four).
+#
+# THERE IS NO ALLOWLIST, and there was nearly one. The first version of this
+# check listed mw_pct_ci() and mw_wordcount() as "referenced only by prose",
+# because it built its corpus with `ls-files "*.qmd"` and friends -- the bare
+# pathspec Q2a of tests/test_gate_integrity_saboteurs.R refuses, having once
+# been measured reading 267 of 645 files. The corpus was short, the two
+# functions looked dead, and the allowlist would have recorded a truncated
+# scan as a property of the code. Listing every tracked file once and
+# filtering in R found both callers and emptied the list.
+# LISTED ONCE AND FILTERED IN R, never `ls-files "*.ext"`. Q2a of
+# tests/test_gate_integrity_saboteurs.R refuses that pathspec because it has
+# been observed reading only the repository root -- 267 of 645 files on the run
+# that produced the rule -- while the message beside it says "every tracked
+# file". This is the form tools/measure_code_complexity.R uses for the same
+# reason.
 corpus_paths <- c(all_files,
-                  system2("git", c("ls-files", "*.qmd", "*.Rmd", "*.md", "*.yml", "*.py"),
-                          stdout = TRUE))
+                  grep("[.](qmd|Rmd|md|yml|yaml|py)$",
+                       system2("git", c("ls-files"), stdout = TRUE), value = TRUE))
 corpus <- unlist(lapply(corpus_paths, function(f)
   if (file.exists(f)) readLines(f, warn = FALSE) else character(0)))
 freq <- table(unlist(regmatches(corpus, gregexpr("[A-Za-z._][A-Za-z0-9._]*", corpus))))
@@ -78,7 +89,7 @@ defined <- do.call(rbind, lapply(all_files, function(f) {
   data.frame(file = f, nm = vapply(cl, `[[`, "", "nm"), stringsAsFactors = FALSE)
 }))
 unreferenced <- function(d) {
-  d <- d[!grepl("[%$]", d$nm) & !d$nm %in% PROSE_ONLY, , drop = FALSE]
+  d <- d[!grepl("[%$]", d$nm), , drop = FALSE]
   n <- as.integer(freq[d$nm]); n[is.na(n)] <- 0L
   d[n <= 1L, , drop = FALSE]
 }
