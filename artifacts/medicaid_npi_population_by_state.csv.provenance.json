@@ -1,17 +1,17 @@
 {
   "artifact": "medicaid_npi_population_by_state.csv",
-  "written_utc": "2026-11-21 18:23:53 UTC",
+  "written_utc": "2026-11-22 00:48:38 UTC",
   "inputs": [
     {
       "path": "/Volumes/MufflySamsung/doge_opendata/medicaid_provider_enrollment_segments_2026_07_24/medicaid-provider-enrollment-segments.parquet",
       "sha256": "c763c53946e5f8822e46db47d2cbd0de09c153c6b7045b57504c461afa2ce92a"
     }
   ],
-  "code_sha256": "292d07d49063c147ad9e020ac35af9248ac5c4b89727054d6822052f06eff558",
+  "code_sha256": "924307fb952dc44dbe4ea9867c07a2bb17298512ac2c24ed603761d7867c8345",
   "code": [
     {
       "path": "build_medicaid_npi_population_by_state.R",
-      "sha256": "4dff95eb3315ed5c7262eff887b5ac7b4249708914f43ab7df72e2ead21f9afd"
+      "sha256": "7e07ddfe303ffeca15b6ede2a5566dc02a8af98f81f1ec219cab5d96724b6f1e"
     },
     {
       "path": "R/lib/artifact_provenance.R",

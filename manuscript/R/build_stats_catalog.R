@@ -1448,15 +1448,27 @@ mw_build_catalog <- function(root = ".") {
       zero_states <-
         acc_npipop$state[acc_npipop$pct_segments_with_npi == 0]
       a$medicaid_npi_pop_zero_states <- zero_states
-      state_names <- c(NM = "New Mexico", OR = "Oregon", VI = "the Virgin Islands",
-                       GU = "Guam", PR = "Puerto Rico", DC = "the District of Columbia")
-      a$medicaid_npi_pop_zero_state_names <-
-        ifelse(zero_states %in% names(state_names),
-               unname(state_names[zero_states]), zero_states)
-      max_state <- acc_npipop$state[which.max(acc_npipop$pct_segments_with_npi)]
+      # state.abb/state.name are base R and cover the 50 states; the released
+      # file also carries DC and the territories, which that pair does not.
+      # A six-entry hand list lived here and printed the bare abbreviation for
+      # every state outside it, so the prose read "100.0% in SD".
+      state_names <- c(stats::setNames(state.name, state.abb),
+                       VI = "the Virgin Islands", GU = "Guam",
+                       PR = "Puerto Rico", AS = "American Samoa",
+                       MP = "the Northern Mariana Islands",
+                       DC = "the District of Columbia")
+      name_of_state <- function(x) {
+        hit <- state_names[x]
+        ifelse(is.na(hit), x, unname(hit))
+      }
+      a$medicaid_npi_pop_zero_state_names <- name_of_state(zero_states)
       a$medicaid_npi_pop_max_state_name <-
-        ifelse(max_state %in% names(state_names),
-               unname(state_names[max_state]), max_state)
+        name_of_state(acc_npipop$state[which.max(p)])
+      # How many jurisdictions fall below the 90% that CMS's 10%-missing
+      # provider-NPI threshold implies. The threshold is cited in the Results
+      # prose; without this it is cited and never applied.
+      a$medicaid_npi_pop_n_states <- length(p)
+      a$medicaid_npi_pop_n_below_cms <- sum(p < 90, na.rm = TRUE)
     }
 
     # Persistence denominators: where a provider who leaves a source went.
@@ -1465,7 +1477,7 @@ mw_build_catalog <- function(root = ".") {
       p <- acc_pers
       num_ <- function(v) as.numeric(v)
       agg <- aggregate(cbind(n_observed, n_followed_source, n_same_state,
-                             n_changed_state, n_lost_visible_in_nppes,
+                             n_changed_state,
                              n_lost_source_but_in_nppes,
                              n_lost_from_source) ~ source,
                        data = transform(p,
@@ -1473,7 +1485,6 @@ mw_build_catalog <- function(root = ".") {
                          n_followed_source = num_(n_followed_source),
                          n_same_state = num_(n_same_state),
                          n_changed_state = num_(n_changed_state),
-                         n_lost_visible_in_nppes = num_(n_lost_visible_in_nppes),
                          n_lost_source_but_in_nppes =
                            num_(n_lost_source_but_in_nppes),
                          n_lost_from_source = num_(n_lost_from_source)),

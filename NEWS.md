@@ -61,6 +61,66 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   behaviourally neutral by running both versions in one worktree (identical
   skip sets, `test_science_contracts_detect.R` 13/13).
 
+### Fixed
+
+- **The public Medicaid NPI-population rate divided providers by spells, and
+  it was published.** `build_medicaid_npi_population_by_state.R` computed
+  `COUNT(DISTINCT NPI) / COUNT(*)` — distinct providers over enrollment
+  segments — under the name `pct_segments_with_npi`. Any state filing many
+  spells per provider therefore read near zero: North Dakota printed **1.0%**
+  against a true **96.8%**, Missouri 1.1% against 96.5%, Colorado 1.2% against
+  71.9%. Only the two genuine zeros (New Mexico, Oregon, which file no
+  NPI-bearing segment at all) were right, and the states that looked complete
+  were simply those filing few spells each. The numerator is now `COUNT(NPI)`,
+  and the artifact carries it as its own column so the rate can be checked
+  against its own inputs. Supplemental Figure S6 and the Results prose are
+  rebuilt: the file is well populated almost everywhere, with a real low tail
+  (Illinois 28%, Minnesota 34%, Michigan 43%) and **26 of 54** reporting
+  states and territories below the 90% that CMS's 10%-missing threshold
+  implies — a number the prose now states, having previously cited the
+  threshold without applying it.
+- **The NPI-population artifact was not reproducible.** `ORDER BY
+  pct_segments_with_npi` had no tie-breaker, so Florida and Maryland (both
+  87.11%) swapped places between two runs over an unchanged input file,
+  churning the artifact and its provenance sidecar for no reason. Found by
+  rebuilding twice while verifying the fix above. `ORDER BY
+  pct_segments_with_npi, state`; two consecutive rebuilds now agree byte for
+  byte.
+- **The F2 "cluster bootstrap" resampled singletons.** It ran inside
+  `group_by(source, year)`, where `agree_cell` holds exactly one row per NPI,
+  so every cluster had one member and the result reproduced the i.i.d.
+  interval it was introduced to replace (`n_npi_years == n_npis` in all 30
+  rows; `boot_width` averaged **0.98x** `wilson_width`, narrower, where
+  positive intracluster correlation must make it wider). A midwife is only in
+  several cells once years are pooled, so the clustered interval now reports
+  at `scope = "pooled"`, one row per source, where a cluster carries up to 14
+  NPI-years — design effects **1.09x to 2.31x**, which is the understatement
+  the spec asked to have printed. The estimator was also a mean of per-NPI
+  means, targeting a different quantity than the NPI-year `pct_agree` beside
+  it; it is now a ratio estimator. Per-year rows keep Wilson and withhold the
+  bootstrap columns rather than print a singleton resample.
+- **`n_lost_visible_in_nppes` counted providers who never left.** The join
+  that built it never excluded the providers still present in the source at
+  t+1, so it counted **9,013** of 9,770 observed provider-years as "lost" for
+  medicaid_enrollment 2018 where **106** had left and 98 of those were still
+  in the registry. Supplemental Table S4 reads the neighbouring, correctly
+  conditioned column, so no published number was wrong — but the column was in
+  a committed artifact and already being aggregated by the stats catalog. It
+  is removed at the producer rather than renamed, since
+  `n_lost_source_but_in_nppes` is the quantity anyone wants.
+- **`tests/test_npi_rate_and_cluster_saboteurs.R`: 22 checks, 3 laws, 4
+  planted defects, 3 near misses.** One law per fix — a share of records
+  divides records by records; a clustered interval is computed where a cluster
+  has more than one member; a column named for leavers is a sub-count of
+  leavers — each checked against the real artifact and then against the defect
+  as it actually shipped. Validated both ways: 22/22 on the fixed tree, 13
+  failures against a clean worktree at `6cb96e0`. Two checks initially passed
+  vacuously on the pre-fix artifact because the column they read did not exist
+  yet (`all()` of nothing is `TRUE`), which is the
+  `docs/APPENDIX_checks_that_cannot_fail_2026-11-20.md` failure mode; both now
+  require their columns. Wired into `ci.yml`; needs no extra packages and no
+  private data.
+
 ### Known issues
 
 - **The five gates report `FAILED (5)` on arrival, because all five defects are
