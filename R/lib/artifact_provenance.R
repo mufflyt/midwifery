@@ -23,6 +23,8 @@
 #' @family provenance
 
 source(file.path("R", "lib", "provenance.R"))
+# walk_call_tree(): the one call-tree walker (2026-11-20 audit, finding 4).
+source(file.path("R", "lib", "ast_walk.R"))
 
 #' Write an artifact together with the hashes of its inputs
 #'
@@ -112,40 +114,24 @@ source(file.path("R", "lib", "provenance.R"))
     if (is.null(ex)) return(invisible(NULL))
     # Walk the parse tree for source()/sys.source() and rebuild the path from
     # the string literals in the call, which is how this repo writes them.
-    walk <- function(node) {
-      if (is.call(node)) {
-        fn <- node[[1L]]
-        if (is.name(fn) && as.character(fn) %in% c("source", "sys.source")) {
-          lits <- unlist(lapply(as.list(node)[-1L], function(a)
-            if (is.character(a)) a
-            else if (is.call(a)) Filter(is.character, as.list(a)[-1L])
-            else NULL), use.names = FALSE)
-          lits <- unlist(lits, use.names = FALSE)
-          if (length(lits)) {
-            cand <- do.call(file.path, as.list(lits))
-            hit <- .resolve_code_path(cand)
-            if (!is.na(hit)) visit(hit, depth + 1L)
-          }
-        }
-        # The gap in `x[, 1]` parses to the empty symbol. Binding it to a loop
-        # variable makes ANY later use of that variable raise "argument is
-        # missing", so it cannot be tested after binding -- compare the
-        # one-element sublist instead, which never evaluates it.
-        args <- as.list(node)[-1L]
-        for (i in seq_along(args)) {
-          if (identical(args[i], list(quote(expr = )))) next
-          walk(args[[i]])
-        }
-      } else if (is.pairlist(node) || is.expression(node) || is.list(node)) {
-        args <- as.list(node)
-        for (i in seq_along(args)) {
-          if (identical(args[i], list(quote(expr = )))) next
-          walk(args[[i]])
-        }
-      }
+    # The walker itself is R/lib/ast_walk.R: it was written twice, once here
+    # and once as walk_calls() inside duckdb_scan_for_raw_connections(), each
+    # with its own paragraph about R's empty symbol. Only the visitor is local.
+    visit_source <- function(node) {
+      fn <- node[[1L]]
+      if (!(is.name(fn) && as.character(fn) %in% c("source", "sys.source")))
+        return(invisible(NULL))
+      lits <- unlist(lapply(as.list(node)[-1L], function(a)
+        if (is.character(a)) a
+        else if (is.call(a)) Filter(is.character, as.list(a)[-1L])
+        else NULL), use.names = FALSE)
+      lits <- unlist(lits, use.names = FALSE)
+      if (!length(lits)) return(invisible(NULL))
+      hit <- .resolve_code_path(do.call(file.path, as.list(lits)))
+      if (!is.na(hit)) visit(hit, depth + 1L)
       invisible(NULL)
     }
-    for (e in as.list(ex)) walk(e)
+    for (e in as.list(ex)) walk_call_tree(e, visit_source)
     invisible(NULL)
   }
   visit(entry, 0L)
@@ -174,6 +160,66 @@ source(file.path("R", "lib", "provenance.R"))
                  algo = "sha256", serialize = FALSE)
 }
 
+#' Packages whose VERSION changes the meaning of a result, not just its speed
+#'
+#' THE HOLE THIS CLOSES (2026-11-14). `code_sha256` fingerprints this
+#' repository's own code. It was IDENTICAL across the AMCB-NPPES linkage
+#' freezes of 2026-09-10 (`1a7bd6a8`) and 2026-10-22 (`9f224007`), while 1,278
+#' normalised middle names and 129 given names changed between them, because
+#' the change was not here. `mysterynpi::split_given()` began stripping periods
+#' and commas in commit cb86e56, and `mysterynpi::middle_agreement()` later
+#' began reading a hyphen as a name boundary; the cohort's membership moved
+#' with both. Reconstructing that took a two-machine comparison of frozen CSVs
+#' because no artifact recorded which build of the matcher had produced it.
+#'
+#' Name normalisation, token splitting and middle-name agreement all live in
+#' these packages. Their version is part of a result's definition, so it is
+#' recorded beside the result.
+#'
+#' DECLARED, not discovered. Fingerprinting every loaded namespace would record
+#' dozens of versions that cannot change an answer and would churn every
+#' sidecar on an unrelated upgrade. A package earns a slot here by owning a
+#' rule the science depends on.
+#' @keywords internal
+#' @noRd
+SEMANTIC_PACKAGES <- c(
+  "mysterynpi",     # name_key, split_given, middle_tokens, middle_agreement
+  "stringi",        # transliteration; name_key() stops without it
+  "humaniformat",   # person-name parsing under mysterynpi::parse_person()
+  "mysteryroster"   # attribute_truth_fusion, attribute_set_agreement,
+                     # attribute_record_presence, validity_estimates, and
+                     # every other decision rule the OIG-remake, migration-
+                     # corroboration and OIG-style-consistency scripts read
+                     # their numbers from -- added 2026-11-16 after an audit
+                     # found it had never been declared, despite two real
+                     # defects (row-corrupting bind_rows(); an overclaiming
+                     # "confirmed" wording) already found and fixed in it on
+                     # 2026-11-12 with nothing here having recorded which
+                     # build produced which committed number.
+)
+
+#' Version and source commit of each semantic package that is installed
+#'
+#' RemoteSha is present for a package installed from GitHub (remotes/pak record
+#' it in DESCRIPTION) and absent for one from CRAN, where the version alone
+#' identifies the source. A package that is not installed is reported as such
+#' rather than omitted: "absent" and "never asked" must not look alike.
+#' @keywords internal
+#' @noRd
+.semantic_pkgs <- function(pkgs = SEMANTIC_PACKAGES) {
+  lapply(pkgs, function(p) {
+    # suppressWarnings: packageDescription() warns for an absent package, and
+    # absence is a reportable state here, not a problem to announce.
+    d <- suppressWarnings(tryCatch(utils::packageDescription(p), error = function(e) NULL))
+    if (is.null(d) || identical(d, NA)) return(list(package = p, installed = FALSE))
+    sha <- d$RemoteSha
+    list(package = p,
+         installed = TRUE,
+         version = as.character(utils::packageVersion(p)),
+         source_sha = if (is.null(sha) || !nzchar(sha)) NA_character_ else sha)
+  })
+}
+
 write_with_provenance <- function(x, path, inputs = character(0), ...) {
   readr::write_csv(x, path, ...)
   inputs <- inputs[file.exists(inputs)]
@@ -190,7 +236,9 @@ write_with_provenance <- function(x, path, inputs = character(0), ...) {
          code_sha256 = .code_fingerprint(code),
          code = if (length(code))
            lapply(code, function(p) list(path = p, sha256 = sha256_of(p)))
-         else list()),
+         else list(),
+         # The producing SEMANTICS, by version. See SEMANTIC_PACKAGES.
+         semantic_packages = .semantic_pkgs()),
     side, auto_unbox = TRUE, pretty = TRUE)
   invisible(path)
 }

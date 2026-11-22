@@ -32,9 +32,11 @@
 # upper-bounded by BOTH a genuine PECOS/Doximity data conflict AND Doximity's
 # own name-match error rate -- this comparison cannot tell those two apart.
 # Treat it as weaker evidence than the PECOS-vs-NPPES comparison, consistent
-# with @archive/experiment_external_org_sources.R's own assessment of
-# Doximity as "the weakest provenance ... and the least verifiable" of the
-# external sources it tried.
+# with the external-source experiment's own assessment of Doximity as "the
+# weakest provenance ... and the least verifiable" of the sources it tried.
+# That script (@archive/experiment_external_org_sources.R) was removed on
+# 2026-11-20; its conclusion is quoted here so this caveat does not depend on
+# a file, and NEWS.md records where it went.
 #
 # NOT year-matched. DAC carries a stated vintage; Doximity profiles carry
 # date_created/date_modified per profile (not used here) but

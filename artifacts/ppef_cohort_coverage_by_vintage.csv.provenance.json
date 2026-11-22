@@ -1,0 +1,33 @@
+{
+  "artifact": "ppef_cohort_coverage_by_vintage.csv",
+  "written_utc": "2026-11-11 02:37:47 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "dbcc76f420ac9be850efcc8aabc1523772cbcccea259783db88a5099d3a2209b"
+    }
+  ],
+  "code_sha256": "38ca5d31eb89aaf7603f44b8d2980aa5fb3dd74789f82c834ff9f0ebebfa5337",
+  "code": [
+    {
+      "path": "extract_ppef_cohort_state_by_vintage.R",
+      "sha256": "d8600fe22aa6ede6fbb4d39bfecf85b29251ba8f151928a2504737a5578cef61"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/clean_state.R",
+      "sha256": "188cee53abd5b2e7afb2c6bffbc7ea27a16029189fb97ca8be1865d5ab0c2c23"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "768130b4a281aed760c6caab7b47f40569138ea30dcabde12aa9a896bf53ba27"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ]
+}

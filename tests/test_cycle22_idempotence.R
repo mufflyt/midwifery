@@ -35,20 +35,15 @@
 # Run: Rscript tests/test_cycle22_idempotence.R
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 suppressPackageStartupMessages({library(dplyr); library(readr)})
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 source(file.path(root, "tests", "helper-optional-inputs.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 ING <- paste(readLines("R/11-wonder-county-ingest.R", warn = FALSE), collapse = "\n")
 OUTP <- "artifacts/county_profiles/county_cnm_births.csv"
 rd <- function(p) suppressWarnings(read_csv(p, show_col_types = FALSE, progress = FALSE,

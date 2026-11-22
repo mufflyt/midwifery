@@ -53,6 +53,7 @@
 suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr); library(DBI); library(duckdb)})
 source(file.path("R", "lib", "clean_state.R"))
 source(file.path("R", "lib", "medicare_duckdb.R"))  # resolve_midwifery_duckdb()
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5()
 
 # The header/body CSVs the foreground pass writes. Default is repo-relative:
 # the previous default was one session's /private/tmp scratchpad on another
@@ -77,7 +78,7 @@ cat(sprintf("Cohort NPIs: %s\n", format(nrow(link), big.mark = ",")))
 pick <- function(have, ...) { opts <- c(...); hit <- opts[opts %in% have]; if (!length(hit)) return(NULL); hit[1] }
 
 extract_one_from_warehouse <- function(table, vintage) {
-  con <- dbConnect(duckdb(), WAREHOUSE, read_only = TRUE)
+  con <- duckdb_connect(WAREHOUSE, read_only = TRUE)
   on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
   have <- names(dbGetQuery(con, sprintf("SELECT * FROM %s LIMIT 0", dbQuoteIdentifier(con, table))))
   col_npi <- pick(have, "NPI"); col_entity <- pick(have, "Entity Type Code")
@@ -96,7 +97,7 @@ extract_one_from_warehouse <- function(table, vintage) {
   rows <- dbGetQuery(con, sql)
   out <- rows %>% filter(trimws(npi) %in% link$npi) %>%
     transmute(npi = trimws(npi), vintage = vintage, practice_address, practice_city,
-              practice_state = clean_state(practice_state), practice_zip = substr(practice_zip, 1, 5),
+              practice_state = clean_state(practice_state), practice_zip = norm_str_zip5(practice_zip),
               deactivation_date = as.character(deactivation_date))
   cat(sprintf("  %s: %s cohort rows (warehouse)\n", vintage, format(nrow(out), big.mark = ",")))
   out
@@ -123,7 +124,7 @@ extract_one_from_files <- function(vintage) {
     filter(.data[[col_entity]] == "1", .data[[col_npi]] %in% link$npi) %>%
     transmute(npi = trimws(.data[[col_npi]]), vintage = vintage,
               practice_address = .data[[col_addr]], practice_city = .data[[col_city]],
-              practice_state = clean_state(.data[[col_state]]), practice_zip = substr(.data[[col_zip]], 1, 5),
+              practice_state = clean_state(.data[[col_state]]), practice_zip = norm_str_zip5(.data[[col_zip]]),
               deactivation_date = .data[[col_deact]])
   cat(sprintf("  %s: %s cohort rows\n", vintage, format(nrow(out), big.mark = ",")))
   out

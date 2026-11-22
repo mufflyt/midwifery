@@ -1,0 +1,106 @@
+# Cohort-freeze consumers that do NOT call verify_linkage_freeze().
+#
+# Each line is a script that reads artifacts/amcb_npi_linkage_FROZEN.csv and
+# takes whatever file is sitting there on trust. That is how a build came to
+# describe 11,920 midwives instead of 12,171 (docs/DATA_VAULT.md): the wrong
+# vintage was present, nothing checked, and the run looked like a success.
+#
+# THIS LIST MAY ONLY SHRINK. A new unverified consumer fails T14. To remove a
+# line, add verify_linkage_freeze(<path>) to that script before it reads the
+# freeze -- which makes the script stop on the wrong vintage instead of
+# silently reporting a different cohort. A script that deliberately reads a
+# non-current freeze still calls it, and declares the hash in
+# artifacts/freeze_pins.tsv with its purpose.
+#
+# Baselined 2026-11-13 at 91 of 98 discovered consumers.
+analyze_address_lead_lag_and_freshness.R
+analyze_linkage_coverage_floor.R
+analyze_linkage_selection_bias.R
+analyze_medicaid_2023_2024_transition_support.R
+analyze_medicaid_billing_by_state.R
+analyze_medicaid_billing_year_trend.R
+analyze_medicaid_enrollment_concordance.R
+analyze_medicaid_enrollment_spending_tier.R
+analyze_temporal_plausibility.R
+audit_amcb_crosswalk.R
+audit_coordinate_provenance.R
+audit_linkage_arms_3way.R
+audit_migration_corroboration_by_transition.R
+audit_migration_stable_vs_mover_corroboration.R
+audit_migration_temporal_sensitivity.R
+build_cross_source_comparison.R
+build_exclusion_flow_person_level.R
+build_geography_by_amcb_status.R
+build_leave_one_source_out_sensitivity.R
+build_linkage_case_gallery.R
+build_midwives_geography_guarded.R
+build_migration_rate_by_method.R
+build_results_geographic_persistence_canonical.R
+build_results_geographic_persistence.R
+build_state_source_audit.R
+build_state_source_pairwise_audit.R
+build_table1_by_year.R
+build_table1_midwives.R
+build_truth_fusion_predictions.R
+build_worksite_address_resolution.R
+build_worksite_leaflet_map.R
+calibrate_amcb_certification_ages.R
+characterize_isochrone_representation.R
+classify_migration_moves_full_panel.R
+compare_all_sources_mysteryroster.R
+compare_geography_versions.R
+compare_nppes_to_dac_demographics.R
+diagnose_medicaid_classification_disagreement.R
+diagnose_migration_year_over_year.R
+diagnose_subannual_migration_timing.R
+diagnose_truth_fusion_migration_states.R
+enrich_doximity_cnm_ages.R
+enrich_state_nursing_license_ages.R
+export_amcb_npi_geography.R
+extract_dac_facility_affiliations.R
+extract_medicaid_activity_by_month.R
+extract_medicaid_enrollment_state_by_year.R
+extract_medicare_part_b_d_cohort_states.R
+extract_nppes_subannual_panel.R
+extract_open_payments_cohort_by_year.R
+extract_pecos_revalidation_state_history.R
+extract_ppef_cohort_state_by_vintage.R
+extract_ppef_enrollment_history.R
+extract_tmsis_medicaid_enrollment_state_history.R
+extract_tmsis_medicaid_spending_history.R
+freeze_cohort.R
+geocode_panel_addresses.R
+link_practice_locations_to_org_npi.R
+link_theses_to_amcb.R
+load_obstetric_providers.R
+make_cohort_exclusion_flow_figure.R
+make_evidence_class_figure.R
+make_temporal_plausibility_figure.R
+map_midwife_geography.R
+match_cms_pecos_revocations.R
+match_fda_debarment.R
+match_florida_voter_ages.R
+match_medicare_partb_partd.R
+match_midwives_to_isochrones.R
+match_ohio_voter_ages.R
+match_open_payments_to_facility.R
+measure_medicare_delivery_code_observability.R
+oig_phase2_candidate_set_and_intersection_analysis.R
+provenance_manifest.R
+R/03-geography-hierarchy.R
+R/05-stage-progression.R
+R/06-cohort-flow.R
+R/07-cohort-composition.R
+reconcile_linkage.R
+remake_oig_07_09_00440_midwifery.R
+render_midwifery_map.R
+report_linkage_veto_strata.R
+resolve_org_ambiguity.R
+scrape_doximity_public_cnm.R
+scrape_healthgrades_midwives.R
+scrape_wa_nursing_cnm.R
+sweep_healthgrades_enrichment.R
+validate_hospital_linkage_controls.R
+validate_training_institution_against_acme.R
+verify_linkage_arms.R
+verify_osmde_full_cohort_coverage.R

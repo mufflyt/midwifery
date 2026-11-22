@@ -95,6 +95,17 @@ with open(roster_file, "r", encoding="utf-8", errors="ignore") as f:
             out["live_bon_status"] = co_info.get("licensestatusdescription", "")
             out["live_bon_exp_date"] = co_info.get("licenseexpirationdate", "")
             out["live_bon_specialty"] = co_info.get("specialty", "")
+            # OBSERVED, NOT ASSUMED. DORA publishes the licensee's own mailing
+            # city/state/zip on the same row; until 2026-11-15 this harvester
+            # read the row and threw those three fields away, so every
+            # Colorado record reached build_state_source_audit.R with no
+            # state at all and bind_rows() filled it with NA. `state` is a
+            # real observation here -- a Colorado licensee may hold a current
+            # CO credential from an out-of-state address -- so it is read
+            # from the record and never defaulted to "CO".
+            out["live_bon_city"] = co_info.get("city", "")
+            out["live_bon_state"] = (co_info.get("state", "") or "").upper().strip()
+            out["live_bon_zip"] = co_info.get("mailzipcode", "")
             out["live_bon_match_status"] = "VERIFIED_LIVE_BON"
             matched_co.append(out)
         else:
@@ -106,6 +117,12 @@ with open(roster_file, "r", encoding="utf-8", errors="ignore") as f:
             out["live_bon_status"] = "UNMATCHED_BON" if not candidates else "AMBIGUOUS_BON"
             out["live_bon_exp_date"] = "NA"
             out["live_bon_specialty"] = "NA"
+            # Empty, not "NA": no board record was observed, so there is no
+            # address to report. An unmatched row must never carry a string
+            # that a reader could mistake for an observed state.
+            out["live_bon_city"] = ""
+            out["live_bon_state"] = ""
+            out["live_bon_zip"] = ""
             out["live_bon_match_status"] = "UNMATCHED" if not candidates else "AMBIGUOUS"
             unmatched_co.append(out)
 

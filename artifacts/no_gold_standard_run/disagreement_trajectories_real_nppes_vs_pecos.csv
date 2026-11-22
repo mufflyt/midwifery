@@ -1,0 +1,9 @@
+trajectory_code,trajectory_label,n,disc_base_n,pct,ci_low,ci_high,median_years_to_resolution
+b_only_adopted_a_base,1. PECOS_revalidation Only Adopted NPPES 2021 Value,116,760,15.26,12.9,18,3
+a_only_adopted_b_base,2. NPPES Only Adopted PECOS_revalidation 2021 Value,162,760,21.32,18.6,24.4,2
+bidirectional_cross_adoption,3. Bidirectional Cross-Adoption (Both Adopted Other's 2021 Value),15,760,1.97,1.2,3.2,1
+converged_new_third_value,4. Converged on New Third Value (Neither 2021 Value),46,760,6.05,4.6,8,3
+unresolved_uncensored_persistent,5. Unresolved Persistent Discordance (Observed Through 2026),323,760,42.5,39,46,NA
+unresolved_right_censored,6. Unresolved Right-Censored (Lost to Paired Follow-Up Before 2026),98,760,12.89,10.7,15.5,NA
+resolved_total,Subtotal: Any Longitudinal Resolution (Trajectories 1-4),339,760,44.61,41.1,48.2,2
+total,Total Base-Year Disagreements,760,760,100,100,100,NA

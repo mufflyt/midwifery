@@ -198,6 +198,69 @@ midwives are certified by other bodies, are not enumerated in this directory,
 and are outside the prespecified study population; they are not included in any
 denominator, analysis, or interpretation.
 
+## Eligibility criteria
+
+Two populations are defined below and are not interchangeable. The **study
+cohort** carries every estimate reported in this paper. The **linkage-eligible
+set** is a strict superset of it, used to construct intermediate products --
+geographic assignment, birth activity, cohort composition -- and to measure
+what the study cohort leaves out. Neither is called "the cohort" without
+saying which.
+
+A certification record entered the study cohort only if **all** of the
+following held:
+
+1. It appeared in the American Midwifery Certification Board public
+   verification directory as a certified nurse-midwife or certified midwife.
+2. Its certification status was ACTIVE at the date of the directory capture.
+3. It resolved to exactly one National Provider Identifier at the
+   `primary_midwifery` evidence tier -- that is, exact or near-exact name
+   identity *and* a provider record carrying midwifery taxonomy.
+4. That identifier was non-missing.
+5. Its certification number resolved to one identifier and no more. A
+   certification number carrying two identifiers is an unresolved identity, not
+   a tie to be broken by preference, and halts the analysis rather than being
+   counted either way.
+
+One record was retained per certification number, so the cohort counts people
+rather than certificates. A provider contributed follow-up time for each annual
+snapshot in which it appeared with a usable practice address; contributing no
+provider-years did not remove a provider from the cohort, because entry and
+exit are themselves observed quantities.
+
+A record was **excluded** from the study cohort for exactly one of the
+following reasons, which are mutually exclusive and sum to the roster
+(Figure 1; Appendix 1, eResults 1):
+
+1. **Not certified by this body.** Certified professional midwives and
+   state-licensed direct-entry midwives are certified elsewhere, are not
+   enumerated in this directory, and are outside the prespecified population.
+2. **Certification not ACTIVE.** Expired, inactive and deceased statuses are
+   excluded from the study cohort. They are retained for the ascertainment
+   comparison reported below, which is why the two selection rates differ.
+3. **Tied on name evidence** (`r mw_n("linkage.tied")`). Two or more candidates
+   were indistinguishable at the strongest class the record reached; the record
+   was left unresolved rather than assigned to the likelier candidate.
+4. **No candidate at all** (`r mw_n("linkage.unmatched")`).
+5. **Partial-surname evidence only** (`r mw_n("linkage.heldout")`). The weakest
+   class in the ladder, held out of the cohort pending review.
+6. **Contested between two certificants** (`r mw_n("linkage.contested")`).
+7. **In a group the one-to-one constraint could not decompose**
+   (`r mw_n("linkage.component")`).
+8. **Resolved only to a nursing-taxonomy record**
+   (`r mw_n("linkage.nursing")`). A certified nurse-midwife must hold
+   registered-nurse licensure and may have enumerated under either taxonomy, so
+   these are reported as a separate stratum and never promoted into the study
+   cohort.
+
+Exclusions 3 through 8 are failures of *linkage*, not of eligibility: each
+names a person who may well be a practising midwife but whose provider record
+could not be identified to the standard set above. They are the subject of the
+selection analysis, and their direction of bias is stated in the Discussion.
+Exclusions 3 through 7 are outside the linkage-eligible set as well; exclusion
+8, together with the fuzzy-surname and unknown-taxonomy sensitivity tiers,
+is inside it, which is the entire difference between the two populations.
+
 ## Record linkage
 
 Because neither source carries a shared identifier, linkage was by name over

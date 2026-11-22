@@ -231,6 +231,75 @@ if (length(arts) == 0) {
 }
 
 # -----------------------------------------------------------------------------
+ci_section("A3b a sidecar names the code that produced it")
+
+# A3 proves a sidecar EXISTS. It cannot tell a real one from an empty one.
+# An artifact written through write_with_provenance() from `Rscript -e` gets
+# a sidecar with code_sha256: null and code: [] -- inputs recorded, producer
+# not -- and A3 passes it. That happened on 2026-11-10 and was caught by
+# review, not by this file.
+#
+# Without the producing code, an artifact cannot be regenerated and a change
+# to the generating logic leaves no trace in the sidecar, which is most of
+# what the sidecar is for.
+#
+# Parsed with a regex rather than a JSON reader on purpose: this job installs
+# stringr and nothing else, and the two files under test are dependency-light
+# by design. The sidecars are machine-written by jsonlite, so the shape is
+# stable enough for a fixed pattern.
+CODE_BASELINE <- file.path(root, "tests",
+                           "ci_artifact_code_provenance_baseline.txt")
+sidecars_all <- suppressWarnings(system2("git",
+  c("ls-files", shQuote("artifacts/*.provenance.json")),
+  stdout = TRUE, stderr = FALSE))
+if (length(sidecars_all) == 0) {
+  ci_skip("no tracked sidecars; skipped")
+} else {
+  nameless <- Filter(function(f) {
+    txt <- tryCatch(paste(readLines(f, warn = FALSE), collapse = " "),
+                    error = function(e) "")
+    !grepl('"code_sha256"', txt, fixed = TRUE) ||
+      grepl('"code_sha256"[[:space:]]*:[[:space:]]*null', txt)
+  }, sidecars_all)
+
+  gf_code <- if (file.exists(CODE_BASELINE)) {
+    x <- trimws(readLines(CODE_BASELINE, warn = FALSE))
+    x[nzchar(x) & !startsWith(x, "#")]
+  } else character(0)
+
+  new_nameless <- setdiff(nameless, gf_code)
+  # GONE IS NOT FIXED. `nameless` is derived from the tracked sidecar list, so a
+  # baseline entry whose sidecar has merely stopped being tracked falls out of
+  # it and reads as "now fixed -- remove it from the baseline". A sidecar that
+  # was deleted has not acquired code provenance; it has disappeared, and on the
+  # next rebuild it can come back exactly as unprovenanced as before, with the
+  # baseline line that recorded it already gone. Local gate sweeps in this
+  # repository delete tracked artifacts and their sidecars routinely -- that is
+  # why `git add -A` after a test run is a documented hazard -- so this is the
+  # ordinary case, not a hypothetical. ci_leak_guard.R draws the same
+  # distinction for the same reason.
+  fixed_code <- intersect(setdiff(gf_code, nameless), sidecars_all)
+  absent_code <- setdiff(setdiff(gf_code, nameless), sidecars_all)
+
+  if (length(new_nameless)) {
+    ci_fail("A3b: %d sidecar(s) do not name their producing code and are not on the baseline. This happens when write_with_provenance() runs from `Rscript -e`; move the call into a script file and re-run it:\n       %s",
+            length(new_nameless),
+            paste(utils::head(new_nameless, 8), collapse = "\n       "))
+  } else if (length(fixed_code) || length(absent_code)) {
+    ci_ok(sprintf(paste0("A3b no NEW sidecar lacks code provenance (%d grandfathered; ",
+                         "%d still tracked and now fixed -- remove those from the baseline ",
+                         "to hold the gain; %d no longer tracked, which is NOT fixed and NOT ",
+                         "a reason to remove the line%s)"),
+                  length(gf_code), length(fixed_code), length(absent_code),
+                  if (length(absent_code))
+                    paste0(": ", paste(utils::head(absent_code, 4), collapse = ", "))
+                  else ""))
+  } else {
+    ci_ok(sprintf("A3b no NEW sidecar lacks code provenance (%d grandfathered)",
+                  length(gf_code)))
+  }
+}
+
 ci_section("A4 geography never appears without an identity behind it")
 
 # The claim this project rests on is
@@ -357,8 +426,24 @@ if (!file.exists(t1_csv) || !file.exists(t1_md)) {
     ci_ok("A5: both Table 1 files report %s%s", format(csv_n, big.mark = ","),
           if (is.na(canon_n)) " (freeze absent; canonical count unchecked)"
           else ", matching canonical_active_primary()")
-    if (length(known))
-      ci_ok("A5: the recorded mismatch is gone -- delete tests/ci_table1_cohort_baseline.txt to hold the gain")
+    # NEVER ADVISE A SHRINK ON A COMPARISON THAT DID NOT RUN. With the freeze
+    # absent, `agree` means only that the two FILES match each other; canon_n is
+    # NA and the cohort definition they both claim went unchecked. On a runner
+    # that is every run, so the old unconditional hint told CI -- the one place
+    # that cannot evaluate the third number -- to delete the baseline recording
+    # the mismatch in it. A baseline removed on partial evidence is how a
+    # shrink-only guard quietly becomes no guard.
+    if (length(known)) {
+      if (is.na(canon_n)) {
+        ci_ok(paste0("A5: the two files agree at %s, but the recorded mismatch is about ",
+                     "the canonical count, which was NOT checked here (freeze absent). ",
+                     "Keeping tests/ci_table1_cohort_baseline.txt -- a machine with the ",
+                     "freeze decides whether it comes off."),
+              format(csv_n, big.mark = ","))
+      } else {
+        ci_ok("A5: the recorded mismatch is gone -- delete tests/ci_table1_cohort_baseline.txt to hold the gain")
+      }
+    }
   } else if (observed %in% known) {
     ci_ok("A5: known mismatch, unchanged (%s); see tests/ci_table1_cohort_baseline.txt", observed)
   } else {

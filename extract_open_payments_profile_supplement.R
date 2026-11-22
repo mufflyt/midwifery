@@ -36,10 +36,43 @@ suppressPackageStartupMessages({library(DBI); library(duckdb); library(dplyr); l
 source(file.path("R", "lib", "medicare_duckdb.R"))  # duckdb_connect(): CSV-ingestion bootstrap
 source("R/lib/common_helpers.R")
 
-SUPPLEMENT <- "data/CMS_Open_Payments_Profile_Supplement.csv"
-stopifnot(file.exists(SUPPLEMENT))
+# SOURCE PATH IS OVERRIDABLE, AND THE VINTAGE IS RECORDED. The repository copy
+# at data/ is gitignored and absent from most clones; the same file ships from
+# CMS as OP_CVRD_RCPNT_PRFL_SPLMTL_<publication>_<asof>.csv inside
+# PHPRFL_<publication>.zip, and a mounted archive copy is the usual way to get
+# it. No absolute path is hard-coded here (ci_repo_integrity forbids it) --
+# point OP_PROFILE_SUPPLEMENT at the file instead.
+#
+# VINTAGES ARE NOT INTERCHANGEABLE. The January 2025 publication carries
+# 1,530,413 rows; the analysis first published in the 2026-11-03 technical
+# appendix cites 1.69M, so that run used a LATER publication. Counts computed
+# from different vintages will differ legitimately and must not be reconciled
+# by adjusting either one. The row count and file name are written into the
+# provenance sidecar so which vintage produced a given artifact is recoverable.
+SUPPLEMENT <- Sys.getenv("OP_PROFILE_SUPPLEMENT",
+                         "data/CMS_Open_Payments_Profile_Supplement.csv")
+if (!file.exists(SUPPLEMENT))
+  stop(sprintf(paste0("Profile supplement not found at %s.\n",
+                      "  Set OP_PROFILE_SUPPLEMENT to the CMS file ",
+                      "(OP_CVRD_RCPNT_PRFL_SPLMTL_*.csv, inside PHPRFL_*.zip)."),
+               SUPPLEMENT), call. = FALSE)
+cat(sprintf("Supplement: %s\n", basename(SUPPLEMENT)))
 
-link <- chr("artifacts/amcb_npi_linkage_FROZEN.csv")
+# THE COHORT FREEZE IS VERIFIED AGAINST ITS OWN MANIFEST, NOT TRUSTED.
+# verify_linkage_freeze() exists for exactly this and was not being called
+# here. It should have been: the 2026-11-12 rebuild of this artifact silently
+# used the superseded pre-reconciliation freeze (sha dbcc76f4, 54 columns,
+# 16,898 cohort members) while the tracked manifest beside it describes the
+# 2026-10-22 reconciled freeze (sha 9f224007, 60 columns, 22,357 rows, 16,775
+# members) -- so the matched count came out on a cohort this project no longer
+# uses. Running on the superseded freeze is still possible, deliberately, via
+# ALLOW_FREEZE_SHA256; the freeze's sha256 lands in the provenance sidecar
+# either way, so which cohort produced a given artifact stays recoverable.
+FREEZE <- "artifacts/amcb_npi_linkage_FROZEN.csv"
+source(file.path("R", "lib", "cohort_definitions.R"))
+verify_linkage_freeze(FREEZE)
+
+link <- chr(FREEZE)
 coh <- link %>%
   filter(cohort_member == "TRUE") %>%
   transmute(certification_number, npi = trimws(npi)) %>%
@@ -92,7 +125,9 @@ out <- rows %>%
   select(npi, certification_number, profile_state, license_states_list, n_license_states,
          multistate_licensed, primary_specialty, ops_taxonomy_1, ops_taxonomy_2, ops_taxonomy_3)
 
-write_csv(out, "artifacts/cohort_midwives_open_payments_profile_supplement.csv", na = "")
+source(file.path("R", "lib", "artifact_provenance.R"))
+write_with_provenance(out, "artifacts/cohort_midwives_open_payments_profile_supplement.csv",
+                      inputs = c(SUPPLEMENT, FREEZE), na = "")
 cat(sprintf("\nwrote %s rows -> artifacts/cohort_midwives_open_payments_profile_supplement.csv\n",
             format(nrow(out), big.mark = ",")))
 cat(sprintf("multistate-licensed: %s / %s (%.1f%%)\n",

@@ -1,0 +1,14 @@
+program_year,status,confidence,observed_years,detail
+2013,retrospective_profile_link,medium,2013,no NPI field; linked through the 2021-2025 profile lookup
+2014,retrospective_profile_link,medium,2014,no NPI field; linked through the 2021-2025 profile lookup
+2015,in_file_date,high,2015,the data's own year field carries the expected year
+2016,in_file_date,high,2016,the data's own year field carries the expected year
+2017,in_file_date,high,2017,the data's own year field carries the expected year
+2018,in_file_date,high,2018,the data's own year field carries the expected year
+2019,in_file_date,high,2019,the data's own year field carries the expected year
+2020,in_file_date,high,2020,the data's own year field carries the expected year
+2021,in_file_date,high,2021,the data's own year field carries the expected year
+2022,in_file_date,high,2022,the data's own year field carries the expected year
+2023,in_file_date,high,2023,the data's own year field carries the expected year
+2024,in_file_date,high,2024,the data's own year field carries the expected year
+2025,in_file_date,high,2025,the data's own year field carries the expected year

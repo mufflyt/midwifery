@@ -1,0 +1,65 @@
+{
+  "artifact": "claims_collapse_lineage_real_2021.csv",
+  "written_utc": "2026-11-20 20:32:36 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/pecos_revalidation_cohort_state_by_year.csv",
+      "sha256": "9d2ecad4b31cd7357360b07534bcea93410b0aa2f34cb9c70ac0dbe2ffa837f9"
+    },
+    {
+      "path": "artifacts/tmsis_medicaid_enrollment_state_by_year.csv",
+      "sha256": "08332aae11b0274dcd54f430a2da214eb44b275ea3bd73aeaaefe78e48f77a04"
+    }
+  ],
+  "code_sha256": "fabbfe74c14efb3d1edddf4ac7795bf6eddb3deecb360ff5fa65af1cd8c60c91",
+  "code": [
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "4937914878dfd340d545d54ab079074fb74320f4272dd5e4c8196aeefd46c391"
+    },
+    {
+      "path": "R/lib/clean_state.R",
+      "sha256": "a8945acebe3fabca73f9839202a184fdbd75164d8884680e9cb49be6072906f8"
+    },
+    {
+      "path": "R/lib/cohort_definitions.R",
+      "sha256": "63ad5336d9c4d148b72f211fd3947f3c3dde44b1c18270c344c13916a1c47e17"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "119d6106bd63bd92b01c4d762710cbd2e4e33bd6fbcdbc4a292b068366e2b343"
+    },
+    {
+      "path": "R/lib/oig_zip_normalizers.R",
+      "sha256": "9affe29ff8909ed2d1841d8c49bf45300e283cf965674b61a52cde0c0cf6c480"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    },
+    {
+      "path": "run_no_gold_standard_toolkit_on_real_data.R",
+      "sha256": "3dcb239b5616ab315ca26b7f77b49abc763c979032191221a64eee390c1fba86"
+    }
+  ],
+  "semantic_packages": [
+    {
+      "package": "mysterynpi",
+      "installed": true,
+      "version": "0.9.1",
+      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
+    },
+    {
+      "package": "stringi",
+      "installed": true,
+      "version": "1.8.9",
+      "source_sha": null
+    },
+    {
+      "package": "humaniformat",
+      "installed": true,
+      "version": "0.6.0",
+      "source_sha": null
+    }
+  ]
+}

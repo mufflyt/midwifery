@@ -1,0 +1,53 @@
+{
+  "artifact": "state_source_audit_before_after.csv",
+  "written_utc": "2026-11-18 03:12:44 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/state_source_audit_agreement.csv",
+      "sha256": "b4033bf046fd3983014d82de9ed17c31f900ea52285cd2c7bd54e9fcb4cf44cd"
+    },
+    {
+      "path": "artifacts/state_source_audit_coverage.csv",
+      "sha256": "9f44ee1aca4cbe227a7550e3961bd076d736ab1d8d6755f293372f5c6e645b8c"
+    },
+    {
+      "path": "artifacts/open_payments_annual_coverage_audit.csv",
+      "sha256": "4a33ead3f55ea99568cd38698448edc24195636970c3a75eb2e0b6aa45777d3f"
+    }
+  ],
+  "code_sha256": "65c91035712f89361784abf6f12e8a8bb67d3791e57f1f5b69bc73a4329202cf",
+  "code": [
+    {
+      "path": "build_state_source_before_after.R",
+      "sha256": "0da7b8d02a0c13a8060579ba7253f8f7c9a36a86f4d2d4a89c1e3b5d20622369"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "4937914878dfd340d545d54ab079074fb74320f4272dd5e4c8196aeefd46c391"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ],
+  "semantic_packages": [
+    {
+      "package": "mysterynpi",
+      "installed": true,
+      "version": "0.9.1",
+      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
+    },
+    {
+      "package": "stringi",
+      "installed": true,
+      "version": "1.8.9",
+      "source_sha": null
+    },
+    {
+      "package": "humaniformat",
+      "installed": true,
+      "version": "0.6.0",
+      "source_sha": null
+    }
+  ]
+}

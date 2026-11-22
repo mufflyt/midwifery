@@ -1,0 +1,55 @@
+{
+  "artifact": "medicaid_npi_population_by_state.csv",
+  "written_utc": "2026-11-22 00:48:38 UTC",
+  "inputs": [
+    {
+      "path": "/Volumes/MufflySamsung/doge_opendata/medicaid_provider_enrollment_segments_2026_07_24/medicaid-provider-enrollment-segments.parquet",
+      "sha256": "c763c53946e5f8822e46db47d2cbd0de09c153c6b7045b57504c461afa2ce92a"
+    }
+  ],
+  "code_sha256": "924307fb952dc44dbe4ea9867c07a2bb17298512ac2c24ed603761d7867c8345",
+  "code": [
+    {
+      "path": "build_medicaid_npi_population_by_state.R",
+      "sha256": "7e07ddfe303ffeca15b6ede2a5566dc02a8af98f81f1ec219cab5d96724b6f1e"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "c1677e2402be56a1a30cc8b6985c0b512bd0599ed93c303d0c0e96e0b9d12b60"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "119d6106bd63bd92b01c4d762710cbd2e4e33bd6fbcdbc4a292b068366e2b343"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ],
+  "semantic_packages": [
+    {
+      "package": "mysterynpi",
+      "installed": true,
+      "version": "0.9.1",
+      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
+    },
+    {
+      "package": "stringi",
+      "installed": true,
+      "version": "1.8.9",
+      "source_sha": null
+    },
+    {
+      "package": "humaniformat",
+      "installed": true,
+      "version": "0.6.0",
+      "source_sha": null
+    },
+    {
+      "package": "mysteryroster",
+      "installed": true,
+      "version": "0.3.0",
+      "source_sha": null
+    }
+  ]
+}

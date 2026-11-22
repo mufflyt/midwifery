@@ -108,11 +108,17 @@ blank_to_na <- function(x) {
 normalize_text <- function(x) {
   cleaned <- blank_to_na(x)
 
-  cleaned <- base::iconv(
-    cleaned,
-    from = "",
-    to = "ASCII//TRANSLIT"
-  )
+  # Accent folding must not depend on the C library. base::iconv(to =
+  # "ASCII//TRANSLIT") is libiconv on macOS and glibc on the Linux runners, and
+  # the two disagree: libiconv emits the combining mark, so "Munoz" arrives here
+  # as "Mu~noz" and "Jose" as "Jos'e", and the [^A-Z0-9 ] pass below turns the
+  # mark into a SPACE -- MU NOZ and JOS E on this machine, MUNOZ and JOSE in CI.
+  # Same input, two linkage keys, decided by which machine ran the script.
+  # R/lib/work_site_topology.R:30 hit this and worked around it by stripping the
+  # marks iconv can leave; the name path here instead uses ICU's Latin-ASCII
+  # transform, which is deterministic by construction and is already the
+  # convention for name normalisation (expand_former_name_candidates.R:127).
+  cleaned <- stringi::stri_trans_general(cleaned, "Latin-ASCII")
 
   cleaned <- cleaned |>
     stringr::str_to_upper() |>
@@ -129,47 +135,41 @@ normalize_city <- function(x) {
 }
 
 # -----------------------------------------------------------------------------
-# State normalization
+# State normalization -- the canonical function, not a local copy
 # -----------------------------------------------------------------------------
-
-normalize_state <- function(x) {
-  raw_state <- normalize_text(x)
-
-  # datasets:: qualified because Rscript does not attach the datasets package
-  # by default, so a bare state.name is not found in a non-interactive run.
-  state_lookup <- tibble::tibble(
-    state_name = base::toupper(datasets::state.name),
-    state_code = datasets::state.abb
-  )
-
-  territories <- tibble::tribble(
-    ~state_name, ~state_code,
-    "DISTRICT OF COLUMBIA", "DC",
-    "PUERTO RICO", "PR",
-    "GUAM", "GU",
-    "VIRGIN ISLANDS", "VI",
-    "AMERICAN SAMOA", "AS",
-    "NORTHERN MARIANA ISLANDS", "MP"
-  )
-
-  state_lookup <- dplyr::bind_rows(
-    state_lookup,
-    territories
-  )
-
-  mapped <- dplyr::case_when(
-    base::is.na(raw_state) ~ NA_character_,
-    stringr::str_detect(raw_state, "^[A-Z]{2}$") ~ raw_state,
-    TRUE ~ state_lookup$state_code[
-      base::match(raw_state, state_lookup$state_name)
-    ]
-  )
-
-  mapped
+# This file carried its own clean_state() whose rule was
+# `str_detect(raw_state, "^[A-Z]{2}$") ~ raw_state`: ANY two-letter token was
+# passed through as if it were a state. Measured against midwife_panel.csv
+# (4,735,546 rows, 156 distinct practice_state values) that accepted eleven
+# things that are not US practice states -- the military postal codes AE/AP/AA,
+# the Canadian provinces AB/BC/ON, and UK/RP/US/PW/CE -- across 6,331 rows and
+# 731 NPIs, each one becoming a license_state_key and a practice state. It
+# also REFUSED the combined "TX - TEXAS" form that NPPES does emit, losing 8
+# rows across 2 NPIs.
+#
+# clean_state() accepts exactly the jurisdictions VALID_STATES declares valid
+# and resolves full names and the combined form, so this swap TIGHTENS the key
+# (11 non-states out) as well as widening it (the combined form in). That is a
+# linkage change, not a rename, which is why tests/ci_hygiene_baseline.txt held
+# this pair open rather than merging it blind.
+if (!exists("clean_state", mode = "function")) {
+  source(file.path("R", "lib", "clean_state.R"))
 }
 
 # -----------------------------------------------------------------------------
 # License normalization
+#
+# TWO NORMALIZERS, OPPOSED ON PURPOSE, SO NEITHER IS CALLED "THE" ONE. This
+# was `normalize_license_number`, the same name
+# R/resolve_amcb_by_state_license.R uses for a function that does the
+# OPPOSITE with leading zeros: that one strips them so "0007" and "7" agree,
+# accepting that a jurisdiction where zeros are significant will see two
+# licences collide (surfaced as quarantined_duplicate_state_board_key, never
+# as a match). This one keeps them. Both choices are documented and defended
+# where they are made, and collapsing them would silently change a license
+# key in one of the two pipelines -- a linkage change, not a cleanup. So they
+# are named for what they do, which is what this repository did when
+# find_column diverged the same way. See tests/ci_hygiene_baseline.txt.
 #
 # Deliberately conservative:
 # - keep leading zeros;
@@ -180,14 +180,20 @@ normalize_state <- function(x) {
 #   proves those prefixes are formatting rather than part of the license.
 # -----------------------------------------------------------------------------
 
-normalize_license_number <- function(x) {
+normalize_license_number_padded <- function(x) {
   cleaned <- blank_to_na(x)
 
+  # Same deterministic fold as normalize_text() above, for the same reason. The
+  # platform difference was NOT reaching the output here -- the strip below is
+  # [^A-Z0-9] with no space in the class, so it DELETES the combining mark
+  # libiconv leaves instead of turning it into a separator, which is the same
+  # accident that makes R/lib/work_site_topology.R safe. That made this call
+  # harmless and fragile rather than wrong: widening the class by one space,
+  # exactly the difference between this function and normalize_text(), would
+  # have brought the platform dependence back silently. Folding deterministically
+  # removes the dependence instead of relying on a later line to hide it.
   cleaned <- cleaned |>
-    base::iconv(
-      from = "",
-      to = "ASCII//TRANSLIT"
-    ) |>
+    stringi::stri_trans_general("Latin-ASCII") |>
     stringr::str_to_upper() |>
     stringr::str_replace_all("[^A-Z0-9]", "")
 
@@ -197,8 +203,8 @@ normalize_license_number <- function(x) {
 }
 
 make_license_key <- function(license_number, license_state) {
-  number_key <- normalize_license_number(license_number)
-  state_key <- normalize_state(license_state)
+  number_key <- normalize_license_number_padded(license_number)
+  state_key <- clean_state(license_state)
 
   dplyr::if_else(
     !base::is.na(number_key) & !base::is.na(state_key),
@@ -223,10 +229,6 @@ first_initial <- function(x) {
     NA_character_,
     base::substr(normalized, 1L, 1L)
   )
-}
-
-middle_initial <- function(x) {
-  first_initial(x)
 }
 
 # -----------------------------------------------------------------------------
@@ -257,7 +259,12 @@ require_columns <- function(table_input, required, label) {
 # AMCB roster
 # -----------------------------------------------------------------------------
 
-read_amcb_roster <- function(path) {
+# bridge_ PREFIXED, because R/build_amcb_state_licenses.R has its own
+# read_amcb_roster() and save_license_artifacts() that do different work: that
+# one synthesizes row IDs and normalizes names into a cohort table, this one
+# reads every column as character for the bridge. Same names, different
+# functions -- named apart rather than merged. See tests/ci_hygiene_baseline.txt.
+bridge_read_amcb_roster <- function(path) {
   log_step("Reading AMCB roster: ", path)
 
   roster <- readr::read_csv(
@@ -296,7 +303,9 @@ read_amcb_roster <- function(path) {
       amcb_first_initial = first_initial(
         .data$amcb_first_name
       ),
-      amcb_middle_initial = middle_initial(
+      # first_initial() of the middle name IS the middle initial; the
+      # middle_initial() alias that used to sit here added a name, not a rule.
+      amcb_middle_initial = first_initial(
         .data$amcb_middle_name
       )
     )
@@ -374,10 +383,10 @@ read_amcb_license_bridge <- function(path) {
       amcb_id = blank_to_na(.data$certification_number),
       license_number_raw = blank_to_na(.data$license_number),
       license_state_raw = blank_to_na(.data$license_state),
-      license_number_key = normalize_license_number(
+      license_number_key = normalize_license_number_padded(
         .data$license_number
       ),
-      license_state_key = normalize_state(
+      license_state_key = clean_state(
         .data$license_state
       ),
       license_key = make_license_key(
@@ -387,7 +396,7 @@ read_amcb_license_bridge <- function(path) {
       amcb_practice_city = normalize_city(
         .data$practice_city
       ),
-      amcb_practice_state = normalize_state(
+      amcb_practice_state = clean_state(
         .data$practice_state
       ),
       board_first_key = normalize_person_name(
@@ -509,7 +518,7 @@ pivot_nppes_licenses <- function(nppes_wide, slots = 15L) {
       nppes_city = normalize_city(
         .data[["Provider Business Practice Location Address City Name"]]
       ),
-      nppes_state = normalize_state(
+      nppes_state = clean_state(
         .data[["Provider Business Practice Location Address State Name"]]
       ),
       nppes_first_key = normalize_person_name(.data[["Provider First Name"]]),
@@ -547,10 +556,10 @@ pivot_nppes_licenses <- function(nppes_wide, slots = 15L) {
           nppes_license_state_raw = blank_to_na(
             .data[[state_column]]
           ),
-          license_number_key = normalize_license_number(
+          license_number_key = normalize_license_number_padded(
             .data[[number_column]]
           ),
-          license_state_key = normalize_state(
+          license_state_key = clean_state(
             .data[[state_column]]
           ),
           license_key = make_license_key(
@@ -1103,7 +1112,7 @@ build_summary_sentence <- function(combined) {
 # Save artifacts
 # -----------------------------------------------------------------------------
 
-save_license_artifacts <- function(
+bridge_save_license_artifacts <- function(
     combined,
     candidates,
     audit,
@@ -1314,7 +1323,7 @@ run_amcb_license_bridge <- function(
     }
   }
 
-  roster <- read_amcb_roster(amcb_path)
+  roster <- bridge_read_amcb_roster(amcb_path)
 
   bridge <- read_amcb_license_bridge(
     license_bridge_path
@@ -1355,7 +1364,7 @@ run_amcb_license_bridge <- function(
 
   print(audit)
 
-  saved_paths <- save_license_artifacts(
+  saved_paths <- bridge_save_license_artifacts(
     combined = combined,
     candidates = linked$candidates,
     audit = audit,

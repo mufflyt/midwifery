@@ -172,11 +172,60 @@ churn and lead/lag denominators would be larger and wrong.
 >   **5.7% in 2024**
 > - **34.9%** of NPI-years genuinely carry more than one state
 >
-> The reported odd-one-out rate of **0.166** for this source — five times the
-> next worst — is therefore substantially an artifact of comparing a
-> career-long modal state against each year's contemporaneous value, largest
-> exactly where drift is largest. It must not be read as evidence that Medicaid
-> enrollment data is unreliable.
+> **CORRECTED 2026-11-10.** An earlier version of this section predicted that
+> the 0.166 odd-one-out rate was "substantially an artifact" of the modal
+> reduction. The expansion was implemented and the prediction was wrong:
+> odd-one-out moved 0.166 → **0.163** and fusion agreement 77.5% → **77.6%**.
+> The reduction error is real (14.4% of NPI-years) but concentrated in
+> 2013–2017, and those two metrics are computed on the current-snapshot slice
+> where the old and new states already agreed to within 5.7%.
+>
+> **The real cause is the estimand, not the source.** Agreement with NPPES
+> falls monotonically with the number of concurrent state enrolments a midwife
+> holds that year (107,386 comparable NPI-years):
+>
+> | concurrent enrolments | NPI-years | agreement with NPPES |
+> |---|---|---|
+> | 1 | 67,618 | **87.1%** |
+> | 2 | 27,929 | 57.8% |
+> | 3 | 8,444 | 45.7% |
+> | 4 | 2,287 | 39.9% |
+> | 5+ | 1,108 | **36.4%** |
+>
+> A midwife enrolled in five state Medicaid programs does not have one
+> practice state. Forcing a modal pick and comparing it against NPPES's single
+> self-report produces ~36% agreement by construction. Restricted to
+> single-state midwives, Medicaid agrees with NPPES at 87.1% — comparable to
+> DAC and better than PECOS. **`medicaid_enrollment` should not be read as an
+> unreliable source; it is answering a legitimately multi-valued question with
+> a single-valued comparator.** Multi-state enrolment rises 19.4% (2013) to
+> 41.0% (2024), so this grows over the panel.
+>
+> **RESOLVED 2026-11-10 — it was the comparator, not the estimand.** The
+> paragraph above attributed the disagreement to multi-state practice being a
+> multi-valued question. That was half right and stopped one step short. The
+> reduction did not merely pick one of several true states — it **discarded the
+> others entirely**, 59,380 of 178,907 memberships (33.2%), emitting them
+> nowhere. The test being run was "does the other source equal my one pick?"
+> when the answerable question was "does the other source name a state she was
+> enrolled in?"
+>
+> On the same 107,386 comparable NPI-years: equality **74.7%**, set membership
+> **88.5%**, rising to **91.4%** in 2024. 14,815 NPI-years were newly scored as
+> agreeing. Medicaid is not an outlier and never was. The full enrolled set is
+> now emitted as `medicaid_enrollment_cohort_state_footprint.csv`; the
+> single-valued series is unchanged, so no assignment moved. See
+> [`audit_medicaid_set_membership.R`](../audit_medicaid_set_membership.R).
+>
+> This does not show that either source names the true practice location. It
+> shows the two are consistent once compared correctly.
+>
+> What the expansion DID change: Medicaid now enters the all-years metrics for
+> the first time — 94,103 paired transitions, 25.3% discordant at t, **85.2%
+> persistent** (the highest of any source, above PECOS's 79.4%) and **4.6%
+> churn** (also the highest). Both follow from the same multi-valued estimand:
+> a modal pick among several concurrent states flips whenever the segment mix
+> shifts, without the midwife moving.
 >
 > **Left-censoring, if expanded.** `min(ENRL_END_DT)` is **2018-01-01**: no
 > segment that closed before 2018 appears in the file. Years 2013–2017 see only

@@ -1,0 +1,8 @@
+specificity_tier,n_clinicians,pct_of_cohort,median_unique_zip5,p25_unique_zip5,p75_unique_zip5,mean_unique_zip5,max_unique_zip5,n_pinpoint_1to1,pct_pinpoint_1to1,n_any_corroborated,pct_any_corroborated_among_present,ci_low_corroborated,ci_high_corroborated,n_all_sources_corroborated,pct_all_sources_corroborated,worst_case_corroborated_pct,best_case_corroborated_pct
+Tier 1: Direct Individual Location,26,0.44,1,1,3.75,9.27,108,21,80.77,22,84.62,66.5,93.8,11,42.31,84.62,84.62
+"Tier 2: Unique Group Location (1 ZIP5, 1 State)",569,9.65,1,1,1,1,1,440,77.33,440,78.57,75,81.8,153,26.89,77.33,78.91
+"Tier 3: Small Intrastate Group (2-5 ZIP5s, 1 State)",1015,17.21,3,2,4,3.27,5,0,0,815,81.42,78.9,83.7,379,37.34,80.3,81.67
+"Tier 4: Large Intrastate Group (>5 ZIP5s, 1 State)",3523,59.74,23,11,45,40.57,261,0,0,3087,88.43,87.3,89.4,1589,45.1,87.62,88.53
+Tier 5: Multi-State Billing Group (>=2 States),510,8.65,30,13,59,42.92,240,0,0,442,86.84,83.6,89.5,227,44.51,86.67,86.86
+Tier 6: Unlinked,254,4.31,0,0,0,0,0,0,0,0,0,0,1.5,0,0,0,1.97
+Total,5897,100,13,3,35,28.65,261,461,7.82,4806,82.35,81.4,83.3,2359,40,81.5,82.53

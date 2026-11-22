@@ -44,14 +44,11 @@ suppressPackageStartupMessages({
 })
 source(file.path("R", "lib", "artifact_provenance.R"))
 source(file.path("R", "amcb_resolver.R"))   # amcb_certification_year()
+source(file.path("R", "lib", "script_cli_and_keys.R"))
 
-tpf_arg <- function(k, d) {
-  h <- grep(paste0("^--", k, "="), commandArgs(TRUE), value = TRUE)
-  if (length(h)) sub(paste0("^--", k, "="), "", h[1]) else d
-}
-CROSSWALK <- tpf_arg("crosswalk", file.path("artifacts", "amcb_npi_linkage_FROZEN.csv"))
-PANEL     <- tpf_arg("panel", "midwife_panel.csv")
-GRACE_DEF <- as.numeric(tpf_arg("grace", "25"))
+CROSSWALK <- cli_arg("crosswalk", file.path("artifacts", "amcb_npi_linkage_FROZEN.csv"))
+PANEL     <- cli_arg("panel", "midwife_panel.csv")
+GRACE_DEF <- as.numeric(cli_arg("grace", "25"))
 OUT <- file.path("docs", "figures", "temporal_plausibility")
 CSV <- file.path("artifacts", "temporal_plausibility_grace_sweep.csv")
 

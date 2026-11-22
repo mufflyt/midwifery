@@ -11,28 +11,67 @@
 # tests target, and they surface a real discrepancy between the two shims.
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 owd <- setwd(root); on.exit(setwd(owd), add = TRUE)
 source(file.path(root, "R", "amcb_name_keys.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 
 cat("\n-- amcb_parse_person(): the NA-contract shim --\n")
 {
   # T1. The shim's whole job: mysterynpi renders absent parts as "", and this
   # repository's callers test is.na() instead, so the shim must convert.
+  #
+  # CORRECTED 2026-11-13. T1 used to also assert `is.na(got1$suffix)`, and it
+  # failed every night. mysterynpi::parse_person() returns first/middle/last
+  # and NO suffix column, so `got1$suffix` was NULL and `is.na(NULL)` is
+  # logical(0) -- the clause could never be TRUE whatever the parser did. The
+  # suffix belongs to the isochrones parser exercised in
+  # test_borrowed_isochrones_name_parser_saboteurs.R, not to this shim, and no
+  # non-test caller of amcb_parse_person() reads $suffix. So the clause is
+  # removed rather than the function grown a column nothing wants.
+  #
+  # The conversion is now proven where it actually happens: an ABSENT middle,
+  # which the parser really does render as "". That is a stronger check than
+  # the old one, which asserted nothing at all.
   got1 <- amcb_parse_person("Jane Q Public")
+  got1b <- amcb_parse_person("Jane Public")
   chk(identical(got1$first, "JANE") && identical(got1$middle, "Q") &&
-      identical(got1$last, "PUBLIC") && is.na(got1$suffix),
-      "T1 a full name parses with every present part filled and the absent suffix as NA, not ''")
+      identical(got1$last, "PUBLIC") &&
+      identical(got1b$first, "JANE") && is.na(got1b$middle) &&
+      identical(got1b$last, "PUBLIC"),
+      "T1 a full name keeps every present part, and an absent middle becomes NA, not ''")
+
+  # T1b. THE TRIPWIRE FIRED, AND THIS IS WHAT IT CAUGHT (2026-11-15).
+  #
+  # T1b previously asserted the column set was exactly first/middle/last, and
+  # said in as many words: "if mysterynpi ever DOES start returning a suffix,
+  # say so instead of silently passing". Pinning mysterynpi at 691daaf (0.9.0)
+  # did exactly that -- parse_person() now returns a fourth column, `suffix`,
+  # populated by its own extract_suffix() before strip_name_noise() can delete
+  # it -- and this assertion went red on the pin bump rather than at some later
+  # point when a caller read "" where it expected NA. That is the test working.
+  #
+  # THE EXPECTATION IS UPDATED, NOT RELAXED. The set is still asserted
+  # EXACTLY, so a fifth column is still a red test tomorrow; only the known
+  # value has moved from three names to four. And the NA contract this shim
+  # exists to enforce is now asserted ON the new column rather than assumed:
+  # amcb_parse_person() converts every column it is handed, so `suffix` is
+  # covered by construction, and T1c below proves it on a name that has one.
+  chk(identical(names(got1), c("first", "middle", "last", "suffix")),
+      sprintf("T1b parse_person() returns exactly first/middle/last/suffix [%s]",
+              paste(names(got1), collapse = ", ")))
+
+  # T1c. The shim's NA conversion reaches the new column. An absent suffix
+  # must arrive as NA, never "", on the same footing as an absent middle --
+  # otherwise the shim's one job is done for three columns out of four.
+  got1c <- amcb_parse_person("Jane Q Public Jr")
+  chk(is.na(got1$suffix) && identical(got1c$suffix, "JR"),
+      sprintf("T1c an absent suffix becomes NA and a present one survives [%s / %s]",
+              format(got1$suffix), format(got1c$suffix)))
 
   # T2. Blank input and explicit NA input must both normalise to ALL-NA
   # parts -- not an empty string anywhere, which is exactly the distinction

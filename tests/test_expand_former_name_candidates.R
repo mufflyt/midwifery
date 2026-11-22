@@ -16,11 +16,11 @@
 # Run: Rscript tests/test_expand_former_name_candidates.R   (exit 1 on failure)
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 
 suppressPackageStartupMessages({
   library(dplyr); library(stringr); library(stringi)
@@ -28,11 +28,6 @@ suppressPackageStartupMessages({
 })
 source(file.path(root, "expand_former_name_candidates.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 
 amcb_roster <- tibble::tibble(
   amcb_id = c("A1", "A2", "A3", "A4"),
@@ -56,14 +51,15 @@ res <- expand_amcb_former_name_candidates(
 )
 
 rs <- res$rescue_summary
-g <- function(m) rs$n[rs$metric == m]
+# rescue_count(), not g(): see the note in tests/test_birth_activity.R.
+rescue_count <- function(m) rs$n[rs$metric == m]
 
 cat("\n-- rescue summary counts --\n")
-chk(g("original_no_candidate") == 3, "3 records start with no current-surname candidate")
-chk(g("rescued_into_candidate_universe") == 2, "2 rescued via a former surname")
-chk(g("rescued_with_one_candidate") == 1, "1 rescued to exactly one NPI")
-chk(g("rescued_with_multiple_candidates") == 1, "1 rescued to multiple NPIs")
-chk(g("still_no_candidate") == 1, "1 remains with no candidate at all")
+chk(rescue_count("original_no_candidate") == 3, "3 records start with no current-surname candidate")
+chk(rescue_count("rescued_into_candidate_universe") == 2, "2 rescued via a former surname")
+chk(rescue_count("rescued_with_one_candidate") == 1, "1 rescued to exactly one NPI")
+chk(rescue_count("rescued_with_multiple_candidates") == 1, "1 rescued to multiple NPIs")
+chk(rescue_count("still_no_candidate") == 1, "1 remains with no candidate at all")
 
 ps <- res$person_status
 status_of <- function(id) ps$rescue_status[ps$.amcb_id == id]

@@ -1,0 +1,29 @@
+{
+  "artifact": "medicaid_set_membership_by_year.csv",
+  "written_utc": "2026-11-11 04:39:21 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/medicaid_enrollment_cohort_state_by_year.csv",
+      "sha256": "f0b1fe1d9d7e9da6b20d30a107c6aebb2e42b3ec3765fa20eb9d670b7f9ef93c"
+    },
+    {
+      "path": "artifacts/medicaid_enrollment_cohort_state_footprint.csv",
+      "sha256": "02a2d3c9e28acebc5b81c617485e4c0531a81d74bae2b154d5ef36addcbc83b3"
+    }
+  ],
+  "code_sha256": "a06e5597b3a84f40b2e0c47e136b659a52b392feea01cc5eca6b5c708bb38df4",
+  "code": [
+    {
+      "path": "audit_medicaid_set_membership.R",
+      "sha256": "66f931e19216cd49d57c5d321bd6e42ac86ac392c395816d7953806593ce6291"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ]
+}

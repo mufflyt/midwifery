@@ -41,6 +41,7 @@ source(file.path("R", "lib", "artifact_provenance.R"))
 # exists for this).
 source(file.path("R", "lib", "trilliant_org_bridge.R"))
 source(file.path("R", "join_safety.R"))  # assert_unique_keys(dedupe = TRUE):
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5()
 # a plain distinct(.keep_all = TRUE) silently picks whichever row sorts first
 # when two rows for one NPI disagree -- e.g. two Open Payments records with
 # different recipient addresses that year. This errors on a real
@@ -55,7 +56,7 @@ shape_dac <- function() {
   read_csv("dac_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
     transmute(npi, state = str_to_upper(str_squish(practice_state)),
               city = str_to_upper(str_squish(practice_city)),
-              zip5 = str_sub(practice_zip, 1, 5),
+              zip5 = norm_str_zip5(practice_zip),
               street = norm_street(practice_address))
 }
 # Open Payments is one row per payment TRANSACTION, not one row per
@@ -84,7 +85,7 @@ shape_op <- function(path) {
   tibble(npi = d$npi,
          state = str_to_upper(str_squish(d$recipient_state)),
          city = str_to_upper(str_squish(d$recipient_city)),
-         zip5 = str_sub(d$recipient_zip, 1, 5),
+         zip5 = norm_str_zip5(d$recipient_zip),
          street = if ("recipient_address" %in% names(d)) norm_street(d$recipient_address) else NA_character_)
 }
 
@@ -102,7 +103,7 @@ nppes_all <- assert_unique_keys(nppes_all, c("npi", "snapshot_year"), label = "m
   transmute(npi, snapshot_year,
             state = str_to_upper(str_squish(practice_state)),
             city = str_to_upper(str_squish(practice_city)),
-            zip5 = str_sub(practice_zip, 1, 5),
+            zip5 = norm_str_zip5(practice_zip),
             street = norm_street(practice_address))
 nppes <- function(year) nppes_all %>% filter(snapshot_year == year) %>% select(-snapshot_year)
 

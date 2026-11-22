@@ -14,9 +14,30 @@ import hashlib
 import os
 import zipfile
 
+import shutil
 import pytest
 
 import hhs_opendata_csv_pipeline as pipeline
+
+# THE duckdb CLI BINARY, NOT A PYTHON PACKAGE. The tests marked below shell out
+# to `duckdb` to load a CSV and run SQL. It is present on a development machine
+# and absent on the CI runner, and pointing pytest at this whole directory --
+# instead of at two named files -- is what finally made that visible: these
+# suites had never run in CI at all, so nobody knew they were not hermetic.
+#
+# A LOUD SKIP, NOT A SILENT PASS, AND PER TEST RATHER THAN PER MODULE. The
+# alternative is installing duckdb into the python-checks job, which README
+# commits to keeping trivially cheap so it is never the reason someone switches
+# CI off. Marking the whole module would have skipped 22 tests to spare 8 --
+# losing the 14 that are hermetic, which is the same coverage loss in a new
+# costume. These gate wherever the binary exists (a developer's machine, the
+# nightly) and announce themselves where it does not; CI runs pytest with -rs
+# so the reason is in the log.
+needs_duckdb = pytest.mark.skipif(
+    shutil.which("duckdb") is None,
+    reason="the duckdb CLI binary is not installed; this test shells out to it",
+)
+
 
 
 def _sha256_bytes(b):
@@ -141,6 +162,7 @@ def test_extract_rejects_zip_with_multiple_csvs(tmp_path):
 # -- 7. An empty-but-well-formed CSV load must be treated as a failure, -----
 #       never a successful "0 rows" load -----------------------------------
 
+@needs_duckdb
 def test_load_rejects_zero_row_csv(tmp_path):
     db_path = str(tmp_path / "test.duckdb")
     csv_path = tmp_path / "empty.csv"
@@ -153,6 +175,7 @@ def test_load_rejects_zero_row_csv(tmp_path):
 #       "0000000000") must survive the load unchanged -- a type-inferring --
 #       mutation (dropping all_varchar=true) would corrupt exactly this ----
 
+@needs_duckdb
 def test_load_preserves_leading_zero_and_all_zero_npi(tmp_path):
     db_path = str(tmp_path / "test.duckdb")
     csv_path = tmp_path / "npis.csv"
@@ -168,6 +191,7 @@ def test_load_preserves_leading_zero_and_all_zero_npi(tmp_path):
 #       trip as literal text, not be nulled out or raise a date-range -----
 #       parse error -------------------------------------------------------
 
+@needs_duckdb
 def test_load_preserves_sentinel_dates_as_literal_text(tmp_path):
     db_path = str(tmp_path / "test.duckdb")
     csv_path = tmp_path / "segs.csv"
@@ -190,6 +214,7 @@ def test_load_preserves_sentinel_dates_as_literal_text(tmp_path):
 #        filename alone (covers run_pipeline()'s cache-reuse branch, the ---
 #        one place a TOCTOU-style shortcut could hide) ---------------------
 
+@needs_duckdb
 def test_run_pipeline_redownloads_when_cached_zip_no_longer_matches_server(tmp_path, monkeypatch):
     work_dir = tmp_path / "work"
     work_dir.mkdir()

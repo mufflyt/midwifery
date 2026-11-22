@@ -43,12 +43,69 @@ if (is.null(bud) || !nrow(bud)) {
   ci_finish()
 }
 
+# `full` IS INFERRED FROM ONE FILE, and the budget has only two columns.
+#
+# env_full is decided by the presence of amcb_npi_linkage_FROZEN.csv alone, and
+# the line below then calls the environment "person-level artifacts present" --
+# but there are many person-level inputs and holding one is not holding all of
+# them. Measured 2026-11-13 in a worktree that had been given only the freeze:
+# it was classified `full`, compared against the `full` column, and SB2 reported
+# five gates over budget because they skipped for OTHER absent private inputs
+# (ci_science_contracts, ci_data_regression_guard, test_cycle15_ob_capacity,
+# test_cycle19_address_provenance, test_cycle22_idempotence). None of those is a
+# budget error; the environment was misdescribed.
+#
+# PRESENT IS ALSO NOT THE SAME AS CORRECT.
+# `full` describes the skips expected when the person-level freeze is available;
+# `lean` describes a bare checkout, which is how CI runs. A machine holding a
+# freeze that is NOT the one the manifest describes is in neither state: its
+# gates do not skip for missing data, they FAIL on data that is present and
+# wrong (measured 2026-11-13 -- ci_manuscript_numbers fails with the superseded
+# 2026-08-10 freeze in place and passes with that file absent). Compared against
+# the `full` column without comment, that machine's counts drift for a reason
+# that has nothing to do with the budget, which is how two rows here came to
+# disagree on one development machine and get written off as pre-existing.
+#
+# This does not change what SB2 compares -- a stale freeze is still a full
+# environment as far as file presence goes -- it refuses to let the environment
+# line claim more than it knows.
 env_full <- file.exists(PERSON_LEVEL)
+FREEZE_MANIFEST <- file.path(root, "artifacts",
+                             "amcb_npi_linkage_FROZEN.csv.manifest.json")
+freeze_state <- "absent"
+if (env_full) {
+  freeze_state <- "unverifiable"
+  if (file.exists(FREEZE_MANIFEST) &&
+      requireNamespace("digest", quietly = TRUE) &&
+      requireNamespace("jsonlite", quietly = TRUE)) {
+    want <- tryCatch(jsonlite::read_json(FREEZE_MANIFEST)$artifact_sha256,
+                     error = function(e) NULL)
+    got <- tryCatch(digest::digest(file = PERSON_LEVEL, algo = "sha256"),
+                    error = function(e) NULL)
+    if (!is.null(want) && !is.null(got))
+      freeze_state <- if (identical(tolower(got), tolower(want))) "current" else "stale"
+  }
+}
 env_name <- if (env_full) "full" else "lean"
 col <- if (env_full) "full" else "lean"
 cat(sprintf("\nenvironment: %s (%s)\n", env_name,
-            if (env_full) "person-level artifacts present"
-            else "bare checkout, as CI runs"))
+            if (!env_full) "bare checkout, as CI runs"
+            else switch(freeze_state,
+              current = paste0("the freeze is present and matches the manifest; note `full` is ",
+                               "inferred from THAT FILE ALONE -- other person-level inputs may ",
+                               "still be absent, and a gate that skips for one of those is not ",
+                               "a budget error"),
+              stale = paste0("the freeze is present but is NOT the one the manifest describes -- ",
+                             "gates that read it FAIL rather than skip, and `full` is inferred from ",
+                             "that file alone, so counts below may not match either column"),
+              "person-level artifacts present; freeze could not be verified")))
+if (identical(freeze_state, "stale"))
+  cat("  note: a stale freeze is a third environment the budget does not model.\n",
+      "        Resolve the freeze before reading an SB2 disagreement as a budget error.\n", sep = "")
+if (env_full)
+  cat("  note: `full` means amcb_npi_linkage_FROZEN.csv is present. It does NOT mean\n",
+      "        every person-level input is. Check the named gate's own skip reason\n",
+      "        before changing a budget row.\n", sep = "")
 
 # --- SB1 every gate that can skip is declared --------------------------------
 # Static, and the reason this is not merely a count check: a NEW gate that
@@ -66,10 +123,26 @@ ci_section("SB1 every gate that can skip is in the budget")
 # synthetic fixtures. Neither calls it. Named explicitly rather than dodged with
 # a cleverer regex, because a regex that has to distinguish a call from a string
 # containing a call is one more thing to be subtly wrong about.
-NOT_GATES <- c("tests/ci_skip_budget.R", "tests/test_skip_budget_detect.R")
+# A THIRD ENTRY, 2026-11-13, for the same reason as the first two: the shared
+# reporter DEFINES the skip mechanism rather than using it. ci_require_files()
+# lives in tests/ci_report.R and prints through ci_skip(), so the file now
+# carries the literal this check searches for while being no more a gate than
+# ci_skip() itself is. It asserts nothing and can therefore skip nothing.
+NOT_GATES <- c("tests/ci_skip_budget.R", "tests/test_skip_budget_detect.R",
+               "tests/ci_report.R")
+
+# TWO SPELLINGS OF ONE MECHANISM, and missing the second would have opened
+# exactly the blind spot this gate exists to close. ci_require_files() (added
+# 2026-11-13, tests/ci_report.R) skips a whole test file when its gitignored
+# person-level input is absent -- seven work-site tests use it -- and it does
+# so without the caller ever writing `ci_skip(`. Scanning only for ci_skip()
+# would have left seven files that skip on every CI run invisible to the
+# budget, which is the same shape of hole as the testthat SKIP count the
+# header describes.
+SKIP_CALLS <- "ci_skip\\(|ci_require_files\\("
 skippers <- Filter(function(f) {
   !(f %in% NOT_GATES) &&
-    any(grepl("ci_skip\\(", readLines(file.path(root, f), warn = FALSE)))
+    any(grepl(SKIP_CALLS, readLines(file.path(root, f), warn = FALSE)))
 }, ci_tracked("tests/*.R"))
 # testthat targets are named in ci.yml rather than discoverable from the source,
 # because a file only skips through testthat when CI chooses to run it that way.
@@ -96,15 +169,66 @@ if (!length(undeclared) && !length(orphaned)) {
         length(skippers), length(skippers) - length(tt_targets), length(tt_targets))
 }
 
+# --- the second axis ---------------------------------------------------------
+# `full`/`lean` IS ONE AXIS AND SOME ROWS SKIP ON ANOTHER. The environment flag
+# above asks exactly one question -- is the person-level freeze present -- and
+# for most rows that is the question, because what they skip for is private
+# data. Four rows skip for something else entirely: the sf package, and the
+# ~/isochrones checkout. Those are properties of the MACHINE, not of the
+# repository, and nothing above measures them.
+#
+# A scratch worktree is where that bites. It has no artifacts/, so it is
+# classified `lean` and those four rows are expected to skip once each -- while
+# it still sees the developer's installed sf and their ~/isochrones, so they do
+# not skip at all. All four then report STALE with nothing wrong with them
+# (measured 2026-11-22; it produced a report claiming four stale entries, and
+# "lowering the count to match" would have reddened CI, where the skip is real).
+#
+# So a row may name its own precondition, and the column it is compared against
+# is chosen by THAT rather than by the global flag. No new column semantics:
+# `full` already means "the thing this row needs is here" and `lean` "it is
+# not"; `needs` only changes which thing is asked about.
+#
+# The precondition is restated here rather than derived from the test file,
+# which is a duplication with a known failure mode: if a guard changes and its
+# `needs` spec does not, this gate mispredicts. That is visible as a count
+# disagreement rather than silent, and the alternative -- parsing a guard out
+# of the script -- is a regex against arbitrary R that would be wrong in ways
+# nobody notices. ponytail: restated spec, parse the guard if the pair ever
+# actually drifts.
+ISO_DIR <- Sys.getenv("ISOCHRONES_R", path.expand("~/isochrones/R"))
+need_met <- function(spec) {
+  what <- trimws(strsplit(sub("^[^:]*:", "", spec), ",", fixed = TRUE)[[1]])
+  switch(sub(":.*", "", spec),
+    pkg  = all(vapply(what, requireNamespace, logical(1), quietly = TRUE)),
+    iso  = dir.exists(ISO_DIR) && all(file.exists(file.path(ISO_DIR, what))),
+    path = all(file.exists(path.expand(what))),
+    # An unknown kind cannot be answered, and guessing `TRUE` would expect no
+    # skip and call a real one unexpected. Fail loudly instead.
+    NA)
+}
+
 # --- SB2 the counts ----------------------------------------------------------
 ci_section("SB2 observed skips match the budget")
 rows <- bud[bud$when == "pr", , drop = FALSE]
 obs_total <- 0L; exp_total <- 0L
 unexpected <- character(0); stale <- character(0); detail <- character(0)
 
+bad_needs <- character(0)
 for (i in seq_len(nrow(rows))) {
   g <- rows$gate[i]
-  expect <- suppressWarnings(as.integer(rows[[col]][i]))
+  spec <- if ("needs" %in% names(rows)) rows$needs[i] else ""
+  rowcol <- col; basis <- env_name
+  if (!is.na(spec) && nzchar(spec) && !identical(spec, "-")) {
+    met <- need_met(spec)
+    if (is.na(met)) {
+      bad_needs <- c(bad_needs, sprintf("%s: unrecognised needs spec `%s` (expected pkg:, iso: or path:)", g, spec))
+      next
+    }
+    rowcol <- if (met) "full" else "lean"
+    basis <- sprintf("%s (%s %s)", rowcol, spec, if (met) "present" else "absent")
+  }
+  expect <- suppressWarnings(as.integer(rows[[rowcol]][i]))
   if (is.na(expect)) next
   kind <- if ("kind" %in% names(rows)) rows$kind[i] else "ci_skip"
   # `cycle` reports through have_inputs(), which prints the same `  --   SKIP`
@@ -134,7 +258,7 @@ for (i in seq_len(nrow(rows))) {
   if (is.na(n)) next
   obs_total <- obs_total + n; exp_total <- exp_total + expect
   mark <- if (n == expect) "ok" else if (n > expect) "NEW" else "STALE"
-  detail <- c(detail, sprintf("| `%s` | %d | %d | %s |", g, n, expect, mark))
+  detail <- c(detail, sprintf("| `%s` | %d | %d | %s | %s |", g, n, expect, basis, mark))
   if (n > expect) {
     lines <- if (identical(kind, "testthat")) grep("SKIP [0-9]+", out, value = TRUE)
              else sub("^  --   ", "", out[grepl("^  --   ", out)])
@@ -150,26 +274,30 @@ for (i in seq_len(nrow(rows))) {
 summary_txt <- paste(c(
   "## Skip budget", "",
   sprintf("Environment: **%s**", env_name), "",
-  "| gate | observed | expected | |", "|---|---|---|---|", detail, "",
+  "| gate | observed | expected | compared against | |", "|---|---|---|---|---|", detail, "",
   "```",
   sprintf("Observed skips:        %d", obs_total),
   sprintf("Expected skips:        %d", exp_total),
   sprintf("Unexpected skips:      %d", length(unexpected)),
   sprintf("Stale expected skips:  %d", length(stale)),
+  sprintf("Unevaluable rows:      %d", length(bad_needs)),
   "",
-  if (!length(unexpected) && !length(stale)) "PASS" else "FAIL",
+  if (!length(unexpected) && !length(stale) && !length(bad_needs)) "PASS" else "FAIL",
   "```"), collapse = "\n")
 cat("\n", summary_txt, "\n", sep = "")
 if (nzchar(Sys.getenv("GITHUB_STEP_SUMMARY")))
   cat(summary_txt, "\n", file = Sys.getenv("GITHUB_STEP_SUMMARY"), append = TRUE)
 
+if (length(bad_needs))
+  ci_fail("SB2: %d row(s) name a precondition this gate cannot evaluate:\n%s\n       Their counts were not checked at all, which is the defect rather than\n       the fix. Use pkg:<package>, iso:<path under ISOCHRONES_R> or path:<path>.",
+          length(bad_needs), paste(sprintf("       - %s", bad_needs), collapse = "\n"))
 if (length(unexpected))
   ci_fail("SB2: %d gate(s) skipped more than the budget allows:\n%s\n       Something stopped being checked. Fix it, or add it to\n       tests/skip_budget.tsv with a reason.",
           length(unexpected), paste(sprintf("       - %s", unexpected), collapse = "\n"))
 if (length(stale))
   ci_fail("SB2: %d stale budget entry/entries:\n%s\n       The skip no longer happens. Lower the count, so the budget stays a\n       record of what is actually unchecked rather than of what once was.",
           length(stale), paste(sprintf("       - %s", stale), collapse = "\n"))
-if (!length(unexpected) && !length(stale))
+if (!length(unexpected) && !length(stale) && !length(bad_needs))
   ci_ok("%d observed skip(s) across %d gate(s), all budgeted", obs_total, nrow(rows))
 
 ci_finish()

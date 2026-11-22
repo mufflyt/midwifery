@@ -3,15 +3,19 @@
 # Does each FROZEN consumer need a frozen POPULATION, or is it merely pinned to
 # stale LINKAGE?
 # =============================================================================
-# artifacts/amcb_npi_linkage_FROZEN.csv is ONE 54-column file carrying TWO
+# artifacts/amcb_npi_linkage_FROZEN.csv is ONE 60-column file carrying TWO
 # different kinds of claim, and that is why the freeze is hard to reason about:
 #
 #   POPULATION  who is in the study -- certification_number, amcb_id, status,
 #               certification_date, the AMCB name fields, cohort_member. This
 #               is a scientific definition. Its manifest records a deliberate
-#               decision ("Option 2: class-5 held OUT of analytic membership",
-#               run refreeze_option2_20260810T192207, 16,898 members), and
-#               changing it changes what the paper is about.
+#               decision -- currently the 2026-10-22 re-freeze that retired
+#               class-4 (Levenshtein surname) matching, run
+#               reconcile_ab_20261022T134500_remove_fuzzy_surname_matching,
+#               16,775 members -- and changing it changes what the paper is
+#               about. This comment described the 54-column, 16,898-member
+#               2026-08-10 freeze until 2026-11-13; the shape and the count
+#               belong to the manifest, not to a comment written once.
 #   LINKAGE     which NPI that person is, and the evidence for it -- npi,
 #               npi_match_*, name_evidence_class, linkage_tier, match_strategy,
 #               and every nppes_* field. This is an EVIDENCE-DEPENDENT estimate.

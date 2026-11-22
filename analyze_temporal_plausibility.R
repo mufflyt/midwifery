@@ -48,18 +48,15 @@ source(file.path("R", "lib", "artifact_provenance.R"))
 # amcb_certification_year(): defined ONCE beside amcb_temporal_separation(),
 # which consumes the year it produces.
 source(file.path("R", "amcb_resolver.R"))
+source(file.path("R", "lib", "script_cli_and_keys.R"))
 
-tp_arg <- function(k, d) {
-  h <- grep(paste0("^--", k, "="), commandArgs(TRUE), value = TRUE)
-  if (length(h)) sub(paste0("^--", k, "="), "", h[1]) else d
-}
-CROSSWALK <- tp_arg("crosswalk", file.path("artifacts", "amcb_npi_linkage_FROZEN.csv"))
-PANEL     <- tp_arg("panel", "midwife_panel.csv")
+CROSSWALK <- cli_arg("crosswalk", file.path("artifacts", "amcb_npi_linkage_FROZEN.csv"))
+PANEL     <- cli_arg("panel", "midwife_panel.csv")
 # Years an NPI may precede certification before the pairing is called
 # implausible. NOT zero: an RN enumerates years before she certifies as a
 # midwife, and that is the normal career order, so only a LONG lead is
 # informative. The default is deliberately generous.
-GRACE     <- as.numeric(tp_arg("grace", "25"))
+GRACE     <- as.numeric(cli_arg("grace", "25"))
 
 for (f in c(CROSSWALK, PANEL))
   if (!file.exists(f))
@@ -136,7 +133,7 @@ message("\n-- SEPARATION: could the signal break the quarantined ties? --")
 tied_n <- sum(x$npi_match_status == "ambiguous_tied_names", na.rm = TRUE)
 tied_ids <- x$amcb_id[x$npi_match_status == "ambiguous_tied_names" &
                         !is.na(x$npi_match_status)]
-AUDIT <- tp_arg("audit", file.path("artifacts", "linkage_candidate_audit.csv"))
+AUDIT <- cli_arg("audit", file.path("artifacts", "linkage_candidate_audit.csv"))
 
 if (!file.exists(AUDIT)) {
   message(sprintf("  %s records are quarantined as tied, but %s is absent, so the",

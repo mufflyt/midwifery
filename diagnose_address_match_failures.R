@@ -79,11 +79,13 @@ root_dir <- {
   if (length(a)) normalizePath(dirname(sub("--file=", "", a[1]))) else normalizePath(".")
 }
 setwd(root_dir)
+source(file.path("R", "lib", "common_helpers.R"))  # chr(): all-character reader
 source(file.path("R", "lib", "artifact_provenance.R"))
 source(file.path("R", "lib", "address_keys.R"))
 source(file.path("R", "lib", "duckdb_guards.R"))
 
 source(file.path("R", "lib", "medicare_duckdb.R"))
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # zip5_sql()
 
 NPPES <- Sys.getenv("NPPES_2025", "")
 if (!nzchar(NPPES))
@@ -148,8 +150,7 @@ normalise_aggressively <- function(a) {
 # =============================================================================
 # Cohort and candidate organizations
 # =============================================================================
-rd <- function(p) read_csv(p, col_types = cols(.default = "c"), progress = FALSE)
-reasons <- rd("artifacts/unresolved_affiliation_reasons.csv")
+reasons <- chr("artifacts/unresolved_affiliation_reasons.csv")
 cli::cli_alert_info("unresolved cohort: {format(nrow(reasons), big.mark = ',')}")
 
 con <- duckdb_connect()
@@ -178,7 +179,7 @@ cli::cli_alert_success("live Type-2 organizations: {format(dbGetQuery(con,'SELEC
 # house number. See reconcile_address_parser_universe.R for the argument.
 duckdb::duckdb_register(con, "bk", tibble(bk = unique(na.omit(mw$bk))))
 cand <- dbGetQuery(con, "
-  WITH k AS (SELECT *, SUBSTR(REGEXP_REPLACE(zip,'[^0-9]','','g'),1,5) AS z5,
+  WITH k AS (SELECT *, ", zip5_sql("zip"), " AS z5,
     CASE WHEN REGEXP_MATCHES(TRIM(addr),'^[0-9]+') THEN REGEXP_EXTRACT(TRIM(addr),'^[0-9]+')
          WHEN REGEXP_MATCHES(TRIM(UPPER(addr)),'^[NSEW][0-9]') THEN REGEXP_EXTRACT(TRIM(UPPER(addr)),'^[NSEW][0-9]+([NSEW][0-9]+)?') END AS hn
     FROM org2)

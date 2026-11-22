@@ -85,6 +85,504 @@ mw_diff <- function(x1, n1, x2, n2, z = 1.96) {
 
 # -----------------------------------------------------------------------------
 
+#' Address lead-lag, freshness decay and Medicaid timing
+#'
+#' @description
+#' Reads only committed artifacts and writes only its own catalog keys, so
+#' it lifts out of `mw_build_catalog()` whole. Extracted for the same reason
+#' as `mw_section_dbacc()`: the caller measured cyclomatic complexity 136.
+#'
+#' @param cat_ [list] the catalog so far.
+#' @param rd [function] the artifact reader.
+#' @return [list] `cat_` with this section's keys added.
+mw_section_leadlag <- function(cat_, rd) {
+# --- Address Lead-Lag, Freshness Decay, and Medicaid Timing ----------------
+ll_tab <- rd(file.path(MW_ART, "address_lead_lag_openpayments_nppes.csv"))
+fr_tab <- rd(file.path(MW_ART, "address_agreement_by_nppes_freshness.csv"))
+md_tab <- rd(file.path(MW_ART, "address_lead_lag_medicaid_nppes_moves.csv"))
+if (!is.null(ll_tab) && !is.null(fr_tab) && !is.null(md_tab)) {
+  attr_col <- if ("attribute" %in% names(ll_tab)) "attribute" else "level"
+  ll_r <- function(lv) ll_tab[ll_tab[[attr_col]] == lv, , drop = FALSE]
+  get_v <- function(df, g_nm, l_nm) if (g_nm %in% names(df)) df[[g_nm]][1] else df[[l_nm]][1]
+
+  st_r <- ll_r("state"); ct_r <- ll_r("city"); zp_r <- ll_r("zip5"); sr_r <- ll_r("street")
+  st_a_brk <- get_v(st_r, "a_breaks_concordance_first", "op_breaks_concordance_first")
+  st_b_brk <- get_v(st_r, "b_breaks_concordance_first", "nppes_breaks_concordance_first")
+  sr_a_brk <- get_v(sr_r, "a_breaks_concordance_first", "op_breaks_concordance_first")
+  sr_b_brk <- get_v(sr_r, "b_breaks_concordance_first", "nppes_breaks_concordance_first")
+
+  f_dac <- fr_tab[fr_tab$comparison == "DAC (2026) vs NPPES (2026)" &
+                  fr_tab$stratification == "nppes_street_spell_age", , drop = FALSE]
+  f_op  <- fr_tab[grepl("Open Payments", fr_tab$comparison), , drop = FALSE]
+  f_car <- fr_tab[fr_tab$stratification == "amcb_career_tenure", , drop = FALSE]
+
+  d0  <- f_dac[grepl("^0 yrs", f_dac$stratum), , drop = FALSE]
+  d12 <- f_dac[f_dac$stratum == "1-2 yrs", , drop = FALSE]
+  d11 <- f_dac[grepl("^11\\+ yrs", f_dac$stratum), , drop = FALSE]
+  op0 <- f_op[grepl("^0 yrs", f_op$stratum), , drop = FALSE]
+  op11 <- f_op[grepl("^11\\+ yrs", f_op$stratum), , drop = FALSE]
+  c35 <- f_car[grepl("^3-5 yrs", f_car$stratum), , drop = FALSE]
+  c1120 <- f_car[grepl("^11-20 yrs", f_car$stratum), , drop = FALSE]
+  c21 <- f_car[grepl("^21\\+ yrs", f_car$stratum), , drop = FALSE]
+
+  m_dest <- md_tab[md_tab$direction_type == "destination_arrival_timing", , drop = FALSE]
+  m_orig <- md_tab[md_tab$direction_type == "origin_departure_termination_timing", , drop = FALSE]
+  n_med_lead_12 <- sum(m_dest$n[grepl("led by [12] yr", m_dest$category) & !grepl("Panel|NPPES", m_dest$category)])
+  n_same_yr     <- sum(m_dest$n[grepl("Same calendar year", m_dest$category)])
+  n_nppes_lead  <- sum(m_dest$n[grepl("(Panel|NPPES) led by", m_dest$category)])
+  n_acute       <- n_med_lead_12 + n_same_yr + n_nppes_lead
+  orig_before   <- m_orig[grepl("BEFORE", m_orig$category), , drop = FALSE]
+  orig_same     <- m_orig[grepl("SAME", m_orig$category), , drop = FALSE]
+  orig_after    <- m_orig[grepl("AFTER", m_orig$category), , drop = FALSE]
+
+  n_tot_moves <- if ("total_panel_moves" %in% names(m_dest)) {
+    m_dest$total_panel_moves[1]
+  } else if ("total_nppes_moves" %in% names(m_dest)) {
+    m_dest$total_nppes_moves[1]
+  } else {
+    2672L
+  }
+
+  cat_$leadlag <- list(
+    n_transitions          = st_r$n_paired_transitions[1],
+    state_a_breaks_n       = st_a_brk,
+    state_b_breaks_n       = st_b_brk,
+    state_break_ratio      = st_a_brk / pmax(1, st_b_brk),
+    street_a_breaks_n      = sr_a_brk,
+    street_b_breaks_n      = sr_b_brk,
+    street_break_ratio     = sr_a_brk / pmax(1, sr_b_brk),
+    state_disc_2022_n      = get_v(st_r, "disc_base_n", "disc_2022_n"),
+    state_b_adopts_n       = get_v(st_r, "b_adopts_a_multi_n", "nppes_adopts_op2022_by_2026_n"),
+    state_b_adopts_pct     = get_v(st_r, "b_adopts_a_multi_pct", "nppes_adopts_op2022_by_2026_pct"),
+    street_disc_2022_n     = get_v(sr_r, "disc_base_n", "disc_2022_n"),
+    street_b_adopts_n      = get_v(sr_r, "b_adopts_a_multi_n", "nppes_adopts_op2022_by_2026_n"),
+    street_b_adopts_pct    = get_v(sr_r, "b_adopts_a_multi_pct", "nppes_adopts_op2022_by_2026_pct"),
+    city_a_reverts_pct     = get_v(ct_r, "a_reverts_b_multi_pct", "op_reverts_np2022_by_2025_pct"),
+    zip_a_reverts_pct      = get_v(zp_r, "a_reverts_b_multi_pct", "op_reverts_np2022_by_2025_pct"),
+    street_a_reverts_pct   = get_v(sr_r, "a_reverts_b_multi_pct", "op_reverts_np2022_by_2025_pct"),
+    dac_street_disc_n      = get_v(sr_r, "cross_section_disc_n", "dac2026_disc_n"),
+    dac_street_prior_n     = get_v(sr_r, "cross_section_in_prior_b_n", "dac2026_in_prior_nppes_n"),
+    dac_street_prior_pct   = get_v(sr_r, "cross_section_in_prior_b_pct", "dac2026_in_prior_nppes_pct"),
+    dac_zip_disc_n         = get_v(zp_r, "cross_section_disc_n", "dac2026_disc_n"),
+    dac_zip_prior_n        = get_v(zp_r, "cross_section_in_prior_b_n", "dac2026_in_prior_nppes_n"),
+    dac_zip_prior_pct      = get_v(zp_r, "cross_section_in_prior_b_pct", "dac2026_in_prior_nppes_pct"),
+    dac_total_n            = sum(f_dac$n),
+    dac_12yr_n             = d12$n[1],
+    dac_12yr_state_pct     = d12$state_agree_pct[1],
+    dac_12yr_city_pct      = d12$city_agree_pct[1],
+    dac_12yr_zip_pct       = d12$zip5_agree_pct[1],
+    dac_12yr_street_pct    = d12$street_agree_pct[1],
+    dac_0yr_n              = d0$n[1],
+    dac_0yr_state_pct      = d0$state_agree_pct[1],
+    dac_0yr_street_pct     = d0$street_agree_pct[1],
+    dac_11yr_n             = d11$n[1],
+    dac_11yr_city_pct      = d11$city_agree_pct[1],
+    dac_11yr_zip_pct       = d11$zip5_agree_pct[1],
+    dac_11yr_street_pct    = d11$street_agree_pct[1],
+    car_35_street_pct      = c35$street_agree_pct[1],
+    car_1120_street_pct    = c1120$street_agree_pct[1],
+    car_21_street_pct      = c21$street_agree_pct[1],
+    op_total_n             = sum(f_op$n),
+    op_0yr_street_pct      = op0$street_agree_pct[1],
+    op_11yr_street_pct     = op11$street_agree_pct[1],
+    med_total_moves_n      = n_tot_moves,
+    med_dest_matched_n     = m_dest$total_matched_moves[1],
+    med_preexisting_3yr_n  = sum(m_dest$n[grepl("3\\+ yrs", m_dest$category)]),
+    med_acute_n            = n_acute,
+    med_lead_12yr_n        = n_med_lead_12,
+    med_lead_12yr_pct      = 100 * n_med_lead_12 / n_acute,
+    med_same_yr_n          = n_same_yr,
+    med_same_yr_pct        = 100 * n_same_yr / n_acute,
+    med_nppes_lead_n       = n_nppes_lead,
+    med_nppes_lead_pct     = 100 * n_nppes_lead / n_acute,
+    med_lead_ratio         = n_med_lead_12 / pmax(1, n_nppes_lead),
+    med_orig_matched_n     = m_orig$total_matched_moves[1],
+    med_orig_after_n       = orig_after$n[1],
+    med_orig_after_pct     = orig_after$pct_of_matched[1],
+    med_orig_same_n        = orig_same$n[1],
+    med_orig_same_pct      = orig_same$pct_of_matched[1],
+    med_orig_before_n      = orig_before$n[1],
+    med_orig_before_pct    = orig_before$pct_of_matched[1]
+  )
+}
+
+
+  cat_
+}
+
+#' Trilliant: an independent, claims-based check on ACTIVE
+#'
+#' @description
+#' Reads only committed artifacts and writes only its own catalog keys.
+#' Extracted from `mw_build_catalog()` for the same reason as the two
+#' sections beside it: the caller measured cyclomatic complexity 136, the
+#' worst in the tree, and these three sections lift out whole.
+#'
+#' @param cat_ [list] the catalog so far.
+#' @param rd [function] the artifact reader.
+#' @param root [character(1)] repository root; this section globs for its
+#'   validation files rather than naming one.
+#' @return [list] `cat_` with this section's keys added.
+mw_section_trilliant <- function(cat_, rd, root) {
+# --- Trilliant: an independent, claims-based check on "ACTIVE" -------------
+# "ACTIVE" throughout this manuscript means AMCB certification standing, an
+# administrative status -- never claimed to mean currently practicing.
+# Trilliant's directory_provider carries its own independent, claims-derived
+# active_provider flag (enrich_trilliant_demographics.R), which this project
+# has never used to ask the obvious question: for the cohort certification
+# already calls ACTIVE, how many show no independent claims-based activity
+# signal at all? The TRACKED aggregate (trilliant_demographics_validation_
+# <freeze sha8>.csv) is read here, not the gitignored person-level file, so
+# this number is reproducible from what the repository actually ships.
+# file.path(root, ...) before Sys.glob(): a bare pattern glob()s against the
+# process's cwd, which is not necessarily `root` when the manuscript renders
+# from a different working directory than the repository root.
+trl_val_files <- sort(Sys.glob(file.path(root, MW_ART, "trilliant_demographics_validation_*.csv")))
+if (length(trl_val_files)) {
+  # SELECT BY CONTENT, NOT BY FILE METADATA. Multiple hash-named files
+  # accumulate here across freezes (the suffix is a freeze SHA256 prefix,
+  # not a date), and NEITHER filename order NOR file modification time
+  # reliably picks the one with the "activity" rows this section needs:
+  # alphabetical order has no relationship to when a row was added, and
+  # mtime is WORSE on a fresh CI checkout -- git sets every file's mtime to
+  # roughly the checkout moment, not its commit history, so "most recently
+  # modified" is close to arbitrary there (confirmed 2026-11-05: this exact
+  # bug shipped once already, picking a pre-2026-11-05 file with no
+  # "activity" rows and silently producing no cat_$trilliant section on
+  # CI). Instead, read every candidate and use the first one that actually
+  # contains both rows this section needs.
+  for (f in trl_val_files) {
+    trl_val <- suppressWarnings(readr::read_csv(f, show_col_types = FALSE, progress = FALSE))
+    act_row   <- trl_val[trl_val$field == "activity" &
+                          trl_val$check == "Trilliant active_provider == TRUE", , drop = FALSE]
+    inact_row <- trl_val[trl_val$field == "activity" &
+                          trl_val$check == "Trilliant active_provider == FALSE despite ACTIVE AMCB certification", , drop = FALSE]
+    if (nrow(act_row) == 1L && nrow(inact_row) == 1L) {
+      n_cohort <- act_row$n[1]
+      n_inactive <- inact_row$value[1]
+      cat_$trilliant <- list(
+        n_cohort                     = n_cohort,
+        n_active                     = act_row$value[1],
+        n_inactive_despite_certified = n_inactive,
+        pct_inactive_despite_certified = 100 * n_inactive / n_cohort,
+        # as.character(), not the bare column: readr::read_csv() auto-parses
+        # a column that looks like an ISO date into a Date, and mw_stat()
+        # with no fmt returns it raw -- a Date prints as its day-count
+        # integer (confirmed: "2026-06-25" became 20629) wherever the
+        # manuscript calls mw_stat() without a %s/date format.
+        snapshot                     = as.character(trl_val$trilliant_snapshot[1])
+      )
+      break
+    }
+  }
+}
+  cat_
+}
+
+#' Federal administrative database accuracy section of the catalog
+#'
+#' @description
+#' Every number in `manuscript/federal_database_accuracy.qmd`, read from the
+#' committed artifacts rather than typed into the prose.
+#'
+#' @section Why it is a function:
+#' It was 282 lines inside `mw_build_catalog()`, which the repository's own
+#' complexity measurement scored at cyclomatic complexity 136, the worst in
+#' the tree and 1.7x the next. This section reads only committed artifacts and
+#' writes only `cat_$dbacc`, so it lifts out whole: nothing in it is used by
+#' any other section, and nothing from another section reaches into it. The
+#' catalog it returns is byte-identical to the one the inline version built,
+#' asserted by `tests/test_catalog_split_saboteurs.R`.
+#'
+#' @param cat_ [list] the catalog so far.
+#' @param rd [function] the artifact reader `mw_build_catalog()` defines: takes
+#'   a path, returns a data frame or NULL.
+#' @return [list] `cat_` with `$dbacc` added.
+mw_section_dbacc <- function(cat_, rd) {
+# --- Federal administrative database accuracy -----------------------------
+# Feeds manuscript/federal_database_accuracy.qmd. Every number in that paper
+# is read here from the OIG replication artifacts rather than typed into the
+# prose, for the same reason the rest of this catalog exists: a figure typed
+# into a paragraph outlives the artifact that produced it.
+acc_dir <- file.path(MW_ART, "oig_remake")
+acc_1 <- rd(file.path(acc_dir, "oig_table1_table2_accuracy_summary.csv"))
+acc_2 <- rd(file.path(acc_dir, "oig_table2_inaccuracy_subtypes_by_variable.csv"))
+acc_3 <- rd(file.path(acc_dir, "oig_table3_completeness_2019_and_2026.csv"))
+acc_4 <- rd(file.path(acc_dir, "oig_table4_consistency_2019_and_2026.csv"))
+acc_any <- rd(file.path(acc_dir, "oig_table4_any_variable_inconsistent.csv"))
+acc_lag <- rd(file.path(acc_dir, "oig_update_lag_and_staleness_check.csv"))
+acc_agree <- rd(file.path(MW_ART, "state_source_audit_agreement.csv"))
+
+if (!is.null(acc_2)) {
+  num <- function(x) suppressWarnings(as.numeric(x))
+  row_of <- function(db, pattern) {
+    hit <- acc_2[acc_2$database == db & grepl(pattern, acc_2$variable), ,
+                 drop = FALSE]
+    if (!nrow(hit)) NULL else hit[1, , drop = FALSE]
+  }
+
+  # The three-state track is the one with a machine-readable primary source
+  # for every record; the seven-state track carries unresolved rows and is
+  # reported with its sensitivity bounds rather than as a point estimate.
+  np3 <- row_of("NPPES (2026)", "3 API-Verified")
+  pe3 <- row_of("PECOS (2026)", "3 API-Verified")
+  np7 <- row_of("NPPES (2026)", "All 7 State BON")
+  pe7 <- row_of("PECOS (2026)", "All 7 State BON")
+  npn <- row_of("NPPES (2026)", "Legal Name")
+  pen <- row_of("PECOS (2026)", "Legal Name")
+
+  as_track <- function(r) {
+    if (is.null(r)) return(NULL)
+    list(n_evaluated = num(r$n_evaluated), n_definitive = num(r$n_definitive),
+         n_unresolved = num(r$n_unresolved), n_accurate = num(r$n_accurate),
+         pct_accurate = num(r$pct_accurate_definitive),
+         n_inaccurate = num(r$n_inaccurate_total),
+         pct_inaccurate = num(r$pct_inaccurate_definitive),
+         pct_typo = num(r$pct_of_inaccurate_partially),
+         pct_outdated = num(r$pct_of_inaccurate_formerly),
+         pct_never = num(r$pct_of_inaccurate_never))
+  }
+
+  a <- list(nppes_license_3 = as_track(np3), pecos_license_3 = as_track(pe3),
+            nppes_license_7 = as_track(np7), pecos_license_7 = as_track(pe7),
+            nppes_name = as_track(npn), pecos_name = as_track(pen),
+            subtypes_table = acc_2)
+
+  # The Inspector General's own 2013 findings, carried as the benchmark
+  # column of the rebuilt tables so the comparison cannot drift.
+  if (!is.null(acc_4)) {
+    bm <- acc_4[!is.na(acc_4$oig_2013_benchmark_inconsistent_pct), , drop = FALSE]
+    a$oig_zip_benchmark   <- num(bm$oig_2013_benchmark_inconsistent_pct[
+      bm$attribute == "practice_zip5"][1])
+    a$oig_phone_benchmark <- num(bm$oig_2013_benchmark_inconsistent_pct[
+      bm$attribute == "phone10"][1])
+    a$oig_name_benchmark  <- num(bm$oig_2013_benchmark_inconsistent_pct[
+      bm$attribute == "full_name"][1])
+    cur <- acc_4[acc_4$year == "2026" & acc_4$source_a == "nppes" &
+                   acc_4$source_b == "dac", , drop = FALSE]
+    get_cur <- function(att)
+      num(cur$pct_inconsistent_any_shared[cur$attribute == att][1])
+    a$zip_inconsistent   <- get_cur("practice_zip5")
+    a$state_inconsistent <- get_cur("practice_state")
+    a$phone_inconsistent <- get_cur("phone10")
+    a$cred_inconsistent  <- get_cur("credential")
+    a$name_inconsistent  <- get_cur("full_name")
+    a$consistency_table  <- acc_4
+  }
+
+  if (!is.null(acc_any)) {
+    a$any_inconsistent_2026 <- num(acc_any$pct_any_inconsistent_oig_rule[
+      acc_any$year == "2026"][1])
+    a$any_overlap_2026 <- num(acc_any$n_overlap_providers[
+      acc_any$year == "2026"][1])
+    a$mean_inconsistent_vars <- num(acc_any$mean_inconsistent_vars_per_provider[
+      acc_any$year == "2026"][1])
+    a$oig_any_benchmark <- num(acc_any$oig_2013_benchmark_any_inconsistent_pct[1])
+  }
+
+  if (!is.null(acc_lag)) {
+    band <- acc_lag[acc_lag$analysis_type ==
+      "2026_nppes_record_age_band_vs_pecos_dac_zip5_inconsistency", , drop = FALSE]
+    band$metric_detail <- trimws(band$metric_detail)
+    get_band <- function(lbl) num(band$pct_zip5_inconsistent[
+      band$metric_detail == lbl][1])
+    a$stale_lt1  <- get_band("<1 yr")
+    a$stale_1_3  <- get_band("1-3 yr")
+    a$stale_3_5  <- get_band("3-5 yr")
+    a$stale_5p   <- get_band("5+ yr")
+    a$stale_table <- band
+    res <- acc_lag[grepl("combined_lag_resolution", acc_lag$analysis_type), ,
+                   drop = FALSE]
+    if (nrow(res)) {
+      a$disagree_2021_n <- num(res$n_compared[1])
+      a$unresolved_n    <- num(res$n_zip5_inconsistent[1])
+      a$unresolved_pct  <- num(res$pct_zip5_inconsistent[1])
+    }
+  }
+
+  if (!is.null(acc_3)) {
+    elig <- acc_3[acc_3$completeness_eligible == "TRUE", , drop = FALSE]
+    a$completeness_table <- elig
+    get_inc <- function(yr, src, att) num(elig$pct_incomplete_of_eligible[
+      elig$year == yr & elig$source == src & elig$attribute == att][1])
+    a$nppes_state_incomplete <- get_inc("2026", "nppes", "practice_state")
+    a$nppes_zip_incomplete   <- get_inc("2026", "nppes", "practice_zip5")
+    a$dac_phone_incomplete   <- get_inc("2026", "dac", "phone10")
+    a$dac_cred_incomplete    <- get_inc("2026", "dac", "credential")
+  }
+
+  if (!is.null(acc_agree)) {
+    a$agreement_table <- acc_agree
+    ag <- acc_agree
+    ag$year_int <- suppressWarnings(as.integer(ag$year))
+    dac <- ag[ag$source == "dac_physician_compare" & !is.na(ag$year_int) &
+                ag$year_int <= 2025, , drop = FALSE]
+    if (nrow(dac) >= 3) {
+      fit <- stats::lm(as.numeric(pct_agree) ~ year_int, data = dac,
+                       weights = as.numeric(dac$n_comparable))
+      a$dac_slope <- unname(stats::coef(fit)[2])
+      a$dac_slope_abs <- abs(unname(stats::coef(fit)[2]))
+      a$dac_p <- summary(fit)$coefficients[2, 4]
+      a$dac_years_n <- nrow(dac)
+    }
+    a$state_agree_min <- min(as.numeric(ag$pct_agree), na.rm = TRUE)
+    a$state_agree_max <- max(as.numeric(ag$pct_agree), na.rm = TRUE)
+  }
+  # THE SOURCE ROSTER, COUNTED RATHER THAN ASSERTED. The paper says "ten
+  # sources"; this is where that ten comes from, so the claim cannot drift
+  # from the analysis. One source is the reference standard (the provider
+  # registry), eight are compared pairwise against it, and Medicaid is
+  # carried as its own classification because it is the only source with a
+  # per-provider-year concordance already built, and reducing it to a
+  # percentage would discard the multi-state categories that matter most.
+  acc_cov <- rd(file.path(MW_ART, "state_source_audit_coverage.csv"))
+  acc_mcaid <- rd(file.path(MW_ART,
+                            "state_source_audit_medicaid_classification_by_year.csv"))
+  if (!is.null(acc_cov)) {
+    compared <- sort(unique(acc_agree$source))
+    anchor_src <- setdiff(sort(unique(acc_cov$source)), compared)
+    a$sources_compared <- compared
+    a$sources_compared_n <- length(compared)
+    a$source_anchor <- anchor_src
+    a$sources_total_n <- length(compared) + length(anchor_src) +
+      as.integer(!is.null(acc_mcaid))
+    a$coverage_table <- acc_cov
+  }
+  if (!is.null(acc_mcaid)) {
+    mc <- acc_mcaid
+    mc$n <- as.numeric(mc$n)
+    by_class <- stats::aggregate(n ~ classification, data = mc, FUN = sum)
+    grand <- sum(by_class$n)
+    getc <- function(lbl) {
+      v <- by_class$n[by_class$classification == lbl]
+      if (!length(v)) NA_real_ else v
+    }
+    a$medicaid_years <- paste(range(mc$year), collapse = "-")
+    a$medicaid_total_n <- grand
+    a$medicaid_observed_n <- grand - getc("Not observed")
+    a$medicaid_concordant_n <- getc("Concordant")
+    a$medicaid_multistate_concordant_n <- getc("Multistate concordant")
+    a$medicaid_discordant_n <- getc("Discordant")
+    a$medicaid_multistate_discordant_n <- getc("Multistate discordant")
+    a$medicaid_indeterminate_n <- getc("Indeterminate")
+    obs <- a$medicaid_observed_n
+    a$medicaid_multistate_pct <- 100 *
+      (getc("Multistate concordant") + getc("Multistate discordant")) / obs
+    a$medicaid_table <- by_class
+  }
+
+  # THE SET-MEMBERSHIP PAIR, READ RATHER THAN TYPED. The manuscript stated
+  # these two as literals -- pc(74.7, 1) and pc(88.5, 1) -- in the Results
+  # and again in the Discussion, in a document whose setup chunk says every
+  # figure is reached by key and nothing is typed by hand. They were not
+  # wrong: audit_medicaid_set_membership.R writes them to a tracked
+  # artifact, on 107,386 comparable NPI-years, a different and larger
+  # universe than the 53,414 observed provider-years the classification
+  # table counts. Being right is not the same as being wired up: a typed
+  # number does not move when its artifact is rebuilt, which is the failure
+  # mode this catalog exists to prevent.
+  acc_setm <- rd(file.path(MW_ART, "medicaid_set_membership_before_after.csv"))
+  if (!is.null(acc_setm)) {
+    getq <- function(lbl) {
+      v <- acc_setm$value[acc_setm$quantity == lbl]
+      if (!length(v)) NA_real_ else as.numeric(v)
+    }
+    a$medicaid_equality_pct <- getq("agreement, equality with the modal pick (%)")
+    a$medicaid_membership_pct <- getq("agreement, membership of the enrolled set (%)")
+    a$medicaid_comparable_npi_years <- getq("comparable NPI-years vs NPPES")
+    a$medicaid_newly_agreeing_n <- getq("NPI-years newly scored as agreeing")
+    a$setm_table <- acc_setm
+  }
+
+  # Supplemental displays (SDC). Butala-style dose-response: unanimous and
+  # pairwise practice-state agreement by number of sources reporting one.
+  acc_nsrc <- rd(file.path(MW_ART,
+    "source_count_agreement_by_n_sources.csv"))
+  if (!is.null(acc_nsrc)) a$source_count_table <- acc_nsrc
+
+  # Haeder-style disposition of base-year disagreements: what happened to
+  # each registry-vs-source discordance at the next observation.
+  acc_mrost <- rd(file.path(MW_ART, "mrost_lead_lag.csv"))
+  if (!is.null(acc_mrost)) a$resolution_table <- acc_mrost
+
+  # NPI-population rate in the public Medicaid enrollment file, by state.
+  # Read so the prose extrema move if the released file is refreshed.
+  acc_npipop <- rd(file.path(MW_ART, "medicaid_npi_population_by_state.csv"))
+  if (!is.null(acc_npipop)) {
+    p <- acc_npipop$pct_segments_with_npi
+    a$medicaid_npi_pop_min <- min(p, na.rm = TRUE)
+    a$medicaid_npi_pop_max <- max(p, na.rm = TRUE)
+    zero_states <-
+      acc_npipop$state[acc_npipop$pct_segments_with_npi == 0]
+    a$medicaid_npi_pop_zero_states <- zero_states
+    # state.abb/state.name are base R and cover the 50 states; the released
+    # file also carries DC and the territories, which that pair does not.
+    # A six-entry hand list lived here and printed the bare abbreviation for
+    # every state outside it, so the prose read "100.0% in SD".
+    state_names <- c(stats::setNames(state.name, state.abb),
+                     VI = "the Virgin Islands", GU = "Guam",
+                     PR = "Puerto Rico", AS = "American Samoa",
+                     MP = "the Northern Mariana Islands",
+                     DC = "the District of Columbia")
+    name_of_state <- function(x) {
+      hit <- state_names[x]
+      ifelse(is.na(hit), x, unname(hit))
+    }
+    a$medicaid_npi_pop_zero_state_names <- name_of_state(zero_states)
+    a$medicaid_npi_pop_max_state_name <-
+      name_of_state(acc_npipop$state[which.max(p)])
+    # How many jurisdictions fall below the 90% that CMS's 10%-missing
+    # provider-NPI threshold implies. The threshold is cited in the Results
+    # prose; without this it is cited and never applied.
+    a$medicaid_npi_pop_n_states <- length(p)
+    a$medicaid_npi_pop_n_below_cms <- sum(p < 90, na.rm = TRUE)
+  }
+
+  # Persistence denominators: where a provider who leaves a source went.
+  acc_pers <- rd(file.path(MW_ART, "persistence_denominators.csv"))
+  if (!is.null(acc_pers)) {
+    p <- acc_pers
+    num_ <- function(v) as.numeric(v)
+    # RESTRICTED TO THE EVALUABLE YEARS, which is DEBT D14 item 1.
+    #
+    # At each source's last observed year there is no t+1, so nobody can be
+    # followed and n_lost_from_source == n_observed by arithmetic rather than
+    # by attrition. Pooling that row made Medicaid's "left source" read 16.9%
+    # where the evaluable years give 0.8%. The producer now withholds those
+    # follow-up cells (blank, not zero), and a row whose t+1 falls past the
+    # registry's last year withholds the leaver-visibility count for the same
+    # reason.
+    #
+    # aggregate()'s formula method would drop the NA rows on its own through
+    # na.action, and that is exactly the problem: a reader of Supplemental
+    # Table S4 cannot see an aggregation's year range, so the restriction is
+    # written out rather than inherited. The subset is the intersection the
+    # gate scores, source t+1 AND registry t+1 both observed, so every column
+    # in the row shares one denominator.
+    evaluable <- p[!is.na(num_(p$n_followed_source)) &
+                   !is.na(num_(p$n_lost_from_source)) &
+                   !is.na(num_(p$n_lost_source_but_in_nppes)), , drop = FALSE]
+    agg <- aggregate(cbind(n_observed, n_followed_source, n_same_state,
+                           n_changed_state,
+                           n_lost_source_but_in_nppes,
+                           n_lost_from_source) ~ source,
+                     data = transform(evaluable,
+                       n_observed = num_(n_observed),
+                       n_followed_source = num_(n_followed_source),
+                       n_same_state = num_(n_same_state),
+                       n_changed_state = num_(n_changed_state),
+                       n_lost_source_but_in_nppes =
+                         num_(n_lost_source_but_in_nppes),
+                       n_lost_from_source = num_(n_lost_from_source)),
+                     FUN = sum, na.rm = TRUE)
+    a$persistence_table <- agg
+  }
+
+  cat_$dbacc <- a
+}
+  cat_
+}
+
 #' Rebuild the whole catalog from source
 #'
 #' @param root [character]: repository root.
@@ -458,27 +956,27 @@ mw_build_catalog <- function(root = ".") {
   # registry existed to record you.
   fl <- rd(file.path(MW_ART, "linkage_coverage_floor.csv"))
   if (!is.null(fl)) {
-    pick <- function(e, s) {
+    pick_era <- function(e, s) {
       r <- fl[fl$era == e & fl$status == s, ]
       if (nrow(r)) r[1, ] else NULL
     }
-    g <- function(e, s, col) { r <- pick(e, s); if (is.null(r)) NA_real_ else r[[col]] }
+    g_era <- function(e, s, col) { r <- pick_era(e, s); if (is.null(r)) NA_real_ else r[[col]] }
     cat_$floor <- list(
-      pre_n           = g("pre_nppes", "ALL", "n"),
-      pre_pct         = g("pre_nppes", "ALL", "pct_linked"),
-      era_n           = g("nppes_era", "ALL", "n"),
-      era_pct         = g("nppes_era", "ALL", "pct_linked"),
-      active_pre_n    = g("pre_nppes", "ACTIVE", "n"),
-      active_pre_pct  = g("pre_nppes", "ACTIVE", "pct_linked"),
-      active_era_n    = g("nppes_era", "ACTIVE", "n"),
-      active_era_pct  = g("nppes_era", "ACTIVE", "pct_linked"),
-      dead_pre_n      = g("pre_nppes", "DECEASED", "n"),
-      dead_pre_pct    = g("pre_nppes", "DECEASED", "pct_linked"),
-      lapsed_pre_n    = g("pre_nppes", "LAPSED", "n"),
-      lapsed_pre_pct  = g("pre_nppes", "LAPSED", "pct_linked"),
-      retired_pre_pct = g("pre_nppes", "RETIRED", "pct_linked"),
-      never_pre       = g("pre_nppes", "ALL", "never_found"),
-      never_era       = g("nppes_era", "ALL", "never_found")
+      pre_n           = g_era("pre_nppes", "ALL", "n"),
+      pre_pct         = g_era("pre_nppes", "ALL", "pct_linked"),
+      era_n           = g_era("nppes_era", "ALL", "n"),
+      era_pct         = g_era("nppes_era", "ALL", "pct_linked"),
+      active_pre_n    = g_era("pre_nppes", "ACTIVE", "n"),
+      active_pre_pct  = g_era("pre_nppes", "ACTIVE", "pct_linked"),
+      active_era_n    = g_era("nppes_era", "ACTIVE", "n"),
+      active_era_pct  = g_era("nppes_era", "ACTIVE", "pct_linked"),
+      dead_pre_n      = g_era("pre_nppes", "DECEASED", "n"),
+      dead_pre_pct    = g_era("pre_nppes", "DECEASED", "pct_linked"),
+      lapsed_pre_n    = g_era("pre_nppes", "LAPSED", "n"),
+      lapsed_pre_pct  = g_era("pre_nppes", "LAPSED", "pct_linked"),
+      retired_pre_pct = g_era("pre_nppes", "RETIRED", "pct_linked"),
+      never_pre       = g_era("pre_nppes", "ALL", "never_found"),
+      never_era       = g_era("nppes_era", "ALL", "never_found")
     )
     # The gap between the two ACTIVE strata is the whole argument, so it is
     # computed here rather than left to a reader subtracting two rendered
@@ -557,37 +1055,37 @@ mw_build_catalog <- function(root = ".") {
   if (!is.null(sig)) {
     row <- function(b) sig[sig$band_minutes == b, ]
     r30 <- row(30); r60 <- row(60)
-    g <- function(r, col) if (nrow(r)) r[[col]][1] else NA_real_
+    g_row <- function(r, col) if (nrow(r)) r[[col]][1] else NA_real_
     gs <- function(r, col) if (nrow(r) && col %in% names(r)) as.character(r[[col]][1]) else NA_character_
     cat_$scope <- list(
-      n_autonomous             = g(r30, "n_autonomous"),
-      n_collaborative          = g(r30, "n_collaborative"),
+      n_autonomous             = g_row(r30, "n_autonomous"),
+      n_collaborative          = g_row(r30, "n_collaborative"),
       # The two counts above are STATES WITH AN ACCESS MEASURE, not the
       # classification. Two autonomous states (AK, HI) have no access row, so
       # 24 vs 25 is being taken from a 26/25 classification -- an exclusion
       # correlated with the exposure, and the manuscript says so rather than
       # leaving a reader to diff two artifacts (#227).
-      n_classified_autonomous    = g(r30, "n_classified_autonomous"),
-      n_classified_collaborative = g(r30, "n_classified_collaborative"),
-      n_excluded                 = g(r30, "n_excluded"),
-      n_excluded_autonomous      = g(r30, "n_excluded_autonomous"),
-      n_excluded_collaborative   = g(r30, "n_excluded_collaborative"),
+      n_classified_autonomous    = g_row(r30, "n_classified_autonomous"),
+      n_classified_collaborative = g_row(r30, "n_classified_collaborative"),
+      n_excluded                 = g_row(r30, "n_excluded"),
+      n_excluded_autonomous      = g_row(r30, "n_excluded_autonomous"),
+      n_excluded_collaborative   = g_row(r30, "n_excluded_collaborative"),
       excluded_states            = gs(r30, "excluded_states"),
       # The exposure's vintage: 2012-2016 law against a 2026 cohort (#226).
       classification_window        = gs(r30, "classification_window"),
-      classification_snapshot_year = g(r30, "classification_snapshot_year"),
-      band30_autonomous_pct    = g(r30, "mean_autonomous_pct"),
-      band30_collaborative_pct = g(r30, "mean_collaborative_pct"),
-      band30_diff_pp           = g(r30, "diff_pp"),
-      band30_ci_lo             = g(r30, "ci_lo"),
-      band30_ci_hi             = g(r30, "ci_hi"),
-      band30_p                 = g(r30, "p_value"),
-      band60_autonomous_pct    = g(r60, "mean_autonomous_pct"),
-      band60_collaborative_pct = g(r60, "mean_collaborative_pct"),
-      band60_diff_pp           = g(r60, "diff_pp"),
-      band60_ci_lo             = g(r60, "ci_lo"),
-      band60_ci_hi             = g(r60, "ci_hi"),
-      band60_p                 = g(r60, "p_value")
+      classification_snapshot_year = g_row(r30, "classification_snapshot_year"),
+      band30_autonomous_pct    = g_row(r30, "mean_autonomous_pct"),
+      band30_collaborative_pct = g_row(r30, "mean_collaborative_pct"),
+      band30_diff_pp           = g_row(r30, "diff_pp"),
+      band30_ci_lo             = g_row(r30, "ci_lo"),
+      band30_ci_hi             = g_row(r30, "ci_hi"),
+      band30_p                 = g_row(r30, "p_value"),
+      band60_autonomous_pct    = g_row(r60, "mean_autonomous_pct"),
+      band60_collaborative_pct = g_row(r60, "mean_collaborative_pct"),
+      band60_diff_pp           = g_row(r60, "diff_pp"),
+      band60_ci_lo             = g_row(r60, "ci_lo"),
+      band60_ci_hi             = g_row(r60, "ci_hi"),
+      band60_p                 = g_row(r60, "p_value")
     )
   }
 
@@ -598,18 +1096,18 @@ mw_build_catalog <- function(root = ".") {
   # strata.R measures it; this makes it citable. See #245.
   vs <- rd(file.path(MW_ART, "linkage_veto_strata.csv"))
   if (!is.null(vs)) {
-    g <- function(k, col) {
+    g_stratum <- function(k, col) {
       r <- vs[vs$stratum == k, ]
       if (nrow(r)) r[[col]][1] else NA_real_
     }
     cat_$veto <- list(
-      absence_c2_cohort_n   = g("resolved_by_absence_c2", "n_study_cohort"),
-      absence_c2_cohort_pct = g("resolved_by_absence_c2", "pct_of_study_cohort"),
-      absence_c5_cohort_n   = g("resolved_by_absence_c5", "n_study_cohort"),
-      demoted_c5_roster_n   = g("npi_demoted_absence_c5", "n_roster"),
-      unmatched_after_veto_roster_n = g("unmatched_after_middle_veto", "n_roster"),
-      multi_exact_cohort_n  = g("exact_first_last_multiple_candidates", "n_study_cohort"),
-      multi_exact_cohort_pct = g("exact_first_last_multiple_candidates", "pct_of_study_cohort")
+      absence_c2_cohort_n   = g_stratum("resolved_by_absence_c2", "n_study_cohort"),
+      absence_c2_cohort_pct = g_stratum("resolved_by_absence_c2", "pct_of_study_cohort"),
+      absence_c5_cohort_n   = g_stratum("resolved_by_absence_c5", "n_study_cohort"),
+      demoted_c5_roster_n   = g_stratum("npi_demoted_absence_c5", "n_roster"),
+      unmatched_after_veto_roster_n = g_stratum("unmatched_after_middle_veto", "n_roster"),
+      multi_exact_cohort_n  = g_stratum("exact_first_last_multiple_candidates", "n_study_cohort"),
+      multi_exact_cohort_pct = g_stratum("exact_first_last_multiple_candidates", "pct_of_study_cohort")
     )
   }
 
@@ -838,13 +1336,13 @@ mw_build_catalog <- function(root = ".") {
   # --- Table 1 ---------------------------------------------------------------
   t1 <- rd(file.path(MW_ART, "table1_midwives.csv"))
   if (!is.null(t1)) {
-    pick <- function(rx) {
+    pick_t1 <- function(rx) {
       r <- t1[grepl(rx, t1$characteristic, ignore.case = TRUE), ]
       if (nrow(r)) r$percent[1] else NA_real_
     }
     # This row's own percent is NA by design: these people remain in the
     # Table 1 cohort but their state/jurisdiction is absent from the supplied
-    # ACNM region table. Read the raw n rather than asking pick() for percent.
+    # ACNM region table. Read the raw n rather than asking pick_t1() for percent.
     pickn <- function(rx) {
       r <- t1[grepl(rx, t1$characteristic, ignore.case = TRUE), ]
       if (nrow(r)) r$n[1] else NA_real_
@@ -881,8 +1379,8 @@ mw_build_catalog <- function(root = ".") {
       n_canonical    = t1_n_canonical,
       n_is_canonical = !is.na(t1_n_canonical) &&
         identical(as.integer(t1$n[1]), as.integer(t1_n_canonical)),
-      n = t1$n[1], cnm_pct = pick("^Certified Nurse-Midwife$"),
-      cm_pct = pick("^Certified Midwife$"), female_pct = pick("^Female$"),
+      n = t1$n[1], cnm_pct = pick_t1("^Certified Nurse-Midwife$"),
+      cm_pct = pick_t1("^Certified Midwife$"), female_pct = pick_t1("^Female$"),
       # NOTE: this n's denominator is t1$n[1] ("ACTIVE, primary-linked
       # midwives" -- ACTIVE status AND primary midwifery-taxonomy match
       # only), NOT exclusion.active_matched_n. Don't divide this by the wrong
@@ -909,168 +1407,168 @@ mw_build_catalog <- function(root = ".") {
     )
   }
 
-  # --- Trilliant: an independent, claims-based check on "ACTIVE" -------------
-  # "ACTIVE" throughout this manuscript means AMCB certification standing, an
-  # administrative status -- never claimed to mean currently practicing.
-  # Trilliant's directory_provider carries its own independent, claims-derived
-  # active_provider flag (enrich_trilliant_demographics.R), which this project
-  # has never used to ask the obvious question: for the cohort certification
-  # already calls ACTIVE, how many show no independent claims-based activity
-  # signal at all? The TRACKED aggregate (trilliant_demographics_validation_
-  # <freeze sha8>.csv) is read here, not the gitignored person-level file, so
-  # this number is reproducible from what the repository actually ships.
-  # file.path(root, ...) before Sys.glob(): a bare pattern glob()s against the
-  # process's cwd, which is not necessarily `root` when the manuscript renders
-  # from a different working directory than the repository root.
-  trl_val_files <- sort(Sys.glob(file.path(root, MW_ART, "trilliant_demographics_validation_*.csv")))
-  if (length(trl_val_files)) {
-    # SELECT BY CONTENT, NOT BY FILE METADATA. Multiple hash-named files
-    # accumulate here across freezes (the suffix is a freeze SHA256 prefix,
-    # not a date), and NEITHER filename order NOR file modification time
-    # reliably picks the one with the "activity" rows this section needs:
-    # alphabetical order has no relationship to when a row was added, and
-    # mtime is WORSE on a fresh CI checkout -- git sets every file's mtime to
-    # roughly the checkout moment, not its commit history, so "most recently
-    # modified" is close to arbitrary there (confirmed 2026-11-05: this exact
-    # bug shipped once already, picking a pre-2026-11-05 file with no
-    # "activity" rows and silently producing no cat_$trilliant section on
-    # CI). Instead, read every candidate and use the first one that actually
-    # contains both rows this section needs.
-    for (f in trl_val_files) {
-      trl_val <- suppressWarnings(readr::read_csv(f, show_col_types = FALSE, progress = FALSE))
-      act_row   <- trl_val[trl_val$field == "activity" &
-                            trl_val$check == "Trilliant active_provider == TRUE", , drop = FALSE]
-      inact_row <- trl_val[trl_val$field == "activity" &
-                            trl_val$check == "Trilliant active_provider == FALSE despite ACTIVE AMCB certification", , drop = FALSE]
-      if (nrow(act_row) == 1L && nrow(inact_row) == 1L) {
-        n_cohort <- act_row$n[1]
-        n_inactive <- inact_row$value[1]
-        cat_$trilliant <- list(
-          n_cohort                     = n_cohort,
-          n_active                     = act_row$value[1],
-          n_inactive_despite_certified = n_inactive,
-          pct_inactive_despite_certified = 100 * n_inactive / n_cohort,
-          # as.character(), not the bare column: readr::read_csv() auto-parses
-          # a column that looks like an ISO date into a Date, and mw_stat()
-          # with no fmt returns it raw -- a Date prints as its day-count
-          # integer (confirmed: "2026-06-25" became 20629) wherever the
-          # manuscript calls mw_stat() without a %s/date format.
-          snapshot                     = as.character(trl_val$trilliant_snapshot[1])
-        )
-        break
+  # Trilliant claims-based ACTIVE check: lifted out whole.
+  cat_ <- mw_section_trilliant(cat_, rd, root)
+
+  # Address lead-lag, freshness decay and Medicaid timing: lifted out whole.
+  cat_ <- mw_section_leadlag(cat_, rd)
+  # --- Twelve-source state concordance (mysteryroster) ----------------------
+  # compare_all_sources_mysteryroster.R cross-checks twelve independent
+  # sources -- six longitudinal panels and six current-only snapshots --
+  # against each other on one attribute, practice state. There is no gold
+  # standard among them, so every quantity here is a statement about
+  # CONSISTENCY, never about correctness: a midwife can be correctly recorded
+  # in two states by two sources built for different purposes.
+  #
+  # WHY THIS IS A SEPARATE SECTION FROM `leadlag`. Both measure which source
+  # changes first, and both include an NPPES-to-Open-Payments comparison, so
+  # they look interchangeable and are not. `leadlag` is the ADDRESS-level
+  # audit (street/ZIP/city/state) over matched address pairs from
+  # address_lead_lag_openpayments_nppes.csv. This section is STATE-level only,
+  # over the twelve-source presence panel, which is a different denominator.
+  # The two therefore disagree on the NPPES-Open-Payments state figure BY
+  # CONSTRUCTION, and neither is wrong. Any prose quoting one must name its
+  # basis, and the two must never be declared equal in
+  # manuscript/protected_results.tsv -- P4 would be enforcing an identity that
+  # the designs do not claim.
+  #
+  # CONFIDENCE INTERVALS ARE ADDED HERE, not taken from the artifacts. The
+  # mysteryroster tables carry point estimates for agreement and odd-one-out;
+  # a results paragraph of bare proportions is not reportable, and the smallest
+  # strata are small enough for it to matter (state boards of nursing
+  # contribute 648 records, the split consensus tier 550 midwives). mw_wilson()
+  # is the same arithmetic the rest of this catalog uses.
+  mr_inv  <- rd(file.path(MW_ART, "mrost_source_inventory.csv"))
+  mr_tier <- rd(file.path(MW_ART, "mrost_consensus_tier.csv"))
+  mr_odd  <- rd(file.path(MW_ART, "mrost_odd_one_out_rate.csv"))
+  mr_fus  <- rd(file.path(MW_ART, "mrost_truth_fusion_agreement.csv"))
+  mr_pw   <- rd(file.path(MW_ART, "mrost_agreement_pairwise.csv"))
+  mr_ll   <- rd(file.path(MW_ART, "mrost_lead_lag.csv"))
+
+  if (!is.null(mr_inv) && !is.null(mr_tier) && !is.null(mr_odd) && !is.null(mr_fus)) {
+    s <- list()
+
+    # Inventory. n_sources is read, not typed: the comparison gains sources as
+    # historical series are recovered (Open Payments went from one year to
+    # five in November 2026), and a hard-coded "twelve" in the prose would go
+    # stale the next time one is added.
+    s$n_sources      <- nrow(mr_inv)
+    s$n_longitudinal <- sum(mr_inv$tier == "longitudinal")
+    s$n_snapshot     <- sum(mr_inv$tier == "snapshot")
+    s$panel_year_min <- suppressWarnings(min(mr_inv$year_min, na.rm = TRUE))
+    s$panel_year_max <- suppressWarnings(max(mr_inv$year_max, na.rm = TRUE))
+
+    # Consensus tier: the headline concordance result. Pulled by name rather
+    # than by row position so a reordered artifact cannot silently swap
+    # "unanimous" for "split".
+    #
+    # ITS DENOMINATOR IS NOT THE COHORT, and this is the one thing in this
+    # section a reader can most easily get wrong. `tier_total_n` is 15,999:
+    # the midwives for whom a consensus is DEFINED, meaning enough sources
+    # name a state to compare. NPPES alone carries 16,885, so roughly 900
+    # cohort members are outside this denominator entirely -- not disagreeing,
+    # just unobserved by a second source. A "71% unanimous" sentence that
+    # divides by the cohort is a different and smaller number, and the
+    # shortfall below is exposed as a key so the prose can state what the
+    # denominator excludes instead of implying it includes everyone.
+    tier_v <- function(nm, col) {
+      r <- mr_tier[mr_tier$tier == nm, , drop = FALSE]
+      if (!nrow(r)) return(NA_real_)
+      as.numeric(r[[col]][1])
+    }
+    s$tier_total_n  <- sum(mr_tier$n_npis)
+    for (tn in c("unanimous", "majority", "split")) {
+      s[[paste0(tn, "_n")]]   <- tier_v(tn, "n_npis")
+      s[[paste0(tn, "_pct")]] <- tier_v(tn, "pct")
+      ci <- mw_wilson(tier_v(tn, "n_npis"), sum(mr_tier$n_npis))
+      s[[paste0(tn, "_lo")]]  <- ci[1]
+      s[[paste0(tn, "_hi")]]  <- ci[2]
+    }
+
+    # Per-source keys are built in a loop so that recovering a new historical
+    # series adds keys without a code change here. Source names are already
+    # snake_case in every artifact, so they are key-safe as they stand.
+    for (i in seq_len(nrow(mr_odd))) {
+      nm <- mr_odd$source[i]
+      n_odd <- as.numeric(mr_odd$n_odd_one_out[i]); n_el <- as.numeric(mr_odd$n_eligible[i])
+      ci <- mw_wilson(n_odd, n_el)
+      s[[paste0("odd_", nm, "_n")]]   <- n_odd
+      s[[paste0("odd_", nm, "_eligible_n")]] <- n_el
+      # Stored as a PERCENT, while the artifact's own odd_rate column is a
+      # proportion. Both forms of 0.165 read as plausible in prose, and the
+      # interval beside it is in percent, so the two must not be mixed.
+      s[[paste0("odd_", nm, "_pct")]] <- 100 * n_odd / n_el
+      s[[paste0("odd_", nm, "_lo")]]  <- ci[1]
+      s[[paste0("odd_", nm, "_hi")]]  <- ci[2]
+    }
+
+    for (i in seq_len(nrow(mr_fus))) {
+      nm <- mr_fus$source[i]
+      ci <- mw_wilson(as.numeric(mr_fus$n_agree[i]), as.numeric(mr_fus$n_comparable[i]))
+      s[[paste0("fusion_", nm, "_n")]]   <- as.numeric(mr_fus$n_comparable[i])
+      s[[paste0("fusion_", nm, "_pct")]] <- as.numeric(mr_fus$pct_agree_with_fused[i])
+      s[[paste0("fusion_", nm, "_lo")]]  <- ci[1]
+      s[[paste0("fusion_", nm, "_hi")]]  <- ci[2]
+    }
+
+    # Pairwise agreement is stored for the NPPES pairings only. NPPES is the
+    # panel's backbone (99.9% of the cohort appears in it), so it is the one
+    # comparator every other source has enough overlap with to report. The
+    # artifact does not guarantee NPPES is source_a, so the row is found by
+    # membership in the pair rather than by column.
+    if (!is.null(mr_pw)) {
+      for (i in seq_len(nrow(mr_pw))) {
+        pair <- c(mr_pw$source_a[i], mr_pw$source_b[i])
+        if (!"nppes" %in% pair) next
+        nm <- setdiff(pair, "nppes")
+        if (length(nm) != 1L) next
+        ci <- mw_wilson(as.numeric(mr_pw$n_agree[i]), as.numeric(mr_pw$n_comparable[i]))
+        s[[paste0("pw_", nm, "_n")]]   <- as.numeric(mr_pw$n_comparable[i])
+        s[[paste0("pw_", nm, "_pct")]] <- as.numeric(mr_pw$pct_agree[i])
+        s[[paste0("pw_", nm, "_lo")]]  <- ci[1]
+        s[[paste0("pw_", nm, "_hi")]]  <- ci[2]
       }
     }
-  }
 
-  # --- Address Lead-Lag, Freshness Decay, and Medicaid Timing ----------------
-  ll_tab <- rd(file.path(MW_ART, "address_lead_lag_openpayments_nppes.csv"))
-  fr_tab <- rd(file.path(MW_ART, "address_agreement_by_nppes_freshness.csv"))
-  md_tab <- rd(file.path(MW_ART, "address_lead_lag_medicaid_nppes_moves.csv"))
-  if (!is.null(ll_tab) && !is.null(fr_tab) && !is.null(md_tab)) {
-    attr_col <- if ("attribute" %in% names(ll_tab)) "attribute" else "level"
-    ll_r <- function(lv) ll_tab[ll_tab[[attr_col]] == lv, , drop = FALSE]
-    get_v <- function(df, g_nm, l_nm) if (g_nm %in% names(df)) df[[g_nm]][1] else df[[l_nm]][1]
-
-    st_r <- ll_r("state"); ct_r <- ll_r("city"); zp_r <- ll_r("zip5"); sr_r <- ll_r("street")
-    st_a_brk <- get_v(st_r, "a_breaks_concordance_first", "op_breaks_concordance_first")
-    st_b_brk <- get_v(st_r, "b_breaks_concordance_first", "nppes_breaks_concordance_first")
-    sr_a_brk <- get_v(sr_r, "a_breaks_concordance_first", "op_breaks_concordance_first")
-    sr_b_brk <- get_v(sr_r, "b_breaks_concordance_first", "nppes_breaks_concordance_first")
-
-    f_dac <- fr_tab[fr_tab$comparison == "DAC (2026) vs NPPES (2026)" &
-                    fr_tab$stratification == "nppes_street_spell_age", , drop = FALSE]
-    f_op  <- fr_tab[grepl("Open Payments", fr_tab$comparison), , drop = FALSE]
-    f_car <- fr_tab[fr_tab$stratification == "amcb_career_tenure", , drop = FALSE]
-
-    d0  <- f_dac[grepl("^0 yrs", f_dac$stratum), , drop = FALSE]
-    d12 <- f_dac[f_dac$stratum == "1-2 yrs", , drop = FALSE]
-    d11 <- f_dac[grepl("^11\\+ yrs", f_dac$stratum), , drop = FALSE]
-    op0 <- f_op[grepl("^0 yrs", f_op$stratum), , drop = FALSE]
-    op11 <- f_op[grepl("^11\\+ yrs", f_op$stratum), , drop = FALSE]
-    c35 <- f_car[grepl("^3-5 yrs", f_car$stratum), , drop = FALSE]
-    c1120 <- f_car[grepl("^11-20 yrs", f_car$stratum), , drop = FALSE]
-    c21 <- f_car[grepl("^21\\+ yrs", f_car$stratum), , drop = FALSE]
-
-    m_dest <- md_tab[md_tab$direction_type == "destination_arrival_timing", , drop = FALSE]
-    m_orig <- md_tab[md_tab$direction_type == "origin_departure_termination_timing", , drop = FALSE]
-    n_med_lead_12 <- sum(m_dest$n[grepl("led by [12] yr", m_dest$category) & !grepl("Panel|NPPES", m_dest$category)])
-    n_same_yr     <- sum(m_dest$n[grepl("Same calendar year", m_dest$category)])
-    n_nppes_lead  <- sum(m_dest$n[grepl("(Panel|NPPES) led by", m_dest$category)])
-    n_acute       <- n_med_lead_12 + n_same_yr + n_nppes_lead
-    orig_before   <- m_orig[grepl("BEFORE", m_orig$category), , drop = FALSE]
-    orig_same     <- m_orig[grepl("SAME", m_orig$category), , drop = FALSE]
-    orig_after    <- m_orig[grepl("AFTER", m_orig$category), , drop = FALSE]
-
-    n_tot_moves <- if ("total_panel_moves" %in% names(m_dest)) {
-      m_dest$total_panel_moves[1]
-    } else if ("total_nppes_moves" %in% names(m_dest)) {
-      m_dest$total_nppes_moves[1]
-    } else {
-      2672L
+    # Lead/lag, state level, each longitudinal source against NPPES. The three
+    # resolution columns are kept together deliberately: a source's
+    # persistent-discordance share is only interpretable beside the two ways a
+    # disagreement can resolve, and quoting `persistent_pct` alone invites the
+    # reading that the remainder was an error rather than a move.
+    if (!is.null(mr_ll) && "source_b" %in% names(mr_ll)) {
+      st <- mr_ll[mr_ll$attribute == "state", , drop = FALSE]
+      for (i in seq_len(nrow(st))) {
+        nm <- st$source_b[i]
+        if (is.na(nm) || !nzchar(nm)) next
+        s[[paste0("ll_", nm, "_transitions_n")]] <- as.numeric(st$n_paired_transitions[i])
+        s[[paste0("ll_", nm, "_discordant_n")]]  <- as.numeric(st$n_discordant_at_t[i])
+        s[[paste0("ll_", nm, "_adopts_pct")]]    <- as.numeric(st$b_adopts_a_at_t1_pct[i])
+        s[[paste0("ll_", nm, "_reverts_pct")]]   <- as.numeric(st$a_reverts_to_b_at_t1_pct[i])
+        s[[paste0("ll_", nm, "_persistent_pct")]] <- as.numeric(st$persistent_discordant_at_t1_pct[i])
+      }
     }
 
-    cat_$leadlag <- list(
-      n_transitions          = st_r$n_paired_transitions[1],
-      state_a_breaks_n       = st_a_brk,
-      state_b_breaks_n       = st_b_brk,
-      state_break_ratio      = st_a_brk / pmax(1, st_b_brk),
-      street_a_breaks_n      = sr_a_brk,
-      street_b_breaks_n      = sr_b_brk,
-      street_break_ratio     = sr_a_brk / pmax(1, sr_b_brk),
-      state_disc_2022_n      = get_v(st_r, "disc_base_n", "disc_2022_n"),
-      state_b_adopts_n       = get_v(st_r, "b_adopts_a_multi_n", "nppes_adopts_op2022_by_2026_n"),
-      state_b_adopts_pct     = get_v(st_r, "b_adopts_a_multi_pct", "nppes_adopts_op2022_by_2026_pct"),
-      street_disc_2022_n     = get_v(sr_r, "disc_base_n", "disc_2022_n"),
-      street_b_adopts_n      = get_v(sr_r, "b_adopts_a_multi_n", "nppes_adopts_op2022_by_2026_n"),
-      street_b_adopts_pct    = get_v(sr_r, "b_adopts_a_multi_pct", "nppes_adopts_op2022_by_2026_pct"),
-      city_a_reverts_pct     = get_v(ct_r, "a_reverts_b_multi_pct", "op_reverts_np2022_by_2025_pct"),
-      zip_a_reverts_pct      = get_v(zp_r, "a_reverts_b_multi_pct", "op_reverts_np2022_by_2025_pct"),
-      street_a_reverts_pct   = get_v(sr_r, "a_reverts_b_multi_pct", "op_reverts_np2022_by_2025_pct"),
-      dac_street_disc_n      = get_v(sr_r, "cross_section_disc_n", "dac2026_disc_n"),
-      dac_street_prior_n     = get_v(sr_r, "cross_section_in_prior_b_n", "dac2026_in_prior_nppes_n"),
-      dac_street_prior_pct   = get_v(sr_r, "cross_section_in_prior_b_pct", "dac2026_in_prior_nppes_pct"),
-      dac_zip_disc_n         = get_v(zp_r, "cross_section_disc_n", "dac2026_disc_n"),
-      dac_zip_prior_n        = get_v(zp_r, "cross_section_in_prior_b_n", "dac2026_in_prior_nppes_n"),
-      dac_zip_prior_pct      = get_v(zp_r, "cross_section_in_prior_b_pct", "dac2026_in_prior_nppes_pct"),
-      dac_total_n            = sum(f_dac$n),
-      dac_12yr_n             = d12$n[1],
-      dac_12yr_state_pct     = d12$state_agree_pct[1],
-      dac_12yr_city_pct      = d12$city_agree_pct[1],
-      dac_12yr_zip_pct       = d12$zip5_agree_pct[1],
-      dac_12yr_street_pct    = d12$street_agree_pct[1],
-      dac_0yr_n              = d0$n[1],
-      dac_0yr_state_pct      = d0$state_agree_pct[1],
-      dac_0yr_street_pct     = d0$street_agree_pct[1],
-      dac_11yr_n             = d11$n[1],
-      dac_11yr_city_pct      = d11$city_agree_pct[1],
-      dac_11yr_zip_pct       = d11$zip5_agree_pct[1],
-      dac_11yr_street_pct    = d11$street_agree_pct[1],
-      car_35_street_pct      = c35$street_agree_pct[1],
-      car_1120_street_pct    = c1120$street_agree_pct[1],
-      car_21_street_pct      = c21$street_agree_pct[1],
-      op_total_n             = sum(f_op$n),
-      op_0yr_street_pct      = op0$street_agree_pct[1],
-      op_11yr_street_pct     = op11$street_agree_pct[1],
-      med_total_moves_n      = n_tot_moves,
-      med_dest_matched_n     = m_dest$total_matched_moves[1],
-      med_preexisting_3yr_n  = sum(m_dest$n[grepl("3\\+ yrs", m_dest$category)]),
-      med_acute_n            = n_acute,
-      med_lead_12yr_n        = n_med_lead_12,
-      med_lead_12yr_pct      = 100 * n_med_lead_12 / n_acute,
-      med_same_yr_n          = n_same_yr,
-      med_same_yr_pct        = 100 * n_same_yr / n_acute,
-      med_nppes_lead_n       = n_nppes_lead,
-      med_nppes_lead_pct     = 100 * n_nppes_lead / n_acute,
-      med_lead_ratio         = n_med_lead_12 / pmax(1, n_nppes_lead),
-      med_orig_matched_n     = m_orig$total_matched_moves[1],
-      med_orig_after_n       = orig_after$n[1],
-      med_orig_after_pct     = orig_after$pct_of_matched[1],
-      med_orig_same_n        = orig_same$n[1],
-      med_orig_same_pct      = orig_same$pct_of_matched[1],
-      med_orig_before_n      = orig_before$n[1],
-      med_orig_before_pct    = orig_before$pct_of_matched[1]
-    )
+    # The tiers must reconstruct the panel, or the concordance table does not
+    # add up in front of a reviewer -- the same check the linkage section makes
+    # on its dispositions.
+    stopifnot(abs(sum(mr_tier$pct) - 100) < 0.2)
+
+    # Exact arithmetic on two artifact values, not an inferred cohort size:
+    # how many midwives NPPES observes but the consensus cannot speak about.
+    mr_pres <- rd(file.path(MW_ART, "mrost_presence_by_source.csv"))
+    if (!is.null(mr_pres) && "nppes" %in% mr_pres$source) {
+      np_n <- as.numeric(mr_pres$n_npis[mr_pres$source == "nppes"][1])
+      s$nppes_presence_n           <- np_n
+      s$tier_outside_denominator_n <- np_n - sum(mr_tier$n_npis)
+    }
+
+    s$inventory <- mr_inv
+    s$tier_table <- mr_tier
+    cat_$sources <- s
   }
+  # Federal administrative database accuracy: 282 lines, lifted out whole.
+  # See mw_section_dbacc() for why, and for the equivalence assertion.
+  cat_ <- mw_section_dbacc(cat_, rd)
 
   cat_$meta <- list(built = format(Sys.time(), "%Y-%m-%d %H:%M %Z"),
                     r_version = paste(R.version$major, R.version$minor, sep = "."))

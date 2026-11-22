@@ -34,7 +34,7 @@
 
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(stringr)
-  library(DBI); library(duckdb); library(checkmate); library(here)
+  library(DBI); library(duckdb); library(checkmate)
 })
 source(file.path("R", "lib", "medicare_duckdb.R"))
 
@@ -85,6 +85,7 @@ parts <- str_split_fixed(cache_raw$address_hash, stringr::fixed("|"), 4)
 # quality_score where that discriminates; refused (no coordinate) where it
 # cannot and the disagreement is material. See R/lib/geocode_conflicts.R.
 source("R/lib/geocode_conflicts.R")
+source(file.path("R", "lib", "county_from_points.R"))
 cache_keyed <- cache_raw %>%
   mutate(cache_key = canonical_address_key(parts[, 1], parts[, 2],
                                            parts[, 3], parts[, 4])) %>%
@@ -106,25 +107,18 @@ cache <- cache_keyed %>%
   group_by(cache_key) %>% slice(1) %>% ungroup()
 
 # Zip-less fallback: same key minus the ZIP field, for records whose ZIP is
-# missing or disagrees. Both sides drop it the same way.
-drop_zip <- function(x) sub("\\|[^|]*$", "", x)
-# Dropping the ZIP MERGES cache keys that were distinct, so this fallback can
-# create conflicts the keyed pass did not have: two different addresses on the
-# same street in different ZIPs collapse to one key. Resolved or refused on
-# the same contract, never picked by row order.
+# missing or disagrees. drop_zip() and the deterministic collapse that follows
+# it are shared with geocode_panel_addresses.R rather than written twice --
+# stripping the ZIP builds a JOIN KEY, and two copies of a key construction
+# drifting apart changes results in silence. See R/lib/geocode_conflicts.R.
 cache_nz_in <- cache %>% mutate(key_nozip = drop_zip(cache_key))
 nz_res <- resolve_geocode_key(cache_nz_in$key_nozip, cache_nz_in$latitude,
                               cache_nz_in$longitude, cache_nz_in$quality_score)
 message("zip-less fallback -- ", summarise_geocode_resolution(nz_res))
-cache_nozip <- cache_nz_in %>%
-  inner_join(nz_res %>% filter(!is.na(lat)) %>%
-               select(key_nozip = key, .lat = lat, .lon = lon),
-             by = "key_nozip") %>%
-  filter(latitude == .lat, longitude == .lon) %>%
-  arrange(key_nozip, desc(quality_score), geocoder_provenance) %>%
-  group_by(key_nozip) %>% slice(1) %>% ungroup() %>%
-  select(key_nozip, lat_nz = latitude, lon_nz = longitude,
-         q_nz = quality_score, prov_nz = geocoder_provenance)
+cache_nozip <- collapse_zipless_key(cache_nz_in, nz_res,
+                                    "geocoder_provenance") %>%
+  rename(lat_nz = latitude, lon_nz = longitude, q_nz = quality_score,
+         prov_nz = geocoder_provenance)
 
 hit <- located %>%
   left_join(select(cache, cache_key, latitude, longitude, quality_score,
@@ -168,23 +162,6 @@ for (col in c("census_tract", "county_fips", "state_fips")) {
 #' @param df [data.frame]: rows with `latitude`/`longitude`.
 #' @return [character] 5-character county GEOID, NA where no polygon contains
 #'   the point (offshore, bad coordinates, or non-US).
-assign_county_from_points <- function(df) {
-  ok <- !is.na(df$latitude) & !is.na(df$longitude)
-  out <- rep(NA_character_, nrow(df))
-  if (!any(ok)) return(out)
-
-  suppressPackageStartupMessages({ library(sf); library(tigris) })
-  options(tigris_use_cache = TRUE)
-
-  counties <- tigris::counties(cb = TRUE, year = 2023, progress_bar = FALSE) %>%
-    sf::st_transform(4326)
-  pts <- sf::st_as_sf(df[ok, c("longitude", "latitude")],
-                      coords = c("longitude", "latitude"), crs = 4326)
-  idx <- sf::st_within(pts, sf::st_geometry(counties))
-  first <- vapply(idx, function(i) if (length(i)) i[1] else NA_integer_, integer(1))
-  out[ok] <- counties$GEOID[first]
-  out
-}
 
 if (all(is.na(hit$county_fips))) {
   message("[county] Tract boundaries unavailable; falling back to point-in-polygon ",

@@ -7,6 +7,13 @@
 # affiliations, with nothing in either script saying so. Every definition now
 # lives here.
 #
+# NOT THE TWIN OF address_keys.py, despite the shared stem. That module builds
+# FACILITY-classification keys (is a given address a hospital campus?). This
+# file builds ORGANISATION-matching join keys for the NPPES/PECOS address
+# comparisons. Neither is the other's port and they must not be reconciled;
+# the shared name is an accident, and it is written down here because a reader
+# who assumes otherwise will key one pipeline with the other's rules.
+#
 # THE DISAGREEMENTS ARE PRESERVED, NOT RESOLVED AWAY. Where two call sites
 # genuinely wanted different behaviour, the variant is a separate function with
 # a name that says what it does, so a reader picks one on purpose. Silently

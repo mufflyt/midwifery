@@ -1,0 +1,56 @@
+{
+  "artifact": "medicare_claims_year_validation.csv",
+  "written_utc": "2026-11-19 03:04:30 UTC",
+  "inputs": [],
+  "code_sha256": "623b467b89531f1758477c8e5995ff8441ba9c7ad889ac9fbc49d792a09e623b",
+  "code": [
+    {
+      "path": "extract_medicare_part_b_d_cohort_states.R",
+      "sha256": "3306bcdde0b0bc3a54a4d82d478bd4347d08862abbd8245e83f9f7e14da31b20"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "4937914878dfd340d545d54ab079074fb74320f4272dd5e4c8196aeefd46c391"
+    },
+    {
+      "path": "R/lib/clean_state.R",
+      "sha256": "a8945acebe3fabca73f9839202a184fdbd75164d8884680e9cb49be6072906f8"
+    },
+    {
+      "path": "R/lib/medicare_duckdb.R",
+      "sha256": "6f825548f04d44ce0847f2aab00b3110d7fbe869e9978aca2ad85c7dd7d6acc1"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    },
+    {
+      "path": "R/lib/source_vintage.R",
+      "sha256": "f2d5751936ccd5fc551e3ae31dd8c9b464c9811fb63ef00adc4b8f6cb758be9a"
+    },
+    {
+      "path": "R/lib/source_year.R",
+      "sha256": "a893f4f26c1d7a8074164782eabb96b4cdd8ed53b94ef268526025020ce3b583"
+    }
+  ],
+  "semantic_packages": [
+    {
+      "package": "mysterynpi",
+      "installed": true,
+      "version": "0.9.1",
+      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
+    },
+    {
+      "package": "stringi",
+      "installed": true,
+      "version": "1.8.9",
+      "source_sha": null
+    },
+    {
+      "package": "humaniformat",
+      "installed": true,
+      "version": "0.6.0",
+      "source_sha": null
+    }
+  ]
+}

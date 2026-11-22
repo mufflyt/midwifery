@@ -54,7 +54,7 @@ CHECKPOINT  <- "healthgrades_attrs_checkpoint.rds"
 # the write is made atomic. See DEBT.md.
 CKPT_EVERY  <- 10L
 
-# log_message() writes to LOG_FILE from the sourced scraper; repoint it so this
+# hg_log_message() writes to LOG_FILE from the sourced scraper; repoint it so this
 # pass does not interleave into the original crawl's log.
 LOG_FILE <- "healthgrades_attrs_log.txt"
 
@@ -63,7 +63,7 @@ LOG_FILE <- "healthgrades_attrs_log.txt"
 #' @param url [character(1)]: relative /providers/ path.
 #' @return [tibble] one row: hg_url, hg_attr_status, plus parse_next_flight().
 enrich_one <- function(url) {
-  log_message(url)
+  hg_log_message(url)
   html <- fetch(paste0("https://www.healthgrades.com", url))
   if (is.na(html)) {
     return(tibble(hg_url = url, hg_attr_status = "fetch_failed"))
@@ -85,13 +85,13 @@ main <- function(n_limit = NA_integer_) {
   todo <- setdiff(targets, names(done))
   if (!is.na(n_limit)) todo <- head(todo, n_limit)
 
-  log_message(sprintf("profiles=%d already_done=%d this_run=%d delay=%ss",
+  hg_log_message(sprintf("profiles=%d already_done=%d this_run=%d delay=%ss",
                       length(targets), length(done), length(todo), DELAY_SEC))
 
   for (i in seq_along(todo)) {
     u <- todo[i]
     res <- tryCatch(enrich_one(u), error = function(e) {
-      log_message(paste("  ERROR:", e$message))
+      hg_log_message(paste("  ERROR:", e$message))
       tibble(hg_url = u, hg_attr_status = "error")
     })
     done[[u]] <- res
@@ -99,7 +99,7 @@ main <- function(n_limit = NA_integer_) {
     if (i %% CKPT_EVERY == 0 || i == length(todo)) {
       atomic_saveRDS(done, CHECKPOINT)
       write_csv(bind_rows(done), OUTPUT, na = "")
-      log_message(sprintf("  checkpoint %d/%d -> %s", i, length(todo), OUTPUT))
+      hg_log_message(sprintf("  checkpoint %d/%d -> %s", i, length(todo), OUTPUT))
     }
   }
 
@@ -107,24 +107,24 @@ main <- function(n_limit = NA_integer_) {
   atomic_write_csv(out, OUTPUT, na = "")
 
   ok <- filter(out, hg_attr_status == "ok")
-  log_message("--- fill rates (of parsed profiles) ---")
-  log_message(sprintf("profiles parsed        : %d", nrow(ok)))
+  hg_log_message("--- fill rates (of parsed profiles) ---")
+  hg_log_message(sprintf("profiles parsed        : %d", nrow(ok)))
   if (nrow(ok) > 0) {
     fill <- function(col) sum(!is.na(ok[[col]]))
     for (v in c("hg_gender", "hg_age", "hg_years_experience",
                 "hg_education_year", "hg_languages", "hg_board_certs",
                 "hg_rating", "hg_verified_date")) {
-      log_message(sprintf("  %-22s %4d (%.0f%%)", v, fill(v),
+      hg_log_message(sprintf("  %-22s %4d (%.0f%%)", v, fill(v),
                           100 * fill(v) / nrow(ok)))
     }
-    log_message("--- gender ---")
+    hg_log_message("--- gender ---")
     g <- count(ok, hg_gender)
     for (j in seq_len(nrow(g))) {
-      log_message(sprintf("  %-4s %d", g$hg_gender[j] %||% "NA", g$n[j]))
+      hg_log_message(sprintf("  %-4s %d", g$hg_gender[j] %||% "NA", g$n[j]))
     }
     a <- ok$hg_age[!is.na(ok$hg_age)]
     if (length(a) > 0) {
-      log_message(sprintf("age: n=%d median=%.0f IQR=%.0f-%.0f range=%d-%d",
+      hg_log_message(sprintf("age: n=%d median=%.0f IQR=%.0f-%.0f range=%d-%d",
                           length(a), median(a), quantile(a, .25),
                           quantile(a, .75), min(a), max(a)))
     }

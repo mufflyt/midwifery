@@ -8,6 +8,7 @@ suppressPackageStartupMessages({
 
 source("R/lib/common_helpers.R")
 source("R/lib/match_npi_to_hospitals.R")
+source(file.path("R", "lib", "oig_zip_normalizers.R"))  # norm_str_zip5()
 
 MW_FILE <- "artifacts/amcb_npi_crosswalk_c5guard_panel-midwifery-plus-nursing_years-2007-2025.csv"
 GEO_FILE <- "artifacts/amcb_npi_geography.csv"
@@ -28,7 +29,7 @@ mw_addr <- mws %>%
     addr1_clean = str_to_upper(trimws(practice_address_1)),
     city_clean  = str_to_upper(trimws(practice_city)),
     state_clean = str_to_upper(trimws(practice_state)),
-    zip_clean   = str_sub(str_trim(practice_zip), 1, 5)
+    zip_clean   = norm_str_zip5(practice_zip)
   )
 
 hosps <- chr(HOSP_FILE) %>%
@@ -38,7 +39,7 @@ hosps <- chr(HOSP_FILE) %>%
     hosp_addr1 = str_to_upper(trimws(geocode_address_1)),
     hosp_city  = str_to_upper(trimws(geocode_city)),
     hosp_state = str_to_upper(trimws(geocode_state)),
-    hosp_zip   = str_sub(str_trim(geocode_zip), 1, 5)
+    hosp_zip   = norm_str_zip5(geocode_zip)
   ) %>%
   filter(!is.na(cms_ccn))
 

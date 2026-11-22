@@ -152,18 +152,16 @@ tbl_has <- inventory |>
 claim_level_tables <- tbl_has$table[tbl_has$clin_npi & tbl_has$svc_date & tbl_has$proc]
 snapshots <- nrow(meta[meta$table_name == "directory_provider", ])
 inv_vol <- function(rel) !is.na(samsung_volume_path(rel, must_exist = FALSE))
-inv_repo <- function(p) file.exists(p)
 src <- c(
   nppes_history      = inv_vol("nppes_historical_downloads") || inv_vol("temporal_nppes.duckdb"),
   medicare_warehouse = inv_vol("DuckDB/nber_my_duckdb.duckdb"),
   dac_vintages       = inv_vol("facility_affiliation"),
   nppes_deactivation = inv_vol("nppes_deactivation_reports"),
-  persistence_paper  = inv_repo("manuscript/midwife_persistence.qmd"),
-  cabc               = inv_repo("artifacts/cabc_accredited_birth_centers_master.csv"),
-  delivery_code_obs  = inv_repo("artifacts/medicare_delivery_code_observability.csv"),
-  cohort_definitions = inv_repo("R/lib/cohort_definitions.R"),
-  work_site_build    = inv_repo("build_trilliant_work_sites.R"))
-inv_yn <- function(x) if (isTRUE(x)) "yes" else "no"
+  persistence_paper  = file.exists("manuscript/midwife_persistence.qmd"),
+  cabc               = file.exists("artifacts/cabc_accredited_birth_centers_master.csv"),
+  delivery_code_obs  = file.exists("artifacts/medicare_delivery_code_observability.csv"),
+  cohort_definitions = file.exists("R/lib/cohort_definitions.R"),
+  work_site_build    = file.exists("build_trilliant_work_sites.R"))
 inv_listed <- function(...) { v <- c(...); paste(names(v)[v], collapse = "; ") }
 trill_single <- sprintf("directory_provider (%d snapshot, %s)", snapshots,
                         paste(meta$snapshot_label[meta$table_name == "directory_provider"], collapse = ","))

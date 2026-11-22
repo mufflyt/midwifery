@@ -622,4 +622,3 @@ format_p_value <- function(x) {
 #' @param x Value. @param y Replacement.
 #' @return `x` unless NULL.
 #' @keywords internal
-`%||%` <- function(x, y) if (is.null(x)) y else x

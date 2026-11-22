@@ -58,6 +58,44 @@ reg <- do.call(rbind, lapply(lines[-1], function(l) {
 reg <- as.data.frame(reg, stringsAsFactors = FALSE)
 names(reg) <- hdr
 
+# -----------------------------------------------------------------------------
+# A LAW MAY NOT QUIETLY STOP BEING ENFORCED.
+#
+# `privacy` decides whether a skip is legitimate, so moving a law off `public`
+# converts it from "enforced on every runner" into "evaluated nowhere". The
+# counts below name the result, but naming is not refusing: the number could
+# grow one word at a time while this gate stayed green and printed a larger
+# total. The registry's own comment records the mistake -- registering L5
+# `private-ok` asserted that a 31 MB derived surface was person-level data.
+#
+# So a non-public law has to be declared, with a reason, in a shrink-only file.
+# The declaration must not outlive its cause either: a law that has gone back to
+# `public` has to come out of the file, the same rule N1 applies to the nightly
+# exceptions list.
+source(file.path(root, "R", "lib", "law_privacy.R"))
+PRIV_BASE <- file.path(root, "tests", "law_privacy_baseline.tsv")
+priv_declared <- law_privacy_declared(PRIV_BASE)
+pv <- law_privacy_violations(reg$law, reg$privacy, priv_declared)
+non_public <- pv$non_public; undeclared <- pv$undeclared; stale_decl <- pv$stale
+if (length(undeclared)) {
+  ci_fail(paste0("%d law(s) are registered non-public but not declared in tests/law_privacy_baseline.tsv: %s\n",
+                 "       A law off `public` is enforced on no runner. If that is intended, declare\n",
+                 "       it there with a reason; otherwise put the law back to `public`. Do not\n",
+                 "       widen the privacy column to make a skip legal."),
+          length(undeclared), paste(undeclared, collapse = ", "))
+} else if (length(non_public)) {
+  ci_ok("%d declared non-public law(s): %s -- enforced on no runner, by declaration",
+        length(non_public), paste(non_public, collapse = ", "))
+} else {
+  ci_ok("all %d declared law(s) are `public`, so every one is enforced on every runner", nrow(reg))
+}
+if (length(stale_decl)) {
+  ci_fail(paste0("%d law(s) are declared non-public in tests/law_privacy_baseline.tsv but are now `public`: %s\n",
+                 "       Delete those lines -- a declaration that outlives its cause silently\n",
+                 "       licenses the next downgrade."),
+          length(stale_decl), paste(stale_decl, collapse = ", "))
+}
+
 # EVIDENCE MAY BE REPLAYED. Coverage re-runs every registered gate and every
 # mutation harness, and those have grown: the determinism harness alone runs the
 # full L8/L9 suite six times. Re-running them here took the gate past its own

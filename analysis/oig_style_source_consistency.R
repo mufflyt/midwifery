@@ -66,6 +66,14 @@
 # DATA_ROOT: argument 1, else MIDWIFERY_DATA_ROOT, else ".".
 # OUT_DIR:   argument 2, else OIG_OUT_DIR, else "artifacts".
 # =============================================================================
+# mysteryroster's version can move this result (attribute_field_dictionary(),
+# attribute_set_agreement() and friends own the comparison rules) -- pinned,
+# not yet re-audited: 3 of this script's gitignored local inputs no longer
+# exist on disk (cohort_midwives_tier1_tier2_bon_validated.csv,
+# midwife_pecos_organization_affiliations.csv, dac_cnm_locations.csv), so a
+# differential re-run is blocked until they are regenerated. See
+# docs/TECHNICAL_APPENDIX_MYSTERYROSTER_PIN_AUDIT.md.
+#   remotes::install_github("mufflyt/mysteryroster@de1aa5d4e4262e8006254e3463c0e0a80eec56ba")
 suppressPackageStartupMessages({library(dplyr); library(readr); library(mysteryroster)})
 
 source(file.path("R", "analysis_args.R"))               # arg_or()

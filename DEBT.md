@@ -196,6 +196,33 @@ nobody can yet defend.
 used for anything published. The comparison document already lays out inputs,
 keys, normalization and rules side by side, which is where a diagnosis starts.
 
+**Update 2026-11-18: diagnosed.** `diagnose_op_linkage_disagreement.py`
+reproduced the 450-overlap / 16.4% figure exactly and decomposed all 376
+disagreements (`artifacts/op_linkage_disagreement_diagnosis.csv`):
+
+- **254 (67.6%) are input-source differences.** A links the Open Payments
+  recipient-reported address; B links NPPES practice locations, and for these
+  midwives the OP address is not among her NPPES locations at all. Two
+  correct linkers measuring different places. No code fix closes this arm.
+- **122 (32.4%) are same-building different-tenant picks, dominated by A's
+  rule.** A returns the first of ≤10 unordered API results in the same
+  city/state/ZIP whose first 8 address characters prefix-match; B requires a
+  shared telephone or ZIP+4+street tying the org to *her* practice. ~117 of
+  the 122 name unrelated organizations; ~5 look like the same org under
+  different enumeration. Conditioning on the SAME input address and on B
+  being unambiguous drops agreement to **7/102 (6.9%)** — A's pick is almost
+  never the defensible one even where both read the same place.
+
+The 83.6% is therefore a *measurement-of-different-things* problem plus an
+under-identified selector in A, not unexplained noise. Ruling recorded in the
+comparison document: **B (`midwife_org_affiliations_candidate.csv`) is
+canonical for organization affiliation; A's outputs are validation-only and
+no published claim may read its `type2_organization_npi` as an employer.**
+Residual, owner-level: whether the 254 input-source disagreements get written
+up as an Open Payments recipient-address-quality finding in the manuscript,
+and whether A's scripts get a header-level demotion comment to match the
+ruling.
+
 ## D6 — Care Compare and PECOS agree on 43% of organization relationships
 
 - **status:** closed
@@ -500,6 +527,45 @@ is unblinded.
 
 ## Closed
 
+## D13 — DAC multi-site ZIP5 comparison silently picked an arbitrary one of a clinician's real sites
+
+- **status:** closed
+- **owner:** tyler
+- **raised:** 2026-11-12
+- **closed:** 2026-11-12
+- **resolution:** `distinct(npi, .keep_all = TRUE)` replaced with a full per-NPI ZIP5 set, compared by membership in `compute_bon_zip_decomposition()` rather than equality against one arbitrary row
+
+Before comparing a clinician's DAC practice ZIP5 against her State Board of
+Nursing (BON) licensing ZIP5 in `remake_oig_07_09_00440_midwifery.R`, the DAC
+claims were collapsed to one row per NPI with
+`distinct(npi, .keep_all = TRUE)` -- which keeps whichever row DuckDB happens
+to return first, in unspecified order. **955 cohort NPIs genuinely have 2-6
+distinct DAC practice ZIP5s** (real multi-site practice), not duplicate rows
+of the same value. A clinician whose BON ZIP matched one of her real DAC
+sites could be scored as a mismatch purely because a *different* one of her
+sites got kept.
+
+Measured effect on `oig_state_bon_address_geographic_concordance.csv`'s
+PECOS/DAC-vs-BON comparison (n=303, CT/FL/IL/PA):
+
+| category | before | after |
+|---|---|---|
+| exact ZIP5 match | 94 (31.0%) | 118 (38.9%) |
+| no match at all (worst category) | 89 (29.4%) | 74 (24.4%) |
+
+24 clinicians were wrongly denied an exact match, and 15 were wrongly placed
+in the "unattributed discordance" category, purely from which arbitrary DAC
+row got kept. Fixed by building the full set of a clinician's distinct DAC
+ZIP5s and testing whether the BON ZIP5 (or its SCF3 prefix) appears in that
+set at all, matching the any-observed-value semantics this script already
+uses elsewhere (e.g. `pecos_matches_pc_zip5`). All 11 other `.keep_all = TRUE`
+sites in the same script were audited the same way: none had this effect --
+9 had zero duplicate keys (converted to `assert_one_row_per_id()`, which
+fails loudly rather than silently picking a winner if that ever changes),
+and 1 (PECOS 2026Q3 enrollment names) had duplicate rows with provably
+identical names, so `arrange() + slice(1)` is a genuine reduction, not an
+arbitrary pick.
+
 ## D0 — Provenance determinism of the recorded name variant
 
 - **status:** closed
@@ -658,7 +724,100 @@ every state that permits a skip is a state a law can hide in.
 
 ---
 
-## D13 — PECOS move rate was ~10x too high from a non-deterministic tie-break, not real churn
+## D14 — Four supplemental-table rates divide a count by a group it did not come from
+
+- **status:** closed
+- **owner:** tyler
+- **raised:** 2026-11-21
+- **closed:** 2026-11-22
+- **resolution:** fixed at the producer and the two displays, in the order the entry asked for. `build_f2_f3_uncertainty_denominators.R` now WITHHOLDS the follow-up columns (NA, not 0) at each source's last year and withholds the leaver-visibility count where `year + 1` is past the registry's last year, so a consumer that sums a blank gets NA instead of a confidently wrong number; the artifact carries 5 withheld edge rows and 45 interior rows that all report follow-up. `manuscript/R/build_stats_catalog.R` restricts to the evaluable rows by name rather than inheriting `aggregate()`'s `na.action`, because a reader of Supplemental Table S4 cannot see an aggregation's year range. Supplemental Table S3 drops the `Base year` column, whose counts pooled the window (23,315 against a base-year 1,316), and states the window and the per-source base years in the caption instead; its `Both moved (%)` column, which divided a concordant-group count by the discordant denominator and made open_payments sum to 114.5%, is replaced by the residual `100 - (persistent + adopts + reverts)`, labelled `Left observation (%)`, which is in the right group and makes the row sum to 100 by construction. `build_state_variation_agreement.R` had already taken the `usable_for_trend` filter, so its line is deleted from `UFT_BASELINE` rather than left standing. `tests/ci_denominator_contracts.R` reports `PASS (0 failures)`, and `tests/test_denominator_contracts_detect.R` still fires on all 9 planted defects and holds its 4 near misses, so the gates were not weakened to get there. One gate correction came with it: D5 called the canonical record table "a tracked artifact, so absence is a regression" when `.gitignore:320` excludes it as person-level, which made D5 fail on every runner for an environment reason; absent-and-gitignored is now a skip and absent-and-tracked is still a failure, the distinction `ci_require_files()` already draws.
+- **source:** `manuscript/federal_database_accuracy.qmd` (Tables S2/S3/S4 and the Results prose at 441-443), `manuscript/R/build_stats_catalog.R:1467`, `build_f2_f3_uncertainty_denominators.R`, `build_source_count_agreement.R:34-35`, `build_state_variation_agreement.R:33`
+- **policed by:** `tests/ci_denominator_contracts.R` (D1-D5), which is **red on arrival by design** -- see the note at the end of this entry
+
+Found in review of the Green Journal rewrite. Four distinct defects, one law:
+**a rate's numerator must be a sub-count of the group in its denominator, over
+rows where the rate is defined at all.** Each one produces a plausible
+number, and two of them produce a number that reverses the sentence it
+supports.
+
+### 1. Table S4 pools persistence across the panel edge
+
+At each source's last observed year there is no t+1, so `n_followed_source`
+is 0 and `n_lost_from_source == n_observed` **by construction, not by
+attrition**. `build_stats_catalog.R:1467` sums every year per source, so the
+degenerate row dominates the rate:
+
+| source | Left source (%) published / evaluable |
+|---|---|
+| medicaid_enrollment | 16.9 / **0.8** |
+| pecos_revalidation | 20.7 / **4.3** |
+| open_payments | 47.7 / 31.2 |
+| medicare_claims | 27.2 / 19.3 |
+
+`build_f2_f3_uncertainty_denominators.R:84` computes `all_years` per source
+and never uses it, which is what the year restriction was for.
+
+### 2. Registry visibility is undefined past the registry's last year
+
+A source-year whose t+1 falls outside NPPES scores every leaver as *not in the
+registry*, which is unobserved rather than absent. PECOS ends in 2026 and so
+does NPPES, so all 9,537 terminal "leavers" score as absent and Table S4
+prints **16.4%** for the leavers-still-in-registry share whose evaluable value
+is **96.5%** -- contradicting the table's own caption and the Results sentence
+at `federal_database_accuracy.qmd:441-443`.
+
+### 3. Table S3's "Both moved" has the wrong denominator
+
+In `mysteryroster::attribute_lead_lag_matrix`, `both_mv` counts provider-years
+that **agreed** at t and moved together at t+1: a sub-count of
+`n_concordant_at_t`. It is divided by `n_discordant_at_t`. The open_payments
+row sums to **114.5%**; the PECOS row goes 94.9% -> 99.1%, which makes a
+broken decomposition look like it closes.
+
+### 4. Table S3 labels pooled counts as base-year counts
+
+`n_discordant_at_t` pools every paired transition in a source's window;
+`disc_base_n` is the base-year cohort. Medicaid prints **23,315** under a
+`Base year` column header where the base-year figure is **1,316**. Per-source
+base years also differ (2013 vs 2021), unmentioned.
+
+### 5. Two consumers ignore `usable_for_trend`
+
+The producer marks left-censored Medicaid segments and pre-SUPPORT-Act Open
+Payments years unusable -- 37,923 of 447,008 rows. `build_source_count_agreement.R:34-35`
+and `build_state_variation_agreement.R:33` read the table without the filter,
+so they score agreement on records the rest of the manuscript excludes. The
+Table S2 dose-response anchor moves 80.0% -> **85.3%** (the Butala claim
+survives and gets steeper; the anchor is off by 5.3 points).
+
+**Checked and clean:** the self-join in `build_source_count_agreement.R:39-46`
+would double-count pairs on multi-state source-years, which
+`build_f2_f3_uncertainty_denominators.R` explicitly defends against. It does
+not here: all 447,008 rows are unique on `(amcb_id, year, source)` and every
+`amcb_id` maps to one NPI, so `unanimous` and `n_pairs` are correct.
+
+**Decision needed:** fix at the producer, not the display. The follow-up
+columns should be **withheld** (NA) where `year + 1` is unobserved in the
+source or past `max(nppes$year)`, so a blank cell cannot be summed into a
+wrong rate where a zero can. Then drop the "Both moved" column or report it as
+the residual `100 - (adopts + reverts + persistent)`, point the base-year
+column at `disc_base_n`, and add the `usable_for_trend` filter to both
+consumers. Every number above is reproducible from committed artifacts.
+
+**On the gate being red.** `tests/ci_denominator_contracts.R` is wired into
+`.github/workflows/ci.yml` while it reports `FAILED (5)`, which is the
+opposite of the call made for `tests/test_cohort_vintage.R` in **D10** above
+("a gate that is red on arrival teaches people to ignore gates"). The cases
+differ in the way that matters: `test_cohort_vintage.R` is red for an
+*environment* reason -- CI has no person-level data and never will -- so it
+could not go green by anyone's work, and a permanently red gate does get
+muted. These five are red because the defects are live, in this branch, and
+fixable from tracked source. A blocking gate failing on a defect it correctly
+found is the normal pre-merge state, not rot. If the fix slips to a later
+branch, unwire the ci.yml steps and say so here rather than leaving a red
+gate standing.
+
+## D15 — PECOS move rate was ~10x too high from a non-deterministic tie-break, not real churn
 
 - **status:** closed
 - **owner:** tyler

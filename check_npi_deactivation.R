@@ -18,7 +18,11 @@
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(readxl); library(stringr)
 })
-source(file.path("R", "join_safety.R"))
+# assert_unique_keys() ONLY. This used to source R/join_safety.R, which is
+# 1,892 lines (2,195 with the R/safe_divide.R it sources) and whose other
+# functions this script never calls -- the 2026-11-20 complexity audit's first
+# finding. The assertion now lives in its own file.
+source(file.path("R", "assert_unique_keys.R"))
 
 report <- Sys.getenv("NPI_DEACTIVATION_REPORT",
                      path.expand("~/Documents/NPPES Deactivated NPI Report 20240408.xlsx"))

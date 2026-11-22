@@ -31,11 +31,11 @@
 # Run: Rscript tests/test_cycle11_spatial.R
 # =============================================================================
 
-root <- {
-  a <- grep("--file=", commandArgs(), value = TRUE)
-  if (length(a)) normalizePath(file.path(dirname(sub("--file=", "", a[1])), ".."))
-  else normalizePath(".")
-}
+.sb <- grep("--file=", commandArgs(), value = TRUE)
+root <- if (length(.sb)) {
+  normalizePath(file.path(dirname(sub("--file=", "", .sb[1])), ".."))
+} else normalizePath(".")
+source(file.path(root, "tests", "helper-saboteur.R"))
 # DEPENDENCY GUARD. This file is discovered by ci.yml's cycle-test glob, which
 # runs in the pure-function job -- and that job installs no system geo
 # libraries by explicit design ("if a package here ever needs one, it does not
@@ -53,17 +53,11 @@ suppressPackageStartupMessages({library(sf); library(dplyr)})
 source(file.path(root, "R", "spatial_crs_contract.R"))
 source(file.path(root, "R", "lib", "coordinate_plausibility.R"))
 
-fails <- 0L
-chk <- function(cond, m) {
-  if (isTRUE(cond)) cat(sprintf("  ok   %s\n", m))
-  else { fails <<- fails + 1L; cat(sprintf("  FAIL %s\n", m)) }
-}
 pt <- function(lon, lat, crs = 4326)
   st_sf(id = 1, geometry = st_sfc(st_point(c(lon, lat)), crs = crs))
 poly <- function(crs = 4326)
   st_sf(g = "A", geometry = st_sfc(st_polygon(list(rbind(
     c(-105, 39), c(-104, 39), c(-104, 40), c(-105, 40), c(-105, 39)))), crs = crs))
-errs <- function(expr) tryCatch({ force(expr); FALSE }, error = function(e) TRUE)
 
 cat("\n-- BVA --\n")
 

@@ -1,0 +1,7 @@
+longitudinal_disposition,n_clinicians,n_base_2021_disagreements,pct_of_all_892,pct_of_728_uncensored
+1. Resolved: PECOS subsequently adopted 2021 NPPES state,130,892,14.57,17.86
+2. Resolved: NPPES subsequently adopted 2021 PECOS state,169,892,18.95,23.21
+3. Resolved: Bidirectional/swap state convergence across 2022-2026,15,892,1.68,2.06
+4. Resolved: Both sources converged on a new third state in 2022-2026,48,892,5.38,6.59
+5. Unresolved & Continuously Observed Through 2026 (True Persistent State Divergence),366,892,41.03,50.27
+6. Unresolved & Right-Censored (Disappeared from PECOS or NPPES Before 2026),164,892,18.39,NA
