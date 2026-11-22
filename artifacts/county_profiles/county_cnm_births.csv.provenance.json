@@ -1,13 +1,13 @@
 {
   "artifact": "county_cnm_births.csv",
-  "written_utc": "2026-11-22 00:38:09 UTC",
+  "written_utc": "2026-09-07 21:22:56.409 UTC",
   "inputs": [
     {
       "path": "artifacts/county_profiles/county_birth_profiles.csv",
       "sha256": "ba00bfeab9876e15ae399225140b7903f4f06a68169d9554315e991d1409f2f1"
     }
   ],
-  "code_sha256": "a71bb8ebb9cbd6afdd50488023971bb6559d7de9b4f2dcbec9ffc80df414160d",
+  "code_sha256": "bb2fd8b6d36d3df9315aabafd7b80d7003607ddefdc6488d8dd0188f8cf2554a",
   "code": [
     {
       "path": "R/11-wonder-county-ingest.R",
@@ -15,7 +15,7 @@
     },
     {
       "path": "R/lib/artifact_provenance.R",
-      "sha256": "c1677e2402be56a1a30cc8b6985c0b512bd0599ed93c303d0c0e96e0b9d12b60"
+      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
     },
     {
       "path": "R/lib/ct_county_crosswalk.R",
@@ -23,33 +23,7 @@
     },
     {
       "path": "R/lib/provenance.R",
-      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
-    }
-  ],
-  "semantic_packages": [
-    {
-      "package": "mysterynpi",
-      "installed": true,
-      "version": "0.9.1",
-      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
-    },
-    {
-      "package": "stringi",
-      "installed": true,
-      "version": "1.8.9",
-      "source_sha": null
-    },
-    {
-      "package": "humaniformat",
-      "installed": true,
-      "version": "0.6.0",
-      "source_sha": null
-    },
-    {
-      "package": "mysteryroster",
-      "installed": true,
-      "version": "0.3.0",
-      "source_sha": null
+      "sha256": "0900115cafb7d8a356aa76b72469ee35d3c015c7e2f0c7e1d4d2bca1f3e26cc3"
     }
   ]
 }
