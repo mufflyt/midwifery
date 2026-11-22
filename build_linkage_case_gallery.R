@@ -35,23 +35,19 @@
 
 suppressPackageStartupMessages({library(dplyr); library(readr)})
 source(file.path("R", "lib", "artifact_provenance.R"))
+source(file.path("R", "lib", "script_cli_and_keys.R"))
 
 # ---- arguments -------------------------------------------------------------
 # Function names are gal_*-prefixed throughout: ci_hygiene H4 forbids one
 # top-level function name being defined in two tracked files, and short names
 # like `arg` or `esc` are exactly the ones a second script would also want.
-gal_arg <- function(key, default) {
-  hit <- grep(paste0("^--", key, "="), commandArgs(TRUE), value = TRUE)
-  if (!length(hit)) return(default)
-  sub(paste0("^--", key, "="), "", hit[1])
-}
 gal_flag <- function(key) paste0("--", key) %in% commandArgs(TRUE)
 
-CROSSWALK <- gal_arg("crosswalk", file.path("artifacts", "amcb_npi_linkage_FROZEN.csv"))
-PER_STRATUM <- as.integer(gal_arg("n", "6"))
-SEED <- as.integer(gal_arg("seed", "20260902"))
+CROSSWALK <- cli_arg("crosswalk", file.path("artifacts", "amcb_npi_linkage_FROZEN.csv"))
+PER_STRATUM <- as.integer(cli_arg("n", "6"))
+SEED <- as.integer(cli_arg("seed", "20260902"))
 REDACT <- gal_flag("redact")
-OUTDIR <- gal_arg("outdir", "qa")
+OUTDIR <- cli_arg("outdir", "qa")
 
 if (!identical(OUTDIR, "qa") && !gal_flag("allow-unsafe-outdir")) {
   stop("Refusing to write person-level output outside qa/, which is gitignored.\n",
@@ -71,7 +67,6 @@ if (!file.exists(CROSSWALK)) {
 x <- read_csv(CROSSWALK, show_col_types = FALSE, guess_max = 50000)
 message(sprintf("Read %s rows from %s", format(nrow(x), big.mark = ","), CROSSWALK))
 
-gal_has <- function(...) all(c(...) %in% names(x))
 gal_num <- function(v) suppressWarnings(as.numeric(v))
 gal_true <- function(v) !is.na(v) & (v %in% c(TRUE, "TRUE", "true", "1"))
 

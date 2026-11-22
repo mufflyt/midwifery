@@ -59,6 +59,7 @@ suppressPackageStartupMessages({
 })
 
 source(file.path("R", "lib", "artifact_provenance.R"))
+source(file.path("R", "lib", "script_cli_and_keys.R"))
 
 timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
 artifact_dir <- file.path("artifacts", "cms_physician_compare")
@@ -83,13 +84,6 @@ if (length(person_files) == 0L) {
   stop("Run build_dac_identity_spine_2013.R first.", call. = FALSE)
 }
 
-drift_norm <- function(x) {
-  x |>
-    toupper() |>
-    stringr::str_replace_all("[^A-Z0-9 ]", " ") |>
-    stringr::str_squish() |>
-    dplyr::na_if("")
-}
 
 drift_zip5 <- function(x) {
   out <- stringr::str_sub(stringr::str_remove_all(x, "\\D"), 1, 5)
@@ -131,14 +125,14 @@ dac_2013 <- read_csv(person_files[[length(person_files)]],
   ungroup() |>
   transmute(
     npi = .data$npi,
-    first_2013 = drift_norm(.data$first_name),
-    middle_2013 = drift_norm(.data$middle_name),
-    last_2013 = drift_norm(.data$last_name),
-    credential_2013 = drift_norm(.data$credential),
-    state_2013 = drift_norm(.data$practice_state),
+    first_2013 = identity_key_norm(.data$first_name),
+    middle_2013 = identity_key_norm(.data$middle_name),
+    last_2013 = identity_key_norm(.data$last_name),
+    credential_2013 = identity_key_norm(.data$credential),
+    state_2013 = identity_key_norm(.data$practice_state),
     zip_2013 = drift_zip5(.data$practice_zip),
-    org_2013 = drift_norm(.data$group_pac_id),
-    specialty_2013 = canon_specialty(drift_norm(.data$primary_specialty))
+    org_2013 = identity_key_norm(.data$group_pac_id),
+    specialty_2013 = canon_specialty(identity_key_norm(.data$primary_specialty))
   )
 
 base::message("[2013] ", format(nrow(dac_2013), big.mark = ","), " CNM NPIs")
@@ -148,11 +142,6 @@ base::message("[2013] ", format(nrow(dac_2013), big.mark = ","), " CNM NPIs")
 # 2. 2026 identity for the same NPIs, keyed by NPI alone
 # -------------------------------------------------------------------------
 
-drift_collapse_set <- function(x) {
-  v <- unique(x[!is.na(x) & nzchar(x)])
-  if (length(v) == 0L) return(NA_character_)
-  paste(sort(v), collapse = "|")
-}
 
 base::message("[2026] Scanning ", basename(DAC_2026))
 
@@ -169,14 +158,14 @@ dac_2026_raw <- read_csv(
 dac_2026 <- dac_2026_raw |>
   group_by(npi = .data$NPI) |>
   summarise(
-    first_2026 = drift_collapse_set(drift_norm(.data$`Provider First Name`)),
-    middle_2026 = drift_collapse_set(drift_norm(.data$`Provider Middle Name`)),
-    last_2026 = drift_collapse_set(drift_norm(.data$`Provider Last Name`)),
-    credential_2026 = drift_collapse_set(drift_norm(.data$Cred)),
-    state_2026 = drift_collapse_set(drift_norm(.data$State)),
-    zip_2026 = drift_collapse_set(drift_zip5(.data$`ZIP Code`)),
-    org_2026 = drift_collapse_set(drift_norm(.data$org_pac_id)),
-    specialty_2026 = canon_specialty(drift_collapse_set(drift_norm(.data$pri_spec))),
+    first_2026 = collapse_key_set(identity_key_norm(.data$`Provider First Name`)),
+    middle_2026 = collapse_key_set(identity_key_norm(.data$`Provider Middle Name`)),
+    last_2026 = collapse_key_set(identity_key_norm(.data$`Provider Last Name`)),
+    credential_2026 = collapse_key_set(identity_key_norm(.data$Cred)),
+    state_2026 = collapse_key_set(identity_key_norm(.data$State)),
+    zip_2026 = collapse_key_set(drift_zip5(.data$`ZIP Code`)),
+    org_2026 = collapse_key_set(identity_key_norm(.data$org_pac_id)),
+    specialty_2026 = canon_specialty(collapse_key_set(identity_key_norm(.data$pri_spec))),
     .groups = "drop"
   )
 
@@ -196,7 +185,7 @@ former <- if (file.exists(NPPES_EXTRACT)) {
   read_csv(NPPES_EXTRACT, col_types = cols(.default = col_character())) |>
     transmute(
       npi = .data$npi,
-      other_surname_2013 = drift_norm(.data$nppes_other_last_name),
+      other_surname_2013 = identity_key_norm(.data$nppes_other_last_name),
       other_surname_type_2013 = .data$nppes_other_last_name_type
     )
 } else {

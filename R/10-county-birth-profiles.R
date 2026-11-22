@@ -281,14 +281,6 @@ county_sentences <- function(r, n_counties) {
   paste(parts, collapse = " ")
 }
 
-#' Ordinal suffix
-#' @keywords internal
-#' @noRd
-scales_ord <- function(n) {
-  n <- round(n)
-  if (n %% 100 %in% 11:13) return("th")
-  switch(as.character(n %% 10), "1" = "st", "2" = "nd", "3" = "rd", "th")
-}
 
 run_profiles <- function() {
   stopifnot(file.exists(BASE), file.exists(GEO))

@@ -22,6 +22,21 @@
 # The environment is detected from artifacts/amcb_npi_linkage_FROZEN.csv, which
 # is gitignored by design and therefore the sharpest available signal.
 #
+# `full`/`lean` IS ONE AXIS, AND `needs` NAMES A ROW'S OWN. The flag above asks
+# exactly one question -- is the person-level freeze present -- and for most
+# rows that is the question, because what they skip for is private data. Four
+# rows skip for something else: the sf package, and the ~/isochrones checkout.
+# Those are properties of the machine, not of the repository, and the freeze
+# says nothing about them.
+#
+# A scratch worktree is where that bit. It has no artifacts/, so it is
+# classified `lean` and those four were expected to skip once each -- while it
+# still sees the developer's installed sf and their ~/isochrones, so they did
+# not skip at all. All four reported STALE on 2026-11-22 with nothing wrong
+# with them, and "lowering the count to match" would have reddened CI, where
+# the skip is real. A row with a `needs` spec is now compared against the
+# column its OWN precondition selects, so all three environments read right.
+#
 # gate    path to the gate script
 # kind    ci_skip   a gate that prints `  --   ` through ci_skip()
 #         cycle     an adversarial-cycle test discovered by the glob step in
@@ -40,12 +55,22 @@
 # full    expected skips with person-level artifacts present
 # lean    expected skips on a bare checkout
 # reason  why these skips are legitimate. An entry without one is a hiding place.
+# needs   optional. The precondition that decides which column applies to THIS
+#         row, instead of the global full/lean flag. Satisfied -> `full`;
+#         absent -> `lean`. Leave empty for a row that skips for private data,
+#         which is what the flag already measures.
+#           pkg:<packages>   comma-separated, all must be installable
+#           iso:<paths>      comma-separated, under $ISOCHRONES_R (default
+#                            ~/isochrones/R), all must exist
+#           path:<paths>     comma-separated absolute or ~ paths
+#         The spec restates the test's own guard, so the two can drift; that
+#         shows up as a count disagreement rather than silently.
 # =============================================================================
-gate	kind	when	full	lean	reason
+gate	kind	when	full	lean	reason	needs
 tests/ci_artifact_contracts.R	ci_skip	pr	0	1	A4 reads the person-level frozen linkage, which is gitignored; on a bare checkout it can only be asserted locally
 tests/ci_semantic_contracts.R	ci_skip	pr	0	0	declares no skips in either environment; listed so that gaining one is a failure rather than a surprise
-tests/ci_science_contracts.R	ci_skip	pr	1	3	SCI2 has known tie-break sites awaiting a policy decision, the affiliation coverage matrix is not built on a bare checkout, and no experiment script chooses a numeric cut to declare
-tests/ci_denominator_contracts.R	ci_skip	pr	0	1	D5 reads artifacts/canonical_source_records.csv, which .gitignore:320 excludes, so it skips on every runner and asserts in full on a machine holding it. full is 0 because UFT_BASELINE is now character(0): no consumer is forgiven any more, so the local run declares nothing. The previous reason said the count was environment-independent because every input is a tracked artifact, which was wrong about this one and is what let D5 fail on every runner for as long as it did.
+tests/ci_science_contracts.R	ci_skip	pr	2	3	SCI2 has known tie-break sites awaiting a policy decision, and no experiment script chooses a numeric cut to declare; both hold in either environment, and 2 is measured rather than assumed. The third lean skip is the affiliation coverage matrix, gitignored and so absent on a bare checkout and present once the pipeline has run
+tests/ci_denominator_contracts.R	ci_skip	pr	0	1	D5 reads artifacts/canonical_source_records.csv, which .gitignore:320 excludes, so it skips on every runner and asserts in full on a machine holding it. full is 0 for two independent reasons: the file is present there, and UFT_BASELINE is now character(0) so no consumer is forgiven and the baselined-consumer skip cannot fire either. The previous reason said the count was environment-independent because every input is a tracked artifact, which was wrong about this one and is what let D5 fail on every runner for as long as it did
 tests/ci_science_laws.R	ci_skip	pr	1	1	L1 carries one off-vintage declaration awaiting a rebuild; the same in both environments because its inputs are tracked
 tests/ci_data_regression_guard.R	ci_skip	pr	0	2	D8 and D9 read the person-level FROZEN linkage and analytic cohort, both gitignored; on a bare checkout both skip as PRIVATE-OK
 tests/ci_science_nightly.R	ci_skip	nightly	-	-	nightly tier only; declared so the completeness check does not report it as an undeclared skipping gate
@@ -63,13 +88,13 @@ tests/test_cycle6_field_quality.R	cycle	pr	2	2	two person-level inputs are gitig
 tests/test_cycle15_ob_capacity.R	cycle	pr	0	1	the obstetric-capacity artifact is pipeline-derived and absent from a bare checkout
 tests/test_cycle19_address_provenance.R	cycle	pr	0	4	the address-provenance evidence file is gitignored; T199 now asks its provenance sidecar rather than an mtime, and skips cleanly when the file is absent rather than pretending to have checked
 tests/test_cycle22_idempotence.R	cycle	pr	0	3	idempotence is asserted against pipeline outputs that a bare checkout does not carry
-tests/test_cycle11_spatial.R	cycle	pr	0	1	needs sf, which the pure-function job installs no system geo libraries for by design; the whole file declares one skip rather than failing the discovery step
-tests/test_cycle14_coverage_surfaces.R	cycle	pr	0	1	needs sf, same reason as cycle11
-tests/test_cycle12_names_territories.R	cycle	pr	0	1	sources R/string_normalization.R, a shim whose implementation lives in ~/isochrones and which no runner carries; test_cycle4 already guards the same shim this way
-tests/test_cycle31_healthgrades_insurance_parsing.R	cycle	pr	0	1	sys.source()s scrape_healthgrades_midwives.R, which calls load_isochrones_name_tools() at top level before its own sys.nframe() guard; that loader stop()s without the ~/isochrones checkout, which no runner carries
+tests/test_cycle11_spatial.R	cycle	pr	0	1	needs sf, which the pure-function job installs no system geo libraries for by design; the whole file declares one skip rather than failing the discovery step	pkg:sf
+tests/test_cycle14_coverage_surfaces.R	cycle	pr	0	1	needs sf, same reason as cycle11	pkg:sf
+tests/test_cycle12_names_territories.R	cycle	pr	0	1	sources R/string_normalization.R, a shim whose implementation lives in ~/isochrones and which no runner carries; test_cycle4 already guards the same shim this way	iso:string_normalization.R
+tests/test_cycle31_healthgrades_insurance_parsing.R	cycle	pr	0	1	sys.source()s scrape_healthgrades_midwives.R, which calls load_isochrones_name_tools() at top level before its own sys.nframe() guard; that loader stop()s without the ~/isochrones checkout, which no runner carries	iso:utils/npi_luhn_qa.R,string_normalization.R,nickname_system.R,enhanced_name_parsing.R,name_parsing_protocol_enhanced.R
 tests/ci_duckdb_connection_contract.R	ci_skip	pr	3	3	three UNSPECIFIED-by-design contract facts (temp_directory, memory_limit, ATTACH/DETACH not exercised) are always skipped, unconditionally, regardless of environment
 tests/ci_duckdb_clean_environment.R	ci_skip	pr	0	0	the one ci_skip() note only fires if the install-allowed scenario cannot reach the network to download the encodings extension; GitHub-hosted runners have outbound internet access by default, so this is expected to be 0 -- if a runner network-restricts this, bump to 1 and note the runner, not a code regression
-tests/test_exclusion_invariants.R	ci_skip	pr	1	1	E3 checks person-level frozen datasets (amcb_npi_linkage_FROZEN.csv and midwives_geography_FROZEN.csv), which are gitignored; skips when absent
+tests/test_exclusion_invariants.R	ci_skip	pr	0	1	E3 checks person-level frozen datasets (amcb_npi_linkage_FROZEN.csv and midwives_geography_FROZEN.csv), which are gitignored; it skips on a bare checkout and runs wherever both are present
 tests/test_table1_demographics_qc.R	ci_skip	pr	0	0	Table 1 CSV is tracked; declared so that gaining a skip is a failure
 tests/test-nightly-registry.R	testthat	pr	0	0	Nightly framework registry schema validation tests
 tests/test-nightly-classification.R	testthat	pr	0	0	Nightly framework classification and severity policy tests

@@ -23,6 +23,11 @@
 
 if (!exists("atomic_saveRDS", mode = "function")) {
   source(file.path("R", "lib", "resume_state.R"))
+  # %|na|% lives in common_helpers.R, which exists so this exact operator is
+  # not defined twice with two meanings. The local copy here fell through on a
+  # length-1 NA; the canonical one also falls through on length 0 and all-NA,
+  # a superset that agrees with it on the scalar cache field below.
+  source(file.path("R", "lib", "common_helpers.R"))
 }
 
 #' Cache file for one location key
@@ -91,10 +96,9 @@ osmde_cache_get <- function(cache_dir, key) {
     return(list(sf = x, fetched_utc = NA_character_, routing_engine = legacy_engine))
   if (is.list(x) && inherits(x$sf, "sf"))
     return(list(sf = x$sf, fetched_utc = x$fetched_utc,
-               routing_engine = x$routing_engine %||% legacy_engine))
+               routing_engine = x$routing_engine %|na|% legacy_engine))
   NULL
 }
-`%||%` <- function(a, b) if (is.null(a) || (length(a) == 1 && is.na(a))) b else a
 
 #' Migrate a monolithic `_checkpoint.rds` into the per-location cache
 #'

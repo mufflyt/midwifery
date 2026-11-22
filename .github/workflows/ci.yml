@@ -86,6 +86,21 @@ jobs:
       - name: Workflow contracts (a job installs what it runs)
         run: Rscript tests/ci_workflow_contracts.R
 
+      # The detector runs BEFORE the gate it tests, deliberately. ci_read_width.R
+      # is a parse walk over a shrink-only baseline, and the two ways a parse
+      # walk fails are "matched nothing" and "scanned nothing" -- both of which
+      # look exactly like a clean tree. Both happened while it was being
+      # written, so the order here means a gate that has stopped detecting is
+      # reported as a gate failure rather than as a green repository.
+      #
+      # In this job because neither script needs a package: base R, ci_report.R
+      # and R/lib/ast_walk.R, about 20s for the pair.
+      - name: Panel read-width detector (the gate still detects)
+        run: Rscript tests/test_read_width_detect.R
+
+      - name: Panel read-width (a 544 MB read names its columns)
+        run: Rscript tests/ci_read_width.R
+
       # The aggregate gate decides whether this pull request is scientifically
       # green, so its logic is tested here rather than trusted: all-success
       # passes, and skipped, cancelled, failed, missing and ran-nothing are each
@@ -385,6 +400,13 @@ jobs:
         run: |
           pkgs <- c("dplyr", "jsonlite", "purrr", "readr", "scales", "stringi",
                     "stringr", "testthat", "tibble", "tidyr",
+                    # cyclocomp: tools/measure_code_complexity.R names it, and
+                    # tests/test_dead_code_cuts_saboteurs.R sources that tool
+                    # rather than writing a second parser. Only mcc_profile()
+                    # calls it and the saboteurs do not, but the package gate
+                    # follows the source() chain and is right to: a step that
+                    # can reach the call must be able to load it.
+                    "cyclocomp",
                     "checkmate", "DBI", "digest", "duckdb", "geosphere",
                     "here", "httr", "openssl", "xml2",
                     # the ported upstream suites: assertthat for their
@@ -553,6 +575,14 @@ jobs:
       # git repository, so this step needs git on PATH -- which this runner has.
       - name: Review-fix saboteurs
         run: Rscript tests/test_review_fixes_saboteurs.R
+
+      # The dead-code and duplication cuts of 2026-11-22, each planted back: a
+      # function nothing references, a body copied under a second name, a
+      # definition shadowing base R, a wrapper that only forwards, and a
+      # catalog section the builder stops calling. A SECOND suite rather than
+      # more cases in the one above, which owns the first round's four laws.
+      - name: Dead-code and duplication cut saboteurs
+        run: Rscript tests/test_dead_code_cuts_saboteurs.R
 
       - name: State-license table construction
         run: Rscript tests/test_build_amcb_state_licenses.R
