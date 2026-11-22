@@ -208,6 +208,20 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   surviving `safe_left_join()`'s unreachable branch to a single `stop()`. The
   merged result is `main`'s. What survives from this branch is the call shape
   below, which the audit did not cover.
+- **Two new scripts opened a raw DuckDB connection outside the chokepoint.**
+  `audit_medicaid_npi_coverage.R` and
+  `build_medicaid_npi_population_by_state.R` each called
+  `dbConnect(duckdb())` directly. Every connection in this repository goes
+  through `duckdb_connect()`, which is an architectural invariant rather than a
+  convention: a raw connection skips the encoding bootstrap and the temp
+  directory setting, and the second of those matters when the connection is
+  about to stream a 66 million row parquet on an 8 GB machine.
+  `tests/duckdb_architecture_scan.R` caught both as unregistered sites, which
+  is the gate working: it arrived on `main` in the same window these scripts
+  were written, so the scan had never seen them while they were untracked.
+  Routed through `duckdb_connect()` rather than registered as exceptions,
+  because an exception is for a connection that cannot use the chokepoint and
+  these can.
 - **`join_coverage_report()` was called positionally.** Its signature ends in
   validation thresholds (`min_coverage`, then `verbose`), so inserting a formal
   ahead of `min_coverage` would have slid a threshold into `verbose` with no
