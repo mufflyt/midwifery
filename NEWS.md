@@ -20,6 +20,257 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-21 — five published rates divide by a group the numerator never came from; five declared checks nothing performed; a gate per defect
+
+### Added
+
+- **`tests/ci_denominator_contracts.R` (D1-D5): a rate's numerator must belong
+  to its denominator's group.** `ci_artifact_contracts.R` checks arithmetic
+  inside a file, `ci_semantic_contracts.R` that two files describe one world,
+  `ci_science_contracts.R` that the code claims no more than the data supports.
+  None of them checks the thing that produced four wrong supplemental-table
+  rates in this rewrite: a percentage whose numerator is a sub-count of some
+  *other* group, or whose denominator pools rows where the rate is undefined.
+  D1 refuses a persistence rate pooled across the panel edge (no t+1 at a
+  source's last year makes `n_lost_from_source == n_observed` by construction);
+  D2 refuses registry visibility computed past the registry's last year; D3
+  refuses a numerator divided by a group it is not a sub-count of; D4 refuses a
+  base-year label backed by a pooled count; D5 requires every consumer of the
+  canonical source record table to honour `usable_for_trend`. Base R, static
+  source plus committed artifacts, no person-level data.
+- **`tests/test_denominator_contracts_detect.R`: 9 planted defects, 4 near
+  misses, 13/13.** Same gate-of-gates construction as
+  `tests/test_science_contracts_detect.R` and for the reason
+  `docs/APPENDIX_checks_that_cannot_fail_2026-11-20.md` records — a gate whose
+  regex matches nothing passes exactly like a clean repository. Writing it
+  caught a design defect in D1 that reading it had not: the structural check
+  hard-coded the *broken* edge shape, so the gate would have blocked its own
+  remedy the moment anyone applied it. D1 now accepts declared-or-withheld
+  degeneracy. Both false positives the gates produced on their first run are
+  pinned as near-miss cases (`build_lead_lag_decomposition.R` carrying two
+  columns through one `transmute()` without dividing them; a 1,500-line catalog
+  whose unrelated `year <` satisfied the year-restriction check from four
+  hundred lines away), so the precision cannot silently regress.
+
+- **The four-wrapper parity gate lives in `~/isochrones`, not here.** It was
+  written for this repository first, at
+  `tests/test_safe_join_key_harmonization.R`, asserting that all four
+  `safe_*_join()` wrappers coerce a character key against an integer key.
+  Merging `main` removed its subject: the 2026-11-20 complexity audit deleted
+  `safe_inner_join()`, `safe_semi_join()` and `safe_anti_join()` from this
+  repository for having no production call site, and
+  `tests/test_complexity_cuts_saboteurs.R` C1a to C1e now refuse a
+  redefinition, a call, or a wrapper copied back from the upstream copy. A
+  parity test for three functions that no longer exist would have been the
+  first thing C1b caught, so it is deleted here and kept where the wrappers
+  are real: `~/isochrones/tests/ci/test-safe-join-key-harmonization.R`, wired
+  into that repository's `fast-gates.yml` as gate 3c.
+- **`audit_medicaid_npi_coverage.R` now checks the precondition behind
+  `COUNT(NPI)`.** The rate below is only the share of segments carrying a
+  provider identifier if SQL `NULL` is the one way the field can be absent; a
+  `VARCHAR` column spelling absence as `""` would be counted as present and
+  would read high for exactly the worst reporting states. Measured on the
+  2026-07-24 release: `VARCHAR`, 65,970,112 segments, 51,289,354 non-`NULL`
+  (77.75%), **0** blank after trim, **0** of length other than ten, and 104
+  sentinel values (92 spelled `0000000000`, 12 spelled `9999999999`: together
+  0.0002% of non-`NULL`, below the two decimals the
+  artifact reports). Fails closed if a blank or short value ever appears. It
+  is folded into the script that already recomputes the per-state rates from
+  the same parquet rather than shipping a second root script that opens the
+  same 66 million row file to ask a neighbouring question.
+- **`docs/APPENDIX_vendored_join_safety_divergence_2026-11-21.md`**: the join
+  safety findings, the probe that distinguishes them, and the two places this
+  shape recurred while being fixed, one inside the file and one across the two
+  repositories that vendor it.
+
+### Changed
+
+- **`code_lines()` moved from `tests/ci_science_contracts.R` to
+  `ci_code_lines()` in `tests/ci_report.R`.** The new gate needs the same
+  comment-stripping read, and a second top-level definition of it is the H4
+  defect these gates exist to catch. All 8 call sites rewritten; proven
+  behaviourally neutral by running both versions in one worktree (identical
+  skip sets, `test_science_contracts_detect.R` 13/13).
+
+### Fixed
+
+- **The public Medicaid NPI-population rate divided providers by spells, and
+  it was published.** `build_medicaid_npi_population_by_state.R` computed
+  `COUNT(DISTINCT NPI) / COUNT(*)` — distinct providers over enrollment
+  segments — under the name `pct_segments_with_npi`. Any state filing many
+  spells per provider therefore read near zero: North Dakota printed **1.0%**
+  against a true **96.8%**, Missouri 1.1% against 96.5%, Colorado 1.2% against
+  71.9%. Only the two genuine zeros (New Mexico, Oregon, which file no
+  NPI-bearing segment at all) were right, and the states that looked complete
+  were simply those filing few spells each. The numerator is now `COUNT(NPI)`,
+  and the artifact carries it as its own column so the rate can be checked
+  against its own inputs. Supplemental Figure S6 and the Results prose are
+  rebuilt: the file is well populated almost everywhere, with a real low tail
+  (Illinois 28%, Minnesota 34%, Michigan 43%) and **26 of 54** reporting
+  states and territories below the 90% that CMS's 10%-missing threshold
+  implies — a number the prose now states, having previously cited the
+  threshold without applying it.
+- **The NPI-population artifact was not reproducible.** `ORDER BY
+  pct_segments_with_npi` had no tie-breaker, so Florida and Maryland (both
+  87.11%) swapped places between two runs over an unchanged input file,
+  churning the artifact and its provenance sidecar for no reason. Found by
+  rebuilding twice while verifying the fix above. `ORDER BY
+  pct_segments_with_npi, state`; two consecutive rebuilds now agree byte for
+  byte.
+- **The F2 "cluster bootstrap" resampled singletons.** It ran inside
+  `group_by(source, year)`, where `agree_cell` holds exactly one row per NPI,
+  so every cluster had one member and the result reproduced the i.i.d.
+  interval it was introduced to replace (`n_npi_years == n_npis` in all 30
+  rows; `boot_width` averaged **0.98x** `wilson_width`, narrower, where
+  positive intracluster correlation must make it wider). A midwife is only in
+  several cells once years are pooled, so the clustered interval now reports
+  at `scope = "pooled"`, one row per source, where a cluster carries up to 14
+  NPI-years — design effects **1.09x to 2.31x**, which is the understatement
+  the spec asked to have printed. The estimator was also a mean of per-NPI
+  means, targeting a different quantity than the NPI-year `pct_agree` beside
+  it; it is now a ratio estimator. Per-year rows keep Wilson and withhold the
+  bootstrap columns rather than print a singleton resample.
+- **`n_lost_visible_in_nppes` counted providers who never left.** The join
+  that built it never excluded the providers still present in the source at
+  t+1, so it counted **9,013** of 9,770 observed provider-years as "lost" for
+  medicaid_enrollment 2018 where **106** had left and 98 of those were still
+  in the registry. Supplemental Table S4 reads the neighbouring, correctly
+  conditioned column, so no published number was wrong — but the column was in
+  a committed artifact and already being aggregated by the stats catalog. It
+  is removed at the producer rather than renamed, since
+  `n_lost_source_but_in_nppes` is the quantity anyone wants.
+- **`tests/test_npi_rate_and_cluster_saboteurs.R`: 22 checks, 3 laws, 4
+  planted defects, 3 near misses.** One law per fix — a share of records
+  divides records by records; a clustered interval is computed where a cluster
+  has more than one member; a column named for leavers is a sub-count of
+  leavers — each checked against the real artifact and then against the defect
+  as it actually shipped. Validated both ways: 22/22 on the fixed tree, 13
+  failures against a clean worktree at `6cb96e0`. Two checks initially passed
+  vacuously on the pre-fix artifact because the column they read did not exist
+  yet (`all()` of nothing is `TRUE`), which is the
+  `docs/APPENDIX_checks_that_cannot_fail_2026-11-20.md` failure mode; both now
+  require their columns. Wired into `ci.yml`; needs no extra packages and no
+  private data.
+
+- **`safe_anti_join()` documented a type harmonization it did not perform,
+  and the answer was to delete it** (`R/join_safety.R`). The 2026-04-05 fix
+  added `harmonize_join_key_types()` to three of the four wrappers. The fourth
+  kept the claim in its own `@section Algorithm` ("Validates keys, harmonizes
+  types, then calls `dplyr::anti_join()`") and in its `@section Calls`, and
+  lost the call, so a character key against an integer key aborted for seven
+  months where its siblings coerced and continued. Probed against a clean
+  worktree at `6cb96e0`: left 3 rows, inner 2 rows, semi 2 rows, anti
+  `Can't join x$npi with y$npi due to incompatible types`. Found by the
+  complexity audit, which measured the semi and anti pair at 0.78 structural
+  similarity and diffed the near duplicates rather than reading the
+  documentation.
+  The three-line fix was written first, and then `main` answered the question
+  one rung higher: the 2026-11-20 audit deleted `safe_inner_join()`,
+  `safe_semi_join()` and `safe_anti_join()` outright, because nothing in this
+  repository called them. A wrapper with no caller does not need its
+  documentation repaired. The fix and the parity gate therefore live in
+  `~/isochrones`, which does use the wrappers and whose
+  `vignettes/joins-that-cannot-fan-out.Rmd` teaches `safe_anti_join()` as the
+  way to see unmatched rows, and `tests/test_complexity_cuts_saboteurs.R` C1c
+  keeps the deleted wrappers from being copied back here from that copy. The
+  write-up of both halves is
+  `docs/APPENDIX_vendored_join_safety_divergence_2026-11-21.md`.
+- **Four supplemental-table rates divided a count by a group it did not come
+  from (DEBT D14).** Fixed at the producer first, then at the two displays.
+  `build_f2_f3_uncertainty_denominators.R` now withholds the follow-up columns
+  as NA rather than 0 at each source's last year, where nobody can be followed
+  because there is no t+1, and withholds the leaver-visibility count where
+  `year + 1` is past the registry's last year, where "absent from the registry"
+  cannot be distinguished from "the registry has not been observed yet". A
+  blank cannot be summed into a wrong rate where a zero can: Medicaid's "left
+  source" read **16.9%** pooled against **0.8%** evaluable, and PECOS's
+  leavers-still-in-registry share read **16.4%** against **96.5%**, which
+  contradicted the sentence it was printed under.
+  `manuscript/R/build_stats_catalog.R` now restricts to the evaluable rows by
+  name instead of inheriting `aggregate()`'s `na.action`, because a reader of
+  Supplemental Table S4 cannot see an aggregation's year range.
+- **Supplemental Table S3 labelled pooled counts as base-year counts, and
+  divided a concordant-group count by the discordant denominator.** The
+  `Base year` column is gone: every count and share in that row pools the
+  source's window, 23,315 paired transitions for Medicaid where the base-year
+  cohort is 1,316, and the window and the per-source base years (2013 for the
+  Medicaid and Medicare sources, 2021 for revalidation and industry payments)
+  are stated in the caption instead. `Both moved (%)` is gone too:
+  `both_move_together_at_t1` counts provider-years that AGREED at t, a
+  sub-count of `n_concordant_at_t`, and over the discordant denominator the
+  open_payments row summed to **114.5%**. It is replaced by the residual
+  `100 - (persistent + adopts + reverts)`, labelled `Left observation (%)`,
+  which is in the right group and makes the row sum to 100 by construction.
+- **D5's baseline is empty and its environment case is a skip.**
+  `build_state_variation_agreement.R` had already taken the `usable_for_trend`
+  filter, so its line is deleted from `UFT_BASELINE` rather than left as a
+  standing exemption. Separately, D5 called
+  `artifacts/canonical_source_records.csv` "a tracked artifact, so absence is a
+  regression" when `.gitignore:320` excludes it as person-level: it failed on
+  every runner for an environment reason, which is the permanently red gate
+  D10 of `DEBT.md` warns teaches people to ignore gates. Absent-and-gitignored
+  is now a skip, absent-and-tracked is still a failure, which is the
+  distinction `ci_require_files()` already draws.
+- **A cited figure from another study tripped the typed-literal gate.**
+  `ci_manuscript_numbers.R` flagged 84.8 at
+  `federal_database_accuracy.qmd:590`, which is Butala et al.'s own published
+  directory-consistency figure quoted with its citation, not this study's
+  `linkage.active_ascertained_pct` that happens to share the digits. Added to
+  `manuscript/allowed_literals.tsv` with that reason, which is what the
+  allowlist is for.
+- **Two new scripts opened a raw DuckDB connection outside the chokepoint.**
+  `audit_medicaid_npi_coverage.R` and
+  `build_medicaid_npi_population_by_state.R` each called
+  `dbConnect(duckdb())` directly. Every connection in this repository goes
+  through `duckdb_connect()`, which is an architectural invariant rather than a
+  convention: a raw connection skips the encoding bootstrap and the temp
+  directory setting, and the second of those matters when the connection is
+  about to stream a 66 million row parquet on an 8 GB machine.
+  `tests/duckdb_architecture_scan.R` caught both as unregistered sites, which
+  is the gate working: it arrived on `main` in the same window these scripts
+  were written, so the scan had never seen them while they were untracked.
+  Routed through `duckdb_connect()` rather than registered as exceptions,
+  because an exception is for a connection that cannot use the chokepoint and
+  these can.
+- **A manuscript gate crashed on the restructure it was written to protect**
+  (`tests/test_manuscript_figure_saboteurs.R`). G5c resolved the multi-state
+  panel by hard-coded number, and the Green Journal restructure moved it from
+  Figure 5 to Supplemental Figure S4, so `grep()` returned nothing and `seq()`
+  raised "argument of length 0": the check did not go red, it crashed, taking
+  the rest of the file's sections with it. It now resolves the caption by its
+  content, so a renumber moves the check instead of breaking it. G4c asserted
+  that no figure is cited twice, which was never the law: the original defect
+  was a citation repointed from Figure 5 to Figure 6, which left one figure
+  uncited (G4b's half, and the half that generalises) and another cited twice,
+  and a second mention is legitimate because the data-availability sentence
+  names every display item by number. With the display items cut to Tables 1
+  through 4 plus one figure, that check failed on a manuscript that is right.
+  G4c now asserts what the journal requires, that a figure's FIRST citation
+  precedes its panel, and the saboteur repoints the first citation at a figure
+  number one past the last caption, so it reproduces the original defect at
+  any figure count instead of naming Figure 5. 7 of 7 saboteurs hold.
+- **The denominator detect suite described a schema its producer cannot
+  emit.** `tests/test_denominator_contracts_detect.R` built its persistence
+  fixture with the `n_lost_visible_in_nppes` column removed above, in the
+  header and in nine clean rows, and six saboteur cases replaced whole rows
+  positionally with eleven field strings. The suite passed, because the gate
+  selects columns by name, so this was a fixture drifting from the artifact
+  rather than a false negative. All sixteen rows now carry ten fields with each
+  case's intent preserved (the D2 case still presents 99 registry visible
+  leavers against 20 leavers; the D1 near miss still presents a 95% visibility
+  share), and the suite still reports `PASS (0 failures)` with every saboteur
+  firing and every near miss held.
+
+### Known issues
+
+- **None outstanding for this entry.** `tests/ci_denominator_contracts.R`
+  reported `FAILED (5)` when it arrived, which was the point: the gates made
+  five live defects blocking rather than fixing them. All five are fixed above
+  and the gate now reports `PASS (0 failures)`, with
+  `tests/test_denominator_contracts_detect.R` still firing on 9 planted
+  defects and holding 4 near misses, so the gates were not weakened to get
+  there. [`DEBT.md`](DEBT.md) **D14** is closed with the measurements.
+
 ## [Unreleased] — 2026-11-21 — a linkage key that depended on the machine that built it; a scope that was not a scope
 
 ### Fixed
@@ -105,6 +356,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the accent fold this is a policy change about who should match, it moves
   linkage counts on purpose, and it needs a shadow-arm comparison rather than
   riding along where the movement could not be attributed between two causes.
+
 
 ## [Unreleased] — 2026-11-17 — mysteryroster audited the same way mysterynpi was; one script's output is stale, unrelated to the pin
 

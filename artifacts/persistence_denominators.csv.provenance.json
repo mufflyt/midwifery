@@ -1,21 +1,25 @@
 {
   "artifact": "persistence_denominators.csv",
-  "written_utc": "2026-11-19 03:01:35 UTC",
+  "written_utc": "2026-11-22 01:14:40 UTC",
   "inputs": [
     {
       "path": "artifacts/canonical_source_records.csv",
       "sha256": "81cf8b26e0a055bc5ddbe74f3ffe872105d12025272bce18b9b68acfc901f006"
     }
   ],
-  "code_sha256": "236442d454598749bece4f37aeb3df67fb843328a16ae7dbfd6cff5deb92fb6e",
+  "code_sha256": "fb2025b8c50ea5685bb8752cb3a3be909dc5c6cc7fce4647b27269a205075742",
   "code": [
     {
       "path": "build_f2_f3_uncertainty_denominators.R",
-      "sha256": "f5436ff5fa283cb446fcf9b7b8703c3a0f0ffed080cf5aad4a3c355db91ae4e1"
+      "sha256": "3fcd7b0c097c7fb8ff9652bf8b192638159060eb619ebdcc4e9d9e44e74fe3e5"
     },
     {
       "path": "R/lib/artifact_provenance.R",
-      "sha256": "4937914878dfd340d545d54ab079074fb74320f4272dd5e4c8196aeefd46c391"
+      "sha256": "3dec47ce20ffe42a4a8b85c84e0264c37c91b6da1452926c33ab2a9d0ec06e9e"
+    },
+    {
+      "path": "R/lib/ast_walk.R",
+      "sha256": "9611f2b4a7119c4fd9c300677df216e72439c94bdb93244fd413510807eba36a"
     },
     {
       "path": "R/lib/provenance.R",
@@ -43,6 +47,12 @@
       "package": "humaniformat",
       "installed": true,
       "version": "0.6.0",
+      "source_sha": null
+    },
+    {
+      "package": "mysteryroster",
+      "installed": true,
+      "version": "0.3.0",
       "source_sha": null
     }
   ]

@@ -719,6 +719,11 @@ safe_left_join <- function(left, right, by, expect_unique_right = TRUE,
   }
 
   # Basic coverage check (enhanced metrics would provide more)
+  # Named, not positional. join_coverage_report()'s signature ends in
+  # validation thresholds (min_coverage, verbose), so inserting a formal ahead
+  # of min_coverage would slide a threshold into verbose with no call site
+  # changing and no error raised. tests/test_review_fixes_saboteurs.R R14/R15
+  # own this shape.
   join_coverage_report(left_before = left_n, joined_rows = matched_rows,
                        label_left = label_left, label_right = label_right,
                        min_coverage = min_coverage)

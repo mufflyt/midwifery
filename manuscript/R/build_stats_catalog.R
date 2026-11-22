@@ -1419,6 +1419,91 @@ mw_build_catalog <- function(root = ".") {
       a$medicaid_membership_pct <- getq("agreement, membership of the enrolled set (%)")
       a$medicaid_comparable_npi_years <- getq("comparable NPI-years vs NPPES")
       a$medicaid_newly_agreeing_n <- getq("NPI-years newly scored as agreeing")
+      a$setm_table <- acc_setm
+    }
+
+    # Supplemental displays (SDC). Butala-style dose-response: unanimous and
+    # pairwise practice-state agreement by number of sources reporting one.
+    acc_nsrc <- rd(file.path(MW_ART,
+      "source_count_agreement_by_n_sources.csv"))
+    if (!is.null(acc_nsrc)) a$source_count_table <- acc_nsrc
+
+    # Haeder-style disposition of base-year disagreements: what happened to
+    # each registry-vs-source discordance at the next observation.
+    acc_mrost <- rd(file.path(MW_ART, "mrost_lead_lag.csv"))
+    if (!is.null(acc_mrost)) a$resolution_table <- acc_mrost
+
+    # NPI-population rate in the public Medicaid enrollment file, by state.
+    # Read so the prose extrema move if the released file is refreshed.
+    acc_npipop <- rd(file.path(MW_ART, "medicaid_npi_population_by_state.csv"))
+    if (!is.null(acc_npipop)) {
+      p <- acc_npipop$pct_segments_with_npi
+      a$medicaid_npi_pop_min <- min(p, na.rm = TRUE)
+      a$medicaid_npi_pop_max <- max(p, na.rm = TRUE)
+      zero_states <-
+        acc_npipop$state[acc_npipop$pct_segments_with_npi == 0]
+      a$medicaid_npi_pop_zero_states <- zero_states
+      # state.abb/state.name are base R and cover the 50 states; the released
+      # file also carries DC and the territories, which that pair does not.
+      # A six-entry hand list lived here and printed the bare abbreviation for
+      # every state outside it, so the prose read "100.0% in SD".
+      state_names <- c(stats::setNames(state.name, state.abb),
+                       VI = "the Virgin Islands", GU = "Guam",
+                       PR = "Puerto Rico", AS = "American Samoa",
+                       MP = "the Northern Mariana Islands",
+                       DC = "the District of Columbia")
+      name_of_state <- function(x) {
+        hit <- state_names[x]
+        ifelse(is.na(hit), x, unname(hit))
+      }
+      a$medicaid_npi_pop_zero_state_names <- name_of_state(zero_states)
+      a$medicaid_npi_pop_max_state_name <-
+        name_of_state(acc_npipop$state[which.max(p)])
+      # How many jurisdictions fall below the 90% that CMS's 10%-missing
+      # provider-NPI threshold implies. The threshold is cited in the Results
+      # prose; without this it is cited and never applied.
+      a$medicaid_npi_pop_n_states <- length(p)
+      a$medicaid_npi_pop_n_below_cms <- sum(p < 90, na.rm = TRUE)
+    }
+
+    # Persistence denominators: where a provider who leaves a source went.
+    acc_pers <- rd(file.path(MW_ART, "persistence_denominators.csv"))
+    if (!is.null(acc_pers)) {
+      p <- acc_pers
+      num_ <- function(v) as.numeric(v)
+      # RESTRICTED TO THE EVALUABLE YEARS, which is DEBT D14 item 1.
+      #
+      # At each source's last observed year there is no t+1, so nobody can be
+      # followed and n_lost_from_source == n_observed by arithmetic rather than
+      # by attrition. Pooling that row made Medicaid's "left source" read 16.9%
+      # where the evaluable years give 0.8%. The producer now withholds those
+      # follow-up cells (blank, not zero), and a row whose t+1 falls past the
+      # registry's last year withholds the leaver-visibility count for the same
+      # reason.
+      #
+      # aggregate()'s formula method would drop the NA rows on its own through
+      # na.action, and that is exactly the problem: a reader of Supplemental
+      # Table S4 cannot see an aggregation's year range, so the restriction is
+      # written out rather than inherited. The subset is the intersection the
+      # gate scores, source t+1 AND registry t+1 both observed, so every column
+      # in the row shares one denominator.
+      evaluable <- p[!is.na(num_(p$n_followed_source)) &
+                     !is.na(num_(p$n_lost_from_source)) &
+                     !is.na(num_(p$n_lost_source_but_in_nppes)), , drop = FALSE]
+      agg <- aggregate(cbind(n_observed, n_followed_source, n_same_state,
+                             n_changed_state,
+                             n_lost_source_but_in_nppes,
+                             n_lost_from_source) ~ source,
+                       data = transform(evaluable,
+                         n_observed = num_(n_observed),
+                         n_followed_source = num_(n_followed_source),
+                         n_same_state = num_(n_same_state),
+                         n_changed_state = num_(n_changed_state),
+                         n_lost_source_but_in_nppes =
+                           num_(n_lost_source_but_in_nppes),
+                         n_lost_from_source = num_(n_lost_from_source)),
+                       FUN = sum, na.rm = TRUE)
+      a$persistence_table <- agg
     }
 
     cat_$dbacc <- a
