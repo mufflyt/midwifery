@@ -525,6 +525,64 @@ scripts and show each reproduces byte-for-byte across two runs. Only then
 consider formal use, and test proposals against the v1 truth set only after it
 is unblinded.
 
+## D15 — Person-name keys split on apostrophes, so `O'Brien` never matches `OBrien`
+
+- **status:** open
+- **owner:** tyler
+- **raised:** 2026-11-22
+- **source:** `amcb_license_bridge.R` `normalize_text()` (feeding `normalize_person_name()` and `normalize_city()`), `R/build_amcb_state_licenses.R:46` `normalize_name()` (feeding `.block_surname_norm`, a blocking key), `expand_former_name_candidates.R:124`
+- **policed by:** nothing. `tests/ci_hygiene.R` H7 records the duplicated-body half of this family; no gate asserts an apostrophe policy, because the repository has not decided on one for people.
+
+Every person-name normaliser replaces anything outside `[A-Z0-9 ]` with a
+**space**, apostrophes included. So:
+
+| input | key |
+|---|---|
+| `O'Brien` | `O BRIEN` |
+| `OBrien` | `OBRIEN` |
+
+Two spellings of one surname, recorded differently by two arms, counted as a
+disagreement. In a cohort of nurse-midwives the affected surnames are not rare.
+
+**The repository already fixed this once, for organizations.**
+`R/lib/org_names.R:28` carries both the rule and the incident:
+
+> Apostrophes are DELETED, not turned into a space. Turning them into a space
+> splits every possessive, so `ST MARY'S HOSPITAL` keyed as `ST MARY S HOSPITAL`
+> and never matched `ST MARYS HOSPITAL` -- two spellings of one organization,
+> recorded differently by two arms, counted as a disagreement.
+
+It also handles curly apostrophes, noting NPPES and Care Compare disagree on
+which they use. None of the person-name copies does either thing.
+
+**Why this is open rather than fixed.** The 2026-11-21 review fixed the
+*determinism* defect in the same functions — `iconv(to = "ASCII//TRANSLIT")`
+returned a different key per operating system — and deliberately stopped there.
+The two are different in kind. The accent fold had one correct answer and the
+old code was wrong on some machines; the apostrophe rule is a **policy choice
+about who should match**, where both behaviours are internally consistent. It
+will move linkage counts on purpose.
+
+Bundling them would also have made the movement unattributable: two causes, one
+count change, no way to say which did what.
+
+**What it would take to close.**
+
+1. Adopt `norm_org`'s rule for people: delete `['’ʼ`]` before the
+   character-class pass, so the apostrophe closes the name rather than splitting
+   it. One line in each of the three sites, or one shared helper.
+2. Validate **arm against arm**, never against the freeze — the freeze is not
+   regenerable, and a shadow-vs-freeze comparison confounds this change with
+   every other difference between the two.
+3. Report the count movement as its own number. More matches is the expected
+   direction; a *drop* would mean the change did something other than what this
+   entry describes.
+
+**Checked and not a concern:** the same character class also spaces hyphens, so
+`Mary-Jo` keys as `MARY JO`. That is the correct behaviour for a name the
+sources spell both ways, and unlike the apostrophe it does not merge or split a
+single token.
+
 ## Closed
 
 ## D13 — DAC multi-site ZIP5 comparison silently picked an arbitrary one of a clinician's real sites
