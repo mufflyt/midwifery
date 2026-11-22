@@ -169,15 +169,66 @@ if (!length(undeclared) && !length(orphaned)) {
         length(skippers), length(skippers) - length(tt_targets), length(tt_targets))
 }
 
+# --- the second axis ---------------------------------------------------------
+# `full`/`lean` IS ONE AXIS AND SOME ROWS SKIP ON ANOTHER. The environment flag
+# above asks exactly one question -- is the person-level freeze present -- and
+# for most rows that is the question, because what they skip for is private
+# data. Four rows skip for something else entirely: the sf package, and the
+# ~/isochrones checkout. Those are properties of the MACHINE, not of the
+# repository, and nothing above measures them.
+#
+# A scratch worktree is where that bites. It has no artifacts/, so it is
+# classified `lean` and those four rows are expected to skip once each -- while
+# it still sees the developer's installed sf and their ~/isochrones, so they do
+# not skip at all. All four then report STALE with nothing wrong with them
+# (measured 2026-11-22; it produced a report claiming four stale entries, and
+# "lowering the count to match" would have reddened CI, where the skip is real).
+#
+# So a row may name its own precondition, and the column it is compared against
+# is chosen by THAT rather than by the global flag. No new column semantics:
+# `full` already means "the thing this row needs is here" and `lean` "it is
+# not"; `needs` only changes which thing is asked about.
+#
+# The precondition is restated here rather than derived from the test file,
+# which is a duplication with a known failure mode: if a guard changes and its
+# `needs` spec does not, this gate mispredicts. That is visible as a count
+# disagreement rather than silent, and the alternative -- parsing a guard out
+# of the script -- is a regex against arbitrary R that would be wrong in ways
+# nobody notices. ponytail: restated spec, parse the guard if the pair ever
+# actually drifts.
+ISO_DIR <- Sys.getenv("ISOCHRONES_R", path.expand("~/isochrones/R"))
+need_met <- function(spec) {
+  what <- trimws(strsplit(sub("^[^:]*:", "", spec), ",", fixed = TRUE)[[1]])
+  switch(sub(":.*", "", spec),
+    pkg  = all(vapply(what, requireNamespace, logical(1), quietly = TRUE)),
+    iso  = dir.exists(ISO_DIR) && all(file.exists(file.path(ISO_DIR, what))),
+    path = all(file.exists(path.expand(what))),
+    # An unknown kind cannot be answered, and guessing `TRUE` would expect no
+    # skip and call a real one unexpected. Fail loudly instead.
+    NA)
+}
+
 # --- SB2 the counts ----------------------------------------------------------
 ci_section("SB2 observed skips match the budget")
 rows <- bud[bud$when == "pr", , drop = FALSE]
 obs_total <- 0L; exp_total <- 0L
 unexpected <- character(0); stale <- character(0); detail <- character(0)
 
+bad_needs <- character(0)
 for (i in seq_len(nrow(rows))) {
   g <- rows$gate[i]
-  expect <- suppressWarnings(as.integer(rows[[col]][i]))
+  spec <- if ("needs" %in% names(rows)) rows$needs[i] else ""
+  rowcol <- col; basis <- env_name
+  if (!is.na(spec) && nzchar(spec) && !identical(spec, "-")) {
+    met <- need_met(spec)
+    if (is.na(met)) {
+      bad_needs <- c(bad_needs, sprintf("%s: unrecognised needs spec `%s` (expected pkg:, iso: or path:)", g, spec))
+      next
+    }
+    rowcol <- if (met) "full" else "lean"
+    basis <- sprintf("%s (%s %s)", rowcol, spec, if (met) "present" else "absent")
+  }
+  expect <- suppressWarnings(as.integer(rows[[rowcol]][i]))
   if (is.na(expect)) next
   kind <- if ("kind" %in% names(rows)) rows$kind[i] else "ci_skip"
   # `cycle` reports through have_inputs(), which prints the same `  --   SKIP`
@@ -207,7 +258,7 @@ for (i in seq_len(nrow(rows))) {
   if (is.na(n)) next
   obs_total <- obs_total + n; exp_total <- exp_total + expect
   mark <- if (n == expect) "ok" else if (n > expect) "NEW" else "STALE"
-  detail <- c(detail, sprintf("| `%s` | %d | %d | %s |", g, n, expect, mark))
+  detail <- c(detail, sprintf("| `%s` | %d | %d | %s | %s |", g, n, expect, basis, mark))
   if (n > expect) {
     lines <- if (identical(kind, "testthat")) grep("SKIP [0-9]+", out, value = TRUE)
              else sub("^  --   ", "", out[grepl("^  --   ", out)])
@@ -223,26 +274,30 @@ for (i in seq_len(nrow(rows))) {
 summary_txt <- paste(c(
   "## Skip budget", "",
   sprintf("Environment: **%s**", env_name), "",
-  "| gate | observed | expected | |", "|---|---|---|---|", detail, "",
+  "| gate | observed | expected | compared against | |", "|---|---|---|---|---|", detail, "",
   "```",
   sprintf("Observed skips:        %d", obs_total),
   sprintf("Expected skips:        %d", exp_total),
   sprintf("Unexpected skips:      %d", length(unexpected)),
   sprintf("Stale expected skips:  %d", length(stale)),
+  sprintf("Unevaluable rows:      %d", length(bad_needs)),
   "",
-  if (!length(unexpected) && !length(stale)) "PASS" else "FAIL",
+  if (!length(unexpected) && !length(stale) && !length(bad_needs)) "PASS" else "FAIL",
   "```"), collapse = "\n")
 cat("\n", summary_txt, "\n", sep = "")
 if (nzchar(Sys.getenv("GITHUB_STEP_SUMMARY")))
   cat(summary_txt, "\n", file = Sys.getenv("GITHUB_STEP_SUMMARY"), append = TRUE)
 
+if (length(bad_needs))
+  ci_fail("SB2: %d row(s) name a precondition this gate cannot evaluate:\n%s\n       Their counts were not checked at all, which is the defect rather than\n       the fix. Use pkg:<package>, iso:<path under ISOCHRONES_R> or path:<path>.",
+          length(bad_needs), paste(sprintf("       - %s", bad_needs), collapse = "\n"))
 if (length(unexpected))
   ci_fail("SB2: %d gate(s) skipped more than the budget allows:\n%s\n       Something stopped being checked. Fix it, or add it to\n       tests/skip_budget.tsv with a reason.",
           length(unexpected), paste(sprintf("       - %s", unexpected), collapse = "\n"))
 if (length(stale))
   ci_fail("SB2: %d stale budget entry/entries:\n%s\n       The skip no longer happens. Lower the count, so the budget stays a\n       record of what is actually unchecked rather than of what once was.",
           length(stale), paste(sprintf("       - %s", stale), collapse = "\n"))
-if (!length(unexpected) && !length(stale))
+if (!length(unexpected) && !length(stale) && !length(bad_needs))
   ci_ok("%d observed skip(s) across %d gate(s), all budgeted", obs_total, nrow(rows))
 
 ci_finish()
