@@ -288,6 +288,29 @@ case("the gates do NOT flag the forbidden expressions NAMED in their own comment
          'print("nothing here does any of that")'))
      }, expect_fail = FALSE)
 
+# D5's private-input skip, in BOTH directions.
+#
+# D5 skips when artifacts/canonical_source_records.csv is absent, because it
+# is gitignored and no runner can have it. That is correct, and it is also the
+# dangerous direction to move a gate: a failure is loud, a skip is counted as
+# coverage. The skip shipped without a test, so nothing distinguished "D5
+# forgives its one known-private input" from "D5 forgives any missing input",
+# and the second would be a far worse gate than the ci_fail() it replaced.
+#
+# These two cases pin the discrimination rather than the skip. The second is
+# the one that matters: delete the artifact while it is still TRACKED and the
+# gate must still fail.
+case("D5 SKIPS when the canonical records are absent AND gitignored",
+     function(dir) {
+       unlink(file.path(dir, "artifacts", "canonical_source_records.csv"))
+       wl(dir, ".gitignore", "artifacts/canonical_source_records.csv")
+     }, expect_fail = FALSE)
+
+case("D5 still FAILS when the canonical records are absent but TRACKED",
+     function(dir) {
+       unlink(file.path(dir, "artifacts", "canonical_source_records.csv"))
+     }, expect_fail = TRUE)
+
 cat("\n")
 if (length(failures)) {
   for (f in failures) cat(sprintf("FAIL %s\n", f))
