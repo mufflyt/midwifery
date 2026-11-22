@@ -398,9 +398,27 @@ ci_section("D5 every consumer of the canonical records honours usable_for_trend"
 # Vacuity control. A flag that is TRUE everywhere makes every consumer correct
 # by accident, and a gate that cannot fail is worse than no gate.
 cv <- ci_read_head(CANON, root = root)
-if (is.null(cv) || !"usable_for_trend" %in% names(cv)) {
-  ci_fail("D5: %s is missing or carries no usable_for_trend column. It is a
-       tracked artifact, so absence is a regression.", CANON)
+# ABSENT-AND-GITIGNORED IS A SKIP, ABSENT-AND-TRACKED IS A FAILURE, which is the
+# same distinction ci_require_files() draws and the one D10 of DEBT.md is about.
+# This gate used to call the canonical record table "a tracked artifact, so
+# absence is a regression". It is not tracked: it carries person-level rows and
+# .gitignore has excluded it since line 320, so on every runner and every fresh
+# clone D5 failed for an environment reason, which is exactly the permanently
+# red gate D10 says teaches people to ignore gates. The vacuity control below
+# still runs wherever the file exists, so the check is unweakened where it can
+# be evaluated. ci_require_files() is not used because it exits the script, and
+# D1 through D4 must still run on a runner.
+canon_ignored <- identical(as.integer(suppressWarnings(system2(
+  "git", c("-C", shQuote(root), "check-ignore", "-q", shQuote(CANON)),
+  stdout = FALSE, stderr = FALSE))), 0L)
+if (is.null(cv) && canon_ignored) {
+  ci_skip("D5: %s absent (person-level, gitignored; expected on CI and a fresh checkout) -- asserts locally only",
+          CANON)
+} else if (is.null(cv) || !"usable_for_trend" %in% names(cv)) {
+  ci_fail("D5: %s is %s. It is gitignored, so absence alone is a skip, but a
+       present file without the flag column is a regression in the producer.",
+       CANON, if (is.null(cv)) "missing and not gitignored" else
+         "present but carries no usable_for_trend column")
 } else {
   n_false <- sum(cv$usable_for_trend != "TRUE")
   cat(sprintf("  [CONTROL] D5 unusable rows n=%d of %d\n", n_false, nrow(cv)))
@@ -408,15 +426,17 @@ if (is.null(cv) || !"usable_for_trend" %in% names(cv)) {
     ci_skip("D5: no row is marked unusable, so honouring the flag is unobservable; the gate below cannot fail")
   }
 
-  # KNOWN, AWAITING A DECISION -- not forgiven.
+  # THE BASELINE IS EMPTY, and that is the state it was built to reach.
   #
-  # build_state_variation_agreement.R predates this gate and scores
-  # per-registry-state agreement without the filter. It is baselined rather
-  # than rewritten here because changing which records enter a published
-  # stratification is the author's call, not a test's. The baseline can only
-  # shrink: a new consumer fails this gate, and fixing the baselined one
-  # requires deleting its line.
-  UFT_BASELINE <- c("build_state_variation_agreement.R")
+  # build_state_variation_agreement.R predated this gate and scored
+  # per-registry-state agreement without the filter. It was baselined rather
+  # than rewritten by the gate's author, because changing which records enter a
+  # published stratification is the author's call and not a test's. The call
+  # was made on 2026-11-21: it now filters on usable_for_trend at line 38, so
+  # its line is deleted here rather than left as a standing exemption. The
+  # baseline can only shrink, and the check below fails if a baselined file
+  # starts honouring the flag, which is how this entry came up for removal.
+  UFT_BASELINE <- character(0)
 
   off <- character(0); known <- character(0)
   for (f in display_files()) {

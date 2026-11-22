@@ -208,6 +208,49 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   surviving `safe_left_join()`'s unreachable branch to a single `stop()`. The
   merged result is `main`'s. What survives from this branch is the call shape
   below, which the audit did not cover.
+- **Four supplemental-table rates divided a count by a group it did not come
+  from (DEBT D14).** Fixed at the producer first, then at the two displays.
+  `build_f2_f3_uncertainty_denominators.R` now withholds the follow-up columns
+  as NA rather than 0 at each source's last year, where nobody can be followed
+  because there is no t+1, and withholds the leaver-visibility count where
+  `year + 1` is past the registry's last year, where "absent from the registry"
+  cannot be distinguished from "the registry has not been observed yet". A
+  blank cannot be summed into a wrong rate where a zero can: Medicaid's "left
+  source" read **16.9%** pooled against **0.8%** evaluable, and PECOS's
+  leavers-still-in-registry share read **16.4%** against **96.5%**, which
+  contradicted the sentence it was printed under.
+  `manuscript/R/build_stats_catalog.R` now restricts to the evaluable rows by
+  name instead of inheriting `aggregate()`'s `na.action`, because a reader of
+  Supplemental Table S4 cannot see an aggregation's year range.
+- **Supplemental Table S3 labelled pooled counts as base-year counts, and
+  divided a concordant-group count by the discordant denominator.** The
+  `Base year` column is gone: every count and share in that row pools the
+  source's window, 23,315 paired transitions for Medicaid where the base-year
+  cohort is 1,316, and the window and the per-source base years (2013 for the
+  Medicaid and Medicare sources, 2021 for revalidation and industry payments)
+  are stated in the caption instead. `Both moved (%)` is gone too:
+  `both_move_together_at_t1` counts provider-years that AGREED at t, a
+  sub-count of `n_concordant_at_t`, and over the discordant denominator the
+  open_payments row summed to **114.5%**. It is replaced by the residual
+  `100 - (persistent + adopts + reverts)`, labelled `Left observation (%)`,
+  which is in the right group and makes the row sum to 100 by construction.
+- **D5's baseline is empty and its environment case is a skip.**
+  `build_state_variation_agreement.R` had already taken the `usable_for_trend`
+  filter, so its line is deleted from `UFT_BASELINE` rather than left as a
+  standing exemption. Separately, D5 called
+  `artifacts/canonical_source_records.csv` "a tracked artifact, so absence is a
+  regression" when `.gitignore:320` excludes it as person-level: it failed on
+  every runner for an environment reason, which is the permanently red gate
+  D10 of `DEBT.md` warns teaches people to ignore gates. Absent-and-gitignored
+  is now a skip, absent-and-tracked is still a failure, which is the
+  distinction `ci_require_files()` already draws.
+- **A cited figure from another study tripped the typed-literal gate.**
+  `ci_manuscript_numbers.R` flagged 84.8 at
+  `federal_database_accuracy.qmd:590`, which is Butala et al.'s own published
+  directory-consistency figure quoted with its citation, not this study's
+  `linkage.active_ascertained_pct` that happens to share the digits. Added to
+  `manuscript/allowed_literals.tsv` with that reason, which is what the
+  allowlist is for.
 - **Two new scripts opened a raw DuckDB connection outside the chokepoint.**
   `audit_medicaid_npi_coverage.R` and
   `build_medicaid_npi_population_by_state.R` each called
@@ -266,13 +309,13 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Known issues
 
-- **The five gates report `FAILED (5)` on arrival, because all five defects are
-  live.** No published number changed in this entry — the gates make the
-  defects blocking, they do not fix them. The measurements, the affected
-  tables, the proposed producer-side fix, and the reason this gate is wired
-  into `ci.yml` red (unlike `tests/test_cohort_vintage.R`, which is red for an
-  environment reason and deliberately unwired) are in **D14** of
-  [`DEBT.md`](DEBT.md).
+- **None outstanding for this entry.** `tests/ci_denominator_contracts.R`
+  reported `FAILED (5)` when it arrived, which was the point: the gates made
+  five live defects blocking rather than fixing them. All five are fixed above
+  and the gate now reports `PASS (0 failures)`, with
+  `tests/test_denominator_contracts_detect.R` still firing on 9 planted
+  defects and holding 4 near misses, so the gates were not weakened to get
+  there. [`DEBT.md`](DEBT.md) **D14** is closed with the measurements.
 
 ## [Unreleased] — 2026-11-17 — mysteryroster audited the same way mysterynpi was; one script's output is stale, unrelated to the pin
 

@@ -1471,11 +1471,30 @@ mw_build_catalog <- function(root = ".") {
     if (!is.null(acc_pers)) {
       p <- acc_pers
       num_ <- function(v) as.numeric(v)
+      # RESTRICTED TO THE EVALUABLE YEARS, which is DEBT D14 item 1.
+      #
+      # At each source's last observed year there is no t+1, so nobody can be
+      # followed and n_lost_from_source == n_observed by arithmetic rather than
+      # by attrition. Pooling that row made Medicaid's "left source" read 16.9%
+      # where the evaluable years give 0.8%. The producer now withholds those
+      # follow-up cells (blank, not zero), and a row whose t+1 falls past the
+      # registry's last year withholds the leaver-visibility count for the same
+      # reason.
+      #
+      # aggregate()'s formula method would drop the NA rows on its own through
+      # na.action, and that is exactly the problem: a reader of Supplemental
+      # Table S4 cannot see an aggregation's year range, so the restriction is
+      # written out rather than inherited. The subset is the intersection the
+      # gate scores, source t+1 AND registry t+1 both observed, so every column
+      # in the row shares one denominator.
+      evaluable <- p[!is.na(num_(p$n_followed_source)) &
+                     !is.na(num_(p$n_lost_from_source)) &
+                     !is.na(num_(p$n_lost_source_but_in_nppes)), , drop = FALSE]
       agg <- aggregate(cbind(n_observed, n_followed_source, n_same_state,
                              n_changed_state,
                              n_lost_source_but_in_nppes,
                              n_lost_from_source) ~ source,
-                       data = transform(p,
+                       data = transform(evaluable,
                          n_observed = num_(n_observed),
                          n_followed_source = num_(n_followed_source),
                          n_same_state = num_(n_same_state),

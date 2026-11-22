@@ -793,7 +793,7 @@ if (!is.null(A$source_count_table)) {
 ```
 
 ```{r table-resolution-disposition}
-#| tbl-cap: "Supplemental Table S3. Disposition of provider-years on which a source and the national provider registry held discordant practice states at the base year, measured at the next observation, in the style of the follow-up taxonomy of Haeder and Zhu. 'Source adopted registry' and 'registry adopted source' are the two directions of resolution; 'both moved' means both records changed to a third value. Columns may not sum to 100 where a provider-year left observation."
+#| tbl-cap: "Supplemental Table S3. Disposition of provider-years on which a source and the national provider registry held discordant practice states, measured at the next observation, in the style of the follow-up taxonomy of Haeder and Zhu. Counts and shares pool every paired transition in each source's observation window rather than a single base-year cohort; the paired series begins in 2013 for the Medicaid and Medicare sources and in 2021 for enrollment revalidation and industry payments. 'Source adopted registry' and 'registry adopted source' are the two directions of resolution, and the residual is the share whose next observation is missing because the provider-year left observation. The four shares sum to 100 by construction."
 if (!is.null(A$resolution_table)) {
   rs <- A$resolution_table
   label <- c(pecos_revalidation = "Medicare enrollment revalidation",
@@ -801,9 +801,30 @@ if (!is.null(A$resolution_table)) {
              medicare_part_d = "Medicare Part D claims",
              open_payments = "Industry payment records",
              medicaid_enrollment = "Medicaid enrollment (T-MSIS)")[rs$source_b]
+  # DEBT D14 items 3 and 4, fixed here rather than in the caption.
+  #
+  # The `Base year` column is gone. Every count and share in this row pools the
+  # source's whole window: b_adopts_a_at_t1_pct is b_adopts_a_at_t1_n over
+  # n_discordant_at_t, which is 23,315 paired transitions for Medicaid where
+  # the base-year cohort disc_base_n is 1,316. A reader given a base year
+  # beside a pooled count reads the pooled count as a base-year count. The
+  # base-year cohort has its own follow-up columns in the artifact
+  # (disc_base_n with the _multi_ shares); reporting it is a different table,
+  # not a relabelling of this one, so the window is stated in the caption
+  # instead.
+  #
+  # `Both moved (%)` is gone for a different reason: both_move_together_at_t1
+  # counts provider-years that AGREED at t and moved together at t+1, a
+  # sub-count of n_concordant_at_t, and it was divided by n_discordant_at_t.
+  # Over the wrong group the open_payments row summed to 114.5%. The residual
+  # below is what that column was reaching for and is in the right group: the
+  # discordant provider-years whose next observation does not exist.
+  resid <- 100 - (as.numeric(rs$persistent_discordant_at_t1_pct) +
+                  as.numeric(rs$b_adopts_a_at_t1_pct) +
+                  as.numeric(rs$a_reverts_to_b_at_t1_pct))
+  stopifnot(all(resid >= -1e-6))
   out <- data.frame(
     Source = ifelse(is.na(label), rs$source_b, label),
-    `Base year` = rs$base_year,
     `Discordant (n)` = formatC(as.numeric(rs$n_discordant_at_t), format = "d",
                                big.mark = ","),
     `Still discordant (%)` = sprintf("%.1f",
@@ -812,16 +833,14 @@ if (!is.null(A$resolution_table)) {
       as.numeric(rs$b_adopts_a_at_t1_pct)),
     `Registry adopted source (%)` = sprintf("%.1f",
       as.numeric(rs$a_reverts_to_b_at_t1_pct)),
-    `Both moved (%)` = sprintf("%.1f",
-      100 * as.numeric(rs$both_move_together_at_t1) /
-        as.numeric(rs$n_discordant_at_t)),
+    `Left observation (%)` = sprintf("%.1f", resid),
     check.names = FALSE)
-  style_manuscript_table(out, align = c("l", "l", "r", "r", "r", "r", "r"))
+  style_manuscript_table(out, align = c("l", "r", "r", "r", "r", "r"))
 }
 ```
 
 ```{r table-persistence-denominators}
-#| tbl-cap: "Supplemental Table S4. Where a provider-year goes by the following year, aggregated across each source's observed window. A provider who leaves a billing source is rarely leaving the workforce: most remain visible in the national provider registry, so source attrition is billing attrition rather than exit from practice. Same-state and different-state shares are computed among provider-years re-observed in the same source; the leavers' registry-visibility share is computed among provider-years absent from the source at the next observation. The registry itself is omitted because persistence in it and visibility in it cannot be distinguished."
+#| tbl-cap: "Supplemental Table S4. Where a provider-year goes by the following year, aggregated across the years of each source's window for which a following year exists in that source and in the national provider registry. Each source's last observed year is excluded: there is no next year to be followed into, so every provider-year in it would count as lost by arithmetic rather than by attrition, and a row whose next year falls past the registry's last year cannot distinguish absence from the registry from a registry that has not been observed yet. A provider who leaves a billing source is rarely leaving the workforce: most remain visible in the national provider registry, so source attrition is billing attrition rather than exit from practice. Same-state and different-state shares are computed among provider-years re-observed in the same source; the leavers' registry-visibility share is computed among provider-years absent from the source at the next observation. The registry itself is omitted because persistence in it and visibility in it cannot be distinguished."
 if (!is.null(A$persistence_table)) {
   ps <- A$persistence_table
   ps <- ps[ps$source != "nppes", , drop = FALSE]
