@@ -1,3 +1,18 @@
+#
+# -- 2026-11-22: four deleted, one renamed ------------------------------------
+# audit2013_norm|drift_norm, dac_spine_collapse_set|drift_collapse_set,
+# gal_arg|tl_arg and tp_arg|tpf_arg are gone from the tree, so their lines are
+# gone from here. The rationale above is kept rather than deleted with them: it
+# records WHY consolidating audit2013_norm/drift_norm would have been wrong,
+# and that reasoning outlives the duplication.
+#
+# save|save_identity_figure became save_identity_figure|write_fig. That is the
+# SAME duplicated body under a new name, not a new acceptance: the local `save`
+# was renamed because it shadowed base::save() for every later line in the
+# file, and make_trilliant_figures.R:34 documents the decision to leave the
+# 5-line body duplicated. A rename is exactly the shape this gate was built to
+# notice, so it is right that it fired; the entry moves rather than the gate
+# bending.
 # =============================================================================
 # H7 baseline: function bodies duplicated under a DIFFERENT name
 # =============================================================================
@@ -43,9 +58,5 @@
 # excluded: a body duplicated under two names is worth knowing about even when
 # it is harmless, and an exclusion rule would have hidden the two above.
 # =============================================================================
-audit2013_norm|drift_norm: audit_2013_dac_vs_nppes.R, build_identity_drift_prior.R
-dac_spine_collapse_set|drift_collapse_set: build_dac_identity_spine_2013.R, build_identity_drift_prior.R
-gal_arg|tl_arg: build_linkage_case_gallery.R, make_migration_evidence_timeline_gallery.R
 err_msg|trip_msg: tests/test_adjudication_queue.R, tests/test_truth_set_infrastructure.R
-save|save_identity_figure: make_trilliant_figures.R, make_trilliant_identity_figures.R
-tp_arg|tpf_arg: analyze_temporal_plausibility.R, make_temporal_plausibility_figure.R
+save_identity_figure|write_fig: make_trilliant_figures.R, make_trilliant_identity_figures.R
