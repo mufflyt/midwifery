@@ -70,7 +70,8 @@ movers <- read_csv(ADJ, col_types = cols(.default = "c"), progress = FALSE) %>%
 # --- same source loads as audit_migration_corroboration_by_transition.R ---
 link <- read_csv("artifacts/amcb_npi_linkage_FROZEN.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
   filter(cohort_member == "TRUE") %>% transmute(npi = trimws(npi)) %>% filter(!is.na(npi), nzchar(npi)) %>% distinct()
-nppes <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+nppes <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"),
+                  col_select = c(npi, snapshot_year, practice_state), progress = FALSE) %>%
   transmute(npi = trimws(npi), year = as.integer(snapshot_year), state = clean_state(practice_state)) %>%
   filter(!is.na(npi), nzchar(npi), !is.na(state), npi %in% link$npi) %>% distinct(npi, year, state)
 hist_dac <- read_csv("artifacts/physician_compare_historical_midwives.csv", col_types = cols(.default = "c"), progress = FALSE) %>%

@@ -63,8 +63,18 @@ linkage <- read_csv(LINKAGE, show_col_types = FALSE, guess_max = Inf)
 cohort_npis <- linkage$npi[linkage$cohort_member & !is.na(linkage$npi)]
 cat(sprintf("cohort NPIs: %s\n", format(length(cohort_npis), big.mark = ",")))
 
-panel <- read_csv(PANEL, show_col_types = FALSE, guess_max = Inf,
-                 col_types = cols(practice_zip = "c", .default = col_guess())) %>%
+# The panel has a fixed 13-column header written by build_midwife_panel.R,
+# so there is nothing to guess. The spec below was previously partial
+# (.default = col_guess()), which does NOT suppress guessing -- it meant
+# guess_max = Inf scanned all 4,735,546 rows to infer the other twelve types
+# before parsing them. These are the types that scan arrives at, verified
+# against the file (npi and the two snapshot columns are doubles), so every
+# downstream join and comparison is unchanged. See Review_AI_performance.qmd F6.
+panel <- read_csv(PANEL, col_types = cols(
+                   npi = "d", last_name = "c", first_name = "c", middle_name = "c",
+                   credential = "c", practice_address = "c", practice_city = "c",
+                   practice_state = "c", practice_zip = "c", deactivation_date = "c",
+                   tax_class = "c", snapshot_year = "d", snapshot_date = "d")) %>%
   filter(npi %in% cohort_npis)
 stopifnot(!anyDuplicated(panel[, c("npi", "snapshot_year")]))
 
