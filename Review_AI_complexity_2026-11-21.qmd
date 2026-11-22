@@ -1,0 +1,678 @@
+---
+title: "midwifery @ 6cb96e0 — AI-Assisted Code-Complexity Analysis (2026-11-21 round)"
+author: "Tyler Muffly (AI-assisted, Claude Code / Opus 5)"
+date: 2026-11-21
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    embed-resources: true
+execute:
+  eval: false
+---
+
+# Prompt
+
+> `/ropensci-skills:run-complexity`
+
+(Invoked with no arguments, against the working tree at `fix/table1-custodian-sort`,
+commit `6cb96e0`, clean.)
+
+# Skill
+
+`ropensci-skills:run-complexity` v1.0.0, from
+`~/.claude/plugins/cache/ropensci-skills/ropensci-skills/1.0.0/skills/run-complexity`.
+Its operative instructions:
+
+> **Measure first.** Rank functions by a real metric before reading source; the
+> eye is a poor complexity meter and misses structural duplication entirely.
+>
+> **Read the code to interpret the numbers.** A high score can be benign (a chain
+> of `&&` guards); a low score can hide 85× duplication. The metric points; you
+> judge.
+>
+> **Confirm behavioural claims with runtime probes.** If you say a function is
+> inert or its error path is broken, reproduce it in a scratch session and paste
+> the result.
+>
+> **Read-only.** No refactoring the package to prove a point.
+>
+> **Preserve the user-facing surface.** Every internal-refactor recommendation
+> must keep exported names, signatures, and return types identical.
+
+Report skeleton: the shared template at
+`run-package-review/references/report-template.md`.
+
+**One documented deviation from the skill's method.** Step 1 prescribes
+`devtools::load_all()` and measurement over a package namespace. `midwifery` has
+no `DESCRIPTION` and is not a package — it is a pipeline of numbered scripts, by
+design — so there is no namespace to load and no exported surface. Functions were
+therefore read from source instead: each tracked `.R` file is parsed, and every
+top-level `name <- function(...)` assignment is evaluated in a fresh environment
+(a closure's body does not run at definition time) and the resulting closure
+measured. This reaches **more** than `load_all()` would, since it covers
+script-local functions that never enter a namespace; it reaches **less** in one
+respect, noted under *Not run*.
+
+# Report
+
+## Method
+
+Reproducible. Four scripts, all in
+`/private/tmp/claude-501/-Users-tylermuffly-midwifery/c7970797-eb02-408a-a4c2-bd39f8250800/scratchpad/`:
+
+| script | what it did |
+|---|---|
+| `cc_measure.R` | cyclomatic complexity, LOC, max brace-nesting depth, `if`/loop counts, arity for every top-level function in every tracked non-test `.R` file → `cc.csv` |
+| `dup_measure.R` | exact body-duplication groups (normalised deparse, grouped); call-site counts for every repo-defined helper via `utils::getParseData()` over `SYMBOL_FUNCTION_CALL` tokens |
+| `own_cc.R` | re-measured the top 12 with every nested `function(...)` replaced by `NULL`, to separate a function's **own** branching from complexity it merely **houses** |
+| `catalog_dup.R` | enumerated and body-hashed the nested closures inside the single largest offender |
+
+Runtime probes (`probe_norm.R`, `probe_rck.R`, `probe_rck2.R`, `probe_na.R`)
+confirmed each behavioural claim below; their output is pasted inline where
+cited.
+
+Versions: R 4.5.2 (`aarch64-apple-darwin20`), cyclocomp 1.1.2, stringr 1.6.0,
+dplyr 1.2.1.
+
+Scope: 959 top-level function definitions across 279 tracked `.R` files.
+`tests/`, `@archive/` and `scratch/` excluded.
+
+**No repository files were modified.** `git status` was clean before and after;
+every probe ran in `/private/tmp/.../scratchpad` or sourced repo files read-only
+into a throwaway session.
+
+## Headline
+
+**Amber, and the amber is concentrated — not diffuse.** Per-function complexity
+across the pipeline is healthy: median cyclomatic complexity 2, mean 4.8, and 735
+of 959 functions score 5 or below. Only 7 functions exceed 50, and two of those
+turn out to be measurement artefacts rather than god-functions.
+
+The real issues are the three the metric alone would not have told you:
+
+1. `mw_build_catalog()` — 913 lines, **own** complexity 107, housing **30 nested
+   closures** in one scope, in which the name `g` is bound **three times** and
+   `pick` **three times**. Two of the three `g` bindings take the same arity and
+   incompatible argument types, 41 lines apart, in the function that produces
+   every number in the manuscript.
+2. `R/join_safety.R` carries **four** near-parallel join wrappers, 595 deparsed
+   lines, with 22 lines common to all four. The repo has already paid for this
+   twice — *Bug 6* and *Bug 30*, both logged in the source, both "a guard
+   `safe_left_join` had that `safe_inner_join` was missing." A **third** instance
+   of the same drift is still open and confirmed by probe: `require_complete_keys`
+   defaults to `TRUE`, is documented as a validation, and has **no effect on any
+   reachable code path**.
+3. One person-name normaliser exists **four times under four names** with
+   divergent behaviour — and one of the four is **platform-dependent**, so the
+   same midwife's name keys differently on the author's Mac than on a Linux CI
+   runner. The repo's `H4` hygiene gate cannot see any of this, because it
+   compares function *names*, and these four have four different names.
+
+Caveat that matters most: finding 1 is a **latent hazard, not a live defect**. I
+checked every current call site and all of them resolve to the binding their
+author intended. The finding is that nothing stops the next edit from being
+wrong, and nothing would catch it.
+
+## Findings
+
+### Measured profile
+
+Cyclomatic complexity distribution over 959 functions:
+
+| cc | functions | share |
+|---|---|---|
+| 1–5 | 735 | 76.6% |
+| 6–10 | 119 | 12.4% |
+| 11–20 | 75 | 7.8% |
+| 21–50 | 23 | 2.4% |
+| 51–100 | 6 | 0.6% |
+| >100 | 1 | 0.1% |
+
+Median 2, mean 4.8, max 136.
+
+The top 12, with `cc_own` = complexity after nested closures are stripped out.
+The gap between the two columns is the whole point of the table:
+
+| function | file:line | cc | **cc_own** | LOC | nested | nest | verdict |
+|---|---|---|---|---|---|---|---|
+| `mw_build_catalog` | `manuscript/R/build_stats_catalog.R:60`¹ | 136 | **107** | 913 | 26 | 5 | **genuine — Hotspot 1** |
+| `duckdb_scan_for_raw_connections` | `R/lib/medicare_duckdb.R:422` | 98 | **3** | 140 | 6 | 7 | artefact — see Minor |
+| `county_sentences` | `R/10-county-birth-profiles.R:125` | 82 | **82** | 104 | 0 | 2 | genuine — Hotspot 4 |
+| `safe_left_join` | `R/join_safety.R:618` | 67 | **67** | 251 | 0 | 3 | genuine — Hotspot 2 |
+| `safe_inner_join` | `R/join_safety.R:1109` | 55 | **55** | 167 | 0 | 3 | genuine — Hotspot 2 |
+| `validate_source_coverage` | `R/lib/source_coverage.R:406` | 54 | **54** | 206 | 0 | 6 | genuine, justified |
+| `classify_apparent_move` | `R/lib/migration_move_classification.R:176` | 51 | **51** | 78 | 0 | 3 | genuine, justified |
+| `repo_gate_read_accessed_utc` | `R/ci_repo_integrity_gates.R:1197` | 40 | **40** | 46 | 0 | 3 | genuine, justified |
+| `.code_closure` | `R/lib/artifact_provenance.R:99` | 40 | **7** | 60 | 2 | 7 | artefact |
+| `district_sentences` | `R/12-district-profiles.R:358` | 38 | **38** | 67 | 0 | 2 | genuine — Hotspot 4 |
+| `source_vintage_table` | `R/lib/source_vintage.R:215` | 36 | **33** | 187 | 3 | 3 | genuine, justified |
+| `describe_panel_input` | `R/lib/source_coverage.R:290` | 35 | **26** | 78 | 3 | 2 | genuine, justified |
+
+¹ `mw_build_catalog` is the catalog builder in `build_stats_catalog.R`; line
+numbers for its internals are cited individually below.
+
+`cyclocomp()` scores a closure's entire body, nested closures included, so a
+function that merely *houses* six helpers inherits all six scores. Reading
+`cc_own` first stops two functions being accused of being god-functions when
+they are modules with private parts.
+
+### Hotspot 1 — `mw_build_catalog()`: one scope, 30 closures, three `g`s _(High.)_
+
+`manuscript/R/build_stats_catalog.R`. 913 deparsed lines, 65 top-level
+statements, own cyclomatic complexity 107, and 30 nested function definitions.
+This is the only genuine god-function in the tree, and it is the one that matters
+most, because it is the indirection layer that produces every number in the
+manuscript — no figure in the paper is typed by hand, they all come out of here.
+
+The structural problem is not the length. It is that 30 closures share one flat
+913-line scope, and **two names are bound three times each**:
+
+```
+line  465:  g    <- function(e, s, col) { r <- pick(e, s); if (is.null(r)) NA_real_ else r[[col]] }
+line  560:  g    <- function(r, col)    if (nrow(r)) r[[col]][1] else NA_real_
+line  601:  g    <- function(k, col)    { r <- vs[vs$stratum == k, ]
+                                          if (nrow(r)) r[[col]][1] else NA_real_ }
+
+line  461:  pick <- function(e, s)                  { ... }
+line  841:  pick <- function(rx)                    { ... }
+line 1246:  pick <- function(frame, pattern, column){ ... }
+```
+
+The `pick` trio is comparatively safe: the arities differ (2 / 1 / 3), so calling
+the wrong one errors loudly. **The `g` pair at 560 and 601 is not.** Both take
+exactly two arguments. The first expects `r` to be a **data frame** and subsets
+it directly; the second expects `k` to be a **character stratum key** and uses it
+to subset the captured `vs`. They are 41 lines apart in one scope, and R gives no
+warning when the second rebinding silently replaces the first.
+
+I verified that **no current call site is wrong**: `g(r30, "diff_pp")` at 563–590
+resolves to the 560 binding and passes a data frame, and `g("resolved_by_absence_c2",
+"n_study_cohort")` at 606+ resolves to the 601 binding and passes a key. All
+correct today. The hazard is that moving, copying or inserting one `mutate()`
+across the line-601 boundary — the single most ordinary edit anyone makes in a
+913-line builder — silently changes which function runs, in the code path that
+decides what the paper claims.
+
+There is a second, smaller instance of the same pattern:
+
+```
+line 1245:  num  <- function(x) suppressWarnings(as.numeric(x))
+line 1466:  num_ <- function(v) as.numeric(v)
+```
+
+Two coercers for one job, 220 lines apart, differing in whether an unparseable
+value fails loudly or becomes `NA` in silence. Which behaviour a statistic gets
+depends on which spelling the author happened to type.
+
+**Why the repo's own gates do not catch this.** `tests/ci_hygiene.R` H4 exists for
+exactly this defect class, and its comment names the incident: "`norm_addr`
+existed four times with divergent behaviour, `zip5` three." But H4 collects
+definitions with `regexpr("^[.A-Za-z_][A-Za-z0-9_.]*(?= *<- *function)")` —
+anchored at `^`, so **top-level definitions only** (`tests/ci_hygiene.R:141`).
+Thirty closures indented inside one function are invisible to it, including two
+names bound three times each.
+
+**Concrete fix, surface unchanged.** `mw_build_catalog()` is called from the
+manuscript and from four tests; its name, arity and return value must not move.
+Split the body at its existing section boundaries into file-level internal
+builders — `.cat_linkage()`, `.cat_bands()`, `.cat_veto()`, … — each taking the
+frames it needs and returning its own slice of the catalog, with
+`mw_build_catalog()` reduced to sourcing its inputs and `c()`-ing the slices
+together. Each accessor then lives in exactly one builder's scope, where a second
+`g` is a visible redefinition in a 40-line function rather than an invisible one
+in a 913-line function. Pick one spelling of the numeric coercer and delete the
+other.
+
+Smallest useful step if the split is too large for one commit: rename the three
+`g`s and three `pick`s to say what they read (`g_link`, `g_row`, `g_stratum`).
+That is a mechanical, reviewable diff that removes the whole hazard class without
+restructuring anything.
+
+**Gate that would hold it closed.** Extend H4 to collect nested definitions too,
+and fail when one name is bound more than once **within a single function scope**.
+That is a different and stricter law than H4's current cross-file one, and it is
+the law that was actually broken here.
+
+### Hotspot 2 — four parallel join wrappers, and a validation that never runs _(High.)_
+
+`R/join_safety.R` defines four wrappers over `dplyr`:
+
+| wrapper | line | LOC |
+|---|---|---|
+| `safe_left_join` | 618 | 251 |
+| `safe_inner_join` | 1109 | 167 |
+| `safe_semi_join` | 1494 | 90 |
+| `safe_anti_join` | 1745 | 87 |
+
+595 deparsed lines. Measured pairwise overlap, counting identical trimmed lines:
+
+```
+safe_left_join   vs safe_inner_join    65  (39% of the smaller)
+safe_left_join   vs safe_semi_join     27  (30%)
+safe_left_join   vs safe_anti_join     22  (25%)
+safe_inner_join  vs safe_semi_join     30  (33%)
+safe_inner_join  vs safe_anti_join     25  (29%)
+safe_semi_join   vs safe_anti_join     43  (49%)
+
+lines shared by ALL FOUR: 22
+```
+
+`safe_left_join` and `safe_inner_join` share 16 of their 17 and 16 parameters;
+the signatures differ by three names only (`expect_unique_right` +
+`require_complete_keys` on left, `expect_unique_both` on inner). Everything
+else — key harmonisation, coverage reporting, duplication gating, the integrity
+ledger, the report writer — is written out twice.
+
+**This is not a hypothetical maintenance cost. The source records two bugs
+already paid for it**, at `R/join_safety.R:1307` and `:1309`:
+
+```r
+# BUG FIX (2026-01-27): Bug 30 - Enforce max_duplication like safe_left_join
+if (!is.null(max_duplication) && left_n > 0) {
+  # Bug 6 fix: safe_left_join uses default=0; safe_inner_join was missing it.
+```
+
+Both are the same failure: a guard present in one wrapper, absent in its
+near-twin, found later, fixed in the copy rather than at the root. Each fix left
+the structure that produced it intact, so the next one is still available.
+
+**A third instance is still open, and confirmed by probe.** `safe_left_join`
+takes `require_complete_keys = TRUE` (`:624`), documents it in roxygen as a
+validation, and reads it in exactly one other place — `:746`, inside the
+`use_enhanced_metrics` branch:
+
+```
+$ grep -n require_complete_keys R/join_safety.R
+624:                           require_complete_keys = TRUE,
+746:      require_complete_keys = require_complete_keys,
+```
+
+That branch forwards to `safe_left_join_with_metrics()` from `R/join_metrics.R`
+— **a file that does not exist in this repository**, which the code itself says
+at `:629`: *"it requires `safe_left_join_with_metrics()` from `R/join_metrics.R`,
+and that file does not exist in this repo."* `use_enhanced_metrics` was therefore
+defaulted to `FALSE`, which is correct — and which makes
+`require_complete_keys` unreachable on every path a caller can take.
+
+Probe (`probe_rck2.R`), with `NA` in the join key on both sides so an incomplete
+key is definitely present:
+
+```
+require_complete_keys = TRUE  -> "ERROR: Join coverage 66.7% below 98.0% threshold..."
+require_complete_keys = FALSE -> "ERROR: Join coverage 66.7% below 98.0% threshold..."
+identical results: TRUE
+TRUE raised no condition about the incomplete key: FALSE
+```
+
+Identical. The flag changes nothing. The incomplete key is caught — but by the
+coverage gate, which would have caught it with the flag set either way. A caller
+who reads the docs and passes `require_complete_keys = TRUE` believes they have
+switched on a check they have not. `safe_inner_join` does not offer the parameter
+at all, which is the drift: one wrapper grew an option its twin never got, and
+the option turned out to be inert in both.
+
+**Concrete fix, surface unchanged.** Factor the shared body into one internal
+`.safe_join_core(left, right, by, how = c("left", "inner", "semi", "anti"), ...)`
+and make the four public names **explicit thin shims** — written out, not
+generated by a factory, so `?safe_left_join`, autocomplete and
+`@inheritParams` keep working, and so the diff stays reviewable:
+
+```r
+safe_left_join <- function(left, right, by, expect_unique_right = TRUE, ...) {
+  .safe_join_core(left, right, by, how = "left",
+                  expect_unique_right = expect_unique_right, ...)
+}
+```
+
+Names, arities, defaults and return types stay byte-identical; `tests/test-join-safety.R`
+and the other five suites that name these functions should pass untouched, which
+is the check that the refactor was behaviour-preserving.
+
+Then make one decision about `require_complete_keys`, and either way the lie
+stops: implement the check in the core (one `anyNA()` over the `by` columns,
+raising when `TRUE`), or delete the parameter and the roxygen that advertises it.
+Implementing it is the better choice in a file whose entire purpose is to refuse
+unsafe joins — but it is a **behaviour change** for existing callers that
+currently rely on the default silently doing nothing, so it belongs in its own
+commit with its own test, not folded into the deduplication.
+
+### Hotspot 3 — one name normaliser, four spellings, one of them platform-dependent _(High.)_
+
+Cyclomatic complexity is blind to this entirely: each of these functions scores
+1–2. It surfaced from the duplication pass.
+
+Outside `tests/`, the tree has only **7** exact body-duplication groups covering
+14 definitions — genuinely clean. But **5 of the 7 are the same body under
+different names**, which is the shape `H4` structurally cannot see, and two of
+those five are in the one category H4's own comment singles out as the dangerous
+one: *"never a JOIN KEY or a normalisation — the two categories where divergence
+silently changes results."*
+
+| name | file:line | notes |
+|---|---|---|
+| `audit2013_norm` | `audit_2013_dac_vs_nppes.R:187` | identical body to `drift_norm` |
+| `drift_norm` | `build_identity_drift_prior.R:86` | identical body to `audit2013_norm` |
+| `normalize_name` | `R/build_amcb_state_licenses.R:46` | same pipeline, different `NA` handling |
+| *(inline)* | `amcb_license_bridge.R:111–121` | same pipeline **plus** `iconv(to = "ASCII//TRANSLIT")` |
+| `dac_spine_collapse_set` | `build_dac_identity_spine_2013.R:186` | identical body to `drift_collapse_set` |
+| `drift_collapse_set` | `build_identity_drift_prior.R:151` | identical body; builds a person-level set key |
+
+These are not incidental. `drift_norm` feeds `first_2013` / `last_2013` /
+`state_2013` and their `_2026` counterparts (`build_identity_drift_prior.R:134–179`);
+`audit2013_norm` feeds `state_agrees = audit2013_norm(practice_state) ==
+audit2013_norm(nppes_state)` (`audit_2013_dac_vs_nppes.R:214`); `normalize_name`
+feeds `.block_surname_norm` (`expand_former_name_candidates.R:210`), a **blocking
+key for candidate generation**. They *are* the comparison.
+
+Probe (`probe_norm.R`), the four live spellings plus the repo's own `norm_org`
+rule, on the two inputs that distinguish them:
+
+```
+     input drift_norm normalize_name    bridge org_rule
+     Muñoz      MU OZ          MU OZ    MU NOZ    MU OZ
+     Munoz      MUNOZ          MUNOZ     MUNOZ    MUNOZ
+   O’Brien    O BRIEN        O BRIEN   O BRIEN   OBRIEN
+    OBrien     OBRIEN         OBRIEN    OBRIEN   OBRIEN
+ St Mary's  ST MARY S      ST MARY S ST MARY S ST MARYS
+```
+
+Three distinct consequences, all confirmed:
+
+**(a) The bridge normaliser is platform-dependent.** Its `iconv()` step is
+supposed to fold accents before `[^A-Z0-9 ]` strips them. On this machine it does
+not:
+
+```
+locale: en_US.UTF-8
+iconv TRANSLIT raw on this machine:  ‘Mu~noz’
+platform: aarch64-apple-darwin20
+```
+
+macOS libiconv transliterates `ñ` to the two characters `~n`; the `~` is then
+replaced by a space, giving `MU NOZ`. glibc's iconv on a Linux CI runner
+transliterates the same character to a bare `n`, giving `MUNOZ`. I verified the
+macOS half directly, above; the glibc half is the long-documented
+libiconv-vs-glibc `//TRANSLIT` difference and I have not executed it here, so
+treat that half as high-confidence but unexecuted. Either way the *mechanism* is
+confirmed: the key this script produces depends on which machine ran it, in a
+repo whose author works on a Mac and whose gates run on Linux.
+
+**(b) Accented names fail to match their own unaccented spelling.** `Muñoz` and
+`Munoz` are the same midwife recorded by two arms. All four normalisers key them
+differently (`MU OZ` vs `MUNOZ`, or `MU NOZ` vs `MUNOZ`), so they land as a
+disagreement rather than a match:
+
+```
+drift_norm  Munoz vs Muñoz : FALSE
+bridge      Munoz vs Muñoz : FALSE
+```
+
+**(c) The repo already learned the apostrophe lesson and did not apply it here.**
+`R/lib/org_names.R:28` carries the fix and its incident, in a comment:
+
+> *"Apostrophes are DELETED, not turned into a space. Turning them into a space
+> splits every possessive, so `ST MARY'S HOSPITAL` keyed as `ST MARY S HOSPITAL`
+> and never matched `ST MARYS HOSPITAL` — two spellings of one organization,
+> recorded differently by two arms, counted as a disagreement."*
+
+All four person-name normalisers turn `'` into a space. The same incident is
+therefore live for people — `O'Brien` keys as `O BRIEN` and never matches
+`OBrien` — in a cohort of nurse-midwives, a population where apostrophised
+surnames are common:
+
+```
+drift_norm  OBrien vs O’Brien: FALSE
+org_rule    OBrien vs O’Brien: TRUE
+```
+
+`norm_org` also handles curly apostrophes, noting NPPES and Care Compare disagree
+on which they use; none of the four person-name copies does.
+
+**Concrete fix.** One `norm_person_name()` in `R/lib/`, beside `norm_org()` and
+built on the same three decisions `norm_org` already paid for (delete
+apostrophes including curly ones; fold accents with a deterministic explicit map,
+**not** `iconv(//TRANSLIT)`, whose output varies by platform; then strip and
+squish). Replace all four call sites with it. This is a **key-changing** fix — it
+will move match counts, which is the point — so it needs the same treatment any
+normalisation change gets here: run it as a shadow arm and compare arm to arm,
+never shadow-vs-freeze.
+
+**Gate that would hold it closed.** H4 compares names, so it cannot see a
+renamed copy. The complement is a body-level law: hash each tracked top-level
+function's normalised body and fail when two definitions in different files
+share a hash, with an allowlist in the shape H4 already uses. `dup_measure.R`
+from this review is most of that gate — it finds 7 groups today, so the baseline
+starts at 7 and shrinks. Catching copies that were also *renamed* is exactly the
+gap this hotspot came out of.
+
+### Hotspot 4 — the two highest-own-complexity functions with no direct test _(Medium.)_
+
+`county_sentences()` (`R/10-county-birth-profiles.R:125`) scores 82 with **no
+nested closures** — all 82 is its own branching, from 35 `if` expressions across
+104 lines. `district_sentences()` (`R/12-district-profiles.R:358`) scores 38 the
+same way. They generate the prose that appears on the county and district
+profiles: each `if` is a guard choosing a sentence form based on which values are
+present, which is a legitimate shape for the job and not a defect.
+
+The gap is coverage. Searching `tests/` for the names of the twelve hotspots:
+
+| function | tests naming it |
+|---|---|
+| `mw_build_catalog` | 4 |
+| `safe_left_join` | 6 |
+| `safe_inner_join` | 4 |
+| `validate_source_coverage` | 2 |
+| `classify_apparent_move` | 1 |
+| **`county_sentences`** | **0** |
+| **`district_sentences`** | **0** |
+
+Every other hotspot is pinned by at least one test. These two — the highest own
+complexity in the repo after the catalog builder and the join wrappers — are
+named by none. Each branch is a reader-facing claim about a county, and several
+carry comments recording that the wording was already wrong once and corrected
+(the ascertainment hedge at `:143–153`, the clause-stacking at `:161–163`). Those
+are exactly the decisions a test should hold.
+
+This is a test-coverage finding surfaced by a complexity pass, not a complexity
+finding; `run-test-audit` is the right pass to size it properly. Flagging it here
+because the ranking put it in front of me: complexity concentrated in untested
+branches is where the next defect goes.
+
+**Concrete fix.** Not a refactor — the nesting is shallow (depth 2) and the
+branches are independent, so splitting buys little. One table-driven test:
+a handful of synthetic `r` rows chosen to hit the documented branch boundaries
+(`n_cnm_cm == 0`, `== 1`, `> 1`; `rucc_2023` absent, as it is for territories
+and for counties added since the 2023 vintage; each `fmt()` returning `NULL`),
+asserting the sentence each produces. That pins the wording decisions the
+comments say were hard-won.
+
+### Minor
+
+**`duckdb_scan_for_raw_connections` is not a god-function** _(Low — no action.)_
+`R/lib/medicare_duckdb.R:422`, cc 98, which ranks it second overall and is
+misleading: `cc_own` is **3**. All 95 of the rest live in six named nested
+closures (`callee_name`, `is_bare_duckdb_driver_call`, `is_bare_duckdb_driver_ref`,
+`walk_calls`, `collect_driver_aliases`, …). It is a static analyser whose helpers
+are scoped inside it, and each closure carries a comment explaining the evasion
+it closes. Lifting the six to file-level internals would make each separately
+testable and would drop the headline number; it would also widen their visibility
+for no behavioural gain. Worth doing only if someone wants to unit-test the
+walker directly. `.code_closure` (`R/lib/artifact_provenance.R:99`, cc 40,
+`cc_own` 7) is the same artefact at smaller scale.
+
+**`walk_calls` swallows every error at three levels** _(Low.)_
+`R/lib/medicare_duckdb.R`, inside the scanner: a `tryCatch` wrapping a loop whose
+body is itself `tryCatch(..., error = function(e) invisible(NULL))`. A node the
+walker cannot descend into is skipped silently, so a malformed region of a file
+being scanned reduces the gate's coverage without saying so. The function's own
+comment argues this trade deliberately and bounds it ("an explicit, documented
+'where practical' limit"), which is why this is Low and not a finding —
+but counting the skips and reporting a non-zero count would turn a silent blind
+spot into a visible one for one line of code.
+
+**`pick` is bound 11 times across the repo** _(Low.)_ Eight top-level definitions
+(`analysis/compare_linkage_arms.R:4`, `compare_nppes_to_dac_demographics.R:190`,
+`enrich_amcb_crosswalk_geography.R:124`, `extract_archive_origins.R:36`,
+`extract_dac_midwives.R:64`, `extract_nppes_subannual_panel.R:78`,
+`link_practice_locations_to_org_npi.R:99`, `resolve_org_ambiguity.R:126`) with
+eight different contracts — `pick(d)`, `pick(have, ..., what)`, `pick(...)`,
+`pick(cands)`, `pick(pat)` — plus the three nested in `mw_build_catalog`. `pick`
+is on H4's `ALLOW` list, and H4's stated line holds: none of these is a join key
+or a normalisation, they are column- and file-choosers local to one script. No
+action, but the allowlist entry is doing more work than its justification
+("a genuinely private one-liner") describes, and it is worth knowing that `pick`
+means eleven different things in this tree.
+
+**`join_coverage_report()` is called positionally** _(Low.)_
+`R/join_safety.R:832` and `:1305` both call it as
+`join_coverage_report(left_n, matched_rows, label_left, label_right, min_coverage)`
+against a signature declared at `:413` with more parameters. Positional calls
+across a five-argument boundary in a function whose later parameters are
+validation thresholds are how an inserted parameter silently shifts a threshold.
+Naming the arguments is a one-line change per call site. It folds naturally into
+the Hotspot 2 refactor, where both call sites collapse into one.
+
+## Caller-facing recommendations (surface unchanged, but worth noting)
+
+Not refactors — discoverability points, kept separate and **optional**:
+
+- **`require_complete_keys` should not be documented as working** until it does.
+  Whichever way Hotspot 2 resolves, the roxygen at `R/join_safety.R:560`–`:566`
+  currently describes a validation a caller cannot switch on. Of everything in
+  this report this is the item most likely to mislead someone reading the docs
+  rather than the source.
+- **`num` vs `num_` in the catalog builder** reads like a typo and is a semantic
+  distinction (warnings suppressed or not). If both spellings survive the
+  Hotspot 1 split, name them for what they do (`num_quiet` / `num_strict`).
+- **The three `g`s and three `pick`s could be self-describing for free.** Even
+  with no restructuring, `g_link` / `g_row` / `g_stratum` makes the next reader's
+  job possible and the next editor's mistake visible.
+
+## Verified healthy (no action)
+
+- **The complexity distribution itself.** 76.6% of 959 functions score 5 or
+  below; median 2. For a 654-file pipeline accreted over years, per-function
+  complexity is genuinely under control. The problems in this report are seven
+  functions, not a pervasive condition.
+- **Duplication outside tests is minimal and real.** 7 exact-body groups covering
+  14 of 959 definitions. The largest is 2 copies × 21 lines
+  (`assign_county_from_points`, already on H4's allowlist with a reason). For a
+  repo this size that is a low number, and it means Hotspot 3 is a specific
+  problem rather than a symptom of general copy-paste.
+- **`na_matches = "never"` is applied consistently.** My probe initially looked
+  like a bug: three left rows in, two out, coverage 66.7%, and `dplyr::left_join`
+  gives three rows for the same input because dplyr matches `NA` to `NA` by
+  default. It is not a bug. `R/join_safety.R` passes `na_matches = "never"` to
+  the join *and* to every accounting call that measures it — `:803` (the join),
+  `:793` and `:764` (the anti-join accounting), `:932`, `:1295`, `:1304`,
+  `:1552`, `:1801`. The policy (two records that both lack an identifier are not
+  the same person) is the right one for identity linkage, it is the opposite of
+  dplyr's default, and it is applied in all ten places rather than nine. That
+  consistency is what made the apparent discrepancy resolvable in one grep.
+- **The duplication that exists in `tests/` is deliberate and documented.** The
+  `chk` / `ok` / `bad` / `skip` harness repeats across 49, 8, and more files, and
+  H4's allowlist carries a paragraph justifying each as console plumbing, never a
+  join key or a normalisation, with a dated note recording six entries *removed*
+  in 2026-11-16 once they stopped repeating. An allowlist that shrinks is working.
+- **The high-complexity functions are commented where it counts.** `county_sentences`,
+  `duckdb_scan_for_raw_connections` and `classify_apparent_move` each explain
+  *why* a branch exists, several citing the incident that created it. That is the
+  difference between 82 branches you can review and 82 you cannot.
+
+## Not run (reason)
+
+- **No package-namespace measurement.** No `DESCRIPTION`, so no
+  `devtools::load_all()` and no exported-surface analysis. Deviation documented
+  under *Skill*.
+- **Nested closures were not measured repo-wide.** `cc_measure.R` and
+  `dup_measure.R` collect **top-level** definitions only, matching H4's
+  convention. `mw_build_catalog`'s 30 closures were enumerated by hand
+  (`catalog_dup.R`) *because* the profile pointed there. A repo-wide nested pass
+  would likely find more of Hotspot 1's shape elsewhere, and is the obvious next
+  measurement — it is also what the proposed gate would require.
+- **`tests/` excluded from the complexity profile.** 249 of 654 tracked `.R`
+  files. Test complexity is a different question, and `run-test-audit` owns it.
+- **No pipeline execution.** Nothing in this review ran a pipeline step, read the
+  frozen cohort, touched DuckDB, or hit a network or paid API. Every probe used
+  three- to five-row synthetic frames. Consequently nothing here is a claim about
+  runtime cost or memory — that is `run-performance-review`.
+- **The glibc half of the `iconv` finding is unexecuted.** macOS libiconv's
+  `Mu~noz` output is pasted above from this machine. The glibc comparison is
+  stated from documented behaviour, not run. It does not affect the finding's
+  substance: a key whose value depends on the C library is a problem whichever
+  direction the difference runs.
+- **No files modified**, per the skill's read-only rule. Every recommendation is
+  a proposal.
+
+## Suggested fix priority
+
+1. **Rename the three `g`s and three `pick`s in `mw_build_catalog`** _(High,
+   Hotspot 1.)_ Mechanical, no behaviour change, removes a live shadowing hazard
+   in the code that produces every published number. Do this before the split,
+   not after — it is the cheap half of the fix and it is independently valuable.
+2. **Consolidate the four person-name normalisers into one `norm_person_name()`**
+   _(High, Hotspot 3.)_ Highest consequence in the report: it changes match
+   outcomes today, silently, differently on different machines. Build it on
+   `norm_org`'s three paid-for decisions; replace `iconv(//TRANSLIT)` with an
+   explicit map; validate shadow-arm against shadow-arm.
+3. **Resolve `require_complete_keys`** _(High, Hotspot 2.)_ Implement it or delete
+   it, in its own commit with its own test. A documented, defaulted-on validation
+   that does nothing is worse than no validation in a file whose job is refusing
+   unsafe joins.
+4. **Factor the four join wrappers onto one core with explicit shims** _(Medium,
+   Hotspot 2.)_ Bug 6 and Bug 30 are the same bug twice; the structure that
+   produced them is still there. Larger diff than items 1–3, which is why it sits
+   below them, but it is the one that stops the fourth instance.
+5. **Split `mw_build_catalog` at its section boundaries** _(Medium, Hotspot 1.)_
+   The real fix for a 913-line function with own complexity 107. Surface stays
+   identical; the four tests naming it are the check.
+6. **Add the nested-rebinding law to H4, and a body-hash law beside it** _(Medium,
+   Hotspots 1 and 3.)_ Two gates for the two blind spots this review found in an
+   existing gate: one name bound twice in one scope, and one body under two
+   names. `dup_measure.R` is most of the second already.
+7. **Table-driven test for `county_sentences` and `district_sentences`** _(Medium,
+   Hotspot 4.)_ cc 82 and 38, no test naming either.
+8. **Name the arguments at the two `join_coverage_report()` call sites** _(Low,
+   Minor.)_ One line each; folds into item 4.
+9. **Count and report `walk_calls`'s skipped nodes** _(Low, Minor.)_ One line;
+   turns a documented blind spot into a visible one.
+
+
+# Addendum, 2026-11-21 (written after `origin/main` moved)
+
+This report measured commit `6cb96e0`. Between the measurement and the fixes
+landing, `origin/main` merged PR #329 (`refactor/complexity-audit-fixes`), which
+came out of the earlier **2026-11-19** round recorded in
+`Review_AI_complexity.qmd`. Two findings above are therefore partly historical,
+and saying so is cheaper than leaving a reader to discover it:
+
+- **Hotspot 2 (four parallel join wrappers).** PR #329 deleted
+  `safe_inner_join()`, `safe_semi_join()` and `safe_anti_join()` outright — they
+  had zero production call sites — taking `R/join_safety.R` from roughly 1,900
+  lines to 874. The 595-line measurement and the pairwise-overlap table describe
+  a structure that no longer exists. What survived the deletion, and what this
+  round fixed, is narrower and was **not** covered by #329: `safe_left_join()`
+  still declared four formals it reads nowhere. Removing the enhanced-metrics
+  delegation removed the only place `require_complete_keys`, `agree_on`,
+  `agree_map` and `max_right_dup_keys` were ever passed, which turned them from
+  conditionally dead into entirely dead while leaving three of them documented
+  with `@param`. They are now refused rather than ignored.
+- **Minor: positional `join_coverage_report()`.** One of the two call sites went
+  with the deleted wrappers; the remaining one is now called by name.
+
+Everything else in this report was measured against code that PR #329 did not
+touch, and the fixes for it landed as described: the platform-dependent accent
+fold, the three same-scope `g` bindings in `mw_build_catalog()`, and the `H6`
+gate that now forbids the latter class.
+
+One correction to this report's own text, kept here rather than edited silently
+into the body above: **Hotspot 3 was wrong to propose consolidating all four
+person-name normalisers.** `audit_2013_dac_vs_nppes.R:181` documents its
+shallowness as a decision — *"no nickname table, no transliteration, no fuzzy
+distance. The point is to count genuine disagreement, and an aggressive
+normaliser hides exactly the disagreement this audit exists to measure."* Folding
+that into a canonical normaliser would change the result the script exists to
+produce. What was genuinely wrong, and what was fixed, is the **platform
+dependence** in `amcb_license_bridge.R`, which is a different defect that
+happened to live in the same family of functions.

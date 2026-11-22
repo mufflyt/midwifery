@@ -20,6 +20,92 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-21 — a linkage key that depended on the machine that built it; a scope that was not a scope
+
+### Fixed
+
+- **`amcb_license_bridge.R` built name and city keys whose value depended on the
+  operating system.** `normalize_text()` folded accents with
+  `base::iconv(to = "ASCII//TRANSLIT")`, whose output is the host C library's
+  choice: macOS libiconv emits the combining mark, glibc does not. The
+  `[^A-Z0-9 ]` pass then turned that mark into a **space**, so `Muñoz` keyed as
+  `MU NOZ` on the author's machine and `MUNOZ` on a CI runner, and `José` as
+  `JOS E` against `JOSE`. These are not display strings:
+  `normalize_person_name()` and `normalize_city()` are built on this, and a key
+  that differs by machine cannot be compared across arms. Now
+  `stringi::stri_trans_general(x, "Latin-ASCII")`, an ICU transform fixed by its
+  own specification, which was already the convention at
+  `expand_former_name_candidates.R:127`. **Numerical effect:** keys for accented
+  names change — `Muñoz` now matches `Munoz` everywhere — so linkage counts for
+  accented surnames will move, in the direction of more matches. No published
+  figure is recomputed by this commit.
+  `normalize_license_number_padded()` had the same call but its strip is
+  `[^A-Z0-9]`, which *deleted* the mark rather than separating on it; it was
+  replaced for uniformity and **every key was verified identical** across
+  sixteen license shapes including `ß`, `Ø` and `Å`. Full write-up in
+  [`docs/APPENDIX_keys_that_depend_on_the_machine_2026-11-21.md`](docs/APPENDIX_keys_that_depend_on_the_machine_2026-11-21.md).
+- **`safe_left_join()` accepted four validation arguments it read nowhere.**
+  `require_complete_keys` (defaulting `TRUE`), `agree_on`, `agree_map` and
+  `max_right_dup_keys` were forwarded to `safe_left_join_with_metrics()` from
+  `R/join_metrics.R`, a file this repository never had. PR #329 removed that
+  delegation without removing them, which turned four conditionally-dead
+  arguments into entirely dead ones while three stayed documented with `@param`.
+  A caller asking for a check got silence that read as success — the exact
+  failure the file's own PRIORITY 1 note (2026-02-12) forbids. They are now
+  refused with an error that says why. Signatures are byte-identical, so no
+  existing caller breaks; each refusal fires only on a value that *asks* for
+  something, never on a default or on a no-op spelling of one.
+- **A comment claimed an enforcement that was not there.** `R/join_safety.R`
+  carried `# BUG FIX (2026-01-27): Enforce max_right_dup_keys in fallback path`
+  directly above the unmatched-left-rows gate, which has nothing to do with
+  right-side duplicate keys; the variable appears nowhere in that path. Right-key
+  duplication is still gated by `expect_unique_right`, so the default protection
+  always held. The comment is corrected in place rather than deleted.
+- **`join_coverage_report()` was called positionally** across a five-argument
+  boundary whose later formals are validation thresholds. Now called by name.
+
+### Added
+
+- **`tests/ci_hygiene.R` H6 — no name bound to a function twice in one scope.**
+  H4 reads top-level definitions across files; H6 reads every scope, which is
+  where the same defect hides. `mw_build_catalog()` bound `g` three times inside
+  one 913-line function body — and because `if (...) { }` is not a scope in R,
+  all three landed in the one environment. Two of the three took the same arity
+  with incompatible first-argument types: a data frame at one binding, a
+  character stratum key at the next, 41 lines apart, in the function that
+  produces every number in the manuscript. **Nothing was computed wrongly**:
+  every call sat inside its own `if (!is.null(x))` block, which is what made it
+  invisible. The accessors are now `g_era` / `g_row` / `g_stratum` and
+  `pick_era` / `pick_t1`; the rename was proved behaviour-neutral by reversing it
+  and diffing against the original. Three test-file rebindings are allowlisted by
+  file *and* name, with the reason recorded. Cost is measured and written down:
+  ~29s over 657 files.
+- **`tests/test_review_fixes_saboteurs.R`** — 20 saboteurs, 30 assertions. Each
+  fix gets the original defect planted back plus a near miss, so no guard can
+  regress into "written exactly this way". The H6 cases run the real
+  `ci_hygiene.R` in a throwaway git repository.
+- **`tools/measure_code_complexity.R`** — the measurement behind
+  `Review_AI_complexity_2026-11-21.qmd`, so its tables can be re-derived rather
+  than believed.
+
+### Changed
+
+- **A dead accessor was deleted** from `mw_build_catalog()`:
+  `pick(frame, pattern, column)` was never called, and its second condition
+  `grepl(pattern = "", frame$database)` matched every row.
+- **`errs()` now lives in `tests/helper-saboteur.R`** instead of in two suites
+  with different mechanics. H4 caught the duplication on the commit that
+  introduced the second copy; it was consolidated rather than allowlisted.
+
+### Known issues
+
+- Person-name keys still turn apostrophes into spaces, so `O'Brien` and
+  `OBrien` do not match. `R/lib/org_names.R:28` records the same incident for
+  organizations and fixes it there. Deliberately **not** changed here: unlike
+  the accent fold this is a policy change about who should match, it moves
+  linkage counts on purpose, and it needs a shadow-arm comparison rather than
+  riding along where the movement could not be attributed between two causes.
+
 ## [Unreleased] — 2026-11-17 — mysteryroster audited the same way mysterynpi was; one script's output is stale, unrelated to the pin
 
 ### Added

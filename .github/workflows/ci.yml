@@ -523,6 +523,14 @@ jobs:
       - name: AMCB license bridge
         run: Rscript tests/test_amcb_license_bridge.R
 
+      # Saboteurs for the platform-dependent-key and scope-rebinding fixes:
+      # each plants the original defect back and requires the guard to die on
+      # it, plus near misses so a guard cannot regress into "written exactly
+      # this way". The H6 cases run the real tests/ci_hygiene.R in a throwaway
+      # git repository, so this step needs git on PATH -- which this runner has.
+      - name: Review-fix saboteurs
+        run: Rscript tests/test_review_fixes_saboteurs.R
+
       - name: State-license table construction
         run: Rscript tests/test_build_amcb_state_licenses.R
 
