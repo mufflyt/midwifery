@@ -35,6 +35,7 @@ suppressPackageStartupMessages({
 })
 
 source(file.path("R", "lib", "artifact_provenance.R"))
+source(file.path("R", "lib", "script_cli_and_keys.R"))
 
 timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
 artifact_dir <- file.path("artifacts", "cms_physician_compare")
@@ -184,24 +185,17 @@ write_csv(
 # nickname table, no transliteration, no fuzzy distance. The point is to count
 # genuine disagreement, and an aggressive normaliser hides exactly the
 # disagreement this audit exists to measure.
-audit2013_norm <- function(x) {
-  x |>
-    toupper() |>
-    stringr::str_replace_all("[^A-Z0-9 ]", " ") |>
-    stringr::str_squish() |>
-    dplyr::na_if("")
-}
 
 audit2013_zip5 <- function(x) stringr::str_sub(stringr::str_remove_all(x, "\\D"), 1, 5)
 
 joined <- dac |>
   left_join(nppes, by = "npi") |>
   mutate(
-    dac_last = audit2013_norm(.data$last_name),
-    dac_first = audit2013_norm(.data$first_name),
-    nppes_last = audit2013_norm(.data$nppes_last_name),
-    nppes_first = audit2013_norm(.data$nppes_first_name),
-    other_last = audit2013_norm(.data$nppes_other_last_name),
+    dac_last = identity_key_norm(.data$last_name),
+    dac_first = identity_key_norm(.data$first_name),
+    nppes_last = identity_key_norm(.data$nppes_last_name),
+    nppes_first = identity_key_norm(.data$nppes_first_name),
+    other_last = identity_key_norm(.data$nppes_other_last_name),
 
     last_name_agrees = .data$dac_last == .data$nppes_last,
     first_name_agrees = .data$dac_first == .data$nppes_first,
@@ -211,7 +205,7 @@ joined <- dac |>
     last_name_matches_other = !is.na(.data$other_last) &
       .data$dac_last == .data$other_last,
 
-    state_agrees = audit2013_norm(.data$practice_state) == audit2013_norm(.data$nppes_state),
+    state_agrees = identity_key_norm(.data$practice_state) == identity_key_norm(.data$nppes_state),
     zip5_agrees = audit2013_zip5(.data$practice_zip) == audit2013_zip5(.data$nppes_zip),
 
     nppes_is_cnm_taxonomy = .data$nppes_taxonomy_1 == TAXONOMY_CNM,
