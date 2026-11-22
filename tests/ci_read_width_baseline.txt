@@ -1,5 +1,5 @@
-# Full-width reads of midwife_panel.csv that existed when tests/ci_read_width.R
-# was written (2026-11-21). Format: path <TAB> count <TAB> reason
+# Full-width reads of midwife_panel.csv that are still in the tree.
+# Format: path <TAB> count <TAB> reason
 #
 # THIS FILE SHOULD ONLY SHRINK. Each count is that many full parses of a 544 MB,
 # 4,735,546-row, 13-column CSV in order to keep a handful of columns. Measured
@@ -12,15 +12,24 @@
 # and delete the row. Raising a count is a decision to parse ten columns nobody
 # reads, and needs the same justification any other waste would.
 #
-# The counts here total 28 reads across 24 files. Fourteen of these scripts are
-# named in rebuild_frozen_dependents.R's plan and account for 18 of the reads,
-# so one REBUILD_APPLY pass spends an extrapolated 18.2 minutes in readr on this
-# one file -- against 3.6 minutes if every read named its columns.
+# HISTORY
+#   2026-11-21  written with 28 reads across 24 files.
+#   2026-11-22  17 reads across 17 files. The eleven reads marked PROVABLE were
+#               narrowed with col_select; each narrowed read was verified to
+#               return a frame identical() to the same columns of the full-width
+#               read of all 4,735,546 rows.
+#
+# Eight of the seventeen scripts below are named in rebuild_frozen_dependents.R's
+# plan and account for 8 of the reads, so one REBUILD_APPLY pass spends an
+# extrapolated 8.1 minutes in readr on this one file -- against 1.6 minutes if
+# every one of them named its columns. Before the 2026-11-22 narrowing that
+# figure was 18.2 minutes.
 #
 # WHAT THE REASONS MEAN
 #   PROVABLE   the read's own pipeline transmute()s or transmute-equivalents to
 #              a fixed, named column set in the next statement, so the columns
-#              it needs are not a guess. Narrow these first.
+#              it needs are not a guess. Narrow these first. (None are left:
+#              every PROVABLE read was narrowed on 2026-11-22.)
 #   WIDER      the chain filters and keeps going, so the full set of columns the
 #              script uses has to be read before narrowing it. Narrowing is
 #              still almost certainly right, but it is not a one-line change
@@ -28,25 +37,18 @@
 
 analyze_address_lead_lag_and_freshness.R	1	WIDER. Uses seven of the thirteen (npi, the four practice_* address fields, snapshot_year, snapshot_date). Still six columns parsed for nothing, but the win is smaller here than anywhere else on this list.
 analyze_consensus_tier_persistence_2021_2025.R	1	WIDER. Reads through `cc <- cols(.default = "c")` at line 50, which hides the width behind a variable -- the gate resolves it, a reader skimming the read does not.
-analyze_inclusive_zip_agreement.R	1	PROVABLE. transmute()s immediately after a max(snapshot_year) filter.
-analyze_medicaid_2023_2024_transition_support.R	1	PROVABLE. semi_join on npi then filter on snapshot_year and practice_state; three columns.
 analyze_medicaid_enrollment_concordance.R	1	WIDER. Path arrives through Sys.getenv("MIDWIFE_PANEL", ...), so the narrowing has to hold for whatever the override points at too.
 audit_identity_flips.R	1	WIDER. Filters on snapshot_year and carries the rest into an identity comparison.
-audit_migration_corroboration_by_transition.R	1	PROVABLE. One of the five byte-identical (npi, year, state) reductions; see Review_AI_performance.qmd F2.
 build_dac_nppes_address_flow_pairs.R	1	WIDER. Deduplicates on npi, then compares addresses, so the address columns are live.
-build_leave_one_source_out_sensitivity.R	1	PROVABLE. Same byte-identical (npi, year, state) reduction.
-build_migration_rate_by_method.R	1	PROVABLE. Same byte-identical (npi, year, state) reduction.
 build_no_npi_match_candidate_detail.R	1	WIDER. Uses six columns for a human-readable candidate listing (names and city as well as state).
-build_results_geographic_persistence.R	1	WIDER, and separately wasteful: guess_max = Inf with .default = col_guess() forces a full type-inference pass over 4.7 M rows before parsing them. See F6.
-build_results_geographic_persistence_canonical.R	1	WIDER. Same guess_max = Inf shape as its non-canonical sibling. See F6.
-build_truth_fusion_predictions.R	1	PROVABLE. Same byte-identical (npi, year, state) reduction -- this is the site the identical() equivalence probe was run against.
+build_results_geographic_persistence.R	1	WIDER. All thirteen types are now named explicitly (F6 fixed 2026-11-22), so the read no longer scans 4.7 M rows to guess twelve of them, but it is still a full-width read.
+build_results_geographic_persistence_canonical.R	1	WIDER. Same as its non-canonical sibling; types named, width unchanged.
 compare_dac_openpayments_to_nppes_address.R	1	WIDER. Address comparison; the practice_* columns are the point of the script.
 compare_healthgrades_to_nppes_address.R	1	WIDER. Address comparison.
 compare_pecos_to_nppes_address.R	1	WIDER. Address comparison.
-diagnose_truth_fusion_migration_states.R	1	PROVABLE. Same byte-identical (npi, year, state) reduction.
 match_amcb_to_npi.R	1	WIDER. Name matching needs last_name, first_name and middle_name as well as the key.
 match_nppes.R	1	WIDER. Name matching; four columns, so narrowing helps less.
 oig_phase2_candidate_set_and_intersection_analysis.R	1	WIDER. Filters to one snapshot year and carries the rest into the OIG candidate set.
 provenance_manifest.R	1	WIDER. Counts rows for the manifest; a DISTINCT/COUNT in DuckDB would be better than any readr call, narrow or not.
-remake_oig_07_09_00440_midwifery.R	3	PROVABLE at lines 1137 and 1798 -- both transmute to (npi, year, state) with different year windows, and could share one read. Line 253 is WIDER (filters to 2019, keeps the rest).
-run_no_gold_standard_toolkit_on_real_data.R	3	Line 319 is PROVABLE ((npi, year, state)); line 460 needs only (npi, deactivation_date); line 91 is WIDER. Three full parses in one process.
+remake_oig_07_09_00440_midwifery.R	1	WIDER. The one read left (line 253) filters to 2019 and carries the rest. The two PROVABLE reads in this file were narrowed on 2026-11-22; it used to be three full parses in one process.
+run_no_gold_standard_toolkit_on_real_data.R	1	WIDER. The one read left (line 91) is the full-width one. The (npi, year, state) read and the (npi, deactivation_date) read were narrowed on 2026-11-22; it used to be three full parses in one process.

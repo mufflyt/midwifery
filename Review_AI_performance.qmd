@@ -501,16 +501,86 @@ the file) — that one is correct and should stay.
    artifact only if rebuild wall-clock still matters after F2. It buys less than
    F2 per unit of new machinery.
 
+## Fixed (applied after the review, same branch)
+
+The review above is read-only and was written against `bbba062`; the fixes
+below were applied afterwards, each one re-measured rather than assumed. The
+read-only claim in **Method** covers the measurements, not this section.
+
+| finding | before | after | evidence |
+|---|---|---|---|
+| **F1** summary tail | 210.9 s, 1,169 MB peak | **6.7 s, 593 MB** | same four values: `4735546 / 472327 / 507559 / 33657` |
+| **F2** 11 reads narrowed | 60.8 s each | **12.1 s each** | `identical()` per column set, over all 4,735,546 rows |
+| **F4** reject accounting | nothing counted | per-release count printed | `store_rejects = true`, reject count reported |
+| **F5** resume probe | 72.5 s, 534 MB held | **5.0 s, 217 MB peak** | same 20 snapshot years, 2007-2026 |
+| **F6** type inference | 96.8 s | **43.0 s** | `identical()` on the whole 13-column frame |
+
+**F2 in detail.** Eleven reads across nine files now name their columns, so the
+baseline in `tests/ci_read_width_baseline.txt` went from 28 reads across 24
+files to 17 across 17. Four distinct column sets were narrowed, and each was
+checked by reading the file both ways in one process and comparing the narrowed
+frame to the same columns of the full-width frame:
+
+| `col_select` | sites | narrowed read | `identical()` |
+|---|---|---|---|
+| `c(npi, snapshot_year, practice_state)` | 7 | 9.5 s | TRUE |
+| `c(npi, snapshot_year, practice_zip)` | 1 | 11.7 s | TRUE |
+| `c(npi, snapshot_year, snapshot_date, practice_state)` | 1 | 29.1 s | TRUE |
+| `c(npi, deactivation_date)` | 1 | 9.6 s | TRUE |
+
+(The full-width read in that same process took 89.3 s rather than the 60.8 s of
+the isolated arm — six reads of a 544 MB file in one R session pay for each
+other's garbage collection. The isolated per-arm figures in **Measured anchors**
+are the ones to quote; these four are for the comparison, which is what the
+column proves.)
+
+Eight of the seventeen remaining full-width reads are in
+`rebuild_frozen_dependents.R`'s plan, so the extrapolated readr cost of one
+`REBUILD_APPLY` pass over this file drops from **18.2 minutes to 8.1 minutes**.
+
+**F6 is not a narrowing.** Both geographic-persistence scripts genuinely use
+most of the panel, so they still read all thirteen columns — what was removed
+is the *type-inference pass* that `guess_max = Inf` forced over all 4,735,546
+rows because the spec was partial (`.default = col_guess()`). The replacement
+names all thirteen types explicitly, and they are the types that scan arrives
+at (`npi`, `snapshot_year` and `snapshot_date` as doubles, the other ten as
+character) — verified by `identical()` on the whole frame, because getting
+`npi`'s type wrong would silently break every downstream join against a
+linkage file that is itself read with guessing on. `reconcile_linkage.R:32` was
+left alone, as the finding said.
+
+**F4 changes no number and adds one.** `store_rejects = true` is tied to
+`ignore_errors` in `reader()` rather than set globally, because
+`store_rejects` suppresses parse errors *by itself*: setting it on the strict
+encoding probe would have defeated that probe exactly as `ignore_errors` would,
+which is the trap the surrounding comment was already written about. The count
+is a delta against `reject_errors`, taken *before* the `next` that skips a
+release with zero usable rows — that release is precisely the case where the
+reject count is the only thing left to report. Not measured on a full NPPES
+release: the flag's cost on a multi-GB file is unknown, and the reject tables
+were exercised on a four-row fixture instead.
+
+**What the gate learned.** Narrowing the reads surfaced a third way this gate
+had been reporting a smaller number than the truth: `panel_vars()` resolved
+path variables with a single-line regex, so it could not see
+`build_midwife_panel.R`'s `out_path`, which is assigned across five lines. The
+two most expensive reads in the repository — F1 and F5, 283 s between them —
+were therefore invisible to the gate that exists to find exactly them. It now
+resolves assignments from the parse tree it was already walking, and
+`tests/test_read_width_detect.R` RW10 plants a multi-line assignment back.
+
 ### Held closed
 
 F2 is a habit, so narrowing eight call sites does not stop the twenty-ninth
 from being written. `tests/ci_read_width.R` (added with this report) refuses a
-**new** full-width read of the panel against a shrink-only baseline of today's
-28, keyed on the file and a count rather than a line number so ordinary edits
-do not churn it. `tests/test_read_width_detect.R` plants the defect back in ten
-cases — including both ways this gate silently under-reported while it was
-being written, a path arriving through a variable and a file listing that
-scanned nothing — and requires the gate to die on each.
+**new** full-width read of the panel against a shrink-only baseline — 28 reads
+when this report was written, 17 after the fixes above — keyed on the file and
+a count rather than a line number so ordinary edits do not churn it.
+`tests/test_read_width_detect.R` plants the defect back in eleven cases --
+including all three ways this gate silently under-reported while it was being
+written: a path arriving through a variable, a file listing that scanned
+nothing, and a path assigned across more than one line — and requires the
+gate to die on each.
 
 Both ran green from the repository root and from inside `tests/`, and both are
 named by the `r-checks` job in `.github/workflows/ci.yml`, detector first.

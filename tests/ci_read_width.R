@@ -71,10 +71,23 @@ narrowing_arg <- function(e) {
 # first silently missed four files -- the PANEL, PANEL_PATH and panel_path
 # spellings that assign through Sys.getenv() -- and a gate reporting a smaller
 # number than the truth is the worst failure mode a gate has.
-panel_vars <- function(lines) {
-  rx <- "^\\s*([.A-Za-z_][A-Za-z0-9_.]*)\\s*<-.*$"
-  hit <- lines[grepl(rx, lines) & grepl(PANEL, lines, fixed = TRUE)]
-  unique(sub(rx, "\\1", hit))
+# Resolve the local names that hold the panel's path. This walks the parse
+# tree; the single-line regex it replaces could only see an assignment whose
+# value sat on the same line as its name. build_midwife_panel.R assigns
+# out_path across five lines (a Sys.getenv() whose default carries a comment),
+# so the two read.csv(out_path) calls in the panel's OWN PRODUCER -- 283 s of
+# measured cost, F1 and F5 -- sat in this gate's blind spot while it reported
+# a clean tree. An assignment is a call, so the walker already reaches it.
+panel_vars <- function(ex) {
+  v <- character(0)
+  walk_call_tree(ex, function(e) {
+    if (!paste(deparse(e[[1L]]), collapse = "") %in% c("<-", "<<-", "=")) return(invisible(NULL))
+    if (length(e) < 3L || !is.symbol(e[[2L]])) return(invisible(NULL))
+    if (grepl(PANEL, paste(deparse(e[[3L]]), collapse = " "), fixed = TRUE))
+      v <<- c(v, as.character(e[[2L]]))
+    invisible(NULL)
+  })
+  unique(v)
 }
 
 reads_panel <- function(e, vars) {
@@ -124,7 +137,7 @@ for (f in r_files) {
   p <- file.path(root, f)
   ex <- tryCatch(parse(p, keep.source = FALSE), error = function(e) NULL)
   if (is.null(ex)) { unparsed <- c(unparsed, f); next }
-  vars <- panel_vars(readLines(p, warn = FALSE))
+  vars <- panel_vars(ex)
   n <- 0L
   walk_call_tree(ex, function(e) {
     fn <- paste(deparse(e[[1L]]), collapse = "")

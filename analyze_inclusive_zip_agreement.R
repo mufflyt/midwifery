@@ -74,6 +74,7 @@ directory_zips <- read_csv("dac_midwives.csv",
 base::message("Reading the registry's primary practice postal code")
 registry_primary <- read_csv("midwife_panel.csv",
                              col_types = cols(.default = "c"),
+                             col_select = c(npi, snapshot_year, practice_zip),
                              progress = FALSE) %>%
   mutate(snapshot_year = as.integer(.data$snapshot_year)) %>%
   filter(.data$snapshot_year == max(.data$snapshot_year, na.rm = TRUE)) %>%

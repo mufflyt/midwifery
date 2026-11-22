@@ -190,5 +190,21 @@ chk(!r$failed, "a baseline row whose file no longer reads full-width -> passes")
 chk(any(grepl("already_fixed\\.R", r$out)),
     "and the gate names the stale row so the baseline gets shrunk")
 
+sab(10, "SABOTEUR: the path is assigned ACROSS LINES")
+# The third way this gate failed silently, and the one that hid the two
+# most expensive reads in the repository: the panel's own producer assigns
+# out_path over five lines, so a resolver that grepped one line at a time
+# never learned the name and never counted read.csv(out_path). Both forms
+# are planted -- the wrapped Sys.getenv() and a wrapped if/else default --
+# because the live assignment is both at once.
+r <- run_read_width_gate(scaffold(list("new_reader.R" = c(
+  'out_path <- Sys.getenv(',
+  '  "MIDWIFE_PANEL_OUT",',
+  '  # the scope is in the filename',
+  '  if (SCOPE == "wide") "midwife_panel_wide.csv" else "midwife_panel.csv")',
+  'panel <- read.csv(out_path, colClasses = "character")'))))
+chk(r$failed, "a full-width read through a multi-line assignment -> refused")
+chk(any(grepl("new_reader\\.R", r$out)), "and the refusal names the file")
+
 # =============================================================================
-saboteur_report(10)
+saboteur_report(11)
