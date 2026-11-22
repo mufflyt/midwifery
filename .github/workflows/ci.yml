@@ -238,6 +238,29 @@ jobs:
       - name: Science contracts
         run: Rscript tests/ci_science_contracts.R
 
+      # RESTORED. These three steps existed at afad4c2 and were dropped by
+      # 579950c, the merge of #336, which took main's ci.yml wholesale -- the
+      # steps lived only on this branch, so nothing conflicted and nothing
+      # complained. DEBT D14 was closed in bef401e immediately afterwards, so
+      # for the span between those two commits the branch had fixed five
+      # denominator defects and stopped running the gates that police them.
+      # That is worse than a red gate: CI went green BECAUSE the checks were
+      # gone. Re-wiring them is the point of this change.
+      #
+      # ORDER MATTERS. The saboteur suite goes FIRST, ahead of the gates it
+      # sits beside, because Actions halts a job at its first failing step --
+      # wired after `Denominator contracts` it previously ran zero times while
+      # counting as coverage. See
+      # docs/APPENDIX_checks_that_cannot_fail_2026-11-20.md.
+      - name: NPI rate, cluster scope and leaver-count saboteurs
+        run: Rscript tests/test_npi_rate_and_cluster_saboteurs.R
+
+      - name: Denominator gates detect planted defects
+        run: Rscript tests/test_denominator_contracts_detect.R
+
+      - name: Denominator contracts
+        run: Rscript tests/ci_denominator_contracts.R
+
   python-checks:
     name: Python syntax and address keys
     runs-on: ubuntu-latest
