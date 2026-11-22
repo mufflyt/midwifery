@@ -66,38 +66,57 @@ two near duplicates is where the missing call became visible.
 ## The same shape, one level up
 
 `R/join_safety.R` is vendored. This repository and `~/isochrones` each carry a
-copy, and the copies have diverged by roughly 250 lines of local history. The
+copy, and the copies had diverged by roughly 250 lines of local history. The
 anti join fix was applied to the isochrones copy first. The midwifery copy
 still had the missing call and the false `@section Algorithm` sentence, so the
 act of fixing one of four wrappers immediately produced one fixed copy of two.
 
-Both copies now carry the fix and a parity test, and each file's test names the
-other in a `TWIN FILE` header. No mechanism keeps them synchronized. The
-options were a shared package, a continuous integration gate diffing the two
-working trees, or a comment in each file. A package is the right answer and is
-not justified by one function; a cross repository diff gate cannot run in
-either repository's continuous integration, because neither checks out the
-other. The comment is what is deployed, and it is deliberately weak: it tells
-the next person where the twin is, and nothing enforces that they look.
+## The two copies got different answers, and that is correct
+
+The three-line fix was written for both. Only one of them kept it.
+
+While this branch was being prepared, `main` merged the other half of the same
+complexity audit, which asked a question one rung higher than "does this
+function do what it says": does it need to exist here at all. In this
+repository, `safe_inner_join()`, `safe_semi_join()` and `safe_anti_join()` had
+**zero production call sites**. Every caller was a test, and one of those tests
+was 500 lines exercising `safe_inner_join()` alone. `main` deleted all three
+wrappers, and `tests/test_complexity_cuts_saboteurs.R` now holds the deletion
+in place: C1a refuses a tracked file that redefines a deleted wrapper, C1b
+refuses a call to one, and **C1c kills a wrapper copied back from the upstream
+isochrones copy**, which is exactly the move a reader of this appendix might
+otherwise make.
+
+So the resolution is asymmetric, and the asymmetry is the point:
+
+| | midwifery | isochrones |
+|---|---|---|
+| Production callers of `safe_anti_join()` | none | none |
+| Taught to readers | no | yes, `vignettes/joins-that-cannot-fan-out.Rmd` recommends it for seeing unmatched rows |
+| Other wrappers used | `safe_left_join()` only | `safe_left_join()` by convention (#6), the others available |
+| Resolution | the three uncalled wrappers deleted | the three-line fix, plus a parity gate |
+
+Repairing the documentation of a function nobody calls is work that produces
+nothing. Deleting it removes the divergence, the false documentation and the
+maintenance surface in one move, and it is why this repository now has one join
+wrapper rather than four. The fix belongs where the function is reachable by
+something other than its own test suite.
 
 ## The gate, and the hole found while wiring it
 
 The test asserts **parity across all four wrappers**, not the behaviour of
 `safe_anti_join()`. Testing only the function that broke would reproduce the
 defect: the bug was that one of four diverged, so the assertion has to be that
-four of four agree.
-
-- midwifery: `tests/test_safe_join_key_harmonization.R`, named by `ci.yml`,
-  registered in the `ci_entrypoints` list in `tests/ci_repo_integrity.R` so the
-  package gate follows its `source()` chain, and also swept by the
-  `tests/test*.R` glob in `nightly.yml`.
-- isochrones: `tests/ci/test-safe-join-key-harmonization.R`, named by
-  `fast-gates.yml` as gate 3c.
+four of four agree. It lives at
+`~/isochrones/tests/ci/test-safe-join-key-harmonization.R`, named by
+`fast-gates.yml` as gate 3c. It was written here first and is deleted here,
+because three of the four functions it names no longer exist in this
+repository.
 
 The isochrones path was not the obvious one. The test was first written at
-`tests/test_safe_join_key_harmonization.R`, which is tracked, passes locally,
-and **is executed by nothing**: no isochrones workflow globs that directory.
-The repository has a ratchet for precisely this failure,
+`tests/test_safe_join_key_harmonization.R` in that repository, which is
+tracked, passes locally, and **is executed by nothing**: no isochrones workflow
+globs that directory. The repository has a ratchet for precisely this failure,
 `scripts/ci/check_governed_test_reachability.R`, which refuses to let the set
 of tests no workflow runs grow. It did not fire, because its governed corpus is
 `tests/validation`, `tests/retirement`, `tests/documentation`, `tests/ci` and
@@ -123,10 +142,17 @@ family, a declared check that nothing performs, and are recorded in
   byte identical results. Removed rather than silently switched on, because
   enforcing it is a behaviour change for every call site and needs its own
   commit and its own test.
-- `agree_on` / `agree_map`, `max_right_dup_keys` on the left join path, and
-  `max_duplication` and `max_right_dup_keys` on the semi join path were
-  accepted and never read. They now stop with a message naming what is actually
-  enforced instead of returning a silent pass that reads as agreement.
+- `agree_on` / `agree_map`, `max_right_dup_keys` and `max_duplication` were
+  accepted on paths that never read them. The branch made them refuse with a
+  message naming what is enforced; `main` got there by deleting the wrappers
+  that took most of them and reducing the survivor's unreachable branch to a
+  single `stop()`. The merged result is `main`'s.
+- `join_coverage_report()` was called positionally, and its signature ends in
+  validation thresholds (`min_coverage`, then `verbose`), so inserting a formal
+  ahead of `min_coverage` would have slid a threshold into `verbose` silently.
+  The surviving call names its arguments, and
+  `tests/test_review_fixes_saboteurs.R` R14/R15 parse the file for the shape
+  and sabotage it back.
 - The `safe_left_join()` documentation stated that `use_enhanced_metrics`
   defaults to `TRUE` and delegates to a richer validation path. The default is
   `FALSE`, and `TRUE` stops, because the module it delegates to has never
@@ -135,8 +161,9 @@ family, a declared check that nothing performs, and are recorded in
 
 ## What this does not claim
 
-The parity test proves that four wrappers coerce a character key against an
-integer key, on one key column, in one direction of mismatch. It does not prove
+The parity test, in the repository that still has four wrappers, proves that
+they coerce a character key against an integer key, on one key column, in one
+direction of mismatch. It does not prove
 that coercion to character is the right harmonization for every type pair, and
 it does not test a named `by` vector or a `dplyr::join_by()` specification,
 where `harmonize_join_key_types()` resolves column names differently and

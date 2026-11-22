@@ -34,17 +34,12 @@ root <- if (length(.sb)) {
 source(file.path(root, "tests", "helper-saboteur.R"))
 SAB_PREFIX <- "P"
 
-tracked <- function(pattern) {
-  out <- suppressWarnings(system2("git", c("-C", shQuote(root), "ls-files", pattern),
-                                  stdout = TRUE, stderr = FALSE))
-  if (!length(out)) character(0) else out
-}
-# EVERY tracked .R file, not just the ones at the top level. A git pathspec of
-# "*.R" returns 267 paths here and the repository has 645: it does not cross
-# directory boundaries, so three of the scans below were reading the root
-# scripts and calling the result "no tracked R file". Listing once and
-# filtering in R makes the scope the message already claimed.
-tracked_r <- function() grep("\\.R$", tracked("."), value = TRUE)
+# tracked() and tracked_r() moved into helper-saboteur.R when a second suite
+# needed them (tests/test_complexity_cuts_saboteurs.R): a top-level function
+# defined in two tracked files is what ci_hygiene H4 refuses, and the lesson
+# this harness exists for. The "every tracked .R file, not just the top level"
+# note lives with them there -- a git pathspec of "*.R" returns 267 paths where
+# the repository has 647.
 
 HELPER <- "tests/helper-saboteur.R"
 ROOT_IDIOM <- paste(
@@ -78,7 +73,10 @@ chk(grepl("test_repo_root", slurp(HELPER), fixed = TRUE) &&
 # SABOTEUR: paste the harness back into a file and the same predicate must fire.
 chk(copies_harness(paste(ROOT_IDIOM, FAILS_IDIOM, CHK_IDIOM, sep = "\n")),
     "P1c KILLED: a file that pastes the harness back in is caught by the predicate that clears the tree")
-chk(!copies_harness(paste('source("helper-saboteur.R")', ROOT_IDIOM, FAILS_IDIOM,
+# Assembled for the same reason as .bad_src below: spelled out, this fixture is
+# a source() of the helper by an unresolvable path, and P1e would read it.
+.ok_src <- paste0('source("helper-', 'saboteur.R")')
+chk(!copies_harness(paste(.ok_src, ROOT_IDIOM, FAILS_IDIOM,
                           CHK_IDIOM, sep = "\n")),
     "P1d a file that sources the helper is not an offender even if it keeps a local root line")
 
@@ -88,14 +86,32 @@ chk(!copies_harness(paste('source("helper-saboteur.R")', ROOT_IDIOM, FAILS_IDIOM
 # to <root>/helper-saboteur.R and fails with "Missing source() target". The 15
 # files that already used it never tripped the gate because none was a CI
 # entrypoint -- it was armed, not harmless, and converting 67 more set it off.
-unresolvable <- Filter(function(f) {
-  txt <- slurp(f)
-  grepl("helper-saboteur", txt, fixed = TRUE) &&
-    !grepl('file.path(root, "tests", "helper-saboteur.R")', txt, fixed = TRUE)
-}, tracked("tests/*.R"))
+# A source() CALL, not a mention -- the same distinction P2 makes below, and
+# for the same reason. The first version of this predicate read the whole file
+# text, so tests/duckdb_architecture_scan.R tripped it by naming helper-saboteur.R in
+# a comment ("tests/helper-saboteur.R set that precedent") while sourcing
+# nothing. That is shape 2 from docs/APPENDIX_checks_that_cannot_fail: a
+# substring test standing in for an anchored one, in a gate whose whole subject
+# is how a path is written.
+sources_helper_badly <- function(txt) {
+  lines <- strsplit(txt, "\n", fixed = TRUE)[[1]]
+  lines <- lines[!grepl("^\\s*#", lines)]
+  calls <- grep("source\\s*\\(.*helper-saboteur", lines, value = TRUE)
+  calls[!grepl('file.path(root, "tests", "helper-saboteur.R")', calls, fixed = TRUE)]
+}
+unresolvable <- Filter(function(f) length(sources_helper_badly(slurp(f))) > 0L,
+                       tracked("tests/*.R"))
 chk(!length(unresolvable),
     sprintf("P1e every file sources the helper by a path the integrity gate can resolve%s",
             if (length(unresolvable)) paste0(" [", paste(basename(unresolvable), collapse = ", "), "]") else ""))
+# Assembled, not spelled: P1e reads every tracked gate including this one, and
+# a fixture written out in full would make this suite its own offender. It did,
+# for one run.
+.bad_src <- paste0('source(file.path(dirname(x), "helper-', 'saboteur.R"))')
+chk(length(sources_helper_badly(.bad_src)) == 1L,
+    "P1f KILLED: the adopter idiom the integrity gate cannot resolve is caught")
+chk(length(sources_helper_badly("# tests/helper-saboteur.R set that precedent")) == 0L,
+    "P1g a comment naming the helper is not a source() of it -- the distinction P2 makes about @archive")
 
 # --- P2 deleted code stays deleted ---------------------------------------------
 sab(2, "nothing executes a path that was deleted")

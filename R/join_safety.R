@@ -1,9 +1,8 @@
 #' @title Safe Join Functions with Coverage Validation and Reporting
 #'
 #' @description
-#' Provides a robust suite of join wrappers (\code{safe_left_join},
-#' \code{safe_inner_join}, etc.)
-#' that enforce data quality contracts. Features include coverage thresholds,
+#' Provides \code{safe_left_join()} and the key-integrity helpers it is built
+#' on, which enforce data quality contracts. Features include coverage thresholds,
 #' cardinality validation, automated deduplication, and CSV reporting.
 #'
 #' @details
@@ -16,6 +15,15 @@
 #' failures.
 #'   \item \strong{Metadata Drift}: Unified reporting across all join types.
 #' }
+#'
+#' @section Removed in the 2026-11-20 complexity audit:
+#' \code{safe_inner_join()}, \code{safe_semi_join()} and \code{safe_anti_join()}
+#' had zero production call sites in this repository -- only tests -- and were
+#' one function written four times (the semi/anti pair scored 0.78 structural
+#' similarity). They still exist in \code{~/isochrones/R/join_safety.R}, the
+#' copy this file was vendored from, which is where to take them from if a
+#' caller ever needs one. \code{assert_unique_keys()} moved to
+#' \code{R/assert_unique_keys.R}; it is still reached by sourcing this file.
 #'
 #' @family join-safety
 #'
@@ -31,6 +39,10 @@ if (!requireNamespace("checkmate", quietly = TRUE)) {
   stop("[join_safety] Package 'checkmate' is required but not installed.", call. = FALSE)
 }
 source(here::here("R", "safe_divide.R"))
+# assert_unique_keys() moved to its own file in the 2026-11-20 complexity
+# audit: 17 scripts were sourcing all 1,892 lines of this module to reach
+# that one 69-line function, which calls nothing else here.
+source(here::here("R", "assert_unique_keys.R"))
 
 # ---- Helper Functions ----------------------------------------------------
 
@@ -119,136 +131,6 @@ harmonize_join_key_types <- function(left, right, by,
   }
 
   list(left = left, right = right)
-}
-
-#' Assert that Join Keys Are Unique
-#'
-#' @title Key Uniqueness Assertion
-#'
-#' @description
-#' Checks that specified key columns contain no duplicates. Can either
-#' deduplicate
-#' (keeping first) or raise an informative error with sample duplicates.
-#'
-#' @details
-#' **Bug fixes incorporated:**
-#' \itemize{
-#'   \item Bug #36 (2026-01-27): Error message now shows sample duplicate key
-#' values.
-#'   \item Bug #135 (2026-01-28): Error message reports total rows affected by
-#' duplicates.
-#'   \item Bug #163 (2026-01-28): Added \code{dedupe=TRUE} option to silently
-#' remove duplicates.
-#' }
-#'
-#' @param .data    \code{[data.frame]} Input data frame to check.
-#' @param key_cols \code{[character]} Vector of column names forming the key.
-#' @param dedupe   \code{[logical(1)]} If \code{TRUE}, remove duplicates instead
-#'   of erroring.
-#'
-#' @return The input data frame (possibly deduplicated). Throws an error if
-#'   duplicates found.
-#'
-#' @section Pipeline Position:
-#' Called by \code{safe_left_join()} and \code{safe_inner_join()} before the
-#' underlying join when \code{expect_unique_right = TRUE} (default). Also
-#' available directly for pre-join validation of lookup tables.
-#'
-#' @section Algorithm:
-#' Groups by \code{key_cols} with \code{dplyr::count()} and filters for
-#' groups with count > 1. When \code{dedupe = TRUE} keeps only the first
-#' row per group via \code{dplyr::distinct()}. Error messages include up to 3
-#' sample duplicate key values for rapid debugging (Bug #36 fix).
-#'
-#' @seealso \code{\link{safe_left_join}} and \code{\link{safe_inner_join}},
-#'   which call this internally; \code{\link{check_join_keys}} for a
-#'   lighter-weight existence check without deduplication.
-#'
-#' @concept join-safety
-#' @concept data-integrity
-#'
-#' @examples
-#' \dontrun{
-#' # Strict check — will stop() if any NPI appears more than once
-#' assert_unique_keys(demographics_lookup, key_cols = "npi",
-#'                    label = "census_demographics")
-#'
-#' # Lenient: deduplicate instead of erroring
-#' clean_lookup <- assert_unique_keys(demographics_lookup, key_cols = "npi",
-#'                                    label = "census_demographics", dedupe =
-#' TRUE)
-#' }
-#'
-#' @family join-safety
-#' @export
-assert_unique_keys <- function(.data, key_cols, label = "table", dedupe = FALSE) {
-  checkmate::assert_data_frame(.data)
-  checkmate::assert_character(key_cols, min.len = 1)
-  checkmate::assert_string(label)
-  checkmate::assert_flag(dedupe)
-
-  n <- nrow(.data)
-  d <- .data %>%
-    dplyr::count(dplyr::across(dplyr::all_of(key_cols)), name = ".dups") %>%
-    dplyr::filter(.dups > 1L)
-
-  if (nrow(d) > 0) {
-    # BUG FIX (2026-01-28): Bug 163 - Support dedupe option to remove duplicates
-    if (isTRUE(dedupe)) {
-      # CYCLE 2. dedupe used to mean "keep whichever row sorted first", which
-      # resolves a DATA CONFLICT by file order inside a helper named
-      # assert_unique_keys. Two rows for one certification_number disagreeing
-      # on practice_state would silently publish one of the two states, and
-      # which one depended on how the input happened to be sorted.
-      #
-      # Identical duplicate rows carry no conflict and still collapse. Rows
-      # that share a key but disagree elsewhere are a question for a human, so
-      # they stop the run and name the offending key and column.
-      dup_keys <- .data %>%
-        dplyr::semi_join(dplyr::select(d, dplyr::all_of(key_cols)), by = key_cols)
-      conflicting <- dup_keys %>%
-        dplyr::group_by(dplyr::across(dplyr::all_of(key_cols))) %>%
-        dplyr::filter(dplyr::n_distinct(dplyr::pick(dplyr::everything())) > 1L) %>%
-        dplyr::ungroup()
-      if (nrow(conflicting) > 0) {
-        varying <- setdiff(names(conflicting), key_cols)
-        varying <- varying[vapply(varying, function(v)
-          dplyr::n_distinct(conflicting[[v]]) > 1L, logical(1))]
-        stop(sprintf(paste0(
-          "assert_unique_keys(dedupe = TRUE) on %s: %d rows share a key but ",
-          "DISAGREE on %s. Deduplication would resolve that by row order. ",
-          "Reconcile the source, or drop the conflicting column before ",
-          "deduplicating.\n  key(s): %s\n  disagreeing column(s): %s"),
-          label, nrow(conflicting),
-          if (length(varying)) "other columns" else "row content",
-          paste(key_cols, collapse = ", "),
-          paste(utils::head(varying, 5), collapse = ", ")), call. = FALSE)
-      }
-      out <- .data %>%
-        dplyr::distinct(dplyr::across(dplyr::all_of(key_cols)), .keep_all = TRUE)
-      message(sprintf(
-        "assert_unique_keys: dedupe=TRUE removed %d duplicate rows from %s",
-        n - nrow(out), label
-      ))
-      return(out)
-    }
-
-    # BUG FIX (2026-01-27): Bug 36 - Show sample duplicate values in error.
-    # Previously just said "found N duplicated key(s)" with no examples,
-    # making it impossible to debug which rows caused the problem.
-    # BUG FIX (2026-01-28): Bug 135 - Show total rows with duplicates
-    total_dup_rows <- sum(d$.dups)
-    sample_dups <- head(d, 3)
-    sample_strs <- apply(sample_dups[, key_cols, drop = FALSE], 1, function(row) {
-      paste(key_cols, "=", row, collapse = ", ")
-    })
-    stop(sprintf(
-      "❌ %s expected unique keys [%s] but found %d duplicated key group(s) affecting %d rows. Samples: %s",
-      label, paste(key_cols, collapse = ", "), nrow(d), total_dup_rows,
-      paste(sample_strs, collapse = "; ")
-    ))
-  }
-  invisible(.data)
 }
 
 #' Format Join \code{by} Specification for Human-Readable Display
@@ -495,10 +377,9 @@ join_coverage_report <- function(left_before, joined_rows,
 #'   \item Validate \code{by} parameter (Bug #220).
 #'   \item Read environment variable overrides (\code{JOIN_MIN_COVERAGE},
 #'         \code{JOIN_MAX_DUPLICATION}).
-#'   \item Check if enhanced metrics available (\code{R/join_metrics.R}).
-#'   \item If enhanced: delegate to \code{safe_left_join_with_metrics()} (stops
-#' if
-#'         unavailable).
+#'   \item Refuse \code{use_enhanced_metrics = TRUE}: the module it names,
+#'         \code{R/join_metrics.R}, does not exist in this repository, so a
+#'         requested check is never silently skipped.
 #'   \item If basic: validate right uniqueness, compute coverage, check
 #' duplication.
 #'   \item Write CSV report to \code{artifacts/step00_summary/} (if
@@ -556,21 +437,13 @@ join_coverage_report <- function(left_before, joined_rows,
 #' @section Algorithm:
 #' Validates parameters and reads \code{JOIN_MIN_COVERAGE} /
 #' \code{JOIN_MAX_DUPLICATION} environment overrides. Harmonizes key types via
-#' \code{harmonize_join_key_types()}. Then runs the inline path: coverage
-#' reporting, the unmatched-left-rows gate, and the duplication gate.
+#' \code{harmonize_join_key_types()}, then validates and joins inline.
+#' \code{use_enhanced_metrics = TRUE} is refused with an error: the metrics
+#' module it names (\code{R/join_metrics.R}) does not exist in this
+#' repository, so a requested check cannot be silently skipped.
 #'
-#' \code{use_enhanced_metrics} defaults to \strong{FALSE} and the inline path is
-#' therefore what every call actually runs. Setting it TRUE does not enable a
-#' richer check -- it hard-stops, because it delegates to
-#' \code{safe_left_join_with_metrics()} from \code{R/join_metrics.R} and that
-#' file does not exist in this repository (see the CYCLE 9 note on the
-#' signature). This paragraph used to say the opposite -- that TRUE was the
-#' default and the inline path a fallback -- which told a reader of
-#' \code{?safe_left_join} that a validation path runs which cannot run.
-#'
-#' @section Calls:
-#' \code{harmonize_join_key_types()}, \code{safe_left_join_with_metrics()} (if enhanced),
-#' \code{dplyr::left_join()}, \code{join_coverage_report()}.
+#' \code{harmonize_join_key_types()}, \code{dplyr::left_join()},
+#' \code{join_coverage_report()}.
 #'
 #' @section Performance:
 #' O(n log n) join complexity. Added validation overhead is O(n), typically <
@@ -627,21 +500,7 @@ safe_left_join <- function(left, right, by, expect_unique_right = TRUE,
                            max_duplication = NULL,
                            max_right_dup_keys = if (expect_unique_right) 0 else Inf,
                            max_left_only_rows = NA_integer_,
-                           # require_complete_keys was removed here. It defaulted
-                           # TRUE and was read in exactly one place: the
-                           # use_enhanced_metrics branch below, which forwards to
-                           # safe_left_join_with_metrics() from R/join_metrics.R --
-                           # the file the CYCLE 9 note further down records as never
-                           # having existed. So it was accepted, defaulted ON, and
-                           # unreachable on every path a caller can take: probing it
-                           # TRUE vs FALSE over a frame with NA join keys gave
-                           # byte-identical results. No caller passed it. A validation
-                           # flag that does nothing is worse than no flag in a file
-                           # whose job is refusing unsafe joins, because it answers
-                           # "are incomplete keys checked?" with a yes. Enforcing it
-                           # instead would have been a behaviour change for all 50-odd
-                           # call sites, so it needs its own commit and its own test,
-                           # not a silent switch-on folded into a cleanup.
+                           require_complete_keys = TRUE,
                            agree_on = NULL, agree_map = NULL,
                            suffix = c(".x", ".y"),
                            write_report = TRUE, report_prefix = "join_left",
@@ -675,38 +534,6 @@ safe_left_join <- function(left, right, by, expect_unique_right = TRUE,
   checkmate::assert_flag(expect_unique_right)
   checkmate::assert_flag(write_report)
   checkmate::assert_flag(use_enhanced_metrics)
-
-  # REFUSE what this path cannot honour, rather than accepting it in silence.
-  # Each parameter below is accepted for signature parity with the enhanced
-  # metrics module R/join_metrics.R would have supplied -- the file the CYCLE 9
-  # note records as never having existed -- and the inline path that actually
-  # runs reads none of them. Ignoring a supplied validation argument is the
-  # precise failure the PRIORITY 1 note (2026-02-12) in this file forbids: a
-  # REQUESTED check skipped without saying so. safe_inner_join already refuses
-  # agree_on/agree_map for that reason; these bring its three siblings into line.
-  if (!is.null(agree_on) || !is.null(agree_map)) {
-    stop("safe_left_join: agree_on/agree_map need the enhanced metrics module ",
-         "(R/join_metrics.R), which does not exist in this repository, so column ",
-         "agreement cannot be checked on the inline path. Drop the argument or ",
-         "port the module -- do not expect a silent pass to mean agreement held.",
-         call. = FALSE)
-  }
-  if (!missing(max_right_dup_keys)) {
-    # Refuse only a value that ASKS for something different from what is
-    # actually enforced. expect_unique_right is all-or-nothing: 0 duplicate
-    # right keys when TRUE, unlimited when FALSE. A caller who passes the
-    # matching value is requesting the behaviour they are already getting, and
-    # erroring on that would break every call that spells the default out.
-    implied <- if (isTRUE(expect_unique_right)) 0 else Inf
-    if (!isTRUE(all.equal(as.numeric(max_right_dup_keys), as.numeric(implied)))) {
-      stop("safe_left_join: max_right_dup_keys=", max_right_dup_keys,
-           " is not enforced on the inline path, which gates right-key ",
-           "duplication through expect_unique_right alone -- all-or-nothing ",
-           "(0 duplicates when TRUE, unlimited when FALSE), currently implying ",
-           implied, ". Use expect_unique_right, or port R/join_metrics.R.",
-           call. = FALSE)
-    }
-  }
   # Validate suffix
   checkmate::assert_character(suffix, len = 2)
   # Validate report_prefix
@@ -764,65 +591,34 @@ safe_left_join <- function(left, right, by, expect_unique_right = TRUE,
   left <- harmonized$left
   right <- harmonized$right
 
-  # PRIORITY 1 FIX (2026-02-12): Enhanced metrics now required when requested
-  # Previously warned and fell back to basic validation, hiding that comprehensive
-  # checks (cardinality, key quality, agreement) were skipped.
-  # Now: STOP if enhanced metrics requested but not available.
+  # CYCLE 10 (2026-11-20 complexity audit, Hotspot 1a). The 54 lines that stood
+  # here delegated to safe_left_join_with_metrics() and logged to
+  # log_join_integrity(). Neither is defined anywhere in this repository and
+  # R/join_metrics.R was never added here, so the only outcome the block could
+  # reach was the stop() below: 54 lines of unreachable delegation guarding a
+  # refusal.
+  #
+  # THE PARAMETER STAYS, AND SO DOES THE REFUSAL. Deleting it would have been
+  # the shorter diff and the wrong one. R/01-build-county-base.R's
+  # load_join_safety() may source ~/isochrones/R/join_safety.R instead of this
+  # copy, and there the same parameter defaults to TRUE and R/join_metrics.R
+  # really does exist -- which is why its six call sites pass FALSE. The
+  # argument is upstream-compatibility insurance, not noise, and a signature
+  # without it would turn every one of those calls into an "unused argument"
+  # error. The hard stop preserves the 2026-02-12 intent: a REQUESTED check is
+  # never silently skipped.
   if (use_enhanced_metrics) {
-    if (!exists("safe_left_join_with_metrics", mode = "function")) {
-      stop(
-        "Enhanced join metrics requested but not available.\n",
-        "safe_left_join_with_metrics() function not found.\n\n",
-        "R/join_metrics.R DOES NOT EXIST in the midwifery repo -- this is not a\n",
-        "module-loading problem, the file was never added here. Either drop\n",
-        "use_enhanced_metrics (basic validation still runs) or port the module.\n",
-        "Check module loading or source manually:\n",
-        "  source(here::here('R', 'join_metrics.R'))\n\n",
-        "To use basic validation only, set use_enhanced_metrics=FALSE explicitly.",
-        call. = FALSE
-      )
-    }
-
-    # Enhanced metrics available - use them
-    result <- safe_left_join_with_metrics(
-      left = left,
-      right = right,
-      by = by,
-      expect_unique_right = expect_unique_right,
-      label_left = label_left,
-      label_right = label_right,
-      min_coverage = min_coverage,
-      max_duplication = max_duplication,
-      max_right_dup_keys = max_right_dup_keys,
-      max_left_only_rows = max_left_only_rows,
-      agree_on = agree_on,
-      agree_map = agree_map,
-      write_report = write_report,
-      report_prefix = report_prefix
+    stop(
+      "Enhanced join metrics requested but not available.\n",
+      "R/join_metrics.R DOES NOT EXIST in the midwifery repo -- it was never\n",
+      "added here, so safe_left_join_with_metrics() cannot be loaded. Drop\n",
+      "use_enhanced_metrics; the validation below is what every caller in this\n",
+      "repository has actually been running.",
+      call. = FALSE
     )
-
-    # Log to join integrity ledger (non-breaking)
-    if (exists("log_join_integrity", mode = "function")) {
-      tryCatch(
-        log_join_integrity(
-          step_name = Sys.getenv("PIPELINE_CURRENT_STEP", unset = "unknown"),
-          join_type = "left",
-          left_label = label_left,
-          right_label = label_right,
-          left_rows = nrow(left),
-          right_rows = nrow(right),
-          result_rows = nrow(result),
-          matched_rows = nrow(left) - nrow(dplyr::anti_join(left, right, by = by, na_matches = "never")),
-          key_columns = format_by_columns(by)
-        ),
-        error = function(e) NULL
-      )
-    }
-
-    return(result)
   }
 
-  # Fallback to original implementation with hardened features
+  # Validation and the join itself
   # Right side uniqueness if declared
   if (isTRUE(expect_unique_right)) {
     # BUG FIX (2026-01-28): Bug 62 - Use right-side column names for right table check.
@@ -880,21 +676,18 @@ safe_left_join <- function(left, right, by, expect_unique_right = TRUE,
   }
 
   # Basic coverage check (enhanced metrics would provide more)
+  # Named, not positional. join_coverage_report()'s signature ends in
+  # validation thresholds (min_coverage, verbose), so inserting a formal ahead
+  # of min_coverage would slide a threshold into verbose with no call site
+  # changing and no error raised. tests/test_review_fixes_saboteurs.R R14/R15
+  # own this shape.
   join_coverage_report(left_before = left_n, joined_rows = matched_rows,
                        label_left = label_left, label_right = label_right,
                        min_coverage = min_coverage)
 
-  # NOTE (corrected 2026-11-21): a comment here used to read "BUG FIX
-  # (2026-01-27): Enforce max_right_dup_keys in fallback path", above the
-  # unmatched-left-rows gate, which has nothing to do with right-side duplicate
-  # keys. Whatever that fix did was lost or never landed: `max_right_dup_keys`
-  # appears nowhere in this path. Right-key duplication IS still gated, by
-  # expect_unique_right above (assert_unique_keys, plus relationship =
-  # "many-to-one" on the join itself), so the DEFAULT protection holds -- what
-  # was missing is the tunable count, and the function now refuses that argument
-  # at the top instead of accepting it and doing nothing. A comment asserting an
-  # enforcement that is not there is worse than no comment: it answers the
-  # reader's question wrongly and stops them checking.
+  # BUG FIX (2026-01-27): Enforce max_right_dup_keys in fallback path
+  # Previously this parameter was accepted but silently ignored when enhanced
+  # metrics were unavailable, allowing right-side duplicate keys to go undetected.
 
   # Coverage-consistent gate for unmatched left rows
 
@@ -1043,946 +836,16 @@ safe_left_join <- function(left, right, by, expect_unique_right = TRUE,
     }
   }
 
-  # Log to join integrity ledger (non-breaking)
-  if (exists("log_join_integrity", mode = "function")) {
-    tryCatch(
-      log_join_integrity(
-        step_name = Sys.getenv("PIPELINE_CURRENT_STEP", unset = "unknown"),
-        join_type = "left",
-        left_label = label_left,
-        right_label = label_right,
-        left_rows = left_n,
-        right_rows = nrow(right),
-        result_rows = nrow(out),
-        matched_rows = matched_rows,
-        key_columns = format_by_columns(by)
-      ),
-      error = function(e) NULL
-    )
-  }
-
-  out
-}
-
-#' @title Safe Inner Join with Cardinality Checking and Coverage Reporting
-#'
-#' @description
-#' Wrapper for \code{dplyr::inner_join()} that filters both tables to matching
-#' keys
-#' while enforcing coverage thresholds and uniqueness constraints.
-#'
-#' @param left                 \code{[data.frame]} Left table.
-#' @param right                \code{[data.frame]} Right table.
-#' @param by                   \code{[character]} or \code{[join_by]}
-#'   specification.
-#' @param expect_unique_both   \code{[logical(1)]} Require unique keys on BOTH
-#'   sides. Default \code{TRUE}.
-#' @param label_left           \code{[character(1)]} Label for left table.
-#' @param label_right          \code{[character(1)]} Label for right table.
-#' @param min_coverage         \code{[numeric(1)]} Min fraction of matches
-#'   (0-1).
-#' @param max_duplication      \code{[numeric(1)]} Max allowed row inflation.
-#' @param max_right_dup_keys   \code{[integer(1)]} Max duplicate key groups on
-#'   right.
-#' @param max_left_only_rows   \code{[integer(1)]} Max unmatched rows allowed.
-#' @param agree_on             \code{[character]} Columns to check for
-#'   agreement.
-#' @param agree_map            \code{[list]} Agreement thresholds per column.
-#' @param suffix               \code{[character(2)]} Suffixes for conflicts.
-#' @param write_report         \code{[logical(1)]} Write CSV report.
-#' @param report_prefix        \code{[character(1)]} Filename prefix.
-#' @param use_enhanced_metrics \code{[logical(1)]} Use full metrics module.
-#'   Default \code{TRUE}.
-#'
-#' @return \code{[data.frame]} Joined result.
-#'
-#' @section Contract:
-#' \strong{Guarantees:}
-#' \itemize{
-#'   \item Returns only rows with matching keys in BOTH tables.
-#'   \item Throws error if keep rate < \code{min_coverage}.
-#'   \item Throws error if row count inflation > \code{max_duplication}.
-#' }
-#' \strong{Fails if:}
-#' \itemize{
-#'   \item \code{expect_unique_both = TRUE} and either table has duplicate keys.
-#'   \item Either table is missing the specified join keys.
-#' }
-#'
-#' @section Pipeline Position:
-#' Used for cohort-restricting joins where only rows with matches in both
-#' tables are meaningful, such as restricting the physician roster to NPIs that
-#' appear in Medicare Part B claims (active-billing requirement). Produces
-#' smaller output than \code{safe_left_join()}: unmatched left rows are
-#' dropped rather than padded with \code{NA}.
-#'
-#' @section Algorithm:
-#' After parameter validation and key-type harmonization, enforces uniqueness
-#' on both tables when \code{expect_unique_both = TRUE} (default). Executes
-#' \code{dplyr::inner_join()} then measures coverage as
-#' \code{nrow(semi_join(left, right)) / nrow(left)} (Bug #26 fix: avoids
-#' double-counting from many-to-many multiplication). Enforces
-#' \code{max_duplication} and writes the CSV report.
-#'
-#' @section Calls:
-#' \code{harmonize_join_key_types()}, \code{assert_unique_keys()}, 
-#' \code{dplyr::inner_join()}, \code{join_coverage_report()}.
-#'
-#' @section Performance:
-#' O(n log n) join complexity. Added validation overhead is O(n).
-#'
-#' @section Disaster Prevention:
-#' \describe{
-#'   \item{Cohort over-filtering guard}{Prevents silent accidental deletion of 
-#'         the entire study cohort if a join key is misconfigured or a 
-#'         reference table is empty.}
-#' }
-#'
-#' @concept join-safety
-#' @concept coverage-threshold
-#' @concept data-integrity
-#'
-#' @seealso \code{\link{safe_left_join}} for joins that retain all left rows;
-#'   \code{\link{safe_semi_join}} for filtering left rows without adding right
-#'   columns; \code{\link{safe_anti_join}} for keeping only unmatched left rows;
-#'   \code{\link{join_coverage_report}} for the underlying coverage check.
-#'
-#' @examples
-#' library(dplyr)
-#' physicians <- data.frame(npi = c("1", "2", "3"), specialty = c("OB", "GYN",
-#' "RE"))
-#' claims     <- data.frame(npi = c("1", "2"),      year = c(2020L, 2020L))
-#'
-#' # Inner join: only physicians with claims are kept
-#' result <- safe_inner_join(
-#'   left        = physicians,
-#'   right       = claims,
-#'   by          = "npi",
-#'   label_left  = "abog_physicians",
-#'   label_right = "medicare_claims",
-#'   min_coverage = 0.50,
-#'   write_report = FALSE
-#' )
-#'
-#' @family safe-joins
-#' @keywords join safety inner
-#' @export
-safe_inner_join <- function(left, right, by, expect_unique_both = TRUE,
-                           label_left = "left", label_right = "right",
-                           min_coverage = NULL,
-                           max_duplication = NULL,
-                           max_right_dup_keys = if (expect_unique_both) 0 else Inf,
-                           max_left_only_rows = 0,
-                           agree_on = NULL, agree_map = NULL,
-                           suffix = c(".x", ".y"),
-                           write_report = TRUE,
-                           report_prefix = "join_inner",
-                           # Matches safe_left_join's resolved default (see its
-                           # own CYCLE 9 comment): R/join_metrics.R does not
-                           # exist in this repo, so a default of TRUE made
-                           # every call either error, or (before this fix)
-                           # silently ignore agree_on/agree_map/
-                           # max_right_dup_keys while claiming to honor them.
-                           use_enhanced_metrics = FALSE) {
-  # ── Parameter validation (parity with safe_left_join) ────────────────────
-  checkmate::assert_data_frame(left)
-  checkmate::assert_data_frame(right)
-  if (is.null(by) || (is.character(by) && length(by) == 0)) {
-    stop("safe_inner_join: 'by' parameter is required. Specify join column(s) or use dplyr::join_by().",
-         call. = FALSE)
-  }
-  # Validate label parameters
-  checkmate::assert_string(label_left)
-  checkmate::assert_string(label_right)
-  # Validate numeric parameters when explicitly passed (not NULL)
-  checkmate::assert_number(min_coverage, lower = 0, upper = 1, null.ok = TRUE)
-  checkmate::assert_number(max_duplication, lower = 0, null.ok = TRUE)
-  # Validate logical parameters
-  checkmate::assert_flag(expect_unique_both)
-  checkmate::assert_flag(write_report)
-  checkmate::assert_flag(use_enhanced_metrics)
-  # Validate suffix
-  checkmate::assert_character(suffix, len = 2)
-  # Validate report_prefix
-  checkmate::assert_string(report_prefix)
-  # Validate max_left_only_rows
-  checkmate::assert_number(max_left_only_rows)
-  # Validate max_right_dup_keys
-  checkmate::assert_number(max_right_dup_keys)
-  # Validate agree_on and agree_map
-  checkmate::assert_character(agree_on, null.ok = TRUE)
-  checkmate::assert_list(agree_map, null.ok = TRUE)
-
-  # BUG FIX: agree_on/agree_map/use_enhanced_metrics=TRUE all require the
-  # enhanced metrics module (R/join_metrics.R), which DOES NOT EXIST in this
-  # repo -- same fact safe_left_join already hard-stops on. Previously these
-  # three parameters were accepted and validated but silently had no effect,
-  # which is a documented contract with nothing behind it: a caller asking
-  # for agreement checking got no error and no checking.
-  if (isTRUE(use_enhanced_metrics) || !is.null(agree_on) || !is.null(agree_map)) {
-    if (!exists("safe_inner_join_with_metrics", mode = "function")) {
-      stop(
-        "safe_inner_join: enhanced join metrics requested (use_enhanced_metrics=TRUE, ",
-        "or agree_on/agree_map supplied) but not available.\n",
-        "safe_inner_join_with_metrics() function not found.\n\n",
-        "R/join_metrics.R DOES NOT EXIST in the midwifery repo -- this is not a\n",
-        "module-loading problem, the file was never added here. Drop ",
-        "use_enhanced_metrics/agree_on/agree_map (basic validation still runs: ",
-        "coverage, max_duplication, max_right_dup_keys) or port the module.",
-        call. = FALSE
-      )
-    }
-  }
-
-  # Validate join key columns exist in both tables
-  by_left_cols <- if (is.character(by) && !is.null(names(by))) names(by) else by
-  by_right_cols <- if (is.character(by) && !is.null(names(by))) unname(by) else by
-  missing_left <- setdiff(by_left_cols, names(left))
-  missing_right <- setdiff(by_right_cols, names(right))
-  if (length(missing_left) > 0) {
-    stop(sprintf(
-      "safe_inner_join: join key(s) not found in left (%s): %s\nAvailable: %s",
-      label_left, paste(missing_left, collapse = ", "),
-      paste(head(names(left), 20), collapse = ", ")
-    ), call. = FALSE)
-  }
-  if (length(missing_right) > 0) {
-    stop(sprintf(
-      "safe_inner_join: join key(s) not found in right (%s): %s\nAvailable: %s",
-      label_right, paste(missing_right, collapse = ", "),
-      paste(head(names(right), 20), collapse = ", ")
-    ), call. = FALSE)
-  }
-
-  # BUG FIX (2026-04-05): Harmonize join key types (same as safe_left_join)
-  harmonized <- harmonize_join_key_types(left, right, by, label_left, label_right)
-  left <- harmonized$left
-  right <- harmonized$right
-
-  # Warn on empty tables (inner join of empty → empty, may indicate upstream bug)
-  if (nrow(left) == 0L) {
-    warning(sprintf(
-      "safe_inner_join: left table '%s' has 0 rows — result will be empty",
-      label_left
-    ), call. = FALSE)
-  }
-  if (nrow(right) == 0L) {
-    warning(sprintf(
-      "safe_inner_join: right table '%s' has 0 rows — result will be empty",
-      label_right
-    ), call. = FALSE)
-  }
-
-  # BUG FIX (2026-01-27): Bug 37 - Read JOIN_MIN_COVERAGE and JOIN_MAX_DUPLICATION
-  # from environment variables, like safe_left_join does. Previously hardcoded
-  # min_coverage=0.90 and ignored env vars, causing inconsistent pipeline behavior.
-  if (is.null(min_coverage)) {
-    env_coverage <- Sys.getenv("JOIN_MIN_COVERAGE", unset = "")
-    if (nzchar(env_coverage)) {
-      min_coverage <- suppressWarnings(as.numeric(env_coverage))
-      if (is.na(min_coverage)) {
-        warning(sprintf("Invalid JOIN_MIN_COVERAGE value '%s', using default 0.90",
-                        env_coverage), call. = FALSE)
-        min_coverage <- 0.90
-      }
-    } else {
-      min_coverage <- 0.90
-    }
-  }
-
-  if (is.null(max_duplication)) {
-    env_dup <- Sys.getenv("JOIN_MAX_DUPLICATION", unset = "")
-    if (nzchar(env_dup)) {
-      max_duplication <- suppressWarnings(as.numeric(env_dup))
-      if (is.na(max_duplication)) {
-        warning(sprintf("Invalid JOIN_MAX_DUPLICATION value '%s', ignoring",
-                        env_dup), call. = FALSE)
-        max_duplication <- NULL
-      }
-    }
-  }
-
-  # Post-resolution range checks (env var values may be out of range)
-  if (!is.null(min_coverage) && (min_coverage < 0 || min_coverage > 1)) {
-    warning(sprintf(
-      "safe_inner_join: resolved min_coverage=%s is out of [0,1] range, clamping to [0,1]",
-      min_coverage
-    ), call. = FALSE)
-    min_coverage <- max(0, min(1, min_coverage))
-  }
-  if (!is.null(max_duplication) && max_duplication < 0) {
-    warning(sprintf(
-      "safe_inner_join: resolved max_duplication=%s is negative, setting to NULL (disabled)",
-      max_duplication
-    ), call. = FALSE)
-    max_duplication <- NULL
-  }
-
-  # BUG FIX (2026-01-28): Bug 62 - Use correct column names for each table.
-  # For named vectors like c("npi" = "provider_npi"):
-  #   - Left table uses names(by) = "npi"
-  #   - Right table uses unname(by) = "provider_npi"
-  # For unnamed vectors, both use the same column names.
-  by_left_cols <- if (is.character(by) && is.null(names(by))) by else names(by)
-  by_right_cols <- if (is.character(by) && is.null(names(by))) by else unname(by)
-
-  # Assert uniqueness on both sides if declared
-  if (isTRUE(expect_unique_both)) {
-    assert_unique_keys(left, by_left_cols, "inner left (keys)")
-    assert_unique_keys(right, by_right_cols, "inner right (keys)")
-  }
-
-  # Enforce max_right_dup_keys regardless of expect_unique_both: the assert
-  # above only covers the all-or-nothing expect_unique_both=TRUE case. A
-  # caller passing expect_unique_both=FALSE with a finite max_right_dup_keys
-  # previously got silent no-op protection -- this parameter was validated
-  # and documented but never actually checked (the comment it replaces said
-  # so outright: "parameter now enforced via join metrics", a module that
-  # does not exist in this repo).
-  if (is.finite(max_right_dup_keys)) {
-    right_key_counts <- dplyr::count(right, dplyr::across(dplyr::all_of(by_right_cols)))
-    n_right_dup_keys <- sum(right_key_counts$n > 1L)
-    if (n_right_dup_keys > max_right_dup_keys) {
-      stop(sprintf(
-        "safe_inner_join: %d right-side key group(s) are duplicated, exceeding max_right_dup_keys=%s. %s -> %s on %s.",
-        n_right_dup_keys, max_right_dup_keys, label_left, label_right, format_by_columns(by)
-      ), call. = FALSE)
-    }
-  }
-
-  left_n <- nrow(left)
-  # BUG FIX (2026-01-28): Bug 154 - Pass suffix parameter to handle column name conflicts
-  out <- dplyr::inner_join(left, right,
-    by = by, suffix = suffix, na_matches = "never",
-    relationship = if (expect_unique_both) "one-to-one" else NULL
-  )
-
-  # BUG FIX (2026-01-27): Bug 26 - Use distinct left match count for coverage,
-
-  # not nrow(out). For many-to-many joins, nrow(out) can exceed left_n, which
-  # caused join_coverage_report to hard-fail with "row multiplication" error.
-  # Coverage should measure "what fraction of left rows appear in output."
-  matched_left_rows <- nrow(dplyr::semi_join(left, right, by = by, na_matches = "never"))
-  join_coverage_report(left_before = left_n, joined_rows = matched_left_rows,
-                       label_left = label_left, label_right = label_right,
-                       min_coverage = min_coverage)
-
-  # BUG FIX (2026-01-27): Bug 30 - Enforce max_duplication like safe_left_join
-  if (!is.null(max_duplication) && left_n > 0) {
-    # Bug 6 fix: safe_left_join uses default=0; safe_inner_join was missing it.
-    # Without default, safe_divide returns NA when left_n==0, and NA > threshold
-    # throws "missing value where TRUE/FALSE needed". Although left_n > 0 is
-    # checked above, adding default=0 is defensive and matches the sibling call.
-    duplication_factor <- safe_divide(nrow(out), left_n, default = 0)
-    if (duplication_factor > max_duplication) {
-      error_msg <- sprintf(
-        "Inner join row duplication %.2fx exceeds max_duplication=%.2f. Output %d rows from %d input. %s -> %s.",
-        duplication_factor, max_duplication,
-        nrow(out), left_n, label_left, label_right
-      )
-        stop(error_msg)
-    }
-  }
-
-  if (write_report) {
-    ts <- format(Sys.time(), "%Y%m%d_%H%M%OS3")
-    env_report_dir <- Sys.getenv("JOIN_REPORT_DIR", unset = "")
-    report_dir <- if (nzchar(env_report_dir)) env_report_dir else "artifacts/step00_summary"
-    dir.create(report_dir, recursive = TRUE, showWarnings = FALSE)
-    report_path <- file.path(report_dir, sprintf("%s_%s.csv", report_prefix, ts))
-
-    metrics <- tibble(
-      timestamp = ts,
-      join_type = "inner",
-      label_left = label_left,
-      label_right = label_right,
-      left_rows = left_n,
-      matched_rows = matched_left_rows,
-      output_rows = nrow(out),
-      coverage = safe_divide(matched_left_rows, left_n),
-      by_columns = format_by_columns(by)
-    )
-
-    report_tmp <- paste0(report_path, ".tmp")
-    readr::write_csv(metrics, report_tmp, na = "")
-    file.rename(report_tmp, report_path)
-    message("[DEBUG] Join report written: ", report_path)
-  }
-
-  # Log to join integrity ledger (non-breaking)
-  if (exists("log_join_integrity", mode = "function")) {
-    tryCatch(
-      log_join_integrity(
-        step_name = Sys.getenv("PIPELINE_CURRENT_STEP", unset = "unknown"),
-        join_type = "inner",
-        left_label = label_left,
-        right_label = label_right,
-        left_rows = left_n,
-        right_rows = nrow(right),
-        result_rows = nrow(out),
-        matched_rows = matched_left_rows,
-        key_columns = format_by_columns(by)
-      ),
-      error = function(e) NULL
-    )
-  }
-
-  out
-}
-
-#' @title Safe Semi Join
-#'
-#' @description
-#' Wrapper for \code{dplyr::semi_join()} that filters left rows to those
-#' matching the right table, enforcing a minimum keep-rate threshold, and writes
-#' an optional CSV report. Unlike \code{safe_inner_join()}, no right-side
-#' columns are added to the output — the result is a subset of \code{left}.
-#'
-#' @details
-#' **When to use:**
-#' Use \code{safe_semi_join()} when you want to filter a data frame to rows that
-#' have a match in a reference table, without attaching any additional columns
-#' from that reference table. Typical use: restricting a physician roster to
-#' those with an isochrone record.
-#'
-#' **Coverage definition:**
-#' Coverage = \code{nrow(output) / nrow(left)}. Because \code{semi_join()} can
-#' never produce more rows than \code{left}, this is always in \code{[0, 1]}.
-#'
-#' **Threshold enforcement (Bug #48):**
-#' Default \code{min_coverage = 0.50} (50%). This intentionally differs from
-#' \code{safe_left_join()} (98%) because semi joins are frequently used for
-#' intentional subsetting. If fewer than \code{min_coverage} of left rows
-#' survive, \code{stop()} is called with a diagnostic message.
-#'
-#' **Environment variables:**
-#' - \code{JOIN_MIN_COVERAGE}: Override \code{min_coverage} (default 0.50).
-#' - \code{JOIN_REPORT_DIR}: Override the report output directory.
-#'
-#' **Report output (Bug #35):**
-#' CSV schema identical to other safe join types: \code{timestamp},
-#' \code{join_type} (\code{"semi"}), \code{label_left}, \code{label_right},
-#' \code{left_rows}, \code{matched_rows}, \code{output_rows}, \code{coverage},
-#' \code{by_columns}.
-#'
-#' @param left               \code{[data.frame]} Left table to filter. Only rows
-#'   that match the
-#'   right table are kept.
-#' @param right              \code{[data.frame]} Reference table. Used for
-#'   matching only; its
-#'   columns are not added to the output.
-#' @param by                 \code{[character]} or \code{[join_by]}
-#'   specification.
-#' @param label_left         \code{[character(1)]} Label for left table.
-#' @param label_right        \code{[character(1)]} Label for right table.
-#' @param min_coverage       \code{[numeric(1)]} Min fraction kept (default
-#'   \code{0.50}).
-#' @param max_duplication    \code{[numeric(1)]} (API consistency only).
-#' @param max_right_dup_keys \code{[integer(1)]} (API consistency only).
-#' @param agree_on           \code{[character]} (API consistency only).
-#' @param write_report       \code{[logical(1)]} Write CSV report.
-#' @param report_prefix      \code{[character(1)]} Filename prefix.
-#'
-#' @return \code{[data.frame]} Filtered subset of \code{left}.
-#'
-#' @section Contract:
-#' \strong{Guarantees:}
-#' \itemize{
-#'   \item Always returns a subset of \code{left} (never adds rows or columns).
-#'   \item Throws error if keep rate < \code{min_coverage}.
-#' }
-#' \strong{Fails if:}
-#' \itemize{
-#'   \item Either table is missing the specified join keys.
-#' }
-#'
-#' @section Pipeline Position:
-#' Typically used at the beginning of downstream steps to restrict a wide
-#' physician roster to those with a required artifact (e.g., an isochrone
-#' record, a geocoded address, or an ABMS credential match). Because no right
-#' columns are added, the output schema is identical to \code{left}.
-#'
-#' @section Algorithm:
-#' Validates that \code{by} keys exist in both tables, harmonizes key types,
-#' then calls \code{dplyr::semi_join(with na_matches = "never")}. Computes
-#' \code{coverage = nrow(out) / nrow(left)} and stops if below
-#' \code{min_coverage} (default 0.50; differs from \code{safe_left_join}'s
-#' 0.98 because semi joins intentionally discard rows).
-#'
-#' @section Calls:
-#' \code{harmonize_join_key_types()}, \code{dplyr::semi_join()}, \code{join_coverage_report()}.
-#'
-#' @section Performance:
-#' Efficient O(n) filtering operation. No validation overhead beyond key type
-#' check.
-#'
-#' @section Disaster Prevention:
-#' \describe{
-#'   \item{Subset integrity guard}{Ensures that mandatory filtering steps (e.g.,
-#'         "only physicians with addresses") don't silently drop the entire 
-#'         dataset due to a key mismatch.}
-#' }
-#'
-#' @concept join-safety
-#' @concept coverage-threshold
-#'
-#' @seealso \code{\link{safe_left_join}} for filtering while also attaching
-#'   right-side columns; \code{\link{safe_anti_join}} for keeping only
-#'   unmatched left rows; \code{\link{safe_inner_join}} for keeping matches
-#'   from both sides with column merging; \code{\link{join_coverage_report}}
-#'   for the underlying coverage utility.
-#'
-#' @examples
-#' library(dplyr)
-#' physicians <- data.frame(
-#'   npi       = c("1", "2", "3", "4"),
-#'   specialty = c("OB", "GYN", "RE", "MFM")
-#' )
-#' has_isochrone <- data.frame(npi = c("1", "3"))
-#'
-#' # Keep only physicians that have an isochrone
-#' result <- safe_semi_join(
-#'   left        = physicians,
-#'   right       = has_isochrone,
-#'   by          = "npi",
-#'   label_left  = "physician_cohort",
-#'   label_right = "isochrone_manifest",
-#'   min_coverage = 0.25,   # at least 1 of 4 must match
-#'   write_report = FALSE
-#' )
-#'
-#' @family safe-joins
-#' @keywords join safety semi
-#' @export
-safe_semi_join <- function(left, right, by,
-                           label_left = "left", label_right = "right",
-                           min_coverage = NULL,
-                           max_duplication = NULL,
-                           max_right_dup_keys = Inf,
-                           agree_on = NULL,
-                           write_report = TRUE, report_prefix = "join_semi") {
-  # ── Parameter validation (parity with safe_left_join/safe_inner_join) ──
-  checkmate::assert_data_frame(left)
-  checkmate::assert_data_frame(right)
-  if (is.null(by) || (is.character(by) && length(by) == 0L)) {
-    stop("safe_semi_join: 'by' parameter is required. Specify join column(s).", call. = FALSE)
-  }
-  # Validate join keys exist in both tables
-  by_left  <- if (!is.null(names(by))) ifelse(nzchar(names(by)), names(by), by) else by
-  by_right <- unname(by)
-  missing_left <- setdiff(by_left, names(left))
-  if (length(missing_left) > 0L) {
-    stop(sprintf("safe_semi_join: join key(s) %s not found in left. Available: %s",
-                 paste0("'", missing_left, "'", collapse = ", "),
-                 paste0(head(names(left), 10), collapse = ", ")), call. = FALSE)
-  }
-  missing_right <- setdiff(by_right, names(right))
-  if (length(missing_right) > 0L) {
-    stop(sprintf("safe_semi_join: join key(s) %s not found in right. Available: %s",
-                 paste0("'", missing_right, "'", collapse = ", "),
-                 paste0(head(names(right), 10), collapse = ", ")), call. = FALSE)
-  }
-  # BUG FIX (2026-04-05): Harmonize join key types
-  harmonized <- harmonize_join_key_types(left, right, by, label_left, label_right)
-  left <- harmonized$left
-  right <- harmonized$right
-
-  if (nrow(left) == 0L) warning("safe_semi_join: left table has 0 rows", call. = FALSE)
-  if (nrow(right) == 0L) warning("safe_semi_join: right table has 0 rows", call. = FALSE)
-
-  # REFUSE what this path cannot honour, rather than accepting it in silence.
-  # Each parameter below is accepted for signature parity with the enhanced
-  # metrics module R/join_metrics.R would have supplied -- the file the CYCLE 9
-  # note records as never having existed -- and the inline path that actually
-  # runs reads none of them. Ignoring a supplied validation argument is the
-  # precise failure the PRIORITY 1 note (2026-02-12) in this file forbids: a
-  # REQUESTED check skipped without saying so. safe_inner_join already refuses
-  # agree_on/agree_map for that reason; these bring its three siblings into line.
-  if (!is.null(agree_on)) {
-    stop("safe_semi_join: agree_on needs the enhanced metrics module ",
-         "(R/join_metrics.R), which does not exist in this repository. A semi ",
-         "join cannot compare columns it does not carry. Drop the argument.",
-         call. = FALSE)
-  }
-  # NULL and Inf both mean "no bound", which is exactly what this path does, so
-  # only a real bound is refused.
-  if (!is.null(max_duplication)) {
-    stop("safe_semi_join: max_duplication is never read. A semi join cannot ",
-         "duplicate left rows -- it filters them -- so there is no duplication ",
-         "to bound. Drop the argument; min_coverage is the threshold that ",
-         "applies here.", call. = FALSE)
-  }
-  if (!missing(max_right_dup_keys) && is.finite(max_right_dup_keys)) {
-    stop("safe_semi_join: max_right_dup_keys is never read. A semi join returns ",
-         "left rows only, so right-side duplicate keys cannot reach the output. ",
-         "Drop the argument (Inf, the default, is honoured because it bounds ",
-         "nothing).", call. = FALSE)
-  }
-
-  # BUG FIX (2026-01-27): Add min_coverage enforcement and join validation.
-  # Previously reported percentages via message() but never enforced any threshold.
-  # BUG FIX (2026-01-27): Bug 48 - Default to 0.50 instead of 0.0.
-  # Previously defaulted to 0.0 which effectively disabled enforcement, so a
-  # semi_join keeping only 1% of rows would pass silently. Other join types
-  # default to 0.90-0.98. Semi_join uses 0.50 as a reasonable default.
-  if (is.null(min_coverage)) {
-    env_cov <- Sys.getenv("JOIN_MIN_COVERAGE", unset = "")
-    if (nzchar(env_cov)) {
-      parsed <- suppressWarnings(as.numeric(env_cov))
-      if (is.na(parsed)) {
-        warning(sprintf("Invalid JOIN_MIN_COVERAGE value '%s', using default 0.50", env_cov), call. = FALSE)
-        min_coverage <- 0.50
-      } else {
-        min_coverage <- parsed
-      }
-    } else {
-      min_coverage <- 0.50
-    }
-  }
-
-  left_n <- nrow(left)
-  out <- dplyr::semi_join(left, right, by = by, na_matches = "never")
-
-  # Bug fix: Guard against division by zero on 0-row left table
-  if (left_n == 0) {
-    message(sprintf(
-      "📊 Semi-join: %s rows=0, kept=0 (kept=N/A, empty input)",
-      label_left
-    ))
-  } else {
-    coverage <- safe_divide(nrow(out), left_n)
-    message(sprintf(
-      "📊 Semi-join: %s rows=%s, kept=%s (kept=%.1f%%)",
-      label_left, format(left_n, big.mark = ","),
-      format(nrow(out), big.mark = ","),
-      coverage * 100
-    ))
-
-    if (coverage < min_coverage) {
-      error_msg <- sprintf(
-        "Semi-join coverage %.1f%% below %.1f%% threshold. Kept %d of %d rows. %s -> %s on %s.",
-        coverage * 100, min_coverage * 100,
-        nrow(out), left_n, label_left, label_right,
-        format_by_columns(by)
-      )
-      stop(error_msg)
-    }
-  }
-
-  # Write report if requested
-  if (write_report) {
-    # BUG FIX (2026-01-27): Use millisecond precision to prevent silent overwrites
-    # when two joins run within the same second.
-    ts <- format(Sys.time(), "%Y%m%d_%H%M%OS3")
-    env_report_dir <- Sys.getenv("JOIN_REPORT_DIR", unset = "")
-    report_dir <- if (nzchar(env_report_dir)) env_report_dir else "artifacts/step00_summary"
-    dir.create(report_dir, recursive = TRUE, showWarnings = FALSE)
-    report_path <- file.path(report_dir, sprintf("%s_%s.csv", report_prefix, ts))
-
-    # BUG FIX (2026-01-27): Bug 35 - Use unified schema across all join types.
-    # Previously used kept_rows/keep_rate which differed from left/inner join schemas.
-    semi_matched <- nrow(out) # semi_join output = matched rows
-    metrics <- tibble(
-      timestamp = ts,
-      join_type = "semi",
-      label_left = label_left,
-      label_right = label_right,
-      left_rows = left_n,
-      matched_rows = semi_matched,
-      output_rows = nrow(out),
-      coverage = safe_divide(semi_matched, left_n),
-      by_columns = format_by_columns(by)
-    )
-
-    report_tmp <- paste0(report_path, ".tmp")
-    readr::write_csv(metrics, report_tmp, na = "")
-    file.rename(report_tmp, report_path)
-    message("[DEBUG] Join report written: ", report_path)
-  }
-
-  out
-}
-
-#' @title Safe Anti Join
-#'
-#' @description
-#' Wrapper for \code{dplyr::anti_join()} that returns left rows with no match
-#' in the right table, enforces a maximum matched-away rate, and writes an
-#' optional CSV report. Useful for identifying exclusion sets (e.g., physicians
-#' NOT in the retired list) while guarding against accidental over-exclusion.
-#'
-#' @details
-#' **When to use:**
-#' Use \code{safe_anti_join()} when you need the complement of a semi join —
-#' rows from \code{left} that do NOT appear in \code{right}. Typical use:
-#' removing retired physicians from an active cohort, or finding providers
-#' without an isochrone.
-#'
-#' **Threshold enforcement (Bug #49):**
-#' \code{max_matched} controls the maximum fraction of left rows that may be
-#' matched away (i.e., excluded). Default: \code{1.0} (no limit). Set a lower
-#' value to guard against over-exclusion — for example, \code{max_matched =
-#' 0.30}
-#' ensures at most 30% of the cohort can be dropped.
-#' Reads the \code{JOIN_MAX_MATCHED} environment variable when not explicitly
-#' supplied.
-#'
-#' **Coverage in reports:**
-#' For anti joins, the \code{coverage} column in the CSV report equals
-#' \code{matched_rows / left_rows}, where \code{matched_rows} is the count of
-#' left rows that were excluded (matched to the right table). \code{output_rows}
-#' is the count of left rows that survived (unmatched).
-#'
-#' **Environment variables:**
-#' \itemize{
-#'   \item \code{JOIN_MAX_MATCHED}: Override \code{max_matched} (default 1.0).
-#'   \item \code{JOIN_REPORT_DIR}: Override the report output directory.
-#' }
-#'
-#' **Report output (Bug #35):**
-#' CSV schema identical to other safe join types: \code{timestamp},
-#' \code{join_type} (\code{"anti"}), \code{label_left}, \code{label_right},
-#' \code{left_rows}, \code{matched_rows} (excluded count), \code{output_rows}
-#' (surviving count), \code{coverage}, \code{by_columns}.
-#'
-#' @param left            \code{[data.frame]} Left table to filter. Rows that
-#'   match the right table are
-#'   removed; unmatched rows are returned.
-#' @param right           \code{[data.frame]} Reference table used for matching.
-#'   Its columns
-#'   are not added to the output.
-#' @param by              \code{[character]} or \code{[join_by]} specification.
-#' @param label_left      \code{[character(1)]} Label for left table.
-#' @param label_right     \code{[character(1)]} Label for right table.
-#' @param max_matched     \code{[numeric(1)]} Maximum fraction of left rows that
-#'   may be
-#'   matched (and thus excluded) (0 to 1). Default: \code{NULL} (reads
-#'   \code{JOIN_MAX_MATCHED} env var or \code{1.0} — no limit).
-#' @param min_coverage    \code{[numeric(1)]} (API consistency only).
-#' @param max_duplication \code{[numeric(1)]} (API consistency only).
-#' @param write_report    \code{[logical(1)]} Write CSV report.
-#' @param report_prefix   \code{[character(1)]} Filename prefix.
-#'
-#' @return \code{[data.frame]} Filtered subset of \code{left}.
-#'
-#' @section Contract:
-#' \strong{Guarantees:}
-#' \itemize{
-#'   \item Returns only rows from \code{left} that have NO match in
-#' \code{right}.
-#'   \item Throws error if exclusion rate > \code{max_matched}.
-#' }
-#' \strong{Fails if:}
-#' \itemize{
-#'   \item Either table is missing the specified join keys.
-#' }
-#'
-#' @section Pipeline Position:
-#' Primarily used in retirement-exclusion steps (e.g., Step 0.5 exclusions,
-#' Step 4 retirement filtering) to remove known-inactive physicians from an
-#' active cohort. Also used to find providers without an isochrone or without
-#' a geocoded practice address for exclusion logging.
-#'
-#' @section Algorithm:
-#' Validates keys, harmonizes types, then calls
-#' \code{dplyr::anti_join(na_matches = "never")}. Computes
-#' \code{matched_rate = (nrow(left) - nrow(out)) / nrow(left)} and stops if
-#' this exceeds \code{max_matched} (default 1.0, i.e., no limit). Uses the
-#' \code{JOIN_MAX_MATCHED} environment variable when not explicitly set.
-#'
-#' @section Calls:
-#' \code{harmonize_join_key_types()}, \code{dplyr::anti_join()}, \code{join_coverage_report()}.
-#'
-#' @section Performance:
-#' Efficient O(n) exclusion operation.
-#'
-#' @section Disaster Prevention:
-#' \describe{
-#'   \item{Over-exclusion guard}{Prevents accidental deletion of a large portion
-#'         of the study cohort (e.g., if the retirement list is accidentally 
-#'         truncated or corrupted).}
-#' }
-#'
-#' @concept join-safety
-#' @concept data-integrity
-#'
-#' @seealso \code{\link{safe_semi_join}} for the complementary filter (keeping
-#'   only matched rows); \code{\link{safe_left_join}} for enrichment joins that
-#'   retain all left rows; \code{\link{safe_inner_join}} for joins that keep
-#'   only matched rows with right-side columns attached;
-#'   \code{\link{join_coverage_report}} for the underlying coverage utility.
-#'
-#' @examples
-#' library(dplyr)
-#' all_physicians <- data.frame(
-#'   npi       = c("1", "2", "3", "4"),
-#'   specialty = c("OB", "GYN", "RE", "MFM")
-#' )
-#' retired <- data.frame(npi = c("2", "4"))
-#'
-#' # Remove retired physicians from the active cohort
-#' active <- safe_anti_join(
-#'   left        = all_physicians,
-#'   right       = retired,
-#'   by          = "npi",
-#'   label_left  = "all_physicians",
-#'   label_right = "retired_list",
-#'   max_matched  = 0.60,   # at most 60% may be excluded
-#'   write_report = FALSE
-#' )
-#'
-#' @family safe-joins
-#' @keywords join safety anti
-#' @export
-safe_anti_join <- function(left, right, by,
-                           label_left = "left", label_right = "right",
-                           max_matched = NULL,
-                           min_coverage = NULL,
-                           max_duplication = NULL,
-                           write_report = TRUE, report_prefix = "join_anti") {
-
-  # ── Parameter validation (parity with safe_left_join/safe_inner_join) ──
-  checkmate::assert_data_frame(left)
-  checkmate::assert_data_frame(right)
-  if (is.null(by) || (is.character(by) && length(by) == 0L)) {
-    stop("safe_anti_join: 'by' parameter is required. Specify join column(s).", call. = FALSE)
-  }
-  # Validate join keys exist in both tables
-  by_left  <- if (!is.null(names(by))) ifelse(nzchar(names(by)), names(by), by) else by
-  by_right <- unname(by)
-  missing_left <- setdiff(by_left, names(left))
-  if (length(missing_left) > 0L) {
-    stop(sprintf("safe_anti_join: join key(s) %s not found in left. Available: %s",
-                 paste0("'", missing_left, "'", collapse = ", "),
-                 paste0(head(names(left), 10), collapse = ", ")), call. = FALSE)
-  }
-  missing_right <- setdiff(by_right, names(right))
-  if (length(missing_right) > 0L) {
-    stop(sprintf("safe_anti_join: join key(s) %s not found in right. Available: %s",
-                 paste0("'", missing_right, "'", collapse = ", "),
-                 paste0(head(names(right), 10), collapse = ", ")), call. = FALSE)
-  }
-  # BUG FIX (2026-11-21): Harmonize join key types, which this function's own
-  # @section Algorithm has claimed all along ("Validates keys, harmonizes
-  # types"). The 2026-04-05 fix added the call to safe_left_join (:731),
-  # safe_inner_join (:1218) and safe_semi_join (:1546) and missed this one, so a
-  # character key against an integer key aborted with dplyr's "incompatible
-  # types" error where the three siblings coerce and continue. ~/isochrones
-  # carries the other copy of this file and got the same fix plus its parity
-  # test, tests/ci/test-safe-join-key-harmonization.R.
-  harmonized <- harmonize_join_key_types(left, right, by, label_left, label_right)
-  left <- harmonized$left
-  right <- harmonized$right
-
-  if (nrow(left) == 0L) warning("safe_anti_join: left table has 0 rows", call. = FALSE)
-  if (nrow(right) == 0L) warning("safe_anti_join: right table has 0 rows", call. = FALSE)
-
-  # REFUSE what this path cannot honour, rather than accepting it in silence.
-  # Each parameter below is accepted for signature parity with the enhanced
-  # metrics module R/join_metrics.R would have supplied -- the file the CYCLE 9
-  # note records as never having existed -- and the inline path that actually
-  # runs reads none of them. Ignoring a supplied validation argument is the
-  # precise failure the PRIORITY 1 note (2026-02-12) in this file forbids: a
-  # REQUESTED check skipped without saying so. safe_inner_join already refuses
-  # agree_on/agree_map for that reason; these bring its three siblings into line.
-  # Both default to NULL, which means "no threshold" -- and no threshold is what
-  # this path applies. Only a supplied threshold is refused.
-  if (!is.null(min_coverage)) {
-    stop("safe_anti_join: min_coverage is never read, and the name inverts here ",
-         "-- an anti join returns the UNMATCHED left rows, so high coverage means ",
-         "a small result, not a healthy one. Use max_matched, which bounds the ",
-         "fraction of left rows matched away.", call. = FALSE)
-  }
-  if (!is.null(max_duplication)) {
-    stop("safe_anti_join: max_duplication is never read. An anti join cannot ",
-         "duplicate left rows -- it removes them -- so there is no duplication to ",
-         "bound. Use max_matched.", call. = FALSE)
-  }
-
-  # BUG FIX (2026-01-27): Add max_matched enforcement and join validation.
-  # Previously reported percentages via message() but never enforced thresholds.
-  # max_matched = fraction of left rows that may be matched away (removed).
-  # BUG FIX (2026-01-27): Bug 49 - Read JOIN_MAX_MATCHED from environment variable.
-  # Previously ignored all env vars, breaking the pattern established by other join types.
-  if (is.null(max_matched)) {
-    env_mm <- Sys.getenv("JOIN_MAX_MATCHED", unset = "")
-    if (nzchar(env_mm)) {
-      # Match the graceful handling already used by safe_left/inner/semi_join: a
-      # malformed override must warn and fall back to the default, not coerce to
-      # NA and then crash the threshold comparison with a cryptic missing-value
-      # error.
-      parsed <- suppressWarnings(as.numeric(env_mm))
-      if (is.na(parsed)) {
-        warning(sprintf("Invalid JOIN_MAX_MATCHED value '%s', using default 1.0", env_mm), call. = FALSE)
-        max_matched <- 1.0
-      } else {
-        max_matched <- parsed
-      }
-    } else {
-      max_matched <- 1.0
-    }
-  }
-
-  left_n <- nrow(left)
-  out <- dplyr::anti_join(left, right, by = by, na_matches = "never")
-
-  # Bug fix: Guard against division by zero on 0-row left table
-  if (left_n == 0) {
-    message(sprintf(
-      "📊 Anti-join: %s rows=0, unmatched=0 (unmatched=N/A, empty input)",
-      label_left
-    ))
-  } else {
-    matched_rate <- safe_divide(left_n - nrow(out), left_n)
-    message(sprintf(
-      "📊 Anti-join: %s rows=%s, unmatched=%s (unmatched=%.1f%%)",
-      label_left, format(left_n, big.mark = ","),
-      format(nrow(out), big.mark = ","),
-      safe_pct_manu(nrow(out), left_n)
-    ))
-
-    if (matched_rate > max_matched) {
-      error_msg <- sprintf(
-        "Anti-join matched rate %.1f%% exceeds max_matched=%.1f%%. %d of %d rows matched away. %s -> %s on %s.",
-        matched_rate * 100, max_matched * 100,
-        left_n - nrow(out), left_n, label_left, label_right,
-        format_by_columns(by)
-      )
-      stop(error_msg)
-    }
-  }
-
-  # Write report if requested
-  if (write_report) {
-    # BUG FIX (2026-01-27): Use millisecond precision to prevent silent overwrites
-    # when two joins run within the same second.
-    ts <- format(Sys.time(), "%Y%m%d_%H%M%OS3")
-    env_report_dir <- Sys.getenv("JOIN_REPORT_DIR", unset = "")
-    report_dir <- if (nzchar(env_report_dir)) env_report_dir else "artifacts/step00_summary"
-    dir.create(report_dir, recursive = TRUE, showWarnings = FALSE)
-    report_path <- file.path(report_dir, sprintf("%s_%s.csv", report_prefix, ts))
-
-    # BUG FIX (2026-01-27): Bug 35 - Use unified schema across all join types.
-    # Previously used unmatched_rows/unmatch_rate which differed from other join schemas.
-    anti_matched <- left_n - nrow(out) # rows that were matched away
-    metrics <- tibble(
-      timestamp = ts,
-      join_type = "anti",
-      label_left = label_left,
-      label_right = label_right,
-      left_rows = left_n,
-      matched_rows = anti_matched,
-      output_rows = nrow(out),
-      coverage = safe_divide(anti_matched, left_n),
-      by_columns = format_by_columns(by)
-    )
-
-    report_tmp <- paste0(report_path, ".tmp")
-    readr::write_csv(metrics, report_tmp, na = "")
-    file.rename(report_tmp, report_path)
-    message("[DEBUG] Join report written: ", report_path)
-  }
-
+  # THE SECOND DEAD DELEGATION, found by the gate written for the first.
+  # tests/test_complexity_cuts_saboteurs.R's C2a parses every tracked file for
+  # CALLS (not text) to a function no file here defines, and it accused this
+  # one: 17 lines logging to a join-integrity ledger, behind
+  # `exists("log_join_integrity", mode = "function")`, which is FALSE in every
+  # run because nothing in this repository defines it -- and wrapped in a
+  # tryCatch that would have swallowed the error if it ever became TRUE. The
+  # enhanced-metrics block above it was the finding; this was its twin, two
+  # hundred lines down, and the audit missed it by reading only the branch the
+  # measurement pointed at.
   out
 }
 

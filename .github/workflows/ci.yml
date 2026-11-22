@@ -541,6 +541,17 @@ jobs:
       - name: Gate-integrity saboteurs
         run: Rscript tests/test_gate_integrity_saboteurs.R
 
+      # The 2026-11-20 complexity audit's four fixes. Mostly text and
+      # parse-tree scans over tracked files, but it also SOURCES
+      # R/join_safety.R (checkmate, dplyr -- both installed above) to prove
+      # safe_left_join() still refuses use_enhanced_metrics = TRUE, and
+      # tests/duckdb_architecture_scan.R to prove the moved scanner still finds a
+      # raw connection. Both are why it lives in this job. nightly.yml globs
+      # tests/test*.R and would run it anyway; naming it here is what makes it
+      # run on the pull request that breaks it.
+      - name: Complexity-cut saboteurs
+        run: Rscript tests/test_complexity_cuts_saboteurs.R
+
       - name: DuckDB architecture and volume-resolution gates
         run: |
           Rscript tests/ci_duckdb_ingestion_bootstrap.R
@@ -560,14 +571,6 @@ jobs:
       # so it needs git on PATH -- which this runner has.
       - name: Review-fix saboteurs
         run: Rscript tests/test_review_fixes_saboteurs.R
-
-      # Parity across the four safe_*_join wrappers, not one of them: the
-      # 2026-04-05 type-harmonization fix reached three and missed
-      # safe_anti_join, which kept the claim in its own @section Algorithm.
-      # Twin file in ~/isochrones (tests/ci/test-safe-join-key-harmonization.R),
-      # where R/join_safety.R is vendored and the same fix landed first.
-      - name: Every safe_*_join harmonizes mismatched key types
-        run: Rscript tests/test_safe_join_key_harmonization.R
 
       - name: State-license table construction
         run: Rscript tests/test_build_amcb_state_licenses.R
@@ -880,13 +883,12 @@ jobs:
       # bounds. JOIN_REPORT_DIR is set because one block exercises the DEFAULT
       # report path rather than overriding it, and would otherwise write into
       # tests/artifacts/ in the checkout.
-      - name: Ported - join_safety (79 assertions)
+      - name: Ported - join_safety (24 assertions)
         env:
           JOIN_REPORT_DIR: ${{ runner.temp }}/join_reports
         run: |
           mkdir -p "$JOIN_REPORT_DIR"
           Rscript -e 'testthat::test_file("tests/test-join-safety.R", stop_on_failure = TRUE)'
-          Rscript -e 'testthat::test_file("tests/test-join-safety-semantic-extended.R", stop_on_failure = TRUE)'
           Rscript -e 'testthat::test_file("tests/test-step2-npi-dedup-bug.R", stop_on_failure = TRUE)'
 
       # resolve_tract_vintage.R is BYTE-IDENTICAL to upstream, so these two are

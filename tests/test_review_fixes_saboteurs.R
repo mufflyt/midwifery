@@ -233,159 +233,26 @@ chk(!grepl("pick <- function(frame, pattern, column)", cat_src, fixed = TRUE),
 
 
 # =============================================================================
-# R14-R22  A join wrapper must not accept a validation it will ignore
+# R14-R15  join_coverage_report() is called by name
 # =============================================================================
-# The law: every formal of safe_*_join is read somewhere the caller can actually
-# reach. `use_enhanced_metrics = TRUE` is not reachable -- it stops, because it
-# delegates to safe_left_join_with_metrics() from R/join_metrics.R, and that
-# file has never existed here -- so a formal read only inside that branch is
-# inert. This is checked over the parsed source, then sabotaged.
-DEAD_DELEGATE <- "safe_left_join_with_metrics"
-
-sab(14, "the delegate the dead branch needs really is absent")
-# If someone ports R/join_metrics.R, that branch becomes live and this whole
-# group's premise changes. Fail loudly then rather than measuring the wrong law.
-# Searched in R rather than by shelling out to `git grep`: the pattern needs a
-# space and a `*`, and getting those through two levels of shell quoting is how
-# a check ends up reporting "no match" because the command was malformed.
-tracked_r <- grep("[.]R$", system2("git", c("ls-files"), stdout = TRUE), value = TRUE)
-defines <- function(nm) {
-  pat <- paste0("^", nm, " *<- *function")
-  any(vapply(tracked_r,
-             function(f) any(grepl(pat, readLines(f, warn = FALSE))),
-             logical(1)))
-}
-chk(!defines(DEAD_DELEGATE),
-    sprintf("R14 %s() is defined in none of the %d tracked .R files",
-            DEAD_DELEGATE, length(tracked_r)))
-
-# Symbols read OUTSIDE the unreachable branch.
-syms_live <- function(e, acc = character(0)) {
-  if (is.symbol(e)) return(c(acc, as.character(e)))
-  if (!is.recursive(e)) return(acc)
-  if (is.call(e) && deparse(e[[1]])[1] == "if" &&
-      grepl("use_enhanced_metrics", paste(deparse(e[[2]]), collapse = " ")) &&
-      grepl(DEAD_DELEGATE, paste(deparse(e), collapse = " "), fixed = TRUE))
-    return(acc)
-  for (i in seq_along(e)) acc <- tryCatch(syms_live(e[[i]], acc),
-                                          error = function(z) acc)
-  acc
-}
-inert_formals <- function(text, fname) {
-  ex <- parse(text = text, keep.source = FALSE)
-  fn <- NULL
-  for (x in ex) if (is.call(x) && length(x) == 3L && deparse(x[[2]])[1] == fname)
-    fn <- eval(x[[3]], new.env(parent = globalenv()))
-  if (!is.function(fn)) stop("no such function in the text: ", fname)
-  setdiff(names(formals(fn)), unique(syms_live(body(fn))))
-}
-
+# WHAT WAS HERE, AND WHY IT IS GONE. Nine saboteurs (the old R14-R22) asserted
+# that no safe_*_join wrapper accepts a formal it never reads, sabotaging the
+# require_complete_keys shape and the arguments the inline path cannot honour.
+# The 2026-11-20 complexity audit on main then deleted safe_inner_join(),
+# safe_semi_join() and safe_anti_join() outright -- zero production call sites --
+# and tests/test_complexity_cuts_saboteurs.R now owns that law in a stronger
+# form: C1a refuses a redefinition of a deleted wrapper, C1b refuses a call to
+# one, C1c kills a wrapper copied back from the upstream isochrones copy, and
+# C2a-C2f own the dead delegation, its refusal, and the one argument six
+# upstream call sites still pass. Nine saboteurs written against a structure
+# that no longer exists would have measured the wrong law, and two of them
+# could not even parse it.
+#
+# What survives is the call-shape law below, which the audit did not cover.
 JS <- slurp("R/join_safety.R")
-sab(15, "no wrapper accepts a formal it never reads")
-for (w in c("safe_left_join", "safe_inner_join", "safe_semi_join", "safe_anti_join")) {
-  got <- inert_formals(JS, w)
-  chk(length(got) == 0L,
-      sprintf("R15 %s has no inert formal%s", w,
-              if (length(got)) paste0(" -- found: ", paste(got, collapse = ", ")) else ""))
-}
-
-sab(16, "SABOTEUR: a formal forwarded ONLY into the unreachable branch")
-# This is require_complete_keys reconstructed: accepted, defaulted ON, passed
-# to the delegate and nowhere else.
-sab16 <- sub("safe_left_join <- function(left, right, by, expect_unique_right = TRUE,",
-             "safe_left_join <- function(left, right, by, expect_unique_right = TRUE,\n                           require_complete_keys = TRUE,",
-             JS, fixed = TRUE)
-sab16 <- sub("    result <- safe_left_join_with_metrics(\n      left = left,",
-             "    result <- safe_left_join_with_metrics(\n      require_complete_keys = require_complete_keys,\n      left = left,",
-             sab16, fixed = TRUE)
-chk(identical(inert_formals(sab16, "safe_left_join"), "require_complete_keys"),
-    "R16 a formal read only inside the dead branch is caught")
-
-sab(17, "SABOTEUR: a formal never referenced at all")
-sab17 <- sub("safe_anti_join <- function(left, right, by,",
-             "safe_anti_join <- function(left, right, by, never_read = 0.5,",
-             JS, fixed = TRUE)
-chk(identical(inert_formals(sab17, "safe_anti_join"), "never_read"),
-    "R17 a formal referenced nowhere in the body is caught")
-
-sab(18, "NEAR MISS: a formal the live path does read")
-sab18 <- sub("safe_anti_join <- function(left, right, by,",
-             "safe_anti_join <- function(left, right, by, is_read = 0.5,",
-             JS, fixed = TRUE)
-sab18 <- sub("  if (nrow(left) == 0L) warning(\"safe_anti_join: left table has 0 rows\", call. = FALSE)",
-             "  if (!is.null(is_read)) invisible(is_read)\n  if (nrow(left) == 0L) warning(\"safe_anti_join: left table has 0 rows\", call. = FALSE)",
-             sab18, fixed = TRUE)
-chk(length(inert_formals(sab18, "safe_anti_join")) == 0L,
-    "R18 a formal read on the live path is NOT flagged")
-
-source(file.path(root, "R", "safe_divide.R"))
-source(file.path(root, "R", "join_safety.R"))
-L <- data.frame(id = c("a", "b", "c"), v = 1:3)
-RT <- data.frame(id = c("a", "b", "c"), w = 4:6)
-
-sab(19, "an argument the inline path cannot honour is REFUSED, not ignored")
-# Before the fix each of these returned a joined frame and checked nothing, so
-# a caller asking for a check got silence that looked like success.
-chk(errs(safe_left_join(L, RT, by = "id", agree_on = "v", write_report = FALSE)),
-    "R19a safe_left_join(agree_on=) errors instead of silently skipping")
-chk(errs(safe_left_join(L, RT, by = "id", agree_map = list(v = "w"),
-                        write_report = FALSE)),
-    "R19b safe_left_join(agree_map=) errors")
-chk(errs(safe_left_join(L, RT, by = "id", expect_unique_right = FALSE,
-                        max_right_dup_keys = 5, write_report = FALSE)),
-    "R19c safe_left_join(max_right_dup_keys=) errors (never enforced inline)")
-chk(errs(safe_semi_join(L, RT, by = "id", max_duplication = 1.5,
-                        write_report = FALSE)),
-    "R19d safe_semi_join(max_duplication=) errors (a semi join cannot duplicate)")
-chk(errs(safe_anti_join(L, RT, by = "id", min_coverage = 0.9,
-                        write_report = FALSE)),
-    "R19e safe_anti_join(min_coverage=) errors (the name inverts for an anti join)")
-
-sab(20, "NEAR MISS: the arguments that ARE honoured still work")
-# The refusals must not have become a blanket "no optional arguments".
-chk(!errs(safe_left_join(L, RT, by = "id", min_coverage = 0.9,
-                         max_duplication = 1.5, write_report = FALSE)),
-    "R20a safe_left_join still accepts min_coverage and max_duplication")
-chk(!errs(safe_semi_join(L, RT, by = "id", min_coverage = 0.5,
-                         write_report = FALSE)),
-    "R20b safe_semi_join still accepts min_coverage")
-chk(!errs(safe_left_join(L, RT, by = "id", expect_unique_right = TRUE,
-                         write_report = FALSE)),
-    "R20c the default expect_unique_right path is untouched")
-
-# The refusals must not fire on a value that ASKS FOR WHAT ALREADY HAPPENS.
-# A first cut of these guards used !missing() alone, which erred on every call
-# that spelled a default out -- and max_right_dup_keys defaults to 0, a finite
-# number, so an is.finite() test alone would have errored on every default call
-# of safe_left_join. Both are no-op spellings, not requests.
-chk(!errs(safe_left_join(L, RT, by = "id", expect_unique_right = TRUE,
-                         max_right_dup_keys = 0, write_report = FALSE)),
-    "R20d max_right_dup_keys=0 with expect_unique_right=TRUE is the enforced value, not a request")
-chk(!errs(safe_left_join(L, RT, by = "id", expect_unique_right = FALSE,
-                         max_right_dup_keys = Inf, write_report = FALSE)),
-    "R20e max_right_dup_keys=Inf with expect_unique_right=FALSE bounds nothing, so it is honoured")
-chk(!errs(safe_semi_join(L, RT, by = "id", max_duplication = NULL,
-                         max_right_dup_keys = Inf, write_report = FALSE)),
-    "R20f semi: NULL/Inf spelled out explicitly still means no bound")
-chk(!errs(safe_anti_join(L, RT, by = "id", min_coverage = NULL,
-                         max_duplication = NULL, write_report = FALSE)),
-    "R20g anti: NULL thresholds spelled out explicitly are not refused")
-
-sab(21, "expect_unique_right still catches a duplicated right key")
-# What max_right_dup_keys was mistakenly believed to be doing. Refusing the
-# argument is only acceptable because THIS guard is real.
-RD <- data.frame(id = c("a", "a", "b", "c"), w = 1:4)
-chk(errs(safe_left_join(L, RD, by = "id", expect_unique_right = TRUE,
-                        write_report = FALSE)),
-    "R21 a duplicated right key is still refused by expect_unique_right")
-
-sab(22, "the inert parameter is gone from the signature, not just unused")
-chk(!"require_complete_keys" %in% names(formals(safe_left_join)),
-    "R22 safe_left_join no longer declares require_complete_keys")
-
 
 # =============================================================================
-# R23-R24  join_coverage_report() is called by name
+# R14-R15  join_coverage_report() is called by name
 # =============================================================================
 # Its signature ends in validation thresholds (min_coverage, verbose). Both
 # call sites passed five arguments positionally, so inserting a formal ahead of
@@ -410,18 +277,18 @@ positional_calls <- function(text) {
   bad
 }
 
-sab(23, "every call in the real file is named")
+sab(14, "every call in the real file is named")
 chk(positional_calls(JS) == 0L,
-    sprintf("R23 no positional join_coverage_report() call remains (%d call site(s))",
+    sprintf("R14 no positional join_coverage_report() call remains (%d call site(s))",
             length(gregexpr("join_coverage_report(", JS, fixed = TRUE)[[1]])))
 
-sab(24, "SABOTEUR: make one call positional again")
+sab(15, "SABOTEUR: make one call positional again")
 sab24 <- sub(
   "  join_coverage_report(left_before = left_n, joined_rows = matched_rows,\n                       label_left = label_left, label_right = label_right,\n                       min_coverage = min_coverage)",
   "  join_coverage_report(left_n, matched_rows, label_left, label_right, min_coverage)",
   JS, fixed = TRUE)
-chk(!identical(sab24, JS), "R24a the saboteur actually changed the source")
+chk(!identical(sab24, JS), "R15a the saboteur actually changed the source")
 chk(positional_calls(sab24) >= 1L,
-    "R24b a positional call is caught")
+    "R15b a positional call is caught")
 
-saboteur_report(24)
+saboteur_report(15)

@@ -1,7 +1,7 @@
 ---
-title: "midwifery @ 6cb96e0 — AI-Assisted Code-Complexity Analysis"
+title: "midwifery (pipeline) — AI-Assisted Code-Complexity Analysis"
 author: "Tyler Muffly (AI-assisted, Claude Code / Opus 5)"
-date: 2026-11-21
+date: 2026-11-19
 format:
   html:
     toc: true
@@ -13,627 +13,573 @@ execute:
 
 # Prompt
 
-> `/ropensci-skills:run-complexity`
-
-(Invoked with no arguments, against the working tree at `fix/table1-custodian-sort`,
-commit `6cb96e0`, clean.)
+> run-complexity on the pipeline
 
 # Skill
 
-`ropensci-skills:run-complexity` v1.0.0, from
-`~/.claude/plugins/cache/ropensci-skills/ropensci-skills/1.0.0/skills/run-complexity`.
-Its operative instructions:
+`run-complexity` from the **ropensci-skills** plugin
+(`ropensci-review-tools/ropensci-skills`, marketplace version 1.0.0, installed
+2026-11-19; skill file
+`~/.claude/plugins/cache/ropensci-skills/ropensci-skills/1.0.0/skills/run-complexity/SKILL.md`).
+Report skeleton from the shared template
+`../run-package-review/references/report-template.md` of the same plugin.
 
-> **Measure first.** Rank functions by a real metric before reading source; the
-> eye is a poor complexity meter and misses structural duplication entirely.
->
-> **Read the code to interpret the numbers.** A high score can be benign (a chain
-> of `&&` guards); a low score can hide 85× duplication. The metric points; you
-> judge.
->
-> **Confirm behavioural claims with runtime probes.** If you say a function is
-> inert or its error path is broken, reproduce it in a scratch session and paste
-> the result.
->
-> **Read-only.** No refactoring the package to prove a point.
->
-> **Preserve the user-facing surface.** Every internal-refactor recommendation
-> must keep exported names, signatures, and return types identical.
+The operative instructions, verbatim:
 
-Report skeleton: the shared template at
-`run-package-review/references/report-template.md`.
+> ## Ground rules (these make the report trustworthy)
+>
+> - **Measure first.** Rank functions by a real metric before reading source; the
+>   eye is a poor complexity meter and misses structural duplication entirely.
+> - **Read the code to interpret the numbers.** A high score can be benign
+>   (a chain of `&&` guards); a low score can hide 85× duplication. The metric
+>   points; you judge.
+> - **Confirm behavioural claims with runtime probes.** If you say a function is
+>   inert or its error path is broken, reproduce it in a scratch session and paste
+>   the result.
+> - **Read-only.** No refactoring the package to prove a point. Throwaway probes
+>   are fine; changes to the package tree are not.
+> - **Preserve the user-facing surface.** Every internal-refactor recommendation
+>   must keep exported names, signatures, and return types identical. Genuine
+>   API/UX changes are flagged **separately** as optional, not folded into
+>   "simplification".
+>
+> ## Method
+>
+> 1. **Per-function metrics.** With `devtools::load_all()`, compute cyclomatic
+>    complexity for every function in the namespace (e.g. `cyclocomp::cyclocomp()`),
+>    plus lines-of-code, maximum brace-nesting depth, and `if`/`for` counts from
+>    the deparsed bodies. Rank; note the distribution (most functions are usually
+>    trivial — complexity concentrates in a few).
+> 2. **Static call-graph.** Over `R/*.R`, use token analysis
+>    (`utils::getParseData()`) to measure **duplication** (near-identical bodies)
+>    and to count **call sites** of key helpers. Cyclomatic complexity is blind to
+>    copy-paste across files; this is where you find it.
+> 3. **Targeted source reading** of the top offenders to characterise _why_ they
+>    are complex (god-function, deep nesting, repeated block) and whether it's
+>    genuine or measurement artefact.
+> 4. **Runtime probes** to confirm behavioural findings surfaced while measuring
+>    (e.g. validation that never runs, an error path that throws the wrong error).
 
-**One documented deviation from the skill's method.** Step 1 prescribes
-`devtools::load_all()` and measurement over a package namespace. `midwifery` has
-no `DESCRIPTION` and is not a package — it is a pipeline of numbered scripts, by
-design — so there is no namespace to load and no exported surface. Functions were
-therefore read from source instead: each tracked `.R` file is parsed, and every
-top-level `name <- function(...)` assignment is evaluated in a fresh environment
-(a closure's body does not run at definition time) and the resulting closure
-measured. This reaches **more** than `load_all()` would, since it covers
-script-local functions that never enter a namespace; it reaches **less** in one
-respect, noted under *Not run*.
+**Deviation from the skill, stated plainly:** `midwifery` is not an R package
+(no `DESCRIPTION`, no namespace — the project is a pipeline of scripts by
+design), so step 1's `devtools::load_all()` is inapplicable. Functions were
+instead collected by parsing each file and evaluating only top-level
+`name <- function(...)` right-hand sides in an empty environment — creating a
+closure runs no body, so nothing in the pipeline executed. Step 2's
+`getParseData()` token analysis was replaced by `deparse()`-based token
+n-gram shingling, which gave both an identifier-level and a structure-only
+(identifiers erased) similarity, so renamed copies are still detected.
 
 # Report
 
 ## Method
 
-Reproducible. Four scripts, all in
-`/private/tmp/claude-501/-Users-tylermuffly-midwifery/c7970797-eb02-408a-a4c2-bd39f8250800/scratchpad/`:
+Tooling: R 4.5.2 (2025-10-31), `cyclocomp` 1.1.2, `dplyr` 1.2.1, on
+`refactor/ponytail-audit-cuts` @ `7cf5fad`.
 
-| script | what it did |
-|---|---|
-| `cc_measure.R` | cyclomatic complexity, LOC, max brace-nesting depth, `if`/loop counts, arity for every top-level function in every tracked non-test `.R` file → `cc.csv` |
-| `dup_measure.R` | exact body-duplication groups (normalised deparse, grouped); call-site counts for every repo-defined helper via `utils::getParseData()` over `SYMBOL_FUNCTION_CALL` tokens |
-| `own_cc.R` | re-measured the top 12 with every nested `function(...)` replaced by `NULL`, to separate a function's **own** branching from complexity it merely **houses** |
-| `catalog_dup.R` | enumerated and body-hashed the nested closures inside the single largest offender |
+**Scope — "the pipeline".** Taken as the five stages
+[ARCHITECTURE.md](ARCHITECTURE.md) labels *The pipeline*, R side only (stages 1
+and 2 are Python), closed over `source()` using the repo's **own** closure
+walker, `.code_closure()` in `R/lib/artifact_provenance.R:99`:
 
-Runtime probes (`probe_norm.R`, `probe_rck.R`, `probe_rck2.R`, `probe_na.R`)
-confirmed each behavioural claim below; their output is pasted inline where
-cited.
+```r
+source("R/lib/artifact_provenance.R")
+for (s in c("match_nppes.R", "geocode_midwives.R", "check_npi_deactivation.R"))
+  print(.code_closure(s))
+```
 
-Versions: R 4.5.2 (`aarch64-apple-darwin20`), cyclocomp 1.1.2, stringr 1.6.0,
-dplyr 1.2.1.
+| Stage | Entry | Closure |
+|---|---|---|
+| 3 | `match_nppes.R` | `credential_compatibility.R`, `R/lib/artifact_provenance.R`, `R/lib/provenance.R` |
+| 4 | `geocode_midwives.R` | `R/lib/geocode_conflicts.R`, `R/lib/medicare_duckdb.R` |
+| 5 | `check_npi_deactivation.R` | `R/join_safety.R`, `R/safe_divide.R` |
 
-Scope: 959 top-level function definitions across 279 tracked `.R` files.
-`tests/`, `@archive/` and `scratch/` excluded.
+Ten files, **4,779 lines, 48 functions**.
 
-**No repository files were modified.** `git status` was clean before and after;
-every probe ran in `/private/tmp/.../scratchpad` or sourced repo files read-only
-into a throwaway session.
+Commands run (all read-only; scripts live in the session scratchpad, not the
+repo):
+
+```bash
+# per-function metrics: cc, LOC, if/loop/apply counts, max brace depth, arity
+Rscript metrics.R match_nppes.R credential_compatibility.R geocode_midwives.R \
+  check_npi_deactivation.R R/lib/artifact_provenance.R R/lib/provenance.R \
+  R/lib/medicare_duckdb.R R/lib/geocode_conflicts.R R/join_safety.R R/safe_divide.R
+
+# near-duplicate bodies: 5-gram identifier Jaccard + 7-gram structure-only Jaccard
+Rscript dup2.R <same file list>
+
+# repo-wide context: every tracked .R outside tests/ and @archive/ (398 files)
+Rscript metrics.R $(git ls-files '*.R' | grep -v '^tests/' | grep -v '^@archive/')
+
+# call sites
+git grep -nF 'safe_inner_join(' -- '*.R'      # etc. per helper
+```
+
+One runtime probe was run (Finding 2), in a throwaway `Rscript` session that
+sourced `R/join_safety.R` and joined two three-row in-memory data frames. It
+touched no pipeline input or output.
+
+**No repository files were modified.** The only file written is this report.
 
 ## Headline
 
-**Amber, and the amber is concentrated — not diffuse.** Per-function complexity
-across the pipeline is healthy: median cyclomatic complexity 2, mean 4.8, and 735
-of 959 functions score 5 or below. Only 7 functions exceed 50, and two of those
-turn out to be measurement artefacts rather than god-functions.
-
-The real issues are the three the metric alone would not have told you:
-
-1. `mw_build_catalog()` — 913 lines, **own** complexity 107, housing **30 nested
-   closures** in one scope, in which the name `g` is bound **three times** and
-   `pick` **three times**. Two of the three `g` bindings take the same arity and
-   incompatible argument types, 41 lines apart, in the function that produces
-   every number in the manuscript.
-2. `R/join_safety.R` carries **four** near-parallel join wrappers, 595 deparsed
-   lines, with 22 lines common to all four. The repo has already paid for this
-   twice — *Bug 6* and *Bug 30*, both logged in the source, both "a guard
-   `safe_left_join` had that `safe_inner_join` was missing." A **third** instance
-   of the same drift is still open and confirmed by probe: `require_complete_keys`
-   defaults to `TRUE`, is documented as a validation, and has **no effect on any
-   reachable code path**.
-3. One person-name normaliser exists **four times under four names** with
-   divergent behaviour — and one of the four is **platform-dependent**, so the
-   same midwife's name keys differently on the author's Mac than on a Linux CI
-   runner. The repo's `H4` hygiene gate cannot see any of this, because it
-   compares function *names*, and these four have four different names.
-
-Caveat that matters most: finding 1 is a **latent hazard, not a live defect**. I
-checked every current call site and all of them resolve to the binding their
-author intended. The finding is that nothing stops the next edit from being
-wrong, and nothing would catch it.
+**Amber.** Per-function complexity in the pipeline is not the problem: 77% of
+the repo's 956 functions score cc ≤ 5, and the pipeline's own glue
+(`score_one()`, the credential gate, the geocode resolvers) is proportionate to
+the decisions it makes. The problem is **mass**: `R/join_safety.R` is 1,892
+lines — 40% of the pipeline's source closure — and stage 5 sources it to use
+exactly **one** 69-line function from it. Three of its four `safe_*_join()`
+functions (cc 55, 18, 18) have **zero production call sites**, it is a drifted
+vendored fork of `~/isochrones/R/join_safety.R` (17 hunks), and it carries a
+branch that can only ever `stop()` because the file it depends on was never in
+this repo. Against that, the pipeline's five R stages make **8 bare `dplyr`
+joins and 0 guarded ones**. Roughly **1,100 lines of the closure are
+unreachable or unused**, and one of the unused four has a real defect the
+duplication hid (Finding 2).
 
 ## Findings
 
 ### Measured profile
 
-Cyclomatic complexity distribution over 959 functions:
+Pipeline closure, every function cc ≥ 10 (full 48-row table reproduced by the
+command above):
 
-| cc | functions | share |
-|---|---|---|
-| 1–5 | 735 | 76.6% |
+| Function | Where | cc | LOC | `if` | depth | args | Verdict |
+|---|---|---:|---:|---:|---:|---:|---|
+| `duckdb_scan_for_raw_connections` | `R/lib/medicare_duckdb.R:422` | 98 | 156 | 28 | 5 | 1 | **Misplaced** — CI-only (Finding 3) |
+| `safe_left_join` | `R/join_safety.R:618` | 67 | 387 | 36 | 4 | 17 | **Hotspot** (Finding 1) |
+| `safe_inner_join` | `R/join_safety.R:1109` | 55 | 260 | 28 | 4 | 16 | **Unused** (Finding 1) |
+| `.code_closure` | `R/lib/artifact_provenance.R:99` | 40 | 55 | 14 | 6 | 2 | Genuine AST walk; duplicated (Finding 4) |
+| `score_one` | `match_nppes.R:370` | 27 | 167 | 14 | 3 | 1 | **Benign** — the acceptance ladder |
+| `format_by_columns` | `R/join_safety.R:304` | 25 | 48 | 8 | 4 | 1 | Minor |
+| `normalize_credential_class` | `credential_compatibility.R:35` | 23 | 23 | 5 | 2 | 1 | **Benign** — dense, documented |
+| `safe_divide` | `R/safe_divide.R:79` | 20 | 74 | 10 | 3 | 6 | Minor (alias + dead wrappers) |
+| `safe_semi_join` | `R/join_safety.R:1494` | 18 | 119 | 13 | 4 | 11 | **Unused** (Finding 1) |
+| `safe_anti_join` | `R/join_safety.R:1745` | 18 | 117 | 13 | 4 | 10 | **Unused + defect** (Finding 2) |
+| `resolve_midwifery_duckdb` | `R/lib/medicare_duckdb.R:126` | 16 | 50 | 12 | 3 | 4 | Fine |
+| `open_medicare_duckdb` | `R/lib/medicare_duckdb.R:792` | 16 | 26 | 5 | 2 | 3 | Fine |
+| `resolve_geocode_key` | `R/lib/geocode_conflicts.R:41` | 16 | 65 | 9 | 3 | 5 | Fine |
+| `ensure_duckdb_temp_directory` | `R/lib/medicare_duckdb.R:727` | 11 | 20 | 3 | 2 | 1 | Fine |
+
+Repo-wide distribution (398 files, 956 functions), as context for reading those
+numbers:
+
+| cc band | functions | share |
+|---|---:|---:|
+| 1–5 (trivial) | 732 | 76.6% |
 | 6–10 | 119 | 12.4% |
 | 11–20 | 75 | 7.8% |
 | 21–50 | 23 | 2.4% |
-| 51–100 | 6 | 0.6% |
-| >100 | 1 | 0.1% |
+| 51+ | 7 | 0.7% |
 
-Median 2, mean 4.8, max 136.
+Median cc 2, p90 11, p95 17, max 132 (`mw_build_catalog`,
+`manuscript/R/build_stats_catalog.R:92`, 1,344 LOC — outside the pipeline). The
+top 1% of functions hold 14.3% of all cyclomatic complexity. Three of the
+repo's five worst functions are in the pipeline closure (cc 98, 67, 55), and
+all three are in the two files this report is about.
 
-The top 12, with `cc_own` = complexity after nested closures are stripped out.
-The gap between the two columns is the whole point of the table:
+Near-duplicate bodies within the closure (0 pairs above threshold anywhere
+outside `R/join_safety.R`):
 
-| function | file:line | cc | **cc_own** | LOC | nested | nest | verdict |
-|---|---|---|---|---|---|---|---|
-| `mw_build_catalog` | `manuscript/R/build_stats_catalog.R:60`¹ | 136 | **107** | 913 | 26 | 5 | **genuine — Hotspot 1** |
-| `duckdb_scan_for_raw_connections` | `R/lib/medicare_duckdb.R:422` | 98 | **3** | 140 | 6 | 7 | artefact — see Minor |
-| `county_sentences` | `R/10-county-birth-profiles.R:125` | 82 | **82** | 104 | 0 | 2 | genuine — Hotspot 4 |
-| `safe_left_join` | `R/join_safety.R:618` | 67 | **67** | 251 | 0 | 3 | genuine — Hotspot 2 |
-| `safe_inner_join` | `R/join_safety.R:1109` | 55 | **55** | 167 | 0 | 3 | genuine — Hotspot 2 |
-| `validate_source_coverage` | `R/lib/source_coverage.R:406` | 54 | **54** | 206 | 0 | 6 | genuine, justified |
-| `classify_apparent_move` | `R/lib/migration_move_classification.R:176` | 51 | **51** | 78 | 0 | 3 | genuine, justified |
-| `repo_gate_read_accessed_utc` | `R/ci_repo_integrity_gates.R:1197` | 40 | **40** | 46 | 0 | 3 | genuine, justified |
-| `.code_closure` | `R/lib/artifact_provenance.R:99` | 40 | **7** | 60 | 2 | 7 | artefact |
-| `district_sentences` | `R/12-district-profiles.R:358` | 38 | **38** | 67 | 0 | 2 | genuine — Hotspot 4 |
-| `source_vintage_table` | `R/lib/source_vintage.R:215` | 36 | **33** | 187 | 3 | 3 | genuine, justified |
-| `describe_panel_input` | `R/lib/source_coverage.R:290` | 35 | **26** | 78 | 3 | 2 | genuine, justified |
+| A | B | tokens | identifier Jaccard | structural Jaccard |
+|---|---|---|---:|---:|
+| `safe_anti_join` | `safe_semi_join` | 355 / 360 | 0.371 | **0.778** |
+| `safe_inner_join` | `safe_left_join` | 700 / 988 | 0.202 | 0.419 |
+| `safe_semi_join` | `safe_inner_join` | 360 / 700 | 0.113 | 0.384 |
+| `safe_anti_join` | `safe_inner_join` | 355 / 700 | 0.085 | 0.370 |
+| `safe_semi_join` | `safe_left_join` | 360 / 988 | 0.074 | 0.254 |
 
-¹ `mw_build_catalog` is the catalog builder in `build_stats_catalog.R`; line
-numbers for its internals are cited individually below.
+The four are one function written four times. `diff` of the semi/anti bodies
+(`R/join_safety.R:1494-1612` vs `1745-1863`, 119 lines each) reports 84 changed
+lines, and most of those changes are the function's own name interpolated into its
+error strings.
 
-`cyclocomp()` scores a closure's entire body, nested closures included, so a
-function that merely *houses* six helpers inherits all six scores. Reading
-`cc_own` first stops two functions being accused of being god-functions when
-they are modules with private parts.
+### Hotspot 1 — `R/join_safety.R` is 1,892 lines serving one 69-line call _(High.)_
 
-### Hotspot 1 — `mw_build_catalog()`: one scope, 30 closures, three `g`s _(High.)_
-
-`manuscript/R/build_stats_catalog.R`. 913 deparsed lines, 65 top-level
-statements, own cyclomatic complexity 107, and 30 nested function definitions.
-This is the only genuine god-function in the tree, and it is the one that matters
-most, because it is the indirection layer that produces every number in the
-manuscript — no figure in the paper is typed by hand, they all come out of here.
-
-The structural problem is not the length. It is that 30 closures share one flat
-913-line scope, and **two names are bound three times each**:
-
-```
-line  465:  g    <- function(e, s, col) { r <- pick(e, s); if (is.null(r)) NA_real_ else r[[col]] }
-line  560:  g    <- function(r, col)    if (nrow(r)) r[[col]][1] else NA_real_
-line  601:  g    <- function(k, col)    { r <- vs[vs$stratum == k, ]
-                                          if (nrow(r)) r[[col]][1] else NA_real_ }
-
-line  461:  pick <- function(e, s)                  { ... }
-line  841:  pick <- function(rx)                    { ... }
-line 1246:  pick <- function(frame, pattern, column){ ... }
-```
-
-The `pick` trio is comparatively safe: the arities differ (2 / 1 / 3), so calling
-the wrong one errors loudly. **The `g` pair at 560 and 601 is not.** Both take
-exactly two arguments. The first expects `r` to be a **data frame** and subsets
-it directly; the second expects `k` to be a **character stratum key** and uses it
-to subset the captured `vs`. They are 41 lines apart in one scope, and R gives no
-warning when the second rebinding silently replaces the first.
-
-I verified that **no current call site is wrong**: `g(r30, "diff_pp")` at 563–590
-resolves to the 560 binding and passes a data frame, and `g("resolved_by_absence_c2",
-"n_study_cohort")` at 606+ resolves to the 601 binding and passes a key. All
-correct today. The hazard is that moving, copying or inserting one `mutate()`
-across the line-601 boundary — the single most ordinary edit anyone makes in a
-913-line builder — silently changes which function runs, in the code path that
-decides what the paper claims.
-
-There is a second, smaller instance of the same pattern:
-
-```
-line 1245:  num  <- function(x) suppressWarnings(as.numeric(x))
-line 1466:  num_ <- function(v) as.numeric(v)
-```
-
-Two coercers for one job, 220 lines apart, differing in whether an unparseable
-value fails loudly or becomes `NA` in silence. Which behaviour a statistic gets
-depends on which spelling the author happened to type.
-
-**Why the repo's own gates do not catch this.** `tests/ci_hygiene.R` H4 exists for
-exactly this defect class, and its comment names the incident: "`norm_addr`
-existed four times with divergent behaviour, `zip5` three." But H4 collects
-definitions with `regexpr("^[.A-Za-z_][A-Za-z0-9_.]*(?= *<- *function)")` —
-anchored at `^`, so **top-level definitions only** (`tests/ci_hygiene.R:141`).
-Thirty closures indented inside one function are invisible to it, including two
-names bound three times each.
-
-**Concrete fix, surface unchanged.** `mw_build_catalog()` is called from the
-manuscript and from four tests; its name, arity and return value must not move.
-Split the body at its existing section boundaries into file-level internal
-builders — `.cat_linkage()`, `.cat_bands()`, `.cat_veto()`, … — each taking the
-frames it needs and returning its own slice of the catalog, with
-`mw_build_catalog()` reduced to sourcing its inputs and `c()`-ing the slices
-together. Each accessor then lives in exactly one builder's scope, where a second
-`g` is a visible redefinition in a 40-line function rather than an invisible one
-in a 913-line function. Pick one spelling of the numeric coercer and delete the
-other.
-
-Smallest useful step if the split is too large for one commit: rename the three
-`g`s and three `pick`s to say what they read (`g_link`, `g_row`, `g_stratum`).
-That is a mechanical, reviewable diff that removes the whole hazard class without
-restructuring anything.
-
-**Gate that would hold it closed.** Extend H4 to collect nested definitions too,
-and fail when one name is bound more than once **within a single function scope**.
-That is a different and stricter law than H4's current cross-file one, and it is
-the law that was actually broken here.
-
-### Hotspot 2 — four parallel join wrappers, and a validation that never runs _(High.)_
-
-`R/join_safety.R` defines four wrappers over `dplyr`:
-
-| wrapper | line | LOC |
-|---|---|---|
-| `safe_left_join` | 618 | 251 |
-| `safe_inner_join` | 1109 | 167 |
-| `safe_semi_join` | 1494 | 90 |
-| `safe_anti_join` | 1745 | 87 |
-
-595 deparsed lines. Measured pairwise overlap, counting identical trimmed lines:
-
-```
-safe_left_join   vs safe_inner_join    65  (39% of the smaller)
-safe_left_join   vs safe_semi_join     27  (30%)
-safe_left_join   vs safe_anti_join     22  (25%)
-safe_inner_join  vs safe_semi_join     30  (33%)
-safe_inner_join  vs safe_anti_join     25  (29%)
-safe_semi_join   vs safe_anti_join     43  (49%)
-
-lines shared by ALL FOUR: 22
-```
-
-`safe_left_join` and `safe_inner_join` share 16 of their 17 and 16 parameters;
-the signatures differ by three names only (`expect_unique_right` +
-`require_complete_keys` on left, `expect_unique_both` on inner). Everything
-else — key harmonisation, coverage reporting, duplication gating, the integrity
-ledger, the report writer — is written out twice.
-
-**This is not a hypothetical maintenance cost. The source records two bugs
-already paid for it**, at `R/join_safety.R:1307` and `:1309`:
+Stage 5, in full (`check_npi_deactivation.R`, 65 lines), sources the module at
+line 21 and uses one thing from it:
 
 ```r
-# BUG FIX (2026-01-27): Bug 30 - Enforce max_duplication like safe_left_join
-if (!is.null(max_duplication) && left_n > 0) {
-  # Bug 6 fix: safe_left_join uses default=0; safe_inner_join was missing it.
+source(file.path("R", "join_safety.R"))   # :21  → also pulls R/safe_divide.R (303 lines)
+...
+  assert_unique_keys("npi", label = "NPPES Deactivated NPI Report", dedupe = TRUE)   # :45
+...
+out <- midwives %>%
+  left_join(select(deactivated, npi, ...), by = "npi")   # :52  — bare dplyr join
 ```
 
-Both are the same failure: a guard present in one wrapper, absent in its
-near-twin, found later, fixed in the copy rather than at the root. Each fix left
-the structure that produced it intact, so the next one is still available.
+`assert_unique_keys()` (`R/join_safety.R:184`, cc 6, 69 LOC) calls **none** of
+the module's other functions — verified by reading its body for
+`safe_divide|format_by_columns|harmonize|join_coverage`: no hits. So the stage
+pays **2,195 lines** of `source()` for 69, and then does its actual join
+unguarded.
 
-**A third instance is still open, and confirmed by probe.** `safe_left_join`
-takes `require_complete_keys = TRUE` (`:624`), documents it in roxygen as a
-validation, and reads it in exactly one other place — `:746`, inside the
-`use_enhanced_metrics` branch:
+Call sites, production only (excluding `tests/` and the definition file):
 
-```
-$ grep -n require_complete_keys R/join_safety.R
-624:                           require_complete_keys = TRUE,
-746:      require_complete_keys = require_complete_keys,
-```
-
-That branch forwards to `safe_left_join_with_metrics()` from `R/join_metrics.R`
-— **a file that does not exist in this repository**, which the code itself says
-at `:629`: *"it requires `safe_left_join_with_metrics()` from `R/join_metrics.R`,
-and that file does not exist in this repo."* `use_enhanced_metrics` was therefore
-defaulted to `FALSE`, which is correct — and which makes
-`require_complete_keys` unreachable on every path a caller can take.
-
-Probe (`probe_rck2.R`), with `NA` in the join key on both sides so an incomplete
-key is definitely present:
+| Function | cc | LOC | production sites | files |
+|---|---:|---:|---:|---|
+| `safe_left_join` | 67 | 387 | 6 | `R/01-build-county-base.R` only |
+| `safe_inner_join` | 55 | 260 | **0** | tests only |
+| `safe_semi_join` | 18 | 119 | **0** | tests only |
+| `safe_anti_join` | 18 | 117 | **0** | tests only |
 
 ```
-require_complete_keys = TRUE  -> "ERROR: Join coverage 66.7% below 98.0% threshold..."
-require_complete_keys = FALSE -> "ERROR: Join coverage 66.7% below 98.0% threshold..."
-identical results: TRUE
-TRUE raised no condition about the incomplete key: FALSE
+$ git grep -lF 'safe_inner_join(' | tr '\n' ' '
+NEWS.md R/join_safety.R tests/test-join-safety-semantic-extended.R tests/test-join-safety.R tests/test_cycle9_joins.R
+$ git grep -lF 'safe_semi_join(' | tr '\n' ' '
+R/join_safety.R tests/test-join-safety.R tests/test_cycle9_joins.R
+$ git grep -lF 'safe_anti_join(' | tr '\n' ' '
+R/join_safety.R tests/test-join-safety.R tests/test_cycle9_joins.R
 ```
 
-Identical. The flag changes nothing. The incomplete key is caught — but by the
-coverage gate, which would have caught it with the flag set either way. A caller
-who reads the docs and passes `require_complete_keys = TRUE` believes they have
-switched on a check they have not. `safe_inner_join` does not offer the parameter
-at all, which is the drift: one wrapper grew an option its twin never got, and
-the option turned out to be inert in both.
+Three sub-findings compound it:
 
-**Concrete fix, surface unchanged.** Factor the shared body into one internal
-`.safe_join_core(left, right, by, how = c("left", "inner", "semi", "anti"), ...)`
-and make the four public names **explicit thin shims** — written out, not
-generated by a factory, so `?safe_left_join`, autocomplete and
-`@inheritParams` keep working, and so the diff stays reviewable:
+**(a) A branch that cannot succeed.** `safe_left_join(use_enhanced_metrics=)`
+guards a 54-line block (`R/join_safety.R:719-772`) that calls
+`safe_left_join_with_metrics()` and `log_join_integrity()`. Neither is defined
+anywhere in the repo:
+
+```
+$ git grep -nE '(safe_left_join_with_metrics|log_join_integrity) *(<-|=) *function'
+   (no output)
+```
+
+The file's own comment at `:628-640` says so and has already flipped the
+default to `FALSE`. Every one of the **22** mentions of the parameter in the
+repo passes `FALSE` explicitly — 6 in `R/01-build-county-base.R`, 16 in
+`tests/test-join-safety.R`; `git grep -nE 'use_enhanced_metrics *= *TRUE'`
+returns nothing. A parameter whose only reachable value is its default, gating
+a block whose only reachable outcome is `stop()`.
+
+**(b) It is a drifted fork, and the only consumer prefers the other copy.**
+`R/01-build-county-base.R:82-130` defines `load_join_safety()`, which tries the
+vendored copy, then `~/isochrones/R/join_safety.R`, then falls back to a
+**third** implementation — a 23-line inline `safe_left_join` at `:106-128` that
+keeps the same contract. Three implementations of one function in one call
+path. `diff ~/isochrones/R/join_safety.R R/join_safety.R`: 17 hunks, 145
+vendored-only lines, 36 upstream-only lines. (Upstream additionally defines
+`.jm_ensure_metrics_loaded()` at `:600` — the machinery sub-finding (a) is dead
+without.) Note also that on the vendored path the success message reads
+`"Reusing safe_left_join() (vendored copy from isochrones)"`, which is not what
+happened.
+
+**(c) 17 and 16 parameters.** `safe_left_join()` takes 17 formals,
+`safe_inner_join()` 16 — the arity is itself most of the cc, since each knob
+brings a validation branch, an env-var fallback branch and a range-clamp
+branch (`:641-705`).
+
+**Recommended cut, user-facing surface unchanged.** Delete
+`safe_inner_join()`, `safe_semi_join()` and `safe_anti_join()` and their tests;
+delete the unreachable block.
+
+> **Correction (applied 2026-11-19).** This paragraph first also recommended
+> deleting the `use_enhanced_metrics` parameter and the 22 call-site arguments
+> that pass `FALSE`, on the grounds that the calls "behave identically — it is
+> already the default and already the only reachable value". That is true of
+> the vendored copy and false of the call sites.
+> `R/01-build-county-base.R:82-130` sources the vendored copy **or**
+> `~/isochrones/R/join_safety.R`, and upstream (`:611-621`) defaults the same
+> parameter to `TRUE` with `R/join_metrics.R` genuinely present. The six
+> explicit `FALSE`s are upstream-compatibility insurance; removing them would
+> silently enable the enhanced path on the upstream load, and removing the
+> parameter would make every one of them an "unused argument" error. The
+> parameter and its hard stop were kept; only the 54 lines of unreachable
+> delegation went. Measuring one copy of a forked file and recommending for
+> both is the error this correction records. That removes ~1,100
+lines from the closure, retires one of the repo's five worst functions
+(`safe_inner_join`, cc 55) and strips most of `safe_left_join`'s cc with it, leaving
+`safe_left_join()` and `assert_unique_keys()` with identical names, signatures
+(minus a parameter no caller sets to anything but its default) and return
+types. Then have stage 5 source `R/join_safety.R`'s one needed function
+directly, or move `assert_unique_keys()` to its own file — `assert_unique_keys`
+is self-contained, so this is a file move, not a rewrite.
+
+If any of the three unused joins is kept deliberately as a staging ground for
+upstream, say so in a header comment; today nothing in the repo distinguishes
+"unused on purpose" from "unused by accident".
+
+### Hotspot 2 — `safe_anti_join()` does not harmonize key types, though its documentation says it does _(High.)_
+
+Surfaced by the duplication scan: the semi/anti pair is 78% structurally
+identical, and the diff shows exactly one guard present in one and absent in
+the other.
+
+`R/join_safety.R:1702` (the `@section Calls:` of `safe_anti_join`):
+
+> `harmonize_join_key_types()`, `dplyr::anti_join()`, `join_coverage_report()`.
+
+and `:1695`:
+
+> Validates keys, harmonizes types, then calls `dplyr::anti_join(na_matches = "never")`.
+
+The body does not:
+
+```
+$ grep -n 'harmonize_join_key_types' R/join_safety.R
+88:   harmonize_join_key_types <- function(...)   # definition
+711:  harmonized <- harmonize_join_key_types(...)  # safe_left_join
+1197: harmonized <- harmonize_join_key_types(...)  # safe_inner_join
+1523: harmonized <- harmonize_join_key_types(...)  # safe_semi_join
+                                                   # safe_anti_join: absent
+```
+
+The 2026-04-05 fix (`:707-710`: "RDS/Parquet round-trips can silently change
+integer→double … dplyr::left_join silently produces 0 matches") was applied to
+three of the four siblings. Runtime probe — the exact shape stage 5 warns about
+in its own comment at `check_npi_deactivation.R:28-30` ("NPIs are identifiers,
+not numbers: read_csv infers double, the report gives character"):
 
 ```r
-safe_left_join <- function(left, right, by, expect_unique_right = TRUE, ...) {
-  .safe_join_core(left, right, by, how = "left",
-                  expect_unique_right = expect_unique_right, ...)
-}
+suppressMessages(source("R/join_safety.R"))
+L <- data.frame(npi = c("1","2","3"), x = 1:3)  # character key (CSV read)
+R <- data.frame(npi = 1:2)                       # integer key (parquet/RDS)
+nrow(safe_semi_join(L, R, by = "npi", write_report = FALSE))
+nrow(safe_anti_join(L, R, by = "npi", write_report = FALSE))
 ```
 
-Names, arities, defaults and return types stay byte-identical; `tests/test-join-safety.R`
-and the other five suites that name these functions should pass untouched, which
-is the check that the refactor was behaviour-preserving.
-
-Then make one decision about `require_complete_keys`, and either way the lie
-stops: implement the check in the core (one `anyNA()` over the `by` columns,
-raising when `TRUE`), or delete the parameter and the roxygen that advertises it.
-Implementing it is the better choice in a file whose entire purpose is to refuse
-unsafe joins — but it is a **behaviour change** for existing callers that
-currently rely on the default silently doing nothing, so it belongs in its own
-commit with its own test, not folded into the deduplication.
-
-### Hotspot 3 — one name normaliser, four spellings, one of them platform-dependent _(High.)_
-
-Cyclomatic complexity is blind to this entirely: each of these functions scores
-1–2. It surfaced from the duplication pass.
-
-Outside `tests/`, the tree has only **7** exact body-duplication groups covering
-14 definitions — genuinely clean. But **5 of the 7 are the same body under
-different names**, which is the shape `H4` structurally cannot see, and two of
-those five are in the one category H4's own comment singles out as the dangerous
-one: *"never a JOIN KEY or a normalisation — the two categories where divergence
-silently changes results."*
-
-| name | file:line | notes |
-|---|---|---|
-| `audit2013_norm` | `audit_2013_dac_vs_nppes.R:187` | identical body to `drift_norm` |
-| `drift_norm` | `build_identity_drift_prior.R:86` | identical body to `audit2013_norm` |
-| `normalize_name` | `R/build_amcb_state_licenses.R:46` | same pipeline, different `NA` handling |
-| *(inline)* | `amcb_license_bridge.R:111–121` | same pipeline **plus** `iconv(to = "ASCII//TRANSLIT")` |
-| `dac_spine_collapse_set` | `build_dac_identity_spine_2013.R:186` | identical body to `drift_collapse_set` |
-| `drift_collapse_set` | `build_identity_drift_prior.R:151` | identical body; builds a person-level set key |
-
-These are not incidental. `drift_norm` feeds `first_2013` / `last_2013` /
-`state_2013` and their `_2026` counterparts (`build_identity_drift_prior.R:134–179`);
-`audit2013_norm` feeds `state_agrees = audit2013_norm(practice_state) ==
-audit2013_norm(nppes_state)` (`audit_2013_dac_vs_nppes.R:214`); `normalize_name`
-feeds `.block_surname_norm` (`expand_former_name_candidates.R:210`), a **blocking
-key for candidate generation**. They *are* the comparison.
-
-Probe (`probe_norm.R`), the four live spellings plus the repo's own `norm_org`
-rule, on the two inputs that distinguish them:
-
 ```
-     input drift_norm normalize_name    bridge org_rule
-     Muñoz      MU OZ          MU OZ    MU NOZ    MU OZ
-     Munoz      MUNOZ          MUNOZ     MUNOZ    MUNOZ
-   O’Brien    O BRIEN        O BRIEN   O BRIEN   OBRIEN
-    OBrien     OBRIEN         OBRIEN    OBRIEN   OBRIEN
- St Mary's  ST MARY S      ST MARY S ST MARY S ST MARYS
+--- safe_semi_join (harmonizes) ---
+[safe_join] Key type mismatch: left$npi is character, right$npi is integer — coercing both to character
+📊 Semi-join: left rows=3, kept=2 (kept=66.7%)
+[1] 2
+--- safe_anti_join (does not) ---
+[1] "ERROR: Can't join `x$npi` with `y$npi` due to incompatible types.
+ℹ `x$npi` is a <character>.
+ℹ `y$npi` is a <integer>."
 ```
 
-Three distinct consequences, all confirmed:
+It fails loudly rather than silently, which is the good failure mode — but the
+documented contract is wrong, and the asymmetry is invisible to anyone reading
+one function. The same gap is present upstream
+(`~/isochrones/R/join_safety.R:1667-1790` has no `harmonize` call either), so
+if the fix is made in the canonical copy rather than the fork, it fixes both.
+This finding survives the Hotspot 1 deletion only if `safe_anti_join()` is
+kept; if it goes, the fix is to the upstream copy.
 
-**(a) The bridge normaliser is platform-dependent.** Its `iconv()` step is
-supposed to fold accents before `[^A-Z0-9 ]` strips them. On this machine it does
-not:
+### Hotspot 3 — a 98-cc CI-only static scanner sits in a library 30+ pipeline scripts source _(Medium.)_
 
-```
-locale: en_US.UTF-8
-iconv TRANSLIT raw on this machine:  ‘Mu~noz’
-platform: aarch64-apple-darwin20
-```
+`duckdb_scan_for_raw_connections()` (`R/lib/medicare_duckdb.R:422`, cc 98, 156
+LOC, 6 nested closures, max brace depth 5) is the pipeline closure's worst
+function and the repo's second worst. Reading it: it is a hand-written lint
+rule — it walks each file's parse tree looking for raw `duckdb::duckdb()` /
+`dbConnect()` construction, with single-assignment alias tracking, and its
+boundaries are documented carefully at `:390-421`. The complexity is honest
+work for what it does.
 
-macOS libiconv transliterates `ñ` to the two characters `~n`; the `~` is then
-replaced by a space, giving `MU NOZ`. glibc's iconv on a Linux CI runner
-transliterates the same character to a bare `n`, giving `MUNOZ`. I verified the
-macOS half directly, above; the glibc half is the long-documented
-libiconv-vs-glibc `//TRANSLIT` difference and I have not executed it here, so
-treat that half as high-confidence but unexecuted. Either way the *mechanism* is
-confirmed: the key this script produces depends on which machine ran it, in a
-repo whose author works on a Mac and whose gates run on Linux.
-
-**(b) Accented names fail to match their own unaccented spelling.** `Muñoz` and
-`Munoz` are the same midwife recorded by two arms. All four normalisers key them
-differently (`MU OZ` vs `MUNOZ`, or `MU NOZ` vs `MUNOZ`), so they land as a
-disagreement rather than a match:
+It is in the wrong file. Every caller is a gate:
 
 ```
-drift_norm  Munoz vs Muñoz : FALSE
-bridge      Munoz vs Muñoz : FALSE
+$ git grep -n 'duckdb_scan_for_raw_connections' | grep -v '^R/lib/medicare_duckdb.R'
+tests/ci_duckdb_architecture_gate.R:51
+tests/ci_duckdb_exception_provenance.R:98
+tests/ci_duckdb_ingestion_bootstrap.R:45
+tests/ci_duckdb_mutation_tests.R:39,53,220,234,248,270
+docs/TECHNICAL_APPENDIX_DUCKDB_BOOTSTRAP_ARCHITECTURE.md:125   (prose)
+NEWS.md:2287                                                   (prose)
 ```
 
-**(c) The repo already learned the apostrophe lesson and did not apply it here.**
-`R/lib/org_names.R:28` carries the fix and its incident, in a comment:
+Zero production callers. Meanwhile `R/lib/medicare_duckdb.R` is sourced by 30+
+scripts including pipeline stage 4, every one of which parses and evaluates
+those 259 lines (`:356-614`, the scanner plus
+`duckdb_encoding_capability()`) to get at `open_medicare_duckdb()`.
 
-> *"Apostrophes are DELETED, not turned into a space. Turning them into a space
-> splits every possessive, so `ST MARY'S HOSPITAL` keyed as `ST MARY S HOSPITAL`
-> and never matched `ST MARYS HOSPITAL` — two spellings of one organization,
-> recorded differently by two arms, counted as a disagreement."*
+**Recommendation:** move `duckdb_scan_for_raw_connections()` (and
+`DUCKDB_RAW_CONNECTION_EXCEPTIONS`) to a gate-side file the four `tests/ci_*.R`
+scripts source — `tests/lib/duckdb_architecture_scan.R` or similar. Name,
+signature and return value (`data.frame(file, line, tag, symbol)`) unchanged;
+the four gates gain one `source()` line each and the pipeline library drops its
+worst function. The mutation suite (`tests/ci_duckdb_mutation_tests.R`) already
+covers the behaviour, so the move is verifiable.
 
-All four person-name normalisers turn `'` into a space. The same incident is
-therefore live for people — `O'Brien` keys as `O BRIEN` and never matches
-`OBrien` — in a cohort of nurse-midwives, a population where apostrophised
-surnames are common:
+### Hotspot 4 — two hand-rolled defensive AST walkers in the same closure _(Low.)_
 
-```
-drift_norm  OBrien vs O’Brien: FALSE
-org_rule    OBrien vs O’Brien: TRUE
-```
+The closure contains two independently written parse-tree walkers, both of
+which exist to recurse over arbitrary R call trees without dying on R's empty
+symbol:
 
-`norm_org` also handles curly apostrophes, noting NPPES and Care Compare disagree
-on which they use; none of the four person-name copies does.
+- `walk()` inside `.code_closure()` — `R/lib/artifact_provenance.R:115-146`,
+  with the comment at `:130-133`: "The gap in `x[, 1]` parses to the empty
+  symbol. Binding it to a loop variable makes ANY later use of that variable
+  raise 'argument is missing'…" — handled by `identical(args[i], list(quote(expr = )))`.
+- `walk_calls()` inside `duckdb_scan_for_raw_connections()` —
+  `R/lib/medicare_duckdb.R:458-470`, with the comment at `:446-457` making the
+  same observation — handled by wrapping every recursive step in `tryCatch`.
 
-**Concrete fix.** One `norm_person_name()` in `R/lib/`, beside `norm_org()` and
-built on the same three decisions `norm_org` already paid for (delete
-apostrophes including curly ones; fold accents with a deterministic explicit map,
-**not** `iconv(//TRANSLIT)`, whose output varies by platform; then strip and
-squish). Replace all four call sites with it. This is a **key-changing** fix — it
-will move match counts, which is the point — so it needs the same treatment any
-normalisation change gets here: run it as a shadow arm and compare arm to arm,
-never shadow-vs-freeze.
+Same problem, same closure, two solutions, two long comments explaining the
+same language quirk. They are nested closures, so the cc table above attributes
+their cost to their parents and the duplication scan (top-level functions only)
+could not see them — a limitation of this pass worth noting.
 
-**Gate that would hold it closed.** H4 compares names, so it cannot see a
-renamed copy. The complement is a body-level law: hash each tracked top-level
-function's normalised body and fail when two definitions in different files
-share a hash, with an allowlist in the shape H4 already uses. `dup_measure.R`
-from this review is most of that gate — it finds 7 groups today, so the baseline
-starts at 7 and shrinks. Catching copies that were also *renamed* is exactly the
-gap this hotspot came out of.
-
-### Hotspot 4 — the two highest-own-complexity functions with no direct test _(Medium.)_
-
-`county_sentences()` (`R/10-county-birth-profiles.R:125`) scores 82 with **no
-nested closures** — all 82 is its own branching, from 35 `if` expressions across
-104 lines. `district_sentences()` (`R/12-district-profiles.R:358`) scores 38 the
-same way. They generate the prose that appears on the county and district
-profiles: each `if` is a guard choosing a sentence form based on which values are
-present, which is a legitimate shape for the job and not a defect.
-
-The gap is coverage. Searching `tests/` for the names of the twelve hotspots:
-
-| function | tests naming it |
-|---|---|
-| `mw_build_catalog` | 4 |
-| `safe_left_join` | 6 |
-| `safe_inner_join` | 4 |
-| `validate_source_coverage` | 2 |
-| `classify_apparent_move` | 1 |
-| **`county_sentences`** | **0** |
-| **`district_sentences`** | **0** |
-
-Every other hotspot is pinned by at least one test. These two — the highest own
-complexity in the repo after the catalog builder and the join wrappers — are
-named by none. Each branch is a reader-facing claim about a county, and several
-carry comments recording that the wording was already wrong once and corrected
-(the ascertainment hedge at `:143–153`, the clause-stacking at `:161–163`). Those
-are exactly the decisions a test should hold.
-
-This is a test-coverage finding surfaced by a complexity pass, not a complexity
-finding; `run-test-audit` is the right pass to size it properly. Flagging it here
-because the ranking put it in front of me: complexity concentrated in untested
-branches is where the next defect goes.
-
-**Concrete fix.** Not a refactor — the nesting is shallow (depth 2) and the
-branches are independent, so splitting buys little. One table-driven test:
-a handful of synthetic `r` rows chosen to hit the documented branch boundaries
-(`n_cnm_cm == 0`, `== 1`, `> 1`; `rucc_2023` absent, as it is for territories
-and for counties added since the 2023 vintage; each `fmt()` returning `NULL`),
-asserting the sentence each produces. That pins the wording decisions the
-comments say were hard-won.
+Low priority because both work and each is read in its own context. If Hotspot
+3 moves the scanner out, this resolves on its own for the pipeline; if a third
+walker is ever needed, that is the signal to extract one
+`walk_call_tree(node, visit)` helper into `R/lib/` and have both call it.
 
 ### Minor
 
-**`duckdb_scan_for_raw_connections` is not a god-function** _(Low — no action.)_
-`R/lib/medicare_duckdb.R:422`, cc 98, which ranks it second overall and is
-misleading: `cc_own` is **3**. All 95 of the rest live in six named nested
-closures (`callee_name`, `is_bare_duckdb_driver_call`, `is_bare_duckdb_driver_ref`,
-`walk_calls`, `collect_driver_aliases`, …). It is a static analyser whose helpers
-are scoped inside it, and each closure carries a comment explaining the evasion
-it closes. Lifting the six to file-level internals would make each separately
-testable and would drop the headline number; it would also widen their visibility
-for no behavioural gain. Worth doing only if someone wants to unit-test the
-walker directly. `.code_closure` (`R/lib/artifact_provenance.R:99`, cc 40,
-`cc_own` 7) is the same artefact at smaller scale.
+- **`R/safe_divide.R`: three of six exports have no production caller.**
+  `safe_divide_manu()` (0 production, 1 test), `safe_percent()` (0 production,
+  **36** tests), `safe_ratio()` (0 production, 4 tests) are thin wrappers
+  around `safe_divide()` that nothing in the pipeline or the repo calls;
+  `safe_divide()` (11), `safe_pct_manu()` (4) and `safe_rate()` (5) are real.
+  36 assertions maintaining a function with no callers is the test suite
+  keeping dead flexibility alive. _(Low.)_
+- **`safe_divide(na_value =)` is a second name for `default`**
+  (`R/safe_divide.R:84-86`: `if (!is.null(na_value)) default <- na_value`). No
+  caller in the repo passes it: `git grep -nF 'na_value =' -- '*.R'` excluding
+  the definition and `tests/` returns nothing (the one hit,
+  `make_migration_rate_by_method_figure.R:32`, is
+  `forcats::fct_na_value_to_level`). Drop the alias; `default` stays. _(Low.)_
+- **`format_by_columns()`** (`R/join_safety.R:304`, cc 25 in 48 LOC) is a
+  message formatter carrying a guard per input shape (`NULL`, empty,
+  `dplyr_join_by`, named character, bare character). Each guard traces to a
+  numbered bug fix, so none is speculative — but if Hotspot 1 shrinks the
+  module to `safe_left_join()` + `assert_unique_keys()`, the `dplyr_join_by`
+  branch (`:313-329`) becomes reachable only if a caller passes `join_by()`,
+  and no current caller does (all 6 pass `by = "GEOID"`). Re-check after the
+  cut. _(Low.)_
 
-**`walk_calls` swallows every error at three levels** _(Low.)_
-`R/lib/medicare_duckdb.R`, inside the scanner: a `tryCatch` wrapping a loop whose
-body is itself `tryCatch(..., error = function(e) invisible(NULL))`. A node the
-walker cannot descend into is skipped silently, so a malformed region of a file
-being scanned reduces the gate's coverage without saying so. The function's own
-comment argues this trade deliberately and bounds it ("an explicit, documented
-'where practical' limit"), which is why this is Low and not a finding —
-but counting the skips and reporting a non-zero count would turn a silent blind
-spot into a visible one for one line of code.
+### User-facing recommendations (API unchanged, but worth noting)
 
-**`pick` is bound 11 times across the repo** _(Low.)_ Eight top-level definitions
-(`analysis/compare_linkage_arms.R:4`, `compare_nppes_to_dac_demographics.R:190`,
-`enrich_amcb_crosswalk_geography.R:124`, `extract_archive_origins.R:36`,
-`extract_dac_midwives.R:64`, `extract_nppes_subannual_panel.R:78`,
-`link_practice_locations_to_org_npi.R:99`, `resolve_org_ambiguity.R:126`) with
-eight different contracts — `pick(d)`, `pick(have, ..., what)`, `pick(...)`,
-`pick(cands)`, `pick(pat)` — plus the three nested in `mw_build_catalog`. `pick`
-is on H4's `ALLOW` list, and H4's stated line holds: none of these is a join key
-or a normalisation, they are column- and file-choosers local to one script. No
-action, but the allowlist entry is doing more work than its justification
-("a genuinely private one-liner") describes, and it is worth knowing that `pick`
-means eleven different things in this tree.
+Kept separate from the simplifications above; all optional.
 
-**`join_coverage_report()` is called positionally** _(Low.)_
-`R/join_safety.R:832` and `:1305` both call it as
-`join_coverage_report(left_n, matched_rows, label_left, label_right, min_coverage)`
-against a signature declared at `:413` with more parameters. Positional calls
-across a five-argument boundary in a function whose later parameters are
-validation thresholds are how an inserted parameter silently shifts a threshold.
-Naming the arguments is a one-line change per call site. It folds naturally into
-the Hotspot 2 refactor, where both call sites collapse into one.
-
-## Caller-facing recommendations (surface unchanged, but worth noting)
-
-Not refactors — discoverability points, kept separate and **optional**:
-
-- **`require_complete_keys` should not be documented as working** until it does.
-  Whichever way Hotspot 2 resolves, the roxygen at `R/join_safety.R:560`–`:566`
-  currently describes a validation a caller cannot switch on. Of everything in
-  this report this is the item most likely to mislead someone reading the docs
-  rather than the source.
-- **`num` vs `num_` in the catalog builder** reads like a typo and is a semantic
-  distinction (warnings suppressed or not). If both spellings survive the
-  Hotspot 1 split, name them for what they do (`num_quiet` / `num_strict`).
-- **The three `g`s and three `pick`s could be self-describing for free.** Even
-  with no restructuring, `g_link` / `g_row` / `g_stratum` makes the next reader's
-  job possible and the next editor's mistake visible.
+- **The guard module the pipeline does not use.** The five R pipeline stages
+  make 8 bare `dplyr` joins (`match_nppes.R` 2, `geocode_midwives.R` 4,
+  `check_npi_deactivation.R` 2) and 0 guarded ones, while `R/join_safety.R`
+  exists to guard joins. The file's own comment at `:628-640` names the
+  likeliest reason — the unusable default that made `safe_left_join()` error on
+  every call — and that default is now fixed. Either adopt `safe_left_join()`
+  in the stages (the row-explosion and coverage guards are exactly what a
+  one-to-one NPI join wants) or state in `ARCHITECTURE.md` that the stages join
+  bare on purpose. Right now the module's existence implies a convention the
+  pipeline does not follow.
+- **`load_join_safety()`'s success message is misleading** on the vendored
+  path: `"Reusing safe_left_join() (vendored copy from isochrones)"`
+  (`R/01-build-county-base.R:100`) is printed when the *local fork* loaded, not
+  the isochrones copy. One-word fix, but it is the line an operator reads when
+  diagnosing which of the three implementations ran.
+- **Three copies invites a fourth.** Per this project's own convention that
+  `~/isochrones` is canonical, the vendored fork's 145 added lines should
+  either go upstream or be documented as an intentional divergence with a
+  reason, so the next reader knows which copy to edit.
 
 ## Verified healthy (no action)
 
-- **The complexity distribution itself.** 76.6% of 959 functions score 5 or
-  below; median 2. For a 654-file pipeline accreted over years, per-function
-  complexity is genuinely under control. The problems in this report are seven
-  functions, not a pervasive condition.
-- **Duplication outside tests is minimal and real.** 7 exact-body groups covering
-  14 of 959 definitions. The largest is 2 copies × 21 lines
-  (`assign_county_from_points`, already on H4's allowlist with a reason). For a
-  repo this size that is a low number, and it means Hotspot 3 is a specific
-  problem rather than a symptom of general copy-paste.
-- **`na_matches = "never"` is applied consistently.** My probe initially looked
-  like a bug: three left rows in, two out, coverage 66.7%, and `dplyr::left_join`
-  gives three rows for the same input because dplyr matches `NA` to `NA` by
-  default. It is not a bug. `R/join_safety.R` passes `na_matches = "never"` to
-  the join *and* to every accounting call that measures it — `:803` (the join),
-  `:793` and `:764` (the anti-join accounting), `:932`, `:1295`, `:1304`,
-  `:1552`, `:1801`. The policy (two records that both lack an identifier are not
-  the same person) is the right one for identity linkage, it is the opposite of
-  dplyr's default, and it is applied in all ten places rather than nine. That
-  consistency is what made the apparent discrepancy resolvable in one grep.
-- **The duplication that exists in `tests/` is deliberate and documented.** The
-  `chk` / `ok` / `bad` / `skip` harness repeats across 49, 8, and more files, and
-  H4's allowlist carries a paragraph justifying each as console plumbing, never a
-  join key or a normalisation, with a dated note recording six entries *removed*
-  in 2026-11-16 once they stopped repeating. An allowlist that shrinks is working.
-- **The high-complexity functions are commented where it counts.** `county_sentences`,
-  `duckdb_scan_for_raw_connections` and `classify_apparent_move` each explain
-  *why* a branch exists, several citing the incident that created it. That is the
-  difference between 82 branches you can review and 82 you cannot.
+- **Complexity is where it should be.** The pipeline's domain glue is
+  proportionate: `score_one()` (`match_nppes.R:370`, cc 27) scores one
+  certificant against a surname pool, and its branches *are* the documented
+  acceptance ladder — credential gate (`:378-381`), stage-1a exact match with
+  the blank-name guard (`:383-393`), middle-name conflict rejection
+  (`:394-398`), single-candidate-with-evidence acceptance (`:399`). That is 14
+  `if`s because the contract has 14 decisions, and `ARCHITECTURE.md` points a
+  newcomer at this function by name. No change.
+- **`normalize_credential_class()`** (`credential_compatibility.R:35`, cc 23 in
+  23 LOC) is the densest function in the closure by cc-per-line and is right:
+  three matching rules (token exact, long-code substring, whole-string
+  two-letter) inside one loop over credential classes, each with a comment
+  saying which false match it prevents ("two-letter codes are not [matched as
+  substrings], to avoid CM matching inside e.g. 'BCMA'"). The metric counts the
+  loop × branch product; the code is 23 readable lines.
+- **77% of the repo is trivial.** 732 of 956 functions score cc ≤ 5, median 2.
+  There is no diffuse complexity problem to attack — the findings above are a
+  short list on purpose.
+- **The geocode layer is in proportion.** `resolve_geocode_key()` (cc 16),
+  `collapse_zipless_key()` (cc 3), `summarise_geocode_resolution()` (cc 1) in
+  `R/lib/geocode_conflicts.R`: one decision function, two thin helpers. This is
+  what the rest of the closure should look like.
+- **The closure walker exists and works.** `.code_closure()` resolved all three
+  stages' `source()` graphs correctly, including the two files a manual read of
+  the `source()` lines missed (`R/lib/provenance.R`, `R/safe_divide.R`). This
+  pass used the repo's helper rather than writing a fourth AST walker.
 
 ## Not run (reason)
 
-- **No package-namespace measurement.** No `DESCRIPTION`, so no
-  `devtools::load_all()` and no exported-surface analysis. Deviation documented
-  under *Skill*.
-- **Nested closures were not measured repo-wide.** `cc_measure.R` and
-  `dup_measure.R` collect **top-level** definitions only, matching H4's
-  convention. `mw_build_catalog`'s 30 closures were enumerated by hand
-  (`catalog_dup.R`) *because* the profile pointed there. A repo-wide nested pass
-  would likely find more of Hotspot 1's shape elsewhere, and is the obvious next
-  measurement — it is also what the proposed gate would require.
-- **`tests/` excluded from the complexity profile.** 249 of 654 tracked `.R`
-  files. Test complexity is a different question, and `run-test-audit` owns it.
-- **No pipeline execution.** Nothing in this review ran a pipeline step, read the
-  frozen cohort, touched DuckDB, or hit a network or paid API. Every probe used
-  three- to five-row synthetic frames. Consequently nothing here is a claim about
-  runtime cost or memory — that is `run-performance-review`.
-- **The glibc half of the `iconv` finding is unexecuted.** macOS libiconv's
-  `Mu~noz` output is pasted above from this machine. The glibc comparison is
-  stated from documented behaviour, not run. It does not affect the finding's
-  substance: a key whose value depends on the C library is a problem whichever
-  direction the difference runs.
-- **No files modified**, per the skill's read-only rule. Every recommendation is
-  a proposal.
+- **No pipeline stage was executed.** No `midwives.csv`, no NPI Registry calls,
+  no DuckDB connection, no geocoding cache read. Functions were measured by
+  parsing and closure creation only; the single runtime probe used two in-memory
+  three-row data frames.
+- **Python stages 1 and 2 (`scrape.py`, `fetch_npi_candidates.py`) were not
+  measured.** `cyclocomp` is R-only and the skill is an R pass. Their
+  complexity is unknown to this report.
+- **The isochrones matching/geocoding stack was not measured.**
+  `geocode_midwives.R:39-49` sources it through a runtime loop
+  (`for (src in ...) source(src)`), which `.code_closure()`'s static walk cannot
+  resolve, and `~/isochrones` is a separate project. `~/isochrones/R/join_safety.R`
+  was read only to quantify the fork drift in Finding 1(b).
+- **The other 388 tracked R files were measured but not reviewed.** They supplied
+  the distribution table only. The repo's worst function overall
+  (`mw_build_catalog`, cc 132, 1,344 LOC, `manuscript/R/build_stats_catalog.R:92`)
+  is outside the pipeline and was not read; it would be the first stop for a
+  whole-repo pass.
+- **`tests/` (247 files) and `@archive/` were excluded** from all metrics. Test
+  complexity was not assessed — that is `run-test-audit`'s pass.
+- **Nested closures were not measured individually.** The collector takes
+  top-level `name <- function(...)` only, so a nested helper's cost is
+  attributed to its parent and nested bodies were excluded from the duplication
+  scan. Finding 4 was found by reading, not by measuring, and there may be more
+  of its kind.
+- **No `getParseData()` token analysis.** Replaced by `deparse()`-based
+  shingling (see Method); the two agree on what they measure, but line-accurate
+  token positions were not used, so duplication findings cite function
+  boundaries rather than exact repeated spans.
+- **No refactor was applied and no file was changed.** Every recommendation
+  above is unexecuted.
 
 ## Suggested fix priority
 
-1. **Rename the three `g`s and three `pick`s in `mw_build_catalog`** _(High,
-   Hotspot 1.)_ Mechanical, no behaviour change, removes a live shadowing hazard
-   in the code that produces every published number. Do this before the split,
-   not after — it is the cheap half of the fix and it is independently valuable.
-2. **Consolidate the four person-name normalisers into one `norm_person_name()`**
-   _(High, Hotspot 3.)_ Highest consequence in the report: it changes match
-   outcomes today, silently, differently on different machines. Build it on
-   `norm_org`'s three paid-for decisions; replace `iconv(//TRANSLIT)` with an
-   explicit map; validate shadow-arm against shadow-arm.
-3. **Resolve `require_complete_keys`** _(High, Hotspot 2.)_ Implement it or delete
-   it, in its own commit with its own test. A documented, defaulted-on validation
-   that does nothing is worse than no validation in a file whose job is refusing
-   unsafe joins.
-4. **Factor the four join wrappers onto one core with explicit shims** _(Medium,
-   Hotspot 2.)_ Bug 6 and Bug 30 are the same bug twice; the structure that
-   produced them is still there. Larger diff than items 1–3, which is why it sits
-   below them, but it is the one that stops the fourth instance.
-5. **Split `mw_build_catalog` at its section boundaries** _(Medium, Hotspot 1.)_
-   The real fix for a 913-line function with own complexity 107. Surface stays
-   identical; the four tests naming it are the check.
-6. **Add the nested-rebinding law to H4, and a body-hash law beside it** _(Medium,
-   Hotspots 1 and 3.)_ Two gates for the two blind spots this review found in an
-   existing gate: one name bound twice in one scope, and one body under two
-   names. `dup_measure.R` is most of the second already.
-7. **Table-driven test for `county_sentences` and `district_sentences`** _(Medium,
-   Hotspot 4.)_ cc 82 and 38, no test naming either.
-8. **Name the arguments at the two `join_coverage_report()` call sites** _(Low,
-   Minor.)_ One line each; folds into item 4.
-9. **Count and report `walk_calls`'s skipped nodes** _(Low, Minor.)_ One line;
-   turns a documented blind spot into a visible one.
+1. **_(High.)_ Delete the three unused `safe_*_join()` functions and the
+   `use_enhanced_metrics` parameter and its unreachable block** — Hotspot 1.
+   ~1,100 lines out of the pipeline closure, one of the repo's five worst
+   functions gone and another cut down. Keep the `use_enhanced_metrics`
+   parameter and its refusal (see the correction under Hotspot 1), so no
+   production call site is affected (all are tests-only or pass
+   the parameter's own default). Largest reduction, lowest risk.
+2. **_(High.)_ Fix `safe_anti_join()`'s key-type contract** — Hotspot 2. Either
+   add the `harmonize_join_key_types()` call its documentation promises or
+   correct `R/join_safety.R:1695` and `:1702`. Fix it in `~/isochrones` (the
+   canonical copy, which has the same gap) if the function survives step 1;
+   otherwise fix upstream only.
+3. **_(Medium.)_ Move `duckdb_scan_for_raw_connections()` to a gate-side file**
+   — Hotspot 3. Removes the closure's worst function (cc 98) from a library 30+
+   scripts source, with the mutation suite already in place to verify it.
+4. **_(Medium.)_ Resolve the three `safe_left_join` implementations to one** —
+   Hotspot 1(b). Decide whether the vendored fork or `~/isochrones` is
+   authoritative, upstream the 145 divergent lines or document them, and fix the
+   misleading `load_join_safety()` success message.
+5. **_(Low.)_ Drop `safe_divide()`'s three uncalled wrappers and the `na_value`
+   alias** — Minor. Also retires 41 test assertions that maintain code nothing
+   calls.
+6. **_(Low.)_ Decide the join convention and write it down** — User-facing
+   recommendations. 8 bare joins against 0 guarded ones in the five stages is
+   either a gap to close or a decision to record in `ARCHITECTURE.md`.
+7. **_(Low.)_ One shared AST walker, if a third is ever needed** — Hotspot 4.
+   Resolves itself for the pipeline if step 3 lands.
+
+# Applied
+
+All four were fixed on 2026-11-19, on branch `refactor/complexity-audit-fixes`,
+with `tests/test_complexity_cuts_saboteurs.R` (26 assertions, four saboteurs,
+each mutating what it guards and checked in both directions) and
+`~/isochrones/tests/test_safe_join_key_harmonization.R`. See `NEWS.md`,
+2026-11-19. Net −1,300 lines. Two things the fix pass found that this report
+did not:
+
+- **A second dead delegation, 200 lines below the first.** `safe_left_join()`
+  also logged to `log_join_integrity()` behind
+  `exists("log_join_integrity", mode = "function")`, inside a `tryCatch` that
+  would have swallowed the error if it ever became TRUE. 17 more unreachable
+  lines. This report measured one branch and read only the branch the
+  measurement pointed at; the gate written for Finding 1 — which parses every
+  tracked file for *calls* to functions no file defines — is what found the
+  twin. A text scan would not have: the surviving `stop()` names the function
+  it refuses to call.
+- **The guard in Finding 4 is load-bearing against one specific idiom.** A
+  walker that indexes with `[[` survives `df[, "col"]`; one that binds with
+  `for (el in as.list(node)[-1L])` dies on it, which is what both originals'
+  comments describe and what `C4e` now reproduces. Worth stating because a
+  guard whose necessity cannot be reproduced invites its own removal.
+
+One finding was fixed upstream rather than here: `safe_anti_join()` did not
+survive Finding 1 in this repository, so the key-type fix went into
+`~/isochrones/R/join_safety.R`, the canonical copy, where the function lives on
+(edited locally, not committed or pushed there).

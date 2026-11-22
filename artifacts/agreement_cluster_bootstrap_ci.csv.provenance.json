@@ -1,21 +1,25 @@
 {
   "artifact": "agreement_cluster_bootstrap_ci.csv",
-  "written_utc": "2026-11-22 00:16:15 UTC",
+  "written_utc": "2026-11-22 01:14:39 UTC",
   "inputs": [
     {
       "path": "artifacts/canonical_source_records.csv",
       "sha256": "81cf8b26e0a055bc5ddbe74f3ffe872105d12025272bce18b9b68acfc901f006"
     }
   ],
-  "code_sha256": "ceede6795cc3339394964fea2525e28e236823ecbff8860460847c6c817551fe",
+  "code_sha256": "fb2025b8c50ea5685bb8752cb3a3be909dc5c6cc7fce4647b27269a205075742",
   "code": [
     {
       "path": "build_f2_f3_uncertainty_denominators.R",
-      "sha256": "3fd36bc0572122d363591d78053834c00966e26b3a0cd6cca3414cf0141c1fad"
+      "sha256": "3fcd7b0c097c7fb8ff9652bf8b192638159060eb619ebdcc4e9d9e44e74fe3e5"
     },
     {
       "path": "R/lib/artifact_provenance.R",
-      "sha256": "c1677e2402be56a1a30cc8b6985c0b512bd0599ed93c303d0c0e96e0b9d12b60"
+      "sha256": "3dec47ce20ffe42a4a8b85c84e0264c37c91b6da1452926c33ab2a9d0ec06e9e"
+    },
+    {
+      "path": "R/lib/ast_walk.R",
+      "sha256": "9611f2b4a7119c4fd9c300677df216e72439c94bdb93244fd413510807eba36a"
     },
     {
       "path": "R/lib/provenance.R",

@@ -14,10 +14,12 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
-# join_safety writes a coverage report next to the caller. One block of the
-# ported test-join-safety-semantic-extended.R exercises the default path
-# rather than overriding JOIN_REPORT_DIR, so running it from tests/ leaves
-# files here. Set JOIN_REPORT_DIR to a temp dir when wiring it into CI.
+# join_safety writes a coverage report next to the caller, so any suite that
+# calls a safe_*_join() without overriding JOIN_REPORT_DIR leaves files here
+# when run from tests/. Set JOIN_REPORT_DIR to a temp dir when wiring one into
+# CI. (The block that first made this necessary lived in the ported
+# test-join-safety-semantic-extended.R, deleted 2026-11-20 with the
+# safe_inner_join it tested.)
 tests/artifacts/
 
 # Derived NPPES pulls: 176 MB candidate table and a 1.4 GB response cache.

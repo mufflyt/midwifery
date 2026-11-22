@@ -52,24 +52,30 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   whose unrelated `year <` satisfied the year-restriction check from four
   hundred lines away), so the precision cannot silently regress.
 
-- **`tests/test_safe_join_key_harmonization.R`: four wrappers, one
-  invariant.** Asserts that `safe_left_join()`, `safe_inner_join()`,
-  `safe_semi_join()` and `safe_anti_join()` all coerce a character key against
-  an integer key, which is the normal state of this project's data: a comma
-  separated values read gives a character provider identifier, a parquet or
-  serialized R object round trip gives an integer one. It tests all four
-  deliberately, because the defect it guards was one of four diverging, so a
-  test of only the one that broke would reproduce it. Named by `ci.yml`,
-  registered in `ci_entrypoints` (`tests/ci_repo_integrity.R`) so the package
-  gate follows its `source()` chain, and swept by the `tests/test*.R` glob in
-  `nightly.yml`. Twin file in `~/isochrones` at
-  `tests/ci/test-safe-join-key-harmonization.R`.
-- **`tests/test_review_fixes_saboteurs.R`: 24 saboteurs, 24/24.** One per fix
+- **The four-wrapper parity gate lives in `~/isochrones`, not here.** It was
+  written for this repository first, at
+  `tests/test_safe_join_key_harmonization.R`, asserting that all four
+  `safe_*_join()` wrappers coerce a character key against an integer key.
+  Merging `main` removed its subject: the 2026-11-20 complexity audit deleted
+  `safe_inner_join()`, `safe_semi_join()` and `safe_anti_join()` from this
+  repository for having no production call site, and
+  `tests/test_complexity_cuts_saboteurs.R` C1a to C1e now refuse a
+  redefinition, a call, or a wrapper copied back from the upstream copy. A
+  parity test for three functions that no longer exist would have been the
+  first thing C1b caught, so it is deleted here and kept where the wrappers
+  are real: `~/isochrones/tests/ci/test-safe-join-key-harmonization.R`, wired
+  into that repository's `fast-gates.yml` as gate 3c.
+- **`tests/test_review_fixes_saboteurs.R`: 15 saboteurs, 15/15.** One per fix
   in the 2026-11-21 complexity review, each planting the original defect back
   and requiring the guard to die on it, plus near misses so a guard cannot
   regress into "written exactly this way". The H6 cases run the real
   `tests/ci_hygiene.R` inside a throwaway git repository rather than asserting
-  against this one, so the controls keep working when the real counts move.
+  against this one, so the controls keep working when the real counts move. It
+  was 24 before merging `main`: nine saboteurs asserted that no `safe_*_join`
+  wrapper accepts a formal it never reads, and `main` deleted three of the four
+  wrappers, so those nine measured a structure that no longer exists and two of
+  them could not parse it. `tests/test_complexity_cuts_saboteurs.R` owns that
+  law now, in a stronger form.
 - **`tests/ci_hygiene.R` H6: no name bound to a function twice in one scope.**
   H4 reads top level definitions across files; H6 walks every scope, which is
   where the same defect hides. As the gate's own comment records, it was found
@@ -167,36 +173,47 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   require their columns. Wired into `ci.yml`; needs no extra packages and no
   private data.
 
-- **`safe_anti_join()` documented a type harmonization it did not perform**
-  (`R/join_safety.R`). The 2026-04-05 fix added `harmonize_join_key_types()` to
-  three of the four wrappers. The fourth kept the claim in its own
-  `@section Algorithm` ("Validates keys, harmonizes types, then calls
-  `dplyr::anti_join()`") and in its `@section Calls`, and lost the call, so a
-  character key against an integer key aborted for seven months where its
-  siblings coerced and continued. Probed against a clean worktree at
-  `6cb96e0`: left 3 rows, inner 2 rows, semi 2 rows, anti
-  `Can't join x$npi with y$npi due to incompatible types`. Nothing here called
-  it from production code, only `tests/test-join-safety.R`, which is why
-  documentation could drift from behaviour without consequence. Found by the
+- **`safe_anti_join()` documented a type harmonization it did not perform,
+  and the answer was to delete it** (`R/join_safety.R`). The 2026-04-05 fix
+  added `harmonize_join_key_types()` to three of the four wrappers. The fourth
+  kept the claim in its own `@section Algorithm` ("Validates keys, harmonizes
+  types, then calls `dplyr::anti_join()`") and in its `@section Calls`, and
+  lost the call, so a character key against an integer key aborted for seven
+  months where its siblings coerced and continued. Probed against a clean
+  worktree at `6cb96e0`: left 3 rows, inner 2 rows, semi 2 rows, anti
+  `Can't join x$npi with y$npi due to incompatible types`. Found by the
   complexity audit, which measured the semi and anti pair at 0.78 structural
   similarity and diffed the near duplicates rather than reading the
-  documentation. The same fix had landed first in the vendored copy in
-  `~/isochrones`, so fixing one of four wrappers also meant fixing one of two
-  copies.
-- **Five parameters in `R/join_safety.R` were accepted, documented, and never
+  documentation.
+  The three-line fix was written first, and then `main` answered the question
+  one rung higher: the 2026-11-20 audit deleted `safe_inner_join()`,
+  `safe_semi_join()` and `safe_anti_join()` outright, because nothing in this
+  repository called them. A wrapper with no caller does not need its
+  documentation repaired. The fix and the parity gate therefore live in
+  `~/isochrones`, which does use the wrappers and whose
+  `vignettes/joins-that-cannot-fan-out.Rmd` teaches `safe_anti_join()` as the
+  way to see unmatched rows, and `tests/test_complexity_cuts_saboteurs.R` C1c
+  keeps the deleted wrappers from being copied back here from that copy. The
+  write-up of both halves is
+  `docs/APPENDIX_vendored_join_safety_divergence_2026-11-21.md`.
+- **Parameters in `R/join_safety.R` were accepted, documented, and never
   read.** `require_complete_keys` defaulted to `TRUE`, was documented as
   validating key completeness, and was read in exactly one branch that cannot
   run, so probing it `TRUE` against `FALSE` over a frame with missing join keys
-  gave byte identical results; it is removed rather than silently switched on,
-  because enforcing it is a behaviour change for every call site and needs its
-  own commit and its own test. `agree_on` / `agree_map` and
-  `max_right_dup_keys` on the left join path, and `agree_on`,
-  `max_duplication` and `max_right_dup_keys` on the semi join path, now stop
-  with a message naming what is actually enforced instead of returning a silent
-  pass that reads as agreement. `max_right_dup_keys` is refused only when the
-  value asks for something other than what `expect_unique_right` already
-  implies, so a call that spells the default out still works. No caller in this
-  repository passes any of them.
+  gave byte identical results. `agree_on` / `agree_map`,
+  `max_right_dup_keys`, and `max_duplication` were accepted on paths that never
+  read them. The branch removed the first and made the rest refuse with a
+  message naming what is actually enforced; `main` reached the same place by a
+  shorter route, deleting the three uncalled wrappers and reducing the
+  surviving `safe_left_join()`'s unreachable branch to a single `stop()`. The
+  merged result is `main`'s. What survives from this branch is the call shape
+  below, which the audit did not cover.
+- **`join_coverage_report()` was called positionally.** Its signature ends in
+  validation thresholds (`min_coverage`, then `verbose`), so inserting a formal
+  ahead of `min_coverage` would have slid a threshold into `verbose` with no
+  call site changing and no error raised. The call in `safe_left_join()` now
+  names its arguments, and `tests/test_review_fixes_saboteurs.R` R14/R15 parse
+  the real file for the call shape and sabotage it back to positional.
 - **`safe_left_join()`'s documentation described a validation path that cannot
   run.** It stated that `use_enhanced_metrics` defaults to `TRUE` and delegates
   to `safe_left_join_with_metrics()` for full cardinality, coverage and
@@ -271,6 +288,122 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   both package states. 1 script (`analysis/oig_style_source_consistency.R`)
   could not be re-run: 3 of its gitignored local inputs no longer exist on
   disk, unrelated to this audit.
+## [Unreleased] — 2026-11-19 — 1,300 lines the pipeline parsed and never called
+
+An AI-assisted code-complexity pass over the five-stage pipeline's `source()`
+closure (`Review_AI_complexity.qmd`, ropensci-skills `run-complexity`). No
+estimate moved: nothing here changes a number, a cohort, or an artifact. What
+changed is how much code the pipeline has to load to do its work, and one join
+wrapper's actual behaviour.
+
+### Removed
+
+- **Three join wrappers with no production caller, and 1,017 lines of
+  `R/join_safety.R` with them.** `safe_inner_join()` (cyclomatic complexity
+  55, 260 lines), `safe_semi_join()` and `safe_anti_join()` were called only
+  from tests — and were one function written four times, the semi/anti pair
+  measuring 0.78 structural similarity on a 7-gram token comparison. They
+  remain in `~/isochrones/R/join_safety.R`, the copy this file was vendored
+  from, which is where to take one from if a caller ever appears. The module
+  went from 1,892 lines to 875. `tests/test-join-safety-semantic-extended.R`
+  (500 lines, every one of them exercising `safe_inner_join()`) was deleted;
+  ten of `tests/test-join-safety.R`'s 21 blocks went with it.
+
+- **Two blocks of delegation to functions no file in this repository
+  defines.** `safe_left_join()` carried a 54-line enhanced-metrics path
+  calling `safe_left_join_with_metrics()` from `R/join_metrics.R`, which was
+  never added here, and — two hundred lines further down, behind
+  `exists("log_join_integrity", mode = "function")` and inside a `tryCatch`
+  that would have swallowed any error — 17 more lines logging to a
+  join-integrity ledger that also does not exist. The second one was found by
+  the gate written for the first.
+
+  The `use_enhanced_metrics` **parameter stays**, and still hard-stops when
+  set. The audit recommended deleting it along with the 22 call sites that
+  pass `FALSE`; that was wrong, and the measurement is why it looked right.
+  `R/01-build-county-base.R`'s `load_join_safety()` sources the vendored copy
+  **or** `~/isochrones/R/join_safety.R`, and upstream defaults the same
+  parameter to `TRUE` with `R/join_metrics.R` present. The six explicit
+  `FALSE`s are upstream-compatibility insurance, not noise.
+
+- **`DUCKDB_RAW_CONNECTION_EXCEPTIONS` and
+  `duckdb_scan_for_raw_connections()` left `R/lib/medicare_duckdb.R`** for
+  `tests/duckdb_architecture_scan.R`, beside the four `tests/ci_duckdb_*.R`
+  gates that are their only callers. The scanner was the pipeline's most
+  complex function (cyclomatic complexity 98 over 156 lines) and has no
+  production caller at all — it parses tracked files to police them — while
+  the library holding it is sourced by 30-odd scripts including pipeline stage
+  4, every one of which was evaluating 343 lines of gate machinery to reach
+  `open_medicare_duckdb()`. Same registry, same site-level tag matching, same
+  `data.frame(file, line, tag, symbol)`; the M1–M17 mutation suite passes
+  unchanged, which is what says so.
+
+### Changed
+
+- **`assert_unique_keys()` moved to `R/assert_unique_keys.R`.** Seventeen
+  scripts source all of `R/join_safety.R` to reach this one 69-line function,
+  which calls nothing else in that module; `check_npi_deactivation.R` is 65
+  lines and was pulling 2,195 (the module plus the `R/safe_divide.R` it
+  sources) to call it once, then doing its own join bare. Stage 5 now sources
+  the 69 lines. `R/join_safety.R` sources the new file, so the other sixteen
+  call sites are unchanged — switching them is a separate decision, one file
+  at a time, for whoever can confirm each uses nothing else from the module.
+
+- **One call-tree walker, `walk_call_tree()` in `R/lib/ast_walk.R`.** It had
+  been written twice — `walk()` inside `.code_closure()` and `walk_calls()`
+  inside the DuckDB scanner, both reachable from the same pipeline script,
+  each with its own paragraph about R's empty symbol. Same traversal in both;
+  they differed only in how each coped with a node that cannot be walked, so
+  the shared one does both. `regex_literals()` in
+  `tests/test_gate_integrity_saboteurs.R` is deliberately not converted: it
+  visits call heads as well as arguments, and Q1's scan set is calibrated to
+  that traversal.
+
+### Fixed
+
+- **`safe_anti_join()` did not harmonize join key types, though its own
+  documentation said it did** — in `~/isochrones/R/join_safety.R`, the
+  canonical copy, where the function survives. The 2026-04-05 fix was applied
+  to `safe_left_join()`, `safe_inner_join()` and `safe_semi_join()` and missed
+  the fourth; a character key against an integer key (a CSV read against a
+  parquet or RDS round-trip — the exact hazard
+  `check_npi_deactivation.R:28-30` warns about) aborted with dplyr's
+  "incompatible types" where the three siblings coerced and continued. Found
+  by the duplication measurement, not by reading: the semi/anti pair scored
+  0.78, and the diff of the two bodies showed one guard present in one and
+  absent in the other. Fixed upstream with
+  `~/isochrones/tests/testthat/test-safe-join-key-harmonization.R`, which asserts the
+  parity rather than the one function — the defect was that one of four
+  diverged.
+
+- **`tests/test_ponytail_cuts_saboteurs.R`'s P1e matched text where it meant a
+  `source()` call.** It read whole file text for "helper-saboteur", so a file
+  naming the harness in a comment was an offender. Now anchored to
+  non-comment `source()` lines, with P1f/P1g holding both directions. Shape 2
+  of `docs/APPENDIX_checks_that_cannot_fail_2026-11-20.md`, in the suite that
+  documents it.
+
+### Added
+
+- **`tests/test_complexity_cuts_saboteurs.R`** — 26 assertions, four
+  saboteurs, one per cut, each mutating what it guards and each checked in
+  both directions. Its C2a parses every tracked `.R` file for *calls* (not
+  text) to functions no file defines, which is what found the second dead
+  delegation above. Registered in `ci.yml`'s `r-unit-tests` job; nightly would
+  glob it anyway, naming it there is what makes it run on the pull request
+  that breaks it.
+
+  Its C3f gates a defect introduced and fixed inside this change: the moved
+  scanner was first named `tests/helper-duckdb-scan.R`, and
+  `testthat::test_file()` auto-sources every `tests/helper-*.R` **from the
+  tests directory** — so all ten `test_file()`-invoked suites in `ci.yml`
+  began sourcing a DuckDB scanner and all ten broke on
+  `tests/R/lib/ast_walk.R`. The P4 lesson arriving from a direction P4 does
+  not scan.
+
+- **`tracked()` and `tracked_r()` moved into `tests/helper-saboteur.R`** when
+  a second suite needed them. A top-level function defined in two tracked
+  files is what `ci_hygiene` H4 refuses, and the reason that harness exists.
 
 ## [Unreleased] — 2026-11-20 — ten checks that reported ok against the defect they guard
 

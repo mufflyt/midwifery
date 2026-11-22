@@ -122,7 +122,9 @@ the file.
 
 ## Enforcement: the AST scanner
 
-`duckdb_scan_for_raw_connections(files)` in `R/lib/medicare_duckdb.R` is a
+`duckdb_scan_for_raw_connections(files)` in `tests/duckdb_architecture_scan.R`
+(moved there from `R/lib/medicare_duckdb.R` on 2026-11-19: it is CI-only, and
+the library holding it is sourced by 30-odd scripts) is a
 structural (not textual) scanner. It parses each file's real AST via
 `parse(path, keep.source = TRUE)` and walks call nodes recursively, flagging:
 
@@ -187,7 +189,7 @@ caught in the act rather than in a postmortem.
 
 ## Exception registry
 
-`DUCKDB_RAW_CONNECTION_EXCEPTIONS` in `R/lib/medicare_duckdb.R` is a
+`DUCKDB_RAW_CONNECTION_EXCEPTIONS` in `tests/duckdb_architecture_scan.R` is a
 structured list — not an anonymous inline allowlist — and **site-level, not
 file-level.** An earlier version matched by file alone: any raw connection
 anywhere in a registered file was silently exempt. That had a real, live
