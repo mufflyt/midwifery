@@ -1134,7 +1134,8 @@ if (file.exists("artifacts/pecos_revalidation_cohort_state_by_year.csv") && file
     slice(1L) %>%
     ungroup()
 
-  nppes_panel_21_26 <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+  nppes_panel_21_26 <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"),
+                                col_select = c(npi, snapshot_year, practice_state), progress = FALSE) %>%
     transmute(npi = trimws(npi), year = as.integer(snapshot_year), state = clean_state(practice_state)) %>%
     filter(year >= 2021L, year <= 2026L, !is.na(npi), !is.na(state)) %>%
     distinct() %>%
@@ -1795,7 +1796,8 @@ cohort_npis_vec <- cohort_active$npi
 n_cohort_total <- length(cohort_npis_vec)
 
 # 1. NPPES annual state claims (2018-2024) from `midwife_panel.csv`
-nppes_18_24 <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+nppes_18_24 <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"),
+                        col_select = c(npi, snapshot_year, practice_state), progress = FALSE) %>%
   transmute(
     npi = trimws(npi),
     year = as.integer(snapshot_year),

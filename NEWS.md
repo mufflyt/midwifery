@@ -177,6 +177,29 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Three gates were unwired from `ci.yml` by a merge, in the same branch that
+  fixed the defects they police.** `579950c` (the merge of #336) took `main`'s
+  workflow file wholesale; `ci_denominator_contracts` (D1-D5),
+  `test_denominator_contracts_detect` and
+  `test_npi_rate_and_cluster_saboteurs` existed only on this branch, so
+  nothing conflicted and nothing reported it. `bef401e` closed DEBT D14
+  immediately afterwards — so for that span the branch had fixed five
+  denominator defects and stopped checking for them, and CI was green
+  *because* the checks were gone. All three are restored, with the saboteur
+  suite ordered ahead of the gates it sits beside so a halt on the first
+  failing step cannot silence it again.
+- **D5's skip had no test, in either direction.** The skip is correct — the
+  canonical records are gitignored and no runner can have them — but it is the
+  dangerous direction to move a gate, and nothing distinguished "forgives its
+  one known-private input" from "forgives any missing input".
+  `test_denominator_contracts_detect.R` now pins both: absent **and**
+  gitignored passes, absent but **tracked** still fails.
+- **`skip_budget.tsv` still declared `1 / 1` for that gate.** `full` is 0 now
+  that `UFT_BASELINE` is `character(0)` and no consumer is forgiven. Its old
+  reason claimed the count was environment-independent "because every input is
+  a tracked artifact" — the false premise that let D5 fail on every runner for
+  as long as it did.
+
 - **The public Medicaid NPI-population rate divided providers by spells, and
   it was published.** `build_medicaid_npi_population_by_state.R` computed
   `COUNT(DISTINCT NPI) / COUNT(*)` — distinct providers over enrollment

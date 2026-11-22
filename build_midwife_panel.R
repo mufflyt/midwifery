@@ -350,12 +350,28 @@ writeLines(as.character(Sys.getpid()), lock)
 on.exit(unlink(lock), add = TRUE)
 done_years <- integer(0)
 if (RESUME && file.exists(out_path)) {
-  done_years <- unique(as.integer(read.csv(out_path, colClasses = "character")$snapshot_year))
+  # The question is SELECT DISTINCT snapshot_year, not the whole file. The
+  # read.csv() this replaces spent 72.5 s and materialised 534 MB to answer it;
+  # `con` has been open since line 317. See Review_AI_performance.qmd F5.
+  done_years <- as.integer(dbGetQuery(con, sprintf(
+    "SELECT DISTINCT snapshot_year FROM read_csv_auto('%s', all_varchar = TRUE)",
+    out_path))$snapshot_year)
   cat(sprintf("resuming: %s already present\n", paste(sort(done_years), collapse = ", ")))
 } else if (file.exists(out_path)) {
   unlink(out_path)
 }
 first <- !file.exists(out_path)
+
+# A malformed row is dropped by ignore_errors = true and the read still reports
+# success, so the only number printed per release used to be the count of rows
+# that PASSED the taxonomy filter: a release that silently lost 10% of its rows
+# would read as a release with 10% fewer midwives. reject_errors accumulates
+# across scans and does not exist until the first store_rejects scan has run,
+# hence the delta and the tryCatch. See Review_AI_performance.qmd F4.
+rejects_seen <- 0L
+reject_total <- function() tryCatch(
+  as.integer(dbGetQuery(con, "SELECT count(*) AS n FROM reject_errors")$n),
+  error = function(e) 0L)
 
 for (k in seq_along(files)) {
   if (snap_year[k] %in% done_years) next
@@ -409,8 +425,14 @@ for (k in seq_along(files)) {
   #   single hardcoded value silently loses one era or the other.
   reader <- function(enc, ignore_errors = TRUE) sprintf(
     "read_csv_auto('%s', all_varchar = TRUE, sample_size = 1000,
-                   normalize_names = TRUE, encoding = '%s', ignore_errors = %s)",
-    f, enc, if (ignore_errors) "true" else "false")
+                   normalize_names = TRUE, encoding = '%s', %s)",
+    f, enc,
+    # store_rejects makes DuckDB record the rows ignore_errors throws away, in
+    # reject_errors. It is tied to ignore_errors deliberately: store_rejects
+    # suppresses parse errors by itself, so setting it on the strict encoding
+    # probe below would defeat that probe exactly as ignore_errors would.
+    if (ignore_errors) "ignore_errors = true, store_rejects = true"
+    else "ignore_errors = false")
   # BUG FIX: `LIMIT 0` never reads a body row, so the header (always plain
   # ASCII) "succeeds" under utf-8 regardless of the file's real encoding --
   # the latin-1 branch below was dead code. Detecting encoding requires
@@ -497,6 +519,13 @@ for (k in seq_along(files)) {
   rows <- tryCatch(dbGetQuery(con, sql),
                    error = function(e) {cat("  ERR:", substr(conditionMessage(e), 1, 90),
                                             "\n"); NULL})
+  # Before the `next`: a release that produced zero usable rows is exactly the
+  # case where the reject count is the only thing left to report.
+  rejected <- reject_total() - rejects_seen
+  rejects_seen <- rejects_seen + rejected
+  if (rejected > 0L)
+    cat(sprintf("  [%d/%d] %s -- MALFORMED: reader dropped %s row(s)\n",
+                k, length(files), snap_year[k], format(rejected, big.mark = ",")))
   if (is.null(rows) || !nrow(rows)) next
   write.table(rows, out_path, sep = ",", row.names = FALSE, na = "",
               col.names = first, append = !first, qmethod = "double")
@@ -517,11 +546,27 @@ if (!file.exists(out_path)) {
        "unreadable, schema-unrecognised, or produced zero matching rows. ",
        "Check the per-file messages above.", call. = FALSE)
 }
-panel <- read.csv(out_path, colClasses = "character")
+# This script writes the panel one snapshot year at a time and never holds the
+# whole result; reading it back in base R to print four numbers undid that. The
+# previous version cost 210.9 s and peaked at 1,169 MB RSS -- 96.8 s of it in
+# aggregate(), whose formula method calls an R closure once per group, and there
+# are 472,327 groups. Two columns through the connection already open at line
+# 317: 6.7 s, 593 MB, same four values (verified 4735546 / 472327 / 507559 /
+# 33657). See Review_AI_performance.qmd F1.
+summary_row <- dbGetQuery(con, sprintf("
+  WITH p AS (SELECT npi, last_name FROM read_csv_auto('%s', all_varchar = TRUE))
+  SELECT (SELECT count(*) FROM p) AS rows,
+         (SELECT count(DISTINCT npi) FROM p) AS npis,
+         (SELECT count(*) FROM (SELECT DISTINCT npi, last_name FROM p)) AS pairs,
+         (SELECT count(*) FROM (SELECT npi FROM p GROUP BY npi
+                                HAVING count(DISTINCT last_name) > 1)) AS multi_surname",
+  out_path))
 cat(sprintf("\npanel: %s rows, %s distinct NPIs, %s distinct (NPI, surname) pairs\n",
-            format(nrow(panel), big.mark = ","),
-            format(length(unique(panel$npi)), big.mark = ","),
-            format(nrow(unique(panel[, c("npi", "last_name")])), big.mark = ",")))
-changed <- aggregate(last_name ~ npi, panel, function(x) length(unique(x)))
+            format(summary_row$rows, big.mark = ","),
+            format(summary_row$npis, big.mark = ","),
+            format(summary_row$pairs, big.mark = ",")))
 cat(sprintf("NPIs appearing under more than one surname: %s\n",
-            format(sum(changed$last_name > 1), big.mark = ",")))
+            format(summary_row$multi_surname, big.mark = ",")))
+if (rejects_seen > 0L)
+  cat(sprintf("malformed rows dropped by the reader across all releases: %s\n",
+              format(rejects_seen, big.mark = ",")))
