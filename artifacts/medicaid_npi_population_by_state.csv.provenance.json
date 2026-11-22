@@ -1,25 +1,29 @@
 {
   "artifact": "medicaid_npi_population_by_state.csv",
-  "written_utc": "2026-11-22 00:48:38 UTC",
+  "written_utc": "2026-11-22 01:50:47 UTC",
   "inputs": [
     {
       "path": "/Volumes/MufflySamsung/doge_opendata/medicaid_provider_enrollment_segments_2026_07_24/medicaid-provider-enrollment-segments.parquet",
       "sha256": "c763c53946e5f8822e46db47d2cbd0de09c153c6b7045b57504c461afa2ce92a"
     }
   ],
-  "code_sha256": "924307fb952dc44dbe4ea9867c07a2bb17298512ac2c24ed603761d7867c8345",
+  "code_sha256": "87969c62b36463cc4e06a347e5e297c215fc28703c27854dd212a9751a67917c",
   "code": [
     {
       "path": "build_medicaid_npi_population_by_state.R",
-      "sha256": "7e07ddfe303ffeca15b6ede2a5566dc02a8af98f81f1ec219cab5d96724b6f1e"
+      "sha256": "b3cc009abe0ddc52541f4b3feefd92c425a89ad1c089bee9112df6b1daac7fd0"
     },
     {
       "path": "R/lib/artifact_provenance.R",
-      "sha256": "c1677e2402be56a1a30cc8b6985c0b512bd0599ed93c303d0c0e96e0b9d12b60"
+      "sha256": "3dec47ce20ffe42a4a8b85c84e0264c37c91b6da1452926c33ab2a9d0ec06e9e"
+    },
+    {
+      "path": "R/lib/ast_walk.R",
+      "sha256": "9611f2b4a7119c4fd9c300677df216e72439c94bdb93244fd413510807eba36a"
     },
     {
       "path": "R/lib/medicare_duckdb.R",
-      "sha256": "119d6106bd63bd92b01c4d762710cbd2e4e33bd6fbcdbc4a292b068366e2b343"
+      "sha256": "632f310d14dce73a683ba256953411ee3368820c786ec88facd469d29fcf2fcd"
     },
     {
       "path": "R/lib/provenance.R",

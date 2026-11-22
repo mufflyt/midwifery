@@ -183,6 +183,37 @@ nothing saying so.
 successor. Ask what the statistic means in the final row before summing the
 column.
 
+## A note on the gate that could not go green
+
+D5 read `artifacts/canonical_source_records.csv` and called `ci_fail()`
+whenever it was missing, on the stated grounds that it is "a tracked artifact,
+so absence is a regression". `.gitignore:320` excludes it. The premise was
+false, so the branch fired on every runner and **D5 could never pass in CI** —
+and because GitHub Actions halts a job at its first failing step, everything
+wired below it never ran either. One wrong word in a comment took four other
+gates and a whole saboteur suite down with it.
+
+The repair is a skip, which is the dangerous direction. A gate that fails is
+loud; a gate that skips is counted as coverage. Three things keep this one
+honest:
+
+- **It asks about one path.** `git check-ignore` is run against that exact
+  file, the way `ci_require_files()` in `tests/ci_report.R` already does, so a
+  *tracked* input that goes missing still fails. The skip is scoped to the
+  single artifact that is known to be private, not to absence in general.
+- **Both directions are pinned.** `tests/test_denominator_contracts_detect.R`
+  builds throwaway repositories and asserts that absent-and-gitignored passes
+  **and** that absent-but-tracked still fails. Without the second case the
+  first is indistinguishable from "D5 no longer checks anything".
+- **The skip is declared.** `tests/skip_budget.tsv` moves from `1 / 1` to
+  `0 / 1`, so gaining or losing it is itself a failure. Its previous reason
+  asserted the count was environment-independent "because every input is a
+  tracked artifact" — the same false premise, written down twice.
+
+**The tell:** a gate whose failure message explains why the input *must* be
+present. Check that claim against `.gitignore` rather than believing it; this
+one had been wrong since the gate was written.
+
 ## A note on gates that go dark rather than red
 
 One more instance of the companion appendix's subject surfaced here, and it is

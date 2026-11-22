@@ -267,6 +267,19 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   (2013 vs 2021). `UFT_BASELINE` is now empty, which makes D5 stricter rather
   than laxer. **D1–D5 report `PASS (0 failures)`** on a machine holding the
   canonical records.
+- **D5 now skips on the input it cannot have, and only on that one.** Its
+  first branch failed whenever `artifacts/canonical_source_records.csv` was
+  absent, calling it "a tracked artifact" — `.gitignore:320` excludes it, so
+  the branch fired on every runner and D5 could never pass in CI. It now asks
+  `git check-ignore` about that exact path, as `ci_require_files()` does. The
+  discrimination is the point rather than the skip: a skip that forgave any
+  missing input would be a worse gate than the one it replaced, so
+  `test_denominator_contracts_detect.R` pins **both** directions in throwaway
+  repositories — absent **and** gitignored passes, absent but **tracked**
+  still fails. `skip_budget.tsv` moves `1 / 1` → **`0 / 1`**; its old reason
+  claimed the count was environment-independent "because every input is a
+  tracked artifact", which was wrong about this one. The gate now reports
+  `PASS (0 failures)` in **both** environments.
 - **The new saboteur suite was wired below a step that cannot go green, so it
   ran zero times.** GitHub Actions halts a job at its first failing step, and
   `Denominator contracts` fails on every runner for an environment reason (D5
@@ -278,14 +291,12 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Known issues
 
-- **`ci_denominator_contracts.R` is still red in CI, for one environment
-  reason only.** D5's first branch calls `ci_fail()` when
-  `artifacts/canonical_source_records.csv` is absent, on the stated grounds
+- **(Resolved)** `ci_denominator_contracts.R` was red in CI for one
+  environment reason: D5 called `ci_fail()` whenever
+  `artifacts/canonical_source_records.csv` was absent, on the stated grounds
   that it is "a tracked artifact". It is not — `.gitignore:320` excludes it —
-  so that branch fires on every runner and D5 cannot pass there. The fix is a
-  `ci_skip()` plus a `skip_budget.tsv` entry, but converting a gate's failure
-  into a skip is the shape of weakening oversight to reach green, so it is
-  left for review. See **D14** in [`DEBT.md`](DEBT.md).
+  so that branch fired on every runner and D5 could never pass there. See the
+  **Fixed** entry above.
 - **(Superseded)** The five gates reported `FAILED (5)` on arrival, because all
   five defects were live. They are fixed above; this note is kept because the
   entry below still refers to it. The measurements, the affected

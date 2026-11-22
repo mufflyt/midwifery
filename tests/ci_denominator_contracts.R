@@ -398,9 +398,32 @@ ci_section("D5 every consumer of the canonical records honours usable_for_trend"
 # Vacuity control. A flag that is TRUE everywhere makes every consumer correct
 # by accident, and a gate that cannot fail is worse than no gate.
 cv <- ci_read_head(CANON, root = root)
-if (is.null(cv) || !"usable_for_trend" %in% names(cv)) {
-  ci_fail("D5: %s is missing or carries no usable_for_trend column. It is a
-       tracked artifact, so absence is a regression.", CANON)
+
+# ABSENT-AND-GITIGNORED IS A SKIP; ABSENT-AND-TRACKED IS STILL A FAILURE.
+# This branch used to call ci_fail() unconditionally, on the stated grounds
+# that the canonical records are "a tracked artifact, so absence is a
+# regression". They are not tracked -- .gitignore:320 excludes them -- so the
+# branch fired on every runner and D5 could never pass in CI. That is the
+# environment case DEBT D14's closing note separates from a live defect: a
+# gate no one's work can turn green gets muted, and the four gates beside it
+# get muted with it.
+#
+# The discrimination matters more than the skip. `git check-ignore` is asked
+# whether this particular path is ignored, exactly as ci_require_files() in
+# tests/ci_report.R does, so deleting a TRACKED input still fails here and
+# only the known-private one is forgiven. The skip is declared in
+# tests/skip_budget.tsv, so gaining or losing it is itself a failure.
+canon_ignored <- identical(as.integer(suppressWarnings(system2(
+  "git", c("-C", root, "check-ignore", "-q", CANON),
+  stdout = FALSE, stderr = FALSE))), 0L)
+
+if (is.null(cv) && !file.exists(file.path(root, CANON)) && canon_ignored) {
+  ci_skip("D5: %s absent (gitignored; expected on CI and a fresh checkout) -- the vacuity control below needs it, so D5 asserts locally only",
+          CANON)
+} else if (is.null(cv) || !"usable_for_trend" %in% names(cv)) {
+  ci_fail("D5: %s is missing while tracked, or carries no usable_for_trend
+       column. The producer writes that column, and a tracked input that has
+       gone missing is a regression rather than a private-data skip.", CANON)
 } else {
   n_false <- sum(cv$usable_for_trend != "TRUE")
   cat(sprintf("  [CONTROL] D5 unusable rows n=%d of %d\n", n_false, nrow(cv)))

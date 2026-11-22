@@ -726,7 +726,7 @@ every state that permits a skip is a state a law can hide in.
 
 ## D14 — Four supplemental-table rates divide a count by a group it did not come from
 
-- **status:** resolved 2026-11-21, except one CI-environment item in D5 (below)
+- **status:** resolved 2026-11-21
 - **owner:** tyler
 - **raised:** 2026-11-21
 - **source:** `manuscript/federal_database_accuracy.qmd` (Tables S2/S3/S4 and the Results prose at 441-443), `manuscript/R/build_stats_catalog.R:1467`, `build_f2_f3_uncertainty_denominators.R`, `build_source_count_agreement.R:34-35`, `build_state_variation_agreement.R:33`
@@ -831,16 +831,27 @@ The remedy prescribed above was carried out as written.
 D1-D5 report `PASS (0 failures)` on a machine holding
 `artifacts/canonical_source_records.csv`.
 
-**Still open, and it needs a decision rather than a fix.** D5's first branch
-calls `ci_fail()` when that file is absent, on the stated grounds that it is
-"a tracked artifact, so absence is a regression". It is not tracked --
-`.gitignore:320` excludes it -- so the branch fires on every runner and D5 can
-never pass in CI, which is precisely the environment case the note below
-separates from a live defect. The fix is a `ci_skip()` with a
-`tests/skip_budget.tsv` entry, but converting a gate's failure into a skip is
-the shape of weakening oversight to reach green and should be reviewed rather
-than done quietly. Until then this gate is green locally and red in CI for
-that one reason.
+6. **D5 skips, rather than fails, on the one input it cannot have.** Its first
+   branch called `ci_fail()` whenever `artifacts/canonical_source_records.csv`
+   was absent, on the stated grounds that it is "a tracked artifact, so
+   absence is a regression". It is not tracked -- `.gitignore:320` excludes it
+   -- so the branch fired on every runner and D5 could never pass in CI, which
+   is exactly the environment case the note below separates from a live
+   defect. It now asks `git check-ignore` about that specific path, the same
+   way `ci_require_files()` in `tests/ci_report.R` does.
+
+   **The discrimination is the point, not the skip.** A skip that forgave any
+   missing input would be a worse gate than the one it replaced, so
+   `tests/test_denominator_contracts_detect.R` pins both directions in
+   throwaway repositories: absent **and** gitignored passes; absent but
+   **tracked** still fails. `tests/skip_budget.tsv` moves from `1 / 1` to
+   `0 / 1` -- one skip on a runner, none on a machine holding the artifact,
+   because the UFT baseline is empty and no consumer is forgiven any more. The
+   old budget line said the count was environment-independent "because every
+   input is a tracked artifact", which was simply wrong about this one.
+
+The gate is now green in both environments: `PASS (0 failures)` on a runner
+(with D5's declared skip) and `PASS (0 failures)` locally (asserting in full).
 
 **On the gate being red.** `tests/ci_denominator_contracts.R` is wired into
 `.github/workflows/ci.yml` while it reports `FAILED (5)`, which is the

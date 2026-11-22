@@ -50,7 +50,10 @@ if (is.null(parquet)) {
 }
 stopifnot(file.exists(COMMITTED))
 
-con <- dbConnect(duckdb())
+# duckdb_connect() rather than a raw dbConnect(duckdb()): it sets the temp
+# directory and loads the encodings extension, and the architecture gate in
+# tests/ refuses raw connections outside a tagged exception registry.
+con <- duckdb_connect()
 on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
 # -----------------------------------------------------------------------------
