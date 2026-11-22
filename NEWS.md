@@ -106,9 +106,13 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   summary line, but not one that produces `SKIP 0 | PASS 0`.** A file that
   errored on load asserted nothing, and the budget reads it as zero skips, as
   expected. `test_invariants_midwifery.R` does exactly that in a worktree.
-- **Nothing compares the README debt badge to `DEBT.md`.** The count is correct
-  as of this entry and has now gone stale twice. The comparison belongs in
-  `tests/ci_debt_check.R`.
+- **Nothing compares either README count badge to what it describes.** The debt
+  badge is correct as of this entry (5 open, 12 closed) and has now gone stale
+  twice; the comparison belongs in `tests/ci_debt_check.R`. The scientific-laws
+  badge is in the same position one step further out: its figures are right and
+  `tests/ci_law_coverage.R` does compute them (`13 declared`, `39/39 planted
+  defects detected`), but nothing reads that output back against the README, so
+  adding a law moves the gate's count and leaves the badge behind.
 
 ## [Unreleased] — 2026-11-22 — 1,552 lines cut, and a saboteur for every cut
 

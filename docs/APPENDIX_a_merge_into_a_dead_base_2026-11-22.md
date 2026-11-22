@@ -228,11 +228,44 @@ README's count badge to `DEBT.md`. On `main` before this session the file held
 11 closed and the badge claimed 10, and #302 existed partly because that same
 badge had gone stale once before.
 
-The count is now computed from the file (4 open, 12 closed) rather than carried
+The count is now computed from the file (5 open, 12 closed) rather than carried
 forward. **Nothing stops it drifting again.** A comparison of the badge against
 `grep -c 'status:\*\* closed' DEBT.md` belongs in `ci_debt_check.R`; it is
 deliberately not added here, because growing a gate inside a docs merge is how
 a change stops being reviewable.
+
+**And it is two badges, not one.** The scientific-laws badge
+(`13 declared, 39 planted defects`) is in exactly the same position — no gate
+reads it:
+
+```
+$ grep -rn 'scientific%20laws\|planted%20defects' tests/*.R
+(nothing)
+```
+
+Both figures are correct, and the second one is worth the detour it took.
+`13 declared` matches `tests/science_law_registry.tsv`, which holds 13 data
+rows. `39 planted defects` cannot be grepped out of anything: the registry's
+`mutation` column names the saboteur *file* for each law rather than a count,
+and the five suites named there declare their cases with different helpers and
+shapes. Counting them by hand gave nothing usable, and the figure was briefly
+written off here as unverifiable.
+
+It is not. `tests/ci_law_coverage.R` computes and prints it:
+
+```
+Scientific laws declared:    13
+Laws with a planted defect:  13/13
+Planted defects detected:    39/39
+```
+
+So the number is *checked* — by a gate that runs in CI and fails if a law loses
+its planted defect. What is not checked is the **badge**: nothing compares the
+README's text to that gate's output, so adding a law moves the gate's count and
+leaves the badge behind. Same hole as the debt badge, one step further from the
+data. The lesson for the next reader is narrower than "the figure is unverified"
+— it is that the verification existed and took ten minutes to find, because a
+gate that prints a number nobody reads back is halfway to a badge nobody checks.
 
 ---
 
