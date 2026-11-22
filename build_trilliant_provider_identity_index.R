@@ -88,15 +88,14 @@ school_lk <- tibble(provider_medical_school_name = distinct_values("provider_med
 cat(sprintf("keys: %s surnames, %s first names, %s middle names, %s credentials, %s specialties\n",
             nrow(last_lk), nrow(first_lk), nrow(middle_lk), nrow(cred_lk), nrow(spec_lk)))
 
-lk <- function(x) as_duckdb_tibble(x)
 index <- dp |>
-  left_join(lk(last_lk), by = "provider_last_name") |>
-  left_join(lk(first_lk), by = "provider_first_name") |>
-  left_join(lk(middle_lk), by = "provider_middle_name") |>
-  left_join(lk(cred_lk), by = "provider_credential") |>
-  left_join(lk(spec_lk), by = "provider_primary_specialty_code") |>
-  left_join(lk(sex_lk), by = "provider_gender") |>
-  left_join(lk(school_lk), by = "provider_medical_school_name") |>
+  left_join(as_duckdb_tibble(last_lk), by = "provider_last_name") |>
+  left_join(as_duckdb_tibble(first_lk), by = "provider_first_name") |>
+  left_join(as_duckdb_tibble(middle_lk), by = "provider_middle_name") |>
+  left_join(as_duckdb_tibble(cred_lk), by = "provider_credential") |>
+  left_join(as_duckdb_tibble(spec_lk), by = "provider_primary_specialty_code") |>
+  left_join(as_duckdb_tibble(sex_lk), by = "provider_gender") |>
+  left_join(as_duckdb_tibble(school_lk), by = "provider_medical_school_name") |>
   mutate(midwife_pool = coalesce(specialty_class == "midwife", FALSE) | coalesce(credential_class == "midwife", FALSE),
          nursing_pool = midwife_pool | coalesce(specialty_class == "nursing", FALSE) |
            coalesce(credential_class == "nursing", FALSE)) |>

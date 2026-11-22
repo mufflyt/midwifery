@@ -87,36 +87,3 @@ nightly_classify <- function(observation) {
   )
 }
 
-nightly_build_summary <- function(events, context = list()) {
-  started_utc <- if (!is.null(context$started_at_utc)) context$started_at_utc else format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
-  finished_utc <- format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
-  run_id <- if (!is.null(context$run_id)) context$run_id else Sys.getenv("GITHUB_RUN_ID", "local-dev-run")
-  repo_sha <- if (!is.null(context$repository_sha)) context$repository_sha else tryCatch(trimws(system("git rev-parse HEAD", intern = TRUE)), error = function(e) "0000000000000000000000000000000000000000")
-
-  res <- nightly_classify(events)
-
-  sources_checked <- length(unique(events$source))
-  sources_failed <- length(unique(events$source[events$classification == "PIPELINE_FAILURE"]))
-  comp_eval <- sum(events$check_type == "completeness", na.rm = TRUE)
-  comp_pass <- sum(events$check_type == "completeness" & events$classification == "PASS", na.rm = TRUE)
-  comp_fail <- sum(events$check_type == "completeness" & events$classification == "PIPELINE_FAILURE", na.rm = TRUE)
-
-  list(
-    run_id = as.character(run_id),
-    repository_sha = repo_sha,
-    started_at_utc = started_utc,
-    finished_at_utc = finished_utc,
-    classification = res$overall_classification,
-    e2e_classification = res$e2e_classification,
-    workflow_should_fail = res$workflow_should_fail,
-    counts = res$counts,
-    severity_counts = res$severity_counts,
-    sources_checked = as.integer(sources_checked),
-    sources_failed = as.integer(sources_failed),
-    completeness_assertions = list(
-      evaluated = as.integer(comp_eval),
-      passed = as.integer(comp_pass),
-      failed = as.integer(comp_fail)
-    )
-  )
-}

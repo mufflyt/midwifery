@@ -85,6 +85,7 @@ parts <- str_split_fixed(cache_raw$address_hash, stringr::fixed("|"), 4)
 # quality_score where that discriminates; refused (no coordinate) where it
 # cannot and the disagreement is material. See R/lib/geocode_conflicts.R.
 source("R/lib/geocode_conflicts.R")
+source(file.path("R", "lib", "county_from_points.R"))
 cache_keyed <- cache_raw %>%
   mutate(cache_key = canonical_address_key(parts[, 1], parts[, 2],
                                            parts[, 3], parts[, 4])) %>%
@@ -161,23 +162,6 @@ for (col in c("census_tract", "county_fips", "state_fips")) {
 #' @param df [data.frame]: rows with `latitude`/`longitude`.
 #' @return [character] 5-character county GEOID, NA where no polygon contains
 #'   the point (offshore, bad coordinates, or non-US).
-assign_county_from_points <- function(df) {
-  ok <- !is.na(df$latitude) & !is.na(df$longitude)
-  out <- rep(NA_character_, nrow(df))
-  if (!any(ok)) return(out)
-
-  suppressPackageStartupMessages({ library(sf); library(tigris) })
-  options(tigris_use_cache = TRUE)
-
-  counties <- tigris::counties(cb = TRUE, year = 2023, progress_bar = FALSE) %>%
-    sf::st_transform(4326)
-  pts <- sf::st_as_sf(df[ok, c("longitude", "latitude")],
-                      coords = c("longitude", "latitude"), crs = 4326)
-  idx <- sf::st_within(pts, sf::st_geometry(counties))
-  first <- vapply(idx, function(i) if (length(i)) i[1] else NA_integer_, integer(1))
-  out[ok] <- counties$GEOID[first]
-  out
-}
 
 if (all(is.na(hit$county_fips))) {
   message("[county] Tract boundaries unavailable; falling back to point-in-polygon ",

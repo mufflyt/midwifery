@@ -84,10 +84,9 @@ arm_note <- function(arm, d) {
   collect[[arm]] <<- d
   cli::cli_alert_success("{arm}: {format(nrow(d), big.mark = ',')} pairs, {format(dplyr::n_distinct(d$npi), big.mark = ',')} midwives")
 }
-have <- function(p) file.exists(p)
 
 # Which file(s) actually determine each arm, for provenance -- kept next to
-# the `have()` checks below so the two can't drift apart silently.
+# the `file.exists()` checks below so the two can't drift apart silently.
 ARM_INPUT_FILES <- list(
   pecos_reassignment    = "artifacts/midwife_reassignment_spells.csv",
   care_compare_group    = "artifacts/midwife_organization_panel.csv",
@@ -100,7 +99,7 @@ ARM_INPUT_FILES <- list(
 cli::cli_h2("Arms")
 
 # PECOS reassignment -- carries real dates, from the spell table.
-if (have("artifacts/midwife_reassignment_spells.csv")) {
+if (file.exists("artifacts/midwife_reassignment_spells.csv")) {
   arm_note("pecos_reassignment", chr("artifacts/midwife_reassignment_spells.csv") %>%
     transmute(npi = midwife_npi, org_id = org_pac_id, org_id_type = "pac_id",
               organization_name, first_evidence = first_seen_vintage,
@@ -109,7 +108,7 @@ if (have("artifacts/midwife_reassignment_spells.csv")) {
 }
 
 # Care Compare -- dated by vintage; collapse to the observed span.
-if (have("artifacts/midwife_organization_panel.csv")) {
+if (file.exists("artifacts/midwife_organization_panel.csv")) {
   arm_note("care_compare_group", chr("artifacts/midwife_organization_panel.csv") %>%
     filter(has_group %in% c("TRUE", "true")) %>%
     group_by(npi = midwife_npi, org_id = org_pac_id, organization_name) %>%
@@ -133,12 +132,12 @@ if (have("artifacts/midwife_organization_panel.csv")) {
 # (organizations close and move; 1,053 midwives are resolved by the old cut and
 # not the new).
 coloc <- NULL
-if (have("artifacts/nppes_colocation_2025.csv")) {
+if (file.exists("artifacts/nppes_colocation_2025.csv")) {
   coloc <- chr("artifacts/nppes_colocation_2025.csv") %>%
     transmute(npi, org_id = org_npi, org_id_type = "npi_type2",
               organization_name, colocation_vintage = nppes_vintage)
 }
-if (have("artifacts/midwife_org_person.csv")) {
+if (file.exists("artifacts/midwife_org_person.csv")) {
   older <- chr("artifacts/midwife_org_person.csv") %>%
     transmute(npi, org_id = org_npi, org_id_type = "npi_type2",
               organization_name, colocation_vintage = "pre_2025")
@@ -153,14 +152,14 @@ if (!is.null(coloc)) {
 }
 
 # Facility / hospital arms -- CCN-identified, undated.
-if (have("artifacts/dac_facility_affiliations.csv")) {
+if (file.exists("artifacts/dac_facility_affiliations.csv")) {
   arm_note("facility_affiliation", chr("artifacts/dac_facility_affiliations.csv") %>%
     transmute(npi, org_id = ccn, org_id_type = "ccn",
               organization_name = facility_name,
               first_evidence = NA_character_, last_evidence = NA_character_) %>%
     filter(!is.na(npi), nzchar(npi)))
 }
-if (have("artifacts/midwife_hospital_affiliations.csv")) {
+if (file.exists("artifacts/midwife_hospital_affiliations.csv")) {
   arm_note("hospital_affiliation", chr("artifacts/midwife_hospital_affiliations.csv") %>%
     transmute(npi, org_id = cms_ccn, org_id_type = "ccn",
               organization_name = hospital_name,
@@ -188,7 +187,7 @@ if (have("artifacts/midwife_hospital_affiliations.csv")) {
 bc <- list(
   c("artifacts/cabc_matched_midwives_final.csv", "matched_cabc_birth_center"))
 bc_rows <- lapply(bc, function(x) {
-  if (!have(x[1])) return(NULL)
+  if (!file.exists(x[1])) return(NULL)
   d <- chr(x[1]); if (!x[2] %in% names(d)) return(NULL)
   tibble::tibble(npi = d$npi, org_id = NA_character_, org_id_type = "none",
                  organization_name = d[[x[2]]],
@@ -200,7 +199,7 @@ if (nrow(bc_rows)) arm_note("birth_center_registry",
                                            !is.na(organization_name),
                                            nzchar(organization_name)))
 
-if (have("artifacts/cohort_midwives_open_payments_type2_organizations.csv")) {
+if (file.exists("artifacts/cohort_midwives_open_payments_type2_organizations.csv")) {
   arm_note("open_payments_org",
        chr("artifacts/cohort_midwives_open_payments_type2_organizations.csv") %>%
          transmute(npi = midwife_npi, org_id = type2_organization_npi,
@@ -318,7 +317,7 @@ cli::cli_alert_success("wrote {OUT_SUM} (cells under 11 suppressed)")
 
 # The unresolved group, described only in aggregate -- it is the work list, and
 # the person-level version stays out of the repo.
-geo <- if (have("artifacts/amcb_npi_geography.csv")) {
+geo <- if (file.exists("artifacts/amcb_npi_geography.csv")) {
   chr("artifacts/amcb_npi_geography.csv") %>% distinct(npi, .keep_all = TRUE) %>%
     select(npi, practice_state, taxonomy_description)
 } else tibble::tibble(npi = character(), practice_state = character(),
