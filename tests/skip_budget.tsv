@@ -22,6 +22,21 @@
 # The environment is detected from artifacts/amcb_npi_linkage_FROZEN.csv, which
 # is gitignored by design and therefore the sharpest available signal.
 #
+# A SCRATCH WORKTREE IS NEITHER ENVIRONMENT, and reading one as `lean` is how
+# four rows here were reported stale on 2026-11-22 when nothing was wrong with
+# them. `full`/`lean` is one axis -- whether the pipeline's private data is
+# present -- but the four sf/isochrones rows below skip on a DIFFERENT axis:
+# whether the sf package and the ~/isochrones checkout exist. A worktree cut
+# under /tmp has no artifacts/ (so it is classified `lean`, expecting those
+# rows to skip once each) while still seeing the developer's installed sf and
+# their ~/isochrones (so the rows do not skip at all). Every one of them then
+# reports STALE, and lowering the `lean` count to match would break CI, where
+# the skip is real.
+#
+# So: measure in a checkout of the repository, not in a worktree, before
+# believing an SB2 disagreement. The gate is right in both environments it
+# models; it is a hybrid of the two that it cannot describe.
+#
 # gate    path to the gate script
 # kind    ci_skip   a gate that prints `  --   ` through ci_skip()
 #         cycle     an adversarial-cycle test discovered by the glob step in
@@ -44,8 +59,8 @@
 gate	kind	when	full	lean	reason
 tests/ci_artifact_contracts.R	ci_skip	pr	0	1	A4 reads the person-level frozen linkage, which is gitignored; on a bare checkout it can only be asserted locally
 tests/ci_semantic_contracts.R	ci_skip	pr	0	0	declares no skips in either environment; listed so that gaining one is a failure rather than a surprise
-tests/ci_science_contracts.R	ci_skip	pr	1	3	SCI2 has known tie-break sites awaiting a policy decision, the affiliation coverage matrix is not built on a bare checkout, and no experiment script chooses a numeric cut to declare
-tests/ci_denominator_contracts.R	ci_skip	pr	1	1	D5 carries one baselined consumer of the canonical records awaiting a policy decision; the count is environment-independent because every input is a tracked artifact
+tests/ci_science_contracts.R	ci_skip	pr	2	3	SCI2 has known tie-break sites awaiting a policy decision, and no experiment script chooses a numeric cut to declare; both hold in either environment. The third lean skip is the affiliation coverage matrix, which is gitignored and so absent on a bare checkout and present once the pipeline has run
+tests/ci_denominator_contracts.R	ci_skip	pr	0	1	D5 skips only when artifacts/canonical_source_records.csv is absent AND gitignored, which is a bare checkout; the file is gitignored rather than tracked, so a machine that has run the pipeline carries it and D5 runs
 tests/ci_science_laws.R	ci_skip	pr	1	1	L1 carries one off-vintage declaration awaiting a rebuild; the same in both environments because its inputs are tracked
 tests/ci_data_regression_guard.R	ci_skip	pr	0	2	D8 and D9 read the person-level FROZEN linkage and analytic cohort, both gitignored; on a bare checkout both skip as PRIVATE-OK
 tests/ci_science_nightly.R	ci_skip	nightly	-	-	nightly tier only; declared so the completeness check does not report it as an undeclared skipping gate
@@ -69,7 +84,7 @@ tests/test_cycle12_names_territories.R	cycle	pr	0	1	sources R/string_normalizati
 tests/test_cycle31_healthgrades_insurance_parsing.R	cycle	pr	0	1	sys.source()s scrape_healthgrades_midwives.R, which calls load_isochrones_name_tools() at top level before its own sys.nframe() guard; that loader stop()s without the ~/isochrones checkout, which no runner carries
 tests/ci_duckdb_connection_contract.R	ci_skip	pr	3	3	three UNSPECIFIED-by-design contract facts (temp_directory, memory_limit, ATTACH/DETACH not exercised) are always skipped, unconditionally, regardless of environment
 tests/ci_duckdb_clean_environment.R	ci_skip	pr	0	0	the one ci_skip() note only fires if the install-allowed scenario cannot reach the network to download the encodings extension; GitHub-hosted runners have outbound internet access by default, so this is expected to be 0 -- if a runner network-restricts this, bump to 1 and note the runner, not a code regression
-tests/test_exclusion_invariants.R	ci_skip	pr	1	1	E3 checks person-level frozen datasets (amcb_npi_linkage_FROZEN.csv and midwives_geography_FROZEN.csv), which are gitignored; skips when absent
+tests/test_exclusion_invariants.R	ci_skip	pr	0	1	E3 checks person-level frozen datasets (amcb_npi_linkage_FROZEN.csv and midwives_geography_FROZEN.csv), which are gitignored; it skips on a bare checkout and runs wherever both are present
 tests/test_table1_demographics_qc.R	ci_skip	pr	0	0	Table 1 CSV is tracked; declared so that gaining a skip is a failure
 tests/test-nightly-registry.R	testthat	pr	0	0	Nightly framework registry schema validation tests
 tests/test-nightly-classification.R	testthat	pr	0	0	Nightly framework classification and severity policy tests
