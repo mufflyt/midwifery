@@ -55,10 +55,10 @@ OUT <- "artifacts/medicaid_npi_population_by_state.csv"
 
 parquet <- samsung_volume_path(SEGMENTS_REL, must_exist = TRUE)
 
-# duckdb_connect(), not a raw dbConnect(duckdb()). The architecture gate had
-# been flagging this line for a while; it went unseen because the step ahead
-# of it in the same CI job was failing, and Actions halts a job at its first
-# failing step.
+# The chokepoint, not a raw DBI::dbConnect(): duckdb_connect() defaults to an
+# in-memory database, and routing through it is what gives this connection the
+# encoding bootstrap and the temp-directory setting that a 66M-row parquet scan
+# needs on an 8 GB machine. tests/duckdb_architecture_scan.R refuses a raw one.
 con <- duckdb_connect()
 out <- dbGetQuery(con, sprintf(
   "SELECT STATE_CD AS state,
