@@ -1,0 +1,51 @@
+# =============================================================================
+# H7 baseline: function bodies duplicated under a DIFFERENT name
+# =============================================================================
+# H4 forbids one NAME defined at top level in two files. H7 forbids one BODY
+# under two names, which H4 cannot see at all -- and which is the shape that
+# actually bit this repository: audit2013_norm and drift_norm are byte-identical
+# normalisers, and norm_addr's four divergent copies (the incident H4 was
+# written for) would have been caught a rename earlier by this check.
+#
+# These six existed when H7 was written. Refactoring live code to make a new
+# lint pass is how a lint gets reverted, so they are grandfathered: the check
+# fails on anything NEW. Each line is `nameA|nameB: file1, file2` with the names
+# and files sorted, and each needs a reason below.
+#
+# THIS FILE SHOULD ONLY EVER SHRINK. Deleting a line is the fix; adding one is a
+# decision to accept a duplicated body, and needs the justification any
+# duplication needs.
+#
+# -- the two that matter, both identity keys --
+#
+# audit2013_norm|drift_norm -- and the one case where consolidating would be
+# WRONG. audit_2013_dac_vs_nppes.R:181 documents the shallowness as a decision:
+# "no nickname table, no transliteration, no fuzzy distance. The point is to
+# count genuine disagreement, and an aggressive normaliser hides exactly the
+# disagreement this audit exists to measure." build_identity_drift_prior.R
+# measures drift, which is the same kind of quantity. The fix here is NOT one
+# shared function; it is one shared RATIONALE -- the copy in
+# build_identity_drift_prior.R carries no comment at all, so a future tightening
+# pass would "fix" it and silently weaken the drift prior.
+#
+# dac_spine_collapse_set|drift_collapse_set -- both collapse a set of values
+# into a sorted pipe-joined key, and both feed person-level identity keys. Same
+# category H4's own comment calls dangerous: "never a JOIN KEY or a
+# normalisation -- the two categories where divergence silently changes
+# results." These two CAN be consolidated; nothing documents a reason not to.
+#
+# -- the four that are plumbing, not keys --
+#
+# gal_arg|tl_arg, tp_arg|tpf_arg -- per-script command-line argument readers.
+# save|save_identity_figure -- ggsave wrappers in two figure scripts.
+# err_msg|trip_msg -- "run this and tell me how it failed", in two test files.
+# None touches real data or builds a key. Low priority, but listed rather than
+# excluded: a body duplicated under two names is worth knowing about even when
+# it is harmless, and an exclusion rule would have hidden the two above.
+# =============================================================================
+audit2013_norm|drift_norm: audit_2013_dac_vs_nppes.R, build_identity_drift_prior.R
+dac_spine_collapse_set|drift_collapse_set: build_dac_identity_spine_2013.R, build_identity_drift_prior.R
+gal_arg|tl_arg: build_linkage_case_gallery.R, make_migration_evidence_timeline_gallery.R
+err_msg|trip_msg: tests/test_adjudication_queue.R, tests/test_truth_set_infrastructure.R
+save|save_identity_figure: make_trilliant_figures.R, make_trilliant_identity_figures.R
+tp_arg|tpf_arg: analyze_temporal_plausibility.R, make_temporal_plausibility_figure.R

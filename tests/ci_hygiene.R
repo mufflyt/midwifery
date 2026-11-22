@@ -43,6 +43,23 @@
 #       `if (!is.null(x))` block. That is the point -- the next edit to move a
 #       statement across a block boundary would have been silent.
 #
+#   H7  No function BODY defined under two different names. H4 forbids one
+#       NAME in two files and cannot see a renamed copy at all -- which is the
+#       shape that actually recurs here. audit2013_norm and drift_norm are
+#       byte-identical normalisers under two names; dac_spine_collapse_set and
+#       drift_collapse_set are byte-identical key-collapsers. Both feed
+#       person-level identity keys, the category H4's own note calls dangerous.
+#       Six pairs existed when this was written and are grandfathered in
+#       tests/ci_hygiene_renamed_baseline.txt; anything new fails.
+#   H8  No tracked R code asks iconv() to transliterate. base::iconv(to =
+#       "ASCII//TRANSLIT") returns whatever the host C library decides: macOS
+#       libiconv emits the combining mark and glibc does not, so "Munoz" folded
+#       to "Mu~noz" on a laptop and "Munoz" on a runner -- and the character
+#       class that followed turned the mark into a SPACE, giving two different
+#       linkage keys for one midwife depending on which machine ran the script.
+#       Nothing catches this in review or in a one-machine test suite.
+#       stringi::stri_trans_general(x, "Latin-ASCII") is fixed by its own
+#       specification and ships with stringr, which is already everywhere here.
 # H4 carries an allowlist. Some repeats are legitimate -- a test's local `chk`
 # harness, or a genuinely private one-liner -- and an allowlist that must be
 # edited deliberately is the point: adding a name here is a decision someone
@@ -298,6 +315,100 @@ note(length(h6_hits) == 0,
 if (H6_SWALLOWED > 0L)
   cat(sprintf("       note: %d subtree(s) could not be walked -- H6 saw less than the whole tree\n",
               H6_SWALLOWED))
+
+cat("\n-- H7 no function body defined under two different names --\n")
+# H4 compares NAMES. A copy that was also renamed is invisible to it, and that
+# is not hypothetical: of the duplicate bodies in this tree, six pairs carry two
+# different names, and two of those six are identity keys.
+#
+# Bodies are normalised by deparsing and collapsing whitespace, so formatting
+# and comments do not matter but structure does. Only bodies of four or more
+# deparsed lines count: a one-line accessor repeating is noise, not duplication.
+h7_bodies <- list()
+for (f in r_files) {
+  ex <- tryCatch(parse(f, keep.source = FALSE), error = function(e) NULL)
+  if (is.null(ex)) next
+  for (e in ex) {
+    if (!(is.call(e) && length(e) == 3L &&
+          deparse(e[[1]])[1] %in% c("<-", "=", "<<-"))) next
+    if (!(is.call(e[[3]]) && deparse(e[[3]][[1]])[1] == "function")) next
+    b <- e[[3]][[3]]
+    dp <- deparse(b)
+    if (length(dp) < 4L) next
+    key <- gsub("\\s+", " ", paste(dp, collapse = " "))
+    h7_bodies[[key]] <- rbind(h7_bodies[[key]],
+                              data.frame(fn = deparse(e[[2]])[1], file = f,
+                                         stringsAsFactors = FALSE))
+  }
+}
+
+H7_BASE <- "tests/ci_hygiene_renamed_baseline.txt"
+h7_baseline <- if (file.exists(H7_BASE)) {
+  b <- readLines(H7_BASE, warn = FALSE)
+  trimws(b[nzchar(trimws(b)) & !grepl("^#", trimws(b))])
+} else character(0)
+
+h7_new <- character(0)
+h7_seen <- character(0)
+for (d in h7_bodies) {
+  if (is.null(d) || nrow(d) < 2L) next
+  nm <- sort(unique(d$fn))
+  # Same name in two files is H4's job, with H4's allowlist. H7 owns only the
+  # case H4 structurally cannot reach.
+  if (length(nm) < 2L) next
+  line <- sprintf("%s: %s", paste(nm, collapse = "|"),
+                  paste(sort(unique(d$file)), collapse = ", "))
+  h7_seen <- c(h7_seen, line)
+  if (!(line %in% h7_baseline)) h7_new <- c(h7_new, line)
+}
+note(length(h7_new) == 0,
+     sprintf("no NEW body duplicated under two names (%d grandfathered in %s)",
+             length(h7_baseline), H7_BASE),
+     h7_new)
+
+# A baseline entry that no longer duplicates is debt that was PAID. Say so, so
+# the file gets trimmed instead of outliving the problem -- the same rule H4's
+# baseline carries.
+h7_stale <- setdiff(h7_baseline, h7_seen)
+if (length(h7_stale))
+  cat(sprintf("       note: %d baseline entry/entries no longer duplicated -- remove from %s:\n%s\n",
+              length(h7_stale), H7_BASE,
+              paste("         ", h7_stale, collapse = "\n")))
+
+cat("\n-- H8 no tracked R code asks iconv to transliterate --\n")
+# Read CODE, not comments: the fix for this defect carries a comment naming the
+# call it removed, and so does this gate's own header. STR_CONST tokens are the
+# string literals actually passed at runtime.
+#
+# R/lib/work_site_topology.R is allowlisted because it does the one thing that
+# makes iconv safe here -- it strips the marks libiconv can leave
+# (gsub("[~^`\"]", "", x) on the next line), so both platforms converge. That is
+# a workaround, not a fix, and if that file is ever touched the better move is
+# stri_trans_general(); the entry is kept narrow for that reason.
+H8_ALLOW <- "R/lib/work_site_topology.R"
+h8_hits <- character(0)
+# SCOPE: production code, not tests/. Not a weakening -- the defect is a KEY
+# that is compared, joined or persisted, and those are built by the pipeline,
+# not by a test. Excluding tests/ is also what stops this gate tripping on
+# itself: the line above contains the forbidden literal, and so do the fixtures
+# in tests/test_review_fixes_saboteurs.R that exist precisely to plant it.
+# Three gates in this repository have shipped self-tripping; the first run of
+# this one made four, and it reported its own message string as a defect.
+# tests/ci_denominator_contracts.R sets the precedent with the same exclusion.
+for (f in grep("^tests/", r_files, value = TRUE, invert = TRUE)) {
+  if (identical(f, H8_ALLOW)) next
+  pd <- tryCatch(utils::getParseData(parse(f, keep.source = TRUE)),
+                 error = function(e) NULL)
+  if (is.null(pd)) next
+  lit <- pd[pd$token == "STR_CONST" &
+              grepl("ASCII//TRANSLIT", pd$text, fixed = TRUE), ]
+  if (nrow(lit))
+    h8_hits <- c(h8_hits, sprintf("%s:%d: %s", f, lit$line1, trimws(lit$text)))
+}
+note(length(h8_hits) == 0,
+     sprintf("no iconv(to = \"ASCII//TRANSLIT\") in tracked R code (1 allowlisted: %s)",
+             H8_ALLOW),
+     h8_hits)
 
 cat(sprintf("\n%s (%d failure%s)\n", if (fails == 0L) "PASS" else "FAIL",
             fails, if (fails == 1L) "" else "s"))
