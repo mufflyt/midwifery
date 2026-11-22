@@ -206,5 +206,19 @@ r <- run_read_width_gate(scaffold(list("new_reader.R" = c(
 chk(r$failed, "a full-width read through a multi-line assignment -> refused")
 chk(any(grepl("new_reader\\.R", r$out)), "and the refusal names the file")
 
+sab(11, "NEAR MISS + SABOTEUR: the measurement harness, and only it")
+# The gate exempts tools/measure_panel_read_cost.R by name, because timing a
+# full-width read requires performing one. An exclusion of all of tools/
+# would hide the next script that reads the panel badly, so both halves are
+# planted: the instrument passes, its neighbour does not.
+r <- run_read_width_gate(scaffold(list(
+  "tools/measure_panel_read_cost.R" = READER_FULL)))
+chk(!r$failed, "a full-width read in the measurement harness -> passes")
+r <- run_read_width_gate(scaffold(list(
+  "tools/measure_something_else.R" = READER_FULL)))
+chk(r$failed, "a full-width read in ANOTHER tools/ file -> refused")
+chk(any(grepl("measure_something_else\\.R", r$out)),
+    "and the refusal names it, so the exemption cannot be read as covering tools/")
+
 # =============================================================================
-saboteur_report(11)
+saboteur_report(12)

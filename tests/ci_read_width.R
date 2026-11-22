@@ -112,6 +112,19 @@ reads_panel <- function(e, vars) {
 all_r <- suppressWarnings(system2("git", c("-C", shQuote(root), "ls-files", "'*.R'"),
                                   stdout = TRUE, stderr = FALSE))
 r_files <- grep("^tests/", all_r, invert = TRUE, value = TRUE)
+
+# ONE FILE, BY NAME, WITH ITS REASON -- not a tools/ exclusion. This gate
+# failed on tools/measure_panel_read_cost.R the moment that file was added,
+# which is the gate working: the file reads the panel full-width several
+# times. It is the INSTRUMENT, though, not the waste -- it exists to time
+# what a full-width read costs, and timing it requires performing it,
+# exactly as a fixture under tests/ plants the defect on purpose. Excluding
+# all of tools/ would hide the next harvester that reads the panel badly, so
+# the exemption is this path and nothing else, and
+# tests/test_read_width_detect.R RW11 plants a full-width read in a
+# DIFFERENT tools/ file and requires it to be refused.
+INSTRUMENT <- "tools/measure_panel_read_cost.R"
+r_files <- setdiff(r_files, INSTRUMENT)
 r_files <- r_files[file.exists(file.path(root, r_files))]
 
 # A FLOOR, NOT A COMMENT. This repository has ~400 tracked R files outside
