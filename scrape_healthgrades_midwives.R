@@ -73,7 +73,10 @@ DELAY_SEC   <- as.numeric(Sys.getenv("HG_DELAY", "2"))
 # the write is made atomic. See DEBT.md.
 CKPT_EVERY  <- 10L
 
-`%||%` <- function(a, b) if (is.null(a) || length(a) == 0) b else a
+# NOT base's %||%: this also falls through on a length-0 vector, which is
+# what an unmatched selector returns. Named for that so it cannot be
+# mistaken for the base operator, which only tests for NULL.
+`%|empty|%` <- function(a, b) if (is.null(a) || length(a) == 0) b else a
 
 # Rate limiting is not decoration: Healthgrades' robots.txt sets no
 # Crawl-delay but does blanket-block AI crawler user-agents, so keep request
@@ -347,7 +350,7 @@ given_name_match <- function(a, b) {
 name_matches_roster <- function(hg_name, first, last) {
   if (is.na(hg_name)) return(FALSE)
   hg <- parse_person(str_squish(str_remove(hg_name, ",.*$")))
-  ros <- parse_person(paste(first %||% "", last %||% ""))
+  ros <- parse_person(paste(first %|empty|% "", last %|empty|% ""))
   if (is.na(hg$last) || is.na(ros$last)) return(FALSE)
 
   # Surname comparison is token SUBSET, not string equality. Married and
@@ -415,7 +418,7 @@ pick_best_url <- function(urls, first, last) {
   # has no name structure and carries a trailing profile id. Compare whole slug
   # tokens instead, which is enough to stop the Anderson/Sanderson collision;
   # verify_profile() then does the real humaniformat check on the page title.
-  ros <- parse_person(paste(first %||% "", last %||% ""))
+  ros <- parse_person(paste(first %|empty|% "", last %|empty|% ""))
   if (is.na(ros$last)) return(NA_character_)
 
   last_hit <- vapply(urls, tokens_all_present, logical(1), part = ros$last)
@@ -444,13 +447,13 @@ extract_locations <- function(html) {
     if (is.null(addr) || is.null(addr$streetAddress)) return(invisible(NULL))
     geo <- node$geo
     rows[[length(rows) + 1]] <<- tibble(
-      hg_practice = node$name %||% NA_character_,
-      hg_street   = addr$streetAddress %||% NA_character_,
-      hg_city     = addr$addressLocality %||% NA_character_,
-      hg_state    = addr$addressRegion %||% NA_character_,
-      hg_zip      = addr$postalCode %||% NA_character_,
-      hg_lat      = as.numeric(geo$latitude %||% NA),
-      hg_lon      = as.numeric(geo$longitude %||% NA)
+      hg_practice = node$name %|empty|% NA_character_,
+      hg_street   = addr$streetAddress %|empty|% NA_character_,
+      hg_city     = addr$addressLocality %|empty|% NA_character_,
+      hg_state    = addr$addressRegion %|empty|% NA_character_,
+      hg_zip      = addr$postalCode %|empty|% NA_character_,
+      hg_lat      = as.numeric(geo$latitude %|empty|% NA),
+      hg_lon      = as.numeric(geo$longitude %|empty|% NA)
     )
   }
 
@@ -469,7 +472,7 @@ extract_locations <- function(html) {
     if (is.null(d)) next
     add_locations(d)
     add_node(d)
-    for (item in (d$`@graph` %||% list())) { add_locations(item); add_node(item) }
+    for (item in (d$`@graph` %|empty|% list())) { add_locations(item); add_node(item) }
   }
   if (length(rows) == 0) return(tibble())
   distinct(bind_rows(rows))
@@ -668,8 +671,8 @@ extract_npi_jsonld <- function(html) {
   for (b in blocks) {
     d <- tryCatch(fromJSON(b, simplifyVector = FALSE), error = function(e) NULL)
     if (is.null(d)) next
-    for (node in c(list(d), d$`@graph` %||% list())) {
-      n <- node$usNPI %||% NA_character_
+    for (node in c(list(d), d$`@graph` %|empty|% list())) {
+      n <- node$usNPI %|empty|% NA_character_
       if (!is.na(n) && luhn_check_npi(as.character(n))) return(as.character(n))
     }
   }
@@ -686,7 +689,7 @@ extract_npi_jsonld <- function(html) {
 verify_profile <- function(html, first, last) {
   title <- tryCatch(read_html(html) %>% html_node("title") %>% html_text(),
                     error = function(e) NA_character_)
-  hg_name <- str_squish(str_remove(title %||% "", "\\|.*$"))
+  hg_name <- str_squish(str_remove(title %|empty|% "", "\\|.*$"))
   cred <- str_match(hg_name, "\\b(CNM|CM|CPM|LM|ND|NP)\\b")[1, 2]
 
   # BUG FIX: last-name-only verification accepted "Ann Abbott, CNM" as a match

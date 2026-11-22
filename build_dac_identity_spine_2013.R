@@ -31,6 +31,7 @@ suppressPackageStartupMessages({
 })
 
 source(file.path("R", "lib", "artifact_provenance.R"))
+source(file.path("R", "lib", "script_cli_and_keys.R"))
 
 timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
 artifact_dir <- file.path("artifacts", "cms_physician_compare")
@@ -183,32 +184,27 @@ base::message("[SPINE] ", format(nrow(spine), big.mark = ","),
 # de-duplicated set so a comparison across snapshots is order-insensitive: a
 # provider whose two hospital CCNs swap position between June and September has
 # not changed affiliation, and must not be scored as though they had.
-dac_spine_collapse_set <- function(x) {
-  v <- unique(x[!is.na(x) & nzchar(x)])
-  if (length(v) == 0L) return(NA_character_)
-  paste(sort(v), collapse = "|")
-}
 
 ccn_columns <- grep("^hospital_ccn_", names(spine), value = TRUE)
 
 person <- spine |>
-  mutate(hospital_ccn_set = apply(across(all_of(ccn_columns)), 1, dac_spine_collapse_set)) |>
+  mutate(hospital_ccn_set = apply(across(all_of(ccn_columns)), 1, collapse_key_set)) |>
   group_by(.data$snapshot_date, .data$npi) |>
   summarise(
-    first_name = dac_spine_collapse_set(.data$first_name),
-    middle_name = dac_spine_collapse_set(.data$middle_name),
-    last_name = dac_spine_collapse_set(.data$last_name),
-    suffix = dac_spine_collapse_set(.data$suffix),
-    credential = dac_spine_collapse_set(.data$credential),
-    gender = dac_spine_collapse_set(.data$gender),
-    primary_specialty = dac_spine_collapse_set(.data$primary_specialty),
-    medical_school = dac_spine_collapse_set(.data$medical_school),
-    graduation_year = dac_spine_collapse_set(.data$graduation_year),
-    group_pac_id = dac_spine_collapse_set(.data$group_pac_id),
-    group_practice_name = dac_spine_collapse_set(.data$group_practice_name),
-    practice_state = dac_spine_collapse_set(.data$practice_state),
-    practice_zip = dac_spine_collapse_set(.data$practice_zip),
-    hospital_ccn_set = dac_spine_collapse_set(.data$hospital_ccn_set),
+    first_name = collapse_key_set(.data$first_name),
+    middle_name = collapse_key_set(.data$middle_name),
+    last_name = collapse_key_set(.data$last_name),
+    suffix = collapse_key_set(.data$suffix),
+    credential = collapse_key_set(.data$credential),
+    gender = collapse_key_set(.data$gender),
+    primary_specialty = collapse_key_set(.data$primary_specialty),
+    medical_school = collapse_key_set(.data$medical_school),
+    graduation_year = collapse_key_set(.data$graduation_year),
+    group_pac_id = collapse_key_set(.data$group_pac_id),
+    group_practice_name = collapse_key_set(.data$group_practice_name),
+    practice_state = collapse_key_set(.data$practice_state),
+    practice_zip = collapse_key_set(.data$practice_zip),
+    hospital_ccn_set = collapse_key_set(.data$hospital_ccn_set),
     n_rows = dplyr::n(),
     .groups = "drop"
   )

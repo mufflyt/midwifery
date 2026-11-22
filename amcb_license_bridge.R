@@ -231,10 +231,6 @@ first_initial <- function(x) {
   )
 }
 
-middle_initial <- function(x) {
-  first_initial(x)
-}
-
 # -----------------------------------------------------------------------------
 # Input checks
 # -----------------------------------------------------------------------------
@@ -307,7 +303,9 @@ bridge_read_amcb_roster <- function(path) {
       amcb_first_initial = first_initial(
         .data$amcb_first_name
       ),
-      amcb_middle_initial = middle_initial(
+      # first_initial() of the middle name IS the middle initial; the
+      # middle_initial() alias that used to sit here added a name, not a rule.
+      amcb_middle_initial = first_initial(
         .data$amcb_middle_name
       )
     )

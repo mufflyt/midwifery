@@ -20,6 +20,89 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-22 — 1,552 lines cut, and a saboteur for every cut
+
+### Removed
+
+- **22 top-level functions nothing referenced, 1,266 lines.** Five more went
+  dead the moment their only callers did: `tests/helper-data-generation.R` fell
+  from 783 lines and 14 functions to 186 and 4, because the generators it
+  exported were used only by the fixtures that were themselves unused. Three
+  of the files are ports whose headers say "PORTED VERBATIM from
+  ~/isochrones"; the unused half came with them.
+  `tests/helper-invariants.R` lost `expect_schema` (71 lines),
+  `expect_monotone_nondecreasing` (46) and three more; `R/nightly/nightly_classify.R`
+  lost `nightly_build_summary` (33). Found by joining every top-level
+  definition against a one-pass token count of the whole tree, which is cheap
+  enough to run as a gate and now does.
+- **Three wrappers whose whole body forwarded identical arguments to one
+  callee.** `middle_initial(x)` called `first_initial(x)`, `have(p)` called
+  `file.exists(p)`, `lk(x)` called `as_duckdb_tibble(x)`. 18 call sites now
+  name the callee. `normalize_city()` and `normalize_person_name()` have the
+  same shape and stay: at 40-odd call sites in the linkage code the name is
+  what the reader is reading.
+
+### Changed
+
+- **Five definitions stopped shadowing base R.** Four files each defined
+  `%||%`, with four different meanings, while base R has shipped it since
+  4.4 and this repository runs 4.5.2. The one that matched base is deleted;
+  the three that also swallow `NA`, length-0 or take the first element are
+  renamed for what they do. `R/lib/osmde_cache.R` turned out to be
+  re-inventing `%|na|%`, which `R/lib/common_helpers.R` already defines for
+  exactly this purpose and documents as the reason not to have two, so it now
+  sources the canonical one. Also renamed: `save()` (shadowed `base::save`
+  for every later line of `make_trilliant_figures.R`), `q()` (shadowed
+  `quit`), `row()` and `norm()`.
+- **Eight duplicated function bodies, each copied under a different name,
+  collapsed into four shared helpers.** `ci_hygiene.R` H4 could not see any of
+  them: it compares names, and a renamed copy shares no name with its twin.
+  `tp_arg`/`tpf_arg`/`gal_arg`/`tl_arg` were one `--key=value` reader in four
+  scripts; `audit2013_norm`/`drift_norm` and
+  `dac_spine_collapse_set`/`drift_collapse_set` were two identity-key helpers
+  in three. They are now `cli_arg()`, `identity_key_norm()` and
+  `collapse_key_set()` in `R/lib/script_cli_and_keys.R`, and
+  `assign_county_from_points()` (21 lines, the largest copy) is in
+  `R/lib/county_from_points.R`. Two 5- and 6-line pairs stay duplicated and
+  are named in the gate's ratchet: a shared file plus two `source()` lines
+  costs more than they save.
+- **`mw_build_catalog()`: 1,424 lines to 987, cyclomatic complexity 136 to
+  98.** It was the worst function in the tree by both measures and 1.7x the
+  next. Three sections that read only committed artifacts and write only their
+  own keys lifted out whole: `mw_section_dbacc()` (282 lines, cc 21),
+  `mw_section_leadlag()` (111, cc 11) and `mw_section_trilliant()` (52, cc 9).
+  **The catalog it returns is equal by value to the one the inline version
+  built**, 19 sections and 2,432 keys, asserted by rebuilding before and after
+  and comparing with `readr`'s per-read `problems` pointer stripped -- without
+  that, two reads of one unchanged file compare as different and the check
+  reads as a regression it is not.
+
+### Added
+
+- **`tests/test_dead_code_cuts_saboteurs.R`: 11 saboteurs, 11/11.** One law per
+  cut above, each planted back and required to be caught: a definition nothing
+  references, a body copied under a second name, a definition taking a base R
+  name, a bare pass-through, and a catalog section the builder stops calling or
+  that stops returning the catalog. A second suite rather than more cases in
+  `tests/test_ponytail_cuts_saboteurs.R`, which owns the previous round's four
+  laws. It sources `tools/measure_code_complexity.R` rather than writing a
+  second parser for the tree, which is the duplication it exists to catch;
+  `cyclocomp` is declared in `ci.yml` and in the package gate's list because
+  that chain can reach it.
+- Three of the gate's own checks were wrong before they were right, and all
+  three failures are recorded in the file. It counted a section named in a
+  COMMENT as a call; it found the end of a function by the first `}` at column
+  zero, which for an extracted top-level function is an inner block; and it
+  built its corpus with `ls-files "*.qmd"`, the bare pathspec Q2a of
+  `tests/test_gate_integrity_saboteurs.R` refuses after measuring it read 267
+  of 645 files. That last one is the instructive failure: the short corpus made
+  `mw_pct_ci()` and `mw_wordcount()` look dead, and the first version of this
+  gate shipped an allowlist calling them "referenced only by prose" --
+  recording a truncated scan as a property of the code. The repository's own
+  gate caught it on the first push. Listing every tracked file once and
+  filtering in R found both callers, and the allowlist is gone rather than
+  justified.
+
 ## [Unreleased] — 2026-11-21 — five published rates divide by a group the numerator never came from; five declared checks nothing performed; a gate per defect
 
 ### Added

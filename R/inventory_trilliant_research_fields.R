@@ -162,7 +162,6 @@ src <- c(
   delivery_code_obs  = file.exists("artifacts/medicare_delivery_code_observability.csv"),
   cohort_definitions = file.exists("R/lib/cohort_definitions.R"),
   work_site_build    = file.exists("build_trilliant_work_sites.R"))
-inv_yn <- function(x) if (isTRUE(x)) "yes" else "no"
 inv_listed <- function(...) { v <- c(...); paste(names(v)[v], collapse = "; ") }
 trill_single <- sprintf("directory_provider (%d snapshot, %s)", snapshots,
                         paste(meta$snapshot_label[meta$table_name == "directory_provider"], collapse = ","))
