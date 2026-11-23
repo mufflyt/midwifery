@@ -113,6 +113,111 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `tests/ci_law_coverage.R` does compute them (`13 declared`, `39/39 planted
   defects detected`), but nothing reads that output back against the README, so
   adding a law moves the gate's count and leaves the badge behind.
+## [Unreleased] — 2026-11-22 — 13.5 minutes of parsing nobody needed, and a panel count that was stale by two builds
+
+**No published figure moves in this entry.** Every code change here was proved
+to return a result `identical()` to what it replaced; the only numbers that
+change are three stale statements in the README about the panel itself, and
+they change to agree with the manifest the freeze was built from.
+
+### Changed
+
+- **`build_midwife_panel.R` no longer reads its own 544 MB output back in base
+  R to print four numbers.** The script writes the panel one snapshot year at a
+  time and never holds the 4.7 M-row result; the summary tail undid that for
+  **210.9 s and a 1,169 MB peak**, 96.8 s of it inside one `aggregate()` whose
+  formula method calls an R closure once per group across 472,327 groups. One
+  query on the DuckDB connection the script already had open: **6.7 s, 593 MB**,
+  returning the same `4735546 / 472327 / 507559 / 33657`. The resume path, which
+  read all 544 MB to learn which snapshot years were already written, is now
+  `SELECT DISTINCT snapshot_year`: **72.5 s → 5.0 s**, same twenty years.
+- **Eleven reads of `midwife_panel.csv` across nine files now name their
+  columns.** A full-width read of this file costs **60.8 s**; the same read
+  naming the three columns the pipeline keeps costs **12.1 s**. Four distinct
+  column sets were narrowed and each was verified by reading the file both ways
+  in one process: the narrowed frame is `identical()` to the same columns of the
+  full-width frame, over all 4,735,546 rows. The extrapolated `readr` cost of
+  one `REBUILD_APPLY` pass over this file fell from **18.2 minutes to 8.1**.
+  Narrowing saves time, **not memory** — peak RSS is 1,186 MB full-width against
+  1,197 MB narrowed, because readr streams the whole file through its parse
+  buffer whichever columns it keeps.
+- **Both geographic-persistence scripts name all thirteen panel column types
+  instead of inferring twelve of them.** `guess_max = Inf` is *not* ignored when
+  the spec is partial (`.default = col_guess()`), so readr scanned all 4,735,546
+  rows to guess the rest before parsing them: **96.8 s → 43.0 s**, `identical()`
+  on the whole frame. The named types are the ones that scan arrives at, `npi`
+  and both snapshot columns as doubles — naming `npi` as character would have
+  silently zeroed every join against a linkage file that is itself read with
+  guessing on. `reconcile_linkage.R` keeps its `guess_max = Inf` and its
+  recorded reason.
+- **Malformed NPPES rows are now counted instead of silently discarded.** Every
+  release is read with `ignore_errors = true`, which drops a broken row and
+  returns success, and the only number printed afterwards was the count of rows
+  that *passed* the taxonomy filter — so a release that silently lost 10% of its
+  rows would have read as a release with 10% fewer midwives. `store_rejects =
+  true` now records what is dropped and the count is reported per release and in
+  the summary. It is tied to `ignore_errors` rather than set globally, because
+  `store_rejects` suppresses parse errors by itself and would have defeated the
+  strict encoding probe the same way `ignore_errors` does. This is the only
+  change in this entry about trust rather than speed.
+
+### Added
+
+- **`tests/ci_read_width.R` (RW1): a new full-width read of the panel is
+  refused.** Shrink-only baseline in `tests/ci_read_width_baseline.txt`, keyed on
+  file and count rather than `file:line` so ordinary edits do not churn it, with
+  a per-file reason recording whether the remaining read is reducible to a fixed
+  column set or genuinely needs the width. 28 reads across 24 files when it was
+  written; **17 across 17** after the narrowing above.
+- **`tests/test_read_width_detect.R`: 12 planted defects, 12/12.** The gate
+  reported a clean tree three times while missing real reads, and all three
+  failures are the same shape — a smaller number than the truth, reported as
+  success. A path arriving through a variable (`regmatches()` drops
+  non-matching elements, so the resolver's mask went out of alignment and
+  missed four files); a file listing that scanned **zero** files when the gate
+  ran from inside `tests/` and still printed `PASS` (now floored at 50 non-test
+  R files); and a path assigned across more than one line, which is how
+  `build_midwife_panel.R`'s `out_path` is written — **the two most expensive
+  reads in the repository were invisible to the gate that exists to find
+  exactly them.** RW11 is a boundary rather than a lie: the gate refused the
+  new measurement harness, which reads the panel full-width on purpose, so
+  that one path is exempt by name and RW11 plants a full-width read in a
+  *different* `tools/` file to prove the exemption does not cover the
+  directory.
+- **`ci_data_regression_guard.R` D14: the README's panel inventory must agree
+  with the manifest.** The panel is gitignored, so no gate can compare the prose
+  to the file; `artifacts/linkage_manifest.json`'s `inputs/nppes_panel` block is
+  the only committed statement of what the panel held when the freeze was built,
+  and therefore the only one the published cohort counts rest on. Scoped to
+  `README.md` with a declared, reasoned exemption for the defect-table row that
+  records the span a 2026-10 bug skipped, and floored at four statements so a
+  pattern that stops matching cannot pass as correct prose.
+- **`tools/measure_panel_read_cost.R`** — the measurement behind
+  `Review_AI_performance.qmd`, kept so the next round can be compared against
+  this one rather than restarted. One arm per process, peak memory from the OS
+  rather than from `gc()`, readr's lazy columns forced inside the timed region,
+  and equivalence checked with `identical()` rather than asserted. It refuses to
+  substitute a fixture when the panel is absent. Its DuckDB arms open their
+  connection through `duckdb_connect()`, not a bare `dbConnect()`: a timing
+  taken on a differently-configured connection is not a timing of the code
+  being measured, and `tests/ci_duckdb_ingestion_bootstrap.R` caught the first
+  version, which did.
+- **`docs/TECHNICAL_APPENDIX_PANEL_READ_COST.md`** — the panel's inventory by
+  snapshot year, the four measurement traps that each produced a wrong number
+  first, the three claims that are *not* true, and §7 on the claim CI cannot
+  check.
+
+### Fixed
+
+- **The README described the panel as "NPPES 2007–2025, 443,623 NPIs" in three
+  places.** The manifest the freeze was built from records **451,793** distinct
+  NPIs and 4,747,648 rows across **twenty** snapshot years, **2007–2026**, none
+  missing — so the parenthetical inviting a reader to look up which years were
+  missing pointed at an empty list. `docs/TECHNICAL_APPENDIX_TAXONOMY_SCOPE.md`
+  had already noticed the NPI count was stale and written down a correction,
+  which was itself stale by the time anyone read it. Both documents now name a
+  date and a build beside the count, and D14 keeps the README's copy pinned to
+  the manifest.
 
 ## [Unreleased] — 2026-11-22 — 1,552 lines cut, and a saboteur for every cut
 

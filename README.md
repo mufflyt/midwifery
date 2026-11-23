@@ -650,7 +650,7 @@ doing any work. Identity is decided first; taxonomy and geography follow.
 ```mermaid
 flowchart TD
   A["AMCB directory - 22,357 names, no location"] --> B["Candidate generation - 197,081 pairs"]
-  P["NPPES 2007-2025 - 443,623 NPIs"] --> B
+  P["NPPES 2007-2026 - 451,793 NPIs"] --> B
   B --> C["Rank by name-evidence class"]
   C --> D{"One candidate at the strongest class?"}
   D -->|no| Q["Quarantined - 3,147"]
@@ -801,7 +801,7 @@ Every number above survived a check that could have refuted it. These fired:
 | NPPES snapshots 2018–2025 silently skipped | Linkage 27.1 points lower |
 
 Frozen linkage `dbcc76f420ac…` · frozen geography `5292564e211f…` · enhanced
-geography `53bb087a59a4…` · NPPES snapshots 2007–2025 · CMS Doctors & Clinicians
+geography `53bb087a59a4…` · NPPES snapshots 2007–2026 · CMS Doctors & Clinicians
 2026-06 · TIGER 2023 counties. Geography figures here are the *enhanced* version;
 the frozen artifact is unmodified and remains the reference. Every artifact
 carries a manifest recording its inputs' SHA-256.
@@ -1673,7 +1673,7 @@ repaired later.
 | Source | Vintage used | Exact file / endpoint | Supplies | Consumed by |
 |---|---|---|---|---|
 | **AMCB Instant Verification** | **accessed 2026-08-06**; 22,309 certificants (183 CM, 22,126 CNM), reconciling to the directory's own totals | [`ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800`](https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800) → `midwives.csv` | the roster: name, certification, certification number, status, certification and expiration dates. **No location at any level** | [`scrape.py`](scrape.py) → [`match_amcb_to_npi.R`](match_amcb_to_npi.R) → [`reconcile_linkage.R`](reconcile_linkage.R) |
-| **NPPES historical dissemination** | **annual snapshots 2007–2025** (the panel; missing years are enumerated in `linkage_manifest.json`) | `/Volumes/MufflySamsung*/nppes_historical_downloads/` → `midwife_panel.csv` | 443,623 NPIs; taxonomy history, name history, practice address *with its observation year* | [`build_midwife_panel.R`](build_midwife_panel.R) → [`extract_nppes_midwives.R`](extract_nppes_midwives.R) |
+| **NPPES historical dissemination** | **annual snapshots 2007–2026** (the panel; all twenty years present — `linkage_manifest.json` records `snapshot_years_missing` as empty) | `/Volumes/MufflySamsung*/nppes_historical_downloads/` → `midwife_panel.csv` | 4,747,648 provider-years, 451,793 NPIs; taxonomy history, name history, practice address *with its observation year*. 544 MB, and reading it costs 60.8 s full-width against 12.1 s naming three columns — see [the read-cost appendix](docs/TECHNICAL_APPENDIX_PANEL_READ_COST.md) | [`build_midwife_panel.R`](build_midwife_panel.R) → [`extract_nppes_midwives.R`](extract_nppes_midwives.R) |
 | **NPPES full dissemination file** | **July 2026** — `npidata_pfile_20050523-20260713`. A local **March 2024** copy (`npidata_pfile_20050523-20240310`) exists and is *deliberately not used*: two years stale, missing recently certified midwives | [download.cms.gov/nppes](https://download.cms.gov/nppes/NPI_Files.html) | primary practice location, sex code, enumeration date | [`build_midwife_panel.R`](build_midwife_panel.R), [`link_practice_locations_to_org_npi.R`](link_practice_locations_to_org_npi.R) |
 | **NPPES secondary practice locations** (`pl_pfile`) | **August 2026** — `pl_pfile_20050523-20260809`, 1,241,922 secondary locations. The December 2022 file has 681,081; switching lifted cohort secondary locations 2,687 → 5,303 | same download page, `PL` file | the second and subsequent practice addresses that turn one NPI into several candidate organizations | [`link_practice_locations_to_org_npi.R`](link_practice_locations_to_org_npi.R), [`resolve_org_ambiguity.R`](resolve_org_ambiguity.R) |
 | **NPI Registry API** (live, v2.1) | **queried live** — no snapshot, so results drift; a rerun will not reproduce byte-identically | [`npiregistry.cms.hhs.gov/api/`](https://npiregistry.cms.hhs.gov/api/) | surname-blocked candidate NPIs including former/maiden names, and NPIs enumerated under non-midwifery taxonomies | [`fetch_npi_candidates.py`](fetch_npi_candidates.py) → [`match_nppes.R`](match_nppes.R) |
@@ -2226,6 +2226,9 @@ midwifery/
 │   ├── test_address_key_matching.py     exact address keys, adversarial
 │   └── test_open_payments_type2_bulk.R  candidate universe, order invariance
 ├── tools/
+│   ├── measure_panel_read_cost.R         the measurement behind
+│   │                                     Review_AI_performance.qmd, one arm
+│   │                                     per process
 │   ├── provenance.py                    the Python provenance writer, imported
 │   │                                    by 14 harvesters
 │   ├── mutate_saboteurs.py              break the library, prove the suite
@@ -2278,7 +2281,7 @@ number.
         ┌─────────────────────────────────────────────────────────────┐
         │  LAYER 1 — IDENTITY          who is this person?            │
         └─────────────────────────────────────────────────────────────┘
-   AMCB roster 22,357                NPPES 2007-2025  443,623 NPIs
+   AMCB roster 22,357                NPPES 2007-2026  451,793 NPIs
           │                                    │
           └──────────────┬─────────────────────┘
                          ▼
@@ -2358,6 +2361,8 @@ is indistinguishable from a good one.
   stopifnot(length(union) == 1)   dissolved surface must be ONE feature
   polygon validation (6 checks)   bands, geometry, CRS, nesting, centre, TEST
   join_safety                     coverage / duplication bounds on every join
+  ci_read_width (RW1)             a new 13-column read of midwife_panel.csv to
+                                  keep 3 ► refused against a shrink-only baseline
 ```
 
 ## Usage
@@ -2444,7 +2449,7 @@ pull request, across three Linux jobs tiered by what they cost to install:
 
 | Job | Installs | Checks |
 |---|---|---|
-| **r-checks** | `stringr` | every tracked R file parses; no hardcoded path into another user's home; no duplicate `.gitignore` rules; no function defined at top level in two files; **no name bound to a function twice in one scope** (`if (...) { }` is not a scope in R, so a helper redefined inside one lands in the enclosing function's environment); the join keys (`pad5` vs `zip5_key`, `zip5` vs `zip5_first_run`, `zip9`, `phone10`, `norm_addr` vs `norm_addr_drop_unit`, `pad_ccn`); Table 1 age/tenure/decade banding; **the leak guard**; **the artifact contracts**; the science, denominator and unit-of-analysis gates with their gate-of-gates suites; **every attached package is called, qualified, or declared** (1,179 `library()` calls judged, so an attachment that stops being used is a failure rather than drift); **the three Wilson interval implementations agree** up to the documented 100x units difference, since the formula lives in three files on purpose and nothing compared them to each other (rOpenSci G5.4a) |
+| **r-checks** | `stringr` | every tracked R file parses; no hardcoded path into another user's home; no duplicate `.gitignore` rules; no function defined at top level in two files; **no name bound to a function twice in one scope** (`if (...) { }` is not a scope in R, so a helper redefined inside one lands in the enclosing function's environment); the join keys (`pad5` vs `zip5_key`, `zip5` vs `zip5_first_run`, `zip9`, `phone10`, `norm_addr` vs `norm_addr_drop_unit`, `pad_ccn`); Table 1 age/tenure/decade banding; **the leak guard**; **the artifact contracts**; **no new full-width read of the 544 MB panel** (shrink-only baseline, 17 reads across 17 files, with a 12-case detector that plants the defect back — see [the read-cost appendix](docs/TECHNICAL_APPENDIX_PANEL_READ_COST.md)); the science, denominator and unit-of-analysis gates with their gate-of-gates suites; **every attached package is called, qualified, or declared** (1,179 `library()` calls judged, so an attachment that stops being used is a failure rather than drift); **the three Wilson interval implementations agree** up to the documented 100x units difference, since the formula lives in three files on purpose and nothing compared them to each other (rOpenSci G5.4a) |
 | **python-checks** | `pytest` | every tracked `.py` compiles; address-key matching; **the whole `tests/` directory under pytest — 134 tests** (the scraper's 500-row APEX pager cap, the NPI API's 200-row candidate cap, five live BON harvesters, the HHS open-data pipeline, the microsimulation conservation suite) |
 | **r-unit-tests** | the tidyverse stack, cached | the deterministic license→NPI bridge and its collision handling; state-license table construction; former/maiden-name candidate expansion; age-at-certification validation; the cross-taxonomy rule that a nursing-only match is never promoted into the primary cohort; the checkpoint-merge contract; the NPI-rate, cluster-scope and leaver-count saboteurs; **the review-fix saboteurs** (each plants a fixed 2026-11-21 defect back and requires the guard to die on it, with near misses so no guard hardens into one implementation) |
 
