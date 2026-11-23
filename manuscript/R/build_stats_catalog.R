@@ -400,6 +400,26 @@ if (!is.null(acc_2)) {
     }
   }
 
+  # A direct 2026 persistence estimand must exclude right-censored providers
+  # and use mutually exclusive dispositions. The older combined-lag row asks
+  # whether either source ever adopted the other's 2021 value instead.
+  censor <- rd(file.path(acc_dir,
+    "oig_longitudinal_2021_2026_censoring_audit.csv"))
+  if (!is.null(censor)) {
+    a$censoring_table <- censor
+    disp_n <- function(pattern) {
+      x <- censor$n_clinicians[grepl(pattern, censor$longitudinal_disposition)]
+      if (length(x)) num(x[1]) else NA_real_
+    }
+    a$persistent_2026_n <- disp_n("Continuously Observed Through 2026")
+    a$censored_2026_n <- disp_n("Right-Censored")
+    a$observable_2026_n <- sum(num(censor$n_clinicians[
+      !grepl("Right-Censored", censor$longitudinal_disposition)]))
+    a$persistent_2026_pct <- 100 * a$persistent_2026_n / a$observable_2026_n
+    a$censored_2026_pct <- 100 * a$censored_2026_n /
+      num(censor$n_base_2021_disagreements[1])
+  }
+
   if (!is.null(acc_3)) {
     elig <- acc_3[acc_3$completeness_eligible == "TRUE", , drop = FALSE]
     a$completeness_table <- elig
@@ -448,6 +468,13 @@ if (!is.null(acc_2)) {
       as.integer(!is.null(acc_mcaid))
     a$coverage_table <- acc_cov
   }
+  # Wilson vs provider-cluster bootstrap intervals (Supplemental Table S7):
+  # pooled per-source rows only. Per-year rows are wilson_independent in the
+  # artifact because within-year clusters are singletons.
+  acc_ci <- rd(file.path(MW_ART, "agreement_cluster_bootstrap_ci.csv"))
+  if (!is.null(acc_ci)) {
+    a$agreement_ci_table <- acc_ci[acc_ci$scope == "pooled", , drop = FALSE]
+  }
   if (!is.null(acc_mcaid)) {
     mc <- acc_mcaid
     mc$n <- as.numeric(mc$n)
@@ -493,7 +520,19 @@ if (!is.null(acc_2)) {
     a$medicaid_newly_agreeing_n <- getq("NPI-years newly scored as agreeing")
     a$setm_table <- acc_setm
   }
-
+  acc_setu <- rd(file.path(MW_ART, "medicaid_set_membership_uncertainty.csv"))
+  if (!is.null(acc_setu)) {
+    getu <- function(lbl, col) {
+      v <- acc_setu[[col]][acc_setu$quantity == lbl]
+      if (!length(v)) NA_real_ else as.numeric(v)
+    }
+    a$medicaid_equality_ci_low    <- getu("equality agreement (%)", "ci95_low")
+    a$medicaid_equality_ci_high   <- getu("equality agreement (%)", "ci95_high")
+    a$medicaid_membership_ci_low  <- getu("membership agreement (%)", "ci95_low")
+    a$medicaid_membership_ci_high <- getu("membership agreement (%)", "ci95_high")
+    a$medicaid_diff_ci_low <- getu("membership minus equality (pct points)", "ci95_low")
+    a$medicaid_diff_ci_high <- getu("membership minus equality (pct points)", "ci95_high")
+  }
   # Supplemental displays (SDC). Butala-style dose-response: unanimous and
   # pairwise practice-state agreement by number of sources reporting one.
   acc_nsrc <- rd(file.path(MW_ART,
@@ -577,6 +616,68 @@ if (!is.null(acc_2)) {
                      FUN = sum, na.rm = TRUE)
     a$persistence_table <- agg
   }
+
+  # --- Registered address vs claims-observed site: the distance behind a
+  # rurality disagreement (docs/TECHNICAL_APPENDIX_TRILLIANT.md section 6.5).
+  # The artifact's distance bands are defined in km; the manuscript prints
+  # statute miles, so the converted band edges are catalog values too --
+  # nothing hand-converted in prose.
+  ws <- rd(file.path(MW_ART, "midwife_work_setting_summary.csv"))
+  if (!is.null(ws)) {
+    dd <- ws[ws$dimension == "nppes_address_to_claims_site_distance", ,
+             drop = FALSE]
+    n_lv <- function(lv) {
+      hit <- dd[dd$level == lv, , drop = FALSE]
+      if (nrow(hit)) as.numeric(hit$n_midwives[1]) else 0
+    }
+    diff_all <- sum(as.numeric(dd$n_midwives[grepl("^different band",
+                                                   dd$level)]))
+    diff_coords <- diff_all - n_lv("different band, no coordinates for both")
+    diff_ge40 <- n_lv("different band, 40-80 km") +
+      n_lv("different band, 80-250 km") + n_lv("different band, 250+ km")
+    if (diff_coords > 0) {
+      a$dist_diff_band_coords_n   <- diff_coords
+      a$dist_diff_band_lt10km_n   <- diff_coords - diff_ge40 -
+        n_lv("different band, 10-40 km")
+      a$dist_diff_band_ge40km_n   <- diff_ge40
+      a$dist_diff_band_ge40km_pct <- 100 * diff_ge40 / diff_coords
+      a$dist_diff_band_ge250km_n  <- n_lv("different band, 250+ km")
+      a$dist_same_band_ge250km_n  <- n_lv("same band, 250+ km")
+      a$dist_mi_10km  <- 10 / 1.609344
+      a$dist_mi_40km  <- 40 / 1.609344
+      a$dist_mi_250km <- 250 / 1.609344
+    }
+  }
+
+  # --- Claims-first resolution of a state disagreement, re-derived
+  # 2026-11-23 from mrost_lead_lag.csv: of transitions discordant at t,
+  # the share where the registry adopted the source's value at t+1
+  # (a_reverts_to_b: the source held the registry's eventual value first).
+  if (!is.null(acc_mrost)) {
+    st_ll <- acc_mrost[acc_mrost$attribute == "state", , drop = FALSE]
+    lead_pct <- function(src) {
+      hit <- st_ll[st_ll$source_b == src, , drop = FALSE]
+      if (nrow(hit) != 1L) return(NULL)
+      100 * as.numeric(hit$a_reverts_to_b_at_t1_n) /
+        as.numeric(hit$n_discordant_at_t)
+    }
+    a$claims_lead_partb_pct <- lead_pct("medicare_part_b")
+    a$claims_lead_partd_pct <- lead_pct("medicare_part_d")
+  }
+
+  # --- Independent corroboration of a state move: the per-transition
+  # ceiling, as a share of raw movers (the artifact's own denominator).
+  mcorr <- rd(file.path(MW_ART,
+    "migration_corroboration_summary_by_transition.csv"))
+  if (!is.null(mcorr)) {
+    a$move_corrob_transitions_n <- nrow(mcorr)
+    a$move_corrob_indep_max_pct <-
+      max(as.numeric(mcorr$independent_corrob_pct_of_movers), na.rm = TRUE)
+  }
+
+  # Full source-by-source agreement matrix (Supplemental Table S6).
+  acc_pairs <- rd(file.path(MW_ART, "source_pairwise_agreement_matrix.csv"))
+  if (!is.null(acc_pairs)) a$pairwise_matrix_table <- acc_pairs
 
   cat_$dbacc <- a
 }

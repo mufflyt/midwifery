@@ -1,29 +1,59 @@
 {
   "artifact": "medicaid_set_membership_by_year.csv",
-  "written_utc": "2026-11-11 04:39:21 UTC",
+  "written_utc": "2026-11-23 23:48:43 UTC",
   "inputs": [
     {
       "path": "artifacts/medicaid_enrollment_cohort_state_by_year.csv",
-      "sha256": "f0b1fe1d9d7e9da6b20d30a107c6aebb2e42b3ec3765fa20eb9d670b7f9ef93c"
+      "sha256": "e3b374669cadf8c68ee830b1b492a433959422e5af9c606a3e688ce0894aa341"
     },
     {
       "path": "artifacts/medicaid_enrollment_cohort_state_footprint.csv",
-      "sha256": "02a2d3c9e28acebc5b81c617485e4c0531a81d74bae2b154d5ef36addcbc83b3"
+      "sha256": "9a678fadfab93e283ce8a621ec2a8d25ced1ccda5e75cd5226f3a6b3f88473f2"
     }
   ],
-  "code_sha256": "a06e5597b3a84f40b2e0c47e136b659a52b392feea01cc5eca6b5c708bb38df4",
+  "code_sha256": "088d82be11d97acdca430e9e0554dfb3169fd7cb67d091541af080a9f8a97aec",
   "code": [
     {
       "path": "audit_medicaid_set_membership.R",
-      "sha256": "66f931e19216cd49d57c5d321bd6e42ac86ac392c395816d7953806593ce6291"
+      "sha256": "87c99c2c6aa0726fabcf6bf7c7ae50e45d1f87fa778c2fdfd9c922a1d3594cd5"
     },
     {
       "path": "R/lib/artifact_provenance.R",
-      "sha256": "6e9d167b792defc3e5ef88b1b6dc8dd951b2225575f3acba96a5206a94090645"
+      "sha256": "3dec47ce20ffe42a4a8b85c84e0264c37c91b6da1452926c33ab2a9d0ec06e9e"
+    },
+    {
+      "path": "R/lib/ast_walk.R",
+      "sha256": "9611f2b4a7119c4fd9c300677df216e72439c94bdb93244fd413510807eba36a"
     },
     {
       "path": "R/lib/provenance.R",
       "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ],
+  "semantic_packages": [
+    {
+      "package": "mysterynpi",
+      "installed": true,
+      "version": "0.9.1",
+      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
+    },
+    {
+      "package": "stringi",
+      "installed": true,
+      "version": "1.8.9",
+      "source_sha": null
+    },
+    {
+      "package": "humaniformat",
+      "installed": true,
+      "version": "0.6.0",
+      "source_sha": null
+    },
+    {
+      "package": "mysteryroster",
+      "installed": true,
+      "version": "0.3.0",
+      "source_sha": "de1aa5d4e4262e8006254e3463c0e0a80eec56ba"
     }
   ]
 }

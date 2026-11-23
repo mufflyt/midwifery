@@ -1,0 +1,4 @@
+quantity,estimate,ci95_low,ci95_high,method,n_comparable,n_midwives
+equality agreement (%),74.8,74.05,75.47,"provider-cluster bootstrap, B=2000, percentile",107193,13366
+membership agreement (%),88.5,88.04,89.02,"provider-cluster bootstrap, B=2000, percentile",107193,13366
+membership minus equality (pct points),13.7,13.24,14.27,"provider-cluster bootstrap, B=2000, percentile",107193,13366
