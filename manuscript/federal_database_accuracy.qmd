@@ -107,12 +107,12 @@ published board files in four more -- for
 `r pc(A$nppes_license_3$pct_accurate, 2)` of resolved records in the three
 live-interface states and `r pc(A$nppes_license_7$pct_accurate, 2)`
 across all seven, though
-`r pc(100 * A$nppes_license_7$n_unresolved / A$nppes_license_7$n_evaluated, 0)`
+`r pc(A$nppes_license_7$pct_unresolved, 0)`
 of audited records could not be matched to a board record, bounding
 seven-state accuracy between
-`r pc(100 * A$nppes_license_7$n_accurate / A$nppes_license_7$n_evaluated, 0)`
+`r pc(A$nppes_license_7$worst_case_pct, 0)`
 and
-`r pc(100 * (A$nppes_license_7$n_accurate + A$nppes_license_7$n_unresolved) / A$nppes_license_7$n_evaluated, 0)`. Of inaccurate records,
+`r pc(A$nppes_license_7$best_case_pct, 0)`. Of inaccurate records,
 `r pc(A$nppes_license_7$pct_outdated, 1)` were formerly correct and had
 gone out of date. Consistency was weaker: the registry and Medicare's
 clinician directory disagreed on at least one variable for
@@ -473,13 +473,13 @@ Medicare enrollment system performed comparably, at
 limiting step, not verification: across all seven states,
 `r cnt(A$nppes_license_7$n_unresolved)` of
 `r cnt(A$nppes_license_7$n_evaluated)` registry records
-(`r pc(100 * A$nppes_license_7$n_unresolved / A$nppes_license_7$n_evaluated, 1)`)
+(`r pc(A$nppes_license_7$pct_unresolved, 1)`)
 could not be matched to a board record and are unresolved rather than
 verified. Counting every unresolved record as inaccurate or as accurate
 bounds registry accuracy between
-`r pc(100 * A$nppes_license_7$n_accurate / A$nppes_license_7$n_evaluated, 1)`
+`r pc(A$nppes_license_7$worst_case_pct, 1)`
 and
-`r pc(100 * (A$nppes_license_7$n_accurate + A$nppes_license_7$n_unresolved) / A$nppes_license_7$n_evaluated, 1)`,
+`r pc(A$nppes_license_7$best_case_pct, 1)`,
 so the resolved-record estimate is the upper region of what the full audit
 can support (Table 2).
 

@@ -334,7 +334,12 @@ if (!is.null(acc_2)) {
   as_track <- function(r) {
     if (is.null(r)) return(NULL)
     list(n_evaluated = num(r$n_evaluated), n_definitive = num(r$n_definitive),
-         n_unresolved = num(r$n_unresolved), n_accurate = num(r$n_accurate),
+         n_unresolved = num(r$n_unresolved),
+         pct_unresolved = 100 * num(r$n_unresolved) / num(r$n_evaluated),
+         n_accurate = num(r$n_accurate),
+         worst_case_pct = 100 * num(r$n_accurate) / num(r$n_evaluated),
+         best_case_pct = 100 * (num(r$n_accurate) + num(r$n_unresolved)) /
+           num(r$n_evaluated),
          pct_accurate = num(r$pct_accurate_definitive),
          n_inaccurate = num(r$n_inaccurate_total),
          pct_inaccurate = num(r$pct_inaccurate_definitive),
