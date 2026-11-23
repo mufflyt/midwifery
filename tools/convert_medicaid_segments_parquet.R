@@ -5,11 +5,18 @@
 # dates against DATE values, so the parquet must carry real DATE columns
 # (the earlier type-detection failure was quote misdetection, not mixed types).
 suppressMessages(library(duckdb))
-d <- "/Volumes/MufflySamsung/doge_opendata/medicaid_provider_enrollment_segments_2026_07_24"
+source(file.path("R", "lib", "medicare_duckdb.R"))
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) != 1L) {
+  stop("usage: Rscript tools/convert_medicaid_segments_parquet.R <segments-directory>",
+       call. = FALSE)
+}
+d <- normalizePath(args[1], mustWork = TRUE)
 csv <- file.path(d, "medicaid-provider-enrollment-segments.csv")
 pq <- file.path(d, "medicaid-provider-enrollment-segments.parquet")
 stopifnot(file.exists(csv))
-con <- DBI::dbConnect(duckdb())
+con <- duckdb_connect()
+on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
 sql <- sprintf(
   "COPY (SELECT * FROM read_csv('%s', sample_size=-1, header=true, quote='\"', escape='\"')) TO '%s' (FORMAT PARQUET)",
   csv, pq)
