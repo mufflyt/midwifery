@@ -82,6 +82,20 @@ durable trail is `docs/TECHNICAL_APPENDIX_STATISTICAL_REVIEW_2026-11-23.md`.
   11 rows); Table 1's Open Payments years cell carries the 2021
   CNM-reportability boundary.
 
+- **Three data-quality-over-time supplements surfaced from artifacts the
+  mysteryroster runners already write** (Supplemental Tables S9-S11):
+  per-source year-over-year churn with Wilson CIs
+  (`mrost_churn_by_source.csv`), consensus-tier persistence 2021-2025
+  (`consensus_tier_persistence_2021_2025.csv`), and lone-dissent rates
+  (`mrost_odd_one_out_rate.csv`). No new computation — the gap was
+  rendering.
+- **The "median lag was two to three years" sentence is now keyed, per
+  direction**: Medicare enrollment adopted the registry's 2021 value after
+  a median of 3 years (IQR 2-4); the registry adopted Medicare
+  enrollment's after a median of 2 years (IQR 1-3) — parsed from
+  `oig_update_lag_and_staleness_check.csv`'s fixed metric format rather
+  than hand-typed.
+
 ### Infrastructure
 
 - **`tools/convert_medicaid_segments_parquet.R` (new)** documents the
@@ -92,8 +106,12 @@ durable trail is `docs/TECHNICAL_APPENDIX_STATISTICAL_REVIEW_2026-11-23.md`.
 ### Known, not yet resolved
 
 - The two Table 2 artifacts disagree by 3 records (3,190/1,938 vs
-  3,193/1,940); the manuscript renders the subtypes values. Untraced, both
-  written by `remake_oig_07_09_00440_midwifery.R`.
+  3,193/1,940); the manuscript renders the subtypes values. Root cause
+  traced: the summary row counts the design-weighted
+  `attribute_verification_status()` fields table, the subtypes row the raw
+  OIG-subtype vector after dropping NA/`not_applicable` — two inclusion
+  rules, three records in the second but not the first. The specific rows
+  need a remake rerun with intermediates retained.
 - Preregistration/protocol statement and the human-subjects determination
   basis need author input; a provider-level clustered trend model remains
   the stronger alternative to the descriptive slope.

@@ -637,9 +637,17 @@ providers whose registry and Medicare enrollment records disagreed in 2021,
 2026; `r cnt(A$persistent_2026_n)` (`r pc(A$persistent_2026_pct, 1)`) still
 disagreed, while `r cnt(A$censored_2026_n)` (`r pc(A$censored_2026_pct, 1)`
 of the starting cohort) were right-censored. Among observed adoption events,
-the median lag was two to three years and adoption ran in both directions, so
+Medicare enrollment adopted the registry's 2021 value after a median of
+`r sprintf("%g", A$lag_pecos_adopts_median)` years (IQR
+`r sprintf("%g", A$lag_pecos_adopts_p25)`-`r sprintf("%g", A$lag_pecos_adopts_p75)`)
+and the registry adopted Medicare enrollment's after a median of
+`r sprintf("%g", A$lag_nppes_adopts_median)` years (IQR
+`r sprintf("%g", A$lag_nppes_adopts_p25)`-`r sprintf("%g", A$lag_nppes_adopts_p75)`);
+adoption ran in both directions, so
 the observed resolutions cannot be attributed to a single lagging system
-(Supplemental Table S3).
+(Supplemental Table S3). Source-level volatility, the year-over-year
+persistence of multi-source consensus, and each source's lone-dissent rate
+are reported in Supplemental Tables S9-S11.
 
 ### Agreement over time
 
@@ -1166,6 +1174,75 @@ if (!is.null(A$censoring_table)) {
       is.na(as.numeric(ca$pct_of_728_uncensored)), "Not applicable",
       sprintf("%.1f", as.numeric(ca$pct_of_728_uncensored))),
     check.names = FALSE)
+  style_manuscript_table(out, align = c("l", "r", "r", "r"))
+}
+```
+
+```{r table-churn}
+#| tbl-cap: "Supplemental Table S9. Year-over-year volatility of each source's own practice-state value (churn): among consecutive-year transitions within one source, the share whose state changed, with a Wilson 95% interval. Churn measures how often a source rewrites itself, independent of whether either value is right; a stale source and a noisy source fail differently, and this column separates them."
+if (!is.null(A$churn_table)) {
+  ch <- A$churn_table
+  lbl <- c(nppes = "NPPES",
+           medicare_part_b = "Medicare Part B claims",
+           medicare_part_d = "Medicare Part D claims",
+           medicare_claims = "Medicare Part B and Part D claims",
+           pecos_revalidation = "PECOS revalidation",
+           open_payments = "Open Payments",
+           medicaid_enrollment = "Medicaid enrollment")
+  out <- data.frame(
+    Source = ifelse(is.na(lbl[ch$source]), ch$source, unname(lbl[ch$source])),
+    `Consecutive-year transitions` = formatC(as.numeric(ch$n_transitions),
+                                             format = "d", big.mark = ","),
+    `State changed` = formatC(as.numeric(ch$n_changed), format = "d",
+                              big.mark = ","),
+    `Churn (%)` = sprintf("%.1f", as.numeric(ch$pct)),
+    `95% CI` = sprintf("%.1f-%.1f", as.numeric(ch$ci_low),
+                       as.numeric(ch$ci_high)),
+    check.names = FALSE)
+  out <- out[order(-as.numeric(ch$pct)), ]
+  style_manuscript_table(out, align = c("l", "r", "r", "r", "r"))
+}
+```
+
+```{r table-tier-flow}
+#| tbl-cap: "Supplemental Table S10. Does multi-source consensus persist year over year, or churn? Each row counts midwives moving from one consensus tier (unanimous, majority, split) to another across consecutive years, 2021-2025, within the cohort for which all four comparison sources are present in every year. Diagonal rows (same tier both years) are stability; off-diagonal rows are consensus churn."
+if (!is.null(A$tier_flow_table)) {
+  tf <- A$tier_flow_table
+  out <- data.frame(
+    `Years` = paste(tf$year_from, "to", tf$year_to),
+    `Tier at start` = tf$tier1,
+    `Tier at end` = tf$tier2,
+    Midwives = formatC(as.numeric(tf$n), format = "d", big.mark = ","),
+    check.names = FALSE)
+  style_manuscript_table(out, align = c("l", "l", "l", "r"))
+}
+```
+
+```{r table-odd-one-out}
+#| tbl-cap: "Supplemental Table S11. Lone-dissent rate per source: among identifier-years where three or more sources report a practice state and all others agree, how often this source is the single dissenter. A tied split with no majority is not a lone dissent. A high rate marks the source the comparison set most often has to outvote."
+if (!is.null(A$odd_one_out_table)) {
+  oo <- A$odd_one_out_table
+  lbl <- c(nppes = "NPPES",
+           medicare_part_b = "Medicare Part B claims",
+           medicare_part_d = "Medicare Part D claims",
+           pecos_revalidation = "PECOS revalidation",
+           open_payments = "Open Payments",
+           medicaid_enrollment = "Medicaid enrollment",
+           dac_physician_compare = "CMS clinician directory",
+           cms_ndh_fhir = "CMS NDH directory",
+           facility_affiliation_ccn = "Facility affiliations",
+           healthgrades = "Healthgrades",
+           doximity = "Doximity",
+           state_boards_of_nursing = "State boards of nursing")
+  out <- data.frame(
+    Source = ifelse(is.na(lbl[oo$source]), oo$source, unname(lbl[oo$source])),
+    `Eligible identifier-years` = formatC(as.numeric(oo$n_eligible),
+                                          format = "d", big.mark = ","),
+    `Lone dissents` = formatC(as.numeric(oo$n_odd_one_out), format = "d",
+                              big.mark = ","),
+    `Lone-dissent rate (%)` = sprintf("%.1f", 100 * as.numeric(oo$odd_rate)),
+    check.names = FALSE)
+  out <- out[order(-as.numeric(oo$odd_rate)), ]
   style_manuscript_table(out, align = c("l", "r", "r", "r"))
 }
 ```

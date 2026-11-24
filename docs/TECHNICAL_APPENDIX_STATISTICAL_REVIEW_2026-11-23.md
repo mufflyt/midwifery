@@ -88,10 +88,18 @@ provenance sidecars are committed with the source changes.
 - **Human-subjects determination**: the manuscript asserts "not human subjects
   research" without a reviewing body or basis; needs the author's
   institutional facts.
-- **The two Table 2 artifacts disagree by 3 records** (summary 3,190
-  audited/1,938 definitive vs subtypes 3,193/1,940; the manuscript renders
-  the subtypes values). Untraced; both are written by
-  `remake_oig_07_09_00440_midwifery.R`.
+- **The two Table 2 artifacts disagree by 3 records — root cause traced,
+  rows not yet itemised.** The summary artifact's 7-state row counts
+  `nrow(bon_verif_status$fields)` — the design-weighted
+  `attribute_verification_status()` path (3,190 audited / 1,938
+  definitive) — while the subtypes artifact counts the raw OIG-subtype
+  vector after dropping NA/`not_applicable`
+  (`summarize_oig_table2_var()`, 3,193 / 1,940). Two tracks, two
+  inclusion rules: three records survive the raw vector but not the
+  verification-status fields table. The manuscript consistently renders
+  the subtypes track. Itemising the three rows requires rerunning the
+  remake with both intermediates retained; until then the tracks should
+  not be cited interchangeably.
 - **WLS slope**: now descriptive and labeled as such; a provider-level
   longitudinal model with cluster-robust inference (or dropping the fitted
   slope for annual estimates) remains the stronger alternative.

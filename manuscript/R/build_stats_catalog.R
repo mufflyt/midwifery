@@ -403,6 +403,25 @@ if (!is.null(acc_2)) {
       a$unresolved_n    <- num(res$n_zip5_inconsistent[1])
       a$unresolved_pct  <- num(res$pct_zip5_inconsistent[1])
     }
+    # Direction-specific adoption lags, parsed from the fixed sprintf format
+    # remake_oig_07_09_00440_midwifery.R writes into metric_detail
+    # ("... (median X yr, IQR Y-Z yr)"), so the Results sentence is keyed
+    # rather than hand-typed.
+    parse_lag <- function(key) {
+      s <- acc_lag$metric_detail[acc_lag$analysis_type == key]
+      if (!length(s)) return(rep(NA_real_, 3))
+      m <- regmatches(s[1],
+        regexec("median ([0-9.]+) yr, IQR ([0-9.]+)-([0-9.]+)", s[1]))[[1]]
+      if (length(m) == 4) as.numeric(m[2:4]) else rep(NA_real_, 3)
+    }
+    pa <- parse_lag("longitudinal_2021_2026_pecos_adopts_nppes_lag")
+    na_ <- parse_lag("longitudinal_2021_2026_nppes_adopts_pecos_lag")
+    a$lag_pecos_adopts_median <- pa[1]
+    a$lag_pecos_adopts_p25    <- pa[2]
+    a$lag_pecos_adopts_p75    <- pa[3]
+    a$lag_nppes_adopts_median <- na_[1]
+    a$lag_nppes_adopts_p25    <- na_[2]
+    a$lag_nppes_adopts_p75    <- na_[3]
   }
 
   # A direct 2026 persistence estimand must exclude right-censored providers
@@ -525,6 +544,16 @@ if (!is.null(acc_2)) {
     a$medicaid_newly_agreeing_n <- getq("NPI-years newly scored as agreeing")
     a$setm_table <- acc_setm
   }
+  # Data-quality-over-time supplements (Tables S9-S11): per-source churn,
+  # consensus-tier persistence, and lone-dissent rates, read from the
+  # committed artifacts the mysteryroster runners already write.
+  acc_churn <- rd(file.path(MW_ART, "mrost_churn_by_source.csv"))
+  if (!is.null(acc_churn)) a$churn_table <- acc_churn
+  acc_tfl <- rd(file.path(MW_ART, "consensus_tier_persistence_2021_2025.csv"))
+  if (!is.null(acc_tfl)) a$tier_flow_table <- acc_tfl
+  acc_ooo <- rd(file.path(MW_ART, "mrost_odd_one_out_rate.csv"))
+  if (!is.null(acc_ooo)) a$odd_one_out_table <- acc_ooo
+
   acc_setu <- rd(file.path(MW_ART, "medicaid_set_membership_uncertainty.csv"))
   if (!is.null(acc_setu)) {
     getu <- function(lbl, col) {
