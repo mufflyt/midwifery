@@ -69,7 +69,7 @@ source(file.path("R", "lib", "wilson_interval.R"))
 source(file.path("R", "lib", "artifact_provenance.R"))
 
 set.seed(20261114)
-B <- 400L
+B <- 2000L
 
 records <- read_csv("artifacts/canonical_source_records.csv",
                     col_types = cols(.default = "c"), progress = FALSE) %>%

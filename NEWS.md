@@ -20,6 +20,102 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-23 — an external statistical review, verified claim by claim; Table 2 stops hiding its unresolved records
+
+Three external AI review passes were run against the manuscript and every
+claim verified against committed artifacts before anything changed. The
+durable trail is `docs/TECHNICAL_APPENDIX_STATISTICAL_REVIEW_2026-11-23.md`.
+
+### Retracted
+
+- **Neither "more than three quarters" nor 63.1% was the 2026 persistence
+  estimate.** The 563/892 residual subtracted non-exclusive ever-adopted-value
+  counts, omitted convergence on a third state, and counted right-censored
+  providers as unresolved. The mutually exclusive censoring audit gives 366
+  of 728 providers observable in both systems (**50.3%**) still discordant;
+  164 of the original 892 (**18.4%**) were right-censored. Abstract, Results,
+  Discussion, README, catalog, and Supplemental Table S8 now agree.
+- **Table 2's caption claimed the three live-verification states resolve
+  "every record" — the artifact carries 165 (NPPES) and 77 (PECOS)
+  unresolved records in that tier.** Claim removed.
+
+### Changed — what the numbers now say
+
+- **Table 2 reports its unresolved records and bounds.** The seven-state
+  NPPES licensure track evaluated 3,193 records, of which 1,253 (39.2%)
+  matched no board record; the displayed 92.58%-of-resolved accuracy now
+  sits beside the worst/best-case bounds 56.2-95.5% that were already in
+  `artifacts/oig_remake/` but rendered nowhere. Abstract, Results, and
+  Discussion state the unresolved share and bounds.
+- **Supplemental Table S7 (new) renders the promised intervals.** Wilson and
+  provider-cluster bootstrap 95% CIs per pooled source come from
+  `agreement_cluster_bootstrap_ci.csv`; its final statistic is correctly
+  labeled a CI-width ratio rather than a variance-ratio design effect. The
+  provider-cluster bootstrap was regenerated with 2,000 replicates.
+- **The Medicaid equality-vs-membership contrast (74.8% → 88.5% on 107,193
+  provider-years) now carries paired uncertainty.** Its provider-cluster
+  bootstrap resamples midwives and computes both rules within every draw.
+- **The WLS trend p-value is gone.** The clinician-directory decline is a
+  descriptive slope; the same midwives contribute to successive years, so an
+  independence-based test overstated the evidence.
+- **Table S6 board rows are marked selection-conditioned.** Board records
+  were harvested only for cohort members whose NPPES state matched the
+  queried board (`harvest_live_*_bon_from_tracked_roster.py`), so their
+  state agreement is conditioned on one side of the comparison; dagger +
+  caption disclosure, plus a new "Of cohort (%)" coverage column for
+  snapshot rows.
+- **Methods now reconcile every cohort count in one table** (22,357 roster →
+  14,956 primary-linked → +1,819 nursing-taxonomy → 16,775 analytic;
+  15,328 ACTIVE → 12,170 primary-linked → 12,115 geocoded), document each
+  source's one-state-per-provider-year reduction rule, name the four
+  published-file verification states (CT, FL, IL October 2026; PA
+  2026-11-16, verified against provenance manifests), scope the board
+  verification to the seven queried states, and describe commercial-source
+  acquisition (Healthgrades/Doximity public profile retrieval; Trilliant
+  platform reads).
+- **Overclaims reworded to what the design supports**: concurrent Medicaid
+  enrollment is enrollment, not observed delivery; Open Payments led the
+  registry rather than "correcting" it; tight agreement does not bound how
+  wrong shared-lineage sources can be together; practice state is the most
+  reproducible geographic variable, accuracy unverified. Source count reads
+  "ten evaluated systems alongside the certification roster" (Table 1 has
+  11 rows); Table 1's Open Payments years cell carries the 2021
+  CNM-reportability boundary.
+
+- **Three data-quality-over-time supplements surfaced from artifacts the
+  mysteryroster runners already write** (Supplemental Tables S9-S11):
+  per-source year-over-year churn with Wilson CIs
+  (`mrost_churn_by_source.csv`), consensus-tier persistence 2021-2025
+  (`consensus_tier_persistence_2021_2025.csv`), and lone-dissent rates
+  (`mrost_odd_one_out_rate.csv`). No new computation — the gap was
+  rendering.
+- **The "median lag was two to three years" sentence is now keyed, per
+  direction**: Medicare enrollment adopted the registry's 2021 value after
+  a median of 3 years (IQR 2-4); the registry adopted Medicare
+  enrollment's after a median of 2 years (IQR 1-3) — parsed from
+  `oig_update_lag_and_staleness_check.csv`'s fixed metric format rather
+  than hand-typed.
+
+### Infrastructure
+
+- **`tools/convert_medicaid_segments_parquet.R` (new)** documents the
+  one-shot conversion needed to rebuild the typed T-MSIS segments parquet
+  from the 2026-07-24 raw csv.zip. The statistical-review appendix records
+  why sampled quote sniffing and an all-character parquet are invalid here.
+
+### Known, not yet resolved
+
+- The two Table 2 artifacts disagree by 3 records (3,190/1,938 vs
+  3,193/1,940); the manuscript renders the subtypes values. Root cause
+  traced: the summary row counts the design-weighted
+  `attribute_verification_status()` fields table, the subtypes row the raw
+  OIG-subtype vector after dropping NA/`not_applicable` — two inclusion
+  rules, three records in the second but not the first. The specific rows
+  need a remake rerun with intermediates retained.
+- Preregistration/protocol statement and the human-subjects determination
+  basis need author input; a provider-level clustered trend model remains
+  the stronger alternative to the descriptive slope.
+
 ## [Unreleased] — 2026-11-22 — a pull request merged into a branch nothing merges; a skip budget that described the wrong environment
 
 ### Fixed

@@ -83,6 +83,44 @@ if (sys.nframe() == 0L) {
   stopifnot(all(paste(foot$npi, foot$year) %in% k_mod))
 
   a <- agreement_two_ways(ref, modal, foot)
+
+  # Paired provider-cluster bootstrap: preserve each midwife's full trajectory
+  # and compute both scoring rules on the same draw.
+  eqj <- dplyr::inner_join(ref, modal, by = c("npi", "year"),
+                           suffix = c("_ref", "_mod"))
+  fkey <- paste(foot$npi, foot$year, foot$state)
+  eqj$eq_hit <- eqj$state_ref == eqj$state_mod
+  eqj$mem_hit <- paste(eqj$npi, eqj$year, eqj$state_ref) %in% fkey
+  per_npi <- eqj %>% group_by(npi) %>%
+    summarise(n = dplyr::n(), eq = sum(eq_hit), mem = sum(mem_hit),
+              .groups = "drop")
+  stopifnot(sum(per_npi$n) == a$n_comparable,
+            all(per_npi$mem >= per_npi$eq))
+  set.seed(20261123)
+  B <- 2000L
+  draws <- vapply(seq_len(B), function(b) {
+    i <- sample.int(nrow(per_npi), nrow(per_npi), replace = TRUE)
+    c(eq = 100 * sum(per_npi$eq[i]) / sum(per_npi$n[i]),
+      mem = 100 * sum(per_npi$mem[i]) / sum(per_npi$n[i]))
+  }, c(eq = 0, mem = 0))
+  diff_draws <- draws["mem", ] - draws["eq", ]
+  qt2 <- function(x) stats::quantile(x, c(0.025, 0.975), names = FALSE)
+  unc <- tibble(
+    quantity = c("equality agreement (%)", "membership agreement (%)",
+                 "membership minus equality (pct points)"),
+    estimate = c(a$equality_pct, a$membership_pct,
+                 round(a$membership_pct - a$equality_pct, 1)),
+    ci95_low = round(c(qt2(draws["eq", ])[1], qt2(draws["mem", ])[1],
+                       qt2(diff_draws)[1]), 2),
+    ci95_high = round(c(qt2(draws["eq", ])[2], qt2(draws["mem", ])[2],
+                        qt2(diff_draws)[2]), 2),
+    method = sprintf("provider-cluster bootstrap, B=%d, percentile", B),
+    n_comparable = a$n_comparable,
+    n_midwives = nrow(per_npi))
+  write_with_provenance(unc,
+    "artifacts/medicaid_set_membership_uncertainty.csv",
+    inputs = c(MODAL, FOOT), na = "")
+
   by_year <- lapply(sort(unique(modal$year)), function(y) {
     r <- agreement_two_ways(filter(ref, year == y), filter(modal, year == y),
                             filter(foot, year == y))

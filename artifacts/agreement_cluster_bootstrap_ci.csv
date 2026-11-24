@@ -1,35 +1,34 @@
 source,scope,year,n_npi_years,n_npis,n_agree,pct_agree,wilson_low,wilson_high,boot_low,boot_high,wilson_width,boot_width,design_effect,method
-medicaid_enrollment,pooled,,73646,12862,55515,75.38,75.07,75.69,74.73,76.16,0.6200000000000045,1.4299999999999926,2.31,cluster_bootstrap_B=400 vs wilson_independent
-medicaid_enrollment,year,2018,8813,8813,6625,75.17,74.26,76.06,,,1.7999999999999972,,,wilson_independent
-medicaid_enrollment,year,2019,9381,9381,7097,75.65,74.77,76.51,,,1.740000000000009,,,wilson_independent
-medicaid_enrollment,year,2020,10038,10038,7623,75.94,75.1,76.77,,,1.6700000000000017,,,wilson_independent
-medicaid_enrollment,year,2021,10427,10427,7911,75.87,75.04,76.68,,,1.6400000000000006,,,wilson_independent
-medicaid_enrollment,year,2022,11025,11025,8309,75.37,74.55,76.16,,,1.6099999999999994,,,wilson_independent
-medicaid_enrollment,year,2023,11678,11678,8790,75.27,74.48,76.04,,,1.5600000000000023,,,wilson_independent
-medicaid_enrollment,year,2024,12284,12284,9160,74.57,73.79,75.33,,,1.539999999999992,,,wilson_independent
-medicare_claims,pooled,,38844,8098,37515,96.58,96.39,96.75,96.34,96.79,0.35999999999999943,0.45000000000000284,1.25,cluster_bootstrap_B=400 vs wilson_independent
-medicare_claims,year,2013,2718,2718,2634,96.91,96.19,97.5,,,1.3100000000000023,,,wilson_independent
-medicare_claims,year,2014,2825,2825,2736,96.85,96.14,97.43,,,1.2900000000000063,,,wilson_independent
-medicare_claims,year,2015,2922,2922,2817,96.41,95.67,97.02,,,1.3499999999999943,,,wilson_independent
-medicare_claims,year,2016,3075,3075,2984,97.04,96.38,97.58,,,1.2000000000000028,,,wilson_independent
-medicare_claims,year,2017,3087,3087,2991,96.89,96.22,97.45,,,1.230000000000004,,,wilson_independent
-medicare_claims,year,2018,3227,3227,3132,97.06,96.41,97.59,,,1.1800000000000068,,,wilson_independent
-medicare_claims,year,2019,3344,3344,3227,96.5,95.82,97.07,,,1.25,,,wilson_independent
-medicare_claims,year,2020,3364,3364,3254,96.73,96.07,97.28,,,1.210000000000008,,,wilson_independent
-medicare_claims,year,2021,3419,3419,3293,96.31,95.63,96.9,,,1.2700000000000102,,,wilson_independent
-medicare_claims,year,2022,3451,3451,3315,96.06,95.36,96.66,,,1.2999999999999972,,,wilson_independent
-medicare_claims,year,2023,3599,3599,3465,96.28,95.61,96.85,,,1.2399999999999949,,,wilson_independent
-medicare_claims,year,2024,3813,3813,3667,96.17,95.51,96.74,,,1.2299999999999898,,,wilson_independent
-open_payments,pooled,,19799,8171,19019,96.06,95.78,96.32,95.76,96.35,0.539999999999992,0.5899999999999892,1.09,cluster_bootstrap_B=400 vs wilson_independent
-open_payments,year,2021,2795,2795,2682,95.96,95.16,96.63,,,1.4699999999999989,,,wilson_independent
-open_payments,year,2022,3736,3736,3571,95.58,94.88,96.2,,,1.3200000000000074,,,wilson_independent
-open_payments,year,2023,3943,3943,3769,95.59,94.9,96.19,,,1.289999999999992,,,wilson_independent
-open_payments,year,2024,4462,4462,4260,95.47,94.82,96.04,,,1.220000000000013,,,wilson_independent
-open_payments,year,2025,4863,4863,4737,97.41,96.92,97.82,,,0.8999999999999915,,,wilson_independent
-pecos_revalidation,pooled,,54201,11330,47682,87.97,87.7,88.24,87.4,88.53,0.539999999999992,1.1299999999999955,2.09,cluster_bootstrap_B=400 vs wilson_independent
-pecos_revalidation,year,2021,7797,7797,6884,88.29,87.56,88.99,,,1.4299999999999926,,,wilson_independent
-pecos_revalidation,year,2022,8483,8483,7467,88.02,87.31,88.7,,,1.3900000000000006,,,wilson_independent
-pecos_revalidation,year,2023,8958,8958,7848,87.61,86.91,88.28,,,1.3700000000000045,,,wilson_independent
-pecos_revalidation,year,2024,9388,9388,8215,87.51,86.82,88.16,,,1.3400000000000034,,,wilson_independent
-pecos_revalidation,year,2025,10108,10108,8924,88.29,87.65,88.9,,,1.25,,,wilson_independent
-pecos_revalidation,year,2026,9467,9467,8344,88.14,87.47,88.77,,,1.2999999999999972,,,wilson_independent
+medicaid_enrollment,pooled,,75546,13315,57082,75.56,75.25,75.86,74.85,76.29,0.6099999999999994,1.440000000000012,2.36,cluster_bootstrap_B=2000 vs wilson_independent
+medicaid_enrollment,year,2018,9086,9086,6838,75.26,74.36,76.14,,,1.7800000000000011,,,wilson_independent
+medicaid_enrollment,year,2019,9807,9807,7466,76.13,75.28,76.96,,,1.6799999999999926,,,wilson_independent
+medicaid_enrollment,year,2020,10277,10277,7816,76.05,75.22,76.87,,,1.6500000000000057,,,wilson_independent
+medicaid_enrollment,year,2021,10664,10664,8124,76.18,75.36,76.98,,,1.6200000000000045,,,wilson_independent
+medicaid_enrollment,year,2022,11165,11165,8414,75.36,74.55,76.15,,,1.6000000000000085,,,wilson_independent
+medicaid_enrollment,year,2023,11828,11828,8902,75.26,74.48,76.03,,,1.5499999999999972,,,wilson_independent
+medicaid_enrollment,year,2024,12719,12719,9522,74.86,74.1,75.61,,,1.5100000000000051,,,wilson_independent
+medicare_claims,pooled,,18011,5409,17452,96.9,96.63,97.14,96.58,97.2,0.5100000000000051,0.6200000000000045,1.22,cluster_bootstrap_B=2000 vs wilson_independent
+medicare_claims,year,2013,957,957,937,97.91,96.79,98.64,,,1.8499999999999943,,,wilson_independent
+medicare_claims,year,2014,1036,1036,999,96.43,95.12,97.4,,,2.280000000000001,,,wilson_independent
+medicare_claims,year,2015,1117,1117,1084,97.05,95.88,97.89,,,2.010000000000005,,,wilson_independent
+medicare_claims,year,2016,1201,1201,1171,97.5,96.46,98.24,,,1.7800000000000011,,,wilson_independent
+medicare_claims,year,2017,1264,1264,1229,97.23,96.17,98,,,1.8299999999999983,,,wilson_independent
+medicare_claims,year,2018,1343,1343,1315,97.92,97,98.55,,,1.5499999999999972,,,wilson_independent
+medicare_claims,year,2019,1419,1419,1385,97.6,96.67,98.28,,,1.6099999999999994,,,wilson_independent
+medicare_claims,year,2020,1219,1219,1185,97.21,96.13,98,,,1.8700000000000045,,,wilson_independent
+medicare_claims,year,2021,1322,1322,1289,97.5,96.52,98.22,,,1.7000000000000028,,,wilson_independent
+medicare_claims,year,2022,3492,3492,3356,96.11,95.41,96.7,,,1.2900000000000063,,,wilson_independent
+medicare_claims,year,2023,3641,3641,3502,96.18,95.51,96.76,,,1.25,,,wilson_independent
+open_payments,pooled,,20111,8231,19350,96.22,95.94,96.47,95.9,96.51,0.5300000000000011,0.6099999999999994,1.15,cluster_bootstrap_B=2000 vs wilson_independent
+open_payments,year,2021,2859,2859,2766,96.75,96.03,97.34,,,1.3100000000000023,,,wilson_independent
+open_payments,year,2022,3785,3785,3618,95.59,94.89,96.2,,,1.3100000000000023,,,wilson_independent
+open_payments,year,2023,3998,3998,3823,95.62,94.94,96.21,,,1.269999999999996,,,wilson_independent
+open_payments,year,2024,4614,4614,4454,96.53,95.96,97.02,,,1.0600000000000023,,,wilson_independent
+open_payments,year,2025,4855,4855,4689,96.58,96.03,97.06,,,1.0300000000000011,,,wilson_independent
+pecos_revalidation,pooled,,55189,11634,48524,87.92,87.65,88.19,87.38,88.46,0.539999999999992,1.0799999999999983,2,cluster_bootstrap_B=2000 vs wilson_independent
+pecos_revalidation,year,2021,7979,7979,7087,88.82,88.11,89.49,,,1.3799999999999955,,,wilson_independent
+pecos_revalidation,year,2022,8588,8588,7561,88.04,87.34,88.71,,,1.3699999999999903,,,wilson_independent
+pecos_revalidation,year,2023,9071,9071,7947,87.61,86.91,88.27,,,1.3599999999999994,,,wilson_independent
+pecos_revalidation,year,2024,9674,9674,8515,88.02,87.36,88.65,,,1.2900000000000063,,,wilson_independent
+pecos_revalidation,year,2025,10096,10096,8863,87.79,87.13,88.41,,,1.2800000000000011,,,wilson_independent
+pecos_revalidation,year,2026,9781,9781,8551,87.42,86.75,88.07,,,1.3199999999999932,,,wilson_independent
