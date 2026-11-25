@@ -188,8 +188,11 @@ chk(nrow(cache_row) == 1L && identical(cache_row$stale, FALSE),
     "check_provenance re-derives the fingerprint and reports the cache FRESH")
 
 # Mutate the cache: the recorded vintage must now read STALE, proving the
-# check compares content rather than mere file presence.
-con <- DBI::dbConnect(duckdb::duckdb(), dbdir = c_base)
+# check compares content rather than mere file presence. Goes through the
+# canonical bootstrap -- a raw dbConnect here would trip the DuckDB
+# architecture gate.
+source(file.path("R", "lib", "medicare_duckdb.R"))
+con <- duckdb_connect(c_base)
 on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
 DBI::dbExecute(con, "UPDATE geocoding_cache SET latitude = latitude + 1")
 stale_row <- check_provenance(art)
