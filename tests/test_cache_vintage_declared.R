@@ -153,6 +153,61 @@ n_neg <- n_neg + 1L
 chk(identical(cache_provenance_entry(gone)$available, FALSE),
     "and an absent cache produces an entry that says so rather than omitting itself")
 
+# --- 7. the declared cache entry survives the sidecar round trip ------------
+# Regression for the dropped-token defect: prov_cache_input() used to return a
+# STRING token that prov_inputs() resolved as a path, failed, and discarded
+# with a warning -- so no sidecar ever recorded which cache produced it. The
+# entry must now reach the sidecar verbatim and check_provenance() must
+# re-verify it by content fingerprint, not by hashing the DuckDB file.
+cat("\n-- 7. declared cache entry round-trips through the sidecar --\n")
+suppressPackageStartupMessages({
+  library(readr); library(jsonlite); library(openssl)
+})
+source(file.path("R", "lib", "artifact_provenance.R"))
+
+prov_dir <- file.path(tempdir(), paste0("prov_decl_", as.integer(stats::runif(1) * 1e9)))
+dir.create(prov_dir, recursive = TRUE, showWarnings = FALSE)
+art <- file.path(prov_dir, "declared_cache_artifact.csv")
+write_with_provenance(data.frame(a = 1:3), art,
+                      inputs = prov_inputs(file.path("tests",
+                        "test_cache_vintage_declared.R")),
+                      declared = prov_cache_input(c_base))
+sj <- jsonlite::read_json(paste0(art, ".provenance.json"), simplifyVector = FALSE)
+cache_entries <- Filter(function(i) identical(i$kind, "geocode_cache"),
+                        sj$inputs)
+n_pos <- n_pos + 1L
+chk(length(cache_entries) == 1L &&
+      identical(cache_entries[[1]]$sha256,
+                geocode_cache_fingerprint(c_base)$content_sha256),
+    "the sidecar records the cache's content fingerprint, not a dropped token")
+
+chk_rows <- check_provenance(art)
+cache_row <- chk_rows[chk_rows$kind == "geocode_cache", , drop = FALSE]
+n_pos <- n_pos + 1L
+chk(nrow(cache_row) == 1L && identical(cache_row$stale, FALSE),
+    "check_provenance re-derives the fingerprint and reports the cache FRESH")
+
+# Mutate the cache: the recorded vintage must now read STALE, proving the
+# check compares content rather than mere file presence.
+con <- DBI::dbConnect(duckdb::duckdb(), dbdir = c_base)
+on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+DBI::dbExecute(con, "UPDATE geocoding_cache SET latitude = latitude + 1")
+stale_row <- check_provenance(art)
+stale_row <- stale_row[stale_row$kind == "geocode_cache", , drop = FALSE]
+n_pos <- n_pos + 1L
+chk(nrow(stale_row) == 1L && identical(stale_row$stale, TRUE),
+    "a mutated cache flips the entry to STALE -- the declaration is load-bearing")
+
+# An unreachable cache is UNVERIFIABLE (current = NA), never silently fresh.
+gone_art <- file.path(prov_dir, "gone_cache_artifact.csv")
+write_with_provenance(data.frame(a = 1:3), gone_art,
+                      declared = prov_cache_input(file.path(prov_dir, "absent.duckdb")))
+gone_row <- check_provenance(gone_art)
+gone_row <- gone_row[gone_row$kind == "geocode_cache", , drop = FALSE]
+n_neg <- n_neg + 1L
+chk(nrow(gone_row) == 1L && is.na(gone_row$current),
+    "an absent cache leaves current = NA so the caller reports UNVERIFIABLE")
+
 # --- 5. the provenance contract, against the real repository -----------------
 cat("\n-- 5. cache-dependent artifacts must declare their cache vintage --\n")
 # HISTORICAL DEBT, baselined rather than back-filled. These artifacts were built
