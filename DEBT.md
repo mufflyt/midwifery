@@ -223,6 +223,21 @@ up as an Open Payments recipient-address-quality finding in the manuscript,
 and whether A's scripts get a header-level demotion comment to match the
 ruling.
 
+**Update 2026-11-24 (spec Part 4 sweep):** enforcement verified and the
+residual code items closed. Consumer audit
+(`review/d5_downstream_impact.csv`): nothing published reads A's
+`type2_organization_npi` as an employer; the resolver ingests it only as the
+`open_payments_org` arm, whose pairs land in the named weak class
+`open_payments_only` unless another arm corroborates by normalized-name
+agreement. `crossref_open_payments_to_type2_npi.py` — the one A producer
+still missing the demotion header — now carries it, and
+`analyze_open_payments_clinical_depth.R` documents that `op_profile_match`
+is presence-flag data only. Factorial decomposition and tie-break fixture
+analysis are in `review/d5_tiebreak_comparison.md`; class ledger in
+`review/d5_linkage_discrepancies.csv`. **Still open, owner-level:** the
+manuscript write-up decision on the 254 input-source disagreements (OP
+recipient address is a billing address, not a practice location).
+
 ## D6 — Care Compare and PECOS agree on 43% of organization relationships
 
 - **status:** closed

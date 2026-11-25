@@ -28,6 +28,11 @@ N_cohort <- nrow(mws_v2)
 cat(sprintf("Cohort Size: %s active primary-linked midwives\n", format(N_cohort, big.mark = ",")))
 
 # 2. Load Open Payments Profile Matches (N = 7,039)
+# op_profile_match below is A-arm (Python crossref) validation data per the
+# DEBT.md D5 ruling: it is used ONLY as a presence flag (has_op_profile). The
+# employer name it carries is an under-identified tenant pick at multi-tenant
+# addresses and must not be read as an employer or affiliation. Canonical
+# affiliation is resolve_org_ambiguity.R / the resolver's arms.
 op_profile <- chr(OP_PROFILE_FILE) %>%
   mutate(npi = as.character(npi)) %>%
   distinct(npi, .keep_all = TRUE) %>%
