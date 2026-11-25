@@ -166,6 +166,13 @@ jobs:
       - name: Geocoder provenance classification
         run: Rscript tests/test_geocoder_provenance.R
 
+      # The OB-hospital geocoder's isochrones cache path resolves through
+      # ISOCHRONES_HOME (no hardcoded developer home) and fails closed inside
+      # run_geocode() when the cache is absent. Uses temp dirs only; needs no
+      # isochrones checkout.
+      - name: OB geocoder cache path contract
+        run: Rscript tests/test_geocode_ob_hospitals_cache_path.R
+
       # The check with the most to prevent. Four commits in one week untracked
       # person-level artifacts one at a time, each found by hand AFTER it was
       # committed. This blocks the next one, caps tracked file size, and holds a
