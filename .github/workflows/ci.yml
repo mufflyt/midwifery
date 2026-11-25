@@ -476,6 +476,25 @@ jobs:
           if (length(missing)) install.packages(missing)
         shell: Rscript {0}
 
+      # mysterynpi is a linkage dependency of several suites below, not just
+      # the Trilliant layer: amcb_license_bridge.R and
+      # R/build_amcb_state_licenses.R delegate their phrase keys to
+      # phrase_key(), expand_former_name_candidates.R delegates to
+      # compact_name_key, and training_institution.R uses strip_med_suffix.
+      # Installing here -- before any of those tests -- keeps every suite in
+      # this job able to reach the pin. Pinned to the 0.11.0 commit that
+      # added phrase_key(), so a later change there cannot move a result
+      # here without a pull request that moves the pin. Installed from
+      # GitHub with the job's token: without one, remotes falls back to its
+      # bundled PAT, which GitHub's API refuses (see nightly.yml).
+      - name: Install mysterynpi (pinned)
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Rscript -e 'if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")'
+          Rscript -e 'remotes::install_github("mufflyt/mysterynpi@03469aed868ea6af1e429b1da033915e49010dc7", upgrade = "never")'
+          Rscript -e 'ex <- getNamespaceExports("mysterynpi"); stopifnot(all(c("strip_med_suffix", "phrase_key", "compact_name_key") %in% ex)); cat("mysterynpi", as.character(packageVersion("mysterynpi")), "\n")'
+
       # The deterministic license->NPI bridge: the one linkage path that does not
       # depend on comparing two spellings of a name. Its collision handling is
       # what keeps a shared license key from asserting a shared identity.
@@ -771,20 +790,6 @@ jobs:
             echo "::endgroup::"
           done
           exit $rc
-
-      # mysterynpi holds strip_med_suffix(), which R/lib/training_institution.R
-      # delegates to and the Trilliant tests below exercise. Pinned to the
-      # commit that added it, so a later change there cannot move a result
-      # here without a pull request that moves the pin. Installed from GitHub
-      # with the job's token: without one, remotes falls back to its bundled
-      # PAT, which GitHub's API refuses (see nightly.yml).
-      - name: Install mysterynpi (pinned)
-        env:
-          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          Rscript -e 'if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")'
-          Rscript -e 'remotes::install_github("mufflyt/mysterynpi@aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a", upgrade = "never")'
-          Rscript -e 'stopifnot("strip_med_suffix" %in% getNamespaceExports("mysterynpi")); cat("mysterynpi", as.character(packageVersion("mysterynpi")), "\n")'
 
       # The Trilliant layer's pure functions: which freeze and cohort a build may
       # use, how work sites are counted and placed, how person-level files move

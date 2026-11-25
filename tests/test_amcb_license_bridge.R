@@ -66,6 +66,33 @@ chk(identical(normalize_city("Espa\u00f1ola"), normalize_city("Espanola")),
 chk(is.na(normalize_person_name(NA)) && is.na(normalize_person_name("")),
     "NA and blank still normalize to NA")
 
+# The fold itself is delegated to mysterynpi::phrase_key, so umlauts expand
+# as German digraphs --
+# "Müller" keys MUELLER, not the MULLER the retired stri_trans_general fold
+# produced. That is the canonical fold the linkage matcher uses; these pins
+# keep a local fold from drifting back in.
+chk(normalize_person_name("M\u00fcller") == "MUELLER",
+    "ü folds to the UE digraph, matching the matcher's canonical fold")
+chk(identical(normalize_person_name("M\u00fcller"), normalize_person_name("Mueller")),
+    "...so Müller and Mueller share one key")
+chk(normalize_person_name("Stra\u00dfe") == "STRASSE",
+    "ß folds to SS")
+
+# DEBT.md D15: apostrophes are DELETED -- the R/lib/org_names.R rule, adopted
+# for people. "O'Brien" and "OBrien" are one surname recorded two ways;
+# spacing the apostrophe keyed them "O BRIEN" and "OBRIEN" and counted the
+# pair as a disagreement.
+chk(normalize_person_name("O'Brien") == "OBRIEN",
+    "straight apostrophe closes the surname")
+chk(identical(normalize_person_name("O'Brien"), normalize_person_name("OBrien")),
+    "...so both spellings share one key")
+chk(identical(normalize_person_name("D’Amelio"), normalize_person_name("D'Amelio")),
+    "curly apostrophe is the same delete")
+chk(identical(normalize_city("O'Fallon"), normalize_city("OFallon")),
+    "same rule on the city path, which shares the normalizer")
+chk(first_initial("O'Brien") == "O",
+    "first initial is unaffected")
+
 # -----------------------------------------------------------------------------
 cat("\n-- license key (state :: number) --\n")
 # -----------------------------------------------------------------------------

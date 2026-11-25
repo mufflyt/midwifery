@@ -172,8 +172,8 @@ jobs:
           GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
         run: |
           Rscript -e 'if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")'
-          Rscript -e 'remotes::install_github("mufflyt/mysterynpi@aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a", upgrade = "never")'
-          Rscript -e 'stopifnot("strip_med_suffix" %in% getNamespaceExports("mysterynpi")); cat("mysterynpi", as.character(packageVersion("mysterynpi")), "\n")'
+          Rscript -e 'remotes::install_github("mufflyt/mysterynpi@03469aed868ea6af1e429b1da033915e49010dc7", upgrade = "never")'
+          Rscript -e 'ex <- getNamespaceExports("mysterynpi"); stopifnot(all(c("strip_med_suffix", "phrase_key", "compact_name_key") %in% ex)); cat("mysterynpi", as.character(packageVersion("mysterynpi")), "\n")'
 
       # Two harnesses live in tests/. 13 files use testthat and must go through
       # test_file(); the other 44 are standalone scripts with their own harness

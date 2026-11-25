@@ -525,13 +525,17 @@ scripts and show each reproduces byte-for-byte across two runs. Only then
 consider formal use, and test proposals against the v1 truth set only after it
 is unblinded.
 
+## Closed
+
 ## D15 — Person-name keys split on apostrophes, so `O'Brien` never matches `OBrien`
 
-- **status:** open
+- **status:** closed
 - **owner:** tyler
 - **raised:** 2026-11-22
+- **closed:** 2026-11-24
+- **resolution:** the three person-name copies were consolidated upstream as `mysterynpi::phrase_key()` (mysterynpi 0.11.0) — fold via `normalize_string(x, remove_apostrophes = TRUE)`, then punctuation→space, whitespace collapse, empty→NA. `amcb_license_bridge.R` `normalize_text()` and `R/build_amcb_state_licenses.R` `normalize_name()` call it; `expand_former_name_candidates.R` delegates its squash contract to `mysterynpi::compact_name_key`. Delegation also closed two latent divergences the local copies carried: the okina apostrophe `ʻ` (the local class covered three of four codepoints) and the German digraphs (`Müller` now keys `MUELLER`, the same key the matcher's own pipeline produces, not the `MULLER` the retired `stri_trans_general` fold gave). Measured arm against arm: the digraph fold moves exactly 1 of 22,309 roster `last_name` values (`Jackson-Köhlin`) and 0 of 1,275,086 NPPES candidate name fields — and that surname reaches no NPPES candidate under either spelling, so the agreement movement is 0 gained / 0 lost. Pinned by apostrophe and umlaut assertions in all three test files; `ci.yml` installs the pinned mysterynpi before the suites that need it.
 - **source:** `amcb_license_bridge.R` `normalize_text()` (feeding `normalize_person_name()` and `normalize_city()`), `R/build_amcb_state_licenses.R:46` `normalize_name()` (feeding `.block_surname_norm`, a blocking key), `expand_former_name_candidates.R:124`
-- **policed by:** nothing. `tests/ci_hygiene.R` H7 records the duplicated-body half of this family; no gate asserts an apostrophe policy, because the repository has not decided on one for people.
+- **policed by:** the three test files named in the resolution, including umlaut pins that fail if a local fold drifts back in; the composition itself now lives upstream in `mysterynpi::phrase_key`, so there is no local copy left to drift.
 
 Every person-name normaliser replaces anything outside `[A-Z0-9 ]` with a
 **space**, apostrophes included. So:
@@ -553,37 +557,58 @@ disagreement. In a cohort of nurse-midwives the affected surnames are not rare.
 > recorded differently by two arms, counted as a disagreement.
 
 It also handles curly apostrophes, noting NPPES and Care Compare disagree on
-which they use. None of the person-name copies does either thing.
+which they use. None of the person-name copies did either thing.
 
-**Why this is open rather than fixed.** The 2026-11-21 review fixed the
+**Why this was open rather than fixed.** The 2026-11-21 review fixed the
 *determinism* defect in the same functions — `iconv(to = "ASCII//TRANSLIT")`
 returned a different key per operating system — and deliberately stopped there.
 The two are different in kind. The accent fold had one correct answer and the
-old code was wrong on some machines; the apostrophe rule is a **policy choice
-about who should match**, where both behaviours are internally consistent. It
-will move linkage counts on purpose.
+old code was wrong on some machines; the apostrophe rule was a **policy choice
+about who should match**, where both behaviours were internally consistent.
 
-Bundling them would also have made the movement unattributable: two causes, one
-count change, no way to say which did what.
+**Scope notes, recorded at closure.**
 
-**What it would take to close.**
+- `normalize_text()` is shared by `normalize_person_name()` and
+  `normalize_city()`, so the rule reaches city keys too — the failure shape is
+  identical (`O'Fallon` vs `OFallon`) and the same incident reasoning applies.
+- `expand_former_name_candidates.R`'s `[^A-Z] -> ""` pass already produced the
+  target behaviour (`O'BRIEN` -> `OBRIEN`); this entry's citation of it was for
+  the family audit, not a live defect there. A comment now marks the delete as
+  deliberate rather than emergent.
+- `R/lib/script_cli_and_keys.R` `identity_key_norm()` also spaces apostrophes
+  on person names and was deliberately left: it is the disagreement-audit
+  normaliser whose shallowness is a documented measurement decision
+  ("an aggressive normaliser hides exactly the disagreement this audit exists
+  to measure", `audit_2013_dac_vs_nppes.R:181`). It counts recorded
+  disagreement; it does not decide matches.
+- `mysterynpi::name_key()` keeps the apostrophe (`O'BRIEN`) — a display key
+  that preserves recorded spelling; `surname_agreement()` strips it at
+  comparison time via its own `deq()` helper. The blocking keys fixed here
+  now share mysterynpi's *fold* (`normalize_string`) but keep their own
+  phrase/squash contracts, which upstream does not offer as functions.
+- **Same defect, next family:** the institution-name and street-name copies
+  (`build_table1_midwives.R` `.norm_school`, `R/lib/training_institution.R`,
+  `validate_training_institution_against_acme.R`, `build_embedded_org_name_arm.R`,
+  `build_worksite_setting_crosswalk.R` `street_key`) still space apostrophes.
+  Org-side scope, not person-name; `ST JOHN'S` -> `ST JOHN S` is the same
+  incident `norm_org` already paid for. Left for a separate entry.
 
-1. Adopt `norm_org`'s rule for people: delete `['’ʼ`]` before the
-   character-class pass, so the apostrophe closes the name rather than splitting
-   it. One line in each of the three sites, or one shared helper.
-2. Validate **arm against arm**, never against the freeze — the freeze is not
-   regenerable, and a shadow-vs-freeze comparison confounds this change with
-   every other difference between the two.
-3. Report the count movement as its own number. More matches is the expected
-   direction; a *drop* would mean the change did something other than what this
-   entry describes.
+**Movement, measured arm against arm** (`midwives.csv` x `nppes_candidates.csv`,
+2026-11-24): 49 roster surnames change key (126 of 22,309 `last_name` values,
+0.56%; 50 distinct recorded surnames contain an apostrophe). Under the new rule
+**27 cross-arm surname agreements are gained** — `O'Brien` now reaches NPPES
+`OBRIEN`, `D'Amelio` reaches `DAMELIO`, `O'Connor`/`O'Neill`/`D'Errico` etc. —
+and **3 are lost**, all malformed NPPES spellings whose old agreement was
+itself accidental: `O"DAY` (a literal double-quote), `O NEIL` (a literal
+space), and `O' ROURKE` (apostrophe-then-space). Each of those surnames still
+reaches its canonical NPPES spelling (`ODAY`, `ONEIL`, `OROURKE`) under the
+new rule. Direction is as predicted: more matches, and the only losses are
+spellings no arm should have been matching on.
 
 **Checked and not a concern:** the same character class also spaces hyphens, so
 `Mary-Jo` keys as `MARY JO`. That is the correct behaviour for a name the
 sources spell both ways, and unlike the apostrophe it does not merge or split a
 single token.
-
-## Closed
 
 ## D13 — DAC multi-site ZIP5 comparison silently picked an arbitrary one of a clinician's real sites
 
