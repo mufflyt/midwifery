@@ -146,6 +146,22 @@ durable trail is `docs/TECHNICAL_APPENDIX_STATISTICAL_REVIEW_2026-11-23.md`.
   `identity_key_norm()` (`R/lib/script_cli_and_keys.R`) keeps spacing
   apostrophes on purpose — it is the disagreement-audit normaliser, where
   shallow normalisation is the measurement, not a defect.
+- **Organization-side keys no longer split on apostrophes either
+  (DEBT.md D18).** `training_norm_school()`, `norm_institution_name()`,
+  `street_key()`, and `embedded_org_text()` spaced apostrophes, so
+  `ST JOHN'S` keyed as `ST JOHN S` and never met `ST JOHNS`. All four now
+  delegate the fold + punctuation pass to `mysterynpi::phrase_key()`
+  while keeping their own local policy (`&`-entity restore and leading
+  `THE` for schools, street-suffix folding, extraction-then-key for
+  embedded org text); the byte-identical `.norm_school` duplicate in
+  `build_table1_midwives.R` is deleted in favour of
+  `training_norm_school()`. Measured on 15,776 real institution strings:
+  14 keys change (all Healthgrades possessives), **0 equivalence classes
+  merge**, so no published count moves. Pinned by
+  `tests/test_org_apostrophe_normalization.R` (20 assertions, wired into
+  `ci.yml`). `validate_training_institution_against_acme.R` also had a
+  latent column-name bug (`norm_name` read where `norm_institution_name`
+  was created) fixed in passing.
 - **#340's work never reached `main`, and was recovered.** The pull request was
   squashed and merged; the squash commit `f194e36` landed on
   `fix/table1-custodian-sort`, which was itself merged away in `ad3aec5` and
