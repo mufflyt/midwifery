@@ -40,7 +40,7 @@ for (s in c(SCRIPT_ED, SCRIPT_WS, SCRIPT_AC)) stopifnot(file.exists(s))
 # Extract a top-level definition by name, balancing delimiters (the
 # regex-close approach breaks on definitions containing ")" inside
 # strings, per test_embedded_org_name_guards.R's own header note).
-extract_fn <- function(script, pattern) {
+extract_top_level_fn <- function(script, pattern) {
   src <- readLines(script, warn = FALSE)
   s <- grep(pattern, src)
   if (!length(s)) stop("not found in ", script, ": ", pattern, call. = FALSE)
@@ -55,10 +55,10 @@ extract_fn <- function(script, pattern) {
   }
   stop("unbalanced definition in ", script, call. = FALSE)
 }
-eval(parse(text = extract_fn(SCRIPT_ED, "^embedded_org_text <- function")))
-eval(parse(text = extract_fn(SCRIPT_WS, "^clean <- function")))
-eval(parse(text = extract_fn(SCRIPT_WS, "^street_key <- function")))
-eval(parse(text = extract_fn(SCRIPT_AC, "^norm_institution_name <- function")))
+eval(parse(text = extract_top_level_fn(SCRIPT_ED, "^embedded_org_text <- function")))
+eval(parse(text = extract_top_level_fn(SCRIPT_WS, "^clean <- function")))
+eval(parse(text = extract_top_level_fn(SCRIPT_WS, "^street_key <- function")))
+eval(parse(text = extract_top_level_fn(SCRIPT_AC, "^norm_institution_name <- function")))
 
 failures <- character(0)
 chk <- function(ok, msg) {
