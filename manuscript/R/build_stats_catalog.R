@@ -472,6 +472,20 @@ if (!is.null(acc_2)) {
     a$state_agree_min <- min(as.numeric(ag$pct_agree), na.rm = TRUE)
     a$state_agree_max <- max(as.numeric(ag$pct_agree), na.rm = TRUE)
   }
+
+  acc_trend <- rd(file.path(MW_ART, "dac_agreement_cluster_trend.csv"))
+  if (!is.null(acc_trend) && nrow(acc_trend)) {
+    tr <- acc_trend[1, , drop = FALSE]
+    a$dac_cluster_trend <- list(
+      start_year = num(tr$start_year), end_year = num(tr$end_year),
+      n_years = num(tr$n_years), n_npi_years = num(tr$n_npi_years),
+      n_npis = num(tr$n_npis), slope = num(tr$slope_pp_per_year),
+      ci_low = num(tr$ci_low), ci_high = num(tr$ci_high),
+      absolute_change = num(tr$absolute_change_pp),
+      start_agreement = num(tr$start_agreement_pct),
+      end_agreement = num(tr$end_agreement_pct),
+      method = as.character(tr$method), unit = as.character(tr$comparison_unit))
+  }
   # THE SOURCE ROSTER, COUNTED RATHER THAN ASSERTED. The paper says "ten
   # sources"; this is where that ten comes from, so the claim cannot drift
   # from the analysis. One source is the reference standard (the provider
@@ -609,6 +623,26 @@ if (!is.null(acc_2)) {
     # prose; without this it is cited and never applied.
     a$medicaid_npi_pop_n_states <- length(p)
     a$medicaid_npi_pop_n_below_cms <- sum(p < 90, na.rm = TRUE)
+  }
+
+  # Multi-state enrollment under the two observation rules the concordance
+  # artifacts carry: a common snapshot date within each enrollment year
+  # (primary) versus enrollment in more than one state at any point in the
+  # year (secondary). The footprint figure counts persons across the whole
+  # window; these are the provider-year rates the figure caption must not
+  # conflate with it.
+  acc_msnap <- rd(file.path(MW_ART,
+    "medicaid_enrollment_concordance_snapshot_date_by_year.csv"))
+  acc_manyt <- rd(file.path(MW_ART,
+    "medicaid_enrollment_concordance_any_time_by_year.csv"))
+  if (!is.null(acc_msnap) && !is.null(acc_manyt)) {
+    ms_rate <- function(tab) {
+      n <- sum(tab$n[grepl("^Multistate", tab$classification)])
+      d <- sum(tab$n[tab$classification != "Not observed"])
+      100 * n / d
+    }
+    a$medicaid_multistate_snapshot_pct <- ms_rate(acc_msnap)
+    a$medicaid_multistate_anytime_pct <- ms_rate(acc_manyt)
   }
 
   # Persistence denominators: where a provider who leaves a source went.

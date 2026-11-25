@@ -278,7 +278,7 @@ if (file.exists(fp)) {
               vjust = -0.3, size = 3.1, lineheight = 0.95) +
     scale_y_continuous(expand = expansion(mult = c(0, 0.16))) +
     labs(title = "Multi-state practice is not an edge case",
-         subtitle = sprintf("State Medicaid programs each midwife was enrolled in, among %s midwives with any Medicaid enrollment. %.1f%% were enrolled in two or more at some point.",
+         subtitle = sprintf("State Medicaid programs each midwife was enrolled in, among %s midwives with any Medicaid enrollment. %.1f%% were enrolled in two or more states at any point in the file's coverage years -- an any-time measure, not enrollment in several states on one date.",
                             format(sum(ms$n), big.mark = ","),
                             sum(ms$pct[ms$band != "1 state"])),
          caption = paste0(fp, " (set-membership footprint, not the modal reduction)"),

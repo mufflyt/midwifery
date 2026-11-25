@@ -1,17 +1,29 @@
 {
   "artifact": "agreement_cluster_bootstrap_ci.csv",
+<<<<<<< /var/folders/n2/1szct8bn7db955prtxx69mlr0000gn/T/tmp.yj4ATCaUF9/current
   "written_utc": "2026-11-23 23:48:34 UTC",
+=======
+  "written_utc": "2026-11-25 03:16:42 UTC",
+>>>>>>> /var/folders/n2/1szct8bn7db955prtxx69mlr0000gn/T/tmp.yj4ATCaUF9/other
   "inputs": [
     {
       "path": "artifacts/canonical_source_records.csv",
       "sha256": "a067f7bfb4fe8fb81f0ca42f841bde70c1b5fc91a53021aefd02417cb3137067"
     }
   ],
+<<<<<<< /var/folders/n2/1szct8bn7db955prtxx69mlr0000gn/T/tmp.yj4ATCaUF9/current
   "code_sha256": "b36be102e43340fa023cb465f75a6a99d04f8297cd2953458253d26c7494dc73",
   "code": [
     {
       "path": "build_f2_f3_uncertainty_denominators.R",
       "sha256": "5ad548d576605ace34c3088a924cd0d9cea5489624e05661d3d9bb6992b9776b"
+=======
+  "code_sha256": "7e2a1e989cebeda5be39c9820678faecdfe9eec96d2a7ec3e5f6085b714bb28e",
+  "code": [
+    {
+      "path": "build_f2_f3_uncertainty_denominators.R",
+      "sha256": "8a558475a8e64eea5d21cf606f9bf466fbab052d498af72ffa6c195d29a8f6f7"
+>>>>>>> /var/folders/n2/1szct8bn7db955prtxx69mlr0000gn/T/tmp.yj4ATCaUF9/other
     },
     {
       "path": "R/lib/artifact_provenance.R",
@@ -34,8 +46,8 @@
     {
       "package": "mysterynpi",
       "installed": true,
-      "version": "0.9.1",
-      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
+      "version": "0.10.0",
+      "source_sha": null
     },
     {
       "package": "stringi",
