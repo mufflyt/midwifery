@@ -1080,15 +1080,15 @@ mw_build_catalog <- function(root = ".") {
     #
     # DENOMINATOR POPULATION. 15,347 is the RETAINED subgroup, not the analytic
     # cohort. The prose around this number says "the analytic cohort", which is
-    # 16,892 (panel.cohort_n_at_panel_build) -- the retained subgroup plus 1,545 newly
-    # NPI-resolved members, every one of whom is Unknown rurality because none
-    # carries a practice ZIP. Reporting a subgroup's composition under the
+    # 16,775 (panel.cohort_n_at_panel_build) -- the retained subgroup plus the
+    # newly NPI-resolved members, most of whom are Unknown rurality because
+    # none carries a practice ZIP. Reporting a subgroup's composition under the
     # cohort's name is how a reader ends up unable to reconcile any two
     # denominators in the paper.
     #
-    # So the frame is the analytic cohort throughout: 14,861 of 16,892 members
-    # have an assignable county and 2,031 do not, and the metropolitan share is
-    # taken among the 14,861. That reconciles exactly with n_linked in the
+    # So the frame is the analytic cohort throughout: 16,254 of 16,775 members
+    # have an assignable county and 521 do not, and the metropolitan share is
+    # taken among the 16,254. That reconciles exactly with n_linked in the
     # bounds artifact, which is the point.
     cohort_groups <- c("1_retained", "2_newly_npi_resolved",
                        "3_in_cohort_no_final_npi")
