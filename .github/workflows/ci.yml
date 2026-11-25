@@ -139,21 +139,7 @@ jobs:
       - name: CCN -> state resolution contract
         run: Rscript tests/test_ccn_state.R
 
-      # Manuscript-to-evidence drift detection (Task 3): verifies the
-      # federal_database_accuracy claim ledger against its artifacts --
-      # provenance freshness, units, terminology, catalog-key resolution,
-      # figure paths, promised intervals, conflict markers, sections.
-      # Report lands in review/manuscript_evidence_report.{csv,md}.
-      - name: Manuscript evidence verification
-        run: Rscript tools/verify_manuscript_evidence.R
-
-      # Proves the verifier actually fails: six corrupted fixtures (missing
-      # artifact, dropped Wilson promise, conflict marker, missing section,
-      # blank unit, broken figure path) must each be rejected.
-      - name: Manuscript evidence verifier (mutation self-test)
-        run: Rscript tests/test_manuscript_evidence_detect.R
-
-      - name: clean_state() full-name and combined-form translation contract
+      # clean_state() full-name and combined-form translation contract
         run: Rscript tests/test_clean_state.R
 
       # Base R plus stringr. Every cross-source comparison pairs files published
@@ -588,6 +574,22 @@ jobs:
       # run on the pull request that breaks it.
       - name: Manuscript figure saboteurs
         run: Rscript tests/test_manuscript_figure_saboteurs.R
+
+      # Manuscript-to-evidence drift detection: verifies the
+      # federal_database_accuracy claim ledger against its artifacts --
+      # provenance freshness, units, terminology, catalog-key resolution,
+      # figure paths, promised intervals, conflict markers, sections.
+      # Needs dplyr/readr, so it lives here rather than in r-checks.
+      # Report lands in review/manuscript_evidence_report.{csv,md}.
+      - name: Manuscript evidence verification
+        run: Rscript tools/verify_manuscript_evidence.R
+
+      # Proves the verifier actually fails: six corrupted fixtures (missing
+      # artifact, dropped Wilson promise, conflict marker, missing section,
+      # blank unit, broken figure path) must each be rejected. Seven verifier
+      # passes, ~15 min -- the reason this pair is here and not in r-checks.
+      - name: Manuscript evidence verifier (mutation self-test)
+        run: Rscript tests/test_manuscript_evidence_detect.R
 
       # Pure text scans over tracked files -- no packages beyond base R, but it
       # lives here rather than in r-checks so it sits beside the other saboteur
