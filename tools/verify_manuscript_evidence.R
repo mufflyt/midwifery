@@ -33,13 +33,44 @@ verifier_add <- function(check, item, status, detail = "") {
 }
 OK <- function(...) isTRUE(all(c(...)))
 
+# A ledger artifact can be absent for two very different reasons: it is a
+# gitignored, rebuildable derivative (expected in a fresh clone -- SKIP), or
+# it is tracked and should be there (FAIL). git check-ignore is the arbiter;
+# if git itself is unavailable we treat absence as FAIL, the conservative
+# direction.
+artifact_absent_status <- function(rel_path) {
+  ap <- file.path(root, rel_path)
+  if (file.exists(ap)) return("present")
+  ign <- system2("git", c("-C", root, "check-ignore", "-q", "--", rel_path),
+                 stdout = FALSE, stderr = FALSE)
+  if (identical(ign, 0L) || identical(ign, 1L)) {
+    # exit 0 = ignored, 1 = not ignored, 128 = not a repo / other error
+    if (identical(ign, 0L)) return("ignored")
+    return("missing")
+  }
+  "missing"
+}
+any_catalog_input_absent <- function() {
+  any(vapply(ledger$source_artifact,
+             function(a) !is.na(a) && nzchar(a) &&
+               artifact_absent_status(a) != "present", logical(1)))
+}
+
 ## -- C01 artifact existence + provenance freshness -------------------------
 base::message("[verify] C01 ledger artifacts exist and provenance is fresh")
 for (i in seq_len(nrow(ledger))) {
   a <- ledger$source_artifact[i]
   if (is.na(a) || !nzchar(a)) { verifier_add("C01", ledger$claim_id[i], "SKIP", "no artifact"); next }
   ap <- file.path(root, a)
-  if (!file.exists(ap)) { verifier_add("C01", ledger$claim_id[i], "FAIL", paste("missing", a)); next }
+  if (!file.exists(ap)) {
+    st <- artifact_absent_status(a)
+    verifier_add("C01", ledger$claim_id[i],
+        ifelse(st == "ignored", "SKIP", "FAIL"),
+        ifelse(st == "ignored",
+               paste("gitignored rebuildable artifact absent:", a),
+               paste("missing tracked artifact:", a)))
+    next
+  }
   side <- paste0(ap, ".provenance.json")
   if (!file.exists(side)) { verifier_add("C01", ledger$claim_id[i], "WARN", "no provenance sidecar"); next }
   pv <- check_provenance(ap)
@@ -96,7 +127,12 @@ verifier_add("C04", "abstract-results shared statistics", "PASS",
 
 ## -- C05 every `A$`/`K$`/`L$` key used resolves in the catalog --------------
 base::message("[verify] C05 all inline stat keys resolve")
-K <- tryCatch(mw_build_catalog(root), error = function(e) NULL)
+# The catalog is built from the same gitignored rebuildable artifacts C01
+# tracks. In a fresh clone those are absent, the catalog is partial, and
+# "unresolved key" would be an artifact of the checkout, not drift -- so the
+# check SKIPs unless every ledger input is present.
+K <- if (any_catalog_input_absent()) NULL else
+  tryCatch(mw_build_catalog(root), error = function(e) NULL)
 all_keys <- unique(unlist(regmatches(qmd,
   gregexpr("\\b[ALK]\\$[A-Za-z0-9_.]+", qmd))))
 unresolved <- character(0)
@@ -109,9 +145,13 @@ if (!is.null(K)) {
     if (is.null(v)) unresolved <- c(unresolved, key)
   }
 }
-verifier_add("C05", "catalog key resolution", ifelse(!length(unresolved), "PASS", "FAIL"),
-    ifelse(!length(unresolved), sprintf("%d keys resolve", length(all_keys)),
-           paste("unresolved:", paste(head(unresolved, 8), collapse = ", "))))
+verifier_add("C05", "catalog key resolution",
+    ifelse(is.null(K), "SKIP",
+           ifelse(!length(unresolved), "PASS", "FAIL")),
+    ifelse(is.null(K),
+           "catalog inputs absent in fresh clone (gitignored rebuildable artifacts)",
+           ifelse(!length(unresolved), sprintf("%d keys resolve", length(all_keys)),
+                  paste("unresolved:", paste(head(unresolved, 8), collapse = ", ")))))
 
 ## -- C06 figure paths exist --------------------------------------------------
 base::message("[verify] C06 every fig() reference resolves to a file")
