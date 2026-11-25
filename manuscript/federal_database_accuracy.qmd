@@ -191,7 +191,8 @@ records, `r cnt(linkage_matched_n)` (`r pc(linkage_matched_pct, 1)`) resolved
 to a provider record through the primary midwifery-taxonomy linkage; a
 nursing-taxonomy sensitivity tier adds
 `r cnt(cohort_n - linkage_matched_n)` further matches, giving the
-analytic cohort of `r cnt(cohort_n)` certificants. Analyses restricted
+analytic cohort of `r cnt(cohort_n)` certificants (Figure 1).
+Analyses restricted
 to certificants in active status use the narrower tiers below;
 each exclusion and its count is diagrammed in Supplemental Figure S8.
 Every count in this paper belongs to one of the following tiers:

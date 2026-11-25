@@ -10,7 +10,7 @@ base <- list(
   flow = file.path(root, "artifacts", "federal_database_accuracy_cohort_flow.csv")
 )
 
-run_gate <- function(paths) {
+gate_passes <- function(paths) {
   status <- system2("Rscript", gate, stdout = FALSE, stderr = FALSE,
                     env = c(sprintf("FDB_QMD=%s", paths$qmd),
                             sprintf("FDB_DENOMINATORS=%s", paths$den),
@@ -25,7 +25,7 @@ mutate_case <- function(id, mutate) {
   paths <- as.list(setNames(file.path(d, basename(unlist(base))), names(base)))
   for (nm in names(base)) file.copy(base[[nm]], paths[[nm]])
   mutate(paths)
-  if (run_gate(paths)) stop(id, " was not detected", call. = FALSE)
+  if (gate_passes(paths)) stop(id, " was not detected", call. = FALSE)
   cat("  ok  ", id, " detected\n")
 }
 
@@ -36,7 +36,7 @@ edit_text <- function(path, pattern, replacement, fixed = TRUE) {
   writeLines(y, path)
 }
 
-if (!run_gate(base)) stop("baseline remediation gate must pass before mutation tests", call. = FALSE)
+if (!gate_passes(base)) stop("baseline remediation gate must pass before mutation tests", call. = FALSE)
 
 mutate_case("MAN-01", function(p) {
   x <- read.csv(p$den, check.names = FALSE); x$numerator[x$statistic_id == "PERSIST_2021_2026"] <- 670
