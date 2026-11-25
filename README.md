@@ -134,11 +134,11 @@ and the [cohort flow](docs/figures/cohort_flow.png).*
 ### 3. Cohort flow, roster to rurality
 ![AMCB roster to analytic cohort to RUCC stratum](docs/figures/cohort_flow.png)
 *Figure 3: 22,357 certificants to the analytic cohort and its rurality strata.
-The **5,329 unresolved** are four different things wearing one label: records
-tied on name evidence, records with no candidate at all, records held out by the
-class-5 guard, and a further group certified in 2025–2026, outside the
-2007–2025 NPPES panel window entirely, which are not linkage failures and
-cannot be recovered by any matching rule.*
+The **5,582 unresolved** are several different things wearing one label, kept
+distinct in `linkage_completeness_by_status.csv`: 2,689 tied on name evidence,
+2,613 with no candidate at all, 163 held out by the class-5 guard, and 117
+contested or unruled-out component records the one-to-one constraint could not
+separate.*
 
 ### 4. Board verification, retracted: 11,355 claimed, 374 observed
 ![Board verification claimed against board verification observed](docs/figures/bon_verification_retraction.png)
@@ -223,13 +223,13 @@ the same quantity. See
 ![Linkage strata as a ladder of properties](docs/figures/linkage_strata_upset.png)
 *Figure 10: The seven linkage strata partition all 22,357 certificants exactly,
 and each loses one more of the five properties a record must accumulate to
-reach the analytic cohort. The sets are strictly nested — 20,270 with a
-candidate, 17,310 single at the best class, 17,189 surviving the one-to-one
-constraint, 17,028 in the cohort, 14,990 with midwifery taxonomy confirmed — so
+reach the analytic cohort. The sets are strictly nested — 19,744 with a
+candidate, 17,055 single at the best class, 16,946 surviving the one-to-one
+constraint, 16,775 in the cohort, 14,956 with midwifery taxonomy confirmed — so
 the dot matrix is a staircase rather than a lattice. **Tied names and
 unruled-out component share a pattern**: they are indistinguishable on these
-five properties, which is why reporting the 5,329 unresolved as one number
-hides four different causes. Contested NPIs resolve uniquely and are pruned
+five properties, which is why reporting the 5,582 unresolved as one number
+hides several different causes. Contested NPIs resolve uniquely and are pruned
 only by the one-to-one constraint, so they sit above tied names. Built by
 [`make_linkage_upset_figure.R`](make_linkage_upset_figure.R), ported from the
 registry-overlap figure in `mufflyt/grace-ent`.*
@@ -700,11 +700,10 @@ evidence tier, never promoted into the primary cohort.
 
 ```mermaid
 flowchart LR
-  S["Resolved candidate"] --> T1{"Fuzzy surname?"}
-  T1 -->|yes| F["sensitivity_fuzzy - 249"]
-  T1 -->|no| T2{"Midwifery taxonomy ever recorded?"}
-  T2 -->|yes| P["primary_midwifery - 14,959"]
-  T2 -->|no| N["sensitivity_nursing - 1,820"]
+  S["Resolved candidate"] --> T{"Midwifery taxonomy ever recorded?"}
+  T -->|yes| P["primary_midwifery - 14,956"]
+  T -->|no| N["sensitivity_nursing - 1,819"]
+  T -. "surname-component match only" .-> H["held out of cohort - 163"]
 ```
 
 ### Where the 22,357 go
@@ -716,15 +715,17 @@ plausible NPI exists, versus plausible NPIs exist but identity is ambiguous.
 | Stage | n | % of roster |
 |---|---:|---:|
 | AMCB roster | 22,357 | 100.0 |
-| **Primary linkage** | **14,959** | **66.9** |
-| + nursing tier | 16,779 | 75.1 |
-| + fuzzy tier | 17,028 | 76.2 |
-| Quarantined | 3,089 | 13.8 |
-| No candidate at all | 2,087 | 9.3 |
-| **Primary + county** | **14,891** | **66.6** |
+| **Primary linkage** | **14,956** | **66.9** |
+| + nursing tier = analytic cohort | 16,775 | 75.0 |
+| Quarantined, incl. class-5 hold-out | 2,969 | 13.3 |
+| No candidate at all | 2,613 | 11.7 |
+| **Cohort + assignable county** | **16,254** | **72.7** |
 
-All 3,089 quarantined records have candidates; all 2,087 unmatched records have
-none. That distinction is preserved in the artifact as `has_candidate`.
+All 2,969 quarantined and held-out records have candidates; all 2,613 unmatched
+records have none. That distinction is preserved in the artifact as
+`has_candidate`. (The last row is the whole analytic cohort's geography coverage,
+not the primary tier's — the tier-specific count needs the person-level
+snapshot, which is pinned separately; see DEBT.md D10.)
 
 ### Geography, once identity is settled
 
@@ -1137,7 +1138,9 @@ discloses a practice address, and jittering is not de-identification.
 
 `linkage_tier` answers *how sure are we this is the right NPI?* `AMCB status` answers *is this person
 part of the current workforce?* Conflating them turns a confidently-linked deceased certificant into a
-practising midwife. Of the 14,677 primary-tier links with geography:
+practising midwife. Of the 14,677 primary-tier links with geography
+(the 2026-08-10 cohort; the current freeze's tier-specific geography split
+awaits the person-level rebuild tracked in DEBT.md D10 and #176):
 
 | Status | n | % |
 |---|---:|---:|
