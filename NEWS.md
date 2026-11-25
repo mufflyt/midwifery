@@ -120,6 +120,32 @@ durable trail is `docs/TECHNICAL_APPENDIX_STATISTICAL_REVIEW_2026-11-23.md`.
 
 ### Fixed
 
+- **Person-name keys no longer split on apostrophes (DEBT.md D15).**
+  `amcb_license_bridge.R` `normalize_text()` and
+  `R/build_amcb_state_licenses.R` `normalize_name()` spaced apostrophes, so
+  `O'Brien` keyed as `O BRIEN` and never matched `OBRIEN` — two spellings of
+  one surname counted as a disagreement. The three person-name copies are now
+  consolidated upstream as `mysterynpi::phrase_key()` (mysterynpi 0.11.0): the
+  fold and apostrophe policy delegate to `normalize_string(x,
+  remove_apostrophes = TRUE)`, and the phrase contract — punctuation→space,
+  whitespace collapse, empty→NA — lives beside it. `expand_former_name_candidates.R`
+  delegates its squash contract to `mysterynpi::compact_name_key`. Delegation
+  also closed two latent divergences: the okina apostrophe `ʻ` and the German
+  digraphs, so `Müller` now keys `MUELLER` (the same key the matcher's own
+  pipeline produces), not the `MULLER` the retired `stri_trans_general` fold
+  gave. Measured arm against arm (`midwives.csv` × `nppes_candidates.csv`):
+  49 roster surnames change key on the apostrophe rule, **27 cross-arm surname
+  agreements are gained** and **3 are lost** — all three malformed NPPES
+  spellings (`O"DAY`, `O NEIL`, `O' ROURKE`) whose old agreement was itself
+  accidental; each surname still reaches its canonical NPPES spelling. The
+  digraph fold moves exactly 1 of 22,309 roster `last_name` values
+  (`Jackson-Köhlin`) and 0 of 1,275,086 NPPES candidate name fields — 0
+  agreements gained or lost. Pinned end-to-end by
+  `test_build_amcb_state_licenses.R` C6, `test_expand_former_name_candidates.R`
+  A5/A6, and umlaut assertions in `test_amcb_license_bridge.R`.
+  `identity_key_norm()` (`R/lib/script_cli_and_keys.R`) keeps spacing
+  apostrophes on purpose — it is the disagreement-audit normaliser, where
+  shallow normalisation is the measurement, not a defect.
 - **#340's work never reached `main`, and was recovered.** The pull request was
   squashed and merged; the squash commit `f194e36` landed on
   `fix/table1-custodian-sort`, which was itself merged away in `ad3aec5` and

@@ -105,29 +105,21 @@ blank_to_na <- function(x) {
   cleaned
 }
 
+# The phrase-key contract (fold + apostrophe policy + punctuation pass) is
+# mysterynpi::phrase_key, upstream since mysterynpi 0.11.0 -- the composition
+# now lives next to the fold it delegates to. This file's private copy
+# drifted twice in a week (the iconv fold, then the D15 apostrophe split);
+# see DEBT.md D15 for the measurements.
 normalize_text <- function(x) {
-  cleaned <- blank_to_na(x)
-
-  # Accent folding must not depend on the C library. base::iconv(to =
-  # "ASCII//TRANSLIT") is libiconv on macOS and glibc on the Linux runners, and
-  # the two disagree: libiconv emits the combining mark, so "Munoz" arrives here
-  # as "Mu~noz" and "Jose" as "Jos'e", and the [^A-Z0-9 ] pass below turns the
-  # mark into a SPACE -- MU NOZ and JOS E on this machine, MUNOZ and JOSE in CI.
-  # Same input, two linkage keys, decided by which machine ran the script.
-  # R/lib/work_site_topology.R:30 hit this and worked around it by stripping the
-  # marks iconv can leave; the name path here instead uses ICU's Latin-ASCII
-  # transform, which is deterministic by construction and is already the
-  # convention for name normalisation (expand_former_name_candidates.R:127).
-  cleaned <- stringi::stri_trans_general(cleaned, "Latin-ASCII")
-
-  cleaned <- cleaned |>
-    stringr::str_to_upper() |>
-    stringr::str_replace_all("[^A-Z0-9 ]", " ") |>
-    stringr::str_squish()
-
-  cleaned[cleaned == ""] <- NA_character_
-
-  cleaned
+  if (!requireNamespace("mysterynpi", quietly = TRUE)) {
+    stop(
+      "normalize_text() delegates its fold to mysterynpi::phrase_key, ",
+      "which is not installed.\n",
+      "  Fix: remotes::install_github(\"mufflyt/mysterynpi\")",
+      call. = FALSE
+    )
+  }
+  mysterynpi::phrase_key(blank_to_na(x))
 }
 
 normalize_city <- function(x) {
