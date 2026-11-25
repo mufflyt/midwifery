@@ -725,7 +725,13 @@ REBUILD_ORDER <- list(
                    "build_cross_source_comparison.R",
                    "analyze_address_lead_lag_and_freshness.R",
                    "build_table1_by_year.R", "diagnose_truth_fusion_migration_states.R",
-                   "build_canonical_source_records.R"))
+                   "build_canonical_source_records.R",
+                   # make_federal_database_accuracy_cohort_flow.R (added
+                   # 2026-11-24 with the cohort-flow figure) reads the freeze
+                   # plus linkage_completeness_by_status.csv and writes the
+                   # flow CSV and figure -- a publication leaf, and the T5/T14
+                   # gates caught it undeclared and unverified.
+                   "make_federal_database_accuracy_cohort_flow.R"))
 )
 declared <- unlist(lapply(REBUILD_ORDER, `[[`, "scripts"))
 

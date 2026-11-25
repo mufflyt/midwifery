@@ -1,10 +1,12 @@
 #!/usr/bin/env Rscript
 
 source(file.path("R", "lib", "artifact_provenance.R"))
+source(file.path("R", "lib", "cohort_definitions.R"))   # verify_linkage_freeze()
 
 summary_path <- "artifacts/linkage_completeness_by_status.csv"
 frozen_path <- "artifacts/amcb_npi_linkage_FROZEN.csv"
 s <- read.csv(summary_path, stringsAsFactors = FALSE)
+verify_linkage_freeze(frozen_path)
 f <- read.csv(frozen_path, stringsAsFactors = FALSE, colClasses = "character")
 
 sum_col <- function(x) sum(as.numeric(s[[x]]), na.rm = TRUE)
