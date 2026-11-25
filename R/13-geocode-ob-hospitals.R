@@ -225,7 +225,9 @@ run_geocode <- function() {
   n_coord <- sum(!is.na(out$latitude) & !is.na(out$longitude))
   cli::cli_alert_info("with coordinates: {n_coord} of {nrow(ob)} ({round(100*n_coord/nrow(ob),1)}%)")
 
-  write_with_provenance(out, OUT, na = "", inputs = prov_inputs(POS, prov_cache_input(CACHE)))
+  write_with_provenance(out, OUT, na = "",
+                        inputs = prov_inputs(POS),
+                        declared = prov_cache_input(CACHE))
   manifest <- list(
     analysis = "OB-service hospital geocoding",
     geocoder = "isochrones::census_batch_geocode (canonical)",
