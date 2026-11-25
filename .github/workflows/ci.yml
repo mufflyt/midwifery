@@ -1007,6 +1007,13 @@ jobs:
       - name: Linkage scripts smoke test
         run: Rscript tests/test_linkage_scripts_smoke.R
 
+      # NEEDS dplyr, readr, cli, jsonlite, DBI and duckdb -- the script under
+      # test sources all six at load time, so this belongs in r-unit-tests,
+      # not the stringr-only r-checks tier where it first landed (CI run
+      # 45558377168 failed there on "there is no package called 'dplyr'").
+      - name: OB geocoder cache path contract
+        run: Rscript tests/test_geocode_ob_hospitals_cache_path.R
+
   # ---------------------------------------------------------------------------
   # Path-filtered: the science-law suite (tests/ci_law_coverage.R) is Nightly's
   # job, not this file's -- it is expensive (the L8/L9 determinism harness runs
