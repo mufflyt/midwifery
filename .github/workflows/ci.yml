@@ -875,7 +875,14 @@ jobs:
       # Cohort exclusion criteria, stage classification rules, and population
       # conservation invariants across the exclusion waterfall.
       - name: Cohort exclusion invariants and flow counts
-        run: Rscript tests/test_exclusion_invariants.R
+        run: |
+          Rscript tests/test_exclusion_invariants.R
+          # Cohort vintage: every tracked aggregate (linkage manifest,
+          # frozen_cohort fingerprint, linkage_completeness, composition
+          # table) must describe the SAME freeze. Reads only tracked
+          # metadata, so it runs on a clean checkout with no person-level
+          # data -- the reason it was once held out of CI no longer applies.
+          Rscript tests/test_cohort_vintage.R
 
       # Table 1 demographics Quality Control (QC): block category sums, percent
       # validity, demographic plausibility bounds, and markdown concordance.

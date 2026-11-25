@@ -452,6 +452,40 @@ still correct). `tests/test_cohort_vintage.R` remains deliberately unwired
 from `.github/workflows/ci.yml` for the same reason it always was: it now
 passes here, but CI has no person-level data to run it against at all.
 
+**Update 2026-11-24 (spec Part 3 sweep):** re-verified end to end. V1–V4 of
+`tests/test_cohort_vintage.R` all agree at **16,775** under
+`reconcile_ab_20261022T134500_remove_fuzzy_surname_matching`; the provider
+panel constants were rebuilt 2026-10-30 (PR #282); `composition_rucc_cat.csv`
+is current. `make_linkage_upset_figure.R` and `make_cohort_flow_figure.R`
+were re-run — Figure 10's strata PNG had been stale since 2026-09-11 and now
+renders the 16,775 cohort; its caption constants are computed, not hardcoded.
+README's Figure 3 caption, Figure 10 caption, cohort mermaid and "Where the
+22,357 go" table were updated to the current freeze (the last table row moved
+from primary-tier to cohort-level geography because the tier-specific count
+needs person-level files — see below). `tests/test_cohort_vintage.R` is now
+wired into `ci.yml`; it reads only tracked metadata, so the old "CI has no
+person-level data" reason to hold it out no longer applies.
+
+**New defect found by the same sweep (D10-E6 in
+`review/d10_cohort_discrepancies.csv`):** the person-level files on this
+machine are the **2026-08-08/10 vintage**, not the current freeze's inputs.
+`midwives.csv` and `midwives_with_nppes.csv` are both 22,309 rows (the Aug-08
+scrape/match), `artifacts/frozen_cohort/midwives_geography_guarded.csv` is
+the original Aug-10 pin (sha `94551381`, 16,892 rows) while
+`INPUT_FINGERPRINT.json` records the 16,775 repin (sha `f8063509`). V1–V4
+could never see this — they compare metadata to metadata. `test_cohort_vintage.R`
+now has a **V5** check that, when the pinned CSV is present, verifies its
+sha256 and row count against the fingerprint; it fails closed on this machine
+today and skips on CI where the files are absent.
+
+**Still open:** the 14,677/11,920 primary-tier-with-geography status table in
+README, the "Primary + county" tier-specific count, and everything downstream
+of `midwives_geography_guarded.csv` cannot be regenerated or re-verified here
+— the current person-level inputs (09-02 scrape, September NPPES match,
+geography build) are not on this machine. Re-pinning needs that machine, then
+`repin_frozen_cohort.R` (`REPIN_APPLY=1`), `R/05-stage-progression.R`,
+`R/07-cohort-composition.R`, and the README person-level sections.
+
 ---
 
 ## D11 — The workforce microsimulation has no sourced inputs
