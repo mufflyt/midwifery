@@ -54,15 +54,23 @@ title_case <- function(x) {
 }
 zip5_from_free_text <- function(x) str_extract(clean(x), "[0-9]{5}")
 street_key <- function(x) {
-  x <- clean(x)
-  x <- str_replace_all(x, "[^A-Z0-9 ]", " ")
-  x <- str_replace_all(x, "\\b(STREET|ST)\\b", "ST")
-  x <- str_replace_all(x, "\\b(AVENUE|AVE)\\b", "AVE")
-  x <- str_replace_all(x, "\\b(ROAD|RD)\\b", "RD")
-  x <- str_replace_all(x, "\\b(BOULEVARD|BLVD)\\b", "BLVD")
-  x <- str_replace_all(x, "\\b(DRIVE|DR)\\b", "DR")
-  x <- str_replace_all(x, "\\b(HIGHWAY|HWY)\\b", "HWY")
-  str_squish(x)
+  if (!requireNamespace("mysterynpi", quietly = TRUE) ||
+      !"phrase_key" %in% getNamespaceExports("mysterynpi"))
+    stop("street_key() delegates to mysterynpi::phrase_key(), and the installed ",
+         "copy does not have it. Install the version CI pins: ",
+         "remotes::install_github(\"mufflyt/mysterynpi@03469aed868ea6af1e429b1da033915e49010dc7\")",
+         call. = FALSE)
+  # phrase_key returns NA for empty input; this key's contract is "" so that
+  # paste() into address_key_from_raw_parts() does not inject a literal "NA".
+  k <- mysterynpi::phrase_key(clean(x))
+  k[is.na(k)] <- ""
+  k <- str_replace_all(k, "\\b(STREET|ST)\\b", "ST")
+  k <- str_replace_all(k, "\\b(AVENUE|AVE)\\b", "AVE")
+  k <- str_replace_all(k, "\\b(ROAD|RD)\\b", "RD")
+  k <- str_replace_all(k, "\\b(BOULEVARD|BLVD)\\b", "BLVD")
+  k <- str_replace_all(k, "\\b(DRIVE|DR)\\b", "DR")
+  k <- str_replace_all(k, "\\b(HIGHWAY|HWY)\\b", "HWY")
+  str_squish(k)
 }
 address_key_from_raw_parts <- function(street, city, state, zip) {
   paste(street_key(street), clean(city), clean(state), zip5_from_free_text(zip), sep = "|")

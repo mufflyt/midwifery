@@ -997,3 +997,61 @@ exposed that the "fix" was incomplete. A dedup that is deterministic *within
 one warehouse instance* is not the same property as one that is deterministic
 *by content*, and the difference is invisible until something forces a second
 instance to be compared against the first.
+
+## D18 — Organization-side keys split on apostrophes, so `ST JOHN'S` never met `ST JOHNS`
+
+- **status:** closed
+- **owner:** tyler
+- **raised:** 2026-11-24
+- **closed:** 2026-11-24
+- **resolution:** every organization-side normaliser now delegates its
+  fold + punctuation pass to `mysterynpi::phrase_key()` (mysterynpi
+  0.11.0, pin `03469ae`), keeping only its own local policy: the `&`
+  entity restore and leading-`THE` strip for schools, street-suffix
+  canonicalisation for `street_key`, and extraction for
+  `embedded_org_text`. Duplicate `.norm_school` in
+  `build_table1_midwives.R` deleted in favour of
+  `training_norm_school()`. Pinned by
+  `tests/test_org_apostrophe_normalization.R` (20 assertions, wired
+  into `ci.yml`).
+
+D15 fixed person-name keys; the same defect class survived on the
+organization side, where `[^A-Z0-9 ]` -> space turned every possessive
+into a phantom word: `ST JOHN'S` keyed `ST JOHN S HOSPITAL`, `O'NEILL`
+keyed `O NEILL`, `D'YOUVILLE` keyed `D YOUVILLE`. `norm_org()` had
+already deleted apostrophes for exactly this reason (its own comment
+records the `ST MARY'S` incident); the school, street, institution,
+and embedded-organization copies never got the rule.
+
+**Affected functions and contracts.** `training_norm_school()`
+(`R/lib/training_institution.R`) and its byte-identical duplicate
+`.norm_school` (`build_table1_midwives.R`) pool training-institution
+display names; `norm_institution_name()`
+(`validate_training_institution_against_acme.R`) feeds the ACME
+face-validity match; `street_key()`
+(`build_worksite_setting_crosswalk.R`) feeds worksite address keys;
+`embedded_org_text()` (`build_embedded_org_name_arm.R`) extracts the
+name that `norm_org()` then keys. Each keeps a different local
+contract, so each delegates only the shared fold+key step.
+
+**Measured before implementing** (15,776 real institution strings:
+DAC 5,793 + Healthgrades 8,231 + repository 1,752): 14 keys change
+(0.09%), all Healthgrades possessives (`WOMEN S` -> `WOMENS`,
+`JOSEPH S` -> `JOSEPHS`, `MASTER S` -> `MASTERS`, `VINCENT S`,
+`LUKE S`); **0 equivalence classes merge**, so no counts move -- the
+spellings that would have collided never coexisted in the data.
+ACME proxy match on the 7 distinct repository program strings: 7/7
+matched before and after. `street_key` and `embedded_org_text` could
+not be measured on real input (`midwife_work_sites_long.csv` and the
+NPPES extract are gitignored/absent locally); their change is pinned
+by fixtures instead. `norm_org()` was left alone: its contract
+(corporate-suffix stripping, `""`-not-NA for missing names, no accent
+fold) does not match `phrase_key()`'s, and its apostrophe class
+already deletes the common forms -- the okina `ʻ` and fullwidth `＇`
+edge cases remain a documented exception.
+
+**Also fixed in passing:** `validate_training_institution_against_acme.R`
+created `norm_institution_name` columns but read `norm_name`, so the
+comparison would have errored had the earlier Table-1 category guard
+not stopped the script first; both reads now use the created column.
+

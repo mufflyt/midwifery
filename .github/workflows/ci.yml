@@ -862,6 +862,11 @@ jobs:
           Rscript tests/test_organization_affiliation_resolver.R
           Rscript tests/test_cycle35_organization_affiliation_pipeline.R
 
+      # Organization-side apostrophe normalization: the D15 person-name fix
+      # extended to school, street, institution, and embedded-org keys.
+      - name: Organization apostrophe normalization
+        run: Rscript tests/test_org_apostrophe_normalization.R
+
       # Linkage selection-bias tipping point and the selection-bounds figure's
       # status-level data transformation.
       - name: Linkage selection bounds figures
