@@ -1,0 +1,2 @@
+source,estimand,start_year,end_year,n_years,n_npi_years,n_npis,slope_pp_per_year,ci_low,ci_high,absolute_change_pp,start_agreement_pct,end_agreement_pct,method,comparison_unit
+dac_physician_compare,linear trend in annual NPI-year source-to-NPPES state agreement,2013,2025,13,44806,9514,-0.16975080078509563,-0.25822759132306017,-0.08127401024713113,-2.0370096094211476,95.52609776304888,93.7289088863892,linear probability model; CR1 sandwich SE clustered by NPI; t reference df=clusters-1,one NPI-year; agreement if DAC and NPPES state sets intersect

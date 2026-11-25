@@ -1,0 +1,13 @@
+finding_id,priority,required_correction,status,evidence,verification,remaining_work
+F01,P0,Reconcile denominators and contradictions,partial,review/denominator_ledger.csv,"Headline and Medicaid arithmetic verified from catalog/artifacts","Run machine gate; verify all table/abstract fractions"
+F02,P0,Temper geographic conclusions,partial,review/claim_evidence_matrix.csv,"Categorical validity and error-bound language removed in current QMD","Claim audit and independent review"
+F03,P0,Report uncertainty,partial,"artifacts/agreement_cluster_bootstrap_ci.csv; review/manuscript_statistical_methods.md","Pooled bootstrap artifact regenerated with current provenance; Wilson and clustered methods documented","Add verified trend and interval-method labels to manuscript"
+F04,P1,Rename certified-name accuracy,partial,manuscript/federal_database_accuracy.qmd,"Current edits use certified-name agreement in main sections","Terminology gate across supplement/render"
+F05,P0,Clarify comparison design,partial,manuscript/federal_database_accuracy.qmd,"Current edits say source-to-NPPES and common comparison source","Confirm every table overlap/unit description"
+F06,P1,Correct multistate interpretation,partial,review/denominator_ledger.csv,"16.1% formula and separate universes verified","Gate language distinguishing enrollment from practice"
+F07,P0,Add auditable cohort flow,partial,manuscript/federal_database_accuracy.qmd,"Current inline figure reconciles headline tiers only","Replace with artifact-driven complete supported branches; audit sensitivity-tier exclusion"
+F08,P0,Correct longitudinal trend inference,partial,"artifacts/dac_agreement_cluster_trend.csv; review/manuscript_statistical_methods.md","Clinician-level NPI-year LPM with CR1 NPI-clustered inference produced","Replace old WLS slope/P value in manuscript and gate"
+F09,P1,Separate observation from explanation,partial,review/claim_evidence_matrix.csv,"Several causal statements qualified in current QMD","Full causal-language audit"
+F10,P2,Reduce repetition,partial,manuscript/federal_database_accuracy.qmd,"Redundant summary removed and research-use table added","Word-count/content-preservation audit"
+F11,P1,Standardize terminology,partial,manuscript/federal_database_accuracy.qmd,"Title and principal sections partly standardized","US spelling and controlled-vocabulary gate"
+F12,P1,Rewrite and reconcile abstract,partial,manuscript/federal_database_accuracy.qmd,"Abstract conclusion tempered","Rewrite after F01/F03/F05/F07/F08 and run trace audit"
