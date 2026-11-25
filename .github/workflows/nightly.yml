@@ -962,6 +962,10 @@ jobs:
       # them to this job. Two entries stay blocked for other reasons: the normalization suite hard-fails without the gitignored
       # person-level roster (T12, by design), and Stage 2 still needs the
       # private isochrones checkout for rank_one_to_one().
+      # NOTE: v0.2.0 deliberately predates phrase_key()/compact_name_key()
+      # (those arrived at commit 03469ae, v0.11.0). The three tests routed
+      # here must not exercise those functions; do not "align" this pin with
+      # ci.yml's 03469ae without re-checking what surface they verify.
       - name: Install mysterynpi (public) and its test dependencies
         # Without a token remotes falls back to its bundled PAT, which GitHub's
         # API refused ("cannot open URL .../contents/DESCRIPTION?ref=v0.2.0").
