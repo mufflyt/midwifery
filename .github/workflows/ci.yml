@@ -139,7 +139,7 @@ jobs:
       - name: CCN -> state resolution contract
         run: Rscript tests/test_ccn_state.R
 
-      # clean_state() full-name and combined-form translation contract
+      - name: clean_state() full-name and combined-form translation contract
         run: Rscript tests/test_clean_state.R
 
       # Base R plus stringr. Every cross-source comparison pairs files published
