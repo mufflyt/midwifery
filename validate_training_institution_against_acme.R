@@ -57,9 +57,16 @@ suppressPackageStartupMessages({library(dplyr); library(readr); library(stringr)
 # rules under one name is what ci_hygiene.R H4 refuses. This one strips a
 # leading THE, which a person-name key must not.
 norm_institution_name <- function(x) {
-  y <- toupper(str_squish(as.character(x)))
-  y <- str_replace_all(y, "[^A-Z0-9 ]", " ")
-  str_squish(str_replace(y, "^THE ", ""))
+  if (!requireNamespace("mysterynpi", quietly = TRUE) ||
+      !"phrase_key" %in% getNamespaceExports("mysterynpi"))
+    stop("norm_institution_name() delegates to mysterynpi::phrase_key(), and the ",
+         "installed copy does not have it. Install the version CI pins: ",
+         "remotes::install_github(\"mufflyt/mysterynpi@03469aed868ea6af1e429b1da033915e49010dc7\")",
+         call. = FALSE)
+  k <- mysterynpi::phrase_key(x)
+  k <- str_replace(k, "^THE ", "")
+  k[is.na(k) | !nzchar(k)] <- NA_character_
+  k
 }
 
 acme <- read_csv("data/acme_accredited_midwifery_programs.csv", show_col_types = FALSE) %>%
@@ -123,10 +130,10 @@ alias <- c(
 
 found <- character(0); missing <- character(0)
 for (i in seq_len(nrow(named))) {
-  nm <- named$norm_name[i]
+  nm <- named$norm_institution_name[i]
   nm_aliased <- if (nm %in% names(alias)) alias[[nm]] else nm
-  hit <- any(str_detect(acme$norm_name, fixed(nm_aliased))) ||
-         any(str_detect(nm_aliased, fixed(acme$norm_name)))
+  hit <- any(str_detect(acme$norm_institution_name, fixed(nm_aliased))) ||
+         any(str_detect(nm_aliased, fixed(acme$norm_institution_name)))
   if (hit) found <- c(found, named$characteristic[i])
   else missing <- c(missing, named$characteristic[i])
 }
