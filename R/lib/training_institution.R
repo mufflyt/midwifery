@@ -37,11 +37,21 @@ suppressPackageStartupMessages({
 #' "The Ohio State University" and "Ohio State University" pool together.
 #' Returns NA for empty input rather than "".
 training_norm_school <- function(x) {
-  y <- toupper(str_squish(as.character(x)))
-  y <- str_replace_all(y, "\\\\U0026|\\\\u0026|&AMP;", "AND")
-  y <- str_replace_all(y, "[^A-Z0-9 ]", " ")
-  y <- str_squish(str_replace(y, "^THE ", ""))
-  ifelse(is.na(x) | !nzchar(y), NA_character_, y)
+  if (!requireNamespace("mysterynpi", quietly = TRUE) ||
+      !"phrase_key" %in% getNamespaceExports("mysterynpi"))
+    stop("training_norm_school() delegates to mysterynpi::phrase_key(), and the ",
+         "installed copy does not have it. Install the version CI pins: ",
+         "remotes::install_github(\"mufflyt/mysterynpi@03469aed868ea6af1e429b1da033915e49010dc7\")",
+         call. = FALSE)
+  # DAC's export escapes '&' as a literal \u0026 or &amp;, which phrase_key
+  # would turn into a word boundary; the AND restoration has to run on the
+  # raw string, before the fold. Case-insensitive so every casing of the
+  # entity behaves like the old post-toupper rule.
+  y <- str_replace_all(as.character(x), "(?i)\\\\u0026|&amp;", "AND")
+  k <- mysterynpi::phrase_key(y)
+  k <- str_replace(k, "^THE ", "")
+  k[is.na(k) | !nzchar(k)] <- NA_character_
+  k
 }
 
 #' The institution in a CMS medical-school name: mysterynpi::strip_med_suffix()

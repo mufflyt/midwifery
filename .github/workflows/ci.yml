@@ -862,6 +862,11 @@ jobs:
           Rscript tests/test_organization_affiliation_resolver.R
           Rscript tests/test_cycle35_organization_affiliation_pipeline.R
 
+      # Organization-side apostrophe normalization: the D15 person-name fix
+      # extended to school, street, institution, and embedded-org keys.
+      - name: Organization apostrophe normalization
+        run: Rscript tests/test_org_apostrophe_normalization.R
+
       # Linkage selection-bias tipping point and the selection-bounds figure's
       # status-level data transformation.
       - name: Linkage selection bounds figures
@@ -1001,6 +1006,13 @@ jobs:
       # is a different kind of bug from one that draws a wrong bar.
       - name: Linkage scripts smoke test
         run: Rscript tests/test_linkage_scripts_smoke.R
+
+      # NEEDS dplyr, readr, cli, jsonlite, DBI and duckdb -- the script under
+      # test sources all six at load time, so this belongs in r-unit-tests,
+      # not the stringr-only r-checks tier where it first landed (CI run
+      # 45558377168 failed there on "there is no package called 'dplyr'").
+      - name: OB geocoder cache path contract
+        run: Rscript tests/test_geocode_ob_hospitals_cache_path.R
 
   # ---------------------------------------------------------------------------
   # Path-filtered: the science-law suite (tests/ci_law_coverage.R) is Nightly's

@@ -539,13 +539,9 @@ if (!"ndh_found" %in% names(coh)) coh$ndh_found <- NA
 # ACNM accredited-programme crosswalk, which this repo does not have.
 school_src <- NULL
 if (file.exists("artifacts/dac_cnm_education.csv")) {
-  .norm_school <- function(x) {
-    y <- toupper(str_squish(as.character(x)))
-    y <- str_replace_all(y, "\\\\U0026|\\\\u0026|&AMP;", "AND")
-    y <- str_replace_all(y, "[^A-Z0-9 ]", " ")
-    y <- str_squish(str_replace(y, "^THE ", ""))
-    ifelse(is.na(x) | !nzchar(y), NA_character_, y)
-  }
+  # Institution pooling uses the shared normaliser, not a local copy: the
+  # local .norm_school this replaced was byte-identical to
+  # training_norm_school() and had already drifted once (apostrophes).
   # Same file, same multi-enrollment risk as dacx above: a school named
   # differently (or NA) across two enrollment rows for one NPI is a real
   # disagreement, not a duplicate to collapse by row order. select() to just
@@ -584,9 +580,9 @@ if (file.exists("artifacts/dac_cnm_education.csv")) {
   else mutate(coh, trl_school = NA_character_)
 
   coh <- coh %>%
-    mutate(training_institution = dplyr::coalesce(.norm_school(dac_school),
-                                                  .norm_school(hg_school),
-                                                  .norm_school(trl_school)))
+    mutate(training_institution = dplyr::coalesce(training_norm_school(dac_school),
+                                                  training_norm_school(hg_school),
+                                                  training_norm_school(trl_school)))
   # A Table 1 row per institution would run to hundreds of levels, so the block
   # names the ten most common and pools the rest. The pooled row is labelled as
   # a pool, not as a school.
