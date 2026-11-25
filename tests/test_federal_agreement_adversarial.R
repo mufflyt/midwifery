@@ -19,7 +19,7 @@ canon_path <- file.path(ART, "canonical_source_records.csv")
 canon <- read_csv(canon_path, show_col_types = FALSE, progress = FALSE)
 
 mut <- list()
-record <- function(id, description, expected_guard, detected, detail = "") {
+audit_record <- function(id, description, expected_guard, detected, detail = "") {
   mut[[length(mut) + 1]] <<- data.frame(
     mutation_id = id, mutation = description,
     expected_guard = expected_guard, detected = detected,
@@ -42,7 +42,7 @@ base <- agree_rate(canon)
 # M01 -- duplicate the same clinician's records without adding clinicians --
 d01 <- bind_rows(canon, canon %>% filter(npi == canon$npi[1]) %>% slice_sample(n = 50))
 r01 <- agree_rate(d01)
-record("M01", "duplicate 50 rows of one clinician (same NPI, no new clinician)",
+audit_record("M01", "duplicate 50 rows of one clinician (same NPI, no new clinician)",
        "distinct-key dedup: n_comparable and rate must not change",
        isTRUE(r01$rate == base$rate && r01$n == base$n),
        sprintf("rate %.3f -> %.3f, n %d -> %d", base$rate, r01$rate, base$n, r01$n))
@@ -54,7 +54,7 @@ d02 <- canon %>% mutate(state = ifelse(source == "pecos_revalidation" & year == 
                                                         TRUE ~ state),
                                        state))
 r02 <- agree_rate(d02)
-record("M02", "swap CA<->TX for all PECOS 2024 rows (reversed classification)",
+audit_record("M02", "swap CA<->TX for all PECOS 2024 rows (reversed classification)",
        "independent recomputation diverges from published artifact",
        r02$rate != base$rate,
        sprintf("rate %.3f -> %.3f", base$rate, r02$rate))
@@ -68,7 +68,7 @@ d03 <- bind_rows(canon, canon %>% filter(source == "nppes", npi == cmp_npi,
                                          year == 2024) %>%
                    mutate(state = "ZZ", source_record_id = "mutation"))
 r03 <- agree_rate(d03)
-record("M03", "inject a second, contradictory NPPES state for one NPI-year",
+audit_record("M03", "inject a second, contradictory NPPES state for one NPI-year",
        "multi-valued cell excluded from equality scoring (or flagged multistate)",
        r03$n <= base$n && (r03$rate != base$rate || r03$n < base$n),
        sprintf("n %d -> %d, rate %.3f -> %.3f", base$n, r03$n, base$rate, r03$rate))
@@ -81,7 +81,7 @@ drop_npi <- canon %>% filter(source == "nppes", year == 2024) %>%
 d04 <- canon %>% filter(!(source == "pecos_revalidation" & npi == drop_npi &
                           year == 2024))
 r04 <- agree_rate(d04)
-record("M04", "delete one PECOS 2024 record that matched an NPPES record",
+audit_record("M04", "delete one PECOS 2024 record that matched an NPPES record",
        "n_comparable decreases by exactly the removed pair",
        r04$n == base$n - 1,
        sprintf("n %d -> %d", base$n, r04$n))
@@ -93,7 +93,7 @@ per_year <- function(d) {
   d %>% filter(source == "pecos_revalidation", year %in% c(2023L, 2024L)) %>%
     count(year) %>% arrange(year) %>% pull(n)
 }
-record("M05", "move all PECOS 2023 rows into 2024 (counts unchanged overall)",
+audit_record("M05", "move all PECOS 2023 rows into 2024 (counts unchanged overall)",
        "year-stratified denominators expose the shift",
        !identical(per_year(d05), per_year(canon)),
        paste("yearly n:", paste(per_year(canon), collapse = "/"), "->",
@@ -113,7 +113,7 @@ spur <- d06 %>% filter(is.na(npi), source %in% c("nppes", "pecos_revalidation"),
                        year == 2024) %>% distinct(npi, source, state)
 na_group_pairs <- nrow(spur) > 0
 r06_guarded <- agree_rate(d06 %>% filter(!is.na(npi)))
-record("M06", "blank the NPI on 50 comparable 2024 clinicians, both sides",
+audit_record("M06", "blank the NPI on 50 comparable 2024 clinicians, both sides",
        "no spurious NA-key pair survives: the multi-value ';' exclusion drops it",
        r06_unguarded$n == r06_guarded$n,
        sprintf("unguarded n=%d rate=%.4f; guarded n=%d rate=%.4f (identical: incidental guard holds)",
@@ -125,7 +125,7 @@ unit <- canon %>% summarise(rows = n(),
                             npi_years = n_distinct(paste(npi, year)),
                             npi_year_source = n_distinct(paste(npi, year, source)))
 ratio <- unit$rows / unit$npi_years
-record("M07", "compare record-level rows against provider-year denominator",
+audit_record("M07", "compare record-level rows against provider-year denominator",
        "unit-labelled denominators: ratio must differ from 1 and be reported",
        ratio > 1.5,
        sprintf("%.2f records per (npi,year,source); using rows as provider-years inflates denominators", ratio))
@@ -134,7 +134,7 @@ record("M07", "compare record-level rows against provider-year denominator",
 set.seed(1)
 d08 <- canon %>% slice_sample(prop = 1)
 r08 <- agree_rate(d08)
-record("M08", "shuffle all 447k rows before aggregation",
+audit_record("M08", "shuffle all 447k rows before aggregation",
        "order-invariant pipeline: identical agreement rate and n",
        isTRUE(all.equal(r08$rate, base$rate) && r08$n == base$n),
        sprintf("rate %.6f vs %.6f", base$rate, r08$rate))
@@ -151,7 +151,7 @@ d09 <- canon %>% mutate(state = ifelse(npi %in% shared & source %in% c("nppes", 
 r09_np_pc <- agree_rate(d09)
 r09_np_mc <- agree_rate(d09, "nppes", "medicare_claims", 2024)
 r09_base_mc <- agree_rate(canon, "nppes", "medicare_claims", 2024)
-record("M09", "inject identical wrong state into NPPES+PECOS for 200 clinicians",
+audit_record("M09", "inject identical wrong state into NPPES+PECOS for 200 clinicians",
        "NPPES-PECOS agreement rises while NPPES-claims agreement falls (shared-error detection)",
        r09_np_pc$rate > base$rate && r09_np_mc$rate < r09_base_mc$rate,
        sprintf("NP-PC %.2f->%.2f; NP-claims %.2f->%.2f", base$rate, r09_np_pc$rate,
@@ -185,13 +185,13 @@ if (file.exists(prov)) {
   # surface exactly that (it currently flags R/lib/ast_walk.R as stale).
   pv_real <- check_provenance("artifacts/persistence_denominators.csv")
   clean_now <- nrow(pv_real) > 0L && !any(pv_real$stale)
-  record("M10", "corrupt canonical input after provenance receipt",
+  audit_record("M10", "corrupt canonical input after provenance receipt",
          "check_provenance() reports stale=TRUE for the corrupted input",
          stale_inputs >= 1,
          sprintf("fabricated probe: %d stale input row(s); real artifact clean=%s (%d stale row(s) currently)",
                  stale_inputs, clean_now, sum(pv_real$stale)))
 } else {
-  record("M10", "corrupt input after provenance receipt",
+  audit_record("M10", "corrupt input after provenance receipt",
          "check_provenance() mismatch", FALSE, "sidecar absent")
 }
 
@@ -206,7 +206,7 @@ fp2 <- fp %>% slice_sample(n = 100) %>% mutate(state = "XX") %>%
 ms_mut <- fp2 %>% distinct(npi, year, state) %>%
   group_by(npi, year) %>% summarise(k = n_distinct(state), .groups = "drop") %>%
   summarise(rate = 100 * mean(k > 1)) %>% pull(rate)
-record("M11", "add a second enrollment state to 100 provider-years",
+audit_record("M11", "add a second enrollment state to 100 provider-years",
        "multistate rate must increase",
        ms_mut > ms_base,
        sprintf("multistate rate %.4f -> %.4f", ms_base, ms_mut))
@@ -217,7 +217,7 @@ empty_rate <- tryCatch(suppressWarnings(agree_rate(empty)$rate),
                        error = function(e) NA_real_)
 # agree_rate on empty errors or yields NA -- the guard is that consumers must
 # check n_comparable > 0 before printing a percentage.
-record("M12", "request agreement for a source with zero comparable records",
+audit_record("M12", "request agreement for a source with zero comparable records",
        "n_comparable == 0 must yield NA/withheld estimate, not a printed %",
        is.na(empty_rate) || is.nan(empty_rate),
        sprintf("empty-subgroup rate = %s", format(empty_rate)))
