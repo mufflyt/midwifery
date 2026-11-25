@@ -2,6 +2,16 @@
 # =============================================================================
 # Open Payments Address to NPPES Type 2 Organization NPI Cross-Referencer
 # =============================================================================
+#
+# VALIDATION-ONLY, NOT A CANONICAL PRODUCER (DEBT.md D5, ruled 2026-11-18).
+# Same under-identified rule as crossref_all_open_payments_type2.py: accepts
+# the FIRST of <=10 unordered NPI-registry results in the same city/state/ZIP
+# whose first 8 address characters prefix-match -- an arbitrary tenant at a
+# multi-tenant building. Canonical organization affiliation lives in
+# resolve_org_ambiguity.R -> artifacts/midwife_org_affiliations_candidate.csv.
+# This output feeds the resolver's `open_payments_org` arm as weak evidence
+# only; never read type2_organization_npi as an employer.
+# See docs/OPEN_PAYMENTS_LINKAGE_COMPARISON.md.
 import requests
 import csv
 import json
