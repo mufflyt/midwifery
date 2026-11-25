@@ -1,0 +1,13 @@
+mutation_id,mutation,expected_guard,detected,detail
+M01,"duplicate 50 rows of one clinician (same NPI, no new clinician)",distinct-key dedup: n_comparable and rate must not change,TRUE,"rate 87.505 -> 87.505, n 9388 -> 9388"
+M02,swap CA<->TX for all PECOS 2024 rows (reversed classification),independent recomputation diverges from published artifact,TRUE,rate 87.505 -> 76.992
+M03,"inject a second, contradictory NPPES state for one NPI-year",multi-valued cell excluded from equality scoring (or flagged multistate),TRUE,"n 9388 -> 9387, rate 87.505 -> 87.504"
+M04,delete one PECOS 2024 record that matched an NPPES record,n_comparable decreases by exactly the removed pair,TRUE,n 9388 -> 9387
+M05,move all PECOS 2023 rows into 2024 (counts unchanged overall),year-stratified denominators expose the shift,TRUE,yearly n: 9248/9647 -> 18895
+M06,"blank the NPI on 50 comparable 2024 clinicians, both sides",no spurious NA-key pair survives: the multi-value ';' exclusion drops it,TRUE,unguarded n=9363 rate=87.4826; guarded n=9363 rate=87.4826 (identical: incidental guard holds)
+M07,compare record-level rows against provider-year denominator,unit-labelled denominators: ratio must differ from 1 and be reported,TRUE,"1.97 records per (npi,year,source); using rows as provider-years inflates denominators"
+M08,shuffle all 447k rows before aggregation,order-invariant pipeline: identical agreement rate and n,TRUE,rate 87.505326 vs 87.505326
+M09,inject identical wrong state into NPPES+PECOS for 200 clinicians,NPPES-PECOS agreement rises while NPPES-claims agreement falls (shared-error detection),TRUE,NP-PC 87.51->87.69; NP-claims 96.17->94.94
+M10,corrupt canonical input after provenance receipt,check_provenance() reports stale=TRUE for the corrupted input,TRUE,fabricated probe: 1 stale input row(s); real artifact clean=FALSE (1 stale row(s) currently)
+M11,add a second enrollment state to 100 provider-years,multistate rate must increase,TRUE,multistate rate 34.8716 -> 34.9051
+M12,request agreement for a source with zero comparable records,"n_comparable == 0 must yield NA/withheld estimate, not a printed %",TRUE,empty-subgroup rate = NA
