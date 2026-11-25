@@ -1,0 +1,8 @@
+source,field,n_values,distinct_old_keys,distinct_new_keys,keys_changed,merged_equivalence_classes,notes
+DAC med_sch_raw,artifacts/dac_cnm_education.csv med_sch_raw,5793,425 pooled,425 pooled,0,0,"No apostrophe-bearing values in this source"
+Healthgrades hg_education_name,healthgrades_profile_attrs.csv hg_education_name,8231,425 pooled,425 pooled,14,0,"All 14 changes are possessive 's: WOMEN S->WOMENS, JOSEPH S->JOSEPHS, MASTER S->MASTERS, VINCENT S->VINCENTS, LUKE S->LUKES"
+repository programs,artifacts/amcb_education_history.csv midwifery_program+later_doctoral_institution,1752,425 pooled,425 pooled,0,0,"No apostrophe-bearing values in this source"
+ACME institutions,data/acme_accredited_midwifery_programs.csv institution,,,,,,"Proxy match: 7 distinct repository program strings matched 7/7 ACME institutions before and after; gained=0 lost=0"
+street addresses,artifacts/midwife_work_sites_long.csv street,,,,,,"INPUT ABSENT locally (gitignored, produced by build_trilliant_work_sites.R); fixture-only verification"
+embedded org candidates,NPPES address lines via build_embedded_org_name_arm.R,,,,,,"NPPES input absent locally; fixture-only verification"
+fixtures (34 institution strings),synthetic battery,,,,5 merged classes,"ST JOHN'S==ST JOHNS==ST JOHN S-free; O'NEILL==ONEILL; D'YOUVILLE==DYOUVILLE; JOHN'S==JOHNS HOPKINS; ST. MARY'S==ST MARYS; non-merges preserved: ST JOHN!=ST JOHNS, ST THOMAS!=SAINT THOMAS"
