@@ -1,6 +1,6 @@
 # Manuscript evidence verification report
 
-Generated 2026-11-25 08:05 by `tools/verify_manuscript_evidence.R`.
+Generated 2026-11-25 09:29 by `tools/verify_manuscript_evidence.R`.
 
 | check | item | status | detail |
 |---|---|---|---|
@@ -55,7 +55,7 @@ Generated 2026-11-25 08:05 by `tools/verify_manuscript_evidence.R`.
 | C03 | geographic-accuracy terminology | WARN | 1 candidate line(s) at 369 |
 | C04 | abstract-results shared statistics | PASS | 8 shared catalog refs (A$sources_total_n, A$nppes_license_3, A$nppes_license_7, A$any_inconsistent_2026); abstract-only:  |
 | C05 | catalog key resolution | PASS | 93 keys resolve |
-| C06 | figure file existence | PASS | 10 figures resolve |
+| C06 | figure file existence | FAIL | missing: nonexistent_figure |
 | C07 | Wilson + cluster-bootstrap both present | PASS | Wilson=TRUE cluster-bootstrap=TRUE |
 | C08 | provenance staleness across ledger | WARN | one or more artifacts stale |
 | C09 | git conflict markers | PASS | 0 marker line(s) in qmd, 0 in manuscript/R |

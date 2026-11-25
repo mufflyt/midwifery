@@ -25,7 +25,7 @@ qmd <- paste(qmd_lines, collapse = "\n")
 ledger <- read_csv(ledger_path, show_col_types = FALSE, progress = FALSE)
 
 report <- list()
-add <- function(check, item, status, detail = "") {
+verifier_add <- function(check, item, status, detail = "") {
   report[[length(report) + 1]] <<- data.frame(
     check_id = check, item = item, status = status, detail = detail,
     stringsAsFactors = FALSE)
@@ -37,18 +37,18 @@ OK <- function(...) isTRUE(all(c(...)))
 base::message("[verify] C01 ledger artifacts exist and provenance is fresh")
 for (i in seq_len(nrow(ledger))) {
   a <- ledger$source_artifact[i]
-  if (is.na(a) || !nzchar(a)) { add("C01", ledger$claim_id[i], "SKIP", "no artifact"); next }
+  if (is.na(a) || !nzchar(a)) { verifier_add("C01", ledger$claim_id[i], "SKIP", "no artifact"); next }
   ap <- file.path(root, a)
-  if (!file.exists(ap)) { add("C01", ledger$claim_id[i], "FAIL", paste("missing", a)); next }
+  if (!file.exists(ap)) { verifier_add("C01", ledger$claim_id[i], "FAIL", paste("missing", a)); next }
   side <- paste0(ap, ".provenance.json")
-  if (!file.exists(side)) { add("C01", ledger$claim_id[i], "WARN", "no provenance sidecar"); next }
+  if (!file.exists(side)) { verifier_add("C01", ledger$claim_id[i], "WARN", "no provenance sidecar"); next }
   pv <- check_provenance(ap)
   n_stale <- if (nrow(pv)) sum(pv$stale) else 0L
   # Stale != invalid: staleness means a rerun could differ, which is expected
   # while producer libs and inputs drift between regenerations. Missing or
   # absent receipts are the hard failures; staleness is reported as WARN so
   # the ledger stays readable during active workstreams.
-  add("C01", ledger$claim_id[i], ifelse(n_stale == 0L, "PASS", "WARN"),
+  verifier_add("C01", ledger$claim_id[i], ifelse(n_stale == 0L, "PASS", "WARN"),
       sprintf("%s: %d stale provenance row(s)", basename(a), n_stale))
 }
 
@@ -58,7 +58,7 @@ for (i in seq_len(nrow(ledger))) {
   u <- ledger$unit[i]
   good <- !is.na(u) && nzchar(u) &&
     grepl("provider|record|clinician|certification|person|segment|state|year|npi", u, ignore.case = TRUE)
-  add("C02", ledger$claim_id[i], ifelse(good, "PASS", "FAIL"), paste("unit =", u))
+  verifier_add("C02", ledger$claim_id[i], ifelse(good, "PASS", "FAIL"), paste("unit =", u))
 }
 
 ## -- C03 accuracy vs agreement terminology ---------------------------------
@@ -70,7 +70,7 @@ geo_acc <- grep("(practice (state|location|ZIP|city)|ZIP code|postal).{0,120}(ac
                 qmd_lines, ignore.case = TRUE, perl = TRUE, value = FALSE)
 lic <- grep("licensure|licensed|certified.name|board", qmd_lines, ignore.case = TRUE)
 hits <- setdiff(geo_acc, lic)
-add("C03", "geographic-accuracy terminology", ifelse(length(hits) == 0L, "PASS", "WARN"),
+verifier_add("C03", "geographic-accuracy terminology", ifelse(length(hits) == 0L, "PASS", "WARN"),
     ifelse(length(hits) == 0L, "no geo+accuracy co-occurrence outside licensure",
            paste(length(hits), "candidate line(s) at", paste(head(hits, 5), collapse = ","))))
 
@@ -89,7 +89,7 @@ refs <- function(txt) unique(unlist(regmatches(txt,
   gregexpr("\\b[ALK]\\$[A-Za-z0-9_.]+", txt))))
 abs_refs <- refs(sec_text("Abstract")); res_refs <- refs(sec_text("Results"))
 shared <- intersect(abs_refs, res_refs)
-add("C04", "abstract-results shared statistics", "PASS",
+verifier_add("C04", "abstract-results shared statistics", "PASS",
     sprintf("%d shared catalog refs (%s); abstract-only: %s",
             length(shared), paste(head(shared, 4), collapse = ", "),
             paste(setdiff(abs_refs, res_refs), collapse = ",")))
@@ -109,7 +109,7 @@ if (!is.null(K)) {
     if (is.null(v)) unresolved <- c(unresolved, key)
   }
 }
-add("C05", "catalog key resolution", ifelse(!length(unresolved), "PASS", "FAIL"),
+verifier_add("C05", "catalog key resolution", ifelse(!length(unresolved), "PASS", "FAIL"),
     ifelse(!length(unresolved), sprintf("%d keys resolve", length(all_keys)),
            paste("unresolved:", paste(head(unresolved, 8), collapse = ", "))))
 
@@ -123,7 +123,7 @@ for (f in gsub(".*fig\\(\"([^\"]+)\"\\).*", "\\1", figs)) {
   if (!file.exists(file.path(root, "docs", "figures", paste0(f, ".png"))))
     missing_fig <- c(missing_fig, f)
 }
-add("C06", "figure file existence", ifelse(!length(missing_fig), "PASS", "FAIL"),
+verifier_add("C06", "figure file existence", ifelse(!length(missing_fig), "PASS", "FAIL"),
     ifelse(!length(missing_fig), sprintf("%d figures resolve", length(figs)),
            paste("missing:", paste(missing_fig, collapse = ", "))))
 
@@ -131,7 +131,7 @@ add("C06", "figure file existence", ifelse(!length(missing_fig), "PASS", "FAIL")
 base::message("[verify] C07 promised interval constructions are present")
 has_wilson <- grepl("Wilson", qmd)
 has_boot  <- grepl("cluster bootstrap|cluster-bootstrap", qmd, ignore.case = TRUE)
-add("C07", "Wilson + cluster-bootstrap both present", ifelse(has_wilson && has_boot, "PASS", "FAIL"),
+verifier_add("C07", "Wilson + cluster-bootstrap both present", ifelse(has_wilson && has_boot, "PASS", "FAIL"),
     sprintf("Wilson=%s cluster-bootstrap=%s", has_wilson, has_boot))
 
 ## -- C08 stale rendered artifacts -------------------------------------------
@@ -145,7 +145,7 @@ for (i in seq_len(nrow(ledger))) {
   pv <- check_provenance(ap)
   if (nrow(pv) && any(pv$stale)) stale_any <- TRUE
 }
-add("C08", "provenance staleness across ledger", ifelse(!stale_any, "PASS", "WARN"),
+verifier_add("C08", "provenance staleness across ledger", ifelse(!stale_any, "PASS", "WARN"),
     ifelse(!stale_any, "all ledger artifacts fresh", "one or more artifacts stale"))
 
 ## -- C09 conflict markers ----------------------------------------------------
@@ -154,21 +154,21 @@ marker <- grep("^(<{7}|={7}|>{7})", qmd_lines)
 code_marker <- grep("^(<{7}|>{7})", unlist(lapply(
   list.files(file.path(root, "manuscript", "R"), full.names = TRUE, pattern = "[.]R$"),
   readLines, warn = FALSE)))
-add("C09", "git conflict markers", ifelse(!length(marker) && !length(code_marker), "PASS", "FAIL"),
+verifier_add("C09", "git conflict markers", ifelse(!length(marker) && !length(code_marker), "PASS", "FAIL"),
     sprintf("%d marker line(s) in qmd, %d in manuscript/R", length(marker), length(code_marker)))
 
 ## -- C10 required reporting sections ----------------------------------------
 base::message("[verify] C10 required sections present")
 need <- c("Abstract", "Introduction", "Methods", "Results", "Discussion")
 missing_sec <- need[!vapply(need, function(s) any(grepl(paste0("^## ", s), qmd_lines)), logical(1))]
-add("C10", "required sections", ifelse(!length(missing_sec), "PASS", "FAIL"),
+verifier_add("C10", "required sections", ifelse(!length(missing_sec), "PASS", "FAIL"),
     ifelse(!length(missing_sec), "all present", paste("missing:", paste(missing_sec, collapse = ", "))))
 
 ## -- C11 provider-year denominators declared --------------------------------
 base::message("[verify] C11 ledger rows using provider-year units declare the window")
 py_rows <- ledger[grepl("provider.year|npi.year", ledger$unit, ignore.case = TRUE), ]
 no_years <- py_rows[is.na(py_rows$years) | !nzchar(py_rows$years), ]
-add("C11", "provider-year rows carry year window", ifelse(nrow(no_years) == 0L, "PASS", "WARN"),
+verifier_add("C11", "provider-year rows carry year window", ifelse(nrow(no_years) == 0L, "PASS", "WARN"),
     sprintf("%d/%d provider-year rows declare years", nrow(py_rows) - nrow(no_years), nrow(py_rows)))
 
 ## -- C12 abstract numeric consistency ----------------------------------------
@@ -176,7 +176,7 @@ base::message("[verify] C12 abstract percentages resolve to catalog values")
 abs_txt <- sec_text("Abstract")
 abs_pcts <- as.numeric(unlist(regmatches(abs_txt,
   gregexpr("[0-9]+\\.[0-9]+%", abs_txt))))
-add("C12", "abstract percentages", "PASS",
+verifier_add("C12", "abstract percentages", "PASS",
     sprintf("%d percentages in abstract; all derive from `r pc(...)` catalog calls (verified by C05)",
             length(abs_pcts)))
 
