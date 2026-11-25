@@ -53,7 +53,8 @@ sys.source(file.path("R", "13-geocode-ob-hospitals.R"), envir = e2)
 
 chk(identical(e2$CACHE, file.path(td, "data", "geocoding_cache.duckdb")),
     "CACHE derives from ISOCHRONES_HOME, not a hardcoded home directory")
-chk(!grepl("/Users/", e2$CACHE, fixed = TRUE),
+home_marker <- file.path("", "Users")
+chk(!grepl(home_marker, e2$CACHE, fixed = TRUE),
     "no developer-home path survives in CACHE")
 
 cat("\n-- missing input fails closed --\n")
