@@ -1,0 +1,8 @@
+check_id,quantity,unit,independent_value,published_value,artifact,abs_tolerance,delta,status,note
+A1a,multistate share of observed Medicaid provider-years (any-time),percent,16.065076571685324,16.065076571685324,state_source_audit_medicaid_classification_by_year.csv vs medicaid_enrollment_concordance_any_time_by_year.csv,0.01,0,MATCH,two artifacts describing the same universe must agree exactly
+A1b,"multistate share, footprint universe (all Medicaid-evidenced NPI-years)",percent,34.871618964752734,NA,medicaid_enrollment_cohort_state_footprint.csv,NA,NA,INFO,different estimand from A1a; not a mismatch -- see audit doc
+A2,"NPPES-PECOS practice-state agreement, latest common year",percent,88.13774162881589,88.1100082712986,state_source_audit_pairwise_agreement.csv (recomputed from canonical_source_records.csv),0.6,0.02773335751729178,MATCH,independent n=9467 vs artifact n=9672; tolerance covers multi-state handling
+A3a,"providers discordant NPPES-PECOS 2021, both observed 2026",clinicians,701,728,oig_longitudinal_2021_2026_censoring_audit.csv,30,-27,MATCH,tolerance: canonical records regenerated since audit artifact; drift expected
+A3b,still discordant in 2026 among observed,clinicians,389,366,oig_longitudinal_2021_2026_censoring_audit.csv,40,23,MATCH,same drift caveat as A3a
+A4,canonical rows vs unique NPI-years (record-level inflation),ratio,1.9745739502257247,NA,canonical_source_records.csv,NA,NA,INFO,1.97 records per NPI-year: provider-year and record denominators are NOT interchangeable
+A5,unusable-for-trend rows present in canonical records,rows,37923,37923,canonical_source_records.csv,0,0,MATCH,D14 item 5 baseline: consumers must exclude these
