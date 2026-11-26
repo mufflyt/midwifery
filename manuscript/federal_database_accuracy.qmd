@@ -1,5 +1,5 @@
 ---
-title: "Accuracy, Completeness, and Consistency of Publicly Available Administrative Databases Describing the United States Certified Midwife Workforce"
+title: "Accuracy, Completeness, and Consistency of Publicly Available Administrative Databases Describing the United States Certified Nurse-Midwife and Certified Midwife Workforce"
 running-head: "Accuracy of Federal Databases Describing Midwives"
 date: today
 format:
@@ -88,10 +88,9 @@ sensitivity_text <- function(track, d = 1) {
 }
 ```
 
-**Précis:** Administrative databases describing certified nurse-midwives and
-certified midwives are highly concordant with state boards on resolved
-licensure records but disagree about finer-grained practice location, and most
-longitudinal disagreements persist.
+**Précis:** Selected federal listings of certified nurse-midwives and
+certified midwives have high state-board verification yield among resolved
+records but disagree about finer-grained administrative location.
 
 ## Abstract
 
@@ -103,42 +102,40 @@ support geographic research.
 **METHODS:** We conducted a conceptual replication and extension of the 2013 Office of Inspector General evaluation
 of federal provider data [@oig2013] for `r cnt(cohort_n)` certified
 nurse-midwives and certified midwives drawn from the American Midwifery Certification Board roster
-and linked to the National Plan and Provider Enumeration System. Licensure
-accuracy was assessed against state-board verification, and exact
+and linked to the National Plan and Provider Enumeration System. State-board
+verification yield was assessed for selected listings, and exact
 certified-name agreement against the certification-board roster.
 Completeness was the proportion of eligible records carrying a value.
-Consistency was disagreement in source-to-NPPES comparisons describing the
-same provider in the same year, across `r n_word(A$sources_total_n)` record
-systems.
+Consistency was disagreement in source-to-NPPES comparisons within declared
+same-year or current-snapshot overlaps, across `r n_word(A$sources_total_n)`
+record systems.
 
-**RESULTS:** Where an independent primary source existed, resolved records
-were largely accurate: licensure status in the national provider registry
-agreed with state board verification -- live interfaces in three states,
-published board files in four more -- for
+**RESULTS:** Among selected listings resolved to a state-board record, the
+board returned a qualifying license outcome -- using live interfaces in three
+states and published board files in four more -- for
 `r pc(A$nppes_license_3$pct_accurate, 2)` of resolved records in the three
 live-interface states and `r pc(A$nppes_license_7$pct_accurate, 2)`
 across all seven, though
 `r pc(A$nppes_license_7$pct_unresolved, 0)`
 of audited records could not be matched to a board record, bounding
-seven-state accuracy between
+seven-state verification yield between
 `r pc(A$nppes_license_7$worst_case_pct, 0)`
 and
-`r pc(A$nppes_license_7$best_case_pct, 0)`. Of inaccurate records,
+`r pc(A$nppes_license_7$best_case_pct, 0)`. Of nonqualifying board outcomes,
 `r pc(A$nppes_license_7$pct_outdated, 1)` were formerly correct and had
 gone out of date. Consistency was weaker: the registry and Medicare's
 clinician directory disagreed on at least one variable for
 `r pc(A$any_inconsistent_2026, 1)` of providers present in both,
 concentrated in the finest geographic unit --
 `r pc(A$zip_inconsistent, 1)` of ZIP codes but
-`r pc(A$state_inconsistent, 1)` of practice states. Of providers whose
-records disagreed in 2021 and remained observable in both systems through
-2026, `r pc(A$persistent_2026_pct, 1)` still disagreed;
-`r pc(A$censored_2026_pct, 1)` of the original cohort was right-censored.
+`r pc(A$state_inconsistent, 1)` of practice states. The versioned
+longitudinal audit is reported as exploratory because its input panel differs
+from the current panel.
 
-**CONCLUSION:** Practice state is the most consistently recorded
-geographic variable across these databases; its accuracy against
-practice location remains unverified. Analyses at
-city or ZIP-code level rest on data that do not hold.
+**CONCLUSION:** Practice state showed substantially greater cross-source
+agreement than ZIP code. Geographic agreement does not establish accuracy;
+state-level analyses require sensitivity to multiple recorded states, and
+finer-grained analyses require external location validation.
 
 ## Introduction
 
@@ -255,7 +252,7 @@ descr["tmsis"] <- paste("Medicaid's transformed statistical system; provider",
   "enrollment carries a per-provider-year state concordance, and the 2018-2024",
   "spending release carries person-level billing activity")
 descr["amcb"] <- paste("The certification board's roster of certified",
-  "nurse-midwives; defines the cohort and is the primary source for the",
+  "nurse-midwives and certified midwives; defines the cohort and is the primary source for the",
   "certified name")
 if (!is.null(A$coverage_table)) {
   cv <- A$coverage_table
@@ -364,12 +361,14 @@ independently of the databases being evaluated.
 
 ### Accuracy, and the attributes for which it is estimable
 
-Accuracy requires a record that can adjudicate the federal one. Two exist for
-this cohort, covering licensure status and certified name; neither covers
-practice location. Accuracy was therefore assessed for those two attributes
-only, and the geographic variables are reported as agreement throughout.
+Accuracy requires a record that can adjudicate the federal one. The
+certification roster can adjudicate the certified name. State-board searches
+can establish whether a selected listing resolves to a qualifying board
+record, but the analysis does not compare a federal license-status field with
+a board-status field. Neither source adjudicates practice location, so the
+geographic variables are reported as agreement throughout.
 
-*Licensure status* was verified against live state board of nursing records
+*State-board verification yield* was measured against live state board of nursing records
 obtained directly from each state's published licensure system. Three states
 publish a machine-readable interface permitting verification of every record
 (Colorado, Texas, and Washington); four further states (Connecticut,
@@ -378,9 +377,9 @@ retrieved in October 2026 (Pennsylvania, November 2026). Board records were soug
 the registry placed in each queried state, so this verification is
 scoped to records locatable in those seven states' boards rather than
 being a random national sample. Records that could not be matched to a board record were
-classified as unresolved rather than inaccurate, and are reported both as a
-point estimate among definitively resolved records and as sensitivity bounds
-in which all unresolved records are assumed accurate or all inaccurate.
+classified as unresolved. The resolved fraction and extreme sensitivity
+bounds are descriptive of this selected search population, not national
+license-status accuracy.
 
 *Certified-name agreement* was assessed against the certification board roster.
 The roster is authoritative for the name under which a midwife is certified,
@@ -479,30 +478,27 @@ derived from billing.
 
 
 
-### Accuracy against independent primary sources
+### State-board verification and certified-name agreement
 
-Accuracy is reported here only for licensure status; exact certified-name
-agreement is reported against the certification roster. These are the two
-attributes an outside record can adjudicate. Every geographic figure in this
+State-board verification yield is reported for licensure; exact certified-name
+agreement is reported against the certification roster. Every geographic figure in this
 paper is agreement, not accuracy, and the distinction is not a hedge: a
 location on which two databases agree may be wrong in both, and nothing in
 this design would detect it.
 
-Where an independent primary source existed and the record could be matched
-to it, the federal records were
-accurate. Licensure status recorded in the national provider registry agreed
-with live state board verification for
+Among selected national-registry listings that resolved to a board record,
+the board returned a qualifying license outcome for
 `r pc(A$nppes_license_3$pct_accurate, 2)` of
 `r cnt(A$nppes_license_3$n_definitive)` definitively resolved records in the
 three states with machine-readable verification. That analysis left
 `r cnt(A$nppes_license_3$n_unresolved)` records unresolved and had sensitivity
-bounds of `r sensitivity_text(A$nppes_license_3, 1)`. Agreement was
+bounds of `r sensitivity_text(A$nppes_license_3, 1)`. The corresponding yield was
 `r pc(A$nppes_license_7$pct_accurate, 2)` of
 `r cnt(A$nppes_license_7$n_definitive)` records across all seven states. The
 seven-state analysis left `r cnt(A$nppes_license_7$n_unresolved)` registry
 records unresolved; treating all unresolved records as inaccurate or all as
 accurate produced bounds of `r sensitivity_text(A$nppes_license_7, 1)`. The
-Medicare enrollment system performed comparably, at
+subset also present in Medicare enrollment had yields of
 `r pc(A$pecos_license_3$pct_accurate, 2)` and
 `r pc(A$pecos_license_7$pct_accurate, 2)` respectively. Matching was the
 limiting step, not verification: across all seven states,
@@ -511,21 +507,19 @@ limiting step, not verification: across all seven states,
 (`r pc(A$nppes_license_7$pct_unresolved, 1)`)
 could not be matched to a board record and are unresolved rather than
 verified. Counting every unresolved record as inaccurate or as accurate
-bounds registry accuracy between
+bounds the seven-state verification yield between
 `r pc(A$nppes_license_7$worst_case_pct, 1)`
 and
 `r pc(A$nppes_license_7$best_case_pct, 1)`,
-so the resolved-record estimate is the upper region of what the full audit
-can support (Table 2).
+so the resolved-record estimate describes only the resolved subset (Table 2).
 
-The character of the errors matters more than their rate. Of the registry
-records that were inaccurate on licensure status across seven states,
+Among nonqualifying board outcomes across seven states,
 `r pc(A$nppes_license_7$pct_outdated, 1)` were formerly correct and had gone
 out of date, `r pc(A$nppes_license_7$pct_typo, 1)` were partially inaccurate,
 and `r pc(A$nppes_license_7$pct_never, 1)` had never been correct. In the
-three machine-verified states, every inaccurate record was of the formerly
-correct type. This pattern is consistent with values that were correct when
-entered but were not updated after status changed.
+three machine-verified states, every nonqualifying outcome was of the formerly
+correct type. These categories describe board-search outcomes; they do not
+show that a federal license-status field was correct when entered.
 
 Exact certified-name agreement was lower: `r pc(A$nppes_name$pct_accurate, 2)` of
 `r cnt(A$nppes_name$n_definitive)` registry records matched the certified
@@ -536,7 +530,7 @@ different people. Such differences may reflect transcription, formatting, or
 legitimate name changes; they do not establish which source was current.
 
 ```{r table-accuracy}
-#| tbl-cap: "Table 2. Accuracy of the two provider attributes that have an independent primary source to be checked against: licensure status, verified against state board of nursing records, and legal name, verified against the certification board roster. Licensure status is shown at two verification depths -- the three states (Colorado, Texas, Washington) whose boards publish a live verification interface, and all seven states with obtainable board records, a set that adds Connecticut, Florida, Illinois, and Pennsylvania, verified from board files retrieved in October-November 2026. A record that could not be matched to a board record is unresolved, not inaccurate: the accurate share is reported among resolved records, and the worst-best bounds count every unresolved record as inaccurate or as accurate respectively, so the truth lies between them. The certification roster is authoritative for the certified name, not necessarily the name currently used for legal purposes. Practice location, city, and ZIP code have no independent primary source, so Tables 3 and 4 report agreement between databases for them rather than verified accuracy."
+#| tbl-cap: "Table 2. State-board verification yield among selected federal listings and exact certified-name agreement. Licensure is shown at two search depths -- three states with live board interfaces and seven states after adding four published board files. The producer classifies board-search outcomes; it does not compare a federal license-status field with a board-status field. Unmatched records are unresolved. The certification roster is authoritative for the certified name, not necessarily the name currently used for legal purposes. Geographic tables report agreement rather than verified accuracy."
 if (!is.null(A$subtypes_table)) {
   tb <- A$subtypes_table
   # The artifact carries the systems by their acronyms; the manuscript names
@@ -551,8 +545,8 @@ if (!is.null(A$subtypes_table)) {
                               "State boards of nursing"),
     `Attribute` = ifelse(grepl("Name", tb$variable), "Exact certified-name agreement",
                          ifelse(grepl("3 API", tb$variable),
-                                "Licensure status, 3 states with live board verification",
-                                "Licensure status, all 7 states with board records")),
+                                "Board verification yield, 3 live-interface states",
+                                "Board verification yield, all 7 searched states")),
     `Evaluated` = formatC(as.numeric(tb$n_evaluated), format = "d",
                           big.mark = ","),
     `Unresolved n (%)` = sprintf(
@@ -561,7 +555,7 @@ if (!is.null(A$subtypes_table)) {
       100 * as.numeric(tb$n_unresolved) / as.numeric(tb$n_evaluated)),
     `Resolved` = formatC(as.numeric(tb$n_definitive), format = "d",
                          big.mark = ","),
-    `Accurate among resolved (%)` =
+    `Qualifying or exact among resolved (%)` =
       sprintf("%.2f", as.numeric(tb$pct_accurate_definitive)),
     `95% CI` = vapply(seq_len(nrow(tb)), function(i) {
       z <- mw_wilson(as.numeric(tb$n_accurate[i]), as.numeric(tb$n_definitive[i]))
@@ -572,7 +566,7 @@ if (!is.null(A$subtypes_table)) {
       100 * as.numeric(tb$n_accurate) / as.numeric(tb$n_evaluated),
       100 * (as.numeric(tb$n_accurate) + as.numeric(tb$n_unresolved)) /
         as.numeric(tb$n_evaluated)),
-    `Errors formerly correct (%)` =
+    `Nonqualifying/mismatched outcomes formerly correct (%)` =
       sprintf("%.1f", as.numeric(tb$pct_of_inaccurate_formerly)),
     check.names = FALSE)
   style_manuscript_table(out,
@@ -674,12 +668,13 @@ nearly as often as the most neglected ones. A pattern consistent with this
 a recent move that the comparison source has not yet adopted, the
 direction of resolution Supplemental Table S3 observes.
 
-Half of observable disagreements persisted. Of `r cnt(A$disagree_2021_n)`
-providers whose registry and Medicare enrollment records disagreed in 2021,
-`r cnt(A$observable_2026_n)` remained observable in both systems through
-2026; `r cnt(A$persistent_2026_n)` (`r pc(A$persistent_2026_pct, 1)`) still
-disagreed, while `r cnt(A$censored_2026_n)` (`r pc(A$censored_2026_pct, 1)`
-of the starting cohort) were right-censored. Among observed adoption events,
+An exploratory, versioned longitudinal audit began with
+`r cnt(A$disagree_2021_n)` 2021 disagreements, classified
+`r cnt(A$observable_2026_n)` as observable in both systems through 2026,
+`r cnt(A$persistent_2026_n)` as continuously divergent, and
+`r cnt(A$censored_2026_n)` as right-censored. Its provenance pins an older
+panel than the current analysis, so these counts describe that historical
+run and are not promoted as a current endpoint estimate. Among observed adoption events,
 Medicare enrollment adopted the registry's 2021 value after a median of
 `r sprintf("%g", A$lag_pecos_adopts_median)` years (IQR
 `r sprintf("%g", A$lag_pecos_adopts_p25)`-`r sprintf("%g", A$lag_pecos_adopts_p75)`)
@@ -732,16 +727,19 @@ if (!is.null(A$agreement_table)) {
 }
 ```
 
-### One Medicaid provider-year in six carries enrollment in more than one state during the year
+### One classified Medicaid provider-year in six has an any-time multistate class
 
-`r pc(A$medicaid_multistate_pct, 1)` of observed provider-years in the
+Under the historical classification, `r pc(A$medicaid_multistate_pct, 1)` of provider-years
+outside the "not observed" category in the
 Transformed Medicaid Statistical Information System (T-MSIS) carried
 enrollment in more than one state at some point in the enrollment year --
-an any-time measure, not enrollment in several states on one date. On a
-common snapshot date within the year the figure is
+an any-time measure, not enrollment in several states on one date. This
+denominator includes indeterminate classifications and is not the count with
+qualifying enrollment evidence. On a common snapshot date within the year,
+among comparable pairs, the multistate share is
 `r pc(A$medicaid_multistate_snapshot_pct, 1)`, so the any-time rule adds
 `r sprintf("%.1f", A$medicaid_multistate_anytime_pct - A$medicaid_multistate_snapshot_pct)`
-percentage points of apparent multi-state practice. This demonstrates that a scoring
+percentage points of apparent multistate enrollment. This demonstrates that a scoring
 rule requiring one state per provider-year can manufacture disagreement; it
 does not mean that every multistate record would be misclassified. T-MSIS was
 therefore classified per provider-year rather than reduced to one assigned
@@ -749,7 +747,8 @@ state.
 
 Across `r A$medicaid_years` T-MSIS contributed
 `r cnt(A$medicaid_total_n)` provider-years, of which
-`r cnt(A$medicaid_observed_n)` carried an observable enrollment.
+`r cnt(A$medicaid_observed_n)` were outside the "not observed" class; this
+historical denominator is not synonymous with observed qualifying enrollment.
 `r cnt(A$medicaid_concordant_n)` were concordant with the registry on a single
 state and a further `r cnt(A$medicaid_multistate_concordant_n)` were
 concordant through enrollment in more than one state during the year, meaning the
@@ -760,7 +759,7 @@ The separate scoring-rule analysis in Supplemental Table S5 contains
 comparable NPI-year state sets rather than the classification artifact's
 restricted observation universe; the two denominators should not be pooled.
 
-### Multi-state practice as a source of apparent disagreement
+### Multistate enrollment as a source of apparent disagreement
 
 A portion of the disagreement between sources is not error. Scoring Medicaid
 enrollment by whether a state is among those in which a midwife is
@@ -785,15 +784,12 @@ directories show the same mechanism: practice-address consistency rose
 from 27.9% to 84.8% when only physicians practicing at a single location
 were counted [@butala2023directories].
 
-Multi-state enrollment is common rather than exceptional among midwives who
+Multistate enrollment occurs among midwives who
 appear in Medicaid at all (Supplemental Figure S4); enrollment out of
-state adds credentialing requirements [@macpac2026enrollment], so the
-pattern is consistent with deliberate cross-border practice --
-a clinic near a state line serving patients from both sides, or
-telehealth furnished across state lines under multi-state enrollment --
-rather than with clerical duplication. Concurrent enrollment is a fact
-about where a midwife is enrolled to deliver care -- enrollment, not
-observed delivery -- and not an error awaiting correction.
+state adds credentialing requirements [@macpac2026enrollment]. The data do
+not establish whether the states were used for cross-border clinical
+practice, telehealth, sequential enrollment, or administrative reasons.
+Enrollment is not observed delivery or verified practice location.
 
 
 
@@ -809,35 +805,32 @@ varies widely by the provider's state (Supplemental Figure S7).
 
 ### Principal findings
 
-Three findings organize the results. First, where an
-independent record could adjudicate and the record could be matched to
-it, the federal systems were
-accurate: licensure status verified against live state boards agreed for
+Three findings organize the results. First, among selected federal listings
+that resolved to a state-board record, the board returned a qualifying
+outcome for
 `r pc(A$nppes_license_3$pct_accurate, 0)` to
-`r pc(A$pecos_license_3$pct_accurate, 0)` of resolved records, nearly
-every error was a formerly correct value
-gone stale, and the limit of that claim is the roughly two in five
-seven-state records that no board record could be matched to (Table 2).
-Second, among records that resolve, accuracy is not the
-limiting property of these data -- consistency is. Correctly populated
+`r pc(A$pecos_license_3$pct_accurate, 0)` of resolved records. The limit is
+the roughly two in five seven-state records that no board record could be
+matched to, the selected search population, and the absence of a direct
+comparison between federal and board license-status fields (Table 2).
+Second, cross-source consistency is limiting. Populated
 records maintained on different schedules diverge, concentrated in the
 finest geographic unit, replicating the
 2013 ordering thirteen years later at similar
-magnitudes. Third, disagreement often persists: among providers whose
-registry and Medicare enrollment records disagreed in 2021 and remained
-observable in both systems, `r pc(A$persistent_2026_pct, 1)` still disagreed
-in 2026; observed adoption ran in both directions rather than one system
-simply lagging another.
+magnitudes. Third, the historical follow-up shows adoption in both directions
+and substantial censoring, but a cohort-bound current endpoint remains to be
+produced before persistence is treated as a headline estimate.
 
 ### Implications for workforce and access research
 
 These results draw a boundary through the
 geographic hierarchy. Practice
-state is the most reproducible geographic unit these systems carry --
+state had substantially greater cross-source agreement than ZIP code in the
+tested comparison --
 agreement, not verified accuracy, and sources that share lineage or
 selection can agree and still be wrong together; ZIP
-code is not reproducible even in that limited sense. Half disagreeing across two systems is too
-large a fraction to analyze past, and no lag will heal it. Licensure
+code had materially lower agreement. This study does not establish a
+universal threshold at which fine-grained analysis becomes impossible. Licensure
 files show the same
 hazard: one statewide study matched nurse-practitioner board addresses
 to employment in 5% of cases, registry addresses in 64%
@@ -847,18 +840,13 @@ Timeliness inverts a common assumption: where sources and the registry
 disagreed on practice state across transitions, Medicare claims held the
 registry's eventual value first in `r pc(A$claims_lead_partb_pct, 1)` of
 Part B and `r pc(A$claims_lead_partd_pct, 1)` of Part D disagreements --
-roughly three in five: the pattern is consistent with billing recording a
-practice change before enumeration records it, though the true move date is
-not observed. A commercial-reporting source shows the same
-direction with a measurable lead: of the `r cnt(L$state_disc_2022_n)`
+roughly three in five. The ordering does not observe a practice change or
+establish which value was correct. In a commercial-reporting source, of the `r cnt(L$state_disc_2022_n)`
 practice-state disagreements between Open Payments and the registry in
-2022, `r pc(L$state_b_adopts_pct, 1)` resolved by the registry adopting
-the Open Payments state within the following four years -- the address a
-manufacturer representative records at a visit reaches the federal
-payment file one to four years before the provider updates her own
-registry entry. Commercial observation was leading the administrative
-record, not mirroring it -- a claim about timing, not about which
-value was correct.
+2022, `r pc(L$state_b_adopts_pct, 1)` resolved by the registry later adopting
+the Open Payments state within four years. This sequence is consistent with
+the payment file carrying the later registry value first, but it does not
+observe a visit, a move date, or truth.
 
 Billing visibility is itself regime-dependent. In states that condition
 midwifery practice on physician collaboration or supervision

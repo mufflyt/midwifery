@@ -28,3 +28,24 @@ Those changes were useful but had not yet been supported by the required ledgers
 ## Verification record
 
 The implementation log and final F01-F12 status are maintained in `review/manuscript_findings_ledger.csv`. Successful Quarto rendering alone is not considered scientific verification.
+
+## Independent-audit correction — 2026-11-25
+
+The independent review in `review/independent_reviewer_audit.md` overturned
+the earlier assumption that green manuscript gates resolved every P0 item.
+The manuscript and ledgers now:
+
+- use 4,267/5,877 as the exact any-variable disagreement count;
+- describe state-board fractions as verification yield in selected listings,
+  not federal license-status-field accuracy;
+- retain 563/892 only as invalid historical endpoint arithmetic and remove it
+  from manuscript conclusions;
+- separate Medicaid any-time state sets from same-date enrollment and actual
+  practice;
+- mark the 44,806-NPI-year clustered trend unresolved because 991 NPIs fall
+  outside the frozen cohort and the series differs from the plotted series;
+  and
+- state explicitly that the manuscript remains blocked on P0 reanalysis.
+
+The durable disposition is
+`docs/TECHNICAL_APPENDIX_FEDERAL_DATABASE_ACCURACY_REVIEW_2026-11-25.md`.

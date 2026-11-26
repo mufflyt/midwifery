@@ -75,6 +75,6 @@ mutate_case("MAN-10", function(p) {
   x <- readLines(p$qmd, warn = FALSE); writeLines(c(x, "Billing observes a practice move."), p$qmd)
 })
 mutate_case("MAN-11", function(p) edit_text(p$qmd, "certified nurse-midwife and certified midwife workforce", "certified nurse-midwife workforce"))
-mutate_case("MAN-12", function(p) edit_text(p$qmd, "A$persistent_2026_pct", "A$state_inconsistent"))
+mutate_case("MAN-12", function(p) edit_text(p$qmd, "A$zip_inconsistent", "12.3"))
 
 cat("PASS: all 12 deliberate faults were rejected\n")

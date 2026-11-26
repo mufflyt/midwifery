@@ -20,6 +20,49 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-25 — independent manuscript audit blocks submission; scratch warehouse recovered
+
+### Corrected and clarified
+
+- **The federal database accuracy manuscript is not submission-ready.** The
+  independent reviewer reproduced the 22,357 → 14,956 + 1,819 → 16,775
+  cohort flow and the principal 2026 state/ZIP agreement counts, but found
+  unresolved P0 construct defects. The state-board fractions are verification
+  yields among selected listings, not a comparison of federal and board
+  license-status fields. The historical 563/892 persistence residual is not a
+  2026 endpoint. The 16.1% Medicaid calculation uses states touched at any
+  time during a year and a composite denominator, not simultaneous practice.
+  The clustered trend includes 991 NPIs outside the frozen cohort and does
+  not match the plotted record-weighted series. Full disposition:
+  `docs/TECHNICAL_APPENDIX_FEDERAL_DATABASE_ACCURACY_REVIEW_2026-11-25.md`.
+- **The exact 2026 any-variable disagreement numerator is 4,267/5,877, not
+  4,268/5,877.** Both round to 72.6%; the denominator ledger and manuscript
+  documentation now preserve the exact source count.
+- **Medicaid universes are explicitly separated.** The current any-time
+  set-membership artifact has 107,193 comparable NPI-years spanning
+  2013–2024. The same-date artifact has 32,952 comparable pairs, 7,596 of
+  which are multistate. Neither measure establishes actual clinical practice.
+- **The manuscript now treats the committed 366/728 censoring result as a
+  versioned historical classification, not a final current-panel endpoint.**
+  A cohort-bound, provenance-complete endpoint remains a release blocker.
+
+### Recovered from scratch
+
+- **The Medicaid provider-spending fact table is present locally.** The
+  Git-ignored scratch directory contains the 3.5 GB source ZIP and a 4.0 GB
+  DuckDB with 238,015,729 rows. The warehouse records source version
+  2026-02-09 and ZIP SHA-256
+  `3387c48ea9600c15e8e6b43e68599b814cc66b24723e8d7aba2f556a8136f149`.
+  No large data were committed; durable provenance and remaining work are in
+  `docs/HANDOFF_hhs_medicaid_provider_spending.md`.
+
+### Release status
+
+- Submission remains blocked on a cohort-bound longitudinal endpoint, a
+  cohort-consistent trend/figure, corrected state-board construct labels,
+  Medicaid timing labels, stronger source-bound manuscript gates, and a new
+  rendered Word audit.
+
 ## [Unreleased] — 2026-11-23 — an external statistical review, verified claim by claim; Table 2 stops hiding its unresolved records
 
 Three external AI review passes were run against the manuscript and every
