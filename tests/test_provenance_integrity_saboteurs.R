@@ -74,7 +74,7 @@ input_entries <- function() {
   }
   list(file = f, path = p, sha = h)
 }
-`%||%` <- function(a, b) if (is.null(a)) b else a
+# %||% is base R since 4.4; a local copy shadows it and fails C3a.
 ENTRIES <- input_entries()
 
 # --- M1 an artifact nothing names -----------------------------------------------
