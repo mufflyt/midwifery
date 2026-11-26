@@ -29,6 +29,16 @@ bot-manager walls, or an explicit no-scraping policy); see
 **[→ Interactive CNM Workforce Map](docs/cnm_national_leaflet_map.html)**
 &nbsp;·&nbsp; [Pipeline Architecture](ARCHITECTURE.md) &nbsp;·&nbsp; [Dataset Metadata](metadata.json)
 
+> **Federal database accuracy manuscript status (2026-11-25): not
+> submission-ready.** An independent audit reproduced the 16,775-person
+> linkage cohort and the principal state/ZIP agreement counts, but found P0
+> construct defects in the licensure interpretation, longitudinal endpoint,
+> Medicaid timing denominator, and dependence-aware trend population. The
+> exact disposition and corrected fact table are in the
+> [technical appendix](docs/TECHNICAL_APPENDIX_FEDERAL_DATABASE_ACCURACY_REVIEW_2026-11-25.md)
+> and [review report](review/independent_reviewer_audit.md). Do not cite the
+> November 24 Word draft as a submission manuscript.
+
 ```mermaid
 flowchart LR
   A["AMCB roster: 22,357 certificants"] --> B["NPPES linkage: 12,170 of 15,328 ACTIVE matched"]
@@ -47,7 +57,8 @@ flowchart LR
 | Licences a board returned | 1,353: WA 369, CO 486, TX 498 (any status the board reported) | `docs/figures/board_licensure_observed_counts.csv` |
 | Delivery attendance | not observable: public Medicare Part B has no delivery-code rows for any provider, 2013–2023 | `artifacts/medicare_delivery_code_observability.csv` |
 | PECOS/DAC vs state-board address agreement (5 pairs total; CA+IL+CT+DE+FL pooled) | State 92.5% (n=239); city 35.5% (n=462); ZIP5 35.6% (n=239) | [docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md](docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md) |
-| 2021 registry–Medicare enrollment state disagreements followed through 2026 | 366 of 728 providers observable in both systems (50.3%) remained discordant; 164 of the original 892 (18.4%) were right-censored | `artifacts/oig_remake/oig_longitudinal_2021_2026_censoring_audit.csv`; [statistical-review appendix](docs/TECHNICAL_APPENDIX_STATISTICAL_REVIEW_2026-11-23.md) |
+| Historical 2021 registry–Medicare enrollment follow-up | The committed censoring audit classifies 366 of 728 observable providers (50.3%) as continuously divergent and 164 of the original 892 (18.4%) as right-censored. Its sidecar pins an older panel, so this is not the current publication endpoint. | `artifacts/oig_remake/oig_longitudinal_2021_2026_censoring_audit.csv`; [2026-11-25 review appendix](docs/TECHNICAL_APPENDIX_FEDERAL_DATABASE_ACCURACY_REVIEW_2026-11-25.md) |
+| Medicaid provider-spending scratch recovery | 238,015,729 rows loaded from the 2026-02-09 source archive into a local 4.0 GB DuckDB; source ZIP and database remain Git-ignored | [warehouse handoff](docs/HANDOFF_hhs_medicaid_provider_spending.md) |
 
 <details>
 <summary><strong>Contents</strong> (click to expand)</summary>
@@ -1496,9 +1507,9 @@ for why this variable exists: joined against per-NPI cross-source consensus,
 multi-state-licensed midwives land in the "Split" (no-majority) disagreement
 tier at roughly nine times the rate of single-state-licensed ones
 (22.1% vs. 2.4%, chi-squared(2, n=8,312) = 1,353.1, p < 2.2e-16) —
-the first direct evidence in this project that most cross-source address
-disagreement reflects genuine multi-state practice rather than a
-data-quality problem.
+evidence that multistate licensure is associated with cross-source address
+disagreement. It does not establish the clinician's actual practice sites or
+show that most disagreements are true practice locations.
 
 **Two more fixes to the same build (2026-11-05).** The CMS hospital-affiliation
 block (hospital privilege via CCN, hospital count, type, ownership and
@@ -1876,7 +1887,8 @@ See [`docs/longitudinal-reconstruction-changelog.md`](docs/longitudinal-reconstr
 
 **Medicaid agreement figures published before 2026-11-10 are withdrawn.** They
 compared other sources against one arbitrarily chosen Medicaid state while
-discarding the other 33.2% of a midwife's concurrent enrolments. Recomputed as
+discarding the other 33.2% of recorded state memberships accumulated within
+the year. Recomputed as
 set membership on the same 107,193 NPI-years, agreement with NPPES is **88.5%**
 (91.5% in 2024), not 74.8% — so the 0.166 odd-one-out rate and the "five times
 the next worst source" claim are artifacts of the comparison, not properties of
@@ -1915,12 +1927,14 @@ them are anticonservative.
   NPPES** — mean pairwise agreement 88.2% across all 8 other sources,
   the lowest of any, confirming its 89.9%-vs-NPPES score wasn't an
   NPPES-anchor artifact.
-- **Most cross-source disagreement is genuine multi-state practice, not
-  noise.** Joining per-NPI consensus tiers against the Open Payments
+- **Multistate licensure is associated with cross-source disagreement.**
+  Joining per-NPI consensus tiers against the Open Payments
   license-state field: midwives licensed in one state are 92.4%
   Unanimous and 2.4% Split; midwives licensed in two or more states are
   59.9% Unanimous and 22.1% Split — roughly nine times the single-state
-  rate (chi-squared(2, n=8,312) = 1,353.1, p < 2.2e-16).
+  rate (chi-squared(2, n=8,312) = 1,353.1, p < 2.2e-16). This association
+  does not identify actual practice sites or prove which recorded state is
+  correct.
 - **84.5% of cohort NPIs with ≥2 current sources reporting are
   Unanimous** (14,314 of 16,939); the unanimous rate declines from 94%
   (2 sources) to ~76% (6–7 sources) as more independent sources are

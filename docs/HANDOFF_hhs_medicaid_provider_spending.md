@@ -1,47 +1,54 @@
-# Handoff: HHS Medicaid provider-spending exploration, incomplete
+# Handoff: HHS Medicaid provider-spending warehouse
 
-An attempt to pull HuggingFace's mirror of CMS Medicaid provider-spending data
-(`cfahlgren1/medicaid-provider-spending` on huggingface.co) was started and did
-not finish. Written here so the next session doesn't re-discover the same
-dead end from scratch.
+**Updated:** 2026-11-25
+**Status:** source and verified local warehouse recovered; not tracked in Git
 
-## What was fetched
+The earlier handoff said the fact-table download had failed. That is no
+longer true. The scratch directory now contains the complete source archive
+and a DuckDB warehouse:
 
-Three dimension tables downloaded successfully (NPI-indexed provider rosters,
-not spending):
-
-| file | rows | schema |
+| Local file | Size | Role |
 |---|---:|---|
-| `servicing-providers.parquet` | 1,627,362 | `npi, entity_type, org_name, last_name, first_name, middle_name, credential, address_line1, city, state, zip, phone, sex, taxonomy_code, enumeration_date` |
-| `billing-providers.parquet` | 617,503 | same schema |
-| `hcpcs-codes.parquet` | 7,549 | `hcpcs_code, description` |
+| `scratch/medicaid_provider_spending/medicaid-provider-spending.csv.zip` | 3.5 GB | Source archive; one 11.55 GB uncompressed CSV |
+| `scratch/medicaid_provider_spending/medicaid_provider_spending_verified.duckdb` | 4.0 GB | Queryable local warehouse |
 
-These are NPPES-derived provider dimension tables — essentially a billing/
-servicing-provider lookup, not the spending figures themselves.
+Both remain ignored by Git. They must not be committed.
 
-## What failed
+## Verified provenance
 
-The main fact table, `medicaid-provider-spending.parquet`, returned
-`HTTP 429 Too Many Requests` from HuggingFace's resolve endpoint. Without it,
-the three tables above have nothing to join against — there is no spending,
-utilization or claim-count column anywhere in what downloaded.
+The warehouse `_provenance` table records:
 
-## Where the files are
+- source URL: `https://stopendataprod.blob.core.windows.net/datasets/medicaid-provider-spending/2026-02-09/dataset/medicaid-provider-spending.csv.zip`
+- version date: `2026-02-09`
+- ZIP SHA-256: `3387c48ea9600c15e8e6b43e68599b814cc66b24723e8d7aba2f556a8136f149`
+- ZIP bytes: `3,761,921,469`
+- loaded rows: `238,015,729`
+- loaded table: `spending`
+- load timestamp: `2026-11-19 05:58:35.770986`
 
-Cached locally in a session scratchpad directory, not in this repo:
-`/private/tmp/claude-501/-Users-tmuffly-midwifery/*/scratchpad/hhs_medicaid/`.
-That path is ephemeral (per-session temp storage) — nothing has been copied
-into the repo, and no script here reads these files. A repo-wide grep for
-`medicaid-provider-spending`, `huggingface`, `hhs_medicaid`,
-`servicing-providers`, `billing-providers` or `hcpcs-codes` returns no other
-hits.
+The `spending` table has seven character columns:
+`BILLING_PROVIDER_NPI_NUM`, `SERVICING_PROVIDER_NPI_NUM`, `HCPCS_CODE`,
+`CLAIM_FROM_MONTH`, `TOTAL_PATIENTS`, `TOTAL_CLAIM_LINES`, and `TOTAL_PAID`.
+Numeric/date conversion must be explicit in downstream queries; the current
+warehouse intentionally preserves source strings.
 
-## If this gets picked back up
+## Safe verification
 
-1. Retry the fact-table download with backoff, or find a non-rate-limited
-   mirror (e.g. pull directly from CMS's own Medicaid spending-by-provider
-   release rather than the HuggingFace re-host).
-2. Only then is there a reason to write a fetch/warehouse script analogous to
-   `archive_revalidation_reassignment.R` — building one around the two
-   dimension tables alone, with no fact table to join, would not answer any
-   research question this repo asks.
+```sh
+unzip -l scratch/medicaid_provider_spending/medicaid-provider-spending.csv.zip
+duckdb -readonly scratch/medicaid_provider_spending/medicaid_provider_spending_verified.duckdb \
+  -c "SELECT * FROM _provenance;"
+duckdb -readonly scratch/medicaid_provider_spending/medicaid_provider_spending_verified.duckdb \
+  -c "SELECT COUNT(*) FROM spending;"
+```
+
+## Remaining work
+
+1. Add a tracked rebuild script before treating the warehouse as a
+   reproducible pipeline input.
+2. Validate typed casts for month, patients, claim lines, and paid amount.
+3. Define a manuscript question and denominator before joining to the AMCB
+   cohort; do not mine the warehouse for an unregistered headline.
+4. Move the two large files to the repository's data-vault location only
+   under the documented vault procedure. The scratch copies are currently
+   the only recovered local copies and should not be deleted casually.
