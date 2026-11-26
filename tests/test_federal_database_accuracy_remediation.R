@@ -77,10 +77,10 @@ chk(!grepl("a recent update generally marks a recent move|billing observes a pra
            ignore.case = TRUE), "MAN-10 unverified practice moves are not asserted")
 chk(!grepl("Practice state is the only geographic variable|agreement this tight bounds", qmd,
            ignore.case = TRUE), "geographic conclusions are evidence-limited")
-chk(lengths(regmatches(qmd, gregexpr("A$persistent_2026_pct", qmd,
-                                     fixed = TRUE))) >= 2 &&
+chk(!grepl("A$unresolved_pct", qmd, fixed = TRUE) &&
+      grepl("A$zip_inconsistent", qmd, fixed = TRUE) &&
       !grepl("more than three quarters", qmd, ignore.case = TRUE),
-    "MAN-01/MAN-12 abstract and Results use the same persistence source")
+    "MAN-01 invalid historical persistence is absent and MAN-12 abstract remains artifact-keyed")
 
 cat("\n-- MAN-09 dependence-aware trend contract --\n")
 need_trend <- c("source", "start_year", "end_year", "n_npi_years", "n_npis",
