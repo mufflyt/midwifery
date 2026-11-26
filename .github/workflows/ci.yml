@@ -86,6 +86,13 @@ jobs:
       - name: Workflow contracts (a job installs what it runs)
         run: Rscript tests/ci_workflow_contracts.R
 
+      # Gate-of-gates for W2. W2 is the check that says a gate nobody runs is
+      # not a gate; if W2 itself cannot fail, it is exactly the thing it
+      # forbids. Six cases, each building a throwaway tree and running the real
+      # gate in it: two kills, four near misses.
+      - name: Workflow contracts detector
+        run: Rscript tests/test_workflow_contracts_detect.R
+
       # The detector runs BEFORE the gate it tests, deliberately. ci_read_width.R
       # is a parse walk over a shrink-only baseline, and the two ways a parse
       # walk fails are "matched nothing" and "scanned nothing" -- both of which
