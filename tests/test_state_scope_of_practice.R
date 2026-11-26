@@ -41,23 +41,23 @@ chk(sum(SOP$practice_authority_2016 == "Autonomous") == 26L &&
     "T6 2016-snapshot counts: 26 autonomous, 25 collaborative")
 
 cat("\n-- spot-check specific jurisdictions against the source paper --\n")
-row <- function(s) SOP[SOP$state == s, ]
-chk(identical(row("DC")$practice_authority_continuous, "Autonomous"),
+sop_row <- function(s) SOP[SOP$state == s, ]
+chk(identical(sop_row("DC")$practice_authority_continuous, "Autonomous"),
     "T7 DC is continuous-autonomous (in the 20 states + DC)")
-chk(identical(row("CA")$practice_authority_continuous, "Collaborative_supervisory"),
+chk(identical(sop_row("CA")$practice_authority_continuous, "Collaborative_supervisory"),
     "T8 CA is continuous-collaborative/supervisory")
-chk(identical(row("MI")$practice_authority_continuous, "Changed_during_window_excluded") &&
-      identical(row("MI")$practice_authority_2016, "Collaborative_supervisory"),
+chk(identical(sop_row("MI")$practice_authority_continuous, "Changed_during_window_excluded") &&
+      identical(sop_row("MI")$practice_authority_2016, "Collaborative_supervisory"),
     "T9 MI changed mid-window (autonomous 2013 -> collaborative 2014) and reverts to collaborative by 2016")
-chk(identical(row("NJ")$practice_authority_continuous, "Changed_during_window_excluded") &&
-      identical(row("NJ")$practice_authority_2016, "Autonomous"),
+chk(identical(sop_row("NJ")$practice_authority_continuous, "Changed_during_window_excluded") &&
+      identical(sop_row("NJ")$practice_authority_2016, "Autonomous"),
     "T10 NJ changed twice (autonomous -> collaborative 2015 -> autonomous 2016) and is autonomous by 2016")
-chk(identical(row("WY")$practice_authority_continuous, "Autonomous"),
+chk(identical(sop_row("WY")$practice_authority_continuous, "Autonomous"),
     "T11 WY is continuous-autonomous")
-chk(identical(row("TX")$practice_authority_continuous, "Collaborative_supervisory"),
+chk(identical(sop_row("TX")$practice_authority_continuous, "Collaborative_supervisory"),
     "T12 TX is continuous-collaborative/supervisory")
 
-cat("\n-- join: no US jurisdiction silently lost, no non-US row silently kept --\n")
+cat("\n-- join: no US jurisdiction silently lost, no non-US sop_row silently kept --\n")
 iso_path <- "artifacts/isochrone_representation_by_scope_of_practice.csv"
 if (!file.exists(iso_path)) {
   cat(sprintf("  --   SKIP join checks: %s absent\n", iso_path))
@@ -68,7 +68,7 @@ if (!file.exists(iso_path)) {
   chk(setequal(us_in_src, unique(iso_j$nppes_state)),
       "T13 every US jurisdiction present in the source geography artifact survives the join")
   chk(all(iso_j$nppes_state %in% SOP$state),
-      "T14 no non-US-jurisdiction row (military APO/FPO, foreign geocoding artifact) leaked into the joined output")
+      "T14 no non-US-jurisdiction sop_row (military APO/FPO, foreign geocoding artifact) leaked into the joined output")
   chk(all(c("practice_authority_continuous", "practice_authority_2016") %in% names(iso_j)),
       "T15 both classification columns are present in the joined artifact")
 }
@@ -84,11 +84,11 @@ if (!file.exists(acc_path)) {
   chk(setequal(us_in_acc_src, unique(acc$state)),
       "T16 every US jurisdiction present in full_cohort_access_by_band_state.csv survives the join")
   chk(all(acc$state %in% SOP$state),
-      "T17 no non-US-jurisdiction row leaked into the access join")
+      "T17 no non-US-jurisdiction sop_row leaked into the access join")
   chk(all(c("women_with_access", "women_total", "practice_authority_2016") %in% names(acc)),
       "T18 access join carries both the population-weighted figures and the classification")
   chk(all(acc$women_with_access <= acc$women_total),
-      "T19 women_with_access never exceeds women_total in any row")
+      "T19 women_with_access never exceeds women_total in any sop_row")
 }
 
 cat("\n-- significance test: state as unit of analysis --\n")
@@ -97,10 +97,10 @@ if (!file.exists(sig_path)) {
   cat(sprintf("  --   SKIP significance checks: %s absent\n", sig_path))
 } else {
   sig <- read_csv(sig_path, show_col_types = FALSE)
-  chk(nrow(sig) == 2L, "T20 one row per band (30, 60)")
+  chk(nrow(sig) == 2L, "T20 one sop_row per band (30, 60)")
   chk(setequal(sig$band_minutes, c(30L, 60L)), "T21 both bands present")
   chk(all(sig$n_autonomous > 0 & sig$n_collaborative > 0),
-      "T22 both groups have a nonzero state count in every row")
+      "T22 both groups have a nonzero state count in every sop_row")
   chk(all(abs((sig$mean_autonomous_pct - sig$mean_collaborative_pct) - sig$diff_pp) < 0.15),
       "T23 diff_pp matches the reported group means (within rounding)")
   chk(all(sig$ci_lo <= sig$diff_pp & sig$diff_pp <= sig$ci_hi),

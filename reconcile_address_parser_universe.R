@@ -61,7 +61,7 @@
 
 suppressPackageStartupMessages({
   library(dplyr); library(readr); library(DBI); library(duckdb); library(cli)
-  library(stringr); library(postmastr); library(yaml)
+  library(stringr); library(yaml)
 })
 
 root_dir <- {

@@ -19,7 +19,47 @@
 #       norm_addr existed four times with divergent behaviour, zip5 three,
 #       and a test shadowed the canonical pad5. Two scripts keying the same
 #       address produced different keys with nothing saying so.
+#   H6  No name bound to a function more than once WITHIN ONE SCOPE. H4 reads
+#       top-level definitions across files; this reads every scope, which is
+#       where the same defect hides. mw_build_catalog() bound `g` three times
+#       in one 913-line function body -- and because `if (...) { }` is not a
+#       scope in R, all three landed in the one environment. Two of the three
+#       took the same arity with incompatible first-argument types (a data
+#       frame at one binding, a character stratum key at the next), 41 lines
+#       apart, in the function that produces every number in the manuscript.
+#       Nothing was wrong at the time: every call sat inside its own
+#       `if (!is.null(x))` block. That is the point -- the next edit to move a
+#       statement across a block boundary would have been silent.
 #
+#   H6  No name bound to a function more than once WITHIN ONE SCOPE. H4 reads
+#       top-level definitions across files; this reads every scope, which is
+#       where the same defect hides. mw_build_catalog() bound `g` three times
+#       in one 913-line function body -- and because `if (...) { }` is not a
+#       scope in R, all three landed in the one environment. Two of the three
+#       took the same arity with incompatible first-argument types (a data
+#       frame at one binding, a character stratum key at the next), 41 lines
+#       apart, in the function that produces every number in the manuscript.
+#       Nothing was wrong at the time: every call sat inside its own
+#       `if (!is.null(x))` block. That is the point -- the next edit to move a
+#       statement across a block boundary would have been silent.
+#
+#   H7  No function BODY defined under two different names. H4 forbids one
+#       NAME in two files and cannot see a renamed copy at all -- which is the
+#       shape that actually recurs here. audit2013_norm and drift_norm are
+#       byte-identical normalisers under two names; dac_spine_collapse_set and
+#       drift_collapse_set are byte-identical key-collapsers. Both feed
+#       person-level identity keys, the category H4's own note calls dangerous.
+#       Six pairs existed when this was written and are grandfathered in
+#       tests/ci_hygiene_renamed_baseline.txt; anything new fails.
+#   H8  No tracked R code asks iconv() to transliterate. base::iconv(to =
+#       "ASCII//TRANSLIT") returns whatever the host C library decides: macOS
+#       libiconv emits the combining mark and glibc does not, so "Munoz" folded
+#       to "Mu~noz" on a laptop and "Munoz" on a runner -- and the character
+#       class that followed turned the mark into a SPACE, giving two different
+#       linkage keys for one midwife depending on which machine ran the script.
+#       Nothing catches this in review or in a one-machine test suite.
+#       stringi::stri_trans_general(x, "Latin-ASCII") is fixed by its own
+#       specification and ships with stringr, which is already everywhere here.
 # H4 carries an allowlist. Some repeats are legitimate -- a test's local `chk`
 # harness, or a genuinely private one-liner -- and an allowlist that must be
 # edited deliberately is the point: adding a name here is a decision someone
@@ -121,7 +161,16 @@ cat("\n-- H4 no function defined at top level in two files --\n")
 # repeats is a hole kept open for nothing. drop_zip in particular was listed as
 # "never a join key", which was wrong: it exists to build key_nozip, so it now
 # lives once in R/lib/geocode_conflicts.R with the collapse that follows it.
+# `scaffold` and `gate_fails` are the gate-of-gates pair -- build a throwaway
+# git repo that passes, then run the gate in it as a subprocess and report
+# whether it exited non-zero. Same category as `kills` directly above: console
+# and subprocess plumbing in a standalone harness, never a join key and never
+# touching real data. They became duplicated when ci_denominator_contracts.R
+# got the detector that ci_science_contracts.R already had, and divergence
+# between the two is harmless by construction -- each builds the fixtures its
+# own gate reads, so a shared definition would be the wrong thing.
 ALLOW <- c("chk", "xchk", "pick", "f", "ok", "bad", "skip", "kills",
+           "scaffold", "gate_fails",
            "rd", "fmt", "mk",
            "main", "code", "rate", "key_of", "fetch_one",
            "assign_cd", "centroid_counts", "assign_county_from_points",
@@ -174,6 +223,192 @@ stale <- setdiff(names(baseline), names(multi))
 if (length(stale))
   cat(sprintf("       note: %s no longer duplicated -- remove from %s\n",
               paste(stale, collapse = ", "), BASE))
+
+cat("\n-- H6 no name bound to a function twice in one scope --\n")
+# Only a function body and local() open a scope in R. `if`, `for`, `while` and
+# a bare `{` DO NOT, so a helper defined inside an if-block belongs to the
+# enclosing function's environment and a second binding of that name silently
+# replaces the first for every statement after it. H4 cannot see this: its
+# pattern is anchored at ^, so it reads top-level definitions only.
+#
+# Scopes are numbered as the walk descends. A file's top level is ONE scope
+# (the script's evaluation environment), not one per expression.
+H6_SID <- 0L
+H6_SWALLOWED <- 0L
+h6_is_fn_assign <- function(e)
+  is.call(e) && length(e) == 3L && deparse(e[[1]])[1] %in% c("<-", "=", "<<-") &&
+    is.call(e[[3]]) && deparse(e[[3]][[1]])[1] == "function"
+h6_opens_scope <- function(e)
+  is.call(e) && length(e) >= 1L && deparse(e[[1]])[1] %in% c("function", "local")
+# Every child step is wrapped: R carries a special EMPTY SYMBOL for an omitted
+# argument (the blank in `df[, "col"]`), and merely binding it to a variable
+# raises "argument is missing" before any check in the loop body can run.
+h6_walk <- function(e, sid) {
+  out <- list()
+  if (!is.recursive(e)) return(out)
+  if (h6_is_fn_assign(e)) out <- list(data.frame(sid = sid, nm = deparse(e[[2]])[1]))
+  for (i in seq_along(e)) {
+    out <- tryCatch({
+      x <- e[[i]]
+      if (!is.recursive(x)) out else {
+        s2 <- if (h6_opens_scope(x)) { H6_SID <<- H6_SID + 1L; H6_SID } else sid
+        c(out, h6_walk(x, s2))
+      }
+    }, error = function(z) {
+      # Swallowing the empty symbol is intended. Swallowing anything ELSE means
+      # a subtree went unwalked, so this check silently covered less of the tree
+      # than it claims -- the same blind spot this review flagged in
+      # duckdb_scan_for_raw_connections()'s walker. Tell the two apart and COUNT
+      # the other one, so a known limit never becomes a silent one.
+      if (!grepl("argument .* is missing", conditionMessage(z)))
+        H6_SWALLOWED <<- H6_SWALLOWED + 1L
+      out
+    })
+  }
+  out
+}
+
+# ALLOWLISTED, keyed on file AND name so it stays narrow: a NEW rebinding in
+# one of these same files still fails. All three are test files that use a
+# top-level `{ ... }` block per scenario and rebind a scenario helper in the
+# next block. Each is harmless TODAY only because every assertion using a
+# binding precedes the next one -- `disagree` in particular goes from
+# (a, b) vectorised to (d) taking a data frame, which is the same shape as the
+# catalog defect this check was written for. The fix when one of these files is
+# next touched is `local({ ... })` per block, which makes the convention a
+# guarantee and lets the entry here be deleted. This list should only shrink.
+H6_ALLOW <- c("tests/test-step2-npi-dedup-bug.R::npi_valid",
+              "tests/test_amcb_gates.R::passthrough",
+              "tests/test_cycle19_address_provenance.R::disagree")
+
+h6_hits <- character(0)
+for (f in r_files) {
+  ex <- tryCatch(parse(f, keep.source = FALSE), error = function(e) NULL)
+  if (is.null(ex)) next
+  H6_SID <- H6_SID + 1L
+  top <- H6_SID
+  rows <- list()
+  for (e in ex) rows <- c(rows, h6_walk(e, top))
+  if (!length(rows)) next
+  d <- do.call(rbind, rows)
+  for (s in unique(d$sid)) {
+    tb <- table(d$nm[d$sid == s])
+    tb <- tb[tb > 1L]
+    for (nm in names(tb)) {
+      if (paste0(f, "::", nm) %in% H6_ALLOW) next
+      h6_hits <- c(h6_hits, sprintf("%s: %s bound %d times in one scope",
+                                    f, nm, as.integer(tb[[nm]])))
+    }
+  }
+}
+note(length(h6_hits) == 0,
+     sprintf("no name bound twice in one scope (%d allowlisted)", length(H6_ALLOW)),
+     h6_hits)
+# Reported, not fatal: an unwalkable subtree lowers this check's COVERAGE
+# without itself being a duplicate-binding defect. It is 0 today.
+#
+# Cost note, measured not guessed: H6 adds ~29s over 657 files against H1's 3s.
+# Left as is. The obvious suspects are not the cause -- replacing every
+# deparse() with a symbol comparison changed nothing -- and a rewrite that
+# dropped the per-node handler aborted on every file while LOOKING 19x faster.
+# If this job needs the time back, profile it first.
+if (H6_SWALLOWED > 0L)
+  cat(sprintf("       note: %d subtree(s) could not be walked -- H6 saw less than the whole tree\n",
+              H6_SWALLOWED))
+
+cat("\n-- H7 no function body defined under two different names --\n")
+# H4 compares NAMES. A copy that was also renamed is invisible to it, and that
+# is not hypothetical: of the duplicate bodies in this tree, six pairs carry two
+# different names, and two of those six are identity keys.
+#
+# Bodies are normalised by deparsing and collapsing whitespace, so formatting
+# and comments do not matter but structure does. Only bodies of four or more
+# deparsed lines count: a one-line accessor repeating is noise, not duplication.
+h7_bodies <- list()
+for (f in r_files) {
+  ex <- tryCatch(parse(f, keep.source = FALSE), error = function(e) NULL)
+  if (is.null(ex)) next
+  for (e in ex) {
+    if (!(is.call(e) && length(e) == 3L &&
+          deparse(e[[1]])[1] %in% c("<-", "=", "<<-"))) next
+    if (!(is.call(e[[3]]) && deparse(e[[3]][[1]])[1] == "function")) next
+    b <- e[[3]][[3]]
+    dp <- deparse(b)
+    if (length(dp) < 4L) next
+    key <- gsub("\\s+", " ", paste(dp, collapse = " "))
+    h7_bodies[[key]] <- rbind(h7_bodies[[key]],
+                              data.frame(fn = deparse(e[[2]])[1], file = f,
+                                         stringsAsFactors = FALSE))
+  }
+}
+
+H7_BASE <- "tests/ci_hygiene_renamed_baseline.txt"
+h7_baseline <- if (file.exists(H7_BASE)) {
+  b <- readLines(H7_BASE, warn = FALSE)
+  trimws(b[nzchar(trimws(b)) & !grepl("^#", trimws(b))])
+} else character(0)
+
+h7_new <- character(0)
+h7_seen <- character(0)
+for (d in h7_bodies) {
+  if (is.null(d) || nrow(d) < 2L) next
+  nm <- sort(unique(d$fn))
+  # Same name in two files is H4's job, with H4's allowlist. H7 owns only the
+  # case H4 structurally cannot reach.
+  if (length(nm) < 2L) next
+  line <- sprintf("%s: %s", paste(nm, collapse = "|"),
+                  paste(sort(unique(d$file)), collapse = ", "))
+  h7_seen <- c(h7_seen, line)
+  if (!(line %in% h7_baseline)) h7_new <- c(h7_new, line)
+}
+note(length(h7_new) == 0,
+     sprintf("no NEW body duplicated under two names (%d grandfathered in %s)",
+             length(h7_baseline), H7_BASE),
+     h7_new)
+
+# A baseline entry that no longer duplicates is debt that was PAID. Say so, so
+# the file gets trimmed instead of outliving the problem -- the same rule H4's
+# baseline carries.
+h7_stale <- setdiff(h7_baseline, h7_seen)
+if (length(h7_stale))
+  cat(sprintf("       note: %d baseline entry/entries no longer duplicated -- remove from %s:\n%s\n",
+              length(h7_stale), H7_BASE,
+              paste("         ", h7_stale, collapse = "\n")))
+
+cat("\n-- H8 no tracked R code asks iconv to transliterate --\n")
+# Read CODE, not comments: the fix for this defect carries a comment naming the
+# call it removed, and so does this gate's own header. STR_CONST tokens are the
+# string literals actually passed at runtime.
+#
+# R/lib/work_site_topology.R is allowlisted because it does the one thing that
+# makes iconv safe here -- it strips the marks libiconv can leave
+# (gsub("[~^`\"]", "", x) on the next line), so both platforms converge. That is
+# a workaround, not a fix, and if that file is ever touched the better move is
+# stri_trans_general(); the entry is kept narrow for that reason.
+H8_ALLOW <- "R/lib/work_site_topology.R"
+h8_hits <- character(0)
+# SCOPE: production code, not tests/. Not a weakening -- the defect is a KEY
+# that is compared, joined or persisted, and those are built by the pipeline,
+# not by a test. Excluding tests/ is also what stops this gate tripping on
+# itself: the line above contains the forbidden literal, and so do the fixtures
+# in tests/test_review_fixes_saboteurs.R that exist precisely to plant it.
+# Three gates in this repository have shipped self-tripping; the first run of
+# this one made four, and it reported its own message string as a defect.
+# tests/ci_denominator_contracts.R sets the precedent with the same exclusion.
+for (f in grep("^tests/", r_files, value = TRUE, invert = TRUE)) {
+  if (identical(f, H8_ALLOW)) next
+  pd <- tryCatch(utils::getParseData(parse(f, keep.source = TRUE)),
+                 error = function(e) NULL)
+  if (is.null(pd)) next
+  lit <- pd[pd$token == "STR_CONST" &
+              grepl("ASCII//TRANSLIT", pd$text, fixed = TRUE), ]
+  if (nrow(lit))
+    h8_hits <- c(h8_hits, sprintf("%s:%d: %s", f, lit$line1, trimws(lit$text)))
+}
+note(length(h8_hits) == 0,
+     sprintf("no iconv(to = \"ASCII//TRANSLIT\") in tracked R code (1 allowlisted: %s)",
+             H8_ALLOW),
+     h8_hits)
 
 cat(sprintf("\n%s (%d failure%s)\n", if (fails == 0L) "PASS" else "FAIL",
             fails, if (fails == 1L) "" else "s"))

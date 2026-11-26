@@ -86,6 +86,21 @@ jobs:
       - name: Workflow contracts (a job installs what it runs)
         run: Rscript tests/ci_workflow_contracts.R
 
+      # The detector runs BEFORE the gate it tests, deliberately. ci_read_width.R
+      # is a parse walk over a shrink-only baseline, and the two ways a parse
+      # walk fails are "matched nothing" and "scanned nothing" -- both of which
+      # look exactly like a clean tree. Both happened while it was being
+      # written, so the order here means a gate that has stopped detecting is
+      # reported as a gate failure rather than as a green repository.
+      #
+      # In this job because neither script needs a package: base R, ci_report.R
+      # and R/lib/ast_walk.R, about 20s for the pair.
+      - name: Panel read-width detector (the gate still detects)
+        run: Rscript tests/test_read_width_detect.R
+
+      - name: Panel read-width (a 544 MB read names its columns)
+        run: Rscript tests/ci_read_width.R
+
       # The aggregate gate decides whether this pull request is scientifically
       # green, so its logic is tested here rather than trusted: all-success
       # passes, and skipped, cancelled, failed, missing and ran-nothing are each
@@ -222,6 +237,55 @@ jobs:
       # without being removed from the list.
       - name: Science contracts
         run: Rscript tests/ci_science_contracts.R
+
+      # RESTORED A SECOND TIME, and by the same mechanism as the block below.
+      # Both gates were merged in #340 -- and #340's squash commit f194e36
+      # landed on `fix/table1-custodian-sort`, not on main, because that was
+      # the PR's base and the branch had already been merged away in ad3aec5.
+      # Nothing conflicted and nothing complained; the two files simply were
+      # never on main. Recovered 2026-11-22. See
+      # docs/APPENDIX_a_merge_into_a_dead_base_2026-11-22.md.
+      #
+      # ABOVE the denominator block deliberately. Actions halts a job at its
+      # first failing step, and the block below is the one that has historically
+      # been red by design, so a gate wired beneath it is a gate that does not
+      # run. Both of these are hermetic -- a static scan of library() calls and
+      # pure arithmetic -- so they are the cheapest possible things to put
+      # first and the least likely to halt anything themselves.
+      - name: Unused package attachments
+        run: Rscript tests/ci_unused_dependencies.R
+
+      # G5.4a of the rOpenSci statistical standards, applied on its merits:
+      # this repository computes a Wilson interval in three places and nothing
+      # compared them to each other. They agree on the formula and differ in
+      # units (proportion vs percent) and shape (vector vs 1x2 matrix); all
+      # three facts are pinned, so a change to one implementation cannot
+      # silently diverge from the other two.
+      - name: Wilson implementations agree
+        run: Rscript tests/test_wilson_implementations_agree.R
+
+      # RESTORED. These three steps existed at afad4c2 and were dropped by
+      # 579950c, the merge of #336, which took main's ci.yml wholesale -- the
+      # steps lived only on this branch, so nothing conflicted and nothing
+      # complained. DEBT D14 was closed in bef401e immediately afterwards, so
+      # for the span between those two commits the branch had fixed five
+      # denominator defects and stopped running the gates that police them.
+      # That is worse than a red gate: CI went green BECAUSE the checks were
+      # gone. Re-wiring them is the point of this change.
+      #
+      # ORDER MATTERS. The saboteur suite goes FIRST, ahead of the gates it
+      # sits beside, because Actions halts a job at its first failing step --
+      # wired after `Denominator contracts` it previously ran zero times while
+      # counting as coverage. See
+      # docs/APPENDIX_checks_that_cannot_fail_2026-11-20.md.
+      - name: NPI rate, cluster scope and leaver-count saboteurs
+        run: Rscript tests/test_npi_rate_and_cluster_saboteurs.R
+
+      - name: Denominator gates detect planted defects
+        run: Rscript tests/test_denominator_contracts_detect.R
+
+      - name: Denominator contracts
+        run: Rscript tests/ci_denominator_contracts.R
 
   python-checks:
     name: Python syntax and address keys
@@ -362,6 +426,13 @@ jobs:
         run: |
           pkgs <- c("dplyr", "jsonlite", "purrr", "readr", "scales", "stringi",
                     "stringr", "testthat", "tibble", "tidyr",
+                    # cyclocomp: tools/measure_code_complexity.R names it, and
+                    # tests/test_dead_code_cuts_saboteurs.R sources that tool
+                    # rather than writing a second parser. Only mcc_profile()
+                    # calls it and the saboteurs do not, but the package gate
+                    # follows the source() chain and is right to: a step that
+                    # can reach the call must be able to load it.
+                    "cyclocomp",
                     "checkmate", "DBI", "digest", "duckdb", "geosphere",
                     "here", "httr", "openssl", "xml2",
                     # the ported upstream suites: assertthat for their
@@ -538,6 +609,22 @@ jobs:
 
       - name: AMCB license bridge
         run: Rscript tests/test_amcb_license_bridge.R
+
+      # Saboteurs for the platform-dependent-key and scope-rebinding fixes:
+      # each plants the original defect back and requires the guard to die on
+      # it, plus near misses so a guard cannot regress into "written exactly
+      # this way". The H6 cases run the real tests/ci_hygiene.R in a throwaway
+      # git repository, so this step needs git on PATH -- which this runner has.
+      - name: Review-fix saboteurs
+        run: Rscript tests/test_review_fixes_saboteurs.R
+
+      # The dead-code and duplication cuts of 2026-11-22, each planted back: a
+      # function nothing references, a body copied under a second name, a
+      # definition shadowing base R, a wrapper that only forwards, and a
+      # catalog section the builder stops calling. A SECOND suite rather than
+      # more cases in the one above, which owns the first round's four laws.
+      - name: Dead-code and duplication cut saboteurs
+        run: Rscript tests/test_dead_code_cuts_saboteurs.R
 
       - name: State-license table construction
         run: Rscript tests/test_build_amcb_state_licenses.R

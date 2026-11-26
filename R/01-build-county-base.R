@@ -50,7 +50,6 @@ suppressPackageStartupMessages({
   library(tidyr)
   library(cli)
   library(checkmate)
-  library(janitor)
   library(tidycensus)
   library(tigris)
   library(sf)

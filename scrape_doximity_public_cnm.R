@@ -173,9 +173,9 @@ parse_profile <- function(url) {
   if (!is.na(jsonld_text) && nchar(jsonld_text) > 2) {
     jld <- tryCatch(fromJSON(jsonld_text), error = function(e) NULL)
     if (!is.null(jld)) {
-      uuid          <- jld$mainEntity$identifier %||% NA_character_
-      date_created  <- jld$dateCreated           %||% NA_character_
-      date_modified <- jld$dateModified          %||% NA_character_
+      uuid          <- jld$mainEntity$identifier %|first|% NA_character_
+      date_created  <- jld$dateCreated           %|first|% NA_character_
+      date_modified <- jld$dateModified          %|first|% NA_character_
     }
   }
 
@@ -201,8 +201,8 @@ parse_profile <- function(url) {
   city_state_raw <- html %>%
     html_elements("a[href*='/directory/location/']") %>%
     html_text(trim = TRUE)
-  city  <- city_state_raw[1] %||% NA_character_
-  state <- city_state_raw[2] %||% NA_character_
+  city  <- city_state_raw[1] %|first|% NA_character_
+  state <- city_state_raw[2] %|first|% NA_character_
 
   # --- address and phone (list items) -----------------------------------------
   list_items <- html %>%
@@ -301,7 +301,10 @@ parse_profile <- function(url) {
 }
 
 # Null-coalescing helper
-`%||%` <- function(a, b) if (!is.null(a) && length(a) > 0 && !is.na(a[1])) a[1] else b
+# NOT base's %||%: this returns the FIRST element and falls through on a
+# length-0 vector or an NA first element, which is what a scraped node set
+# yields. Named for that so it cannot be mistaken for the base operator.
+`%|first|%` <- function(a, b) if (!is.null(a) && length(a) > 0 && !is.na(a[1])) a[1] else b
 
 already_done <- character(0)
 existing_profiles <- NULL

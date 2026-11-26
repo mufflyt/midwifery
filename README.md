@@ -3,7 +3,7 @@
 [![CI](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml)
 [![Nightly](https://github.com/mufflyt/midwifery/actions/workflows/nightly.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/nightly.yml)
 [![Scientific laws](https://img.shields.io/badge/scientific%20laws-13%20declared%2C%2039%20planted%20defects-blueviolet.svg)](tests/science_law_registry.tsv)
-[![Known debt](https://img.shields.io/badge/known%20debt-4%20open%2C%2010%20closed-informational.svg)](DEBT.md)
+[![Known debt](https://img.shields.io/badge/known%20debt-5%20open%2C%2012%20closed-informational.svg)](DEBT.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Cite this repository](https://img.shields.io/badge/cite-CITATION.cff-brightgreen.svg)](CITATION.cff)
 [![Dataset Metadata](https://img.shields.io/badge/metadata-metadata.json-orange.svg)](metadata.json)
@@ -13,7 +13,10 @@
 certificants, **15,328** of them ACTIVE — to NPI identity and practice
 geography. State Board of Nursing licensure is observed only where a board
 publishes it as open data and this project queried it: **Washington, Colorado
-and Texas** (Figure 1). Every other state-board figure this repository once
+and Texas** (Figure 1); the manuscript's licensure-accuracy check
+(Table 2) additionally verifies **Connecticut, Florida, Illinois and
+Pennsylvania** from board files retrieved October-November 2026, reporting
+unmatched records as unresolved with worst/best-case bounds. Every other state-board figure this repository once
 reported was synthesized and is retracted (Figure 4); so were a Medicare
 "delivery claims" layer and a collaborative-practice (CPA) layer, which had no
 source at all. Separately, for a cross-source address-agreement check (not
@@ -44,6 +47,7 @@ flowchart LR
 | Licences a board returned | 1,353: WA 369, CO 486, TX 498 (any status the board reported) | `docs/figures/board_licensure_observed_counts.csv` |
 | Delivery attendance | not observable: public Medicare Part B has no delivery-code rows for any provider, 2013–2023 | `artifacts/medicare_delivery_code_observability.csv` |
 | PECOS/DAC vs state-board address agreement (5 pairs total; CA+IL+CT+DE+FL pooled) | State 92.5% (n=239); city 35.5% (n=462); ZIP5 35.6% (n=239) | [docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md](docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md) |
+| 2021 registry–Medicare enrollment state disagreements followed through 2026 | 366 of 728 providers observable in both systems (50.3%) remained discordant; 164 of the original 892 (18.4%) were right-censored | `artifacts/oig_remake/oig_longitudinal_2021_2026_censoring_audit.csv`; [statistical-review appendix](docs/TECHNICAL_APPENDIX_STATISTICAL_REVIEW_2026-11-23.md) |
 
 <details>
 <summary><strong>Contents</strong> (click to expand)</summary>
@@ -403,6 +407,22 @@ behind that year's DAC agreement-rate dip. Full appendix, rule definitions,
 and 20 adversarial test cases:
 [docs/TECHNICAL_APPENDIX_MIGRATION_MOVE_CLASSIFICATION.md](docs/TECHNICAL_APPENDIX_MIGRATION_MOVE_CLASSIFICATION.md).
 
+Is 0.2% unusually low because migration is hard to verify, or would the same
+evidence bar rarely clear for *any* pair given how sparse the 3 usable source
+families are in general? Checked directly against all 156,684 genuinely
+stable pairs in the panel (not a sample): **13.33% of them meet the exact
+same ≥2-independent-family bar — roughly 44x the 0.3% rate for apparent
+movers.** That gap is itself the strongest evidence in this investigation
+that low mover-confirmation reflects something real about verifying
+migration, not generic sparsity, which would hit stable pairs just as hard.
+One individual-level figure exists but is intentionally not shown here — a
+per-NPI timeline of real cross-source evidence for one example each of a
+confirmed move, a possible move, a likely artifact, and an indeterminate
+transition. It is necessarily person-level (real NPIs, real state claims),
+so [`make_migration_evidence_timeline_gallery.R`](make_migration_evidence_timeline_gallery.R)
+writes only to gitignored `qa/`, `--redact` for a shareable copy — the same
+convention `build_linkage_case_gallery.R` already uses above.
+
 ### Three more you build yourself
 
 These read the frozen crosswalk, which is person-level and gitignored, so they
@@ -634,7 +654,7 @@ doing any work. Identity is decided first; taxonomy and geography follow.
 ```mermaid
 flowchart TD
   A["AMCB directory - 22,357 names, no location"] --> B["Candidate generation - 197,081 pairs"]
-  P["NPPES 2007-2025 - 443,623 NPIs"] --> B
+  P["NPPES 2007-2026 - 451,793 NPIs"] --> B
   B --> C["Rank by name-evidence class"]
   C --> D{"One candidate at the strongest class?"}
   D -->|no| Q["Quarantined - 3,147"]
@@ -785,7 +805,7 @@ Every number above survived a check that could have refuted it. These fired:
 | NPPES snapshots 2018–2025 silently skipped | Linkage 27.1 points lower |
 
 Frozen linkage `dbcc76f420ac…` · frozen geography `5292564e211f…` · enhanced
-geography `53bb087a59a4…` · NPPES snapshots 2007–2025 · CMS Doctors & Clinicians
+geography `53bb087a59a4…` · NPPES snapshots 2007–2026 · CMS Doctors & Clinicians
 2026-06 · TIGER 2023 counties. Geography figures here are the *enhanced* version;
 the frozen artifact is unmodified and remains the reference. Every artifact
 carries a manifest recording its inputs' SHA-256.
@@ -1657,7 +1677,7 @@ repaired later.
 | Source | Vintage used | Exact file / endpoint | Supplies | Consumed by |
 |---|---|---|---|---|
 | **AMCB Instant Verification** | **accessed 2026-08-06**; 22,309 certificants (183 CM, 22,126 CNM), reconciling to the directory's own totals | [`ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800`](https://ams.amcbmidwife.org/amcbssa/f?p=AMCBSSA:17800) → `midwives.csv` | the roster: name, certification, certification number, status, certification and expiration dates. **No location at any level** | [`scrape.py`](scrape.py) → [`match_amcb_to_npi.R`](match_amcb_to_npi.R) → [`reconcile_linkage.R`](reconcile_linkage.R) |
-| **NPPES historical dissemination** | **annual snapshots 2007–2025** (the panel; missing years are enumerated in `linkage_manifest.json`) | `/Volumes/MufflySamsung*/nppes_historical_downloads/` → `midwife_panel.csv` | 443,623 NPIs; taxonomy history, name history, practice address *with its observation year* | [`build_midwife_panel.R`](build_midwife_panel.R) → [`extract_nppes_midwives.R`](extract_nppes_midwives.R) |
+| **NPPES historical dissemination** | **annual snapshots 2007–2026** (the panel; all twenty years present — `linkage_manifest.json` records `snapshot_years_missing` as empty) | `/Volumes/MufflySamsung*/nppes_historical_downloads/` → `midwife_panel.csv` | 4,747,648 provider-years, 451,793 NPIs; taxonomy history, name history, practice address *with its observation year*. 544 MB, and reading it costs 60.8 s full-width against 12.1 s naming three columns — see [the read-cost appendix](docs/TECHNICAL_APPENDIX_PANEL_READ_COST.md) | [`build_midwife_panel.R`](build_midwife_panel.R) → [`extract_nppes_midwives.R`](extract_nppes_midwives.R) |
 | **NPPES full dissemination file** | **July 2026** — `npidata_pfile_20050523-20260713`. A local **March 2024** copy (`npidata_pfile_20050523-20240310`) exists and is *deliberately not used*: two years stale, missing recently certified midwives | [download.cms.gov/nppes](https://download.cms.gov/nppes/NPI_Files.html) | primary practice location, sex code, enumeration date | [`build_midwife_panel.R`](build_midwife_panel.R), [`link_practice_locations_to_org_npi.R`](link_practice_locations_to_org_npi.R) |
 | **NPPES secondary practice locations** (`pl_pfile`) | **August 2026** — `pl_pfile_20050523-20260809`, 1,241,922 secondary locations. The December 2022 file has 681,081; switching lifted cohort secondary locations 2,687 → 5,303 | same download page, `PL` file | the second and subsequent practice addresses that turn one NPI into several candidate organizations | [`link_practice_locations_to_org_npi.R`](link_practice_locations_to_org_npi.R), [`resolve_org_ambiguity.R`](resolve_org_ambiguity.R) |
 | **NPI Registry API** (live, v2.1) | **queried live** — no snapshot, so results drift; a rerun will not reproduce byte-identically | [`npiregistry.cms.hhs.gov/api/`](https://npiregistry.cms.hhs.gov/api/) | surname-blocked candidate NPIs including former/maiden names, and NPIs enumerated under non-midwifery taxonomies | [`fetch_npi_candidates.py`](fetch_npi_candidates.py) → [`match_nppes.R`](match_nppes.R) |
@@ -1745,7 +1765,7 @@ measured — see [Absence is not zero](#absence-is-not-zero-in-four-different-so
 | Source | Vintage used | Exact file | Supplies | Consumed by |
 |---|---|---|---|---|
 | **CMS Doctors & Clinicians (DAC)** | **June 2026** for Table 1/attribute use; **full annual history, 2013–2026**, for the state-source audit (2013–2016 from NBER's mirror, 2017–2025 from tables already sitting in an external DuckDB warehouse, 2026 the live pull) | `DAC_NationalDownloadableFile_2026-06.csv`; historical vintages via [`extract_physician_compare_historical_midwives.R`](extract_physician_compare_historical_midwives.R) | practice-address corroboration, group practice, medical/midwifery school (14.3% coverage), graduation year, CCN facility affiliations (2013–2022 only — CMS dropped the field from the file itself starting 2023, see [`extract_historical_facility_affiliation.R`](extract_historical_facility_affiliation.R)) | [`extract_dac_midwives.R`](extract_dac_midwives.R), [`extract_dac_cnm_education.R`](extract_dac_cnm_education.R), [`extract_dac_facility_affiliations.R`](extract_dac_facility_affiliations.R) |
-| **Medicaid enrolment (DOGE T-MSIS segments)** | **2013–2024**, expanded from `ENRL_START_DT`/`ENRL_END_DT` by date-range overlap | `doge_opendata/medicaid_provider_enrollment_segments_2026_07_24/` (external volume) | 119,527 cohort NPI-years / 13,622 midwives, plus a 178,907-row multi-state footprint. **Agreement with NPPES is 88.5% under set membership** (91.4% in 2024); the 74.7% equality figure and the withdrawn 0.166 odd-one-out rate compared against one arbitrarily chosen state. Left-censored before 2018 — no segment that closed earlier is in the file | [`extract_medicaid_enrollment_state_by_year.R`](extract_medicaid_enrollment_state_by_year.R) |
+| **Medicaid enrolment (DOGE T-MSIS segments)** | **2013–2024**, expanded from `ENRL_START_DT`/`ENRL_END_DT` by date-range overlap | `doge_opendata/medicaid_provider_enrollment_segments_2026_07_24/` (external volume) | 118,324 cohort NPI-years / 13,481 midwives, plus a 177,197-row multi-state footprint. **Agreement with NPPES is 88.5% under set membership** (91.5% in 2024); the 74.8% equality figure and the withdrawn 0.166 odd-one-out rate compared against one arbitrarily chosen state. Left-censored before 2018 — no segment that closed earlier is in the file. **Identifiability is itself state-varying:** the share of enrollment segments carrying a provider NPI runs from **0% in New Mexico and Oregon** (neither file carries one, so a midwife enrolled only there is unobservable in this source at any accuracy) to **100% in South Dakota**, with a real low tail (Illinois 28%, Minnesota 34%, Michigan 43%) and **26 of 54** jurisdictions below the 90% implied by CMS's 10%-missing threshold — `artifacts/medicaid_npi_population_by_state.csv`, [`build_medicaid_npi_population_by_state.R`](build_medicaid_npi_population_by_state.R). The rate is `COUNT(NPI) / COUNT(*)`, which is the share of segments carrying one only because SQL `NULL` is the single way the field is absent here: [`audit_medicaid_npi_coverage.R`](audit_medicaid_npi_coverage.R) measures that precondition on the release (`VARCHAR`, 65,970,112 segments, 51,289,354 non-`NULL` = **77.75%** nationally, 0 blank after trim, 0 of length other than ten) and fails closed if a blank or short value ever appears | [`extract_medicaid_enrollment_state_by_year.R`](extract_medicaid_enrollment_state_by_year.R) |
 | **Medicaid spending by NDC (DOGE)** | **2018-01 – 2024-12**, 84 months — the file has nothing earlier | same volume, `medicaid_provider_spending_ndc_2026_07_24/` | 935 midwives with a dated claim; prescription drug claims only, so absence is weak evidence | [`extract_medicaid_activity_by_month.R`](extract_medicaid_activity_by_month.R) |
 | **PPEF / PECOS enrolment (NBER + CMS quarterly)** | **16 vintages, 2016-08 – 2024-07** (10 monthly, 6 quarterly). 2020–2022 does not exist at any source | `ppef_nber/` (external volume) | 127,372 rows / 11,931 midwives; 2016-08 alone holds 6,388 with a state, five years before the PECOS revalidation series starts | [`extract_ppef_cohort_state_by_vintage.R`](extract_ppef_cohort_state_by_vintage.R) |
 | **NPPES deactivation / reactivation** | events 2008-12-30 – 2026-02-05 | `credentials.nppes_status` in `nber_my_duckdb.duckdb` (6,464,366 rows) | 396 cohort deactivations, 10 reactivations. **Zero fall inside a Medicare billing gap** | [`audit_billing_gaps_vs_registry_status.R`](audit_billing_gaps_vs_registry_status.R) |
@@ -1854,8 +1874,8 @@ See [`docs/longitudinal-reconstruction-changelog.md`](docs/longitudinal-reconstr
 **Medicaid agreement figures published before 2026-11-10 are withdrawn.** They
 compared other sources against one arbitrarily chosen Medicaid state while
 discarding the other 33.2% of a midwife's concurrent enrolments. Recomputed as
-set membership on the same 107,386 NPI-years, agreement with NPPES is **88.5%**
-(91.4% in 2024), not 74.7% — so the 0.166 odd-one-out rate and the "five times
+set membership on the same 107,193 NPI-years, agreement with NPPES is **88.5%**
+(91.5% in 2024), not 74.8% — so the 0.166 odd-one-out rate and the "five times
 the next worst source" claim are artifacts of the comparison, not properties of
 the data. No location assignment changed; truth fusion reads the unchanged
 single-valued series.
@@ -2210,6 +2230,9 @@ midwifery/
 │   ├── test_address_key_matching.py     exact address keys, adversarial
 │   └── test_open_payments_type2_bulk.R  candidate universe, order invariance
 ├── tools/
+│   ├── measure_panel_read_cost.R         the measurement behind
+│   │                                     Review_AI_performance.qmd, one arm
+│   │                                     per process
 │   ├── provenance.py                    the Python provenance writer, imported
 │   │                                    by 14 harvesters
 │   ├── mutate_saboteurs.py              break the library, prove the suite
@@ -2242,6 +2265,7 @@ midwifery/
     ├── make_evidence_class_figure.R      accepted matches by evidence class
     ├── build_linkage_case_gallery.R      by-eye review sheet (person-level)
     ├── analyze_temporal_plausibility.R   the unused temporal signal (D17)
+    ├── audit_medicaid_npi_coverage.R     committed rate vs the live parquet
     └── repin_frozen_cohort.R             re-pin the cohort snapshot (D10)
 ```
 
@@ -2261,7 +2285,7 @@ number.
         ┌─────────────────────────────────────────────────────────────┐
         │  LAYER 1 — IDENTITY          who is this person?            │
         └─────────────────────────────────────────────────────────────┘
-   AMCB roster 22,357                NPPES 2007-2025  443,623 NPIs
+   AMCB roster 22,357                NPPES 2007-2026  451,793 NPIs
           │                                    │
           └──────────────┬─────────────────────┘
                          ▼
@@ -2341,6 +2365,8 @@ is indistinguishable from a good one.
   stopifnot(length(union) == 1)   dissolved surface must be ONE feature
   polygon validation (6 checks)   bands, geometry, CRS, nesting, centre, TEST
   join_safety                     coverage / duplication bounds on every join
+  ci_read_width (RW1)             a new 13-column read of midwife_panel.csv to
+                                  keep 3 ► refused against a shrink-only baseline
 ```
 
 ## Usage
@@ -2431,9 +2457,9 @@ every required job succeeded:
 
 | Job | Installs | Checks |
 |---|---|---|
-| **r-checks** | `stringr` | every tracked R file parses; no hardcoded path into another user's home; no duplicate `.gitignore` rules; no function defined at top level in two files; the join keys (`pad5` vs `zip5_key`, `zip5` vs `zip5_first_run`, `zip9`, `phone10`, `norm_addr` vs `norm_addr_drop_unit`, `pad_ccn`); Table 1 age/tenure/decade banding; **the leak guard**; **the artifact contracts** |
+| **r-checks** | `stringr` | every tracked R file parses; no hardcoded path into another user's home; no duplicate `.gitignore` rules; no function defined at top level in two files; **no name bound to a function twice in one scope** (`if (...) { }` is not a scope in R, so a helper redefined inside one lands in the enclosing function's environment); the join keys (`pad5` vs `zip5_key`, `zip5` vs `zip5_first_run`, `zip9`, `phone10`, `norm_addr` vs `norm_addr_drop_unit`, `pad_ccn`); Table 1 age/tenure/decade banding; **the leak guard**; **the artifact contracts**; **no new full-width read of the 544 MB panel** (shrink-only baseline, 17 reads across 17 files, with a 12-case detector that plants the defect back — see [the read-cost appendix](docs/TECHNICAL_APPENDIX_PANEL_READ_COST.md)); the science, denominator and unit-of-analysis gates with their gate-of-gates suites; **every attached package is called, qualified, or declared** (1,179 `library()` calls judged, so an attachment that stops being used is a failure rather than drift); **the three Wilson interval implementations agree** up to the documented 100x units difference, since the formula lives in three files on purpose and nothing compared them to each other (rOpenSci G5.4a) |
 | **python-checks** | `pytest` | every tracked `.py` compiles; address-key matching; **the whole `tests/` directory under pytest — 134 tests** (the scraper's 500-row APEX pager cap, the NPI API's 200-row candidate cap, five live BON harvesters, the HHS open-data pipeline, the microsimulation conservation suite) |
-| **r-unit-tests** | the tidyverse stack, cached | the deterministic license→NPI bridge and its collision handling; state-license table construction; former/maiden-name candidate expansion; age-at-certification validation; the cross-taxonomy rule that a nursing-only match is never promoted into the primary cohort; the checkpoint-merge contract; the skip budget; and three claim-integrity suites — 31 saboteurs over what the repository says about itself, what its documentation says about the tree, and what the pipeline says about the data it moves ([appendix](docs/APPENDIX_gates_for_unchecked_claims_2026-11-21.md)) |
+| **r-unit-tests** | the tidyverse stack, cached | the deterministic license→NPI bridge and its collision handling; state-license table construction; former/maiden-name candidate expansion; age-at-certification validation; the cross-taxonomy rule that a nursing-only match is never promoted into the primary cohort; the checkpoint-merge contract; the skip budget; the NPI-rate, cluster-scope and leaver-count saboteurs; **the review-fix saboteurs** (each plants a fixed 2026-11-21 defect back and requires the guard to die on it, with near misses so no guard hardens into one implementation); and three claim-integrity suites — 31 saboteurs over what the repository says about itself, what its documentation says about the tree, and what the pipeline says about the data it moves ([appendix](docs/APPENDIX_gates_for_unchecked_claims_2026-11-21.md)) |
 | **science-law-coverage** | the tidyverse stack, cached | every declared scientific law has a gate and a mutation that the gate kills; the README's badge **and** its prose must both state the law count and the planted-defect count this run measured |
 | **scientific-gate** | nothing | every required job above ran and succeeded — a skipped step cannot report green ([`tests/ci_aggregate_gate.sh`](tests/ci_aggregate_gate.sh)) |
 
@@ -2733,7 +2759,10 @@ repository (not just that one script) is what this diagram shows.
 An AST-based scanner (not a regex ratchet — it survives multi-line calls,
 named arguments, and a driver constructor aliased through a bare symbol)
 runs against every tracked `.R` file and fails CI if any raw connection
-exists outside a structured, per-site exception registry. Current state:
-**355 files scanned, 0 raw connections outside the registry, 17/17 planted
-mutations killed.** Full contract, registry, and verification results in
+exists outside a structured, per-site exception registry. Current state,
+measured 2026-11-21 by `Rscript tests/ci_duckdb_architecture_gate.R`:
+**659 tracked `.R` files scanned, 0 raw connections outside the registry, 6
+files carrying a registered exception, 17/17 planted mutations killed.** The
+appendix's 355 is the count at architecture closure, not a current figure; the
+tracked corpus has grown since. Full contract, registry, and verification results in
 [`docs/TECHNICAL_APPENDIX_DUCKDB_BOOTSTRAP_ARCHITECTURE.md`](docs/TECHNICAL_APPENDIX_DUCKDB_BOOTSTRAP_ARCHITECTURE.md).

@@ -1,21 +1,25 @@
 {
   "artifact": "persistence_denominators.csv",
-  "written_utc": "2026-11-19 03:01:35 UTC",
+  "written_utc": "2026-11-23 23:48:34 UTC",
   "inputs": [
     {
       "path": "artifacts/canonical_source_records.csv",
-      "sha256": "81cf8b26e0a055bc5ddbe74f3ffe872105d12025272bce18b9b68acfc901f006"
+      "sha256": "a067f7bfb4fe8fb81f0ca42f841bde70c1b5fc91a53021aefd02417cb3137067"
     }
   ],
-  "code_sha256": "236442d454598749bece4f37aeb3df67fb843328a16ae7dbfd6cff5deb92fb6e",
+  "code_sha256": "b36be102e43340fa023cb465f75a6a99d04f8297cd2953458253d26c7494dc73",
   "code": [
     {
       "path": "build_f2_f3_uncertainty_denominators.R",
-      "sha256": "f5436ff5fa283cb446fcf9b7b8703c3a0f0ffed080cf5aad4a3c355db91ae4e1"
+      "sha256": "5ad548d576605ace34c3088a924cd0d9cea5489624e05661d3d9bb6992b9776b"
     },
     {
       "path": "R/lib/artifact_provenance.R",
-      "sha256": "4937914878dfd340d545d54ab079074fb74320f4272dd5e4c8196aeefd46c391"
+      "sha256": "3dec47ce20ffe42a4a8b85c84e0264c37c91b6da1452926c33ab2a9d0ec06e9e"
+    },
+    {
+      "path": "R/lib/ast_walk.R",
+      "sha256": "9611f2b4a7119c4fd9c300677df216e72439c94bdb93244fd413510807eba36a"
     },
     {
       "path": "R/lib/provenance.R",
@@ -23,7 +27,7 @@
     },
     {
       "path": "R/lib/wilson_interval.R",
-      "sha256": "0458dbfbaaef986be0ebfbcc1edebff2c715358c11c68d9b5cf9dfdb0af918a7"
+      "sha256": "d7ec65c7b07499742265c60f0b3ad2df045429a51c3d8a0481476b454f5a1a3e"
     }
   ],
   "semantic_packages": [
@@ -44,6 +48,12 @@
       "installed": true,
       "version": "0.6.0",
       "source_sha": null
+    },
+    {
+      "package": "mysteryroster",
+      "installed": true,
+      "version": "0.3.0",
+      "source_sha": "de1aa5d4e4262e8006254e3463c0e0a80eec56ba"
     }
   ]
 }

@@ -630,4 +630,116 @@ if (!file.exists(fm_path13)) {
   }
 }
 
+# -----------------------------------------------------------------------------
+ci_section("D14 README's panel inventory matches the manifest's panel input")
+
+# PUBLIC doc-vs-data drift, and it had already happened twice before this
+# section existed. README.md described midwife_panel.csv as "NPPES 2007-2025 --
+# 443,623 NPIs" in three places. The manifest the freeze was actually built
+# from records 451,793 distinct NPIs across twenty snapshot years, 2007-2026,
+# none missing. Worse, docs/TECHNICAL_APPENDIX_TAXONOMY_SCOPE.md had ALREADY
+# noticed the NPI count was stale and written down a correction -- which was
+# itself stale by the time anyone read it. A number nobody can check is a
+# number that rots, and this one rotted in the repository's own front door.
+#
+# WHY THE MANIFEST AND NOT THE FILE. midwife_panel.csv is gitignored and is not
+# regenerable from a fresh clone, so CI has never seen it and never will.
+# artifacts/linkage_manifest.json's inputs/nppes_panel block is the only
+# committed statement of what the panel held when the freeze was built, which
+# also makes it the only statement the published cohort counts actually rest
+# on. See docs/TECHNICAL_APPENDIX_PANEL_READ_COST.md section 7.
+#
+# WHY ONLY README.md. Other tracked documents legitimately quote a DIFFERENT
+# build of the panel -- docs/source-series-reconstruction.md and
+# docs/longitudinal-source-inventory.md quote the later on-disk rebuild, and
+# TAXONOMY_SCOPE's scope-comparison table quotes the vintage that comparison
+# was measured at. Scoping this to the repository's data inventory keeps the
+# gate from failing on correct prose, which is how a check gets deleted rather
+# than fixed. Same reasoning as D13's deliberate refusal to check column
+# counts.
+lm_path14 <- drg_path("artifacts", "linkage_manifest.json")
+readme14 <- drg_path("README.md")
+if (!file.exists(lm_path14) || !file.exists(readme14)) {
+  ci_fail("D14: README.md and/or artifacts/linkage_manifest.json is committed and absent")
+} else {
+  np <- read_json(lm_path14)$inputs$nppes_panel
+  if (is.null(np) || is.null(np$distinct_npi) || is.null(np$snapshot_years)) {
+    ci_fail(paste("D14: linkage_manifest.json has no",
+                  "inputs/nppes_panel/{distinct_npi,snapshot_years} block to check against"))
+  } else {
+    want_npi <- as.integer(np$distinct_npi)
+    yrs <- sort(as.integer(unlist(np$snapshot_years)))
+    want_span <- sprintf("%d-%d", yrs[1], yrs[length(yrs)])
+    txt <- readLines(readme14, warn = FALSE)
+
+    # DECLARED PER LINE, WITH ITS REASON, not inferred -- the same construction
+    # D13 uses for documents that quote a superseded freeze on purpose. This
+    # row is in the table of defects that have already been fixed: it records
+    # the span a 2026-10 bug silently skipped, so it is a statement about a
+    # defect and not about the panel's extent. A year range alone cannot tell
+    # those apart, which is why the exemption is a literal.
+    HISTORICAL14 <- c("NPPES snapshots 2018–2025 silently skipped")
+    is_historical <- function(line) any(vapply(
+      HISTORICAL14, function(h) grepl(h, line, fixed = TRUE), logical(1)))
+
+    bad <- character(0); seen <- 0L
+
+    # (a) An NPI count on a line that is about the panel. Qualified by NPPES or
+    # the panel's own filename so that cohort, roster and directory counts --
+    # which are different facts with their own sources -- are not swept in.
+    rx_npi <- "([0-9][0-9,]{4,}) NPIs"
+    for (i in grep(rx_npi, txt)) {
+      if (!grepl("NPPES|midwife_panel", txt[i]) || is_historical(txt[i])) next
+      got <- suppressWarnings(as.integer(gsub(
+        ",", "", regmatches(txt[i], regexec(rx_npi, txt[i]))[[1]][2])))
+      seen <- seen + 1L
+      if (!is.na(got) && !identical(got, want_npi))
+        bad <- c(bad, sprintf("README.md:%d says %s NPIs, manifest says %s",
+                              i, format(got, big.mark = ","),
+                              format(want_npi, big.mark = ",")))
+    }
+
+    # (b) The panel's span. ONLY where the years are attached to the word
+    # "snapshot(s)" or immediately follow "NPPES": this README says "2007-2025"
+    # in several places where it means the ANALYSIS window, which is a
+    # different claim and is not this gate's business. Both a hyphen and an en
+    # dash are accepted because the README uses both.
+    rx_span <- "(?:NPPES|snapshots?)[^0-9]{0,16}(20[0-9]{2})[[:space:]]*[-–][[:space:]]*(20[0-9]{2})"
+    for (i in grep(rx_span, txt)) {
+      if (is_historical(txt[i])) next
+      m <- regmatches(txt[i], regexec(rx_span, txt[i]))[[1]]
+      got <- sprintf("%s-%s", m[2], m[3])
+      seen <- seen + 1L
+      if (!identical(got, want_span))
+        bad <- c(bad, sprintf("README.md:%d spans %s, manifest's snapshot_years are %s",
+                              i, got, want_span))
+    }
+
+    # A FLOOR, for the reason APPENDIX_checks_that_cannot_fail_2026-11-20.md
+    # records: a regex that stops matching passes exactly like correct prose.
+    # The README states these facts in at least four places; if it states them
+    # in none, the inventory was gutted or the pattern broke, and either way a
+    # PASS here would mean nothing.
+    if (seen < 4L) {
+      ci_fail(paste("D14: found only %d panel statement(s) in README.md (floor 4).",
+                    "The data inventory no longer describes the panel's NPI count or",
+                    "snapshot span, or this section's patterns stopped matching it."),
+              seen)
+    } else if (length(bad)) {
+      ci_fail(paste0("D14: %d README.md statement(s) disagree with the panel input the ",
+                     "freeze was built from:\n       %s\n",
+                     "       The manifest is authoritative here because the panel itself is\n",
+                     "       gitignored. If a sentence deliberately describes a DIFFERENT\n",
+                     "       build, name its hash in the sentence (as\n",
+                     "       docs/TECHNICAL_APPENDIX_PANEL_READ_COST.md section 1 does) rather\n",
+                     "       than leaving a bare number a reader will take as current."),
+              length(bad), paste(bad, collapse = "\n       "))
+    } else {
+      ci_ok(paste("%d README.md statement(s) about the panel agree with the manifest",
+                  "(%s NPIs, snapshots %s)"),
+            seen, format(want_npi, big.mark = ","), want_span)
+    }
+  }
+}
+
 ci_finish()
