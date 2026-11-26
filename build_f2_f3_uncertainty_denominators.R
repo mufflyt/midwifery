@@ -31,6 +31,33 @@
 # source but still visible in NPPES (source attrition, not workforce exit),
 # and among the followed who kept the same state.
 #
+# REFERENCES (rOpenSci statistical standard G1.0). Attributed separately
+# because the three pieces of this method come from three places, and the
+# percentile interval in particular is NOT from the 1979 paper.
+#
+#   Efron, B. (1979). Bootstrap methods: another look at the jackknife.
+#   The Annals of Statistics 7(1), 1-26. doi:10.1214/aos/1176344552
+#     -- the bootstrap principle: resample the observed units with
+#     replacement and recompute the statistic.
+#
+#   Efron, B. & Tibshirani, R. J. (1993). An Introduction to the Bootstrap.
+#   Chapman & Hall, Monographs on Statistics and Applied Probability 57.
+#   ISBN 0-412-04231-2.
+#     -- the PERCENTILE interval, which is what quantile(reps, c(.025, .975))
+#     below computes. It is a deliberately plain choice: no bias correction
+#     or acceleration (BCa), so the bounds are the empirical quantiles of the
+#     replicate distribution and nothing more.
+#
+#   Field, C. A. & Welsh, A. H. (2007). Bootstrapping clustered data.
+#   Journal of the Royal Statistical Society Series B 69(3), 369-390.
+#   doi:10.1111/j.1467-9868.2007.00593.x
+#     -- resampling CLUSTERS rather than observations, which is the whole
+#     point of the pooled scope below: a midwife, not an NPI-year, is the
+#     independent unit. It also sets out why the variance estimate depends on
+#     which level you resample, which is the error this script made until
+#     2026-11-21 by resampling inside a source-year where every cluster has
+#     one member.
+#
 # Input : artifacts/canonical_source_records.csv (build_canonical_source_records.R)
 # Output: artifacts/agreement_cluster_bootstrap_ci.csv
 #         artifacts/persistence_denominators.csv
@@ -42,7 +69,7 @@ source(file.path("R", "lib", "wilson_interval.R"))
 source(file.path("R", "lib", "artifact_provenance.R"))
 
 set.seed(20261114)
-B <- 400L
+B <- 2000L
 
 records <- read_csv("artifacts/canonical_source_records.csv",
                     col_types = cols(.default = "c"), progress = FALSE) %>%

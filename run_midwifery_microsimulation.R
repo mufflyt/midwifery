@@ -15,7 +15,7 @@
 # year. See tests/test_run_midwifery_microsimulation.R.
 # =============================================================================
 
-suppressPackageStartupMessages({library(readr)})
+suppressPackageStartupMessages({})
 
 SIMULATION_YEARS    <- 2026:2040
 ANNUAL_NEW_GRADUATES <- 680L   # Annual AMCB new certificant inflow

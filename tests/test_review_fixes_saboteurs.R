@@ -20,6 +20,10 @@
 #           landed in the one environment and two took the same arity with
 #           incompatible first-argument types.
 #   R14-R15 join_coverage_report() is called with NAMED arguments.
+#   R21-R24 ci_hygiene.R H7 (no function body defined under two different
+#           names -- the renamed copy H4 structurally cannot see) and H8 (no
+#           tracked R code asks iconv() to transliterate, because its output is
+#           the host C library's choice).
 #   R16-R20 safe_left_join() refuses the four formals it reads nowhere, rather
 #           than accepting them and checking nothing. They were forwarded to
 #           safe_left_join_with_metrics() from R/join_metrics.R -- a file this
@@ -377,4 +381,70 @@ chk(errs(safe_left_join(L, RD, by = "id", expect_unique_right = TRUE,
                         write_report = FALSE)),
     "R20e expect_unique_right still catches a duplicated right key -- the guard that makes refusing max_right_dup_keys acceptable")
 
-saboteur_report(20)
+
+# =============================================================================
+# R21-R24  H7 (a body under two names) and H8 (iconv transliteration)
+# =============================================================================
+# Both reuse the H6 scaffold: a throwaway git repository holding only
+# tests/ci_hygiene.R, a .gitignore and the planted files. Neither baseline file
+# is copied in, so a planted pair is NEW by construction and must fail.
+
+FOUR_LINE <- c("  v <- unique(x[!is.na(x) & nzchar(x)])",
+               "  if (length(v) == 0L) return(NA_character_)",
+               "  paste(sort(v), collapse = \"|\")")
+
+sab(21, "SABOTEUR: one body, two names, two files")
+# The exact shape H4 cannot see -- and the exact pair that is real in this tree
+# (dac_spine_collapse_set and drift_collapse_set), reproduced under new names.
+h6_case("R21 a body duplicated under a different name -> H7 refuses",
+        list("a.R" = c("collapse_one <- function(x) {", FOUR_LINE, "}"),
+             "b.R" = c("collapse_two <- function(x) {", FOUR_LINE, "}")))
+
+sab(22, "NEAR MISS: different bodies, and a body too small to count")
+h6_case("R22a two different bodies under two names -> H7 passes",
+        list("c.R" = c("collapse_one <- function(x) {", FOUR_LINE, "}"),
+             "d.R" = c("collapse_two <- function(x) {",
+                       "  v <- unique(x[!is.na(x)])",
+                       "  if (!length(v)) return(NA_character_)",
+                       "  paste(rev(sort(v)), collapse = \",\")", "}")),
+        expect_fail = FALSE)
+# A one-line accessor repeating is noise. H7's floor is four deparsed lines, so
+# a short shared body must NOT trip it -- otherwise every `function(x) x[[1]]`
+# in the tree would be a finding and the gate would be turned off.
+h6_case("R22b a two-line shared body is below H7's floor -> passes",
+        list("e.R" = c("get_one <- function(r) r[[1]]"),
+             "f.R" = c("get_two <- function(r) r[[1]]")),
+        expect_fail = FALSE)
+
+sab(23, "SABOTEUR: ask iconv to transliterate")
+h6_case("R23a a transliterating iconv() call -> H8 refuses",
+        list("g.R" = c("fold <- function(x) {",
+                       "  iconv(as.character(x), to = \"ASCII//TRANSLIT\")",
+                       "}")))
+# The literal can arrive through a variable; H8 reads string literals, so this
+# is the honest limit of the check and the case that documents it.
+h6_case("R23b the same literal, assigned first, is still caught",
+        list("h.R" = c("fold <- function(x) {",
+                       "  enc <- \"ASCII//TRANSLIT\"",
+                       "  iconv(as.character(x), to = enc)",
+                       "}")))
+
+sab(24, "NEAR MISS: naming the call in prose is not making the call")
+# This repository documents a defect by naming it. ci_hygiene.R's own H8 header
+# contains the string, and so does the fix in amcb_license_bridge.R. A gate that
+# read raw text would flag its own explanation -- and the first version of the
+# equivalent check in R5 did exactly that.
+h6_case("R24a the literal in a COMMENT -> H8 passes",
+        list("i.R" = c("# Do not use iconv(to = \"ASCII//TRANSLIT\"): its output",
+                       "# is the host C library's choice. See the appendix.",
+                       "fold <- function(x) {",
+                       "  stringi::stri_trans_general(x, \"Latin-ASCII\")",
+                       "}")),
+        expect_fail = FALSE)
+h6_case("R24b a non-transliterating iconv() is untouched",
+        list("j.R" = c("to_utf8 <- function(x) {",
+                       "  iconv(as.character(x), from = \"latin1\", to = \"UTF-8\")",
+                       "}")),
+        expect_fail = FALSE)
+
+saboteur_report(24)

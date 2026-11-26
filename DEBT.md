@@ -525,6 +525,64 @@ scripts and show each reproduces byte-for-byte across two runs. Only then
 consider formal use, and test proposals against the v1 truth set only after it
 is unblinded.
 
+## D15 — Person-name keys split on apostrophes, so `O'Brien` never matches `OBrien`
+
+- **status:** open
+- **owner:** tyler
+- **raised:** 2026-11-22
+- **source:** `amcb_license_bridge.R` `normalize_text()` (feeding `normalize_person_name()` and `normalize_city()`), `R/build_amcb_state_licenses.R:46` `normalize_name()` (feeding `.block_surname_norm`, a blocking key), `expand_former_name_candidates.R:124`
+- **policed by:** nothing. `tests/ci_hygiene.R` H7 records the duplicated-body half of this family; no gate asserts an apostrophe policy, because the repository has not decided on one for people.
+
+Every person-name normaliser replaces anything outside `[A-Z0-9 ]` with a
+**space**, apostrophes included. So:
+
+| input | key |
+|---|---|
+| `O'Brien` | `O BRIEN` |
+| `OBrien` | `OBRIEN` |
+
+Two spellings of one surname, recorded differently by two arms, counted as a
+disagreement. In a cohort of nurse-midwives the affected surnames are not rare.
+
+**The repository already fixed this once, for organizations.**
+`R/lib/org_names.R:28` carries both the rule and the incident:
+
+> Apostrophes are DELETED, not turned into a space. Turning them into a space
+> splits every possessive, so `ST MARY'S HOSPITAL` keyed as `ST MARY S HOSPITAL`
+> and never matched `ST MARYS HOSPITAL` -- two spellings of one organization,
+> recorded differently by two arms, counted as a disagreement.
+
+It also handles curly apostrophes, noting NPPES and Care Compare disagree on
+which they use. None of the person-name copies does either thing.
+
+**Why this is open rather than fixed.** The 2026-11-21 review fixed the
+*determinism* defect in the same functions — `iconv(to = "ASCII//TRANSLIT")`
+returned a different key per operating system — and deliberately stopped there.
+The two are different in kind. The accent fold had one correct answer and the
+old code was wrong on some machines; the apostrophe rule is a **policy choice
+about who should match**, where both behaviours are internally consistent. It
+will move linkage counts on purpose.
+
+Bundling them would also have made the movement unattributable: two causes, one
+count change, no way to say which did what.
+
+**What it would take to close.**
+
+1. Adopt `norm_org`'s rule for people: delete `['’ʼ`]` before the
+   character-class pass, so the apostrophe closes the name rather than splitting
+   it. One line in each of the three sites, or one shared helper.
+2. Validate **arm against arm**, never against the freeze — the freeze is not
+   regenerable, and a shadow-vs-freeze comparison confounds this change with
+   every other difference between the two.
+3. Report the count movement as its own number. More matches is the expected
+   direction; a *drop* would mean the change did something other than what this
+   entry describes.
+
+**Checked and not a concern:** the same character class also spaces hyphens, so
+`Mary-Jo` keys as `MARY JO`. That is the correct behaviour for a name the
+sources spell both ways, and unlike the apostrophe it does not merge or split a
+single token.
+
 ## Closed
 
 ## D13 — DAC multi-site ZIP5 comparison silently picked an arbitrary one of a clinician's real sites
@@ -816,3 +874,52 @@ fixable from tracked source. A blocking gate failing on a defect it correctly
 found is the normal pre-merge state, not rot. If the fix slips to a later
 branch, unwire the ci.yml steps and say so here rather than leaving a red
 gate standing.
+
+## D16 — PECOS move rate was ~10x too high from a non-deterministic tie-break, not real churn
+
+- **status:** closed
+- **owner:** tyler
+- **raised:** 2026-11-06
+- **closed:** 2026-11-06
+- **resolution:** `extract_pecos_revalidation_state_history.R` now resolves its warehouse path via `samsung_volume_path("cms_revalidation.duckdb")` (matching `build_reassignment_panel.R`'s existing convention) instead of a hardcoded `/DuckDB/` subfolder, and both dedup blocks sort (`arrange(pecos_state)`) before `slice(1)`, making the pick deterministic by content rather than by incidental SQL row order
+
+Two compounding bugs, found while building the migration truth-fusion model's
+sub-annual PECOS checks (`docs/TECHNICAL_APPENDIX_TRUTH_FUSION_MIGRATION.md`
+§7). Neither was visible in isolation — each produced a plausible-looking
+number.
+
+**The warehouse path was stale.** `extract_pecos_revalidation_state_history.R`
+pointed at `/Volumes/MufflySamsung/DuckDB/cms_revalidation.duckdb`, a one-time
+copy that had silently fallen behind the real warehouse
+`archive_revalidation_reassignment.R` maintains at the volume root
+(`samsung_volume_path()` resolves there, same as `build_reassignment_panel.R`
+already did) — 2 months and 1 vintage out of date, with no error, since
+`dbConnect()` happily opens a stale-but-valid file.
+
+**Re-pointing at the live warehouse surfaced the second, worse bug.** ~10% of
+`(npi, vintage)` rows carry multiple simultaneous states (one person enrolled
+under several group practices in different states the same month — a
+documented multi-affiliation data shape, not a move). The existing dedup,
+`group_by(npi, vintage) %>% slice(1)`, was described as an
+"arbitrary-but-deterministic pick," but `slice(1)` returns whichever row SQL
+happens to return first, which depends on physical row order — not
+deterministic across two warehouse copies holding byte-for-byte identical
+logical data. **Measured directly**: one NPI stably enrolled under ME/NH/VT
+across all 41 vintages got a *different* state picked depending on which
+warehouse copy was queried, producing a spurious "move" every time the
+ordering flipped, though the person's real affiliations never changed. That
+noise, not genuine churn, was the dominant driver of PECOS's reported move
+rate for two already-published sub-annual windows: **3.5%–4.9% dropped to
+0.05%–0.66%** (2020-21 window) once both bugs were fixed — close to NPPES's
+own quiet 0.13%–1.06% baseline for the same era, which is what made the old
+figures implausible in hindsight.
+
+**Why this is worth keeping, not just fixing quietly.** The original fix for
+the cruder version of this bug (15–17% down to 3.5%–4.9%, same investigation,
+same day) was itself declared "fixed" and shipped to
+`TECHNICAL_APPENDIX_TRUTH_FUSION_MIGRATION.md` before this second layer was
+caught — only re-pointing to the correct warehouse, for an unrelated reason,
+exposed that the "fix" was incomplete. A dedup that is deterministic *within
+one warehouse instance* is not the same property as one that is deterministic
+*by content*, and the difference is invisible until something forces a second
+instance to be compared against the first.

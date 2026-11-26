@@ -316,7 +316,8 @@ if (!is.null(sp_dist_real)) {
 # 8. Real multi-year, multi-source panels (NPPES state, PECOS reval state, TMSIS state)
 # =============================================================================
 cat("\n--- Building real multi-year state panels (NPPES / PECOS-reval / T-MSIS) ---\n")
-nppes_state_panel <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+nppes_state_panel <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"),
+                              col_select = c(npi, snapshot_year, practice_state), progress = FALSE) %>%
   mutate(npi = trimws(npi), year = as.integer(snapshot_year)) %>%
   semi_join(cohort_active, by = "npi") %>%
   transmute(npi, year, state = clean_state(practice_state))
@@ -457,7 +458,8 @@ active_nppes_real <- nppes_2019_panel %>% filter(is.na(deactivation_date) | !nzc
 # Use the earliest reported date per NPI (when NPPES first recorded the
 # deactivation) and flag the 2 genuinely inconsistent NPIs rather than
 # silently picking whichever snapshot year happened to sort first.
-deact_nppes_raw_real <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+deact_nppes_raw_real <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"),
+                                 col_select = c(npi, deactivation_date), progress = FALSE) %>%
   mutate(npi = trimws(npi)) %>%
   filter(!is.na(deactivation_date), nzchar(deactivation_date)) %>%
   semi_join(cohort_active, by = "npi")

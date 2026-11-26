@@ -1,0 +1,59 @@
+{
+  "artifact": "source_pairwise_agreement_matrix.csv",
+  "written_utc": "2026-11-23 23:48:43 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/mrost_agreement_pairwise.csv",
+      "sha256": "99b1762ab2e34bd8c82bb40a438511888bb3a10073cb26c641e5d37aed34fbc5"
+    },
+    {
+      "path": "artifacts/cross_source_pairwise_matrix.csv",
+      "sha256": "a2c608c15c899f98061090b7a7c95e9b39325220e65df4f70a429ba5a180bfb9"
+    }
+  ],
+  "code_sha256": "850c3ac4191904ac23ccbb9ecdf997caec37cc6ccb1fe4b9f2585d9d492e1fb5",
+  "code": [
+    {
+      "path": "build_source_pairwise_agreement_matrix.R",
+      "sha256": "18620aed8f554be83dd2a4c2265bbc628aab586650d974422f8fad16fbba4402"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "3dec47ce20ffe42a4a8b85c84e0264c37c91b6da1452926c33ab2a9d0ec06e9e"
+    },
+    {
+      "path": "R/lib/ast_walk.R",
+      "sha256": "9611f2b4a7119c4fd9c300677df216e72439c94bdb93244fd413510807eba36a"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ],
+  "semantic_packages": [
+    {
+      "package": "mysterynpi",
+      "installed": true,
+      "version": "0.9.1",
+      "source_sha": "aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a"
+    },
+    {
+      "package": "stringi",
+      "installed": true,
+      "version": "1.8.9",
+      "source_sha": null
+    },
+    {
+      "package": "humaniformat",
+      "installed": true,
+      "version": "0.6.0",
+      "source_sha": null
+    },
+    {
+      "package": "mysteryroster",
+      "installed": true,
+      "version": "0.3.0",
+      "source_sha": "de1aa5d4e4262e8006254e3463c0e0a80eec56ba"
+    }
+  ]
+}

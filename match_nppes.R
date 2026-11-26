@@ -57,7 +57,7 @@
 # =============================================================================
 
 suppressPackageStartupMessages({
-  library(dplyr); library(readr); library(stringdist); library(tidyr)
+  library(dplyr); library(readr); library(tidyr)
 })
 
 Sys.setenv(NAME_PARSER_CACHE_DISABLE = "1")   # cache is here()-relative to isochrones

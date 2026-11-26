@@ -27,7 +27,7 @@
 # @author Tyler Muffly, MD + Claude Code
 # =============================================================================
 suppressPackageStartupMessages({
-  library(dplyr); library(readr); library(stringr)
+ library(readr); library(stringr)
   library(ggplot2); library(scales); library(cli)
 })
 

@@ -1,17 +1,17 @@
 {
   "artifact": "agreement_cluster_bootstrap_ci.csv",
-  "written_utc": "2026-11-22 01:14:39 UTC",
+  "written_utc": "2026-11-23 23:48:34 UTC",
   "inputs": [
     {
       "path": "artifacts/canonical_source_records.csv",
-      "sha256": "81cf8b26e0a055bc5ddbe74f3ffe872105d12025272bce18b9b68acfc901f006"
+      "sha256": "a067f7bfb4fe8fb81f0ca42f841bde70c1b5fc91a53021aefd02417cb3137067"
     }
   ],
-  "code_sha256": "fb2025b8c50ea5685bb8752cb3a3be909dc5c6cc7fce4647b27269a205075742",
+  "code_sha256": "b36be102e43340fa023cb465f75a6a99d04f8297cd2953458253d26c7494dc73",
   "code": [
     {
       "path": "build_f2_f3_uncertainty_denominators.R",
-      "sha256": "3fcd7b0c097c7fb8ff9652bf8b192638159060eb619ebdcc4e9d9e44e74fe3e5"
+      "sha256": "5ad548d576605ace34c3088a924cd0d9cea5489624e05661d3d9bb6992b9776b"
     },
     {
       "path": "R/lib/artifact_provenance.R",
@@ -27,7 +27,7 @@
     },
     {
       "path": "R/lib/wilson_interval.R",
-      "sha256": "0458dbfbaaef986be0ebfbcc1edebff2c715358c11c68d9b5cf9dfdb0af918a7"
+      "sha256": "d7ec65c7b07499742265c60f0b3ad2df045429a51c3d8a0481476b454f5a1a3e"
     }
   ],
   "semantic_packages": [
@@ -53,7 +53,7 @@
       "package": "mysteryroster",
       "installed": true,
       "version": "0.3.0",
-      "source_sha": null
+      "source_sha": "de1aa5d4e4262e8006254e3463c0e0a80eec56ba"
     }
   ]
 }

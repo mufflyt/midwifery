@@ -118,13 +118,6 @@ if (!file.exists(supplemental)) {
   message("Created supplemental input template: ", supplemental)
 }
 
-empty_supplemental <- function() tibble(
-  source = character(), source_id = character(), facility_name = character(),
-  parent_organization = character(), street = character(), city = character(),
-  state = character(), zip = character(), site_setting = character(),
-  ccn = character(), source_url = character(), source_vintage = character(),
-  source_confidence = character()
-)
 append_supplemental <- function(rows) {
   if (!nrow(rows)) return(invisible(NULL))
   old <- read_csv(supplemental, col_types = cols(.default = col_character()),

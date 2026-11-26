@@ -20,6 +20,384 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-23 — an external statistical review, verified claim by claim; Table 2 stops hiding its unresolved records
+
+Three external AI review passes were run against the manuscript and every
+claim verified against committed artifacts before anything changed. The
+durable trail is `docs/TECHNICAL_APPENDIX_STATISTICAL_REVIEW_2026-11-23.md`.
+
+### Retracted
+
+- **Neither "more than three quarters" nor 63.1% was the 2026 persistence
+  estimate.** The 563/892 residual subtracted non-exclusive ever-adopted-value
+  counts, omitted convergence on a third state, and counted right-censored
+  providers as unresolved. The mutually exclusive censoring audit gives 366
+  of 728 providers observable in both systems (**50.3%**) still discordant;
+  164 of the original 892 (**18.4%**) were right-censored. Abstract, Results,
+  Discussion, README, catalog, and Supplemental Table S8 now agree.
+- **Table 2's caption claimed the three live-verification states resolve
+  "every record" — the artifact carries 165 (NPPES) and 77 (PECOS)
+  unresolved records in that tier.** Claim removed.
+
+### Changed — what the numbers now say
+
+- **Table 2 reports its unresolved records and bounds.** The seven-state
+  NPPES licensure track evaluated 3,193 records, of which 1,253 (39.2%)
+  matched no board record; the displayed 92.58%-of-resolved accuracy now
+  sits beside the worst/best-case bounds 56.2-95.5% that were already in
+  `artifacts/oig_remake/` but rendered nowhere. Abstract, Results, and
+  Discussion state the unresolved share and bounds.
+- **Supplemental Table S7 (new) renders the promised intervals.** Wilson and
+  provider-cluster bootstrap 95% CIs per pooled source come from
+  `agreement_cluster_bootstrap_ci.csv`; its final statistic is correctly
+  labeled a CI-width ratio rather than a variance-ratio design effect. The
+  provider-cluster bootstrap was regenerated with 2,000 replicates.
+- **The Medicaid equality-vs-membership contrast (74.8% → 88.5% on 107,193
+  provider-years) now carries paired uncertainty.** Its provider-cluster
+  bootstrap resamples midwives and computes both rules within every draw.
+- **The WLS trend p-value is gone.** The clinician-directory decline is a
+  descriptive slope; the same midwives contribute to successive years, so an
+  independence-based test overstated the evidence.
+- **Table S6 board rows are marked selection-conditioned.** Board records
+  were harvested only for cohort members whose NPPES state matched the
+  queried board (`harvest_live_*_bon_from_tracked_roster.py`), so their
+  state agreement is conditioned on one side of the comparison; dagger +
+  caption disclosure, plus a new "Of cohort (%)" coverage column for
+  snapshot rows.
+- **Methods now reconcile every cohort count in one table** (22,357 roster →
+  14,956 primary-linked → +1,819 nursing-taxonomy → 16,775 analytic;
+  15,328 ACTIVE → 12,170 primary-linked → 12,115 geocoded), document each
+  source's one-state-per-provider-year reduction rule, name the four
+  published-file verification states (CT, FL, IL October 2026; PA
+  2026-11-16, verified against provenance manifests), scope the board
+  verification to the seven queried states, and describe commercial-source
+  acquisition (Healthgrades/Doximity public profile retrieval; Trilliant
+  platform reads).
+- **Overclaims reworded to what the design supports**: concurrent Medicaid
+  enrollment is enrollment, not observed delivery; Open Payments led the
+  registry rather than "correcting" it; tight agreement does not bound how
+  wrong shared-lineage sources can be together; practice state is the most
+  reproducible geographic variable, accuracy unverified. Source count reads
+  "ten evaluated systems alongside the certification roster" (Table 1 has
+  11 rows); Table 1's Open Payments years cell carries the 2021
+  CNM-reportability boundary.
+
+- **Three data-quality-over-time supplements surfaced from artifacts the
+  mysteryroster runners already write** (Supplemental Tables S9-S11):
+  per-source year-over-year churn with Wilson CIs
+  (`mrost_churn_by_source.csv`), consensus-tier persistence 2021-2025
+  (`consensus_tier_persistence_2021_2025.csv`), and lone-dissent rates
+  (`mrost_odd_one_out_rate.csv`). No new computation — the gap was
+  rendering.
+- **The "median lag was two to three years" sentence is now keyed, per
+  direction**: Medicare enrollment adopted the registry's 2021 value after
+  a median of 3 years (IQR 2-4); the registry adopted Medicare
+  enrollment's after a median of 2 years (IQR 1-3) — parsed from
+  `oig_update_lag_and_staleness_check.csv`'s fixed metric format rather
+  than hand-typed.
+
+### Infrastructure
+
+- **`tools/convert_medicaid_segments_parquet.R` (new)** documents the
+  one-shot conversion needed to rebuild the typed T-MSIS segments parquet
+  from the 2026-07-24 raw csv.zip. The statistical-review appendix records
+  why sampled quote sniffing and an all-character parquet are invalid here.
+
+### Known, not yet resolved
+
+- The two Table 2 artifacts disagree by 3 records (3,190/1,938 vs
+  3,193/1,940); the manuscript renders the subtypes values. Root cause
+  traced: the summary row counts the design-weighted
+  `attribute_verification_status()` fields table, the subtypes row the raw
+  OIG-subtype vector after dropping NA/`not_applicable` — two inclusion
+  rules, three records in the second but not the first. The specific rows
+  need a remake rerun with intermediates retained.
+- Preregistration/protocol statement and the human-subjects determination
+  basis need author input; a provider-level clustered trend model remains
+  the stronger alternative to the descriptive slope.
+
+## [Unreleased] — 2026-11-22 — a pull request merged into a branch nothing merges; a skip budget that described the wrong environment
+
+### Fixed
+
+- **#340's work never reached `main`, and was recovered.** The pull request was
+  squashed and merged; the squash commit `f194e36` landed on
+  `fix/table1-custodian-sort`, which was itself merged away in `ad3aec5` and
+  left standing as a ref. GitHub reported #340 as merged, because it was —
+  nothing says *into what*. Recovered to `main`: the `U1` unused-attachment
+  gate (`tests/ci_unused_dependencies.R`), the Wilson agreement suite
+  (`tests/test_wilson_implementations_agree.R`, rOpenSci G5.4a), both of their
+  `ci.yml` steps, all five statistical citations (Wilson 1927; Brown, Cai &
+  DasGupta 2001; Efron 1979; Efron & Tibshirani 1993; Field & Welsh 2007) in
+  `R/lib/wilson_interval.R`, `build_f2_f3_uncertainty_denominators.R`,
+  `manuscript/references.bib` and the manuscript methods paragraph, and the
+  sixteen unused `library()` attachments the gate polices.
+  Found while writing documentation, not in review — a presence check for two
+  files returned `ABSENT` three hours after the merge was reported. The gate
+  that would have caught it was the one that was stranded: `U1` fails on `main`
+  the moment it is restored, because its sixteen cuts were stranded with it.
+  Recovery was selective rather than a cherry-pick, because the squash was
+  computed against the old base and its tree is `-3189` lines against today's
+  `main`. See
+  [`docs/APPENDIX_a_merge_into_a_dead_base_2026-11-22.md`](docs/APPENDIX_a_merge_into_a_dead_base_2026-11-22.md).
+- **One of those sixteen cuts was verified beyond the gate's word.**
+  `scrape_healthgrades_midwives.R` attaches `humaniformat`, which the static
+  scan calls unused — and the only test exercising that file (`test_cycle31`)
+  skips on every runner, so #340's green CI never executed it. The attachment
+  is genuinely unnecessary: the isochrones name tools attach it themselves
+  (`core_utils.R:76`, `batch_npi_processing.R:52`) and otherwise namespace it
+  (`matching_utils.R:371`). A green gate plus a skipped test is not evidence.
+- **Three supplemental-table budget rows were wrong in the `full` column**,
+  which CI never reads and so nothing had contradicted. `ci_science_contracts`
+  expected 1 and the gate prints 2 (SCI2's tie-break sites and the absent
+  numeric-cut declaration both fire in either environment; only the affiliation
+  coverage matrix is bare-checkout-specific). `ci_denominator_contracts` and
+  `test_exclusion_invariants` expected 1 each and now skip 0, because their
+  inputs are present wherever the pipeline has run. The D5 reason had claimed
+  the count was "environment-independent because every input is a tracked
+  artifact" — `.gitignore:320` excludes that input as person-level.
+- **`DEBT.md` carried two D13 entries after a merge, and the gate refused it.**
+  This repository filed the PECOS dedup-determinism bug as D13 on 2026-11-06;
+  `main` had since filed the unrelated DAC multi-site ZIP5 bug as D13 on
+  2026-11-12. `tests/ci_debt_check.R` reported `FAIL B5: duplicated id(s): D13`
+  on the first run after the merge. Keeping both entries is the right
+  resolution for the prose and the wrong one for the label; the PECOS entry is
+  renumbered **D15**. The README debt badge is now counted from the file (4
+  open, 12 closed) rather than carried forward — it had said 10 closed against
+  a file holding 11.
+
+### Added
+
+- **A `needs` column in `tests/skip_budget.tsv`, so a row can name its own
+  precondition.** `full`/`lean` asks exactly one question — is the person-level
+  freeze present — and four rows skip for something else entirely: the `sf`
+  package (`test_cycle11_spatial`, `test_cycle14_coverage_surfaces`) and the
+  `~/isochrones` checkout (`test_cycle12_names_territories`,
+  `test_cycle31_healthgrades_insurance_parsing`). Those are properties of the
+  machine. A scratch worktree is `lean` on the data axis and `full` on theirs,
+  so all four reported `STALE` with nothing wrong with them — and lowering
+  their `lean` count to match would have reddened CI, where the skip is real.
+  Specs are `pkg:`, `iso:` and `path:`; an unrecognised one **fails** rather
+  than falling through, because a row the gate cannot answer for is a row whose
+  count was never checked.
+  Four saboteur cases in `tests/test_skip_budget_detect.R` (14 total, up from
+  10), each shown red against a mutant of the logic it covers — including a
+  `full_env` scaffold, without which the absent-precondition case passed under
+  the mutant.
+- **`docs/APPENDIX_a_merge_into_a_dead_base_2026-11-22.md`**, collecting five
+  findings of one shape: a claim true when written that nothing re-checked
+  against the thing it described. The merge into a dead base; the same dead
+  base making three pull requests report `CONFLICTING` against nothing; the
+  worktree that is neither environment; `.git` being a *file* in a worktree,
+  which breaks the `dir.exists(".git")` root idiom in 31 files under
+  `testthat::test_file()`; and the debt badge nothing gates.
+
+### Known not fixed
+
+- **`file.exists(".git")` would fix the root-detection idiom in all 31 files**
+  that use it. Not applied: the idiom is correct in every context CI uses
+  (`actions/checkout` creates a real `.git` directory), and 31 files is its own
+  change. The visible symptom is worktree-only.
+- **The skip budget's non-vacuity guard catches a testthat run that produces no
+  summary line, but not one that produces `SKIP 0 | PASS 0`.** A file that
+  errored on load asserted nothing, and the budget reads it as zero skips, as
+  expected. `test_invariants_midwifery.R` does exactly that in a worktree.
+- **Nothing compares either README count badge to what it describes.** The debt
+  badge is correct as of this entry (5 open, 12 closed) and has now gone stale
+  twice; the comparison belongs in `tests/ci_debt_check.R`. The scientific-laws
+  badge is in the same position one step further out: its figures are right and
+  `tests/ci_law_coverage.R` does compute them (`13 declared`, `39/39 planted
+  defects detected`), but nothing reads that output back against the README, so
+  adding a law moves the gate's count and leaves the badge behind.
+## [Unreleased] — 2026-11-22 — 13.5 minutes of parsing nobody needed, and a panel count that was stale by two builds
+
+**No published figure moves in this entry.** Every code change here was proved
+to return a result `identical()` to what it replaced; the only numbers that
+change are three stale statements in the README about the panel itself, and
+they change to agree with the manifest the freeze was built from.
+
+### Changed
+
+- **`build_midwife_panel.R` no longer reads its own 544 MB output back in base
+  R to print four numbers.** The script writes the panel one snapshot year at a
+  time and never holds the 4.7 M-row result; the summary tail undid that for
+  **210.9 s and a 1,169 MB peak**, 96.8 s of it inside one `aggregate()` whose
+  formula method calls an R closure once per group across 472,327 groups. One
+  query on the DuckDB connection the script already had open: **6.7 s, 593 MB**,
+  returning the same `4735546 / 472327 / 507559 / 33657`. The resume path, which
+  read all 544 MB to learn which snapshot years were already written, is now
+  `SELECT DISTINCT snapshot_year`: **72.5 s → 5.0 s**, same twenty years.
+- **Eleven reads of `midwife_panel.csv` across nine files now name their
+  columns.** A full-width read of this file costs **60.8 s**; the same read
+  naming the three columns the pipeline keeps costs **12.1 s**. Four distinct
+  column sets were narrowed and each was verified by reading the file both ways
+  in one process: the narrowed frame is `identical()` to the same columns of the
+  full-width frame, over all 4,735,546 rows. The extrapolated `readr` cost of
+  one `REBUILD_APPLY` pass over this file fell from **18.2 minutes to 8.1**.
+  Narrowing saves time, **not memory** — peak RSS is 1,186 MB full-width against
+  1,197 MB narrowed, because readr streams the whole file through its parse
+  buffer whichever columns it keeps.
+- **Both geographic-persistence scripts name all thirteen panel column types
+  instead of inferring twelve of them.** `guess_max = Inf` is *not* ignored when
+  the spec is partial (`.default = col_guess()`), so readr scanned all 4,735,546
+  rows to guess the rest before parsing them: **96.8 s → 43.0 s**, `identical()`
+  on the whole frame. The named types are the ones that scan arrives at, `npi`
+  and both snapshot columns as doubles — naming `npi` as character would have
+  silently zeroed every join against a linkage file that is itself read with
+  guessing on. `reconcile_linkage.R` keeps its `guess_max = Inf` and its
+  recorded reason.
+- **Malformed NPPES rows are now counted instead of silently discarded.** Every
+  release is read with `ignore_errors = true`, which drops a broken row and
+  returns success, and the only number printed afterwards was the count of rows
+  that *passed* the taxonomy filter — so a release that silently lost 10% of its
+  rows would have read as a release with 10% fewer midwives. `store_rejects =
+  true` now records what is dropped and the count is reported per release and in
+  the summary. It is tied to `ignore_errors` rather than set globally, because
+  `store_rejects` suppresses parse errors by itself and would have defeated the
+  strict encoding probe the same way `ignore_errors` does. This is the only
+  change in this entry about trust rather than speed.
+
+### Added
+
+- **`tests/ci_read_width.R` (RW1): a new full-width read of the panel is
+  refused.** Shrink-only baseline in `tests/ci_read_width_baseline.txt`, keyed on
+  file and count rather than `file:line` so ordinary edits do not churn it, with
+  a per-file reason recording whether the remaining read is reducible to a fixed
+  column set or genuinely needs the width. 28 reads across 24 files when it was
+  written; **17 across 17** after the narrowing above.
+- **`tests/test_read_width_detect.R`: 12 planted defects, 12/12.** The gate
+  reported a clean tree three times while missing real reads, and all three
+  failures are the same shape — a smaller number than the truth, reported as
+  success. A path arriving through a variable (`regmatches()` drops
+  non-matching elements, so the resolver's mask went out of alignment and
+  missed four files); a file listing that scanned **zero** files when the gate
+  ran from inside `tests/` and still printed `PASS` (now floored at 50 non-test
+  R files); and a path assigned across more than one line, which is how
+  `build_midwife_panel.R`'s `out_path` is written — **the two most expensive
+  reads in the repository were invisible to the gate that exists to find
+  exactly them.** RW11 is a boundary rather than a lie: the gate refused the
+  new measurement harness, which reads the panel full-width on purpose, so
+  that one path is exempt by name and RW11 plants a full-width read in a
+  *different* `tools/` file to prove the exemption does not cover the
+  directory.
+- **`ci_data_regression_guard.R` D14: the README's panel inventory must agree
+  with the manifest.** The panel is gitignored, so no gate can compare the prose
+  to the file; `artifacts/linkage_manifest.json`'s `inputs/nppes_panel` block is
+  the only committed statement of what the panel held when the freeze was built,
+  and therefore the only one the published cohort counts rest on. Scoped to
+  `README.md` with a declared, reasoned exemption for the defect-table row that
+  records the span a 2026-10 bug skipped, and floored at four statements so a
+  pattern that stops matching cannot pass as correct prose.
+- **`tools/measure_panel_read_cost.R`** — the measurement behind
+  `Review_AI_performance.qmd`, kept so the next round can be compared against
+  this one rather than restarted. One arm per process, peak memory from the OS
+  rather than from `gc()`, readr's lazy columns forced inside the timed region,
+  and equivalence checked with `identical()` rather than asserted. It refuses to
+  substitute a fixture when the panel is absent. Its DuckDB arms open their
+  connection through `duckdb_connect()`, not a bare `dbConnect()`: a timing
+  taken on a differently-configured connection is not a timing of the code
+  being measured, and `tests/ci_duckdb_ingestion_bootstrap.R` caught the first
+  version, which did.
+- **`docs/TECHNICAL_APPENDIX_PANEL_READ_COST.md`** — the panel's inventory by
+  snapshot year, the four measurement traps that each produced a wrong number
+  first, the three claims that are *not* true, and §7 on the claim CI cannot
+  check.
+
+### Fixed
+
+- **The README described the panel as "NPPES 2007–2025, 443,623 NPIs" in three
+  places.** The manifest the freeze was built from records **451,793** distinct
+  NPIs and 4,747,648 rows across **twenty** snapshot years, **2007–2026**, none
+  missing — so the parenthetical inviting a reader to look up which years were
+  missing pointed at an empty list. `docs/TECHNICAL_APPENDIX_TAXONOMY_SCOPE.md`
+  had already noticed the NPI count was stale and written down a correction,
+  which was itself stale by the time anyone read it. Both documents now name a
+  date and a build beside the count, and D14 keeps the README's copy pinned to
+  the manifest.
+
+## [Unreleased] — 2026-11-22 — 1,552 lines cut, and a saboteur for every cut
+
+### Removed
+
+- **22 top-level functions nothing referenced, 1,266 lines.** Five more went
+  dead the moment their only callers did: `tests/helper-data-generation.R` fell
+  from 783 lines and 14 functions to 186 and 4, because the generators it
+  exported were used only by the fixtures that were themselves unused. Three
+  of the files are ports whose headers say "PORTED VERBATIM from
+  ~/isochrones"; the unused half came with them.
+  `tests/helper-invariants.R` lost `expect_schema` (71 lines),
+  `expect_monotone_nondecreasing` (46) and three more; `R/nightly/nightly_classify.R`
+  lost `nightly_build_summary` (33). Found by joining every top-level
+  definition against a one-pass token count of the whole tree, which is cheap
+  enough to run as a gate and now does.
+- **Three wrappers whose whole body forwarded identical arguments to one
+  callee.** `middle_initial(x)` called `first_initial(x)`, `have(p)` called
+  `file.exists(p)`, `lk(x)` called `as_duckdb_tibble(x)`. 18 call sites now
+  name the callee. `normalize_city()` and `normalize_person_name()` have the
+  same shape and stay: at 40-odd call sites in the linkage code the name is
+  what the reader is reading.
+
+### Changed
+
+- **Five definitions stopped shadowing base R.** Four files each defined
+  `%||%`, with four different meanings, while base R has shipped it since
+  4.4 and this repository runs 4.5.2. The one that matched base is deleted;
+  the three that also swallow `NA`, length-0 or take the first element are
+  renamed for what they do. `R/lib/osmde_cache.R` turned out to be
+  re-inventing `%|na|%`, which `R/lib/common_helpers.R` already defines for
+  exactly this purpose and documents as the reason not to have two, so it now
+  sources the canonical one. Also renamed: `save()` (shadowed `base::save`
+  for every later line of `make_trilliant_figures.R`), `q()` (shadowed
+  `quit`), `row()` and `norm()`.
+- **Eight duplicated function bodies, each copied under a different name,
+  collapsed into four shared helpers.** `ci_hygiene.R` H4 could not see any of
+  them: it compares names, and a renamed copy shares no name with its twin.
+  `tp_arg`/`tpf_arg`/`gal_arg`/`tl_arg` were one `--key=value` reader in four
+  scripts; `audit2013_norm`/`drift_norm` and
+  `dac_spine_collapse_set`/`drift_collapse_set` were two identity-key helpers
+  in three. They are now `cli_arg()`, `identity_key_norm()` and
+  `collapse_key_set()` in `R/lib/script_cli_and_keys.R`, and
+  `assign_county_from_points()` (21 lines, the largest copy) is in
+  `R/lib/county_from_points.R`. Two 5- and 6-line pairs stay duplicated and
+  are named in the gate's ratchet: a shared file plus two `source()` lines
+  costs more than they save.
+- **`mw_build_catalog()`: 1,424 lines to 987, cyclomatic complexity 136 to
+  98.** It was the worst function in the tree by both measures and 1.7x the
+  next. Three sections that read only committed artifacts and write only their
+  own keys lifted out whole: `mw_section_dbacc()` (282 lines, cc 21),
+  `mw_section_leadlag()` (111, cc 11) and `mw_section_trilliant()` (52, cc 9).
+  **The catalog it returns is equal by value to the one the inline version
+  built**, 19 sections and 2,432 keys, asserted by rebuilding before and after
+  and comparing with `readr`'s per-read `problems` pointer stripped -- without
+  that, two reads of one unchanged file compare as different and the check
+  reads as a regression it is not.
+
+### Added
+
+- **`tests/test_dead_code_cuts_saboteurs.R`: 11 saboteurs, 11/11.** One law per
+  cut above, each planted back and required to be caught: a definition nothing
+  references, a body copied under a second name, a definition taking a base R
+  name, a bare pass-through, and a catalog section the builder stops calling or
+  that stops returning the catalog. A second suite rather than more cases in
+  `tests/test_ponytail_cuts_saboteurs.R`, which owns the previous round's four
+  laws. It sources `tools/measure_code_complexity.R` rather than writing a
+  second parser for the tree, which is the duplication it exists to catch;
+  `cyclocomp` is declared in `ci.yml` and in the package gate's list because
+  that chain can reach it.
+- Three of the gate's own checks were wrong before they were right, and all
+  three failures are recorded in the file. It counted a section named in a
+  COMMENT as a call; it found the end of a function by the first `}` at column
+  zero, which for an extracted top-level function is an inner block; and it
+  built its corpus with `ls-files "*.qmd"`, the bare pathspec Q2a of
+  `tests/test_gate_integrity_saboteurs.R` refuses after measuring it read 267
+  of 645 files. That last one is the instructive failure: the short corpus made
+  `mw_pct_ci()` and `mw_wordcount()` look dead, and the first version of this
+  gate shipped an allowlist calling them "referenced only by prose" --
+  recording a truncated scan as a property of the code. The repository's own
+  gate caught it on the first push. Listing every tracked file once and
+  filtering in R found both callers, and the allowlist is gone rather than
+  justified.
+
 ## [Unreleased] — 2026-11-21 — five published rates divide by a group the numerator never came from; five declared checks nothing performed; a gate per defect
 
 ### Added
@@ -93,6 +471,29 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   skip sets, `test_science_contracts_detect.R` 13/13).
 
 ### Fixed
+
+- **Three gates were unwired from `ci.yml` by a merge, in the same branch that
+  fixed the defects they police.** `579950c` (the merge of #336) took `main`'s
+  workflow file wholesale; `ci_denominator_contracts` (D1-D5),
+  `test_denominator_contracts_detect` and
+  `test_npi_rate_and_cluster_saboteurs` existed only on this branch, so
+  nothing conflicted and nothing reported it. `bef401e` closed DEBT D14
+  immediately afterwards — so for that span the branch had fixed five
+  denominator defects and stopped checking for them, and CI was green
+  *because* the checks were gone. All three are restored, with the saboteur
+  suite ordered ahead of the gates it sits beside so a halt on the first
+  failing step cannot silence it again.
+- **D5's skip had no test, in either direction.** The skip is correct — the
+  canonical records are gitignored and no runner can have them — but it is the
+  dangerous direction to move a gate, and nothing distinguished "forgives its
+  one known-private input" from "forgives any missing input".
+  `test_denominator_contracts_detect.R` now pins both: absent **and**
+  gitignored passes, absent but **tracked** still fails.
+- **`skip_budget.tsv` still declared `1 / 1` for that gate.** `full` is 0 now
+  that `UFT_BASELINE` is `character(0)` and no consumer is forgiven. Its old
+  reason claimed the count was environment-independent "because every input is
+  a tracked artifact" — the false premise that let D5 fail on every runner for
+  as long as it did.
 
 - **The public Medicaid NPI-population rate divided providers by spells, and
   it was published.** `build_medicaid_npi_population_by_state.R` computed

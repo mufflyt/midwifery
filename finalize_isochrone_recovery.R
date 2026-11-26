@@ -16,7 +16,7 @@
 # The canonical 3,909-origin library is not modified. No routing, no generation.
 # =============================================================================
 suppressPackageStartupMessages({
-  library(dplyr); library(readr); library(purrr); library(stringr); library(readxl)
+  library(dplyr); library(readr); library(purrr); library(stringr)
 })
 ISO <- path.expand("~/isochrones")
 

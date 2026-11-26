@@ -1,0 +1,586 @@
+---
+title: "midwifery (analysis pipeline, no version) — AI-Assisted Performance & Memory Review"
+author: "Tyler Muffly (AI-assisted, Claude Code / Opus 5)"
+date: 2026-11-21
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    embed-resources: true
+execute:
+  eval: false
+---
+
+# Prompt
+
+> write more gates and test the gates.  Make sure the gates are all wired in.
+> /ropensci-skills:run-performance-review
+
+# Skill
+
+`ropensci-skills:run-performance-review`, from
+`~/.claude/plugins/cache/ropensci-skills/ropensci-skills/1.0.0/skills/run-performance-review`.
+Its operative instructions, verbatim:
+
+> - **Trace before you profile.** Understand the data/compute path end to end —
+>   where I/O happens, where results accumulate — before quoting numbers.
+> - **Anchor on measured data.** Profile real inputs, or measure the package's own
+>   recorded fixtures (`object.size()`, row/column counts, per-row cost). State
+>   which figures are _measured_ and which are _extrapolated_.
+> - **Extrapolate explicitly.** Show the multipliers (rows/site/year, bytes/row,
+>   transient vs. persistent) so a reader can check the arithmetic and see the
+>   assumptions.
+> - **Distinguish the persistent result from the transient peak** — the peak
+>   (in-flight parse + accumulated result + concatenation copy) is usually what
+>   OOMs, not the final object.
+> - **Measured wins only.** Recommend an optimization only where the trace or a
+>   measurement shows it matters; keep behaviour identical.
+> - **Read-only.** Don't edit the package; propose, with evidence.
+
+Report structure follows the shared template at
+`../run-package-review/references/report-template.md`.
+
+One deviation from the skill, stated up front: this repository is **not an R
+package** — it is a pipeline of numbered and named scripts with no `DESCRIPTION`
+and no namespace, so `devtools::load_all()` and per-export profiling do not
+apply. Hot paths were traced through the scripts and the shared helpers in
+`R/lib/` instead.
+
+# Report
+
+## Method
+
+Everything below ran on one machine, stated because the memory findings depend
+on it:
+
+| | |
+|---|---|
+| Host | macOS 24.3.0 (darwin), 8 cores, **8.0 GB RAM** |
+| R | 4.5.2 (2025-10-31) |
+| Packages | readr 2.2.0 · dplyr 1.2.1 · duckdb 1.5.5 · arrow 25.0.1 · data.table 1.18.6.1 |
+| Tree | `origin/main` at `bbba062`; findings re-verified against that commit's line numbers |
+
+Measurement harness, all scripts kept in the session scratchpad, none of them in
+the repository:
+
+- Each timing arm ran in its **own `Rscript --vanilla` process**, so a peak is
+  that arm's peak and not the previous arm's garbage.
+- Peak memory is the OS figure — `/usr/bin/time -l`'s *maximum resident set
+  size* — not `gc()`'s accounting. An earlier pass of this review used `gc()`
+  and mis-scaled the Ncells/Vcells byte widths; every memory number in this
+  report is RSS.
+- readr 2.x returns lazy ALTREP columns, so a read timed without touching the
+  data measures *not having read the file*. Every readr arm forces
+  materialisation (`sum(nchar(as.character(col)))` over every column) inside the
+  timed region.
+- Row-level equivalence between a current implementation and its proposed
+  replacement was checked with `identical()` on the full result, not on a
+  sample.
+
+**No repository files were modified for the measurements.** The gate added
+alongside this report is separate work, requested in the same message, and is
+additive (`tests/ci_read_width.R` and its detector); it changes no analysis
+script.
+
+## Headline
+
+**Amber, and the colour is about time rather than memory.**
+
+The architecture is already right where the data is biggest: every raw federal
+extract — including a 963 MB CMS Physician Compare release — is read through
+DuckDB with predicate and projection pushdown, and the 544 MB person-level panel
+is *written* incrementally, one snapshot year at a time, so the producer never
+holds it all. Nothing in the repository accumulates a frame quadratically, and
+no per-row loop touches person-level data.
+
+The cost is concentrated in one habit: **the derived panel is read full-width
+at 28 sites across 24 files, and narrowed with `col_select` at exactly one**,
+even though most of those sites reduce to three columns in the next statement.
+Measured, with the answer proven byte-identical: the full-width read costs
+**60.8 s** against **12.1 s** for the three columns actually used. Fourteen of
+the twenty-four reader scripts are in `rebuild_frozen_dependents.R`'s plan, and
+two of them read the panel three times each, so a full rebuild pays that penalty
+**18 times** — an extrapolated **18.2 minutes** of pure re-parsing.
+
+Worse per statement, and the single clearest win: `build_midwife_panel.R` spends
+**210.9 s** at the end of a streamed build reading its own 544 MB output back
+into base R to print four summary numbers. One DuckDB query — on a connection
+the script already has open — returns the same four numbers in **6.7 s**. That
+is **31×**, with identical output.
+
+Memory is *not* the problem, and the obvious-sounding claim about it is false:
+`col_select` does **not** reduce peak RSS (1,197 MB vs 1,186 MB — the file scan
+dominates, not the retained columns). Peak RSS never exceeded **1.4 GB** in any
+arm, comfortable even on this 8 GB laptop. CI is unaffected throughout: the
+panel is gitignored (`.gitignore:61`), so no runner ever reads it. Every figure
+here is a cost paid on a developer's machine.
+
+## Measured anchors
+
+The central artifact, `midwife_panel.csv` (gitignored; produced by
+`build_midwife_panel.R`):
+
+| property | value |
+|---|---|
+| bytes on disk | 544,742,809 (519.5 MB) |
+| rows × columns | 4,735,546 × 13 |
+| bytes/row on disk | 115 |
+| distinct NPIs | 472,327 |
+| distinct (NPI, surname) pairs | 507,559 |
+| NPIs under more than one surname | 33,657 |
+
+### Reading it (all measured, one process per arm)
+
+| arm | elapsed | persistent `object.size()` | peak RSS |
+|---|---|---|---|
+| `read_csv(cols(.default = "c"))` — 13 cols, as written at 28 sites | **60.8 s** | 534.1 MB | 1,186 MB |
+| `read_csv(col_select = 3 cols)` — as written at 1 site | **12.1 s** | 137.2 MB | 1,197 MB |
+| `read_csv(cols(<10 × col_skip>))` — the `source_coverage.R` idiom | 12.4 s | 137.2 MB | 1,172 MB |
+| `read.csv(colClasses = "character")` — base R, as written at 2 sites | 72.5 s | 534.0 MB | — |
+| DuckDB `read_csv_auto` + `GROUP BY snapshot_year` | **4.4 s** | ~0 | 313 MB |
+
+Two results worth stating because they contradict the intuitive version:
+
+1. **Narrowing the read saves time, not memory.** 60.8 s → 12.1 s is a 5.0×
+   speed-up, but peak RSS is unchanged (1,186 → 1,197 MB). readr streams all
+   544 MB through its parse buffer whichever columns it keeps; the retained
+   frame (534 → 137 MB) is a minority of the peak. Any recommendation below is
+   a *latency* recommendation.
+2. **`col_select` beats the `col_skip` column spec** (12.1 s vs 12.4 s) and is
+   one argument instead of a constructed `cols()` object — relevant because
+   `R/lib/source_coverage.R:330-336` builds the `col_skip` spec by hand.
+
+### The summary tail of `build_midwife_panel.R` (lines 520–528)
+
+Both arms produce the same four numbers, which is the point:
+
+| step | as written (base R) | one DuckDB query |
+|---|---|---|
+| `read.csv(out_path, colClasses = "character")` | 72.5 s | — |
+| `length(unique(npi))` + `nrow(unique(npi, last_name))` | 41.6 s | — |
+| `aggregate(last_name ~ npi, panel, function(x) length(unique(x)))` | **96.8 s** | — |
+| **total** | **210.9 s** | **6.7 s** |
+| peak RSS | 1,169 MB | 593 MB |
+| answers | 4735546 / 472327 / 507559 / 33657 | identical |
+
+### End-to-end on a real consumer
+
+`build_truth_fusion_predictions.R:69-71`, reproduced verbatim (its own
+`clean_state()` from `R/lib/clean_state.R`), both arms in one process, with an
+`arrange()` added to **both** so `identical()` is meaningful:
+
+| arm | elapsed | rows | equal? |
+|---|---|---|---|
+| as written — full 13-column read | **125.6 s** | 4,728,364 | — |
+| `col_select = c("npi", "snapshot_year", "practice_state")` | **52.8 s** | 4,728,364 | `identical() == TRUE` |
+
+Peak RSS 1,333 MB for the process holding both.
+
+### The shared reduction those sites recompute
+
+| property | value |
+|---|---|
+| DuckDB build of `DISTINCT (npi, year, state)` | 25.0 s, peak RSS 419 MB |
+| rows | 4,735,546 (every row is already a distinct triple) |
+| as CSV on disk | 85.8 MB |
+| in memory | 119.2 MB |
+
+## What scales, and what does not
+
+**Does not scale with the data** (so: leave alone):
+
+- The CI gate suite. `tests/ci_hygiene.R` walks all 664 tracked R files for
+  18.5 s of CPU; parsing the whole tree costs 5.3 s with source refs and 4.0 s
+  without, and reading every file with `readLines()` costs 0.53 s — so the fact
+  that each file is opened four times across H1/H2/H4/H6 is worth nothing to
+  fix. (Wall-clock on this laptop was 48.6 s against 18.5 s of CPU; that gap is
+  memory pressure from the measurements above, not the gate, and is not a
+  finding.)
+- `safe_left_join()` runs an extra full `anti_join()` on every call
+  (`R/join_safety.R:683`) purely to count unmatched left rows, roughly doubling
+  the join. All 15 non-test call sites are in `R/01-build-county-base.R`
+  joining ~3,143-row county frames. A 2× cost on 3,143 rows is free; this is
+  deliberately **not** a finding.
+- Per-row `for` loops: 50 sites, every one of them over a manifest, summary
+  table, or bounded work queue. None iterates person-level data.
+- `stats::aggregate()`: 6 sites, five over frames of tens to hundreds of rows.
+
+**Scales with the panel** (4.7 M rows, and growing by one snapshot year per
+NPPES release — ~250 k rows/year, ~29 MB/year):
+
+- the 23 full-width reads;
+- `build_midwife_panel.R`'s summary tail, which grows in both the read (linear)
+  and the `aggregate()` (linear in rows, with per-group R closure calls — 472 k
+  groups today).
+
+## Extrapolated scenarios
+
+Estimates, from the measured per-read anchors. The multiplier is counted, not
+guessed: 14 of the 24 panel-reading scripts appear by name in
+`rebuild_frozen_dependents.R`'s plan, and within those,
+`remake_oig_07_09_00440_midwifery.R` reads the panel at lines 253, 1137 and 1798
+and `run_no_gold_standard_toolkit_on_real_data.R` at lines 91, 319 and 460 —
+14 scripts, 18 reads.
+
+| scenario | panel reads | time in `read_csv` | vs. narrowed |
+|---|---|---|---|
+| one analysis script, today | 1 | 60.8 s | 12.1 s |
+| `remake_oig_07_09_00440_midwifery.R` alone | 3 | 182 s | 36 s |
+| `REBUILD_APPLY=1 rebuild_frozen_dependents.R` | **18** | **1,094 s (18.2 min)** | **218 s (3.6 min)** |
+| rebuild after 4 more NPPES releases (+1 M rows, +115 MB) | 18 | ~1,325 s (22.1 min) | ~264 s (4.4 min) |
+
+The last row assumes cost is linear in rows, which the 115 bytes/row figure and
+readr's streaming parse support but which was not measured at a second size.
+
+## Findings
+
+### Hot-path cost
+
+**F1 — `build_midwife_panel.R:520-528` reads its own 544 MB output back into
+base R to print four numbers. _(High.)_**
+
+The script is otherwise exemplary: it writes the panel incrementally with
+`write.table(..., append = !first)` per snapshot year (lines 370, 389, 501), so
+it never holds more than one year. Line 520 then undoes that:
+
+```r
+panel <- read.csv(out_path, colClasses = "character")          # 72.5 s
+cat(sprintf("\npanel: %s rows, %s distinct NPIs, %s distinct (NPI, surname) pairs\n",
+            format(nrow(panel), big.mark = ","),
+            format(length(unique(panel$npi)), big.mark = ","),
+            format(nrow(unique(panel[, c("npi", "last_name")])), big.mark = ",")))  # 41.6 s
+changed <- aggregate(last_name ~ npi, panel, function(x) length(unique(x)))         # 96.8 s
+```
+
+Why it is wrong, rather than merely slow: `aggregate()`'s formula method calls
+an R closure once per group, and there are 472,327 groups, so the slowest
+statement in the repository exists only to produce one `cat()` line. And the
+cheaper tool is not a new dependency — it is **already connected in this
+script** at line 317 (`con <- duckdb_connect()`), and `duckdb` is attached at
+line 27.
+
+Measured replacement, same four numbers (`4735546 / 472327 / 507559 / 33657`),
+210.9 s → 6.7 s, peak RSS 1,169 → 593 MB:
+
+```r
+summary_row <- dbGetQuery(con, sprintf("
+  WITH p AS (SELECT npi, last_name FROM read_csv_auto('%s', all_varchar = TRUE))
+  SELECT (SELECT count(*) FROM p) AS rows,
+         (SELECT count(DISTINCT npi) FROM p) AS npis,
+         (SELECT count(*) FROM (SELECT DISTINCT npi, last_name FROM p)) AS pairs,
+         (SELECT count(*) FROM (SELECT npi FROM p GROUP BY npi
+                                HAVING count(DISTINCT last_name) > 1)) AS multi_surname",
+  out_path))
+```
+
+**F2 — 28 panel reads parse all 13 columns; 1 narrows. _(High.)_**
+
+Counted by parse walk, not by grep. A line-oriented `git grep` for
+`cols(.default = "c")` finds 23 reads in 19 files and **misses five**: the reads
+that pass no column spec at all (`analyze_inclusive_zip_agreement.R:75`), the
+ones that hide the spec behind a variable (`cc <- cols(.default = "c")` at
+`analyze_consensus_tier_persistence_2021_2025.R:50`), and the ones that reach
+the file through `Sys.getenv("MIDWIFE_PANEL", "midwife_panel.csv")`. The AST
+figure is the one used throughout this report:
+
+```
+$ Rscript tests/ci_read_width.R
+  ok   no NEW full-width read of midwife_panel.csv
+       (28 grandfathered across 24 file(s) in tests/ci_read_width_baseline.txt)
+$ git grep -n 'read_csv("midwife_panel.csv", col_select' -- '*.R'
+compare_all_sources_mysteryroster.R:159
+```
+
+This is a reuse finding before it is a performance finding: the cheaper idiom is
+already in the tree, written once, in a file that reads the same three columns
+the others do.
+
+Five scripts carry a **byte-identical** three-line reduction —
+`audit_migration_corroboration_by_transition.R:97`,
+`build_leave_one_source_out_sensitivity.R:50`,
+`build_migration_rate_by_method.R:35`,
+`build_truth_fusion_predictions.R:69`,
+`diagnose_truth_fusion_migration_states.R:73`:
+
+```r
+nppes <- read_csv("midwife_panel.csv", col_types = cols(.default = "c"), progress = FALSE) %>%
+  transmute(npi = trimws(npi), year = as.integer(snapshot_year), state = clean_state(practice_state)) %>%
+  filter(!is.na(npi), nzchar(npi), !is.na(state), npi %in% link$npi) %>% distinct(npi, year, state)
+```
+
+Every one of the 13 columns is parsed; the next line keeps three.
+`remake_oig_07_09_00440_midwifery.R:1137` and `:1798` are the same reduction with
+different year windows, and `run_no_gold_standard_toolkit_on_real_data.R:319`
+makes seven. `analyze_inclusive_zip_agreement.R:75` and
+`analyze_medicaid_2023_2024_transition_support.R:64` are the same shape through
+a different filter, for eight provable sites in all.
+
+The fix is one argument, and it does not change the answer — proven above with
+`identical() == TRUE` on all 4,728,364 rows:
+
+```r
+read_csv("midwife_panel.csv",
+         col_select = c("npi", "snapshot_year", "practice_state"),
+         col_types = cols(.default = "c"), progress = FALSE)
+```
+
+Calibration: most of the 28 sites reference four or fewer of the 13 column
+names within the read's own pipeline, but that is a **floor**, not proof — a
+site that only filters by `snapshot_year` may use wider columns later in the
+script, and several genuinely do (the three address-comparison scripts need the
+four `practice_*` columns; the two name-matching scripts need the three name
+columns). `tests/ci_read_width_baseline.txt` records which of the 24 are
+provable and which are wider, with a reason per file. Narrow the eight marked
+PROVABLE first.
+
+**F3 — seven sites recompute the same `(npi, year, state)` reduction from
+scratch. _(Medium.)_**
+
+The result is 85.8 MB on disk and takes 25.0 s to build once in DuckDB.
+Materialising it as a provenance-stamped artifact turns 7 × 60.8 s of parsing
+into 1 × 25.0 s plus seven small reads, and removes the duplication F2 only
+narrows.
+
+Stated as Medium and second to F2 deliberately: this adds an artifact, a
+provenance sidecar, a staleness relationship and a line in the rebuild graph.
+`col_select` adds nothing. Do F2 first and only reach for F3 if rebuild
+wall-clock still matters.
+
+### Silent failure paths
+
+**F4 — DuckDB discards malformed rows and nothing counts them. _(Medium.)_**
+
+`build_midwife_panel.R:411-413` reads every NPPES release with
+`ignore_errors = true`:
+
+```r
+reader <- function(enc, ignore_errors = TRUE) sprintf(
+  "read_csv_auto('%s', all_varchar = TRUE, sample_size = 1000,
+                 normalize_names = TRUE, encoding = '%s', ignore_errors = %s)",
+  f, enc, if (ignore_errors) "true" else "false")
+```
+
+The flag is deliberate and the comment above it is right about the dangerous
+case (an encoding probe must *not* use it, or a wrong encoding silently drops
+every row with a non-ASCII byte — lines 414-421). The residual risk is the one
+the comment does not cover: for genuinely malformed rows, DuckDB drops them and
+returns success, and the count printed at line 501 is the count of rows that
+**passed the taxonomy filter**, so there is no number anywhere that would move
+if a future release started emitting broken rows. A release that silently lost
+10 % of its rows would look like a release with 10 % fewer midwives.
+
+`store_rejects` / `rejects_table` is unused across the whole repository
+(`git grep store_rejects` → nothing). Adding `store_rejects = true` to the full
+read and refusing a non-zero reject count — or at minimum printing it beside the
+row count — turns a silent loss into a visible one.
+
+### Minor
+
+**F5 — the resume path reads the whole output to learn which years are done.
+_(Low.)_** `build_midwife_panel.R:353`:
+
+```r
+done_years <- unique(as.integer(read.csv(out_path, colClasses = "character")$snapshot_year))
+```
+
+72.5 s and 534 MB to answer `SELECT DISTINCT snapshot_year`, which the open
+DuckDB connection answers in about a second. Low only because `RESUME` is not
+the common path.
+
+**F6 — `guess_max = Inf` with `.default = col_guess()` forces a full
+type-inference pass. _(Low.)_** `build_results_geographic_persistence.R:67` and
+`build_results_geographic_persistence_canonical.R:66`:
+
+```r
+panel <- read_csv(PANEL, show_col_types = FALSE, guess_max = Inf,
+                  col_types = cols(practice_zip = "c", .default = col_guess()))
+```
+
+Because the spec is partial, readr must scan all 4,735,546 rows to guess the
+other twelve types before parsing them. The panel's schema is fixed and known
+(its producer writes 13 named columns), so naming the types removes the pass.
+Note that `reconcile_linkage.R:32` uses `guess_max = Inf` **with a recorded
+reason** (a column that is NA for most rows and a real 10-digit value late in
+the file) — that one is correct and should stay.
+
+## Verified healthy (no action)
+
+- **DuckDB where the data is biggest, with pushdown.** The 963 MB
+  `National_Downloadable_File_2013-06.csv` and its siblings, the 537 MB
+  revalidation file, and the 132 MB facility-affiliation file are all read
+  through `read_csv_auto` inside SQL that projects and filters before anything
+  reaches R (`extract_physician_compare_historical_midwives.R:121`,
+  `R/lib/match_npi_to_hospitals.R:201`, `build_midwife_panel.R:411`). Of the 15
+  `SELECT *` occurrences outside tests, 13 are `LIMIT 0` header probes and one
+  is a documented 50,000-row encoding probe.
+- **The producer streams.** `build_midwife_panel.R` writes one snapshot year at
+  a time (lines 370, 389, 501) and never holds the 4.7 M-row result — which is
+  exactly what makes F1 stand out.
+- **No quadratic accumulation.** No `x <- rbind(x, …)` or
+  `x <- bind_rows(x, …)` inside a loop over data. The one self-accumulating
+  `bind_rows` in a loop (`R/lib/source_coverage.R:646`) is bounded by the number
+  of undeclared panel years — single digits, normally zero.
+- **No per-row loop over person-level data.** All 50
+  `for (i in seq_len(nrow(…)))` loops iterate manifests, summary tables or
+  bounded queues.
+- **Network paths are properly engineered.** `generate_osmde_isochrones.R:110-128`
+  retries three times, honours the `retry-after` header, and backs off
+  (`SLEEP_S * attempt * 2`); the per-location cache means an aborted run resumes
+  for free. `scrape_healthgrades_midwives.R` and `scrape_doximity_public_cnm.R`
+  checkpoint and resume, write atomically via `R/lib/resume_state.R`, and
+  rate-limit. The checkpoint-interval trade-off at
+  `scrape_healthgrades_midwives.R:59-73` is reasoned from a test
+  (`tests/test_recovery_resume_equivalence.R` E4) and its residual torn-write
+  risk is already logged in `DEBT.md` — correctly scoped, not re-raised here.
+- **Repeated-read defects have already been found and fixed once.**
+  `R/lib/source_coverage.R:415-429` describes each panel file **once** and looks
+  the result up per declared row; the comment at lines 250-258 records the
+  defect it replaced ("twenty full reads of a 700 MB CSV to answer twenty
+  variants of one question"). That function also narrows its read to the
+  declared columns (lines 330-336). F2 is the same lesson, not yet applied to the
+  consumer scripts.
+- **Type-inference cost was already measured in the right place.**
+  `build_midwife_panel.R:400-410` records that `sample_size = -1` "forced a full
+  multi-GB scan that failed outright on every release from 2018 onward" and that
+  the encoding must be resolved per file. Both are correct.
+- **Truncation in reporting is detected, not silent.** `R/join_safety.R:840-841`
+  flags a truncated unmatched-key list and carries the pre-truncation count.
+- **CI is not exposed to any of this.** `midwife_panel.csv` is gitignored
+  (`.gitignore:61`) and named by no workflow step, so no runner reads it.
+  `read_csv_auto` sites that would touch multi-GB inputs are likewise local-only.
+
+## Not run (reason)
+
+- **No end-to-end pipeline execution.** `rebuild_frozen_dependents.R` is dry-run
+  by default and a real `REBUILD_APPLY=1` pass spans scrapers, paid geocoding
+  and multi-hour DuckDB work. The 15.2-minute rebuild figure is an
+  **extrapolation** from the measured 60.8 s single read times a counted
+  multiplier, not a timed rebuild.
+- **No second input size.** Scaling is assumed linear in rows from the 115
+  bytes/row anchor and readr's streaming parse. Not measured at a second size,
+  so the "+4 NPPES releases" row is the softest number in this report.
+- **No CI-runner measurement.** Deliberate: the panel is gitignored, so runner
+  figures would describe a path that does not execute there.
+- **The 963 MB CMS Physician Compare path was traced, not timed.** It is already
+  DuckDB-with-pushdown, so a measurement would have confirmed a design that the
+  trace shows is correct; measuring it would have cost ~15 minutes per arm for
+  no decision.
+- **No `profmem`/allocation profiling.** `Rprof(line.profiling = TRUE)` over
+  `tests/ci_hygiene.R` returned `<no location>` for 100 % of samples because the
+  gate is `source()`d and exits via its own reporter; the per-arm process timings
+  replaced it and were sufficient.
+- **No change to any analysis script.** Read-only, per the skill.
+
+## Suggested fix priority
+
+1. **F1 _(High)_** — replace `build_midwife_panel.R:520-528` with the one
+   DuckDB query on the already-open `con`. 210.9 s → 6.7 s, identical output,
+   smallest diff of anything here.
+2. **F2 _(High)_** — add `col_select` to the eight sites the baseline marks
+   PROVABLE (`analyze_inclusive_zip_agreement.R:75`,
+   `analyze_medicaid_2023_2024_transition_support.R:64`,
+   `audit_migration_corroboration_by_transition.R:97`,
+   `build_leave_one_source_out_sensitivity.R:50`,
+   `build_migration_rate_by_method.R:35`,
+   `build_truth_fusion_predictions.R:69`,
+   `diagnose_truth_fusion_migration_states.R:73`, and
+   `remake_oig_07_09_00440_midwifery.R:1137`/`:1798` plus
+   `run_no_gold_standard_toolkit_on_real_data.R:319`). ~48.7 s each, answer
+   proven identical. Then work outward through the rest by reading what each
+   script actually uses.
+3. **F4 _(Medium)_** — `store_rejects = true` on the full NPPES read, and refuse
+   or at least print a non-zero reject count. This one is about trust in the
+   data, not speed, and it is the only finding here that could be hiding a
+   wrong number rather than a slow one.
+4. **F5 _(Low)_** — `SELECT DISTINCT snapshot_year` in place of the full
+   `read.csv` on the resume path (`build_midwife_panel.R:353`).
+5. **F6 _(Low)_** — name the panel's column types at
+   `build_results_geographic_persistence.R:67` and `_canonical.R:66` instead of
+   `guess_max = Inf`. Leave `reconcile_linkage.R:32` alone.
+6. **F3 _(Medium, but last)_** — materialise the shared `(npi, year, state)`
+   artifact only if rebuild wall-clock still matters after F2. It buys less than
+   F2 per unit of new machinery.
+
+## Fixed (applied after the review, same branch)
+
+The review above is read-only and was written against `bbba062`; the fixes
+below were applied afterwards, each one re-measured rather than assumed. The
+read-only claim in **Method** covers the measurements, not this section.
+
+| finding | before | after | evidence |
+|---|---|---|---|
+| **F1** summary tail | 210.9 s, 1,169 MB peak | **6.7 s, 593 MB** | same four values: `4735546 / 472327 / 507559 / 33657` |
+| **F2** 11 reads narrowed | 60.8 s each | **12.1 s each** | `identical()` per column set, over all 4,735,546 rows |
+| **F4** reject accounting | nothing counted | per-release count printed | `store_rejects = true`, reject count reported |
+| **F5** resume probe | 72.5 s, 534 MB held | **5.0 s, 217 MB peak** | same 20 snapshot years, 2007-2026 |
+| **F6** type inference | 96.8 s | **43.0 s** | `identical()` on the whole 13-column frame |
+
+**F2 in detail.** Eleven reads across nine files now name their columns, so the
+baseline in `tests/ci_read_width_baseline.txt` went from 28 reads across 24
+files to 17 across 17. Four distinct column sets were narrowed, and each was
+checked by reading the file both ways in one process and comparing the narrowed
+frame to the same columns of the full-width frame:
+
+| `col_select` | sites | narrowed read | `identical()` |
+|---|---|---|---|
+| `c(npi, snapshot_year, practice_state)` | 7 | 9.5 s | TRUE |
+| `c(npi, snapshot_year, practice_zip)` | 1 | 11.7 s | TRUE |
+| `c(npi, snapshot_year, snapshot_date, practice_state)` | 1 | 29.1 s | TRUE |
+| `c(npi, deactivation_date)` | 1 | 9.6 s | TRUE |
+
+(The full-width read in that same process took 89.3 s rather than the 60.8 s of
+the isolated arm — six reads of a 544 MB file in one R session pay for each
+other's garbage collection. The isolated per-arm figures in **Measured anchors**
+are the ones to quote; these four are for the comparison, which is what the
+column proves.)
+
+Eight of the seventeen remaining full-width reads are in
+`rebuild_frozen_dependents.R`'s plan, so the extrapolated readr cost of one
+`REBUILD_APPLY` pass over this file drops from **18.2 minutes to 8.1 minutes**.
+
+**F6 is not a narrowing.** Both geographic-persistence scripts genuinely use
+most of the panel, so they still read all thirteen columns — what was removed
+is the *type-inference pass* that `guess_max = Inf` forced over all 4,735,546
+rows because the spec was partial (`.default = col_guess()`). The replacement
+names all thirteen types explicitly, and they are the types that scan arrives
+at (`npi`, `snapshot_year` and `snapshot_date` as doubles, the other ten as
+character) — verified by `identical()` on the whole frame, because getting
+`npi`'s type wrong would silently break every downstream join against a
+linkage file that is itself read with guessing on. `reconcile_linkage.R:32` was
+left alone, as the finding said.
+
+**F4 changes no number and adds one.** `store_rejects = true` is tied to
+`ignore_errors` in `reader()` rather than set globally, because
+`store_rejects` suppresses parse errors *by itself*: setting it on the strict
+encoding probe would have defeated that probe exactly as `ignore_errors` would,
+which is the trap the surrounding comment was already written about. The count
+is a delta against `reject_errors`, taken *before* the `next` that skips a
+release with zero usable rows — that release is precisely the case where the
+reject count is the only thing left to report. Not measured on a full NPPES
+release: the flag's cost on a multi-GB file is unknown, and the reject tables
+were exercised on a four-row fixture instead.
+
+**What the gate learned.** Narrowing the reads surfaced a third way this gate
+had been reporting a smaller number than the truth: `panel_vars()` resolved
+path variables with a single-line regex, so it could not see
+`build_midwife_panel.R`'s `out_path`, which is assigned across five lines. The
+two most expensive reads in the repository — F1 and F5, 283 s between them —
+were therefore invisible to the gate that exists to find exactly them. It now
+resolves assignments from the parse tree it was already walking, and
+`tests/test_read_width_detect.R` RW10 plants a multi-line assignment back.
+
+### Held closed
+
+F2 is a habit, so narrowing eight call sites does not stop the twenty-ninth
+from being written. `tests/ci_read_width.R` (added with this report) refuses a
+**new** full-width read of the panel against a shrink-only baseline — 28 reads
+when this report was written, 17 after the fixes above — keyed on the file and
+a count rather than a line number so ordinary edits do not churn it.
+`tests/test_read_width_detect.R` plants the defect back in eleven cases --
+including all three ways this gate silently under-reported while it was being
+written: a path arriving through a variable, a file listing that scanned
+nothing, and a path assigned across more than one line — and requires the
+gate to die on each.
+
+Both ran green from the repository root and from inside `tests/`, and both are
+named by the `r-checks` job in `.github/workflows/ci.yml`, detector first.

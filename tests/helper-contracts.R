@@ -28,22 +28,6 @@ contract_require_cols <- function(x, cols) {
   invisible(TRUE)
 }
 
-#' Enforce data types for specific columns
-#' @param x data frame
-#' @param spec named list like list(npi="character", year="integer")
-contract_types <- function(x, spec) {
-  for (nm in names(spec)) {
-    want <- spec[[nm]]
-    got  <- class(x[[nm]])[1]
-    if (want == "integer" && is.double(x[[nm]]) &&
-        all(x[[nm]] == as.integer(x[[nm]]), na.rm = TRUE)) {
-      next
-    }
-    if (want != got) stop("Type mismatch for ", nm, ": got ", got,
-                          " want ", want)
-  }
-  invisible(TRUE)
-}
 
 #' Enforce categorical domain (allow-list)
 contract_domain <- function(v, allowed) {
@@ -52,17 +36,6 @@ contract_domain <- function(v, allowed) {
   invisible(TRUE)
 }
 
-#' Assert 1:1 join keys (no fan-out)
-#' @param a left data frame
-#' @param b right data frame
-#' @param by character vector of key column names
-contract_join_11 <- function(a, b, by) {
-  ka <- a[, by, drop = FALSE]
-  kb <- b[, by, drop = FALSE]
-  if (anyDuplicated(ka) > 0) stop("Left keys not unique for join: ", paste(by, collapse = ","))
-  if (anyDuplicated(kb) > 0) stop("Right keys not unique for join: ", paste(by, collapse = ","))
-  invisible(TRUE)
-}
 
 #' Assert NPI uniqueness (Bug #16 prevention)
 #' @description Verifies that all NPIs in a dataset are unique.

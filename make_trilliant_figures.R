@@ -18,7 +18,7 @@
 #       <- artifacts/trilliant_activity_validation_<freeze sha8>.csv (newest)
 # =============================================================================
 suppressPackageStartupMessages({
-  library(dplyr); library(readr); library(ggplot2); library(stringr); library(tidyr)
+  library(dplyr); library(readr); library(ggplot2); library(stringr)
   library(scales); library(patchwork)
 })
 FIG <- file.path("docs", "figures")
@@ -31,7 +31,12 @@ theme_tr <- function(base = 11) {
           plot.caption = element_text(colour = "grey50", size = base - 3, hjust = 0),
           panel.grid.minor = element_blank())
 }
-save <- function(p, name, w, h) {
+# Named write_fig(), not save(): a script-local `save` shadows base::save()
+# for every later line in the file, which is the same hazard a local %||%
+# carried. The twin in make_trilliant_identity_figures.R is already
+# distinctly named; the 5-line body stays duplicated because a shared file
+# plus two source() lines costs more than it saves at that size.
+write_fig <- function(p, name, w, h) {
   ggsave(file.path(FIG, name), p, width = w, height = h, dpi = 200, bg = "white")
   cat("wrote", file.path(FIG, name), "\n")
 }
@@ -62,7 +67,7 @@ p1 <- ggplot(tabs, aes(rows, table, fill = kind)) +
        x = "rows (log scale)", y = NULL,
        caption = "Source: artifacts/trilliant_schema_inventory.csv (R/inventory_trilliant_research_fields.R)") +
   theme_tr() + theme(legend.position = "bottom")
-save(p1, "trilliant_lake_tables.png", 9, 5)
+write_fig(p1, "trilliant_lake_tables.png", 9, 5)
 
 # ---- 2. Which studies it can support ----------------------------------------------
 fz <- rd("artifacts/trilliant_research_question_feasibility.csv") |>
@@ -84,7 +89,7 @@ p2 <- ggplot(fz, aes(x = 1, y = research_question, fill = status)) +
        caption = "Source: artifacts/trilliant_research_question_feasibility.csv") +
   theme_tr() +
   theme(axis.text.x = element_blank(), panel.grid = element_blank(), legend.position = "bottom")
-save(p2, "trilliant_feasibility.png", 11, 5.5)
+write_fig(p2, "trilliant_feasibility.png", 11, 5.5)
 
 # ---- 3. 11,920 against the tracked roster -----------------------------------------
 rec <- rd("artifacts/trilliant_cohort_reconciliation_reasons.csv")
@@ -106,7 +111,7 @@ p3 <- ggplot(legacy_only, aes(n_certificants, state, fill = group)) +
        x = "certificants", y = NULL,
        caption = "Source: artifacts/trilliant_cohort_reconciliation_reasons.csv (reconcile_trilliant_cohort.R)") +
   theme_tr() + theme(legend.position = "bottom")
-save(p3, "trilliant_cohort_reconciliation.png", 8.5, 6.5)
+write_fig(p3, "trilliant_cohort_reconciliation.png", 8.5, 6.5)
 
 # ---- 4. Does active_provider mean practising? ---------------------------------------
 av_path <- sort(Sys.glob(file.path("artifacts", "trilliant_activity_validation_*.csv")), decreasing = TRUE)
@@ -153,4 +158,4 @@ p4 <- (pa | pb) / pc +
                        freeze8, av$trilliant_snapshot[1], av$medicare_years[1]),
     caption = sprintf("Source: %s (analyze_trilliant_activity_flag.R)", av_path),
     theme = theme_tr())
-save(p4, "trilliant_activity_validation.png", 11, 8.5)
+write_fig(p4, "trilliant_activity_validation.png", 11, 8.5)

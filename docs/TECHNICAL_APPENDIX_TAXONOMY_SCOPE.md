@@ -2,15 +2,23 @@
 
 **Repository**: `midwifery`
 **Primary code**: [`build_midwife_panel.R`](../build_midwife_panel.R) (`panel_tax_predicate()`)
-**Primary artifact**: `midwife_panel.csv` — 443,623 NPIs (gitignored, person-level)
+**Primary artifact**: `midwife_panel.csv` — 443,623 NPIs **as measured on 2026-08-30**;
+451,793 in the build the freeze was made from (see the note below, and
+[the read-cost appendix](TECHNICAL_APPENDIX_PANEL_READ_COST.md) §1 for why a bare
+count of this file needs a date and a hash beside it)
 **Sensitivity artifact**: `midwife_panel_wide.csv` — 845,255 NPIs (gitignored, person-level)
 **Investigation date**: 2026-08-30
 **Decision**: the wide pool is a **sensitivity artifact**. It is not the primary panel.
 
-> **Note (added later): the primary artifact has since grown.** `midwife_panel.csv`
-> now holds 451,793 distinct NPIs, not the 443,623 measured at this
-> investigation's 2026-08-30 date — the panel has picked up additional
-> snapshot years since, including a fix to the 2023 vintage's ingestion. The
+> **Note (added later): the primary artifact has since grown, twice.**
+> `artifacts/linkage_manifest.json` records the build the freeze was made from as
+> 4,747,648 rows and **451,793** distinct NPIs across twenty snapshot years,
+> 2007–2026, none missing — not the 443,623 measured at this investigation's
+> 2026-08-30 date. The panel has picked up additional snapshot years since,
+> including a fix to the 2023 vintage's ingestion. A later on-disk rebuild
+> (4,735,546 rows, 472,327 NPIs) differs again, which is why
+> `ci_data_regression_guard.R` D14 now pins the README's inventory to the
+> manifest rather than to whichever copy is on a given machine. The
 > mechanism this appendix documents (the pool-widening cost/benefit
 > accounting in §4-§6) is unaffected; its specific counts are a property of
 > that date's pull and have not been recomputed against the current panel.
@@ -209,8 +217,9 @@ neither is worth building for a sensitivity arm already 3:1 against.
 
 Two boundaries remain outside this measurement entirely:
 
-- **The panel window.** Snapshots run 2007–2025, and certificants from
-  2025–2026 fall outside it, which is not a linkage failure and no pool change
+- **The panel window.** Snapshots ran 2007–2025 when this was measured and now
+  run 2007–2026, so the certificants that fall outside the window have moved
+  with it; either way those are not linkage failures and no pool change
   reaches them. (A prior draft of this point cited "1,174 certificants
   certified in 2025–2026, 519 unresolved" — `DEBT.md` D10 records that no
   script or artifact in this repo computes that count; it was apparently a

@@ -101,6 +101,7 @@ cache <- dbGetQuery(con, sprintf("
 # drop_zip() and the collapse below are shared with geocode_midwives.R -- see
 # R/lib/geocode_conflicts.R, which both scripts already source.
 source("R/lib/geocode_conflicts.R")
+source(file.path("R", "lib", "county_from_points.R"))
 cache$key_nozip <- drop_zip(cache$address_hash)
 roster$key_nozip <- drop_zip(roster$address_hash)
 nozip_res <- resolve_geocode_key(cache$key_nozip, cache$latitude,
@@ -131,21 +132,6 @@ hit <- roster %>%
 # The cache's county_fips column is empty, so county comes from
 # point-in-polygon against TIGER 2023 boundaries -- the same derivation
 # geocode_midwives.R uses, and the same vintage as data/county_base.csv.
-assign_county_from_points <- function(df) {
-  ok <- !is.na(df$latitude) & !is.na(df$longitude)
-  out <- rep(NA_character_, nrow(df))
-  if (!any(ok)) return(out)
-  suppressPackageStartupMessages({ library(sf); library(tigris) })
-  options(tigris_use_cache = TRUE)
-  counties <- tigris::counties(cb = TRUE, year = 2023, progress_bar = FALSE) %>%
-    sf::st_transform(4326)
-  pts <- sf::st_as_sf(df[ok, c("longitude", "latitude")],
-                      coords = c("longitude", "latitude"), crs = 4326)
-  idx <- sf::st_within(pts, sf::st_geometry(counties))
-  first <- vapply(idx, function(i) if (length(i)) i[1] else NA_integer_, integer(1))
-  out[ok] <- counties$GEOID[first]
-  out
-}
 # BUG (found 2026-08-08 by the coordinate-provenance audit): this was gated on
 # all(is.na(hit$county_fips)) -- point-in-polygon ran ONLY when EVERY row
 # lacked a cached county. Once any rows carried one (4,949 did), the branch
