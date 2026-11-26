@@ -1,8 +1,8 @@
 # Statistical Methods Verification
 
-## Accuracy and certified-name agreement
+## State-board verification and certified-name agreement
 
-Licensure estimates use definitive state-board resolutions as the denominator. Wilson 95% confidence intervals are calculated from `n_accurate/n_definitive` in `artifacts/oig_remake/oig_table2_inaccuracy_subtypes_by_variable.csv`. Unresolved records are reported separately. Sensitivity bounds divide `n_accurate` by all evaluated records for the lower bound and `(n_accurate + n_unresolved)` by all evaluated records for the upper bound.
+State-board verification estimates use definitive board-search resolutions as the denominator. Wilson 95% confidence intervals are calculated from `n_accurate/n_definitive` in `artifacts/oig_remake/oig_table2_inaccuracy_subtypes_by_variable.csv`. Unresolved records are reported separately. Sensitivity bounds divide `n_accurate` by all evaluated records for the lower bound and `(n_accurate + n_unresolved)` by all evaluated records for the upper bound. The producer does not compare a federal license-status field with a board-status field; these are verification yields in selected listings, not federal-field accuracy estimates.
 
 The AMCB roster verifies the name under which a clinician is certified, not a current legal name. The corresponding estimate is therefore exact certified-name agreement. Its Wilson interval uses resolved records and does not convert name variants into proven identity errors.
 
@@ -16,19 +16,19 @@ The regenerated `artifacts/agreement_cluster_bootstrap_ci.csv` provenance record
 
 ## Persistence of disagreement
 
-The 2021-to-2026 persistence estimate is 563/892 = 63.12%, reported as 63.1%. Its displayed Wilson interval treats the 892 clinicians as independent Bernoulli observations. No repeated clinician contributes more than once to this fixed-cohort endpoint, so a longitudinal cluster correction is not applicable to this estimate. The interval does not account for linkage or classification uncertainty.
+The historical 563/892 value is not a valid 2026 endpoint. It subtracts two nonexclusive ever-adoption counts from 892 baseline disagreements and does not require observation in 2026. It is retained only as historical arithmetic. The committed censoring audit classifies 366/728 observable records as continuously divergent and 164/892 as right-censored, but its provenance pins an older panel. A new interval is not reported until a cohort-bound, versioned endpoint producer reconciles baseline, reobserved, concordant, discordant, and missing counts.
 
-## Concurrent multistate enrollment
+## Medicaid multistate enrollment
 
-The 16.1% estimate is `(7,050 multistate concordant + 1,531 multistate discordant) / 53,414 observed provider-years = 16.065%` in `artifacts/state_source_audit_medicaid_classification_by_year.csv`. It measures concurrent enrollment states, not verified practice states.
+The historical 16.1% estimate is `(7,050 multistate concordant + 1,531 multistate discordant) / 53,414 non-Not-observed classifications = 16.065%` in `artifacts/state_source_audit_medicaid_classification_by_year.csv`. State sets accumulate enrollment at any time during the calendar year, and the denominator includes indeterminate classifications. It is not a simultaneous-enrollment or verified-practice estimate. The same-date artifact reports 7,596 multistate classifications among 32,952 comparable pairs.
 
-The classification artifact contains 85,190 provider-years, including 31,776 not observed and 53,414 observed classifications. Within the observed universe, 27,175 are concordant under either the single-state or multistate-concordant class. The separate set-membership audit contains 107,386 comparable NPI-years under a different inclusion rule. These universes are not additive.
+The classification artifact contains 85,190 provider-years, including 31,776 not observed and 53,414 classifications outside that category. Within this universe, 27,175 are concordant under either the single-state or multistate-concordant class. The current separate set-membership audit contains 107,193 comparable NPI-years spanning 2013-2024 under a different inclusion rule. These universes are not additive.
 
 ## Dependence-aware annual trend
 
 `build_dac_agreement_cluster_trend.R` reads the declared NPPES panel and historical clinician-directory inputs after source-coverage validation. It creates one Bernoulli observation per NPI-year; agreement occurs when the source and NPPES state sets intersect. A linear probability model estimates change in source-to-NPPES agreement by calendar year. Inference uses a CR1 sandwich covariance clustered by NPI and a *t* reference distribution with clusters minus one degrees of freedom.
 
-For 2013-2025, the model includes 44,806 NPI-years from 9,514 NPIs. The slope is -0.170 percentage points per year (95% CI, -0.258 to -0.081), corresponding to a modeled -2.04 percentage-point change across 12 year-to-year intervals. This replaces the aggregate weighted-least-squares slope and its P value. The estimand is a trend in administrative source-to-NPPES agreement, not geographic accuracy.
+For 2013-2025, the experimental model includes 44,806 NPI-years from 9,514 NPIs. The slope reproduces as -0.170 percentage points per year (95% CI, -0.258 to -0.081), but 991 contributing NPIs are outside the frozen 16,775-person cohort and the NPI-year series differs from the plotted record-weighted series. It therefore does not replace the manuscript series. The manuscript retains a descriptive aggregate slope without a P value while a cohort-bound dependence-aware analysis remains unresolved.
 
 ## Known limitations
 
