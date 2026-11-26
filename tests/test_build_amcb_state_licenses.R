@@ -29,19 +29,20 @@ dir.create(bd, recursive = TRUE, showWarnings = FALSE)
 # C3 two same-name licensees in CO                     -> ambiguous, deferred
 # C4 lives in CO, only licence is in TX, unique name   -> tier 3, CROSS-STATE
 # C5 no licence anywhere                               -> unresolved
+# C6 apostrophe surname, board drops the apostrophe    -> tier 2 (D15)
 write_csv(tibble(
-  certification_number = paste0("C", 1:5),
-  first_name = c("ANNA","BETH","CARA","DELIA","EVE"),
-  middle_name = c("MAE", NA, NA, NA, NA),
-  last_name = c("ADAMS","BROOKS","COLE","DIAZ","EVANS"),
-  state = c("CO","CO","CO","CO","CO")), file.path(td, "amcb.csv"))
+  certification_number = paste0("C", 1:6),
+  first_name = c("ANNA","BETH","CARA","DELIA","EVE","FRAN"),
+  middle_name = c("MAE", NA, NA, NA, NA, NA),
+  last_name = c("ADAMS","BROOKS","COLE","DIAZ","EVANS","O'BRIEN"),
+  state = c("CO","CO","CO","CO","CO","CO")), file.path(td, "amcb.csv"))
 
 write_csv(tibble(
-  first_name = c("ANNA","BETH","CARA","CARA"),
-  middle_name = c("MAE", NA, NA, NA),
-  last_name = c("ADAMS","BROOKS","COLE","COLE"),
-  license_number = c("111","222","333","444"),
-  license_state = c("CO","CO","CO","CO"),
+  first_name = c("ANNA","BETH","CARA","CARA","FRAN"),
+  middle_name = c("MAE", NA, NA, NA, NA),
+  last_name = c("ADAMS","BROOKS","COLE","COLE","OBRIEN"),
+  license_number = c("111","222","333","444","555"),
+  license_state = c("CO","CO","CO","CO","CO"),
   license_status = "ACTIVE", license_type = "CNM"),
   file.path(bd, "CO.csv"))
 
@@ -70,6 +71,11 @@ ok("C1 accepted on first+middle+last+state",
 ok("C2 accepted on first+last+state",
    nrow(gb("C2")) == 1L && gb("C2")$match_tier == "exact_first_last_state")
 ok("C1 carries the right licence number", gb("C1")$license_number == "111")
+# DEBT.md D15: the board spells the surname without the apostrophe. Before the
+# fix, O'BRIEN keyed as "O BRIEN" and never produced the same blocking key as
+# OBRIEN, so this pair could not match at any tier.
+ok("C6 accepted across the apostrophe spelling",
+   nrow(gb("C6")) == 1L && gb("C6")$match_tier == "exact_first_last_state")
 
 cat("\n=== ambiguity is deferred, not resolved ===\n")
 ok("C3 (two CO licensees, same name) is NOT in the bridge", nrow(gb("C3")) == 0L)
@@ -101,7 +107,7 @@ ok("the default run does NOT accept the cross-state C4",
 ok("C4 is reported unresolved by default",
    "C4" %in% res_default$resolution$unresolved$amcb_id)
 ok("tiers 1 and 2 still populate the bridge by default",
-   all(c("C1","C2") %in% res_default$bridge$amcb_id))
+   all(c("C1","C2","C6") %in% res_default$bridge$amcb_id))
 
 cat("\n=== acquisition manifest ===\n")
 m <- res_default$manifest
@@ -169,6 +175,16 @@ ok("normalize_state_lenient does not error (datasets, not base)",
 ok("normalize_license strips punctuation and case",
    normalize_license(" rn-12 345 ") == "RN12345")
 ok("normalize_name blanks become NA", is.na(normalize_name("   ")))
+# DEBT.md D15: the apostrophe closes the surname -- deleted before the class
+# pass, so "O'Brien" and "OBrien" share one blocking key.
+ok("normalize_name deletes a straight apostrophe",
+   identical(normalize_name("O'Brien"), "OBRIEN"))
+ok("normalize_name deletes a curly apostrophe",
+   identical(normalize_name("O\u2019Brien"), "OBRIEN"))
+# The fold is delegated to mysterynpi::normalize_string: umlauts expand as
+# German digraphs, matching the canonical key the matcher produces.
+ok("normalize_name folds umlauts as digraphs",
+   identical(normalize_name("Müller"), "MUELLER"))
 ok("a filename that is not a state code yields NA, not a bogus state",
    is.na(normalize_state_lenient(str_to_upper(str_extract("colorado", "[A-Za-z]{2}$")))))
 

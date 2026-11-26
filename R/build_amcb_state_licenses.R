@@ -40,17 +40,25 @@ log_message <- function(...) {
   invisible(NULL)
 }
 
+# The phrase-key contract (fold + apostrophe policy + punctuation pass) is
+# mysterynpi::phrase_key, upstream since mysterynpi 0.11.0 -- the composition
+# now lives next to the fold it delegates to. This file's private copy
+# drifted (DEBT.md D15) and never even folded accents, so "José" keyed as
+# "JOS E"; see DEBT.md D15 for the measurements.
+
 #' Normalize a person-name component.
 #' @param value Character vector.
 #' @return [character] normalized, NA when empty.
 normalize_name <- function(value) {
-  normalized <- value |>
-    as.character() |>
-    stringr::str_to_upper() |>
-    stringr::str_replace_all("[^A-Z0-9 ]", " ") |>
-    stringr::str_squish()
-  normalized[is.na(normalized) | normalized == ""] <- NA_character_
-  normalized
+  if (!requireNamespace("mysterynpi", quietly = TRUE)) {
+    stop(
+      "normalize_name() delegates its fold to mysterynpi::phrase_key, ",
+      "which is not installed.\n",
+      "  Fix: remotes::install_github(\"mufflyt/mysterynpi\")",
+      call. = FALSE
+    )
+  }
+  mysterynpi::phrase_key(value)
 }
 
 #' Normalize a license number.

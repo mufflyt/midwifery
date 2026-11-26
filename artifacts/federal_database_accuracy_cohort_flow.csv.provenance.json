@@ -1,0 +1,59 @@
+{
+  "artifact": "federal_database_accuracy_cohort_flow.csv",
+  "written_utc": "2026-11-25 03:24:25 UTC",
+  "inputs": [
+    {
+      "path": "artifacts/linkage_completeness_by_status.csv",
+      "sha256": "14f949ed43b804891e5af85f14db0001c627e6837945252c125494596d142218"
+    },
+    {
+      "path": "artifacts/amcb_npi_linkage_FROZEN.csv",
+      "sha256": "9f224007d99ac91d14f405f4c863f752df435c71362168c02ddf1256184b8716"
+    }
+  ],
+  "code_sha256": "648a09cb6369a7e2a085e8640908896405d3d6db88e1cc82513b6f6239e8e679",
+  "code": [
+    {
+      "path": "make_federal_database_accuracy_cohort_flow.R",
+      "sha256": "5d7434e3cc4aba3c55114da02f4545bd5a174f0e7fb84b01b2d00b3bbdb1c6f5"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "3dec47ce20ffe42a4a8b85c84e0264c37c91b6da1452926c33ab2a9d0ec06e9e"
+    },
+    {
+      "path": "R/lib/ast_walk.R",
+      "sha256": "9611f2b4a7119c4fd9c300677df216e72439c94bdb93244fd413510807eba36a"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    }
+  ],
+  "semantic_packages": [
+    {
+      "package": "mysterynpi",
+      "installed": true,
+      "version": "0.10.0",
+      "source_sha": null
+    },
+    {
+      "package": "stringi",
+      "installed": true,
+      "version": "1.8.9",
+      "source_sha": null
+    },
+    {
+      "package": "humaniformat",
+      "installed": true,
+      "version": "0.6.0",
+      "source_sha": null
+    },
+    {
+      "package": "mysteryroster",
+      "installed": true,
+      "version": "0.3.0",
+      "source_sha": null
+    }
+  ]
+}

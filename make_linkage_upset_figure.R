@@ -21,7 +21,7 @@
 #'     is really about.
 #'
 #' Two strata share a dot pattern, and the reason is worth the figure on its
-#' own: the 156 class-5 hold-outs and the 8 "unruled-out component" rows are the
+#' own: the class-5 hold-outs and the "unruled-out component" rows are the
 #' same situation booked under two different status strings, which is visible
 #' here and stated nowhere else.
 #'
@@ -76,7 +76,7 @@ STRATA <- tibble::tribble(
     # "class5_survived_only_by_carrying_no_middle_initial" -- a class-5
     # candidate that was the sole survivor because it carried no middle initial
     # for the veto to act on. The comment at line 690 says these 8 are "the same
-    # situation" as the 156, "recorded two different ways".
+    # situation" as the class-5 hold-outs, "recorded two different ways".
     #
     # An earlier version of this figure grouped it with the tied names, on the
     # strength of the gloss in manuscript/R/build_stats_catalog.R:127 -- "a
@@ -94,8 +94,9 @@ STRATA <- tibble::tribble(
     `Counted in the\nanalytic cohort` = col %in% c("matched", "matched_nursing_taxonomy"))
 
 # Order matters and is not cosmetic: the sets are nested, each strictly
-# contained in the one above (candidate 20,201 > single 17,149 > one-to-one
-# 17,054 > cohort 16,898 > midwifery 14,764). Listing midwifery taxonomy before
+# contained in the one above (the live counts are printed by the script at
+# run time; they shrink every time a re-freeze retires an evidence class).
+# Listing midwifery taxonomy before
 # cohort membership would break that, because the cohort deliberately admits
 # nursing-taxonomy matches -- and the matrix would then show a connecting line
 # passing through an empty dot, asserting a containment that does not hold.
@@ -194,9 +195,13 @@ dots <- ggplot(matrix_long, aes(label, set)) +
     "alone -- the roster carries no address and no date of birth -- searching a panel restricted to midwifery and nursing\ntaxonomies, so a certificant enumerated outside that panel is indistinguishable here from one who is absent.\n",
     "Columns 3 and 4 carry an IDENTICAL pattern because they are the same thing ",
     "recorded twice: both are class-5 candidates\n",
-    "held out of the cohort, 156 booked as held-out and 8 as ambiguous. ",
-    "The 8 differ only in having carried no middle initial\n",
-    "for the veto to act on. Reporting the 5,411 unresolved as one number hides ",
+    "held out of the cohort, ", format(counts$total_n[counts$col == "candidate_class5_held_out_of_cohort"], big.mark = ","),
+    " booked as held-out and ", format(counts$total_n[counts$col == "ambiguous_unruled_out_component"], big.mark = ","),
+    " as ambiguous. The ", format(counts$total_n[counts$col == "ambiguous_unruled_out_component"], big.mark = ","),
+    " differ only in having carried no middle initial\n",
+    "for the veto to act on. Reporting the ",
+    format(roster - sum(counts$total_n[counts$outcome == "In analytic cohort"]), big.mark = ","),
+    " unresolved as one number hides ",
     "causes as different as these.\n\n",
     "Columns, left to right, as named in the source: matched \u00b7 ",
     "matched_nursing_taxonomy \u00b7 candidate_class5_held_out_of_cohort \u00b7\n",

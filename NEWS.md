@@ -20,6 +20,49 @@ printed alongside the right one. Those entries are the point of the file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-11-25 — independent manuscript audit blocks submission; scratch warehouse recovered
+
+### Corrected and clarified
+
+- **The federal database accuracy manuscript is not submission-ready.** The
+  independent reviewer reproduced the 22,357 → 14,956 + 1,819 → 16,775
+  cohort flow and the principal 2026 state/ZIP agreement counts, but found
+  unresolved P0 construct defects. The state-board fractions are verification
+  yields among selected listings, not a comparison of federal and board
+  license-status fields. The historical 563/892 persistence residual is not a
+  2026 endpoint. The 16.1% Medicaid calculation uses states touched at any
+  time during a year and a composite denominator, not simultaneous practice.
+  The clustered trend includes 991 NPIs outside the frozen cohort and does
+  not match the plotted record-weighted series. Full disposition:
+  `docs/TECHNICAL_APPENDIX_FEDERAL_DATABASE_ACCURACY_REVIEW_2026-11-25.md`.
+- **The exact 2026 any-variable disagreement numerator is 4,267/5,877, not
+  4,268/5,877.** Both round to 72.6%; the denominator ledger and manuscript
+  documentation now preserve the exact source count.
+- **Medicaid universes are explicitly separated.** The current any-time
+  set-membership artifact has 107,193 comparable NPI-years spanning
+  2013–2024. The same-date artifact has 32,952 comparable pairs, 7,596 of
+  which are multistate. Neither measure establishes actual clinical practice.
+- **The manuscript now treats the committed 366/728 censoring result as a
+  versioned historical classification, not a final current-panel endpoint.**
+  A cohort-bound, provenance-complete endpoint remains a release blocker.
+
+### Recovered from scratch
+
+- **The Medicaid provider-spending fact table is present locally.** The
+  Git-ignored scratch directory contains the 3.5 GB source ZIP and a 4.0 GB
+  DuckDB with 238,015,729 rows. The warehouse records source version
+  2026-02-09 and ZIP SHA-256
+  `3387c48ea9600c15e8e6b43e68599b814cc66b24723e8d7aba2f556a8136f149`.
+  No large data were committed; durable provenance and remaining work are in
+  `docs/HANDOFF_hhs_medicaid_provider_spending.md`.
+
+### Release status
+
+- Submission remains blocked on a cohort-bound longitudinal endpoint, a
+  cohort-consistent trend/figure, corrected state-board construct labels,
+  Medicaid timing labels, stronger source-bound manuscript gates, and a new
+  rendered Word audit.
+
 ## [Unreleased] — 2026-11-23 — an external statistical review, verified claim by claim; Table 2 stops hiding its unresolved records
 
 Three external AI review passes were run against the manuscript and every
@@ -120,6 +163,48 @@ durable trail is `docs/TECHNICAL_APPENDIX_STATISTICAL_REVIEW_2026-11-23.md`.
 
 ### Fixed
 
+- **Person-name keys no longer split on apostrophes (DEBT.md D15).**
+  `amcb_license_bridge.R` `normalize_text()` and
+  `R/build_amcb_state_licenses.R` `normalize_name()` spaced apostrophes, so
+  `O'Brien` keyed as `O BRIEN` and never matched `OBRIEN` — two spellings of
+  one surname counted as a disagreement. The three person-name copies are now
+  consolidated upstream as `mysterynpi::phrase_key()` (mysterynpi 0.11.0): the
+  fold and apostrophe policy delegate to `normalize_string(x,
+  remove_apostrophes = TRUE)`, and the phrase contract — punctuation→space,
+  whitespace collapse, empty→NA — lives beside it. `expand_former_name_candidates.R`
+  delegates its squash contract to `mysterynpi::compact_name_key`. Delegation
+  also closed two latent divergences: the okina apostrophe `ʻ` and the German
+  digraphs, so `Müller` now keys `MUELLER` (the same key the matcher's own
+  pipeline produces), not the `MULLER` the retired `stri_trans_general` fold
+  gave. Measured arm against arm (`midwives.csv` × `nppes_candidates.csv`):
+  49 roster surnames change key on the apostrophe rule, **27 cross-arm surname
+  agreements are gained** and **3 are lost** — all three malformed NPPES
+  spellings (`O"DAY`, `O NEIL`, `O' ROURKE`) whose old agreement was itself
+  accidental; each surname still reaches its canonical NPPES spelling. The
+  digraph fold moves exactly 1 of 22,309 roster `last_name` values
+  (`Jackson-Köhlin`) and 0 of 1,275,086 NPPES candidate name fields — 0
+  agreements gained or lost. Pinned end-to-end by
+  `test_build_amcb_state_licenses.R` C6, `test_expand_former_name_candidates.R`
+  A5/A6, and umlaut assertions in `test_amcb_license_bridge.R`.
+  `identity_key_norm()` (`R/lib/script_cli_and_keys.R`) keeps spacing
+  apostrophes on purpose — it is the disagreement-audit normaliser, where
+  shallow normalisation is the measurement, not a defect.
+- **Organization-side keys no longer split on apostrophes either
+  (DEBT.md D18).** `training_norm_school()`, `norm_institution_name()`,
+  `street_key()`, and `embedded_org_text()` spaced apostrophes, so
+  `ST JOHN'S` keyed as `ST JOHN S` and never met `ST JOHNS`. All four now
+  delegate the fold + punctuation pass to `mysterynpi::phrase_key()`
+  while keeping their own local policy (`&`-entity restore and leading
+  `THE` for schools, street-suffix folding, extraction-then-key for
+  embedded org text); the byte-identical `.norm_school` duplicate in
+  `build_table1_midwives.R` is deleted in favour of
+  `training_norm_school()`. Measured on 15,776 real institution strings:
+  14 keys change (all Healthgrades possessives), **0 equivalence classes
+  merge**, so no published count moves. Pinned by
+  `tests/test_org_apostrophe_normalization.R` (20 assertions, wired into
+  `ci.yml`). `validate_training_institution_against_acme.R` also had a
+  latent column-name bug (`norm_name` read where `norm_institution_name`
+  was created) fixed in passing.
 - **#340's work never reached `main`, and was recovered.** The pull request was
   squashed and merged; the squash commit `f194e36` landed on
   `fix/table1-custodian-sort`, which was itself merged away in `ad3aec5` and

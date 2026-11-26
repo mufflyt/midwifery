@@ -32,7 +32,8 @@ ci_entrypoints <- file.path("tests", c(
   "test_open_payments_type2_bulk.R", "test_table1_blk_hg.R",
   "test_pip_materialization.R", "test_safe_divide_types.R",
   "test_amcb_license_bridge.R", "test_build_amcb_state_licenses.R",
-  "test_review_fixes_saboteurs.R", "test_dead_code_cuts_saboteurs.R",
+  "test_review_fixes_saboteurs.R", "test_workflow_contracts_detect.R",
+  "test_dead_code_cuts_saboteurs.R",
   "test_read_width_detect.R",
   "test_adapt_license_bridge_to_reconcile.R",
   "test_expand_former_name_candidates.R",
@@ -72,8 +73,11 @@ ci_packages <- c(
   # the same latent break checkmate was before it fired.
   "readxl",
   # mysterynpi: reached through R/lib/training_institution.R
-  # (strip_med_suffix()). Installed from GitHub at a pinned commit by the
-  # "Install mysterynpi (pinned)" step of r-unit-tests.
+  # (strip_med_suffix()), amcb_license_bridge.R and
+  # R/build_amcb_state_licenses.R (phrase_key), and
+  # expand_former_name_candidates.R (compact_name_key). Installed from
+  # GitHub at a pinned commit by the "Install mysterynpi (pinned)" step of
+  # r-unit-tests.
   "mysterynpi",
   # cyclocomp: reached through tools/measure_code_complexity.R, which
   # tests/test_dead_code_cuts_saboteurs.R sources rather than writing a second

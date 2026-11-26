@@ -206,8 +206,14 @@ chk(length(pct_line) >= 1L && any(grepl("provider-year", pct_line)),
 # "argument of length 0" -- the check did not go red, it CRASHED, taking the
 # rest of this file's sections with it. Resolve the caption by its content, so
 # a renumber moves the check instead of breaking it.
-ms_cap_idx <- grep("^!\\[\\*\\*(Supplemental )?Figure S?[0-9]+\\.\\*\\* Concurrent multi-state",
-                   qmd)
+# Anchor on the figure's artifact name, not its caption wording: the caption
+# was reworded for the any-time-in-year estimand and a wording anchor broke
+# on a correct figure, which is the failure mode this file's own comments
+# warn about. medicaid_multistate_footprint is the figure's identity.
+cap_idx <- grep("^!\\[\\*\\*(Supplemental )?Figure S?[0-9]+\\.\\*\\*", qmd)
+ms_cap_idx <- cap_idx[vapply(cap_idx, function(i)
+  any(grepl("medicaid_multistate_footprint",
+            qmd[i:min(i + 8L, length(qmd))], fixed = TRUE)), logical(1))]
 chk(length(ms_cap_idx) == 1L,
     "G5c-pre exactly one caption introduces the concurrent multi-state panel")
 ms_block <- if (length(ms_cap_idx) == 1L) {

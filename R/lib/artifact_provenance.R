@@ -220,18 +220,26 @@ SEMANTIC_PACKAGES <- c(
   })
 }
 
-write_with_provenance <- function(x, path, inputs = character(0), ...) {
+write_with_provenance <- function(x, path, inputs = character(0),
+                                   declared = list(), ...) {
   readr::write_csv(x, path, ...)
   inputs <- inputs[file.exists(inputs)]
   side <- paste0(path, ".provenance.json")
   code <- tryCatch(.code_closure(), error = function(e) character(0))
+  # `declared` carries pre-shaped input records that are not filesystem paths
+  # -- today only prov_cache_input()'s geocode_cache entry, whose sha256 is a
+  # content fingerprint of the cache's rows, not of the DuckDB file. Appended
+  # verbatim; check_provenance() knows how to re-verify each kind.
+  if (length(declared) && is.list(declared) && !is.null(declared$path))
+    declared <- list(declared)
+  input_records <- c(
+    lapply(inputs, function(p) list(path = .repo_relative(p),
+                                    sha256 = sha256_of(p))),
+    declared)
   jsonlite::write_json(
     list(artifact = basename(path),
          written_utc = format(Sys.time(), tz = "UTC", usetz = TRUE),
-         inputs = if (length(inputs))
-           lapply(inputs, function(p) list(path = .repo_relative(p),
-                                           sha256 = sha256_of(p)))
-         else list(),
+         inputs = if (length(input_records)) input_records else list(),
          # The producing code, by content. See .code_closure().
          code_sha256 = .code_fingerprint(code),
          code = if (length(code))
@@ -259,9 +267,24 @@ check_provenance <- function(path) {
   rows <- function(entries, kind) {
     if (!length(entries)) return(NULL)
     do.call(rbind, lapply(entries, function(i) {
-      cur <- if (file.exists(i$path)) sha256_of(i$path) else NA_character_
-      data.frame(path = i$path, recorded = i$sha256, current = cur,
-                 stale = !identical(cur, i$sha256), kind = kind,
+      entry_kind <- if (is.null(i$kind)) kind else i$kind
+      cur <- if (identical(entry_kind, "geocode_cache")) {
+        # A cache entry's sha256 is a CONTENT fingerprint of the cache's rows
+        # (cache_vintage.R), not a hash of the DuckDB file -- hashing the file
+        # would report every cache artifact stale forever. Re-derive the same
+        # fingerprint; an unreachable cache leaves current = NA, which the
+        # caller reports as UNVERIFIABLE rather than STALE.
+        fp <- tryCatch({
+          vf <- file.path("R", "lib", "cache_vintage.R")
+          if (!exists("geocode_cache_fingerprint", mode = "function"))
+            source(vf, local = TRUE)
+          geocode_cache_fingerprint(i$path)
+        }, error = function(e) list(available = FALSE))
+        if (isTRUE(fp$available)) fp$content_sha256 else NA_character_
+      } else if (file.exists(i$path)) sha256_of(i$path) else NA_character_
+      recorded <- if (is.null(i$sha256)) NA_character_ else i$sha256
+      data.frame(path = i$path, recorded = recorded, current = cur,
+                 stale = !identical(cur, recorded), kind = entry_kind,
                  stringsAsFactors = FALSE)
     }))
   }
@@ -301,22 +324,24 @@ check_provenance <- function(path) {
 #' counts as scientifically relevant.
 #'
 #' @param path [character]: the DuckDB cache.
-#' @return [character] one declared-input token carrying entry count and hash,
-#'   or a token that says the cache was unavailable -- never nothing, because a
-#'   silently absent declaration is the defect this replaces.
+#' @return a `cache_provenance_entry()` list shaped for a provenance sidecar's
+#'   `inputs` array -- pass it via `write_with_provenance(declared = ...)`,
+#'   NOT through `prov_inputs()`, which resolves every argument as a
+#'   filesystem path and would drop the entry with only a warning. Never
+#'   nothing, because a silently absent declaration is the defect this
+#'   replaces.
 #' @keywords internal
 #' @noRd
 prov_cache_input <- function(path) {
   vf <- file.path("R", "lib", "cache_vintage.R")
   if (!exists("geocode_cache_fingerprint", mode = "function")) {
-    if (!file.exists(vf)) return(sprintf("geocode_cache:UNAVAILABLE:%s", basename(path)))
+    if (!file.exists(vf)) {
+      return(list(path = path, kind = "geocode_cache", available = FALSE,
+                  reason = "cache_vintage.R not found"))
+    }
     source(vf, local = FALSE)
   }
-  fp <- geocode_cache_fingerprint(path)
-  if (!isTRUE(fp$available))
-    return(sprintf("geocode_cache:UNAVAILABLE:%s:%s", basename(path), fp$reason))
-  sprintf("geocode_cache:%s:n=%d:sha256=%s", basename(path), fp$n_entries,
-          substr(fp$content_sha256, 1, 32))
+  cache_provenance_entry(geocode_cache_fingerprint(path))
 }
 
 prov_inputs <- function(..., roots = c(".", "artifacts", "data"), quiet = FALSE) {

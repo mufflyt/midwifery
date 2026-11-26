@@ -149,6 +149,12 @@ MIL_MARKER <- paste0(
 #' street belongs to the address arm, not this one. Returns `NA` when nothing
 #' organization-like remains.
 embedded_org_text <- function(a) {
+  if (!requireNamespace("mysterynpi", quietly = TRUE) ||
+      !"phrase_key" %in% getNamespaceExports("mysterynpi"))
+    stop("embedded_org_text() delegates to mysterynpi::phrase_key(), and the ",
+         "installed copy does not have it. Install the version CI pins: ",
+         "remotes::install_github(\"mufflyt/mysterynpi@03469aed868ea6af1e429b1da033915e49010dc7\")",
+         call. = FALSE)
   x <- toupper(trimws(as.character(a)))
   x <- str_replace_all(x, "[,/]", " ")
   # Drop an appended street address: the first run of digits and everything
@@ -156,9 +162,11 @@ embedded_org_text <- function(a) {
   x <- str_replace(x, "(?<=[A-Z]{2}\\s)\\b[0-9]+\\b.*$", "")
   # Drop trailing unit/level/room designators.
   x <- str_replace(x, "\\b(UNIT|BLDG|BUILDING|LEVEL|RM|ROOM|STE|SUITE|BOX)\\b.*$", "")
-  x <- str_squish(str_replace_all(x, "[^A-Z0-9 ]", " "))
-  x[!nzchar(x)] <- NA_character_
-  x
+  # phrase_key owns the final normalisation: accent fold, apostrophe deletion
+  # (not word-splitting -- "ST MARY'S" must reach norm_org() as STMARYS),
+  # punctuation to space, squish, and empty-to-NA, which the old last two
+  # lines reproduced by hand.
+  mysterynpi::phrase_key(x)
 }
 
 #' Does a normalised name retain a distinctive token?

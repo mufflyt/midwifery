@@ -104,6 +104,58 @@ if (!file.exists(MANIFEST)) {
                                 "through analytic_cohort.csv, so rebuilding it",
                                 "alone will NOT fix this."), comp_n - members)))
   }
+
+  # --- the pinned snapshot itself (person-level; local runs only) -------------
+  # V1-V4 compare TRACKED metadata, which is all CI can see. They cannot tell
+  # that the pinned CSV on disk is a different file than the fingerprint
+  # describes -- and on 2026-11-24 that is exactly what happened here: the
+  # fingerprint recorded sha256 f8063509 / 16,775 rows for a repin run on
+  # 2026-10-30, while artifacts/frozen_cohort/midwives_geography_guarded.csv
+  # on this machine was still the 2026-08-10 pin (sha256 94551381 / 16,892
+  # rows). Every V-check passed the whole time. When the person-level files
+  # are present they MUST be checked against the fingerprint; when they are
+  # absent (CI, fresh clone) this is a skip, not a pass.
+  PINNED_GEO <- "artifacts/frozen_cohort/midwives_geography_guarded.csv"
+  if (!file.exists(FINGERPRINT)) {
+    skip("no fingerprint; cannot check the pinned snapshot")
+  } else if (!file.exists(PINNED_GEO)) {
+    skip("pinned snapshot absent (person-level, gitignored); V5 not evaluable")
+  } else {
+    fp <- fromJSON(FINGERPRINT)
+    # sha256 without new dependencies: shasum -a 256 on unix, certutil on
+    # Windows. A missing tool yields NA and fails the check, which is the
+    # fail-closed direction.
+    actual_sha <- tryCatch({
+      if (.Platform$OS.type == "windows") {
+        out <- system2("certutil", args = c("-hashfile", PINNED_GEO, "SHA256"),
+                       stdout = TRUE, stderr = TRUE)
+        sub("[^0-9a-fA-F].*$", "", out[2])
+      } else {
+        sub(" .*$", "", system2("shasum", args = c("-a", "256", PINNED_GEO),
+                                stdout = TRUE, stderr = TRUE)[1])
+      }
+    }, error = function(e) NA_character_)
+    actual_rows <- tryCatch(
+      nrow(read_csv(PINNED_GEO, show_col_types = FALSE, progress = FALSE,
+                    guess_max = 50000)),
+      error = function(e) NA_integer_)
+    fp_sha <- fp$sha256; fp_rows <- as.integer(fp$rows)
+    sha_ok <- !is.na(actual_sha) && identical(tolower(actual_sha),
+                                              tolower(as.character(fp_sha)))
+    rows_ok <- !is.na(actual_rows) && identical(actual_rows, fp_rows)
+    chk(sha_ok && rows_ok,
+        sprintf(paste0("V5 pinned snapshot file == its fingerprint ",
+                       "[sha %s rows %s vs recorded %s / %s]%s"),
+                if (is.na(actual_sha)) "?" else substr(actual_sha, 1, 8),
+                format(actual_rows, big.mark = ","),
+                substr(as.character(fp_sha), 1, 8),
+                format(fp_rows, big.mark = ","),
+                if (sha_ok && rows_ok) "" else
+                  paste0(" | the pin on disk is NOT the file the fingerprint",
+                         " describes -- the metadata checks above cannot see",
+                         " this; re-pin with repin_frozen_cohort.R on the",
+                         " machine holding the current person-level inputs")))
+  }
 }
 
 cat(sprintf("\n%s (%d failure%s)\n", if (fails) "FAIL" else "PASS", fails,

@@ -3,7 +3,7 @@
 [![CI](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/ci.yml)
 [![Nightly](https://github.com/mufflyt/midwifery/actions/workflows/nightly.yml/badge.svg)](https://github.com/mufflyt/midwifery/actions/workflows/nightly.yml)
 [![Scientific laws](https://img.shields.io/badge/scientific%20laws-13%20declared%2C%2039%20planted%20defects-blueviolet.svg)](tests/science_law_registry.tsv)
-[![Known debt](https://img.shields.io/badge/known%20debt-5%20open%2C%2012%20closed-informational.svg)](DEBT.md)
+[![Known debt](https://img.shields.io/badge/known%20debt-4%20open%2C%2014%20closed-informational.svg)](DEBT.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Cite this repository](https://img.shields.io/badge/cite-CITATION.cff-brightgreen.svg)](CITATION.cff)
 [![Dataset Metadata](https://img.shields.io/badge/metadata-metadata.json-orange.svg)](metadata.json)
@@ -29,6 +29,16 @@ bot-manager walls, or an explicit no-scraping policy); see
 **[→ Interactive CNM Workforce Map](docs/cnm_national_leaflet_map.html)**
 &nbsp;·&nbsp; [Pipeline Architecture](ARCHITECTURE.md) &nbsp;·&nbsp; [Dataset Metadata](metadata.json)
 
+> **Federal database accuracy manuscript status (2026-11-25): not
+> submission-ready.** An independent audit reproduced the 16,775-person
+> linkage cohort and the principal state/ZIP agreement counts, but found P0
+> construct defects in the licensure interpretation, longitudinal endpoint,
+> Medicaid timing denominator, and dependence-aware trend population. The
+> exact disposition and corrected fact table are in the
+> [technical appendix](docs/TECHNICAL_APPENDIX_FEDERAL_DATABASE_ACCURACY_REVIEW_2026-11-25.md)
+> and [review report](review/independent_reviewer_audit.md). Do not cite the
+> November 24 Word draft as a submission manuscript.
+
 ```mermaid
 flowchart LR
   A["AMCB roster: 22,357 certificants"] --> B["NPPES linkage: 12,170 of 15,328 ACTIVE matched"]
@@ -47,7 +57,8 @@ flowchart LR
 | Licences a board returned | 1,353: WA 369, CO 486, TX 498 (any status the board reported) | `docs/figures/board_licensure_observed_counts.csv` |
 | Delivery attendance | not observable: public Medicare Part B has no delivery-code rows for any provider, 2013–2023 | `artifacts/medicare_delivery_code_observability.csv` |
 | PECOS/DAC vs state-board address agreement (5 pairs total; CA+IL+CT+DE+FL pooled) | State 92.5% (n=239); city 35.5% (n=462); ZIP5 35.6% (n=239) | [docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md](docs/TECHNICAL_APPENDIX_MULTI_SOURCE_ADDRESS_AGREEMENT.md) |
-| 2021 registry–Medicare enrollment state disagreements followed through 2026 | 366 of 728 providers observable in both systems (50.3%) remained discordant; 164 of the original 892 (18.4%) were right-censored | `artifacts/oig_remake/oig_longitudinal_2021_2026_censoring_audit.csv`; [statistical-review appendix](docs/TECHNICAL_APPENDIX_STATISTICAL_REVIEW_2026-11-23.md) |
+| Historical 2021 registry–Medicare enrollment follow-up | The committed censoring audit classifies 366 of 728 observable providers (50.3%) as continuously divergent and 164 of the original 892 (18.4%) as right-censored. Its sidecar pins an older panel, so this is not the current publication endpoint. | `artifacts/oig_remake/oig_longitudinal_2021_2026_censoring_audit.csv`; [2026-11-25 review appendix](docs/TECHNICAL_APPENDIX_FEDERAL_DATABASE_ACCURACY_REVIEW_2026-11-25.md) |
+| Medicaid provider-spending scratch recovery | 238,015,729 rows loaded from the 2026-02-09 source archive into a local 4.0 GB DuckDB; source ZIP and database remain Git-ignored | [warehouse handoff](docs/HANDOFF_hhs_medicaid_provider_spending.md) |
 
 <details>
 <summary><strong>Contents</strong> (click to expand)</summary>
@@ -134,11 +145,11 @@ and the [cohort flow](docs/figures/cohort_flow.png).*
 ### 3. Cohort flow, roster to rurality
 ![AMCB roster to analytic cohort to RUCC stratum](docs/figures/cohort_flow.png)
 *Figure 3: 22,357 certificants to the analytic cohort and its rurality strata.
-The **5,329 unresolved** are four different things wearing one label: records
-tied on name evidence, records with no candidate at all, records held out by the
-class-5 guard, and a further group certified in 2025–2026, outside the
-2007–2025 NPPES panel window entirely, which are not linkage failures and
-cannot be recovered by any matching rule.*
+The **5,582 unresolved** are several different things wearing one label, kept
+distinct in `linkage_completeness_by_status.csv`: 2,689 tied on name evidence,
+2,613 with no candidate at all, 163 held out by the class-5 guard, and 117
+contested or unruled-out component records the one-to-one constraint could not
+separate.*
 
 ### 4. Board verification, retracted: 11,355 claimed, 374 observed
 ![Board verification claimed against board verification observed](docs/figures/bon_verification_retraction.png)
@@ -223,13 +234,13 @@ the same quantity. See
 ![Linkage strata as a ladder of properties](docs/figures/linkage_strata_upset.png)
 *Figure 10: The seven linkage strata partition all 22,357 certificants exactly,
 and each loses one more of the five properties a record must accumulate to
-reach the analytic cohort. The sets are strictly nested — 20,270 with a
-candidate, 17,310 single at the best class, 17,189 surviving the one-to-one
-constraint, 17,028 in the cohort, 14,990 with midwifery taxonomy confirmed — so
+reach the analytic cohort. The sets are strictly nested — 19,744 with a
+candidate, 17,055 single at the best class, 16,946 surviving the one-to-one
+constraint, 16,775 in the cohort, 14,956 with midwifery taxonomy confirmed — so
 the dot matrix is a staircase rather than a lattice. **Tied names and
 unruled-out component share a pattern**: they are indistinguishable on these
-five properties, which is why reporting the 5,329 unresolved as one number
-hides four different causes. Contested NPIs resolve uniquely and are pruned
+five properties, which is why reporting the 5,582 unresolved as one number
+hides several different causes. Contested NPIs resolve uniquely and are pruned
 only by the one-to-one constraint, so they sit above tied names. Built by
 [`make_linkage_upset_figure.R`](make_linkage_upset_figure.R), ported from the
 registry-overlap figure in `mufflyt/grace-ent`.*
@@ -700,11 +711,10 @@ evidence tier, never promoted into the primary cohort.
 
 ```mermaid
 flowchart LR
-  S["Resolved candidate"] --> T1{"Fuzzy surname?"}
-  T1 -->|yes| F["sensitivity_fuzzy - 249"]
-  T1 -->|no| T2{"Midwifery taxonomy ever recorded?"}
-  T2 -->|yes| P["primary_midwifery - 14,959"]
-  T2 -->|no| N["sensitivity_nursing - 1,820"]
+  S["Resolved candidate"] --> T{"Midwifery taxonomy ever recorded?"}
+  T -->|yes| P["primary_midwifery - 14,956"]
+  T -->|no| N["sensitivity_nursing - 1,819"]
+  T -. "surname-component match only" .-> H["held out of cohort - 163"]
 ```
 
 ### Where the 22,357 go
@@ -716,15 +726,17 @@ plausible NPI exists, versus plausible NPIs exist but identity is ambiguous.
 | Stage | n | % of roster |
 |---|---:|---:|
 | AMCB roster | 22,357 | 100.0 |
-| **Primary linkage** | **14,959** | **66.9** |
-| + nursing tier | 16,779 | 75.1 |
-| + fuzzy tier | 17,028 | 76.2 |
-| Quarantined | 3,089 | 13.8 |
-| No candidate at all | 2,087 | 9.3 |
-| **Primary + county** | **14,891** | **66.6** |
+| **Primary linkage** | **14,956** | **66.9** |
+| + nursing tier = analytic cohort | 16,775 | 75.0 |
+| Quarantined, incl. class-5 hold-out | 2,969 | 13.3 |
+| No candidate at all | 2,613 | 11.7 |
+| **Cohort + assignable county** | **16,254** | **72.7** |
 
-All 3,089 quarantined records have candidates; all 2,087 unmatched records have
-none. That distinction is preserved in the artifact as `has_candidate`.
+All 2,969 quarantined and held-out records have candidates; all 2,613 unmatched
+records have none. That distinction is preserved in the artifact as
+`has_candidate`. (The last row is the whole analytic cohort's geography coverage,
+not the primary tier's — the tier-specific count needs the person-level
+snapshot, which is pinned separately; see DEBT.md D10.)
 
 ### Geography, once identity is settled
 
@@ -1137,7 +1149,9 @@ discloses a practice address, and jittering is not de-identification.
 
 `linkage_tier` answers *how sure are we this is the right NPI?* `AMCB status` answers *is this person
 part of the current workforce?* Conflating them turns a confidently-linked deceased certificant into a
-practising midwife. Of the 14,677 primary-tier links with geography:
+practising midwife. Of the 14,677 primary-tier links with geography
+(the 2026-08-10 cohort; the current freeze's tier-specific geography split
+awaits the person-level rebuild tracked in DEBT.md D10 and #176):
 
 | Status | n | % |
 |---|---:|---:|
@@ -1493,9 +1507,9 @@ for why this variable exists: joined against per-NPI cross-source consensus,
 multi-state-licensed midwives land in the "Split" (no-majority) disagreement
 tier at roughly nine times the rate of single-state-licensed ones
 (22.1% vs. 2.4%, chi-squared(2, n=8,312) = 1,353.1, p < 2.2e-16) —
-the first direct evidence in this project that most cross-source address
-disagreement reflects genuine multi-state practice rather than a
-data-quality problem.
+evidence that multistate licensure is associated with cross-source address
+disagreement. It does not establish the clinician's actual practice sites or
+show that most disagreements are true practice locations.
 
 **Two more fixes to the same build (2026-11-05).** The CMS hospital-affiliation
 block (hospital privilege via CCN, hospital count, type, ownership and
@@ -1873,7 +1887,8 @@ See [`docs/longitudinal-reconstruction-changelog.md`](docs/longitudinal-reconstr
 
 **Medicaid agreement figures published before 2026-11-10 are withdrawn.** They
 compared other sources against one arbitrarily chosen Medicaid state while
-discarding the other 33.2% of a midwife's concurrent enrolments. Recomputed as
+discarding the other 33.2% of recorded state memberships accumulated within
+the year. Recomputed as
 set membership on the same 107,193 NPI-years, agreement with NPPES is **88.5%**
 (91.5% in 2024), not 74.8% — so the 0.166 odd-one-out rate and the "five times
 the next worst source" claim are artifacts of the comparison, not properties of
@@ -1912,12 +1927,14 @@ them are anticonservative.
   NPPES** — mean pairwise agreement 88.2% across all 8 other sources,
   the lowest of any, confirming its 89.9%-vs-NPPES score wasn't an
   NPPES-anchor artifact.
-- **Most cross-source disagreement is genuine multi-state practice, not
-  noise.** Joining per-NPI consensus tiers against the Open Payments
+- **Multistate licensure is associated with cross-source disagreement.**
+  Joining per-NPI consensus tiers against the Open Payments
   license-state field: midwives licensed in one state are 92.4%
   Unanimous and 2.4% Split; midwives licensed in two or more states are
   59.9% Unanimous and 22.1% Split — roughly nine times the single-state
-  rate (chi-squared(2, n=8,312) = 1,353.1, p < 2.2e-16).
+  rate (chi-squared(2, n=8,312) = 1,353.1, p < 2.2e-16). This association
+  does not identify actual practice sites or prove which recorded state is
+  correct.
 - **84.5% of cohort NPIs with ≥2 current sources reporting are
   Unanimous** (14,314 of 16,939); the unanimous rate declines from 94%
   (2 sources) to ~76% (6–7 sources) as more independent sources are

@@ -71,6 +71,15 @@ expand_amcb_former_name_candidates <- function(
     existing_status_col = "match_status",
     no_candidate_value = "no_candidate"
 ) {
+  if (!requireNamespace("mysterynpi", quietly = TRUE)) {
+    base::stop(
+      "expand_amcb_former_name_candidates() delegates its name keys to ",
+      "mysterynpi::compact_name_key, which is not installed.\n",
+      "  Fix: remotes::install_github(\"mufflyt/mysterynpi\")",
+      call. = FALSE
+    )
+  }
+
   required_amcb <- c(
     amcb_id_col,
     amcb_first_col,
@@ -120,19 +129,15 @@ expand_amcb_former_name_candidates <- function(
     base::format(base::nrow(nppes_people), big.mark = ",")
   )
 
+  # Squash contract: every non-letter is deleted, so this is the canonical
+  # mysterynpi::compact_name_key -- not phrase_key(), which keeps word
+  # boundaries. compact_name_key also strips parentheticals; that is
+  # safe here because split_former_surnames() has already removed the
+  # NEE/FORMERLY/MAIDEN markers and delimiter-split the value before this
+  # runs. It carries the canonical fold too, so "Müller" keys MUELLER, the
+  # same key the matcher's own pipeline produces.
   normalize_name <- function(name_value) {
-    normalized <- name_value |>
-      base::as.character() |>
-      stringr::str_to_upper() |>
-      stringi::stri_trans_general("Latin-ASCII") |>
-      stringr::str_replace_all("[^A-Z]", "") |>
-      stringr::str_trim()
-
-    dplyr::if_else(
-      normalized == "",
-      NA_character_,
-      normalized
-    )
+    mysterynpi::compact_name_key(name_value)
   }
 
   split_former_surnames <- function(surname_value) {

@@ -65,7 +65,7 @@ source(file.path("R", "lib", "isochrones_dep.R"))
 source(file.path("R", "lib", "ob_hospitals.R"))
 
 ISO   <- isochrones_home()
-CACHE <- file.path("/Users/tylermuffly/isochrones", "data", "geocoding_cache.duckdb")
+CACHE <- file.path(ISO, "data", "geocoding_cache.duckdb")
 POS   <- file.path("data", "cms_pos_hospital.csv")
 OUT   <- file.path("artifacts", "ob_hospitals_geocoded.csv")
 
@@ -159,6 +159,14 @@ ob_hospital_addresses <- function(path = POS) {
 }
 
 run_geocode <- function() {
+  if (!file.exists(CACHE)) {
+    stop("Geocoding cache not found at ", CACHE,
+         "\n  Set ISOCHRONES_HOME to the isochrones checkout that holds",
+         "\n  data/geocoding_cache.duckdb. This script consumes that cache",
+         "\n  read-only and has no fallback -- refusing to geocode against",
+         "\n  nothing rather than silently regenerating every address.",
+         call. = FALSE)
+  }
   load_geocoding_stack()
   cli::cli_alert_success("canonical geocoding stack loaded from {ISO}")
 
@@ -217,7 +225,9 @@ run_geocode <- function() {
   n_coord <- sum(!is.na(out$latitude) & !is.na(out$longitude))
   cli::cli_alert_info("with coordinates: {n_coord} of {nrow(ob)} ({round(100*n_coord/nrow(ob),1)}%)")
 
-  write_with_provenance(out, OUT, na = "", inputs = prov_inputs(POS, prov_cache_input(CACHE)))
+  write_with_provenance(out, OUT, na = "",
+                        inputs = prov_inputs(POS),
+                        declared = prov_cache_input(CACHE))
   manifest <- list(
     analysis = "OB-service hospital geocoding",
     geocoder = "isochrones::census_batch_geocode (canonical)",
