@@ -151,7 +151,13 @@ jobs:
                     # contradictory-status section with "there is no package
                     # called 'data.table'". Everything before that point had
                     # already passed, which is why it read as a partial run.
-                    "data.table")
+                    "data.table",
+                    # test_geocode_ob_hospitals_cache_path.R loads cli
+                    # unguarded at its header; it resolved on runners only
+                    # when another package dragged it in. Found by the
+                    # claim-integrity R1b gate the first time it ran against
+                    # this file's glob.
+                    "cli")
           missing <- pkgs[!pkgs %in% rownames(installed.packages())]
           if (length(missing)) install.packages(missing)
           for (p in pkgs) if (!requireNamespace(p, quietly = TRUE))
