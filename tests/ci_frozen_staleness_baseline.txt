@@ -102,7 +102,6 @@ artifacts/midwife_work_sites_excluded_non_workplace.csv
 artifacts/midwife_work_sites_long.csv 
 artifacts/midwife_work_sites_summary.csv 
 artifacts/midwives_geography_FROZEN.csv 
-artifacts/msn_dnp_credential_classification.csv 
 artifacts/newly_resolved_by_prior_status.csv 
 artifacts/no_final_npi_provenance.csv 
 artifacts/no_org_anomaly_mechanism.csv 

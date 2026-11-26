@@ -1029,3 +1029,9 @@ artifacts/mrost_consensus_tier_by_npi.csv.provenance.json
 # these are a working convenience for before/after measurement and must not
 # double the person-level data in the repository.
 artifacts/archive/
+
+# The CMS Facility Affiliation refresh drop. Named by
+# artifacts/dac_hospital_affiliation_summary.csv.provenance.json as an input;
+# it is a download, not a product, so it is deliberately uncommitted rather
+# than merely absent.
+data/facility_affiliation_refresh/

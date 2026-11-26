@@ -106,7 +106,7 @@ so every DONE row names the test that covers it.
 | 10 | Monthly Medicaid aggregation | **NOT DONE** | Workstream C absent |
 | 11 | NPPES deactivation chronology | **BLOCKED** | no source data |
 | 12 | Reproducible output hashes | **PARTIAL** | determinism tested; hashes not pinned |
-| 13 | Accurate provenance sidecars | **PARTIAL** | A3 checks existence only; **79 pre-existing artifacts carry `code_sha256: null`** |
+| 13 | Accurate provenance sidecars | **PARTIAL** | A3 checks existence only; **80 tracked sidecars carry `code_sha256: null` — 75 under `artifacts/`, 5 under `data/`** |
 | 14 | Stable source-by-year schemas | **DONE** | `[8]` |
 | 15 | Persistence denominators | **DONE** | `artifacts/persistence_denominators.csv` from `build_f2_f3_uncertainty_denominators.R` |
 
@@ -118,17 +118,17 @@ entries, 24 added here, all KILLED**.
 
 | Requirement | Status | Remaining |
 |---|---|---|
-| `artifacts/longitudinal_reconstruction_audit.csv` | **NOT DONE** | MISSING. Needs 11 columns per source-year |
+| `artifacts/longitudinal_reconstruction_audit.csv` | **DONE** | tracked, 63 source-years × 12 columns, from `build_longitudinal_reconstruction_audit.R` |
 | Headline summary with explanations | **PARTIAL** | `a2_medicaid_before_after.csv` covers 2 metrics for 1 source |
 
-## §12 Documentation — **3 of 4**
+## §12 Documentation — **4 of 4**
 
 | Doc | Status |
 |---|---|
 | `longitudinal-source-inventory.md` | **DONE** |
 | `source-series-reconstruction.md` | **DONE** |
 | `temporal-evidence-validation.md` | **DONE** (2026-11-14) — F4 decomposition write-up |
-| `longitudinal-reconstruction-changelog.md` | **NOT DONE** |
+| `longitudinal-reconstruction-changelog.md` | **DONE** |
 | Roxygen on all new functions | **DONE** — 13 + 5 (PPEF) + 2 (Medicaid) + 2 (source_year) |
 | ≤80-char lines, `base::message()`, qualified calls | **PARTIAL** — new files comply; `audit_source_series_independence.R` uses unqualified `read_csv`/`filter` |
 
@@ -174,4 +174,5 @@ Phase 4 **NOT STARTED** · Phase 5 **NOT STARTED**
 14. §11 — `longitudinal_reconstruction_audit.csv`
 15. §12 — `longitudinal-reconstruction-changelog.md` (`temporal-evidence-validation.md` done)
 16. DAC 2017–2025 (proposal #5, distinct from A1)
-17. 79 artifacts with `code_sha256: null` (pre-existing; needs its own issue)
+17. 80 sidecars with `code_sha256: null` — 75 under `artifacts/`, 5 under
+    `data/` (pre-existing; needs its own issue)

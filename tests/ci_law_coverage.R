@@ -397,4 +397,43 @@ if (!length(bad) && !length(nomut) && !length(surv) && !length(nopos) &&
         n_pass, n_law, sum(pos > 0L), n_law, tot_killed, tot_mut)
 }
 
+
+# --- the README states these two numbers; they must be THESE two numbers ------
+# WHY HERE AND NOT IN A SEPARATE GATE. n_law and tot_mut exist at this point in
+# this script and nowhere else cheaply: tot_mut is a count of [MUTATION]
+# markers emitted by this run, so any other gate would have to re-derive it and
+# the repository would then hold two answers to one question.
+#
+# WHAT WENT WRONG WITHOUT IT. README.md states the counts twice -- a badge and
+# a sentence -- and on 2026-11-21 they read 39 and 37. The badge was updated
+# alongside the laws; the sentence was written in #104 and never revisited, so
+# the prose a reader trusts more than the badge was two defects out of date.
+# Neither number was checked against the run that produces them.
+ci_section("the README's law counts match this run")
+readme_flat <- paste(readLines(file.path(root, "README.md"), warn = FALSE),
+                     collapse = " ")
+badge_m <- regmatches(readme_flat, regexec(
+  "scientific%20laws-([0-9]+)%20declared%2C%20([0-9]+)%20planted",
+  readme_flat))[[1]]
+prose_m <- regmatches(readme_flat, regexec(
+  "\\*\\*([0-9]+) planted defects, ([0-9]+) detected[.]\\*\\*",
+  readme_flat))[[1]]
+if (length(badge_m) != 3L) {
+  ci_fail("the scientific-laws badge was not found in README.md, so the counts it states cannot be checked against this run")
+} else if (as.integer(badge_m[2]) != n_law || as.integer(badge_m[3]) != tot_mut) {
+  ci_fail(paste0("README.md's badge says %s laws and %s planted defects; this run counted %d and %d.\n",
+                 "       Update the badge in README.md, or explain which number is wrong."),
+          badge_m[2], badge_m[3], n_law, tot_mut)
+} else if (length(prose_m) != 3L) {
+  ci_fail("README.md's \"N planted defects, N detected\" sentence was not found, so the prose beside the badge is unchecked")
+} else if (as.integer(prose_m[2]) != tot_mut ||
+             as.integer(prose_m[3]) != tot_killed) {
+  ci_fail(paste0("README.md's prose says %s planted defects and %s detected; this run counted %d and %d.\n",
+                 "       The badge and the sentence are edited in different places and drift apart."),
+          prose_m[2], prose_m[3], tot_mut, tot_killed)
+} else {
+  ci_ok("README.md's badge and prose both state %d laws and %d/%d planted defects, which is what this run counted",
+        n_law, tot_killed, tot_mut)
+}
+
 ci_finish()

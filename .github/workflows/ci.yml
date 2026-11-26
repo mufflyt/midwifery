@@ -613,6 +613,22 @@ jobs:
       - name: Gate-integrity saboteurs
         run: Rscript tests/test_gate_integrity_saboteurs.R
 
+      # Claims nobody re-verified: the package lists the two workflows must
+      # agree on, the root idiom a testthat-dispatched file may not use, the
+      # README's figure numbers and its scientific-laws badge, and the
+      # baselines. Base R and git only -- no packages beyond this job's list.
+      # Named here as well as globbed by nightly: until a test is named in
+      # ci.yml it runs only at night, which is a day's delay on the exact
+      # drift R1-R3 exist to catch.
+      - name: Claim-integrity saboteurs
+        run: Rscript tests/test_claim_integrity_saboteurs.R
+
+      - name: Doc-integrity saboteurs
+        run: Rscript tests/test_doc_integrity_saboteurs.R
+
+      - name: Provenance-integrity saboteurs
+        run: Rscript tests/test_provenance_integrity_saboteurs.R
+
       # The 2026-11-20 complexity audit's four fixes. Mostly text and
       # parse-tree scans over tracked files, but it also SOURCES
       # R/join_safety.R (checkmate, dplyr -- both installed above) to prove

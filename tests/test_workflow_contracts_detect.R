@@ -81,6 +81,11 @@ wc_scaffold <- function(dir, gates, workflow) {
   dir.create(file.path(dir, "tests"), recursive = TRUE, showWarnings = FALSE)
   file.copy(GATE, file.path(dir, "tests", "ci_workflow_contracts.R"))
   file.copy(REPORT, file.path(dir, "tests", "ci_report.R"))
+  # The gate sources this helper since the #333 refactor; a scaffold without
+  # it crashes the gate, which reads as a refusal and inverts every case.
+  helper <- file.path(root, "tests", "helper-workflow-scan.R")
+  if (file.exists(helper))
+    file.copy(helper, file.path(dir, "tests", "helper-workflow-scan.R"))
   for (g in gates)
     writeLines("quit(status = 0L)", file.path(dir, "tests", g))
   if (!is.null(workflow)) {

@@ -317,7 +317,7 @@ write-up: [docs/TECHNICAL_APPENDIX_TRILLIANT.md](docs/TECHNICAL_APPENDIX_TRILLIA
 
 ### 17. Can Trilliant's directory resolve who is who? (experiment)
 ![What Trilliant's directory says about each certificant's NPI](docs/figures/trilliant_identity_outcomes.png)
-*Figure 16: Every certificant in the 2026-08-10 freeze searched against all
+*Figure 17: Every certificant in the 2026-08-10 freeze searched against all
 7.5 million directory NPIs by exact keys, and scored twice: with profession,
 and without it (taxonomy may not break a tie, D17). With profession, 96.9% of
 high-confidence links are "confirmed", but that is largely circular, because
@@ -330,7 +330,7 @@ Full write-up: [docs/TECHNICAL_APPENDIX_TRILLIANT_IDENTITY_EXPERIMENT.md](docs/T
 
 ### 18. Which identity fields the directory carries
 ![Which identity fields Trilliant's directory carries](docs/figures/trilliant_identity_fields.png)
-*Figure 17: Field coverage over all 7,518,635 individual NPIs and over the
+*Figure 18: Field coverage over all 7,518,635 individual NPIs and over the
 25,540 with a midwifery specialty or credential. Name, sex and credential are
 nearly complete. Graduation year exists for 41% of midwifery records. A named
 school exists for under 6%: the field is CMS's *medical* school, "Other" or
@@ -340,7 +340,7 @@ blank for nearly every midwife, so it cannot serve as identity evidence. Source:
 
 ### 19. Graduation year separates true links from namesakes
 ![Trilliant's graduation year against the AMCB certification year](docs/figures/trilliant_identity_grad_year.png)
-*Figure 18: For each current link, the directory's graduation year minus the
+*Figure 19: For each current link, the directory's graduation year minus the
 AMCB certification year, among pairs where the directory has one. Primary-tier
 links sit almost entirely within a year. Nursing- and fuzzy-tier links look like
 the namesakes every other candidate represents. The likelihood ratios behind
@@ -350,7 +350,7 @@ this (9.4 within a year, 0.05 beyond ten) are in
 
 ### 20. From the AMCB roster to the final analytic cohort
 ![Cohort exclusion flow: AMCB roster to the final analytic cohort](docs/figures/cohort_exclusion_flow.png)
-*Figure 19: 22,357 AMCB certificants, step by step, to the **12,022**
+*Figure 20: 22,357 AMCB certificants, step by step, to the **12,022**
 certificants (99.87% of those NPI-matched) in the final analytic cohort:
 7,029 deceased/inactive; 3,158 with no confident NPI match; 77 excluded for a
 federal adverse action; 55 with no geocodable address; 16 overseas/territory
@@ -1821,7 +1821,7 @@ reproducibility gap stated rather than hidden.
 | **Healthgrades** profiles | practice addresses for AMCB certificants with *no NPI at all*, via schema.org JSON-LD blocks; profile attributes | not recorded; checkpoints timestamped **2026-08-09** | [`scrape_healthgrades_midwives.R`](scrape_healthgrades_midwives.R), [`enrich_healthgrades_profiles.R`](enrich_healthgrades_profiles.R), [`sweep_healthgrades_enrichment.R`](sweep_healthgrades_enrichment.R) |
 | **Doximity** public CNM directory | maiden names and a specialty label; **no NPI** — the UUID is Doximity-internal | not recorded | [`scrape_doximity_public_cnm.R`](scrape_doximity_public_cnm.R), [`enrich_doximity_cnm_ages.R`](enrich_doximity_cnm_ages.R) |
 | **CMS National Provider Directory (NDH)** — public, no-auth FHIR R4 gateway at `directory.cms.gov/fhir` | multi-location practice addresses/phones, state license numbers, Medicare-enrollment and HHS-exclusion-list flags, and (uniquely here) an accepting-new-patients signal per organization affiliation | full-cohort run completed **2026-10-23**: 16,361 of 16,775 (97.5%) found, cross-checked against an independent bulk-export pass that landed on the identical figure (see [technical appendix](docs/TECHNICAL_APPENDIX_CMS_NDH.md)) | [`harvest_cms_national_provider_directory.py`](harvest_cms_national_provider_directory.py), [`download_cms_ndh_bulk.py`](download_cms_ndh_bulk.py) + [`clean_cms_ndh_bulk.py`](clean_cms_ndh_bulk.py) |
-| **CMS PECOS Medicare revocation** — "Revoked Medicare Providers and Suppliers" (opendata.hhs.gov), NPI-keyed | a re-enrollment bar, CMS's own administrative-action record — a second, independently-sourced federal-adverse-action check alongside the NDH exclusion flag above (Figure 19) | snapshot updated 2026-03-02; checked **2026-10-26** | [`load_cms_pecos_revocations_to_duckdb.R`](load_cms_pecos_revocations_to_duckdb.R), [`match_cms_pecos_revocations.R`](match_cms_pecos_revocations.R) |
+| **CMS PECOS Medicare revocation** — "Revoked Medicare Providers and Suppliers" (opendata.hhs.gov), NPI-keyed | a re-enrollment bar, CMS's own administrative-action record — a second, independently-sourced federal-adverse-action check alongside the NDH exclusion flag above (Figure 20) | snapshot updated 2026-03-02; checked **2026-10-26** | [`load_cms_pecos_revocations_to_duckdb.R`](load_cms_pecos_revocations_to_duckdb.R), [`match_cms_pecos_revocations.R`](match_cms_pecos_revocations.R) |
 | **FDA Debarment List** (Drug Product Applications) — name-only, no NPI | a third federal-adverse-action check, matched by normalized last+first name; flagged only on an unambiguous one-to-one match (any name collision is reported, never flagged) | snapshot dated 2026-10-02; checked **2026-10-26** | [`load_fda_debarment_to_duckdb.R`](load_fda_debarment_to_duckdb.R), [`match_fda_debarment.R`](match_fda_debarment.R) |
 | **State Boards of Nursing** — open data or unprotected search only: WA DOH (`qxh8-f4bd`), Illinois IDFPR (`pzzh-kp68`), Colorado DORA (`7s5z-vewr`), Texas BON (`jnzg-cr4w`), California DCA (Box-hosted roster), Delaware DELPROS, Connecticut eLicense, Florida DOH License Verification, Pennsylvania PALS. The "~40 portals" once listed here were never queried; their licence numbers were synthesized (see [the defect note](docs/PROVENANCE_DEFECT_BON_LICENSE_IDENTIFIERS.md)). 8 further states (NC, OH, GA, MN, AZ, TN, WI, OR) were checked and found to have no usable public search — see [the portal-availability survey](docs/TECHNICAL_APPENDIX_BON_PORTAL_AVAILABILITY.md). | WA/IL: licence issue dates → age-at-certification calibration. WA/CO/TX: licence number and status (Figure 1). CA/IL/CT/DE/FL: address agreement against PECOS/DAC (below); PA: licence number/status, a CNM-specific category by construction | WA/IL 2026-08-10 (`artifacts/state_nursing_license_ages_provenance.csv`); CO 2026-09-11; TX 2026-09-12; WA re-queried 2026-09-13; CA/IL/CT/DE 2026-10-23; FL 2026-10-26; PA 2026-10-23 | [`enrich_state_nursing_license_ages.R`](enrich_state_nursing_license_ages.R), [`harvest_live_wa_bon_from_tracked_roster.py`](harvest_live_wa_bon_from_tracked_roster.py), [`harvest_live_co_bon_from_tracked_roster.py`](harvest_live_co_bon_from_tracked_roster.py), [`harvest_live_tx_bon_from_tracked_roster.py`](harvest_live_tx_bon_from_tracked_roster.py), [`compare_pecos_to_bon_address.R`](compare_pecos_to_bon_address.R) |
 | **Florida and Ohio voter files** | date of birth for age validation, under a three-tier disambiguation that **excludes ambiguous collisions rather than guessing** | not recorded | [`match_florida_voter_ages.R`](match_florida_voter_ages.R), [`match_ohio_voter_ages.R`](match_ohio_voter_ages.R), [`parse_ohio_voter_file.py`](parse_ohio_voter_file.py) |
@@ -2466,13 +2466,19 @@ expiration_date, last_name, first_name, middle_name, discipline, primary_source`
 ## Continuous integration
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push and
-pull request, across three Linux jobs tiered by what they cost to install:
+pull request, across five Linux jobs tiered by what they cost to install.
+Three install something and run checks; `science-law-coverage` runs the
+mutation suite that counts the laws and planted defects in the badge above;
+`scientific-gate` installs nothing and refuses to call the run green unless
+every required job succeeded:
 
 | Job | Installs | Checks |
 |---|---|---|
 | **r-checks** | `stringr` | every tracked R file parses; no hardcoded path into another user's home; no duplicate `.gitignore` rules; no function defined at top level in two files; **no name bound to a function twice in one scope** (`if (...) { }` is not a scope in R, so a helper redefined inside one lands in the enclosing function's environment); the join keys (`pad5` vs `zip5_key`, `zip5` vs `zip5_first_run`, `zip9`, `phone10`, `norm_addr` vs `norm_addr_drop_unit`, `pad_ccn`); Table 1 age/tenure/decade banding; **the leak guard**; **the artifact contracts**; **no new full-width read of the 544 MB panel** (shrink-only baseline, 17 reads across 17 files, with a 12-case detector that plants the defect back — see [the read-cost appendix](docs/TECHNICAL_APPENDIX_PANEL_READ_COST.md)); the science, denominator and unit-of-analysis gates with their gate-of-gates suites; **every attached package is called, qualified, or declared** (1,179 `library()` calls judged, so an attachment that stops being used is a failure rather than drift); **the three Wilson interval implementations agree** up to the documented 100x units difference, since the formula lives in three files on purpose and nothing compared them to each other (rOpenSci G5.4a) |
 | **python-checks** | `pytest` | every tracked `.py` compiles; address-key matching; **the whole `tests/` directory under pytest — 134 tests** (the scraper's 500-row APEX pager cap, the NPI API's 200-row candidate cap, five live BON harvesters, the HHS open-data pipeline, the microsimulation conservation suite) |
-| **r-unit-tests** | the tidyverse stack, cached | the deterministic license→NPI bridge and its collision handling; state-license table construction; former/maiden-name candidate expansion; age-at-certification validation; the cross-taxonomy rule that a nursing-only match is never promoted into the primary cohort; the checkpoint-merge contract; the NPI-rate, cluster-scope and leaver-count saboteurs; **the review-fix saboteurs** (each plants a fixed 2026-11-21 defect back and requires the guard to die on it, with near misses so no guard hardens into one implementation) |
+| **r-unit-tests** | the tidyverse stack, cached | the deterministic license→NPI bridge and its collision handling; state-license table construction; former/maiden-name candidate expansion; age-at-certification validation; the cross-taxonomy rule that a nursing-only match is never promoted into the primary cohort; the checkpoint-merge contract; the skip budget; the NPI-rate, cluster-scope and leaver-count saboteurs; **the review-fix saboteurs** (each plants a fixed 2026-11-21 defect back and requires the guard to die on it, with near misses so no guard hardens into one implementation); and three claim-integrity suites — 31 saboteurs over what the repository says about itself, what its documentation says about the tree, and what the pipeline says about the data it moves ([appendix](docs/APPENDIX_gates_for_unchecked_claims_2026-11-21.md)) |
+| **science-law-coverage** | the tidyverse stack, cached | every declared scientific law has a gate and a mutation that the gate kills; the README's badge **and** its prose must both state the law count and the planted-defect count this run measured |
+| **scientific-gate** | nothing | every required job above ran and succeeded — a skipped step cannot report green ([`tests/ci_aggregate_gate.sh`](tests/ci_aggregate_gate.sh)) |
 
 The tiering is deliberate. The first two jobs stay trivially cheap so they are
 never the reason someone switches CI off; the third is allowed to cost a minute
@@ -2538,8 +2544,8 @@ Each law must do five things, and
 missing: be **registered**, be **exercised**, run on a **non-zero number of
 subjects**, carry a **positive control** proving its detector responds to a
 violation, and have a **planted defect** that it kills. A law with only a
-negative control has proved it did not fire; it has not proved it could. **37
-planted defects, 37 detected.**
+negative control has proved it did not fire; it has not proved it could. **39
+planted defects, 39 detected.**
 
 A gate that **dies** is reported as dead, not as vacuous: a non-zero exit with no
 `[LAW]` markers is CRASHED, with the reason attached. A non-zero exit on its own

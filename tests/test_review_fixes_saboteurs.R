@@ -447,4 +447,8 @@ h6_case("R24b a non-transliterating iconv() is untouched",
                        "}")),
         expect_fail = FALSE)
 
-saboteur_report(24)
+# 23, not 24: the ids skip 6 (R6 is a chk inside saboteur 5's block, never its
+# own sab() call), so 23 saboteurs actually run. The declared count said 24
+# from the day the file was written and nothing checked it until the
+# claim-integrity R10b gate counted the calls.
+saboteur_report(23)
