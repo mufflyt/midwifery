@@ -575,6 +575,22 @@ jobs:
       - name: Manuscript figure saboteurs
         run: Rscript tests/test_manuscript_figure_saboteurs.R
 
+      # Manuscript-to-evidence drift detection: verifies the
+      # federal_database_accuracy claim ledger against its artifacts --
+      # provenance freshness, units, terminology, catalog-key resolution,
+      # figure paths, promised intervals, conflict markers, sections.
+      # Needs dplyr/readr, so it lives here rather than in r-checks.
+      # Report lands in review/manuscript_evidence_report.{csv,md}.
+      - name: Manuscript evidence verification
+        run: Rscript tools/verify_manuscript_evidence.R
+
+      # Proves the verifier actually fails: six corrupted fixtures (missing
+      # artifact, dropped Wilson promise, conflict marker, missing section,
+      # blank unit, broken figure path) must each be rejected. Seven verifier
+      # passes, ~15 min -- the reason this pair is here and not in r-checks.
+      - name: Manuscript evidence verifier (mutation self-test)
+        run: Rscript tests/test_manuscript_evidence_detect.R
+
       # Pure text scans over tracked files -- no packages beyond base R, but it
       # lives here rather than in r-checks so it sits beside the other saboteur
       # suites. It guards the cuts from the 2026-11-20 over-engineering audit:
