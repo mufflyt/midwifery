@@ -1,0 +1,79 @@
+{
+  "artifact": "dac_agreement_cluster_trend.csv",
+  "written_utc": "2026-11-25 03:16:13 UTC",
+  "inputs": [
+    {
+      "path": "midwife_panel.csv",
+      "sha256": "6b9696ce891949d07e37fb768ae48095838ba74a9600ffe84e599cf03835f4d3"
+    },
+    {
+      "path": "artifacts/physician_compare_historical_midwives.csv",
+      "sha256": "58ebc15f91f6e053c472c8a4d528e9d9ed850cdd6242017b3f15c2ab4ddfa50c"
+    },
+    {
+      "path": "config/state_source_audit_sources.csv",
+      "sha256": "465143bf82753696be7c901fe38a5f017b5ed494b42cb86235e78f0467cbb66c"
+    }
+  ],
+  "code_sha256": "6753b7d048099abf67e00878c6f631ec9ce0e9707aff4caaf98727e6e9174e6e",
+  "code": [
+    {
+      "path": "build_dac_agreement_cluster_trend.R",
+      "sha256": "30ac8c33f45eeda78d76de8b05980c881c48073eca7ec0c9082d13f49248f46b"
+    },
+    {
+      "path": "R/lib/artifact_provenance.R",
+      "sha256": "3dec47ce20ffe42a4a8b85c84e0264c37c91b6da1452926c33ab2a9d0ec06e9e"
+    },
+    {
+      "path": "R/lib/ast_walk.R",
+      "sha256": "9611f2b4a7119c4fd9c300677df216e72439c94bdb93244fd413510807eba36a"
+    },
+    {
+      "path": "R/lib/clean_state.R",
+      "sha256": "a8945acebe3fabca73f9839202a184fdbd75164d8884680e9cb49be6072906f8"
+    },
+    {
+      "path": "R/lib/provenance.R",
+      "sha256": "fbe1f9ab4cbc46926012f6c5fdff9d54273a2ef826c3da1c73f57c92008538aa"
+    },
+    {
+      "path": "R/lib/source_coverage.R",
+      "sha256": "2c3b5bc39032c11c41fcce1e2743c966e8644b213c81c217c5cf6b55f5669abb"
+    },
+    {
+      "path": "R/lib/source_vintage.R",
+      "sha256": "f2d5751936ccd5fc551e3ae31dd8c9b464c9811fb63ef00adc4b8f6cb758be9a"
+    },
+    {
+      "path": "R/lib/source_year.R",
+      "sha256": "a893f4f26c1d7a8074164782eabb96b4cdd8ed53b94ef268526025020ce3b583"
+    }
+  ],
+  "semantic_packages": [
+    {
+      "package": "mysterynpi",
+      "installed": true,
+      "version": "0.10.0",
+      "source_sha": null
+    },
+    {
+      "package": "stringi",
+      "installed": true,
+      "version": "1.8.9",
+      "source_sha": null
+    },
+    {
+      "package": "humaniformat",
+      "installed": true,
+      "version": "0.6.0",
+      "source_sha": null
+    },
+    {
+      "package": "mysteryroster",
+      "installed": true,
+      "version": "0.3.0",
+      "source_sha": null
+    }
+  ]
+}

@@ -12,6 +12,16 @@
 #   A2 WILLIAMS, nee JONES    -> no current candidate; JONES -> 1 NPI (rescued)
 #   A3 LEE, nee BAKER; CHURCH -> no current candidate; 2 NPIs (rescued, multi)
 #   A4 STONE   (no former)    -> no candidate anywhere (still_no_candidate)
+#   A5 FISHER, nee O'BRIEN    -> no current candidate; OBRIEN -> 1 NPI (rescued);
+#                              NPPES records the surname without the apostrophe
+#                              and the squash key deletes it on BOTH sides, so
+#                              the two spellings share one key (DEBT.md D15).
+#   A6 GREEN, nee MÜLLER      -> no current candidate; MUELLER -> 1 NPI
+#                              (rescued); the fold is delegated to
+#                              mysterynpi::compact_name_key, which expands
+#                              umlauts as German digraphs -- a local
+#                              stri_trans_general fold would key MULLER and
+#                              miss this record.
 #
 # Run: Rscript tests/test_expand_former_name_candidates.R   (exit 1 on failure)
 # =============================================================================
@@ -30,17 +40,18 @@ source(file.path(root, "expand_former_name_candidates.R"))
 
 
 amcb_roster <- tibble::tibble(
-  amcb_id = c("A1", "A2", "A3", "A4"),
-  first_name = c("JANE", "MARY", "ANNA", "RUTH"),
-  last_name = c("SMITH", "WILLIAMS", "LEE", "STONE"),
-  former_last_name = c("", "JONES", "BAKER; CHURCH", ""),
-  match_status = c("matched", "no_candidate", "no_candidate", "no_candidate")
+  amcb_id = c("A1", "A2", "A3", "A4", "A5", "A6"),
+  first_name = c("JANE", "MARY", "ANNA", "RUTH", "KATE", "HELEN"),
+  last_name = c("SMITH", "WILLIAMS", "LEE", "STONE", "FISHER", "GREEN"),
+  former_last_name = c("", "JONES", "BAKER; CHURCH", "", "O'BRIEN", "MÜLLER"),
+  match_status = c("matched", "no_candidate", "no_candidate", "no_candidate",
+                   "no_candidate", "no_candidate")
 )
 
 nppes_names <- tibble::tibble(
-  npi = c("1", "2", "3", "4"),
-  provider_first_name = c("JANE", "MARY", "ANNA", "ANNA"),
-  provider_last_name = c("SMITH", "JONES", "BAKER", "CHURCH")
+  npi = c("1", "2", "3", "4", "5", "6"),
+  provider_first_name = c("JANE", "MARY", "ANNA", "ANNA", "KATE", "HELEN"),
+  provider_last_name = c("SMITH", "JONES", "BAKER", "CHURCH", "OBRIEN", "MUELLER")
 )
 
 res <- expand_amcb_former_name_candidates(
@@ -55,9 +66,9 @@ rs <- res$rescue_summary
 rescue_count <- function(m) rs$n[rs$metric == m]
 
 cat("\n-- rescue summary counts --\n")
-chk(rescue_count("original_no_candidate") == 3, "3 records start with no current-surname candidate")
-chk(rescue_count("rescued_into_candidate_universe") == 2, "2 rescued via a former surname")
-chk(rescue_count("rescued_with_one_candidate") == 1, "1 rescued to exactly one NPI")
+chk(rescue_count("original_no_candidate") == 5, "5 records start with no current-surname candidate")
+chk(rescue_count("rescued_into_candidate_universe") == 4, "4 rescued via a former surname")
+chk(rescue_count("rescued_with_one_candidate") == 3, "3 rescued to exactly one NPI")
 chk(rescue_count("rescued_with_multiple_candidates") == 1, "1 rescued to multiple NPIs")
 chk(rescue_count("still_no_candidate") == 1, "1 remains with no candidate at all")
 
@@ -73,6 +84,10 @@ chk(status_of("A3") == "former_name_multiple_candidates",
     "LEE/nee BAKER;CHURCH rescued to multiple NPIs")
 chk(status_of("A4") == "still_no_candidate",
     "STONE with no former name stays unrescued")
+chk(status_of("A5") == "former_name_one_candidate",
+    "O'BRIEN rescued to OBRIEN -- the apostrophe spelling is no obstacle")
+chk(status_of("A6") == "former_name_one_candidate",
+    "MÜLLER rescued to MUELLER -- the canonical digraph fold, not MULLER")
 
 cat("\n-- block-source provenance is preserved --\n")
 cp <- res$candidate_pairs

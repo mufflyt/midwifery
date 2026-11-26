@@ -483,6 +483,25 @@ jobs:
           if (length(missing)) install.packages(missing)
         shell: Rscript {0}
 
+      # mysterynpi is a linkage dependency of several suites below, not just
+      # the Trilliant layer: amcb_license_bridge.R and
+      # R/build_amcb_state_licenses.R delegate their phrase keys to
+      # phrase_key(), expand_former_name_candidates.R delegates to
+      # compact_name_key, and training_institution.R uses strip_med_suffix.
+      # Installing here -- before any of those tests -- keeps every suite in
+      # this job able to reach the pin. Pinned to the 0.11.0 commit that
+      # added phrase_key(), so a later change there cannot move a result
+      # here without a pull request that moves the pin. Installed from
+      # GitHub with the job's token: without one, remotes falls back to its
+      # bundled PAT, which GitHub's API refuses (see nightly.yml).
+      - name: Install mysterynpi (pinned)
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Rscript -e 'if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")'
+          Rscript -e 'remotes::install_github("mufflyt/mysterynpi@03469aed868ea6af1e429b1da033915e49010dc7", upgrade = "never")'
+          Rscript -e 'ex <- getNamespaceExports("mysterynpi"); stopifnot(all(c("strip_med_suffix", "phrase_key", "compact_name_key") %in% ex)); cat("mysterynpi", as.character(packageVersion("mysterynpi")), "\n")'
+
       # The deterministic license->NPI bridge: the one linkage path that does not
       # depend on comparing two spellings of a name. Its collision handling is
       # what keeps a shared license key from asserting a shared identity.
@@ -562,6 +581,22 @@ jobs:
       # run on the pull request that breaks it.
       - name: Manuscript figure saboteurs
         run: Rscript tests/test_manuscript_figure_saboteurs.R
+
+      # Manuscript-to-evidence drift detection: verifies the
+      # federal_database_accuracy claim ledger against its artifacts --
+      # provenance freshness, units, terminology, catalog-key resolution,
+      # figure paths, promised intervals, conflict markers, sections.
+      # Needs dplyr/readr, so it lives here rather than in r-checks.
+      # Report lands in review/manuscript_evidence_report.{csv,md}.
+      - name: Manuscript evidence verification
+        run: Rscript tools/verify_manuscript_evidence.R
+
+      # Proves the verifier actually fails: six corrupted fixtures (missing
+      # artifact, dropped Wilson promise, conflict marker, missing section,
+      # blank unit, broken figure path) must each be rejected. Seven verifier
+      # passes, ~15 min -- the reason this pair is here and not in r-checks.
+      - name: Manuscript evidence verifier (mutation self-test)
+        run: Rscript tests/test_manuscript_evidence_detect.R
 
       # Pure text scans over tracked files -- no packages beyond base R, but it
       # lives here rather than in r-checks so it sits beside the other saboteur
@@ -779,20 +814,6 @@ jobs:
           done
           exit $rc
 
-      # mysterynpi holds strip_med_suffix(), which R/lib/training_institution.R
-      # delegates to and the Trilliant tests below exercise. Pinned to the
-      # commit that added it, so a later change there cannot move a result
-      # here without a pull request that moves the pin. Installed from GitHub
-      # with the job's token: without one, remotes falls back to its bundled
-      # PAT, which GitHub's API refuses (see nightly.yml).
-      - name: Install mysterynpi (pinned)
-        env:
-          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          Rscript -e 'if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")'
-          Rscript -e 'remotes::install_github("mufflyt/mysterynpi@aa5d94c61a8ab0b4f0e5f96596e7fd57f0dd879a", upgrade = "never")'
-          Rscript -e 'stopifnot("strip_med_suffix" %in% getNamespaceExports("mysterynpi")); cat("mysterynpi", as.character(packageVersion("mysterynpi")), "\n")'
-
       # The Trilliant layer's pure functions: which freeze and cohort a build may
       # use, how work sites are counted and placed, how person-level files move
       # between machines, and when the directory may stand in for a missing
@@ -864,6 +885,11 @@ jobs:
           Rscript tests/test_organization_affiliation_resolver.R
           Rscript tests/test_cycle35_organization_affiliation_pipeline.R
 
+      # Organization-side apostrophe normalization: the D15 person-name fix
+      # extended to school, street, institution, and embedded-org keys.
+      - name: Organization apostrophe normalization
+        run: Rscript tests/test_org_apostrophe_normalization.R
+
       # Linkage selection-bias tipping point and the selection-bounds figure's
       # status-level data transformation.
       - name: Linkage selection bounds figures
@@ -877,7 +903,14 @@ jobs:
       # Cohort exclusion criteria, stage classification rules, and population
       # conservation invariants across the exclusion waterfall.
       - name: Cohort exclusion invariants and flow counts
-        run: Rscript tests/test_exclusion_invariants.R
+        run: |
+          Rscript tests/test_exclusion_invariants.R
+          # Cohort vintage: every tracked aggregate (linkage manifest,
+          # frozen_cohort fingerprint, linkage_completeness, composition
+          # table) must describe the SAME freeze. Reads only tracked
+          # metadata, so it runs on a clean checkout with no person-level
+          # data -- the reason it was once held out of CI no longer applies.
+          Rscript tests/test_cohort_vintage.R
 
       # Table 1 demographics Quality Control (QC): block category sums, percent
       # validity, demographic plausibility bounds, and markdown concordance.
@@ -996,6 +1029,13 @@ jobs:
       # is a different kind of bug from one that draws a wrong bar.
       - name: Linkage scripts smoke test
         run: Rscript tests/test_linkage_scripts_smoke.R
+
+      # NEEDS dplyr, readr, cli, jsonlite, DBI and duckdb -- the script under
+      # test sources all six at load time, so this belongs in r-unit-tests,
+      # not the stringr-only r-checks tier where it first landed (CI run
+      # 45558377168 failed there on "there is no package called 'dplyr'").
+      - name: OB geocoder cache path contract
+        run: Rscript tests/test_geocode_ob_hospitals_cache_path.R
 
   # ---------------------------------------------------------------------------
   # Path-filtered: the science-law suite (tests/ci_law_coverage.R) is Nightly's

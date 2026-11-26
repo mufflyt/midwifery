@@ -73,8 +73,11 @@ ci_packages <- c(
   # the same latent break checkmate was before it fired.
   "readxl",
   # mysterynpi: reached through R/lib/training_institution.R
-  # (strip_med_suffix()). Installed from GitHub at a pinned commit by the
-  # "Install mysterynpi (pinned)" step of r-unit-tests.
+  # (strip_med_suffix()), amcb_license_bridge.R and
+  # R/build_amcb_state_licenses.R (phrase_key), and
+  # expand_former_name_candidates.R (compact_name_key). Installed from
+  # GitHub at a pinned commit by the "Install mysterynpi (pinned)" step of
+  # r-unit-tests.
   "mysterynpi",
   # cyclocomp: reached through tools/measure_code_complexity.R, which
   # tests/test_dead_code_cuts_saboteurs.R sources rather than writing a second

@@ -223,6 +223,21 @@ up as an Open Payments recipient-address-quality finding in the manuscript,
 and whether A's scripts get a header-level demotion comment to match the
 ruling.
 
+**Update 2026-11-24 (spec Part 4 sweep):** enforcement verified and the
+residual code items closed. Consumer audit
+(`review/d5_downstream_impact.csv`): nothing published reads A's
+`type2_organization_npi` as an employer; the resolver ingests it only as the
+`open_payments_org` arm, whose pairs land in the named weak class
+`open_payments_only` unless another arm corroborates by normalized-name
+agreement. `crossref_open_payments_to_type2_npi.py` — the one A producer
+still missing the demotion header — now carries it, and
+`analyze_open_payments_clinical_depth.R` documents that `op_profile_match`
+is presence-flag data only. Factorial decomposition and tie-break fixture
+analysis are in `review/d5_tiebreak_comparison.md`; class ledger in
+`review/d5_linkage_discrepancies.csv`. **Still open, owner-level:** the
+manuscript write-up decision on the 254 input-source disagreements (OP
+recipient address is a billing address, not a practice location).
+
 ## D6 — Care Compare and PECOS agree on 43% of organization relationships
 
 - **status:** closed
@@ -452,6 +467,40 @@ still correct). `tests/test_cohort_vintage.R` remains deliberately unwired
 from `.github/workflows/ci.yml` for the same reason it always was: it now
 passes here, but CI has no person-level data to run it against at all.
 
+**Update 2026-11-24 (spec Part 3 sweep):** re-verified end to end. V1–V4 of
+`tests/test_cohort_vintage.R` all agree at **16,775** under
+`reconcile_ab_20261022T134500_remove_fuzzy_surname_matching`; the provider
+panel constants were rebuilt 2026-10-30 (PR #282); `composition_rucc_cat.csv`
+is current. `make_linkage_upset_figure.R` and `make_cohort_flow_figure.R`
+were re-run — Figure 10's strata PNG had been stale since 2026-09-11 and now
+renders the 16,775 cohort; its caption constants are computed, not hardcoded.
+README's Figure 3 caption, Figure 10 caption, cohort mermaid and "Where the
+22,357 go" table were updated to the current freeze (the last table row moved
+from primary-tier to cohort-level geography because the tier-specific count
+needs person-level files — see below). `tests/test_cohort_vintage.R` is now
+wired into `ci.yml`; it reads only tracked metadata, so the old "CI has no
+person-level data" reason to hold it out no longer applies.
+
+**New defect found by the same sweep (D10-E6 in
+`review/d10_cohort_discrepancies.csv`):** the person-level files on this
+machine are the **2026-08-08/10 vintage**, not the current freeze's inputs.
+`midwives.csv` and `midwives_with_nppes.csv` are both 22,309 rows (the Aug-08
+scrape/match), `artifacts/frozen_cohort/midwives_geography_guarded.csv` is
+the original Aug-10 pin (sha `94551381`, 16,892 rows) while
+`INPUT_FINGERPRINT.json` records the 16,775 repin (sha `f8063509`). V1–V4
+could never see this — they compare metadata to metadata. `test_cohort_vintage.R`
+now has a **V5** check that, when the pinned CSV is present, verifies its
+sha256 and row count against the fingerprint; it fails closed on this machine
+today and skips on CI where the files are absent.
+
+**Still open:** the 14,677/11,920 primary-tier-with-geography status table in
+README, the "Primary + county" tier-specific count, and everything downstream
+of `midwives_geography_guarded.csv` cannot be regenerated or re-verified here
+— the current person-level inputs (09-02 scrape, September NPPES match,
+geography build) are not on this machine. Re-pinning needs that machine, then
+`repin_frozen_cohort.R` (`REPIN_APPLY=1`), `R/05-stage-progression.R`,
+`R/07-cohort-composition.R`, and the README person-level sections.
+
 ---
 
 ## D11 — The workforce microsimulation has no sourced inputs
@@ -525,13 +574,17 @@ scripts and show each reproduces byte-for-byte across two runs. Only then
 consider formal use, and test proposals against the v1 truth set only after it
 is unblinded.
 
+## Closed
+
 ## D15 — Person-name keys split on apostrophes, so `O'Brien` never matches `OBrien`
 
-- **status:** open
+- **status:** closed
 - **owner:** tyler
 - **raised:** 2026-11-22
+- **closed:** 2026-11-24
+- **resolution:** the three person-name copies were consolidated upstream as `mysterynpi::phrase_key()` (mysterynpi 0.11.0) — fold via `normalize_string(x, remove_apostrophes = TRUE)`, then punctuation→space, whitespace collapse, empty→NA. `amcb_license_bridge.R` `normalize_text()` and `R/build_amcb_state_licenses.R` `normalize_name()` call it; `expand_former_name_candidates.R` delegates its squash contract to `mysterynpi::compact_name_key`. Delegation also closed two latent divergences the local copies carried: the okina apostrophe `ʻ` (the local class covered three of four codepoints) and the German digraphs (`Müller` now keys `MUELLER`, the same key the matcher's own pipeline produces, not the `MULLER` the retired `stri_trans_general` fold gave). Measured arm against arm: the digraph fold moves exactly 1 of 22,309 roster `last_name` values (`Jackson-Köhlin`) and 0 of 1,275,086 NPPES candidate name fields — and that surname reaches no NPPES candidate under either spelling, so the agreement movement is 0 gained / 0 lost. Pinned by apostrophe and umlaut assertions in all three test files; `ci.yml` installs the pinned mysterynpi before the suites that need it.
 - **source:** `amcb_license_bridge.R` `normalize_text()` (feeding `normalize_person_name()` and `normalize_city()`), `R/build_amcb_state_licenses.R:46` `normalize_name()` (feeding `.block_surname_norm`, a blocking key), `expand_former_name_candidates.R:124`
-- **policed by:** nothing. `tests/ci_hygiene.R` H7 records the duplicated-body half of this family; no gate asserts an apostrophe policy, because the repository has not decided on one for people.
+- **policed by:** the three test files named in the resolution, including umlaut pins that fail if a local fold drifts back in; the composition itself now lives upstream in `mysterynpi::phrase_key`, so there is no local copy left to drift.
 
 Every person-name normaliser replaces anything outside `[A-Z0-9 ]` with a
 **space**, apostrophes included. So:
@@ -553,37 +606,58 @@ disagreement. In a cohort of nurse-midwives the affected surnames are not rare.
 > recorded differently by two arms, counted as a disagreement.
 
 It also handles curly apostrophes, noting NPPES and Care Compare disagree on
-which they use. None of the person-name copies does either thing.
+which they use. None of the person-name copies did either thing.
 
-**Why this is open rather than fixed.** The 2026-11-21 review fixed the
+**Why this was open rather than fixed.** The 2026-11-21 review fixed the
 *determinism* defect in the same functions — `iconv(to = "ASCII//TRANSLIT")`
 returned a different key per operating system — and deliberately stopped there.
 The two are different in kind. The accent fold had one correct answer and the
-old code was wrong on some machines; the apostrophe rule is a **policy choice
-about who should match**, where both behaviours are internally consistent. It
-will move linkage counts on purpose.
+old code was wrong on some machines; the apostrophe rule was a **policy choice
+about who should match**, where both behaviours were internally consistent.
 
-Bundling them would also have made the movement unattributable: two causes, one
-count change, no way to say which did what.
+**Scope notes, recorded at closure.**
 
-**What it would take to close.**
+- `normalize_text()` is shared by `normalize_person_name()` and
+  `normalize_city()`, so the rule reaches city keys too — the failure shape is
+  identical (`O'Fallon` vs `OFallon`) and the same incident reasoning applies.
+- `expand_former_name_candidates.R`'s `[^A-Z] -> ""` pass already produced the
+  target behaviour (`O'BRIEN` -> `OBRIEN`); this entry's citation of it was for
+  the family audit, not a live defect there. A comment now marks the delete as
+  deliberate rather than emergent.
+- `R/lib/script_cli_and_keys.R` `identity_key_norm()` also spaces apostrophes
+  on person names and was deliberately left: it is the disagreement-audit
+  normaliser whose shallowness is a documented measurement decision
+  ("an aggressive normaliser hides exactly the disagreement this audit exists
+  to measure", `audit_2013_dac_vs_nppes.R:181`). It counts recorded
+  disagreement; it does not decide matches.
+- `mysterynpi::name_key()` keeps the apostrophe (`O'BRIEN`) — a display key
+  that preserves recorded spelling; `surname_agreement()` strips it at
+  comparison time via its own `deq()` helper. The blocking keys fixed here
+  now share mysterynpi's *fold* (`normalize_string`) but keep their own
+  phrase/squash contracts, which upstream does not offer as functions.
+- **Same defect, next family:** the institution-name and street-name copies
+  (`build_table1_midwives.R` `.norm_school`, `R/lib/training_institution.R`,
+  `validate_training_institution_against_acme.R`, `build_embedded_org_name_arm.R`,
+  `build_worksite_setting_crosswalk.R` `street_key`) still space apostrophes.
+  Org-side scope, not person-name; `ST JOHN'S` -> `ST JOHN S` is the same
+  incident `norm_org` already paid for. Left for a separate entry.
 
-1. Adopt `norm_org`'s rule for people: delete `['’ʼ`]` before the
-   character-class pass, so the apostrophe closes the name rather than splitting
-   it. One line in each of the three sites, or one shared helper.
-2. Validate **arm against arm**, never against the freeze — the freeze is not
-   regenerable, and a shadow-vs-freeze comparison confounds this change with
-   every other difference between the two.
-3. Report the count movement as its own number. More matches is the expected
-   direction; a *drop* would mean the change did something other than what this
-   entry describes.
+**Movement, measured arm against arm** (`midwives.csv` x `nppes_candidates.csv`,
+2026-11-24): 49 roster surnames change key (126 of 22,309 `last_name` values,
+0.56%; 50 distinct recorded surnames contain an apostrophe). Under the new rule
+**27 cross-arm surname agreements are gained** — `O'Brien` now reaches NPPES
+`OBRIEN`, `D'Amelio` reaches `DAMELIO`, `O'Connor`/`O'Neill`/`D'Errico` etc. —
+and **3 are lost**, all malformed NPPES spellings whose old agreement was
+itself accidental: `O"DAY` (a literal double-quote), `O NEIL` (a literal
+space), and `O' ROURKE` (apostrophe-then-space). Each of those surnames still
+reaches its canonical NPPES spelling (`ODAY`, `ONEIL`, `OROURKE`) under the
+new rule. Direction is as predicted: more matches, and the only losses are
+spellings no arm should have been matching on.
 
 **Checked and not a concern:** the same character class also spaces hyphens, so
 `Mary-Jo` keys as `MARY JO`. That is the correct behaviour for a name the
 sources spell both ways, and unlike the apostrophe it does not merge or split a
 single token.
-
-## Closed
 
 ## D13 — DAC multi-site ZIP5 comparison silently picked an arbitrary one of a clinician's real sites
 
@@ -923,3 +997,61 @@ exposed that the "fix" was incomplete. A dedup that is deterministic *within
 one warehouse instance* is not the same property as one that is deterministic
 *by content*, and the difference is invisible until something forces a second
 instance to be compared against the first.
+
+## D18 — Organization-side keys split on apostrophes, so `ST JOHN'S` never met `ST JOHNS`
+
+- **status:** closed
+- **owner:** tyler
+- **raised:** 2026-11-24
+- **closed:** 2026-11-24
+- **resolution:** every organization-side normaliser now delegates its
+  fold + punctuation pass to `mysterynpi::phrase_key()` (mysterynpi
+  0.11.0, pin `03469ae`), keeping only its own local policy: the `&`
+  entity restore and leading-`THE` strip for schools, street-suffix
+  canonicalisation for `street_key`, and extraction for
+  `embedded_org_text`. Duplicate `.norm_school` in
+  `build_table1_midwives.R` deleted in favour of
+  `training_norm_school()`. Pinned by
+  `tests/test_org_apostrophe_normalization.R` (20 assertions, wired
+  into `ci.yml`).
+
+D15 fixed person-name keys; the same defect class survived on the
+organization side, where `[^A-Z0-9 ]` -> space turned every possessive
+into a phantom word: `ST JOHN'S` keyed `ST JOHN S HOSPITAL`, `O'NEILL`
+keyed `O NEILL`, `D'YOUVILLE` keyed `D YOUVILLE`. `norm_org()` had
+already deleted apostrophes for exactly this reason (its own comment
+records the `ST MARY'S` incident); the school, street, institution,
+and embedded-organization copies never got the rule.
+
+**Affected functions and contracts.** `training_norm_school()`
+(`R/lib/training_institution.R`) and its byte-identical duplicate
+`.norm_school` (`build_table1_midwives.R`) pool training-institution
+display names; `norm_institution_name()`
+(`validate_training_institution_against_acme.R`) feeds the ACME
+face-validity match; `street_key()`
+(`build_worksite_setting_crosswalk.R`) feeds worksite address keys;
+`embedded_org_text()` (`build_embedded_org_name_arm.R`) extracts the
+name that `norm_org()` then keys. Each keeps a different local
+contract, so each delegates only the shared fold+key step.
+
+**Measured before implementing** (15,776 real institution strings:
+DAC 5,793 + Healthgrades 8,231 + repository 1,752): 14 keys change
+(0.09%), all Healthgrades possessives (`WOMEN S` -> `WOMENS`,
+`JOSEPH S` -> `JOSEPHS`, `MASTER S` -> `MASTERS`, `VINCENT S`,
+`LUKE S`); **0 equivalence classes merge**, so no counts move -- the
+spellings that would have collided never coexisted in the data.
+ACME proxy match on the 7 distinct repository program strings: 7/7
+matched before and after. `street_key` and `embedded_org_text` could
+not be measured on real input (`midwife_work_sites_long.csv` and the
+NPPES extract are gitignored/absent locally); their change is pinned
+by fixtures instead. `norm_org()` was left alone: its contract
+(corporate-suffix stripping, `""`-not-NA for missing names, no accent
+fold) does not match `phrase_key()`'s, and its apostrophe class
+already deletes the common forms -- the okina `ʻ` and fullwidth `＇`
+edge cases remain a documented exception.
+
+**Also fixed in passing:** `validate_training_institution_against_acme.R`
+created `norm_institution_name` columns but read `norm_name`, so the
+comparison would have errored had the earlier Table-1 category guard
+not stopped the script first; both reads now use the created column.
+

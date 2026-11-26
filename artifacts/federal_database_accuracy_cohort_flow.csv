@@ -1,0 +1,13 @@
+stage,label,n,unit,parent
+amcb_records,AMCB certification records,22357,certification record,
+midwifery_taxonomy,Midwifery-taxonomy link,14956,certification record,amcb_records
+nursing_taxonomy,Nursing-taxonomy sensitivity addition,1819,certification record,amcb_records
+no_candidate,No candidate NPI,2613,certification record,amcb_records
+ambiguous_tied_names,Tied name evidence,2689,certification record,amcb_records
+contested_npi,"NPI claimed by
+multiple certificants",109,certification record,amcb_records
+unresolved_component,"Candidate component
+unresolved",8,certification record,amcb_records
+held_out_candidate,"Candidate held out
+by linkage rule",163,certification record,amcb_records
+analytic_cohort,Analytic cohort (unique NPIs),16775,unique NPI,included_tiers

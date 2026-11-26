@@ -1,0 +1,25 @@
+claim_id,manuscript_section,statistic,source_artifact,numerator,denominator,unit,years,estimator,source_fingerprint,verification_status
+CohortRoster,Methods,AMCB roster records,artifacts/linkage_completeness_by_status.csv,22357,22357,certification_record,2026,count,14f949ed43b80489,unverified
+CohortMatched,Methods,primary midwifery-taxonomy NPI links,artifacts/linkage_completeness_by_status.csv,12170,22357,unique_certification_record_link,2026,count,14f949ed43b80489,unverified
+CohortNursing,Methods,nursing-taxonomy sensitivity tier,artifacts/linkage_completeness_by_status.csv,,,unique_certification_record_link,2026,count,14f949ed43b80489,unverified
+Licensure3,Results,"licensure agreement, 3 live-verification states",artifacts/oig_remake/oig_table2_inaccuracy_subtypes_by_variable.csv,,,resolved_record,2026,proportion,38a09496fd68e338,unverified
+Licensure7,Results,"licensure agreement, 7 board-record states",artifacts/oig_remake/oig_table2_inaccuracy_subtypes_by_variable.csv,,,resolved_record,2026,proportion,38a09496fd68e338,unverified
+NameAgreement,Results,exact certified-name agreement,artifacts/oig_remake/oig_table2_inaccuracy_subtypes_by_variable.csv,,,resolved_record,2026,proportion,38a09496fd68e338,unverified
+AnyInconsistent,Abstract,"providers inconsistent on >=1 variable, NPPES vs DAC 2026",artifacts/oig_remake/oig_table4_any_variable_inconsistent.csv,,,provider,2026,proportion,8673623cd02fec1a,unverified
+StateAgreement,Results,practice-state agreement by source-year,artifacts/state_source_audit_agreement.csv,,,provider_year,2013-2026,proportion,b02dca7d2d8a675b,unverified
+PairwiseMatrix,SDC S6,all source-pair practice-state agreement,artifacts/source_pairwise_agreement_matrix.csv,,,provider_year_or_snapshot_record,varies,proportion,eb79d681f78970f2,unverified
+AgreementCI,SDC S7,pooled agreement with Wilson + cluster-bootstrap CIs,artifacts/agreement_cluster_bootstrap_ci.csv,,,provider_year,pooled window,proportion,3483a471acf6e79a,unverified
+MedicaidClass,Results,Medicaid per-provider-year concordance classes,artifacts/state_source_audit_medicaid_classification_by_year.csv,,,provider_year,2018-2024,count,744f30b6a64fb692,unverified
+MedicaidMultistate,Results,"multistate enrollment share, any-time",artifacts/state_source_audit_medicaid_classification_by_year.csv,8581,53414,provider_year,2018-2024,proportion,744f30b6a64fb692,unverified
+SetMembership,Results,"equality vs membership scoring, same provider-years",artifacts/medicaid_set_membership_before_after.csv,,107386,provider_year,2018-2024,proportion,2f88283c2fcfcd16,unverified
+PersistenceDenom,SDC S4,provider-year disposition at t+1,artifacts/persistence_denominators.csv,,,provider_year,2013-2024,proportion,df66e4c6bc3ea4ae,unverified
+CensoringAudit,Results,2021-2026 discordance dispositions,artifacts/oig_remake/oig_longitudinal_2021_2026_censoring_audit.csv,,892,clinician,2021-2026,count,4c1202f5ebbe8ac9,unverified
+Churn,SDC S9,year-over-year within-source state churn,artifacts/mrost_churn_by_source.csv,,,provider_year,2021-2025,proportion,91bb5b778f90ee13,unverified
+TierFlow,SDC S10,consensus-tier persistence,artifacts/consensus_tier_persistence_2021_2025.csv,,,provider_year,2021-2025,count,9dc1e0eae07cefec,unverified
+OddOneOut,SDC S11,lone-dissent rate by source,artifacts/mrost_odd_one_out_rate.csv,,,provider_year,2021-2025,proportion,4f47f76756c11c14,unverified
+SourceCount,SDC S2,agreement by number of reporting sources,artifacts/source_count_agreement_by_n_sources.csv,,,provider_year,2021-2025,proportion,c4293baf2459417b,unverified
+Resolution,SDC S3,base-year discordance disposition,artifacts/mrost_lead_lag.csv,,,provider_year,2021-2025,proportion,52f65c940ea80e48,unverified
+NpiPopulation,SDC S6 fig,"Medicaid segments carrying an NPI, by state",artifacts/medicaid_npi_population_by_state.csv,,,segment,2018-2024,proportion,20a4ef0c95a6446a,unverified
+StateVariation,SDC S7 fig,agreement by registry state and source,artifacts/state_variation_agreement_by_source.csv,,,provider_year,varies,proportion,994aa51230aca14c,unverified
+Coverage,SDC S1 fig,years each source covers the cohort,artifacts/state_source_audit_coverage.csv,,,source_year,2007-2026,count,84c68eb6c9695553,unverified
+Completeness,Results,"field completeness, registry vs directory",artifacts/oig_remake/oig_table3_completeness_2019_and_2026.csv,,,record,2019-2026,proportion,c7f9d3cd8d56db0c,unverified

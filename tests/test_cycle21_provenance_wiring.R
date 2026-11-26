@@ -222,5 +222,59 @@ cat("\n-- ADVERSARIAL --\n")
   unlink(f)
 }
 
+# T222 (BVA). A declared cache input must reach the sidecar. Regression for
+# the dropped-token defect: prov_cache_input() returned a STRING that
+# prov_inputs() resolved as a path, failed to find, and discarded with a
+# warning -- so no sidecar ever recorded which cache produced a
+# cache-dependent artifact. The entry now travels via
+# write_with_provenance(declared = ...) and check_provenance() re-verifies it
+# by content fingerprint, not by hashing the DuckDB file.
+{
+  source(file.path(root, "R", "lib", "cache_vintage.R"))
+  source(file.path(root, "R", "lib", "medicare_duckdb.R"))
+  cache_file <- tempfile(fileext = ".duckdb")
+  con <- duckdb_connect(cache_file)
+  DBI::dbWriteTable(con, "geocoding_cache", data.frame(
+    address_hash = sprintf("h%03d", 1:10), latitude = 39 + 1:10 / 100,
+    longitude = -104 - 1:10 / 100, stringsAsFactors = FALSE),
+    overwrite = TRUE)
+  DBI::dbDisconnect(con, shutdown = TRUE)
+
+  prov_dir <- tempfile("prov_decl_")
+  dir.create(prov_dir)
+  art <- file.path(prov_dir, "declared_cache_artifact.csv")
+  write_with_provenance(data.frame(a = 1:3), art,
+                        declared = prov_cache_input(cache_file))
+  sj <- jsonlite::read_json(paste0(art, ".provenance.json"),
+                            simplifyVector = FALSE)
+  cache_entries <- Filter(function(i) identical(i$kind, "geocode_cache"),
+                          sj$inputs)
+  chk(length(cache_entries) == 1L &&
+        identical(cache_entries[[1]]$sha256,
+                  geocode_cache_fingerprint(cache_file)$content_sha256),
+      "T222a the sidecar records the cache's content fingerprint, not a dropped token")
+
+  cache_row <- check_provenance(art)
+  cache_row <- cache_row[cache_row$kind == "geocode_cache", , drop = FALSE]
+  chk(nrow(cache_row) == 1L && identical(cache_row$stale, FALSE),
+      "T222b check_provenance re-derives the fingerprint and reports FRESH")
+
+  con <- duckdb_connect(cache_file)
+  DBI::dbExecute(con, "UPDATE geocoding_cache SET latitude = latitude + 1")
+  DBI::dbDisconnect(con, shutdown = TRUE)
+  stale_row <- check_provenance(art)
+  stale_row <- stale_row[stale_row$kind == "geocode_cache", , drop = FALSE]
+  chk(nrow(stale_row) == 1L && identical(stale_row$stale, TRUE),
+      "T222c a mutated cache flips the entry to STALE -- the declaration is load-bearing")
+
+  gone_art <- file.path(prov_dir, "gone_cache_artifact.csv")
+  write_with_provenance(data.frame(a = 1:3), gone_art,
+                        declared = prov_cache_input(file.path(prov_dir, "absent.duckdb")))
+  gone_row <- check_provenance(gone_art)
+  gone_row <- gone_row[gone_row$kind == "geocode_cache", , drop = FALSE]
+  chk(nrow(gone_row) == 1L && is.na(gone_row$current),
+      "T222d an absent cache leaves current = NA -> UNVERIFIABLE, never silently fresh")
+}
+
 cat(sprintf("\n%s (%d failures)\n", if (fails == 0L) "PASS" else "FAIL", fails))
 quit(status = if (fails == 0L) 0L else 1L)
